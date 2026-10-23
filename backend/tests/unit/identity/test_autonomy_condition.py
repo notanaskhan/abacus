@@ -1,6 +1,8 @@
-"""SPEC-027 (TASK-051 D2): `firm_setting(autonomy_policy)` for agents. The engagement agent may
-send a routine reminder (`follow_up.send`) at the firm's Routine autonomy or higher, within its
-declared scope, and never beyond its initiator (ADR-025)."""
+"""SPEC-027 (TASK-051 D2): `firm_setting(autonomy_policy)` for agents, and DEC-74 (P-06-T14):
+the engagement agent once sent routine reminders at the firm's Routine autonomy; now it only
+drafts, so `follow_up.send` denies the agent at every autonomy level, in or out of its declared
+scope, whatever its initiator may do (INV-1). No matrix row gives an agent an autonomy-policy
+cell any more."""
 
 from __future__ import annotations
 
@@ -77,9 +79,20 @@ def _on(agent: AgentContext) -> Resource:
 SCOPE = frozenset({"follow_up.draft", "follow_up.send"})
 
 
-async def test_d2_routine_lets_the_agent_send_a_reminder(fakes: _Fakes) -> None:
+@pytest.mark.parametrize("level", [1, 2, 3])
+async def test_dec74_at_routine_or_higher_the_agent_may_not_send_a_follow_up(
+    fakes: _Fakes, level: int
+) -> None:
+    fakes.level = level
     agent = _agent(SCOPE, uuid.uuid4())
-    await authorise(agent, "follow_up.send", _on(agent))
+    with pytest.raises(Forbidden) as raised:
+        await authorise(agent, "follow_up.send", _on(agent))
+    assert raised.value.layer == "role"
+
+
+async def test_dec74_the_agent_may_still_draft_within_its_scope(fakes: _Fakes) -> None:
+    agent = _agent(SCOPE, uuid.uuid4())
+    await authorise(agent, "follow_up.draft", _on(agent))
 
 
 async def test_d2_advise_refuses_it(fakes: _Fakes) -> None:
@@ -97,11 +110,11 @@ async def test_d2_outside_the_declared_scope_it_is_refused(fakes: _Fakes) -> Non
 
 
 async def test_d2_never_beyond_its_initiator(fakes: _Fakes) -> None:
-    fakes.initiator_role = "staff"  # staff may not send follow-ups
+    fakes.initiator_role = "staff"  # staff may now send follow-ups (P-06-T14); the agent may not
     agent = _agent(SCOPE, uuid.uuid4())
     with pytest.raises(Forbidden) as raised:
         await authorise(agent, "follow_up.send", _on(agent))
-    assert raised.value.layer == "delegation"
+    assert raised.value.layer == "role"
 
 
 async def test_d2_people_are_unaffected(fakes: _Fakes) -> None:
@@ -123,20 +136,21 @@ async def test_d2_people_are_unaffected(fakes: _Fakes) -> None:
         )
 
 
-def test_d1_only_policy_agents_may_declare_follow_up_send() -> None:
+def test_dec74_no_agent_may_declare_follow_up_send() -> None:
     assert not agent_may_hold("follow_up.send")  # model agents: unchanged
-    assert policy_agent_may_hold("follow_up.send")
+    assert not policy_agent_may_hold("follow_up.send")  # DEC-74: policy agents neither
     assert policy_agent_may_hold("follow_up.draft")
     assert not policy_agent_may_hold("evidence.accept")
 
 
-def test_the_matrix_s_only_agent_firm_setting_is_the_autonomy_policy() -> None:
+def test_no_agent_cell_is_a_firm_setting_any_more() -> None:
     """The parsed matrix keeps `firm_setting`, not its name; `authorise` reads an agent's as the
-    autonomy policy, so any other would be a silent grant. This fails first."""
+    autonomy policy, so any agent firm-setting cell would be a silent grant. DEC-74 removed the
+    only one (`follow_up.send`). This fails first."""
     actions = cast(dict[str, dict[str, str]], yaml.safe_load(pm.source())["actions"])
     agent_settings = {
         name: entries["agent"]
         for name, entries in actions.items()
         if re.fullmatch(r"firm_setting\(.*\)", str(entries.get("agent", "")))
     }
-    assert agent_settings == {"follow_up.send": "firm_setting(autonomy_policy)"}
+    assert agent_settings == {}

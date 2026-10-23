@@ -142,10 +142,35 @@ class FollowUpSchedule(Base):
     decided_by: Mapped[UUID | None]
     decided_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # Follow-ups v2 (P-06-T14, migration 0121).
+    binder_id: Mapped[UUID | None]
+    recipient_contact_id: Mapped[UUID | None]
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    template_key: Mapped[str | None]
+    body_sealed: Mapped[bytes | None]
+    body_fingerprint: Mapped[str | None]
+    edit_fingerprint: Mapped[str | None]
+    drafted_by_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    sent_by: Mapped[UUID | None]
+    sent_at: Mapped[datetime | None]
+    not_before: Mapped[datetime | None]
+    undone_at: Mapped[datetime | None]
+
+
+class FollowUpReturn(Base):
+    """A file a screening-return follow-up returns, with its reason (P-06-T14). Insert-only."""
+
+    __tablename__ = "follow_up_returns"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    follow_up_id: Mapped[UUID] = mapped_column(primary_key=True)
+    evidence_version_id: Mapped[UUID] = mapped_column(primary_key=True)
+    reason_code: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
 class FollowUpItem(Base):
-    """An item a reminder named, with its due date then and its place in the sequence (1-3)."""
+    """An item a follow-up named, with its due date then and its place in the sequence (1-4)."""
 
     __tablename__ = "follow_up_items"
 

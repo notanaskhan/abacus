@@ -6646,6 +6646,42 @@ export type FlowStepOut = {
 };
 
 /**
+ * FollowUpDraftsIn
+ *
+ * BND-01 b (binders) or BND-02 d (requests of one binder): one of the two lists.
+ */
+export type FollowUpDraftsIn = {
+    /**
+     * Binder Ids
+     */
+    binder_ids?: Array<string>;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids?: Array<string>;
+};
+
+/**
+ * FollowUpDraftsOut
+ */
+export type FollowUpDraftsOut = {
+    /**
+     * Items
+     */
+    items: Array<FollowUpOut>;
+};
+
+/**
+ * FollowUpEditIn
+ */
+export type FollowUpEditIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
  * FollowUpIn
  */
 export type FollowUpIn = {
@@ -6653,6 +6689,114 @@ export type FollowUpIn = {
      * Text
      */
     text: string;
+};
+
+/**
+ * FollowUpItemOut
+ */
+export type FollowUpItemOut = {
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * Overdue
+     */
+    overdue: boolean;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * FollowUpOut
+ *
+ * One follow-up: who it goes to, the open requests it lists (each once), and the email
+ * exactly as it will be sent. `body` is template-composed (DEC-79: never model text) or the
+ * person's edit.
+ */
+export type FollowUpOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Binder Id
+     */
+    binder_id: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Drafted By Kind
+     */
+    drafted_by_kind: 'person' | 'agent';
+    /**
+     * Edited
+     */
+    edited: boolean;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Items
+     */
+    items: Array<FollowUpItemOut>;
+    /**
+     * Kind
+     */
+    kind: 'overdue' | 'chase' | 'screening_return';
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string | null;
+    /**
+     * Recipient Name
+     */
+    recipient_name: string;
+    /**
+     * Recipient User Id
+     */
+    recipient_user_id: string;
+    /**
+     * Sent At
+     */
+    sent_at: string | null;
+    /**
+     * Sent By
+     */
+    sent_by: string | null;
+    /**
+     * Status
+     */
+    status: 'drafted' | 'sent' | 'dismissed';
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * Template Key
+     */
+    template_key: string;
+    /**
+     * Undo Until
+     */
+    undo_until: string | null;
 };
 
 /**
@@ -6702,6 +6846,16 @@ export type FollowUpPreviewOut = {
      * Subject
      */
     subject: string;
+};
+
+/**
+ * FollowUpSendManyIn
+ */
+export type FollowUpSendManyIn = {
+    /**
+     * Ids
+     */
+    ids: Array<string>;
 };
 
 /**
@@ -36214,6 +36368,392 @@ export type ReviewWaitingResponses = {
 };
 
 export type ReviewWaitingResponse = ReviewWaitingResponses[keyof ReviewWaitingResponses];
+
+export type DraftSelectionFollowUpsData = {
+    body: FollowUpDraftsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/follow-ups/drafts';
+};
+
+export type DraftSelectionFollowUpsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DraftSelectionFollowUpsError = DraftSelectionFollowUpsErrors[keyof DraftSelectionFollowUpsErrors];
+
+export type DraftSelectionFollowUpsResponses = {
+    /**
+     * Successful Response
+     */
+    201: FollowUpDraftsOut;
+};
+
+export type DraftSelectionFollowUpsResponse = DraftSelectionFollowUpsResponses[keyof DraftSelectionFollowUpsResponses];
+
+export type SendFollowUpsData = {
+    body: FollowUpSendManyIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/follow-ups/send';
+};
+
+export type SendFollowUpsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SendFollowUpsError = SendFollowUpsErrors[keyof SendFollowUpsErrors];
+
+export type SendFollowUpsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpDraftsOut;
+};
+
+export type SendFollowUpsResponse = SendFollowUpsResponses[keyof SendFollowUpsResponses];
+
+export type GetFollowUpData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/follow-ups/{follow_up_id}';
+};
+
+export type GetFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetFollowUpError = GetFollowUpErrors[keyof GetFollowUpErrors];
+
+export type GetFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpOut;
+};
+
+export type GetFollowUpResponse = GetFollowUpResponses[keyof GetFollowUpResponses];
+
+export type EditFollowUpData = {
+    body: FollowUpEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/follow-ups/{follow_up_id}';
+};
+
+export type EditFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EditFollowUpError = EditFollowUpErrors[keyof EditFollowUpErrors];
+
+export type EditFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpOut;
+};
+
+export type EditFollowUpResponse = EditFollowUpResponses[keyof EditFollowUpResponses];
+
+export type DismissFollowUpData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/follow-ups/{follow_up_id}/dismiss';
+};
+
+export type DismissFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DismissFollowUpError = DismissFollowUpErrors[keyof DismissFollowUpErrors];
+
+export type DismissFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpOut;
+};
+
+export type DismissFollowUpResponse = DismissFollowUpResponses[keyof DismissFollowUpResponses];
+
+export type SendFollowUpData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/follow-ups/{follow_up_id}/send';
+};
+
+export type SendFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SendFollowUpError = SendFollowUpErrors[keyof SendFollowUpErrors];
+
+export type SendFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpOut;
+};
+
+export type SendFollowUpResponse = SendFollowUpResponses[keyof SendFollowUpResponses];
+
+export type UndoFollowUpData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Follow Up Id
+         */
+        follow_up_id: string;
+    };
+    query?: never;
+    url: '/v1/follow-ups/{follow_up_id}/undo';
+};
+
+export type UndoFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UndoFollowUpError = UndoFollowUpErrors[keyof UndoFollowUpErrors];
+
+export type UndoFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpOut;
+};
+
+export type UndoFollowUpResponse = UndoFollowUpResponses[keyof UndoFollowUpResponses];
 
 export type GroupingSetVersionsData = {
     body?: never;

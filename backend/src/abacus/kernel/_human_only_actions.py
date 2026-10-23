@@ -12,6 +12,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "evidence.accepted",
         "firm.ai_client_data_opted_in",
         "firm_export.approved",
+        "follow_up.sent",
         "going_concern.decided",
         "guidance_draft.approved",
         "independence.confirmed",

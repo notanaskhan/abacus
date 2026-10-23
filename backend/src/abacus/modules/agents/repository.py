@@ -22,6 +22,7 @@ from abacus.modules.agents.models import (
     EngagementAgentState,
     EntryAssessmentRow,
     FollowUpItem,
+    FollowUpReturn,
     FollowUpSchedule,
     GuidanceDraftDecision,
     GuidanceDraftRow,
@@ -562,6 +563,12 @@ async def insert_follow_up(
     status: str,
     agent_run_id: UUID | None,
     items: Sequence[tuple[UUID, date, int]],
+    kind: str = "overdue",
+    drafted_by_kind: str = "agent",
+    binder_id: UUID | None = None,
+    recipient_contact_id: UUID | None = None,
+    template_key: str | None = None,
+    body_fingerprint: str | None = None,
 ) -> UUID:
     follow_up_id = (
         await session.execute(
@@ -572,6 +579,12 @@ async def insert_follow_up(
                 recipient_user_id=recipient_user_id,
                 status=status,
                 agent_run_id=agent_run_id,
+                kind=kind,
+                drafted_by_kind=drafted_by_kind,
+                binder_id=binder_id,
+                recipient_contact_id=recipient_contact_id,
+                template_key=template_key,
+                body_fingerprint=body_fingerprint,
             )
             .returning(FollowUpSchedule.id)
         )
@@ -645,6 +658,74 @@ async def settle_follow_up(
         .where(FollowUpSchedule.id == follow_up_id)
         .values(status=status, decided_by=by, decided_at=func.abacus_now(), note=note)
     )
+
+
+async def waiting_pairs(
+    session: AsyncSession, recipient_user_ids: Sequence[UUID]
+) -> set[tuple[UUID, UUID]]:
+    """P-06-T14: (recipient, request) already in a follow-up waiting for a person, so a new
+    draft never repeats them. For a caller that authorised `follow_up.draft` on the requests'
+    engagements (LIST_EXEMPT: identifiers only)."""
+    if not recipient_user_ids:
+        return set()
+    rows = await session.execute(
+        select(FollowUpSchedule.recipient_user_id, FollowUpItem.request_item_id)
+        .join(FollowUpItem, FollowUpItem.follow_up_id == FollowUpSchedule.id)
+        .where(
+            FollowUpSchedule.recipient_user_id.in_(list(recipient_user_ids)),
+            FollowUpSchedule.status == "drafted",
+        )
+    )
+    return {(r, i) for r, i in rows.all()}
+
+
+async def get_follow_up(
+    session: AsyncSession, follow_up_id: UUID, *, lock: bool = False
+) -> FollowUpSchedule | None:
+    query = select(FollowUpSchedule).where(FollowUpSchedule.id == follow_up_id)
+    if lock:
+        query = query.with_for_update()
+    return (await session.execute(query)).scalar_one_or_none()
+
+
+async def follow_up_item_rows(session: AsyncSession, follow_up_id: UUID) -> Sequence[FollowUpItem]:
+    """One follow-up's items, for a caller that authorised the follow-up (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(FollowUpItem)
+                .where(FollowUpItem.follow_up_id == follow_up_id)
+                .order_by(FollowUpItem.due_on, FollowUpItem.request_item_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def set_follow_up(
+    session: AsyncSession, follow_up_id: UUID, values: dict[str, object]
+) -> None:
+    await session.execute(
+        update(FollowUpSchedule).where(FollowUpSchedule.id == follow_up_id).values(**values)
+    )
+
+
+async def insert_follow_up_returns(
+    session: AsyncSession,
+    tenant_id: UUID,
+    follow_up_id: UUID,
+    returns: Sequence[tuple[UUID, str]],
+) -> None:
+    for version_id, reason in returns:
+        await session.execute(
+            insert(FollowUpReturn).values(
+                tenant_id=tenant_id,
+                follow_up_id=follow_up_id,
+                evidence_version_id=version_id,
+                reason_code=reason,
+            )
+        )
 
 
 async def set_self_paused(

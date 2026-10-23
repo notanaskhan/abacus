@@ -45,3 +45,5 @@ actions:
     verb: approve
   - action: firm.ai_client_data_opted_in
     verb: confirm
+  - action: follow_up.sent
+    verb: send  # P-06-T14 (DEC-74): a follow-up to a client is sent by a person

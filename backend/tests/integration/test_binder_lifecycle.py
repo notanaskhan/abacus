@@ -218,6 +218,10 @@ async def _relay(at: datetime) -> list[OutboxEvent]:
     return publisher.published
 
 
+# P-06-T14's follow-up suite relays the same way.
+drain, relay = _drain, _relay
+
+
 def _published(events: list[OutboxEvent], binder: uuid.UUID) -> list[OutboxEvent]:
     return [
         e

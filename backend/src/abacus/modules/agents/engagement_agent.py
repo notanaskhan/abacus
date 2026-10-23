@@ -31,7 +31,7 @@ from uuid import UUID, uuid4, uuid5
 
 from temporalio import activity
 
-from abacus.kernel import _flags
+from abacus.kernel import _flags, clock
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import signal_with_start
@@ -51,6 +51,7 @@ from abacus.modules.agents.repository import (
     record_activity,
     screenings_skipped_while_paused,
     set_agent_paused,
+    set_follow_up,
     set_self_paused,
     settle_follow_up,
 )
@@ -62,7 +63,7 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     ScreeningInput,
 )
-from abacus.modules.communications.api import render_follow_up, send_follow_up
+from abacus.modules.communications.api import compose_follow_up, deliver_follow_up
 from abacus.modules.engagements.api import (
     get_ref,
     is_archived,
@@ -72,6 +73,7 @@ from abacus.modules.engagements.api import (
 )
 from abacus.modules.identity.api import (
     AuthContext,
+    Forbidden,
     agents_paused,
     authorise,
     autonomy_level,
@@ -578,6 +580,20 @@ class DraftGone(DomainConflict):
     code = "draft_not_waiting"
 
 
+async def _email(
+    tenant_id: UUID,
+    engagement_id: UUID,
+    recipient_user_id: UUID,
+    descriptions: list[str],
+    note: str | None,
+) -> tuple[str, str]:
+    """The SPEC-027 draft's email: the published Reminder template (P-06-T14: in the database,
+    never in code), with the person's optional note after it."""
+    composed = await compose_follow_up(tenant_id, engagement_id, recipient_user_id, descriptions)
+    body = f"{composed.body.rstrip()}\n\n{note}\n" if note else composed.body
+    return composed.subject, body
+
+
 async def settle_draft(
     ctx: AuthContext,
     engagement_id: UUID,
@@ -586,25 +602,44 @@ async def settle_draft(
     send: bool,
     note: str | None = None,
 ) -> None:
-    """A person sends (optionally with a note) or dismisses a drafted reminder. Items no longer
-    overdue are left out; with none left it's dismissed."""
+    """A person sends (optionally with a note) or dismisses a drafted follow-up. Items no longer
+    overdue are left out; with none left it's dismissed. Only a person (DEC-74): the agent's
+    matrix row is `deny` and `follow_up.sent` is human-only in the database."""
+    if ctx.tenant.actor_kind != "human" or ctx.is_support:
+        raise Forbidden("follow_up.send", "role")
     kept = (note or "").strip()[:500] or None
+    email: tuple[str, str] | None = None
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "follow_up.send", ref.resource())
         draft = await lock_follow_up(tx.session, engagement_id, follow_up_id)
         if draft is None:
-            raise NotFound("reminder")
+            raise NotFound("follow_up")
         if draft.status != "drafted":
             raise DraftGone(str(follow_up_id))
         found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
         items = found[0].items if found else []
         outcome = "sent" if send and items else "dismissed"
+        if outcome == "sent":
+            email = await _email(
+                ctx.tenant_id, engagement_id, draft.recipient_user_id, [d for _, d in items], kept
+            )
         await settle_follow_up(tx.session, follow_up_id, status=outcome, by=ctx.user_id, note=kept)
-        tx.record(f"reminder.{outcome}", target=Target("reminder", follow_up_id))
-    if outcome == "sent":
-        await send_follow_up(
-            ctx, engagement_id, draft.recipient_user_id, [d for _, d in items], kept
+        if outcome == "sent":
+            at = await clock.now(ctx.tenant)
+            await set_follow_up(
+                tx.session, follow_up_id, {"sent_by": ctx.user_id, "sent_at": at, "not_before": at}
+            )
+        tx.record(f"follow_up.{outcome}", target=Target("follow_up", follow_up_id))
+    if email is not None:
+        await deliver_follow_up(
+            ctx.tenant_id,
+            follow_up_id,
+            engagement_id,
+            draft.recipient_user_id,
+            ctx.user_id,
+            email[0],
+            email[1],
         )
 
 
@@ -621,12 +656,17 @@ async def draft_follow_ups(ctx: AuthContext, engagement_id: UUID) -> int:
 async def preview_follow_up(
     ctx: AuthContext, engagement_id: UUID, follow_up_id: UUID, note: str | None
 ) -> tuple[str, str]:
-    """The email a person is about to send: subject and body, from the fixed template."""
+    """The email a person is about to send: subject and body, from the published template."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "follow_up.draft", ref.resource())
     found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
     if not found:
-        raise NotFound("reminder")
-    return await render_follow_up(
-        ctx.tenant_id, engagement_id, [t for _, t in found[0].items], note
+        raise NotFound("follow_up")
+    kept = (note or "").strip()[:500] or None
+    return await _email(
+        ctx.tenant_id,
+        engagement_id,
+        found[0].recipient_user_id,
+        [t for _, t in found[0].items],
+        kept,
     )

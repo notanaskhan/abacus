@@ -160,9 +160,10 @@ def _policy_specs() -> dict[str, PolicySpec]:
     declared = [
         PolicySpec(
             ENGAGEMENT_AGENT,
-            1,
-            "Chase overdue request items with routine reminders in the firm's name (SPEC-027 P-4)",
-            frozenset({"follow_up.draft", "follow_up.send"}),
+            # v2 (P-06-T14, DEC-74): the agent only drafts; a person sends.
+            2,
+            "Draft follow-ups on overdue request items for a person to send (SPEC-027 P-4)",
+            frozenset({"follow_up.draft"}),
         )
     ]
     for policy in declared:

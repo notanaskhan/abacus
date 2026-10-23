@@ -24,6 +24,7 @@ from abacus.modules.agents.follow_ups import MAX_PER_ITEM, Outcome, chase_overdu
 from abacus.modules.agents.workflow_types import HandleInput
 from abacus.modules.communications.transport import configure_transport
 
+from .follow_up_template import import_reminder_template
 from .support import Net, Person, Role, Seeder, Site
 
 ZONE = "America/Chicago"
@@ -47,6 +48,12 @@ class Mailbox:
     ) -> None:
         # Q-01-T09: the transport protocol also carries the Reply-To and the IDs SES tags use.
         self.sent.append({"to": to, "subject": subject, "body": body, "sender_name": sender_name})
+
+
+@pytest.fixture(autouse=True)
+async def reminder_template(engines: None) -> None:
+    """P-06-T14: the email is the published Reminder template (in the database, never code)."""
+    await import_reminder_template()
 
 
 @pytest.fixture(autouse=True)
@@ -241,7 +248,8 @@ async def test_ac4_the_team_sees_the_drafts_waiting_for_them(
     assert len(response.json()) == 2
 
 
-@pytest.mark.parametrize("role", ["engagement_partner", "manager", "senior"])
+# P-06-T14 (P-06 §4.4): staff may send follow-ups too.
+@pytest.mark.parametrize("role", ["engagement_partner", "manager", "senior", "staff"])
 async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox, role: str
 ) -> None:
@@ -268,7 +276,7 @@ async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
         chase.team[role].user_id,
         "Could you send these by Friday?",
     )
-    assert {"reminder.sent", "message.sent"} <= set(await seed.actions(chase.tenant_id))
+    assert {"follow_up.sent", "message.sent"} <= set(await seed.actions(chase.tenant_id))
     again = await net.call(
         "POST", f"{chase.base}/follow-ups/{follow_up_id}/send", chase.team[role], body={}
     )
@@ -317,7 +325,7 @@ async def test_ac4_a_person_dismisses_a_draft_and_nothing_is_sent(
         await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
         == "dismissed"
     )
-    assert "reminder.dismissed" in await seed.actions(chase.tenant_id)
+    assert "follow_up.dismissed" in await seed.actions(chase.tenant_id)
     # While the other contact's draft waits, the item has been reminded once; dismiss it too and
     # a dismissed draft leaves the sequence where it was: the next tick drafts both again.
     other = await seed.value(
@@ -348,8 +356,9 @@ async def test_ac4_when_nothing_in_a_draft_is_overdue_any_more_sending_dismisses
     )
 
 
-@pytest.mark.parametrize("role", ["staff", "reviewer"])
-async def test_ac4_only_a_partner_manager_or_senior_may_send_or_dismiss(
+# P-06-T14 (P-06 §4.4) added staff to the senders; the reviewer still may not.
+@pytest.mark.parametrize("role", ["reviewer"])
+async def test_ac4_a_reviewer_may_not_send_or_dismiss(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox, role: str
 ) -> None:
     follow_up_id = await _drafted(chase, seed)

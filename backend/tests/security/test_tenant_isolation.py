@@ -84,6 +84,7 @@ TABLES: tuple[str, ...] = (
     "firm_settings_sections",
     "firms",
     "follow_up_items",
+    "follow_up_returns",
     "follow_up_schedules",
     "fs_line_range_rules",
     "fs_lines",
