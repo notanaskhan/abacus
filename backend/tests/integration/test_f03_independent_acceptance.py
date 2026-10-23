@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 import re
 import uuid
 from collections.abc import AsyncIterator, Iterator
@@ -725,15 +726,6 @@ async def test_t30_capabilities_records_no_authorisation_check(seed: Seeder) -> 
     assert checked == set()  # "what could I do", never "do it" (ADR-145)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Bug: GET /v1/me/capabilities?engagement_id= answers 200 for an engagement whose client "
-        "the caller is walled from; the engagement is resolved without the wall check, so its "
-        "existence leaks. F-03 Story 6.1 (INV-3: every read answers 404) and the capabilities "
-        "docstring both require 404; see #317"
-    ),
-)
 async def test_story_6_1_a_walled_engagements_capabilities_are_404(
     seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider
 ) -> None:
@@ -935,7 +927,9 @@ async def test_story_8_1_cursors_are_opaque_and_page_without_overlap(
     raw = _decoded(cursor)
     for plain in ("Copperleaf", str(engagement), str(firm.tenant), engagement.hex, "2026-0"):
         assert plain.encode() not in raw and plain not in cursor
-    assert b"{" not in raw  # not readable JSON
+    # Not readable JSON. (Ciphertext can hold a `{` byte by chance, so parse rather than scan.)
+    with pytest.raises((ValueError, UnicodeDecodeError)):
+        json.loads(raw)
     seen = [i["id"] for i in first["items"]]
     while cursor is not None:
         page: Json = (await _list(http, idp, partner, limit=3, cursor=cursor)).json()
