@@ -581,6 +581,13 @@ class WallApprovalStatus(StrEnum):
     APPROVED = "approved"
 
 
+class LegalHoldStatus(StrEnum):
+    APPLYING = "applying"
+    ACTIVE = "active"
+    RELEASING = "releasing"
+    RELEASED = "released"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1067,6 +1074,12 @@ STORED: dict[str, tuple[str, ...]] = {
     "wall_approval": (
         "awaiting",
         "approved",
+    ),
+    "legal_hold": (
+        "applying",
+        "active",
+        "releasing",
+        "released",
     ),
 }
 CHECKS: dict[str, str] = {

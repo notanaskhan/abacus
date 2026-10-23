@@ -1,0 +1,12 @@
+# The platform module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: compliance.incidents
+    description: 'The incident register (Q-02-T33): POST /v1/firm/security/incidents and the staff propagation route. Off: 404. G-02 retires it with security_center.v1.'
+    owner: notanaskhan
+    created: 2026-10-24
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

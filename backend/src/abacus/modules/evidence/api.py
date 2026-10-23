@@ -1,7 +1,7 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.evidence.activities import ACTIVITIES
+from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.events import (
@@ -10,6 +10,12 @@ from abacus.modules.evidence.events import (
     InboxFileExtracted,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
+from abacus.modules.evidence.hold_routes import router as legal_hold_router
+from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
+from abacus.modules.evidence.hold_runs import WORKFLOWS as HOLD_WORKFLOWS
+from abacus.modules.evidence.hold_runs import with_hold_inheritance
+from abacus.modules.evidence.holds import holds_covering
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.match_material import (
     Candidate,
@@ -20,8 +26,12 @@ from abacus.modules.evidence.match_material import (
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.processing import (
-    SUBSCRIPTIONS,
-    WORKFLOWS,
+    SUBSCRIPTIONS as UPLOAD_SUBSCRIPTIONS,
+)
+from abacus.modules.evidence.processing import (
+    WORKFLOWS as UPLOAD_WORKFLOWS,
+)
+from abacus.modules.evidence.processing import (
     ReviewMaterial,
     process_upload,
     review_material,
@@ -87,8 +97,8 @@ from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.uploads import upload
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
-from abacus.modules.evidence.workflow_types import UploadInput
-from abacus.modules.evidence.workflows import UploadProcessing
+from abacus.modules.evidence.workflow_types import LegalHoldInput, UploadInput
+from abacus.modules.evidence.workflows import LegalHoldApply, LegalHoldRelease, UploadProcessing
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
 
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -98,7 +108,25 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
+    legal_hold_router,  # Q-02-T29: legal holds
 )
+
+# Q-02-T29: the legal-hold workflows and their activities beside upload processing; a new version
+# gets its S3 holds before its processing starts. Importing `holds` registered `holds_covering`
+# as the kernel's hold check (fail closed without it).
+WORKFLOWS: dict[type, str] = {**UPLOAD_WORKFLOWS, **HOLD_WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = (*UPLOAD_ACTIVITIES, *HOLD_ACTIVITIES)
+SUBSCRIPTIONS = {
+    **{
+        event: (
+            with_hold_inheritance(handler)
+            if event == EvidenceVersionCreated.event_type
+            else handler
+        )
+        for event, handler in UPLOAD_SUBSCRIPTIONS.items()
+    },
+    **HOLD_SUBSCRIPTIONS,
+}
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -133,6 +161,9 @@ __all__ = [
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntegrityError",
+    "LegalHoldApply",
+    "LegalHoldInput",
+    "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
     "Proposal",
@@ -157,6 +188,7 @@ __all__ = [
     "evidence_versions_for",
     "extend_retention_for",
     "firm_router",
+    "holds_covering",
     "match_material",
     "process_upload",
     "put_record",

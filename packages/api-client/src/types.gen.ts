@@ -8531,6 +8531,133 @@ export type LeadsheetOut = {
 };
 
 /**
+ * LegalHoldIn
+ */
+export type LegalHoldIn = {
+    /**
+     * Details
+     */
+    details?: string | null;
+    /**
+     * Notify User Ids
+     */
+    notify_user_ids?: Array<string>;
+    /**
+     * Reason Code
+     */
+    reason_code: 'irs_examination' | 'litigation' | 'regulatory_inquiry' | 'subpoena' | 'other';
+    scope: LegalHoldScopeIn;
+};
+
+/**
+ * LegalHoldOut
+ */
+export type LegalHoldOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Objects Applied
+     */
+    objects_applied: number;
+    /**
+     * Objects Held
+     */
+    objects_held: number;
+    /**
+     * Placed At
+     */
+    placed_at: string;
+    /**
+     * Placed By
+     */
+    placed_by: string;
+    /**
+     * Reason Code
+     */
+    reason_code: 'irs_examination' | 'litigation' | 'regulatory_inquiry' | 'subpoena' | 'other';
+    /**
+     * Released At
+     */
+    released_at?: string | null;
+    /**
+     * Released By
+     */
+    released_by?: string | null;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'client' | 'client_tax_year' | 'engagement' | 'work_item';
+    /**
+     * Status
+     */
+    status: 'applying' | 'active' | 'releasing' | 'released';
+    /**
+     * Tax Year
+     */
+    tax_year?: number | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
+};
+
+/**
+ * LegalHoldReleaseIn
+ */
+export type LegalHoldReleaseIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * LegalHoldScopeIn
+ */
+export type LegalHoldScopeIn = {
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_tax_year' | 'engagement' | 'work_item';
+    /**
+     * Tax Year
+     */
+    tax_year?: number | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
+};
+
+/**
+ * LegalHoldsOut
+ */
+export type LegalHoldsOut = {
+    /**
+     * Items
+     */
+    items: Array<LegalHoldOut>;
+};
+
+/**
  * LetterIn
  */
 export type LetterIn = {
@@ -37608,6 +37735,156 @@ export type SearchResponses = {
 };
 
 export type SearchResponse = SearchResponses[keyof SearchResponses];
+
+export type ListLegalHoldsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/legal-holds';
+};
+
+export type ListLegalHoldsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListLegalHoldsError = ListLegalHoldsErrors[keyof ListLegalHoldsErrors];
+
+export type ListLegalHoldsResponses = {
+    /**
+     * Successful Response
+     */
+    200: LegalHoldsOut;
+};
+
+export type ListLegalHoldsResponse = ListLegalHoldsResponses[keyof ListLegalHoldsResponses];
+
+export type PlaceLegalHoldData = {
+    body: LegalHoldIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/legal-holds';
+};
+
+export type PlaceLegalHoldErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PlaceLegalHoldError = PlaceLegalHoldErrors[keyof PlaceLegalHoldErrors];
+
+export type PlaceLegalHoldResponses = {
+    /**
+     * Successful Response
+     */
+    202: LegalHoldOut;
+};
+
+export type PlaceLegalHoldResponse = PlaceLegalHoldResponses[keyof PlaceLegalHoldResponses];
+
+export type ReleaseLegalHoldData = {
+    body: LegalHoldReleaseIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Hold Id
+         */
+        hold_id: string;
+    };
+    query?: never;
+    url: '/v1/legal-holds/{hold_id}/release';
+};
+
+export type ReleaseLegalHoldErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReleaseLegalHoldError = ReleaseLegalHoldErrors[keyof ReleaseLegalHoldErrors];
+
+export type ReleaseLegalHoldResponses = {
+    /**
+     * Successful Response
+     */
+    202: LegalHoldOut;
+};
+
+export type ReleaseLegalHoldResponse = ReleaseLegalHoldResponses[keyof ReleaseLegalHoldResponses];
 
 export type MeData = {
     body?: never;

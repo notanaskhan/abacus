@@ -34,6 +34,9 @@ TABLES: frozenset[str] = frozenset(
         "retention_policy_defaults",
         "retention_policies",
         "retention_policy_versions",
+        # Q-02-T29 (0126): legal holds and their reference-counted objects.
+        "legal_holds",
+        "hold_objects",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -105,4 +108,9 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "retention_policies": frozenset(  # Q-02-T23: version and history are the trigger's
         {"firm_years", "clock_start_event", "lock", "basis", "updated_by", "updated_at"}
     ),
+    # Q-02-T29: status forward only; `released_by` bound to the session's person (trigger).
+    "legal_holds": frozenset(
+        {"status", "applied_at", "released_by", "released_at", "release_reason"}
+    ),
+    "hold_objects": frozenset({"applied_at", "released_at"}),  # each stamped once
 }

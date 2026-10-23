@@ -297,6 +297,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.AlreadyPublished
+  hold_not_active:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.holds.HoldNotActive
+    summary: 'Only an active hold can be lifted: wait until it finishes applying, or it is already lifted.'
   hold_reason_required:
     status: 422
     raised_by:
@@ -575,6 +580,11 @@ codes:
     raised_by:
     - abacus.modules.agents.draft_start.NothingToPublish
     summary: No approved drafted guidance on this version yet.
+  notify_not_member:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.holds.NotifyNotMember
+    summary: Everyone on the notify list must be a current member of the firm's staff.
   office_not_in_firm:
     status: 422
     raised_by:

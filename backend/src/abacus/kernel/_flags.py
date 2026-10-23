@@ -16,6 +16,21 @@ CLIENTS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+COMPLIANCE_FIRM_EXPORT = Flag(
+    name="compliance.firm_export",
+    kind="boolean",
+    default="false",
+)
+COMPLIANCE_INCIDENTS = Flag(
+    name="compliance.incidents",
+    kind="boolean",
+    default="false",
+)
+COMPLIANCE_LEGAL_HOLDS = Flag(
+    name="compliance.legal_holds",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
     kind="boolean",
@@ -138,6 +153,9 @@ UPLOADS_PROCESSING = Flag(
 FLAGS: dict[str, Flag] = {
     "binders.engine": BINDERS_ENGINE,
     "clients.v2": CLIENTS_V2,
+    "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
+    "compliance.incidents": COMPLIANCE_INCIDENTS,
+    "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.v2": ENGAGEMENTS_V2,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,

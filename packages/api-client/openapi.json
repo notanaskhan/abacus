@@ -18103,6 +18103,313 @@
         "title": "LeadsheetOut",
         "type": "object"
       },
+      "LegalHoldIn": {
+        "additionalProperties": false,
+        "properties": {
+          "details": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Details"
+          },
+          "notify_user_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Notify User Ids",
+            "type": "array"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "enum": [
+              "irs_examination",
+              "litigation",
+              "regulatory_inquiry",
+              "subpoena",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/LegalHoldScopeIn",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "scope",
+          "reason_code"
+        ],
+        "title": "LegalHoldIn",
+        "type": "object"
+      },
+      "LegalHoldOut": {
+        "properties": {
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "objects_applied": {
+            "cls": "internal",
+            "title": "Objects Applied",
+            "type": "integer"
+          },
+          "objects_held": {
+            "cls": "internal",
+            "title": "Objects Held",
+            "type": "integer"
+          },
+          "placed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Placed At",
+            "type": "string"
+          },
+          "placed_by": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Placed By",
+            "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "enum": [
+              "irs_examination",
+              "litigation",
+              "regulatory_inquiry",
+              "subpoena",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "released_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released At"
+          },
+          "released_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released By"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_tax_year",
+              "engagement",
+              "work_item"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "applying",
+              "active",
+              "releasing",
+              "released"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Year"
+          },
+          "work_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Id"
+          }
+        },
+        "required": [
+          "id",
+          "scope_kind",
+          "client_id",
+          "reason_code",
+          "status",
+          "placed_by",
+          "placed_at",
+          "objects_held",
+          "objects_applied"
+        ],
+        "title": "LegalHoldOut",
+        "type": "object"
+      },
+      "LegalHoldReleaseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "LegalHoldReleaseIn",
+        "type": "object"
+      },
+      "LegalHoldScopeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_tax_year",
+              "engagement",
+              "work_item"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1990.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Year"
+          },
+          "work_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Id"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "LegalHoldScopeIn",
+        "type": "object"
+      },
+      "LegalHoldsOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/LegalHoldOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "LegalHoldsOut",
+        "type": "object"
+      },
       "LetterIn": {
         "additionalProperties": false,
         "properties": {
@@ -80998,6 +81305,334 @@
           "knowledge"
         ],
         "x-abacus-action": "knowledge.read"
+      }
+    },
+    "/v1/legal-holds": {
+      "get": {
+        "operationId": "list_legal_holds",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalHoldsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Legal Holds Route",
+        "tags": [
+          "legal holds"
+        ],
+        "x-abacus-action": "legal_hold.read"
+      },
+      "post": {
+        "description": "Fresh MFA. 202 while applying; 404 for a scope outside the firm; 422\n`notify_not_member`.",
+        "operationId": "place_legal_hold",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalHoldIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalHoldOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Place Legal Hold Route",
+        "tags": [
+          "legal holds"
+        ],
+        "x-abacus-action": "legal_hold.place"
+      }
+    },
+    "/v1/legal-holds/{hold_id}/release": {
+      "post": {
+        "description": "Fresh MFA. 202 while releasing; 409 `hold_not_active` before it is active or once lifted.",
+        "operationId": "release_legal_hold",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hold_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Hold Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalHoldReleaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalHoldOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Release Legal Hold Route",
+        "tags": [
+          "legal holds"
+        ],
+        "x-abacus-action": "legal_hold.lift"
       }
     },
     "/v1/me": {

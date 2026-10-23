@@ -17,3 +17,15 @@ class UploadInput:
     tenant_id: str
     kind: str  # VERSION | INBOX
     source_id: str
+
+
+@dataclass(frozen=True)
+class LegalHoldInput:
+    """`LegalHoldApply` and `LegalHoldRelease` (Q-02-T29): the hold, by identifier only."""
+
+    tenant_id: str
+    hold_id: str
+
+
+# Activity error types the hold workflows don't retry (the hold isn't in the tenant).
+HOLD_NOT_FOUND: Final = "NotFound"

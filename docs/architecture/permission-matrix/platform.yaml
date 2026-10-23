@@ -4,3 +4,5 @@
 actions:
   budget.read:              {firm_admin: allow, practice_leader: allow, platform_support: allow, platform_support_content: allow}   # SPEC-007
   budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
+  # Q-02-T30 row; the create route lands with Q-02-T33 (G-02 adds incident.read and .decide).
+  incident.manage:          {security_admin: allow, agent: deny, system: deny}
