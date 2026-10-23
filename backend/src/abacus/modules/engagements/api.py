@@ -52,6 +52,7 @@ from abacus.modules.engagements.service import (
     engagement_label,
     engagement_metadata,
     engagement_resource_of,
+    engagements_of_scope,
     entity_of,
     gate_client_data,
     get_ref,
@@ -120,6 +121,7 @@ from abacus.modules.identity.api import (
     register_engagement_client,
     register_engagement_resource,
     register_engagement_service_line,
+    register_engagements_of_scope,
     register_independence,
     register_member_added,
     register_scope_resolver,
@@ -171,6 +173,7 @@ register_work_item_kind("advisory_project", AdvisoryProjectKind())
 register_scope_resolver("client", client_scope)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
+register_engagements_of_scope(engagements_of_scope)
 # F-03-T30: an engagement's Resource for platform's capabilities (archived from the row).
 register_engagement_resource(engagement_resource_of)
 

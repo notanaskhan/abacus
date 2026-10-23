@@ -19,9 +19,9 @@ from abacus.modules.portal.codes import TeamRoleCode
 from abacus.modules.portal.home_sources import (
     HomePart,
     HomeScope,
+    HomeTeamMember,
     Pill,
     Stage,
-    TeamMember,
     WorkCard,
     register_home_source,
 )
@@ -77,7 +77,7 @@ async def engagements_source(ctx: AuthContext, scope: HomeScope) -> HomePart:
             role = codes[member.role]
             if day_to_day and role == "preparer":  # the first preparer is the day-to-day contact
                 role, day_to_day = "preparer_day_to_day", False
-            part.team.append(TeamMember(member.user_id, member.display_name, role))
+            part.team.append(HomeTeamMember(member.user_id, member.display_name, role))
     return part
 
 

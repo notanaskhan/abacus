@@ -620,6 +620,11 @@ codes:
     raised_by:
     - abacus.modules.portal.branding.HostInvalid
     summary: Not a hostname a portal can answer on.
+  portal_preferences_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.portal.home.PortalPreferencesStale
+    summary: 'The preferences changed since they were read (`version` is behind): read the home again.'
   possible_duplicate:
     status: 409
     raised_by:

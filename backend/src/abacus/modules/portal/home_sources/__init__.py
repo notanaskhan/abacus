@@ -94,7 +94,7 @@ class Binder:
 
 
 @dataclass(frozen=True)
-class TeamMember:
+class HomeTeamMember:
     user_id: UUID
     display_name: str
     role_code: TeamRoleCode
@@ -113,7 +113,7 @@ class HomePart:
     todos: list[Todo] = field(default_factory=list[Todo])
     work_cards: list[WorkCard] = field(default_factory=list[WorkCard])
     binders: list[Binder] = field(default_factory=list[Binder])
-    team: list[TeamMember] = field(default_factory=list[TeamMember])
+    team: list[HomeTeamMember] = field(default_factory=list[HomeTeamMember])
     earlier: list[Earlier] = field(default_factory=list[Earlier])
 
 

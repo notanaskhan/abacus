@@ -1,8 +1,8 @@
 """P-08-T13: portal preferences for every grant scope kind.
 
-0111 limited `portal_preferences.scope_kind` to `engagement`, `client` and `firm`, but a home is for
-one grant's scope, and a full-client grant may name a client entity or a work item too (F-03-T26
-`ScopeKind`). The check now takes the grant scope kinds; no row changes.
+0111 limited `portal_preferences.scope_kind` to `engagement`, `client` and `firm`, but a home is
+for one grant's scope, and a full-client grant may name a client entity or a work item too
+(F-03-T26 `ScopeKind`). The check now takes the grant scope kinds; no row changes.
 
 Revision ID: 0115
 Revises: 0114
