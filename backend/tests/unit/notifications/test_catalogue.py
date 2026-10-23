@@ -34,6 +34,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "materiality.proposed",  # SPEC-305 (TASK-306)
         "risk.approval_requested",
         "finding.severity_proposed",
+        "legal_hold.placed",  # Q-02-T29 (C16 `legal_hold_placed`)
     }
 
 
@@ -52,3 +53,36 @@ async def test_task307_the_partner_is_not_told_of_their_own_proposal(
     assert await catalogue.CATALOGUE["materiality.proposed"].recipients(uuid.uuid4(), payload) == [
         other
     ]
+
+
+async def test_q02t29_a_hold_tells_its_list_and_the_partners_but_no_client_or_walled_person(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.modules.identity.api import MemberFacts
+    from abacus.modules.notifications import catalogue
+
+    placer, listed, partner, portal, walled = (uuid.uuid4() for _ in range(5))
+    client = uuid.uuid4()
+
+    async def partners(*_: object) -> list[uuid.UUID]:
+        return [partner, walled, placer]
+
+    async def facts(_tenant: object, user: uuid.UUID) -> MemberFacts | None:
+        return MemberFacts(None, False, frozenset(), client=user == portal)
+
+    async def walls(_tenant: object, user: uuid.UUID) -> frozenset[uuid.UUID]:
+        return frozenset({client}) if user == walled else frozenset()
+
+    monkeypatch.setattr(catalogue, "engagement_partners", partners)
+    monkeypatch.setattr(catalogue, "member_facts", facts)
+    monkeypatch.setattr(catalogue, "walled_from", walls)
+    payload: dict[str, object] = {
+        "hold_id": str(uuid.uuid4()),
+        "client_id": str(client),
+        "engagement_ids": [str(uuid.uuid4())],
+        "notify_user_ids": [str(listed), str(portal)],
+        "by_user": str(placer),
+    }
+    found = await catalogue.CATALOGUE["legal_hold.placed"].recipients(uuid.uuid4(), payload)
+    assert found == sorted([listed, partner])
+    assert catalogue.CATALOGUE["legal_hold.placed"].kind == "legal_hold_placed"

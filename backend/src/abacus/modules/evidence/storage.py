@@ -241,6 +241,38 @@ async def extend_retention(stored: StoredObject, until: datetime) -> None:
     await _extend_retention(_storage(), stored.key, stored.version_id, until)
 
 
+async def set_legal_hold(stored: StoredObject, *, on: bool) -> None:
+    """Set or clear the S3 object legal hold on exactly this version (Q-02-T29). Idempotent; a
+    held version can't be deleted whatever its retention date. Reference counting across holds is
+    `holds.py`'s: this only does what it is told."""
+    target = _storage()
+    await asyncio.to_thread(
+        target.client.put_object_legal_hold,
+        Bucket=target.bucket,
+        Key=stored.key,
+        VersionId=stored.version_id,
+        LegalHold={"Status": "ON" if on else "OFF"},
+    )
+
+
+async def legal_hold_on(stored: StoredObject) -> bool:
+    """Whether the S3 object legal hold is on for this version (the nightly reconciliation and
+    tests read it; the hold check reads the database)."""
+    target = _storage()
+    try:
+        found = await asyncio.to_thread(
+            target.client.get_object_legal_hold,
+            Bucket=target.bucket,
+            Key=stored.key,
+            VersionId=stored.version_id,
+        )
+    except StorageError as exc:
+        if error_code(exc) in ("NoSuchObjectLockConfiguration", "ObjectLockConfigurationNotFound"):
+            return False
+        raise
+    return found.get("LegalHold", {}).get("Status") == "ON"
+
+
 async def get(tenant_id: UUID, stored: StoredObject) -> bytes:
     if stored.key != object_key(tenant_id, stored.fingerprint):
         raise IntegrityError("storage key does not match tenant and fingerprint")

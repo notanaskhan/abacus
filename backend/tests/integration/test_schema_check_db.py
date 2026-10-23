@@ -1248,6 +1248,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "retention_policies": frozenset(  # Q-02-T23 (0112)
             {"firm_years", "clock_start_event", "lock", "basis", "updated_by", "updated_at"}
         ),
+        "legal_holds": frozenset(  # Q-02-T29 (0126): status forward only, person bound
+            {"status", "applied_at", "released_by", "released_at", "release_reason"}
+        ),
+        "hold_objects": frozenset({"applied_at", "released_at"}),  # Q-02-T29: stamped once
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

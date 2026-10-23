@@ -81,6 +81,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
         "work_item.status_changed",  # P-06-T07: binders close
         "engagement.status_changed",
+        "legal_hold.lifted",  # Q-02-T29: LegalHoldRelease starts (placed also notifies)
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

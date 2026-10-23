@@ -23,6 +23,12 @@ from abacus.modules.engagements.contract import (
 )
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
+from abacus.modules.engagements.hold_scope import (
+    EngagementHoldFacts,
+    engagement_hold_facts,
+    engagements_in_hold_scope,
+    work_item_engagement,
+)
 from abacus.modules.engagements.index_facts import work_item_index
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -203,6 +209,7 @@ __all__ = [
     "Effort",
     "EngagementContact",
     "EngagementCreated",
+    "EngagementHoldFacts",
     "EngagementMetadata",
     "EngagementNotOpen",
     "EngagementRef",
@@ -236,8 +243,10 @@ __all__ = [
     "create_work_item",
     "designate_contact",
     "engagement_contacts",
+    "engagement_hold_facts",
     "engagement_label",
     "engagement_metadata",
+    "engagements_in_hold_scope",
     "entity_of",
     "firm_router",
     "gate_client_data",
@@ -269,6 +278,7 @@ __all__ = [
     "stored_file",
     "version_detail",
     "visible_among",
+    "work_item_engagement",
     "work_item_index",
     "work_item_provider",
 ]

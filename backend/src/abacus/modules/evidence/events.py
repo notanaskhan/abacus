@@ -70,3 +70,28 @@ class InboxFileExtracted(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     inbox_file_id: Annotated[UUID, classified("internal")]
+
+
+class LegalHoldPlaced(DomainEvent):
+    """A person placed a legal hold (Q-02-T29): `LegalHoldApply` starts, and the notify list and
+    the partners of the engagements in scope are told (`legal_hold_placed`, C16)."""
+
+    event_type: ClassVar[str] = "legal_hold.placed"
+
+    hold_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    work_item_id: Annotated[UUID | None, classified("internal")] = None
+    engagement_ids: Annotated[tuple[UUID, ...], classified("internal")] = ()
+    notify_user_ids: Annotated[tuple[UUID, ...], classified("internal")] = ()
+    by_user: Annotated[UUID, classified("internal")]
+
+
+class LegalHoldLifted(DomainEvent):
+    """A person lifted an active legal hold (Q-02-T29): `LegalHoldRelease` starts."""
+
+    event_type: ClassVar[str] = "legal_hold.lifted"
+
+    hold_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
