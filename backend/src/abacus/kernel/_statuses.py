@@ -564,6 +564,23 @@ class EvidenceUnlockStatus(StrEnum):
     WRONG_PASSWORD = "wrong_password"
 
 
+class MembershipStatus(StrEnum):
+    ACTIVE = "active"
+    INVITED = "invited"
+    DEACTIVATED = "deactivated"
+
+
+class AnnualIndependenceStatus(StrEnum):
+    CONFIRMED = "confirmed"
+    NOT_YET = "not_yet"
+    DECLINED = "declined"
+
+
+class WallApprovalStatus(StrEnum):
+    AWAITING = "awaiting"
+    APPROVED = "approved"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1036,6 +1053,20 @@ STORED: dict[str, tuple[str, ...]] = {
     "evidence_unlock": (
         "ready",
         "wrong_password",
+    ),
+    "membership": (
+        "active",
+        "invited",
+        "deactivated",
+    ),
+    "annual_independence": (
+        "confirmed",
+        "not_yet",
+        "declined",
+    ),
+    "wall_approval": (
+        "awaiting",
+        "approved",
     ),
 }
 CHECKS: dict[str, str] = {

@@ -680,6 +680,26 @@ objects:
       ready:          {label: "Unlocked", variant: green-tint, terminal: true, derived: false}
       wrong_password: {label: "That password didn't open the file.", variant: red-tint, terminal: false, derived: false}
 
+  membership:
+    source: "G-01 section 3.3-3.4 (ADM-02a, d, e)"
+    codes:
+      active:      {label: "Active", variant: null, terminal: false, derived: false}
+      invited:     {label: "Invite pending", variant: amber, terminal: false, derived: false}   # an open staff invitation, served as a row
+      deactivated: {label: "Deactivated", variant: muted, terminal: true, derived: false}   # memberships.status revoked (AC4.4)
+
+  annual_independence:
+    source: "G-01 section 3.6 (ADM-02g, DEC-91)"
+    codes:
+      confirmed: {label: "Confirmed", variant: green-tint, terminal: true, derived: false}
+      not_yet:   {label: "Not yet", variant: muted, terminal: false, derived: false}   # served when no row exists for the year
+      declined:  {label: "Declined", variant: red-tint, terminal: true, derived: false}   # with a note
+
+  wall_approval:
+    source: "G-01 section 3.8 (ADM-03b, f; DEC-73)"
+    codes:
+      awaiting: {label: "Awaiting approval", variant: amber, terminal: false, derived: false}   # active at once; the named partner approves
+      approved: {label: "Approved", variant: null, terminal: true, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

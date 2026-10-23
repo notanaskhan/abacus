@@ -89,6 +89,9 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
     "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
+    # G-01-T02: deactivating and approving change a person or a wall and return it, so 200.
+    "/v1/firm/staff/{user_id}/deactivate",
+    "/v1/walls/{wall_id}/approve",
     # Q-02-T23: publishing changes a draft set's status, so 200.
     "/v1/platform/retention/floors/{set_version}/publish",
     "/v1/platform/retention/defaults/{set_version}/publish",
@@ -213,6 +216,10 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # G-01-T02 (firm-settings stub): an office, a team, and one's annual confirmation.
+        "/v1/firm/offices",
+        "/v1/firm/teams",
+        "/v1/me/independence/annual",
         # Q-02-T23: a draft retention floor set and a draft default-policy set.
         "/v1/platform/retention/floors",
         "/v1/platform/retention/defaults",

@@ -2436,6 +2436,60 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false
     }
+  },
+  "membership": {
+    "active": {
+      "label": "Active",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "invited": {
+      "label": "Invite pending",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "deactivated": {
+      "label": "Deactivated",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "annual_independence": {
+    "confirmed": {
+      "label": "Confirmed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "not_yet": {
+      "label": "Not yet",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "wall_approval": {
+    "awaiting": {
+      "label": "Awaiting approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 

@@ -43,6 +43,7 @@ from abacus.modules.organisations.service import (
     set_client_record,
     set_entity_attributes,
 )
+from abacus.modules.organisations.settings_contract import org_settings_router
 from abacus.modules.organisations.slots import (
     OverviewItem,
     OverviewSection,
@@ -56,6 +57,7 @@ from abacus.modules.organisations.slots import (
 ROUTERS: tuple[AbacusRouter, ...] = (
     clients_router,  # the clients family contract, v1 stub (P-07-T04)
     client_entities_router,
+    org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
 )
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.

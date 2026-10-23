@@ -39,3 +39,10 @@ actions:
   # ("Start acceptance"); accepting and staffing stay `engagement.create`. The manager path
   # lands with the live routes the DEC-132 way, as on `client.update`.
   client.intake:            {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  # --- Firm-settings family contract, v1 (G-01-T02 stub): offices, teams and groups ---
+  # Filters and review pools, never an access boundary (DEC-30). G-01 section 4.3 names
+  # `office.*` and `team.*`; one pair covers both so no rule names an office
+  # (test_office_not_access).
+  org_structure.read:       {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  org_structure.manage:     {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}
+

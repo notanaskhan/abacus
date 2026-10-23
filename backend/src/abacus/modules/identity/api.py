@@ -177,6 +177,8 @@ from abacus.modules.identity.service import (
     team_of,
     walled_from,
 )
+from abacus.modules.identity.settings_contract import me_router as me_annual_router
+from abacus.modules.identity.settings_contract import settings_router, walls_v2_router
 from abacus.modules.identity.slots import (
     ScopeFacts,
     consent_given,
@@ -225,6 +227,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     signup_router,
     contacts_router,  # C5 v1.1 portal half (P-08-T01 stub)
     auth_router,
+    settings_router,  # firm-settings family v1 (G-01-T02 stub)
+    walls_v2_router,
+    me_annual_router,
 )
 
 # P-04-T10 (ADR-161): grant-held outbox events are delivered only through `consume_grant`.
