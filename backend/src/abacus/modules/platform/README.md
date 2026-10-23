@@ -7,6 +7,13 @@ Firm budgets and metering, entitlements, the capabilities read and the search sl
 - `plans` (0088): global plan codes; no app privilege.
 - `platform_controls`, `platform_control_changes`, `firm_provisioning_requests` (Q-01-T19, migration 0086; ADR-157): global, reached only through definer functions (`platform_control_state` for the app; `set_platform_control` and `provision_firm` for `abacus_ops` only).
 
+## Tenant provisioning (Q-01-T45; `provisioning.py`, `workflows.py`; ADR-156)
+- `abacus_tools.tenants provision` calls `provision_firm(...)` as `abacus_ops` (`ops_database_url`), then `start_provisioning(input)` starts `TenantProvisioningWorkflow` (`tenant_provision:<tenant_id>`, background class). A run that is open or completed is never started again (the same idempotency key returns the same tenant); a failed one may be.
+- v1 runs one activity, `platform.emit_tenant_provisioned`: it reads the firm under its row-level security, then records `tenant.provisioned` (audit and outbox `TenantProvisioned`: `tenant_id`, `plan`, `synthetic`, `operator`) as `system` / `operator:<handle>`.
+- Patch points, each a later change behind its own `workflow.patched(...)` before the emit step: `tenant_key_v1` (Q-01-T27's child `TenantKeyWorkflow`), `plan_entitlements_v1` and `first_admins_v1` (each needs a migration first: a writer the worker may use for `tenant_entitlements`, and a staff invitation no member sent), `g04_plan_v2` (G-04). The v1 history `tenant-provisioning-v1-provisioned.json` must keep replaying.
+- `make entitlement` (`abacus_tools.tenants entitlement`) writes one `tenant_entitlements` row and `tenant.entitlements_changed` as the operator, through the owner role, until `abacus_ops` has a definer for it.
+- The worker loads this module (`SUBSCRIPTIONS`, `WORKFLOWS`, `ACTIVITIES` in `api.py`).
+
 ## Budgets and metering (SPEC-007)
 The gateway owns the data; this module authorises and serves it.
 

@@ -32,6 +32,7 @@ _LOCAL_DB = "postgresql+asyncpg://abacus_app:abacusapp@127.0.0.1:55432/abacus"
 _LOCAL_MIGRATIONS_DB = "postgresql+asyncpg://abacus_owner:abacusowner@127.0.0.1:55432/abacus"
 _LOCAL_RELAY_DB = "postgresql+asyncpg://abacus_relay:abacusrelay@127.0.0.1:55432/abacus"
 _LOCAL_IDENTITY_DB = "postgresql+asyncpg://abacus_identity:abacusidentity@127.0.0.1:55432/abacus"
+_LOCAL_OPS_DB = "postgresql+asyncpg://abacus_ops:abacusops@127.0.0.1:55432/abacus"
 MIN_EVIDENCE_RETENTION_DAYS = 365
 _CONNECTIONS = (
     "database_url",
@@ -53,6 +54,7 @@ _LOCAL_DEFAULTS: dict[str, object] = {
     "migrations_database_url": _LOCAL_MIGRATIONS_DB,
     "relay_database_url": _LOCAL_RELAY_DB,
     "identity_database_url": _LOCAL_IDENTITY_DB,
+    "ops_database_url": _LOCAL_OPS_DB,
     # The fake identity provider (abacus_tools.fakes.identity) signs with a key made per run; local
     # runs and tests install its public JWKS. An empty key set verifies nothing: fail closed.
     "identity_issuer": "https://identity.abacus.local",
@@ -185,6 +187,10 @@ class Settings(BaseSettings):
     migrations_database_url: Annotated[SecretStr | None, classified("restricted")] = None
     relay_database_url: Annotated[SecretStr | None, classified("restricted")] = None
     identity_database_url: Annotated[SecretStr | None, classified("restricted")] = None
+    # Q-01-T45 (ADR-156): operator commands (`abacus_tools.tenants`) connect as `abacus_ops`, the
+    # EXECUTE-only role (secret `abacus/<env>/db/ops`, read only by the ops task). The API and
+    # worker never use it, so it is not required to start them.
+    ops_database_url: Annotated[SecretStr | None, classified("restricted")] = None
     # Who may sign users in (ADR-029): the issuer and audience tokens must carry, and the
     # provider's public JWKS as JSON. Public keys, not secrets.
     identity_issuer: Annotated[str | None, classified("internal")] = None

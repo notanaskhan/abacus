@@ -1726,6 +1726,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/signup_codes.py",
             # SPEC-036 (TASK-076 D1): agent stages are the owner's; the app role only reads them.
             "src/abacus_tools/agent_stage.py",
+            # Q-01-T45 (ADR-156): provision_firm as abacus_ops; entitlements as the owner role.
+            "src/abacus_tools/tenants.py",
             "tests/integration/conftest.py",
             "tests/integration/test_local_stack.py",
             "tests/integration/test_tenancy.py",
@@ -1876,6 +1878,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/quality/banned_patterns.py",
             # SPEC-036 (TASK-076 D1): writes a stage and its audit event as the platform.
             "src/abacus_tools/agent_stage.py",
+            # Q-01-T45: writes an entitlement and its audit event as the operator.
+            "src/abacus_tools/tenants.py",
             # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
             "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
             "tests/integration/test_tenancy.py",
