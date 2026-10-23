@@ -255,6 +255,7 @@ __all__ = [
     "require_open",
     "router",
     "run_auto_retrieval",
+    "service_line_of",
     "set_assurance_phase",
     "stored_file",
     "version_detail",

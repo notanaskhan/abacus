@@ -1255,7 +1255,8 @@ async def test_ac1_the_worker_polls_one_queue_per_class_and_the_legacy_queue(
     temporal: Client,
 ) -> None:
     queues = [*(queue_for(c) for c in WORK_CLASSES), QUEUE]
-    assert len(set(queues)) == 5
+    # Five work classes since Q-01-T27 added `keyops` (served by default in local and test).
+    assert len(set(queues)) == 6
     async with asyncio.timeout(30):
         while True:
             counts = [await _pollers(temporal, queue) for queue in queues]

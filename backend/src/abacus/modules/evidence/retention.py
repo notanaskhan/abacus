@@ -16,15 +16,18 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Literal
+from typing import Final, Literal
 
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
-from abacus.kernel.db import platform_transaction, tenant_session
+from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.evidence import storage
+from abacus.modules.evidence.storage import StoredObject
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 
 SetKind = Literal["floors", "defaults"]
@@ -266,7 +269,41 @@ async def set_policy(ctx: AuthContext, change: PolicyChange) -> int:
     return version
 
 
+# --- retain-until per record class (Q-02-T24) -------------------------------------------------
+
+# The record classes code stores; floors and defaults name them by these codes (their years are
+# content). A class with no published floor or policy falls back to `evidence_retention_days`.
+RECORD_TYPES: Final = frozenset(
+    {"client_document", "derived_rendering", "chain_anchor", "seal_manifest"}
+    | {"consent_evidence", "signature_evidence"}
+)
+_DAYS_PER_YEAR: Final = Decimal("365.25")
+_EFFECTIVE_YEARS = text(
+    "SELECT greatest("
+    "(SELECT p.firm_years FROM retention_policies p WHERE p.record_type = :type "
+    "AND p.service_line IN (:line, 'any') ORDER BY (p.service_line = :line) DESC LIMIT 1), "
+    "retention_floor_of(:type, :line))"
+)
+
+
+async def retain_until_for(
+    tenant: TenantContext, record_type: str, service_line: str, anchor_at: datetime
+) -> datetime | None:
+    """When a record of this class, anchored at `anchor_at`, may first be released: the longer of
+    the firm's policy and the published floor. None when neither exists yet."""
+    if record_type not in RECORD_TYPES:
+        raise ValueError(f"unknown record type {record_type!r}")
+    async with tenant_session(tenant) as session:
+        years = (
+            await session.execute(_EFFECTIVE_YEARS, {"type": record_type, "line": service_line})
+        ).scalar_one_or_none()
+    if years is None:
+        return None
+    return anchor_at + timedelta(days=float(Decimal(years) * _DAYS_PER_YEAR))
+
+
 __all__ = [
+    "RECORD_TYPES",
     "BelowFloor",
     "EffectivePolicy",
     "PolicyChange",
@@ -275,7 +312,33 @@ __all__ = [
     "SetExists",
     "SetInvalid",
     "effective_policies",
+    "extend_retention_for",
     "import_set",
     "publish_set",
+    "retain_until_for",
     "set_policy",
 ]
+
+
+async def extend_retention_for(
+    tenant: TenantContext,
+    versions: Sequence[tuple[str, str]],
+    record_type: str,
+    service_line: str,
+    anchor_at: datetime,
+) -> int:
+    """An anchor event (a report release, a filing date) moved these stored versions' policy
+    expiry: lock each `(storage_key, storage_version_id)` until at least the new date, and audit
+    `retention.extended` as the system. How many; 0 when no policy or floor applies yet."""
+    until = await retain_until_for(tenant, record_type, service_line, anchor_at)
+    if until is None or not versions:
+        return 0
+    for key, version_id in versions:
+        await storage.extend_retention(StoredObject(key, version_id, "", 0), until)
+    async with uow(TenantContext(tenant.tenant_id, "system", "retention_clock")) as tx:
+        tx.record(
+            "retention.extended",
+            target=Target("firm", tenant.tenant_id),
+            after=Ref(objects=len(versions), days=(until - anchor_at).days),
+        )
+    return len(versions)

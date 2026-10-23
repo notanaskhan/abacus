@@ -60,8 +60,15 @@ Every policy change is also copied to the insert-only `retention_policy_versions
 ## 8. Example payloads
 `PUT /v1/retention/policies` `{"record_type": "<a published record type>", "service_line": "audit", "firm_years": "7", "clock_start_event": "report_release"}` → `{"version": 1}`. Record types and years come from the published sets, never from this document.
 
+## 8a. Retain-until and records (Q-02-T24; internal APIs, no HTTP)
+- **Record classes** code stores, by code: `client_document`, `derived_rendering`, `chain_anchor`, `seal_manifest`, `consent_evidence`, `signature_evidence` (`evidence.api.RECORD_TYPES`). Floors and defaults name these codes; their years are content.
+- `evidence.api.retain_until_for(tenant, record_type, service_line, anchor_at)`: the longer of the firm's policy and the published floor (its service line, else `any`), from the anchor, at 365.25 days a year; None when neither exists, and the evidence default (`evidence_retention_days`) applies.
+- An upload is locked (GOVERNANCE) until at least its `client_document` expiry anchored at upload (provisional), never less than the default.
+- `evidence.api.extend_retention_for(tenant, versions, record_type, service_line, anchor_at)`: an anchor event (report release, filing date) extends each stored version's lock; one `retention.extended` event as the system. The daily `RetentionClock` that applies registered anchor events waits for Temporal Schedules.
+- `evidence.api.put_record(tenant, record_class, body, retain_until)`: the records bucket, Object Lock **COMPLIANCE**, written once. `evidence.api.anchor_chain(tenant, retain_until)` publishes the newest audit checkpoint hash there (`audit_chain.anchored`); `kernel.uow.chain.verify_anchor` checks it later. No records bucket configured: 503, never a fallback.
+
 ## 9. Consumer contract tests
-`backend/tests/integration/test_retention_policies.py` (floors, two-person publish, below floor, lock, the floor fallback, defaults at provisioning and through the back-fill, no value in the migration).
+`backend/tests/integration/test_retention_policies.py` (floors, two-person publish, below floor, lock, the floor fallback, defaults at provisioning and through the back-fill, no value in the migration); `backend/tests/integration/test_retention_object_lock.py` (lock at or after the policy expiry, an anchor event extends it, chain anchors in COMPLIANCE mode that refuse deletion, no records bucket fails closed).
 
 ## 10. Versioning
 | Version | Frozen on | Overlap ends | Notes |

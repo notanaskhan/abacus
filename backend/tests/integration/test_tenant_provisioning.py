@@ -213,6 +213,7 @@ async def test_ac_the_audit_trail_names_the_operator_on_every_step(
     assert [action for _, _, action in trail if action != "tenant_key.recorded"] == [
         "tenant.entitlements_changed",  # the plan's (0107)
         "staff_invitation.issued",  # the first administrator (0107)
+        "retention_policy.defaults_applied",  # the published defaults, every run (Q-02-T23)
         "tenant.provisioned",
         "tenant.entitlements_changed",  # the operator's `make entitlement`
     ]

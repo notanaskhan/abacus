@@ -28,6 +28,7 @@ from abacus.modules.evidence.processing import (
     stale_pdfs,
 )
 from abacus.modules.evidence.processing import check_upload as check_upload_content
+from abacus.modules.evidence.records import RecordClass, StoredRecord, anchor_chain, put_record
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -49,6 +50,7 @@ from abacus.modules.evidence.render_gl import (
     render_journal_listing,
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
+from abacus.modules.evidence.retention import RECORD_TYPES, extend_retention_for, retain_until_for
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
@@ -109,6 +111,7 @@ __all__ = [
     "FIRST_LINE_ROW",
     "MAX_CONTENT_BYTES",
     "NAME_COLUMN",
+    "RECORD_TYPES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
@@ -134,9 +137,11 @@ __all__ = [
     "NewItem",
     "Proposal",
     "Provenance",
+    "RecordClass",
     "ReviewMaterial",
     "ScreeningDecision",
     "StoredObject",
+    "StoredRecord",
     "TrialBalance",
     "TrialBalanceLine",
     "UploadChecksRecorded",
@@ -144,14 +149,17 @@ __all__ = [
     "UploadProcessing",
     "add_to_inbox",
     "add_version",
+    "anchor_chain",
     "check_ready",
     "check_upload_content",
     "decisions_on_screenings",
     "engagement_snapshots",
     "evidence_versions_for",
+    "extend_retention_for",
     "firm_router",
     "match_material",
     "process_upload",
+    "put_record",
     "read_content",
     "read_version",
     "register_match_picks",
@@ -159,6 +167,7 @@ __all__ = [
     "render_general_ledger",
     "render_journal_listing",
     "render_trial_balance",
+    "retain_until_for",
     "review_material",
     "router",
     "stage_content",
