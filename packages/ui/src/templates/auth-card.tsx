@@ -102,7 +102,11 @@ export function AuthFrame({
 // ---- Brand -------------------------------------------------------------------------------------
 
 /** The firm's 34 mark on its tile, with the name beside it (above the card) or alone (inside). */
-export function AuthBrand({ placement }: { placement: "above" | "inside" }): JSX.Element {
+export function AuthBrand({
+  placement,
+}: {
+  placement: "above" | "inside" | "header";
+}): JSX.Element {
   const brand = usePortalBrand();
   const name = brand.portalName ?? brand.name;
   const mark = (
@@ -121,6 +125,15 @@ export function AuthBrand({ placement }: { placement: "above" | "inside" }): JSX
   if (placement === "inside") {
     return <div className="flex justify-center pb-[14px]">{mark}</div>;
   }
+  if (placement === "header") {
+    // POR-01: the mark, 8, then the firm's name, both centred at the card's head; 18 to the title.
+    return (
+      <div data-auth="brand" className="flex flex-col items-center gap-[8px] pb-[4px]">
+        {mark}
+        <span className="text-brand">{name}</span>
+      </div>
+    );
+  }
   return (
     <div data-auth="brand" className="mb-[24px] flex items-center justify-center gap-[10px]">
       {mark}
@@ -135,14 +148,15 @@ export interface AuthCardProps {
   title: string;
   /** Under the title: 12.5/1.5 ink-2. */
   lead?: ReactNode;
-  /** The firm's mark above the card with its name (TPL-15), or in the card over a centred title
-   * (T15a). `marks` draws the caller's `marks` instead (the firm app's own sign-in, SHL-06). */
-  brand?: "above" | "inside" | "marks";
+  /** The firm's mark above the card with its name (TPL-15), in the card over a centred title
+   * (T15a), or centred with its name at the head of a left-aligned card (`header`, POR-01).
+   * `marks` draws the caller's `marks` instead (the firm app's own sign-in, SHL-06). */
+  brand?: "above" | "inside" | "header" | "marks";
   /** With `brand="marks"`: what sits above the card (centred, 35 over it) and the 34 mark in the
    * card over a centred title. The portal never passes these; it draws the firm's brand. */
   marks?: { above: ReactNode; inside: ReactNode };
   /** A 34 tile over the title: the expired clock, the done check. */
-  tile?: { icon: IconName; tone: "red" | "green" };
+  tile?: { icon: IconName; tone: "red" | "green" | "neutral" };
   /** Fill the width (390) instead of 400. */
   fluid?: boolean;
   /** Under the card: the secure sign-in line and the links. */
@@ -181,6 +195,7 @@ export function AuthCard({
         )}
       >
         {brand === "inside" && <AuthBrand placement="inside" />}
+        {brand === "header" && <AuthBrand placement="header" />}
         {own !== undefined && tile === undefined && (
           <div className="flex justify-center pb-[14px]">{own.inside}</div>
         )}
@@ -190,7 +205,9 @@ export function AuthCard({
             className={cn(
               "inline-flex size-[34px] items-center justify-center rounded-tile-lg",
               centred && "self-center",
-              tile.tone === "red" ? "bg-red-tint text-red-ink" : "bg-green-tint text-green-ink",
+              tile.tone === "red" && "bg-red-tint text-red-ink",
+              tile.tone === "green" && "bg-green-tint text-green-ink",
+              tile.tone === "neutral" && "bg-nested text-ink-2",
             )}
           >
             <Icon name={tile.icon} size={17} />
@@ -293,6 +310,13 @@ export interface CodeInputProps {
   forceFocus?: boolean;
   /** 8 between boxes at 400, 6 at 390. */
   gap?: 6 | 8;
+  /** A rejected code: each box takes the 1px red-ink inset ring (POR-01f) and `aria-invalid`.
+   * The words go in the screen's helper, tied by `describedBy`. */
+  invalid?: boolean;
+  /** The id of the helper that says why (a polite live region). */
+  describedBy?: string;
+  /** 42 x 50 boxes (the 390 layout) instead of 44 x 52. */
+  compact?: boolean;
 }
 
 /** Six 44 × 52 code boxes (radius 10, nested; the focused one white with a 2px ring). Typing a
@@ -306,6 +330,9 @@ export function CodeInput({
   autoFocus = false,
   forceFocus = false,
   gap = 8,
+  invalid = false,
+  describedBy,
+  compact = false,
 }: CodeInputProps): JSX.Element {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const [focused, setFocused] = useState<number | null>(null);
@@ -368,6 +395,8 @@ export function CodeInput({
             autoComplete={i === 0 ? "one-time-code" : "off"}
             maxLength={length}
             aria-label={`Digit ${String(i + 1)} of ${String(length)}`}
+            aria-invalid={invalid ? true : undefined}
+            {...(describedBy === undefined ? {} : { "aria-describedby": describedBy })}
             value={digits[i] ?? ""}
             data-focus={on ? "true" : "false"}
             // A box past the next empty one cannot be typed into: focus jumps to the next empty.
@@ -400,8 +429,10 @@ export function CodeInput({
               set(merged, i + typed.length);
             }}
             className={cn(
-              "h-[52px] w-[44px] min-w-0 flex-none rounded-nested text-center text-[20px] font-normal tabular-nums caret-transparent outline-none transition-[background-color,box-shadow] duration-[180ms]",
+              "min-w-0 flex-none rounded-nested text-center text-[20px] font-normal tabular-nums caret-transparent outline-none transition-[background-color,box-shadow] duration-[180ms]",
+              compact ? "h-[50px] w-[42px]" : "h-[52px] w-[44px]",
               on ? "bg-card ring-2 ring-stroke" : "bg-nested",
+              invalid && "inset-ring-1 inset-ring-red-ink",
             )}
           />
         );

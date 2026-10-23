@@ -270,3 +270,42 @@ describe("AuthCard marks", () => {
     expect(tile?.className).toContain("self-center");
   });
 });
+
+describe("POR-01 additions (P-08-T09)", () => {
+  it("a rejected code rings every box in red ink and ties them to the helper", () => {
+    render(
+      <>
+        <CodeInput
+          value="481072"
+          onChange={() => undefined}
+          label="Sign-in code"
+          invalid
+          describedBy="why"
+        />
+        <span id="why">That code didn’t match.</span>
+      </>,
+    );
+    for (const box of screen.getAllByRole("textbox")) {
+      expect(box.getAttribute("aria-invalid")).toBe("true");
+      expect(box.getAttribute("aria-describedby")).toBe("why");
+      expect(box.className).toContain("inset-ring-red-ink");
+    }
+  });
+
+  it("compact boxes are 42 x 50 for the 390 layout", () => {
+    render(<CodeInput value="" onChange={() => undefined} label="Sign-in code" compact gap={6} />);
+    expect(screen.getAllByRole("textbox")[0]?.className).toContain("h-[50px] w-[42px]");
+  });
+
+  it("the header brand sits inside the card, centred, with the firm's name", () => {
+    const { container } = render(
+      <PortalBrandProvider brand={BRIGHTWATER_BRAND}>
+        <AuthCard brand="header" title="Sign in to your client portal" />
+      </PortalBrandProvider>,
+    );
+    const card = container.querySelector('[data-auth="card"]');
+    const brand = card?.querySelector('[data-auth="brand"]');
+    expect(brand?.textContent).toBe(BRIGHTWATER_BRAND.portalName ?? BRIGHTWATER_BRAND.name);
+    expect(card?.className).not.toContain("text-center");
+  });
+});
