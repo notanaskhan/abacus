@@ -53,6 +53,7 @@ jobs:
       frontend: ${{ steps.paths.outputs.frontend }}
       gallery: ${{ steps.paths.outputs.gallery }}
       agents: ${{ steps.paths.outputs.agents }}
+      journeys: ${{ steps.paths.outputs.journeys }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -273,6 +274,61 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Fixture-mode journeys (F-04-T28; F-04.32): the journey specs and the harness self-checks in
+  # the `fixture` project, on a change to what they walk (abacus_tools.ci.paths, `journeys`).
+  # Playwright starts vite on fixtures itself (ABACUS_FIXTURES=1): no database, no backend, no
+  # secrets. Every run publishes its traces and the report; each step's axe findings are
+  # attachments in the report.
+  journeys:
+    name: stage 2 fixture journeys
+    needs: [changes]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - if: needs.changes.outputs.journeys != 'true'
+        run: echo "no journey paths changed (abacus_tools.ci.paths), so nothing to run"
+      - if: needs.changes.outputs.journeys == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: needs.changes.outputs.journeys == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - if: needs.changes.outputs.journeys == 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - if: needs.changes.outputs.journeys == 'true'
+        run: corepack enable
+      - if: needs.changes.outputs.journeys == 'true'
+        run: make setup
+      - if: needs.changes.outputs.journeys == 'true'
+        name: Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: needs.changes.outputs.journeys == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - if: needs.changes.outputs.journeys == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm -C apps/web exec playwright install-deps chromium
+      - if: needs.changes.outputs.journeys == 'true'
+        name: Journeys in fixture mode (make journeys)
+        run: make journeys JOURNEY_ARGS=--trace=on
+      - if: always() && needs.changes.outputs.journeys == 'true'
+        name: Traces and the report with axe findings
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fixture-journeys
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
   coverage:
     name: stage 2 coverage floor
     needs: [changes, unit, integration]
@@ -342,7 +398,7 @@ jobs:
   stage-2:
     name: stages 1 and 2 (make check)
     if: always() && (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft))
-    needs: [stage-1, changes, unit, integration, contracts, frontend, gallery, coverage, evals-fast]
+    needs: [stage-1, changes, unit, integration, contracts, frontend, gallery, journeys, coverage, evals-fast]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

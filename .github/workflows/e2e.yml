@@ -3,6 +3,7 @@
 # development against the compose stack. Actions are pinned to full commit SHAs; the token is
 # read-only except in nightly-red, which may only write issues; no secrets are used.
 # F-01-T08 (SPEC-045 AC-14, AC-15): a red scheduled night opens or updates one nightly-red issue.
+# F-04-T28: the nightly full-stack journeys, and a staging job that stays off until staging exists.
 name: e2e
 
 on:
@@ -67,9 +68,106 @@ jobs:
           path: apps/web/playwright-report
           retention-days: 7
 
+  # The full-stack journeys (F-04-T28; F-04.32): the journey specs in the `fullstack` project
+  # against the compose stack on this runner, with the Brightwater Hale scenario loaded at E0
+  # (`make seed-demo`, Fairhaven held out for J02-audit-core), the fakes and the injected clock.
+  # Every database here is the runner's own (127.0.0.1); `make seed-demo` and `make
+  # journeys-full` refuse any other host (db-guard). Traces and the report, with each step's axe
+  # findings, are published on every run.
+  fullstack:
+    name: nightly full-stack journeys (make journeys-full)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: corepack enable
+      - run: make setup
+      - name: Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm -C apps/web exec playwright install-deps chromium
+      - name: Start the local stack (API, sign-in, worker, SPA)
+        run: |
+          make dev > dev.log 2>&1 &
+          for _ in $(seq 1 120); do
+            if curl -sf http://localhost:5173/ > /dev/null && \
+              curl -sf http://127.0.0.1:9000/jwks > /dev/null && \
+              curl -s -o /dev/null http://127.0.0.1:8001/v1/me; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "the local stack did not come up"; tail -100 dev.log; exit 1
+      - name: Load the scenario at E0 (local database only)
+        run: make seed-demo SNAPSHOT=E0 HOLDOUT=fairhaven_ebp
+      - name: Journeys on the full stack
+        run: make journeys-full JOURNEY_ARGS=--trace=on
+      - name: Stack log on failure
+        if: failure()
+        run: tail -200 dev.log
+      - name: Traces and the report with axe findings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fullstack-journeys
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # The staging journeys (F-04.32): the demo tenant on staging, with real WorkOS, SES and the
+  # scanner. OFF until staging exists (Q-01 R0) and its hosted sign-in is registered: it runs only
+  # when the repository variable STAGING_JOURNEYS is "on", with ABACUS_STAGING_URL set. It drives
+  # a browser at the hosted URL and nothing else: no local build, no seed, no migration and no
+  # database connection from this runner (F-04.16, F-04.17; the staging reset is the runbook's ECS
+  # one-off task). Reading sign-in codes from the staging sink will need a read-only role for the
+  # sink bucket (Q-01-T47), granted through OIDC; no secret is stored here.
+  staging:
+    name: nightly staging journeys
+    if: vars.STAGING_JOURNEYS == 'on'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - name: Journeys on the staging demo tenant
+        env:
+          ABACUS_STAGING_URL: ${{ vars.ABACUS_STAGING_URL }}
+        run: pnpm -C apps/web exec playwright test --project=staging --trace=on
+      - name: Traces and the report with axe findings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: staging-journeys
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   nightly-red:
     name: open or update the nightly-red issue
-    needs: journey
+    needs: [journey, fullstack]
     if: failure() && github.event_name == 'schedule'
     runs-on: ubuntu-24.04
     timeout-minutes: 5

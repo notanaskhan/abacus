@@ -67,6 +67,21 @@ async function probeInPage(page: Page, path: string): Promise<number> {
   return response.status();
 }
 
+/**
+ * F-04-T26: a portal persona's entry path is the portal's own page (portal.html), as the portal
+ * origin serves it (P-08-T07; DEC-59). The fixture server is the firm's vite dev server, which
+ * answers every path with the firm entry, so the entry navigation is answered with portal.html;
+ * the portal's router then reads the real path.
+ */
+async function servePortalEntry(page: Page, path: string): Promise<void> {
+  const entry = path.split("?")[0] ?? "/";
+  const html = await (await page.request.get("/portal.html")).text();
+  await page.route(
+    (url) => url.pathname === entry,
+    (route) => route.fulfill({ status: 200, contentType: "text/html", body: html }),
+  );
+}
+
 const fixture: PersonaAdapter = {
   project: "fixture",
   async open(page, persona, path, options = {}) {
@@ -83,6 +98,7 @@ const fixture: PersonaAdapter = {
       },
       Date.parse(clock) + 12 * 3_600_000,
     );
+    if (persona.kind !== "staff") await servePortalEntry(page, path);
     await page.goto(withQuery(path, { as: persona.slug, clock }));
   },
   probe: () => Promise.resolve(null),

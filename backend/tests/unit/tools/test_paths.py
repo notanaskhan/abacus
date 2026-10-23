@@ -61,6 +61,30 @@ def test_unknown_changes_run_everything() -> None:
     assert paths.classify(None) == ALL
 
 
+@pytest.mark.parametrize(
+    ("changed", "expected"),
+    [
+        # F-04-T28: the pull request's fixture journeys run when what they walk changes.
+        (["apps/web/src/screens/CLI-01/index.tsx"], True),
+        (["apps/web/src/fixtures/seed/clients.ts"], True),
+        (["apps/web/e2e/journeys/J02-client-onboarding.spec.ts"], True),
+        (["apps/web/e2e/harness/adapters.ts"], True),
+        (["apps/web/portal.html"], True),
+        (["packages/ui/src/Button.tsx"], True),
+        (["pnpm-lock.yaml"], True),
+        (["backend/src/abacus/kernel/uow.py"], False),
+        (["apps/web/e2e/visual/parity.spec.ts"], False),
+        (["docs/adr/ADR-131-workpapers.md", ".github/workflows/e2e.yml"], False),
+        ([], False),
+        (None, True),
+    ],
+)
+def test_t28_fixture_journeys_run_when_what_they_walk_changes(
+    changed: list[str] | None, expected: bool
+) -> None:
+    assert paths.journeys(changed) is expected
+
+
 @pytest.mark.parametrize("base", ["", "0" * 40])
 def test_a_missing_base_is_unknown(base: str) -> None:
     assert paths.changed(base, "HEAD") is None
@@ -105,6 +129,7 @@ def test_main_prints_github_outputs(repo: Path, capsys: pytest.CaptureFixture[st
         "frontend=true",
         "gallery=true",
         "agents=true",
+        "journeys=true",
     ]
 
 
