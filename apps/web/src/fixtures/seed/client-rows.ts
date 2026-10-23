@@ -167,4 +167,3 @@ export function lastActivityOf(client: SeedClient, index: number): string {
 export function descriptorOf(client: SeedClient): string | null {
   return NAMED_ROW_FACTS[client.name]?.descriptor ?? null;
 }
-

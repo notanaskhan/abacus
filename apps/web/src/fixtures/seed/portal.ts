@@ -8,8 +8,11 @@ import { slugOf } from "./people";
 
 export const SINK_DOMAIN = "sink.brightwaterhale.test";
 
-/** `whitley` has no engagement in the seed: Dana Whitley exists for T15a sign-in only (F-05-T33). */
-export type PortalEngagement = "northwind" | "granite-peak" | "feld" | "whitley";
+/** `whitley` has no engagement in the seed: Dana Whitley exists for T15a sign-in only (F-05-T33).
+ * `copperleaf` and `tessellate` hold the P-08-T08 personas: Tess Moreno (POR-01c, POR-02d) and
+ * Marisol Vega (POR-02h); their engagements arrive with C-01 and A-07. */
+export type PortalEngagement =
+  "northwind" | "granite-peak" | "feld" | "whitley" | "copperleaf" | "tessellate" | "meera";
 
 export interface PortalUser {
   slug: string;
@@ -63,6 +66,11 @@ const ROWS: readonly Row[] = [
   ["Jonah Feld", "Jonah & Claire Feld", "Household", "feld", "client_contributor"],
   // F-05-T33: TPL-15's T15a signs in as Dana Whitley; F-04's persona list had no one for it.
   ["Dana Whitley", "Marcus & Dana Whitley", "Primary portal user", "whitley", "client_admin"],
+  // P-08-T08: POR-01c (an owner grant meets the MFA floor) and POR-02d; POR-02h.
+  ["Tess Moreno", "Copperleaf Coffee Roasters, Inc.", "Owner", "copperleaf", "client_admin"],
+  ["Marisol Vega", "Tessellate Health Cloud", "Primary portal user", "tessellate", "client_admin"],
+  // POR-02e: Meera Shah's role union (her own return and her Ridgeline K-1).
+  ["Meera Shah", "Meera Shah", "Primary portal user", "meera", "client_admin"],
 ];
 
 export const PORTAL_USERS: readonly PortalUser[] = ROWS.map(
