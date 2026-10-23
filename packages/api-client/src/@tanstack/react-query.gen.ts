@@ -159,7 +159,8 @@ export const listBindersQueryKey = (options?: Options<ListBindersData>) => creat
 /**
  * List Binders Route
  *
- * BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3).
+ * BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3; P-06-T11).
+ * `counts` leave out the status tile; each facet leaves out its own filter.
  */
 export const listBindersOptions = (options?: Options<ListBindersData>) => queryOptions<ListBindersResponse, ListBindersError, ListBindersResponse, ReturnType<typeof listBindersQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -208,7 +209,8 @@ export const listBindersInfiniteQueryKey = (options?: Options<ListBindersData>):
 /**
  * List Binders Route
  *
- * BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3).
+ * BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3; P-06-T11).
+ * `counts` leave out the status tile; each facet leaves out its own filter.
  */
 export const listBindersInfiniteOptions = (options?: Options<ListBindersData>) => {
     const opts = infiniteQueryOptions<ListBindersResponse, ListBindersError, InfiniteData<ListBindersResponse>, QueryKey<Options<ListBindersData>>, string | null | Pick<QueryKey<Options<ListBindersData>>[0], 'body' | 'headers' | 'path' | 'query'>>(

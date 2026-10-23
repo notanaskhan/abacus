@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from uuid import UUID
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import ColumnElement, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import QueryableAttribute
 
 from abacus.modules.organisations.models import Client, ClientEntity, Contact, Office
 
@@ -170,3 +171,28 @@ async def offices_in_firm(session: AsyncSession) -> list[tuple[UUID, str]]:
     """The firm's offices by name (LIST_EXEMPT: firm structure, a filter only, DEC-30)."""
     rows = await session.execute(select(Office.id, Office.name).order_by(Office.name))
     return [(r.id, r.name) for r in rows]
+
+
+# P-06-T11 (BND-01): names another module's list shows and searches, as correlated subqueries
+# on its own rows. They read under the same session's RLS; the outer list applies `visible()`.
+Column = ColumnElement[UUID] | QueryableAttribute[UUID] | QueryableAttribute[UUID | None]
+
+
+def client_name_column(client_id: Column) -> ColumnElement[str]:
+    """The client's name for each outer row."""
+    return (
+        select(Client.name)
+        .where(Client.id == client_id)
+        .correlate_except(Client)
+        .scalar_subquery()
+    )
+
+
+def office_name_column(office_id: Column) -> ColumnElement[str]:
+    """The office's name for each outer row (None without an office)."""
+    return (
+        select(Office.name)
+        .where(Office.id == office_id)
+        .correlate_except(Office)
+        .scalar_subquery()
+    )

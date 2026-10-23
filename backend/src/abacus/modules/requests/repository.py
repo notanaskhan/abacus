@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime
-from typing import Literal, cast
+from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, func, insert, or_, select, update
+from sqlalchemy import Select, Subquery, and_, func, insert, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +18,7 @@ from abacus.kernel.listing import Position, capped_total, keyset, status_counts
 from abacus.modules.identity.api import AuthContext, visible, visible_items
 from abacus.modules.requests.guidance import Guidance
 from abacus.modules.requests.models import (
+    BinderActivity,
     BinderRecipient,
     ClientItemResponse,
     ClientListDone,
@@ -954,3 +955,106 @@ async def open_binders(
     else:
         return []
     return (await session.execute(query.with_for_update())).scalars().all()
+
+
+# --- P-06-T11: the binders index read model (BND-01) --------------------------------------------
+
+IndexQuery = Select[*tuple[Any, ...]]  # Any: the binder and its joined facts' columns
+
+
+def binder_index(ctx: AuthContext, work_items: Subquery) -> IndexQuery:
+    """Every binder the caller may read, joined to its work item's facts (engagements'
+    `work_item_index`) and its activity projection. `visible()` applies here, so walled and
+    out-of-team binders are absent from rows, tiles, totals and facets alike (INV-3, DEC-43).
+    The caller adds the filters; Any: the row is the binder and its joined facts."""
+    return (
+        select(
+            RequestList,
+            work_items.c.kind.label("work_item_kind"),
+            work_items.c.name.label("work_item_name"),
+            work_items.c.client_name,
+            work_items.c.office_id,
+            work_items.c.office_name,
+            work_items.c.season,
+            work_items.c.preparer_user_id,
+            BinderActivity.last_client_activity_at,
+        )
+        .join(work_items, work_items.c.id == RequestList.work_item_id)
+        .outerjoin(
+            BinderActivity,
+            and_(
+                BinderActivity.tenant_id == RequestList.tenant_id,
+                BinderActivity.binder_id == RequestList.id,
+            ),
+        )
+        .where(visible(ctx, "binder.read", RequestList.engagement_id))
+    )
+
+
+DONE_REQUESTS: tuple[str, ...] = ("uploaded", "received", "not_applicable")
+OPEN_REQUESTS: tuple[str, ...] = ("requested", "returned")
+
+
+async def binder_progress(
+    session: AsyncSession, ctx: AuthContext, binder_ids: Sequence[UUID], today: date
+) -> dict[UUID, tuple[int, int, int, int, datetime | None, datetime | None]]:
+    """Per binder of a page the caller listed: (done, total, overdue, requested, first and last
+    `requested_at` of the requests still waiting on the client). Deleted drafts don't count.
+    Overdue is an open request past its due date, its own or the binder's default."""
+    if not binder_ids:
+        return {}
+    due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
+    waiting = and_(RequestItem.status == "requested", RequestItem.client_visible.is_(True))
+    rows = await session.execute(
+        select(
+            RequestItem.request_list_id,
+            func.count().filter(RequestItem.status.in_(DONE_REQUESTS)),
+            func.count(),
+            func.count().filter(RequestItem.status.in_(OPEN_REQUESTS), due < today),
+            func.count().filter(waiting),
+            func.min(RequestItem.requested_at).filter(waiting),
+            func.max(RequestItem.requested_at).filter(waiting),
+        )
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
+        .where(
+            RequestItem.request_list_id.in_(binder_ids),
+            RequestItem.deleted_at.is_(None),
+            visible(ctx, "binder.read", RequestList.engagement_id),
+        )
+        .group_by(RequestItem.request_list_id)
+    )
+    return {
+        binder: (int(done), int(total), int(overdue), int(requested), first, last)
+        for binder, done, total, overdue, requested, first, last in rows
+    }
+
+
+async def touch_client_activity(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    binder_id: UUID,
+    work_item_id: UUID | None,
+    status: str,
+    at: datetime,
+) -> None:
+    """The projection after a client act on the binder (P-06-T11): its status and when the
+    client last acted. Inside the caller's unit of work, whose audit event records the act."""
+    await session.execute(
+        pg_insert(BinderActivity)
+        .values(
+            tenant_id=tenant_id,
+            binder_id=binder_id,
+            work_item_id=work_item_id,
+            status=status,
+            last_client_activity_at=at,
+        )
+        .on_conflict_do_update(
+            index_elements=[BinderActivity.tenant_id, BinderActivity.binder_id],
+            set_={
+                "status": status,
+                "last_client_activity_at": at,
+                "updated_at": func.abacus_now(),
+            },
+        )
+    )

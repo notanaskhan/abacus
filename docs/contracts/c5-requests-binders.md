@@ -57,7 +57,7 @@ Portal routes run under the firm context until P-08's portal principal and BFF l
 ## 3. Models
 Code: `backend/src/abacus/modules/requests/contract.py`, `backend/src/abacus/modules/evidence/contract.py`. Every field is tagged (ADR-031). Confidential: names, titles, client wording, reasons and notes, `supports_ref`. Everything else is internal (identifiers, codes, dates, counts). No Restricted field and no TIN appears in any C5 payload.
 
-- **`BinderRowOut`** (BND-01 row, in `ListPage[BinderRowOut]`): `id`, `engagement_id`, `work_item_id`, `client_name`*, `work_item_label`*, `name`*, `kind` (`organizer · pbc · close_intake · intake · third_party`), `part`, `status` (`BinderStatus`), `preparer_user_id`, `done_count`, `total_count`, `last_client_activity_at`, `unpublished_at`, `unpublished_by`, `unpublish_reason`*, `tags` (registered codes), `allowed_actions`. The envelope's `counts` are per binder status (the tiles), computed after `visible()`; `total` is the visible total ("Showing 15 of 241").
+- **`BinderRowOut`** (BND-01 row, in `ListPage[BinderRowOut]`): `id`, `engagement_id`, `work_item_id`, `client_name`*, `work_item_label`*, `name`*, `kind` (`organizer · pbc · close_intake · intake · third_party`), `part`, `status` (`BinderStatus`), `preparer_user_id`, `done_count`, `total_count`, `last_client_activity_at`, `unpublished_at`, `unpublished_by`, `unpublish_reason`*, `tags` (registered codes), `allowed_actions`. The envelope's `counts` are per binder status (the tiles), computed after `visible()`; `total` is the visible total ("Showing 15 of 241"). Added in place by P-06-T11 (all optional, all internal but one): `service` (the Service chip's code: `tax_returns`, `assurance`, `closes`, `notices`, `advisory_projects`), `season` (`TY<year>` for a return, the year its period begins; `FY<year>` for other work), `office_id`, `published_at`; the Complete line's `marked_done_at`, `marked_done_by` and `marked_done_by_name`*; the Closed line's `closed_at` and `closed_reason` (a registered close-rule code); the Count's `overdue_count`; and "n requested Sep 8-10" as `requested_count`, `requested_from` and `requested_to` (business dates). Each facet leaves out its own filter; `facets` are `service`, `season`, `office`, `preparer`, `client_activity` (`any`, `none_30_days`) and `part` (`1` returns, `2+` second-part binders). `client_activity=none_30_days` keeps Published binders whose last client activity (else their publish) is more than 30 business days old. Rows sort by status in the tiles' order, then newest client activity. The last-activity summary and its Inbox link wait for the projection columns (§11).
 - **`BinderOut`** (BND-02 record): identity and kind fields as the row, `created_from` (`blank · template · prior_year_binder · engine_import`), `prior_year_source_ref`, `template_ref`, `default_due_on`, `recipients [{contact_id, name*}]`, `categories [{id, name*, position, done_count, total_count}]`, `done_count`, `total_count`, `published_at/by`, `unpublished_at/by/reason*`, `marked_done_at/by`, `marked_done_open_count`, `closed_at`, `closed_reason` (a registered close-rule code), `follow_up_override {every_days 1..30, max 1..4}`, `undo_until`, `allowed_actions`.
 - **`BinderIn`**: `work_item_id`, `kind`, `name?`*, `from_binder_id?`, `template_ref?`. **`UnpublishIn`**: `reason`* (1..300). **`RecipientsIn`**: `contact_ids` (≤ 50). **`FollowUpOverrideIn`**: `override` (null clears).
 - **`BinderRequestRowOut`** (in `ListPage[BinderRequestRowOut]`, `counts` per request status): `id`, `category_id`, `title`*, `status` (`RequestStatus`), `overdue` (derived), `client_visible`, `kind` (`client_upload · firm_provided`), `due_on`, `requested_at`, `client_ignored_at`, `client_ignore_reason`, `source_tag` (`prior_year`), `incorporation_state`, `screening` (`EvidenceScreeningStatus`, the glyph only), `linked_count`, `upload_count`, `allowed_actions`.
@@ -151,9 +151,13 @@ Brightwater Hale, synthetic. Real fixtures come from the binder slice (P-06-T08)
 {"items": [{"id": "…", "engagement_id": "…", "work_item_id": "…", "client_name": "Claire Feld",
   "work_item_label": "2025 Form 1040", "name": "Feld 2025 Binder", "kind": "pbc", "part": 1,
   "status": "published", "preparer_user_id": "…", "done_count": 5, "total_count": 7,
-  "last_client_activity_at": "2026-09-14T14:02:00Z", "tags": [], "allowed_actions": ["binder.read"]}],
+  "last_client_activity_at": "2026-09-14T14:02:00Z", "tags": [], "allowed_actions": ["binder.read"],
+  "service": "tax_returns", "season": "TY2025", "overdue_count": 0, "requested_count": 2,
+  "requested_from": "2026-09-08", "requested_to": "2026-09-10"}],
  "next_cursor": "…", "total": 241, "total_capped": false,
- "counts": {"draft": 1, "published": 48, "unpublished": 0, "complete": 40, "closed": 152}, "facets": {}}
+ "counts": {"draft": 1, "published": 48, "unpublished": 0, "complete": 40, "closed": 152},
+ "facets": {"part": [{"value": "1", "label": "Returns", "n": 224},
+                     {"value": "2+", "label": "Second-part binders", "n": 17}]}}
 ```
 
 `POST /v1/binders/{id}/unpublish` without a reason: `422 {"detail": "reason_required"}`. Before G3: `409 {"detail": "binder_gate_unmet", "facts": {"gate": "G3"}}`.
@@ -173,8 +177,10 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 |---|---|---|---|
 | v1 | (planned 2026-12-11) | | stub 2026-10-22 (P-06-T01); SHL-20 family additive in P-06-T15 |
 | v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-08-T01): the portal half (portal identity and home, POR-01 and POR-02) in `docs/contracts/portal-identity.md`; nothing in this half changes |
+| v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-06-T11): `GET /v1/binders` live; `BinderRowOut` gains the status-line facts and `service`, `season`, `office_id`, `published_at`; facets named |
 
 ## 11. Open points
 - DEC-136: OQ-1 mechanism (preparer publish on tax-return binders), firm-setting key names, portal ignore vs SPEC-042, staff create deferred to P-06-T10.
 - ADR-162 (P-31, the plan's "ADR-137") is accepted; the withdraw route follows it.
+- BND-01's last-activity summary ("Claire emailed 2 files (Inbox) · uploading 2 now") and its INB-04 link need `binder_activity` to carry the activity's kind, actor, file count and inbox thread (a migration); until then the row has `last_client_activity_at` only. The projection is kept today by the client's mark-done; portal upload, answer, sign and `inbox_file.added` subscribers follow with that migration.
 - P-08 owns the portal principal; until it lands the `/v1/portal` routes take the firm context. The portal half is `docs/contracts/portal-identity.md` (C5 v1.1, P-08-T01).

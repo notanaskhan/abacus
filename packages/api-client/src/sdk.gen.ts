@@ -89,7 +89,8 @@ export const signOut = <ThrowOnError extends boolean = false>(options?: Options<
 /**
  * List Binders Route
  *
- * BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3).
+ * BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3; P-06-T11).
+ * `counts` leave out the status tile; each facet leaves out its own filter.
  */
 export const listBinders = <ThrowOnError extends boolean = false>(options?: Options<ListBindersData, ThrowOnError>): RequestResult<ListBindersResponses, ListBindersErrors, ThrowOnError> => (options?.client ?? client).get<ListBindersResponses, ListBindersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

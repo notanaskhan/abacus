@@ -88,6 +88,7 @@ from abacus.modules.requests.repository import (
     recipient_rows,
     set_binder,
     stamp_sent,
+    touch_client_activity,
     upload_counts,
 )
 from abacus.modules.requests.roll_forward import copy_binder_items
@@ -368,6 +369,16 @@ def _reason_context(binder_id: UUID) -> str:
     return hashlib.sha256(f"binder.unpublish_reason:{binder_id}".encode()).hexdigest()
 
 
+async def unpublish_reason(tenant_id: UUID, binder: RequestList) -> str | None:
+    """An Unpublished binder's reason, opened for a caller that may read the binder."""
+    if binder.status != "unpublished" or binder.unpublish_reason_sealed is None:
+        return None
+    sealed = await open_sealed(
+        tenant_id, binder.unpublish_reason_sealed, _reason_context(binder.id)
+    )
+    return sealed.decode()
+
+
 def current_recipients(rows: Sequence[BinderRecipient]) -> list[UUID]:
     """Contacts whose additions outnumber their removals (insert-only history), in the order
     they were first added."""
@@ -406,13 +417,7 @@ async def _view(ctx: AuthContext, binder_id: UUID) -> BinderView:
     resource = _resource(ref, binder, facts)
     names = await client_contact_names(ctx.tenant, binder.engagement_id, recipients)
     now = await clock.now(ctx.tenant)
-    reason = None
-    if binder.status == "unpublished" and binder.unpublish_reason_sealed is not None:
-        reason = (
-            await open_sealed(
-                ctx.tenant_id, binder.unpublish_reason_sealed, _reason_context(binder.id)
-            )
-        ).decode()
+    reason = await unpublish_reason(ctx.tenant_id, binder)
     undo_until = None
     if binder.status == "published" and binder.published_at is not None:
         ends = binder.published_at + UNDO_WINDOW
@@ -1014,6 +1019,15 @@ async def mark_done(ctx: AuthContext, binder_id: UUID) -> MarkedDoneView:
             status="complete",
             marked_done_at=now,
             marked_done_by=ctx.user_id,
+        )
+        # P-06-T11: the index's last client activity is this act (BND-01 "Last client activity").
+        await touch_client_activity(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            binder_id=binder.id,
+            work_item_id=binder.work_item_id,
+            status="complete",
+            at=now,
         )
         tx.record(
             "binder.marked_done",
