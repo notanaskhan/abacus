@@ -490,7 +490,7 @@ async def test_ac3_1_2_tabs_filter_by_category_and_counts_are_unread(world: Worl
         "registers a facts or pending resolver yet, so a client upload lists with empty facts, "
         "never pending, outside Approvals and without Accept/Return; TASK-406 defers the wiring "
         "to P-01-T16. Recorded in "
-        "work/tasks/TASK-993-notifications-binder-independent-tests.md (#PR-C)"
+        "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)"
     ),
 )
 async def test_ac3_1_2_a_client_upload_waits_in_approvals_with_facts_and_inline_actions(
@@ -557,7 +557,7 @@ async def test_ac4_1_4_rows_older_than_30_days_are_neither_shown_nor_counted(
         "BYPASSRLS, and `notifications` has forced RLS, so the daily purge deletes nothing. The "
         "fix is a new migration redefining the function (not small; one Alembic head across "
         "parallel sessions). Recorded in "
-        "work/tasks/TASK-993-notifications-binder-independent-tests.md (#PR-C)"
+        "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)"
     ),
 )
 async def test_ac10_the_daily_purge_deletes_rows_older_than_180_days(world: World) -> None:

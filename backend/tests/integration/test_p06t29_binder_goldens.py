@@ -461,7 +461,8 @@ async def test_shl14_keystone_bridge_letter_requested_sep_1_due_sep_25(
 @pytest.mark.xfail(
     strict=True,
     reason="DEC-146: only Feld and the close intake carry requests, so Thornbury's 15 are "
-    "declared data; recorded in work/tasks/TASK-993-notifications-binder-independent-tests.md",
+    "declared data; recorded in work/tasks/TASK-993-notifications-binder-independent-tests.md "
+    "(#380)",
 )
 async def test_bnd02d_thornbury_6_of_15_with_3_overdue_14_days_late(
     conn: asyncpg.Connection,
@@ -478,7 +479,7 @@ async def test_bnd02d_thornbury_6_of_15_with_3_overdue_14_days_late(
     strict=True,
     reason="DEC-146: only Feld and the close intake carry requests, so the other BND-01 rows' "
     "n of m is declared data; recorded in "
-    "work/tasks/TASK-993-notifications-binder-independent-tests.md",
+    "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)",
 )
 async def test_bnd01a_named_rows_n_of_m_foot_from_their_requests(
     conn: asyncpg.Connection,
@@ -488,8 +489,9 @@ async def test_bnd01a_named_rows_n_of_m_foot_from_their_requests(
 
 @pytest.mark.xfail(
     strict=True,
-    reason="Granite Peak SURL files wait for F-04-T25; recorded in "
-    "work/tasks/TASK-993-notifications-binder-independent-tests.md",
+    reason="the binders slice writes no Granite Peak SURL Draft or files yet; P-06 §5.4 has "
+    "them use F-04-T25's documents, which (TASK-996) do not include them; recorded in "
+    "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)",
 )
 async def test_shl20a_granite_peak_surl_draft_with_31_files(conn: asyncpg.Connection) -> None:
     assert await granite_peak(conn) == {"surl": ("draft", True), "files": 31}
@@ -497,8 +499,9 @@ async def test_shl20a_granite_peak_surl_draft_with_31_files(conn: asyncpg.Connec
 
 @pytest.mark.xfail(
     strict=True,
-    reason="Claire's BND-02 g files are scenario documents and wait for F-04-T25; recorded in "
-    "work/tasks/TASK-993-notifications-binder-independent-tests.md",
+    reason="Claire's BND-02 g files are scenario documents the binders slice does not load "
+    "yet (F-04-T25's set in TASK-996 has none); recorded in "
+    "work/tasks/TASK-993-notifications-binder-independent-tests.md (#380)",
 )
 async def test_bnd02g_claires_two_files_cover_four_installments(
     conn: asyncpg.Connection,
