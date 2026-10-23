@@ -934,7 +934,7 @@ export function WizardSpecimen(): JSX.Element {
         </Wizard>
       </Row>
       <Row name="Step 2" meaning="Held: Back, Save draft and Next">
-        <Stage height={360} width={920}>
+        <Stage height={400} width={920}>
           <div className="h-full w-full">
             <Wizard
               forceState="open"
@@ -951,7 +951,7 @@ export function WizardSpecimen(): JSX.Element {
         </Stage>
       </Row>
       <Row name="Last step" meaning="Held: Create">
-        <Stage height={360} width={920}>
+        <Stage height={400} width={920}>
           <div className="h-full w-full">
             <Wizard
               forceState="open"
