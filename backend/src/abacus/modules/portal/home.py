@@ -85,10 +85,11 @@ class PreferencesView:
 async def _grant(ctx: AuthContext, scope_id: UUID | None) -> GrantScope:
     """The person's full-client grant on the scope (or their first one); 404 for any other."""
     held = await portal_scopes(ctx)
-    for grant in held.scopes:
-        if grant.role in FULL_ROLES and scope_id in (None, grant.scope_id):
-            return grant
-    raise NotFound("portal_scope")
+    found = [g for g in held.scopes if g.role in FULL_ROLES and scope_id in (None, g.scope_id)]
+    if not found:
+        raise NotFound("portal_scope")
+    # Two roles on one scope: the label names the stronger (an owner before a contributor).
+    return min(found, key=lambda g: (g.scope_id != found[0].scope_id, g.role == "contributor"))
 
 
 async def _covered(ctx: AuthContext, grant: GrantScope) -> HomeScope:
@@ -106,6 +107,8 @@ async def _covered(ctx: AuthContext, grant: GrantScope) -> HomeScope:
         except (Forbidden, NotFound):
             continue  # a target this scope's grant does not cover (INV-4)
         engagements.append(engagement_id)
+    if not engagements:
+        raise NotFound("portal_scope")  # nothing of the scope this person may read
     return HomeScope(
         grant.scope_kind,
         grant.scope_id,
@@ -158,6 +161,10 @@ async def set_preferences(
 ) -> PreferencesView:
     """Per user and scope, at the version read (0: never written); audited."""
     grant = await _grant(ctx, scope_id)
+    scope = await _covered(ctx, grant)
+    await authorise(
+        ctx, "portal_preferences.update", (await get_ref(ctx, scope.engagements[0])).resource()
+    )
     async with uow(ctx.tenant) as tx:
         if version == 0:
             row = await repository.insert_preference(

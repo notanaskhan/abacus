@@ -108,6 +108,10 @@ async def test_a_client_entity_grant_covers_that_entitys_engagements_only(seed: 
 
     assert await engagement_role_of(tess.context().tenant, covered, tess.user_id) == "client_admin"
     assert await engagement_role_of(tess.context().tenant, not_covered, tess.user_id) is None
+    home = await read_home(tess.context(), roasters)  # the entity's own scope resolver
+    assert {c.work_item_id for c in home.work_cards} == {
+        await seed.value("SELECT id FROM work_items WHERE engagement_id = $1", covered)
+    }
 
 
 @pytest.mark.parametrize(

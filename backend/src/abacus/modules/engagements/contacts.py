@@ -21,6 +21,7 @@ from abacus.modules.identity.api import AuthContext, ScopeFacts, authorise
 from abacus.modules.organisations.api import (
     attest_client_of,
     client_exists,
+    client_of_entity,
     contact_client,
     contact_facts,
 )
@@ -145,3 +146,10 @@ async def work_item_scope(tenant: TenantContext, work_item_id: UUID) -> ScopeFac
 async def client_scope(tenant: TenantContext, client_id: UUID) -> ScopeFacts | None:
     """A `client` grant's scope: every engagement of the client."""
     return ScopeFacts(client_id) if await client_exists(tenant, client_id) else None
+
+
+async def client_entity_scope(tenant: TenantContext, entity_id: UUID) -> ScopeFacts | None:
+    """A `client_entity` grant's scope: its client's facts. Its engagement role covers only the
+    entity's engagements (DEC-211), so `scope_only` never reaches past them."""
+    client_id = await client_of_entity(tenant, entity_id)
+    return ScopeFacts(client_id) if client_id is not None else None
