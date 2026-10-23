@@ -127,6 +127,32 @@ describe("ac4 roles and access", () => {
     });
   });
 
+  it("shows an IT / Security member with that role and changes someone to it (P-10)", async () => {
+    const security = {
+      user_id: "u-it",
+      display_name: "Ivy Ito",
+      email: "ivy@firm.test",
+      firm_role: "security_admin" as const,
+      status: "active" as const,
+    };
+    const { calls } = mockApi({
+      "GET /v1/me": () => json(ME),
+      "GET /v1/firm/staff": () => json({ ...LIST, members: [...LIST.members, security] }),
+      "PUT /v1/firm/staff/u-s/role": () => json({ id: "u-s" }),
+    });
+    page();
+    const select = await screen.findByLabelText<HTMLSelectElement>("Role for Ivy Ito");
+    expect(select.value).toBe("security_admin");
+    fireEvent.change(screen.getByLabelText("Role for Sam Staff"), {
+      target: { value: "security_admin" },
+    });
+    await waitFor(() => {
+      expect(calls.find((c) => c.path === "/v1/firm/staff/u-s/role")?.body).toEqual({
+        firm_role: "security_admin",
+      });
+    });
+  });
+
   it("asks for a recent sign-in when the list is refused", async () => {
     mockApi({
       "GET /v1/me": () => json(ME),

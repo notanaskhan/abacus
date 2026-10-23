@@ -13898,7 +13898,8 @@
                 "enum": [
                   "firm_admin",
                   "practice_leader",
-                  "quality_partner"
+                  "quality_partner",
+                  "security_admin"
                 ],
                 "type": "string"
               },
@@ -29639,7 +29640,8 @@
                 "enum": [
                   "firm_admin",
                   "practice_leader",
-                  "quality_partner"
+                  "quality_partner",
+                  "security_admin"
                 ],
                 "type": "string"
               },
@@ -29683,7 +29685,8 @@
                 "enum": [
                   "firm_admin",
                   "practice_leader",
-                  "quality_partner"
+                  "quality_partner",
+                  "security_admin"
                 ],
                 "type": "string"
               },
@@ -29760,7 +29763,8 @@
                 "enum": [
                   "firm_admin",
                   "practice_leader",
-                  "quality_partner"
+                  "quality_partner",
+                  "security_admin"
                 ],
                 "type": "string"
               },

@@ -28,12 +28,14 @@ import { type JSX, type SyntheticEvent, useEffect, useState } from "react";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 
-type Role = "firm_admin" | "practice_leader" | "quality_partner";
+type Role = NonNullable<StaffMemberOut["firm_role"]>;
 const ROLES: [Role | "", string][] = [
   ["", "Team member"],
   ["firm_admin", "Firm administrator"],
   ["practice_leader", "Practice leader"],
   ["quality_partner", "Quality partner"],
+  // P-10 (DEC-21; ED-009): the glossary's label for `security_admin`.
+  ["security_admin", "IT / Security"],
 ];
 const SELECT = "h-8 rounded-[var(--radius-control)] border border-hair bg-surface px-2 text-body";
 

@@ -4,7 +4,7 @@ title: Escaped defects ED-009 (security_admin in the staff models) and ED-011 (t
 spec: SPEC-024
 acceptance_criteria: [AC-3, AC-4]
 risk_zone: red
-status: in-progress
+status: done
 epic: Q-03
 plan_key: Q-03-T006; Q-03-T008
 branch: s6-defects-ed009-ed011
@@ -28,3 +28,5 @@ Fix the two SEV3 escaped defects the S6 back-fill found (`docs/quality/escaped-d
 
 ## Progress log
 - 2026-10-24: ED-011 fixed: register, generated module, migration 0127; the three `_NOT_REGISTERED` cases pass without their marker.
+- 2026-10-24: ED-009 fixed. Lifting the models alone left two tests failing with 500: 0033's `add_staff_membership` and `membership_set_firm_role` raise `not a firm role` for `security_admin`, so 0127 (renamed `0127_gate_facts_and_security_admin.py`) redefines both too. Frontend types and the People page follow the generated client. DEC-230.
+- 2026-10-24: verified. Integration: `backfill/test_staff_people.py`, `backfill/test_acceptance_independence_letter.py`, `test_human_only_guard.py` 93 passed, 1 xfailed (ED-010, untouched); `test_identity.py`, `test_schema_check_db.py`, `backfill/test_signup_and_engagement_types.py` 379 passed. `tests/unit tests/contracts tests/security`: 25096 passed, 6 failed; the same 6 fail without this change (`unit/identity/test_independence.py` x2, `unit/identity/test_permission_matrix.py` x3, `contracts/c5_requests_binders/test_c5_consumer_r01.py` x1, all `visible()` client-grant SQL shape, after DEC-211). Web: tsc clean, vitest `src/legacy src/status src/fixtures` 681 passed. `make check-fast` green.
