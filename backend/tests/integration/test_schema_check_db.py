@@ -1777,6 +1777,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}  # 0107
         | {"portal_resolve_host", "portal_host_logo", "portal_domain_add"}  # 0111
         | {"portal_domain_activate"}  # 0111
+        | {"portal_sign_in_start", "portal_sign_in_issue", "portal_sign_in_check"}  # 0116
+        | {"portal_sign_in_fail", "portal_sign_in_consume", "portal_sign_in_resend"}  # 0116
+        | {"portal_session_start", "portal_session_resolve", "portal_session_rotate"}  # 0116
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

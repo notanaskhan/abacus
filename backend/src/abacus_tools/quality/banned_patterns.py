@@ -616,6 +616,9 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     # P-08-T05 (ADR-163 §6): portal branding, Public fields only, inside `AbacusRouter` under the
     # `PORTAL_PUBLIC` marker.
     | {"/v1/portal/branding", "/v1/portal/branding/logo"}
+    # P-08-T10 (ADR-168): the portal's sign-in by emailed code, under `PRE_SESSION`.
+    | {"/v1/portal/auth/start", "/v1/portal/auth/verify", "/v1/portal/auth/resend"}
+    | {"/v1/portal/auth/refresh"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

@@ -31,6 +31,7 @@ from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.portal_session import is_portal_token, portal_context
 from abacus.modules.identity.service import (
     TENANT_HEADER,
     NoActiveTenant,
@@ -59,7 +60,12 @@ STAFF: Final = "staff"
 # exists. They authenticate themselves (state with PKCE, or the refresh cookie with the CSRF
 # header and Origin); no other path may carry this marker.
 PRE_SESSION: Final = "pre_session"
-PRE_SESSION_PATHS: Final = frozenset({"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"})
+PRE_SESSION_PATHS: Final = frozenset(
+    {"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"}
+    # P-08-T10 (ADR-168): the portal's own sign-in by emailed code.
+    | {"/v1/portal/auth/start", "/v1/portal/auth/verify", "/v1/portal/auth/resend"}
+    | {"/v1/portal/auth/refresh"}
+)
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may
 # carry this marker.
@@ -101,6 +107,10 @@ _RESPONSES: dict[int | str, dict[str, object]] = {
 # not implemented yet (NotImplementedYet).
 _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
+    # P-08-T10 (SPEC-320 §6): the portal sign-in's answers.
+    410: {"model": ErrorOut, "description": "Gone: the sign-in code expired or was used"},
+    423: {"model": ErrorOut, "description": "Locked: too many wrong codes"},
+    429: {"model": ErrorOut, "description": "Too soon: wait before asking again"},
     501: {"model": ErrorOut, "description": "Contract stub: not implemented yet"},
     503: {"model": ErrorOut, "description": "Service unavailable"},
 }
@@ -150,6 +160,14 @@ async def current_context(
 ) -> AuthContext:
     if x_support_session is not None:
         return await _support_context(request, authorization, x_abacus_tenant, x_support_session)
+    scheme, _, token = (authorization or "").partition(" ")
+    if scheme.lower() == "bearer" and is_portal_token(token):
+        # ADR-168: an opaque portal token, resolved only on the host it was minted on; the tenant
+        # header can't choose another firm.
+        portal = await portal_context(token, request.headers.get("host"))
+        if portal is None or x_abacus_tenant not in (None, str(portal.tenant_id)):
+            raise HTTPException(401, "not authenticated", headers={"WWW-Authenticate": "Bearer"})
+        return portal
     signed_in = await current_signed_in(authorization)
     try:
         return choose_tenant(signed_in, x_abacus_tenant)

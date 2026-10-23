@@ -186,6 +186,11 @@ NOT_CREATING = {
     # P-01-T09 (ADR-165): a refresh rotates the cookie; sign-out ends the session.
     "/v1/auth/refresh",
     "/v1/auth/sign-out",
+    # P-08-T10 (ADR-168): verifying a code or refreshing returns a token; resend and start
+    # answer 202; sign-out ends the session.
+    "/v1/portal/auth/verify",
+    "/v1/portal/auth/refresh",
+    "/v1/portal/auth/sign-out",
     # P-07-T04 (clients stub): a reveal returns the value once and stores nothing but its audit.
     "/v1/client-entities/{entity_id}/tin/reveal",
     # P-07-T05 (engagements v2 stub): per-step validation returns findings, nothing stored.
@@ -209,6 +214,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/issues/{issue_id}/fix-instructions",
         "/v1/issues/fix-instructions:bulk",
         "/v1/issues/{issue_id}/explanations",
+        # P-08-T10 (SPEC-320): a sign-in start and a resend answer 202 for any email.
+        "/v1/portal/auth/start",
+        "/v1/portal/auth/resend",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)

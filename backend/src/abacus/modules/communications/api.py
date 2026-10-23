@@ -35,6 +35,7 @@ from abacus.modules.communications.ses_identities import (
     configure_ses_identities,
     ses_identities,
 )
+from abacus.modules.communications.sign_in_codes import deliver_sign_in_code
 from abacus.modules.communications.sink import (
     LOCAL_SINK_DOMAIN,
     on_sink,
@@ -43,13 +44,19 @@ from abacus.modules.communications.sink import (
 )
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
 from abacus.modules.communications.workflows import DrainSesEventsWorkflow
-from abacus.modules.identity.api import AbacusRouter, ClientInvitationIssued, StaffInvitationIssued
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    ClientInvitationIssued,
+    PortalSignInCodeRequested,
+    StaffInvitationIssued,
+)
 from abacus.modules.requests.api import register_comment_scope_check
 
 # SPEC-015: invitation emails are sent when the relay delivers `client_invitation.issued`.
 SUBSCRIPTIONS = {
     ClientInvitationIssued.event_type: deliver_invitation,
     StaffInvitationIssued.event_type: deliver_staff_invitation,  # SPEC-024 (TASK-041)
+    PortalSignInCodeRequested.event_type: deliver_sign_in_code,  # P-08-T10
 }
 # SPEC-032 (TASK-062 D1): a firm comment is checked before it's shared with the client.
 register_comment_scope_check(comment_scope_kinds)

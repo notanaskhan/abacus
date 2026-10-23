@@ -48,14 +48,18 @@ CLIENT_ONLY = {"portal_home.read", "portal_preferences.update"}
 # Pre-session routes: answer before any session, so they wait for ADR-152's list (DEC-139).
 # Branding and its logo are live since P-08-T05 under the `PORTAL_PUBLIC` marker
 # (tests/integration/test_portal_branding.py).
-PRE_SESSION = (
+# P-08-T10 serves start, verify, resend and refresh (ADR-168; tests/integration/
+# test_portal_sign_in.py): still never on the public-route list, only under `PRE_SESSION`.
+SERVED_PRE_SESSION = (
     "/v1/portal/auth/start",
     "/v1/portal/auth/verify",
     "/v1/portal/auth/resend",
+    "/v1/portal/auth/refresh",
+)
+PRE_SESSION = (
     "/v1/portal/auth/mfa",
     "/v1/portal/auth/mfa/setup",
     "/v1/portal/auth/mfa/setup/verify",
-    "/v1/portal/auth/refresh",
     "/v1/portal/links/renew",
     "/v1/invitations/preview",
 )
@@ -194,4 +198,10 @@ def test_ac5_me_gains_only_optional_portal_and_mfa_fields() -> None:
 @pytest.mark.parametrize("path", PRE_SESSION)
 def test_ac5_the_pre_session_family_is_not_served_by_the_stub(path: str) -> None:
     assert path not in PATHS
+    assert path not in PUBLIC_ROUTES
+
+
+@pytest.mark.parametrize("path", SERVED_PRE_SESSION)
+def test_p08_t10_the_served_sign_in_routes_are_pre_session_not_public(path: str) -> None:
+    assert PATHS[path]["post"]["x-abacus-action"] == "pre_session"
     assert path not in PUBLIC_ROUTES

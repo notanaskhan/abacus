@@ -23135,6 +23135,197 @@
         "title": "PortalSignInPolicyOut",
         "type": "object"
       },
+      "PortalSignInResendIn": {
+        "additionalProperties": false,
+        "description": "New code, old code void, tries not reset; 429 `resend_too_soon {resend_available_at}`.",
+        "properties": {
+          "challenge_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Challenge Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_id"
+        ],
+        "title": "PortalSignInResendIn",
+        "type": "object"
+      },
+      "PortalSignInStartIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/portal/auth/start`. At most one of the two tokens.",
+        "properties": {
+          "email": {
+            "cls": "confidential",
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "invitation_token": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Invitation Token"
+          },
+          "link_token": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Link Token"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "PortalSignInStartIn",
+        "type": "object"
+      },
+      "PortalSignInStartOut": {
+        "description": "Always 202 with this shape, for any email (unknown, staff, no grant, another firm's,\nlocked): identical status, body and padded timing. No email is sent unless eligible.",
+        "properties": {
+          "challenge_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Challenge Id",
+            "type": "string"
+          },
+          "code_expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Code Expires At",
+            "type": "string"
+          },
+          "resend_available_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Resend Available At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_id",
+          "code_expires_at",
+          "resend_available_at"
+        ],
+        "title": "PortalSignInStartOut",
+        "type": "object"
+      },
+      "PortalSignInVerifyIn": {
+        "additionalProperties": false,
+        "properties": {
+          "challenge_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Challenge Id",
+            "type": "string"
+          },
+          "code": {
+            "cls": "restricted",
+            "pattern": "^[0-9]{6}$",
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_id",
+          "code"
+        ],
+        "title": "PortalSignInVerifyIn",
+        "type": "object"
+      },
+      "PortalSignInVerifyOut": {
+        "description": "200. `signed_in` carries the access token and the landing; the MFA states carry a\n5-minute single-use `mfa_token`. Errors: 401 `code_mismatch {tries_left}`, 423\n`sign_in_locked {locked_until}`, 410 `code_expired`, 503 `sign_in_paused`.",
+        "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Access Token"
+          },
+          "expires_in": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expires In"
+          },
+          "landing": {
+            "anyOf": [
+              {
+                "enum": [
+                  "home",
+                  "requests",
+                  "k1s",
+                  "governance",
+                  "intake",
+                  "component_room",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Landing"
+          },
+          "mfa_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Mfa Token"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "signed_in",
+              "mfa_required",
+              "mfa_setup_required"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "PortalSignInVerifyOut",
+        "type": "object"
+      },
       "PreferencesIn": {
         "additionalProperties": false,
         "properties": {
@@ -83506,6 +83697,559 @@
           "retention"
         ],
         "x-abacus-action": "staff"
+      }
+    },
+    "/v1/portal/auth/refresh": {
+      "post": {
+        "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin.",
+        "operationId": "portal_refresh",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Abacus-CSRF",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Csrf"
+            }
+          },
+          {
+            "in": "header",
+            "name": "origin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Origin"
+            }
+          },
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-portal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Portal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSignInVerifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal Refresh Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
+    "/v1/portal/auth/resend": {
+      "post": {
+        "operationId": "portal_resend",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalSignInResendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSignInStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the sign-in code expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon: wait before asking again"
+          }
+        },
+        "summary": "Portal Resend Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
+    "/v1/portal/auth/sign-out": {
+      "post": {
+        "description": "End the person's own portal session and clear the cookie.",
+        "operationId": "portal_sign_out",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-portal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Portal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedOutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal Sign Out Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "own"
+      }
+    },
+    "/v1/portal/auth/start": {
+      "post": {
+        "description": "Always 202 with the same shape, for any email on any host.",
+        "operationId": "portal_start",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalSignInStartIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSignInStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal Start Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
+    "/v1/portal/auth/verify": {
+      "post": {
+        "operationId": "portal_verify",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalSignInVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSignInVerifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the sign-in code expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Locked: too many wrong codes"
+          }
+        },
+        "summary": "Portal Verify Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
       }
     },
     "/v1/portal/binders/{binder_id}/mark-done": {
