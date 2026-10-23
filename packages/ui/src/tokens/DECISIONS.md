@@ -387,3 +387,18 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-23 | Legal heading      | Gelasio at 700 only under `[data-doc]` (`doc-bold`), the compiled-CSS rule's one exception                                                                                                          |
 | 2026-10-23 | Difference         | Computed in cents from the decimal strings (ADR-050) and formatted by `amount()`; red-ink, never a float                                                                                            |
 | 2026-10-23 | Footer links       | Privacy and Help take the branding URLs (ADR-163); Terms has no branding slot yet and renders without a link                                                                                        |
+
+### T2 RecordCockpit, C-03 Rail kit, C-04 Record kit (F-05-T40)
+
+| Date       | Item               | Decision                                                                                                                                                                                        |
+| ---------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-23 | Rail row focus     | The plan's .55 outline drawn inside the row (`outline-offset: -2px`), where C-03 draws an inset 2px .28 ring: the AA ladder (SPEC-048 AC-3) wins, and full-bleed rows still do not clip it      |
+| 2026-10-23 | Rail row roles     | A phase row is a group holding its main button, Begin… and ···, not one `role="button"` (axe: no nested interactive); ↑ ↓ walk the main buttons and bands that are visible                      |
+| 2026-10-23 | Collapse           | A collapsed group is `inert` and animates `grid-template-rows` 1fr ↔ 0fr over 340ms, where the kit measures `max-height`; no ResizeObserver needed                                              |
+| 2026-10-23 | Disc names         | The kit's `progress` and `running` discs are the registry's `half` and `run` (C-06 names)                                                                                                       |
+| 2026-10-23 | Begin…             | Keeps the kit's ellipsis but opens no dialog, so it carries no `aria-haspopup`; it shows Running at once and the data takes over                                                                |
+| 2026-10-23 | Layout chip        | Toggles the dock and keeps the white e1 chip in both states, as T2a and T2e draw it (no pressed fill)                                                                                           |
+| 2026-10-23 | Dock live state    | The 8px live dot plus visually hidden words "Run in progress": the dot alone would be colour only                                                                                               |
+| 2026-10-23 | Composer           | Its submit button is "Submit message": the INV-1 sweep reserves controls named Send for `HumanAction`                                                                                           |
+| 2026-10-23 | AboutCard tile     | Radius 11 is `rounded-menu-inner` (the only 11px radius token)                                                                                                                                  |
+| 2026-10-23 | T2 canvas and dock | The frame's specimens hold slot notes where C-02, C-12 and SHL-11 later fill them; T2a's canvas draws the seed's Northwind net assets. Parity entries t2a to t2e are Tier B with that deviation |

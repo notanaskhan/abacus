@@ -21,6 +21,7 @@ import { LedgerGridSpecimen, StatementGridSpecimen } from "./data";
 import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
+import { RailKitSpecimen, RecordCockpitSpecimen, RecordKitSpecimen } from "./record";
 import { PortalLayoutSpecimen } from "./portal";
 import { T15Specimen, Tpl15Specimen } from "./auth";
 import { RequestRowsSpecimen, T7Specimen, Tpl07Specimen } from "./requests";
@@ -224,6 +225,15 @@ export const SPECIMENS: readonly Specimen[] = [
   },
   // Templates (F-05-T28): T1 Index list, artboards T1a to T1e
   { id: "t1-index-list", kit: "T1", title: "Index list", Component: IndexListSpecimen },
+  // T2 RecordCockpit (F-05-T40): the C-03 Rail kit, the C-04 Record kit and artboards T2a to T2e
+  { id: "c-03-rail", kit: "C-03", title: "RecordRail", Component: RailKitSpecimen },
+  { id: "c-04-record", kit: "C-04", title: "Record kit", Component: RecordKitSpecimen },
+  {
+    id: "t2-record-cockpit",
+    kit: "T2",
+    title: "Record cockpit",
+    Component: RecordCockpitSpecimen,
+  },
   // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar
   {
     id: "t7-portal-layout",

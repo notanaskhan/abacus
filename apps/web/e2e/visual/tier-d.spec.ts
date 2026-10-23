@@ -443,3 +443,40 @@ test.describe("tier D: T15 auth card", () => {
     });
   }
 });
+
+// T2 RecordCockpit (F-05-T40): the rail and the dock are 330, the canvas 696 beside the dock and
+// 1036 without it (to x1388 in the 1400 window), under the 59 audit bar; the layout chip toggles it.
+test.describe("tier D: T2 record cockpit", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  const widths = (el: Element) => {
+    const w = (sel: string): number | null => {
+      const node = el.querySelector(sel);
+      return node === null ? null : node.getBoundingClientRect().width;
+    };
+    return {
+      rail: w('[data-cockpit="rail"]'),
+      canvas: w('[data-cockpit="canvas"]'),
+      dock: w('[data-cockpit="dock"]'),
+      bar: el.querySelector('[data-variant="audit"]')?.getBoundingClientRect().height ?? null,
+    };
+  };
+
+  test("T2a: rail 330, canvas 696, dock 330, audit bar 59", async ({ page }) => {
+    const facts = await specimen(page, "t2-record-cockpit", '[data-artboard="t2a"]').evaluate(
+      widths,
+    );
+    expect(facts).toEqual({ rail: 330, canvas: 696, dock: 330, bar: 59 });
+  });
+
+  test("T2e: no dock, the canvas runs to 1036; the layout chip brings the dock back", async ({
+    page,
+  }) => {
+    const board = specimen(page, "t2-record-cockpit", '[data-artboard="t2e"]');
+    expect(await board.evaluate(widths)).toEqual({ rail: 330, canvas: 1036, dock: null, bar: 59 });
+    await board.getByRole("button", { name: "Layout" }).click();
+    expect(await board.evaluate(widths)).toEqual({ rail: 330, canvas: 696, dock: 330, bar: 59 });
+  });
+});

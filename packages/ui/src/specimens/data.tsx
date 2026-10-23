@@ -9,12 +9,12 @@ import { NORTHWIND_FIGURES, NORTHWIND_PLAN } from "./seed-figures";
 // kit's sample data. Totals are the seed's own figures, as a server would send them; the grid adds
 // nothing up, and the app's seed test checks that the ledger's footing holds.
 
-const LEDGER_COLUMNS: TableColumn[] = [
+export const LEDGER_COLUMNS: TableColumn[] = [
   { key: "item", header: "Item", type: "label" },
   { key: "amount", header: "Amount", width: 160 },
 ];
 
-const LEDGER_ROWS: TableRow[] = [
+export const LEDGER_ROWS: TableRow[] = [
   {
     id: "unadjusted",
     label: "Net assets available for benefits, unadjusted",
