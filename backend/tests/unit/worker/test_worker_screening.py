@@ -69,6 +69,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         EVIDENCE_VERSION_CREATED,
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015
+        "portal.sign_in_code_requested",  # P-08-T10: the code is issued at delivery
         "staff_invitation.issued",  # SPEC-024 (TASK-041)
         "request_item.classified",  # SPEC-022: automatic retrieval
         "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent
