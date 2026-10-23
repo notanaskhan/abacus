@@ -2,7 +2,7 @@
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.engagements.api import register_open_requests, register_roll_forward_items
-from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_tag
@@ -16,6 +16,7 @@ from abacus.modules.requests.events import (
     RequestItemCreated,
     RequestItemDocumentKindChanged,
 )
+from abacus.modules.requests.lifecycle import register_live_facts, request_item_scope
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
 from abacus.modules.requests.routes import firm_router, methodology_router, router
@@ -67,6 +68,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # P-07-T08: the clients index's open-request count.
 register_open_requests(open_requests_by_engagement)
+# P-06-T10: a delegate's `request_item` grant resolves to its request's engagement and client.
+register_scope_resolver("request_item", request_item_scope)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
@@ -111,6 +114,7 @@ __all__ = [
     "register_binder_close_rule",
     "register_binder_tag",
     "register_comment_scope_check",
+    "register_live_facts",
     "request_items_for",
     "review_targets",
     "router",

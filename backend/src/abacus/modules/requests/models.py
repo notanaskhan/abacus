@@ -132,6 +132,26 @@ class RequestItem(Base):
     sent_by: Mapped[UUID | None]
     deleted_at: Mapped[datetime | None]
     incorporation_state: Mapped[str] = mapped_column(server_default=FetchedValue())
+    # P-06-T10: the rest of the v2 record (0071, 0100).
+    na_reason: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    na_note: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    na_by: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    na_at: Mapped[datetime | None] = mapped_column(server_default=FetchedValue())
+    incorporated_by: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    incorporated_at: Mapped[datetime | None] = mapped_column(server_default=FetchedValue())
+    firm_owner_user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    period_start: Mapped[date | None] = mapped_column(server_default=FetchedValue())
+    period_end: Mapped[date | None] = mapped_column(server_default=FetchedValue())
+    wave: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    supports_ref: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    # {kind, id}: an opaque reference to what the request supports.
+    linked_ref: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON scalars
+        JSONB, server_default=FetchedValue()
+    )
+    drafted_by_run_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    drafted_wording_source: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    drafted_wording_fingerprint: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    deleted_by: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
 
 
 class Fulfilment(Base):

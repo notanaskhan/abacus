@@ -115,6 +115,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         # P-06-T05 (0100)
         | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end", "wave"}
         | {"supports_ref", "linked_ref", "sent_by", "deleted_at", "deleted_by"}
+        | {"description"}  # P-06-T10 (0113): the client wording, edited before it closes
     ),
     "request_delegations": frozenset({"revoked_at"}),  # P-06-T05 (0100)
     "binder_activity": frozenset(  # P-06-T05 (0100): a projection

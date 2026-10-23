@@ -61,6 +61,11 @@ def register_comment_scope_check(check: ScopeCheck) -> None:
     _scope_check = check
 
 
+def scope_check() -> ScopeCheck | None:
+    """The registered client-text scope check (`communications`), for the request send too."""
+    return _scope_check
+
+
 class CommentOutOfScope(DomainConflict):
     """AC-7: the comment names something outside the engagement; it wasn't posted."""
 

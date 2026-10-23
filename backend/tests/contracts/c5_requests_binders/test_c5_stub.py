@@ -96,6 +96,20 @@ IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
         ("get", "/v1/binders/{binder_id}/client-preview"),
         ("get", "/v1/binders/{binder_id}/activity"),
         ("post", "/v1/portal/binders/{binder_id}/mark-done"),
+        # P-06-T10 (2026-10-23): the request lifecycle, the client's Ignore, upload intents and
+        # the live poll.
+        ("get", "/v1/binders/{binder_id}/live"),
+        ("patch", "/v1/engagements/{engagement_id}/request-items/{item_id}"),
+        ("delete", "/v1/engagements/{engagement_id}/request-items/{item_id}"),
+        ("post", "/v1/engagements/{engagement_id}/request-items/{item_id}/send"),
+        ("post", "/v1/engagements/{engagement_id}/request-items/{item_id}/send/undo"),
+        ("post", "/v1/engagements/{engagement_id}/request-items/{item_id}/waive"),
+        ("post", "/v1/engagements/{engagement_id}/request-items/{item_id}/return-to-client"),
+        ("post", "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate"),
+        ("post", "/v1/engagements/{engagement_id}/request-items/{item_id}/incorporate"),
+        ("get", "/v1/engagements/{engagement_id}/request-items/{item_id}/activity"),
+        ("post", "/v1/portal/request-items/{item_id}/ignore"),
+        ("post", "/v1/portal/request-items/{item_id}/upload-intents"),
     }
 )
 

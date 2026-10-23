@@ -154,17 +154,17 @@ async def get_contact(session: AsyncSession, contact_id: UUID) -> Contact | None
 
 async def contacts_by_id(
     session: AsyncSession, contact_ids: list[UUID]
-) -> dict[UUID, tuple[UUID, str]]:
-    """Contacts by ID: their client and display name (P-06-T07: a binder's recipients, for a
-    caller that authorised the binder)."""
+) -> dict[UUID, tuple[UUID, str, UUID | None]]:
+    """Contacts by ID: their client, display name and portal user (P-06-T07: a binder's
+    recipients; P-06-T10: a request's delegate), for a caller that authorised the record."""
     if not contact_ids:
         return {}
     rows = await session.execute(
-        select(Contact.id, Contact.client_id, Contact.display_name).where(
+        select(Contact.id, Contact.client_id, Contact.display_name, Contact.user_id).where(
             Contact.id.in_(contact_ids)
         )
     )
-    return {r.id: (r.client_id, r.display_name) for r in rows}
+    return {r.id: (r.client_id, r.display_name, r.user_id) for r in rows}
 
 
 async def offices_in_firm(session: AsyncSession) -> list[tuple[UUID, str]]:

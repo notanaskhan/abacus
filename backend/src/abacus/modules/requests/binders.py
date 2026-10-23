@@ -600,6 +600,11 @@ async def binder_activity(ctx: AuthContext, binder_id: UUID, cursor: str | None)
     return ActivityPage([_activity(e) for e in page], following, total[0], total[1])
 
 
+def activity_view(event: TargetEvent) -> ActivityView:
+    """One audit event as an activity row (binders and, P-06-T10, a request)."""
+    return _activity(event)
+
+
 def _activity(event: TargetEvent) -> ActivityView:
     kind = event.actor_kind if event.actor_kind in ("human", "agent") else "system"
     person: UUID | None = event.on_behalf_of_user_id

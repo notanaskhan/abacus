@@ -16145,10 +16145,6 @@ export type BinderLiveErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BinderLiveError = BinderLiveErrors[keyof BinderLiveErrors];
@@ -26364,10 +26360,6 @@ export type DeleteRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeleteRequestItemError = DeleteRequestItemErrors[keyof DeleteRequestItemErrors];
@@ -26428,10 +26420,6 @@ export type UpdateRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateRequestItemError = UpdateRequestItemErrors[keyof UpdateRequestItemErrors];
@@ -26493,10 +26481,6 @@ export type RequestItemActivityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RequestItemActivityError = RequestItemActivityErrors[keyof RequestItemActivityErrors];
@@ -27134,10 +27118,6 @@ export type DelegateRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DelegateRequestItemError = DelegateRequestItemErrors[keyof DelegateRequestItemErrors];
@@ -27310,10 +27290,6 @@ export type IncorporateRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type IncorporateRequestItemError = IncorporateRequestItemErrors[keyof IncorporateRequestItemErrors];
@@ -27378,10 +27354,6 @@ export type ReturnRequestItemToClientErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReturnRequestItemToClientError = ReturnRequestItemToClientErrors[keyof ReturnRequestItemToClientErrors];
@@ -27446,10 +27418,6 @@ export type SendRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendRequestItemError = SendRequestItemErrors[keyof SendRequestItemErrors];
@@ -27510,10 +27478,6 @@ export type UndoSendRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoSendRequestItemError = UndoSendRequestItemErrors[keyof UndoSendRequestItemErrors];
@@ -28385,10 +28349,6 @@ export type WaiveRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WaiveRequestItemError = WaiveRequestItemErrors[keyof WaiveRequestItemErrors];
@@ -37046,10 +37006,6 @@ export type IgnoreRequestItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type IgnoreRequestItemError = IgnoreRequestItemErrors[keyof IgnoreRequestItemErrors];
@@ -37102,10 +37058,6 @@ export type AnnounceUploadIntentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AnnounceUploadIntentError = AnnounceUploadIntentErrors[keyof AnnounceUploadIntentErrors];

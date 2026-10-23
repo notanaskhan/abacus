@@ -391,6 +391,7 @@ class ContactFacts:
 
     client_id: UUID
     display_name: str
+    user_id: UUID | None = None  # the portal user, once the contact has signed in (P-06-T10)
 
 
 async def contact_facts(
@@ -399,7 +400,7 @@ async def contact_facts(
     """The firm's contacts among `contact_ids`; others (another firm's, unknown) are left out.
     For a caller that authorised the record the contacts are named on."""
     found = await contacts_by_id(session, contact_ids)
-    return {cid: ContactFacts(client, name) for cid, (client, name) in found.items()}
+    return {cid: ContactFacts(client, name, user) for cid, (client, name, user) in found.items()}
 
 
 async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | None:

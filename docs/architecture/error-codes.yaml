@@ -165,6 +165,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.service.ContactExists
     summary: A client has one contact per email address.
+  contact_not_portal_user:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.ContactNotPortalUser
+    summary: 'The contact has no portal sign-in yet: invite them first, then delegate.'
   correction_not_allowed:
     status: 422
     raised_by:
@@ -450,6 +455,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.MethodologyAlreadyApplied
     summary: An engagement is pinned to one methodology version, once (SPEC-008 Q4).
+  model_text_not_permitted:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.ModelTextNotPermitted
+    summary: Unchanged model-drafted client wording can't be sent while the firm's P-25 is off.
   no_assurance_item:
     status: 409
     raised_by:
@@ -492,6 +502,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.NotConcluded
     summary: A deficiency is communicated only once the partner has concluded its severity.
+  not_ignored:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.NotIgnored
+    summary: Only a request the client ignored can be returned to them.
   not_locked:
     status: 409
     raised_by:
@@ -502,6 +517,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.notes.NotRaiser
     summary: 'AC-3: only the person who raised a note clears it.'
+  not_pending_incorporation:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.NotPendingIncorporation
+    summary: Only a request pending incorporation can be marked incorporated.
   not_prepared:
     status: 409
     raised_by:
@@ -555,6 +575,7 @@ codes:
     raised_by:
     - abacus.modules.communications.service.OutOfScope
     - abacus.modules.requests.comments.CommentOutOfScope
+    - abacus.modules.requests.lifecycle.OutOfScope
     summary: 'AC-7: the comment names something outside the engagement; it wasn''t posted.'
   override_refused:
     status: 409
@@ -627,6 +648,16 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.ReasonRequired
     summary: Unpublishing a binder needs a reason.
+  request_already_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.RequestAlreadySent
+    summary: Only a Draft never sent can be deleted or sent; this one was sent.
+  request_closed:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.RequestClosed
+    summary: 'The request is Received or Not applicable: reopen it before changing it.'
   response_invalid:
     status: 422
     raised_by:
