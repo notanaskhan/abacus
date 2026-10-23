@@ -264,6 +264,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",
+        # P-01-T13 (TASK-1001): Undo writes a compensating review decision.
+        "/v1/engagements/{engagement_id}/review-decisions/{decision_id}/undo",
         # SPEC-032 (TASK-062): a comment, or a redaction, is created.
         "/v1/engagements/{engagement_id}/request-items/{item_id}/comments",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/versions/{version_id}/comments",

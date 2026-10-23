@@ -150,6 +150,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "checkpoint.create": {
         "engagement_partner": "allow",
@@ -176,6 +177,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "checkpoint.rename": {
         "engagement_partner": "allow",
@@ -191,6 +193,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "citation.create": {
         "engagement_partner": "allow",
@@ -407,6 +410,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "reserved_role": "required",
     },
     "decision.notify": {
         "engagement_partner": "allow",
@@ -624,6 +628,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "preparer",
     },
     "field.read": {
         "engagement_partner": "allow",
@@ -859,6 +864,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "issue.resolve": {
         "engagement_partner": "allow",
@@ -890,6 +896,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "item.sign_prepared": {
         "manager": "allow",
@@ -1389,6 +1396,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "agent": "deny",
         "independence": "required",
+        "not_preparer_of_target": "required",
     },
     "sign_off.partner": {
         "engagement_partner": "allow",
@@ -1417,6 +1425,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+        "not_preparer_of_target": "required",
     },
     "statement.approve": {
         "engagement_partner": "allow",

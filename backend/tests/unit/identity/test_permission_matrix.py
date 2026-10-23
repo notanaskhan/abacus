@@ -28,8 +28,9 @@ from abacus.modules.identity.api import (
     authorise,
     visible,
 )
-from abacus.modules.identity.authz import matrix
-from abacus.modules.identity.authz.matrix import RULES
+from abacus.modules.identity.authz import TargetFacts, matrix
+from abacus.modules.identity.authz.conditions import LOOKUPS
+from abacus.modules.identity.authz.matrix import FUNCTIONS, RULES
 from abacus.modules.identity.repository import GRANT_ROLES_OF
 from abacus_tools.codegen import permission_matrix as pm
 
@@ -159,6 +160,11 @@ def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
         return False  # DEC-132's derived role is tested in test_allowed_actions and nav tests
 
     monkeypatch.setattr(authz, "_partner_level", not_a_partner)
+
+    async def every_function(*args: object) -> frozenset[str]:
+        return frozenset(FUNCTIONS)  # function_in rows: the person holds them (P-04-T15)
+
+    monkeypatch.setattr(LOOKUPS, "functions", every_function)
     return fake
 
 
@@ -185,13 +191,25 @@ def _arranged(
     mfa_ago: timedelta | None = timedelta(minutes=1),
     archived: bool = False,
 ) -> tuple[AuthContext, Resource]:
-    """A context and resource where layers 1, 2 and 4 pass for `role`."""
+    """A context and resource where layers 1, 2 and 4 pass for `role`, and the work-item and
+    target conditions' facts are met (P-04-T15: not a preparer; the card reserved to this role
+    and person). Those conditions' own allow and deny cases are generated elsewhere
+    (test_matrix_conditions.py, tests/security/test_resolution_actions_generated.py)."""
     if role in FIRM_ROLES:
         ctx = _ctx(firm_role=role, mfa_ago=mfa_ago)
         return ctx, _resource(ctx.tenant_id, archived=archived)
     ctx = _ctx(mfa_ago=mfa_ago)
     engagement.role = role
-    return ctx, _resource(ctx.tenant_id, engagement_id=uuid.uuid4(), archived=archived)
+    resource = Resource(
+        ctx.tenant_id,
+        uuid.uuid4(),
+        archived,
+        work_item_id=uuid.uuid4(),
+        target=TargetFacts(
+            preparer_user_ids=frozenset(), reserved_role=role, reserved_user_id=ctx.user_id
+        ),
+    )
+    return ctx, resource
 
 
 async def _denied_layer(

@@ -9,13 +9,13 @@ person can do now, decided by the permission matrix itself (`could`), never by r
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Final, Literal
 from uuid import UUID
 
 from abacus.kernel.clock import today
 from abacus.modules.engagements.api import gate_fact, get_ref, progress_of
-from abacus.modules.identity.api import AuthContext, authorise, could
+from abacus.modules.identity.api import AuthContext, TargetFacts, authorise, could
 from abacus.modules.ledger.api import engagement_trial_balances, mapping_view
 from abacus.modules.requests.api import overdue_for, request_items_for
 from abacus.modules.review.api import (
@@ -89,7 +89,6 @@ async def dashboard_for(ctx: AuthContext, engagement_id: UUID) -> Dashboard:
         )
     notes = await open_note_counts(ctx.tenant, engagement_id)
     can_prepare = await could(ctx, ctx.user_id, "sign_off.prepare", resource)
-    can_review = await could(ctx, ctx.user_id, "sign_off.review", resource)
     complete = ready = changed = 0
     next_up: list[NextItem] = []
     papers = [r for r in found if r.target_type == "workpaper"]
@@ -102,7 +101,9 @@ async def dashboard_for(ctx: AuthContext, engagement_id: UUID) -> Dashboard:
             complete += 1 if r.target_type == "workpaper" else 0
         if 1 in current and 2 not in current:
             ready += 1
-            if can_review and current[1] != ctx.user_id:
+            # P-04-T15: whether I may review this one (never a paper I prepared).
+            mine = replace(resource, target=TargetFacts(preparer_user_ids=frozenset({current[1]})))
+            if await could(ctx, ctx.user_id, "sign_off.review", mine):
                 next_up.append(NextItem("review", r.title, r.target_type, r.target_id, r.code))
         if 1 not in current and r.has_content and can_prepare:
             next_up.append(NextItem("prepare", r.title, r.target_type, r.target_id, r.code))

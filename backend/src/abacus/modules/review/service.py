@@ -9,7 +9,7 @@ deleted). L2 and above need a current L1, and the L1 signer can't sign L2 (segre
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Final
 from uuid import UUID
@@ -17,7 +17,7 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.identity.api import AuthContext, Resource, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, Resource, TargetFacts, authorise
 from abacus.modules.review.models import SignOff
 from abacus.modules.review.repository import (
     insert_sign_off,
@@ -26,6 +26,7 @@ from abacus.modules.review.repository import (
     sign_offs_of,
     stale_sign_offs,
 )
+from abacus.modules.review.slots import reviewable_fact_types, reviewable_facts
 
 LEVELS: Final = {1: "preparer", 2: "reviewer", 3: "manager", 4: "partner", 5: "eqr"}
 _ACTIONS: Final = {
@@ -147,11 +148,24 @@ async def record_sign_off(
     level: int,
     content_hash: str,
 ) -> None:
-    """Inside the owner's unit of work (the owner has locked the target and computed the hash)."""
+    """Inside the owner's unit of work (the owner has locked the target and computed the hash).
+    The level's action is authorised with the target's facts (P-04-T15): its preparers are the
+    owner's (`ReviewableFacts`) and whoever signed L1 on this content, and the L2 and L3 rows
+    refuse them (`not_preparer_of_target`), answered as 409 `preparer_cannot_review`."""
     if level not in LEVELS:
         raise SignOffInvalid("level")
-    await authorise(ctx, _ACTIONS[level], resource)
-    current = states_of(await sign_offs_of(tx.session, target_type, [target_id]), content_hash)
+    rows = await sign_offs_of(tx.session, target_type, [target_id])
+    preparers = {r.signed_by for r in rows if r.level == 1 and r.content_hash == content_hash}
+    if target_type in reviewable_fact_types():
+        preparers |= (await reviewable_facts(ctx.tenant, target_type, target_id)).preparer_user_ids
+    target = replace(resource, target=TargetFacts(preparer_user_ids=frozenset(preparers)))
+    try:
+        await authorise(ctx, _ACTIONS[level], target)
+    except Forbidden as denied:
+        if denied.layer == "condition" and ctx.user_id in preparers:
+            raise PreparerCannotReview(str(target_id)) from None
+        raise
+    current = states_of(rows, content_hash)
     mine = current[level - 1]
     if mine.signed_by is not None and not mine.stale and mine.signed_by == ctx.user_id:
         raise AlreadySigned(str(level))
@@ -161,7 +175,7 @@ async def record_sign_off(
         preparer = current[0]
         if preparer.signed_by is None or preparer.stale:
             raise NotPrepared(str(target_id))
-        if level == 2 and preparer.signed_by == ctx.user_id:
+        if level in (2, 3) and preparer.signed_by == ctx.user_id:  # also the matrix (R-SO-3)
             raise PreparerCannotReview(str(target_id))
     await insert_sign_off(
         tx.session,

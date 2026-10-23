@@ -8,6 +8,7 @@ fakes; `authz._independence` is set directly, as `register_independence` would.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import cast
 
@@ -30,6 +31,9 @@ from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.repository import GRANT_ROLES_OF
 from abacus_tools.codegen import permission_matrix as pm
+
+# The `conditions_met` fixture (conftest.py): a resource whose condition facts are met.
+MeetConditions = Callable[[Resource, AuthContext, str], Resource]
 
 DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
 ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
@@ -173,6 +177,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review.assign",
         "review.read",
         "review.take",
+        "review_decision.undo",  # P-01-T13 (TASK-1001)
         "review_note.clear",  # SPEC-041 (TASK-103)
         "review_note.raise",
         "review_note.read",  # P-04-T07 (TASK-413)
@@ -210,11 +215,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
 
 @pytest.mark.parametrize(("action", "role"), MARKED_STAFF, ids=MARKED_STAFF_IDS)
 async def test_ac7_a_confirmed_staff_member_is_allowed(
-    fakes: Fakes, action: str, role: str
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
 ) -> None:
     fakes.role, fakes.confirmed = role, True
     ctx = _person()
-    await authorise(ctx, action, _on(ctx))
+    await authorise(ctx, action, conditions_met(_on(ctx), ctx, role))
 
 
 @pytest.mark.parametrize(("action", "role"), MARKED_STAFF, ids=MARKED_STAFF_IDS)
