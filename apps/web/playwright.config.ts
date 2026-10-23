@@ -9,6 +9,24 @@ const offset = Number(process.env.ABACUS_PORT_OFFSET ?? "0") || 0;
 // handled with ABACUS_VISUAL_PORT.
 const visual = process.env.ABACUS_VISUAL === "1";
 const visualPort = Number(process.env.ABACUS_VISUAL_PORT ?? String(5173 + offset));
+// The journey harness's fixture project (F-04-T21) needs the same server: ABACUS_FIXTURES=1 starts
+// it, or `make dev-fixtures` is already running on the port.
+const fixtureServer = visual || process.env.ABACUS_FIXTURES === "1";
+const local = `http://localhost:${String(5173 + offset)}`;
+
+// The journey harness's four projects (F-04-T21; F-04.32). One spec runs in each; the persona
+// adapter for the project (`metadata.harness`, e2e/harness/adapters.ts) signs the persona in.
+// fullstack is `make dev` + `make seed-demo` on the local stack, never a hosted database; staging
+// and canary run only where their URL is set (the nightly and release jobs, F-04-T28).
+const JOURNEY_FILES = ["**/journeys/**/*.spec.ts", "**/harness/**/*.spec.ts"];
+const journeyUse = {
+  ...devices["Desktop Chrome"],
+  viewport: { width: 1440, height: 900 },
+  reducedMotion: "reduce" as const,
+  locale: "en-US",
+  timezoneId: "America/Chicago",
+};
+const hosted = (url: string | undefined) => (url === undefined ? {} : { baseURL: url });
 
 // The journey runs against the local stack: `make dev` running and `make seed` done (`make e2e`).
 export default defineConfig({
@@ -28,13 +46,13 @@ export default defineConfig({
       : ([["html", { open: "never", outputFolder: "playwright-report" }]] as const)),
   ],
   use: {
-    baseURL: `http://localhost:${String(5173 + offset)}`,
+    baseURL: local,
     trace: "retain-on-failure",
   },
   projects: [
     {
       name: "chromium",
-      testIgnore: "**/visual/**",
+      testIgnore: ["**/visual/**", ...JOURNEY_FILES],
       use: { ...devices["Desktop Chrome"] },
     },
     {
@@ -55,8 +73,32 @@ export default defineConfig({
         timezoneId: "America/Chicago",
       },
     },
+    {
+      name: "fixture",
+      testMatch: JOURNEY_FILES,
+      metadata: { harness: "fixture" },
+      use: { ...journeyUse, baseURL: `http://localhost:${String(visualPort)}` },
+    },
+    {
+      name: "fullstack",
+      testMatch: JOURNEY_FILES,
+      metadata: { harness: "fullstack" },
+      use: { ...journeyUse, baseURL: local },
+    },
+    {
+      name: "staging",
+      testMatch: JOURNEY_FILES,
+      metadata: { harness: "staging" },
+      use: { ...journeyUse, ...hosted(process.env.ABACUS_STAGING_URL) },
+    },
+    {
+      name: "canary",
+      testMatch: JOURNEY_FILES,
+      metadata: { harness: "canary" },
+      use: { ...journeyUse, ...hosted(process.env.ABACUS_CANARY_URL) },
+    },
   ],
-  ...(visual
+  ...(fixtureServer
     ? {
         webServer: {
           command: `pnpm exec vite --port ${String(visualPort)} --strictPort`,
