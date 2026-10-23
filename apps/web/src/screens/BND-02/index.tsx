@@ -37,6 +37,7 @@ import {
 } from "@abacus/ui";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useOverlays } from "../../app-core/overlay-host";
 import { useSession } from "../../app-core/session";
 import {
   BinderRequestRow,
@@ -118,6 +119,7 @@ export function BND02({
   onBack,
 }: BND02Props): JSX.Element {
   const now = useNow();
+  const overlays = useOverlays();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const names = useStaffNames();
   const binderQ = useBinder(binderId);
@@ -335,8 +337,11 @@ export function BND02({
       <Button
         variant={reminderPrimary ? "secondary" : "primary"}
         size="sm"
-        disabled
+        disabled={binder === undefined || !allows(binder, "binder.update")}
         title={COPY.canvas.newRequestHint}
+        onClick={() => {
+          overlays.open("request", "new", binderId);
+        }}
       >
         <Icon name="plus" size={14} />
         {COPY.canvas.newRequest}
@@ -366,8 +371,15 @@ export function BND02({
 
   const menuFor = (row: BinderRequestRowOut): MenuItem[][] => {
     const items: MenuItem[] = [
-      // SHL-14 is planned (P-06-T13): its tooltip names it.
-      { label: COPY.row.edit, hint: COPY.row.editHint, disabled: true, onSelect: () => undefined },
+      // SHL-14 (P-06-T13): the composer drawer, `?ov=request:<id>:<binderId>`.
+      {
+        label: COPY.row.edit,
+        hint: COPY.row.editHint,
+        disabled: !allows(row, "request_item.update"),
+        onSelect: () => {
+          overlays.open("request", row.id, binderId);
+        },
+      },
     ];
     if (row.status !== "received" && row.status !== "not_applicable" && row.status !== "draft") {
       items.push({

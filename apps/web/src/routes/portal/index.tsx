@@ -27,6 +27,10 @@ const SignIn = lazy(async () => ({
 const Shell = lazy(async () => ({
   default: (await import("../../portal/PortalShell")).PortalShell,
 }));
+// POR-02 (P-08-T15): Home is its own chunk; the other areas keep the shell's planned state.
+const Home = lazy(async () => ({
+  default: (await import("../../screens/POR-02")).POR02,
+}));
 
 function Root(): JSX.Element {
   return (
@@ -74,7 +78,8 @@ function Area({ area }: { area: string }): JSX.Element | null {
   useEffect(() => {
     if (!signedIn) history.push(`/sign-in?return=${encodeURIComponent(window.location.pathname)}`);
   }, [signedIn, history]);
-  return signedIn ? <Shell area={area} /> : null;
+  if (!signedIn) return null;
+  return area === "Home" ? <Home scopeId={null} /> : <Shell area={area} />;
 }
 
 const page = (path: string, component: () => JSX.Element | null) =>

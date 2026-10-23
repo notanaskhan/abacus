@@ -40,6 +40,12 @@ import {
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
 import { PortalSignIn } from "./POR-01";
+import { PortalHome } from "./POR-02";
+import {
+  STATES as POR02_STATES,
+  type Por02State,
+  scenarios as por02Scenarios,
+} from "./POR-02/scenarios";
 import {
   START as POR01_START,
   STATES as POR01_STATES,
@@ -51,6 +57,13 @@ import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
 import { SHL04 } from "./SHL-04";
 import { SHL06 } from "./SHL-06";
+import { RequestComposer } from "./SHL-14";
+import {
+  OPENS as SHL14_OPENS,
+  STATES as SHL14_STATES,
+  type Shl14State,
+  scenarios as shl14Scenarios,
+} from "./SHL-14/scenarios";
 import {
   SEARCH as SHL06_SEARCH,
   STATES as SHL06_STATES,
@@ -328,6 +341,36 @@ function Eng02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ENG-02", { title: "Engagement record", Component: Eng02Artboard });
 
+// SHL-14 (P-06-T13): the request composer drawer, opened over an empty frame.
+function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl14State = SHL14_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl14Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <RequestComposer
+        binderId={SHL14_OPENS[state].binderId}
+        requestId={SHL14_OPENS[state].requestId}
+        open
+        onOpenChange={() => undefined}
+      />
+    </div>
+  );
+}
+
+registerScreen("SHL-14", { title: "Request composer drawer", Component: Shl14Artboard });
+
 const stayOnCard = (): void => undefined;
 
 function Shl06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
@@ -385,3 +428,29 @@ function Por01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-01", { title: "Portal sign-in · Brightwater Hale", Component: Por01Artboard });
+
+// POR-02 (P-08-T15): the portal home, a, b, c and f; the portal draws it from its own entry, the
+// gallery from the fixture scenario.
+function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por02State = POR02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalHome scopeId={null} frame />
+    </div>
+  );
+}
+
+registerScreen("POR-02", { title: "Portal home · Feld household", Component: Por02Artboard });

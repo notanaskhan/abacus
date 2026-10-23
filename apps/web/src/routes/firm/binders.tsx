@@ -1,7 +1,8 @@
 import { FlagOffState } from "@abacus/ui";
 import { createRoute } from "@tanstack/react-router";
-import type { JSX } from "react";
+import { type JSX, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
+import { registerOverlay } from "../../app-core/overlays";
 import { appRoute, lazyScreen } from "../root";
 
 // Binders (P-06 §5.1): `/binders` → BND-01 and `/binders/$binderId` → BND-02, behind
@@ -10,6 +11,32 @@ import { appRoute, lazyScreen } from "../root";
 
 const BindersIndex = lazyScreen(async () => (await import("../../screens/BND-01")).BindersIndex);
 const Binder = lazyScreen(async () => (await import("../../screens/BND-02")).BND02);
+
+// SHL-14 (P-06-T13): the request composer drawer over its host, `?ov=request:new:<binderId>` or
+// `?ov=request:<requestItemId>:<binderId>`. The drawer is its own chunk.
+const Composer = lazy(async () => ({
+  default: (await import("../../screens/SHL-14")).RequestComposer,
+}));
+
+registerOverlay("request", {
+  layer: "drawer",
+  render: ({ ref, close }) => {
+    const [first, binderId] = ref.args;
+    if (first === undefined || binderId === undefined) return null;
+    return (
+      <Suspense fallback={null}>
+        <Composer
+          binderId={binderId}
+          requestId={first === "new" ? null : first}
+          open
+          onOpenChange={(open) => {
+            if (!open) close();
+          }}
+        />
+      </Suspense>
+    );
+  },
+});
 
 function gated(children: JSX.Element): JSX.Element {
   return (
