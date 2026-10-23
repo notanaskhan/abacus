@@ -27,6 +27,12 @@ The `binders` slice (P-06-T08: the 241 TY2025 binders on 224 return work items o
 engagements, Copperleaf's close intake, and the client people binders name) is opt-in
 (`--slice binders`) and bootstrapped the same way; see DEC-146.
 
+The `portal` slice (P-08-T14: Brightwater Hale's portal branding and host, the portal people and
+their grants, Sam Ortiz's pending invitation) is opt-in (`--slice portal`, which brings `binders`
+with it; `make seed-staging` passes it). Branding and the host go through `portal.api`; the host is
+`brightwaterhale.<portal_base_domain>` from settings, left out on a laptop without that setting and
+refused on `--staging` without it. People, grants and the invitation are bootstrapped; see DEC-213.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -51,7 +57,7 @@ import sys
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Final
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -66,6 +72,12 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.identity.api import AuthContext, set_demo_clock
 from abacus.modules.organisations.api import client_with_entity, create_client
+from abacus.modules.portal.api import (
+    BrandingSlots,
+    activate_portal_host,
+    add_portal_host,
+    set_branding,
+)
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
@@ -103,6 +115,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     email_of,
     slug_of,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
+    HOST_LABEL,
+    INVITATION_BY_NAME,
+    PERSON_BY_NAME,
+    PortalPerson,
+    work_item_of,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal import NEEDS as PORTAL_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.portal import SLICE as PORTAL_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
     FIRM_ID,
@@ -995,6 +1016,151 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
     await _bootstrap(conn, event, write)
 
 
+# --- the portal slice (P-08-T14; DEC-213) --------------------------------------------------------
+# Branding and the host have services (`portal.api`), called in a unit of work under Grace
+# Holloway. Client users, memberships and grants have none a loader can call (granting wants a
+# signed-in person with fresh MFA, and a client-wide grant the firm's administrator), so they are
+# bootstrapped like `_portal_user_added`, with the `granted` history row the service writes. The
+# invitation is bootstrapped too: `create_invitation` would mint a token and email it.
+
+SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {PORTAL_SLICE: PORTAL_NEEDS}
+
+
+def expand_slices(slices: tuple[str, ...]) -> tuple[str, ...]:
+    """The slices with the ones they need first, each once, in the order asked."""
+    out: list[str] = []
+    for name in slices:
+        for needed in (*SLICE_NEEDS.get(name, ()), name):
+            if needed not in out:
+                out.append(needed)
+    return tuple(out)
+
+
+def portal_host(label: str) -> str | None:
+    """`<label>.<portal_base_domain>`, or None where the environment sets no portal domain."""
+    domain = settings().portal_base_domain
+    return None if domain is None else f"{label}.{domain}"
+
+
+async def _branding_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    data = event.data
+    kind, actor = _actor(event)
+    slots = BrandingSlots(
+        display_name=str(data["display_name"]),
+        address_line=str(data["address_line"]),
+        support_contact_name=str(data["support_contact_name"]),
+        secured_footer=bool(data["secured_footer"]),
+    )
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await set_branding(tx, TENANT, slots, UUID(actor))
+
+
+async def _host_added(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """The firm's default host, active: provisioning's DNS and certificate are the edge's."""
+    host = portal_host(str(event.data["label"]))
+    if host is None:
+        raise LoadRefused("the portal host needs portal_base_domain")
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await add_portal_host(tx, TENANT, host, "default")
+        await activate_portal_host(tx, TENANT, host)
+
+
+async def _portal_scope(
+    conn: asyncpg.Connection, person: PortalPerson
+) -> tuple[UUID, tuple[str, str]]:
+    """The grant's scope id and the audit target the grant service names (firm or engagement)."""
+    if person.scope_kind == "work_item":
+        item = UUID(work_item_of(person))
+        engagement = await conn.fetchval(
+            "SELECT engagement_id FROM work_items WHERE tenant_id = $1 AND id = $2", TENANT, item
+        )
+        if engagement is None:
+            raise LookupError(f"no work item for {person.scope!r}")
+        return item, ("engagement", str(engagement))
+    client = await _client_id(conn, person.client)
+    if person.scope_kind == "client":
+        return client, ("firm", str(TENANT))
+    return await _entity_id(conn, client, person.scope), ("firm", str(TENANT))
+
+
+async def _portal_person_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A portal person: their user, a client membership and their grant (F-03-T26)."""
+    person = PERSON_BY_NAME[str(event.data["person"])]
+    user = UUID(person.id)
+    grant = UUID(person.grant_id)
+    by = user_id_of(_SEATS[event.actor])
+
+    async def write() -> tuple[str, str, str]:
+        scope, (target_type, target_id) = await _portal_scope(conn, person)
+        await conn.execute(
+            "INSERT INTO users (id, idp_issuer, idp_subject, email, display_name) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            user,
+            ISSUER,
+            f"scenario-{person.slug}",
+            person.email,
+            person.name,
+        )
+        await conn.execute(
+            "INSERT INTO memberships (tenant_id, user_id, status, kind) "
+            "VALUES ($1, $2, 'active', 'client') ON CONFLICT DO NOTHING",
+            TENANT,
+            user,
+        )
+        inserted = await conn.fetchval(
+            "INSERT INTO client_access_grants (id, tenant_id, user_id, role, scope_kind, "
+            "scope_id, granted_by, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, "
+            "'active', $8) ON CONFLICT DO NOTHING RETURNING id",
+            grant,
+            TENANT,
+            user,
+            person.role,
+            person.scope_kind,
+            scope,
+            by,
+            event.at,
+        )
+        if inserted is not None:
+            await conn.execute(
+                "INSERT INTO client_access_events (tenant_id, grant_id, event, by_user_id, at) "
+                "VALUES ($1, $2, 'granted', $3, $4)",
+                TENANT,
+                grant,
+                by,
+                event.at,
+            )
+        return "client_access.granted", target_type, target_id
+
+    await _bootstrap(conn, event, write)
+
+
+async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A pending invitation as the existing table holds it (no token: nothing is emailed)."""
+    invitation = INVITATION_BY_NAME[str(event.data["invitee"])]
+    engagement = engagement_id_of(BY_LABEL[invitation.engagement])
+    by = user_id_of(_SEATS[event.actor])
+    invitation_id = UUID(invitation.id)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
+            "invited_by, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, "
+            "$8) ON CONFLICT DO NOTHING",
+            invitation_id,
+            TENANT,
+            engagement,
+            invitation.email,
+            invitation.role,
+            by,
+            event.at,
+            event.at + timedelta(days=invitation.days),
+        )
+        return "client_invitation.created", "client_invitation", str(invitation_id)
+
+    await _bootstrap(conn, event, write)
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -1023,6 +1189,11 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.tax_engagement_created": _tax_engagement_created,
     "engagements.close_engagement_created": _close_engagement_created,
     "requests.binder_created": _binder_created,
+    # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
+    "portal.branding_set": _branding_set,
+    "portal.host_added": _host_added,
+    "identity.portal_person_added": _portal_person_added,
+    "identity.client_invitation_created": _client_invitation_created,
     # The shell slice, after audit_core: the sandbox firm before its offices and membership.
     "identity.sandbox_firm_created": _sandbox_firm_created,
     "organisations.sandbox_office_created": _sandbox_office_created,
@@ -1079,6 +1250,10 @@ async def load(
     wait: bool = True,
 ) -> LoadResult:
     guard(dsn, staging=staging)
+    slices = expand_slices(slices)
+    host = portal_host(HOST_LABEL) if PORTAL_SLICE in slices else None
+    if staging and PORTAL_SLICE in slices and host is None:
+        raise LoadRefused("--slice portal on staging needs portal_base_domain for its host")
     scenario = build(at, holdouts, ("audit_core", *slices))
     replayed = skipped = 0
     conn = await asyncpg.connect(dsn)
@@ -1087,7 +1262,11 @@ async def load(
         if synthetic is False:
             raise LoadRefused("the scenario firm exists and is not synthetic")
         await preflight(conn, scenario.events)
-        for event in replay_order(scenario.events):
+        # A laptop without a portal domain loads everything but the host.
+        events = tuple(
+            e for e in scenario.events if host is not None or e.kind != "portal.host_added"
+        )
+        for event in replay_order(events):
             handler = HANDLERS.get(event.kind)
             if handler is None:
                 raise NotImplementedError(f"no loader handler for {event.kind}")
