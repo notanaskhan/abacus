@@ -2382,6 +2382,180 @@ export type CitationBody = {
 };
 
 /**
+ * CitationCreateIn
+ *
+ * Reserved (Cite selection): the server derives the quote from the layer and ignores any
+ * client text.
+ */
+export type CitationCreateIn = {
+    /**
+     * Cited From Id
+     */
+    cited_from_id: string;
+    /**
+     * Cited From Ref
+     */
+    cited_from_ref: string;
+    /**
+     * Cited From Type
+     */
+    cited_from_type: string;
+    /**
+     * Kind
+     */
+    kind: 'document_text';
+    locator: CitationLocatorIn;
+};
+
+/**
+ * CitationCreatorOut
+ */
+export type CitationCreatorOut = {
+    /**
+     * Kind
+     */
+    kind: 'agent' | 'human' | 'system';
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * CitationLocatorIn
+ */
+export type CitationLocatorIn = {
+    /**
+     * Bbox
+     */
+    bbox: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Page
+     */
+    page: number;
+};
+
+/**
+ * CitationMovedOut
+ */
+export type CitationMovedOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Successor Ref
+     */
+    successor_ref: string | null;
+};
+
+/**
+ * CitationSourceOut
+ */
+export type CitationSourceOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Version
+     */
+    version: string | null;
+};
+
+/**
+ * CitationV2Out
+ *
+ * The display contract: what a popover, chip or linked-figure row reads.
+ */
+export type CitationV2Out = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    created_by: CitationCreatorOut;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'document_text' | 'sheet_cell' | 'ledger_line' | 'workpaper_cell' | 'methodology_step' | 'policy_rule' | 'record_field' | 'tax_form_line' | 'artifact_cell' | 'request_item';
+    /**
+     * Loc
+     */
+    loc: string;
+    /**
+     * Match Id
+     */
+    match_id: string | null;
+    moved: CitationMovedOut | null;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Quote
+     */
+    quote: string | null;
+    /**
+     * Quote State
+     */
+    quote_state: 'shown' | 'withheld' | 'changed';
+    /**
+     * Retrieved At
+     */
+    retrieved_at: string | null;
+    source: CitationSourceOut;
+    /**
+     * State
+     */
+    state: 'valid' | 'moved' | 'broken' | 'relinked';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Used In
+     */
+    used_in: number;
+    /**
+     * Value Text
+     */
+    value_text: string | null;
+    /**
+     * Verification Reason
+     */
+    verification_reason: 'page_not_found' | 'cell_not_found' | 'quote_not_found' | 'value_mismatch' | 'bbox_mismatch' | 'source_not_found' | 'source_not_visible' | 'locator_invalid' | null;
+    /**
+     * Verified
+     */
+    verified: boolean;
+};
+
+/**
  * CitedSourceOut
  *
  * A verified citation (C4) as its chip reads ("K-1 box 18A", "K-1 statement p. 3").
@@ -5396,6 +5570,36 @@ export type EventPageOut = {
 export type EvidenceScreeningStatus = 'passed' | 'flagged' | 'not_screened';
 
 /**
+ * EvidenceUnlockIn
+ *
+ * AC5.4: the password is a secret; never logged, stored or echoed.
+ */
+export type EvidenceUnlockIn = {
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
+ * EvidenceUnlockOut
+ */
+export type EvidenceUnlockOut = {
+    /**
+     * Attempts Left
+     */
+    attempts_left: number | null;
+    /**
+     * Derivation Id
+     */
+    derivation_id: string | null;
+    /**
+     * Status
+     */
+    status: 'ready' | 'wrong_password';
+};
+
+/**
  * EvidenceVersionOut
  */
 export type EvidenceVersionOut = {
@@ -8229,6 +8433,40 @@ export type ListPageBinderRowOut = {
 };
 
 /**
+ * ListPage[CitationV2Out]
+ */
+export type ListPageCitationV2Out = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<CitationV2Out>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[ClientRelationshipOut]
  */
 export type ListPageClientRelationshipOut = {
@@ -9647,6 +9885,83 @@ export type PicksIn = {
      * Picks
      */
     picks: Array<PickIn>;
+};
+
+/**
+ * PiiMaskOut
+ */
+export type PiiMaskOut = {
+    /**
+     * Display
+     */
+    display: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'ssn' | 'itin' | 'ein' | 'bank_account' | 'routing_number' | 'dob';
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Rect
+     */
+    rect: [
+        number,
+        number,
+        number,
+        number
+    ];
+};
+
+/**
+ * PiiRevealIn
+ */
+export type PiiRevealIn = {
+    /**
+     * Context Ref
+     */
+    context_ref?: string | null;
+    /**
+     * Region Id
+     */
+    region_id: string;
+};
+
+/**
+ * PiiRevealOut
+ *
+ * The only payload that carries a revealed value; `Cache-Control: no-store` (DEC-60).
+ */
+export type PiiRevealOut = {
+    /**
+     * Expires In
+     */
+    expires_in: number;
+    /**
+     * Kind
+     */
+    kind: 'ssn' | 'itin' | 'ein' | 'bank_account' | 'routing_number' | 'dob';
+    /**
+     * Mask Id
+     */
+    mask_id: string;
+    /**
+     * Revealed At
+     */
+    revealed_at: string;
+    /**
+     * Revealed By
+     */
+    revealed_by: string;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -14147,6 +14462,184 @@ export type VersionOut = {
 };
 
 /**
+ * ViewerManifestOut
+ */
+export type ViewerManifestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Derivation Id
+     */
+    derivation_id: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Kind
+     */
+    kind: 'pages' | 'image' | 'table' | 'none';
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Pages
+     */
+    pages: Array<ViewerPageOut>;
+    /**
+     * Pii Masks
+     */
+    pii_masks: Array<PiiMaskOut>;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Status
+     */
+    status: 'processing' | 'ready' | 'password_protected' | 'unreadable' | 'not_previewable';
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+};
+
+/**
+ * ViewerPageOut
+ */
+export type ViewerPageOut = {
+    /**
+     * Height Pt
+     */
+    height_pt: number;
+    /**
+     * Image H
+     */
+    image_h: number;
+    /**
+     * Image W
+     */
+    image_w: number;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Pii Scan
+     */
+    pii_scan: 'done' | 'not_scannable';
+    /**
+     * Rotation
+     */
+    rotation: 0 | 90 | 180 | 270;
+    /**
+     * Text Layer
+     */
+    text_layer: boolean;
+    /**
+     * Width Pt
+     */
+    width_pt: number;
+};
+
+/**
+ * ViewerRegionOut
+ */
+export type ViewerRegionOut = {
+    /**
+     * Cell
+     */
+    cell: string | null;
+    /**
+     * Citation Id
+     */
+    citation_id: string | null;
+    /**
+     * Label
+     */
+    label: string | null;
+    /**
+     * Match Id
+     */
+    match_id: string;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Rects
+     */
+    rects: Array<[
+        number,
+        number,
+        number,
+        number
+    ]>;
+    /**
+     * Sheet
+     */
+    sheet: string | null;
+};
+
+/**
+ * ViewerRegionsOut
+ */
+export type ViewerRegionsOut = {
+    /**
+     * Items
+     */
+    items: Array<ViewerRegionOut>;
+};
+
+/**
+ * ViewerSearchHitOut
+ */
+export type ViewerSearchHitOut = {
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Rects
+     */
+    rects: Array<[
+        number,
+        number,
+        number,
+        number
+    ]>;
+};
+
+/**
+ * ViewerSearchOut
+ */
+export type ViewerSearchOut = {
+    /**
+     * Items
+     */
+    items: Array<ViewerSearchHitOut>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+};
+
+/**
  * WaitingOut
  */
 export type WaitingOut = {
@@ -16151,6 +16644,261 @@ export type CheckpointRestoreResponses = {
 };
 
 export type CheckpointRestoreResponse = CheckpointRestoreResponses[keyof CheckpointRestoreResponses];
+
+export type ListCitationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Anchor Type
+         */
+        anchor_type?: string | null;
+        /**
+         * Anchor Id
+         */
+        anchor_id?: string | null;
+        /**
+         * Anchor Ref
+         */
+        anchor_ref?: string | null;
+        /**
+         * Host Ref
+         */
+        host_ref?: string | null;
+        /**
+         * Section Id
+         */
+        section_id?: string | null;
+        /**
+         * Source Version Id
+         */
+        source_version_id?: string | null;
+        /**
+         * Kind
+         */
+        kind?: 'document_text' | 'sheet_cell' | 'ledger_line' | 'workpaper_cell' | 'methodology_step' | 'policy_rule' | 'record_field' | 'tax_form_line' | 'artifact_cell' | 'request_item' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/citations';
+};
+
+export type ListCitationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListCitationsError = ListCitationsErrors[keyof ListCitationsErrors];
+
+export type ListCitationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageCitationV2Out;
+};
+
+export type ListCitationsResponse = ListCitationsResponses[keyof ListCitationsResponses];
+
+export type CreateCitationData = {
+    body: CitationCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/citations';
+};
+
+export type CreateCitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateCitationError = CreateCitationErrors[keyof CreateCitationErrors];
+
+export type CreateCitationResponses = {
+    /**
+     * Successful Response
+     */
+    201: CitationV2Out;
+};
+
+export type CreateCitationResponse = CreateCitationResponses[keyof CreateCitationResponses];
+
+export type GetCitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Citation Id
+         */
+        citation_id: string;
+    };
+    query?: never;
+    url: '/v1/citations/{citation_id}';
+};
+
+export type GetCitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetCitationError = GetCitationErrors[keyof GetCitationErrors];
+
+export type GetCitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: CitationV2Out;
+};
+
+export type GetCitationResponse = GetCitationResponses[keyof GetCitationResponses];
+
+export type RelinkCitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Citation Id
+         */
+        citation_id: string;
+    };
+    query?: never;
+    url: '/v1/citations/{citation_id}/relink';
+};
+
+export type RelinkCitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RelinkCitationError = RelinkCitationErrors[keyof RelinkCitationErrors];
+
+export type RelinkCitationResponses = {
+    /**
+     * Successful Response
+     */
+    201: CitationV2Out;
+};
+
+export type RelinkCitationResponse = RelinkCitationResponses[keyof RelinkCitationResponses];
 
 export type RevealTinData = {
     body: TinRevealIn;
@@ -30823,6 +31571,366 @@ export type SetupFileResponses = {
 };
 
 export type SetupFileResponse = SetupFileResponses[keyof SetupFileResponses];
+
+export type ViewerPageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/evidence-versions/{version_id}/pages/{page_no}';
+};
+
+export type ViewerPageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ViewerPageError = ViewerPageErrors[keyof ViewerPageErrors];
+
+export type ViewerPageResponses = {
+    /**
+     * Response Viewer Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ViewerPageResponse = ViewerPageResponses[keyof ViewerPageResponses];
+
+export type RevealPiiData = {
+    body: PiiRevealIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/evidence-versions/{version_id}/pii-reveals';
+};
+
+export type RevealPiiErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevealPiiError = RevealPiiErrors[keyof RevealPiiErrors];
+
+export type RevealPiiResponses = {
+    /**
+     * Successful Response
+     */
+    201: PiiRevealOut;
+};
+
+export type RevealPiiResponse = RevealPiiResponses[keyof RevealPiiResponses];
+
+export type ViewerRegionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: {
+        /**
+         * Match Ids
+         */
+        match_ids?: Array<string> | null;
+    };
+    url: '/v1/evidence-versions/{version_id}/regions';
+};
+
+export type ViewerRegionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ViewerRegionsError = ViewerRegionsErrors[keyof ViewerRegionsErrors];
+
+export type ViewerRegionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ViewerRegionsOut;
+};
+
+export type ViewerRegionsResponse = ViewerRegionsResponses[keyof ViewerRegionsResponses];
+
+export type ViewerSearchData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query: {
+        /**
+         * Q
+         */
+        q: string;
+    };
+    url: '/v1/evidence-versions/{version_id}/search';
+};
+
+export type ViewerSearchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ViewerSearchError = ViewerSearchErrors[keyof ViewerSearchErrors];
+
+export type ViewerSearchResponses = {
+    /**
+     * Successful Response
+     */
+    200: ViewerSearchOut;
+};
+
+export type ViewerSearchResponse = ViewerSearchResponses[keyof ViewerSearchResponses];
+
+export type UnlockVersionData = {
+    body: EvidenceUnlockIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/evidence-versions/{version_id}/unlock';
+};
+
+export type UnlockVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UnlockVersionError = UnlockVersionErrors[keyof UnlockVersionErrors];
+
+export type UnlockVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: EvidenceUnlockOut;
+};
+
+export type UnlockVersionResponse = UnlockVersionResponses[keyof UnlockVersionResponses];
+
+export type ViewerManifestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/evidence-versions/{version_id}/viewer';
+};
+
+export type ViewerManifestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ViewerManifestError = ViewerManifestErrors[keyof ViewerManifestErrors];
+
+export type ViewerManifestResponses = {
+    /**
+     * Successful Response
+     */
+    200: ViewerManifestOut;
+};
+
+export type ViewerManifestResponse = ViewerManifestResponses[keyof ViewerManifestResponses];
 
 export type FieldProvenanceData = {
     body?: never;

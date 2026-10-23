@@ -112,6 +112,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py" = ["S311", "S603"]  # runs gh run list (F-04.16)
 "src/abacus_tools/synthetic/**" = ["S311"]  # seeded, non-cryptographic by design (ADR-085)
 "src/abacus/modules/sampling/selection.py" = ["S311"]  # seeded audit sampling, re-performable (ADR-132)
+"src/abacus/kernel/_statuses.py" = ["S105"]  # generated status codes such as wrong_password
 "tests/**" = ["S101"]
 "tests/acceptance/support.py" = ["S106"]  # throwaway credentials for stubbed AWS clients that never connect
 "tests/unit/quality/test_hooks.py" = ["S101", "S603"]  # runs the repo's own hook scripts

@@ -2364,6 +2364,78 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "citation": {
+    "valid": {
+      "label": "Verified",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "moved": {
+      "label": "Source moved",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "broken": {
+      "label": "Broken",
+      "variant": "red",
+      "terminal": true,
+      "derived": true
+    },
+    "relinked": {
+      "label": "Re-linked",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true
+    }
+  },
+  "viewer": {
+    "processing": {
+      "label": "Processing…",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "password_protected": {
+      "label": "Password-protected",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "unreadable": {
+      "label": "Can't read this file",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "not_previewable": {
+      "label": "Can't preview",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "evidence_unlock": {
+    "ready": {
+      "label": "Unlocked",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "wrong_password": {
+      "label": "That password didn't open the file.",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
   }
 } as const;
 

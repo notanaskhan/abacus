@@ -611,14 +611,12 @@ OBJECT_OF_FIELD = {
 NO_YAML_ENTRY = {
     "AdjustmentOut.status": "client_accepted, client_declined",
     "GlImportOut.status": "waiting_for_tb",
-    "KnowledgeDocumentOut.status": "ready, stale",
     "LetterIn.status": "not_required_this_year",
     "LogEntryOut.status": "failed_validation",
     "MatrixRowOut.status": "needs_sign_off, open_notes",
     "RetrievalOut.status": "failed_validation",
     "SupportSessionOut.status": "ended",
     "WallOut.status": "removed",
-    "WorkpaperOut.status": "ready",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
 OUTSIDE_ITS_OBJECT = {
