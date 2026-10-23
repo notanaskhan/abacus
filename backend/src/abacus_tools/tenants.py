@@ -33,6 +33,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import asyncpg
 from temporalio.service import RPCError, RPCStatusCode
 
+from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.config import settings
 from abacus.kernel.db.session import configure_engine, dispose_engine
 from abacus.kernel.temporal import temporal_client
@@ -211,10 +212,13 @@ async def set_entitlement(
             actor,
         )
         async with connection.transaction():
-            # A new row is valid from the firm's business date, not the server's (a firm west
-            # of UTC is still on yesterday); a changed row keeps its dates.
+            # A new row is valid from the business date `entitlement()` compares with: the
+            # kernel clock's firm zone (Central until offices carry their own), not the server's
+            # date and not `firms.time_zone`. A firm west of UTC is still on yesterday.
             today = await connection.fetchval(
-                "SELECT (clock_timestamp() AT TIME ZONE time_zone)::date FROM firms"
+                "SELECT (clock_timestamp() AT TIME ZONE $2)::date FROM firms WHERE tenant_id = $1",
+                firm,
+                FIRM_ZONE.key,
             )
             if today is None:
                 raise Refused("no such firm")
