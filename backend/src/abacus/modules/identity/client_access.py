@@ -131,7 +131,9 @@ async def portal_scopes(ctx: AuthContext) -> PortalScopes:
     return PortalScopes(shell_of(g.role for g in grants), tuple(_scope(g) for g in grants))
 
 
-async def _facts(tenant: TenantContext, kind: str, scope_id: UUID) -> ScopeFacts | None:
+async def scope_facts(tenant: TenantContext, kind: str, scope_id: UUID) -> ScopeFacts | None:
+    """What a grant's scope covers (its client, and its engagement or work item if narrower), or
+    None for an unknown scope: the portal home composes one scope (P-08-T13)."""
     if kind == "engagement":
         client = await engagement_client(tenant, scope_id)
         return None if client is None else ScopeFacts(client, engagement_id=scope_id)
@@ -157,7 +159,7 @@ async def scope_covers(
         return False
     client_id = await engagement_client(tenant, engagement_id)
     for grant in grants:
-        facts = await _facts(tenant, grant.scope_kind, grant.scope_id)
+        facts = await scope_facts(tenant, grant.scope_kind, grant.scope_id)
         if facts is not None and _covers(facts, engagement_id, work_item_id, client_id):
             return True
     return False
@@ -196,7 +198,9 @@ async def grant_client_access(
     if action == "request_item.delegate" and (role, scope_kind) != ("delegate", "request_item"):
         raise GrantScopeInvalid
     await authorise(ctx, action, resource)
-    if not _resource_matches(resource, scope_kind, await _facts(ctx.tenant, scope_kind, scope_id)):
+    if not _resource_matches(
+        resource, scope_kind, await scope_facts(ctx.tenant, scope_kind, scope_id)
+    ):
         raise GrantScopeInvalid
     async with uow(ctx.tenant) as tx:
         grant_id = await insert_grant(
@@ -231,7 +235,7 @@ async def revoke_client_access(ctx: AuthContext, resource: Resource, grant_id: U
     if grant is None:
         raise NotFound("client_access_grant")
     await authorise(ctx, "client_access.revoke", resource)
-    facts = await _facts(ctx.tenant, grant.scope_kind, grant.scope_id)
+    facts = await scope_facts(ctx.tenant, grant.scope_kind, grant.scope_id)
     if not _resource_matches(resource, grant.scope_kind, facts):
         raise NotFound("client_access_grant")
     async with uow(ctx.tenant) as tx:

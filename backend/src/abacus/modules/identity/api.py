@@ -39,6 +39,7 @@ from abacus.modules.identity.authz.conditions import (
 )
 from abacus.modules.identity.authz.matrix import RULES, Rule
 from abacus.modules.identity.client_access import (
+    FULL_ROLES,
     GrantExists,
     GrantRole,
     GrantScope,
@@ -48,6 +49,7 @@ from abacus.modules.identity.client_access import (
     grant_client_access,
     portal_scopes,
     revoke_client_access,
+    scope_facts,
     shell_of,
 )
 from abacus.modules.identity.context import (
@@ -257,6 +259,7 @@ __all__ = [
     "ACTION_KEY",
     "CODE_DIGITS",
     "EQR_ROLES",
+    "FULL_ROLES",
     "IDENTITY",
     "MFA_RECENT",
     "OWN",
@@ -418,6 +421,7 @@ __all__ = [
     "revoke_invitation",
     "role_codes",
     "router",
+    "scope_facts",
     "serving_request",
     "set_autonomy",
     "set_demo_clock",

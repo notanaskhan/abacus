@@ -1,9 +1,8 @@
 """C5 v1.1, the portal half: the POR-02 home and preferences (P-08-T01 stub; ADR P-36, ADR-163).
 Contract: `docs/contracts/portal-identity.md`; spec: SPEC-320.
 
-Behind `portal.home_v2`: off, both routes answer 404; on, 501 `not_implemented` until P-08-T13
-(the home read model over `home_sources`). The Brightwater Hale portal slice (`stub_from_seed`)
-arrives with P-08-T08, so the stubs return no fixtures yet.
+Behind `portal.home_v2`: off, both routes answer 404; on, both are live (P-08-T13): the home read
+model over `home_sources` (`home.py`) and the per-scope preferences.
 
 The home is a client's view. No field carries a firm status code, an amount, materiality, an agent
 name or a confidence: stages and pills are client stage codes (`stages.py`, P-08-T12), team members
@@ -20,7 +19,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -28,7 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import PORTAL_HOME_V2
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     PORTAL_PUBLIC,
@@ -38,92 +37,26 @@ from abacus.modules.identity.api import (
     current_member,
 )
 from abacus.modules.portal.branding import branding_for_host, logo_for_host
+from abacus.modules.portal.codes import (
+    EarlierKind,
+    Facts,
+    NoteCode,
+    NoticeCode,
+    PillCode,
+    PillVariant,
+    PortalScreen,
+    StageCode,
+    StageState,
+    TeamRoleCode,
+    TodoKind,
+    TodoState,
+)
+from abacus.modules.portal.home import read_home, set_preferences
 
 # A portal person themself, never a break-glass support context.
 Member = Annotated[AuthContext, Depends(current_member)]
 # `PortalHomeEarlierOut` has a field named `date`, which would shadow the type in its own body.
 Day = date
-# Identifier-only facts (ADR-139): codes, identifiers, counts and flags; never prose.
-Facts = dict[str, str | int | bool]
-
-# The kinds of to-do POR-02 shows (a to h). A kind whose source module has not shipped is hidden in
-# production and rendered in fixture builds (P-08 §2.2). New kinds are additive.
-TodoKind = Literal[
-    "upload",
-    "answer",
-    "sign",
-    "deliverables",
-    "approve",
-    "reconnect",
-    "review_statements",
-    "control_requests",
-    "exceptions",
-    "description_approved",
-]
-TodoState = Literal["open", "none", "overdue"]
-# The screen a to-do or row opens: manifest IDs, never URLs.
-PortalScreen = Literal[
-    "POR-03",
-    "POR-04",
-    "POR-05",
-    "POR-06",
-    "POR-07",
-    "POR-08",
-    "POR-09",
-    "POR-11",
-    "POR-12",
-    "POR-13",
-    "POR-16",
-    "POR-21",
-]
-# Client stage codes (P-08-T12 `stages.py` over C2), never firm statuses (POR-02 Copy table).
-StageCode = Literal[
-    "gather_documents",
-    "prepare",
-    "review",
-    "sign_form_8879",
-    "file",
-    "requests",
-    "reconcile",
-    "statements",
-    "planning",
-    "fieldwork",
-    "statements_review",
-    "report",
-    "scoping",
-    "system_description",
-    "testing",
-    "exceptions",
-]
-StageState = Literal["done", "current", "upcoming"]
-PillCode = Literal[
-    "getting_started",
-    "preparing_return",
-    "reviewing_return",
-    "reconciling_accounts",
-    "filed_and_accepted",
-    "finishing_audit",
-    "testing_under_way",
-]
-PillVariant = Literal["state", "success", "neutral"]
-NoteCode = Literal["waiting_on_k1", "waiting_on_your_k1"]
-# Client-facing team roles (OQ-5: the day-to-day contact is derived per work-item kind).
-TeamRoleCode = Literal[
-    "partner_signs_return",
-    "partner",
-    "engagement_partner",
-    "manager_reviews_return",
-    "manager",
-    "preparer_day_to_day",
-    "preparer",
-    "close_preparer",
-    "day_to_day_contact",
-    "client_service",
-]
-EarlierKind = Literal[
-    "return_filed", "extension_filed", "engagement_letter_signed", "deliverable_released"
-]
-NoticeCode = Literal["agency_notice_in_review"]
 
 
 class PortalHomeScopeOut(BaseModel):
@@ -325,36 +258,38 @@ class PortalBrandingOut(BaseModel):
     maintenance_banner: Annotated[str | None, classified("public")] = None
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _flag(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, PORTAL_HOME_V2):
         raise NotFound("portal.home_v2")
-    raise NotImplementedYet
 
 
 router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 
 
-@router.get("/home", action="portal_home.read", response_model=PortalHomeOut, errors=(501,))
+@router.get("/home", action="portal_home.read", response_model=PortalHomeOut)
 async def get_portal_home_route(
     ctx: Member, scope_id: Annotated[UUID | None, Query()] = None
 ) -> PortalHomeOut:
     """POR-02 for one scope (default: the person's first full-client scope). A scope no grant
     covers, or a person with no full-client grant (third party, K-1 only), answers 404 (INV-4)."""
-    await _stub(ctx)
+    await _flag(ctx)
+    return PortalHomeOut.model_validate(asdict(await read_home(ctx, scope_id)))
 
 
 @router.put(
     "/preferences",
     action="portal_preferences.update",
     response_model=PortalPreferencesOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def update_portal_preferences_route(
     body: PortalPreferencesIn, ctx: Member
 ) -> PortalPreferencesOut:
     """Per user and scope; 409 `portal_preferences_stale` on a version mismatch; a scope no grant
     covers answers 404. Audited as `portal_preferences.updated`."""
-    await _stub(ctx)
+    await _flag(ctx)
+    found = await set_preferences(ctx, body.scope_id, body.welcome_dismissed, body.version)
+    return PortalPreferencesOut.model_validate(asdict(found))
 
 
 # The sign-in policy every portal shows today (DEC-58 email codes; MFA for owners, signers and

@@ -17,6 +17,7 @@ from abacus.modules.requests.events import (
     RequestItemDocumentKindChanged,
 )
 from abacus.modules.requests.lifecycle import register_live_facts, request_item_scope
+from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
 from abacus.modules.requests.routes import firm_router, methodology_router, router
@@ -78,6 +79,8 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "BinderProgress",
+    "ClientHome",
     "DueDatesChanged",
     "FulfilledVersion",
     "FulfilmentRef",
@@ -95,6 +98,7 @@ __all__ = [
     "add_request_item",
     "apply_drafted_guidance",
     "classify",
+    "client_home",
     "document_kind",
     "firm_router",
     "fulfil_by_rule",

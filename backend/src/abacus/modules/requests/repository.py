@@ -1150,3 +1150,38 @@ async def live_upload_intents(session: AsyncSession, item_ids: Sequence[UUID]) -
         {"items": list(item_ids)},
     )
     return {item: int(n) for item, n in rows.tuples().all()}
+
+
+async def client_home_items(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[tuple[RequestItem, RequestList, int]]:
+    """P-08-T13 (POR-02): the engagement's live client-visible requests in a published (or done)
+    binder, each with its binder and how many of its files the firm matched (`rule`, `agent`)."""
+    matched = (
+        select(func.count())
+        .where(
+            Fulfilment.request_item_id == RequestItem.id,
+            Fulfilment.created_by_kind.in_(("rule", "agent")),
+        )
+        .correlate(RequestItem)
+        .scalar_subquery()
+    )
+    rows = await session.execute(
+        select(RequestItem, RequestList, matched)
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
+        .where(
+            RequestItem.engagement_id == engagement_id,
+            RequestItem.deleted_at.is_(None),
+            RequestItem.client_visible.is_(True),
+            RequestList.status.in_(("published", "complete")),
+            visible_items(
+                ctx,
+                "request_item.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+        .order_by(RequestItem.created_at, RequestItem.id)
+    )
+    return [(item, binder, int(count)) for item, binder, count in rows.all()]
