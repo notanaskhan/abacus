@@ -97,6 +97,7 @@ import {
   ToolbarSpecimen,
 } from "./shell";
 import { CheckboxSpecimen, RadioSpecimen, ToggleSpecimen } from "./toggles";
+import { Tpl18Specimen } from "./wizard";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
 // "@abacus/ui/specimens": only the gallery subtree, which a production build does not compile,
@@ -363,6 +364,8 @@ export const SPECIMENS: readonly Specimen[] = [
     title: "ConfirmDialog",
     Component: ConfirmDialogSpecimen,
   },
+  // O6 wizard specimen (F-05-T38): TPL-18a to TPL-18e, the type catalogue and the gate cards
+  { id: "tpl-18", kit: "TPL-18", title: "Stepper wizard specimen", Component: Tpl18Specimen },
   {
     id: "o1-o6-stacking",
     kit: "O1-O6",

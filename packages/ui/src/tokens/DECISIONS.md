@@ -426,3 +426,14 @@ semantics are kept exact; the plan's `toast.undoable` and `toast.running` sit on
 | 2026-10-23 | Evidence value chip | `ValueChip` (radius 5, sel-bg, 0.5 stroke ring) in the evidence grammar; statement and ledger keep `PropChip`                                                                                     |
 | 2026-10-23 | Tally pills         | TallyStrip pills are `TallyPill` over the registry; a running check is the tag pill with its spinner (the registry has no `run` code)                                                             |
 | 2026-10-23 | AccountTree roles   | `role="tree"` with treeitems and `aria-activedescendant`; section headers are `group` labels, not focus stops; the 13px chevron keeps a 25px hit area (`HIT.issue`)                               |
+
+### O6 wizard specimen TPL-18 and its kit (F-05-T38)
+
+| Date       | Item              | Decision                                                                                                                                                     |
+| ---------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-23 | Step list         | Padding 10 and 38-high pill rows 2 apart, as TPL-18 draws them (F-05-T20 had edge-to-edge rows); the summary card sits 14 under the list on the shell colour |
+| 2026-10-23 | Saved line        | `subtitleAt="start"`: TPL-18's "Draft saved 9:05 AM" in 11.5 ink-3 at the header's start; ENG-03 keeps it after the title                                    |
+| 2026-10-23 | Type card tiles   | Clay for tax, espresso for assurance, olive for accounting, ochre for advisory (canvas `TP18.CAT`); a coming-soon card's tile is `surface-deep`              |
+| 2026-10-23 | Selected card     | `inset-ring-[1.5px] inset-ring-espresso` plus the 16px olive done disc, top right                                                                            |
+| 2026-10-23 | Blocked gate edge | White card with a 1px `red-ink` ring at 40% and the brick fail disc; words carry the meaning                                                                 |
+| 2026-10-23 | Underlay          | The ENG-01 index under the .30 scrim is an empty pane until P-07 builds ENG-01; parity entries `tpl-18.a` to `e` record it as their deviation                |

@@ -23,6 +23,7 @@ export const STAFF = {
   margaret: "Margaret Okonkwo",
   raj: "Raj Malhotra",
   daniel: "Daniel Reyes",
+  olivia: "Olivia Brandt",
 } as const;
 
 /** Persona slugs the specimens are seen as (`?as=`), including F-05-T33's two. */

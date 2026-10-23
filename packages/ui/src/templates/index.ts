@@ -34,6 +34,22 @@ export {
   CodeInput,
   type CodeInputProps,
 } from "./auth-card";
+// The O6 wizard's kit (F-05-T38, TPL-18): the data-driven type catalogue and the gate cards.
+export {
+  type CatalogueGroup,
+  type CatalogueTone,
+  type CatalogueType,
+  GateCard,
+  type GateCardProps,
+  type GateTone,
+  TypeCard,
+  type TypeCardProps,
+  TypeCatalogue,
+  type TypeCatalogueProps,
+  type TypeAvailability,
+  WizardSummary,
+  typeAvailability,
+} from "./wizard-kit";
 // T2 RecordCockpit (F-05-T40): rail, canvas and dock under the audit record bar.
 export {
   type CockpitCanvas,

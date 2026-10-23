@@ -456,6 +456,46 @@
       "sha256": "657176938071f47edf6c64f9967bec7fb7149969991f23ac8b988cece127cb66",
       "crop": "window",
       "tier": "C"
+    },
+    "tpl-18.a": {
+      "selector": "[data-artboard=\"tpl-18a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-18 Stepper wizard specimen - new advisory engagement/screenshots/TPL-18a.png",
+      "sha256": "9f37940aa07947f1faed67206a4355c48d66c865f771e174bd577dbd4bfc01f2",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+    },
+    "tpl-18.b": {
+      "selector": "[data-artboard=\"tpl-18b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-18 Stepper wizard specimen - new advisory engagement/screenshots/TPL-18b.png",
+      "sha256": "ef5937da0ba65673f06230757457a2a51585d02330fec9b2ae48ae7d30faeffa",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+    },
+    "tpl-18.c": {
+      "selector": "[data-artboard=\"tpl-18c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-18 Stepper wizard specimen - new advisory engagement/screenshots/TPL-18c.png",
+      "sha256": "cd47de3e305928a6bc53e2354d7b8a22c449bdb4d35489fe061750ce2cc26aca",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+    },
+    "tpl-18.d": {
+      "selector": "[data-artboard=\"tpl-18d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-18 Stepper wizard specimen - new advisory engagement/screenshots/TPL-18d.png",
+      "sha256": "79ede1abd01a4b6fd75ff39629c0e99ed2ae2555fd8bd682ccf90309f66608ac",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+    },
+    "tpl-18.e": {
+      "selector": "[data-artboard=\"tpl-18e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-18 Stepper wizard specimen - new advisory engagement/screenshots/TPL-18e.png",
+      "sha256": "e291ba760fef14e27b953e830fd77216047240e975562ebb39c0754008cff5a8",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
     }
   }
 }

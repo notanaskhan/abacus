@@ -25,8 +25,10 @@ export interface WizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  /** Next to the title in ink-3: "Draft · saved 9:39 AM". */
+  /** In ink-3: "Draft · saved 9:39 AM". */
   subtitle?: string;
+  /** Where the subtitle sits: after the title (ENG-03), or at the header's start in 11.5 (TPL-18). */
+  subtitleAt?: "title" | "start";
   description?: string;
   steps: readonly WizardStep[];
   /** A press on a done step goes back to it. Without it the list is not interactive. */
@@ -58,6 +60,7 @@ const PLACE = "fixed inset-x-[14px] top-[60px] bottom-[14px]";
 function Frame({
   title,
   subtitle,
+  subtitleAt = "title",
   description,
   steps,
   onStepChange,
@@ -83,8 +86,13 @@ function Frame({
         <FrameTitle className="min-w-0 truncate text-title font-medium tracking-[-0.012em]">
           {title}
         </FrameTitle>
-        {subtitle !== undefined && (
+        {subtitle !== undefined && subtitleAt === "title" && (
           <span className="shrink-0 text-body text-ink-3">{subtitle}</span>
+        )}
+        {subtitle !== undefined && subtitleAt === "start" && (
+          <span className="absolute top-1/2 left-[16px] -translate-y-1/2 text-meta text-ink-3">
+            {subtitle}
+          </span>
         )}
         <FrameClose
           className="absolute top-[8px] right-[9px]"
@@ -94,9 +102,9 @@ function Frame({
       <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)]">
         <nav
           aria-label="Steps"
-          className="flex min-h-0 flex-col gap-[1px] overflow-y-auto border-r-[0.5px] border-hair bg-card pt-[6px]"
+          className="flex min-h-0 flex-col overflow-y-auto border-r-[0.5px] border-hair bg-card p-[10px]"
         >
-          <ol className="flex flex-col">
+          <ol className="flex flex-col gap-[2px]">
             {steps.map((step, i) => {
               const row = (
                 <>
@@ -110,7 +118,7 @@ function Frame({
                 </>
               );
               const cls = cn(
-                "flex h-[38px] w-full items-center gap-[10px] px-[14px] text-left text-body",
+                "flex h-[38px] w-full items-center gap-[10px] rounded-pill px-[10px] text-left text-body",
                 step.state === "current" && "bg-sel-bg font-medium",
               );
               return (
@@ -139,9 +147,7 @@ function Frame({
               );
             })}
           </ol>
-          {aside !== undefined && (
-            <div className="px-[14px] pt-[14px] pb-[12px] text-dense text-ink-3">{aside}</div>
-          )}
+          {aside !== undefined && <div className="pt-[14px] text-dense text-ink-3">{aside}</div>}
         </nav>
         <div className="min-h-0 overflow-y-auto p-[12px]">
           {description === undefined ? (
