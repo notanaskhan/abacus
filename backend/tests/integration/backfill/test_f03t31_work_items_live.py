@@ -22,9 +22,9 @@ import httpx
 import pytest
 
 # Each registers its work-item kind, as the app does at start-up.
-import abacus.modules.closes.api  # pyright: ignore[reportUnusedImport]
-import abacus.modules.notices.api  # pyright: ignore[reportUnusedImport]
-import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport]
+import abacus.modules.closes.api  # pyright: ignore[reportUnusedImport] -- registers the kind
+import abacus.modules.notices.api  # pyright: ignore[reportUnusedImport] -- registers the kind
+import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the kind
 from abacus.kernel.db import TenantContext
 from abacus.modules.engagements.api import create_work_item
 from abacus.modules.identity.api import AuthContext, Forbidden
