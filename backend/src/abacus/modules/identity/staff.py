@@ -46,7 +46,12 @@ from abacus.modules.identity.tokens import VerifiedIdentity
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
 INVITATION_DAYS: Final = 14
 # For audit references (integers only, never text); 0 is no firm role.
-_ROLE_INDEX: Final = {"firm_admin": 1, "practice_leader": 2, "quality_partner": 3}
+_ROLE_INDEX: Final = {
+    "firm_admin": 1,
+    "practice_leader": 2,
+    "quality_partner": 3,
+    "security_admin": 4,
+}
 _PLATFORM: Final = UUID(int=0)
 _log = get_logger(__name__)
 

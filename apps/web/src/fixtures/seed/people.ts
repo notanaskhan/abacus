@@ -112,7 +112,7 @@ export function emailOf(name: string): string {
 
 /** Seat holders who carry a firm-level role in `/v1/firm/staff` (identity `firm_role`). */
 export const FIRM_ROLES: Readonly<
-  Record<string, "firm_admin" | "practice_leader" | "quality_partner">
+  Record<string, "firm_admin" | "practice_leader" | "quality_partner" | "security_admin">
 > = {
   GH: "firm_admin",
   FA: "firm_admin",

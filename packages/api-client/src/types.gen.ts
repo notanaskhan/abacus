@@ -6494,7 +6494,7 @@ export type FirmRoleIn = {
     /**
      * Firm Role
      */
-    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
 };
 
 /**
@@ -14338,7 +14338,7 @@ export type StaffInvitationOut = {
     /**
      * Firm Role
      */
-    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
     /**
      * Id
      */
@@ -14356,7 +14356,7 @@ export type StaffInviteIn = {
     /**
      * Firm Role
      */
-    firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
 };
 
 /**
@@ -14398,7 +14398,7 @@ export type StaffMemberOut = {
     /**
      * Firm Role
      */
-    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
     /**
      * Status
      */
