@@ -6,7 +6,8 @@ Run: python -m abacus_tools.workflows.record_upload_processing <output-directory
 Records one run of the real `UploadProcessing` workflow against throwaway containers, with its
 activities replaced by stubs (replay never runs activities):
 `upload-processing-<version>-extracted.json`. v2 (TASK-055) adds the `checks` step, v3
-(TASK-056) `previews`. Refuses to overwrite an existing file.
+(TASK-056) `previews`, v4 (P-03-T05) `words`, recorded as `upload-processing-v4-words.json`.
+Refuses to overwrite an existing file.
 """
 
 from __future__ import annotations
@@ -43,13 +44,26 @@ async def _preview_stub(given: UploadInput) -> str:
     return "pages"
 
 
+@activity.defn(name="upload.words")
+async def _words_stub(given: UploadInput) -> int:
+    return 1
+
+
+# The outcome a history is named after: from v4 on, the step the version added.
+_OUTCOMES = {"v4": "words"}
+
+
+def _file_name(version: str) -> str:
+    return f"upload-processing-{version}-{_OUTCOMES.get(version, 'extracted')}.json"
+
+
 async def _record(out: Path, version: str, stack: Stack) -> None:
     client = await connect(stack)
     async with Worker(
         client,
         task_queue=_TASK_QUEUE,
         workflows=[UploadProcessing],
-        activities=[_stub, _check_stub, _preview_stub],
+        activities=[_stub, _check_stub, _preview_stub, _words_stub],
     ):
         handle = await client.start_workflow(
             UploadProcessing.run,
@@ -59,7 +73,7 @@ async def _record(out: Path, version: str, stack: Stack) -> None:
         )
         await handle.result()
         scrubbed = await decoded_and_scrubbed(await handle.fetch_history(), payload_codec())
-    path = out / f"upload-processing-{version}-extracted.json"
+    path = out / _file_name(version)
     path.write_text(scrubbed.to_json())
     print(f"recorded {path}")
 
@@ -67,7 +81,7 @@ async def _record(out: Path, version: str, stack: Stack) -> None:
 def main(argv: list[str]) -> int:
     out = Path(argv[0]) if argv else Path("tests/workflows/histories")
     version = argv[1] if len(argv) > 1 else "v1"
-    if refuse_overwrite(out, [f"upload-processing-{version}-extracted.json"]):
+    if refuse_overwrite(out, [_file_name(version)]):
         return 1
 
     async def record(stack: Stack) -> None:

@@ -3,6 +3,27 @@
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.evidence.citations.matching import (
+    cell_reason as citation_cell_reason,
+)
+from abacus.modules.evidence.citations.matching import (
+    cell_text as citation_cell_text,
+)
+from abacus.modules.evidence.citations.matching import (
+    column_letters,
+    page_quote_reason,
+    quote_in,
+)
+from abacus.modules.evidence.citations.matching import normalised as normalised_text
+from abacus.modules.evidence.citations.registry import Anchor as CitationAnchor
+from abacus.modules.evidence.citations.registry import (
+    CitationClaim,
+    CitationKind,
+    register_citable,
+)
+from abacus.modules.evidence.citations.registry import Display as CitationLabel
+from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
+from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
@@ -95,10 +116,16 @@ from abacus.modules.evidence.storage import (
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.uploads import upload
+from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
-from abacus.modules.evidence.workflow_types import LegalHoldInput, UploadInput
-from abacus.modules.evidence.workflows import LegalHoldApply, LegalHoldRelease, UploadProcessing
+from abacus.modules.evidence.workflow_types import BackfillInput, LegalHoldInput, UploadInput
+from abacus.modules.evidence.workflows import (
+    LegalHoldApply,
+    LegalHoldRelease,
+    TrustLayerBackfill,
+    UploadProcessing,
+)
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
 
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -146,9 +173,16 @@ __all__ = [
     "TOTAL_LABEL",
     "UPLOAD_INBOX",
     "UPLOAD_VERSION",
+    "WORDS_VERSION",
     "WORKFLOWS",
     "XLSX_MEDIA_TYPE",
+    "BackfillInput",
     "Candidate",
+    "CitationAnchor",
+    "CitationClaim",
+    "CitationKind",
+    "CitationLabel",
+    "CitationVerdict",
     "ContentTooLarge",
     "EngagementArchived",
     "EvidenceVersionCreated",
@@ -169,12 +203,14 @@ __all__ = [
     "Proposal",
     "Provenance",
     "RecordClass",
+    "RecordedCitation",
     "ReviewMaterial",
     "ScreeningDecision",
     "StoredObject",
     "StoredRecord",
     "TrialBalance",
     "TrialBalanceLine",
+    "TrustLayerBackfill",
     "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
@@ -183,6 +219,9 @@ __all__ = [
     "anchor_chain",
     "check_ready",
     "check_upload_content",
+    "citation_cell_reason",
+    "citation_cell_text",
+    "column_letters",
     "decisions_on_screenings",
     "engagement_snapshots",
     "evidence_versions_for",
@@ -190,10 +229,15 @@ __all__ = [
     "firm_router",
     "holds_covering",
     "match_material",
+    "normalised_text",
+    "page_quote_reason",
     "process_upload",
     "put_record",
+    "quote_in",
     "read_content",
     "read_version",
+    "record_citations",
+    "register_citable",
     "register_match_picks",
     "register_proposal_source",
     "render_general_ledger",
@@ -204,6 +248,7 @@ __all__ = [
     "router",
     "stage_content",
     "stale_pdfs",
+    "start_trust_layer_backfill",
     "suggest_by_name",
     "upload",
     "version_view",

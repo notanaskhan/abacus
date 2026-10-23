@@ -3,7 +3,8 @@ history, and a change to what it schedules is detected as non-determinism.
 
 Offline: `Replayer` needs no Temporal server and no codec. The history was recorded by
 `abacus_tools.workflows.record_upload_processing` with a stub activity; it is never re-recorded.
-TASK-055 and TASK-056 add steps behind `workflow.patched(...)` and must keep it replaying.
+TASK-055 and TASK-056 add steps behind `workflow.patched(...)` and must keep it replaying; so does
+P-03-T05's `words` step (v4).
 """
 
 from __future__ import annotations
@@ -34,7 +35,20 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v2-extracted",
         # v3 (TASK-056): `patched("previews")`.
         "upload-processing-v3-extracted",
+        # v4 (P-03-T05): `patched("words")`, the word layer.
+        "upload-processing-v4-words",
     ]
+
+
+def test_p03t05_v4_reads_words_after_previews() -> None:
+    text = (HISTORIES / "upload-processing-v4-words.json").read_text(encoding="utf-8")
+    assert text.index("upload.preview") < text.index("upload.words")
+    assert text.count("EVENT_TYPE_MARKER_RECORDED") == 3  # checks, previews, words
+
+
+def test_p03t05_v1_to_v3_never_read_words() -> None:
+    for path in ALL[:3]:
+        assert "upload.words" not in path.read_text(encoding="utf-8")
 
 
 def test_ac12_v3_previews_after_checking() -> None:
