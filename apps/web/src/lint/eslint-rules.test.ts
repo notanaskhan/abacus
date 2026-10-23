@@ -38,7 +38,7 @@ describe("ac18 ESLint architecture rules", () => {
     expect(found.length).toBeGreaterThan(0);
   });
 
-  it("bans fetch outside src/auth/session.ts", async () => {
+  it("bans fetch in screens and legacy code", async () => {
     const found = await violations(
       "export const load = () => fetch('/v1/me');",
       "src/legacy/Example.tsx",
@@ -46,7 +46,7 @@ describe("ac18 ESLint architecture rules", () => {
     expect(found.some((m) => m.startsWith("no-restricted-globals"))).toBe(true);
   });
 
-  it("bans XMLHttpRequest outside src/auth/session.ts", async () => {
+  it("bans XMLHttpRequest in screens and legacy code", async () => {
     const found = await violations(
       "export const x = new XMLHttpRequest();",
       "src/legacy/Example.tsx",
@@ -54,10 +54,11 @@ describe("ac18 ESLint architecture rules", () => {
     expect(found.some((m) => m.startsWith("no-restricted-globals"))).toBe(true);
   });
 
-  it("allows fetch in src/auth/session.ts only", async () => {
+  // P-01-T11: the token exchange moved to the BFF, so the auth code lost its fetch exception.
+  it("bans fetch in the auth client too", async () => {
     const code = "export const token = () => fetch('http://idp/token');";
-    expect(await violations(code, "src/auth/session.ts")).toEqual([]);
-    expect((await violations(code, "src/auth/other.ts")).length).toBeGreaterThan(0);
+    expect((await violations(code, "src/auth/session.ts")).length).toBeGreaterThan(0);
+    expect((await violations(code, "src/app-core/auth/session.ts")).length).toBeGreaterThan(0);
   });
 
   it("bans importing axios", async () => {

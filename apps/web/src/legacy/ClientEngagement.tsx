@@ -40,10 +40,10 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { PortalBrand } from "../shell/PortalBrand";
-import { accessToken, signIn } from "../auth/session";
+import { useSignedIn } from "../app-core/auth";
 import { ClientUploadChecks } from "./CheckResults";
 import { CommentThread } from "./CommentThread";
 import { ConnectionPanel } from "./ConnectionPanel";
@@ -73,10 +73,7 @@ function uploadError(error: unknown): string {
 
 /** SPEC-020 AC-1: a client's view of one engagement — its requests by area, with uploads. */
 export function ClientEngagement({ engagementId }: { engagementId: string }): JSX.Element {
-  const signedIn = accessToken() !== null;
-  useEffect(() => {
-    if (!signedIn) void signIn(`/client/engagements/${engagementId}`);
-  }, [signedIn, engagementId]);
+  const signedIn = useSignedIn(`/client/engagements/${engagementId}`);
   const path = { path: { engagement_id: engagementId } };
   const engagement = useQuery({ ...getEngagementOptions(path), enabled: signedIn });
   const items = useQuery({ ...listRequestItemsOptions(path), enabled: signedIn });

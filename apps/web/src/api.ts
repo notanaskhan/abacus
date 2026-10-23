@@ -1,7 +1,15 @@
 // The generated client, configured once: same-origin `/v1` (Vite proxies it locally), the bearer
-// token and, for users in several firms, the chosen firm. A 401 means the session is over.
+// token and, for users in several firms, the chosen firm. The token lives in memory (P-01-T11):
+// it is refreshed from the BFF cookie before it runs out, and a 401 refreshes once and retries a
+// request without a body, or sends the person through sign-in and back to the same route.
 import { client } from "@abacus/api-client/client";
-import { accessToken, chosenTenant, handleUnauthorised } from "./auth/session";
+import {
+  AUTH_PREFIX,
+  accessToken,
+  chosenTenant,
+  freshToken,
+  handleUnauthorised,
+} from "./app-core/auth";
 
 export const TENANT_HEADER = "X-Abacus-Tenant";
 
@@ -18,19 +26,44 @@ export function sessionHeaders(): Record<string, string> | null {
   return headers;
 }
 
+function isAuthRoute(request: Request): boolean {
+  return new URL(request.url).pathname.startsWith(AUTH_PREFIX);
+}
+
+function withSession(request: Request, token: string | null): Request {
+  if (token !== null) request.headers.set("Authorization", `Bearer ${token}`);
+  const tenant = chosenTenant();
+  if (tenant !== null) request.headers.set(TENANT_HEADER, tenant);
+  return request;
+}
+
+/** The bearer token and firm on every call. The BFF's own routes never wait for a refresh: the
+ * refresh is one of them. */
+async function onRequest(request: Request): Promise<Request> {
+  return withSession(request, isAuthRoute(request) ? accessToken() : await freshToken());
+}
+
+/** A 401 from the API: refresh once and replay a request without a body; otherwise the caller
+ * sees the 401 while the person goes through sign-in (or the loop guard stops it). */
+async function onResponse(
+  response: Response,
+  request: Request,
+  options: { fetch?: typeof globalThis.fetch },
+): Promise<Response> {
+  if (response.status !== 401 || isAuthRoute(request)) return response;
+  const outcome = await handleUnauthorised();
+  if (outcome !== "refreshed" || request.body !== null || options.fetch === undefined) {
+    return response;
+  }
+  return options.fetch(withSession(new Request(request), accessToken()));
+}
+
 export function configureClient(): void {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
-  client.interceptors.request.use((request) => {
-    const token = accessToken();
-    if (token !== null) request.headers.set("Authorization", `Bearer ${token}`);
-    const tenant = chosenTenant();
-    if (tenant !== null) request.headers.set(TENANT_HEADER, tenant);
-    return request;
-  });
-  client.interceptors.response.use((response) => {
-    if (response.status === 401) handleUnauthorised();
-    return response;
-  });
+  if (!client.interceptors.request.exists(onRequest)) client.interceptors.request.use(onRequest);
+  if (!client.interceptors.response.exists(onResponse)) {
+    client.interceptors.response.use(onResponse);
+  }
 }
 
 /** Retry transient failures once; never an auth or client error. */

@@ -1,0 +1,25 @@
+// The staff auth client's public entry (P-01-T11): what the shell, screens and api.ts import.
+export {
+  AUTH_PREFIX,
+  CALLBACK_PATH,
+  CSRF_HEADER,
+  SIGN_IN_PATH,
+  type Unauthorised,
+  accessToken,
+  chooseTenant,
+  chosenTenant,
+  currentRoute,
+  endSession,
+  ensureSession,
+  freshToken,
+  handleUnauthorised,
+  lastRefreshFailure,
+  refreshSession,
+  resetAuthForTest,
+  safeReturnTo,
+  signIn,
+  signInUrl,
+  signOut,
+  startSession,
+} from "./session";
+export { useSignedIn } from "./use-signed-in";

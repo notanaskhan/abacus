@@ -2,12 +2,12 @@ import { meOptions } from "@abacus/api-client/query";
 import { Alert, AppShell, Button, Card, Spinner } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useState } from "react";
 import { App } from "../App";
 import { isForbidden } from "../shell/mfa";
 import { NoFirm } from "./Signup";
 import { errorMessage } from "../api";
-import { accessToken, chooseTenant, chosenTenant, signIn, signOut } from "../auth/session";
+import { chooseTenant, chosenTenant, endSession, signIn, useSignedIn } from "../app-core/auth";
 import { FirmMenu } from "../shell/firm/FirmMenu";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { useOverlays } from "../app-core/overlay-host";
@@ -16,10 +16,9 @@ import { NOTIFICATIONS_OVERLAY } from "../shell/firm/NotificationsDrawer";
 /** The signed-in firm workspace (F-05-T23): the design system's AppShell and Toolbar around the
  * legacy screens, the firm pill's menu (SHL-03), notifications, and the page. */
 export function Layout(): JSX.Element {
-  const signedIn = accessToken() !== null;
-  useEffect(() => {
-    if (!signedIn) void signIn();
-  }, [signedIn]);
+  // P-01-T11: a fresh load refreshes the session from the BFF cookie; without one, sign-in comes
+  // back to this route (AC 5.1.4).
+  const signedIn = useSignedIn();
   if (!signedIn) {
     return <App status="Redirecting to sign-in…" />;
   }
@@ -134,10 +133,11 @@ function SignedIn(): JSX.Element {
               setPicked(m.tenant_id);
             }}
             onSignedOut={() => {
-              // The SPA's auth client (P-01-T11) moves this to the BFF's hosted sign-in.
-              signOut();
+              // The menu has ended the BFF session (`POST /v1/auth/sign-out`); forget it here and
+              // go back through the hosted sign-in (P-01-T11).
+              endSession();
               queryClient.clear();
-              void signIn("/");
+              signIn("/");
             }}
           />
         </>

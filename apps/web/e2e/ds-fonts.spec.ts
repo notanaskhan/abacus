@@ -13,7 +13,7 @@ const EXPECTED_POLICY = [
   `"script-src 'self'"`,
   `"style-src 'self'"`,
   `"img-src 'self' data:"`,
-  "`connect-src 'self' ${authority}`",
+  `"connect-src 'self'"`,
   `"frame-ancestors 'none'"`,
   `"object-src 'none'"`,
   `"base-uri 'none'"`,

@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type JSX, type ReactNode, useEffect, useRef } from "react";
 import { PortalBrand } from "../shell/PortalBrand";
-import { accessToken, signIn } from "../auth/session";
+import { useSignedIn } from "../app-core/auth";
 
 const TOKEN_KEY = "abacus.invitation";
 export const ACCEPT_PATH = "/client/accept";
@@ -26,7 +26,8 @@ function useToken(): string | null {
 export function Accept(): JSX.Element {
   takeTokenFromFragment();
   const token = useToken();
-  const signedIn = accessToken() !== null;
+  // With an invitation in hand: a session from the BFF cookie, else sign in and come back here.
+  const signedIn = useSignedIn(ACCEPT_PATH, { enabled: token !== null });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const started = useRef(false);
@@ -42,11 +43,7 @@ export function Accept(): JSX.Element {
   });
 
   useEffect(() => {
-    if (token === null || started.current) return;
-    if (!signedIn) {
-      void signIn(ACCEPT_PATH);
-      return;
-    }
+    if (token === null || started.current || !signedIn) return;
     started.current = true;
     accept.mutate({ body: { token } });
   }, [token, signedIn, accept]);

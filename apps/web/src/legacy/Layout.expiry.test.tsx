@@ -2,7 +2,7 @@
 // needs its own module registry.
 import { cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { accessToken } from "../auth/session";
+import { accessToken } from "../app-core/auth";
 import { json, mockApi, renderRoutes, signInForTest, stubLocation } from "../testing/support";
 import { Layout } from "./Layout";
 
@@ -27,7 +27,8 @@ describe("ac1 Layout, session over", () => {
     await waitFor(() => {
       expect(assign).toHaveBeenCalled();
     });
-    expect(String(assign.mock.calls[0]?.[0])).toContain("/authorize?");
+    // P-01-T11: the refresh finds no session, so the BFF's sign-in comes back to this route.
+    expect(String(assign.mock.calls[0]?.[0])).toBe("/v1/auth/sign-in?return_to=%2F");
     expect(accessToken()).toBeNull();
     expect(screen.queryByText("Page body")).toBeNull();
   });

@@ -1,6 +1,6 @@
 import { Button, Dialog } from "@abacus/ui";
 import type { JSX } from "react";
-import { signIn } from "../auth/session";
+import { currentRoute, signIn } from "../app-core/auth";
 
 /** A 403 on an action that needs recent MFA (ADR-030): offer a fresh sign-in, then return here. */
 export function isForbidden(error: unknown): boolean {
@@ -37,7 +37,7 @@ export function ConfirmItsYou({
         </Button>
         <Button
           onClick={() => {
-            void signIn(window.location.pathname, { forceLogin: true });
+            signIn(currentRoute(), { forceLogin: true });
           }}
         >
           Sign in again

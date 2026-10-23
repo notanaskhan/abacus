@@ -21,7 +21,9 @@ export const shlScreens = {
   // land: neither overlay has a path, so the link cannot be wired with a builder yet.
   "SHL-04": { name: "Notifications panel", status: "planned", path: null, entry: true },
   "SHL-05": { name: "Support panel", status: "planned", path: null, entry: true },
-  "SHL-06": { name: "Firm sign-in", status: "planned", path: null, entry: true },
+  // P-01-T11: g and the sign-in error state at /signin/callback, the BFF's landing (a route outside
+  // the area tree, reached only by redirect); a–f are the hosted provider's pages.
+  "SHL-06": { name: "Firm sign-in", status: "live", path: null, entry: true },
   "SHL-07": { name: "Citation popover", status: "planned", path: null },
   "SHL-08": { name: "Source viewer · drawer and pane", status: "planned", path: null },
   "SHL-09": { name: "Field provenance popover", status: "planned", path: null },
