@@ -19,7 +19,7 @@ import {
   Badge,
   Button,
   bytes,
-  CitationChip,
+  NumberedCitation,
   Dialog,
   EmptyState,
   Input,
@@ -455,7 +455,7 @@ function Screening({
                   key={`${c.cell}-${String(index)}`}
                   className="flex flex-wrap items-center gap-2"
                 >
-                  <CitationChip
+                  <NumberedCitation
                     n={index + 1}
                     label={`cell ${c.cell}`}
                     verified={c.verified}

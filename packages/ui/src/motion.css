@@ -106,6 +106,14 @@
   }
 }
 
+/* C-07: the anchored citation popover enters with a 4px rise over 260ms (F-05-T41). */
+@keyframes ac-cite-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
 @keyframes ac-slide {
   from {
     transform: translateX(-100%);
@@ -165,6 +173,9 @@
   animation: ac-slide 1400ms ease-in-out infinite;
 }
 /* C-21: a toast rises 6px over 260ms; it fades out by transition (the store keeps it 180ms). */
+@utility motion-cite-in {
+  animation: ac-cite-in 260ms var(--ease-out) both;
+}
 @utility motion-toast-in {
   animation: toast-in var(--motion-reveal) backwards;
 }

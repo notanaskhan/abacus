@@ -22,6 +22,13 @@ import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
 import { RailKitSpecimen, RecordCockpitSpecimen, RecordKitSpecimen } from "./record";
+import {
+  CitationChipSpecimen,
+  CitationPopoverSpecimen,
+  CiteMarkerSpecimen,
+  MatchLightSpecimen,
+  MatchWiredSpecimen,
+} from "./cite";
 import { PortalLayoutSpecimen } from "./portal";
 import { T15Specimen, Tpl15Specimen } from "./auth";
 import { RequestRowsSpecimen, T7Specimen, Tpl07Specimen } from "./requests";
@@ -301,6 +308,27 @@ export const SPECIMENS: readonly Specimen[] = [
     title: "Statement grammar",
     Component: StatementGridSpecimen,
   },
+  // E1 MatchProvider, E2 popover host and the C-07 Cite kit (F-05-T41)
+  { id: "c-07-cite-marker", kit: "C-07", title: "CiteMarker", Component: CiteMarkerSpecimen },
+  {
+    id: "c-07-citation-popover",
+    kit: "C-07",
+    title: "CitationPopover",
+    Component: CitationPopoverSpecimen,
+  },
+  {
+    id: "c-07-citation-chip",
+    kit: "C-07",
+    title: "CitationChip",
+    Component: CitationChipSpecimen,
+  },
+  {
+    id: "c-07-wired",
+    kit: "C-07",
+    title: "Wired to MatchProvider",
+    Component: MatchWiredSpecimen,
+  },
+  { id: "e1-match-light", kit: "E1", title: "Match light", Component: MatchLightSpecimen },
   // Toasts E3 (F-05-T21): C-21
   { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
   { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },
