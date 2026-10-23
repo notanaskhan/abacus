@@ -23,6 +23,10 @@ The audit-core content (F-04-T20: the 27 audits, the Northwind and Granite Peak 
 client people and the E0 firm settings) is bootstrapped the same way, except a plan entity, which
 goes through `organisations.client_with_entity`; see the section comment and DEC-144.
 
+The `binders` slice (P-06-T08: the 241 TY2025 binders on 224 return work items over 214 tax
+engagements, Copperleaf's close intake, and the client people binders name) is opt-in
+(`--slice binders`) and bootstrapped the same way; see DEC-146.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -47,7 +51,7 @@ import sys
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, date, datetime
 from typing import Final
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -74,6 +78,21 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
     created_at as audit_created_at,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.binders import (
+    BINDER_BY_LABEL,
+    CLOSE_DUE,
+    CLOSE_PERIOD,
+    CLOSE_PREPARER,
+    COPPERLEAF,
+    COPPERLEAF_CLOSE_ENGAGEMENT,
+    COPPERLEAF_CLOSE_ITEM,
+    ENGAGEMENT_BY_LABEL,
+    RETURN_BY_LABEL,
+    TAX_YEAR,
+    Binder,
+    person_email,
+    person_id,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
@@ -687,6 +706,295 @@ async def _firm_setting_set(conn: asyncpg.Connection, _: Scenario, event: Event)
     await _bootstrap(conn, event, write)
 
 
+# --- the binders slice (P-06-T08; bootstrap writes) ----------------------------------------------
+# The binder service creates Drafts for a signed-in person and moves them one step at a time
+# (publish behind G3 and a 10-second Undo grant, mark-done by a client principal, close on a C1
+# status event). The slice's binders stand at their E0 states, on return work items no tax
+# service opens yet (T-02), so the loader writes them as the owner with their audit rows.
+
+_FELD_TEAM: Final = (
+    ("DR", "engagement_partner"),
+    ("SI", "manager"),
+    ("OB", "senior"),
+    ("KO", "staff"),
+)
+_FELD_OPENED: Final = datetime(2026, 2, 2, 15, tzinfo=UTC)  # audits.ts: onDate("2026-02-02")
+_FELD_DUE: Final = date(2026, 10, 15)
+
+
+async def _client_person_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A client's person a binder names ("Marked done by"): a client user, no grant yet."""
+    name = str(event.data["person"])
+    user = UUID(person_id(name))
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO users (id, idp_issuer, idp_subject, email, display_name) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            user,
+            ISSUER,
+            f"scenario-{slug_of(name).strip('-')}",
+            person_email(name),
+            name,
+        )
+        await conn.execute(
+            "INSERT INTO memberships (tenant_id, user_id, status, kind) "
+            "VALUES ($1, $2, 'active', 'client') ON CONFLICT DO NOTHING",
+            TENANT,
+            user,
+        )
+        return "membership.created", "user", str(user)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _engagement_row(
+    conn: asyncpg.Connection,
+    engagement: UUID,
+    client_name: str,
+    entity_name: str,
+    *,
+    name: str,
+    type_: str,
+    period: tuple[date, date],
+    creator: UUID,
+    created: datetime | None,
+) -> tuple[UUID, UUID]:
+    client = await _client_id(conn, client_name)
+    entity = await _entity_id(conn, client, entity_name)
+    await conn.execute(
+        "INSERT INTO engagements (id, tenant_id, client_id, client_entity_id, name, type, "
+        "fiscal_period_start, fiscal_period_end, status, created_by, created_at, office_id) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', $9, coalesce($10, abacus_now()), "
+        "$11) ON CONFLICT DO NOTHING",
+        engagement,
+        TENANT,
+        client,
+        entity,
+        name,
+        type_,
+        period[0],
+        period[1],
+        creator,
+        created,
+        office_id_of(_CLIENTS[client_name].office),
+    )
+    return client, entity
+
+
+async def _tax_engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A TY2025 tax engagement with its return work items (`tax_return`, with the subtype)."""
+    found = ENGAGEMENT_BY_LABEL[str(event.data["engagement"])]
+    returns = [RETURN_BY_LABEL[label] for label in found.returns]
+    engagement = UUID(found.id)
+    creator = user_id_of(_SEATS[found.partner])
+    feld = found.label == "jonah-and-claire-feld"
+
+    async def write() -> tuple[str, str, str]:
+        client, entity = await _engagement_row(
+            conn,
+            engagement,
+            found.client,
+            found.entity,
+            name=found.name(returns[0]),
+            type_="tax_compliance",
+            period=returns[0].period,
+            creator=creator,
+            created=_FELD_OPENED if feld else None,
+        )
+        for ret in returns:
+            await conn.execute(
+                "INSERT INTO work_items (id, tenant_id, engagement_id, client_id, "
+                "client_entity_id, kind, name, period_start, period_end, office_id, due_on, "
+                "created_by) VALUES ($1, $2, $3, $4, $5, 'tax_return', $6, $7, $8, $9, $10, $11) "
+                "ON CONFLICT DO NOTHING",
+                UUID(ret.id),
+                TENANT,
+                engagement,
+                client,
+                entity,
+                ret.name,
+                ret.period[0],
+                ret.period[1],
+                office_id_of(ret.office),
+                _FELD_DUE if feld else None,
+                creator,
+            )
+            await conn.execute(
+                "INSERT INTO tax_returns (tenant_id, work_item_id, engagement_id, "
+                "client_entity_id, form, tax_year) VALUES ($1, $2, $3, $4, $5, $6) "
+                "ON CONFLICT DO NOTHING",
+                TENANT,
+                UUID(ret.id),
+                engagement,
+                entity,
+                ret.code,
+                TAX_YEAR,
+            )
+        for initials, role in _FELD_TEAM if feld else ():
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                user_id_of(_SEATS[initials]),
+                role,
+            )
+        return "engagement.created", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _close_engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Copperleaf's 2026 Close and its August close (CLS-03: preparer RM, reviewer PR)."""
+    engagement = UUID(COPPERLEAF_CLOSE_ENGAGEMENT)
+    item = UUID(COPPERLEAF_CLOSE_ITEM)
+    creator = user_id_of(_SEATS[event.actor])
+    copperleaf = _CLIENTS[COPPERLEAF]
+
+    async def write() -> tuple[str, str, str]:
+        client, entity = await _engagement_row(
+            conn,
+            engagement,
+            COPPERLEAF,
+            copperleaf.entities[0],
+            name="2026 Close",
+            type_="cas_monthly_close",
+            period=(date(2026, 1, 1), date(2026, 12, 31)),
+            creator=creator,
+            created=None,
+        )
+        await conn.execute(
+            "INSERT INTO work_items (id, tenant_id, engagement_id, client_id, client_entity_id, "
+            "kind, name, period_start, period_end, office_id, due_on, created_by) VALUES ($1, $2, "
+            "$3, $4, $5, 'close', 'August 2026 Close', $6, $7, $8, $9, $10) "
+            "ON CONFLICT DO NOTHING",
+            item,
+            TENANT,
+            engagement,
+            client,
+            entity,
+            date(2026, 8, 1),
+            date(2026, 8, 31),
+            office_id_of(copperleaf.office),
+            CLOSE_DUE,
+            creator,
+        )
+        await conn.execute(
+            "INSERT INTO closes (tenant_id, work_item_id, engagement_id, period) "
+            "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+            TENANT,
+            item,
+            engagement,
+            CLOSE_PERIOD,
+        )
+        for initials, role in ((event.actor, "engagement_partner"), (CLOSE_PREPARER, "senior")):
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                user_id_of(_SEATS[initials]),
+                role,
+            )
+        return "engagement.created", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
+def _binder_home(binder: Binder) -> tuple[UUID, UUID]:
+    """(engagement, work item) the binder hangs on."""
+    if binder.kind == "close_intake":
+        return UUID(COPPERLEAF_CLOSE_ENGAGEMENT), UUID(COPPERLEAF_CLOSE_ITEM)
+    ret = RETURN_BY_LABEL[binder.ret]
+    return UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id), UUID(ret.id)
+
+
+async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A binder at its E0 state, its categories and requests, and its activity projection."""
+    binder = BINDER_BY_LABEL[str(event.data["binder"])]
+    engagement, item = _binder_home(binder)
+    actor = user_id_of(_SEATS[event.actor])
+    named = binder.named
+    done = named.marked_done if named is not None else None
+    published = binder.published
+    binder_id = UUID(binder.id)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO request_lists (id, tenant_id, engagement_id, work_item_id, name, kind, "
+            "part, status, published_at, published_by, marked_done_at, marked_done_by, "
+            "closed_at, created_from) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, "
+            "$12, $13, $14) ON CONFLICT DO NOTHING",
+            binder_id,
+            TENANT,
+            engagement,
+            item,
+            binder.name,
+            binder.kind,
+            binder.part,
+            binder.status,
+            published[1] if published is not None else None,
+            user_id_of(_SEATS[published[0]]) if published is not None else None,
+            done[1] if done is not None else None,
+            UUID(person_id(done[0])) if done is not None else None,
+            named.closed_at if named is not None else None,
+            binder.created_from,
+        )
+        for position, (name, glyph) in enumerate(binder.categories):
+            await conn.execute(
+                "INSERT INTO request_categories (id, tenant_id, request_list_id, name, "
+                "position, glyph, family) VALUES ($1, $2, $3, $4, $5, $6, $7) "
+                "ON CONFLICT DO NOTHING",
+                UUID(binder.category_id(name)),
+                TENANT,
+                binder_id,
+                name,
+                position,
+                glyph,
+                binder.family,
+            )
+        for position, request in enumerate(binder.requests, 1):
+            incorporated = request.incorporation == "incorporated"
+            await conn.execute(
+                "INSERT INTO request_items (id, tenant_id, engagement_id, request_list_id, "
+                "description, title, audit_area, category_id, status, kind, created_by, "
+                "created_at, client_visible, due_on, requested_at, incorporation_state, "
+                "incorporated_by, incorporated_at) VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, "
+                "$9, $10, $11, true, $12, $11, $13, $14, $15) ON CONFLICT DO NOTHING",
+                UUID(binder.request_id(position)),
+                TENANT,
+                engagement,
+                binder_id,
+                request.title,
+                request.category,
+                UUID(binder.category_id(request.category)),
+                request.status,
+                request.kind,
+                actor,
+                request.created,
+                request.due_on,
+                request.incorporation,
+                actor if incorporated else None,
+                request.received if incorporated else None,
+            )
+        open_count = sum(1 for r in binder.requests if r.status != "received")
+        await conn.execute(
+            "INSERT INTO binder_activity (tenant_id, binder_id, work_item_id, status, "
+            "open_count, last_client_activity_at) VALUES ($1, $2, $3, $4, $5, $6) "
+            "ON CONFLICT DO NOTHING",
+            TENANT,
+            binder_id,
+            item,
+            binder.status,
+            open_count,
+            named.last_activity if named is not None else None,
+        )
+        return "binder.created", "binder", str(binder_id)
+
+    await _bootstrap(conn, event, write)
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -710,6 +1018,11 @@ HANDLERS: Final[dict[str, Handler]] = {
     "identity.portal_user_added": _portal_user_added,
     "requests.pbc_list_created": _pbc_list_created,
     "identity.firm_setting_set": _firm_setting_set,
+    # P-06-T08 (`--slice binders`): client people, tax and close engagements, then the binders.
+    "identity.client_person_added": _client_person_added,
+    "engagements.tax_engagement_created": _tax_engagement_created,
+    "engagements.close_engagement_created": _close_engagement_created,
+    "requests.binder_created": _binder_created,
     # The shell slice, after audit_core: the sandbox firm before its offices and membership.
     "identity.sandbox_firm_created": _sandbox_firm_created,
     "organisations.sandbox_office_created": _sandbox_office_created,
