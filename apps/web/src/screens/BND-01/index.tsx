@@ -71,6 +71,8 @@ const SILENT_DAYS = 30;
 export interface BND01Props {
   filters: BinderFilters;
   onFilters: (next: BinderFilters) => void;
+  /** A row's › opens its binder (BND-02, P-06-T12). */
+  onOpen?: (row: BinderRowOut) => void;
 }
 
 /** "9:12 AM" today, "Yesterday", else "Sep 9" (the Inbox and HOME-01 feed agree). */
@@ -95,16 +97,29 @@ function priorSeason(season: string): string {
 /** The screen with its own filters: the route's page and the gallery's artboard. The filters live
  * in the page's state until the fixture-to-live swap (P-06-T16) mirrors them into the search
  * params; `initial` is what an artboard opens on (d: Season │ TY2026). */
-export function BindersIndex({ initial = {} }: { initial?: Partial<BinderFilters> }): JSX.Element {
+export function BindersIndex({
+  initial = {},
+  onOpen,
+}: {
+  initial?: Partial<BinderFilters>;
+  /** A row's › opens its binder (BND-02); the route navigates. */
+  onOpen?: (row: BinderRowOut) => void;
+}): JSX.Element {
   const today = useToday();
   const [filters, setFilters] = useState<BinderFilters>(() => ({
     ...defaultBinderFilters(today),
     ...initial,
   }));
-  return <BND01 filters={filters} onFilters={setFilters} />;
+  return (
+    <BND01
+      filters={filters}
+      onFilters={setFilters}
+      {...(onOpen === undefined ? {} : { onOpen })}
+    />
+  );
 }
 
-export function BND01({ filters, onFilters }: BND01Props): JSX.Element {
+export function BND01({ filters, onFilters, onOpen }: BND01Props): JSX.Element {
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const names = useStaffNames();
@@ -384,6 +399,7 @@ export function BND01({ filters, onFilters }: BND01Props): JSX.Element {
         state={state}
         envelope={envelope}
         columns={columns}
+        {...(onOpen === undefined ? {} : { onOpen })}
         rowKey={(r) => r.id}
         twoLine={() => true}
         chips={chips}

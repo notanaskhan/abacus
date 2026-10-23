@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/BND-02 Binder builder and tracker - Feld 2025 Binder/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-06 · contract P-06-T03 (TASK-404); a–f P-06-T12; g and the R2 rows (Linked (n), glyph, dock ScreeningCard) P-06-T22; fixture → live P-06-T16; data P-06-T08; parity P-06-T26 |
-| Manifest status | planned (`routes/manifest/bnd.ts`) |
+| Manifest status | planned, path `/binders/$binderId` (`routes/manifest/bnd.ts`). a–f are built on fixtures (P-06-T12); the entry turns `fixture` once CLI-01's "open binder" link can be wired (Open gaps) |
 
-Code to come (P-06 §5.2): `src/domain/requests/` (`RequestRow.tsx`, `CategoryRail.tsx`, `ReturnDialog.tsx`, `FollowUpSheet.tsx`, `ClientPreviewSheet.tsx`, `live.ts`), `src/domain/screening/ScreeningCardHost.tsx`, `src/screens/BND-02/{index.tsx, scenarios.ts, copy.ts, BND-02.test.tsx}`.
+Code (P-06-T12): `src/domain/requests/binder.ts` (reads, the visible-only live poll, writes), `src/domain/requests/BinderParts.tsx` (`CategoryList`, `BinderRequestRow`), `src/screens/BND-02/{index.tsx, scenarios.ts, copy.ts, BND-02.test.tsx}` (the dock, the publish bar, the client preview sheet and the dialogs live in the screen until a second consumer needs them), `src/fixtures/{seed/binder-detail.ts, scenarios/BND-02.ts}`, `routes/firm/binders.tsx`, `e2e/screens/BND-02.spec.ts`. Still to come: `FollowUpSheet.tsx` (P-06-T16), `ReturnDialog.tsx` and `domain/screening/ScreeningCardHost.tsx` (P-06-T22). The search params built are `?tab=activity` and `?request=`; `?category=` is local state (the rail scrolls the canvas to the category).
 
 ## States
 
@@ -159,7 +159,8 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | locked (blocking) at the end of S10; mask the "Uploading" spinner |
+| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26 adds the manifest entries) | built 2026-10-23; axe 0 serious or critical on all six (`e2e/screens/BND-02.spec.ts`); mask the "Uploading" spinner |
+| g | C | — | P-06-T22 |
 | host | D | — | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12, card 420, drawer 480, sheet 500 |
 
 ## Open gaps
@@ -167,3 +168,19 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 - c's data is dated Sep 15, 9:02 AM while the artboard renders at the E0 clock; the scenario keeps E0 and seeds the mark-done stamp at Sep 15, 9:02 AM as the handoff draws it.
 - "Publish to client…" in b: whether the return's preparer may publish a tax binder is P-06 OQ-1 (recommended: `binder.publish` adds `function_in(preparer)` on `tax_return` binders), decided with the C5 stub (P-06-T01). Fixture mode renders the control as designed; live mode follows `allowed_actions`.
 - Persona `kevin-osei` is added to the scenario by P-06-T08 if F-04 has not.
+
+### P-06-T12 (a–f built on fixtures, 2026-10-23; DEC-150)
+Contract facts the screen needs and C5 v1 does not carry. Nothing is invented: each renders as the contract allows and waits for the read model (P-06-T11 / T10) to add the field additively.
+- **G-1 Subbar context.** `BinderOut` has no `client_name` or `work_item_label`. The screen reads the engagement and its work items, so the subbar and the overview card read "Jonah & Claire Feld · TY2025 Form 1040" (the work item's name), not spec.md's "2025 Form 1040".
+- **G-2 Row second line.** `BinderRequestRowOut` has no matched file name, channel or uploader ("Claire_Feld_2025_W2_MercerHill.pdf · email Aug 3"). Open rows show "Requested Feb 3" from `requested_at`; satisfied rows show no second line. The green receipts ("Claire uploaded Aug 7"), the K-1's handoff line ("Firm-provided · handed off from the 2025 Form 1065 …") and its note ("final pending Ridgeline approval (due Sep 15)") need the same field.
+- **G-3 Last client activity.** `BinderOut` has no `last_client_activity_at` (the list row has it), so the publish bar drops "· last client activity 9:12 AM".
+- **G-4 Reminders.** Only `follow_up_override.every_days` is in the record: the rail reads "Every 7 days" without "· last sent Sep 8 (pre-approved template)".
+- **G-5 Personal & Household Information.** The canvas ticks it because the organizer is answered with no document requests; the record carries 0 of 0, so the rail shows "—". Needs an organizer-answered fact per category (BND-03, T-03).
+- **G-6 Section count.** The kit's `RequestSection` has no right slot, so "3 of 3" is read to assistive technology only. A C-16 header slot is a kit change for the parity task (P-06-T26).
+- **G-7 Uploaded Document.** `UploadOut` has no document title, type or summary, so the card shows Status, File ("1 of n files" when there are several) and Uploaded by; the K-1 summary with its figures (DV-5) waits for P-11 / T-02. The fixture's K-1 has the one file the handoff names, not five.
+- **G-8 Ignored by.** `client_ignored_at` has no actor: the row and the dock read the client's reason ("Not applicable this year") without "— Paul Thornbury", and the dock omits "Ignored by".
+- **G-9 Questions tab.** No questionnaire read exists (BND-03, T-03), so the tab is hidden as the contract allows; Requests and Activity are built.
+- **G-10 Visible to.** Recipients carry names only, so Thornbury's reads "Paul Thornbury" without "(executor)".
+- **G-11 Inbound link from CLI-01.** `ClientRowOut` has no binder id, so CLI-01's "Opens BND-02 · open binder" cannot be wired; BND-02's manifest entry stays `planned` (link-contract rule 1) though the screen is routed. BND-01 → BND-02 (the row's ›) and BND-02 → BND-01 ("‹ All Binders") are wired through the route's navigation; screens call no `to.*()` builder yet because the manifest names carry "Brightwater Hale" into the production bundle (the dist scan forbids it). The builder pattern needs the names out of `to.ts`'s import before a production screen can use it.
+- **Undesigned copy (DEC-150).** The Publish, Unpublish, Waive and Return dialogs, the waive reasons, the toasts and the Activity tab's event words are written for this task in `copy.ts`; the handoff draws none of them.
+- **Disabled controls.** "+ Request" and Edit (SHL-14, P-06-T13), "Send reminder…" and "Send reminder for this request" (P-06-T16), "Open return ›" (TAX-03), "Open in viewer" (SHL-08) and "Waiting 2" (INB-02) are present with their tooltips and disabled until their targets land.

@@ -11,6 +11,13 @@ import {
   type Bnd01State,
   scenarios as bnd01Scenarios,
 } from "./BND-01/scenarios";
+import { BinderPage } from "./BND-02";
+import {
+  STATES as BND02_STATES,
+  OPENS as BND02_OPENS,
+  type Bnd02State,
+  scenarios as bnd02Scenarios,
+} from "./BND-02/scenarios";
 import { ClientsIndex } from "./CLI-01";
 import {
   STATES as CLI01_STATES,
@@ -147,6 +154,45 @@ function Bnd01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("BND-01", { title: "Binders index", Component: Bnd01Artboard });
+
+function Bnd02Frame({ state }: { state: Bnd02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/binders" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <BinderPage
+        binderId={BND02_OPENS[state].binderId}
+        initialRequest={BND02_OPENS[state].request}
+        toolbar={bar.toolbar}
+        frame
+      />
+    </div>
+  );
+}
+
+function Bnd02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Bnd02State = BND02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      bnd02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Bnd02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("BND-02", { title: "Binder builder & tracker", Component: Bnd02Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
