@@ -98,6 +98,7 @@ All of SPEC-013. Excluded: email, preferences, the SPA bell, and client users.
 
   Gates, the schema check and unit tests pass. A local Postgres smoke run passed: fan-out, idempotent redelivery, uncatalogued events ignored, another user refused, read and read-all, purge. Full test runs deferred by the founder.
 - `2026-10-08` — SPEC-013 approved and merged (#50). Design written for founder review.
+- `2026-10-23` — Closed as superseded (QD-3) by P-01-T14: SPEC-013 AC-1 to AC-10 each map to a test in `backend/tests/integration/backfill/test_p01t14_notifications.py` or `backend/tests/contracts/c16_notifications/test_c16_kinds.py`; the map, the drift and AC-10's open purge defect (ED-016) are in `work/tasks/TASK-993-notifications-binder-independent-tests.md`.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

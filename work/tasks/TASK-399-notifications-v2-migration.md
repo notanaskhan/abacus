@@ -36,3 +36,4 @@ new tables, and the existing notification tests still pass."
 
 ## Progress log
 - 2026-10-22: ruff and pyright are clean. The drawer and legacy vitest files pass. The notification integration tests run against the migration, since the fixture migrates up, down and up.
+- `2026-10-23` — P-01-T14 contract tests (TASK-993): every registered kind code passes the widened CHECK, new codes are undotted, none is registered twice.

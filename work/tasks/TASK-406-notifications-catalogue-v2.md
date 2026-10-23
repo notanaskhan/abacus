@@ -42,3 +42,4 @@ updated: 2026-10-22
 - 2026-10-22: built per the S3 batch rules. The new `tests/unit/notifications/test_kinds.py` covers the C16 rules, every code passing the 0090 CHECK, and the tab categories.
 - 2026-10-22: no SPEC-013 kind has a facts resolver yet. Rows d, e and g (`client_uploaded`, `mention`) list with empty `facts` until evidence and requests register their resolvers through `notifications.api`; the live facts are wired in P-01-T16. `SUBSCRIPTIONS` is still computed when `notifications.api` is imported, so `register_kind_source` (the next kind source) has to land with a subscription refresh.
 - 2026-10-22: fixed `validate_docs` on TASK-391 to TASK-401 by using spec AC ids instead of plan story ids.
+- `2026-10-23` — P-01-T14 independent AC suite (TASK-993): defects ED-012 and ED-013 fixed; ED-015 (`register_kind_source`) and the facts and pending resolvers (deferred to P-01-T16) held by strict xfails.

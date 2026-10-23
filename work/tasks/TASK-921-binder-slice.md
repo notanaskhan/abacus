@@ -79,3 +79,4 @@ updated: 2026-10-23
   test); scenario and golden suites pass. ruff, pyright, banned_patterns, validate_docs,
   scope_guards and check-generated are clean. secrets_scan reports only the pre-existing
   finding above.
+- `2026-10-23` — P-06-T29 golden-figure suite `backend/tests/integration/test_p06t29_binder_goldens.py` (TASK-993): the §5.4 figures the slice carries pass and a seeded change to each fails its golden; the figures it does not carry yet are strict xfails.

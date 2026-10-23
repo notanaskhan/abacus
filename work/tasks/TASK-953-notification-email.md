@@ -48,3 +48,4 @@ DEC-152.
   - the integration suite, including Margaret's mention reaching Hannah once on the sink through Temporal and a redelivered event sending nothing;
   - the replay test and the C16 frozen-snapshot tests;
   - the unit, contract and security suites, ruff, pyright, `lint-imports`, `banned_patterns`, `secrets_scan`, `error_codes` and `make check-generated`.
+- `2026-10-23` — P-01-T14 independent AC suite (TASK-993): ED-014 fixed (notification email is staff only).
