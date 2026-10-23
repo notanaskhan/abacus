@@ -1,7 +1,7 @@
 """Public interface of the requests module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.engagements.api import register_roll_forward_items
+from abacus.modules.engagements.api import register_open_requests, register_roll_forward_items
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
@@ -16,6 +16,7 @@ from abacus.modules.requests.events import (
     RequestItemCreated,
     RequestItemDocumentKindChanged,
 )
+from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
 from abacus.modules.requests.routes import firm_router, methodology_router, router
 from abacus.modules.requests.service import (
@@ -64,6 +65,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     portal_router,
 )
 
+# P-07-T08: the clients index's open-request count.
+register_open_requests(open_requests_by_engagement)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 

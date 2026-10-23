@@ -64,6 +64,15 @@ engagement_members = Table(
     Column("user_id", PgUUID(as_uuid=True), nullable=False),
     Column("role", String, nullable=False),
 )
+
+
+def engagement_team_query() -> Select[UUID, UUID, str]:
+    """Every engagement's team, `(engagement_id, user_id, role)`, as a subquery for the client
+    record's derived Manager and Preparer (P-07-T09; DEC-62, DEC-138)."""
+    team = engagement_members.c
+    return cast(Select[UUID, UUID, str], select(team.engagement_id, team.user_id, team.role))
+
+
 # F-03-T26 (ADR-146): client access lives in grants. An engagement-scope `owner` or
 # `contributor` grant is what the matrix calls `client_admin` or `client_contributor`; the other
 # grant roles have no matrix cells yet (P-08).

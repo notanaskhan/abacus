@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` (P-07 owns no C-number; §8.1) |
 | Version | v1 |
-| Status | stub (P-07-T04, 2026-10-23) |
+| Status | live except the TIN reveal (P-07-T08, T09, 2026-10-23); reveal stub until P-07-T10 |
 | Provider epic | P-07 (`organisations`) |
 | Consumers | CLI-01, CLI-02 (P-07-T12, T19); fixtures P-07-T11; T-01 (CLI-05 TIN columns), T-06 (CLI-03 on `entity_relationships`), P-02 (the `client` search projection) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
@@ -15,7 +15,13 @@
 ## 1. Purpose
 Consumers can rely on a clients index on the P-36 envelope (`{items, next_cursor, total, total_capped, counts, facets}`), a client record with `allowed_actions` and `version`, a per-kind overview built from registered section providers, a relationship list, a PATCH for the four editable fields, and a TIN reveal that is a live person's act. Walls use 404 semantics: a walled client is absent from rows, counts, facets and totals and nothing anywhere says one is hidden (DEC-43). Taxpayer IDs are masked in every payload except the reveal response.
 
-**Stub behaviour.** With `clients.v2` off every route below answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-07-T08 (index), P-07-T09 (record, overview, relationships, PATCH), P-07-T10 (reveal). The seed slice is P-07-T11's, so the stubs return no fixtures; the screens build on scenarios typed with the generated client.
+**Flag and stub behaviour.** With `clients.v2` off every route below answers 404. With it on, the index (P-07-T08) and the record, overview, relationships and PATCH (P-07-T09) are live; the reveal answers 501 `not_implemented` until P-07-T10.
+
+**Where the facts come from (DEC-153).** Organisations owns the client record, entities, contacts and relationships. Each other fact is a query its owner registers (`organisations/slots.py`), and an unregistered one fails closed:
+- service lines, the active-engagements menu and the derived Manager and Preparer: engagements' open engagements (neither archived nor declined) and identity's engagement teams (Manager is `manager`; Preparer is `senior` or `staff`);
+- `open_request_count`: requests' items waiting on the client (`requested`, `returned`), summed over the client's open engagements;
+- `last_activity_at` and `last_activity_event_type`: the newest audit event (business time) on one of the client's open engagements or about the client itself;
+- overview sections: organisations' own `entities`, `key_dates` and `contacts` (`client.read`) and engagements' `engagements` (`engagement.read_metadata`). The profile is `business` for business, nonprofit; `household` for household, trust and family; `plan_sponsor`; and `empty` (no sections) while the kind is unset.
 
 **Existing route kept, not duplicated:** `GET /v1/firm/clients/search` (the ENG-03 client picker, SPEC-025) keeps its path and shape and now reads the widened `client.read` (it already drops walled clients).
 
@@ -99,7 +105,7 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | | | stub 2026-10-23 (P-07-T04) |
+| v1 | | | stub 2026-10-23 (P-07-T04); index, record, overview, relationships and PATCH live 2026-10-23 (P-07-T08, T09) |
 
 ## 11. Open points
 - DEC-141: `not_offshore` on the reveal and `firm_partner` on reads land with the live routes (a condition without its registered facts fails closed); the PATCH status change is nested (`status_change`) so that every status field in the document is a plain enum; the reveal reason codes; the manager and preparer paths added when live; the reveal response as the one plain-TIN payload.

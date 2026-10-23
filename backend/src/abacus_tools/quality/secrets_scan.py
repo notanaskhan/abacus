@@ -64,6 +64,11 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "SECRET-003",
         "C3 `field_key` values are tax-form line codes (f1040.l2a), not credentials",
     ),
+    (
+        "apps/web/src/fixtures/scenarios/POR-01.ts",
+        "SECRET-003",
+        "POR-01e's reminder-link fragment is a readable fixture word, not a 256-bit link token",
+    ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(

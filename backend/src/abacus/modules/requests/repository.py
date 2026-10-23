@@ -1058,3 +1058,17 @@ async def touch_client_activity(
             },
         )
     )
+
+
+# P-07-T08: items waiting on the client (service.OPEN_FOR_CLIENT).
+_WAITING_ON_CLIENT = ("requested", "returned")
+
+
+def open_requests_by_engagement() -> Select[UUID, int]:
+    """`(engagement_id, n)`: items waiting on the client, per engagement, for the clients
+    index's open-request count (registered with organisations)."""
+    return (
+        select(RequestItem.engagement_id, func.count().label("n"))
+        .where(RequestItem.status.in_(_WAITING_ON_CLIENT))
+        .group_by(RequestItem.engagement_id)
+    )

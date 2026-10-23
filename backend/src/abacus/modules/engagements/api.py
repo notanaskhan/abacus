@@ -2,6 +2,7 @@
 
 from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
+from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
 from abacus.modules.engagements.contacts import (
     Designation,
@@ -122,6 +123,12 @@ from abacus.modules.identity.api import (
     register_work_item_functions,
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
+from abacus.modules.organisations.api import (
+    OverviewSection,
+    register_client_engagements,
+    register_open_requests,
+    register_overview_section,
+)
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
@@ -129,6 +136,19 @@ register_engagement_client(client_subquery, client_of)
 register_client_data_facts(excluded=ai_excluded)
 # SPEC-014: which engagements count for firm-level reads by engagement role (not archived).
 register_active_engagements(active_engagements)
+# P-07-T08: `register_open_requests` is re-exported for requests, keeping the plan's graph
+# (requests -> engagements -> organisations; DEC-153).
+# P-07-T08, T09: each client's open engagements, and CLI-02's Engagements overview section.
+register_client_engagements(client_engagements)
+register_overview_section(
+    OverviewSection(
+        code="engagements",
+        kind="table",
+        read_action="engagement.read_metadata",
+        order=20,
+        provide=engagements_section,
+    )
+)
 # SPEC-025 (TASK-044): whoever joins a team is asked to confirm their independence.
 register_member_added(request_independence)
 # SPEC-025 (TASK-045): a staff engagement role reaches client data once its holder confirms.
@@ -226,6 +246,7 @@ __all__ = [
     "register_auto_retrieval",
     "register_gate_provider",
     "register_judgment_source",
+    "register_open_requests",
     "register_progress_source",
     "register_roll_forward_items",
     "register_work_item_kind",

@@ -43,6 +43,8 @@ LIMITS = {
     "time_sensitive": {"max_activities": 4, "max_workflow_tasks": 4, **SLOT_FIELDS},
     "background": {"max_activities": 1, "max_workflow_tasks": 4, **SLOT_FIELDS},
     "batch": {"max_activities": 1, "max_workflow_tasks": 4, **SLOT_FIELDS},
+    # Q-01-T27: the tenant-key class, served only when named; one at a time here.
+    "keyops": {"max_activities": 1, "max_workflow_tasks": 4, **SLOT_FIELDS},
 }
 TARGET_SECONDS = 2.0
 
@@ -254,4 +256,4 @@ async def test_ac5_an_interactive_workflow_starts_within_the_target_while_backgr
 
 
 def test_ac5_the_test_pools_are_sized_from_settings() -> None:
-    assert [LIMITS[c]["max_activities"] for c in WORK_CLASSES] == [4, 4, 1, 1]
+    assert [LIMITS[c]["max_activities"] for c in WORK_CLASSES] == [4, 4, 1, 1, 1]

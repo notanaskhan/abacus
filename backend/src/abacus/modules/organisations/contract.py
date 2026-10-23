@@ -16,7 +16,7 @@ never in a list, and in plain text only in the one reveal response (DEC-141).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -25,11 +25,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel._statuses import ClientStatus, EngagementStatus, InvitationStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.organisations import live
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -76,12 +77,6 @@ TinRevealReason = Literal[
 # The kind profile CLI-02's overview renders (business a, household b, plan sponsor c, empty e).
 OverviewProfile = Literal["business", "household", "plan_sponsor", "empty"]
 OverviewSectionKind = Literal["stats", "details", "table", "key_dates", "activity"]
-
-
-class ClientStaleVersion(DomainConflict):
-    """The client changed since it was read (`seen_version` is behind): read it again."""
-
-    code = "stale_version"
 
 
 # --- CLI-01 index -------------------------------------------------------------------------------
@@ -297,17 +292,76 @@ class TinRevealOut(BaseModel):
     remask_after_seconds: Annotated[int, classified("internal")] = 10
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _gate(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, CLIENTS_V2):
         raise NotFound("clients.v2")
+
+
+async def _stub(ctx: AuthContext) -> NoReturn:
+    await _gate(ctx)
     raise NotImplementedYet
+
+
+def _row(r: live.ClientRow) -> ClientRowOut:
+    return ClientRowOut.model_validate(r, from_attributes=True)
+
+
+def _record(v: live.ClientRecordView) -> ClientRecordOut:
+    c = v.client
+    return ClientRecordOut(
+        id=c.id,
+        name=c.name,
+        descriptor=c.descriptor,
+        kind=cast(ClientKind | None, c.kind),
+        status=ClientStatus(c.status),
+        is_attest_client=c.is_attest_client,
+        risk_tier=cast(RiskTier | None, c.risk_tier),
+        primary_office_id=c.primary_office_id,
+        office_name=v.office_name,
+        relationship_partner_id=c.relationship_partner_id,
+        manager_user_ids=v.manager_user_ids,
+        preparer_user_ids=v.preparer_user_ids,
+        portal_status=InvitationStatus(c.portal_status),
+        entities=[
+            ClientEntityBriefOut(
+                id=e.id,
+                name=e.name,
+                entity_type=cast(EntityType | None, e.entity_type),
+                fye_month_day=e.fye_month_day,
+                state_of_formation=e.state_of_formation,
+                plan_number=e.plan_number,
+                tin=(
+                    None
+                    if e.tin_kind is None
+                    else MaskedTinOut(
+                        kind=cast(TinKind, e.tin_kind),
+                        presence=cast(TinPresence, e.tin_presence),
+                        last4=e.tin_last4,
+                    )
+                ),
+            )
+            for e in v.entities
+        ],
+        active_engagements=[
+            ClientEngagementBriefOut(
+                id=b.id,
+                name=b.name,
+                status=EngagementStatus(b.status),
+                service_line=cast(ServiceLine, b.service_line),
+            )
+            for b in v.active_engagements
+        ],
+        tab_counts=ClientTabCountsOut.model_validate(v.tab_counts),
+        version=c.version,
+        allowed_actions=v.allowed_actions,
+    )
 
 
 clients_router = AbacusRouter(prefix="/v1/clients", tags=["clients"])
 client_entities_router = AbacusRouter(prefix="/v1/client-entities", tags=["clients"])
 
 
-@clients_router.get("", action="client.read", response_model=ListPage[ClientRowOut], errors=(501,))
+@clients_router.get("", action="client.read", response_model=ListPage[ClientRowOut])
 async def list_clients_route(
     ctx: Ctx,
     kind: Annotated[ClientKind | None, Query()] = None,
@@ -324,47 +378,115 @@ async def list_clients_route(
     """CLI-01: rows, `counts` per client status and, on request, `facets` (kind, office,
     partner, service line), after `visible(scope=client)`. `total` is exact (DEC-47); `q` is
     never logged."""
-    await _stub(ctx)
+    await _gate(ctx)
+    found = await live.list_clients(
+        ctx,
+        live.ClientFilters(
+            kind=kind,
+            office_id=office_id,
+            partner_id=partner_id,
+            service_line=service_line,
+            status=None if status is None else status.value,
+            q=q,
+        ),
+        sort=sort,
+        facets=facets,
+        cursor=cursor,
+        limit=limit,
+    )
+    return ListPage[ClientRowOut](
+        items=[_row(r) for r in found.items],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+        counts=found.counts,
+        facets=found.facets,
+    )
 
 
-@clients_router.get(
-    "/{client_id}", action="client.read", response_model=ClientRecordOut, errors=(501,)
-)
+@clients_router.get("/{client_id}", action="client.read", response_model=ClientRecordOut)
 async def get_client_route(client_id: UUID, ctx: Ctx) -> ClientRecordOut:
-    await _stub(ctx)
+    await _gate(ctx)
+    return _record(await live.client_record(ctx, client_id))
 
 
 @clients_router.get(
-    "/{client_id}/overview", action="client.read", response_model=ClientOverviewOut, errors=(501,)
+    "/{client_id}/overview", action="client.read", response_model=ClientOverviewOut
 )
 async def client_overview_route(client_id: UUID, ctx: Ctx) -> ClientOverviewOut:
     """Per-kind profile from registered section providers, each filtered by its own read action;
     an unregistered section is absent and an unregistered column renders "—" (fail closed)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    profile, sections = await live.client_overview(ctx, client_id)
+    return ClientOverviewOut(
+        client_id=client_id,
+        profile=profile,
+        sections=[
+            ClientOverviewSectionOut(
+                code=s.code,
+                kind=cast(OverviewSectionKind, s.kind),
+                read_action=s.read_action,
+                items=[
+                    ClientOverviewItemOut(
+                        key=i.key,
+                        text=i.text,
+                        figure=i.figure,
+                        on=i.on,
+                        at=i.at,
+                        pill_object=i.pill_object,
+                        pill_code=i.pill_code,
+                        ref=(
+                            None
+                            if i.ref_type is None or i.ref_id is None
+                            else ClientObjectRefOut(type=i.ref_type, id=i.ref_id)
+                        ),
+                    )
+                    for i in s.rows.items
+                ],
+                total=s.rows.total,
+            )
+            for s in sections
+        ],
+    )
 
 
 @clients_router.patch(
-    "/{client_id}",
-    action="client.update",
-    response_model=ClientRecordOut,
-    errors=(409, 501),
+    "/{client_id}", action="client.update", response_model=ClientRecordOut, errors=(409,)
 )
 async def update_client_route(client_id: UUID, body: ClientPatchIn, ctx: Ctx) -> ClientRecordOut:
     """Descriptor, office, relationship partner and status; 409 `stale_version`, 409
     `illegal_transition`; one `client.updated` audit event."""
-    await _stub(ctx)
+    await _gate(ctx)
+    await live.update_client(
+        ctx,
+        client_id,
+        live.ClientPatch(
+            seen_version=body.seen_version,
+            descriptor=body.descriptor,
+            primary_office_id=body.primary_office_id,
+            relationship_partner_id=body.relationship_partner_id,
+            status=None if body.status_change is None else body.status_change.status.value,
+        ),
+    )
+    return _record(await live.client_record(ctx, client_id))
 
 
 @clients_router.get(
     "/{client_id}/relationships",
     action="client.read",
     response_model=ListPage[ClientRelationshipOut],
-    errors=(501,),
 )
 async def client_relationships_route(
     client_id: UUID, ctx: Ctx, cursor: Annotated[str | None, Query(max_length=512)] = None
 ) -> ListPage[ClientRelationshipOut]:
-    await _stub(ctx)
+    await _gate(ctx)
+    found = await live.client_relationships(ctx, client_id, cursor)
+    return ListPage[ClientRelationshipOut](
+        items=[ClientRelationshipOut.model_validate(r, from_attributes=True) for r in found.items],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+    )
 
 
 @client_entities_router.post(

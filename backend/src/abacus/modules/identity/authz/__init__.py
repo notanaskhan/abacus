@@ -220,6 +220,11 @@ class Resource:
         return cls(tenant_id, None, False)
 
     @classmethod
+    def client(cls, tenant_id: UUID, client_id: UUID) -> Resource:
+        """A firm-level action on one client (P-07-T09): the wall check names the client."""
+        return cls(tenant_id, None, False, client_id=client_id)
+
+    @classmethod
     def engagement(
         cls,
         tenant_id: UUID,
@@ -780,6 +785,27 @@ def visible_scope(
     raise ValueError(f"unknown scope kind {scope!r}")
 
 
+async def visible_clients(
+    ctx: Actor, action: str, client_id: EngagementColumn
+) -> ColumnElement[bool]:
+    """`visible_scope(ctx, action, "client", client_id)` with the derived `firm_partner` cell
+    (DEC-132, DEC-141): a partner-level member whose firm role doesn't already allow the read
+    reads every client they aren't walled off from. Async: the membership level is read."""
+    rule = _rule(action)
+    if not rule.reads:
+        raise ValueError(f"visible() filters reads; {action!r} is not a read action")
+    if (
+        isinstance(ctx, AuthContext)
+        and rule.decisions.get(FIRM_PARTNER) == "allow"
+        and not ctx.is_support
+        and (ctx.firm_role is None or rule.decisions.get(ctx.firm_role) != "allow")
+        and await _partner_level(ctx)
+    ):
+        _record(action)
+        return _not_walled_client(ctx, client_id)
+    return visible_scope(ctx, action, "client", client_id)
+
+
 def _visible_by_role(
     ctx: Actor, action: str, engagement_id: EngagementColumn
 ) -> ColumnElement[bool]:
@@ -907,5 +933,6 @@ __all__ = [
     "register_independence",
     "serving_request",
     "visible",
+    "visible_clients",
     "visible_items",
 ]
