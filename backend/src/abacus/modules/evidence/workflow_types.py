@@ -17,3 +17,14 @@ class UploadInput:
     tenant_id: str
     kind: str  # VERSION | INBOX
     source_id: str
+
+
+@dataclass(frozen=True)
+class BackfillInput:
+    """P-03-T05: the trust layer backfill's cursor. Ids only: the last version and inbox file
+    it reached (ordered by id), and how many it has handed to `upload.words` so far."""
+
+    tenant_id: str
+    after_version: str | None = None
+    after_inbox: str | None = None
+    done: int = 0

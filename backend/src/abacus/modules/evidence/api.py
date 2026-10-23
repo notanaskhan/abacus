@@ -85,10 +85,11 @@ from abacus.modules.evidence.storage import (
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.uploads import upload
+from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
-from abacus.modules.evidence.workflow_types import UploadInput
-from abacus.modules.evidence.workflows import UploadProcessing
+from abacus.modules.evidence.workflow_types import BackfillInput, UploadInput
+from abacus.modules.evidence.workflows import TrustLayerBackfill, UploadProcessing
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
 
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -118,8 +119,10 @@ __all__ = [
     "TOTAL_LABEL",
     "UPLOAD_INBOX",
     "UPLOAD_VERSION",
+    "WORDS_VERSION",
     "WORKFLOWS",
     "XLSX_MEDIA_TYPE",
+    "BackfillInput",
     "Candidate",
     "ContentTooLarge",
     "EngagementArchived",
@@ -144,6 +147,7 @@ __all__ = [
     "StoredRecord",
     "TrialBalance",
     "TrialBalanceLine",
+    "TrustLayerBackfill",
     "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
@@ -172,6 +176,7 @@ __all__ = [
     "router",
     "stage_content",
     "stale_pdfs",
+    "start_trust_layer_backfill",
     "suggest_by_name",
     "upload",
     "version_view",

@@ -12,7 +12,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.evidence.models import (
+    Citation,
     EvidenceItem,
+    EvidencePage,
     EvidenceVersion,
     InboxFile,
     ReviewAssignment,
@@ -773,6 +775,126 @@ async def stale_pdf_uploads(
         .all()
     )
     return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
+
+
+# --- The word layer (P-03-T05) and citations (P-03-T06) ----------------------------------------
+
+
+async def pages_of(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+    extractor_version: str,
+) -> Sequence[EvidencePage]:
+    """A source's word-layer pages by this extractor version, by page (none derived), for the
+    system or a caller that authorised on the source (LIST_EXEMPT: one source's pages)."""
+    source = (
+        EvidencePage.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else EvidencePage.inbox_file_id == inbox_file_id
+    )
+    return (
+        (
+            await session.execute(
+                select(EvidencePage)
+                .where(
+                    source,
+                    EvidencePage.derivation_id.is_(None),
+                    EvidencePage.extractor_version == extractor_version,
+                )
+                .order_by(EvidencePage.page_no)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def insert_pages(session: AsyncSession, rows: Sequence[dict[str, object]]) -> int:
+    """The pages written; a page a concurrent run already wrote is left alone."""
+    if not rows:
+        return 0
+    added = await session.execute(
+        pg_insert(EvidencePage)
+        .values(list(rows))
+        .on_conflict_do_nothing()
+        .returning(EvidencePage.id)
+    )
+    return len(added.scalars().all())
+
+
+async def sources_without_words(
+    session: AsyncSession,
+    extractor_version: str,
+    *,
+    after_version: UUID | None,
+    after_inbox: UUID | None,
+    limit: int,
+) -> list[tuple[str, UUID]]:
+    """P-03-T05: PDF versions, then inbox files, by id after the cursors, with no word layer by
+    this version and an extraction that read them (LIST_EXEMPT: the system backfill only)."""
+    readable = (
+        select(UploadExtraction.id)
+        .where(UploadExtraction.status != "unreadable")
+        .correlate_except(UploadExtraction)
+    )
+    layered = (
+        select(EvidencePage.id)
+        .where(
+            EvidencePage.extractor_version == extractor_version,
+            EvidencePage.derivation_id.is_(None),
+        )
+        .correlate_except(EvidencePage)
+    )
+    version_query = select(EvidenceVersion.id).where(
+        EvidenceVersion.media_type == "application/pdf",
+        readable.where(UploadExtraction.evidence_version_id == EvidenceVersion.id).exists(),
+        ~layered.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
+    )
+    if after_version is not None:
+        version_query = version_query.where(EvidenceVersion.id > after_version)
+    versions = (
+        (await session.execute(version_query.order_by(EvidenceVersion.id).limit(limit)))
+        .scalars()
+        .all()
+    )
+    inbox_query = select(InboxFile.id).where(
+        InboxFile.media_type == "application/pdf",
+        readable.where(UploadExtraction.inbox_file_id == InboxFile.id).exists(),
+        ~layered.where(EvidencePage.inbox_file_id == InboxFile.id).exists(),
+    )
+    if after_inbox is not None:
+        inbox_query = inbox_query.where(InboxFile.id > after_inbox)
+    inbox = (
+        (
+            await session.execute(
+                inbox_query.order_by(InboxFile.id).limit(max(limit - len(versions), 0))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
+
+
+async def next_citation_n(session: AsyncSession, cited_from_type: str, cited_from_id: UUID) -> int:
+    """The next position in an anchor's stack (1 for a new anchor)."""
+    found = (
+        await session.execute(
+            select(func.max(Citation.n)).where(
+                Citation.cited_from_type == cited_from_type,
+                Citation.cited_from_id == cited_from_id,
+            )
+        )
+    ).scalar_one_or_none()
+    return int(found or 0) + 1
+
+
+async def insert_citation(session: AsyncSession, values: dict[str, object]) -> UUID:
+    return (
+        await session.execute(insert(Citation).values(**values).returning(Citation.id))
+    ).scalar_one()
 
 
 async def decisions_for_screenings(
