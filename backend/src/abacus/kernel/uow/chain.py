@@ -11,7 +11,8 @@ Each firm's audit events are sealed in checkpoints:
 `seal_checkpoint` closes a firm's new events up to the settle horizon. Events younger than the
 settle window are left for the next run, so a transaction still committing a lower `seq` isn't
 skipped. `verify_chain` recomputes every checkpoint from its rows and names any that no longer
-match (a changed, removed or added event, or a broken link).
+match (a changed, removed or added event, or a broken link). `verify_anchor` checks a published
+(checkpoint, chain hash) pair against the recomputed chain.
 
 Checkpoints are an operational ledger the chain itself proves, written without an audit event,
 as `kernel/slots.py` is. A test fails if `audit_events` gains a column that `LEAF_V1_COLUMNS`
@@ -254,6 +255,20 @@ async def verify_chain(tenant_id: UUID) -> list[int]:
     return bad
 
 
+async def verify_anchor(tenant_id: UUID, checkpoint_no: int, anchored: bytes) -> bool:
+    """Whether a published anchor still holds (Q-02-T27; C-09): the firm's chain recomputes
+    cleanly through `checkpoint_no`, and that checkpoint's chain hash is the one published. A
+    checkpoint the database no longer has fails, as does any change below it."""
+    async with tenant_connection(_system(tenant_id, "anchor")) as conn:
+        rows = _rows(await conn.execute(_ALL))
+    found = next(
+        (c for c in map(_checkpoint, rows) if c and c.checkpoint_no == checkpoint_no), None
+    )
+    if found is None or found.chain_hash != anchored:
+        return False
+    return not [n for n in await verify_chain(tenant_id) if n <= checkpoint_no]
+
+
 __all__ = [
     "LEAF_V1_COLUMNS",
     "LEAF_VERSION",
@@ -264,5 +279,6 @@ __all__ = [
     "leaf",
     "merkle_root",
     "seal_checkpoint",
+    "verify_anchor",
     "verify_chain",
 ]
