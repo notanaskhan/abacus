@@ -1735,6 +1735,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
             "tests/integration/test_staff_session.py",  # P-01-T09: seeds as the superuser
+            "tests/integration/test_telemetry_tunnel.py",  # Q-01-T48: seeds as the superuser
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
             "tests/integration/test_work_items.py",  # F-03-T05: setup as the superuser

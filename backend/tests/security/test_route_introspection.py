@@ -713,6 +713,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/support/sessions", "staff"),
     ("POST", "/v1/support/sessions/{session_id}/approve", "staff"),
     ("POST", "/v1/support/sessions/{session_id}/end", "staff"),
+    ("POST", "/v1/telemetry/errors", "own"),
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),
     ("PUT", "/v1/binders/{binder_id}/follow-up-override", "binder.update"),
