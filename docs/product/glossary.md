@@ -167,9 +167,12 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Evidence object key | The wrapped data key of one detached-key evidence version (client-channel uploads, ADR-162), stored apart from the object so destroying it crypto-erases the file. Acceptance stamps `retained_at`, one-way; only the purge's SECURITY DEFINER path nulls `wrapped_key` and stamps `destroyed_at`. Not the S3 object path (`tenants/<tenant>/v/<version_id>`) and not the tenant key. | `evidence_object_keys` (`version_id`, `wrapped_key`, `retained_at`, `destroyed_at`), `evidence_versions.storage_mode` | — |
 | File folder | The Files tree. | `file_folders` | — |
 | Archive / addition | Seal manifests; post-lock additions. | `archives`, `archive_additions`, `audit_checkpoints` | — |
-| Retention policy / legal hold / destruction batch | P-14. | `retention_policies`, `legal_holds`, `hold_objects`, `destruction_batches` | — |
+| Retention floor | The legal minimum years a record type is kept, per service line (`any` for every line), with its anchor event and authority. Platform content in numbered sets, imported by one staff member and published by another; never a literal in code (DEC-156). | `retention_floors`, `retention_floor_of()` | — |
+| Retention policy | A firm's years for a record type and service line, at or above its floor, with a clock-start event, a lock and a basis (DEC-71 / P-14). Destruction batches are Q-05's. | `retention_policies`, `retention_policy_versions`, `destruction_batches` | — |
+| Legal hold | A person's preservation order on a client, a client and tax year, an engagement or a work item, with a reason code (IRS examination, litigation, regulatory inquiry, subpoena, other). While any hold covers a stored version, no retention expiry, withdrawal or destruction can erase it, and S3 holds the object (`legal_hold.placed`, `legal_hold.lifted`; human only). Statuses: Applying, Active, Releasing, Released. | `legal_holds`, action `legal_hold.place` / `.lift` / `.read` | — |
+| Hold object | One evidence version a legal hold covers: the reference count. The S3 object legal hold comes off only when no unreleased hold object names that stored object. | `hold_objects`, `active_hold_count()`, `holds_covering()` | — |
 | Capture session | POR-19 mobile capture. | `capture_sessions` | — |
-| Firm export | Dual control (DEC-72). | `firm_exports` | — |
+| Firm export | The firm's whole data, exported on request by a security admin and approved by a different person (a partner or security admin), with fresh MFA; links last 15 minutes within 7 days of approval (DEC-72). | `firm_exports`, actions `firm_export.request` / `.approve` / `.download` / `.read` | — |
 
 ## New terms: notifications
 
@@ -346,18 +349,25 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 |---|---|---|---|
 | Reference set | Platform-published calendars (P-62). | `reference_sets` (+ versions) | — |
 | Agent-minute | Metering unit (P-28). | `agent_minute`; `plan_entitlements` | — |
+| Security incident | A firm's or Accrued's recorded security event, with its discovery time and the FTC clock (notify by discovery + 30 calendar days in the firm's time zone when 500 or more consumers' unencrypted data is involved). An Accrued-side incident is propagated into each affected firm's register. | `security_incidents`, action `incident.manage` | — |
 
 ## New terms: kernel
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | TRI | Tax return information. Data-class tag, plus `phi` and `pii_kind`. Gated by `consent_7216`. | `tri` | — |
+| Access event | One read of client data (who, what, for whom), in the insert-only, partitioned read log kept apart from audit events (R-30). | `access_events`, `kernel.access.record_reads` | — |
+| Audit checkpoint | A sealed range of a firm's audit events with its Merkle root and chain hash; an anchor publishes one to the records bucket. | `audit_checkpoints`, `audit_anchors` | — |
 
 ## New terms: agents
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Agent (capability) | Code-declared agent spec (ADR-047). | `modules/agents/specs/*.yaml` | — |
+| Agent stage | Per firm and per agent: `off`, `shadow` (runs, nothing shown) or `live` (SPEC-036). | `agent_stages`, `agent_stage_events` | — |
+| AI opt-in | A firm administrator's opt-in, with fresh MFA, to the agent reading clients' data, against the disclosure version shown (SPEC-036). | `firms.ai_client_data_at`, action `firm.ai_client_data` | — |
+| AI exclusion | An engagement partner's exclusion of one engagement from the agent, with a reason. | `engagements.ai_excluded_at`, action `engagement.ai_exclude` | — |
+| Run record | The insert-only record of a completed specialist run: versions, model, route, inputs' hashes, records read, citations and outcome, kept for the engagement's retention after traces expire. | `agent_run_records` | — |
 | Run step | One step of an agent run. Never "task". | `agent_run_steps` | `task` |
 | Plan / question / artifact / event | P-47. | `agent_plans`, `agent_questions`, `run_artifacts`, `run_events` | — |
 | Proposal (agent change set) | Groups suggestions (X-14). | `proposals`, `proposal_rows` | — |

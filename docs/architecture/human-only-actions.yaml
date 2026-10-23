@@ -41,7 +41,13 @@ actions:
     verb: accept
   - action: legal_hold.placed
     verb: decide
+  - action: legal_hold.lifted
+    verb: decide  # Q-02-T30 (migration 0125)
   - action: firm_export.approved
     verb: approve
+  - action: firm_export.declined
+    verb: reject  # Q-02-T30 (migration 0125)
+  - action: retention_policy.updated
+    verb: decide  # Q-02-T30 (migration 0125)
   - action: firm.ai_client_data_opted_in
     verb: confirm

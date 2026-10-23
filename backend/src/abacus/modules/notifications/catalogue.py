@@ -195,6 +195,14 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("materiality.proposed", "approval", "Scale"),
     NotificationKind("risk.approval_requested", "approval", "TriangleAlert"),
     NotificationKind("finding.severity_proposed", "approval", "Flag"),
+    # Q-02-T30 (Q-02 §4.8): the compliance kernel's kinds. Email text is database rows, loaded
+    # through the admin import; none is committed.
+    NotificationKind("ai_client_data_changed", "system", "ShieldCheck"),
+    NotificationKind("legal_hold_placed", "system", "Lock"),
+    NotificationKind("incident_recorded", "system", "ShieldAlert"),
+    NotificationKind("incident_from_accrued", "system", "ShieldAlert", email_default=True),
+    NotificationKind("firm_export_approval_requested", "approval", "Download"),
+    NotificationKind("firm_export_ready", "system", "Download"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

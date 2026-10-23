@@ -18,8 +18,8 @@ A firm keeps each record type for at least the published legal floor, and for it
 ## 2. Who may call it
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
 |---|---|---|---|---|
-| Read the firm's effective policies | `GET /v1/retention/policies` | `retention_policy.read` | firm admin, security admin, quality partner, practice leader | denied |
-| Save one policy | `PUT /v1/retention/policies` | `retention_policy.update` (fresh MFA) | firm admin, security admin | denied |
+| Read the firm's effective policies | `GET /v1/retention/policies` | `retention_policy.read` (the plan's `retention.read`; DEC-227) | every firm role: firm admin, security admin, quality partner, practice leader, partner-level members, and engagement roles on the firm's active engagements; clients denied | denied |
+| Save one policy | `PUT /v1/retention/policies` | `retention_policy.update` (the plan's `retention_policy.manage`; fresh MFA) | firm admin, security admin | denied |
 | Import a floor set (draft) | `POST /v1/platform/retention/floors` → 201 | staff issuer (`STAFF`) | platform staff | n/a |
 | Publish a floor set | `POST /v1/platform/retention/floors/{set_version}/publish` | staff issuer | a different staff member from the importer | n/a |
 | Import a default-policy set (draft) | `POST /v1/platform/retention/defaults` → 201 | staff issuer | platform staff | n/a |
@@ -36,7 +36,7 @@ Code: `backend/src/abacus/modules/evidence/retention_routes.py`. All Internal.
 Set status: `draft`, `published`, `superseded` (database only; not shown in the product yet).
 
 ## 5. Human-only actions
-Saving a policy denies `agent` and `system`. Publishing a set needs a second, different staff member (the database refuses the importer).
+Saving a policy denies `agent` and `system`; `retention_policy.updated` is in the human-only register (Q-02-T30, migration 0125), so the database refuses it from an agent or policy actor. Publishing a set needs a second, different staff member (the database refuses the importer).
 
 ## 6. Errors
 | Status | Body | When |

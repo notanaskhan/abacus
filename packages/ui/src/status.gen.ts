@@ -2490,6 +2490,32 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "legal_hold": {
+    "applying": {
+      "label": "Applying",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "active": {
+      "label": "Active",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "releasing": {
+      "label": "Releasing",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "released": {
+      "label": "Released",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 
