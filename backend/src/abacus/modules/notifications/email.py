@@ -31,7 +31,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import MissingAuditEvent, Target, uow
 from abacus.modules.communications.api import NotificationMail, send_notification_email
-from abacus.modules.identity.api import engagement_resource, walled_from
+from abacus.modules.identity.api import engagement_resource, member_facts, walled_from
 from abacus.modules.notifications.catalogue import CATALOGUE, TEMPLATES
 from abacus.modules.notifications.kinds import kind_of
 from abacus.modules.notifications.repository import (
@@ -93,7 +93,18 @@ async def queue_emails(ctx: TenantContext, event_id: UUID, code: str) -> None:
     async with tenant_session(ctx) as session:
         made = await made_for_event(session, event_id, code)
         chosen = await email_choices(session, code, [user for user, _ in made.values()])
-    wanted = [n for n, (user, _) in made.items() if chosen.get(user, kind.email_default)]
+    # INV-4 (P-01-T14): notification email goes to firm staff only, never to a client user
+    # (a client may be mentioned in a comment and so hold an in-app row).
+    staff = {
+        user
+        for user, _ in made.values()
+        if (facts := await member_facts(ctx, user)) is not None and not facts.client
+    }
+    wanted = [
+        n
+        for n, (user, _) in made.items()
+        if user in staff and chosen.get(user, kind.email_default)
+    ]
     if not wanted:
         return
     status = "queued" if await flag_enabled(ctx, NOTIFICATIONS_EMAIL) else "suppressed"
