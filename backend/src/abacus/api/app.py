@@ -59,8 +59,9 @@ _log = get_logger(__name__)
 
 async def _forbidden(request: Request, exc: Exception) -> JSONResponse:
     # Which layer denied is logged by authorise, never told to the caller. A walled person gets
-    # the same answer as for a missing engagement, so a wall doesn't reveal it (SPEC-002 Q1).
-    if isinstance(exc, identity.Forbidden) and exc.layer == "wall":
+    # the same answer as for a missing engagement, so a wall doesn't reveal it (SPEC-002 Q1); so
+    # does a client user on another client's engagement (F-03 story 5.2, DEC-43).
+    if isinstance(exc, identity.Forbidden) and exc.layer in ("wall", "client_scope"):
         return await _not_found(request, exc)
     return JSONResponse({"detail": "forbidden"}, status_code=403)
 

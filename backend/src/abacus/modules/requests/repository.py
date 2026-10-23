@@ -9,9 +9,11 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import and_, func, insert, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
+from abacus.kernel.errors import DomainConflict
 from abacus.kernel.listing import Position, capped_total, keyset, status_counts
 from abacus.modules.identity.api import AuthContext, visible, visible_items
 from abacus.modules.requests.guidance import Guidance
@@ -30,6 +32,12 @@ from abacus.modules.requests.models import (
 )
 
 
+class NoWorkItem(DomainConflict):
+    """A request needs a binder, and a binder a work item: the engagement has none yet."""
+
+    code = "no_work_item"
+
+
 async def request_list_for(
     session: AsyncSession, tenant_id: UUID, engagement_id: UUID
 ) -> tuple[UUID, bool]:
@@ -44,17 +52,26 @@ async def request_list_for(
     existing = (await session.execute(select(RequestList.id).where(*first))).scalar_one_or_none()
     if existing is not None:
         return existing, False
-    created = (
-        await session.execute(
-            pg_insert(RequestList)
-            # Published at once: the publish flow (BND-01) isn't built yet.
-            .values(
-                id=uuid4(), tenant_id=tenant_id, engagement_id=engagement_id, status="published"
+    try:
+        created = (
+            await session.execute(
+                pg_insert(RequestList)
+                # Published at once: the publish flow (BND-01) isn't built yet.
+                .values(
+                    id=uuid4(),
+                    tenant_id=tenant_id,
+                    engagement_id=engagement_id,
+                    status="published",
+                )
+                .on_conflict_do_nothing(constraint="request_lists_binder_key")
+                .returning(RequestList.id)
             )
-            .on_conflict_do_nothing(constraint="request_lists_binder_key")
-            .returning(RequestList.id)
-        )
-    ).scalar_one_or_none()
+        ).scalar_one_or_none()
+    except IntegrityError as exc:
+        # 0070's trigger: a binder belongs to a work item, and the engagement has none yet.
+        if getattr(exc.orig, "sqlstate", None) == "23503":
+            raise NoWorkItem("request_list") from None
+        raise
     if created is not None:
         return created, True
     winner = (await session.execute(select(RequestList.id).where(*first))).scalar_one()

@@ -39,6 +39,7 @@ from abacus.kernel.db import (
     tenant_session,
 )
 from abacus.kernel.db.migration import tenant_table
+from abacus.modules.identity import authz
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -51,6 +52,7 @@ from abacus.modules.identity.api import (
     reset_verifier,
     visible,
 )
+from abacus.modules.identity.authz.matrix import RULES
 from abacus_tools.codegen import permission_matrix as pm
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
@@ -625,6 +627,7 @@ ME_KEYS = {
     *("user_id", "email", "display_name", "memberships", "active_tenant_id"),
     *("server_now", "clock_mode"),
     *("initials", "job_title", "default_office_id", "offices"),  # P-01-T04 (v3)
+    *("portal", "mfa"),  # P-08-T01 (C5 v1.1): optional, null until P-08-T07 and T17
 }
 
 
@@ -1521,6 +1524,9 @@ READ_ACTIONS = sorted(
         cast(dict[str, object], yaml.safe_load(pm.source()))["actions"],
     )
     if action.split(".", 1)[1] in {"read", "read_metadata", "read_log"}
+    # `visible()` refuses a conditioned read by design (`portal_home.read`, P-08-T01): it is
+    # checked with `authorise()` only (tests/unit/identity/test_permission_matrix.py).
+    and not authz.has_conditions(RULES[action])
 )
 FIRM_ROLES: tuple[FirmRole | None, ...] = (
     None,
