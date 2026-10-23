@@ -4,7 +4,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 
 - **P-ID.** The proposal ID from [`docs/plan/09-decisions-adrs.md`](../plan/09-decisions-adrs.md) section 9.4.2. P-64 to P-69 were added from the backlog tasks that draft them.
 - **Epic.** The epic whose backlog task first drafts the ADR (from `docs/plan/backlog.csv`, best match; check the task when drafting starts). Epic keys such as `P-10` are epics, not ADR IDs. A dash means no task names it.
-- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161, P-31 = ADR-162, P-11 = ADR-163, P-13 = ADR-164 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
+- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161, P-31 = ADR-162, P-11 = ADR-163, P-13 = ADR-164, P-48 = ADR-166 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
 - **DEC row.** The decision it records, in [`docs/product/decision-log.md`](../product/decision-log.md).
 - **Status.** `to draft`, `proposed`, `accepted`, or `n/a, solo edition`.
 
@@ -57,7 +57,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-45 | Unauthenticated `/healthz` and portal branding routes | red | Q-01 | ADR-152 | Fri 13 Nov (with TASK-014) | DEC-59 | proposed |
 | P-46 | Gateway conversations and tool use | red | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-41 | to draft (re-dated) |
 | P-47 | Runs, steps, sessions, canonical run states, run records | red | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | — | to draft (re-dated) |
-| P-48 | Citation v2 and number provenance | red | P-03 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-03's first task, owner ayushkbhatia | — | to draft (re-dated) |
+| P-48 | Citation v2 and number provenance | red | P-03 | ADR-166 (plan alias ADR-144, which is P-44's request status migration) | Fri 13 Nov; re-dated 2026-10-22: drafted and accepted 2026-10-23 with P-03-T27 | DEC-147 | accepted |
 | P-49 | Autonomy policy versions and Auto mode | red | P-10 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-50 | to draft (re-dated) |
 | P-50 | Agent schedules | amber | W-03 | next free | Fri 18 Dec | DEC-90 | to draft |
 | P-51 | Triggers and run-as | red | K-04 | next free | Fri 18 Dec | DEC-90 | to draft |
