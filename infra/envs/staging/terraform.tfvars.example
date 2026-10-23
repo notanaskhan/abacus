@@ -8,7 +8,7 @@ portal_base_domain = "portal-domain.example.test"
 # portal_canary_custom_domain = "portal.canary-firm.example.test"
 
 # From Q-01-T15's load balancer and VPC origin.
-api_vpc_origin_id      = "vo_0000000000000000"
+api_vpc_origin_id      = "vo_example"
 api_origin_domain_name = "internal-api.staging.example.test"
 
 # count for the first two weeks, then block.
