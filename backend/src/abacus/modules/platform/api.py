@@ -18,6 +18,7 @@ from abacus.modules.platform.provisioning import (
     emit_tenant_provisioned_activity,
     invite_first_admins_activity,
     operator_context,
+    request_tenant_key_activity,
     set_plan_entitlements_activity,
     start_provisioning,
 )
@@ -28,11 +29,22 @@ from abacus.modules.platform.slots import (
     register_search_projection,
     search_document,
 )
-from abacus.modules.platform.workflow_types import ProvisionTenantInput, ProvisionTenantResult
+from abacus.modules.platform.tenant_keys import (
+    TENANT_KEY_ACTIVITIES,
+    InMemoryTenantKeyOps,
+    configure_tenant_key_ops,
+)
+from abacus.modules.platform.workflow_types import (
+    ProvisionTenantInput,
+    ProvisionTenantResult,
+    TenantKeyInput,
+)
 from abacus.modules.platform.workflows import (
     G04_PLAN_PATCH,
+    TenantKeyWorkflow,
     TenantProvisioningWorkflow,
     provisioning_workflow_id,
+    tenant_key_workflow_id,
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -44,6 +56,8 @@ ACTIVITIES: tuple[object, ...] = (
     emit_tenant_provisioned_activity,
     set_plan_entitlements_activity,  # Q-01-T45 (0107)
     invite_first_admins_activity,
+    request_tenant_key_activity,  # Q-01-T27
+    *TENANT_KEY_ACTIVITIES,  # the keyops queue's (P-65)
 )
 
 __all__ = [
@@ -57,13 +71,17 @@ __all__ = [
     "BudgetInvalid",
     "Entitlement",
     "EntitlementRequired",
+    "InMemoryTenantKeyOps",
     "Module",
     "ProvisionTenantInput",
     "ProvisionTenantResult",
     "SearchDocument",
+    "TenantKeyInput",
+    "TenantKeyWorkflow",
     "TenantProvisioned",
     "TenantProvisioningWorkflow",
     "check_entitlement",
+    "configure_tenant_key_ops",
     "entitlement",
     "operator_context",
     "provisioning_workflow_id",
@@ -72,4 +90,5 @@ __all__ = [
     "router",
     "search_document",
     "start_provisioning",
+    "tenant_key_workflow_id",
 ]

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from dataclasses import replace
 from datetime import timedelta
 from typing import cast
@@ -20,6 +20,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from temporalio.client import Client
+from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.config import settings
@@ -30,14 +31,22 @@ from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.platform.api import (
     ACTIVITIES,
     WORKFLOWS,
+    InMemoryTenantKeyOps,
     ProvisionTenantResult,
+    TenantKeyWorkflow,
     TenantProvisioningWorkflow,
+    configure_tenant_key_ops,
     entitlement,
     operator_context,
     provisioning_workflow_id,
 )
 from abacus.modules.platform.provisioning import invite_admins, set_plan_entitlements
-from abacus.modules.platform.workflow_types import ProvisionTenantInput
+from abacus.modules.platform.tenant_keys import (
+    create_tenant_key,
+    replicate_tenant_key,
+    verify_tenant_key,
+)
+from abacus.modules.platform.workflow_types import ProvisionTenantInput, TenantKeyInput
 from abacus_tools import tenants
 from abacus_tools.tenants import ProvisionRequest, Refused
 
@@ -92,13 +101,31 @@ async def temporal(temporal_target: str) -> AsyncIterator[Client]:
 
 
 @pytest.fixture
-async def worker(temporal: Client) -> AsyncIterator[None]:
-    assert {TenantProvisioningWorkflow: "background"} == WORKFLOWS
-    async with Worker(
-        temporal,
-        task_queue=queue_for("background"),
-        workflows=list(WORKFLOWS),
-        activities=cast("list[Callable[..., object]]", list(ACTIVITIES)),
+def key_ops() -> Iterator[InMemoryTenantKeyOps]:
+    ops = InMemoryTenantKeyOps()
+    configure_tenant_key_ops(ops)
+    yield ops
+    configure_tenant_key_ops(None)
+
+
+@pytest.fixture
+async def worker(temporal: Client, key_ops: InMemoryTenantKeyOps) -> AsyncIterator[None]:
+    assert {TenantProvisioningWorkflow: "background", TenantKeyWorkflow: "keyops"} == WORKFLOWS
+    activities = cast("list[Callable[..., object]]", list(ACTIVITIES))
+    # Two pools, as in production: the general one and the keyops one (P-65).
+    async with (
+        Worker(
+            temporal,
+            task_queue=queue_for("background"),
+            workflows=list(WORKFLOWS),
+            activities=activities,
+        ),
+        Worker(
+            temporal,
+            task_queue=queue_for("keyops"),
+            workflows=list(WORKFLOWS),
+            activities=activities,
+        ),
     ):
         yield
 
@@ -129,7 +156,14 @@ async def test_ac_rerunning_a_provision_with_the_same_key_returns_the_same_tenan
     assert first.workflow_id == f"tenant_provision:{first.tenant_id}"
     result = await _finished(temporal, first.tenant_id)
     # 0107: "pilot" holds no modules here (0 rows); its one first administrator is invited.
-    assert result == ProvisionTenantResult(str(first.tenant_id), "none", 0, 1)
+    # Q-01-T27: the key runs beside provisioning on the keyops queue, so its status at this point
+    # depends on timing; the key's own tests pin each step.
+    assert (result.tenant_id, result.entitlement_rows, result.invitations_sent) == (
+        str(first.tenant_id),
+        0,
+        1,
+    )
+    assert result.key_status in {"none", "active", "replica_verified"}
 
     again = await tenants.provision(_ops_url(migrated_db), _request(key))
     assert again.tenant_id == first.tenant_id
@@ -174,7 +208,9 @@ async def test_ac_the_audit_trail_names_the_operator_on_every_step(
         reason="pilot plan",
     )
     trail = await _audit(seed, outcome.tenant_id)
-    assert [action for _, _, action in trail] == [
+    # The key's own rows (Q-01-T27) run beside provisioning, on the keyops queue, so they
+    # interleave by timing; the provisioning steps keep their order.
+    assert [action for _, _, action in trail if action != "tenant_key.recorded"] == [
         "tenant.entitlements_changed",  # the plan's (0107)
         "staff_invitation.issued",  # the first administrator (0107)
         "tenant.provisioned",
@@ -396,3 +432,50 @@ async def test_q01t45_a_retried_step_writes_nothing_twice(
     assert await invite_admins(given) == 1
     count = await seed.value("SELECT count(*) FROM staff_invitations WHERE tenant_id = $1", tenant)
     assert count == 1
+
+
+# --- Q-01-T27: the tenant key, on the keyops queue ----------------------------------------------
+
+
+async def _key_done(temporal: Client, tenant: uuid.UUID) -> str:
+    handle = temporal.get_workflow_handle(f"tenant_key:{tenant}", result_type=str)
+    return await handle.result(rpc_timeout=timedelta(seconds=60))
+
+
+@pytest.mark.usefixtures("worker")
+async def test_q01t27_a_new_firm_gets_a_verified_key_in_both_regions(
+    migrated_db: MigratedDatabase, seed: Seeder, temporal: Client, key_ops: InMemoryTenantKeyOps
+) -> None:
+    outcome = await tenants.provision(
+        _ops_url(migrated_db), _request(f"provision-{uuid.uuid4().hex}")
+    )
+    await _finished(temporal, outcome.tenant_id)
+    assert await _key_done(temporal, outcome.tenant_id) == "replica_verified"
+    row = await seed.rows(
+        "SELECT kms_key_arn, kms_key_status, kms_replica_verified_at FROM firms "
+        "WHERE tenant_id = $1",
+        outcome.tenant_id,
+    )
+    assert row[0]["kms_key_status"] == "replica_verified"
+    assert row[0]["kms_key_arn"] == key_ops.keys[outcome.tenant_id]
+    assert row[0]["kms_replica_verified_at"] is not None
+    assert outcome.tenant_id in key_ops.replicas
+    trail = [action for _, _, action in await _audit(seed, outcome.tenant_id)]
+    assert trail.count("tenant_key.recorded") == 2  # active, then replica_verified
+
+
+async def test_q01t27_an_unverified_replica_leaves_the_firm_active_not_verified(
+    migrated_db: MigratedDatabase, seed: Seeder, key_ops: InMemoryTenantKeyOps
+) -> None:
+    tenant = await tenants.create_firm(
+        _ops_url(migrated_db), _request(f"provision-{uuid.uuid4().hex}")
+    )
+    key_ops.broken_replica.add(tenant)
+    given = TenantKeyInput(str(tenant), OPERATOR)
+    arn = await create_tenant_key(given)
+    replica = await replicate_tenant_key(given, arn)
+    with pytest.raises(ApplicationError, match="ReplicaNotVerified"):
+        await verify_tenant_key(given, arn, replica)
+    status = await seed.value("SELECT kms_key_status FROM firms WHERE tenant_id = $1", tenant)
+    assert status == "active"  # ADR-156: no client content until replica_verified
+    assert await create_tenant_key(given) == arn  # a retried create reuses the key

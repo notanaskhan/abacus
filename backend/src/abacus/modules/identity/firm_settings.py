@@ -17,6 +17,8 @@ from typing import Final, Literal, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from sqlalchemy import text
+
 from abacus.ai_gateway import forget_boundary_facts
 from abacus.kernel import clock, provider_terms
 from abacus.kernel.clock import system_now
@@ -219,6 +221,30 @@ async def firm_tenancy(tenant: TenantContext) -> FirmTenancy | None:
         row["kms_replica_verified_at"],
         row["created_at"],
     )
+
+
+TenantKeyStatus = Literal["active", "replica_verified"]
+_RECORD_KEY = text(
+    "UPDATE firms SET kms_key_arn = :arn, kms_key_status = :status, "
+    "kms_replica_verified_at = CASE WHEN :status = 'replica_verified' "
+    "THEN clock_timestamp() ELSE kms_replica_verified_at END "
+    "WHERE kms_key_status IN ('none', 'pending', 'active', 'replica_verified')"
+)
+
+
+async def record_tenant_key(ctx: TenantContext, *, arn: str, status: TenantKeyStatus) -> None:
+    """Q-01-T27: the firm's tenant key, as the keyops workflow made it (the firm's own row,
+    under its row-level security). `replica_verified` is what lets the firm store client content
+    (ADR-156). A key scheduled for deletion is never brought back here. Audited."""
+    if not arn.startswith("arn:aws:kms:") or len(arn) > 300:
+        raise ValueError("a tenant key is a KMS key ARN")
+    async with uow(ctx) as tx:
+        await tx.session.execute(_RECORD_KEY, {"arn": arn, "status": status})
+        tx.record(
+            "tenant_key.recorded",
+            target=Target("firm", ctx.tenant_id),
+            after=Ref(verified=int(status == "replica_verified")),
+        )
 
 
 async def letter_policy(tenant: TenantContext) -> bool:

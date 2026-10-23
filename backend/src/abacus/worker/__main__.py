@@ -120,10 +120,18 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     return workers
 
 
+def default_classes() -> tuple[WorkClass, ...]:
+    """Every class but `keyops` (Q-01-T27; P-65): only the keyops worker, the one task role
+    allowed `kms:CreateKey`, serves it, by naming it. Local runs and tests serve it too."""
+    if settings().environment in ("local", "test"):
+        return WORK_CLASSES
+    return tuple(c for c in WORK_CLASSES if c != "keyops")
+
+
 def classes_from(argv: Sequence[str]) -> tuple[WorkClass, ...]:
-    """`--classes interactive,time_sensitive` (default: all four)."""
+    """`--classes interactive,time_sensitive` (default: every class but keyops outside local)."""
     parser = argparse.ArgumentParser(prog="python -m abacus.worker")
-    parser.add_argument("--classes", default=",".join(WORK_CLASSES))
+    parser.add_argument("--classes", default=",".join(default_classes()))
     raw = parser.parse_args(list(argv)).classes
     chosen = tuple(dict.fromkeys(c.strip() for c in raw.split(",") if c.strip()))
     unknown = [c for c in chosen if c not in WORK_CLASSES]

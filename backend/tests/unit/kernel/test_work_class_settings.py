@@ -19,6 +19,7 @@ DEFAULTS = {
     "time_sensitive": (10, 10),
     "background": (5, 5),
     "batch": (2, 2),
+    "keyops": (2, 2),  # Q-01-T27
 }
 
 
@@ -53,6 +54,13 @@ SLOTS = {
         "max_wait_seconds": 86400,
         "admission_reserve_pct": 50,
     },
+    "keyops": {  # Q-01-T27
+        "firm_cap": 1,
+        "engagement_cap": 1,
+        "class_capacity": 4,
+        "max_wait_seconds": 3600,
+        "admission_reserve_pct": 0,
+    },
 }
 
 
@@ -80,7 +88,7 @@ def _load(monkeypatch: pytest.MonkeyPatch, value: object) -> Settings:
 def test_ac1_the_defaults_are_small_enough_for_the_database_pool() -> None:
     found = settings().work_classes
     assert {c: (v.max_activities, v.max_workflow_tasks) for c, v in found.items()} == DEFAULTS
-    assert list(found) == ["interactive", "time_sensitive", "background", "batch"]
+    assert list(found) == ["interactive", "time_sensitive", "background", "batch", "keyops"]
 
 
 def test_ac1_an_override_names_all_four_classes(monkeypatch: pytest.MonkeyPatch) -> None:
