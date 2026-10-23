@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-01 Clients index/` (README.md, spec.md; spec-alt.md is byte-identical; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T01 · fixtures and scenarios P-07-T11 · screen P-07-T12 · read model P-07-T08 · parity lock P-07-T63 |
-| Manifest status | planned (`routes/manifest/cli.ts`, path `/clients`, `navArea: "Clients"`) |
+| Manifest status | fixture (`routes/manifest/cli.ts`, path `/clients`, `navArea: "Clients"`; P-07-T12). Live when P-07-T08 serves `GET /v1/clients` and `clients.v2` turns on |
 
-Code to come (P-07 §5): `src/routes/firm/clients.tsx`, `src/domain/clients/{index.ts, queries.ts, messages.ts}`, `src/screens/CLI-01/{index.tsx, scenarios.ts, copy.ts, CLI-01.test.tsx}`. Flag `clients.v2` (flag-off renders F-05's flag-off ViewState at `/clients`).
+Code (P-07-T11, T12): `src/routes/firm/clients.tsx`, `src/domain/clients/{index.ts, queries.ts, messages.ts}`, `src/screens/CLI-01/{index.tsx, scenarios.ts, copy.ts, CLI-01.test.tsx}`, `src/fixtures/{handlers/clients.ts, handlers/engagements.ts, seed/client-rows.ts, scenarios/CLI-01.ts, clients.foot.test.ts}`, `e2e/screens/CLI-01.spec.ts`. Flag `clients.v2`: on, CLI-01; off, the SPEC-303 legacy list until P-07-T58 retires it (see Deviations).
 
 ## States
 
@@ -17,12 +17,12 @@ Code to come (P-07 §5): `src/routes/firm/clients.tsx`, `src/domain/clients/{ind
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a | grace-holloway (Grace Holloway, Firm Admin) | Mon Sep 14, 2026, 9:24 AM CT | E0 | Status │ Active; the 184 clients, first page of 16 by newest last client activity; `next_cursor` set, so "Load more" shows | built · live (T12) |
-| b | grace-holloway | same | E0 | Service line │ Audit: Northwind, Granite Peak, Lakeshore; `total` 3 | built · live (T12) |
-| c | lena-park (Lena Park, seasonal preparer) | same | E0 | An active wall Lena ↔ Ashford Manufacturing Co.: Ashford is absent from rows and `total`, with no footer, count or gap (DEC-43) | built · live (T12) |
-| d | grace-holloway | same | E0 | `q=Schwab` matches no client, entity or contact | built · live (T12) |
-| e | grace-holloway | same | E0 | `GET /v1/clients` never answers (`never()` handler) | built · live (T12) |
-| f | grace-holloway | same | empty-firm override | The firm has no clients (first day) | built · live (T12) |
+| a | grace-holloway (Grace Holloway, Firm Admin) | Mon Sep 14, 2026, 9:24 AM CT | E0 | Status │ Active; the 184 clients, first page of 16 by newest last client activity; `next_cursor` set, so "Load more" shows | built · fixture (T12) |
+| b | grace-holloway | same | E0 | Service line │ Audit: Northwind, Granite Peak, Lakeshore; `total` 3 | built · fixture (T12) |
+| c | lena-park (Lena Park, seasonal preparer) | same | E0 | An active wall Lena ↔ Ashford Manufacturing Co.: Ashford is absent from rows and `total`, with no footer, count or gap (DEC-43) | built · fixture (T12) |
+| d | grace-holloway | same | E0 | `q=Schwab` matches no client, entity or contact | built · fixture (T12) |
+| e | grace-holloway | same | E0 | `GET /v1/clients` never answers (`never()` handler) | built · fixture (T12) |
+| f | grace-holloway | same | empty-firm override | The firm has no clients (first day) | built · fixture (T12) |
 
 Not-allowed: a walled client is absent everywhere and a guessed `/clients/<id>` answers 404 and renders not-found; nothing says a client is hidden (INV-3, DEC-43). Error: F-05's ViewState error row (C-20). A firm role without `client.read` gets the C-20 not-allowed pane. Flag off (`clients.v2`): the flag-off ViewState.
 
@@ -96,13 +96,13 @@ Inbound: SHL-01 nav "Clients", SHL-02, CLI-02 "‹ All Clients", CLI-04, FIL-01,
 ## Figures
 | Figure | Foots | Proven by |
 |---|---|---|
-| Header (a) | 184 clients at E0 (DEC-47): 16 named + 66 roster + 102 filler | `fixtures/seed.test.ts` (F-04); P-07-T11 footing test |
+| Header (a) | 184 clients at E0 (DEC-47): 16 named + 66 roster + 102 filler | `fixtures/seed.test.ts` (F-04); `fixtures/clients.foot.test.ts` (P-07-T11) |
 | Rows (a) | 16 rows by newest last activity; "Load more" with no total | P-07-T11 scenario test |
-| Northwind open requests | 13 = 24 − 11 | P-07-T11 seed footing test |
+| Northwind open requests | 13 = 24 − 11 | `fixtures/clients.foot.test.ts`, computed from the seed's PBC list |
 | Ridgeline · Feld · Copperleaf | 5 · 2 · 2 (2 = 9 − 7) | same |
 | Granite Peak | "Binder draft" (only a draft binder exists; draft requests excluded) | same |
 | Entities | Northwind 2, Granite Peak 2, Thornbury 2, others 1 | same |
-| Filtered (b) | "Showing 3" = Northwind + Granite Peak + Lakeshore | scenario test |
+| Filtered (b) | Northwind + Granite Peak + Lakeshore first; "Showing 25" on the seed (DV-3; the handoff's "Showing 3" counted its 16-row sample) | `fixtures/clients.foot.test.ts`; scenario test |
 | Restricted (c) | Ashford absent from rows; `total` 183 = 184 − 1, the same shape as a firm without Ashford (the handoff caption read "15 most recently active" over the 15 named rows left) | scenario test and P-07-T13 |
 | Loading (e) | 8 skeleton rows | scenario test |
 
@@ -116,17 +116,24 @@ Gradients in product UI, emoji, saturated blue links, heavy shadows, invented co
 | DEC-47 | The pane-header caption reads "{total} clients" ("184 clients" at E0) instead of "16 most recently active" | The header carries the firm's exact client count | DEC-47; P-07 §2.1 amended copy |
 | DEC-62 | The Thornbury row reads client "Walter Thornbury" (2 entities: the decedent and the estate) where spec row 9 reads "Estate of Walter Thornbury" | A client's display name is its own field and never follows an entity | DEC-62 |
 | — | Row "···" Message (INB-04) is hidden in production until N-03 registers it | Planned targets are hidden in production (chapter 04 §2.1 rule 4) | P-07 §2.1 |
+| DV-1 (T12) | Every outbound target (CLI-02 row open, CLI-04 portal pill, ENG-01 service tags, BND-02 open requests, CLI-06 "+ New client" and "Import…", ENG-03 and INB-04 in the row menu) is planned: the controls are hidden in production and drawn disabled with their "Opens …" hint in dev, fixture and gallery builds (`app-core/planned.ts`). Rows, tags and pills are not links until their targets are built | Chapter 04 §2.1 rule 4 | P-07-T12 (TASK-944) |
+| DV-2 (T12) | `clients.v2` off keeps SPEC-303's legacy list at `/clients` instead of F-05's flag-off state | The flag defaults off in every firm; the flag-off state would take a working list away before CLI-01 is live. P-07-T58 retires the legacy list and the fallback becomes the flag-off state | P-07-T12 (TASK-944) |
+| DV-3 (T12) | b reads "Showing 25", not "Showing 3": Service line │ Audit over the seed's 184 clients is the 3 named audit clients (first, newest activity) and the 22 §9.7 roster audits | The handoff's count was taken over its 16-row sample; the seed is not trimmed (as DEC-138 OQ-5 does for ENG-01) | P-07-T12; parity masks the count text |
+| DV-4 (T12) | "+ New client" and "Import…" render for `client.intake` holders | `client_import.run` is not an action in the matrix yet (`actions.gen.ts`); CLI-06's bulk import task adds it | P-07-T12 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, d, f | C (locked before M8) | not run (unbuilt) | P0 lock at Tier C (P-07 §5 Parity, T63); mask the header count text if the seed differs (OQ-5) |
+| a, b, d, f | C (locked before M8) | not run (axe 0 serious in `e2e/screens/CLI-01.spec.ts`; parity reported by P-07-T63) | P0 lock at Tier C (P-07 §5 Parity, T63); mask the header count text if the seed differs (OQ-5) |
 | c | C (report) | not run | mask the footer region (DEC-43) |
 | e | C (report) | not run | mask the skeleton pulse |
 | host | D | — | toolbar 46, filter bar 50, pane header 46 with a 14.5/500 title, rows 44, th 30, pills 21/22/18 |
 
 ## Open gaps
+- **Type pill (T12).** `ClientRowOut.kind` is the five-value client kind (`household`, `business`, `plan_sponsor`, `nonprofit`, `trust_family`); the handoff's type pills name the entity's tax form for businesses ("S corporation", "C corporation", "Partnership", "Single-member LLC") and "Individual" and "Estate" for people. The screen words the kind (`domain/clients/messages.ts`: Household, Business, Plan sponsor, Exempt org, Trust) until the read model carries the primary entity's form (a `primary_entity_form` field, P-07-T08 or a later contract change). Parity masks the Type column text.
+- **Last activity line (T12).** The row carries `last_activity_at` and `last_activity_event_type`, not the actor or object, so the line reads "9:12 AM · Documents uploaded" where the handoff reads "9:12 AM · Claire Feld emailed 2 forms". The event-type wording table is `ACTIVITY_WORDS` in `domain/clients/messages.ts` (an event type without words shows the time alone); the full line needs a client-safe `last_activity_summary` from the read model. These words are not handoff copy.
+- **Thornbury's name (T11).** The TS seed and the Python golden file (`backend/tests/golden/scenario/brightwater_hale/clients.json`) still name the client "Estate of Walter Thornbury"; the fixture read model shows the client's own name "Walter Thornbury" (DEC-62, `CLIENT_DISPLAY_NAME` in `fixtures/seed/client-rows.ts`). The seed rename is a backend scenario change (F-04-T31 or P-07-T08).
+- **Search over contacts (T11).** The fixture `q` matches the client's name, descriptor and entity names; the seed has no per-client contact list outside the three portal engagements, so contact matches arrive with the read model.
 - Row 9's last-activity line "Sep 11 · Acceptance pre-screen drafted" names an agent pre-screen, which v1 does not run (DEC-64, P-07 §2.3). The fixture keeps the handoff line for parity; production shows the seed's latest real event for Thornbury.
 - The handoff's d copy is "No clients match 'Schwab'."; P-07 §1 summarises it as "No clients". The handoff wins (verbatim rule).
-- The interim seed (`fixtures/seed/clients.ts`) still names the Thornbury client "Estate of Walter Thornbury"; P-07-T11 renames it to "Walter Thornbury" per DEC-62.
 - Personas `grace-holloway` and `lena-park` exist in the F-04 seed; the empty-firm override (f) is a scenario-local handler.
