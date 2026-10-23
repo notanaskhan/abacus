@@ -31,3 +31,32 @@ actions:
   decision.request_analysis: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Request more analysis"
   decision.notify:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Notify Margaret"
   decision.reassess:        {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # SHL-11 d: the owner's provider recomputes in code
+  # --- Issues and fix instructions (C3 stub 3, P-04-T11; ADR-160 clause 7). Every resolution
+  # and every write denies agent and system (INV-1, ISSUE-001). Agent-raised and engine issues
+  # arrive with review.api.create_issue (P-04-T30) and their own task_scope row. The reviewer
+  # function conditions arrive with P-04-T15 (DEC-145); independence is not marked (DEC-145).
+  issue.read:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # SHL-15, TAX-06: firm roles only; sealed texts read as access events
+  issue.create:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-15 b, c: the composer and the field flag
+  issue.update:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # title, class, priority, assignee
+  issue.resolve:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # resolve and mark not applicable; team members (P-04 4.3)
+  issue.verify:             {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny}   # reviewer functions (P-04 4.3)
+  issue.reopen:             {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny}   # as verify
+  issue.send_to_client:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-15 b: one request item with only the client wording (INV-4)
+  issue.explain:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-15 d: a person asks the agent to explain
+  fix_instruction.set:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-15 a, e: sealed instructions; runs always propose (DF-13)
+  # --- Checkpoints (C3 stub 3, P-04-T11; ADR-160 clause 9). Approve, reject and restore are a
+  # reviewer's (function_in(first_level_reviewer, detail_reviewer, manager_reviewer, signer) with
+  # P-04-T15). checkpoint.propose is service-only (review.api.propose_checkpoint).
+  checkpoint.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # SHL-16: firm roles only
+  checkpoint.create:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-16 f: "Save checkpoint…"
+  checkpoint.approve:       {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny}   # SHL-16 b: equals approving the SHL-10 proposal
+  checkpoint.reject:        {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny}   # SHL-16 e
+  checkpoint.restore:       {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny}   # SHL-16 c: a new checkpoint as a copy; nothing deleted
+  checkpoint.rename:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-16 d: name and star only
+  checkpoint.propose:       {agent: task_scope}   # P-04 4.3: the agent through its task (no route); the system cell for engine imports lands with P-04-T32 (DEC-145)
+  # --- Field provenance (C3 stub 3, P-04-T11; ADR-160 clauses 5 and 10). Preparers edit and
+  # reviewers propose (DEC-84); a field tick is a field_tick sign-off, human only.
+  field.read:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # SHL-09: firm roles only
+  field.edit:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-09 c: preparer functions (DEC-84), narrowed by function_in(preparer) in P-04-T15; a citation note is required
+  field.add_reference:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-09: "Add reference", verified through C4
+  field.sign_off:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-09: "Sign off field"; an unsupported value cannot be ticked

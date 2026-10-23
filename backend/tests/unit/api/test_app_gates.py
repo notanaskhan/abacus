@@ -152,6 +152,14 @@ NOT_CREATING = {
     "/v1/proposals/{proposal_id}/undo",
     "/v1/suggestions/{suggestion_id}/adopt",
     "/v1/suggestions/{suggestion_id}/dismiss",
+    # P-04-T11 (C3 stub 3): issue status changes and checkpoint decisions return the record.
+    "/v1/issues/{issue_id}/resolve",
+    "/v1/issues/{issue_id}/verify",
+    "/v1/issues/{issue_id}/reopen",
+    "/v1/issues/{issue_id}/mark-not-applicable",
+    "/v1/issues/{issue_id}/send-to-client",
+    "/v1/checkpoints/{checkpoint_id}/approve",
+    "/v1/checkpoints/{checkpoint_id}/reject",
     # P-06-T01 (C5 stub): state changes on a binder or request item that return the record.
     "/v1/binders/{binder_id}/publish",
     "/v1/binders/{binder_id}/publish/undo",
@@ -189,6 +197,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         TEMPLATE_DRAFTS,
         SELECT,
         ASSESS,
+        # P-04-T11 (C3 stub 3): fix instructions and Explain start an agent run, so 202.
+        "/v1/issues/{issue_id}/fix-instructions",
+        "/v1/issues/fix-instructions:bulk",
+        "/v1/issues/{issue_id}/explanations",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -319,6 +331,13 @@ def test_ac20_creating_routes_answer_201() -> None:
         # SPEC-318 (TASK-461): a run trace export
         "/v1/agent-runs/{run_id}/trace-exports",
         "/v1/decision-cards/{card_id}/analysis-requests",  # P-04-T08: a recorded request
+        # P-04-T11 (C3 stub 3): an issue, a checkpoint (saved or restored as a copy), a field
+        # reference and a field tick.
+        "/v1/issues",
+        "/v1/checkpoints",
+        "/v1/checkpoints/{checkpoint_id}/restore",
+        "/v1/fields/{target_type}/{target_id}/{field_key}/references",
+        "/v1/fields/{target_type}/{target_id}/{field_key}/ticks",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

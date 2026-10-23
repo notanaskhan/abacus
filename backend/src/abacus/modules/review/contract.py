@@ -1,11 +1,14 @@
 """C3 v1, the review grammar (ADR-160; P-36 contract first). Stub PR 1 (P-04-T07): sign-offs,
 review notes and the human-gate projection, the SHL-12 family. Stub PR 2 (P-04-T08): decision
-cards, the SHL-11 family; proposals and suggestions are the agents module's (ADR-161).
+cards, the SHL-11 family; proposals and suggestions are the agents module's (ADR-161). Stub PR 3
+(P-04-T11): issues and fix instructions (SHL-15), checkpoints (SHL-16) and field provenance
+(SHL-09), an additive extension of the C3 v1 schema.
 
 Behind `review.grammar_api`: off, every route answers 404; on, 501 `not_implemented` until its
 service lands (sign-offs P-04-T18, notes P-04-T21, the projection P-04-T16, decision cards
-P-04-T23). Nothing here decides; the shapes are what SHL-11, SHL-12, AUD-17 and HOME-02 read.
-`docs/contracts/review-grammar.md` parts 1 and 2.
+P-04-T23, issues P-04-T30 and T31, checkpoints P-04-T32, field values P-04-T35). Nothing here
+decides; the shapes are what SHL-09, SHL-11, SHL-12, SHL-15, SHL-16, AUD-17 and HOME-02 read.
+`docs/contracts/review-grammar.md` parts 1 to 3.
 
 The level actions are the existing `sign_off.prepare|review|manager|partner|eqr` rows (L1 to L5);
 `POST /v1/sign-offs` declares `sign_off.create` and the service also authorises the level's row.
@@ -17,11 +20,18 @@ from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Query
+from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import REVIEW_GRAMMAR_API
-from abacus.kernel._statuses import DecisionCardStatus, ReviewNoteStatus
+from abacus.kernel._statuses import (
+    AgentRunStatus,
+    CheckpointStatus,
+    DecisionCardStatus,
+    IssueSeverityStatus,
+    IssueStatus,
+    ReviewNoteStatus,
+)
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
@@ -705,4 +715,925 @@ async def decision_card_notify_route(card_id: UUID, ctx: Ctx) -> DecisionNotifyO
 async def decision_card_reassess_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
     """SHL-11 d, h: the owner's provider recomputes in code; no change is a new version, a
     changed outcome raises a superseding card."""
+    await _stub(ctx)
+
+
+# === C3 stub PR 3 (P-04-T11): issues, checkpoints, field provenance ===========================
+# An additive extension of the C3 v1 schema: new models and routes beside the old, none changed.
+
+# --- Issues and fix instructions (SHL-15; ADR-160 clause 7) -----------------------------------
+
+IssueKind = Literal[
+    "missing_information",
+    "action_required",
+    "review_point",
+    "waiting_on_client",
+    "exception",
+    "engine_diagnostic",
+]
+IssueBlock = Literal["final_approval", "export", "release", "sign_off"]
+IssueLinkKind = Literal["cell_range", "form_field", "file", "request_item", "finding"]
+IssueEvent = Literal[
+    "created",
+    "assigned",
+    "status_changed",
+    "fix_instructions_set",
+    "sent_to_client",
+    "explained",
+    "resolved",
+    "verified",
+    "reopened",
+    "marked_not_applicable",
+]
+FixScope = Literal["this_issue", "all_of_class"]
+# Why one issue of a bulk instruction was left out (SHL-15 e).
+FixExclusionCode = Literal["issue_changed", "fix_runner_unavailable", "level_not_permitted"]
+SealedTitle = Annotated[MultiLineText, Field(min_length=1, max_length=400)]
+SealedText = Annotated[MultiLineText, Field(min_length=1, max_length=4000)]
+
+
+class CitedSourceOut(BaseModel):
+    """A verified citation (C4) as its chip reads ("K-1 box 18A", "K-1 statement p. 3")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    citation_id: Annotated[UUID, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+
+
+class IssueLinkOut(BaseModel):
+    """A linked target: a cell range ("EBP-04 Participant data!F12:F15"), a form field ("Form
+    1040 · line 2a"), a file, a request item or a finding. The chip lights its target."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[IssueLinkKind, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    target_type: Annotated[str | None, classified("internal")]
+    target_id: Annotated[UUID | None, classified("internal")]
+    anchor: Annotated[str | None, classified("confidential")]
+
+
+class IssueLinkIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[IssueLinkKind, classified("internal")]
+    target_type: Annotated[TargetType | None, classified("internal")] = None
+    target_id: Annotated[UUID | None, classified("internal")] = None
+    # A cell range or a field key on the target ("F12:F15", a form line code).
+    anchor: Annotated[
+        SingleLineText | None, Field(min_length=1, max_length=120), classified("confidential")
+    ] = None
+
+
+class IssueItemOut(BaseModel):
+    """An issue in a list (TAX-06, TXP-10, AUD-15). The title, notes and client wording are
+    sealed and Restricted, so lists never carry them; the detail does."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    work_item_id: Annotated[UUID | None, classified("internal")]
+    record: Annotated[ObjectRefOut, classified("internal")]
+    kind: Annotated[IssueKind, classified("internal")]
+    priority: Annotated[IssueSeverityStatus, classified("internal")]
+    status: Annotated[IssueStatus, classified("internal")]
+    # The "Instructions required" sub-state of an open issue.
+    instructions_required: Annotated[bool, classified("internal")]
+    assignee_user_id: Annotated[UUID | None, classified("internal")]
+    assignee_name: Annotated[str | None, classified("internal")]
+    # "Assigned to · Accrued Agent": enables fix instructions; a person disables them.
+    assignee_agent: Annotated[bool, classified("internal")]
+    blocks: Annotated[list[IssueBlock], classified("internal")]
+    link_count: Annotated[int, classified("internal")]
+    version: Annotated[int, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class IssueClientContactOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    contact_id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    role_label: Annotated[str | None, classified("confidential")]
+
+
+class IssueFixSuggestionOut(BaseModel):
+    """ "Suggested by Accrued Agent": agent text, rendered only through AgentText."""
+
+    model_config = ConfigDict(frozen=True)
+
+    text: Annotated[str, classified("restricted")]
+    agent_run_id: Annotated[UUID | None, classified("internal")]
+    suggested_at: Annotated[datetime, classified("internal")]
+
+
+class IssueFixInstructionsOut(BaseModel):
+    """The sealed instructions a person set. Fix runs always propose (DF-13): there is no
+    direct-edit mode, so the "Propose changes for my approval" box is not a wire field."""
+
+    model_config = ConfigDict(frozen=True)
+
+    text: Annotated[str, classified("restricted")]
+    scope: Annotated[FixScope, classified("internal")]
+    set_by_user_id: Annotated[UUID, classified("internal")]
+    set_by_name: Annotated[str, classified("internal")]
+    set_at: Annotated[datetime, classified("internal")]
+
+
+class IssueFixRunOut(BaseModel):
+    """The run fixing the issue (SHL-15 a-prime: "Adding 1,550 to Form 1040 line 2a · Running"),
+    then its proposal (a-double-prime: the ghost values; Accept opens SHL-10 b). `label` is
+    agent text."""
+
+    model_config = ConfigDict(frozen=True)
+
+    agent_run_id: Annotated[UUID, classified("internal")]
+    label: Annotated[str, classified("restricted")]
+    status: Annotated[AgentRunStatus, classified("internal")]
+    proposal_id: Annotated[UUID | None, classified("internal")]
+
+
+class IssueExplanationOut(BaseModel):
+    """SHL-15 d, "Explain…": read-only agent text with its citations; it decides nothing."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    text: Annotated[str, classified("restricted")]
+    agent_run_id: Annotated[UUID, classified("internal")]
+    explained_at: Annotated[datetime, classified("internal")]
+    citations: Annotated[list[CitedSourceOut], classified("confidential")]
+    pinned: Annotated[bool, classified("internal")]
+
+
+class IssueEventOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    event: Annotated[IssueEvent, classified("internal")]
+    actor_kind: Annotated[ActorKind, classified("internal")]
+    actor_user_id: Annotated[UUID | None, classified("internal")]
+    actor_name: Annotated[str, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+
+
+class IssueDetailOut(BaseModel):
+    """One issue with its sealed title, internal note and client wording. Only `client_wording`
+    ever reaches the client, as a request item through `send-to-client` (INV-4)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    issue: Annotated[IssueItemOut, classified("internal")]
+    record_label: Annotated[str, classified("confidential")]
+    title: Annotated[str, classified("restricted")]
+    internal_note: Annotated[str | None, classified("restricted")]
+    client_wording: Annotated[str | None, classified("restricted")]
+    client_contact: Annotated[IssueClientContactOut | None, classified("confidential")]
+    links: Annotated[list[IssueLinkOut], classified("confidential")]
+    suggestion: Annotated[IssueFixSuggestionOut | None, classified("restricted")]
+    fix_instructions: Annotated[IssueFixInstructionsOut | None, classified("restricted")]
+    fix_run: Annotated[IssueFixRunOut | None, classified("restricted")]
+    explanations: Annotated[list[IssueExplanationOut], classified("restricted")]
+    request_item_id: Annotated[UUID | None, classified("internal")]
+    events: Annotated[list[IssueEventOut], classified("internal")]
+
+
+class IssueCreateIn(BaseModel):
+    """`POST /v1/issues`. "Create & send to client" is this, then `send-to-client`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    record_type: Annotated[TargetType, classified("internal")]
+    record_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[IssueKind, classified("internal")]
+    priority: Annotated[IssueSeverityStatus, classified("internal")] = IssueSeverityStatus.MEDIUM
+    title: Annotated[SealedTitle, classified("restricted")]
+    internal_note: Annotated[SealedText | None, classified("restricted")] = None
+    client_wording: Annotated[SealedText | None, classified("restricted")] = None
+    client_contact_id: Annotated[UUID | None, classified("internal")] = None
+    assignee_user_id: Annotated[UUID | None, classified("internal")] = None
+    assignee_agent: Annotated[bool, classified("internal")] = False
+    links: Annotated[list[IssueLinkIn], Field(max_length=20), classified("confidential")] = []
+    blocks: Annotated[list[IssueBlock], Field(max_length=4), classified("internal")] = []
+
+
+class IssueUpdateIn(BaseModel):
+    """`PATCH /v1/issues/{id}`: title, class, priority and assignee. A stale `seen_version`
+    answers 409 `issue_changed`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+    title: Annotated[SealedTitle | None, classified("restricted")] = None
+    kind: Annotated[IssueKind | None, classified("internal")] = None
+    priority: Annotated[IssueSeverityStatus | None, classified("internal")] = None
+    assignee_user_id: Annotated[UUID | None, classified("internal")] = None
+    assignee_agent: Annotated[bool | None, classified("internal")] = None
+
+
+class IssueResolutionIn(BaseModel):
+    """Resolve, verify, reopen or mark not applicable: a person's act (ISSUE-001)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+    note: Annotated[SealedText | None, classified("restricted")] = None
+
+
+class IssueSendToClientIn(BaseModel):
+    """One request item through `requests.api` (P-06) carrying only the client wording."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+    client_wording: Annotated[SealedText, classified("restricted")]
+    contact_id: Annotated[UUID, classified("internal")]
+    due_on: Annotated[date | None, classified("internal")] = None
+
+
+class FixInstructionsIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+    text: Annotated[SealedText, classified("restricted")]
+    scope: Annotated[FixScope, classified("internal")] = "this_issue"
+
+
+class FixInstructionsAcceptedOut(BaseModel):
+    """202: the instructions are recorded and the registered fix runner started a run."""
+
+    model_config = ConfigDict(frozen=True)
+
+    issue_id: Annotated[UUID, classified("internal")]
+    agent_run_id: Annotated[UUID, classified("internal")]
+    status: Annotated[IssueStatus, classified("internal")]
+
+
+class BulkFixIssueIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    issue_id: Annotated[UUID, classified("internal")]
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class BulkFixInstructionsIn(BaseModel):
+    """SHL-15 e: one shared editor; the scope is locked to the selection, so each issue gets
+    its own sealed instruction with scope `this_issue`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    issues: Annotated[
+        list[BulkFixIssueIn], Field(min_length=1, max_length=50), classified("internal")
+    ]
+    text: Annotated[SealedText, classified("restricted")]
+
+
+class BulkFixItemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    issue_id: Annotated[UUID, classified("internal")]
+    ok: Annotated[bool, classified("internal")]
+    agent_run_id: Annotated[UUID | None, classified("internal")]
+    detail: Annotated[FixExclusionCode | None, classified("internal")]
+
+
+class BulkFixInstructionsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    results: Annotated[list[BulkFixItemOut], classified("internal")]
+    accepted: Annotated[int, classified("internal")]
+    excluded: Annotated[int, classified("internal")]
+
+
+class ExplainAcceptedOut(BaseModel):
+    """202: the explanation run started; its text arrives on the issue's detail."""
+
+    model_config = ConfigDict(frozen=True)
+
+    issue_id: Annotated[UUID, classified("internal")]
+    agent_run_id: Annotated[UUID, classified("internal")]
+
+
+issues_router = AbacusRouter(prefix="/v1/issues", tags=["review"])
+
+
+@issues_router.get("", action="issue.read", response_model=ListPage[IssueItemOut], errors=(501,))
+async def issue_list_route(
+    ctx: Ctx,
+    record_type: Annotated[str | None, Query(pattern=r"^[a-z][a-z_]{0,39}$")] = None,
+    record_id: Annotated[UUID | None, Query()] = None,
+    engagement_id: Annotated[UUID | None, Query()] = None,
+    status: Annotated[IssueStatus | None, Query()] = None,
+    kind: Annotated[IssueKind | None, Query()] = None,
+    cursor: Annotated[str | None, Query(max_length=2000)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
+) -> ListPage[IssueItemOut]:
+    """Issues on a record or an engagement; `counts` per status and `facets` by kind."""
+    await _stub(ctx)
+
+
+@issues_router.get(
+    "/{issue_id}", action="issue.read", response_model=IssueDetailOut, errors=(501,)
+)
+async def issue_route(issue_id: UUID, ctx: Ctx) -> IssueDetailOut:
+    """One issue with its sealed texts (each read is an access event)."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "", action="issue.create", response_model=IssueDetailOut, status_code=201, errors=(501,)
+)
+async def issue_create_route(body: IssueCreateIn, ctx: Ctx) -> IssueDetailOut:
+    """SHL-15 b, c: a new issue, from cells or a field flag."""
+    await _stub(ctx)
+
+
+@issues_router.patch(
+    "/{issue_id}", action="issue.update", response_model=IssueDetailOut, errors=(409, 501)
+)
+async def issue_update_route(issue_id: UUID, body: IssueUpdateIn, ctx: Ctx) -> IssueDetailOut:
+    """Title, class, priority and assignee."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/resolve", action="issue.resolve", response_model=IssueDetailOut, errors=(409, 501)
+)
+async def issue_resolve_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
+    """Human only; the agent never resolves its own issue (ISSUE-001)."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/verify", action="issue.verify", response_model=IssueDetailOut, errors=(409, 501)
+)
+async def issue_verify_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
+    """A reviewer verifies a resolved issue."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/reopen", action="issue.reopen", response_model=IssueDetailOut, errors=(409, 501)
+)
+async def issue_reopen_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/mark-not-applicable",
+    action="issue.resolve",
+    response_model=IssueDetailOut,
+    errors=(409, 501),
+)
+async def issue_not_applicable_route(
+    issue_id: UUID, body: IssueResolutionIn, ctx: Ctx
+) -> IssueDetailOut:
+    """Not applicable is a resolution, so it shares `issue.resolve`."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/send-to-client",
+    action="issue.send_to_client",
+    response_model=IssueDetailOut,
+    errors=(409, 501),
+)
+async def issue_send_to_client_route(
+    issue_id: UUID,
+    body: IssueSendToClientIn,
+    ctx: Ctx,
+    idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+) -> IssueDetailOut:
+    """SHL-15 b: one request item with only the client wording; G3 is checked (ADR-111)."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/fix-instructions:bulk",
+    action="fix_instruction.set",
+    response_model=BulkFixInstructionsOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def fix_instructions_bulk_route(
+    body: BulkFixInstructionsIn, ctx: Ctx
+) -> BulkFixInstructionsOut:
+    """SHL-15 e: one instruction per selected issue, each decided on its own."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/fix-instructions",
+    action="fix_instruction.set",
+    response_model=FixInstructionsAcceptedOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def fix_instructions_route(
+    issue_id: UUID, body: FixInstructionsIn, ctx: Ctx
+) -> FixInstructionsAcceptedOut:
+    """SHL-15 a: sealed instructions; 409 `fix_runner_unavailable` when no runner is registered."""
+    await _stub(ctx)
+
+
+@issues_router.post(
+    "/{issue_id}/explanations",
+    action="issue.explain",
+    response_model=ExplainAcceptedOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def issue_explain_route(issue_id: UUID, ctx: Ctx) -> ExplainAcceptedOut:
+    """SHL-15 d, "Explain…": a person asks the agent to explain; nothing is decided."""
+    await _stub(ctx)
+
+
+# --- Checkpoints (SHL-16; ADR-160 clause 9) ----------------------------------------------------
+
+CheckpointAuthorKind = Literal["agent", "person", "import"]
+CheckpointCause = Literal[
+    "agent_run", "engine_import", "human_edit", "restore", "amendment", "manual_save"
+]
+CheckpointDecisionKind = Literal["approved", "rejected", "restored"]
+CheckpointFilter = Literal["agent", "named", "all"]
+CheckpointCompare = Literal["current", "previous"]
+# The step rows' icons: ScanSearch, ListPlus, ListX, and the self-check and import steps.
+CheckpointStepKind = Literal[
+    "analyzed",
+    "updated_worksheet",
+    "created_worksheet",
+    "skipped_worksheet",
+    "self_check",
+    "imported",
+]
+
+
+class CheckpointDecisionOut(BaseModel):
+    """The insert-only, human-only `checkpoint_decisions` row (SHL-16 b, e)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    decision: Annotated[CheckpointDecisionKind, classified("internal")]
+    reason: Annotated[str | None, classified("restricted")]
+    decided_by_user_id: Annotated[UUID, classified("internal")]
+    decided_by_name: Annotated[str, classified("internal")]
+    decided_at: Annotated[datetime, classified("internal")]
+    # Approving Checkpoint 6 here equals approving the SHL-10 proposal it came from.
+    proposal_decision_id: Annotated[UUID | None, classified("internal")]
+
+
+class CheckpointItemOut(BaseModel):
+    """One checkpoint card. "Checkpoint {seq}" is its title unless it is named; `current` is
+    derived (ADR-160 clause 9) and never stored. `summary` may carry return figures
+    ("Corrected Halvard 1099-INT (2,190 → 2,310)"), so it is Restricted and appears only in
+    one target's history read."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    seq: Annotated[int, classified("internal")]
+    name: Annotated[str | None, classified("confidential")]
+    starred: Annotated[bool, classified("internal")]
+    author_kind: Annotated[CheckpointAuthorKind, classified("internal")]
+    author_user_id: Annotated[UUID | None, classified("internal")]
+    # "Accrued Agent", "Kevin Osei" or "Imported Return".
+    author_name: Annotated[str, classified("internal")]
+    cause: Annotated[CheckpointCause, classified("internal")]
+    status: Annotated[CheckpointStatus, classified("internal")]
+    current: Annotated[bool, classified("internal")]
+    summary: Annotated[str | None, classified("restricted")]
+    created_at: Annotated[datetime, classified("internal")]
+    content_hash: Annotated[str, classified("internal")]
+    proposal_id: Annotated[UUID | None, classified("internal")]
+    restored_from_id: Annotated[UUID | None, classified("internal")]
+    agent_run_id: Annotated[UUID | None, classified("internal")]
+    decision: Annotated[CheckpointDecisionOut | None, classified("restricted")]
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class CheckpointHistoryOut(BaseModel):
+    """`GET /v1/checkpoints`: one target's checkpoints, newest first, read like the sign-off
+    ladder (one target, bounded) rather than as a cross-record list."""
+
+    model_config = ConfigDict(frozen=True)
+
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    filter: Annotated[CheckpointFilter, classified("internal")]
+    items: Annotated[list[CheckpointItemOut], classified("restricted")]
+    current_checkpoint_id: Annotated[UUID | None, classified("internal")]
+    total: Annotated[int, classified("internal")]
+    # An empty history (SHL-16 f) still offers `checkpoint.create` ("Save checkpoint…").
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class CheckpointStepOut(BaseModel):
+    """One step of the run that made the checkpoint (C6 run steps, read through review)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[CheckpointStepKind, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    detail: Annotated[str | None, classified("restricted")]
+    at: Annotated[datetime, classified("internal")]
+
+
+class CheckpointDiffRowOut(BaseModel):
+    """One field's old and new value, computed by code (`checkpoint_diffs`). Values are strings
+    and numbers are decimal strings; null is an empty cell ("—")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    field_key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    old: Annotated[str | None, classified("restricted")]
+    new: Annotated[str | None, classified("restricted")]
+    cause: Annotated[str, classified("confidential")]
+    citation_ids: Annotated[list[UUID], classified("internal")]
+
+
+class CheckpointTotalOut(BaseModel):
+    """The code-computed totals row ("Net change to total income · 0", a tie)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, classified("confidential")]
+    value: Annotated[str, classified("restricted")]
+    ties: Annotated[bool, classified("internal")]
+
+
+class CheckpointDetailOut(BaseModel):
+    """`GET /v1/checkpoints/{id}?compare=`: the card, its steps and the diff against `compare`
+    (the previous checkpoint, or current for an older one, SHL-16 c)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    checkpoint: Annotated[CheckpointItemOut, classified("restricted")]
+    compare: Annotated[CheckpointCompare, classified("internal")]
+    compared_to_id: Annotated[UUID | None, classified("internal")]
+    steps: Annotated[list[CheckpointStepOut], classified("restricted")]
+    diff: Annotated[list[CheckpointDiffRowOut], classified("restricted")]
+    totals: Annotated[list[CheckpointTotalOut], classified("restricted")]
+
+
+class CheckpointCreateIn(BaseModel):
+    """ "Save checkpoint…": a person's named checkpoint of the target as it is."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    target_type: Annotated[TargetType, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    name: Annotated[
+        SingleLineText | None, Field(min_length=1, max_length=120), classified("confidential")
+    ] = None
+
+
+class CheckpointApproveIn(BaseModel):
+    """A checkpoint that is no longer proposed, or whose hash differs, answers 409
+    `checkpoint_changed`; nothing is written."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_hash: Annotated[ContentHash, classified("internal")]
+
+
+class CheckpointRejectIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_hash: Annotated[ContentHash, classified("internal")]
+    reason: Annotated[
+        SingleLineText, Field(min_length=1, max_length=200), classified("restricted")
+    ]
+
+
+class CheckpointRestoreIn(BaseModel):
+    """Restore creates a new checkpoint as a copy; nothing is deleted (SHL-16 c)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_hash: Annotated[ContentHash, classified("internal")]
+
+
+class CheckpointRenameIn(BaseModel):
+    """Rename and star change only `name` and `starred` (SHL-16 d)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    name: Annotated[
+        SingleLineText | None, Field(min_length=1, max_length=120), classified("confidential")
+    ] = None
+    starred: Annotated[bool | None, classified("internal")] = None
+
+
+checkpoints_router = AbacusRouter(prefix="/v1/checkpoints", tags=["review"])
+
+
+@checkpoints_router.get(
+    "", action="checkpoint.read", response_model=CheckpointHistoryOut, errors=(501,)
+)
+async def checkpoint_history_route(
+    ctx: Ctx,
+    target_type: Annotated[str, Query(pattern=r"^[a-z][a-z_]{0,39}$")],
+    target_id: Annotated[UUID, Query()],
+    filter: Annotated[CheckpointFilter, Query()] = "all",
+) -> CheckpointHistoryOut:
+    """SHL-16: the drawer's cards, filtered Agent only, Named only or All."""
+    await _stub(ctx)
+
+
+@checkpoints_router.get(
+    "/{checkpoint_id}", action="checkpoint.read", response_model=CheckpointDetailOut, errors=(501,)
+)
+async def checkpoint_route(
+    checkpoint_id: UUID,
+    ctx: Ctx,
+    compare: Annotated[CheckpointCompare, Query()] = "previous",
+) -> CheckpointDetailOut:
+    """SHL-16 a, c: steps and the code-computed diff."""
+    await _stub(ctx)
+
+
+@checkpoints_router.post(
+    "",
+    action="checkpoint.create",
+    response_model=CheckpointItemOut,
+    status_code=201,
+    errors=(501,),
+)
+async def checkpoint_create_route(body: CheckpointCreateIn, ctx: Ctx) -> CheckpointItemOut:
+    """SHL-16 f: "Save checkpoint…"."""
+    await _stub(ctx)
+
+
+@checkpoints_router.post(
+    "/{checkpoint_id}/approve",
+    action="checkpoint.approve",
+    response_model=CheckpointItemOut,
+    errors=(409, 501),
+)
+async def checkpoint_approve_route(
+    checkpoint_id: UUID, body: CheckpointApproveIn, ctx: Ctx
+) -> CheckpointItemOut:
+    """SHL-16 b: human only; Current moves and `checkpoint.approved` carries the deltas."""
+    await _stub(ctx)
+
+
+@checkpoints_router.post(
+    "/{checkpoint_id}/reject",
+    action="checkpoint.reject",
+    response_model=CheckpointItemOut,
+    errors=(409, 501),
+)
+async def checkpoint_reject_route(
+    checkpoint_id: UUID, body: CheckpointRejectIn, ctx: Ctx
+) -> CheckpointItemOut:
+    """SHL-16 e: "Reject…" with a reason (human only)."""
+    await _stub(ctx)
+
+
+@checkpoints_router.post(
+    "/{checkpoint_id}/restore",
+    action="checkpoint.restore",
+    response_model=CheckpointItemOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def checkpoint_restore_route(
+    checkpoint_id: UUID, body: CheckpointRestoreIn, ctx: Ctx
+) -> CheckpointItemOut:
+    """SHL-16 c: returns the new checkpoint (Checkpoint 7, a copy of Checkpoint 3); human only."""
+    await _stub(ctx)
+
+
+@checkpoints_router.patch(
+    "/{checkpoint_id}",
+    action="checkpoint.rename",
+    response_model=CheckpointItemOut,
+    errors=(501,),
+)
+async def checkpoint_rename_route(
+    checkpoint_id: UUID, body: CheckpointRenameIn, ctx: Ctx
+) -> CheckpointItemOut:
+    """SHL-16 d: rename and star."""
+    await _stub(ctx)
+
+
+# --- Field provenance (SHL-09; ADR-160 clauses 5 and 10) --------------------------------------
+
+FieldKey = Annotated[str, Path(pattern=r"^[A-Za-z0-9_.!:-]{1,80}$")]
+FieldTargetType = Annotated[str, Path(pattern=r"^[a-z][a-z_]{0,39}$")]
+ValueType = Literal["decimal", "text", "date", "bool"]
+ValueKind = Literal["exact", "estimate"]
+# `policy` stays off the wire while `fvv_policy_dormant` holds (P-08).
+ValueSource = Literal["agent_suggested", "human", "formula", "tb_linked", "engine_import"]
+ValueCause = Literal[
+    "edit", "suggestion_adopted", "recompute", "import", "restore", "template_update", "relink"
+]
+ReferenceKind = Literal["document", "engine_import", "workpaper", "prior_return"]
+
+
+class FieldValueOut(BaseModel):
+    """A typed value as `field_value_versions.value` stores it: `{t, v}`, decimals as strings."""
+
+    model_config = ConfigDict(frozen=True)
+
+    t: Annotated[ValueType, classified("internal")]
+    v: Annotated[str | None, classified("restricted")]
+
+
+class FieldValueIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    t: Annotated[ValueType, classified("internal")]
+    v: Annotated[SingleLineText | None, Field(max_length=200), classified("restricted")]
+
+
+class FieldReferenceOut(BaseModel):
+    """A reference row: the imported return or the document page that proves the value."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    kind: Annotated[ReferenceKind, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    detail: Annotated[str | None, classified("restricted")]
+    citation_id: Annotated[UUID | None, classified("internal")]
+    document_id: Annotated[UUID | None, classified("internal")]
+    page: Annotated[int | None, classified("internal")]
+
+
+class FieldVersionOut(BaseModel):
+    """One insert-only `field_value_versions` row. `unsupported` is computed: no verified
+    citation, so the value cannot be ticked or approved. The pill (Updated, Edited, ≈,
+    Unsupported) is derived from these fields and never stored."""
+
+    model_config = ConfigDict(frozen=True)
+
+    seq: Annotated[int, classified("internal")]
+    value: Annotated[FieldValueOut, classified("restricted")]
+    value_kind: Annotated[ValueKind, classified("internal")]
+    value_source: Annotated[ValueSource, classified("internal")]
+    cause: Annotated[ValueCause, classified("internal")]
+    actor_kind: Annotated[ActorKind, classified("internal")]
+    actor_user_id: Annotated[UUID | None, classified("internal")]
+    # "Accrued Agent", "Kevin Osei" or "Imported Return"; "<person> via Agent" once adopted.
+    actor_name: Annotated[str, classified("internal")]
+    recorded_at: Annotated[datetime, classified("internal")]
+    # The citation sentence (C4), or a person's required citation note on an edit.
+    citation: Annotated[str | None, classified("restricted")]
+    citation_ids: Annotated[list[UUID], classified("internal")]
+    references: Annotated[list[FieldReferenceOut], classified("restricted")]
+    unsupported: Annotated[bool, classified("internal")]
+    suggestion_id: Annotated[UUID | None, classified("internal")]
+    checkpoint_id: Annotated[UUID | None, classified("internal")]
+    # An estimate links its open issue (SHL-09 b).
+    issue_id: Annotated[UUID | None, classified("internal")]
+
+
+class FieldTickOut(BaseModel):
+    """A field tick: a `field_tick` sign-off bound to the value's hash. `stale` is computed
+    ("✓ KO · Sep 8 (before this change)")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    sign_off_id: Annotated[UUID, classified("internal")]
+    level: Annotated[Level, classified("internal")]
+    signer_user_id: Annotated[UUID, classified("internal")]
+    signer_name: Annotated[str, classified("internal")]
+    initials: Annotated[str, classified("internal")]
+    signed_at: Annotated[datetime, classified("internal")]
+    content_hash: Annotated[str, classified("internal")]
+    stale: Annotated[bool, classified("internal")]
+
+
+class FieldFlagOut(BaseModel):
+    """A field flag ("⚑ SI · Sep 11"): a review note anchored on the field."""
+
+    model_config = ConfigDict(frozen=True)
+
+    note_id: Annotated[UUID, classified("internal")]
+    raised_by_user_id: Annotated[UUID, classified("internal")]
+    raised_by_initials: Annotated[str, classified("internal")]
+    raised_at: Annotated[datetime, classified("internal")]
+    body: Annotated[str, classified("restricted")]
+    status: Annotated[ReviewNoteStatus, classified("internal")]
+
+
+class FieldProvenanceOut(BaseModel):
+    """`GET /v1/fields/{type}/{id}/{key}/provenance`: the tray behind ⓘ, newest version first.
+    Every field write answers with it too."""
+
+    model_config = ConfigDict(frozen=True)
+
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    field_key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    current_seq: Annotated[int, classified("internal")]
+    content_hash: Annotated[str, classified("internal")]
+    versions: Annotated[list[FieldVersionOut], classified("restricted")]
+    ticks: Annotated[list[FieldTickOut], classified("internal")]
+    flags: Annotated[list[FieldFlagOut], classified("restricted")]
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class FieldEditIn(BaseModel):
+    """`PUT …/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`
+    CHECK); a stale `seen_seq` answers 409 `field_changed`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    value: Annotated[FieldValueIn, classified("restricted")]
+    value_kind: Annotated[ValueKind, classified("internal")] = "exact"
+    citation_note: Annotated[SealedText, classified("restricted")]
+    seen_seq: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class FieldReferenceIn(BaseModel):
+    """`POST …/references`: a document in this return; C4 verifies the citation."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    document_id: Annotated[UUID, classified("internal")]
+    page: Annotated[int | None, Field(ge=1), classified("internal")] = None
+    seen_seq: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class FieldTickIn(BaseModel):
+    """`POST …/ticks`: "Sign off field". An unsupported value answers 422 `uncited_change`; a
+    different current hash answers 409 `content_changed`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    level: Annotated[Level, classified("internal")]
+    seen_hash: Annotated[ContentHash, classified("internal")]
+
+
+fields_router = AbacusRouter(prefix="/v1/fields", tags=["review"])
+_FIELD = "/{target_type}/{target_id}/{field_key}"
+
+
+@fields_router.get(
+    _FIELD + "/provenance", action="field.read", response_model=FieldProvenanceOut, errors=(501,)
+)
+async def field_provenance_route(
+    target_type: FieldTargetType, target_id: UUID, field_key: FieldKey, ctx: Ctx
+) -> FieldProvenanceOut:
+    """SHL-09 a to f: versions, prior values, citations, ticks and flags with staleness."""
+    await _stub(ctx)
+
+
+@fields_router.put(
+    _FIELD + "/value", action="field.edit", response_model=FieldProvenanceOut, errors=(409, 501)
+)
+async def field_edit_route(
+    target_type: FieldTargetType,
+    target_id: UUID,
+    field_key: FieldKey,
+    body: FieldEditIn,
+    ctx: Ctx,
+) -> FieldProvenanceOut:
+    """SHL-09 c: a person's edit with a citation note (a human checkpoint where the owner
+    checkpoints, SHL-16)."""
+    await _stub(ctx)
+
+
+@fields_router.post(
+    _FIELD + "/references",
+    action="field.add_reference",
+    response_model=FieldProvenanceOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def field_reference_route(
+    target_type: FieldTargetType,
+    target_id: UUID,
+    field_key: FieldKey,
+    body: FieldReferenceIn,
+    ctx: Ctx,
+) -> FieldProvenanceOut:
+    """ "Add reference": a document in this return, verified through C4."""
+    await _stub(ctx)
+
+
+@fields_router.post(
+    _FIELD + "/ticks",
+    action="field.sign_off",
+    response_model=FieldProvenanceOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def field_tick_route(
+    target_type: FieldTargetType,
+    target_id: UUID,
+    field_key: FieldKey,
+    body: FieldTickIn,
+    ctx: Ctx,
+) -> FieldProvenanceOut:
+    """ "Sign off field": a `field_tick` sign-off (human only)."""
     await _stub(ctx)

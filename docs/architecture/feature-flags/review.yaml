@@ -3,7 +3,7 @@
 
 flags:
   - name: review.grammar_api
-    description: 'C3 review grammar API (ADR-160, ADR-161; P-04-T07, T08, T11): sign-offs, review notes, human gates, decision cards, proposals and suggestions. Off: the C3 routes answer 404. On: they answer 501 not_implemented until each service lands (P-04-T16 to T24). Off by default; on for the Dev, synthetic and canary tenants once the services land. Renewal or retirement is calendared with the C3 services freeze (P-04-T27).'
+    description: 'C3 review grammar API (ADR-160, ADR-161; P-04-T07, T08, T11): sign-offs, review notes, human gates, decision cards, proposals and suggestions, issues and fix instructions, checkpoints and field provenance. Off: the C3 routes answer 404. On: they answer 501 not_implemented until each service lands (P-04-T16 to T35). Off by default; on for the Dev, synthetic and canary tenants once the services land. Renewal or retirement is calendared with the C3 services freeze (P-04-T27).'
     owner: ayushkbhatia
     created: 2026-10-23
     expires: 2027-04-21
