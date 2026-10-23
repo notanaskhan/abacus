@@ -233,8 +233,10 @@ fixtures:
 # `make dev` + `make seed-demo` with fakes and the injected clock, never a hosted database. The
 # harness (F-04-T21) gives each its Playwright project and persona adapter; ABACUS_FIXTURES=1 starts
 # the fixture server. Staging and canary are `--project=staging` / `canary` with their URL set.
+# JOURNEY_ARGS passes Playwright options through (CI: `--trace=on`, F-04-T28).
+JOURNEY_ARGS ?=
 journeys:
-	ABACUS_FIXTURES=1 pnpm -C apps/web exec playwright test --project=fixture
+	ABACUS_FIXTURES=1 pnpm -C apps/web exec playwright test --project=fixture $(JOURNEY_ARGS)
 
 journeys-full: db-guard
-	pnpm -C apps/web exec playwright test --project=fullstack
+	pnpm -C apps/web exec playwright test --project=fullstack $(JOURNEY_ARGS)

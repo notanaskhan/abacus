@@ -5,4 +5,12 @@ They import the harness (`../harness`, F-04-T21): `test` with a `journey` fixtur
 
 Each spec runs in four Playwright projects: `fixture` (`make journeys`, no Docker), `fullstack`
 (`make journeys-full`, against `make dev` + `make seed-demo`), and `staging` and `canary` (their
-URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; hosted sign-in arrives with F-04-T22).
+URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
+
+- `J02-client-onboarding.spec.ts`: J02-audit-core (F-04-T26).
+- `J12-client-portal.spec.ts`: J12-core (F-04-T26).
+
+A step whose screen is still planned is `test.fixme` with an `owner` annotation: the epic, the task
+and its sprint end date. CI (F-04-T28): pull requests run the `fixture` project when the SPA, the
+portal, the UI library or the journeys change; the nightly runs `fullstack` on the runner's own
+stack; the staging job is off until staging exists (`STAGING_JOURNEYS`).

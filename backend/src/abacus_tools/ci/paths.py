@@ -2,10 +2,10 @@
 
 Run: python -m abacus_tools.ci.paths <base> <head>
 
-Prints `backend=…`, `frontend=…`, `gallery=…` and `agents=…` (`true` or `false`) for
-`$GITHUB_OUTPUT`. The single source for every path filter in `ci.yml`. Standard library only, so
-the filter job needs no environment. Anything it can't classify counts as backend: a skipped
-suite must be provably irrelevant, and an unknown base (a new branch) runs everything.
+Prints `backend=…`, `frontend=…`, `gallery=…`, `agents=…` and `journeys=…` (`true` or `false`)
+for `$GITHUB_OUTPUT`. The single source for every path filter in `ci.yml`. Standard library
+only, so the filter job needs no environment. Anything it can't classify counts as backend: a
+skipped suite must be provably irrelevant, and an unknown base (a new branch) runs everything.
 """
 
 from __future__ import annotations
@@ -50,6 +50,22 @@ AGENTS = (
     "evals/**",
     "backend/src/abacus_tools/evals/**",
 )
+# What the fixture-mode journeys walk (F-04-T28; F-04.32): the SPA and portal sources, the
+# component library, the journey specs and their harness, and the server and browser config. A
+# pull request touching none of these cannot change a fixture journey's outcome.
+JOURNEYS = (
+    "apps/web/src/**",
+    "apps/web/e2e/journeys/**",
+    "apps/web/e2e/harness/**",
+    "apps/web/index.html",
+    "apps/web/portal.html",
+    "apps/web/playwright.config.ts",
+    "apps/web/vite.config.ts",
+    "apps/web/package.json",
+    "packages/ui/**",
+    "packages/api-client/**",
+    "pnpm-lock.yaml",
+)
 NO_BASE = frozenset({"", "0" * 40})
 
 
@@ -70,6 +86,11 @@ def classify(paths: list[str] | None) -> dict[str, bool]:
     }
 
 
+def journeys(paths: list[str] | None) -> bool:
+    """Whether a pull request's fixture journeys run; unknown paths run them."""
+    return paths is None or any(_matches(p, JOURNEYS) for p in paths)
+
+
 def changed(base: str, head: str) -> list[str] | None:
     git = shutil.which("git")
     if base in NO_BASE or git is None:
@@ -86,7 +107,8 @@ def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print(__doc__, file=sys.stderr)
         return 2
-    for name, value in classify(changed(argv[0], argv[1])).items():
+    found = changed(argv[0], argv[1])
+    for name, value in {**classify(found), "journeys": journeys(found)}.items():
         print(f"{name}={'true' if value else 'false'}")
     return 0
 
