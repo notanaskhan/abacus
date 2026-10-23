@@ -69,6 +69,11 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "SECRET-003",
         "POR-01e's reminder-link fragment is a readable fixture word, not a 256-bit link token",
     ),
+    (
+        "apps/web/src/fixtures/seed/client-records.ts",
+        "SECRET-003",
+        "CLI-02 overview items carry a `key` row code (form_7004.filed), never a credential",
+    ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(
