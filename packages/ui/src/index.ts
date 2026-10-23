@@ -233,7 +233,7 @@ export {
   TooltipProvider,
 } from "./components/popover";
 export { type Column, DataTable } from "./components/data-table";
-export { CitationChip } from "./components/citation";
+export { NumberedCitation } from "./components/citation";
 export {
   Amount,
   type AmountProps,
@@ -379,3 +379,6 @@ export * from "./requests";
 
 // C-03 Rail kit and C-04 Record kit (F-05-T40).
 export * from "./record";
+
+// E1 MatchProvider, E2 anchored popover host and the C-07 Cite kit (F-05-T41).
+export * from "./tracing";

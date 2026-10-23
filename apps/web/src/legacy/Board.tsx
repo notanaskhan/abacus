@@ -24,7 +24,7 @@ import {
   Alert,
   Badge,
   Button,
-  CitationChip,
+  NumberedCitation,
   Drawer,
   EmptyState,
   Fieldset,
@@ -516,7 +516,7 @@ function ScreeningSummary({
         <ul className="flex flex-wrap gap-x-3 gap-y-1" aria-label="Citations">
           {result.citations.map((c, index) => (
             <li key={c.cell} className="flex items-center gap-1.5 text-[12px]">
-              <CitationChip
+              <NumberedCitation
                 n={index + 1}
                 label={`cell ${c.cell}`}
                 verified={c.verified}

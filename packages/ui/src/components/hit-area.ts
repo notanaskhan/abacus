@@ -16,6 +16,8 @@ export const HIT = {
   checkbox: "before:absolute before:-inset-[5px]",
   /** 17px radio. */
   radio: "before:absolute before:-inset-[4px]",
+  /** 17px citation marker (C-07): 25 tall, 24 at its narrowest. */
+  marker: "before:absolute before:-inset-[4px]",
   /** 16px clear button in a search field. */
   clear: "before:absolute before:-inset-[4px]",
   /** 22px switch: taller by one px a side. */
