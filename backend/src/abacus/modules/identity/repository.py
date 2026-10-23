@@ -1200,6 +1200,17 @@ async def firm_is_synthetic(session: AsyncSession) -> bool:
     return bool(await session.scalar(text("SELECT synthetic FROM firms")))
 
 
+async def firm_tenancy_row(session: AsyncSession) -> RowMapping | None:
+    """Q-01-T45: the session's firm's region, synthetic flag and tenant-key state (ADR-156)."""
+    result = await session.execute(
+        text(
+            "SELECT synthetic, region, kms_key_status, kms_replica_verified_at, created_at "
+            "FROM firms"
+        )
+    )
+    return result.mappings().first()
+
+
 async def agents_paused_since(session: AsyncSession) -> datetime | None:
     """SPEC-027: when the session's firm paused every engagement agent, or None."""
     found = await session.scalar(text("SELECT agents_paused_at FROM firms"))

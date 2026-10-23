@@ -38,6 +38,7 @@ from abacus.modules.identity.repository import (
     drafted_guidance_shown,
     firm_is_synthetic,
     firm_settings,
+    firm_tenancy_row,
     insert_policy_override,
     letter_required,
     onboarding_counts,
@@ -191,6 +192,33 @@ async def is_synthetic_firm(tenant: TenantContext) -> bool:
     when the local seed or an evaluation run marked it, through the owner role."""
     async with tenant_session(tenant) as session:
         return await firm_is_synthetic(session)
+
+
+@dataclass(frozen=True)
+class FirmTenancy:
+    """Q-01-T45 (ADR-156): what provisioning set on the firm. A firm whose key is not
+    `replica_verified` stores no client content."""
+
+    synthetic: bool
+    region: str
+    kms_key_status: str
+    kms_replica_verified_at: datetime | None
+    created_at: datetime
+
+
+async def firm_tenancy(tenant: TenantContext) -> FirmTenancy | None:
+    """The firm's tenancy facts under its row-level security, or None if it doesn't exist."""
+    async with tenant_session(tenant) as session:
+        row = await firm_tenancy_row(session)
+    if row is None:
+        return None
+    return FirmTenancy(
+        bool(row["synthetic"]),
+        str(row["region"]),
+        str(row["kms_key_status"]),
+        row["kms_replica_verified_at"],
+        row["created_at"],
+    )
 
 
 async def letter_policy(tenant: TenantContext) -> bool:

@@ -325,7 +325,7 @@ async def test_ac1_every_worker_registers_every_modules_workflows_and_activities
         assert kwargs["workflows"] == [w for m in worker_main.MODULES for w in m.WORKFLOWS]
         assert kwargs["activities"] == [a for m in worker_main.MODULES for a in m.ACTIVITIES]
         names = {m.__name__.split(".")[2] for m in worker_main.MODULES}
-        assert {"connections", "agents", "evidence", "fieldwork"} <= names
+        assert {"connections", "agents", "evidence", "fieldwork", "platform"} <= names
         assert kwargs["graceful_shutdown_timeout"] == worker_main.GRACEFUL_SHUTDOWN
 
 

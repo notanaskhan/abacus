@@ -48,6 +48,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
         "notifications",
+        "platform",  # Q-01-T45: tenant provisioning
         "requests",  # P-06-T07: binders close on C1's terminal transitions
     )
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
