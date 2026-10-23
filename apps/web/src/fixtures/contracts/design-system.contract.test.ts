@@ -25,6 +25,7 @@ import type {
   ListPageHumanGateOut,
   ListPageIssueItemOut,
   ListPageReviewNoteItemOut,
+  ListPageWallEventOut,
   ListPageWorkItemRowOut,
   MePortalOut,
   PiiMaskOut,
@@ -103,6 +104,7 @@ const LIST_PAGES = {
   ListPage_HumanGateOut_: (p: ListPageHumanGateOut) => envelope(p),
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
+  ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02
   ListPage_WorkItemRowOut_: (p: ListPageWorkItemRowOut) => envelope(p),
 } as const;
 

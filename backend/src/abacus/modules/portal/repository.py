@@ -90,3 +90,39 @@ async def add_domain(session: AsyncSession, tenant_id: UUID, hostname: str, kind
 async def activate_domain(session: AsyncSession, hostname: str) -> bool:
     found = await session.execute(text("SELECT portal_domain_activate(:host)"), {"host": hostname})
     return bool(found.scalar_one())
+
+
+async def branding_display_name(session: AsyncSession) -> str | None:
+    """The session's firm's display name (G-01-T04's settings accessor)."""
+    return (
+        await session.execute(text("SELECT display_name FROM portal_branding"))
+    ).scalar_one_or_none()
+
+
+async def branding_secured_footer(session: AsyncSession) -> bool | None:
+    return (
+        await session.execute(text("SELECT secured_footer FROM portal_branding"))
+    ).scalar_one_or_none()
+
+
+async def set_display_name(session: AsyncSession, tenant_id: UUID, name: str, by: UUID) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO portal_branding (tenant_id, display_name, updated_by) "
+            "VALUES (:tenant, :name, :by) ON CONFLICT (tenant_id) DO UPDATE SET "
+            "display_name = EXCLUDED.display_name, updated_by = EXCLUDED.updated_by, "
+            "updated_at = abacus_now(), version = portal_branding.version + 1"
+        ),
+        {"tenant": tenant_id, "name": name, "by": by},
+    )
+
+
+async def set_secured_footer(session: AsyncSession, on: bool, by: UUID) -> bool:
+    found = await session.execute(
+        text(
+            "UPDATE portal_branding SET secured_footer = :on, updated_by = :by, "
+            "updated_at = abacus_now(), version = version + 1 RETURNING tenant_id"
+        ),
+        {"on": on, "by": by},
+    )
+    return found.first() is not None

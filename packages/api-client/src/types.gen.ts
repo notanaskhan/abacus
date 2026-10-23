@@ -13532,7 +13532,7 @@ export type SettingsSectionValuesOut = {
     /**
      * Section
      */
-    section: 'general' | 'profile' | 'defaults' | 'plan';
+    section: 'profile' | 'defaults' | 'plan';
     /**
      * Values
      */
@@ -35091,10 +35091,6 @@ export type SettingsOverviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SettingsOverviewError = SettingsOverviewErrors[keyof SettingsOverviewErrors];
@@ -35124,7 +35120,7 @@ export type SettingsSectionData = {
         /**
          * Section
          */
-        section: 'general' | 'profile' | 'defaults' | 'plan';
+        section: 'profile' | 'defaults' | 'plan';
     };
     query?: never;
     url: '/v1/firm/settings/{section}';
@@ -35147,10 +35143,6 @@ export type SettingsSectionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SettingsSectionError = SettingsSectionErrors[keyof SettingsSectionErrors];
@@ -35180,7 +35172,7 @@ export type UpdateSettingsSectionData = {
         /**
          * Section
          */
-        section: 'general' | 'profile' | 'defaults' | 'plan';
+        section: 'profile' | 'defaults' | 'plan';
     };
     query?: never;
     url: '/v1/firm/settings/{section}';
@@ -35207,10 +35199,6 @@ export type UpdateSettingsSectionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateSettingsSectionError = UpdateSettingsSectionErrors[keyof UpdateSettingsSectionErrors];

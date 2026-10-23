@@ -179,6 +179,15 @@ from abacus.modules.identity.service import (
 )
 from abacus.modules.identity.settings_contract import me_router as me_annual_router
 from abacus.modules.identity.settings_contract import settings_router, walls_v2_router
+from abacus.modules.identity.settings_registry import (
+    DisplayNameRequired,
+    GlanceRow,
+    SettingKey,
+    active_wall_count,
+    register_firm_setting,
+    register_identity_settings,
+    register_settings_area,
+)
 from abacus.modules.identity.slots import (
     ScopeFacts,
     consent_given,
@@ -241,6 +250,9 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 # F-04-T07 (ADR-143): a synthetic firm's demo clock is the business clock's tenant provider.
 register_tenant_clock(tenant_demo_time)
 
+# G-01-T04: identity's own firm-settings keys and its At a glance row.
+register_identity_settings()
+
 __all__ = [
     "ACTION_KEY",
     "CODE_DIGITS",
@@ -272,11 +284,13 @@ __all__ = [
     "ClockView",
     "ContactView",
     "DemoClockRefused",
+    "DisplayNameRequired",
     "EngagementRole",
     "FirmAgentsResumed",
     "FirmFacts",
     "FirmTenancy",
     "Forbidden",
+    "GlanceRow",
     "GrantExists",
     "GrantNotYetDue",
     "GrantRole",
@@ -298,6 +312,7 @@ __all__ = [
     "Rule",
     "ScopeFacts",
     "ScopeKind",
+    "SettingKey",
     "Staff",
     "StaffInvitationIssued",
     "StaffRole",
@@ -309,6 +324,7 @@ __all__ = [
     "VerifiedIdentity",
     "VisibleScopeKind",
     "acknowledge",
+    "active_wall_count",
     "add_creator_as_partner",
     "add_member",
     "add_rolled_forward_member",
@@ -384,12 +400,14 @@ __all__ = [
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
+    "register_firm_setting",
     "register_gates",
     "register_independence",
     "register_member_added",
     "register_member_removed",
     "register_office_list",
     "register_scope_resolver",
+    "register_settings_area",
     "register_work_item_functions",
     "remove_client",
     "remove_member",

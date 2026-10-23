@@ -1343,7 +1343,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("firm.read_settings", "firm_admin", "allow"),
     ("firm.read_settings", "practice_leader", "allow"),
     ("firm.read_settings", "quality_partner", "deny"),
-    ("firm.read_settings", "security_admin", "deny"),
+    ("firm.read_settings", "security_admin", "allow"),
     ("firm.read_settings", "engagement_partner", "deny"),
     ("firm.read_settings", "manager", "deny"),
     ("firm.read_settings", "senior", "deny"),

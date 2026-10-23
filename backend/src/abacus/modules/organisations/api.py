@@ -1,6 +1,6 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
-from abacus.modules.identity.api import AbacusRouter, register_office_list
+from abacus.modules.identity.api import AbacusRouter, register_office_list, register_settings_area
 from abacus.modules.organisations.contract import client_entities_router, clients_router
 from abacus.modules.organisations.live import (
     NewRelationship,
@@ -43,7 +43,7 @@ from abacus.modules.organisations.service import (
     set_client_record,
     set_entity_attributes,
 )
-from abacus.modules.organisations.settings_contract import org_settings_router
+from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
 from abacus.modules.organisations.slots import (
     OverviewItem,
     OverviewSection,
@@ -62,6 +62,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.
 register_office_list(firm_offices)
+# G-01-T04: the Offices & teams row of the settings overview's At a glance.
+register_settings_area("offices_teams", 20, offices_glance)
 # P-07-T09: CLI-02's overview sections organisations owns (metadata; `client.read`).
 for _section in (
     OverviewSection("entities", "details", "client.read", 10, entities_section),

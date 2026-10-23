@@ -22,10 +22,15 @@ from uuid import UUID
 
 from PIL import Image
 
-from abacus.kernel.db import platform_transaction
+from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.modules.identity.api import (
+    DisplayNameRequired,
+    SettingKey,
+    register_firm_setting,
+)
 from abacus.modules.portal import repository
 
 LOGO_PATH: Final = "/v1/portal/branding/logo"
@@ -196,3 +201,64 @@ async def activate_portal_host(tx: UnitOfWork, tenant_id: UUID, hostname: str) -
     if name is None or not await repository.activate_domain(tx.session, name):
         raise NotFound("portal_domain")
     tx.record("portal_domain.activated", target=Target("firm", tenant_id))
+
+
+# --- the firm-settings accessors (G-01-T04; AC1.9: one copy of each value) ---------------------
+
+
+async def _display_name(tenant: TenantContext) -> str | int | bool | None:
+    async with tenant_session(tenant) as session:
+        found = await repository.branding_display_name(session)
+    return None if found is None else str(found)
+
+
+async def _set_display_name(
+    tx: UnitOfWork, tenant_id: UUID, value: str | int | bool | None, by: UUID
+) -> None:
+    if not isinstance(value, str):
+        raise DisplayNameRequired
+    await repository.set_display_name(tx.session, tenant_id, value, by)
+
+
+async def _secured_footer(tenant: TenantContext) -> str | int | bool | None:
+    async with tenant_session(tenant) as session:
+        found = await repository.branding_secured_footer(session)
+    return bool(found) if found is not None else False
+
+
+class BrandingNotSetUp(DomainInvalid):
+    """The portal has no branding yet: set the display name first."""
+
+    code = "branding_not_set_up"
+
+
+async def _set_secured_footer(
+    tx: UnitOfWork, _tenant: UUID, value: str | int | bool | None, by: UUID
+) -> None:
+    if not isinstance(value, bool):
+        raise BrandingNotSetUp
+    if not await repository.set_secured_footer(tx.session, value, by):
+        raise BrandingNotSetUp
+
+
+def register_branding_settings() -> None:
+    register_firm_setting(
+        SettingKey(
+            "profile",
+            "display_name",
+            "text",
+            max_length=120,
+            required=True,
+            read=_display_name,
+            write=_set_display_name,
+        )
+    )
+    register_firm_setting(
+        SettingKey(
+            "defaults",
+            "portal_secured_footer",
+            "bool",
+            read=_secured_footer,
+            write=_set_secured_footer,
+        )
+    )
