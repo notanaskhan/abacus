@@ -4,7 +4,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 
 - **P-ID.** The proposal ID from [`docs/plan/09-decisions-adrs.md`](../plan/09-decisions-adrs.md) section 9.4.2. P-64 to P-69 were added from the backlog tasks that draft them.
 - **Epic.** The epic whose backlog task first drafts the ADR (from `docs/plan/backlog.csv`, best match; check the task when drafting starts). Epic keys such as `P-10` are epics, not ADR IDs. A dash means no task names it.
-- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161, P-31 = ADR-162, P-11 = ADR-163, P-13 = ADR-164, P-48 = ADR-166 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159.
+- **ADR number.** `next free` until drafting starts. Numbers minted so far: P-01 = ADR-133, P-38 = ADR-135, P-04 = ADR-136, P-05 = ADR-137, P-34 = ADR-138, P-36 = ADR-139, P-39 = ADR-140, P-54 = ADR-141, P-55 = ADR-142, P-07 = ADR-160, P-35 = ADR-161, P-31 = ADR-162, P-11 = ADR-163, P-13 = ADR-164, P-48 = ADR-166 (all accepted). Proposed so far: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154, P-65 = ADR-156, P-66 = ADR-157, P-40 = ADR-158, P-43 = ADR-159, P-12 = ADR-167.
 - **DEC row.** The decision it records, in [`docs/product/decision-log.md`](../product/decision-log.md).
 - **Status.** `to draft`, `proposed`, `accepted`, or `n/a, solo edition`.
 
@@ -21,7 +21,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-09 | Client identity, scoped grants, link principals, portal MFA | red | F-03 | ADR-146 | Fri 6 Nov | DEC-34, DEC-63, DEC-67 | accepted |
 | P-10 | Role catalogue and need-to-know | red | F-03 | ADR-147 | Fri 6 Nov | DEC-20, DEC-21 | accepted |
 | P-11 | White-label portal, domains, branded email | amber | P-08 | ADR-163 (plan alias ADR-203) | Fri 13 Nov; drafted and accepted 2026-10-23 with P-08-T30 | DEC-59 | accepted |
-| P-12 | §7216 consents, TRI, TIN sealing, gateway condition | red | Q-02 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with Q-02's first task, owner ayushkbhatia | DEC-52 | to draft (re-dated) |
+| P-12 | §7216 consents, TRI, TIN sealing, gateway condition | red | Q-02 | ADR-167 | drafted 2026-10-23 with Q-02-T25; acceptance by both founders and counsel's naming of the recipient (OQ-1) due Fri 22 Jan 2027 | DEC-52 | proposed |
 | P-13 | Independence and attest-client rules | red | P-07 | ADR-164 (plan alias ADR-142, which is the AWS production topology) | Fri 27 Nov; drafted and accepted 2026-10-23 with P-07-T66 | DEC-69 | accepted |
 | P-14 | Retention, holds, destruction | red | Q-02 | next free | Fri 27 Nov (data model); re-dated 2026-10-22: drafted with Q-02's first task, owner ayushkbhatia | DEC-71 | to draft (re-dated) |
 | P-15 | Real time via SSE, plus presence | amber | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-23 | to draft (re-dated) |
