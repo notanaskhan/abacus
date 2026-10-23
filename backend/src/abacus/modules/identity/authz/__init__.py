@@ -82,6 +82,9 @@ Layer = Literal[
     "tenancy",
     "wall",
     "relationship",
+    # A client user with no relationship to an engagement: answered as if it did not exist
+    # (F-03 story 5.2, DEC-43), so another client's engagement is never confirmed.
+    "client_scope",
     "role",
     "independence",
     "condition",
@@ -375,6 +378,8 @@ async def authorise(
     # 2b. Relationships.
     roles = await _roles(ctx, resource, rule)
     if not roles:
+        if resource.engagement_id is not None and isinstance(ctx, AuthContext) and ctx.client:
+            raise _deny(ctx, action, "client_scope")
         raise _deny(ctx, action, "relationship")
     # 3. Roles. For an agent, `task_scope` grants only what its run declared (ADR-025). A firm's
     # policy override narrows a cell, never widens it (F-03-T24).

@@ -26,6 +26,9 @@ class AuthContext:
     membership_id: UUID
     firm_role: FirmRole | SupportRole | None
     mfa_at: datetime | None
+    # A client user (a client membership), from the membership the request chose: another
+    # client's engagement then answers as if it did not exist (F-03 story 5.2, DEC-43).
+    client: bool = False
 
     @property
     def is_support(self) -> bool:

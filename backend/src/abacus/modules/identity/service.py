@@ -111,6 +111,7 @@ def choose_tenant(signed_in: SignedIn, requested: str | None) -> AuthContext:
         membership_id=membership.membership_id,
         firm_role=membership.firm_role,
         mfa_at=signed_in.identity.mfa_at,
+        client=membership.kind == "client",
     )
 
 

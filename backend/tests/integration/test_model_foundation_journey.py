@@ -637,12 +637,6 @@ async def test_recording_the_signed_letter_moves_accepted_to_contracted(
     assert await j.status(engagement) == "contracted"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: a client user gets 403 for another client's engagement and 404 for one that "
-    "does not exist, which tells the two apart. F-03 story 5.2 and POR-02e (INV-4; DEC-43) "
-    "answer 404. See #338.",
-)
 async def test_another_clients_engagement_answers_as_if_it_did_not_exist(
     seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider
 ) -> None:
@@ -658,12 +652,6 @@ async def test_another_clients_engagement_answers_as_if_it_did_not_exist(
     assert (other.status_code, other.json()) == (missing.status_code, missing.json())
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: a request on an engagement with no work item yet (a new CAS close) answers 500: "
-    "the default binder's insert into request_lists violates its work-item foreign key instead "
-    "of a refusal the person can act on. See #338.",
-)
 async def test_a_request_before_any_work_item_is_refused_not_a_server_error(
     seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider
 ) -> None:

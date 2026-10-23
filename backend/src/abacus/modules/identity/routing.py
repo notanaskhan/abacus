@@ -184,8 +184,10 @@ async def current_identity(
 async def current_member(
     ctx: Annotated[AuthContext, Depends(current_context)],
 ) -> AuthContext:
-    """A firm member themself (`OWN` routes): never a break-glass support context."""
-    if ctx.is_support:
+    """A firm member themself (`OWN` routes): never a break-glass support context, and never an
+    agent or system context (they hold no `OWN` action; refused, not a 500)."""
+    # The annotation says AuthContext; a dependency override can still hand in another context.
+    if not isinstance(cast(object, ctx), AuthContext) or ctx.is_support:
         raise HTTPException(403, "forbidden")
     return ctx
 
