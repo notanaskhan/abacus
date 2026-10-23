@@ -15,6 +15,19 @@ from abacus.modules.communications.invitations import deliver_invitation, delive
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.service import Draft, MessageView, OutOfScope, send
+from abacus.modules.communications.ses_identities import (
+    DnsRecord,
+    IdentitySetup,
+    IdentityStatus,
+    InMemorySesIdentities,
+    SesIdentities,
+    SesIdentityInvalid,
+    SesIdentityNotFound,
+    SesIdentityPort,
+    SesIdentityUnavailable,
+    configure_ses_identities,
+    ses_identities,
+)
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
 from abacus.modules.communications.workflows import DrainSesEventsWorkflow
 from abacus.modules.identity.api import AbacusRouter, ClientInvitationIssued, StaffInvitationIssued
@@ -42,22 +55,33 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "DnsRecord",
     "Draft",
     "DrainSesEventsWorkflow",
+    "IdentitySetup",
+    "IdentityStatus",
+    "InMemorySesIdentities",
     "LocalMailbox",
     "MessageBounced",
     "MessageComplained",
     "MessageView",
     "OutOfScope",
     "SesEventQueue",
+    "SesIdentities",
+    "SesIdentityInvalid",
+    "SesIdentityNotFound",
+    "SesIdentityPort",
+    "SesIdentityUnavailable",
     "Transport",
     "Violation",
     "check_scope",
     "configure_ses_event_queue",
+    "configure_ses_identities",
     "configure_transport",
     "drain_ses_events",
     "is_suppressed",
     "render_follow_up",
     "send",
     "send_follow_up",
+    "ses_identities",
 ]

@@ -14,6 +14,12 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
 
 - `comment_scope_kinds`: registered into requests as the check on firm comments shared with a client (SPEC-032 TASK-062 D1); a checker error returns `checker_error`, which blocks.
 
+- `ses_identities() -> SesIdentityPort` (Q-01-T47; platform-ops contract 3.8), for R-01's ADM-10 sender domains:
+  - `create_identity(domain=, mail_from_subdomain=)` requests Easy DKIM and a custom MAIL FROM domain, and returns the DNS records to publish (three DKIM CNAMEs, then the MAIL FROM MX and SPF TXT). It is idempotent for the same domain.
+  - `identity_status(domain=)` returns `pending`, `verified` or `failed` for verification, DKIM and MAIL FROM.
+  - `delete_identity(domain=)` is quiet when SES has no identity for the domain.
+  - `SesIdentities` calls SES v2 through `kernel.storage.sesv2_client()` when `ses_configuration_set` is set. `InMemorySesIdentities` serves local and test runs. An SES error raises `SesIdentityUnavailable`, carrying the error code only. No tag or name carries a tenant: which firm owns a domain is R-01's record.
+
 ## Rules
 - COMM-001: nothing outside this module imports a mail or messaging library or emits `message.ready`.
 - No transport yet: delivery comes with Phase 2 increments 2 and 8.
