@@ -47,6 +47,8 @@ export interface CockpitDock {
   view: DockView;
   /** The views this dock offers; one view draws its name as the title instead of the switch. */
   views?: readonly DockView[];
+  /** A single-purpose dock's own title in place of the view's name ("Request" on BND-02). */
+  title?: string;
   onView?: (view: DockView) => void;
   /** A run is executing: the 8px olive live dot before the switch (T2b). */
   live?: boolean;
@@ -58,9 +60,16 @@ export interface CockpitDock {
 }
 
 export interface RecordCockpitProps {
-  toolbar: ToolbarProps;
+  /** The firm toolbar. Without one the cockpit draws inside a shell that already has it (a routed
+   * screen in the workspace): no window, the same bar, tabs and columns. */
+  toolbar?: ToolbarProps;
   /** The audit record bar; the template wires its layout chip to the dock. */
-  record: Omit<AuditRecordHeaderProps, "variant" | "onLayout">;
+  record?: Omit<AuditRecordHeaderProps, "variant" | "onLayout">;
+  /** A record's own bar in place of the audit one (chrome takes slots, plan 04 §4.5 rule 5): the
+   * 42 settings-style subbar of a binder or a client record. Wins over `record`. */
+  header?: ReactNode;
+  /** The 50 tabsbar under the bar (a `Tabsbar`). */
+  tabs?: ReactNode;
   /** The 330 rail: a `RecordRail`. */
   rail: ReactNode;
   canvas: CockpitCanvas;
@@ -82,6 +91,8 @@ export interface RecordCockpitProps {
 export function RecordCockpit({
   toolbar,
   record,
+  header,
+  tabs,
   rail,
   canvas,
   dock,
@@ -100,6 +111,44 @@ export function RecordCockpit({
     setOwnOpen(next);
     onDockOpenChange?.(next);
   };
+  const bar =
+    header ??
+    (record === undefined ? undefined : (
+      <RecordHeader
+        {...record}
+        variant="audit"
+        {...(dock === undefined ? {} : { onLayout: toggle })}
+      />
+    ));
+  const panes = (
+    <>
+      <div data-cockpit="rail" className="flex w-(--rail-w) flex-none flex-col">
+        {rail}
+      </div>
+      <Canvas canvas={canvas} />
+      {open && <Dock dock={dock} />}
+    </>
+  );
+  if (toolbar === undefined) {
+    // Inside a shell that already draws the toolbar (the app's workspace): the bar, the tabs and
+    // the same three columns, without a second window.
+    return (
+      <div
+        data-cockpit="bare"
+        className={cn("flex min-h-0 flex-1 flex-col", className)}
+        {...(height === undefined ? {} : { style: { height } })}
+      >
+        {bar}
+        {tabs}
+        <div
+          data-shell="cols"
+          className="flex min-h-0 flex-1 items-stretch gap-(--gutter-pane) pt-(--gutter-pane)"
+        >
+          {panes}
+        </div>
+      </div>
+    );
+  }
   return (
     <AppShell
       toolbar={toolbar}
@@ -107,19 +156,10 @@ export function RecordCockpit({
       embedded={embedded}
       {...(height === undefined ? {} : { height })}
       {...(className === undefined ? {} : { className })}
-      record={
-        <RecordHeader
-          {...record}
-          variant="audit"
-          {...(dock === undefined ? {} : { onLayout: toggle })}
-        />
-      }
+      record={bar}
+      {...(tabs === undefined ? {} : { tabs })}
     >
-      <div data-cockpit="rail" className="flex w-(--rail-w) flex-none flex-col">
-        {rail}
-      </div>
-      <Canvas canvas={canvas} />
-      {open && <Dock dock={dock} />}
+      {panes}
     </AppShell>
   );
 }
@@ -182,7 +222,7 @@ function Dock({ dock }: { dock: CockpitDock }): JSX.Element {
     <section
       data-cockpit="dock"
       data-view={dock.view}
-      aria-label={`${dock.view} dock`}
+      aria-label={`${dock.title ?? dock.view} dock`}
       className="pane flex w-(--dock-w) flex-none flex-col overflow-hidden"
     >
       <div
@@ -206,7 +246,7 @@ function Dock({ dock }: { dock: CockpitDock }): JSX.Element {
             />
           ) : (
             <h2 id={id} className="truncate text-pane font-medium tracking-[-0.012em]">
-              {dock.view}
+              {dock.title ?? dock.view}
             </h2>
           )}
         </div>
