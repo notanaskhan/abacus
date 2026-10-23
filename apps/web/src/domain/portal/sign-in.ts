@@ -1,10 +1,10 @@
-// Portal sign-in (P-08 §5.2, L3): branding and the pre-session family over the generated client's
-// transport. The routes have no generated function yet (DEC-139; draft types in
-// app-core/portal-contracts.ts), so each call names its path on the generated `client`, which
-// keeps the interceptors, the base URL and fixture mode;
-// `make generate` replaces them with the generated functions when P-08-T05 and T10 serve them.
-// Codes, emails and tokens are never logged, stored or put in a URL (P-08 §5.4).
+// Portal sign-in (P-08 §5.2, L3): branding and the pre-session family over the generated client.
+// Start, verify and resend are the generated functions since P-08-T10 serves them (P-08-T11), so
+// fixture mode and the live API answer the same calls (fixture-mode swaps the client's fetch).
+// Branding and links/renew still name their paths on the generated `client` (P-08-T05 and T21
+// move them). Codes, emails and tokens are never logged, stored or put in a URL (P-08 §5.4).
 
+import { portalResend, portalStart, portalVerify } from "@abacus/api-client";
 import { client } from "@abacus/api-client/client";
 import type { PortalBrand } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -38,11 +38,12 @@ async function post<Out>(url: string, body: object): Promise<Out> {
 }
 
 export const signIn = {
-  start: (body: PortalSignInStartIn) => post<PortalSignInStartOut>("/v1/portal/auth/start", body),
-  verify: (body: PortalSignInVerifyIn) =>
-    post<PortalSignInVerifyOut>("/v1/portal/auth/verify", body),
-  resend: (body: PortalSignInResendIn) =>
-    post<PortalSignInStartOut>("/v1/portal/auth/resend", body),
+  start: async (body: PortalSignInStartIn): Promise<PortalSignInStartOut> =>
+    (await portalStart({ body, throwOnError: true })).data,
+  verify: async (body: PortalSignInVerifyIn): Promise<PortalSignInVerifyOut> =>
+    (await portalVerify({ body, throwOnError: true })).data,
+  resend: async (body: PortalSignInResendIn): Promise<PortalSignInStartOut> =>
+    (await portalResend({ body, throwOnError: true })).data,
   renewLink: (body: PortalLinkRenewIn) => post<PortalLinkRenewOut>("/v1/portal/links/renew", body),
 };
 

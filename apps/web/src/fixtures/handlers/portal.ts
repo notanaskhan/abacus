@@ -1,13 +1,16 @@
 // The portal's fixture routes (P-08-T08): branding, the pre-session sign-in family, the portal
-// shell on `/v1/me` and the POR-02 home. The pre-session routes are not served yet (DEC-139), so
-// these answer the shapes the backend contract models fix (app-core/portal-contracts.ts):
+// shell on `/v1/me` and the POR-02 home. They answer the shapes the backend contract fixes (the
+// generated types; app-core/portal-contracts.ts for the routes not served yet):
 // - `start` answers 202 with the same body for any email (no enumeration); a reminder link older
 //   than 14 days answers 410 `link_expired` (the contract has no such answer yet: an open gap in
 //   docs/screens/POR-01.md);
 // - `verify` takes the fixture code 481027; a wrong code costs one of three tries (401
 //   `code_mismatch {tries_left}`), the third locks sign-in for 15 minutes (423 `sign_in_locked`);
 //   an owner (the MFA floor) answers `mfa_required`;
-// - `resend` answers 429 `resend_too_soon` before the countdown ends; `links/renew` 202.
+// - `resend` answers 429 `resend_too_soon` before the countdown ends; `links/renew` 202;
+// - `refresh` (P-08-T11) stands for the persona's host cookie: a persona with a portal shell gets
+//   a fresh token (a reload of a signed-in area), anyone else 401 `session_expired`; `sign-out`
+//   ends it.
 // Times are offsets from the scenario's clock; nothing here reads the device clock.
 
 import type {
@@ -85,6 +88,13 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
     return out;
   };
 
+  const signedIn = (who: string): PortalSignInVerifyOut => ({
+    state: "signed_in",
+    access_token: stableId(`portal:session:${who}`),
+    expires_in: 900,
+    landing: PORTAL_SHELLS[who]?.landing ?? "none",
+  });
+
   const start = ({ body, persona }: FixtureRequest) => {
     const given = (body ?? {}) as Partial<PortalSignInStartIn>;
     const linkIssued = options.linkIssuedAt;
@@ -113,18 +123,12 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
         : json(errorBody("code_mismatch", { tries_left: triesLeft }), 401);
     }
     const who = persona ?? "claire-feld";
-    const shell = PORTAL_SHELLS[who];
     const out: PortalSignInVerifyOut = MFA_FLOOR_PERSONAS.has(who)
       ? {
           state: options.mfaEnrolled === false ? "mfa_setup_required" : "mfa_required",
           mfa_token: stableId(`portal:mfa:${who}`),
         }
-      : {
-          state: "signed_in",
-          access_token: stableId(`portal:session:${who}`),
-          expires_in: 900,
-          landing: shell?.landing ?? "none",
-        };
+      : signedIn(who);
     return json(out);
   };
 
@@ -141,6 +145,11 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
         429,
       );
     },
+    "POST /v1/portal/auth/refresh": ({ persona }) =>
+      persona !== undefined && PORTAL_SHELLS[persona] !== undefined
+        ? json(signedIn(persona))
+        : json(errorBody("session_expired"), 401),
+    "POST /v1/portal/auth/sign-out": () => json({ ended: true }),
     "POST /v1/portal/links/renew": () => json({ accepted: true }, 202),
     "POST /v1/invitations/preview": () =>
       options.invitation === undefined

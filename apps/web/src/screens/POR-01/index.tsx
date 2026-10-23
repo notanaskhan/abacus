@@ -22,7 +22,7 @@ import {
   brandOf,
   failureOf,
   failureWords,
-  setPortalAccessToken,
+  setPortalSession,
   signIn,
   useBranding,
 } from "../../domain/portal";
@@ -143,7 +143,8 @@ export function POR01({ opening, mobile = false, onSignedIn }: POR01Props): JSX.
     try {
       const answer = await signIn.verify({ challenge_id: against.challenge_id, code: digits });
       if (answer.state === "signed_in") {
-        setPortalAccessToken(answer.access_token ?? null);
+        // The token and its lifetime into the auth client's memory (P-08-T11).
+        setPortalSession(answer);
         onSignedIn?.(answer.landing ?? "none");
       } else {
         setStep("second");

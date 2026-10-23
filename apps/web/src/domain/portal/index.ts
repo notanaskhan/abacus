@@ -17,6 +17,7 @@ export {
   LANDING_PATH,
   portalAccessToken,
   setPortalAccessToken,
+  setPortalSession,
 } from "../../app-core/portal-session";
 export {
   type SignInFailure,
