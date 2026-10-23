@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` (this file is the portal half; the binders and requests half is `c5-requests-binders.md`) |
 | Version | v1.1 (additive to C5 v1) |
-| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). The pre-session family and branding are specified here and **not served** until their decision lands (DEC-139, §2.2) |
+| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the pre-session family is specified here and **not served** until its decision lands (DEC-139, §2.2) |
 | Provider epic | P-08 (schema half: F-03-T26, F-03-T27, F-03-T30) |
 | Consumers | R-01 (POR-03, POR-04, POR-14, POR-20 emails), P-07 (CLI-04 unlock and invitations v2), G-02 (ADM-06 MFA policy), N-02, N-01, T-01, T-02, R-02, N-03, A-08, A-09, R-03. Screens: POR-01, POR-02 |
 | Freeze sprint | S3 (starts 2026-11-30) with the rest of C5; freeze Fri 2026-12-11 |
@@ -33,12 +33,12 @@ Matrix: `docs/architecture/permission-matrix/portal.yaml`, `identity.yaml`.
 The plan's `portal.home.read` and `portal.preferences.update` are spelt `portal_home.read` and `portal_preferences.update`: a matrix action is `<entity>.<verb>` with one dot (DEC-139). Portal routes take the client principal (`current_member`: the person's own context in the firm, never a break-glass support context) until P-08-T10's portal BFF session and host pinning land (ADR-163 §5); they keep the same action then. The reserved G-02 action `portal_security.manage` is not added until G-02 serves its routes.
 
 ### 2.2 Specified, not served by this stub (DEC-139)
-These answer before any session exists, so they cannot sit behind `AbacusRouter` (which refuses a route without an action and a principal). An unauthenticated route lives only on ADR-152's public-route list (`abacus.api.public_routes`, ROUTE-001), which is protected and changes only with its own decision. ADR-152 lists `/v1/portal/branding`; the logo and the pre-session family still need an entry (P-08 OQ-2). The routes are served by the named task once that decision lands; their shapes are fixed now in code (`identity/portal_contract.py`, `portal/contract.py`, not routed) and tested by `test_c5_portal_stub.py` and the P-08-T02 consumer tests.
+These answer before any session exists, so they cannot sit behind `AbacusRouter` (which refuses a route without an action and a principal). An unauthenticated route lives only on ADR-152's public-route list (`abacus.api.public_routes`, ROUTE-001), which is protected and changes only with its own decision. ADR-152 lists `/v1/portal/branding` and `/v1/portal/branding/logo`, both live under the `PORTAL_PUBLIC` route marker since P-08-T05 (DEC-154); the pre-session family still needs an entry (P-08 OQ-2). The routes are served by the named task once that decision lands; their shapes are fixed now in code (`identity/portal_contract.py`, `portal/contract.py`, not routed) and tested by `test_c5_portal_stub.py` and the P-08-T02 consumer tests.
 
 | Operation | Method and path | Authentication | Served by |
 |---|---|---|---|
 | Branding | `GET /v1/portal/branding` → `PortalBrandingOut` | none · ADR-152 list | P-08-T05 |
-| Logo | `GET /v1/portal/branding/logo` → re-encoded PNG, ETag | none · ADR-152 list (to add) | P-08-T05 |
+| Logo | `GET /v1/portal/branding/logo` → re-encoded PNG (`image/png`, `nosniff`); 404 for a host without one | none · ADR-152 list | P-08-T05 |
 | Start | `POST /v1/portal/auth/start` `PortalSignInStartIn` → always **202** `PortalSignInStartOut` | pre-session | P-08-T10 |
 | Verify | `POST /v1/portal/auth/verify` `PortalSignInVerifyIn` → `PortalSignInVerifyOut` | pre-session | P-08-T10 |
 | Resend | `POST /v1/portal/auth/resend` `PortalSignInResendIn` → `PortalSignInStartOut` | pre-session | P-08-T10 |

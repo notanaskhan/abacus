@@ -10065,6 +10065,52 @@ export type PopulationOut = {
 };
 
 /**
+ * PortalBrandingOut
+ *
+ * Public fields only, the same shape for an unknown host (neutral values), and no tenant
+ * identifier on any host (ADR-163 §5, §6).
+ */
+export type PortalBrandingOut = {
+    /**
+     * Address Line
+     */
+    address_line: string | null;
+    /**
+     * Firm Name
+     */
+    firm_name: string | null;
+    /**
+     * Help Url
+     */
+    help_url: string | null;
+    /**
+     * Logo Url
+     */
+    logo_url: string | null;
+    /**
+     * Maintenance Banner
+     */
+    maintenance_banner?: string | null;
+    /**
+     * Portal Name
+     */
+    portal_name: string | null;
+    /**
+     * Privacy Url
+     */
+    privacy_url: string | null;
+    /**
+     * Secured Footer
+     */
+    secured_footer?: boolean;
+    sign_in: PortalSignInPolicyOut;
+    /**
+     * Support Contact Name
+     */
+    support_contact_name: string | null;
+};
+
+/**
  * PortalHomeBinderOut
  *
  * Binder progress: "19 of 21 requests done · Brightwater Hale sorted 37 of your files". The
@@ -10463,6 +10509,20 @@ export type PortalPreferencesOut = {
      * Welcome Dismissed At
      */
     welcome_dismissed_at?: string | null;
+};
+
+/**
+ * PortalSignInPolicyOut
+ */
+export type PortalSignInPolicyOut = {
+    /**
+     * Methods
+     */
+    methods: Array<'email_code'>;
+    /**
+     * Mfa Floor
+     */
+    mfa_floor: Array<'owner' | 'signer' | 'approver'>;
 };
 
 /**
@@ -36341,6 +36401,94 @@ export type MarkBinderDoneResponses = {
 };
 
 export type MarkBinderDoneResponse = MarkBinderDoneResponses[keyof MarkBinderDoneResponses];
+
+export type GetPortalBrandingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/branding';
+};
+
+export type GetPortalBrandingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetPortalBrandingError = GetPortalBrandingErrors[keyof GetPortalBrandingErrors];
+
+export type GetPortalBrandingResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalBrandingOut;
+};
+
+export type GetPortalBrandingResponse = GetPortalBrandingResponses[keyof GetPortalBrandingResponses];
+
+export type GetPortalLogoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/branding/logo';
+};
+
+export type GetPortalLogoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetPortalLogoError = GetPortalLogoErrors[keyof GetPortalLogoErrors];
+
+export type GetPortalLogoResponses = {
+    /**
+     * Response Get Portal Logo
+     *
+     * Successful Response
+     */
+    200: string;
+};
+
+export type GetPortalLogoResponse = GetPortalLogoResponses[keyof GetPortalLogoResponses];
 
 export type GetPortalHomeData = {
     body?: never;

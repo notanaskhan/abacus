@@ -60,6 +60,11 @@ STAFF: Final = "staff"
 # header and Origin); no other path may carry this marker.
 PRE_SESSION: Final = "pre_session"
 PRE_SESSION_PATHS: Final = frozenset({"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"})
+# P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
+# before anyone signs in. Public fields only, the same shape for any host; no other path may
+# carry this marker.
+PORTAL_PUBLIC: Final = "portal_public"
+PORTAL_PUBLIC_PATHS: Final = frozenset({"/v1/portal/branding", "/v1/portal/branding/logo"})
 # SPEC-013 (Q3): a firm member acting only on their own rows (their notifications). No firm matrix
 # action applies; the service filters to the caller, and support contexts are refused.
 OWN: Final = "own"
@@ -116,6 +121,10 @@ async def requested_tenant(
 
 async def pre_session() -> None:
     """No principal yet (P-01-T09): the sign-in route authenticates the request itself."""
+
+
+async def portal_public() -> None:
+    """No principal (P-08-T05): the branding routes answer Public fields to anyone."""
 
 
 async def current_signed_in(
@@ -218,7 +227,7 @@ class AbacusRoute(APIRoute):
             with recording_checks() as checked:
                 response = await handler(request)
             if (
-                action not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION)
+                action not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
                 and action not in checked
                 and response.status_code < 400
             ):
@@ -246,10 +255,13 @@ class AbacusRouter(APIRouter):
         status_code: int | None = None,
         errors: Sequence[int] = (),
     ) -> None:
-        if action not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION) and action not in RULES:
+        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
+        if action not in markers and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
         if action == PRE_SESSION and self.prefix + path not in PRE_SESSION_PATHS:
             raise ValueError(f"route {path}: only the sign-in routes are pre-session (ADR-165)")
+        if action == PORTAL_PUBLIC and self.prefix + path not in PORTAL_PUBLIC_PATHS:
+            raise ValueError(f"route {path}: only portal branding is public (ADR-163)")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
         auth = {
@@ -258,6 +270,7 @@ class AbacusRouter(APIRouter):
             OWN: current_member,
             IDENTITY: current_identity,
             PRE_SESSION: pre_session,
+            PORTAL_PUBLIC: portal_public,
         }.get(action, current_context)
         super().add_api_route(
             path,

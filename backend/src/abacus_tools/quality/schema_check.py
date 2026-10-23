@@ -64,6 +64,7 @@ NON_TENANT_TABLES = frozenset(
     | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}
     | {"plans"}  # 0088 (F-03-T28): global, operator-set
     | {"plan_modules"}  # 0107 (Q-01-T45): a plan's modules, set by operators
+    | {"portal_domains"}  # 0111 (P-08-T05): hosts are global; definer functions only
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05): definers only
     # 0101 (P-01-T09, ADR-165): staff sessions span firms; definers only.
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}
@@ -205,6 +206,7 @@ GLOBAL_TABLES = frozenset(
     | {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}  # 0086
     | {"plans"}  # 0088
     | {"plan_modules"}  # 0107 (Q-01-T45)
+    | {"portal_domains"}  # 0111 (P-08-T05)
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
 )
@@ -241,6 +243,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"access_events_partition"}  # 0105 (Q-02-T20): next month's partition, ahead of time
     # 0107 (Q-01-T45): the provisioning workflow's writers, and operators' plan contents.
     | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}
+    # 0111 (P-08-T05, ADR-163): branding before sign-in, and a firm's own portal hosts.
+    | {"portal_resolve_host", "portal_host_logo", "portal_domain_add", "portal_domain_activate"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

@@ -134,6 +134,8 @@ TABLES: tuple[str, ...] = (
     "pii_reveals",
     "pii_scan_runs",
     "populations",
+    "portal_branding",
+    "portal_preferences",
     "procedure_conclusions",
     "procedure_session_events",
     "procedure_workpaper_signatures",

@@ -21105,6 +21105,129 @@
         "title": "PopulationOut",
         "type": "object"
       },
+      "PortalBrandingOut": {
+        "description": "Public fields only, the same shape for an unknown host (neutral values), and no tenant\nidentifier on any host (ADR-163 \u00a75, \u00a76).",
+        "properties": {
+          "address_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Address Line"
+          },
+          "firm_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Firm Name"
+          },
+          "help_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Help Url"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Logo Url"
+          },
+          "maintenance_banner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Maintenance Banner"
+          },
+          "portal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Portal Name"
+          },
+          "privacy_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Privacy Url"
+          },
+          "secured_footer": {
+            "cls": "public",
+            "default": false,
+            "title": "Secured Footer",
+            "type": "boolean"
+          },
+          "sign_in": {
+            "$ref": "#/components/schemas/PortalSignInPolicyOut",
+            "cls": "public"
+          },
+          "support_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Support Contact Name"
+          }
+        },
+        "required": [
+          "firm_name",
+          "portal_name",
+          "logo_url",
+          "address_line",
+          "help_url",
+          "privacy_url",
+          "support_contact_name",
+          "sign_in"
+        ],
+        "title": "PortalBrandingOut",
+        "type": "object"
+      },
       "PortalHomeBinderOut": {
         "description": "Binder progress: \"19 of 21 requests done \u00b7 Brightwater Hale sorted 37 of your files\". The\nsorted count is firm-attributed; the agent is never named (INV-5, DEC-19).",
         "properties": {
@@ -21945,6 +22068,38 @@
           "version"
         ],
         "title": "PortalPreferencesOut",
+        "type": "object"
+      },
+      "PortalSignInPolicyOut": {
+        "properties": {
+          "methods": {
+            "cls": "public",
+            "items": {
+              "const": "email_code",
+              "type": "string"
+            },
+            "title": "Methods",
+            "type": "array"
+          },
+          "mfa_floor": {
+            "cls": "public",
+            "items": {
+              "enum": [
+                "owner",
+                "signer",
+                "approver"
+              ],
+              "type": "string"
+            },
+            "title": "Mfa Floor",
+            "type": "array"
+          }
+        },
+        "required": [
+          "methods",
+          "mfa_floor"
+        ],
+        "title": "PortalSignInPolicyOut",
         "type": "object"
       },
       "PreferencesIn": {
@@ -78267,6 +78422,169 @@
           "portal"
         ],
         "x-abacus-action": "binder.mark_done"
+      }
+    },
+    "/v1/portal/branding": {
+      "get": {
+        "description": "POR-01's branding for the request's host: Public slots, or the same shape with neutral\nvalues. Cached per host at the edge for a minute.",
+        "operationId": "get_portal_branding",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBrandingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Get Portal Branding Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_public"
+      }
+    },
+    "/v1/portal/branding/logo": {
+      "get": {
+        "description": "The firm's logo, re-encoded as PNG on upload, served same-origin; 404 for any host\nwithout one. The body is `image/png` (the model is only the generator's placeholder).",
+        "operationId": "get_portal_logo",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Portal Logo",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Get Portal Logo Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_public"
       }
     },
     "/v1/portal/home": {

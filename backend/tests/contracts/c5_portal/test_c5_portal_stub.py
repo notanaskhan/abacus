@@ -43,9 +43,9 @@ ROUTES: dict[tuple[str, str], str] = {
 HUMAN_ONLY = {"contact.unlock", "contact.mfa_reset"}
 CLIENT_ONLY = {"portal_home.read", "portal_preferences.update"}
 # Pre-session routes: answer before any session, so they wait for ADR-152's list (DEC-139).
+# Branding and its logo are live since P-08-T05 under the `PORTAL_PUBLIC` marker
+# (tests/integration/test_portal_branding.py).
 PRE_SESSION = (
-    "/v1/portal/branding",
-    "/v1/portal/branding/logo",
     "/v1/portal/auth/start",
     "/v1/portal/auth/verify",
     "/v1/portal/auth/resend",

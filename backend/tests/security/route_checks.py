@@ -29,6 +29,7 @@ from abacus.modules.identity.api import (
     ACTION_KEY,
     IDENTITY,
     OWN,
+    PORTAL_PUBLIC,
     PRE_SESSION,
     RULES,
     SELF,
@@ -40,7 +41,7 @@ from abacus.modules.identity.api import (
     current_signed_in,
     current_staff,
 )
-from abacus.modules.identity.routing import pre_session
+from abacus.modules.identity.routing import portal_public, pre_session
 from abacus_tools.quality.banned_patterns import PUBLIC_ROUTE_EXCEPTIONS
 
 # The authentication each route marker needs; every matrix action needs `current_context`.
@@ -50,6 +51,7 @@ MARKER_AUTH: dict[str, Callable[..., object]] = {
     OWN: current_member,
     IDENTITY: current_identity,
     PRE_SESSION: pre_session,
+    PORTAL_PUBLIC: portal_public,
 }
 AUTHENTICATION: frozenset[Callable[..., object]] = frozenset(
     {current_context, *MARKER_AUTH.values()}
@@ -93,8 +95,8 @@ def route_problems(application: FastAPI, method: str, path: str, action: str) ->
         problems.append(f"{method} {path} declares {declared!r}, generated as {action!r}")
     if route.response_model is None and route.status_code != NO_CONTENT:
         problems.append(f"{method} {path} has no response model")
-    if declared == PRE_SESSION and path not in PUBLIC_ROUTE_EXCEPTIONS:
-        problems.append(f"{method} {path} is pre-session but not on the ROUTE-001 exception list")
+    if declared in (PRE_SESSION, PORTAL_PUBLIC) and path not in PUBLIC_ROUTE_EXCEPTIONS:
+        problems.append(f"{method} {path} is public but not on the ROUTE-001 exception list")
     want = MARKER_AUTH.get(declared, current_context) if isinstance(declared, str) else None
     auth = _authentication(route)
     if want is None or auth != [want]:

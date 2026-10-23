@@ -11,26 +11,33 @@ carry client-facing role codes, and the words come from the frontend copy regist
 code to words). Every aggregate is filtered by the grant that covers its own target scope, so role
 union never leaks one scope into another (INV-4).
 
-`PortalBrandingOut` is the shape of `GET /v1/portal/branding` (ADR-163 §6). The route is not
-served by this stub: an unauthenticated route needs its own entry on ADR-152's public-route list,
-and P-08-T05 adds it with that decision (DEC-139). The model is here so the shape is reviewed and
-tested with the rest of the contract.
+`GET /v1/portal/branding` and `GET /v1/portal/branding/logo` are live (P-08-T05; ADR-163 §6): the
+two routes on ADR-152's public-route list, under the `PORTAL_PUBLIC` marker. They answer anyone,
+Public fields only, the same shape for an unknown host, and never a tenant id.
 """
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import PORTAL_HOME_V2
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.identity.api import AbacusRouter, AuthContext, ScopeKind, current_member
+from abacus.modules.identity.api import (
+    PORTAL_PUBLIC,
+    AbacusRouter,
+    AuthContext,
+    ScopeKind,
+    current_member,
+)
+from abacus.modules.portal.branding import branding_for_host, logo_for_host
 
 # A portal person themself, never a break-glass support context.
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -290,7 +297,7 @@ class PortalPreferencesOut(BaseModel):
     version: Annotated[int, classified("internal")]
 
 
-# --- Not served by this stub: GET /v1/portal/branding (P-08-T05, after ADR-152 lists it) --------
+# --- Branding before sign-in (P-08-T05) --------------------------------------------------------
 
 
 class PortalSignInPolicyOut(BaseModel):
@@ -348,3 +355,36 @@ async def update_portal_preferences_route(
     """Per user and scope; 409 `portal_preferences_stale` on a version mismatch; a scope no grant
     covers answers 404. Audited as `portal_preferences.updated`."""
     await _stub(ctx)
+
+
+# The sign-in policy every portal shows today (DEC-58 email codes; MFA for owners, signers and
+# approvers, P-08 §3).
+_SIGN_IN = PortalSignInPolicyOut(methods=["email_code"], mfa_floor=["owner", "signer", "approver"])
+
+
+@router.get("/branding", action=PORTAL_PUBLIC, response_model=PortalBrandingOut)
+async def get_portal_branding_route(
+    response: Response, host: Annotated[str | None, Header()] = None
+) -> PortalBrandingOut:
+    """POR-01's branding for the request's host: Public slots, or the same shape with neutral
+    values. Cached per host at the edge for a minute."""
+    found = await branding_for_host(host)
+    response.headers["Cache-Control"] = "public, max-age=60"
+    response.headers["Vary"] = "Host"
+    return PortalBrandingOut(**asdict(found), sign_in=_SIGN_IN)
+
+
+@router.get("/branding/logo", action=PORTAL_PUBLIC, response_model=str)
+async def get_portal_logo_route(host: Annotated[str | None, Header()] = None) -> Response:
+    """The firm's logo, re-encoded as PNG on upload, served same-origin; 404 for any host
+    without one. The body is `image/png` (the model is only the generator's placeholder)."""
+    png = await logo_for_host(host)
+    return Response(
+        png,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=300",
+            "Vary": "Host",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )

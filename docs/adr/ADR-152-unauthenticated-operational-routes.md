@@ -17,6 +17,7 @@ risk_zone: red
 
 ## Decision
 - **Two allowlisted unauthenticated routes**, outside `AbacusRouter`, on the ROUTE-001 exception list: `/healthz` and `GET /v1/portal/branding`.
+- **Portal branding and its logo** (`GET /v1/portal/branding`, `GET /v1/portal/branding/logo`, P-08-T05; ADR-163 §6, P-08 OQ-2): on the same exception list, but served inside `AbacusRouter` under the `PORTAL_PUBLIC` route marker, which the router accepts on those two paths only (as ADR-165's `PRE_SESSION` for the staff sign-in routes). They are in the OpenAPI document, so the portal's generated client types them.
 - **The list is explicit and checked by ROUTE-001** (a protected banned pattern); any other route without an action still fails.
 - **The portal host is only a branding hint.** `/v1` is proxied same-origin.
 - **`/readyz`** is added under Q-01-T16 on the same list; later proposals (P-01, P-08) extend the list through their own ADRs.
