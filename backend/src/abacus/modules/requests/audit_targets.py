@@ -17,6 +17,7 @@ from abacus.modules.requests.models import Comment, Fulfilment, RequestItem, Req
 _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | None]]] = {
     "request_item": (RequestItem.id, RequestItem.engagement_id),
     "request_list": (RequestList.id, RequestList.engagement_id),
+    "binder": (RequestList.id, RequestList.engagement_id),  # P-06-T07: binders are request lists
     "comment": (Comment.id, Comment.engagement_id),
     "fulfilment": (Fulfilment.id, Fulfilment.engagement_id),
 }

@@ -1,6 +1,7 @@
 """C5 v1 stub, the BND-01/BND-02/SHL-14 family (P-06-T01; SPEC-319 AC-1 to AC-4): every route
-exists with its one matrix action, answers 404 with `binders.engine` off and 501 with it on, and
-the human-only actions deny the agent. The consumers' own tests are P-06-T02's."""
+exists with its one matrix action, answers 404 with `binders.engine` off and 501 with it on until
+its task implements it (P-06-T07: the binder lifecycle), and the human-only actions deny the
+agent. The consumers' own tests are P-06-T02's."""
 
 from __future__ import annotations
 
@@ -79,12 +80,39 @@ HUMAN_ONLY = {
 CLIENT_ONLY = {"binder.mark_done", "request_item.ignore", "evidence.withdraw"}
 
 
+# Implemented since the stub (P-06-T07, the binder lifecycle): 404 with the flag off as before,
+# and no longer 501 with it on.
+IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("post", "/v1/binders"),
+        ("get", "/v1/binders/{binder_id}"),
+        ("get", "/v1/binders/{binder_id}/requests"),
+        ("post", "/v1/binders/{binder_id}/publish"),
+        ("post", "/v1/binders/{binder_id}/publish/undo"),
+        ("post", "/v1/binders/{binder_id}/unpublish"),
+        ("post", "/v1/binders/{binder_id}/duplicate"),
+        ("put", "/v1/binders/{binder_id}/recipients"),
+        ("get", "/v1/binders/{binder_id}/client-preview"),
+        ("get", "/v1/binders/{binder_id}/activity"),
+        ("post", "/v1/portal/binders/{binder_id}/mark-done"),
+    }
+)
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_ac1_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
     responses = cast(Json, op["responses"])
-    assert {"404", "501"} <= set(responses)
+    assert "404" in responses
+    if (method, path) in IMPLEMENTED:
+        assert "501" not in responses
+    else:
+        assert "501" in responses
+
+
+def test_ac1_the_implemented_routes_are_routes_of_the_contract() -> None:
+    assert set(ROUTES) >= IMPLEMENTED
 
 
 @pytest.mark.parametrize("path", sorted(IDEMPOTENT))

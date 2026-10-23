@@ -48,6 +48,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
         "notifications",
+        "requests",  # P-06-T07: binders close on C1's terminal transitions
     )
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.
@@ -77,6 +78,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer may follow
         "inbox_file.extracted",  # SPEC-033 (TASK-066): the matcher may follow
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
+        "work_item.status_changed",  # P-06-T07: binders close
+        "engagement.status_changed",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

@@ -67,3 +67,19 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 - **Text:** Restricted, sealed with `kernel.crypto` (bound to its SHA-256), never logged; audit events carry identifiers and the fingerprint only.
 - **Routes:** `GET/POST …/request-items/{id}/comments`, `GET/POST …/{id}/versions/{version}/comments`, `GET …/{id}/comments/mention-candidates`, `POST …/{id}/comments/read`, `POST …/{id}/comments/{comment}/redact`. The request list carries `comment_count` and `unread_comments`.
 - **Drafted guidance (SPEC-035; TASK-073):** `apply_drafted_guidance` (inside the caller's unit of work, `request_item.update`) writes approved drafter text with source `drafted` and `guidance_approved_by`. For client roles, `request_items_for` replaces drafted guidance with the kind default, or nothing, unless the firm's `drafted_guidance_to_clients` is on (identity; synthetic firms only, ADR-111/112). A kind change keeps drafted guidance; a firm edit makes it `firm`.
+
+## Binder lifecycle (P-06-T07; C5 v1; SPEC-319 AC-5 to AC-9)
+`binders.py`, behind `binders.engine` (404 when off). The routes are in `contract.py`.
+- **Create** (`binder.create`): a Draft on a work item, numbered by part per kind. It starts blank, from a firm template (`template_ref` kept; K-01 fills templates), or from last year's binder. The prior-year route copies the binder's sections and requests through `roll_forward.copy_binder_items`: tagged `prior_year`, the still-needed note dropped, no assignee, no due date.
+- **Duplicate** (`binder.create`): the next part, empty, with the same sections and recipients.
+- **Read** (`binder.read`): the record with categories, counts, recipients and `allowed_actions`. `GET …/requests` lists rows through `visible_items`. The client preview shows client-visible rows only. Activity (`activity.read`) reads the binder's and its requests' audit events through `kernel.uow.audit_of_targets`. To a client, a binder that isn't published, or isn't in their scope, is 404 (INV-4).
+- **Publish** (`binder.publish`, a person only, `Idempotency-Key`):
+  - G3 first, except an `intake` binder (409 `binder_gate_unmet`).
+  - Every request sent needs a due date (422 `due_date_required`).
+  - Client-visible, never-sent requests get `sent_at`/`sent_by`.
+  - `binder.published` is held by an approval grant until business now + 10 s.
+- **Undo:** within 10 s it voids the grant, so the relay delivers nothing, and puts the binder and requests back. After 10 s: 409 `undo_window_closed`. After the grant is consumed: 409 `effect_started`.
+- **Unpublish** needs a reason. The reason is sealed; the audit keeps its fingerprint.
+- **Recipients:** the engagement's client's contacts (`engagements.api.client_contact_names`). The history is insert-only.
+- **Mark-done** (`binder.mark_done`, the client): Published to Complete, recording the open count.
+- **Close:** `SUBSCRIPTIONS` closes non-terminal binders on `work_item.status_changed` or `engagement.status_changed` into `delivered`/`archived`. Kinds add theirs with `register_binder_close_rule`.

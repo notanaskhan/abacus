@@ -100,7 +100,8 @@ export const listBinders = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Create Binder Route
  *
- * A Draft binder on a work item (DEC-31: many per work item).
+ * A Draft binder on a work item (DEC-31: many per work item): blank, from a firm template,
+ * or from the prior-year binder (P-06-T07).
  */
 export const createBinder = <ThrowOnError extends boolean = false>(options: Options<CreateBinderData, ThrowOnError>): RequestResult<CreateBinderResponses, CreateBinderErrors, ThrowOnError> => (options.client ?? client).post<CreateBinderResponses, CreateBinderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -123,6 +124,8 @@ export const getBinder = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Binder Activity Route
+ *
+ * The binder's and its requests' audit events, newest first, identifiers only.
  */
 export const binderActivity = <ThrowOnError extends boolean = false>(options: Options<BinderActivityData, ThrowOnError>): RequestResult<BinderActivityResponses, BinderActivityErrors, ThrowOnError> => (options.client ?? client).get<BinderActivityResponses, BinderActivityErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -176,7 +179,8 @@ export const binderLive = <ThrowOnError extends boolean = false>(options: Option
  * Publish Binder Route
  *
  * Human-only. Draft or Unpublished to Published; G3 first except `intake` (409
- * `binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window.
+ * `binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window. A retry
+ * with the same key answers what the first answered and sends nothing again.
  */
 export const publishBinder = <ThrowOnError extends boolean = false>(options: Options<PublishBinderData, ThrowOnError>): RequestResult<PublishBinderResponses, PublishBinderErrors, ThrowOnError> => (options.client ?? client).post<PublishBinderResponses, PublishBinderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -187,7 +191,8 @@ export const publishBinder = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Undo Publish Binder Route
  *
- * Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`).
+ * Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`; 409
+ * `effect_started` once the delivery has begun).
  */
 export const undoPublishBinder = <ThrowOnError extends boolean = false>(options: Options<UndoPublishBinderData, ThrowOnError>): RequestResult<UndoPublishBinderResponses, UndoPublishBinderErrors, ThrowOnError> => (options.client ?? client).post<UndoPublishBinderResponses, UndoPublishBinderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -197,6 +202,8 @@ export const undoPublishBinder = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Set Binder Recipients Route
+ *
+ * The engagement's client's contacts the binder is for (insert-only history).
  */
 export const setBinderRecipients = <ThrowOnError extends boolean = false>(options: Options<SetBinderRecipientsData, ThrowOnError>): RequestResult<SetBinderRecipientsResponses, SetBinderRecipientsErrors, ThrowOnError> => (options.client ?? client).put<SetBinderRecipientsResponses, SetBinderRecipientsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -221,6 +228,8 @@ export const binderRequests = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Unpublish Binder Route
+ *
+ * Published to Unpublished with a reason: client principals get 404 at once (INV-4).
  */
 export const unpublishBinder = <ThrowOnError extends boolean = false>(options: Options<UnpublishBinderData, ThrowOnError>): RequestResult<UnpublishBinderResponses, UnpublishBinderErrors, ThrowOnError> => (options.client ?? client).post<UnpublishBinderResponses, UnpublishBinderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

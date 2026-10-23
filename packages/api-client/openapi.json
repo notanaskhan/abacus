@@ -28937,7 +28937,7 @@
         "x-abacus-action": "binder.read"
       },
       "post": {
-        "description": "A Draft binder on a work item (DEC-31: many per work item).",
+        "description": "A Draft binder on a work item (DEC-31: many per work item): blank, from a firm template,\nor from the prior-year binder (P-06-T07).",
         "operationId": "create_binder",
         "parameters": [
           {
@@ -29043,16 +29043,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Binder Route",
@@ -29159,16 +29149,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Binder Route",
@@ -29180,6 +29160,7 @@
     },
     "/v1/binders/{binder_id}/activity": {
       "get": {
+        "description": "The binder's and its requests' audit events, newest first, identifiers only.",
         "operationId": "binder_activity",
         "parameters": [
           {
@@ -29292,16 +29273,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Binder Activity Route",
@@ -29408,16 +29379,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Binder Client Preview Route",
@@ -29535,16 +29496,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Duplicate Binder Route",
@@ -29798,7 +29749,7 @@
     },
     "/v1/binders/{binder_id}/publish": {
       "post": {
-        "description": "Human-only. Draft or Unpublished to Published; G3 first except `intake` (409\n`binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window.",
+        "description": "Human-only. Draft or Unpublished to Published; G3 first except `intake` (409\n`binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window. A retry\nwith the same key answers what the first answered and sends nothing again.",
         "operationId": "publish_binder",
         "parameters": [
           {
@@ -29915,16 +29866,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Binder Route",
@@ -29936,7 +29877,7 @@
     },
     "/v1/binders/{binder_id}/publish/undo": {
       "post": {
-        "description": "Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`).",
+        "description": "Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`; 409\n`effect_started` once the delivery has begun).",
         "operationId": "undo_publish_binder",
         "parameters": [
           {
@@ -30042,16 +29983,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Publish Binder Route",
@@ -30063,6 +29994,7 @@
     },
     "/v1/binders/{binder_id}/recipients": {
       "put": {
+        "description": "The engagement's client's contacts the binder is for (insert-only history).",
         "operationId": "set_binder_recipients",
         "parameters": [
           {
@@ -30159,6 +30091,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -30168,16 +30110,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Binder Recipients Route",
@@ -30319,16 +30251,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Binder Requests Route",
@@ -30340,6 +30262,7 @@
     },
     "/v1/binders/{binder_id}/unpublish": {
       "post": {
+        "description": "Published to Unpublished with a reason: client principals get 404 at once (INV-4).",
         "operationId": "unpublish_binder",
         "parameters": [
           {
@@ -30455,16 +30378,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Unpublish Binder Route",
@@ -69960,16 +69873,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mark Binder Done Route",

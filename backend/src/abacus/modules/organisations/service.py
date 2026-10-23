@@ -18,6 +18,7 @@ from abacus.kernel.uow import Target, UnitOfWork
 from abacus.modules.organisations.models import Contact
 from abacus.modules.organisations.repository import (
     clients_matching,
+    contacts_by_id,
     contacts_of,
     get_client,
     get_contact,
@@ -382,6 +383,23 @@ async def contact_client(session: AsyncSession, contact_id: UUID) -> UUID | None
     """The client a contact belongs to, or None if it isn't the firm's."""
     contact = await get_contact(session, contact_id)
     return None if contact is None else contact.client_id
+
+
+@dataclass(frozen=True)
+class ContactFacts:
+    """A contact's client and name (P-06-T07: binder recipients)."""
+
+    client_id: UUID
+    display_name: str
+
+
+async def contact_facts(
+    session: AsyncSession, contact_ids: list[UUID]
+) -> dict[UUID, ContactFacts]:
+    """The firm's contacts among `contact_ids`; others (another firm's, unknown) are left out.
+    For a caller that authorised the record the contacts are named on."""
+    found = await contacts_by_id(session, contact_ids)
+    return {cid: ContactFacts(client, name) for cid, (client, name) in found.items()}
 
 
 async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | None:

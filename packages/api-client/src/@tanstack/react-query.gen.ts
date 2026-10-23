@@ -238,7 +238,8 @@ export const listBindersInfiniteOptions = (options?: Options<ListBindersData>) =
 /**
  * Create Binder Route
  *
- * A Draft binder on a work item (DEC-31: many per work item).
+ * A Draft binder on a work item (DEC-31: many per work item): blank, from a firm template,
+ * or from the prior-year binder (P-06-T07).
  */
 export const createBinderMutation = (options?: Partial<Options<CreateBinderData>>): UseMutationOptions<CreateBinderResponse, CreateBinderError, Options<CreateBinderData>> => {
     const mutationOptions: UseMutationOptions<CreateBinderResponse, CreateBinderError, Options<CreateBinderData>> = {
@@ -276,6 +277,8 @@ export const binderActivityQueryKey = (options: Options<BinderActivityData>) => 
 
 /**
  * Binder Activity Route
+ *
+ * The binder's and its requests' audit events, newest first, identifiers only.
  */
 export const binderActivityOptions = (options: Options<BinderActivityData>) => queryOptions<BinderActivityResponse, BinderActivityError, BinderActivityResponse, ReturnType<typeof binderActivityQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -294,6 +297,8 @@ export const binderActivityInfiniteQueryKey = (options: Options<BinderActivityDa
 
 /**
  * Binder Activity Route
+ *
+ * The binder's and its requests' audit events, newest first, identifiers only.
  */
 export const binderActivityInfiniteOptions = (options: Options<BinderActivityData>) => {
     const opts = infiniteQueryOptions<BinderActivityResponse, BinderActivityError, InfiniteData<BinderActivityResponse>, QueryKey<Options<BinderActivityData>>, string | null | Pick<QueryKey<Options<BinderActivityData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -396,7 +401,8 @@ export const binderLiveOptions = (options: Options<BinderLiveData>) => queryOpti
  * Publish Binder Route
  *
  * Human-only. Draft or Unpublished to Published; G3 first except `intake` (409
- * `binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window.
+ * `binder_gate_unmet`); 422 `due_date_required`; email after the 10-s Undo window. A retry
+ * with the same key answers what the first answered and sends nothing again.
  */
 export const publishBinderMutation = (options?: Partial<Options<PublishBinderData>>): UseMutationOptions<PublishBinderResponse, PublishBinderError, Options<PublishBinderData>> => {
     const mutationOptions: UseMutationOptions<PublishBinderResponse, PublishBinderError, Options<PublishBinderData>> = {
@@ -415,7 +421,8 @@ export const publishBinderMutation = (options?: Partial<Options<PublishBinderDat
 /**
  * Undo Publish Binder Route
  *
- * Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`).
+ * Within 10 s: `binder.publish_undone`, nothing sent (409 `undo_window_closed`; 409
+ * `effect_started` once the delivery has begun).
  */
 export const undoPublishBinderMutation = (options?: Partial<Options<UndoPublishBinderData>>): UseMutationOptions<UndoPublishBinderResponse, UndoPublishBinderError, Options<UndoPublishBinderData>> => {
     const mutationOptions: UseMutationOptions<UndoPublishBinderResponse, UndoPublishBinderError, Options<UndoPublishBinderData>> = {
@@ -433,6 +440,8 @@ export const undoPublishBinderMutation = (options?: Partial<Options<UndoPublishB
 
 /**
  * Set Binder Recipients Route
+ *
+ * The engagement's client's contacts the binder is for (insert-only history).
  */
 export const setBinderRecipientsMutation = (options?: Partial<Options<SetBinderRecipientsData>>): UseMutationOptions<SetBinderRecipientsResponse, SetBinderRecipientsError, Options<SetBinderRecipientsData>> => {
     const mutationOptions: UseMutationOptions<SetBinderRecipientsResponse, SetBinderRecipientsError, Options<SetBinderRecipientsData>> = {
@@ -502,6 +511,8 @@ export const binderRequestsInfiniteOptions = (options: Options<BinderRequestsDat
 
 /**
  * Unpublish Binder Route
+ *
+ * Published to Unpublished with a reason: client principals get 404 at once (INV-4).
  */
 export const unpublishBinderMutation = (options?: Partial<Options<UnpublishBinderData>>): UseMutationOptions<UnpublishBinderResponse, UnpublishBinderError, Options<UnpublishBinderData>> => {
     const mutationOptions: UseMutationOptions<UnpublishBinderResponse, UnpublishBinderError, Options<UnpublishBinderData>> = {
