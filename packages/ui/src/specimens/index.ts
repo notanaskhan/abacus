@@ -17,7 +17,14 @@ import {
   SearchFieldSpecimen,
   ValueRowSpecimen,
 } from "./inputs";
-import { LedgerGridSpecimen, StatementGridSpecimen } from "./data";
+import {
+  AccountTreeSpecimen,
+  EvidenceGridSpecimen,
+  LedgerGridSpecimen,
+  StatementGridSpecimen,
+  TallyStripSpecimen,
+  VarianceSpecimen,
+} from "./data";
 import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
@@ -329,6 +336,11 @@ export const SPECIMENS: readonly Specimen[] = [
     Component: MatchWiredSpecimen,
   },
   { id: "e1-match-light", kit: "E1", title: "Match light", Component: MatchLightSpecimen },
+  // DataTable grammars 2 (F-05-T43): evidence, the variance cell, TallyStrip, AccountTree
+  { id: "c-01-evidence", kit: "C-01", title: "Evidence grammar", Component: EvidenceGridSpecimen },
+  { id: "c-01-variance", kit: "C-01", title: "Variance cell", Component: VarianceSpecimen },
+  { id: "c-01-tally-strip", kit: "C-01", title: "TallyStrip", Component: TallyStripSpecimen },
+  { id: "c-01-account-tree", kit: "C-01", title: "AccountTree", Component: AccountTreeSpecimen },
   // Toasts E3 (F-05-T21): C-21
   { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
   { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },

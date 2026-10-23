@@ -39,6 +39,15 @@ export const NORTHWIND_FIGURES = {
   netAssetsAvailable20250101: "14228500.00",
 } as const;
 
+/**
+ * Northwind's change in net assets over PY2025, as a server would send it with a variance cell:
+ * the change foots Jan 1 to Dec 31 (FOOTINGS); the ratio is the change over the Jan 1 base.
+ */
+export const NORTHWIND_CHANGE = {
+  netAssetsChange: "2632500.00",
+  ratio: "0.1850",
+} as const;
+
 /** Request lists a specimen counts (blueprint 01 §9.3): the seed's own items. */
 export const REQUEST_COUNTS = {
   northwind: { received: 11, total: 24 },
@@ -54,6 +63,11 @@ export const FOOTINGS: readonly { name: string; parts: readonly string[]; total:
   {
     name: "Northwind net assets at Dec 31, 2025",
     parts: [NORTHWIND_FIGURES.netAssetsUnadjusted, NORTHWIND_FIGURES.contributionsReceivable],
+    total: NORTHWIND_FIGURES.netAssetsAvailable20251231,
+  },
+  {
+    name: "Northwind net assets over PY2025",
+    parts: [NORTHWIND_FIGURES.netAssetsAvailable20250101, NORTHWIND_CHANGE.netAssetsChange],
     total: NORTHWIND_FIGURES.netAssetsAvailable20251231,
   },
   {

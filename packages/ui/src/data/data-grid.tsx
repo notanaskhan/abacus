@@ -1,13 +1,16 @@
 import { tableFeatures, useTable } from "@tanstack/react-table";
 import { type JSX, type KeyboardEvent, useId, useMemo, useState } from "react";
 import { cn } from "../cn";
-import { MoneyCell, PropChip, TickCell } from "./cells";
+import { MoneyCell, PropChip, TickCell, ValueChip } from "./cells";
 import type { ColumnType, Grammar, TableColumn, TableRow } from "./types";
+import { NoteCorner, VarianceAction, VarianceCell, varianceState } from "./variance";
 
-// E4 DataTable engine (F-05-T27; plan 04 E4; C-01 spec 01 and 02): one headless model on
-// @tanstack/react-table and a renderer per grammar. This task ships `ledger` (closes and
-// reconciliations: 30px rows, 12.5px, "$" with cents) and `statement` (financial statements:
-// th 30, td 26, whole dollars, uppercase group bands).
+// E4 DataTable engine (F-05-T27; plan 04 E4; C-01 spec 01 to 03 and 06): one headless model on
+// @tanstack/react-table and a renderer per grammar: `ledger` (closes and reconciliations: 30px
+// rows, 12.5px, "$" with cents), `statement` (financial statements: th 30, td 26, whole dollars,
+// uppercase group bands) and `evidence` (audit workpapers: th 28, td 29, 12px, "$" with cents,
+// a fixed layout, extracted-value chips; its blocks sit on a well, evidence.tsx). A `variance`
+// column draws the VarianceCell and gains the 100px action column (F-05-T43).
 //
 // - Grid semantics: `role="grid"`, one focusable container, ↑/↓ move the selection (clamped),
 //   Home/End jump, Enter (or a double click) opens. Keys are ignored while an input, button or
@@ -20,6 +23,7 @@ const FEATURES = tableFeatures({});
 interface GrammarMetrics {
   /** Body type role. */
   text: string;
+  layout: "auto" | "fixed";
   th: string;
   td: string;
   pad: number;
@@ -33,6 +37,7 @@ interface GrammarMetrics {
 const GRAMMARS: Record<Grammar, GrammarMetrics> = {
   ledger: {
     text: "text-dense",
+    layout: "auto",
     th: "h-[30px] bg-band-hd text-dense font-normal text-ink-2",
     td: "h-[30px]",
     pad: 12,
@@ -44,6 +49,7 @@ const GRAMMARS: Record<Grammar, GrammarMetrics> = {
   },
   statement: {
     text: "text-cell",
+    layout: "auto",
     th: "h-[30px] bg-band-hd text-th font-medium text-ink-3",
     td: "h-[26px]",
     pad: 10,
@@ -53,14 +59,29 @@ const GRAMMARS: Record<Grammar, GrammarMetrics> = {
     total: "font-medium",
     numTracking: "tracking-[-0.005em]",
   },
+  evidence: {
+    text: "text-cell",
+    layout: "fixed",
+    th: "h-[28px] bg-band-hd text-meta font-normal text-ink-2 border-y-[0.5px] border-hair",
+    td: "h-[29px]",
+    pad: 12,
+    indentStep: 16,
+    format: "money",
+    group: "h-[29px] text-cell font-medium text-ink",
+    total: "font-medium",
+    numTracking: "tracking-[-0.005em]",
+  },
 };
+
+/** The action column a variance column brings (C-01 spec 06): 100 wide, right-aligned. */
+const ACTION_WIDTH = 100;
 
 function typeOf(column: TableColumn, index: number): ColumnType {
   return column.type ?? (index === 0 ? "label" : "num");
 }
 
 function rightAligned(column: TableColumn, type: ColumnType): boolean {
-  return (column.align ?? (type === "num" ? "right" : "left")) === "right";
+  return (column.align ?? (type === "num" || type === "variance" ? "right" : "left")) === "right";
 }
 
 export interface DataGridProps {
@@ -74,6 +95,10 @@ export interface DataGridProps {
   onSelect?: (id: string, row: TableRow) => void;
   /** Enter or a double click. */
   onOpen?: (row: TableRow) => void;
+  /** "Explain…" on an unexplained variance: the screen opens its editor. */
+  onExplain?: (row: TableRow, columnKey: string) => void;
+  /** The issue link on a variance exception. */
+  onIssue?: (row: TableRow) => void;
   className?: string;
 }
 
@@ -85,9 +110,12 @@ export function DataGrid({
   selected,
   onSelect,
   onOpen,
+  onExplain,
+  onIssue,
   className,
 }: DataGridProps): JSX.Element {
   const g = GRAMMARS[grammar];
+  const varianceKey = columns.find((c) => c.type === "variance")?.key;
   const gridId = useId();
   const columnDefs = useMemo(
     () =>
@@ -167,6 +195,7 @@ export function DataGrid({
       onKeyDown={onKeyDown}
       className={cn(
         "w-full border-collapse tracking-[-0.005em] focus-visible:outline-offset-[-2px]",
+        g.layout === "fixed" && "table-fixed",
         g.text,
         className,
       )}
@@ -192,6 +221,16 @@ export function DataGrid({
               </th>
             );
           })}
+          {varianceKey !== undefined && (
+            <th
+              role="columnheader"
+              scope="col"
+              style={{ width: ACTION_WIDTH, paddingLeft: g.pad, paddingRight: g.pad }}
+              className={cn("text-right", g.th)}
+            >
+              <span className="sr-only">Action</span>
+            </th>
+          )}
         </tr>
       </thead>
       <tbody>
@@ -205,7 +244,7 @@ export function DataGrid({
                 <th
                   role="rowheader"
                   scope="rowgroup"
-                  colSpan={columns.length}
+                  colSpan={columns.length + (varianceKey === undefined ? 0 : 1)}
                   style={pad}
                   className={cn("border-t-[0.5px] border-hair text-left", g.group)}
                 >
@@ -240,6 +279,8 @@ export function DataGrid({
                 const cell = row.cells[c.key];
                 const right = rightAligned(c, type);
                 const indent = type === "label" ? g.pad + (row.indent ?? 0) * g.indentStep : g.pad;
+                const variance = type === "variance" ? cell?.variance : undefined;
+                const vstate = variance === undefined ? null : varianceState(variance);
                 return (
                   <td
                     key={c.key}
@@ -256,7 +297,8 @@ export function DataGrid({
                         ? "border-t-[0.5px] border-stroke"
                         : "border-t-[0.5px] border-hair",
                       right ? "text-right" : "text-left",
-                      type === "num"
+                      vstate === "unexplained" && "bg-amber-tint",
+                      type === "num" || type === "variance"
                         ? cn("overflow-visible whitespace-nowrap", g.numTracking)
                         : "truncate",
                     )}
@@ -268,15 +310,52 @@ export function DataGrid({
                       </>
                     ) : type === "num" ? (
                       <MoneyCell value={cell?.value ?? null} format={c.format ?? g.format} />
+                    ) : type === "variance" ? (
+                      variance !== undefined && (
+                        <VarianceCell variance={variance} format={c.format ?? g.format} />
+                      )
                     ) : type === "chip" ? (
-                      cell?.value != null && <PropChip>{cell.value}</PropChip>
+                      cell?.value != null &&
+                      (grammar === "evidence" ? (
+                        <ValueChip>{cell.value}</ValueChip>
+                      ) : (
+                        <PropChip>{cell.value}</PropChip>
+                      ))
                     ) : (
                       (cell?.value ?? "")
                     )}
                     {cell?.tick !== undefined && <TickCell tick={cell.tick} />}
+                    {vstate === "explained" && <NoteCorner />}
                   </td>
                 );
               })}
+              {varianceKey !== undefined && (
+                <td
+                  role="gridcell"
+                  style={{ paddingLeft: g.pad, paddingRight: g.pad, width: ACTION_WIDTH }}
+                  className={cn("border-t-[0.5px] border-hair text-right", g.td)}
+                >
+                  {row.cells[varianceKey]?.variance !== undefined && (
+                    <VarianceAction
+                      variance={row.cells[varianceKey].variance}
+                      {...(onExplain === undefined
+                        ? {}
+                        : {
+                            onExplain: () => {
+                              onExplain(row, varianceKey);
+                            },
+                          })}
+                      {...(onIssue === undefined
+                        ? {}
+                        : {
+                            onIssue: () => {
+                              onIssue(row);
+                            },
+                          })}
+                    />
+                  )}
+                </td>
+              )}
             </tr>
           );
         })}

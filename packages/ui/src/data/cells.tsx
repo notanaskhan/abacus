@@ -82,3 +82,13 @@ export function PropChip({ children }: { children: string }): JSX.Element {
     </span>
   );
 }
+
+/** An extracted value in the evidence grammar ("Level 1", "NAV"): radius 5, the selection fill,
+ * a 0.5px stroke ring, ellipsis. */
+export function ValueChip({ children }: { children: string }): JSX.Element {
+  return (
+    <span className="inline-block max-w-full truncate rounded-prop bg-sel-bg px-[6px] py-[1px] align-middle leading-[1.3] inset-ring-[0.5px] inset-ring-stroke">
+      {children}
+    </span>
+  );
+}

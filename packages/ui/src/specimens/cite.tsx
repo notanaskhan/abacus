@@ -207,7 +207,7 @@ export function MatchWiredSpecimen(): JSX.Element {
         </MatchScope>
       </Row>
       <Row name="At the right edge" meaning="No room on the right: the popover flips left">
-        <MatchScope className="block w-[1080px] max-w-full">
+        <MatchScope className="block w-[1000px] max-w-full">
           <div data-specimen="edge" className="flex w-full items-center">
             <p className="text-para text-ink-2">
               Contributions receivable

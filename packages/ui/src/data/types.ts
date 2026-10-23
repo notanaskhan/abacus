@@ -5,10 +5,12 @@
 
 import type { AmountStyle } from "../format";
 
-/** The five grammars of E4. This task builds the engine with `ledger` and `statement`. */
-export type Grammar = "ledger" | "statement";
+/** The grammars of E4 built so far: `ledger` and `statement` (F-05-T27), `evidence` (F-05-T43).
+ * `grid` and `leadsheet` follow (F-05-T52). */
+export type Grammar = "ledger" | "statement" | "evidence";
 
-export type ColumnType = "label" | "text" | "num" | "chip";
+/** `variance` cells carry a `VarianceValue`; a table with one gains the 100px action column. */
+export type ColumnType = "label" | "text" | "num" | "chip" | "variance";
 
 export interface TableColumn {
   key: string;
@@ -35,6 +37,28 @@ export interface TableCell {
   /** A decimal string ("1234.56"), a text value, or null for blank. */
   value: string | null;
   tick?: Tickmark | undefined;
+  /** A variance column's cell: the change and what is known about it. */
+  variance?: VarianceValue | undefined;
+}
+
+/** The five variance states (C-01 spec 06), in precedence order. */
+export type VarianceState = "posted" | "exception" | "explained" | "within" | "unexplained";
+
+/** A change between two figures, as the server sends it. Every figure is a decimal string; the
+ * browser compares and formats them and computes none of them (ADR-050). */
+export interface VarianceValue {
+  /** Δ, the change. */
+  value: string;
+  /** Δ as a ratio of the base ("0.285"); null or absent when there is no base or Δ is zero. */
+  ratio?: string | null | undefined;
+  /** |Δ| at or under this is within threshold. Absent: never within. */
+  threshold?: string | undefined;
+  /** The explanation a person saved, and who saved it. */
+  explained?: { text: string; by?: string | undefined } | undefined;
+  /** An issue was raised for it ("9"). */
+  exception?: { issue?: string | undefined } | undefined;
+  /** The reconciling entry is not posted yet: "Ties once posted". */
+  posted?: boolean | undefined;
 }
 
 export interface TableRow {
