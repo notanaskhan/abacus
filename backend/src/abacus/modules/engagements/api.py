@@ -20,6 +20,7 @@ from abacus.modules.engagements.contract import (
 )
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
+from abacus.modules.engagements.index_facts import work_item_index
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -235,5 +236,6 @@ __all__ = [
     "stored_file",
     "version_detail",
     "visible_among",
+    "work_item_index",
     "work_item_provider",
 ]

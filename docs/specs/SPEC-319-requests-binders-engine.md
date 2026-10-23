@@ -119,6 +119,7 @@ BND-01, BND-02, SHL-14 screen contracts (`docs/screens/`); flag off shows F-05's
 |---|---|---|
 | AC-1 to AC-4 | unit (contract) | `backend/tests/contracts/c5_requests_binders/test_c5_stub.py` |
 | AC-5 to AC-9 | integration | `backend/tests/integration/test_binder_lifecycle.py` (P-06-T07); P-06-T17 adds the independent suite |
+| AC-10 | integration | `backend/tests/integration/test_binders_index.py`, `test_binders_index_e0.py` (P-06-T11; the E0 tiles foot to 241) |
 | AC-5 to AC-14 | integration | P-06-T17 (independent suite) |
 | AC-15 | integration, workflow replay | P-06-T23 |
 

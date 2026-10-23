@@ -44,6 +44,22 @@ class RequestList(Base):
     closed_reason: Mapped[str | None]
 
 
+class BinderActivity(Base):
+    """The binder-list projection (P-06-T05, 0100): status, open count and the last client
+    activity, read by the binders index (P-06-T11). The app inserts and updates the projection
+    columns only, never deletes."""
+
+    __tablename__ = "binder_activity"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    binder_id: Mapped[UUID] = mapped_column(primary_key=True)
+    work_item_id: Mapped[UUID | None]
+    status: Mapped[str]
+    open_count: Mapped[int] = mapped_column(server_default=FetchedValue())
+    last_client_activity_at: Mapped[datetime | None]
+    updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
 class RequestCategory(Base):
     """A binder's section (F-03-T14). Insert-only."""
 

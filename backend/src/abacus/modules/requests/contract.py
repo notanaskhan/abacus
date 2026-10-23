@@ -33,7 +33,7 @@ from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
-from abacus.modules.requests import binders
+from abacus.modules.requests import binder_index, binders
 from abacus.modules.requests.binders import engine_on
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -108,6 +108,25 @@ class BinderRowOut(BaseModel):
     # Registered tag codes (the §7216 consents tag is P-07's / T-01's): codes, never prose.
     tags: Annotated[list[str], classified("internal")] = []
     allowed_actions: Annotated[list[str], classified("internal")] = []
+    # P-06-T11 (additive): the read model's facts for the chips and the status sub-lines.
+    service: Annotated[str | None, classified("internal")] = None  # the Service chip's code
+    season: Annotated[str | None, classified("internal")] = None  # "TY2025"
+    office_id: Annotated[UUID | None, classified("internal")] = None
+    published_at: Annotated[datetime | None, classified("internal")] = None
+    # Complete: "Marked done by {person} · {date}" (the client person, by name).
+    marked_done_at: Annotated[datetime | None, classified("internal")] = None
+    marked_done_by: Annotated[UUID | None, classified("internal")] = None
+    marked_done_by_name: Annotated[str | None, classified("confidential")] = None
+    # Closed: "Return accepted Apr 10" from the registered close-rule code and its date.
+    closed_at: Annotated[datetime | None, classified("internal")] = None
+    closed_reason: Annotated[str | None, classified("internal")] = None
+    # "3 overdue": open requests past their due date (their own or the binder's default).
+    overdue_count: Annotated[int, classified("internal")] = 0
+    # "2 requested Sep 8-10": client-visible requests still waiting, with their first and last
+    # requested dates in the firm's zone.
+    requested_count: Annotated[int, classified("internal")] = 0
+    requested_from: Annotated[date | None, classified("internal")] = None
+    requested_to: Annotated[date | None, classified("internal")] = None
 
 
 class BinderOut(BaseModel):
@@ -469,7 +488,7 @@ portal_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 # --- /v1/binders (P-06-T07, T11) ----------------------------------------------------------------
 
 
-@binders_router.get("", action="binder.read", response_model=ListPage[BinderRowOut], errors=(501,))
+@binders_router.get("", action="binder.read", response_model=ListPage[BinderRowOut])
 async def list_binders_route(
     ctx: Ctx,
     service: Annotated[str | None, Query(max_length=40)] = None,
@@ -482,8 +501,30 @@ async def list_binders_route(
     cursor: Annotated[str | None, Query(max_length=512)] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> ListPage[BinderRowOut]:
-    """BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3)."""
-    await _stub(ctx)
+    """BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3; P-06-T11).
+    `counts` leave out the status tile; each facet leaves out its own filter."""
+    page = await binder_index.list_binders(
+        ctx,
+        binder_index.IndexFilters(
+            service=service,
+            season=season,
+            office=office,
+            preparer=preparer,
+            client_activity=client_activity,
+            status=status,
+            q=q.strip() if q and q.strip() else None,
+        ),
+        cursor,
+        limit,
+    )
+    return ListPage[BinderRowOut](
+        items=[BinderRowOut.model_validate(r, from_attributes=True) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+        counts=page.counts,
+        facets=page.facets,
+    )
 
 
 @binders_router.post(

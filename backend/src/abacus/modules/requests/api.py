@@ -5,6 +5,7 @@ from abacus.modules.engagements.api import register_roll_forward_items
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
+from abacus.modules.requests.binder_index import register_binder_tag
 from abacus.modules.requests.binders import SUBSCRIPTIONS, register_binder_close_rule
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
@@ -105,6 +106,7 @@ __all__ = [
     "read_item_versions",
     "register_available_datasets",
     "register_binder_close_rule",
+    "register_binder_tag",
     "register_comment_scope_check",
     "request_items_for",
     "review_targets",

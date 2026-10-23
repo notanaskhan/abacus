@@ -3019,6 +3019,31 @@
             "title": "Client Name",
             "type": "string"
           },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Closed At"
+          },
+          "closed_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Closed Reason"
+          },
           "done_count": {
             "cls": "internal",
             "title": "Done Count",
@@ -3061,10 +3086,67 @@
             "cls": "internal",
             "title": "Last Client Activity At"
           },
+          "marked_done_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Marked Done At"
+          },
+          "marked_done_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Marked Done By"
+          },
+          "marked_done_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Marked Done By Name"
+          },
           "name": {
             "cls": "confidential",
             "title": "Name",
             "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "overdue_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Overdue Count",
+            "type": "integer"
           },
           "part": {
             "cls": "internal",
@@ -3083,6 +3165,75 @@
             ],
             "cls": "internal",
             "title": "Preparer User Id"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Published At"
+          },
+          "requested_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Requested Count",
+            "type": "integer"
+          },
+          "requested_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Requested From"
+          },
+          "requested_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Requested To"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Season"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Service"
           },
           "status": {
             "$ref": "#/components/schemas/BinderStatus",
@@ -32374,7 +32525,7 @@
     },
     "/v1/binders": {
       "get": {
-        "description": "BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3).",
+        "description": "BND-01 rows, tiles (`counts` per status) and facets, after `visible()` (INV-3; P-06-T11).\n`counts` leave out the status tile; each facet leaves out its own filter.",
         "operationId": "list_binders",
         "parameters": [
           {
@@ -32604,16 +32755,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Binders Route",

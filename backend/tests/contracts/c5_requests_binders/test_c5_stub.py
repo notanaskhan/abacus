@@ -80,10 +80,11 @@ HUMAN_ONLY = {
 CLIENT_ONLY = {"binder.mark_done", "request_item.ignore", "evidence.withdraw"}
 
 
-# Implemented since the stub (P-06-T07, the binder lifecycle): 404 with the flag off as before,
-# and no longer 501 with it on.
+# Implemented since the stub (P-06-T07, the binder lifecycle; P-06-T11, the index): 404 with the
+# flag off as before, and no longer 501 with it on.
 IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
     {
+        ("get", "/v1/binders"),
         ("post", "/v1/binders"),
         ("get", "/v1/binders/{binder_id}"),
         ("get", "/v1/binders/{binder_id}/requests"),

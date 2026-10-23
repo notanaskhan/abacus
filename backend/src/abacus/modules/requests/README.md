@@ -83,3 +83,9 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 - **Recipients:** the engagement's client's contacts (`engagements.api.client_contact_names`). The history is insert-only.
 - **Mark-done** (`binder.mark_done`, the client): Published to Complete, recording the open count.
 - **Close:** `SUBSCRIPTIONS` closes non-terminal binders on `work_item.status_changed` or `engagement.status_changed` into `delivered`/`archived`. Kinds add theirs with `register_binder_close_rule`.
+
+### Binders index (P-06-T11; `binder_index.py`)
+- `GET /v1/binders` (`binder.read`): BND-01's rows, tiles (`counts` per status, without the tile), total and facets, from one statement under `visible()` (`repository.binder_index`), so walled binders are absent everywhere (INV-3, DEC-43).
+- Work-item facts (kind, season, office, preparer, client and work item names) come from `engagements.api.work_item_index()`, joined on the binder's work item.
+- `binder_activity` is the projection it reads for the last client activity; the client's mark-done keeps it (`repository.touch_client_activity`).
+- **Slot:** `register_binder_tag(code, provider)`: a provider names, of a page's binders, those carrying its tag (the §7216 consents tag: P-07, T-01). None registered, no tags.
