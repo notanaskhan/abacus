@@ -1,5 +1,5 @@
 ---
-id: TASK-923
+id: TASK-930
 title: Browser error reporting through the tunnel, and the platform error copy (Q-01-T50)
 spec: SPEC-050
 acceptance_criteria: [AC-16, AC-31]
@@ -52,4 +52,4 @@ SPEC-050 has no AC written for T50. The nearest are AC-31, the runtime config th
 
 ## Progress log
 - 2026-10-23: vitest on the touched files (70) and the full web suite pass. ESLint (whole app), prettier and tsc pass, with no errors beyond the known `api-client` `*.gen.ts` set. The bundle budget passes (firm initial 242.4 of 250 KB; the telemetry chunk is 31.2 KB). `make check-generated` and `scope_guards` pass.
-- `secrets_scan` reports one finding that is already on `main`: `backend/tests/integration/test_telemetry_tunnel.py:24` (PII-001, SSN `123-45-6789` from TASK-922). This change adds no finding: its test SSN is in the never-issued 9xx area.
+- `secrets_scan` reports one finding that is already on `main`: `backend/tests/integration/test_telemetry_tunnel.py:24` (PII-001, a real-shaped test SSN from TASK-922, since replaced with a 9xx one). This change adds no finding: its test SSN is in the never-issued 9xx area.

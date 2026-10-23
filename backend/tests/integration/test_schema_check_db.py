@@ -29,6 +29,7 @@ DATABASE = "abacus"
 class Migrated(Protocol):
     owner_url: str
     app_url: str
+    superuser_dsn: str  # Q-02-T20: the partition probe is created as the superuser
 
 
 class Cluster:

@@ -21,7 +21,7 @@ from abacus.kernel.error_tracking import forward_event
 from abacus.modules.identity.api import configure_verifier, reset_verifier
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
-SSN, TIN, EMAIL = "123-45-6789", "987654321", "claire.feld@example.test"
+SSN, TIN, EMAIL = "900-45-6789", "900456789", "claire.feld@example.test"
 
 
 class Migrated(Protocol):

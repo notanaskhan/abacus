@@ -265,7 +265,7 @@ describe("dates", () => {
     expect(monthYear("")).toBe("—");
   });
   it("heads a day with its weekday (SHL-04 day groups)", () => {
-    const now = "2026-09-14T09:41:00-05:00";
+    const now = Date.parse("2026-09-14T09:41:00-05:00");
     expect(weekdayDate("2026-09-11T14:05:00-05:00", { now })).toBe("Friday, September 11");
     expect(weekdayDate("2026-09-28T11:46:00-05:00", { now })).toBe("Monday, September 28");
     expect(weekdayDate("2025-12-31T12:00:00-06:00", { now })).toBe("Wednesday, December 31, 2025");
