@@ -2,6 +2,26 @@
 
 AWS for Accrued (code namespace `abacus`). Region **us-east-2**, DR **us-west-2** (DEC-03, ADR-142). Everything after the landing zone is Terraform (Q-01-T03); the console is used only for the one-time steps below, and every console step is logged here with date and operator (SPEC-050 AC-5). Never write a money amount in this repo: budgets refer to "the DEC-03 envelope", and the amount stays in the vault.
 
+## 0. Layout and the rules for sessions
+
+| Path | Holds | State |
+|---|---|---|
+| `landing-zone/` | SCP and AI opt-out policy documents pasted in section 1 | in use |
+| `bootstrap/` | state bucket, GitHub OIDC, plan and apply roles (section "Terraform bootstrap") | applied by hand once |
+| `envs/shared/` | PR previews (Q-01-T49); ECR and artifact buckets come with Q-01-T07 | built |
+| `envs/staging/` | the portal edge (Q-01-T56, off until its tfvars are set); network, data and compute come with Q-01-T14 and T15 | partly built |
+| `envs/production/`, `envs/production-dr/` | backend and provider only (Q-01-T28, T29) | skeleton |
+| `modules/` | local modules; `modules/README.md` lists which are built | see there |
+| `tests/` | offline assertions: no credentials, no plan (`infra.yml`, job `assertions`) | in use |
+
+Rules (TASK-014 guardrails, SPEC-050 AC-6):
+
+- **A session never applies.** It runs `terraform fmt`, `terraform validate` (after `init -backend=false`), the offline tests and `make check-generated`. `infra.yml` adds `tflint`, `trivy config` and the read-only plan on the pull request. The builder applies by hand, from a laptop SSO session, after the PR merges.
+- **Nothing identifying is committed.** No account ID, domain, ARN with an account, secret or money amount. Values go in untracked `terraform.tfvars` files; each root has a `terraform.tfvars.example` with `.test` placeholders and `000000000000` for an account.
+- **Every egress host has a sub-processor row.** A host in a `domains`, `*_domains` or `*_hosts` list in any `.tf` file without a row in `docs/operations/sub-processors.yaml` fails `make check-generated` (P-67, ADR-154).
+- **How to add an egress host, a bucket or a service:** `.claude/skills/infra-terraform/SKILL.md`.
+- Before touching staging, check that no deploy is in flight: `gh run list --workflow deploy-staging.yml --status in_progress` (the workflow arrives with Q-01-T18).
+
 ## 1. Landing zone (Q-01-T01, TASK-142) — one-time console steps
 
 Do these signed in as the management account's root user only where a step says so; everything else through Identity Center. Policy documents to paste are in `infra/landing-zone/`.
@@ -15,7 +35,7 @@ Do these signed in as the management account's root user only where a step says 
 5. **Service control policies** (Organizations → Policies → SCPs). AWS allows at most five SCPs on a target and Control Tower already uses some, so ours are combined. Attach at the **root**: `scp-region-guard.json` (us-east-2 and us-west-2 only; us-east-1 only for the global edge and Bedrock US Geo) and `scp-baseline-guards.json` (no IAM users or long-lived keys; protected CloudTrail, Config, GuardDuty, Security Hub, Access Analyzer, Macie). Leaving the organisation is already denied by AWS's managed account security policy on the root, and `aws-managed/` keeps a copy of AWS's region-restriction policy as it was enabled (`region-restriction.original.json` before our edit). SCPs never apply to the management account itself, so keep it empty of workloads.
 6. **AI services opt-out** (Organizations → Policies → AI services opt-out policies): enable the policy type, create from `ai-services-opt-out.json`, attach at the root (ADR-114, SPEC-050 AC-4).
 7. **Budgets** after DEC-03 is recorded: one budget per account at the DEC-03 envelope with 50/80/100 % alerts to your email. The amounts live in the vault, not here.
-8. **Portal DNS** when F-09-T09 delivers the neutral portal domain: hosted zone in `shared`, delegate from the registrar.
+8. **Portal DNS** when F-09-T09 delivers the neutral portal domain: hosted zone in `shared`, delegate from the registrar. The portal edge then follows section "Portal edge".
 
 ### Open gap: 4-hour expiry on elevated assignments (SPEC-050 AC-3)
 
@@ -135,6 +155,41 @@ One-time, by hand, after `infra/envs/shared` is applied with the `shared` apply 
 4. Create the `preview` label (Issues, Labels, New label).
 5. Bookmark the founder-only link `https://<preview host>/__preview/login?k=<gate key>` and open it once per browser (the cookie lasts 14 days). Never paste it anywhere.
 6. Check: label a PR; its comment link opens the fixture build; the same link in a private window answers 403; closing the PR leaves `aws s3 ls s3://abacus-shared-previews/pr-<n>/ --profile shared` empty. Log it below.
+
+## Portal edge (Q-01-T56, OPS-14 part)
+
+`infra/envs/staging/portal_edge.tf` with `modules/cloudfront-portal` and `modules/waf`: one CloudFront multi-tenant distribution for the client portal. The tenant `default` serves `*.<portal domain>` (every firm's default host) on a wildcard ACM certificate; the tenant `canary` serves one custom domain with its own CloudFront-managed certificate for pen test 1. Both serve the same portal entry and the same `/v1` origin, the internal API load balancer through a VPC origin. The WebACL blocks the 31st request in 5 minutes from one IP to `/v1/auth/` and `/v1/portal/auth/` (ADR-163; chapter 06 sections 1.12 and 1.13).
+
+It plans to nothing until `portal_base_domain`, `api_vpc_origin_id` and `api_origin_domain_name` are set in the untracked `infra/envs/staging/terraform.tfvars`. It needs:
+- the neutral portal domain registered (F-09-T09) with its hosted zone in `shared` (section 1, step 8);
+- the staging load balancer and its CloudFront VPC origin (Q-01-T15).
+
+One-time, by hand, with the staging apply role or a `PlatformAdmin` session:
+
+1. `cp infra/envs/staging/terraform.tfvars.example infra/envs/staging/terraform.tfvars` and fill in the portal domain and the two API values. Leave `portal_canary_custom_domain` commented out. The domain must not contain the product name: the variable, and the API's settings, refuse it.
+2. `terraform -chdir=infra/envs/staging init`, then `plan -out=portal.tfplan`. Expect the WebACL, the bundle bucket and its key, the wildcard certificate, the distribution, the `default` tenant, the entry function, the headers policy, the runtime-config parameter and the deploy policy. Nothing else should change.
+3. Create the certificate first, so its validation record can exist before the distribution waits on it:
+   ```bash
+   terraform -chdir=infra/envs/staging apply -target='module.portal_edge[0].aws_acm_certificate.portal'
+   terraform -chdir=infra/envs/staging output portal_certificate_validation_records
+   ```
+   Create that CNAME in the portal domain's hosted zone (`shared`), then run the full `apply`. It waits until the certificate is issued.
+4. Point `*.<portal domain>` (CNAME) at the default connection group's routing endpoint (`aws cloudfront list-connection-groups --profile staging`).
+5. Canary custom domain. Pick a domain you control that stands in for a firm's own domain. It must not be under the portal domain. CNAME `portal.<that domain>` to the same routing endpoint, set `portal_canary_custom_domain` in the tfvars, then plan and apply. CloudFront answers the managed certificate's HTTP validation itself. The tenant is ready when `aws cloudfront get-distribution-tenant --identifier <canary_tenant_id>` shows it deployed.
+6. Attach `portal_deploy_policy_arn` to the staging deploy role (Q-01-T18), and switch `portal_managed_rules_action` to `block` two weeks after step 2 (chapter 06 section 1.13).
+
+**Deploy path for the portal entry** (P-08-T07's `pnpm -C apps/web build:portal`, which writes `apps/web/dist/portal/`). `deploy-staging.yml` (Q-01-T18) runs these steps from the release's `s3://abacus-shared-artifacts/web/<sha>/portal/` once it exists; until then the builder runs them for the canary bring-up. The order matters: assets first, so the new entry never names a missing file.
+
+1. `assets/` to `s3://abacus-staging-web-portal/assets/` with `Cache-Control: public, max-age=31536000, immutable`. Never `--delete`: the previous bundle's assets stay for rollback.
+2. `portal.html` with `Cache-Control: no-cache`. Never `.vite/` (the manifest is for the bundle budget only).
+3. `runtime-config.json` with `Cache-Control: no-cache`. Render it per release (platform-ops contract section 3.2): `portal_base_domain` from the SSM parameter `portal_runtime_config_parameter`, and `release` set to the git SHA.
+
+No invalidation is needed, because entry files are never cached at the edge. Rollback puts back the previous `portal.html` and `runtime-config.json` (noncurrent versions are kept for 30 days).
+
+**Checks** (log the results below):
+- `curl -sI https://<slug>.<portal domain>/sign-in` and `curl -sI https://portal.<canary domain>/sign-in` both answer 200 with `portal.html`, `strict-transport-security` and `referrer-policy: no-referrer`. Each presents its own certificate (`openssl s_client -servername <host> -connect <host>:443`).
+- `curl -s https://portal.<canary domain>/v1/portal/branding` answers from the API (same origin), and `/healthz` answers 403.
+- From one address, send 31 `POST /v1/portal/auth/start` requests within 5 minutes. The 31st (give or take WAF's few seconds of lag) answers 429 `{"detail": "rate_limited"}`, and the `auth-and-code-rate` metric shows the blocks.
 
 ## 4. Console log
 

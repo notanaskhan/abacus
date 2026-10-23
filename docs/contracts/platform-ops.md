@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Platform interfaces (unnumbered) in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (Q-01-T13); freezes with Q-01-T57 |
+| Status | frozen v1 (Q-01-T57, 2026-10-23); stub was Q-01-T13 |
 | Provider epic | Q-01 |
 | Consumers | P-01 (sign-in, notifications), P-08 (portal sign-in, branding, invitations), F-04 (seed loader, canary, mailbox reader), G-04 (tenant console, provisioning patch), F-01 (`db_guard`), R-01 (sender identities, ADM-10), Q-04 (release train, on-call) |
 | Freeze sprint | S5 (starts 2026-12-28) |
@@ -80,7 +80,7 @@ Rules the port keeps:
 
 ### 3.2 `runtime-config.json`
 
-Served as a static file next to the SPA at `/runtime-config.json` on each host (the firm host, the neutral portal host, a custom portal host). The deploy uploads it after the hashed assets and before it invalidates `index.html` (Q-01-T18). Locally it is `apps/web/public/runtime-config.json`.
+Served as a static file next to the SPA at `/runtime-config.json` on each host (the firm host, the neutral portal host, a custom portal host). The deploy uploads it after the hashed assets and before it invalidates `index.html` (Q-01-T18). On portal hosts the entry files are never cached at the edge, so no invalidation is needed there; the deploy reads `portal_base_domain` from the SSM parameter `/abacus/<env>/runtime-config/portal_base_domain` (Q-01-T56, `infra/README.md` "Portal edge"). Locally it is `apps/web/public/runtime-config.json`.
 
 ```json
 {
@@ -337,7 +337,7 @@ Additive changes (a new optional `runtime-config.json` key, a new readiness chec
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | not yet; planned with Q-01-T57 (S5) | n/a | stub written under Q-01-T13 (TASK-355) before the code in sections 3.1, 3.4 to 3.8 exists; section 3.9 and the routes in 3.3 are live |
+| v1 | 2026-10-23 (Q-01-T57) | n/a | frozen as written. Live behind it: sections 3.2 (schema and the TypeScript mirror), 3.3, 3.6 (v1 shape), 3.8 and 3.9. Still to be built against the frozen text: 3.1 (Q-01-T17), 3.4 and 3.5 (Q-01-T18 and the ops-task workflow), 3.7 (Q-01-T36, T37). The frozen parts are pinned by `backend/tests/contracts/platform_ops/test_platform_ops_frozen.py` |
 
 ## 11. Open points
 
