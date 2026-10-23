@@ -61,6 +61,11 @@ FIELDWORK_PROCEDURES = Flag(
     kind="boolean",
     default="false",
 )
+FIRM_SETTINGS_V2 = Flag(
+    name="firm_settings.v2",
+    kind="boolean",
+    default="false",
+)
 GUIDANCE_DRAFTING = Flag(
     name="guidance.drafting",
     kind="boolean",
@@ -142,6 +147,7 @@ FLAGS: dict[str, Flag] = {
     "evidence.viewer_v1": EVIDENCE_VIEWER_V1,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
+    "firm_settings.v2": FIRM_SETTINGS_V2,
     "guidance.drafting": GUIDANCE_DRAFTING,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,

@@ -812,6 +812,92 @@ export type AnnotationsBody = {
 };
 
 /**
+ * AnnualConfirmIn
+ *
+ * For oneself only: no user id in the body (AC6.3, structural).
+ */
+export type AnnualConfirmIn = {
+    /**
+     * Decision
+     */
+    decision: 'confirmed' | 'declined';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Statement Version
+     */
+    statement_version: number;
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * AnnualConfirmedOut
+ */
+export type AnnualConfirmedOut = {
+    /**
+     * Decided At
+     */
+    decided_at: string;
+    /**
+     * Decision
+     */
+    decision: 'confirmed' | 'declined';
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * AnnualIndependenceOut
+ */
+export type AnnualIndependenceOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Rows
+     */
+    rows: Array<AnnualRowOut>;
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * AnnualIndependenceStatus
+ */
+export type AnnualIndependenceStatus = 'confirmed' | 'not_yet' | 'declined';
+
+/**
+ * AnnualRowOut
+ */
+export type AnnualRowOut = {
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    status: AnnualIndependenceStatus;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * AppliedMethodologyOut
  */
 export type AppliedMethodologyOut = {
@@ -3692,6 +3778,20 @@ export type DashboardOut = {
 };
 
 /**
+ * DeactivateIn
+ */
+export type DeactivateIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason?: 'manual' | 'access_ended' | 'scim_deprovisioned';
+};
+
+/**
  * DecideIn
  */
 export type DecideIn = {
@@ -6255,6 +6355,129 @@ export type FirmMemberOut = {
 };
 
 /**
+ * FirmOfficeIn
+ *
+ * 409 `office_code_taken`, `one_hq`; the time zone is an IANA name.
+ */
+export type FirmOfficeIn = {
+    /**
+     * Address Line1
+     */
+    address_line1?: string | null;
+    /**
+     * Address Line2
+     */
+    address_line2?: string | null;
+    /**
+     * City
+     */
+    city?: string | null;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Default Reviewer Pool Team Id
+     */
+    default_reviewer_pool_team_id?: string | null;
+    /**
+     * Is Hq
+     */
+    is_hq?: boolean;
+    /**
+     * Lead User Id
+     */
+    lead_user_id?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Postal Code
+     */
+    postal_code?: string | null;
+    /**
+     * Region Code
+     */
+    region_code?: string | null;
+    /**
+     * Time Zone
+     */
+    time_zone: string;
+};
+
+/**
+ * FirmOfficeOut
+ *
+ * ADM-03a's office. `seats` is derived from memberships; facts other modules register come
+ * as counts by key.
+ */
+export type FirmOfficeOut = {
+    /**
+     * Address Line1
+     */
+    address_line1?: string | null;
+    /**
+     * Address Line2
+     */
+    address_line2?: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * City
+     */
+    city?: string | null;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Default Reviewer Pool Team Id
+     */
+    default_reviewer_pool_team_id?: string | null;
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: number;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Hq
+     */
+    is_hq: boolean;
+    /**
+     * Lead User Id
+     */
+    lead_user_id?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Postal Code
+     */
+    postal_code?: string | null;
+    /**
+     * Region Code
+     */
+    region_code?: string | null;
+    /**
+     * Seats
+     */
+    seats: number;
+    /**
+     * Time Zone
+     */
+    time_zone: string;
+};
+
+/**
  * FirmRefIn
  */
 export type FirmRefIn = {
@@ -6272,6 +6495,74 @@ export type FirmRoleIn = {
      * Firm Role
      */
     firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+};
+
+/**
+ * FirmTeamIn
+ */
+export type FirmTeamIn = {
+    /**
+     * Kind
+     */
+    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom';
+    /**
+     * Lead User Id
+     */
+    lead_user_id?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+};
+
+/**
+ * FirmTeamMembersIn
+ *
+ * The whole roster; a service-line team also sets the members' service lines (AC7.4).
+ */
+export type FirmTeamMembersIn = {
+    /**
+     * Member Ids
+     */
+    member_ids: Array<string>;
+};
+
+/**
+ * FirmTeamOut
+ */
+export type FirmTeamOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'service_line' | 'practice_group' | 'eqr_pool' | 'monitoring_reviewers' | 'reviewer_pool' | 'custom';
+    /**
+     * Lead User Id
+     */
+    lead_user_id?: string | null;
+    /**
+     * Member Ids
+     */
+    member_ids: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
 };
 
 /**
@@ -6712,6 +7003,37 @@ export type GlImportOut = {
 };
 
 /**
+ * GlanceRowOut
+ *
+ * One registered area's status line ("46 of 46 seats · 0 pending invites"); words come
+ * from the copy registry by `key` and `facts`. `unavailable` when its provider failed.
+ */
+export type GlanceRowOut = {
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: number;
+    };
+    /**
+     * Href
+     */
+    href?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Tone
+     */
+    tone: 'ok' | 'attention' | 'partial' | 'none';
+    /**
+     * Unavailable
+     */
+    unavailable?: boolean;
+};
+
+/**
  * GoingConcernBody
  */
 export type GoingConcernBody = {
@@ -6885,6 +7207,43 @@ export type GraphTeamMemberOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * GridRowOut
+ *
+ * One capability row; cells per template computed from the compiled matrix and the firm's
+ * overrides, or from `role-templates.yaml` for actions not yet in the matrix.
+ */
+export type GridRowOut = {
+    /**
+     * Actions
+     */
+    actions: Array<string>;
+    /**
+     * Cells
+     */
+    cells: {
+        [key: string]: 'allow' | 'conditional' | 'delegated' | 'deny' | 'locked';
+    };
+    /**
+     * Conditions
+     */
+    conditions?: {
+        [key: string]: string;
+    };
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Locked
+     */
+    locked?: boolean;
+    /**
+     * Source
+     */
+    source: 'matrix' | 'policy';
 };
 
 /**
@@ -8723,6 +9082,40 @@ export type ListPageReviewNoteItemOut = {
 };
 
 /**
+ * ListPage[WallEventOut]
+ */
+export type ListPageWallEventOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<WallEventOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[WorkItemRowOut]
  */
 export type ListPageWorkItemRowOut = {
@@ -9312,6 +9705,11 @@ export type MembershipOut = {
 };
 
 /**
+ * MembershipStatus
+ */
+export type MembershipStatus = 'active' | 'invited' | 'deactivated';
+
+/**
  * MentionCandidateOut
  */
 export type MentionCandidateOut = {
@@ -9777,6 +10175,30 @@ export type OfficeOut = {
 };
 
 /**
+ * OffshoreOut
+ *
+ * ADM-03d. The two policy toggles are always on and locked (AC9.3).
+ */
+export type OffshoreOut = {
+    /**
+     * Block Without Consent
+     */
+    block_without_consent?: true;
+    /**
+     * Consented Client Count
+     */
+    consented_client_count: number;
+    /**
+     * Mask Tins
+     */
+    mask_tins?: true;
+    /**
+     * Member Ids
+     */
+    member_ids: Array<string>;
+};
+
+/**
  * OnboardingOut
  */
 export type OnboardingOut = {
@@ -9901,6 +10323,74 @@ export type PauseIn = {
      * Reason
      */
     reason?: string | null;
+};
+
+/**
+ * PersonOut
+ *
+ * ADM-02d's drawer.
+ */
+export type PersonOut = {
+    annual_independence?: AnnualIndependenceStatus;
+    /**
+     * Assignment Count
+     */
+    assignment_count?: number;
+    /**
+     * Firm Role
+     */
+    firm_role?: string | null;
+    /**
+     * Recent Sign Ins
+     */
+    recent_sign_ins?: Array<SignInOut>;
+    row: StaffRowV2Out;
+    /**
+     * Security Admin
+     */
+    security_admin?: boolean;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Wall Ids
+     */
+    wall_ids?: Array<string>;
+};
+
+/**
+ * PersonPatchIn
+ */
+export type PersonPatchIn = {
+    /**
+     * Access Ends On
+     */
+    access_ends_on?: string | null;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Offshore
+     */
+    offshore?: boolean | null;
+    /**
+     * Service Lines
+     */
+    service_lines?: Array<'audit' | 'tax' | 'cas' | 'advisory'> | null;
+    /**
+     * Team Ids
+     */
+    team_ids?: Array<string> | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -12450,6 +12940,38 @@ export type RoleOut = {
 };
 
 /**
+ * RoleTemplateOut
+ */
+export type RoleTemplateOut = {
+    /**
+     * Key
+     */
+    key: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security';
+    /**
+     * Levels
+     */
+    levels: Array<'partner' | 'manager' | 'senior' | 'staff' | 'seasonal' | 'admin'>;
+    /**
+     * Member Count
+     */
+    member_count: number;
+};
+
+/**
+ * RoleTemplatesOut
+ */
+export type RoleTemplatesOut = {
+    /**
+     * Grid
+     */
+    grid: Array<GridRowOut>;
+    /**
+     * Templates
+     */
+    templates: Array<RoleTemplateOut>;
+};
+
+/**
  * RollForwardIn
  *
  * SPEC-025 AC-2 (TASK-048): exactly what the person confirmed from the proposal.
@@ -12731,6 +13253,42 @@ export type ScreeningResultOut = {
 };
 
 /**
+ * SeasonalAccessEndsIn
+ *
+ * ADM-03a's Seasonal group: one date for every seasonal member, one audit row each.
+ */
+export type SeasonalAccessEndsIn = {
+    /**
+     * Access Ends On
+     */
+    access_ends_on: string;
+};
+
+/**
+ * SeasonalAccessEndsOut
+ */
+export type SeasonalAccessEndsOut = {
+    /**
+     * Access Ends On
+     */
+    access_ends_on: string;
+    /**
+     * Members
+     */
+    members: number;
+};
+
+/**
+ * SecurityRoleIn
+ */
+export type SecurityRoleIn = {
+    /**
+     * Security Admin
+     */
+    security_admin: boolean;
+};
+
+/**
  * SelectionOut
  */
 export type SelectionOut = {
@@ -12783,6 +13341,64 @@ export type SendDraftIn = {
 };
 
 /**
+ * ServiceLinePolicyIn
+ *
+ * Audit is always `engagement_team_only` (422 `audit_locked`).
+ */
+export type ServiceLinePolicyIn = {
+    /**
+     * Content Visible To
+     */
+    content_visible_to: 'engagement_team_only' | 'service_line';
+    /**
+     * Cross Line Access
+     */
+    cross_line_access: 'handoffs_only' | 'by_request';
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Lead User Id
+     */
+    lead_user_id?: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ServiceLinePolicyOut
+ */
+export type ServiceLinePolicyOut = {
+    /**
+     * Content Visible To
+     */
+    content_visible_to: 'engagement_team_only' | 'service_line';
+    /**
+     * Cross Line Access
+     */
+    cross_line_access: 'handoffs_only' | 'by_request';
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Lead User Id
+     */
+    lead_user_id?: string | null;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * SessionOut
  */
 export type SessionOut = {
@@ -12814,6 +13430,117 @@ export type SessionTokenOut = {
      * Expires In
      */
     expires_in: number;
+};
+
+/**
+ * SettingValueOut
+ *
+ * A registered key with its value. Values are JSON scalars; a Confidential key's value is
+ * never in an audit row (AC1.2).
+ */
+export type SettingValueOut = {
+    /**
+     * Editable
+     */
+    editable: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Value
+     */
+    value: string | number | boolean | null;
+};
+
+/**
+ * SettingsOverviewOut
+ */
+export type SettingsOverviewOut = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * At A Glance
+     */
+    at_a_glance: Array<GlanceRowOut>;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Sections
+     */
+    sections: Array<SettingsSectionOut>;
+};
+
+/**
+ * SettingsPatchIn
+ *
+ * Only registered keys (422 `unknown_setting`); `version` as read (409 `stale_version`).
+ */
+export type SettingsPatchIn = {
+    /**
+     * Values
+     */
+    values: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SettingsSectionOut
+ */
+export type SettingsSectionOut = {
+    /**
+     * Group
+     */
+    group: 'firm' | 'people' | 'security' | 'data' | 'quality' | 'integrations';
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Planned
+     */
+    planned?: boolean;
+    /**
+     * Visible
+     */
+    visible: boolean;
+};
+
+/**
+ * SettingsSectionValuesOut
+ *
+ * A section's keys; Plan & seats is absent for `security_admin` (AC1.7).
+ */
+export type SettingsSectionValuesOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Read Only Reason
+     */
+    read_only_reason?: string | null;
+    /**
+     * Section
+     */
+    section: 'general' | 'profile' | 'defaults' | 'plan';
+    /**
+     * Values
+     */
+    values: Array<SettingValueOut>;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -12952,6 +13679,28 @@ export type SheetPreviewOut = {
      * Suggested Tier
      */
     suggested_tier: number | null;
+};
+
+/**
+ * SignInOut
+ */
+export type SignInOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Ip
+     */
+    ip?: string | null;
+    /**
+     * Method
+     */
+    method: string;
+    /**
+     * Mfa
+     */
+    mfa: boolean;
 };
 
 /**
@@ -13430,6 +14179,75 @@ export type StaffMemberOut = {
      * Status
      */
     status: 'active' | 'revoked';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * StaffRowV2Out
+ *
+ * ADM-02a's row: the v2 shape `GET /v1/firm/staff` grows into (G-01-T05).
+ */
+export type StaffRowV2Out = {
+    /**
+     * Access Ends On
+     */
+    access_ends_on?: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Band
+     */
+    band: 'partners' | 'managers' | 'seniors' | 'staff' | 'seasonal' | 'operations';
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Invitation Expires On
+     */
+    invitation_expires_on?: string | null;
+    /**
+     * Last Sign In At
+     */
+    last_sign_in_at?: string | null;
+    /**
+     * Level
+     */
+    level: 'partner' | 'manager' | 'senior' | 'staff' | 'seasonal' | 'admin';
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Offshore
+     */
+    offshore?: boolean;
+    /**
+     * Role Template
+     */
+    role_template: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security';
+    /**
+     * Service Lines
+     */
+    service_lines?: Array<'audit' | 'tax' | 'cas' | 'advisory'>;
+    status: MembershipStatus;
+    /**
+     * Team Ids
+     */
+    team_ids?: Array<string>;
+    /**
+     * Title
+     */
+    title?: string | null;
     /**
      * User Id
      */
@@ -14996,6 +15814,29 @@ export type WaiveIn = {
 };
 
 /**
+ * WallApprovalStatus
+ */
+export type WallApprovalStatus = 'awaiting' | 'approved';
+
+/**
+ * WallEventOut
+ */
+export type WallEventOut = {
+    /**
+     * Actor User Id
+     */
+    actor_user_id?: string | null;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Event Type
+     */
+    event_type: string;
+};
+
+/**
  * WallIn
  */
 export type WallIn = {
@@ -15043,6 +15884,71 @@ export type WallOut = {
      * Status
      */
     status: 'active' | 'removed';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * WallPreviewOut
+ *
+ * What adding the wall would do: blockers and the effect counts (AC8.1, AC8.3).
+ */
+export type WallPreviewOut = {
+    /**
+     * Assignments Ended
+     */
+    assignments_ended: number;
+    /**
+     * Blockers
+     */
+    blockers: Array<'relationship_partner' | 'wall_exists' | 'own_wall'>;
+};
+
+/**
+ * WallV2Out
+ *
+ * The v2 shape `GET /v1/walls` grows into (G-01-T09).
+ */
+export type WallV2Out = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    approval_status: WallApprovalStatus;
+    /**
+     * Approved At
+     */
+    approved_at?: string | null;
+    /**
+     * Approver User Id
+     */
+    approver_user_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By
+     */
+    created_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Reason Code
+     */
+    reason_code: 'personal_relationship' | 'financial_interest' | 'relative' | 'prior_employment' | 'other';
+    /**
+     * Reason Text
+     */
+    reason_text?: string | null;
     /**
      * User Id
      */
@@ -33264,6 +34170,113 @@ export type SetFieldworkSettingsResponses = {
 
 export type SetFieldworkSettingsResponse = SetFieldworkSettingsResponses[keyof SetFieldworkSettingsResponses];
 
+export type SetSeasonalAccessEndsData = {
+    body: SeasonalAccessEndsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/groups/seasonal/access-ends';
+};
+
+export type SetSeasonalAccessEndsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SetSeasonalAccessEndsError = SetSeasonalAccessEndsErrors[keyof SetSeasonalAccessEndsErrors];
+
+export type SetSeasonalAccessEndsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonalAccessEndsOut;
+};
+
+export type SetSeasonalAccessEndsResponse = SetSeasonalAccessEndsResponses[keyof SetSeasonalAccessEndsResponses];
+
+export type AnnualIndependenceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Year
+         */
+        year: number;
+    };
+    url: '/v1/firm/independence/annual';
+};
+
+export type AnnualIndependenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AnnualIndependenceError = AnnualIndependenceErrors[keyof AnnualIndependenceErrors];
+
+export type AnnualIndependenceResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnnualIndependenceOut;
+};
+
+export type AnnualIndependenceResponse = AnnualIndependenceResponses[keyof AnnualIndependenceResponses];
+
 export type LetterPolicyData = {
     body?: never;
     headers?: {
@@ -33406,6 +34419,225 @@ export type FirmMembersResponses = {
 };
 
 export type FirmMembersResponse = FirmMembersResponses[keyof FirmMembersResponses];
+
+export type OfficesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/offices';
+};
+
+export type OfficesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type OfficesError = OfficesErrors[keyof OfficesErrors];
+
+export type OfficesResponses = {
+    /**
+     * Response Offices
+     *
+     * Successful Response
+     */
+    200: Array<FirmOfficeOut>;
+};
+
+export type OfficesResponse = OfficesResponses[keyof OfficesResponses];
+
+export type CreateOfficeData = {
+    body: FirmOfficeIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/offices';
+};
+
+export type CreateOfficeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateOfficeError = CreateOfficeErrors[keyof CreateOfficeErrors];
+
+export type CreateOfficeResponses = {
+    /**
+     * Successful Response
+     */
+    201: FirmOfficeOut;
+};
+
+export type CreateOfficeResponse = CreateOfficeResponses[keyof CreateOfficeResponses];
+
+export type UpdateOfficeData = {
+    body: FirmOfficeIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Office Id
+         */
+        office_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/offices/{office_id}';
+};
+
+export type UpdateOfficeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateOfficeError = UpdateOfficeErrors[keyof UpdateOfficeErrors];
+
+export type UpdateOfficeResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmOfficeOut;
+};
+
+export type UpdateOfficeResponse = UpdateOfficeResponses[keyof UpdateOfficeResponses];
+
+export type OffshoreData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/offshore';
+};
+
+export type OffshoreErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type OffshoreError = OffshoreErrors[keyof OffshoreErrors];
+
+export type OffshoreResponses = {
+    /**
+     * Successful Response
+     */
+    200: OffshoreOut;
+};
+
+export type OffshoreResponse = OffshoreResponses[keyof OffshoreResponses];
 
 export type OnboardingData = {
     body?: never;
@@ -33553,6 +34785,57 @@ export type AcknowledgeStepResponses = {
 
 export type AcknowledgeStepResponse = AcknowledgeStepResponses[keyof AcknowledgeStepResponses];
 
+export type RoleTemplatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/role-templates';
+};
+
+export type RoleTemplatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RoleTemplatesError = RoleTemplatesErrors[keyof RoleTemplatesErrors];
+
+export type RoleTemplatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoleTemplatesOut;
+};
+
+export type RoleTemplatesResponse = RoleTemplatesResponses[keyof RoleTemplatesResponses];
+
 export type SearchFindingsData = {
     body?: never;
     headers?: {
@@ -33660,6 +34943,286 @@ export type SearchRequestItemsResponses = {
 };
 
 export type SearchRequestItemsResponse = SearchRequestItemsResponses[keyof SearchRequestItemsResponses];
+
+export type ServiceLinesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/service-lines';
+};
+
+export type ServiceLinesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ServiceLinesError = ServiceLinesErrors[keyof ServiceLinesErrors];
+
+export type ServiceLinesResponses = {
+    /**
+     * Response Service Lines
+     *
+     * Successful Response
+     */
+    200: Array<ServiceLinePolicyOut>;
+};
+
+export type ServiceLinesResponse = ServiceLinesResponses[keyof ServiceLinesResponses];
+
+export type SetServiceLineData = {
+    body: ServiceLinePolicyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Line
+         */
+        line: 'audit' | 'tax' | 'cas' | 'advisory';
+    };
+    query?: never;
+    url: '/v1/firm/service-lines/{line}';
+};
+
+export type SetServiceLineErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SetServiceLineError = SetServiceLineErrors[keyof SetServiceLineErrors];
+
+export type SetServiceLineResponses = {
+    /**
+     * Successful Response
+     */
+    200: ServiceLinePolicyOut;
+};
+
+export type SetServiceLineResponse = SetServiceLineResponses[keyof SetServiceLineResponses];
+
+export type SettingsOverviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/settings/overview';
+};
+
+export type SettingsOverviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SettingsOverviewError = SettingsOverviewErrors[keyof SettingsOverviewErrors];
+
+export type SettingsOverviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettingsOverviewOut;
+};
+
+export type SettingsOverviewResponse = SettingsOverviewResponses[keyof SettingsOverviewResponses];
+
+export type SettingsSectionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Section
+         */
+        section: 'general' | 'profile' | 'defaults' | 'plan';
+    };
+    query?: never;
+    url: '/v1/firm/settings/{section}';
+};
+
+export type SettingsSectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SettingsSectionError = SettingsSectionErrors[keyof SettingsSectionErrors];
+
+export type SettingsSectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettingsSectionValuesOut;
+};
+
+export type SettingsSectionResponse = SettingsSectionResponses[keyof SettingsSectionResponses];
+
+export type UpdateSettingsSectionData = {
+    body: SettingsPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Section
+         */
+        section: 'general' | 'profile' | 'defaults' | 'plan';
+    };
+    query?: never;
+    url: '/v1/firm/settings/{section}';
+};
+
+export type UpdateSettingsSectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateSettingsSectionError = UpdateSettingsSectionErrors[keyof UpdateSettingsSectionErrors];
+
+export type UpdateSettingsSectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SettingsSectionValuesOut;
+};
+
+export type UpdateSettingsSectionResponse = UpdateSettingsSectionResponses[keyof UpdateSettingsSectionResponses];
 
 export type StaffData = {
     body?: never;
@@ -33859,6 +35422,182 @@ export type RevokeStaffInvitationResponses = {
 
 export type RevokeStaffInvitationResponse = RevokeStaffInvitationResponses[keyof RevokeStaffInvitationResponses];
 
+export type PersonData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}';
+};
+
+export type PersonErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PersonError = PersonErrors[keyof PersonErrors];
+
+export type PersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonOut;
+};
+
+export type PersonResponse = PersonResponses[keyof PersonResponses];
+
+export type UpdatePersonData = {
+    body: PersonPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}';
+};
+
+export type UpdatePersonErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdatePersonError = UpdatePersonErrors[keyof UpdatePersonErrors];
+
+export type UpdatePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonOut;
+};
+
+export type UpdatePersonResponse = UpdatePersonResponses[keyof UpdatePersonResponses];
+
+export type DeactivatePersonData = {
+    body: DeactivateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}/deactivate';
+};
+
+export type DeactivatePersonErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeactivatePersonError = DeactivatePersonErrors[keyof DeactivatePersonErrors];
+
+export type DeactivatePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonOut;
+};
+
+export type DeactivatePersonResponse = DeactivatePersonResponses[keyof DeactivatePersonResponses];
+
 export type RevokeStaffData = {
     body?: never;
     headers?: {
@@ -33970,6 +35709,282 @@ export type ChangeFirmRoleResponses = {
 };
 
 export type ChangeFirmRoleResponse = ChangeFirmRoleResponses[keyof ChangeFirmRoleResponses];
+
+export type SetSecurityRoleData = {
+    body: SecurityRoleIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}/security-role';
+};
+
+export type SetSecurityRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SetSecurityRoleError = SetSecurityRoleErrors[keyof SetSecurityRoleErrors];
+
+export type SetSecurityRoleResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonOut;
+};
+
+export type SetSecurityRoleResponse = SetSecurityRoleResponses[keyof SetSecurityRoleResponses];
+
+export type TeamsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/teams';
+};
+
+export type TeamsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TeamsError = TeamsErrors[keyof TeamsErrors];
+
+export type TeamsResponses = {
+    /**
+     * Response Teams
+     *
+     * Successful Response
+     */
+    200: Array<FirmTeamOut>;
+};
+
+export type TeamsResponse = TeamsResponses[keyof TeamsResponses];
+
+export type CreateTeamData = {
+    body: FirmTeamIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/teams';
+};
+
+export type CreateTeamErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateTeamError = CreateTeamErrors[keyof CreateTeamErrors];
+
+export type CreateTeamResponses = {
+    /**
+     * Successful Response
+     */
+    201: FirmTeamOut;
+};
+
+export type CreateTeamResponse = CreateTeamResponses[keyof CreateTeamResponses];
+
+export type UpdateTeamData = {
+    body: FirmTeamIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Team Id
+         */
+        team_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/teams/{team_id}';
+};
+
+export type UpdateTeamErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateTeamError = UpdateTeamErrors[keyof UpdateTeamErrors];
+
+export type UpdateTeamResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmTeamOut;
+};
+
+export type UpdateTeamResponse = UpdateTeamResponses[keyof UpdateTeamResponses];
+
+export type SetTeamMembersData = {
+    body: FirmTeamMembersIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Team Id
+         */
+        team_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/teams/{team_id}/members';
+};
+
+export type SetTeamMembersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SetTeamMembersError = SetTeamMembersErrors[keyof SetTeamMembersErrors];
+
+export type SetTeamMembersResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmTeamOut;
+};
+
+export type SetTeamMembersResponse = SetTeamMembersResponses[keyof SetTeamMembersResponses];
 
 export type TimeZoneData = {
     body?: never;
@@ -35607,6 +37622,57 @@ export type MyCapabilitiesResponses = {
 };
 
 export type MyCapabilitiesResponse = MyCapabilitiesResponses[keyof MyCapabilitiesResponses];
+
+export type ConfirmAnnualIndependenceData = {
+    body: AnnualConfirmIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/me/independence/annual';
+};
+
+export type ConfirmAnnualIndependenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConfirmAnnualIndependenceError = ConfirmAnnualIndependenceErrors[keyof ConfirmAnnualIndependenceErrors];
+
+export type ConfirmAnnualIndependenceResponses = {
+    /**
+     * Successful Response
+     */
+    201: AnnualConfirmedOut;
+};
+
+export type ConfirmAnnualIndependenceResponse = ConfirmAnnualIndependenceResponses[keyof ConfirmAnnualIndependenceResponses];
 
 export type NotificationPreferencesData = {
     body?: never;
@@ -38799,6 +40865,187 @@ export type CreateWallResponses = {
 };
 
 export type CreateWallResponse = CreateWallResponses[keyof CreateWallResponses];
+
+export type WallPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * User Id
+         */
+        user_id: string;
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    url: '/v1/walls/preview';
+};
+
+export type WallPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WallPreviewError = WallPreviewErrors[keyof WallPreviewErrors];
+
+export type WallPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: WallPreviewOut;
+};
+
+export type WallPreviewResponse = WallPreviewResponses[keyof WallPreviewResponses];
+
+export type ApproveWallData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Wall Id
+         */
+        wall_id: string;
+    };
+    query?: never;
+    url: '/v1/walls/{wall_id}/approve';
+};
+
+export type ApproveWallErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveWallError = ApproveWallErrors[keyof ApproveWallErrors];
+
+export type ApproveWallResponses = {
+    /**
+     * Successful Response
+     */
+    200: WallV2Out;
+};
+
+export type ApproveWallResponse = ApproveWallResponses[keyof ApproveWallResponses];
+
+export type WallEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Wall Id
+         */
+        wall_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/walls/{wall_id}/events';
+};
+
+export type WallEventsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WallEventsError = WallEventsErrors[keyof WallEventsErrors];
+
+export type WallEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageWallEventOut;
+};
+
+export type WallEventsResponse = WallEventsResponses[keyof WallEventsResponses];
 
 export type RemoveWallData = {
     body?: never;

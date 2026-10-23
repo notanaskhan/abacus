@@ -46,7 +46,7 @@ TASK_FIELDS = (
     "created",
     "updated",
 )
-ID_IN_NAME = re.compile(r"^((?:ADR|SPEC|TASK)-\d{3})(?:-|\.md$)")
+ID_IN_NAME = re.compile(r"^((?:ADR|SPEC|TASK)-\d{3,})(?:-|\.md$)")
 AC_ID = re.compile(r"\bAC-\d+\b")
 INDEX_ROW = re.compile(r"^\|\s*\[(ADR-\d{3})\]\(([^)]+)\)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|\s*$")
 

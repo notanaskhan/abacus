@@ -680,6 +680,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "mfa_recent": "required",
     },
+    "firm.read_people": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "firm.read_settings": {
         "firm_admin": "allow",
         "practice_leader": "allow",
@@ -787,6 +794,30 @@ ACTIONS: dict[str, dict[str, str]] = {
     "inbox_match.run": {
         "system": "allow",
         "agent": "task_scope",
+    },
+    "independence.annual_confirm": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+        "security_admin": "allow",
+        "firm_partner": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "eqr_reviewer": "allow",
+        "specialist": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "independence.annual_read": {
+        "firm_admin": "allow",
+        "quality_partner": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "independence.confirm": {
         "engagement_partner": "allow",
@@ -954,6 +985,22 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+    },
+    "org_structure.manage": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "org_structure.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+        "security_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "pii.reveal": {
         "engagement_partner": "allow",
@@ -1280,6 +1327,20 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "security_role.assign": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "service_line_policy.manage": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "setup.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
@@ -1448,6 +1509,12 @@ ACTIONS: dict[str, dict[str, str]] = {
     "upload_review.run": {
         "system": "allow",
         "agent": "task_scope",
+    },
+    "wall.approve": {
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
     },
     "wall.create": {
         "firm_admin": "allow",
