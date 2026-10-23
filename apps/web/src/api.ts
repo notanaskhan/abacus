@@ -50,7 +50,9 @@ async function onResponse(
   request: Request,
   options: { fetch?: typeof globalThis.fetch },
 ): Promise<Response> {
-  if (response.status !== 401 || isAuthRoute(request)) return response;
+  if (response.status !== 401 || isAuthRoute(request) || isPreSession(request.url)) {
+    return response;
+  }
   const outcome = await handleUnauthorised();
   if (outcome !== "refreshed" || request.body !== null || options.fetch === undefined) {
     return response;
@@ -64,6 +66,12 @@ export function configureClient(): void {
   if (!client.interceptors.response.exists(onResponse)) {
     client.interceptors.response.use(onResponse);
   }
+}
+
+/** The portal's pre-session family answers 401 for a wrong code (`code_mismatch`), which is not a
+ * session ending (P-08-T09; docs/contracts/portal-identity.md §6). */
+export function isPreSession(url: string): boolean {
+  return /\/v1\/portal\/auth\//.test(url);
 }
 
 /** Retry transient failures once; never an auth or client error. */

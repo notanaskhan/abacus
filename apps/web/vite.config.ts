@@ -67,10 +67,13 @@ function fontPreload(): Plugin {
 
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, ".", ["VITE_", "ABACUS_PORT_OFFSET"]);
+  // `vite build --mode portal` (P-08-T07; `build:portal`): the client portal's own entry,
+  // portal.html, into dist/portal, with no gallery and no firm entry (the same-origin CSP).
+  const portal = mode === "portal";
   // The /components gallery (F-05-T09): on for the dev server and tests, off for any build unless
   // VITE_UI_GALLERY=1 opts in. `define` makes the flag a constant, so a production build drops the
   // gallery's routes and its lazy chunk entirely.
-  const gallery = env.VITE_UI_GALLERY ?? (command === "serve" ? "1" : "");
+  const gallery = portal ? "" : (env.VITE_UI_GALLERY ?? (command === "serve" ? "1" : ""));
   // This worktree's port offset (F-01-T09; `make worktree-env`): 0 in the primary checkout and CI.
   const offset = Number(env.ABACUS_PORT_OFFSET ?? "0") || 0;
   return {
@@ -85,7 +88,9 @@ export default defineConfig(({ mode, command }) => {
         : {}),
     },
     // dist/.vite/manifest.json: scripts/bundle-budget.mjs (F-05-T17) reads the chunk graph from it.
-    build: { manifest: true },
+    build: portal
+      ? { manifest: true, outDir: "dist/portal", rollupOptions: { input: "portal.html" } }
+      : { manifest: true },
     server: {
       port: 5173 + offset,
       strictPort: true,

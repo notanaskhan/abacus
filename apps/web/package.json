@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:portal": "tsc --noEmit && vite build --mode portal && node scripts/portal-dist-check.mjs dist/portal && node scripts/bundle-budget.mjs dist/portal",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",

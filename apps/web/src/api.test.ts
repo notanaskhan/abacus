@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { errorMessage, shouldRetry } from "./api";
+import { errorMessage, isPreSession, shouldRetry } from "./api";
+
+describe("P-08-T09: a wrong portal sign-in code is not a session ending", () => {
+  it("treats only the portal's pre-session family as pre-session", () => {
+    expect(isPreSession("http://localhost/v1/portal/auth/verify")).toBe(true);
+    expect(isPreSession("http://localhost/v1/portal/home")).toBe(false);
+    expect(isPreSession("http://localhost/v1/me")).toBe(false);
+  });
+});
 
 describe("ac1 shouldRetry", () => {
   it("never retries an authorisation or client error", () => {

@@ -18,6 +18,13 @@ import {
   type Cli01State,
   scenarios as cli01Scenarios,
 } from "./CLI-01/scenarios";
+import { PortalSignIn } from "./POR-01";
+import {
+  START as POR01_START,
+  STATES as POR01_STATES,
+  type Por01State,
+  scenarios as por01Scenarios,
+} from "./POR-01/scenarios";
 import { SHL01 } from "./SHL-01";
 import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
@@ -202,3 +209,35 @@ function Shl06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-06", { title: "Firm sign-in · signing in", Component: Shl06Artboard });
+
+// POR-01 (P-08-T09): the portal's sign-in card, a, b, e, f, g and the 390 layout M. The portal is
+// its own entry (portal.html); the gallery draws the same screen from its fixture scenario.
+function Por01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por01State = POR01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const mobile = state === "M";
+  return (
+    <div
+      key={state}
+      data-artboard={state}
+      data-surface="portal"
+      className={mobile ? "mx-auto h-[844px] w-[390px] overflow-hidden" : "h-[900px]"}
+    >
+      <PortalSignIn opening={POR01_START[state]} mobile={mobile} />
+    </div>
+  );
+}
+
+registerScreen("POR-01", { title: "Portal sign-in · Brightwater Hale", Component: Por01Artboard });

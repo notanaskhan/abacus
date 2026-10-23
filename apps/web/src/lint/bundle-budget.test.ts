@@ -104,4 +104,25 @@ describe("F-05-T17 bundle budgets", () => {
     delete single["src/portal.html"];
     expect(budget.budgetLines(single, () => 0).portal).toBe(false);
   });
+
+  it("measures a portal-only build's routes against the portal's initial load (P-08-T07)", () => {
+    const portalOnly: Record<string, Chunk> = {
+      "portal.html": { file: "assets/portal.js", isEntry: true, imports: ["_vendor.js"] },
+      "_vendor.js": { file: "assets/vendor.js" },
+      "src/screens/POR-01/index.tsx": {
+        file: "assets/POR-01.js",
+        isDynamicEntry: true,
+        imports: ["_vendor.js"],
+      },
+    };
+    const sizes: Record<string, number> = {
+      "assets/portal.js": 30 * KB,
+      "assets/vendor.js": 100 * KB,
+      "assets/POR-01.js": 20 * KB,
+    };
+    const { lines } = budget.budgetLines(portalOnly, (file) => sizes[file] ?? 0);
+    const route = lines.find((l) => l.name.includes("POR-01"));
+    expect(route?.bytes).toBe(20 * KB);
+    expect(lines.find((l) => l.name.startsWith("portal initial"))?.bytes).toBe(130 * KB);
+  });
 });
