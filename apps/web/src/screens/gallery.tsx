@@ -1,6 +1,16 @@
+import { AppShell } from "@abacus/ui";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
+import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
+import { useFirmToolbar } from "../shell/firm/ToolbarData";
+import { BindersIndex } from "./BND-01";
+import {
+  STATES as BND01_STATES,
+  SEARCH as BND01_SEARCH,
+  type Bnd01State,
+  scenarios as bnd01Scenarios,
+} from "./BND-01/scenarios";
 import { SHL01 } from "./SHL-01";
 import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
@@ -80,3 +90,39 @@ function Shl04Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-04", { title: "Notifications panel", Component: Shl04Artboard });
+
+function Bnd01Frame({ state }: { state: Bnd01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/binders" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <BindersIndex initial={BND01_SEARCH[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Bnd01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Bnd01State = BND01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      bnd01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Bnd01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("BND-01", { title: "Binders index", Component: Bnd01Artboard });
