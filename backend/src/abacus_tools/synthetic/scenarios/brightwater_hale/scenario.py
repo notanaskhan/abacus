@@ -14,6 +14,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Final
 
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import audit_events
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT, Snapshot, snapshot
 from abacus_tools.synthetic.scenarios.brightwater_hale.holdouts import held_out
@@ -31,8 +32,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice, slice_events
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event, ordered
 
-SCENARIO_VERSION: Final = "bh-2026.10.1"
-SCENARIO_HASH: Final = "e41c35883816c67e8e8fee12cd1ab067bb5f4dc0cb9cbd9f6d5acd7d9edf619e"
+SCENARIO_VERSION: Final = "bh-2026.10.2"
+SCENARIO_HASH: Final = "f25ed109665dc4167f1b5f460ee3f760cf05fe71ece99f7904ad2d904ff40016"
 FIRM_ID: Final = stable_id("firm:brightwater-hale")
 # The firm, its offices, seats and clients exist before the demo week opens.
 SETUP_AT: Final = datetime(2026, 9, 1, 8, 0, tzinfo=CT)
@@ -40,7 +41,8 @@ SETUP_AT: Final = datetime(2026, 9, 1, 8, 0, tzinfo=CT)
 
 @register_slice("audit_core")
 def _audit_core() -> list[Event]:
-    """F-04's slice: the firm, offices, people and clients (the 27 audits follow in F-04-T13)."""
+    """F-04's slice: the firm, offices, people and clients, then the 27 audits, the Northwind and
+    Granite Peak PBC lists, their portal people and the E0 firm settings (F-04-T20, `audits`)."""
     events = [Event("firm", SETUP_AT, "identity.firm_created", "system", "audit_core")]
     events += [
         Event(f"office:{o.name}", SETUP_AT, "organisations.office_created", "system", "audit_core")
@@ -69,7 +71,7 @@ def _audit_core() -> list[Event]:
         )
         for c in build_clients()
     ]
-    return events
+    return events + audit_events(SETUP_AT)
 
 
 @dataclass(frozen=True)
