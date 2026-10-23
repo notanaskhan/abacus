@@ -1353,6 +1353,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
         "message_deliveries": "message_deliveries_immutable",  # 0104 (Q-01-T46)
         "access_events": "access_events_immutable",  # 0105 (Q-02-T20)
+        "audit_checkpoints": "audit_chain_immutable",  # 0106 (Q-02-T21)
+        "audit_anchors": "audit_chain_immutable",  # 0106 (Q-02-T21)
         "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
         "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)

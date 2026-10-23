@@ -23,6 +23,8 @@ TABLES: tuple[str, ...] = (
     "approval_grants",
     "archives",
     "assurance_work_items",
+    "audit_anchors",
+    "audit_checkpoints",
     "audit_events",
     "binder_activity",
     "binder_recipients",
