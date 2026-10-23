@@ -57,7 +57,7 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 024 | red | Knowledge retrieval infrastructure | SPEC-009 | S11 | T048 | scheduled | |
 | 026 | amber | Feature flag registry | SPEC-011 | S11 | T050 | scheduled | |
 | 023 | amber | Engagement graph and methodology v1 | SPEC-008 | S10–S26 | T065, T525 | superseded | **K-01**'s AC suite; legacy path back-filled by M8 (T525) |
-| 028 | amber | In-app notifications | SPEC-013 | S6 | T065 | superseded | **P-01**: P-01-T14 |
+| 028 | amber | In-app notifications | SPEC-013 | S6 | T065 | superseded | **P-01**: P-01-T14, closed: `backfill/test_p01t14_notifications.py`, `contracts/c16_notifications/test_c16_kinds.py` (TASK-993) |
 | 034 | amber | Knowledge, budget, support access and walls screens | SPEC-019 | S6–S14 | T065 | superseded | **G-01**, **G-02**, **K-01** AC suites; walls and support backend by T012 and tranche 0 |
 | 042 | red | Autonomy policy and the onboarding checklist | SPEC-024 | S9–S14 | T065 | superseded | **G-02** AI policy v1 (ADR P-49) AC suite |
 | 043 | amber | Clients you already have; invitations in the firm's name | SPEC-025 | S4–S15 | T065 | superseded | **P-07** CLI-04/06 AC suite |
