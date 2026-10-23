@@ -49,13 +49,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{DRAFT}/create"): "engagement.create",
 }
 HUMAN_ONLY = {"engagement.create", "client.intake", "letter.record"}
-# Live since P-07-T15 (index, record, gates, recorded letter); the rest stay stubs until P-07-T16.
-LIVE = {
-    ("get", "/v1/engagements/index"),
-    ("get", f"{EID}/record"),
-    ("get", f"{EID}/gates"),
-    ("put", f"{EID}/letter/record"),
-}
+# Live since P-07-T15 (index, record, gates, recorded letter) and P-07-T16 (catalogue, drafts,
+# create); start-acceptance stays a stub until the acceptance record lands (P-07-T35, DEC-225).
+LIVE = set(ROUTES) - {("post", f"{DRAFT}/start-acceptance")}
 CLIENT_ROLES = {"client_admin", "client_contributor"}
 
 

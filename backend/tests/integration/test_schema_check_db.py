@@ -1206,6 +1206,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"client_signed_on", "firm_signed_on", "client_signer_contact_id"}
             | {"firm_signer_user_id", "signed_copy_version_id", "recorded_by_user_id"}
         ),
+        "engagement_drafts": frozenset(  # P-07-T16 (0124): autosave, discard, create
+            {"client_id", "client_entity_id", "type_code", "step", "payload"}
+            | {"prospect_engagement_id", "created_engagement_id", "version", "saved_at"}
+            | {"discarded_at"}
+        ),
         "inbox_files": frozenset(  # SPEC-023
             {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
         ),
