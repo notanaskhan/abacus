@@ -227,6 +227,13 @@ class SesIdentityPort(Protocol):
 | `IdentitySetup` | `domain: str`, `dns_records: tuple[DnsRecord, ...]` (Easy DKIM CNAMEs, custom MAIL FROM MX and SPF TXT) | Internal |
 | `IdentityStatus` | `domain: str`, `verification: Literal["pending", "verified", "failed"]`, `dkim: Literal["pending", "verified", "failed"]`, `mail_from: Literal["pending", "verified", "failed"]` | Internal |
 
+**Built in v1 (Q-01-T47).** The models are frozen dataclasses. `SesIdentities(client, *, region, configuration_set=None)` is the SES v2 adapter. `InMemorySesIdentities` is the port for local and test runs; its `set_states(...)` stands in for the DNS checks. `ses_identities()` and `configure_ses_identities(...)` select between them. Three errors can be raised:
+- `SesIdentityInvalid`: the domain, or the subdomain (a single label), is not a lower-case host name. The client is never called.
+- `SesIdentityNotFound`: `identity_status` for an unknown domain.
+- `SesIdentityUnavailable`: any other SES error. It carries the SES error code only.
+
+`delete_identity` for an unknown domain is not an error. A new identity is attached to the environment's configuration set, so its delivery events reach the Q-01-T46 drain.
+
 Rules: Easy DKIM and a custom MAIL FROM domain are always requested. `create_identity` is idempotent for the same domain. The port returns machine states; the words "Pending DNS" and "Verified" belong to ADM-10 and enter the status registry in R-01, not here. A client portal never shows "Accrued" in a sender identity (DEC-01, ADR-133). The staging sink (a receipt rule delivering to a short-lived bucket, read by F-04's mailbox reader) is an environment detail described in `docs/ops/environments.md`, not an interface.
 
 ### 3.9 Existing adapters (live)
