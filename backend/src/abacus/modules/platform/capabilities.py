@@ -15,6 +15,7 @@ from typing import Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel import _flags
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag
 from abacus.modules.identity.api import (
     MFA_RECENT,
@@ -29,6 +30,7 @@ from abacus.modules.identity.api import (
     member_facts,
     portal_scopes,
     role_codes,
+    walled_from,
 )
 from abacus.modules.platform.entitlements import MODULES, Module, entitlement
 
@@ -94,6 +96,11 @@ async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabili
         if engagement_id is None
         else await engagement_resource(ctx.tenant, engagement_id)
     )
+    # INV-3: a walled engagement answers exactly as an unknown one, so its existence never leaks.
+    if resource.client_id is not None and resource.client_id in await walled_from(
+        ctx.tenant, ctx.user_id
+    ):
+        raise NotFound("engagement")
     allowed = await allowed_actions(ctx, resource)
     member = await member_facts(ctx.tenant, ctx.user_id)
     codes = await role_codes(ctx, engagement_id)
