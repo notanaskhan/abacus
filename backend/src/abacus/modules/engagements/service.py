@@ -347,6 +347,13 @@ def clients_of_engagements(
     return select(Engagement.client_id).where(admits(Engagement.id))
 
 
+def engagements_of_scope(kind: str, scope_ids: Select[tuple[UUID]]) -> Select[UUID]:
+    """The engagements of the clients (`client`) or client entities (`client_entity`) a subquery
+    names: what a client-wide grant covers (DEC-129, DEC-211)."""
+    column = Engagement.client_entity_id if kind == "client_entity" else Engagement.client_id
+    return select(Engagement.id).where(column.in_(scope_ids))
+
+
 async def client_of(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     """The engagement's client, or None outside the tenant (for walls in `authorise`)."""
     async with tenant_session(tenant) as session:

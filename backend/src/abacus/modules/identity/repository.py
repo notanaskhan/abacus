@@ -9,10 +9,10 @@ Two kinds of read:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Literal, cast, get_args
+from typing import Any, Final, Literal, cast, get_args
 from uuid import UUID
 
 from sqlalchemy import (
@@ -25,9 +25,11 @@ from sqlalchemy import (
     bindparam,
     func,
     insert,
+    literal,
     or_,
     select,
     text,
+    union,
     update,
 )
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
@@ -94,24 +96,65 @@ MATRIX_ROLE_OF: dict[str, ClientRole] = {
     "owner": "client_admin",
     "contributor": "client_contributor",
 }
+# DEC-211 (DEC-129): the full-client grant roles that act for the client hold the matrix's
+# `client_admin` cells, a `contributor` its `client_contributor` cells. `delegate` waits for P-09's
+# matrix cells (DEC-158); the limited roles (third party, K-1 recipient and the rest) hold none.
+GRANT_ROLES_OF: dict[str, tuple[str, ...]] = {
+    "client_admin": ("owner", "plan_administrator", "trustee", "taxpayer", "spouse"),
+    "client_contributor": ("contributor",),
+}
+# A client-wide grant covers its client's (or client entity's) engagements (DEC-129). The
+# engagements module registers how to list them, as identity never reads its tables (ADR-008);
+# unregistered, only engagement-scope grants count (fail closed).
+EngagementsOfScope = Callable[[str, Select[tuple[UUID]]], Select[UUID]]
+_engagements_of_scope: EngagementsOfScope | None = None
 
 
-def client_grant_engagements(
-    tenant_id: UUID, user_id: UUID, roles: Sequence[str]
+def register_engagements_of_scope(builder: EngagementsOfScope) -> None:
+    """engagements registers how to list the engagements of a `client` or `client_entity` scope."""
+    global _engagements_of_scope
+    known = _engagements_of_scope
+    if known is not None and (known.__module__, known.__qualname__) != (
+        builder.__module__,
+        builder.__qualname__,
+    ):
+        raise RuntimeError("the engagements-of-scope subquery is already registered")
+    _engagements_of_scope = builder
+
+
+def _granted(
+    tenant_id: UUID, user_id: UUID, kind: str, roles: Sequence[str]
 ) -> Select[tuple[UUID]]:
-    """The engagements where the person holds one of these client matrix roles: an active,
-    unexpired engagement-scope grant of the matching grant role."""
     return select(client_access_grants.c.scope_id).where(
         client_access_grants.c.tenant_id == tenant_id,
         client_access_grants.c.user_id == user_id,
-        client_access_grants.c.scope_kind == "engagement",
-        client_access_grants.c.role.in_([GRANT_ROLE_OF[r] for r in roles]),
+        client_access_grants.c.scope_kind == kind,
+        client_access_grants.c.role.in_(
+            sorted({grant for r in roles for grant in GRANT_ROLES_OF[r]})
+        ),
         client_access_grants.c.status == "active",
         or_(
             client_access_grants.c.expires_at.is_(None),
             client_access_grants.c.expires_at > func.clock_timestamp(),
         ),
     )
+
+
+def client_grant_engagements(
+    tenant_id: UUID, user_id: UUID, roles: Sequence[str]
+) -> Select[tuple[UUID]]:
+    """The engagements where the person holds one of these client matrix roles: an active,
+    unexpired grant of a matching grant role on the engagement, or on its client or client
+    entity (DEC-211)."""
+    found = _granted(tenant_id, user_id, "engagement", roles)
+    builder = _engagements_of_scope
+    if builder is None:
+        return found
+    wide = [builder(kind, _granted(tenant_id, user_id, kind, roles)) for kind in _CLIENT_WIDE]
+    return select(union(found, *wide).subquery().c[0])
+
+
+_CLIENT_WIDE: Final = ("client", "client_entity")
 
 
 # Ethical walls (migration 0012; SPEC-002): `authorise` and `visible()` read active ones.
@@ -381,8 +424,8 @@ async def insert_grant_event(
 async def engagement_role(
     tenant: TenantContext, user_id: UUID, engagement_id: UUID
 ) -> EngagementRole | ClientRole | None:
-    """The person's role on the engagement: a staff row, or (F-03-T26) a client grant on it,
-    owner before contributor."""
+    """The person's role on the engagement: a staff row, or (F-03-T26) a client grant on it or
+    (DEC-211) on its client or client entity, the client admin roles before contributor."""
     async with tenant_session(tenant) as session:
         role = (
             await session.execute(
@@ -394,25 +437,15 @@ async def engagement_role(
         ).scalar_one_or_none()
         if role is not None:
             return cast(EngagementRole, role)
-        granted = set(
-            (
-                await session.execute(
-                    select(client_access_grants.c.role).where(
-                        client_access_grants.c.user_id == user_id,
-                        client_access_grants.c.scope_kind == "engagement",
-                        client_access_grants.c.scope_id == engagement_id,
-                        client_access_grants.c.status == "active",
-                        or_(
-                            client_access_grants.c.expires_at.is_(None),
-                            client_access_grants.c.expires_at > func.clock_timestamp(),
-                        ),
-                    )
+        # The stronger client role first (owner before contributor, DEC-211).
+        for matrix_role in ("client_admin", "client_contributor"):
+            covers = select(literal(True)).where(
+                literal(engagement_id).in_(
+                    client_grant_engagements(tenant.tenant_id, user_id, [matrix_role])
                 )
-            ).scalars()
-        )
-    for grant_role in ("owner", "contributor"):
-        if grant_role in granted:
-            return MATRIX_ROLE_OF[grant_role]
+            )
+            if (await session.execute(covers)).scalar_one_or_none():
+                return matrix_role
     return None
 
 

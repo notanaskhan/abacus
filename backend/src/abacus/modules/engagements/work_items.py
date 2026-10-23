@@ -15,6 +15,7 @@ from uuid import UUID
 
 from sqlalchemy import ColumnElement, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel._flags import ENGAGEMENTS_WORK_ITEMS_API
 from abacus.kernel.config import settings
@@ -93,9 +94,10 @@ class PortalWorkItem:
 
 
 # The work item column a portal grant's scope id names (F-03-T26 scope kinds that cover work).
-_GRANT_COLUMN: Final = {
+_GRANT_COLUMN: Final[dict[str, QueryableAttribute[UUID]]] = {
     "client": WorkItem.client_id,
-    "client_entity": WorkItem.client_entity_id,
+    # Compared only with a grant's scope id: a work item without an entity never matches.
+    "client_entity": cast("QueryableAttribute[UUID]", WorkItem.client_entity_id),
     "engagement": WorkItem.engagement_id,
     "work_item": WorkItem.id,
 }
@@ -106,7 +108,7 @@ async def portal_work_items(
 ) -> list[PortalWorkItem]:
     """P-08-T13 (POR-02): the live work items one of the person's portal grants covers, oldest
     first, through `visible_scope(..., "portal_scope")`. The caller still authorises
-    `portal_home.read` per target (`scope_only`); a grant on any other kind of scope covers none."""
+    `portal_home.read` per target (`scope_only`); a grant on another kind of scope covers none."""
     column = _GRANT_COLUMN.get(grant_kind)
     if column is None:
         return []

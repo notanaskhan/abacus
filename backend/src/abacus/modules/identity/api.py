@@ -125,6 +125,7 @@ from abacus.modules.identity.repository import (
     engagement_team_query,
     member_facts,
     my_engagement_roles,
+    register_engagements_of_scope,
 )
 from abacus.modules.identity.routes import (
     auth_router,
@@ -403,6 +404,7 @@ __all__ = [
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
+    "register_engagements_of_scope",
     "register_firm_setting",
     "register_gates",
     "register_independence",

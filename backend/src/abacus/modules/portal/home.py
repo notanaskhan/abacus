@@ -34,7 +34,7 @@ from abacus.modules.portal.home_sources import (
     Binder,
     Earlier,
     HomeScope,
-    TeamMember,
+    HomeTeamMember,
     Todo,
     WorkCard,
 )
@@ -67,7 +67,7 @@ class HomeView:
     todos: list[Todo]
     work_cards: list[WorkCard]
     binder: Binder | None
-    team: list[TeamMember]
+    team: list[HomeTeamMember]
     earlier: list[Earlier]
     first_visit: bool
     welcome_dismissed: bool
@@ -122,7 +122,7 @@ async def read_home(ctx: AuthContext, scope_id: UUID | None) -> HomeView:
     todos: list[Todo] = []
     cards: list[WorkCard] = []
     binders: list[Binder] = []
-    team: list[TeamMember] = []
+    team: list[HomeTeamMember] = []
     earlier: list[Earlier] = []
     for _, source in home_sources.home_sources():
         part = await source(ctx, scope)
