@@ -12,7 +12,8 @@ export const porScreens = {
     path: null,
     entry: true,
   },
-  "POR-02": { name: "Portal home · Feld household", status: "planned", path: null },
+  // P-08-T15: a, b, c, f on fixtures at the portal root; d, e, g, h and M are P-08-T23's.
+  "POR-02": { name: "Portal home · Feld household", status: "fixture", path: null },
   "POR-03": { name: "Documents · Feld 2025 Binder", status: "planned", path: null },
   "POR-04": { name: "Request detail · ignore reason sheet", status: "planned", path: null },
   "POR-05": { name: "Questions · Feld 2025 Tax Organizer", status: "planned", path: null },

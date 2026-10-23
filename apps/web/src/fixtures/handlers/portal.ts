@@ -10,7 +10,12 @@
 // - `resend` answers 429 `resend_too_soon` before the countdown ends; `links/renew` 202.
 // Times are offsets from the scenario's clock; nothing here reads the device clock.
 
-import type { MeOut, PortalHomeOut } from "@abacus/api-client";
+import type {
+  MeOut,
+  PortalHomeOut,
+  PortalPreferencesIn,
+  PortalPreferencesOut,
+} from "@abacus/api-client";
 import {
   type FixtureHandler,
   type FixtureRequest,
@@ -151,6 +156,22 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
     "GET /v1/portal/home": () => {
       if (options.home === null) return never();
       return options.home === undefined ? json({ detail: "not found" }, 404) : json(options.home);
+    },
+    // P-08-T15: the welcome card's dismissal, per user and scope (P-08 Story 6.2). A scope the
+    // person holds no full-client grant on answers 404 (INV-4); a stale version 409.
+    "PUT /v1/portal/preferences": ({ body }) => {
+      const given = body as PortalPreferencesIn;
+      if (options.home == null || given.scope_id !== options.home.scope.id) {
+        return json({ detail: "not found" }, 404);
+      }
+      if (given.version !== 0) return json({ detail: "stale_version" }, 409);
+      const out: PortalPreferencesOut = {
+        scope_id: given.scope_id,
+        version: 1,
+        welcome_dismissed: given.welcome_dismissed,
+        welcome_dismissed_at: given.welcome_dismissed ? at(clock, 0) : null,
+      };
+      return json(out);
     },
   };
 }

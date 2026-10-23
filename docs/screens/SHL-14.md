@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-14 Request composer drawer/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-06 · contract P-06-T03 (TASK-404); a, b, e, f and R2 items 1–5 P-06-T13; d P-06-T24; request lifecycle P-06-T10; data P-06-T08; parity P-06-T26 |
-| Manifest status | planned (`routes/manifest/shl.ts`) |
+| Manifest status | fixture (`routes/manifest/shl.ts`): a, b, e, f built by P-06-T13 (TASK-989), registered as the `request` overlay in `routes/firm/binders.tsx` and opened from BND-02 |
 
 Code to come (P-06 §5.2): `src/domain/requests/{queries.ts, mutations.ts, messages.ts, ClientPreviewSheet.tsx}`, `src/screens/SHL-14/{index.tsx, scenarios.ts, copy.ts, SHL-14.test.tsx}`.
 
@@ -136,10 +136,22 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | "+ Attach" for reference files is R-01's | portal file intake | P-06 §2.1 |
 | — | The spec's C-16 preview rows are drawn inline (README note) | README build detail | P-06 §5.3 |
 
+### Contract gaps (P-06-T13)
+| Gap | What the handoff draws | What the drawer does until the contract carries it | Owner |
+|---|---|---|---|
+| G-1 | the create body's fields (`title`, `category_id`, `due_on`, `wave`, `firm_owner_user_id`, `linked_ref`, `supports_ref`, `binder_id`) | create with the live `audit_area` and `description`, then PATCH the v2 fields; no `binder_id` on create | P-06-T10 (the extended create body the contract names) |
+| G-2 | one request read in the v2 shape (period, wave, firm owner, linked workpaper, supports, the delegate, `drafted_wording_source`) | an open request shows what the binder row, the C1 list item and the client projection carry; the others start unset | P-06-T10 |
+| G-3 | the period label ("Plan year 2025 (1/1–12/31/2025)") and the linked workpaper picker | not drawn; Supports is a text row | P-06-T10, A-01 |
+| G-4 | the client wording of a draft in the preview ("what Dana sees") | the preview draws only a request the binder's client projection holds (b); a new request (a, e) and a draft (f) show none | P-06-T10 (`client-view` extended for drafts) |
+| G-5 | the overlay's host context | `?ov=request:<new\|id>:<binderId>` | DEC-196 |
+
+The Comments tab lists the request's comments (SPEC-032 route) with "No comments yet." when none; the Activity tab words `request_item.drafted` by the agent ("Drafted by Accrued Agent in the BH-FS-430 procedure session") and `request_item.sent` ("Sent by ‹person›"); "No activity yet." otherwise. Toast after a save without a send: "Draft saved"; on failure: "Couldn’t save the request."
+
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, d, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | report-only until A-01's AUD-03 host is stable |
+| a, b, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26) | built; axe in `e2e/screens/SHL-14.spec.ts`; report-only until A-01's AUD-03 host is stable |
+| d | C | — | P-06-T24 |
 | c | — | — | deferred to A-03; recorded in `routes/manifest/shl.ts`, not missing |
 | host | D | — | drawer 480, pane header 46 with a 14.5/500 title, rows 34, pills 21, radius 14 |
 

@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-02 Portal home - Feld household/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-08 · contract P-08-T03; contract stub P-08-T01; stage projection P-08-T12; home read model P-08-T13; portal entry and shell data P-08-T07; data P-08-T08; a, b, c, f P-08-T15; d, e, g, h, M P-08-T23; parity and accessibility P-08-T27 |
-| Manifest status | planned (`routes/manifest/por.ts`) |
+| Manifest status | fixture (`routes/manifest/por.ts`): a, b, c, f built by P-08-T15 (TASK-989); the portal route renders it for Home |
 
 Code to come (P-08 §5.2): `src/routes/portal/{root,home}.tsx`, `src/shell/portal/{PortalToolbarData,EntitySwitcher}.tsx`, `src/domain/portal/{queries,mutations,messages}.ts`, `src/screens/POR-02/{index.tsx, scenarios.ts, copy.ts, POR-02.test.tsx}`.
 
@@ -189,6 +189,13 @@ Each becomes a test in `POR-02.test.tsx` ("POR-02 avoid: …"): gradients in pro
 | — | g and h are gated by the `statements_studio` and `attest` entitlements, not flags, and stay fixture-only until A-10/R-02 and X-01 register their home sources | ADR P-28, DEC-55 | P-08 §0 |
 | — | The catalogue's "progress ring" is superseded by the built 5-step StageTracker | The built screen reflects later decisions | P-08 §2.1 |
 | — | Planned to-do kinds, cards and nav items are hidden in production and render in fixture builds | Chapter 04 §2.1 rule 4 | P-08 §2.2 |
+
+### Part 1 notes (P-08-T15)
+- The skeleton (f) and the error are drawn by the screen from tokens: the kit's ViewState module carries the firm's product words, which the portal bundle may not hold (DEC-196). Error strings: "Couldn’t load your home." · "We could not reach the server. Nothing was lost; try again in a moment." (the kit's portal line) · "Retry"; the skeleton's status label "Loading".
+- A first visit's to-do cards read the request in full (`detail`) as the title, with b's line under it ("Read and sign before we start on your 2025 return." · "Drop files in your 2025 binder and they're sorted for you.").
+- The greeting is the handoff's "Good morning, {first_name}" at every hour: no other greeting is designed (open gap).
+- `PUT /v1/portal/preferences` needs a `version` the home does not carry: a scope never dismissed sends 0 (DEC-196).
+- The scope switcher and the role chips are P-08-T23's (e).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
