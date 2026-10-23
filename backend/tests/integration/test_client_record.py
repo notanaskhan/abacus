@@ -169,7 +169,9 @@ async def test_no_plaintext_taxpayer_id_column_exists(firm: _Firm) -> None:
         "SELECT coalesce(string_agg(table_name || '.' || column_name, ', '), '') "
         "FROM information_schema.columns WHERE table_schema = 'public' "
         "AND column_name ~ '(^|_)(tin|ssn|ein|itin|taxpayer_id)(_|$)' "
-        "AND column_name !~ '_last4$'"
+        "AND column_name !~ '_last4$' "
+        # P-07-T07 (DEC-52): the sealed set: an envelope, its kind, status and HMAC fingerprint.
+        "AND column_name NOT IN ('tin_sealed', 'tin_kind', 'tin_status', 'tin_fingerprint')"
     )
     assert columns == ""
 

@@ -1328,6 +1328,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "mfa_recent": "required",
         "requires": "reason",
+        "not_offshore": "required",
     },
     "trial_balance.adopt": {
         "engagement_partner": "allow",

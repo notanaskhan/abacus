@@ -32,6 +32,7 @@ from fastapi.routing import APIRoute
 from abacus.api import create_app
 from abacus.api import public_routes as public_routes_module
 from abacus.api.public_routes import PUBLIC_ROUTES, READINESS_CHECKS
+from abacus.modules.identity.routing import PRE_SESSION_PATHS
 from abacus_tools.quality import banned_patterns as bp
 
 from .support import cached_app, closed_endpoint, use_environment
@@ -112,7 +113,9 @@ async def test_ac24_every_other_route_refuses_a_caller_without_a_token(app: Fast
     unexpected: list[tuple[str, str, int]] = []
     async with client(app) as http:
         for route in routes:
-            if route.path in PUBLIC_ROUTES:
+            # ADR-165: the staff sign-in routes answer before any session exists; they are on the
+            # protected exception list and authenticate themselves (state, PKCE, cookie, CSRF).
+            if route.path in PUBLIC_ROUTES or route.path in PRE_SESSION_PATHS:
                 continue
             url = re.sub(r"\{[^}]+\}", str(uuid.uuid4()), route.path)
             for method in sorted(route.methods or ()):
