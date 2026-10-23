@@ -46,7 +46,7 @@ Interfaces that Q-01 provides to the product modules but that are not among the 
 
 | Interface set | File | Provider (epic) | Consumers | Freeze sprint | Freeze starts | Version | Status |
 |---|---|---|---|---|---|---|---|
-| Platform operations: WorkOS adapter port, `runtime-config.json` schema, public routes and readiness, deploy lock, ops-task commands, `TenantProvisioningWorkflow`, `platform.api.control_active` and the kill-switch rule, SES identity port, the live AWS adapters | `platform-ops.md` | Q-01 (Q-01-T13) | P-01, P-08, F-04, G-04, R-01, F-01 `db_guard`, Q-04 | S5 (Q-01-T57) | 2026-12-28 | v1 | stub (Q-01-T13, 2026-10-22) |
+| Platform operations: WorkOS adapter port, `runtime-config.json` schema, public routes and readiness, deploy lock, ops-task commands, `TenantProvisioningWorkflow`, `platform.api.control_active` and the kill-switch rule, SES identity port, the live AWS adapters | `platform-ops.md` | Q-01 (Q-01-T13) | P-01, P-08, F-04, G-04, R-01, F-01 `db_guard`, Q-04 | S5 (Q-01-T57) | 2026-12-28 | v1 | frozen (Q-01-T57, 2026-10-23) |
 
 ## Screen-family contracts (unnumbered)
 

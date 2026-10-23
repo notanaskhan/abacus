@@ -8,7 +8,7 @@ status: in-progress
 branch:
 worktree:
 created: 2026-10-06
-updated: 2026-10-20
+updated: 2026-10-23
 ---
 
 > **Rules for the agent working this task**
@@ -109,6 +109,7 @@ Taken with the plan's default, per the solo amendment (`docs/plan/06-platform-op
 ## Progress log
 - `2026-10-06` — Created from the SPEC-000 breakdown approved by the founder. Not started.
 - `2026-10-20` (SU-22, Q-01-T02) — Plan rewritten as 'Staging and production on AWS through Terraform': 18 steps in dependency order, decisions D-OPS-02/03/05 to 12 recorded with the plan's default, guardrails added. Status moved from blocked to in-progress. Plan box awaits the builder's approval.
+- `2026-10-23` (Q-01-T57, TASK-972) — Close-out attempted; **not done**. Q-01-T57 asks for this task `done` with SPEC-000 AC-21 evidence, and there is none: no staging environment exists. The landing zone (step 1) is still in progress, nothing under `infra/envs/staging` has been applied, and steps 3, 5 and 8 to 18 are open (`docs/product/capacity-ledger.md`). AC-21 needs a merge to main to deploy the same image to staging through Terraform with Stories 1 to 6 working there, so it can only be recorded after a real staging deploy. No Definition-of-done box is checked. What landed meanwhile and serves this task: the adapters (TASK-343), the operational routes (TASK-342), the platform-tenancy migration (TASK-377), the sub-processor register (TASK-916), previews (TASK-915), the portal edge Terraform (TASK-971, plans to nothing until its settings exist), `docs/ops/environments.md`, the `infra-terraform` skill, and the platform-ops contract frozen at v1.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -124,5 +125,5 @@ Taken with the plan's default, per the solo amendment (`docs/plan/06-platform-op
 - 4-hour expiry on elevated Identity Center assignments is an open gap (TASK-142); manual removal until automated.
 
 ## Handoff
-- **Current state:** Plan written (SU-22). Step 1 (T01, TASK-142) in progress; step 2 (T05) done; step 4 (T03) in progress (SU-20). Plan not yet approved.
+- **Current state (2026-10-23):** Plan written (SU-22). Step 1 (T01, TASK-142) in progress; step 2 (T05) done; step 4 (T03) in progress (SU-20); steps 6 and 7 in review (TASK-352, TASK-343); step 9 frozen (platform-ops v1); step 12 in progress (TASK-342); step 14 done (TASK-377). Nothing is applied on AWS, so AC-21 has no evidence and this task is not done (Q-01-T57 could not close it).
 - **Exact next step:** Builder approves the plan box, then finishes the T01 console steps (accounts shared, staging, production, sandbox; root SCPs) and runs the checks in `infra/README.md` section 3.
