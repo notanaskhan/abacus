@@ -83940,7 +83940,7 @@
     },
     "/v1/portal/auth/sign-out": {
       "post": {
-        "description": "End the person's own portal session and clear the cookie.",
+        "description": "End the person's own portal session (the token signed out with, and the cookie's) and\nclear the cookie.",
         "operationId": "portal_sign_out",
         "parameters": [
           {
@@ -84160,6 +84160,22 @@
                 }
               ],
               "title": "Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-portal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Portal"
             }
           }
         ],

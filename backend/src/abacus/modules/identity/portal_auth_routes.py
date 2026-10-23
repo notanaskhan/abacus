@@ -101,10 +101,12 @@ async def portal_start_route(
     "/verify", action=PRE_SESSION, response_model=PortalSignInVerifyOut, errors=(410, 423)
 )
 async def portal_verify_route(
-    body: PortalSignInVerifyIn, host: Annotated[str | None, Header()] = None
+    body: PortalSignInVerifyIn,
+    host: Annotated[str | None, Header()] = None,
+    previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
 ) -> Response:
     try:
-        tokens = await verify_code(host, body.challenge_id, body.code)
+        tokens = await verify_code(host, body.challenge_id, body.code, previous_cookie=previous)
     except CodeMismatch as miss:
         return _error(401, "code_mismatch", {"tries_left": miss.tries_left})
     except SignInLocked as locked:
@@ -164,7 +166,8 @@ async def portal_sign_out_route(
     ctx: Annotated[AuthContext, Depends(current_member)],
     cookie: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
 ) -> Response:
-    """End the person's own portal session and clear the cookie."""
+    """End the person's own portal session (the token signed out with, and the cookie's) and
+    clear the cookie."""
     ended = await sign_out_portal(ctx, cookie)
     response = JSONResponse(SignedOutOut(ended=ended).model_dump())
     _clear_cookie(response)

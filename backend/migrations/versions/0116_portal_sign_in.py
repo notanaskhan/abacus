@@ -4,22 +4,24 @@ Two new global tables, with no app or identity-role privileges, reached only thr
 DEFINER functions (as 0101's staff sessions are). Before sign-in there is no tenant: the host
 names the firm inside the definers, and no tenant id is ever returned to the person signing in.
 
-- `sign_in_challenges`: one sign-in attempt on one portal host for one email (kept as a SHA-256 of
-  the case-folded address). The firm and the person are set only when the email belongs to an
-  active client of the host's firm with a grant; otherwise both are null and no code is sent, but
-  the row behaves the same (no oracle). The code is issued at delivery, so only its salted digest
-  is kept; a resend replaces it. Codes live 10 minutes.
-- `sign_in_locks`: a (host, email) locked for 15 minutes after the third wrong code. A new
-  challenge does not lift it.
+- `sign_in_challenges`: one sign-in attempt on one of a firm's active portal hosts for one email
+  (kept as a SHA-256 of the case-folded address). The person is set only when the email belongs
+  to an active client of that firm with a grant; otherwise it is null and no code is sent, but
+  the row behaves the same (no oracle). A host no firm has active writes nothing. The code is
+  issued at delivery, so only its salted digest is kept; a resend replaces it. Codes live 10
+  minutes.
+- `sign_in_locks`: per firm and email, the guesses in the current 15-minute window over every
+  challenge, and the 15-minute lock after the third wrong one. Each guess is counted before it is
+  compared (`portal_sign_in_attempt`), so neither parallel requests nor fresh challenges get more.
 
 `auth_sessions` gains the portal surface: `surface`, the `tenant_id` and `host` it was minted on,
 and the opaque access token's SHA-256 and expiry (15 minutes). A portal session is resolved only
 on its own host (ADR-168 §3).
 
 Definers: `portal_sign_in_start`, `portal_sign_in_issue` (the code's digest, at delivery),
-`portal_sign_in_check`, `portal_sign_in_fail`, `portal_sign_in_consume`, `portal_sign_in_resend`,
-`portal_session_start`, `portal_session_resolve` and `portal_session_rotate`. Sign-out reuses
-`auth_session_end`.
+`portal_sign_in_attempt`, `portal_sign_in_missed`, `portal_sign_in_consume`,
+`portal_sign_in_resend`, `portal_session_start`, `portal_session_resolve`, `portal_session_rotate`
+and `portal_session_end_id`. Sign-out also uses `auth_session_end` for the cookie.
 
 Revision ID: 0116
 Revises: 0115
@@ -37,13 +39,14 @@ depends_on = None
 _FUNCTIONS = (
     "portal_sign_in_start(text, text, integer, integer)",
     "portal_sign_in_issue(uuid, bytea, bytea)",
-    "portal_sign_in_check(uuid, text)",
-    "portal_sign_in_fail(uuid, integer, integer)",
+    "portal_sign_in_attempt(uuid, text, integer, integer)",
+    "portal_sign_in_missed(uuid, integer, integer)",
     "portal_sign_in_consume(uuid)",
     "portal_sign_in_resend(uuid, text, integer, integer)",
     "portal_session_start(uuid, uuid, text, text, integer, text, integer, integer)",
     "portal_session_resolve(text, text)",
     "portal_session_rotate(text, text, text, text, integer, integer)",
+    "portal_session_end_id(uuid, uuid)",
 )
 
 
@@ -53,6 +56,7 @@ def upgrade() -> None:
         CREATE TABLE sign_in_challenges (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             host text NOT NULL CHECK (length(host) BETWEEN 1 AND 253),
+            host_tenant_id uuid NOT NULL REFERENCES firms (tenant_id),
             email_sha256 text NOT NULL CHECK (email_sha256 ~ '^[0-9a-f]{64}$'),
             tenant_id uuid NULL REFERENCES firms (tenant_id),
             user_id uuid NULL REFERENCES users (id),
@@ -60,22 +64,30 @@ def upgrade() -> None:
             code_digest bytea NULL CHECK (octet_length(code_digest) = 32),
             code_expires_at timestamptz NOT NULL,
             resend_available_at timestamptz NOT NULL,
-            failed_tries integer NOT NULL DEFAULT 0 CHECK (failed_tries >= 0),
+            attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             consumed_at timestamptz NULL,
             CHECK ((tenant_id IS NULL) = (user_id IS NULL)),
+            CHECK (tenant_id IS NULL OR tenant_id = host_tenant_id),
             CHECK ((code_salt IS NULL) = (code_digest IS NULL))
         )
         """
     )
-    op.execute("CREATE INDEX sign_in_challenges_email ON sign_in_challenges (host, email_sha256)")
+    op.execute(
+        "CREATE INDEX sign_in_challenges_email "
+        "ON sign_in_challenges (host_tenant_id, email_sha256, created_at)"
+    )
+    # One row per firm and email: the attempts in the current 15-minute window, and the lock.
+    # Every challenge for the email on any of the firm's hosts counts against the same row.
     op.execute(
         """
         CREATE TABLE sign_in_locks (
-            host text NOT NULL,
+            host_tenant_id uuid NOT NULL REFERENCES firms (tenant_id),
             email_sha256 text NOT NULL CHECK (email_sha256 ~ '^[0-9a-f]{64}$'),
-            locked_until timestamptz NOT NULL,
-            PRIMARY KEY (host, email_sha256)
+            attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+            window_until timestamptz NULL,
+            locked_until timestamptz NULL,
+            PRIMARY KEY (host_tenant_id, email_sha256)
         )
         """
     )
@@ -107,14 +119,16 @@ def upgrade() -> None:
 
     # The host's firm and the eligible client person, read under that firm's tenant setting and
     # restored after (0111's pattern). Eligible: an active client membership and an active,
-    # unexpired grant in that firm.
+    # unexpired grant in that firm. A host no firm has active writes nothing: it gets a fresh id
+    # that no later call knows. `send` is false when the person is unknown, locked out, or was
+    # sent a code for this firm in the last `p_resend_seconds` (no mail bombing through start).
     op.execute(
         """
         CREATE FUNCTION portal_sign_in_start(
             p_host text, p_email text, p_code_seconds integer, p_resend_seconds integer
         ) RETURNS TABLE (challenge_id uuid, code_expires_at timestamptz,
                          resend_available_at timestamptz, tenant_id uuid, user_id uuid,
-                         locked boolean)
+                         send boolean)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
         #variable_conflict use_column
         DECLARE
@@ -122,41 +136,48 @@ def upgrade() -> None:
             v_previous text := current_setting('app.tenant_id', true);
             v_email_sha text := encode(sha256(convert_to(lower(trim(p_email)), 'UTF8')), 'hex');
             v_host text := lower(p_host);
-            v_tenant uuid;
+            v_firm uuid;
             v_user uuid;
-            v_locked boolean;
+            v_held boolean;
             v_id uuid;
         BEGIN
-            SELECT d.tenant_id INTO v_tenant FROM public.portal_domains d
+            SELECT d.tenant_id INTO v_firm FROM public.portal_domains d
              WHERE d.hostname = v_host AND d.status = 'active';
-            IF v_tenant IS NOT NULL THEN
-                PERFORM set_config('app.tenant_id', v_tenant::text, true);
-                SELECT u.id INTO v_user FROM public.users u
-                  JOIN public.memberships m ON m.user_id = u.id AND m.tenant_id = v_tenant
-                 WHERE lower(u.email) = lower(trim(p_email)) AND m.kind = 'client'
-                   AND m.status = 'active'
-                   AND EXISTS (
-                       SELECT 1 FROM public.client_access_grants g
-                        WHERE g.tenant_id = v_tenant AND g.user_id = u.id
-                          AND g.status = 'active'
-                          AND (g.expires_at IS NULL OR g.expires_at > v_now))
-                 LIMIT 1;
-                PERFORM set_config('app.tenant_id', coalesce(v_previous, ''), true);
-                IF v_user IS NULL THEN
-                    v_tenant := NULL;
-                END IF;
+            IF v_firm IS NULL THEN
+                RETURN QUERY SELECT gen_random_uuid(),
+                    v_now + make_interval(secs => p_code_seconds),
+                    v_now + make_interval(secs => p_resend_seconds),
+                    NULL::uuid, NULL::uuid, false;
+                RETURN;
             END IF;
+            PERFORM set_config('app.tenant_id', v_firm::text, true);
+            SELECT u.id INTO v_user FROM public.users u
+              JOIN public.memberships m ON m.user_id = u.id AND m.tenant_id = v_firm
+             WHERE lower(u.email) = lower(trim(p_email)) AND m.kind = 'client'
+               AND m.status = 'active'
+               AND EXISTS (
+                   SELECT 1 FROM public.client_access_grants g
+                    WHERE g.tenant_id = v_firm AND g.user_id = u.id
+                      AND g.status = 'active'
+                      AND (g.expires_at IS NULL OR g.expires_at > v_now))
+             LIMIT 1;
+            PERFORM set_config('app.tenant_id', coalesce(v_previous, ''), true);
             SELECT EXISTS (SELECT 1 FROM public.sign_in_locks l
-                            WHERE l.host = v_host AND l.email_sha256 = v_email_sha
-                              AND l.locked_until > v_now) INTO v_locked;
-            INSERT INTO public.sign_in_challenges (host, email_sha256, tenant_id, user_id,
-                code_expires_at, resend_available_at)
-            VALUES (v_host, v_email_sha, v_tenant, v_user,
-                v_now + make_interval(secs => p_code_seconds),
+                            WHERE l.host_tenant_id = v_firm AND l.email_sha256 = v_email_sha
+                              AND l.locked_until > v_now)
+                OR EXISTS (SELECT 1 FROM public.sign_in_challenges c
+                            WHERE c.host_tenant_id = v_firm AND c.email_sha256 = v_email_sha
+                              AND c.user_id IS NOT NULL
+                              AND c.created_at > v_now - make_interval(secs => p_resend_seconds))
+              INTO v_held;
+            INSERT INTO public.sign_in_challenges (host, host_tenant_id, email_sha256, tenant_id,
+                user_id, code_expires_at, resend_available_at)
+            VALUES (v_host, v_firm, v_email_sha, CASE WHEN v_user IS NOT NULL THEN v_firm END,
+                v_user, v_now + make_interval(secs => p_code_seconds),
                 v_now + make_interval(secs => p_resend_seconds))
             RETURNING id INTO v_id;
             RETURN QUERY SELECT c.id, c.code_expires_at, c.resend_available_at, c.tenant_id,
-                c.user_id, v_locked
+                c.user_id, c.user_id IS NOT NULL AND NOT v_held
               FROM public.sign_in_challenges c WHERE c.id = v_id;
         END $$
         """
@@ -176,51 +197,104 @@ def upgrade() -> None:
         END $$
         """
     )
+    # Every guess is counted before it is compared, under row locks on the challenge and on the
+    # firm's (email) row, so concurrent or fresh challenges never get more than `p_max` guesses
+    # in a window. 'ok' hands back the digest for the comparison; the caller then calls
+    # `portal_sign_in_missed` or `portal_sign_in_consume`.
     op.execute(
         """
-        CREATE FUNCTION portal_sign_in_check(p_id uuid, p_host text)
-        RETURNS TABLE (tenant_id uuid, user_id uuid, code_salt bytea, code_digest bytea,
-                       expired boolean, failed_tries integer, locked_until timestamptz)
+        CREATE FUNCTION portal_sign_in_attempt(
+            p_id uuid, p_host text, p_max integer, p_lock_seconds integer
+        ) RETURNS TABLE (outcome text, tenant_id uuid, user_id uuid, code_salt bytea,
+                         code_digest bytea, tries_left integer, locked_until timestamptz)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
         #variable_conflict use_column
+        DECLARE
+            v_now timestamptz := clock_timestamp();
+            v_challenge record;
+            v_lock record;
+            v_until timestamptz;
         BEGIN
-            RETURN QUERY
-            SELECT c.tenant_id, c.user_id, c.code_salt, c.code_digest,
-                   c.code_expires_at <= clock_timestamp(), c.failed_tries,
-                   (SELECT l.locked_until FROM public.sign_in_locks l
-                     WHERE l.host = c.host AND l.email_sha256 = c.email_sha256
-                       AND l.locked_until > clock_timestamp())
-              FROM public.sign_in_challenges c
-             WHERE c.id = p_id AND c.host = lower(p_host) AND c.consumed_at IS NULL;
+            SELECT * INTO v_challenge FROM public.sign_in_challenges c
+             WHERE c.id = p_id AND c.host = lower(p_host) FOR UPDATE;
+            IF NOT FOUND THEN
+                RETURN QUERY SELECT 'unknown'::text, NULL::uuid, NULL::uuid, NULL::bytea,
+                    NULL::bytea, 0, NULL::timestamptz;
+                RETURN;
+            END IF;
+            INSERT INTO public.sign_in_locks (host_tenant_id, email_sha256)
+            VALUES (v_challenge.host_tenant_id, v_challenge.email_sha256)
+            ON CONFLICT DO NOTHING;
+            SELECT * INTO v_lock FROM public.sign_in_locks l
+             WHERE l.host_tenant_id = v_challenge.host_tenant_id
+               AND l.email_sha256 = v_challenge.email_sha256 FOR UPDATE;
+            IF v_lock.locked_until > v_now THEN
+                RETURN QUERY SELECT 'locked'::text, NULL::uuid, NULL::uuid, NULL::bytea,
+                    NULL::bytea, 0, v_lock.locked_until;
+                RETURN;
+            END IF;
+            IF v_challenge.consumed_at IS NOT NULL THEN
+                RETURN QUERY SELECT 'unknown'::text, NULL::uuid, NULL::uuid, NULL::bytea,
+                    NULL::bytea, 0, NULL::timestamptz;
+                RETURN;
+            END IF;
+            IF v_challenge.code_expires_at <= v_now THEN
+                RETURN QUERY SELECT 'expired'::text, NULL::uuid, NULL::uuid, NULL::bytea,
+                    NULL::bytea, 0, NULL::timestamptz;
+                RETURN;
+            END IF;
+            IF v_lock.window_until IS NULL OR v_lock.window_until <= v_now THEN
+                UPDATE public.sign_in_locks SET attempts = 0, locked_until = NULL,
+                    window_until = v_now + make_interval(secs => p_lock_seconds)
+                 WHERE host_tenant_id = v_lock.host_tenant_id
+                   AND email_sha256 = v_lock.email_sha256;
+                v_lock.attempts := 0;
+            END IF;
+            UPDATE public.sign_in_locks SET attempts = attempts + 1
+             WHERE host_tenant_id = v_lock.host_tenant_id AND email_sha256 = v_lock.email_sha256;
+            UPDATE public.sign_in_challenges SET attempts = attempts + 1 WHERE id = p_id;
+            IF v_lock.attempts + 1 > p_max THEN
+                UPDATE public.sign_in_locks
+                   SET locked_until = v_now + make_interval(secs => p_lock_seconds)
+                 WHERE host_tenant_id = v_lock.host_tenant_id
+                   AND email_sha256 = v_lock.email_sha256
+                RETURNING sign_in_locks.locked_until INTO v_until;
+                UPDATE public.sign_in_challenges SET consumed_at = v_now WHERE id = p_id;
+                RETURN QUERY SELECT 'locked'::text, NULL::uuid, NULL::uuid, NULL::bytea,
+                    NULL::bytea, 0, v_until;
+                RETURN;
+            END IF;
+            RETURN QUERY SELECT 'ok'::text, v_challenge.tenant_id, v_challenge.user_id,
+                v_challenge.code_salt, v_challenge.code_digest, p_max - (v_lock.attempts + 1),
+                NULL::timestamptz;
         END $$
         """
     )
     op.execute(
         """
-        CREATE FUNCTION portal_sign_in_fail(p_id uuid, p_max_tries integer, p_lock_seconds integer)
-        RETURNS TABLE (tries_left integer, locked_until timestamptz)
+        CREATE FUNCTION portal_sign_in_missed(p_id uuid, p_max integer, p_lock_seconds integer)
+        RETURNS timestamptz
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
-        #variable_conflict use_column
         DECLARE
-            v_row record;
+            v_challenge record;
             v_until timestamptz;
         BEGIN
-            UPDATE public.sign_in_challenges c SET failed_tries = c.failed_tries + 1
-             WHERE c.id = p_id AND c.consumed_at IS NULL
-            RETURNING c.host, c.email_sha256, c.failed_tries INTO v_row;
+            SELECT * INTO v_challenge FROM public.sign_in_challenges WHERE id = p_id;
             IF NOT FOUND THEN
-                RETURN;
+                RETURN NULL;
             END IF;
-            IF v_row.failed_tries >= p_max_tries THEN
-                v_until := clock_timestamp() + make_interval(secs => p_lock_seconds);
-                INSERT INTO public.sign_in_locks (host, email_sha256, locked_until)
-                VALUES (v_row.host, v_row.email_sha256, v_until)
-                ON CONFLICT (host, email_sha256)
-                DO UPDATE SET locked_until = EXCLUDED.locked_until;
+            -- The last allowed guess missed: lock, or report the lock a concurrent guess set.
+            UPDATE public.sign_in_locks
+               SET locked_until = CASE WHEN locked_until > clock_timestamp() THEN locked_until
+                   ELSE clock_timestamp() + make_interval(secs => p_lock_seconds) END
+             WHERE host_tenant_id = v_challenge.host_tenant_id
+               AND email_sha256 = v_challenge.email_sha256 AND attempts >= p_max
+            RETURNING locked_until INTO v_until;
+            IF v_until IS NOT NULL THEN
                 UPDATE public.sign_in_challenges SET consumed_at = clock_timestamp()
-                 WHERE id = p_id;
+                 WHERE id = p_id AND consumed_at IS NULL;
             END IF;
-            RETURN QUERY SELECT greatest(p_max_tries - v_row.failed_tries, 0), v_until;
+            RETURN v_until;
         END $$
         """
     )
@@ -228,11 +302,20 @@ def upgrade() -> None:
         """
         CREATE FUNCTION portal_sign_in_consume(p_id uuid) RETURNS boolean
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+        DECLARE
+            v_challenge record;
         BEGIN
             UPDATE public.sign_in_challenges SET consumed_at = clock_timestamp(),
                 code_salt = NULL, code_digest = NULL
-             WHERE id = p_id AND consumed_at IS NULL;
-            RETURN FOUND;
+             WHERE id = p_id AND consumed_at IS NULL
+            RETURNING host_tenant_id, email_sha256 INTO v_challenge;
+            IF NOT FOUND THEN
+                RETURN false;
+            END IF;
+            UPDATE public.sign_in_locks SET attempts = 0, window_until = NULL
+             WHERE host_tenant_id = v_challenge.host_tenant_id
+               AND email_sha256 = v_challenge.email_sha256;
+            RETURN true;
         END $$
         """
     )
@@ -242,7 +325,7 @@ def upgrade() -> None:
             p_id uuid, p_host text, p_code_seconds integer, p_resend_seconds integer
         ) RETURNS TABLE (outcome text, code_expires_at timestamptz,
                          resend_available_at timestamptz, tenant_id uuid, user_id uuid,
-                         locked boolean)
+                         send boolean)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
         #variable_conflict use_column
         DECLARE
@@ -261,16 +344,17 @@ def upgrade() -> None:
                     v_row.resend_available_at, NULL::uuid, NULL::uuid, false;
                 RETURN;
             END IF;
-            -- A new code; the old one is void and the tries are not reset.
+            -- A new code; the old one is void and the attempts are kept.
             UPDATE public.sign_in_challenges c SET code_salt = NULL, code_digest = NULL,
                 code_expires_at = v_now + make_interval(secs => p_code_seconds),
                 resend_available_at = v_now + make_interval(secs => p_resend_seconds)
              WHERE c.id = p_id;
             RETURN QUERY SELECT 'ok'::text, c.code_expires_at, c.resend_available_at,
                 c.tenant_id, c.user_id,
-                EXISTS (SELECT 1 FROM public.sign_in_locks l
-                         WHERE l.host = c.host AND l.email_sha256 = c.email_sha256
-                           AND l.locked_until > v_now)
+                c.user_id IS NOT NULL AND NOT EXISTS (
+                    SELECT 1 FROM public.sign_in_locks l
+                     WHERE l.host_tenant_id = c.host_tenant_id
+                       AND l.email_sha256 = c.email_sha256 AND l.locked_until > v_now)
               FROM public.sign_in_challenges c WHERE c.id = p_id;
         END $$
         """
@@ -378,6 +462,22 @@ def upgrade() -> None:
              WHERE id = v_session.id;
             RETURN QUERY SELECT 'ok'::text, v_session.id, v_session.user_id,
                 v_session.tenant_id;
+        END $$
+        """
+    )
+    op.execute(
+        """
+        CREATE FUNCTION portal_session_end_id(p_session_id uuid, p_user_id uuid)
+        RETURNS uuid
+        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+        DECLARE
+            v_id uuid;
+        BEGIN
+            UPDATE public.auth_sessions SET ended_at = clock_timestamp(), end_reason = 'sign_out'
+             WHERE id = p_session_id AND user_id = p_user_id
+               AND surface = 'portal' AND ended_at IS NULL
+            RETURNING id INTO v_id;
+            RETURN v_id;
         END $$
         """
     )
