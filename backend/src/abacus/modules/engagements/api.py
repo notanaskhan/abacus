@@ -97,10 +97,12 @@ from abacus.modules.engagements.slots import (
 from abacus.modules.engagements.work_items import (
     AdvisoryProjectKind,
     AssuranceKind,
+    PortalWorkItem,
     WorkItemExists,
     assurance_item_id,
     create_work_item,
     lock_engagement,
+    portal_work_items,
     set_assurance_phase,
 )
 from abacus.modules.engagements.workbook import (
@@ -206,6 +208,7 @@ __all__ = [
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
     "NewWorkItem",
+    "PortalWorkItem",
     "PriorItem",
     "ProgressFact",
     "ProgressSource",
@@ -243,6 +246,7 @@ __all__ = [
     "methodology_version",
     "open_engagements",
     "pin_methodology",
+    "portal_work_items",
     "progress_of",
     "publish_drafted_version",
     "register_auto_retrieval",

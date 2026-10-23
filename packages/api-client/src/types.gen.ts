@@ -38945,10 +38945,6 @@ export type GetPortalHomeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetPortalHomeError = GetPortalHomeErrors[keyof GetPortalHomeErrors];
@@ -39000,10 +38996,6 @@ export type UpdatePortalPreferencesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdatePortalPreferencesError = UpdatePortalPreferencesErrors[keyof UpdatePortalPreferencesErrors];

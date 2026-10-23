@@ -126,3 +126,83 @@ async def set_secured_footer(session: AsyncSession, on: bool, by: UUID) -> bool:
         {"on": on, "by": by},
     )
     return found.first() is not None
+
+
+async def preference(
+    session: AsyncSession, user_id: UUID, scope_kind: str, scope_id: UUID
+) -> RowMapping | None:
+    """The person's preferences for one scope (`welcome_dismissed_at`, `version`), or None."""
+    return (
+        (
+            await session.execute(
+                text(
+                    "SELECT welcome_dismissed_at, version FROM portal_preferences "
+                    "WHERE user_id = :user AND scope_kind = :kind AND scope_id = :scope"
+                ),
+                {"user": user_id, "kind": scope_kind, "scope": scope_id},
+            )
+        )
+        .mappings()
+        .first()
+    )
+
+
+async def insert_preference(
+    session: AsyncSession,
+    tenant_id: UUID,
+    user_id: UUID,
+    scope_kind: str,
+    scope_id: UUID,
+    on: bool,
+) -> RowMapping | None:
+    """The first write (version 1); None when another write made the row first."""
+    return (
+        (
+            await session.execute(
+                text(
+                    "INSERT INTO portal_preferences (tenant_id, user_id, scope_kind, scope_id, "
+                    "welcome_dismissed_at) VALUES (:tenant, :user, :kind, :scope, "
+                    "CASE WHEN :on THEN abacus_now() END) ON CONFLICT DO NOTHING "
+                    "RETURNING welcome_dismissed_at, version"
+                ),
+                {
+                    "tenant": tenant_id,
+                    "user": user_id,
+                    "kind": scope_kind,
+                    "scope": scope_id,
+                    "on": on,
+                },
+            )
+        )
+        .mappings()
+        .first()
+    )
+
+
+async def update_preference(
+    session: AsyncSession, user_id: UUID, scope_kind: str, scope_id: UUID, on: bool, version: int
+) -> RowMapping | None:
+    """Set the welcome at `version`; None when the row moved on (stale). A dismissal keeps its
+    first time."""
+    return (
+        (
+            await session.execute(
+                text(
+                    "UPDATE portal_preferences SET welcome_dismissed_at = CASE WHEN :on THEN "
+                    "coalesce(welcome_dismissed_at, abacus_now()) END, version = version + 1, "
+                    "updated_at = abacus_now() WHERE user_id = :user AND scope_kind = :kind "
+                    "AND scope_id = :scope AND version = :version "
+                    "RETURNING welcome_dismissed_at, version"
+                ),
+                {
+                    "user": user_id,
+                    "kind": scope_kind,
+                    "scope": scope_id,
+                    "on": on,
+                    "version": version,
+                },
+            )
+        )
+        .mappings()
+        .first()
+    )

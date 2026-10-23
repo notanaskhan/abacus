@@ -40,6 +40,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{CONTACT}/portal-unlock"): "contact.unlock",
     ("post", f"{CONTACT}/mfa-reset"): "contact.mfa_reset",
 }
+# Live since P-08-T13 (the home read model): 404 with the flag off, served with it on
+# (tests/integration/test_portal_home.py).
+LIVE = {("get", "/v1/portal/home"), ("put", "/v1/portal/preferences")}
 HUMAN_ONLY = {"contact.unlock", "contact.mfa_reset"}
 CLIENT_ONLY = {"portal_home.read", "portal_preferences.update"}
 # Pre-session routes: answer before any session, so they wait for ADR-152's list (DEC-139).
@@ -76,7 +79,8 @@ MODELS = _models(portal_contract) + _models(identity_contract)
 def test_ac1_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    answers = {"404"} if (method, path) in LIVE else {"404", "501"}
+    assert answers <= set(cast(Json, op["responses"]))
 
 
 def test_ac1_preferences_document_the_version_conflict() -> None:
@@ -144,10 +148,11 @@ Stub = Callable[[AuthContext], Awaitable[object]]
     [(portal_contract, PORTAL_HOME_V2), (identity_contract, PORTAL_SIGN_IN_V2)],
     ids=["portal.home_v2", "portal.sign_in_v2"],
 )
-async def test_ac4_flag_off_is_404_and_flag_on_is_501(
+async def test_ac4_flag_off_is_404_and_flag_on_serves_or_is_501(
     module: ModuleType, flag: Flag, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub = cast(Stub, module._stub)  # the stub gate, tested directly
+    live = module is portal_contract  # its gate serves once the flag is on (P-08-T13)
+    stub = cast(Stub, module._flag if live else module._stub)  # the gate, tested directly
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -166,6 +171,9 @@ async def test_ac4_flag_off_is_404_and_flag_on_is_501(
         await stub(ctx)
     assert seen == [flag]
     monkeypatch.setattr(module, "flag_enabled", on)
+    if live:
+        await stub(ctx)
+        return
     with pytest.raises(NotImplementedYet):
         await stub(ctx)
 

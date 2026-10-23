@@ -43,6 +43,7 @@ from abacus.modules.identity.api import (
     visible,
     visible_scope,
 )
+from abacus.modules.organisations.api import client_name_column
 
 
 @dataclass(frozen=True)
@@ -76,6 +77,62 @@ async def work_items_of(ctx: AuthContext, engagement_id: UUID) -> list[WorkItemV
     return [
         WorkItemView(w.id, w.kind, w.name, w.status, w.period_start, w.period_end, w.due_on, phase)
         for w, phase in rows
+    ]
+
+
+@dataclass(frozen=True)
+class PortalWorkItem:
+    id: UUID
+    engagement_id: UUID
+    kind: str
+    name: str
+    due_on: date | None
+    phase: str | None  # assurance only: the C2 `audit_engagement` code
+    assurance_type: str | None
+    client_name: str
+
+
+# The work item column a portal grant's scope id names (F-03-T26 scope kinds that cover work).
+_GRANT_COLUMN: Final = {
+    "client": WorkItem.client_id,
+    "client_entity": WorkItem.client_entity_id,
+    "engagement": WorkItem.engagement_id,
+    "work_item": WorkItem.id,
+}
+
+
+async def portal_work_items(
+    ctx: AuthContext, grant_kind: str, scope_id: UUID
+) -> list[PortalWorkItem]:
+    """P-08-T13 (POR-02): the live work items one of the person's portal grants covers, oldest
+    first, through `visible_scope(..., "portal_scope")`. The caller still authorises
+    `portal_home.read` per target (`scope_only`); a grant on any other kind of scope covers none."""
+    column = _GRANT_COLUMN.get(grant_kind)
+    if column is None:
+        return []
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            await session.execute(
+                select(
+                    WorkItem,
+                    AssuranceWorkItem.phase,
+                    AssuranceWorkItem.assurance_type,
+                    client_name_column(WorkItem.client_id),
+                )
+                .outerjoin(AssuranceWorkItem, AssuranceWorkItem.work_item_id == WorkItem.id)
+                .where(
+                    column == scope_id,
+                    WorkItem.status == "active",
+                    visible_scope(
+                        ctx, "portal_home.read", "portal_scope", column, grant_kind=grant_kind
+                    ),
+                )
+                .order_by(WorkItem.created_at, WorkItem.id)
+            )
+        ).all()
+    return [
+        PortalWorkItem(w.id, w.engagement_id, w.kind, w.name, w.due_on, phase, kind, name)
+        for w, phase, kind, name in rows
     ]
 
 
