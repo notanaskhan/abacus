@@ -19,6 +19,10 @@ them as the database owner in a transaction that carries the event's actor, tena
 time, together with the audit row the service would have written. That's the same bootstrap
 `seed_dev` uses.
 
+The audit-core content (F-04-T20: the 27 audits, the Northwind and Granite Peak PBC lists, their
+client people and the E0 firm settings) is bootstrapped the same way, except a plan entity, which
+goes through `organisations.client_with_entity`; see the section comment and DEC-144.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -57,10 +61,20 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.identity.api import AuthContext, set_demo_clock
-from abacus.modules.organisations.api import create_client
+from abacus.modules.organisations.api import client_with_entity, create_client
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
+    BY_LABEL,
+    PBC_LISTS,
+    PORTAL_USERS,
+    Audit,
+    team_of,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
+    created_at as audit_created_at,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
@@ -450,6 +464,229 @@ async def preflight(conn: asyncpg.Connection, events: tuple[Event, ...]) -> None
             raise SchemaPending(f"{kind} needs {where}, which arrives with {task}")
 
 
+# --- the audit-core content (F-04-T20; bootstrap writes) ----------------------------------------
+# The 25 shallow audits sit at phases (Fieldwork, In review, Released) that the engagements
+# service reaches only through G1 to G3 records (acceptance, independence, the signed letter) and
+# the release and archive gates, none of which this slice models. So, like the firm and its
+# people, each engagement is written as the database owner at its stage, in one transaction with
+# its team and the audit row `engagement.created` (`seed_dev`'s bootstrap). The PBC lists, the
+# portal people's client memberships and grants and the firm setting are written the same way:
+# the publish, grant and setting services all want a signed-in person with fresh MFA.
+
+_PBC: Final = {p.key: p for p in PBC_LISTS}
+_PORTAL: Final = {u.name: u for u in PORTAL_USERS}
+
+
+async def _client_id(conn: asyncpg.Connection, name: str) -> UUID:
+    found = await conn.fetchval(
+        "SELECT id FROM clients WHERE tenant_id = $1 AND name = $2", TENANT, name
+    )
+    if found is None:
+        raise LookupError(f"no client {name!r}")
+    return found
+
+
+async def _entity_id(conn: asyncpg.Connection, client: UUID, name: str) -> UUID:
+    found = await conn.fetchval(
+        "SELECT id FROM client_entities WHERE tenant_id = $1 AND client_id = $2 AND name = $3",
+        TENANT,
+        client,
+        name,
+    )
+    if found is None:
+        raise LookupError(f"no entity {name!r}")
+    return found
+
+
+def engagement_id_of(audit: Audit) -> UUID:
+    return UUID(audit.id)
+
+
+async def _client_entity_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Through `organisations.api` under the engagement partner: a plan entity of its sponsor."""
+    client = await _client_id(conn, str(event.client))
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await client_with_entity(tx, TENANT, client, None, str(event.data["entity"]))
+
+
+async def _engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    audit = BY_LABEL[str(event.data["audit"])]
+    engagement = engagement_id_of(audit)
+    creator = user_id_of(_SEATS[audit.ep])
+    office = office_id_of(_CLIENTS[audit.client].office)
+    created = audit_created_at(audit)
+
+    async def write() -> tuple[str, str, str]:
+        client = await _client_id(conn, audit.client)
+        entity = await _entity_id(conn, client, audit.entity_name)
+        # The insert trigger adds the primary engagement entity and, for an attest type, the
+        # assurance work item at `planning`.
+        await conn.execute(
+            "INSERT INTO engagements (id, tenant_id, client_id, client_entity_id, name, type, "
+            "fiscal_period_start, fiscal_period_end, status, created_by, created_at, office_id) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING",
+            engagement,
+            TENANT,
+            client,
+            entity,
+            audit.name,
+            audit.type,
+            audit.period[0],
+            audit.period[1],
+            audit.status,
+            creator,
+            created,
+            office,
+        )
+        await conn.execute(
+            "UPDATE work_items SET due_on = $3, office_id = $4, created_at = $5, "
+            "status = CASE WHEN $6 THEN 'archived' ELSE status END "
+            "WHERE tenant_id = $1 AND engagement_id = $2 AND kind = 'assurance'",
+            TENANT,
+            engagement,
+            audit.due_on,
+            office,
+            created,
+            audit.status == "archived",
+        )
+        await conn.execute(
+            "UPDATE assurance_work_items SET phase = $3 "
+            "WHERE tenant_id = $1 AND engagement_id = $2",
+            TENANT,
+            engagement,
+            audit.phase,
+        )
+        for initials, role in team_of(audit):
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                user_id_of(_SEATS[initials]),
+                role,
+            )
+        return "engagement.created", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _portal_user_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A client person: their user, a client membership and an engagement-scoped grant."""
+    person = _PORTAL[str(event.data["user"])]
+    user = UUID(person.id)
+    audit = BY_LABEL[person.engagement]
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO users (id, idp_issuer, idp_subject, email, display_name) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            user,
+            ISSUER,
+            f"scenario-{person.slug}",
+            person.email,
+            person.name,
+        )
+        await conn.execute(
+            "INSERT INTO memberships (tenant_id, user_id, status, kind) "
+            "VALUES ($1, $2, 'active', 'client') ON CONFLICT DO NOTHING",
+            TENANT,
+            user,
+        )
+        await conn.execute(
+            "INSERT INTO client_access_grants (id, tenant_id, user_id, role, scope_kind, "
+            "scope_id, granted_by, status) VALUES ($1, $2, $3, $4, 'engagement', $5, $6, "
+            "'active') ON CONFLICT DO NOTHING",
+            UUID(stable_id(f"grant:{person.slug}:{person.engagement}")),
+            TENANT,
+            user,
+            person.role,
+            engagement_id_of(audit),
+            user_id_of(_SEATS[audit.ep]),
+        )
+        return "client_access.granted", "engagement", str(engagement_id_of(audit))
+
+    await _bootstrap(conn, event, write)
+
+
+async def _pbc_list_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A PBC list with its categories and requests, published when the firm has sent it."""
+    pbc = _PBC[str(event.data["list"])]
+    audit = BY_LABEL[pbc.engagement]
+    engagement = engagement_id_of(audit)
+    by = user_id_of(_SEATS[audit.ep])
+    list_id = UUID(pbc.id)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO request_lists (id, tenant_id, engagement_id, created_at, kind, status, "
+            "published_at, published_by) VALUES ($1, $2, $3, $4, 'pbc', $5, $6, $7) "
+            "ON CONFLICT DO NOTHING",
+            list_id,
+            TENANT,
+            engagement,
+            pbc.created,
+            "published" if pbc.published else "draft",
+            pbc.created if pbc.published else None,
+            by if pbc.published else None,
+        )
+        for position, name in enumerate(pbc.categories()):
+            await conn.execute(
+                "INSERT INTO request_categories (id, tenant_id, request_list_id, name, "
+                "position, family) VALUES ($1, $2, $3, $4, $5, 'audit_area') "
+                "ON CONFLICT DO NOTHING",
+                UUID(pbc.category_id(name)),
+                TENANT,
+                list_id,
+                name,
+                position,
+            )
+        for position, request in enumerate(pbc.requests, 1):
+            assignee = request.assignee
+            visible = request.status != "draft"
+            await conn.execute(
+                "INSERT INTO request_items (id, tenant_id, engagement_id, request_list_id, "
+                "description, title, audit_area, category_id, status, created_by, created_at, "
+                "client_visible, client_assignee_user_id, due_on, requested_at) VALUES ($1, $2, "
+                "$3, $4, $5, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT DO NOTHING",
+                UUID(pbc.request_id(position)),
+                TENANT,
+                engagement,
+                list_id,
+                request.title,
+                request.category,
+                UUID(pbc.category_id(request.category)),
+                request.status,
+                by,
+                pbc.created,
+                visible,
+                UUID(assignee.id) if assignee is not None else None,
+                request.due_on,
+                pbc.created if visible else None,
+            )
+        return "request_list.created", "request_list", str(list_id)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _firm_setting_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    user = user_id_of(_SEATS[event.actor])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO firm_setting_values (tenant_id, key, value, set_by, set_at) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            TENANT,
+            str(event.data["key"]),
+            bool(event.data["value"]),
+            user,
+            event.at,
+        )
+        return "firm_setting.set", "firm", str(TENANT)
+
+    await _bootstrap(conn, event, write)
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -467,6 +704,12 @@ HANDLERS: Final[dict[str, Handler]] = {
     "organisations.office_created": _office_created,
     "identity.staff_member_added": _staff_member_added,
     "organisations.client_created": _client_created,
+    # F-04-T20: plan entities, engagements, their client people, PBC lists, firm settings.
+    "organisations.client_entity_added": _client_entity_added,
+    "engagements.engagement_created": _engagement_created,
+    "identity.portal_user_added": _portal_user_added,
+    "requests.pbc_list_created": _pbc_list_created,
+    "identity.firm_setting_set": _firm_setting_set,
     # The shell slice, after audit_core: the sandbox firm before its offices and membership.
     "identity.sandbox_firm_created": _sandbox_firm_created,
     "organisations.sandbox_office_created": _sandbox_office_created,

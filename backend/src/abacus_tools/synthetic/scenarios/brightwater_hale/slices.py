@@ -1,6 +1,7 @@
 """Slices: the subsets of content a screen family needs (SPEC-307 AC-2; F-04 §2.1). F-04 ships
-`audit_core` (the firm, offices, people, 184 clients and the 27 audits) and `portal_minimum`
-(Northwind's and Granite Peak's portal users and the Feld binder). Later epics register theirs
+`audit_core` (the firm, offices, people, 184 clients, the 27 audits, the Northwind and Granite
+Peak PBC lists and the client people their requests are assigned to, F-04-T20) and
+`portal_minimum` (the Feld binder). Later epics register theirs
 (`tax` T-02, `cas` C-01, Harlow & Pike A-09, Tessellate X-02) with `@register_slice`, so adding
 one never edits this file. A slice yields timeline events; an unregistered slice is an error."""
 
