@@ -51,6 +51,14 @@ def example(*keys: str) -> Json:
     return found[0]
 
 
+def example_where(key: str, value: object) -> Json:
+    """The one §8 JSON block whose top-level `key` is `value` (P-04-T12: part 3's two issue
+    creates carry the same keys, so they are told apart by a value)."""
+    found = [b for b in _BLOCKS if key in b and b[key] == value]
+    assert len(found) == 1, f"{len(found)} examples have {key} = {value!r}"
+    return found[0]
+
+
 def inline_example(after: str) -> Json:
     """An inline `{...}` example in the doc's prose, the first after the text `after`."""
     match = re.search(re.escape(after) + r"\s*`(\{.*?\})`", _DOC)

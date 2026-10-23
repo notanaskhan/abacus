@@ -66,32 +66,32 @@ Part 3 (P-04-T11) has the same flag and the same 404 and 501 behaviour. Every ro
 | Issues, list | `GET /v1/issues?record_type=&record_id=&engagement_id=&status=&kind=&cursor=&limit=` | `issue.read` | engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
 | Issue | `GET /v1/issues/{issue_id}` | `issue.read` | as above; reading the sealed texts is an access event (Q-02) | denied |
 | Create | `POST /v1/issues` | `issue.create` | engagement partner, manager, senior, staff, reviewer | denied |
-| Update and assign | `PATCH /v1/issues/{issue_id}` | `issue.update` | as create | denied |
+| Update and assign | `PATCH /v1/issues/{issue_id}` | `issue.update` | engagement partner, manager, senior, staff | denied |
 | Resolve | `POST /v1/issues/{issue_id}/resolve` | `issue.resolve` | engagement partner, manager, senior, staff | denied at every layer (ISSUE-001) |
 | Mark not applicable | `POST /v1/issues/{issue_id}/mark-not-applicable` | `issue.resolve` | as resolve | denied at every layer |
-| Verify | `POST /v1/issues/{issue_id}/verify` | `issue.verify` | engagement partner, manager, senior, reviewer | denied at every layer |
+| Verify | `POST /v1/issues/{issue_id}/verify` | `issue.verify` | engagement partner, manager, senior; the reviewer functions on the work item (service now, `function_in` in P-04-T15) | denied at every layer |
 | Reopen | `POST /v1/issues/{issue_id}/reopen` | `issue.reopen` | as verify | denied |
 | Send to client | `POST /v1/issues/{issue_id}/send-to-client` with `Idempotency-Key` | `issue.send_to_client` | engagement partner, manager, senior, staff | denied |
-| Fix instructions | `POST /v1/issues/{issue_id}/fix-instructions` | `fix_instruction.set` | engagement partner, manager, senior, staff, reviewer | denied |
+| Fix instructions | `POST /v1/issues/{issue_id}/fix-instructions` | `fix_instruction.set` | engagement partner, manager, senior, staff | denied |
 | Bulk fix instructions | `POST /v1/issues/fix-instructions:bulk` | `fix_instruction.set` | as above | denied |
 | Explain | `POST /v1/issues/{issue_id}/explanations` | `issue.explain` | engagement partner, manager, senior, staff, reviewer | denied |
 | Checkpoints of one target | `GET /v1/checkpoints?target_type=&target_id=&filter=agent\|named\|all` | `checkpoint.read` | engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
 | Checkpoint | `GET /v1/checkpoints/{checkpoint_id}?compare=previous\|current` | `checkpoint.read` | as above | denied |
 | Save | `POST /v1/checkpoints` | `checkpoint.create` | engagement partner, manager, senior, staff | denied |
-| Approve | `POST /v1/checkpoints/{checkpoint_id}/approve` | `checkpoint.approve` | engagement partner, manager, senior, reviewer; the reviewer functions on the work item (service now, `function_in` in P-04-T15) | denied at every layer |
+| Approve | `POST /v1/checkpoints/{checkpoint_id}/approve` | `checkpoint.approve` | engagement partner, manager, senior; the reviewer functions on the work item (service now, `function_in` in P-04-T15) | denied at every layer |
 | Reject | `POST /v1/checkpoints/{checkpoint_id}/reject` | `checkpoint.reject` | as approve | denied at every layer |
 | Restore as new | `POST /v1/checkpoints/{checkpoint_id}/restore` | `checkpoint.restore` | as approve | denied at every layer |
-| Rename and star | `PATCH /v1/checkpoints/{checkpoint_id}` | `checkpoint.rename` | engagement partner, manager, senior, staff, reviewer | denied |
+| Rename and star | `PATCH /v1/checkpoints/{checkpoint_id}` | `checkpoint.rename` | engagement partner, manager, senior, staff | denied |
 | Field provenance | `GET /v1/fields/{target_type}/{target_id}/{field_key}/provenance` | `field.read` | engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
 | Edit a value | `PUT /v1/fields/{target_type}/{target_id}/{field_key}/value` | `field.edit` | engagement partner, manager, senior, staff; preparer functions (DEC-84; `function_in` in P-04-T15) | denied |
-| Add a reference | `POST /v1/fields/{target_type}/{target_id}/{field_key}/references` | `field.add_reference` | engagement partner, manager, senior, staff, reviewer | denied |
-| Tick a field | `POST /v1/fields/{target_type}/{target_id}/{field_key}/ticks` | `field.sign_off` | as add a reference | denied at every layer |
+| Add a reference | `POST /v1/fields/{target_type}/{target_id}/{field_key}/references` | `field.add_reference` | engagement partner, manager, senior, staff | denied |
+| Tick a field | `POST /v1/fields/{target_type}/{target_id}/{field_key}/ticks` | `field.sign_off` | engagement partner, manager, senior, staff, reviewer, as `sign_off.create`; the level row decides who may tick at which level | denied at every layer |
 | Propose a checkpoint (no route) | `review.api.propose_checkpoint` | `checkpoint.propose` | none | agent: `task_scope`; the system cell for engine imports lands with P-04-T32 |
 
 - **Beyond the plan's table.** `POST /v1/issues/{issue_id}/explanations` (`issue.explain`) serves SHL-15 d's "Explain…". Mark not applicable is a resolution, so it shares `issue.resolve`, as adopt and dismiss share `suggestion.resolve`.
 - **One target's checkpoints.** `GET /v1/checkpoints` is one target's history, read like the sign-off ladder, so it answers `CheckpointHistoryOut` rather than the list envelope. Its summaries may carry return figures, so they are Restricted (§3).
 - **Agent-raised issues.** Engine diagnostics and issues the agent raises come through `review.api.create_issue` (P-04-T30), with their own `task_scope` row then. The route's `issue.create` is a person's.
-- **Conditions arriving later.** P-04-T15 adds `function_in(first_level_reviewer, detail_reviewer, manager_reviewer, signer)` to `checkpoint.approve`, `.reject` and `.restore`, the reviewer functions to `issue.verify`, and `function_in(preparer)` to `field.edit`. Conditions only narrow a row (DEC-132), so the role cells ship now and P-04-T15 narrows them. Until then the service checks (DEC-145).
+- **Conditions arriving later.** P-04-T15 adds `function_in(first_level_reviewer, detail_reviewer, manager_reviewer, signer)` to `checkpoint.approve`, `.reject` and `.restore`, the reviewer functions to `issue.verify`, and `function_in(preparer)` to `field.edit`. Conditions only narrow a row (DEC-132), so the role cells ship now and P-04-T15 narrows them. Until then the service checks (DEC-145). Tax Preparer and Tax Reviewer are work-item functions, not roles (DEC-21), so the repo's `reviewer` role (a read-only QC role) holds no part 3 write except raising an issue, asking for an explanation and a field tick, as it raises review notes and holds `sign_off.create` (P-04-T12).
 
 ## 3. Models
 Code: `backend/src/abacus/modules/review/contract.py`.
@@ -763,12 +763,34 @@ P-04-T09 (2026-10-22). Both suites run in the provider's stage 2 (`make check`: 
 - Unique names: the operation ids and the C3 component names (`AgentProposalOut`, `AgentSuggestionOut`, `ReviewNoteDetailOut`, `CardDecisionOut`, `CardDecideIn`, TASK-422) are asserted, so a collision cannot rename a frozen type again (#284).
 - One strict xfail, to clear before the freeze: #285 (decision-card figures and the agent's reasons should be Restricted).
 
+Part 3 (P-04-T12, 2026-10-23), in the same two suites:
+
+- `test_c3_stub3.py` covers stub 3 as a whole:
+  - the 23 routes declare their one matrix action, with 404 and 501 in their responses, the 202s on the run starts and the 201s on new rows;
+  - each handler, called directly, answers 404 with `review.grammar_api` off and 501 with it on;
+  - send to client requires `Idempotency-Key`;
+  - every part 3 write and resolution denies `agent` and `system` explicitly, and the agent holds only `checkpoint.propose`;
+  - the QC `reviewer` role writes only an issue, an Explain request and a field tick;
+  - `IssueStatus`, `IssueSeverityStatus`, `CheckpointStatus`, `AgentRunStatus` and `ReviewNoteStatus` are the registry's stored codes, and `current`, `stale`, `unsupported` and every `field_value` word are derived;
+  - the CHECK lists of migrations 0093 and 0094 equal the wire literals, and the human-only and citation-note constraints exist;
+  - every part 3 field is classified;
+  - the operation ids and component names are unique, and the stub 1 and 2 paths are untouched.
+- `test_c3_shl09_field_provenance.py`, `test_c3_shl15_issues.py` and `test_c3_shl16_checkpoints.py` hold, per artboard, the fields with their classification tags and the part 3 examples validated as written.
+- The figures foot as `Decimal`:
+  - Halvard 2,190 → 2,310, with Box 1 at 2,310.00;
+  - the estimate, 4 × 12,000 = 48,000;
+  - Checkpoint 6's diff is SHL-10 a's four rows, and the net change to total income is 0;
+  - the fix run's 1,550 is the line 2a suggestion's;
+  - F12:F15 is four participants.
+- The vitest frames are SHL-09 a to f, SHL-15 a, a-prime, a-double-prime, b and d (with c and e as requests), and SHL-16 a, b, d, e and f (with c's restore). Each is typed with the generated client and checked against `openapi.json`.
+- Stub 3 is recorded in `docs/contracts/README.md` as an additive extension of the C3 v1 schema (handshake rule 5).
+
 ## 10. Versioning
 Additive changes go in place. Breaking changes ship as v2 with one sprint of overlap.
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed) |
+| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed). 2026-10-23: part 3 consumer tests (P-04-T12); the QC `reviewer` cells on part 3 writes were narrowed (DEC-145) |
 
 ## 11. Open points
 - **Level actions.** The level actions keep their SPEC-308 names rather than `sign_off.l1` to `l5` (DEC-135).
