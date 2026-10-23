@@ -151,7 +151,7 @@ async def test_ac4_g1_and_g2_are_unmet_until_the_partner_records_each_fact(
     "engagement), but C1's G3 reads met with no letter whenever the firm's letter policy is off "
     "(SPEC-025 Q4's older 'warn, don't block'); tightening it moves binder publishing and every "
     "G3 consumer, beyond a small fix; "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#PRB)",
+    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#378)",
 )
 async def test_ac6_g3_is_unmet_until_the_letter_is_recorded_whatever_the_firm_policy(
     eng: Engagement,
@@ -236,7 +236,7 @@ _NOT_REGISTERED = pytest.mark.xfail(
     reason="the human-only audit register (docs/architecture/human-only-actions.yaml, "
     "abacus_human_only_actions()) lacks this gate fact, so the data layer would accept it with "
     "actor_kind agent; adding it needs the protected register, a migration and codegen; "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#PRB)",
+    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#378)",
 )
 
 

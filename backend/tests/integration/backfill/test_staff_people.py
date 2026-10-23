@@ -529,7 +529,7 @@ _P10 = pytest.mark.xfail(
     reason="P-10 (DEC-21) adds security_admin to the firm roles, but the /v1/firm/staff models "
     "still allow only the three SPEC-024 roles: listing such a member answers 500 and inviting "
     "or changing to it 422; the fix changes the API contract (make generate); "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#PRB)",
+    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#378)",
 )
 
 
