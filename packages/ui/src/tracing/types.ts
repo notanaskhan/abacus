@@ -42,11 +42,11 @@ export type Locator =
 
 export type LocatorKind = Locator["kind"];
 
-/** A typed C4 citation or region: its server-derived `match_id` and the kind it was derived for. */
-export interface ContractMatch {
-  kind: LocatorKind;
-  match_id: string;
-}
+/** A typed C4 citation (its `kind` is the locator kind the id was derived for) or a typed C4 region
+ * (its `rects` are where the id lights on a page): the server's `match_id` off either. */
+export type ContractMatch = { match_id: string } & (
+  { kind: LocatorKind } | { rects: readonly (readonly [number, number, number, number])[] }
+);
 
 /** How an element joins a match: rows, cells and regions light after 120ms, markers after 150ms. */
 export type MatchKind = "row" | "cell" | "region" | "marker";
