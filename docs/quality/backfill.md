@@ -21,12 +21,12 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 029 | red | Firm-level reads for engagement roles | SPEC-014 | S0–S3 | T059; T021 (S8) | tranche 0 | `tests/integration/backfill/test_firm_level_reads.py`; extended to the P-06 scope kinds by T021 |
 | 027 | red | Break-glass support access | SPEC-012 | S0–S3 | T059 | tranche 0 | re-run at S12 |
 | 020 | amber | Evaluation runner, graders and calibration | SPEC-005 | S0–S3 | T059 | tranche 0 | re-run at S12 |
-| 041 | red | People and firm roles | SPEC-024 | S6 | T006 | scheduled | |
-| 045 | red | Per-person independence gate | SPEC-025 | S6 | T006 | scheduled | |
-| 030 | red | Client invitations and client users | SPEC-015 | S6 | T007 | scheduled | |
-| 032 | red | Engagement team management | SPEC-017 | S6 | T007 | scheduled | |
-| 040 | red | Self-serve sign-up and engagement types | SPEC-024 | S6 | T008 | scheduled | |
-| 044 | red | Acceptance, independence, letter and the engagement gate | SPEC-025 | S6 | T008 | scheduled | |
+| 041 | red | People and firm roles | SPEC-024 | S6 | T006 | back-filled | `backfill/test_staff_people.py`; AC-8 `apps/web/src/legacy/spec024states.test.tsx` (TASK-992) |
+| 045 | red | Per-person independence gate | SPEC-025 | S6 | T006 | back-filled | `backfill/test_independence_gate.py` (TASK-992) |
+| 030 | red | Client invitations and client users | SPEC-015 | S6 | T007 | back-filled | `backfill/test_client_invitations.py` (TASK-992) |
+| 032 | red | Engagement team management | SPEC-017 | S6 | T007 | back-filled | `backfill/test_team_management.py`; AC-7 `apps/web/src/legacy/spec017people.test.tsx` (TASK-992) |
+| 040 | red | Self-serve sign-up and engagement types | SPEC-024 | S6 | T008 | back-filled | `backfill/test_signup_and_engagement_types.py`; AC-8 `legacy/spec024states.test.tsx` (TASK-992) |
+| 044 | red | Acceptance, independence, letter and the engagement gate | SPEC-025 | S6 | T008 | back-filled | `backfill/test_acceptance_independence_letter.py`, `test_independence_gate.py`; AC-9 `legacy/spec025states.test.tsx` (TASK-992) |
 | 035 | red | Client portal, item visibility and client uploads | SPEC-020 | S7 | T014 | scheduled | |
 | 056 | red | Upload processing, part 3: previews | SPEC-029 | S7 | T014 | scheduled | |
 | 054 | red | Upload processing, part 1: scanning, workflow, extraction | SPEC-029 | S7 | T015 | scheduled | |
@@ -73,8 +73,8 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | Status | Rows |
 |---|---|
 | tranche 0 | 9 |
-| scheduled | 35 |
-| back-filled | 0 |
+| scheduled | 29 |
+| back-filled | 6 |
 | superseded | 11 |
 | **Total** | **55** |
 
@@ -83,3 +83,16 @@ M8 (Fri May 28, 2027) needs 44 back-filled (tranche 0 included) and 11 supersede
 ## QD-3: the superseded list
 
 Recorded at the S6 Contract Monday (Mon Jan 11, 2027; pulled forward to 2026-10-23 with Q-03-T002). The eleven tasks above marked `superseded` are not back-filled on their old code paths, because a later epic rebuilds them against the migrated contracts; each closes when that epic's AC suite merges. The four whose replacement lands after M8 (023, 053, 061, 063) get black-box suites on their legacy paths by M8 (T524, T525), retired only when the replacing suite merges.
+
+## Spec drift found by the back-fill
+
+| TASK | AC | The spec says | The current contract says | Superseded by |
+|---|---|---|---|---|
+| 030 | SPEC-015 §4, §7 | client roles are `engagement_members` rows | a client's role is a `client_access_grants` row; `engagement_members` is staff only | F-03-T26, DEC-129, ADR-146 |
+| 030 | SPEC-015 AC-1 | `client_invitation.created` is audited and emitted | audited as `client_invitation.created`, emitted as `client_invitation.issued` | identity README (communications subscribes to it) |
+| 030 | SPEC-015 AC-1, AC-9 | partners and managers invite and manage contacts | `client_service` may too (additive; not tested here) | F-03-T30, ADR-147 |
+| 040 | SPEC-024 §4, AC-6 | four engagement types (`audit`, `review`, `compilation`, `agreed_upon_procedures`) | C1 v1's 14 types, `fs_audit` for `audit` | DEC-122, F-03 |
+| 041 | SPEC-024 AC-3, AC-4 | three firm roles | four: `security_admin` added (held by ED-009) | ADR P-10, DEC-21 |
+| 040 | SPEC-024 AC-1 | a second attempt is "refused"; sign-up is "rate-limited" | 409 `signup_code_invalid`, `signup_already_staff`, `signup_rate_limited`; 422 `signup_invalid` | `docs/architecture/error-codes.yaml` |
+| 044 | SPEC-025 Q4 | the letter warns and does not block | G3 is strict (held by ED-010) | DEC-39 (b) |
+| 044 | SPEC-025 AC-9 | the roll-forward wizard's states | belongs to TASK-048's suite | Q-03-T023 (S8) |

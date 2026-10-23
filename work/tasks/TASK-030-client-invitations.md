@@ -108,6 +108,7 @@ All of SPEC-015. Excluded: the client SPA route tree, SES, and bulk import.
 
   Unit tests (8,903) and gates pass. An end-to-end run against local Postgres passed: invite, email to the mailbox, resend kills the old link, wrong email refused, accept once, replay refused, client authorised by client rows and refused firm actions, removal effective.
 - `2026-10-08` — SPEC-015 approved and merged (#54). Design written for founder review.
+- `2026-10-23` — Q-03 back-fill (S6, Q-03-T007): independent AC suite `backfill/test_client_invitations.py`; triage, defects and spec drift in `work/tasks/TASK-992-s6-backfill-suites.md` and `docs/quality/backfill.md`. test_author: ayushkbhatia; test_session: 2026-10-23.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

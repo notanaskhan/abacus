@@ -235,7 +235,7 @@ async def test_ac1_the_response_never_carries_the_link_or_a_token(desk: Desk) ->
 @pytest.mark.xfail(
     strict=True,
     reason="SPEC-015 AC-1: the response carries only invitation_id, not email and status; "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md",
+    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#PRB)",
 )
 async def test_ac1_the_response_carries_the_invitations_id_email_and_status(desk: Desk) -> None:
     response = await desk.invite(desk.partner, "cfo@ashford.example")
@@ -346,7 +346,7 @@ async def test_ac3_an_archived_engagement_refuses_invitations(desk: Desk) -> Non
     strict=True,
     reason="SPEC-015 AC-3 and docs/contracts/engagements-v2.md say 409 engagement_archived; "
     "authorise's archived_write attribute answers 403 forbidden first; recorded in "
-    "work/tasks/TASK-992-s6-backfill-suites.md",
+    "work/tasks/TASK-992-s6-backfill-suites.md (#PRB)",
 )
 async def test_ac3_an_archived_engagement_answers_409(desk: Desk) -> None:
     await desk.seed.run(
