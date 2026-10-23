@@ -6,7 +6,7 @@ acceptance_criteria: [AC-5]
 risk_zone: amber
 status: done
 epic: F-04
-plan_key: F-04-T22
+plan_key: F-04-T22; F-04-T23
 branch: TASK-953-notification-email
 created: 2026-10-23
 updated: 2026-10-23
