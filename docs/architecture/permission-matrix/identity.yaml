@@ -8,7 +8,7 @@ actions:
   support_session.read:     {firm_admin: allow}   # SPEC-012
   support_session.manage:   {firm_admin: allow, mfa_recent: required}   # SPEC-012 Q1
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
-  firm.read_settings:       {firm_admin: allow, practice_leader: allow, firm_partner: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA; P-01-T04 (DEC-132): partners read settings (SHL-03c)
+  firm.read_settings:       {firm_admin: allow, practice_leader: allow, security_admin: allow, firm_partner: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA; P-01-T04 (DEC-132): partners read settings (SHL-03c)
   wall.create:              {firm_admin: allow, mfa_recent: required}
   wall.remove:              {firm_admin: allow, mfa_recent: required}
   wall.list:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there)
@@ -24,9 +24,8 @@ actions:
   contact.unlock:           {firm_admin: allow, security_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}   # Story 7.1: clear a sign-in lock
   contact.mfa_reset:        {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # Story 7.2: remove the factor, backup codes and trusted devices (OQ-1)
   # --- Firm-settings family contract, v1 (G-01-T02 stub; G-01 section 4.3) ---
-  # New actions only: the widenings of live actions (`firm.read_settings` to security admins,
-  # `wall.create` and `wall.remove` to partners) land with the tasks that implement them
-  # (G-01-T04, T09), so the stub changes no live route's behaviour.
+  # New actions only. `firm.read_settings` gained `security_admin` with the live settings
+  # (G-01-T04); `wall.create` and `wall.remove` move to partners with G-01-T09.
   firm.read_people:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}   # ADM-02 list, drawer, role templates
   security_role.assign:     {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # grant or remove security_admin only
   service_line_policy.manage: {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # ADM-03h; audit stays engagement-team-only

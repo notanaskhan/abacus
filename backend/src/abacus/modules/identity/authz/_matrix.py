@@ -690,6 +690,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "firm.read_settings": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "security_admin": "allow",
         "firm_partner": "allow",
     },
     "firm_agents.pause": {

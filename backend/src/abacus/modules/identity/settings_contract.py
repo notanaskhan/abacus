@@ -37,13 +37,14 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.identity import settings_registry
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import AbacusRouter, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
 # The settings sections (ADM-01 §3.1; the order is the section list's).
-Section = Literal["general", "profile", "defaults", "plan"]
+Section = Literal["profile", "defaults", "plan"]
 SectionGroup = Literal["firm", "people", "security", "data", "quality", "integrations"]
 GlanceTone = Literal["ok", "attention", "partial", "none"]
 RoleTemplate = Literal[
@@ -365,10 +366,27 @@ class WallEventOut(BaseModel):
 # --- routes --------------------------------------------------------------------------------------
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _gate(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, FIRM_SETTINGS_V2):
         raise NotFound("firm_settings.v2")
+
+
+async def _stub(ctx: AuthContext) -> NoReturn:
+    await _gate(ctx)
     raise NotImplementedYet
+
+
+def _section(view: settings_registry.SectionView) -> SettingsSectionValuesOut:
+    return SettingsSectionValuesOut(
+        section=view.section,
+        values=[
+            SettingValueOut(key=k.key, value=v, editable=k.editable and not view.read_only_reason)
+            for k, v in view.values
+        ],
+        version=view.version,
+        read_only_reason=view.read_only_reason,
+        allowed_actions=view.allowed_actions,
+    )
 
 
 settings_router = AbacusRouter(prefix="/v1/firm", tags=["firm-settings"])
@@ -377,37 +395,49 @@ me_router = AbacusRouter(prefix="/v1/me", tags=["firm-settings"])
 
 
 @settings_router.get(
-    "/settings/overview",
-    action="firm.read_settings",
-    response_model=SettingsOverviewOut,
-    errors=(501,),
+    "/settings/overview", action="firm.read_settings", response_model=SettingsOverviewOut
 )
 async def settings_overview_route(ctx: Ctx) -> SettingsOverviewOut:
     """ADM-01: sections for the caller and At a glance (each provider within 500 ms)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    found = await settings_registry.overview(ctx)
+    return SettingsOverviewOut(
+        firm_name=found.firm_name,
+        sections=[
+            SettingsSectionOut(key=key, group="firm", visible=visible)
+            for key, visible in found.sections
+        ],
+        at_a_glance=[
+            GlanceRowOut(
+                key=r.key, tone=r.tone, facts=r.facts, href=r.href, unavailable=r.unavailable
+            )
+            for r in found.at_a_glance
+        ],
+        as_of=found.as_of,
+    )
 
 
 @settings_router.get(
-    "/settings/{section}",
-    action="firm.read_settings",
-    response_model=SettingsSectionValuesOut,
-    errors=(501,),
+    "/settings/{section}", action="firm.read_settings", response_model=SettingsSectionValuesOut
 )
 async def settings_section_route(section: Section, ctx: Ctx) -> SettingsSectionValuesOut:
-    await _stub(ctx)
+    await _gate(ctx)
+    return _section(await settings_registry.read_section(ctx, section))
 
 
 @settings_router.patch(
     "/settings/{section}",
     action="firm.manage_settings",
     response_model=SettingsSectionValuesOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def update_settings_section_route(
     section: Section, body: SettingsPatchIn, ctx: Ctx
 ) -> SettingsSectionValuesOut:
     """Fresh MFA; 422 `unknown_setting`, `display_name_required`; 409 `stale_version`."""
-    await _stub(ctx)
+    await _gate(ctx)
+    await settings_registry.save_section(ctx, section, body.version, body.values)
+    return _section(await settings_registry.read_section(ctx, section))
 
 
 @settings_router.get(

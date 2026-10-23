@@ -80,6 +80,8 @@ TABLES: tuple[str, ...] = (
     "firm_demo_clocks",
     "firm_policy_overrides",
     "firm_setting_values",
+    "firm_settings",
+    "firm_settings_sections",
     "firms",
     "follow_up_items",
     "follow_up_schedules",

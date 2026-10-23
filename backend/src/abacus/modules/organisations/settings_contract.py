@@ -15,13 +15,21 @@ from uuid import UUID
 
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import text
 
 from abacus.kernel._flags import FIRM_SETTINGS_V2
 from abacus.kernel.classification import classified
+from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    GlanceRow,
+    active_wall_count,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 TeamKind = Literal[
@@ -209,3 +217,18 @@ async def set_seasonal_access_ends_route(
     body: SeasonalAccessEndsIn, ctx: Ctx
 ) -> SeasonalAccessEndsOut:
     await _stub(ctx)
+
+
+# --- At a glance: Offices & teams (G-01-T04; AC2.1, AC2.4) --------------------------------------
+
+_COUNTS = text("SELECT (SELECT count(*) FROM offices), (SELECT count(*) FROM teams)")
+
+
+async def offices_glance(ctx: AuthContext) -> GlanceRow | None:
+    async with tenant_session(ctx.tenant) as session:
+        offices, teams = (await session.execute(_COUNTS)).one()
+    facts = {"offices": int(offices), "teams": int(teams)}
+    walls = await active_wall_count(ctx)
+    if walls is not None:
+        facts["walls"] = walls
+    return GlanceRow("offices_teams", "ok", facts, "/settings/offices")

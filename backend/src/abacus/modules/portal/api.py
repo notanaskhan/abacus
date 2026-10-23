@@ -5,9 +5,13 @@ preferences routes; branding, the home read model and preferences land with P-08
 """
 
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.portal.branding import register_branding_settings
 from abacus.modules.portal.contract import router
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
+
+# G-01-T04 (AC1.9): the display name and the footer are the portal's; settings write them here.
+register_branding_settings()
 
 __all__ = ["ROUTERS"]

@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` (G-01) |
 | Version | v1 |
-| Status | stub (G-01-T02, 2026-10-23) |
+| Status | overview and sections live (G-01-T04, 2026-10-23); the rest stub |
 | Provider epic | G-01 (`identity`, `organisations`) |
 | Consumers | ADM-01, ADM-02, ADM-03; SHL-03 (the profile drawer's annual confirmation); P-07 (G2 reads annual confirmations) |
 | Freeze sprint | the sprint review after the stub |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 One family for the firm's own configuration: the settings frame and its typed sections (ADM-01), people, role templates and annual independence (ADM-02), offices, teams, groups, service-line separation, offshore and walls v2 (ADM-03). Walls keep 404 semantics: nothing here carries a hidden count or a field derived from walled rows (DEC-43). The firm's region is never writable through this family.
 
-**Stub behaviour.** With `firm_settings.v2` off every route below answers 404; with it on, 501 `not_implemented` until its task lands: G-01-T04 (overview and sections), T05 (people), T08 (offices, teams, groups), T09 (walls v2), T12 (service lines, offshore), T13 (annual independence).
+**Stub behaviour.** With `firm_settings.v2` off every route below answers 404. With it on, the overview and the sections are live (G-01-T04, DEC-170); the rest answer 501 `not_implemented` until their task lands: T05 (people), T08 (offices, teams, groups), T09 (walls v2), T12 (service lines, offshore), T13 (annual independence).
 
 **Existing routes kept, growing additively in their tasks:**
 - `GET /v1/firm/staff`, `POST /v1/firm/staff/invitations` (with resend and revoke), `PUT /v1/firm/staff/{user_id}/role`, `POST /v1/firm/staff/{user_id}/revoke` (deactivate's alias for one release): their v2 row shape is `StaffRowV2Out`.
@@ -53,6 +53,14 @@ Code: `backend/src/abacus/modules/identity/settings_contract.py`, `backend/src/a
 - **Roles** `RoleTemplatesOut`: templates with levels and counts, and the capability grid (`GridRowOut`: actions, cells per template, conditions, `source` matrix or policy, `locked`).
 - **Annual independence** `AnnualIndependenceOut` and `AnnualConfirmIn`, which has no user id: one confirms only for oneself.
 - **ADM-03** `ServiceLinePolicyOut`, `OffshoreOut` (its two toggles are always true), `FirmOfficeOut`, `FirmTeamOut`, `WallV2Out`, `WallPreviewOut`, `WallEventOut`.
+
+## 3a. Settings keys (G-01-T04, DEC-170)
+Sections `profile`, `defaults` and `plan`; a key is accepted only when registered (422 `unknown_setting`; `region` is never one). Keys today:
+- `profile`: `display_name` (the portal's, required: 422 `display_name_required`), `legal_name`, `website`, `intake_mailbox`, `seatless_staff_count`, `time_zone` (`firms.time_zone`, an IANA name);
+- `defaults`: `week_starts_on`, `portal_secured_footer` (the portal's; 422 `branding_not_set_up` before a display name exists);
+- `plan`: `billing_contact_user_id`.
+
+At a glance rows today: `people` (`used`, `pending`) and `offices_teams` (`offices`, `teams`, and `walls` only for `wall.list` holders). A row whose provider fails or takes over 500 ms is `unavailable`.
 
 ## 4. Status words
 `membership`: `active` Active · `invited` Invite pending · `deactivated` Deactivated. `wall_approval`: `awaiting` Awaiting approval · `approved` Approved. `annual_independence`: `confirmed` Confirmed · `not_yet` Not yet · `declined` Declined.

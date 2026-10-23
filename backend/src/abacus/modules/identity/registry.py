@@ -23,6 +23,8 @@ TABLES: frozenset[str] = frozenset(
         "staff_invitations",
         "staff_invitation_tokens",
         "firm_setting_values",  # F-03-T24
+        "firm_settings",  # G-01-T04 (0114): the typed store
+        "firm_settings_sections",  # G-01-T04: one version per section
         "firm_policy_overrides",  # F-03-T24: stricter-only, never edited
         "client_access_grants",  # F-03-T26 (ADR-146)
         "client_access_events",
@@ -52,6 +54,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "email", "firm_role", "invited_by", "expires_at"}
     ),
     "firm_setting_values": frozenset({"tenant_id", "key", "value", "set_by"}),  # F-03-T24
+    "firm_settings": frozenset({"tenant_id", "section", "key", "value", "updated_by"}),  # G-01-T04
+    "firm_settings_sections": frozenset({"tenant_id", "section"}),  # G-01-T04
     "firm_policy_overrides": frozenset(  # F-03-T24
         {"tenant_id", "action", "role", "decision", "reason", "set_by"}
     ),
@@ -90,6 +94,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),  # F-03-T24
+    "firm_settings": frozenset({"value", "updated_by", "updated_at"}),  # G-01-T04
+    "firm_settings_sections": frozenset({"version", "updated_at"}),  # G-01-T04
     "client_access_grants": frozenset({"status"}),  # F-03-T26: each change is an event row
     "firm_demo_clocks": frozenset(  # F-04-T07: set or reset by the demo-clock service
         {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}

@@ -1154,6 +1154,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # F-03-T24 (migration 0081): a firm setting's value; overrides are never edited.
         "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),
+        "firm_settings": frozenset({"value", "updated_by", "updated_at"}),  # G-01-T04 (0114)
+        "firm_settings_sections": frozenset({"version", "updated_at"}),  # G-01-T04 (0114)
         "client_access_grants": frozenset({"status"}),  # F-03-T26 (migration 0083)
         "firm_demo_clocks": frozenset(  # F-04-T06 (migration 0085)
             {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}

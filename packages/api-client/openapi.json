@@ -28492,7 +28492,6 @@
           "section": {
             "cls": "internal",
             "enum": [
-              "general",
               "profile",
               "defaults",
               "plan"
@@ -75457,16 +75456,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Settings Overview Route",
@@ -75486,7 +75475,6 @@
             "required": true,
             "schema": {
               "enum": [
-                "general",
                 "profile",
                 "defaults",
                 "plan"
@@ -75578,16 +75566,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Settings Section Route",
@@ -75606,7 +75584,6 @@
             "required": true,
             "schema": {
               "enum": [
-                "general",
                 "profile",
                 "defaults",
                 "plan"
@@ -75718,16 +75695,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Settings Section Route",

@@ -80,11 +80,21 @@ def _props(schema: str) -> dict[str, Json]:
     return cast(dict[str, Json], SCHEMAS[schema].get("properties", {}))
 
 
+# Live since G-01-T04 (DEC-170): the overview and the sections.
+LIVE = {
+    ("get", "/v1/firm/settings/overview"),
+    ("get", "/v1/firm/settings/{section}"),
+    ("patch", "/v1/firm/settings/{section}"),
+}
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_g01t02_each_route_declares_its_action_and_is_a_stub(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == ((method, path) not in LIVE)
 
 
 @pytest.mark.parametrize("module", [settings_contract, org_settings])
