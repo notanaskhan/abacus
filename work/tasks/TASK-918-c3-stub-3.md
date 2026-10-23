@@ -28,7 +28,7 @@ updated: 2026-10-23
 - **Rollback.** Revert the commit.
 
 ## What changed
-- **Issues** (SHL-15), 13 routes:
+- **Issues** (SHL-15), 12 routes (23 in all):
   - `GET /v1/issues` (list envelope, no titles) and `GET /v1/issues/{id}`, both `issue.read`;
   - `POST /v1/issues` (`issue.create`) and `PATCH /v1/issues/{id}` (`issue.update`);
   - `POST …/resolve` and `…/mark-not-applicable` (`issue.resolve`), `…/verify` (`issue.verify`) and `…/reopen` (`issue.reopen`);

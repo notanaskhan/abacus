@@ -3,7 +3,8 @@
 // renamed field fails tsc) and checked against the OpenAPI document at run time (a field the schema
 // no longer has fails here). Figures foot with bigint decimals, never floats. Copy and figures come
 // from docs/contracts/review-grammar.md §8 and the P-04 epic's artboard rows; ids are placeholders.
-// The UI tasks (P-04 S16–S24) build their scenarios from these shapes.
+// The UI tasks (P-04 S16–S24) build their scenarios from these shapes. P-04-T12 adds stub 3: one
+// frame per SHL-09 a–f, SHL-15 a–e and SHL-16 a–f artboard, an additive extension of C3 v1.
 import type {
   AgentProposalOut as ProposalOut,
   AgentSuggestionOut as SuggestionOut,
@@ -11,12 +12,39 @@ import type {
   CardDecisionOut as DecisionOut,
   ReviewNoteDetailOut as ReviewNoteOut,
   ApproveProposalIn,
+  BulkFixInstructionsIn,
+  BulkFixInstructionsOut,
   BulkSignOffOut,
+  CheckpointApproveIn,
+  CheckpointCreateIn,
+  CheckpointDecisionOut,
+  CheckpointDetailOut,
+  CheckpointDiffRowOut,
+  CheckpointHistoryOut,
+  CheckpointItemOut,
+  CheckpointRejectIn,
+  CheckpointRenameIn,
+  CheckpointRestoreIn,
   DecisionCardOut,
   DecisionCardVersionOut,
   EligibilityCheckOut,
+  ExplainAcceptedOut,
+  FieldEditIn,
+  FieldProvenanceOut,
+  FieldReferenceIn,
+  FieldReferenceOut,
+  FieldTickIn,
+  FieldTickOut,
+  FieldVersionOut,
+  FixInstructionsAcceptedOut,
+  FixInstructionsIn,
+  IssueCreateIn,
+  IssueDetailOut,
+  IssueItemOut,
+  IssueSendToClientIn,
   LadderLevelOut,
   ListPageDecisionCardItemOut,
+  ListPageIssueItemOut,
   ListPageReviewNoteItemOut,
   ProposalRowOut,
   RejectProposalIn,
@@ -859,5 +887,787 @@ describe("SHL-10 a–g (stub 2)", () => {
 
   it("g: the set link row: 40 results, 1 exception", () => {
     expect(SHL10.g.set).toMatchObject({ results: 40, exceptions: 1 });
+  });
+});
+
+// --- Stub 3 (P-04-T12): SHL-09 a–f, SHL-15 a–e, SHL-16 a–f ------------------------------------
+// An additive extension of C3 v1: new frames on new types; the frames above are unchanged.
+
+const FELD_1040 = id(200);
+const KEVIN = id(280);
+const ANA = id(281);
+const DANA = id(282);
+const digest = (head: string, tail: string): string => `sha256:${head}${"0".repeat(56)}${tail}`;
+const FIELD_V2 = digest("7d20", "c4b1"); // SHL-09 a, the current value's hash
+const FIELD_V1 = digest("e913", "5a02"); // Kevin's tick, on the imported value
+const CP6_HASH = digest("5e1d", "a6f0");
+
+// SHL-09 a–f: field provenance tray -------------------------------------------------------------
+
+const importRef: FieldReferenceOut = {
+  id: id(201),
+  kind: "engine_import",
+  label: "Imported Return — CCH Axcess 2025I:FeldJ:V3",
+  detail: null,
+  citation_id: null,
+  document_id: null,
+  page: null,
+};
+const updated: FieldVersionOut = {
+  seq: 2,
+  value: { t: "decimal", v: "2310" },
+  value_kind: "exact",
+  value_source: "agent_suggested",
+  cause: "suggestion_adopted",
+  actor_kind: "agent",
+  actor_user_id: null,
+  actor_name: "Accrued Agent",
+  recorded_at: "2026-09-10T19:12:00Z",
+  citation:
+    "Box 1 of the corrected Halvard Securities 2025 Form 1099-INT (issued Mar 6, 2026), consolidated statement p. 4.",
+  citation_ids: [id(202)],
+  references: [
+    { ...importRef, label: `${importRef.label} (prior value 2,190)` },
+    {
+      id: id(203),
+      kind: "document",
+      label: "Halvard Securities 2025 Consolidated 1099 (Corrected) · p. 4",
+      detail: "Interest income, Box 1: 2,310.00",
+      citation_id: id(202),
+      document_id: id(204),
+      page: 4,
+    },
+  ],
+  unsupported: false,
+  suggestion_id: id(205),
+  checkpoint_id: id(214),
+  issue_id: null,
+};
+const previous: FieldVersionOut = {
+  ...updated,
+  seq: 1,
+  value: { t: "decimal", v: "2190" },
+  value_source: "engine_import",
+  cause: "import",
+  actor_kind: "system",
+  actor_name: "Imported Return",
+  recorded_at: "2026-08-28T15:46:00Z",
+  citation:
+    "Box 1 of the original Halvard Securities 2025 Form 1099-INT (issued Feb 14, 2026), p. 4.",
+  citation_ids: [id(206)],
+  references: [importRef],
+  suggestion_id: null,
+  checkpoint_id: id(212),
+};
+const koTick: FieldTickOut = {
+  sign_off_id: id(207),
+  level: "L1_preparer",
+  signer_user_id: KEVIN,
+  signer_name: "Kevin Osei",
+  initials: "KO",
+  signed_at: "2026-09-08T17:00:00Z",
+  content_hash: FIELD_V1,
+  stale: true,
+};
+const tray: FieldProvenanceOut = {
+  target_type: "tax_return",
+  target_id: FELD_1040,
+  field_key: "sch_b.p1.l1.halvard",
+  label: "Taxable interest — Halvard Securities",
+  current_seq: 2,
+  content_hash: FIELD_V2,
+  versions: [updated, previous],
+  ticks: [koTick],
+  flags: [
+    {
+      note_id: id(208),
+      raised_by_user_id: SAMUEL,
+      raised_by_initials: "SI",
+      raised_at: "2026-09-11T17:00:00Z",
+      body: "Confirm corrected 1099 replaces the original",
+      status: "open",
+    },
+  ],
+  allowed_actions: ["field.edit", "field.add_reference", "field.sign_off"],
+};
+const SHL09 = {
+  a: tray,
+  b: {
+    ...tray,
+    field_key: "f1040es.federal.2025",
+    label: "2025 federal estimated tax payments",
+    current_seq: 1,
+    versions: [
+      {
+        ...updated,
+        seq: 1,
+        value: { t: "decimal", v: "48000" },
+        value_kind: "estimate",
+        citation:
+          "Four 2025 Form 1040-ES vouchers of $12,000 prepared with the 2024 return; payment confirmations not received.",
+        references: [
+          { ...importRef, kind: "prior_return", label: "2024 Form 1040 — estimate worksheet" },
+        ],
+        issue_id: id(209),
+      },
+    ],
+    ticks: [],
+    flags: [],
+  },
+  c: {
+    ...tray,
+    versions: [
+      {
+        ...updated,
+        value_source: "human",
+        cause: "edit",
+        actor_kind: "human",
+        actor_user_id: KEVIN,
+        actor_name: "Kevin Osei",
+        citation: "Per client email Sep 9 — Jonah confirmed…",
+        suggestion_id: null,
+      },
+      updated,
+      previous,
+    ],
+    current_seq: 3,
+  },
+  d: {
+    ...tray,
+    ticks: [
+      { ...koTick, signed_at: "2026-09-11T17:00:00Z", content_hash: FIELD_V2, stale: false },
+      {
+        ...koTick,
+        sign_off_id: id(210),
+        level: "L2_reviewer",
+        signer_user_id: SAMUEL,
+        signer_name: "Samuel Ito",
+        initials: "SI",
+        signed_at: "2026-09-14T17:00:00Z",
+        content_hash: FIELD_V2,
+        stale: false,
+      },
+    ],
+    flags: [],
+  },
+  e: {
+    ...tray,
+    versions: [
+      { ...updated, citation: null, citation_ids: [], references: [], unsupported: true },
+    ],
+    current_seq: 1,
+    ticks: [],
+    flags: [],
+    allowed_actions: ["field.edit", "field.add_reference"],
+  },
+  f: tray,
+} satisfies Record<string, FieldProvenanceOut>;
+const PROVENANCE = "/v1/fields/{target_type}/{target_id}/{field_key}/provenance";
+
+describe("SHL-09 a–f (stub 3)", () => {
+  it("every frame is the GET …/provenance shape", () => {
+    for (const [key, frame] of Object.entries(SHL09)) {
+      expect(validateResponse("GET", PROVENANCE, frame), key).toEqual([]);
+    }
+  });
+
+  it("a: 2,190 → 2,310 from the corrected 1099-INT; Kevin's earlier tick is stale", () => {
+    const [now, before] = SHL09.a.versions;
+    expect([milli(before?.value.v ?? ""), milli(now?.value.v ?? "")]).toEqual([
+      milli("2,190"),
+      milli("2,310"),
+    ]);
+    const box1 = now?.references.find((r) => r.kind === "document")?.detail ?? "";
+    expect(milli(box1.split(": ")[1] ?? "")).toBe(milli("2,310"));
+    expect(SHL09.a.ticks[0]?.stale).toBe(SHL09.a.ticks[0]?.content_hash !== SHL09.a.content_hash);
+    expect(`${String(SHL09.a.versions.length)} versions`).toBe("2 versions");
+    for (const field of ["versions", "flags"]) {
+      expect(cls("FieldProvenanceOut", field), field).toBe("restricted");
+    }
+    expect([cls("FieldValueOut", "v"), cls("FieldVersionOut", "citation")]).toEqual([
+      "restricted",
+      "restricted",
+    ]);
+    const tick: FieldTickIn = { level: "L2_reviewer", seen_hash: FIELD_V2 };
+    expect(validateSchema("FieldTickIn", tick)).toEqual([]);
+  });
+
+  it("b: ≈ 48,000 is four vouchers of 12,000 and links its open issue", () => {
+    const [estimate] = SHL09.b.versions;
+    expect(estimate?.value_kind).toBe("estimate");
+    expect(milli(estimate?.value.v ?? "")).toBe(4n * milli("12,000"));
+    expect(estimate?.issue_id).not.toBeNull();
+  });
+
+  it("c: a person's edit carries its citation note", () => {
+    const edit: FieldEditIn = {
+      value: { t: "decimal", v: "2310" },
+      value_kind: "exact",
+      citation_note: "Per client email Sep 9",
+      seen_seq: 2,
+    };
+    expect(validateSchema("FieldEditIn", edit)).toEqual([]);
+    expect(validateSchema("FieldEditIn", { ...edit, citation_note: undefined })).not.toEqual([]);
+    expect(SHL09.c.versions[0]?.actor_name).toBe("Kevin Osei");
+  });
+
+  it("d: both ticks are on the current hash", () => {
+    expect(SHL09.d.ticks.map((t) => [t.initials, t.stale])).toEqual([
+      ["KO", false],
+      ["SI", false],
+    ]);
+  });
+
+  it("e: an uncited agent value is Unsupported and cannot be ticked", () => {
+    expect(SHL09.e.versions[0]?.unsupported).toBe(true);
+    expect(SHL09.e.allowed_actions).not.toContain("field.sign_off");
+    const add: FieldReferenceIn = { document_id: id(204), page: 4, seen_seq: 1 };
+    expect(validateSchema("FieldReferenceIn", add)).toEqual([]);
+  });
+});
+
+// SHL-16 a–f: checkpoint drawer -----------------------------------------------------------------
+
+const checkpoint = (seq: number, over: Partial<CheckpointItemOut>): CheckpointItemOut => ({
+  id: id(210 + seq),
+  target_type: "tax_return",
+  target_id: FELD_1040,
+  seq,
+  name: null,
+  starred: false,
+  author_kind: "agent",
+  author_user_id: null,
+  author_name: "Accrued Agent",
+  cause: "agent_run",
+  status: "saved",
+  current: false,
+  summary: null,
+  created_at: "2026-09-14T14:18:00Z",
+  content_hash: digest(String(seq).repeat(4), "0000"),
+  proposal_id: null,
+  restored_from_id: null,
+  agent_run_id: null,
+  decision: null,
+  allowed_actions: ["checkpoint.restore", "checkpoint.rename"],
+  ...over,
+});
+const approval = (by: string, name: string, at: string): CheckpointDecisionOut => ({
+  id: id(230),
+  decision: "approved",
+  reason: null,
+  decided_by_user_id: by,
+  decided_by_name: name,
+  decided_at: at,
+  proposal_decision_id: id(231),
+});
+const cp6 = checkpoint(6, {
+  status: "proposed",
+  summary: "K-1 treatment: Ridgeline",
+  content_hash: CP6_HASH,
+  proposal_id: k1.ref,
+  agent_run_id: id(31),
+  allowed_actions: ["checkpoint.approve", "checkpoint.reject", "checkpoint.rename"],
+});
+const cards: CheckpointItemOut[] = [
+  cp6,
+  checkpoint(5, {
+    author_kind: "person",
+    author_user_id: KEVIN,
+    author_name: "Kevin Osei",
+    cause: "human_edit",
+    current: true,
+    summary: "Preparer review edits",
+    created_at: "2026-09-11T21:40:00Z",
+    allowed_actions: ["checkpoint.rename"],
+  }),
+  checkpoint(4, {
+    status: "approved",
+    summary: "Corrected Halvard 1099-INT (2,190 → 2,310)",
+    created_at: "2026-09-10T19:12:00Z",
+    decision: approval(KEVIN, "Kevin Osei", "2026-09-10T19:12:00Z"),
+  }),
+  checkpoint(3, {
+    status: "approved",
+    summary: "Initial draft self-checked",
+    created_at: "2026-09-03T16:05:00Z",
+  }),
+  checkpoint(2, {
+    author_kind: "import",
+    author_name: "Imported Return",
+    cause: "engine_import",
+    summary: "Imported from CCH Axcess 2025I:FeldJ:V3",
+    created_at: "2026-08-28T15:46:00Z",
+  }),
+  checkpoint(1, {
+    name: "Extension estimate (4868)",
+    starred: true,
+    author_kind: "person",
+    author_user_id: KEVIN,
+    author_name: "Kevin Osei",
+    cause: "manual_save",
+    created_at: "2026-04-13T17:00:00Z",
+  }),
+];
+const history = (items: CheckpointItemOut[]): CheckpointHistoryOut => ({
+  target_type: "tax_return",
+  target_id: FELD_1040,
+  filter: "all",
+  items,
+  current_checkpoint_id: items.find((c) => c.current)?.id ?? null,
+  total: items.length,
+  allowed_actions: ["checkpoint.create"],
+});
+const diffRow = (
+  field_key: string,
+  label: string,
+  old: string | null,
+  next: string | null,
+  cause: string,
+): CheckpointDiffRowOut => ({ field_key, label, old, new: next, cause, citation_ids: [id(33)] });
+const cp6Detail: CheckpointDetailOut = {
+  checkpoint: cp6,
+  compare: "previous",
+  compared_to_id: id(215),
+  steps: [
+    {
+      kind: "analyzed",
+      title: "Analyzed the drafted return",
+      detail: "Read 11 worksheets and the 2024 return's Schedule E, p. 2.",
+      at: "2026-09-14T14:16:00Z",
+    },
+    {
+      kind: "analyzed",
+      title: "Analyzed the draft Ridgeline K-1 (pre-release)",
+      detail: "Boxes G, 2, 5, 18A, 19A and the box 20 Z statement.",
+      at: "2026-09-14T14:17:00Z",
+    },
+    {
+      kind: "updated_worksheet",
+      title: "Updated worksheet",
+      detail: "Federal › Income › Sch E, p 2 - Partnership Passthrough (K-1 1065) › Ridgeline",
+      at: "2026-09-14T14:17:00Z",
+    },
+    {
+      kind: "updated_worksheet",
+      title: "Updated worksheet",
+      detail: "Federal › Deductions › Form 8995-A — Qualified business income",
+      at: "2026-09-14T14:18:00Z",
+    },
+    {
+      kind: "skipped_worksheet",
+      title: "Skipped creating worksheet",
+      detail: "Form 8582 — no passive losses this year, so it isn't required.",
+      at: "2026-09-14T14:18:00Z",
+    },
+  ],
+  diff: [
+    diffRow(
+      "activity_classification.ridgeline",
+      "Activity classification · Ridgeline",
+      "Nonpassive",
+      "Passive",
+      "K-1 box G; 2024 Sch E",
+    ),
+    diffRow(
+      "sch_e.p2.28a_k",
+      "Sch E p. 2 line 28A (k) Nonpassive income",
+      "307900",
+      null,
+      "moved to (h)",
+    ),
+    diffRow(
+      "sch_e.p2.28a_h",
+      "Sch E p. 2 line 28A (h) Passive income",
+      null,
+      "307900",
+      "K-1 box 2",
+    ),
+    diffRow(
+      "f8995a.p1.l1.ridgeline",
+      "Form 8995-A Part I line 1 · Ridgeline QBI",
+      null,
+      "307900",
+      "K-1 box 20 Z",
+    ),
+  ],
+  totals: [{ label: "Net change to total income", value: "0", ties: true }],
+};
+const SHL16 = {
+  a: history(cards),
+  b: history([
+    {
+      ...cp6,
+      status: "approved",
+      current: true,
+      decision: approval(SAMUEL, "Samuel Ito", "2026-09-14T14:26:00Z"),
+      allowed_actions: ["checkpoint.rename"],
+    },
+    ...cards.slice(1).map((c) => ({ ...c, current: false })),
+  ]),
+  d: history(
+    cards.map((c) => (c.seq === 5 ? { ...c, name: "Before K-1 treatment", starred: true } : c)),
+  ),
+  e: history([
+    {
+      ...cp6,
+      status: "rejected",
+      decision: {
+        ...approval(SAMUEL, "Samuel Ito", "2026-09-14T14:26:00Z"),
+        decision: "rejected",
+        reason: "Wait for final K-1",
+      },
+      allowed_actions: ["checkpoint.rename"],
+    },
+    ...cards.slice(1),
+  ]),
+  f: { ...history([]), target_id: id(240) },
+} satisfies Record<string, CheckpointHistoryOut>;
+
+describe("SHL-16 a–f (stub 3)", () => {
+  it("every history frame is the GET /v1/checkpoints shape", () => {
+    for (const [key, frame] of Object.entries(SHL16)) {
+      expect(validateResponse("GET", "/v1/checkpoints", frame), key).toEqual([]);
+    }
+    expect(validateResponse("GET", "/v1/checkpoints/{checkpoint_id}", cp6Detail)).toEqual([]);
+  });
+
+  it("a: Checkpoint 6 is the SHL-10 a proposal; the net change to total income ties at 0", () => {
+    expect(cp6Detail.checkpoint.proposal_id).toBe(k1.ref);
+    expect(cp6Detail.diff.map((r) => [r.field_key, r.old, r.new])).toEqual(
+      k1.rows.map((r) => [r.field_key, r.before, r.after]),
+    );
+    const income = cp6Detail.diff.filter((r) => r.field_key.startsWith("sch_e."));
+    const net = sum(income.map((r) => milli(r.new ?? "0") - milli(r.old ?? "0")));
+    expect(net).toBe(milli(cp6Detail.totals[0]?.value ?? ""));
+    expect(net).toBe(0n);
+    expect(SHL16.a.items.filter((c) => c.current).map((c) => c.seq)).toEqual([5]);
+    for (const field of ["summary", "decision"]) {
+      expect(cls("CheckpointItemOut", field), field).toBe("restricted");
+    }
+    const approve: CheckpointApproveIn = { seen_hash: CP6_HASH };
+    expect(validateSchema("CheckpointApproveIn", approve)).toEqual([]);
+  });
+
+  it("b: approving moves Current to Checkpoint 6", () => {
+    const current = SHL16.b.items.filter((c) => c.current);
+    expect(current.map((c) => c.seq)).toEqual([6]);
+    expect(SHL16.b.current_checkpoint_id).toBe(cp6.id);
+    expect(current[0]?.decision?.decided_by_name).toBe("Samuel Ito");
+  });
+
+  it("c: restoring Checkpoint 3 creates Checkpoint 7 as a copy", () => {
+    const three = cards.find((c) => c.seq === 3);
+    const seven = checkpoint(7, {
+      cause: "restore",
+      status: "saved",
+      restored_from_id: three?.id ?? null,
+    });
+    expect(validateSchema("CheckpointItemOut", seven)).toEqual([]);
+    const restore: CheckpointRestoreIn = { seen_hash: three?.content_hash ?? "" };
+    expect(validateSchema("CheckpointRestoreIn", restore)).toEqual([]);
+    expect(
+      validateResponse("GET", "/v1/checkpoints/{checkpoint_id}", {
+        ...cp6Detail,
+        compare: "current",
+      }),
+    ).toEqual([]);
+  });
+
+  it("d: rename and star change only name and starred", () => {
+    const rename: CheckpointRenameIn = { name: "Before K-1 treatment", starred: true };
+    expect(validateSchema("CheckpointRenameIn", rename)).toEqual([]);
+    expect(SHL16.d.items.find((c) => c.seq === 5)).toMatchObject(rename);
+  });
+
+  it("e: rejected with a reason", () => {
+    const reject: CheckpointRejectIn = { seen_hash: CP6_HASH, reason: "Wait for final K-1" };
+    expect(validateSchema("CheckpointRejectIn", reject)).toEqual([]);
+    const d = SHL16.e.items[0]?.decision;
+    expect(`${d?.decided_by_name ?? ""} · reason: ${d?.reason ?? ""}`).toBe(
+      "Samuel Ito · reason: Wait for final K-1",
+    );
+  });
+
+  it("f: an empty return offers Save checkpoint…", () => {
+    expect([SHL16.f.total, SHL16.f.items.length, SHL16.f.current_checkpoint_id]).toEqual([
+      0,
+      0,
+      null,
+    ]);
+    expect(SHL16.f.allowed_actions).toEqual(["checkpoint.create"]);
+    const save: CheckpointCreateIn = { target_type: "tax_return", target_id: id(240), name: null };
+    expect(validateSchema("CheckpointCreateIn", save)).toEqual([]);
+  });
+});
+
+// SHL-15 a–e: issue composer and fix instructions -----------------------------------------------
+
+const SUGGESTION =
+  "Add 1,550 from the draft Ridgeline K-1 box 18A to Form 1040 line 2a. Check the K-1 statement for the state of the bonds and add any non-New York portion to IT-201 line 20. Mark both values as draft until Ridgeline releases final K-1s.";
+const issueRow: IssueItemOut = {
+  id: id(250),
+  engagement_id: id(251),
+  work_item_id: FELD_1040,
+  record: { type: "tax_return", id: FELD_1040 },
+  kind: "missing_information",
+  priority: "high",
+  status: "open",
+  instructions_required: true,
+  assignee_user_id: null,
+  assignee_name: null,
+  assignee_agent: true,
+  blocks: [],
+  link_count: 2,
+  version: 1,
+  created_at: "2026-09-14T14:00:00Z",
+  allowed_actions: ["issue.update", "issue.resolve", "fix_instruction.set", "issue.explain"],
+};
+const issue18a: IssueDetailOut = {
+  issue: issueRow,
+  record_label: "2025 Form 1040 · Jonah & Claire Feld",
+  title: "Source K-1 box 18A 'Tax-exempt interest' is not on the worksheet",
+  internal_note: null,
+  client_wording: null,
+  client_contact: null,
+  links: [
+    {
+      kind: "file",
+      label: "Ridgeline_2025_K1_JonahFeld_DRAFT.pdf",
+      target_type: "document",
+      target_id: id(252),
+      anchor: null,
+    },
+    {
+      kind: "form_field",
+      label: "Form 1040 · line 2a",
+      target_type: "tax_return",
+      target_id: FELD_1040,
+      anchor: "f1040.l2a",
+    },
+  ],
+  suggestion: { text: SUGGESTION, agent_run_id: id(253), suggested_at: "2026-09-14T14:00:00Z" },
+  fix_instructions: null,
+  fix_run: null,
+  explanations: [
+    {
+      id: id(254),
+      text: "Line 2a is informational federally, but New York adds interest on other states' bonds back on IT-201 line 20. Leaving it out would understate New York income by up to $1,550, and the IRS matches K-1 reporting to the return.",
+      agent_run_id: id(255),
+      explained_at: "2026-09-14T14:22:00Z",
+      citations: [
+        { citation_id: id(256), label: "K-1 box 18A" },
+        { citation_id: id(257), label: "K-1 statement p. 3" },
+        { citation_id: id(258), label: "IT-201 instructions, line 20" },
+      ],
+      pinned: true,
+    },
+  ],
+  request_item_id: null,
+  events: [],
+};
+const INSTRUCTIONS = `${SUGGESTION}\nDon't change taxable interest on line 2b (6,910).`;
+const fixing: IssueDetailOut = {
+  ...issue18a,
+  issue: { ...issueRow, status: "in_progress", instructions_required: false, version: 2 },
+  fix_instructions: {
+    text: INSTRUCTIONS,
+    scope: "this_issue",
+    set_by_user_id: KEVIN,
+    set_by_name: "Kevin Osei",
+    set_at: "2026-09-14T14:24:00Z",
+  },
+  fix_run: {
+    agent_run_id: id(259),
+    label: "Adding 1,550 to Form 1040 line 2a",
+    status: "running",
+    proposal_id: null,
+  },
+};
+const NOTE =
+  "The plan is a QACA with 6% default deferral. Four eligible participants had no 2025 deferrals and no opt-out election on file. If none exists, this is a missed-deferral failure to correct under EPCRS (start the correct deferrals, notify the participants and fund any missed QACA safe-harbor match; a QNEC for the missed deferrals may be 0% under the auto-enrollment safe harbor if corrected in time); evaluate as a control exception in AUD-15.";
+const WORDING =
+  "Four employees were automatically enrolled in the 401(k) but had no contributions in 2025. Please upload their signed opt-out forms, or let us know if none exist. The list is attached.";
+const optOuts: IssueCreateIn = {
+  record_type: "workpaper",
+  record_id: id(260),
+  kind: "waiting_on_client",
+  priority: "high",
+  title: "Opt-out elections missing for 4 auto-enrolled participants who are not deferring",
+  internal_note: NOTE,
+  client_wording: WORDING,
+  client_contact_id: DANA,
+  assignee_user_id: ANA,
+  assignee_agent: false,
+  links: [
+    { kind: "cell_range", target_type: "workpaper", target_id: id(260), anchor: "F12:F15" },
+    { kind: "file", target_type: "document", target_id: id(261), anchor: null },
+  ],
+  blocks: [],
+};
+const SHL15 = {
+  a: issue18a,
+  a_prime: fixing,
+  a_double_prime: {
+    ...fixing,
+    fix_run: {
+      agent_run_id: id(259),
+      label: "Adding 1,550 to Form 1040 line 2a",
+      status: "succeeded",
+      proposal_id: k1.ref,
+    },
+  },
+  b: {
+    ...issue18a,
+    issue: {
+      ...issueRow,
+      id: id(262),
+      kind: "waiting_on_client",
+      assignee_agent: false,
+      assignee_user_id: ANA,
+      assignee_name: "Ana Cruz",
+      instructions_required: false,
+    },
+    record_label: "EBP-04 Participant data · Northwind Robotics 401(k) Plan",
+    title: optOuts.title,
+    internal_note: NOTE,
+    client_wording: WORDING,
+    client_contact: { contact_id: DANA, name: "Dana Kowalski", role_label: "Plan administrator" },
+    suggestion: null,
+    explanations: [],
+    request_item_id: id(263),
+  },
+  d: issue18a,
+} satisfies Record<string, IssueDetailOut>;
+
+describe("SHL-15 a–e (stub 3)", () => {
+  it("every issue frame is the GET /v1/issues/{issue_id} shape", () => {
+    for (const [key, frame] of Object.entries(SHL15)) {
+      expect(validateResponse("GET", "/v1/issues/{issue_id}", frame), key).toEqual([]);
+    }
+    const page: ListPageIssueItemOut = {
+      items: [issueRow],
+      next_cursor: null,
+      total: 4,
+      total_capped: false,
+      counts: { open: 4 },
+      facets: {},
+    };
+    expect(validateResponse("GET", "/v1/issues", page)).toEqual([]);
+  });
+
+  it("a: Use suggestion plus one constraint; runs always propose", () => {
+    const body: FixInstructionsIn = { seen_version: 1, text: INSTRUCTIONS, scope: "this_issue" };
+    expect(validateSchema("FixInstructionsIn", body)).toEqual([]);
+    expect(body.text.split("\n")[0]).toBe(SHL15.a.suggestion?.text);
+    const accepted: FixInstructionsAcceptedOut = {
+      issue_id: issueRow.id,
+      agent_run_id: id(259),
+      status: "in_progress",
+    };
+    expect(validateSchema("FixInstructionsAcceptedOut", accepted)).toEqual([]);
+    for (const field of ["title", "suggestion", "fix_instructions", "fix_run", "explanations"]) {
+      expect(cls("IssueDetailOut", field), field).toBe("restricted");
+    }
+    expect(cls("IssueItemOut", "title")).toBeUndefined();
+  });
+
+  it("a′, a″: the run adds the same 1,550 the line 2a suggestion adopts, then proposes", () => {
+    const amount = /(\d{1,3}(?:,\d{3})+)/.exec(SHL15.a_prime.fix_run?.label ?? "")?.[1] ?? "";
+    expect(milli(amount)).toBe(milli("1,550"));
+    expect(SHL15.a_prime.issue.status).toBe("in_progress");
+    expect(SHL15.a_double_prime.fix_run.proposal_id).toBe(k1.ref);
+  });
+
+  it("b: four cells, four participants; only the client wording goes to the client", () => {
+    expect(validateSchema("IssueCreateIn", optOuts)).toEqual([]);
+    const [, first, last] =
+      /^[A-Z]+(\d+):[A-Z]+(\d+)$/.exec(optOuts.links?.[0]?.anchor ?? "") ?? [];
+    expect(Number(last) - Number(first) + 1).toBe(4);
+    for (const word of ["EPCRS", "QACA", "QNEC", "AUD-15"]) {
+      expect(NOTE, word).toContain(word);
+      expect(WORDING, word).not.toContain(word);
+    }
+    const send: IssueSendToClientIn = {
+      seen_version: 1,
+      client_wording: WORDING,
+      contact_id: DANA,
+      due_on: null,
+    };
+    expect(validateSchema("IssueSendToClientIn", send)).toEqual([]);
+    expect(SHL15.b.request_item_id).not.toBeNull();
+  });
+
+  it("c: a field flag raises a Review point; Feld Issues 4 → 5", () => {
+    const flag: IssueCreateIn = {
+      record_type: "tax_return",
+      record_id: FELD_1040,
+      kind: "review_point",
+      title: "Confirm Ridgeline K-1 amounts against the final K-1 before export",
+      assignee_user_id: KEVIN,
+      assignee_agent: false,
+      links: [
+        {
+          kind: "form_field",
+          target_type: "tax_return",
+          target_id: FELD_1040,
+          anchor: "f1040.l2b",
+        },
+      ],
+    };
+    expect(validateSchema("IssueCreateIn", flag)).toEqual([]);
+    expect(validateSchema("IssueCreateIn", { ...flag, kind: "urgent" })).not.toEqual([]);
+    const four: ListPageIssueItemOut = {
+      items: [issueRow, issueRow, issueRow, issueRow],
+      next_cursor: null,
+      total: 4,
+      total_capped: false,
+      counts: { open: 4 },
+      facets: {},
+    };
+    const five: ListPageIssueItemOut = {
+      ...four,
+      items: [...four.items, issueRow],
+      total: 5,
+      counts: { open: 5 },
+    };
+    expect([four.total, five.total]).toEqual([4, 5]);
+    expect(validateResponse("GET", "/v1/issues", five)).toEqual([]);
+  });
+
+  it("d: Explain is read-only agent text with three citations", () => {
+    const [explanation] = SHL15.d.explanations;
+    expect(explanation?.citations.map((c) => c.label)).toEqual([
+      "K-1 box 18A",
+      "K-1 statement p. 3",
+      "IT-201 instructions, line 20",
+    ]);
+    const accepted: ExplainAcceptedOut = { issue_id: issueRow.id, agent_run_id: id(255) };
+    expect(validateSchema("ExplainAcceptedOut", accepted)).toEqual([]);
+  });
+
+  it("e: bulk instructions for the 2 Missing information issues", () => {
+    const bulk: BulkFixInstructionsIn = {
+      issues: [
+        { issue_id: id(209), seen_version: 1 },
+        { issue_id: issueRow.id, seen_version: 1 },
+      ],
+      text: "Obtain the confirmations",
+    };
+    expect(validateSchema("BulkFixInstructionsIn", bulk)).toEqual([]);
+    const out: BulkFixInstructionsOut = {
+      results: bulk.issues.map((i) => ({
+        issue_id: i.issue_id,
+        ok: true,
+        agent_run_id: id(270),
+        detail: null,
+      })),
+      accepted: 2,
+      excluded: 0,
+    };
+    expect(validateSchema("BulkFixInstructionsOut", out)).toEqual([]);
+    expect(out.accepted + out.excluded).toBe(out.results.length);
+    expect(`Set Fix Instructions for ${String(bulk.issues.length)}`).toBe(
+      "Set Fix Instructions for 2",
+    );
   });
 });
