@@ -589,6 +589,11 @@ export type AgentRunOut = {
 };
 
 /**
+ * AgentRunStatus
+ */
+export type AgentRunStatus = 'queued' | 'planning' | 'awaiting_plan_approval' | 'dispatched' | 'running' | 'needs_input' | 'blocked_on_decision' | 'waiting_on_inputs' | 'succeeded' | 'failed' | 'cancelled';
+
+/**
  * AgentSuggestionOut
  *
  * One proposed value for one target, after a person's decision.
@@ -1558,6 +1563,77 @@ export type BudgetOut = {
 };
 
 /**
+ * BulkFixInstructionsIn
+ *
+ * SHL-15 e: one shared editor; the scope is locked to the selection, so each issue gets
+ * its own sealed instruction with scope `this_issue`.
+ */
+export type BulkFixInstructionsIn = {
+    /**
+     * Issues
+     */
+    issues: Array<BulkFixIssueIn>;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * BulkFixInstructionsOut
+ */
+export type BulkFixInstructionsOut = {
+    /**
+     * Accepted
+     */
+    accepted: number;
+    /**
+     * Excluded
+     */
+    excluded: number;
+    /**
+     * Results
+     */
+    results: Array<BulkFixItemOut>;
+};
+
+/**
+ * BulkFixIssueIn
+ */
+export type BulkFixIssueIn = {
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * BulkFixItemOut
+ */
+export type BulkFixItemOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Detail
+     */
+    detail: 'issue_changed' | 'fix_runner_unavailable' | 'level_not_permitted' | null;
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    /**
+     * Ok
+     */
+    ok: boolean;
+};
+
+/**
  * BulkSignOffIn
  */
 export type BulkSignOffIn = {
@@ -1947,6 +2023,351 @@ export type ChecklistItemOut = {
 };
 
 /**
+ * CheckpointApproveIn
+ *
+ * A checkpoint that is no longer proposed, or whose hash differs, answers 409
+ * `checkpoint_changed`; nothing is written.
+ */
+export type CheckpointApproveIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * CheckpointCreateIn
+ *
+ * "Save checkpoint…": a person's named checkpoint of the target as it is.
+ */
+export type CheckpointCreateIn = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
+ * CheckpointDecisionOut
+ *
+ * The insert-only, human-only `checkpoint_decisions` row (SHL-16 b, e).
+ */
+export type CheckpointDecisionOut = {
+    /**
+     * Decided At
+     */
+    decided_at: string;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string;
+    /**
+     * Decided By User Id
+     */
+    decided_by_user_id: string;
+    /**
+     * Decision
+     */
+    decision: 'approved' | 'rejected' | 'restored';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Proposal Decision Id
+     */
+    proposal_decision_id: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+};
+
+/**
+ * CheckpointDetailOut
+ *
+ * `GET /v1/checkpoints/{id}?compare=`: the card, its steps and the diff against `compare`
+ * (the previous checkpoint, or current for an older one, SHL-16 c).
+ */
+export type CheckpointDetailOut = {
+    checkpoint: CheckpointItemOut;
+    /**
+     * Compare
+     */
+    compare: 'current' | 'previous';
+    /**
+     * Compared To Id
+     */
+    compared_to_id: string | null;
+    /**
+     * Diff
+     */
+    diff: Array<CheckpointDiffRowOut>;
+    /**
+     * Steps
+     */
+    steps: Array<CheckpointStepOut>;
+    /**
+     * Totals
+     */
+    totals: Array<CheckpointTotalOut>;
+};
+
+/**
+ * CheckpointDiffRowOut
+ *
+ * One field's old and new value, computed by code (`checkpoint_diffs`). Values are strings
+ * and numbers are decimal strings; null is an empty cell ("—").
+ */
+export type CheckpointDiffRowOut = {
+    /**
+     * Cause
+     */
+    cause: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * New
+     */
+    new: string | null;
+    /**
+     * Old
+     */
+    old: string | null;
+};
+
+/**
+ * CheckpointHistoryOut
+ *
+ * `GET /v1/checkpoints`: one target's checkpoints, newest first, read like the sign-off
+ * ladder (one target, bounded) rather than as a cross-record list.
+ */
+export type CheckpointHistoryOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Current Checkpoint Id
+     */
+    current_checkpoint_id: string | null;
+    /**
+     * Filter
+     */
+    filter: 'agent' | 'named' | 'all';
+    /**
+     * Items
+     */
+    items: Array<CheckpointItemOut>;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * CheckpointItemOut
+ *
+ * One checkpoint card. "Checkpoint {seq}" is its title unless it is named; `current` is
+ * derived (ADR-160 clause 9) and never stored. `summary` may carry return figures
+ * ("Corrected Halvard 1099-INT (2,190 → 2,310)"), so it is Restricted and appears only in
+ * one target's history read.
+ */
+export type CheckpointItemOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Author Kind
+     */
+    author_kind: 'agent' | 'person' | 'import';
+    /**
+     * Author Name
+     */
+    author_name: string;
+    /**
+     * Author User Id
+     */
+    author_user_id: string | null;
+    /**
+     * Cause
+     */
+    cause: 'agent_run' | 'engine_import' | 'human_edit' | 'restore' | 'amendment' | 'manual_save';
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Current
+     */
+    current: boolean;
+    decision: CheckpointDecisionOut | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string | null;
+    /**
+     * Proposal Id
+     */
+    proposal_id: string | null;
+    /**
+     * Restored From Id
+     */
+    restored_from_id: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * Starred
+     */
+    starred: boolean;
+    status: CheckpointStatus;
+    /**
+     * Summary
+     */
+    summary: string | null;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+};
+
+/**
+ * CheckpointRejectIn
+ */
+export type CheckpointRejectIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * CheckpointRenameIn
+ *
+ * Rename and star change only `name` and `starred` (SHL-16 d).
+ */
+export type CheckpointRenameIn = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Starred
+     */
+    starred?: boolean | null;
+};
+
+/**
+ * CheckpointRestoreIn
+ *
+ * Restore creates a new checkpoint as a copy; nothing is deleted (SHL-16 c).
+ */
+export type CheckpointRestoreIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * CheckpointStatus
+ */
+export type CheckpointStatus = 'proposed' | 'approved' | 'rejected' | 'saved';
+
+/**
+ * CheckpointStepOut
+ *
+ * One step of the run that made the checkpoint (C6 run steps, read through review).
+ */
+export type CheckpointStepOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Detail
+     */
+    detail: string | null;
+    /**
+     * Kind
+     */
+    kind: 'analyzed' | 'updated_worksheet' | 'created_worksheet' | 'skipped_worksheet' | 'self_check' | 'imported';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * CheckpointTotalOut
+ *
+ * The code-computed totals row ("Net change to total income · 0", a tie).
+ */
+export type CheckpointTotalOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Ties
+     */
+    ties: boolean;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * CitationBody
  */
 export type CitationBody = {
@@ -1958,6 +2379,22 @@ export type CitationBody = {
      * Locator
      */
     locator?: string | null;
+};
+
+/**
+ * CitedSourceOut
+ *
+ * A verified citation (C4) as its chip reads ("K-1 box 18A", "K-1 statement p. 3").
+ */
+export type CitedSourceOut = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -5019,6 +5456,22 @@ export type ExclusionBody = {
 };
 
 /**
+ * ExplainAcceptedOut
+ *
+ * 202: the explanation run started; its text arrives on the issue's detail.
+ */
+export type ExplainAcceptedOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+};
+
+/**
  * Facet
  */
 export type Facet = {
@@ -5051,6 +5504,28 @@ export type FacetsOut = {
 };
 
 /**
+ * FieldEditIn
+ *
+ * `PUT …/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`
+ * CHECK); a stale `seen_seq` answers 409 `field_changed`.
+ */
+export type FieldEditIn = {
+    /**
+     * Citation Note
+     */
+    citation_note: string;
+    /**
+     * Seen Seq
+     */
+    seen_seq: number;
+    value: FieldValueIn;
+    /**
+     * Value Kind
+     */
+    value_kind?: 'exact' | 'estimate';
+};
+
+/**
  * FieldErrorOut
  */
 export type FieldErrorOut = {
@@ -5066,6 +5541,299 @@ export type FieldErrorOut = {
      * Type
      */
     type: string;
+};
+
+/**
+ * FieldFlagOut
+ *
+ * A field flag ("⚑ SI · Sep 11"): a review note anchored on the field.
+ */
+export type FieldFlagOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Note Id
+     */
+    note_id: string;
+    /**
+     * Raised At
+     */
+    raised_at: string;
+    /**
+     * Raised By Initials
+     */
+    raised_by_initials: string;
+    /**
+     * Raised By User Id
+     */
+    raised_by_user_id: string;
+    status: ReviewNoteStatus;
+};
+
+/**
+ * FieldProvenanceOut
+ *
+ * `GET /v1/fields/{type}/{id}/{key}/provenance`: the tray behind ⓘ, newest version first.
+ * Every field write answers with it too.
+ */
+export type FieldProvenanceOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Current Seq
+     */
+    current_seq: number;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Flags
+     */
+    flags: Array<FieldFlagOut>;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Ticks
+     */
+    ticks: Array<FieldTickOut>;
+    /**
+     * Versions
+     */
+    versions: Array<FieldVersionOut>;
+};
+
+/**
+ * FieldReferenceIn
+ *
+ * `POST …/references`: a document in this return; C4 verifies the citation.
+ */
+export type FieldReferenceIn = {
+    /**
+     * Document Id
+     */
+    document_id: string;
+    /**
+     * Page
+     */
+    page?: number | null;
+    /**
+     * Seen Seq
+     */
+    seen_seq: number;
+};
+
+/**
+ * FieldReferenceOut
+ *
+ * A reference row: the imported return or the document page that proves the value.
+ */
+export type FieldReferenceOut = {
+    /**
+     * Citation Id
+     */
+    citation_id: string | null;
+    /**
+     * Detail
+     */
+    detail: string | null;
+    /**
+     * Document Id
+     */
+    document_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'document' | 'engine_import' | 'workpaper' | 'prior_return';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Page
+     */
+    page: number | null;
+};
+
+/**
+ * FieldTickIn
+ *
+ * `POST …/ticks`: "Sign off field". An unsupported value answers 422 `uncited_change`; a
+ * different current hash answers 409 `content_changed`.
+ */
+export type FieldTickIn = {
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * FieldTickOut
+ *
+ * A field tick: a `field_tick` sign-off bound to the value's hash. `stale` is computed
+ * ("✓ KO · Sep 8 (before this change)").
+ */
+export type FieldTickOut = {
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Level
+     */
+    level: 'L1_preparer' | 'L2_reviewer' | 'L3_manager' | 'L4_partner' | 'L5_eqr';
+    /**
+     * Sign Off Id
+     */
+    sign_off_id: string;
+    /**
+     * Signed At
+     */
+    signed_at: string;
+    /**
+     * Signer Name
+     */
+    signer_name: string;
+    /**
+     * Signer User Id
+     */
+    signer_user_id: string;
+    /**
+     * Stale
+     */
+    stale: boolean;
+};
+
+/**
+ * FieldValueIn
+ */
+export type FieldValueIn = {
+    /**
+     * T
+     */
+    t: 'decimal' | 'text' | 'date' | 'bool';
+    /**
+     * V
+     */
+    v: string | null;
+};
+
+/**
+ * FieldValueOut
+ *
+ * A typed value as `field_value_versions.value` stores it: `{t, v}`, decimals as strings.
+ */
+export type FieldValueOut = {
+    /**
+     * T
+     */
+    t: 'decimal' | 'text' | 'date' | 'bool';
+    /**
+     * V
+     */
+    v: string | null;
+};
+
+/**
+ * FieldVersionOut
+ *
+ * One insert-only `field_value_versions` row. `unsupported` is computed: no verified
+ * citation, so the value cannot be ticked or approved. The pill (Updated, Edited, ≈,
+ * Unsupported) is derived from these fields and never stored.
+ */
+export type FieldVersionOut = {
+    /**
+     * Actor Kind
+     */
+    actor_kind: 'human' | 'agent' | 'system';
+    /**
+     * Actor Name
+     */
+    actor_name: string;
+    /**
+     * Actor User Id
+     */
+    actor_user_id: string | null;
+    /**
+     * Cause
+     */
+    cause: 'edit' | 'suggestion_adopted' | 'recompute' | 'import' | 'restore' | 'template_update' | 'relink';
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id: string | null;
+    /**
+     * Citation
+     */
+    citation: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Issue Id
+     */
+    issue_id: string | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * References
+     */
+    references: Array<FieldReferenceOut>;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string | null;
+    /**
+     * Unsupported
+     */
+    unsupported: boolean;
+    value: FieldValueOut;
+    /**
+     * Value Kind
+     */
+    value_kind: 'exact' | 'estimate';
+    /**
+     * Value Source
+     */
+    value_source: 'agent_suggested' | 'human' | 'formula' | 'tb_linked' | 'engine_import';
 };
 
 /**
@@ -5248,6 +6016,41 @@ export type FirmRoleIn = {
      * Firm Role
      */
     firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | null;
+};
+
+/**
+ * FixInstructionsAcceptedOut
+ *
+ * 202: the instructions are recorded and the registered fix runner started a run.
+ */
+export type FixInstructionsAcceptedOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    status: IssueStatus;
+};
+
+/**
+ * FixInstructionsIn
+ */
+export type FixInstructionsIn = {
+    /**
+     * Scope
+     */
+    scope?: 'this_issue' | 'all_of_class';
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -6276,6 +7079,448 @@ export type IndependenceIn = {
 export type InvitationStatus = 'not_invited' | 'invited' | 'active' | 'locked' | 'deactivated';
 
 /**
+ * IssueClientContactOut
+ */
+export type IssueClientContactOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Role Label
+     */
+    role_label: string | null;
+};
+
+/**
+ * IssueCreateIn
+ *
+ * `POST /v1/issues`. "Create & send to client" is this, then `send-to-client`.
+ */
+export type IssueCreateIn = {
+    /**
+     * Assignee Agent
+     */
+    assignee_agent?: boolean;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id?: string | null;
+    /**
+     * Blocks
+     */
+    blocks?: Array<'final_approval' | 'export' | 'release' | 'sign_off'>;
+    /**
+     * Client Contact Id
+     */
+    client_contact_id?: string | null;
+    /**
+     * Client Wording
+     */
+    client_wording?: string | null;
+    /**
+     * Internal Note
+     */
+    internal_note?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'missing_information' | 'action_required' | 'review_point' | 'waiting_on_client' | 'exception' | 'engine_diagnostic';
+    /**
+     * Links
+     */
+    links?: Array<IssueLinkIn>;
+    priority?: IssueSeverityStatus;
+    /**
+     * Record Id
+     */
+    record_id: string;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * IssueDetailOut
+ *
+ * One issue with its sealed title, internal note and client wording. Only `client_wording`
+ * ever reaches the client, as a request item through `send-to-client` (INV-4).
+ */
+export type IssueDetailOut = {
+    client_contact: IssueClientContactOut | null;
+    /**
+     * Client Wording
+     */
+    client_wording: string | null;
+    /**
+     * Events
+     */
+    events: Array<IssueEventOut>;
+    /**
+     * Explanations
+     */
+    explanations: Array<IssueExplanationOut>;
+    fix_instructions: IssueFixInstructionsOut | null;
+    fix_run: IssueFixRunOut | null;
+    /**
+     * Internal Note
+     */
+    internal_note: string | null;
+    issue: IssueItemOut;
+    /**
+     * Links
+     */
+    links: Array<IssueLinkOut>;
+    /**
+     * Record Label
+     */
+    record_label: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string | null;
+    suggestion: IssueFixSuggestionOut | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * IssueEventOut
+ */
+export type IssueEventOut = {
+    /**
+     * Actor Kind
+     */
+    actor_kind: 'human' | 'agent' | 'system';
+    /**
+     * Actor Name
+     */
+    actor_name: string;
+    /**
+     * Actor User Id
+     */
+    actor_user_id: string | null;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Event
+     */
+    event: 'created' | 'assigned' | 'status_changed' | 'fix_instructions_set' | 'sent_to_client' | 'explained' | 'resolved' | 'verified' | 'reopened' | 'marked_not_applicable';
+};
+
+/**
+ * IssueExplanationOut
+ *
+ * SHL-15 d, "Explain…": read-only agent text with its citations; it decides nothing.
+ */
+export type IssueExplanationOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+    /**
+     * Citations
+     */
+    citations: Array<CitedSourceOut>;
+    /**
+     * Explained At
+     */
+    explained_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Pinned
+     */
+    pinned: boolean;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * IssueFixInstructionsOut
+ *
+ * The sealed instructions a person set. Fix runs always propose (DF-13): there is no
+ * direct-edit mode, so the "Propose changes for my approval" box is not a wire field.
+ */
+export type IssueFixInstructionsOut = {
+    /**
+     * Scope
+     */
+    scope: 'this_issue' | 'all_of_class';
+    /**
+     * Set At
+     */
+    set_at: string;
+    /**
+     * Set By Name
+     */
+    set_by_name: string;
+    /**
+     * Set By User Id
+     */
+    set_by_user_id: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * IssueFixRunOut
+ *
+ * The run fixing the issue (SHL-15 a-prime: "Adding 1,550 to Form 1040 line 2a · Running"),
+ * then its proposal (a-double-prime: the ghost values; Accept opens SHL-10 b). `label` is
+ * agent text.
+ */
+export type IssueFixRunOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Proposal Id
+     */
+    proposal_id: string | null;
+    status: AgentRunStatus;
+};
+
+/**
+ * IssueFixSuggestionOut
+ *
+ * "Suggested by Accrued Agent": agent text, rendered only through AgentText.
+ */
+export type IssueFixSuggestionOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string | null;
+    /**
+     * Suggested At
+     */
+    suggested_at: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * IssueItemOut
+ *
+ * An issue in a list (TAX-06, TXP-10, AUD-15). The title, notes and client wording are
+ * sealed and Restricted, so lists never carry them; the detail does.
+ */
+export type IssueItemOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Assignee Agent
+     */
+    assignee_agent: boolean;
+    /**
+     * Assignee Name
+     */
+    assignee_name: string | null;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string | null;
+    /**
+     * Blocks
+     */
+    blocks: Array<'final_approval' | 'export' | 'release' | 'sign_off'>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Instructions Required
+     */
+    instructions_required: boolean;
+    /**
+     * Kind
+     */
+    kind: 'missing_information' | 'action_required' | 'review_point' | 'waiting_on_client' | 'exception' | 'engine_diagnostic';
+    /**
+     * Link Count
+     */
+    link_count: number;
+    priority: IssueSeverityStatus;
+    record: ObjectRefOut;
+    status: IssueStatus;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string | null;
+};
+
+/**
+ * IssueLinkIn
+ */
+export type IssueLinkIn = {
+    /**
+     * Anchor
+     */
+    anchor?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'cell_range' | 'form_field' | 'file' | 'request_item' | 'finding';
+    /**
+     * Target Id
+     */
+    target_id?: string | null;
+    /**
+     * Target Type
+     */
+    target_type?: string | null;
+};
+
+/**
+ * IssueLinkOut
+ *
+ * A linked target: a cell range ("EBP-04 Participant data!F12:F15"), a form field ("Form
+ * 1040 · line 2a"), a file, a request item or a finding. The chip lights its target.
+ */
+export type IssueLinkOut = {
+    /**
+     * Anchor
+     */
+    anchor: string | null;
+    /**
+     * Kind
+     */
+    kind: 'cell_range' | 'form_field' | 'file' | 'request_item' | 'finding';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target Id
+     */
+    target_id: string | null;
+    /**
+     * Target Type
+     */
+    target_type: string | null;
+};
+
+/**
+ * IssueResolutionIn
+ *
+ * Resolve, verify, reopen or mark not applicable: a person's act (ISSUE-001).
+ */
+export type IssueResolutionIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * IssueSendToClientIn
+ *
+ * One request item through `requests.api` (P-06) carrying only the client wording.
+ */
+export type IssueSendToClientIn = {
+    /**
+     * Client Wording
+     */
+    client_wording: string;
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * IssueSeverityStatus
+ */
+export type IssueSeverityStatus = 'high' | 'medium' | 'low';
+
+/**
+ * IssueStatus
+ */
+export type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'verified' | 'reopened' | 'not_applicable';
+
+/**
+ * IssueUpdateIn
+ *
+ * `PATCH /v1/issues/{id}`: title, class, priority and assignee. A stale `seen_version`
+ * answers 409 `issue_changed`.
+ */
+export type IssueUpdateIn = {
+    /**
+     * Assignee Agent
+     */
+    assignee_agent?: boolean | null;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id?: string | null;
+    /**
+     * Kind
+     */
+    kind?: 'missing_information' | 'action_required' | 'review_point' | 'waiting_on_client' | 'exception' | 'engine_diagnostic' | null;
+    priority?: IssueSeverityStatus | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Title
+     */
+    title?: string | null;
+};
+
+/**
  * ItemHitOut
  */
 export type ItemHitOut = {
@@ -7105,6 +8350,40 @@ export type ListPageHumanGateOut = {
      * Items
      */
     items: Array<HumanGateOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[IssueItemOut]
+ */
+export type ListPageIssueItemOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<IssueItemOut>;
     /**
      * Next Cursor
      */
@@ -14450,6 +15729,418 @@ export type PutBudgetResponses = {
 };
 
 export type PutBudgetResponse = PutBudgetResponses[keyof PutBudgetResponses];
+
+export type CheckpointHistoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+        /**
+         * Filter
+         */
+        filter?: 'agent' | 'named' | 'all';
+    };
+    url: '/v1/checkpoints';
+};
+
+export type CheckpointHistoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointHistoryError = CheckpointHistoryErrors[keyof CheckpointHistoryErrors];
+
+export type CheckpointHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckpointHistoryOut;
+};
+
+export type CheckpointHistoryResponse = CheckpointHistoryResponses[keyof CheckpointHistoryResponses];
+
+export type CheckpointCreateData = {
+    body: CheckpointCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/checkpoints';
+};
+
+export type CheckpointCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointCreateError = CheckpointCreateErrors[keyof CheckpointCreateErrors];
+
+export type CheckpointCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: CheckpointItemOut;
+};
+
+export type CheckpointCreateResponse = CheckpointCreateResponses[keyof CheckpointCreateResponses];
+
+export type CheckpointData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Checkpoint Id
+         */
+        checkpoint_id: string;
+    };
+    query?: {
+        /**
+         * Compare
+         */
+        compare?: 'current' | 'previous';
+    };
+    url: '/v1/checkpoints/{checkpoint_id}';
+};
+
+export type CheckpointErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointError = CheckpointErrors[keyof CheckpointErrors];
+
+export type CheckpointResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckpointDetailOut;
+};
+
+export type CheckpointResponse = CheckpointResponses[keyof CheckpointResponses];
+
+export type CheckpointRenameData = {
+    body: CheckpointRenameIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Checkpoint Id
+         */
+        checkpoint_id: string;
+    };
+    query?: never;
+    url: '/v1/checkpoints/{checkpoint_id}';
+};
+
+export type CheckpointRenameErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointRenameError = CheckpointRenameErrors[keyof CheckpointRenameErrors];
+
+export type CheckpointRenameResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckpointItemOut;
+};
+
+export type CheckpointRenameResponse = CheckpointRenameResponses[keyof CheckpointRenameResponses];
+
+export type CheckpointApproveData = {
+    body: CheckpointApproveIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Checkpoint Id
+         */
+        checkpoint_id: string;
+    };
+    query?: never;
+    url: '/v1/checkpoints/{checkpoint_id}/approve';
+};
+
+export type CheckpointApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointApproveError = CheckpointApproveErrors[keyof CheckpointApproveErrors];
+
+export type CheckpointApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckpointItemOut;
+};
+
+export type CheckpointApproveResponse = CheckpointApproveResponses[keyof CheckpointApproveResponses];
+
+export type CheckpointRejectData = {
+    body: CheckpointRejectIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Checkpoint Id
+         */
+        checkpoint_id: string;
+    };
+    query?: never;
+    url: '/v1/checkpoints/{checkpoint_id}/reject';
+};
+
+export type CheckpointRejectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointRejectError = CheckpointRejectErrors[keyof CheckpointRejectErrors];
+
+export type CheckpointRejectResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckpointItemOut;
+};
+
+export type CheckpointRejectResponse = CheckpointRejectResponses[keyof CheckpointRejectResponses];
+
+export type CheckpointRestoreData = {
+    body: CheckpointRestoreIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Checkpoint Id
+         */
+        checkpoint_id: string;
+    };
+    query?: never;
+    url: '/v1/checkpoints/{checkpoint_id}/restore';
+};
+
+export type CheckpointRestoreErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckpointRestoreError = CheckpointRestoreErrors[keyof CheckpointRestoreErrors];
+
+export type CheckpointRestoreResponses = {
+    /**
+     * Successful Response
+     */
+    201: CheckpointItemOut;
+};
+
+export type CheckpointRestoreResponse = CheckpointRestoreResponses[keyof CheckpointRestoreResponses];
 
 export type RevealTinData = {
     body: TinRevealIn;
@@ -29123,6 +30814,274 @@ export type SetupFileResponses = {
 
 export type SetupFileResponse = SetupFileResponses[keyof SetupFileResponses];
 
+export type FieldProvenanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+        /**
+         * Field Key
+         */
+        field_key: string;
+    };
+    query?: never;
+    url: '/v1/fields/{target_type}/{target_id}/{field_key}/provenance';
+};
+
+export type FieldProvenanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FieldProvenanceError = FieldProvenanceErrors[keyof FieldProvenanceErrors];
+
+export type FieldProvenanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: FieldProvenanceOut;
+};
+
+export type FieldProvenanceResponse = FieldProvenanceResponses[keyof FieldProvenanceResponses];
+
+export type FieldReferenceData = {
+    body: FieldReferenceIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+        /**
+         * Field Key
+         */
+        field_key: string;
+    };
+    query?: never;
+    url: '/v1/fields/{target_type}/{target_id}/{field_key}/references';
+};
+
+export type FieldReferenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FieldReferenceError = FieldReferenceErrors[keyof FieldReferenceErrors];
+
+export type FieldReferenceResponses = {
+    /**
+     * Successful Response
+     */
+    201: FieldProvenanceOut;
+};
+
+export type FieldReferenceResponse = FieldReferenceResponses[keyof FieldReferenceResponses];
+
+export type FieldTickData = {
+    body: FieldTickIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+        /**
+         * Field Key
+         */
+        field_key: string;
+    };
+    query?: never;
+    url: '/v1/fields/{target_type}/{target_id}/{field_key}/ticks';
+};
+
+export type FieldTickErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FieldTickError = FieldTickErrors[keyof FieldTickErrors];
+
+export type FieldTickResponses = {
+    /**
+     * Successful Response
+     */
+    201: FieldProvenanceOut;
+};
+
+export type FieldTickResponse = FieldTickResponses[keyof FieldTickResponses];
+
+export type FieldEditData = {
+    body: FieldEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Target Type
+         */
+        target_type: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+        /**
+         * Field Key
+         */
+        field_key: string;
+    };
+    query?: never;
+    url: '/v1/fields/{target_type}/{target_id}/{field_key}/value';
+};
+
+export type FieldEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FieldEditError = FieldEditErrors[keyof FieldEditErrors];
+
+export type FieldEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: FieldProvenanceOut;
+};
+
+export type FieldEditResponse = FieldEditResponses[keyof FieldEditResponses];
+
 export type FirmAgentsData = {
     body?: never;
     headers?: {
@@ -31196,6 +33155,732 @@ export type AcceptStaffInvitationResponses = {
 };
 
 export type AcceptStaffInvitationResponse = AcceptStaffInvitationResponses[keyof AcceptStaffInvitationResponses];
+
+export type IssueListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Record Type
+         */
+        record_type?: string | null;
+        /**
+         * Record Id
+         */
+        record_id?: string | null;
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+        /**
+         * Status
+         */
+        status?: IssueStatus | null;
+        /**
+         * Kind
+         */
+        kind?: 'missing_information' | 'action_required' | 'review_point' | 'waiting_on_client' | 'exception' | 'engine_diagnostic' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/issues';
+};
+
+export type IssueListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueListError = IssueListErrors[keyof IssueListErrors];
+
+export type IssueListResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageIssueItemOut;
+};
+
+export type IssueListResponse = IssueListResponses[keyof IssueListResponses];
+
+export type IssueCreateData = {
+    body: IssueCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/issues';
+};
+
+export type IssueCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueCreateError = IssueCreateErrors[keyof IssueCreateErrors];
+
+export type IssueCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: IssueDetailOut;
+};
+
+export type IssueCreateResponse = IssueCreateResponses[keyof IssueCreateResponses];
+
+export type FixInstructionsBulkData = {
+    body: BulkFixInstructionsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/issues/fix-instructions:bulk';
+};
+
+export type FixInstructionsBulkErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FixInstructionsBulkError = FixInstructionsBulkErrors[keyof FixInstructionsBulkErrors];
+
+export type FixInstructionsBulkResponses = {
+    /**
+     * Successful Response
+     */
+    202: BulkFixInstructionsOut;
+};
+
+export type FixInstructionsBulkResponse = FixInstructionsBulkResponses[keyof FixInstructionsBulkResponses];
+
+export type IssueData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}';
+};
+
+export type IssueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueError = IssueErrors[keyof IssueErrors];
+
+export type IssueResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueResponse = IssueResponses[keyof IssueResponses];
+
+export type IssueUpdateData = {
+    body: IssueUpdateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}';
+};
+
+export type IssueUpdateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueUpdateError = IssueUpdateErrors[keyof IssueUpdateErrors];
+
+export type IssueUpdateResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueUpdateResponse = IssueUpdateResponses[keyof IssueUpdateResponses];
+
+export type IssueExplainData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/explanations';
+};
+
+export type IssueExplainErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueExplainError = IssueExplainErrors[keyof IssueExplainErrors];
+
+export type IssueExplainResponses = {
+    /**
+     * Successful Response
+     */
+    202: ExplainAcceptedOut;
+};
+
+export type IssueExplainResponse = IssueExplainResponses[keyof IssueExplainResponses];
+
+export type FixInstructionsData = {
+    body: FixInstructionsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/fix-instructions';
+};
+
+export type FixInstructionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FixInstructionsError = FixInstructionsErrors[keyof FixInstructionsErrors];
+
+export type FixInstructionsResponses = {
+    /**
+     * Successful Response
+     */
+    202: FixInstructionsAcceptedOut;
+};
+
+export type FixInstructionsResponse = FixInstructionsResponses[keyof FixInstructionsResponses];
+
+export type IssueNotApplicableData = {
+    body: IssueResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/mark-not-applicable';
+};
+
+export type IssueNotApplicableErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueNotApplicableError = IssueNotApplicableErrors[keyof IssueNotApplicableErrors];
+
+export type IssueNotApplicableResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueNotApplicableResponse = IssueNotApplicableResponses[keyof IssueNotApplicableResponses];
+
+export type IssueReopenData = {
+    body: IssueResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/reopen';
+};
+
+export type IssueReopenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueReopenError = IssueReopenErrors[keyof IssueReopenErrors];
+
+export type IssueReopenResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueReopenResponse = IssueReopenResponses[keyof IssueReopenResponses];
+
+export type IssueResolveData = {
+    body: IssueResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/resolve';
+};
+
+export type IssueResolveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueResolveError = IssueResolveErrors[keyof IssueResolveErrors];
+
+export type IssueResolveResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueResolveResponse = IssueResolveResponses[keyof IssueResolveResponses];
+
+export type IssueSendToClientData = {
+    body: IssueSendToClientIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/send-to-client';
+};
+
+export type IssueSendToClientErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueSendToClientError = IssueSendToClientErrors[keyof IssueSendToClientErrors];
+
+export type IssueSendToClientResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueSendToClientResponse = IssueSendToClientResponses[keyof IssueSendToClientResponses];
+
+export type IssueVerifyData = {
+    body: IssueResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Issue Id
+         */
+        issue_id: string;
+    };
+    query?: never;
+    url: '/v1/issues/{issue_id}/verify';
+};
+
+export type IssueVerifyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IssueVerifyError = IssueVerifyErrors[keyof IssueVerifyErrors];
+
+export type IssueVerifyResponses = {
+    /**
+     * Successful Response
+     */
+    200: IssueDetailOut;
+};
+
+export type IssueVerifyResponse = IssueVerifyResponses[keyof IssueVerifyResponses];
 
 export type ListDocumentsData = {
     body?: never;

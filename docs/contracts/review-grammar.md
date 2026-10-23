@@ -4,16 +4,16 @@
 |---|---|
 | Register row | C3 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub. Part 1 (sign-offs, review notes, human gates) is P-04-T07. Part 2 (decision cards, proposals, suggestions) is P-04-T08. Part 3 (issues, checkpoints, field provenance) is P-04-T11 |
+| Status | stub. Part 1 (sign-offs, review notes, human gates) is P-04-T07. Part 2 (decision cards, proposals, suggestions) is P-04-T08. Part 3 (issues and fix instructions, checkpoints, field provenance) is P-04-T11, an additive extension of the schema |
 | Provider epic | P-04 (`review` module; `agents` for suggestions and proposals, ADR-161) |
 | Consumers | SHL-09, SHL-10, SHL-11, SHL-12, SHL-15, SHL-16 (P-04 UI); AUD-17 (A-06); HOME-01/02 (I-01); A-04, A-05, A-07, T-01, T-02, T-04, C-01, C-02, K-03, K-04 |
 | Freeze sprint | Schema S3: recorded frozen by Fri Dec 11, 2026 (P-04-T09). Services S12: Fri Apr 16, 2027 (P-04-T27) |
-| Flag | `review.grammar_api` (default off, expires 2027-01-20) |
-| Spec | `docs/plan/epics/P-04.md` §3 (F1 to F5, F9), §4.3, §4.5 |
+| Flag | `review.grammar_api` (default off, expires 2027-04-21 under DEC-137) |
+| Spec | `docs/plan/epics/P-04.md` §3 (F1 to F9), §4.3, §4.5 |
 | ADRs | ADR-160 (review grammar, P-07), ADR-161 (suggestions, proposals, approval grants, Undo, P-35), P-36 (API conventions), ADR-031 (classification), ADR-089 (flags), ADR-005 (agents propose) |
 
 ## 1. Purpose
-Every service line records a human judgement on prepared work the same way. A sign-off is a level on a ladder, bound to the content hash the signer saw. A review note blocks sign-off until a person clears it. The Home counts come from one projection. A judgement reserved to a role is a decision card whose options code computed. What the agent proposes is a proposal or a suggestion, which a named person approves, rejects or adopts. Consumers build SHL-10, SHL-11, SHL-12, AUD-17 and HOME-02 against these shapes in fixture mode while the services land. No route here lets an agent, system or support principal sign, clear, decide, approve or adopt (INV-1).
+Every service line records a human judgement on prepared work the same way. A sign-off is a level on a ladder, bound to the content hash the signer saw. A review note blocks sign-off until a person clears it. The Home counts come from one projection. A judgement reserved to a role is a decision card whose options code computed. What the agent proposes is a proposal or a suggestion, which a named person approves, rejects or adopts. Consumers build SHL-09, SHL-10, SHL-11, SHL-12, SHL-15, SHL-16, AUD-17 and HOME-02 against these shapes in fixture mode while the services land. An issue records what is wrong with a record, with an internal note and separate client wording. A checkpoint is a version of a target that a reviewer approves or restores, and a field's history shows who set each value, from what, citing what. No route here lets an agent, system or support principal sign, clear, decide, approve, adopt, resolve or tick (INV-1).
 
 ## 2. Who may call it
 Part 1 (P-04-T07). Every route is behind `review.grammar_api`. Off, it answers 404. On, it answers 501 `not_implemented` until its service lands: sign-offs in P-04-T18, notes in P-04-T21, the projection in P-04-T16.
@@ -58,6 +58,40 @@ Part 2 (P-04-T08) has the same flag and the same 404 and 501 behaviour. The serv
 | Create a proposal (no route) | `agents.api.create_proposal` | `proposal.create` | none | agent: `task_scope` |
 
 Raising a card is service-only, through `review.api.raise_decision_card` (P-04-T23), and has no route.
+
+Part 3 (P-04-T11) has the same flag and the same 404 and 501 behaviour. Every route is `review`'s, and its matrix rows are in `review.yaml`. The services land in P-04-T30 and T31 (issues), P-04-T32 (checkpoints) and P-04-T35 (field values).
+
+| Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
+|---|---|---|---|---|
+| Issues, list | `GET /v1/issues?record_type=&record_id=&engagement_id=&status=&kind=&cursor=&limit=` | `issue.read` | engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
+| Issue | `GET /v1/issues/{issue_id}` | `issue.read` | as above; reading the sealed texts is an access event (Q-02) | denied |
+| Create | `POST /v1/issues` | `issue.create` | engagement partner, manager, senior, staff, reviewer | denied |
+| Update and assign | `PATCH /v1/issues/{issue_id}` | `issue.update` | as create | denied |
+| Resolve | `POST /v1/issues/{issue_id}/resolve` | `issue.resolve` | engagement partner, manager, senior, staff | denied at every layer (ISSUE-001) |
+| Mark not applicable | `POST /v1/issues/{issue_id}/mark-not-applicable` | `issue.resolve` | as resolve | denied at every layer |
+| Verify | `POST /v1/issues/{issue_id}/verify` | `issue.verify` | engagement partner, manager, senior, reviewer | denied at every layer |
+| Reopen | `POST /v1/issues/{issue_id}/reopen` | `issue.reopen` | as verify | denied |
+| Send to client | `POST /v1/issues/{issue_id}/send-to-client` with `Idempotency-Key` | `issue.send_to_client` | engagement partner, manager, senior, staff | denied |
+| Fix instructions | `POST /v1/issues/{issue_id}/fix-instructions` | `fix_instruction.set` | engagement partner, manager, senior, staff, reviewer | denied |
+| Bulk fix instructions | `POST /v1/issues/fix-instructions:bulk` | `fix_instruction.set` | as above | denied |
+| Explain | `POST /v1/issues/{issue_id}/explanations` | `issue.explain` | engagement partner, manager, senior, staff, reviewer | denied |
+| Checkpoints of one target | `GET /v1/checkpoints?target_type=&target_id=&filter=agent\|named\|all` | `checkpoint.read` | engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
+| Checkpoint | `GET /v1/checkpoints/{checkpoint_id}?compare=previous\|current` | `checkpoint.read` | as above | denied |
+| Save | `POST /v1/checkpoints` | `checkpoint.create` | engagement partner, manager, senior, staff | denied |
+| Approve | `POST /v1/checkpoints/{checkpoint_id}/approve` | `checkpoint.approve` | engagement partner, manager, senior, reviewer; the reviewer functions on the work item (service now, `function_in` in P-04-T15) | denied at every layer |
+| Reject | `POST /v1/checkpoints/{checkpoint_id}/reject` | `checkpoint.reject` | as approve | denied at every layer |
+| Restore as new | `POST /v1/checkpoints/{checkpoint_id}/restore` | `checkpoint.restore` | as approve | denied at every layer |
+| Rename and star | `PATCH /v1/checkpoints/{checkpoint_id}` | `checkpoint.rename` | engagement partner, manager, senior, staff, reviewer | denied |
+| Field provenance | `GET /v1/fields/{target_type}/{target_id}/{field_key}/provenance` | `field.read` | engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
+| Edit a value | `PUT /v1/fields/{target_type}/{target_id}/{field_key}/value` | `field.edit` | engagement partner, manager, senior, staff; preparer functions (DEC-84; `function_in` in P-04-T15) | denied |
+| Add a reference | `POST /v1/fields/{target_type}/{target_id}/{field_key}/references` | `field.add_reference` | engagement partner, manager, senior, staff, reviewer | denied |
+| Tick a field | `POST /v1/fields/{target_type}/{target_id}/{field_key}/ticks` | `field.sign_off` | as add a reference | denied at every layer |
+| Propose a checkpoint (no route) | `review.api.propose_checkpoint` | `checkpoint.propose` | none | agent: `task_scope`; the system cell for engine imports lands with P-04-T32 |
+
+- **Beyond the plan's table.** `POST /v1/issues/{issue_id}/explanations` (`issue.explain`) serves SHL-15 d's "Explain…". Mark not applicable is a resolution, so it shares `issue.resolve`, as adopt and dismiss share `suggestion.resolve`.
+- **One target's checkpoints.** `GET /v1/checkpoints` is one target's history, read like the sign-off ladder, so it answers `CheckpointHistoryOut` rather than the list envelope. Its summaries may carry return figures, so they are Restricted (§3).
+- **Agent-raised issues.** Engine diagnostics and issues the agent raises come through `review.api.create_issue` (P-04-T30), with their own `task_scope` row then. The route's `issue.create` is a person's.
+- **Conditions arriving later.** P-04-T15 adds `function_in(first_level_reviewer, detail_reviewer, manager_reviewer, signer)` to `checkpoint.approve`, `.reject` and `.restore`, the reviewer functions to `issue.verify`, and `function_in(preparer)` to `field.edit`. Conditions only narrow a row (DEC-132), so the role cells ship now and P-04-T15 narrows them. Until then the service checks (DEC-145).
 
 ## 3. Models
 Code: `backend/src/abacus/modules/review/contract.py`.
@@ -160,6 +194,67 @@ Values may be return information (§7216) or client figures, so they are Restric
 
 Agent text has no dedicated wire type yet: there is no `AgentTextValue` in the repo. These fields are plain strings, marked as agent text here and in their docstrings, and the web app renders them only through `AgentText` (frontend rule 2).
 
+**Issues and fix instructions (part 3)**
+
+Code: `backend/src/abacus/modules/review/contract.py`. Titles, notes, client wording, instructions and agent text may be return information or client figures, so they are Restricted and appear only in the detail.
+
+- **`IssueItemOut`**, a list row (internal): `id`, `engagement_id`, `work_item_id`, `record {type, id}`, `kind`, `priority`, `status`, `instructions_required`, `assignee_user_id`, `assignee_name`, `assignee_agent`, `blocks[]`, `link_count`, `version`, `created_at`, `allowed_actions`.
+  - `kind` is `missing_information`, `action_required`, `review_point`, `waiting_on_client`, `exception` or `engine_diagnostic`. The four §3.3.1 kind lines are labels on an issue, not states.
+  - `priority` is the generated `IssueSeverityStatus` (`high`, `medium`, `low`), and `status` is the generated `IssueStatus`.
+  - `blocks[]` holds `final_approval`, `export`, `release` or `sign_off`.
+  - **No title is in a list row.** It is sealed and Restricted.
+- **`IssueDetailOut`**, the detail and the response of every issue write:
+  - `issue` and `record_label` (Confidential, "2025 Form 1040 · Jonah & Claire Feld");
+  - `title`, `internal_note` and `client_wording` (Restricted, sealed);
+  - `client_contact {contact_id, name, role_label}` (Confidential);
+  - `links[] {kind, label, target_type, target_id, anchor}` (Confidential), where `kind` is `cell_range`, `form_field`, `file`, `request_item` or `finding`;
+  - `suggestion {text, agent_run_id, suggested_at}`, agent text rendered only through AgentText (Restricted);
+  - `fix_instructions {text, scope, set_by_user_id, set_by_name, set_at}` (Restricted). `scope` is `this_issue` or `all_of_class`;
+  - `fix_run {agent_run_id, label, status, proposal_id}` (Restricted). `status` is the generated `AgentRunStatus`, and `label` is agent text;
+  - `explanations[] {id, text, agent_run_id, explained_at, citations[] {citation_id, label}, pinned}` (Restricted);
+  - `request_item_id`, set once the client wording was sent;
+  - `events[] {event, actor_kind, actor_user_id, actor_name, at}`. `event` is one of the ten `issue_events` codes.
+- **Requests:**
+  - `IssueCreateIn {record_type, record_id, kind, priority, title, internal_note?, client_wording?, client_contact_id?, assignee_user_id?, assignee_agent, links[] {kind, target_type?, target_id?, anchor?}, blocks[]}`.
+  - `IssueUpdateIn {seen_version, title?, kind?, priority?, assignee_user_id?, assignee_agent?}`.
+  - `IssueResolutionIn {seen_version, note?}` for resolve, verify, reopen and mark not applicable.
+  - `IssueSendToClientIn {seen_version, client_wording, contact_id, due_on?}`, with an `Idempotency-Key`.
+  - `FixInstructionsIn {seen_version, text, scope}`. It answers 202 `FixInstructionsAcceptedOut {issue_id, agent_run_id, status}`.
+  - `BulkFixInstructionsIn {issues[] {issue_id, seen_version}, text}` (1 to 50 issues). It answers 202 `BulkFixInstructionsOut {results[] {issue_id, ok, agent_run_id, detail}, accepted, excluded}`.
+  - Explain takes no body and answers 202 `ExplainAcceptedOut {issue_id, agent_run_id}`.
+- Fix runs always propose (DF-13), so the "Propose changes for my approval" box is not a wire field.
+
+**Checkpoints (part 3)**
+
+- **`CheckpointItemOut`**, one card:
+  - Internal: `id`, `target_type`, `target_id`, `seq`, `starred`, `author_kind` (`agent`, `person` or `import`), `author_user_id`, `author_name`, `cause`, `status`, `current`, `created_at`, `content_hash`, `proposal_id`, `restored_from_id`, `agent_run_id`, `allowed_actions`.
+  - Confidential: `name`. A card reads "Checkpoint {seq}" unless it is named.
+  - Restricted: `summary` ("Corrected Halvard 1099-INT (2,190 → 2,310)") and `decision`.
+  - `status` is the generated `CheckpointStatus`. `current` is computed and never stored.
+- **`CheckpointDecisionOut`**: `id`, `decision` (`approved`, `rejected` or `restored`), `reason` (Restricted, sealed), `decided_by_user_id`, `decided_by_name`, `decided_at` and `proposal_decision_id`.
+- **`CheckpointHistoryOut`**: `target_type`, `target_id`, `filter`, `items[]` (newest first), `current_checkpoint_id`, `total` and `allowed_actions`.
+- **`CheckpointDetailOut`**: `checkpoint`, `compare` (`previous` or `current`), `compared_to_id`, `steps[]`, `diff[]` and `totals[]`.
+  - `CheckpointStepOut {kind, title, detail, at}`. `kind` is `analyzed`, `updated_worksheet`, `created_worksheet`, `skipped_worksheet`, `self_check` or `imported`. `detail` is Restricted.
+  - `CheckpointDiffRowOut {field_key, label, old, new, cause, citation_ids}`. Code computes `old` and `new` (Restricted). Values are strings, numbers are decimal strings, and null is an empty cell.
+  - `CheckpointTotalOut {label, value, ties}`. Code computes it ("Net change to total income · 0").
+- **Requests:** `CheckpointCreateIn {target_type, target_id, name?}`; `CheckpointApproveIn {seen_hash}`; `CheckpointRejectIn {seen_hash, reason}`; `CheckpointRestoreIn {seen_hash}`; `CheckpointRenameIn {name?, starred?}`. Approve, reject and rename answer `CheckpointItemOut`. Save and restore answer 201 with the new checkpoint.
+
+**Field provenance (part 3)**
+
+- **`FieldProvenanceOut`**, the tray and the response of every field write: `target_type`, `target_id`, `field_key`, `label` (Confidential), `current_seq`, `content_hash`, `versions[]` (newest first, Restricted), `ticks[]`, `flags[]` (Restricted) and `allowed_actions`.
+- **`FieldVersionOut`**, one insert-only `field_value_versions` row:
+  - `seq`; `value {t, v}` (Restricted), where `t` is `decimal`, `text`, `date` or `bool` and decimals are strings;
+  - `value_kind` (`exact` or `estimate`), `value_source`, `cause`;
+  - `actor_kind`, `actor_user_id`, `actor_name`, `recorded_at`;
+  - `citation` (Restricted): the C4 citation sentence, or a person's required citation note on an edit;
+  - `citation_ids`, and `references[] {id, kind, label, detail, citation_id, document_id, page}` (Restricted), where `kind` is `document`, `engine_import`, `workpaper` or `prior_return`;
+  - `unsupported`, which is computed: no verified citation;
+  - `suggestion_id`, `checkpoint_id` and `issue_id`. An estimate links its open issue.
+  - `value_source` never carries `policy` while `fvv_policy_dormant` holds.
+- **`FieldTickOut`**: `sign_off_id`, `level`, `signer_user_id`, `signer_name`, `initials`, `signed_at`, `content_hash` and `stale` (computed). A tick is a `field_tick` sign-off.
+- **`FieldFlagOut`**: `note_id`, `raised_by_user_id`, `raised_by_initials`, `raised_at`, `body` (Restricted) and `status`. A flag is a review note anchored on the field.
+- **Requests:** `FieldEditIn {value {t, v}, value_kind, citation_note, seen_seq}`, where the note is required; `FieldReferenceIn {document_id, page?, seen_seq}`; `FieldTickIn {level, seen_hash}`.
+
 ## 4. Status words
 From `docs/product/status-vocabulary.yaml` (P-04-T02):
 
@@ -168,6 +263,15 @@ From `docs/product/status-vocabulary.yaml` (P-04-T02):
 - `decision_card`: `awaiting_role` ("Waiting on {person}"), `decided` ("Decided"; a reassessment with no change reads "No change" in history) and `superseded` ("Superseded by v{n}"). These are the generated `DecisionCardStatus`.
 - `proposal`: `pending` ("Ready for review"), `approved` ("Approved by {person}"), `approved_with_edits`, `rejected` ("Rejected by {person} · reason: {reason}") and `superseded`. These are the generated `ProposalStatus`.
 - `suggestion`: `pending`, `adopted` ("Adopted by {initials}"), `edited`, `dismissed`, `superseded` and `expired`. These are the generated `SuggestionStatus`.
+
+
+Part 3:
+
+- `issue`: `open` (sub-state "Instructions required"), `in_progress` ("In progress"; the agent fixing), `resolved`, `verified`, `reopened` and `not_applicable`. These are the generated `IssueStatus`. The `issue_audit_route` codes (`under_evaluation`, `converted_to_misstatement`, `converted_to_deficiency`) share the `issues.status` CHECK, but no SHL-15 frame shows them, so they reach the wire with AUD-15's contract (A-06), not here.
+- `issue_severity`: `high`, `medium` and `low`, the issue's `priority` (the generated `IssueSeverityStatus`).
+- `checkpoint`: `proposed`, `approved` ("Approved · {person} · {time}"), `rejected` ("{person} · reason: {reason}") and `saved` (the generated `CheckpointStatus`). `current` is derived: the wire has a computed `current` boolean and no stored status.
+- `field_value`: `updated`, `edited`, `estimate` ("≈") and `unsupported` are all derived, never stored. The wire carries `value_source`, `value_kind`, the earlier versions and the computed `unsupported`.
+- `agent_run`: `fix_run.status` is the generated `AgentRunStatus` ("Running" on SHL-15 a-prime).
 
 ## 5. Human-only actions
 `sign_off.create`, `sign_off.bulk`, the five level rows, and `review_note.raise`, `.respond`, `.clear` and `.withdraw` all deny the agent. The sign-off rows and `review_note.withdraw` also deny `system` explicitly. Every other principal, support included, holds no cell, so it is denied.
@@ -190,6 +294,15 @@ Part 2 adds more resolution actions, each denying `agent` and `system` at the ma
 The agent holds only `proposal.create` and the existing `suggestion.create`, both through `task_scope`. Decision cards are raised through `review.api.raise_decision_card`.
 
 The data layer adds the human-only CHECKs on `decisions`, `proposal_decisions` and `suggestion_decisions` (migrations 0094 and 0095), the 10-second Undo trigger, and the `DECISION-001` and `PROPOSAL-001` static rules (P-04-T23, T24). The agent is only ever "Recommended by Accrued Agent" or "proposed by Accrued Agent", never the decider or approver.
+
+
+Part 3 adds more actions that deny `agent` and `system` at the matrix:
+- the resolutions `issue.resolve` (with mark not applicable), `issue.verify` and `issue.reopen`, and `checkpoint.approve`, `.reject` and `.restore`;
+- `field.sign_off`, a `field_tick` sign-off.
+
+`issue.create`, `.update`, `.send_to_client` and `.explain`, `fix_instruction.set`, `checkpoint.create` and `.rename`, and `field.edit` and `.add_reference` are a person's acts too, and deny both principals.
+
+The agent holds only `checkpoint.propose`, through `task_scope`, with no route. The system principal gets it for engine imports with P-04-T32, when the contract set of system actions grows with its service. The agent never resolves its own issue (`ISSUE-001`, P-04-T31). A fix run's output is a proposal that a person approves in SHL-10, never a direct edit (DF-13). The data layer adds the human-only CHECK on `checkpoint_decisions` and the resolution CHECK on `issue_events` (migration 0094), and `field_value_versions` requires a citation note on every human edit (`fvv_human_edits_cite`, migration 0093). Only `send-to-client` creates anything a client can see, and it carries only the client wording (INV-4).
 
 ## 6. Errors
 Every route on this page also answers:
@@ -224,6 +337,22 @@ Part 2:
 | 409 | `{"detail": "undo_window_closed"}` | Undo after 10 s or by another person |
 | 409 | `{"detail": "effect_started"}` | Undo after the held effect started |
 
+
+Part 3:
+
+| Status | Body | When |
+|---|---|---|
+| 409 | `{"detail": "issue_changed"}` | an issue write on a stale `seen_version` |
+| 409 | `{"detail": "fix_runner_unavailable"}` | fix instructions or Explain while no runner is registered for the record's owner (the sheet's agents-off state) |
+| 409 | `{"detail": "gate_unmet", "facts": {"gate": "G3"}}` | send to client before the G3 gate is met |
+| 409 | `{"detail": "checkpoint_changed"}` | approve, reject or restore when the checkpoint is no longer as seen (`seen_hash`, or no longer `proposed`) |
+| 403 | `{"detail": "forbidden"}` | approve, reject or restore by someone without a reviewer function on the work item |
+| 409 | `{"detail": "field_changed"}` | an edit or a reference on a stale `seen_seq` |
+| 409 | `{"detail": "content_changed"}` | a field tick on a value whose hash moved |
+| 422 | `{"detail": "uncited_change"}` | a field tick on an unsupported value ("Add a reference before signing off") |
+
+Bulk fix-instruction items carry `issue_changed`, `fix_runner_unavailable` or `level_not_permitted` in `results[].detail`. An edit without a citation note fails the schema (422).
+
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |
 |---|---|---|
@@ -236,8 +365,11 @@ Part 2:
 | `decision.reassessed`, `.analysis_requested`, `.notified` (audit) | reassess, request analysis, notify | card id, version |
 | `proposal.approved`, `.approved_with_edits`, `.rejected`, `.routed`, `.undone`, `.follow_up_recorded` (audit); `proposal.decided`, `.undone` (outbox) | each proposal decision | proposal id, decision id, reason code |
 | `suggestion.adopted`, `.edited`, `.dismissed`, `.undone` (audit); `suggestion.resolved` (outbox) | each suggestion decision | suggestion id, decision |
+| `issue.created`, `.assigned`, `.fix_instructions_set`, `.explained`, `.resolved`, `.verified`, `.reopened`, `.marked_not_applicable`, `.sent_to_client` (audit); `issue.created`, `.assigned`, `.status_changed`, `.sent_to_client` (outbox) | each issue event | issue id, record, event |
+| `checkpoint.proposed`, `.created`, `.approved`, `.rejected`, `.restored`, `.renamed` (audit); `checkpoint.created`, `.approved`, `.rejected`, `.restored` (outbox) | each checkpoint event; `checkpoint.approved` carries the amount deltas (DEC-85) | checkpoint id, target, decision id, delta facts |
+| `field.value_edited`, `.reference_added` (audit); `field.value_recorded` (outbox); a tick writes `sign_off.recorded` | each field write | target, field key, seq |
 
-Reads of sealed note bodies and decision rationales are access events (Q-02 `access_events`). The notification kinds come from P-04-T26 (C16): `sign_off_requested`, `sign_off_stale`, `review_note_raised`, `decision_assigned` and `proposal_routed`.
+Reads of sealed note bodies, decision rationales and issue texts are access events (Q-02 `access_events`). The notification kinds come from P-04-T26 (C16): `sign_off_requested`, `sign_off_stale`, `review_note_raised`, `decision_assigned` and `proposal_routed`.
 
 ## 8. Example payloads
 Brightwater Hale E0: Northwind Robotics 401(k) Plan, PY2025, Mon Sep 14, 2026, 9:41 AM CT. Viewer Hannah Leclerc. Ids are placeholders, and the seed fixes them when P-04-T36 loads the scenario.
@@ -428,6 +560,198 @@ Approve by Raj answers 403 with `facts.routed_to`. `POST …/route` with `{"seen
 
 **Suggestion adopt (SHL-10 b's single source change, as one suggestion).** `POST /v1/suggestions/<s-line-2a>/adopt` with `{"seen_version": 1}` adopts Form 1040 line 2a tax-exempt interest of 1,550 (K-1 box 18A). The response has `status: "adopted"` and `decision: "adopted"`.
 
+### Part 3 examples
+Brightwater Hale E0: the Feld 2025 Form 1040 (Jonah & Claire Feld), Mon Sep 14, 2026, 9:24 AM CT, viewer Samuel Ito unless a frame names another. Ids are placeholders, as in parts 1 and 2. An instant the artboard shows only as a date is written at noon CT, and `"<time>"` is an instant no artboard shows; the seed fixes both (P-04-T36). Hashes are written abbreviated, as in part 1.
+
+**SHL-09 a. Halvard interest, 2,190 → 2,310.** `GET /v1/fields/tax_return/<feld-1040>/sch_b.p1.l1.halvard/provenance`. The agent changed the value from the corrected 1099-INT when Kevin Osei approved Checkpoint 4. Kevin's earlier tick was on the imported value, so its hash no longer matches and it reads stale ("✓ KO · Sep 8 (before this change)", "Changed after sign-off").
+```json
+{"target_type": "tax_return", "target_id": "<feld-1040>", "field_key": "sch_b.p1.l1.halvard",
+ "label": "Taxable interest — Halvard Securities", "current_seq": 2, "content_hash": "sha256:7d20…c4b1",
+ "versions": [
+   {"seq": 2, "value": {"t": "decimal", "v": "2310"}, "value_kind": "exact", "value_source": "agent_suggested",
+    "cause": "suggestion_adopted", "actor_kind": "agent", "actor_user_id": null, "actor_name": "Accrued Agent",
+    "recorded_at": "2026-09-10T19:12:00Z",
+    "citation": "Box 1 of the corrected Halvard Securities 2025 Form 1099-INT (issued Mar 6, 2026), consolidated statement p. 4.",
+    "citation_ids": ["<c-halvard-corrected>"],
+    "references": [
+      {"id": "<ref-import-v3>", "kind": "engine_import", "label": "Imported Return — CCH Axcess 2025I:FeldJ:V3 (prior value 2,190)",
+       "detail": null, "citation_id": null, "document_id": null, "page": null},
+      {"id": "<ref-halvard-corrected>", "kind": "document", "label": "Halvard Securities 2025 Consolidated 1099 (Corrected) · p. 4",
+       "detail": "Interest income, Box 1: 2,310.00", "citation_id": "<c-halvard-corrected>", "document_id": "<doc-halvard-corrected>", "page": 4}],
+    "unsupported": false, "suggestion_id": "<s-halvard>", "checkpoint_id": "<checkpoint-4>", "issue_id": null},
+   {"seq": 1, "value": {"t": "decimal", "v": "2190"}, "value_kind": "exact", "value_source": "engine_import",
+    "cause": "import", "actor_kind": "system", "actor_user_id": null, "actor_name": "Imported Return",
+    "recorded_at": "2026-08-28T15:46:00Z",
+    "citation": "Box 1 of the original Halvard Securities 2025 Form 1099-INT (issued Feb 14, 2026), p. 4.",
+    "citation_ids": ["<c-halvard-original>"],
+    "references": [
+      {"id": "<ref-import-v3>", "kind": "engine_import", "label": "Imported Return — CCH Axcess 2025I:FeldJ:V3",
+       "detail": null, "citation_id": null, "document_id": null, "page": null}],
+    "unsupported": false, "suggestion_id": null, "checkpoint_id": "<checkpoint-2>", "issue_id": null}],
+ "ticks": [
+   {"sign_off_id": "<tick-ko>", "level": "L1_preparer", "signer_user_id": "<kevin>", "signer_name": "Kevin Osei",
+    "initials": "KO", "signed_at": "2026-09-08T17:00:00Z", "content_hash": "sha256:e913…5a02", "stale": true}],
+ "flags": [
+   {"note_id": "<flag-si>", "raised_by_user_id": "<samuel>", "raised_by_initials": "SI", "raised_at": "2026-09-11T17:00:00Z",
+    "body": "Confirm corrected 1099 replaces the original", "status": "open"}],
+ "allowed_actions": ["field.edit", "field.add_reference", "field.sign_off"]}
+```
+The footer reads "2 versions". "Sign off field" posts `{"level": "L2_reviewer", "seen_hash": "sha256:7d20…c4b1"}` to `…/ticks`, with the full digest on the wire, and adds "✓ SI · now".
+
+**SHL-09 b. Estimate.** The one version of "2025 federal estimated tax payments" is an estimate that links the open Feld issue. Four vouchers of 12,000 foot to 48,000.
+```json
+{"seq": 1, "value": {"t": "decimal", "v": "48000"}, "value_kind": "estimate", "value_source": "agent_suggested",
+ "cause": "suggestion_adopted", "actor_kind": "agent", "actor_user_id": null, "actor_name": "Accrued Agent",
+ "recorded_at": "<time>",
+ "citation": "Four 2025 Form 1040-ES vouchers of $12,000 prepared with the 2024 return; payment confirmations not received.",
+ "citation_ids": ["<c-1040es>"],
+ "references": [
+   {"id": "<ref-2024-estimates>", "kind": "prior_return", "label": "2024 Form 1040 — estimate worksheet",
+    "detail": null, "citation_id": "<c-1040es>", "document_id": "<doc-2024-1040>", "page": null}],
+ "unsupported": false, "suggestion_id": "<s-estimates>", "checkpoint_id": null, "issue_id": "<issue-estimates>"}
+```
+The issue row reads "Open issue: Obtain 2025 federal and NY estimated tax payment confirmations" and opens TAX-06.
+
+**SHL-09 c. Human-edited** (viewer Kevin Osei). `PUT …/value` with `{value, value_kind, citation_note, seen_seq}`. The new version has `value_source: "human"`, `cause: "edit"`, `actor_kind: "human"` and `actor_name: "Kevin Osei"`, and its `citation` is Kevin's note ("Per client email Sep 9 — Jonah confirmed…"). The pill reads "Edited". An edit without a note fails the schema, and a stale `seen_seq` answers `409 {"detail": "field_changed"}`.
+
+**SHL-09 d. Signed off.** Both ticks ("✓ KO · Sep 11", "✓ SI · Sep 14") are on the current hash, so both read `"stale": false`, and `flags` is empty.
+
+**SHL-09 e. Uncited agent value.** The current version has `"citation": null`, `"citation_ids": []` and `"unsupported": true`, so the Citation row reads "No source cited" with the "Unsupported" pill. `allowed_actions` has no `field.sign_off`, and a tick answers `422 {"detail": "uncited_change"}` ("Add a reference before signing off").
+
+**SHL-09 f. Collapsed Previous** is the same payload as a; the fold is client state.
+
+**SHL-16 a. Checkpoint 6 proposed.** `GET /v1/checkpoints?target_type=tax_return&target_id=<feld-1040>&filter=all`. Checkpoint 6 came from the SHL-10 a proposal (`<k1-proposal>`), and Checkpoint 5 is current.
+```json
+{"target_type": "tax_return", "target_id": "<feld-1040>", "filter": "all",
+ "items": [
+   {"id": "<checkpoint-6>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 6, "name": null, "starred": false,
+    "author_kind": "agent", "author_user_id": null, "author_name": "Accrued Agent", "cause": "agent_run", "status": "proposed",
+    "current": false, "summary": "K-1 treatment: Ridgeline", "created_at": "2026-09-14T14:18:00Z", "content_hash": "sha256:5e1d…a6f0",
+    "proposal_id": "<k1-proposal>", "restored_from_id": null, "agent_run_id": "<run>", "decision": null,
+    "allowed_actions": ["checkpoint.approve", "checkpoint.reject", "checkpoint.rename"]},
+   {"id": "<checkpoint-5>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 5, "name": null, "starred": false,
+    "author_kind": "person", "author_user_id": "<kevin>", "author_name": "Kevin Osei", "cause": "human_edit", "status": "saved",
+    "current": true, "summary": "Preparer review edits", "created_at": "2026-09-11T21:40:00Z", "content_hash": "sha256:41b9…0e7c",
+    "proposal_id": null, "restored_from_id": null, "agent_run_id": null, "decision": null,
+    "allowed_actions": ["checkpoint.rename"]},
+   {"id": "<checkpoint-4>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 4, "name": null, "starred": false,
+    "author_kind": "agent", "author_user_id": null, "author_name": "Accrued Agent", "cause": "agent_run", "status": "approved",
+    "current": false, "summary": "Corrected Halvard 1099-INT (2,190 → 2,310)", "created_at": "2026-09-10T19:12:00Z",
+    "content_hash": "sha256:9a07…d318", "proposal_id": "<halvard-proposal>", "restored_from_id": null, "agent_run_id": "<run-halvard>",
+    "decision": {"id": "<checkpoint-4-approval>", "decision": "approved", "reason": null, "decided_by_user_id": "<kevin>",
+                 "decided_by_name": "Kevin Osei", "decided_at": "2026-09-10T19:12:00Z", "proposal_decision_id": "<halvard-approval>"},
+    "allowed_actions": ["checkpoint.restore", "checkpoint.rename"]},
+   {"id": "<checkpoint-3>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 3, "name": null, "starred": false,
+    "author_kind": "agent", "author_user_id": null, "author_name": "Accrued Agent", "cause": "agent_run", "status": "approved",
+    "current": false, "summary": "Initial draft self-checked", "created_at": "2026-09-03T16:05:00Z", "content_hash": "sha256:2c66…81fa",
+    "proposal_id": null, "restored_from_id": null, "agent_run_id": "<run-draft>", "decision": null,
+    "allowed_actions": ["checkpoint.restore", "checkpoint.rename"]},
+   {"id": "<checkpoint-2>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 2, "name": null, "starred": false,
+    "author_kind": "import", "author_user_id": null, "author_name": "Imported Return", "cause": "engine_import", "status": "saved",
+    "current": false, "summary": "Imported from CCH Axcess 2025I:FeldJ:V3", "created_at": "2026-08-28T15:46:00Z",
+    "content_hash": "sha256:b350…6e29", "proposal_id": null, "restored_from_id": null, "agent_run_id": null, "decision": null,
+    "allowed_actions": ["checkpoint.restore", "checkpoint.rename"]},
+   {"id": "<checkpoint-1>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 1, "name": "Extension estimate (4868)",
+    "starred": true, "author_kind": "person", "author_user_id": "<kevin>", "author_name": "Kevin Osei", "cause": "manual_save",
+    "status": "saved", "current": false, "summary": null, "created_at": "2026-04-13T17:00:00Z", "content_hash": "sha256:0f8e…37d5",
+    "proposal_id": null, "restored_from_id": null, "agent_run_id": null, "decision": null,
+    "allowed_actions": ["checkpoint.restore", "checkpoint.rename"]}],
+ "current_checkpoint_id": "<checkpoint-5>", "total": 6, "allowed_actions": ["checkpoint.create"]}
+```
+Checkpoint 3's card names no approver, so the example leaves its decision out. The named Checkpoint 1 shows "Checkpoint 1" as its second line.
+
+`GET /v1/checkpoints/<checkpoint-6>` (`compare=previous`) has the steps and the diff. The diff is SHL-10 a's four rows. 307,900 leaves line 28A (k) and enters line 28A (h), so the net change to total income is 0, a tie. The QBI line is on a separate form.
+```json
+{"checkpoint": {"id": "<checkpoint-6>", "target_type": "tax_return", "target_id": "<feld-1040>", "seq": 6, "name": null, "starred": false,
+                "author_kind": "agent", "author_user_id": null, "author_name": "Accrued Agent", "cause": "agent_run", "status": "proposed",
+                "current": false, "summary": "K-1 treatment: Ridgeline", "created_at": "2026-09-14T14:18:00Z", "content_hash": "sha256:5e1d…a6f0",
+                "proposal_id": "<k1-proposal>", "restored_from_id": null, "agent_run_id": "<run>", "decision": null,
+                "allowed_actions": ["checkpoint.approve", "checkpoint.reject", "checkpoint.rename"]},
+ "compare": "previous", "compared_to_id": "<checkpoint-5>",
+ "steps": [
+   {"kind": "analyzed", "title": "Analyzed the drafted return", "detail": "Read 11 worksheets and the 2024 return's Schedule E, p. 2.", "at": "2026-09-14T14:16:00Z"},
+   {"kind": "analyzed", "title": "Analyzed the draft Ridgeline K-1 (pre-release)", "detail": "Boxes G, 2, 5, 18A, 19A and the box 20 Z statement.", "at": "2026-09-14T14:17:00Z"},
+   {"kind": "updated_worksheet", "title": "Updated worksheet", "detail": "Federal › Income › Sch E, p 2 - Partnership Passthrough (K-1 1065) › Ridgeline", "at": "2026-09-14T14:17:00Z"},
+   {"kind": "updated_worksheet", "title": "Updated worksheet", "detail": "Federal › Deductions › Form 8995-A — Qualified business income", "at": "2026-09-14T14:18:00Z"},
+   {"kind": "skipped_worksheet", "title": "Skipped creating worksheet", "detail": "Form 8582 — no passive losses this year, so it isn't required.", "at": "2026-09-14T14:18:00Z"}],
+ "diff": [
+   {"field_key": "activity_classification.ridgeline", "label": "Activity classification · Ridgeline", "old": "Nonpassive", "new": "Passive", "cause": "K-1 box G; 2024 Sch E", "citation_ids": ["<c1>", "<c2>"]},
+   {"field_key": "sch_e.p2.28a_k", "label": "Sch E p. 2 line 28A (k) Nonpassive income", "old": "307900", "new": null, "cause": "moved to (h)", "citation_ids": ["<c1>"]},
+   {"field_key": "sch_e.p2.28a_h", "label": "Sch E p. 2 line 28A (h) Passive income", "old": null, "new": "307900", "cause": "K-1 box 2", "citation_ids": ["<c1>"]},
+   {"field_key": "f8995a.p1.l1.ridgeline", "label": "Form 8995-A Part I line 1 · Ridgeline QBI", "old": null, "new": "307900", "cause": "K-1 box 20 Z", "citation_ids": ["<c3>"]}],
+ "totals": [{"label": "Net change to total income", "value": "0", "ties": true}]}
+```
+The footer reads "Approving makes Checkpoint 6 current. The sync chip will read 'Out of sync' until the return is exported."
+
+**SHL-16 b. Approved.** `POST /v1/checkpoints/<checkpoint-6>/approve` with `{"seen_hash": "sha256:5e1d…a6f0"}`, with the full digest on the wire. The response is Checkpoint 6 with `status: "approved"`, `current: true` and a decision by Samuel Ito at 9:26 AM (`2026-09-14T14:26:00Z`), whose `proposal_decision_id` is the SHL-10 approval of `<k1-proposal>`. Checkpoint 5 loses Current. `checkpoint.approved` carries the deltas, and the record header's sync chip (T-01) reads "Out of sync". The toast reads "Checkpoint 6 approved".
+
+**SHL-16 c. Older checkpoint.** `GET /v1/checkpoints/<checkpoint-3>?compare=current` returns its steps ("Created worksheet Federal › Income › Wages (W-2)", "Created worksheet Sch E, p 2 › Ridgeline", "Self-check: 0 errors, 2 warnings") and the diff against current. `POST /v1/checkpoints/<checkpoint-3>/restore` answers 201 with Checkpoint 7: `{"seq": 7, "cause": "restore", "status": "saved", "restored_from_id": "<checkpoint-3>"}`. Nothing is deleted ("This creates Checkpoint 7 as a copy of Checkpoint 3.").
+
+**SHL-16 d. Rename and star.** `PATCH /v1/checkpoints/<checkpoint-5>` with `{"name": "Before K-1 treatment", "starred": true}`.
+
+**SHL-16 e. Rejected.** `POST /v1/checkpoints/<checkpoint-6>/reject` with `{"seen_hash": "sha256:5e1d…a6f0", "reason": "Wait for final K-1"}`. The card reads "Rejected" and "Samuel Ito · reason: Wait for final K-1".
+
+**SHL-16 f. Empty** (the Calloway 1041). The history is `{"target_type": "tax_return", "target_id": "<calloway-1041>", "filter": "all", "items": [], "current_checkpoint_id": null, "total": 0, "allowed_actions": ["checkpoint.create"]}`, so the drawer shows "No checkpoints yet." with "Save checkpoint…".
+
+**SHL-15 a. Set fix instructions** (viewer Kevin Osei). `GET /v1/issues/<issue-18a>`, Feld issue 3 of 4. The agent's explanation (SHL-15 d) is already pinned to it.
+```json
+{"issue": {"id": "<issue-18a>", "engagement_id": "<feld>", "work_item_id": "<feld-1040>",
+           "record": {"type": "tax_return", "id": "<feld-1040>"}, "kind": "missing_information", "priority": "high",
+           "status": "open", "instructions_required": true, "assignee_user_id": null, "assignee_name": null,
+           "assignee_agent": true, "blocks": [], "link_count": 2, "version": 1, "created_at": "<time>",
+           "allowed_actions": ["issue.update", "issue.resolve", "fix_instruction.set", "issue.explain"]},
+ "record_label": "2025 Form 1040 · Jonah & Claire Feld",
+ "title": "Source K-1 box 18A 'Tax-exempt interest' is not on the worksheet",
+ "internal_note": null, "client_wording": null, "client_contact": null,
+ "links": [
+   {"kind": "file", "label": "Ridgeline_2025_K1_JonahFeld_DRAFT.pdf", "target_type": "document", "target_id": "<doc-ridgeline-k1>", "anchor": null},
+   {"kind": "form_field", "label": "Form 1040 · line 2a", "target_type": "tax_return", "target_id": "<feld-1040>", "anchor": "f1040.l2a"}],
+ "suggestion": {"text": "Add 1,550 from the draft Ridgeline K-1 box 18A to Form 1040 line 2a. Check the K-1 statement for the state of the bonds and add any non-New York portion to IT-201 line 20. Mark both values as draft until Ridgeline releases final K-1s.",
+                "agent_run_id": "<run-18a>", "suggested_at": "<time>"},
+ "fix_instructions": null, "fix_run": null,
+ "explanations": [
+   {"id": "<explain-18a>", "text": "Line 2a is informational federally, but New York adds interest on other states' bonds back on IT-201 line 20. Leaving it out would understate New York income by up to $1,550, and the IRS matches K-1 reporting to the return.",
+    "agent_run_id": "<run-explain-18a>", "explained_at": "2026-09-14T14:22:00Z",
+    "citations": [{"citation_id": "<c-k1-18a>", "label": "K-1 box 18A"}, {"citation_id": "<c-k1-statement>", "label": "K-1 statement p. 3"},
+                  {"citation_id": "<c-it201>", "label": "IT-201 instructions, line 20"}],
+    "pinned": true}],
+ "request_item_id": null, "events": []}
+```
+"Use suggestion", plus Kevin's constraint, then "Set Fix Instructions":
+```json
+{"seen_version": 1, "scope": "this_issue",
+ "text": "Add 1,550 from the draft Ridgeline K-1 box 18A to Form 1040 line 2a. Check the K-1 statement for the state of the bonds and add any non-New York portion to IT-201 line 20. Mark both values as draft until Ridgeline releases final K-1s.\nDon't change taxable interest on line 2b (6,910)."}
+```
+- The 202 is `{"issue_id": "<issue-18a>", "agent_run_id": "<run-fix-18a>", "status": "in_progress"}`. With no runner registered it answers `409 {"detail": "fix_runner_unavailable"}`, and the sheet shows the agents-off state.
+- **a-prime.** The detail's `fix_run` is `{"agent_run_id": "<run-fix-18a>", "label": "Adding 1,550 to Form 1040 line 2a", "status": "running", "proposal_id": null}`, and the queue row reads "In progress — agent fixing".
+- **a-double-prime.** The run ends in a proposal, so `fix_run.proposal_id` is set, and Accept opens SHL-10 b. There the line 2a suggestion adopts the same 1,550 (part 2).
+
+**SHL-15 b. New audit issue** (viewer Ana Cruz, Northwind). `POST /v1/issues` from cells F12:F15 of EBP-04, four rows for the four participants:
+```json
+{"record_type": "workpaper", "record_id": "<ebp-04>", "kind": "waiting_on_client", "priority": "high",
+ "title": "Opt-out elections missing for 4 auto-enrolled participants who are not deferring",
+ "internal_note": "The plan is a QACA with 6% default deferral. Four eligible participants had no 2025 deferrals and no opt-out election on file. If none exists, this is a missed-deferral failure to correct under EPCRS (start the correct deferrals, notify the participants and fund any missed QACA safe-harbor match; a QNEC for the missed deferrals may be 0% under the auto-enrollment safe harbor if corrected in time); evaluate as a control exception in AUD-15.",
+ "client_wording": "Four employees were automatically enrolled in the 401(k) but had no contributions in 2025. Please upload their signed opt-out forms, or let us know if none exist. The list is attached.",
+ "client_contact_id": "<dana>", "assignee_user_id": "<ana>", "assignee_agent": false,
+ "links": [{"kind": "cell_range", "target_type": "workpaper", "target_id": "<ebp-04>", "anchor": "F12:F15"},
+           {"kind": "file", "target_type": "document", "target_id": "<northwind-census>", "anchor": null}],
+ "blocks": []}
+```
+"Create & send to client" then posts `POST /v1/issues/<opt-out-issue>/send-to-client` with an `Idempotency-Key` and `{"seen_version": 1, "client_wording": "Four employees were automatically enrolled in the 401(k) but had no contributions in 2025. Please upload their signed opt-out forms, or let us know if none exist. The list is attached.", "contact_id": "<dana>", "due_on": null}`. One request item is created in Dana Kowalski's portal (POR-04), and `request_item_id` is set. The internal note never leaves the firm.
+
+**SHL-15 c. New issue from a field flag** (viewer Samuel Ito). Feld Issues goes from 4 to 5 (`total` on `GET /v1/issues?record_type=tax_return&record_id=<feld-1040>`).
+```json
+{"record_type": "tax_return", "record_id": "<feld-1040>", "kind": "review_point",
+ "title": "Confirm Ridgeline K-1 amounts against the final K-1 before export",
+ "assignee_user_id": "<kevin>", "assignee_agent": false,
+ "links": [{"kind": "form_field", "target_type": "tax_return", "target_id": "<feld-1040>", "anchor": "f1040.l2b"}]}
+```
+The chip reads "Ridgeline K-1 box 5 → Form 1040 line 2b".
+
+**SHL-15 d. Explain.** `POST /v1/issues/<issue-18a>/explanations` answers 202 `{"issue_id": "<issue-18a>", "agent_run_id": "<run-explain-18a>"}`. The explanation arrives on the detail (a, above) with its three citation chips. It is read-only and decides nothing.
+
+**SHL-15 e. Bulk instructions.** `POST /v1/issues/fix-instructions:bulk` with the two Missing information issues (`<issue-estimates>` and `<issue-18a>`, each with its `seen_version`) and one shared text. The scope is locked to the selection, so each issue gets one sealed instruction with scope `this_issue`. The response has two `results`, and `accepted` plus `excluded` is 2. The CTA reads "Set Fix Instructions for 2".
+
 ## 9. Consumer contract tests
 P-04-T09 (2026-10-22). Both suites run in the provider's stage 2 (`make check`: `ci-contracts` and `ci-frontend`). They fail if a field the artboards need is removed, renamed or retagged.
 
@@ -444,13 +768,16 @@ Additive changes go in place. Breaking changes ship as v2 with one sprint of ove
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate |
+| v1 | (S3, Fri Dec 11, 2026) | | 2026-10-22: part 1 stub (P-04-T07): sign-offs, review notes and human gates. 2026-10-22: part 2 stub (P-04-T08): decision cards (`review`), proposals and suggestions (`agents`). 2026-10-22: consumer tests (P-04-T09); the schema freeze is scheduled for Fri Dec 11, 2026 with them as the gate. 2026-10-23: part 3 stub (P-04-T11): issues and fix instructions, checkpoints and field provenance, additive (new models and routes beside the old; no part 1 or 2 shape changed) |
 
 ## 11. Open points
 - **Level actions.** The level actions keep their SPEC-308 names rather than `sign_off.l1` to `l5` (DEC-135).
 - **Note bodies.** Note bodies are Restricted, so the list carries none. A detail route, `GET /v1/review-notes/{note_id}`, is added beyond the plan's table. Each body read is then one access event.
 - **`sign_off.eqr` cell.** The row allows `reviewer` (SPEC-308). The F-03-T23 role `eqr_reviewer` is added to the reads and to `sign_off.create`. Moving `sign_off.eqr` to `eqr_reviewer` is P-04-T15's, with the generated deny tests.
-- **Flag expiry.** `review.grammar_api` expires 2027-01-20, within the plan's Jan 1 to Apr 20 window, which it avoids for flags that live firms use. Live firms do not use this flag before the C3 services land. Its renewal moves the expiry past Apr 20.
+- **Flag expiry.** `review.grammar_api` was renewed on 2026-10-23 to expire 2027-04-21 under DEC-137 (F-03-T37), after the Jan 1 to Apr 20 window. Part 3 reuses it, so it covers every C3 route.
 - **Part 2 module split.** Decision cards are `review`'s (`review/contract.py`, `review.yaml`). Proposals and suggestions are `agents`' (`agents/contract.py`, `agents.yaml`), per ADR-160 clause 1 and ADR-161. One flag, `review.grammar_api`, covers both, and the agents routes read it from the kernel flag registry.
 - **`proposal.create`.** It is added for the agent through `task_scope` (as `suggestion.create`), for `agents.api.create_proposal`. `decision_card.raise` arrives with its service function in P-04-T23.
 - **Human-only audit register (Q-02-T17).** `decision.decided`, `proposal.approved` and `suggestion.adopted` join `docs/architecture/human-only-actions.yaml` with their services (P-04-T23, T24). That change needs its migration.
+- **Part 3 matrix (DEC-145).** The rows carry role cells now. The reviewer and preparer function conditions arrive with P-04-T15, because a condition only narrows a row (DEC-132). None of the part 3 rows is marked `independence: required`: the plan names independence only for the sign-off levels, and SHL-15 and SHL-16 are mostly tax returns, where it does not apply. P-04-T15 revisits this for attest targets with the generated tests.
+- **Part 3 lists.** Issue titles are sealed and Restricted, so `GET /v1/issues` rows carry no title. The queue screens (TAX-06, TXP-10, AUD-15) read the detail, or ask their own contract for a queue read. A checkpoint's summary may carry return figures, so the checkpoints of one target are a history read (`CheckpointHistoryOut`), not the list envelope.
+- **Explain.** `POST /v1/issues/{issue_id}/explanations` (`issue.explain`) is added beyond the plan's table for SHL-15 d. It answers `fix_runner_unavailable` when no runner is registered, because the fix runner slot also explains.
