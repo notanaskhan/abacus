@@ -28,11 +28,23 @@ def _history(path: Path) -> WorkflowHistory:
 
 
 def test_p03t05_the_histories_are_committed() -> None:
-    assert IDS == ["trust-layer-backfill-v1-done"]
+    assert IDS == [
+        "trust-layer-backfill-v1-done",
+        # Security review: an upload whose step fails for good is passed, never a wedge.
+        "trust-layer-backfill-v1-skipped",
+    ]
+
+
+def test_review_a_failing_upload_is_passed_and_the_rest_still_get_layers() -> None:
+    text = (HISTORIES / "trust-layer-backfill-v1-skipped.json").read_text(encoding="utf-8")
+    assert "EVENT_TYPE_ACTIVITY_TASK_FAILED" in text
+    assert text.count('"upload.words"') == 2  # the failing version, then the inbox file
+    assert "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED" in text
+    assert "EVENT_TYPE_WORKFLOW_EXECUTION_FAILED" not in text
 
 
 def test_p03t05_each_pending_upload_gets_its_word_layer() -> None:
-    text = ALL[0].read_text(encoding="utf-8")
+    text = (HISTORIES / "trust-layer-backfill-v1-done.json").read_text(encoding="utf-8")
     assert text.count('"upload.words"') == 2
     assert text.index("trust_layer.pending_words") < text.index("upload.words")
 

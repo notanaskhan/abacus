@@ -22,9 +22,11 @@ class UploadInput:
 @dataclass(frozen=True)
 class BackfillInput:
     """P-03-T05: the trust layer backfill's cursor. Ids only: the last version and inbox file
-    it reached (ordered by id), and how many it has handed to `upload.words` so far."""
+    it reached (ordered by id), how many it has handed to `upload.words` so far, and how many of
+    those failed after their retries (passed, never retried in this run)."""
 
     tenant_id: str
     after_version: str | None = None
     after_inbox: str | None = None
     done: int = 0
+    failed: int = 0

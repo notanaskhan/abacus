@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import uuid
 
-from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.evidence.api import (
     CitationAnchor,
@@ -19,6 +18,7 @@ from abacus.modules.evidence.api import (
     record_citations,
 )
 from abacus.modules.evidence.words import words_upload
+from abacus.modules.identity.api import Actor, AgentContext, agent_context_for_run
 from abacus_tools.synthetic.documents import positioned_pdf
 
 from .support import Firm, Seeder, as_version, engagement, make_firm
@@ -33,20 +33,36 @@ STATEMENT = positioned_pdf(
 LINE = [70.0, 82.0, 300.0, 96.0]  # page 3's first line, in page points from the top
 
 
-async def _record(
-    firm: Firm, claims: list[CitationClaim], *, agent: bool = False
-) -> list[RecordedCitation]:
-    run_id = uuid.uuid4()
-    ctx = (
-        TenantContext(firm.tenant_id, "agent", str(run_id), on_behalf_of_user_id=firm.user_id)
-        if agent
-        else TenantContext(firm.tenant_id, "human", str(firm.user_id))
+async def _agent(firm: Firm, engagement_id: uuid.UUID | None = None) -> AgentContext:
+    return await agent_context_for_run(
+        tenant_id=firm.tenant_id,
+        run_id=uuid.uuid4(),
+        agent_id="evidence.screen",
+        engagement_id=engagement_id or firm.engagement_id,
+        task_scope=frozenset({"evidence.read", "request_item.read"}),
+        initiator_user_id=firm.user_id,
     )
-    anchor = CitationAnchor("workpaper_cell", uuid.uuid4(), "RA!C14", None, firm.engagement_id)
-    async with uow(ctx) as tx:
-        return await record_citations(
-            tx, anchor=anchor, claims=claims, run_id=run_id if agent else None
-        )
+
+
+async def _record(
+    firm: Firm,
+    claims: list[CitationClaim],
+    *,
+    agent: bool = False,
+    actor: Actor | None = None,
+    engagement_id: uuid.UUID | None = None,
+    anchored: bool = True,
+) -> list[RecordedCitation]:
+    acting = actor or (await _agent(firm) if agent else firm.person())
+    anchor = CitationAnchor(
+        "workpaper_cell",
+        uuid.uuid4(),
+        "RA!C14",
+        None,
+        (engagement_id or firm.engagement_id) if anchored else None,
+    )
+    async with uow(acting.tenant) as tx:
+        return await record_citations(tx, actor=acting, anchor=anchor, claims=claims)
 
 
 async def _layered(firm: Firm) -> uuid.UUID:
@@ -164,7 +180,11 @@ async def test_ac3_without_a_layer_the_page_text_verifies_and_no_box_fails_it(
         (False, "page_not_found"),
     ]
     row = await _row(seed, found[0].id)
-    assert (row["match_id"], row["quote_sha256"]) == (f"ev:{version}#p3", None)
+    # No region; the hash is of the quote as matched on the page text (security review #2).
+    assert (row["match_id"], row["quote_sha256"]) == (
+        f"ev:{version}#p3",
+        hashlib.sha256(b"total investments").digest(),
+    )
 
 
 async def test_ac2_sheet_cells_check_the_quote_and_the_value(seed: Seeder) -> None:
@@ -188,7 +208,9 @@ async def test_ac2_sheet_cells_check_the_quote_and_the_value(seed: Seeder) -> No
     assert found[0].match_id == f"{sheet}!B2"
 
 
-async def test_a_source_outside_the_anchors_engagement_is_not_visible(seed: Seeder) -> None:
+async def test_a_source_outside_the_anchors_engagement_reads_as_absent(seed: Seeder) -> None:
+    """Security review (#3): a version in another engagement answers exactly as a missing one,
+    so verification is no oracle for what other engagements hold."""
     firm = await make_firm(seed)
     [row] = await seed.rows(
         "SELECT client_id, client_entity_id FROM engagements WHERE id = $1", firm.engagement_id
@@ -201,7 +223,11 @@ async def test_a_source_outside_the_anchors_engagement_is_not_visible(seed: Seed
     [cited] = await _record(
         firm, [CitationClaim("document_text", _doc(elsewhere, 3), quote="Total investments")]
     )
-    assert (cited.verified, cited.verification_reason) == (False, "source_not_visible")
+    assert (cited.verified, cited.verification_reason) == (False, "source_not_found")
+    [missing] = await _record(
+        firm, [CitationClaim("document_text", _doc(uuid.uuid4(), 3), quote="Total investments")]
+    )
+    assert missing.verification_reason == "source_not_found"
 
 
 async def test_adr166_kinds_without_a_verifier_and_bad_locators_are_locator_invalid(
@@ -236,11 +262,12 @@ async def test_adr007_each_citation_is_audited_and_a_stack_keeps_counting(
     firm = await make_firm(seed)
     version = await _layered(firm)
     anchor = CitationAnchor("workpaper_cell", uuid.uuid4(), None, None, firm.engagement_id)
-    human = TenantContext(firm.tenant_id, "human", str(firm.user_id))
+    human = firm.person()
     for quote in ("Total investments", "Net assets"):
-        async with uow(human) as tx:
+        async with uow(human.tenant) as tx:
             await record_citations(
                 tx,
+                actor=human,
                 anchor=anchor,
                 claims=[CitationClaim("document_text", _doc(version, 3), quote=quote)],
             )
@@ -258,3 +285,60 @@ async def test_adr007_each_citation_is_audited_and_a_stack_keeps_counting(
         firm.tenant_id,
     )
     assert audited == 2
+
+
+async def test_review_verification_authorises_the_acting_person(seed: Seeder) -> None:
+    """Security review (#3): verifying reads the source, so the actor must be allowed
+    `evidence.read` on its engagement; otherwise it answers as if nothing were there."""
+    firm = await make_firm(seed)
+    version = await _layered(firm)
+    outsider = firm.person(await firm.outsider())
+    claim = CitationClaim("document_text", _doc(version, 3), quote="Total investments")
+    [cited] = await _record(firm, [claim], actor=outsider)
+    assert (cited.verified, cited.verification_reason) == (False, "source_not_visible")
+    [cited] = await _record(firm, [claim])
+    assert cited.verified
+
+
+async def test_review_an_anchor_without_an_engagement_cannot_verify_evidence(
+    seed: Seeder,
+) -> None:
+    firm = await make_firm(seed)
+    version = await _layered(firm)
+    found = await _record(
+        firm,
+        [
+            CitationClaim("document_text", _doc(version, 3), quote="Total investments"),
+            CitationClaim("request_item", {"request_item_id": str(uuid.uuid4())}),
+        ],
+        anchored=False,
+    )
+    assert [(c.verified, c.verification_reason) for c in found] == [
+        (False, "source_not_visible"),
+        (False, "source_not_visible"),
+    ]
+
+
+async def test_review_an_agent_verifies_only_inside_its_runs_engagement(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    [row] = await seed.rows(
+        "SELECT client_id, client_entity_id FROM engagements WHERE id = $1", firm.engagement_id
+    )
+    other = await engagement(
+        seed, firm.tenant_id, row["client_id"], row["client_entity_id"], firm.user_id
+    )
+    elsewhere = await firm.version(STATEMENT, engagement_id=other)
+    await words_upload(as_version(firm, elsewhere))
+    claim = CitationClaim("document_text", _doc(elsewhere, 3), quote="Total investments")
+    # The anchor names the other engagement, but the run is confined to its own.
+    [cited] = await _record(firm, [claim], agent=True, engagement_id=other)
+    assert (cited.verified, cited.verification_reason) == (False, "source_not_visible")
+
+
+async def test_review_an_overlong_quote_is_never_searched(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    version = await _layered(firm)
+    [cited] = await _record(
+        firm, [CitationClaim("document_text", _doc(version, 3), quote="Total " * 400)]
+    )
+    assert (cited.verified, cited.verification_reason) == (False, "quote_not_found")

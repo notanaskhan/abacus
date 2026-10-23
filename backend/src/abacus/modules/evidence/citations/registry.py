@@ -7,7 +7,10 @@ owner registers its own kind from its `api.py` when it lands (K-01 `methodology_
 with `locator_invalid`, until its owner registers one. A kind is registered once; an eleventh kind
 needs a new ADR.
 
-A verifier reads the cited source inside the writer's unit of work and returns a `Verdict`: the
+A verifier first authorises the acting principal to read the cited source on the anchor's
+engagement (an anchor with no engagement can't cite engagement evidence), so verification is never
+an oracle across engagements; then it reads the source inside the writer's unit of work and
+returns a `Verdict`: the
 outcome, the normalised locator (with any resolved box), the server-derived `match_id`, the hash
 of the words the quote resolved to, and the source's printed value. It never stores, logs or
 returns the quote itself. A display function renders `title` and `loc` from the locator by code,
@@ -23,6 +26,7 @@ from uuid import UUID
 
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.evidence.citations.matching import Reason
+from abacus.modules.identity.api import Actor
 
 CitationKind = Literal[
     "document_text",
@@ -69,8 +73,8 @@ class CitationClaim:
 
 @dataclass(frozen=True)
 class Anchor:
-    """Where the citation is used: the citing record, its cell or line, and its scope. A
-    verifier refuses a source outside `engagement_id` (`source_not_visible`)."""
+    """Where the citation is used: the citing record, its cell or line, and its scope. An
+    engagement source must be in `engagement_id`, which the actor must be allowed to read."""
 
     type: str
     id: UUID
@@ -103,7 +107,8 @@ class Display:
     loc: str
 
 
-Verifier = Callable[[UnitOfWork, CitationClaim, Anchor], Awaitable[Verdict]]
+# (the writer's unit of work, the acting principal, the claim, where it is used)
+Verifier = Callable[[UnitOfWork, Actor, CitationClaim, Anchor], Awaitable[Verdict]]
 Displayer = Callable[[UnitOfWork, Mapping[str, object]], Awaitable[Display]]
 
 

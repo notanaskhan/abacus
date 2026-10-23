@@ -7,9 +7,11 @@ stack, with a `citation.created` audit event (ids only). A claim that fails is s
 `verified=false` with its reason: every reader shows it "Unverified", never as fact. The quote is
 never stored: only the hash of the words it resolved to.
 
-Who wrote it comes from the transaction itself, never from the caller: a person's transaction
-writes `human` rows with their user id, an agent's writes `agent` rows (and must name its run),
-the system's writes `system` rows. Agents call this from their handoff unit of work (P-03-T10).
+Who wrote it comes from the acting principal, never from the caller's say-so, and that principal
+must be the one the transaction acts as: a person writes `human` rows, an agent context `agent`
+rows with its run and initiator, a system context `system` rows with its run. Every verifier
+authorises that principal on the anchor's engagement before reading the source. Agents call this
+from their handoff unit of work (P-03-T10).
 """
 
 from __future__ import annotations
@@ -18,20 +20,21 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import text
-
 from abacus.kernel.db import transaction_context
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
 from abacus.modules.evidence.citations import verifiers as _builtin  # registers the built-ins
+from abacus.modules.evidence.citations.matching import MAX_QUOTE
 from abacus.modules.evidence.citations.registry import (
     KINDS,
     Anchor,
     CitationClaim,
     Verdict,
     citable,
+    source_of,
     unverifiable,
 )
 from abacus.modules.evidence.repository import insert_citation, next_citation_n
+from abacus.modules.identity.api import Actor, AgentContext, AuthContext
 
 _ = _builtin
 MAX_CLAIMS = 200
@@ -47,49 +50,65 @@ class RecordedCitation:
     match_id: str | None
 
 
-async def verify_claim(tx: UnitOfWork, claim: CitationClaim, anchor: Anchor) -> Verdict:
-    """The claim's verdict by its kind's verifier, or `locator_invalid` without one."""
+async def verify_claim(
+    tx: UnitOfWork, actor: Actor, claim: CitationClaim, anchor: Anchor
+) -> Verdict:
+    """The claim's verdict by its kind's verifier, or `locator_invalid` without one. A quote
+    longer than `MAX_QUOTE` characters is never searched (`quote_not_found`)."""
     found = citable(claim.kind)
     if found is None:
         return unverifiable(claim)
-    return await found.verifier(tx, claim, anchor)
+    if claim.quote is not None and len(claim.quote) > MAX_QUOTE:
+        source_type, source_id = source_of(claim)
+        return Verdict("quote_not_found", source_type, source_id)
+    return await found.verifier(tx, actor, claim, anchor)
 
 
-def _creator(actor_kind: str, actor_id: str, run_id: UUID | None) -> dict[str, object]:
-    if actor_kind == "human":
-        return {"created_by_kind": "human", "created_by_user_id": UUID(actor_id)}
-    if actor_kind == "agent":
-        if run_id is None:
-            raise ValueError("an agent's citations name its run")
-        return {"created_by_kind": "agent", "created_by_run_id": run_id}
-    return {"created_by_kind": "system", "created_by_run_id": run_id}
+def _creator(actor: Actor) -> dict[str, object]:
+    """Who wrote the rows, from the acting principal (never from the caller's say-so)."""
+    if isinstance(actor, AuthContext):
+        return {"created_by_kind": "human", "created_by_user_id": actor.user_id}
+    if isinstance(actor, AgentContext):
+        return {
+            "created_by_kind": "agent",
+            "created_by_run_id": actor.agent_run_id,
+            "on_behalf_of_user_id": actor.initiator.user_id,
+        }
+    return {
+        "created_by_kind": "system",
+        "created_by_run_id": actor.run_id,
+        "on_behalf_of_user_id": actor.on_behalf_of,
+    }
 
 
 async def record_citations(
     tx: UnitOfWork,
     *,
+    actor: Actor,
     anchor: Anchor,
     claims: Sequence[CitationClaim],
-    run_id: UUID | None = None,
-    on_behalf_of_user_id: UUID | None = None,
 ) -> list[RecordedCitation]:
-    """Verify and write `claims` for `anchor`, in order; returns each row's outcome."""
+    """Verify and write `claims` for `anchor`, in order, as `actor` (whose transaction `tx`
+    is: the same firm and actor); returns each row's outcome. Each verifier authorises `actor`
+    on the anchor's engagement before reading the cited source."""
     if len(claims) > MAX_CLAIMS:
         raise ValueError(f"at most {MAX_CLAIMS} citations at once")
     unknown = sorted({c.kind for c in claims} - KINDS)
     if unknown:
         raise ValueError(f"not citation kinds: {', '.join(unknown)}")
     context = await transaction_context(tx.session)
-    creator = _creator(context.actor_kind, context.actor_id, run_id)
-    if on_behalf_of_user_id is None:  # the person an agent or the platform acts for (0108)
-        behalf = (
-            await tx.session.execute(text("SELECT current_setting('app.on_behalf_of', true)"))
-        ).scalar_one_or_none()
-        on_behalf_of_user_id = UUID(str(behalf)) if behalf else None
+    acting = actor.tenant
+    if (context.tenant_id, context.actor_kind, context.actor_id) != (
+        acting.tenant_id,
+        acting.actor_kind,
+        acting.actor_id,
+    ):
+        raise ValueError("the actor is not the one this transaction acts as")
+    creator = _creator(actor)
     n = await next_citation_n(tx.session, anchor.type, anchor.id)
     recorded: list[RecordedCitation] = []
     for claim in claims:
-        verdict = await verify_claim(tx, claim, anchor)
+        verdict = await verify_claim(tx, actor, claim, anchor)
         registered = citable(claim.kind)
         values: dict[str, object] = {
             "tenant_id": context.tenant_id,
@@ -112,7 +131,6 @@ async def record_citations(
             "verified": verdict.verified,
             "verification_reason": verdict.reason,
             "verifier_version": registered.version if registered is not None else "none",
-            "on_behalf_of_user_id": on_behalf_of_user_id,
             **creator,
         }
         citation_id = await insert_citation(tx.session, values)

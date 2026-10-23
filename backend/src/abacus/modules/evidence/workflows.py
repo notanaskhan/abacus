@@ -13,6 +13,7 @@ from datetime import timedelta
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
+from temporalio.exceptions import ActivityError
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.evidence.workflow_types import VERSION, BackfillInput, UploadInput
@@ -57,15 +58,19 @@ class UploadProcessing:
                 start_to_close_timeout=_TIMEOUT,
                 retry_policy=_RETRY,
             )
-        # v4 (P-03-T05): the word layer, for versions and inbox files alike.
+        # v4 (P-03-T05): the word layer, for versions and inbox files alike. A layer that can't
+        # be built never undoes the steps before it; the backfill tries the upload again.
         if workflow.patched("words"):
-            await workflow.execute_activity(
-                "upload.words",
-                given,
-                result_type=int,
-                start_to_close_timeout=_TIMEOUT,
-                retry_policy=_RETRY,
-            )
+            try:
+                await workflow.execute_activity(
+                    "upload.words",
+                    given,
+                    result_type=int,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
         return status
 
 
@@ -73,8 +78,10 @@ class UploadProcessing:
 class TrustLayerBackfill:
     """P-03 §4.5 (P-03-T05): one tenant's uploads that have no word layer get one, by the same
     activity as new uploads (idempotent). Batches of `BACKFILL_BATCH` by id cursor, so a file
-    that yields no layer is passed, never retried forever; continues as new while a batch is
-    full. Started by an operator command (`abacus_tools.trust_layer_backfill`)."""
+    that yields no layer is passed, never retried forever, and one whose step fails after its
+    retries is counted (`failed`) and passed too, so the backfill never wedges on it. Continues as
+    new while a batch is full. Started by an operator command
+    (`abacus_tools.trust_layer_backfill`)."""
 
     @workflow.run
     async def run(self, given: BackfillInput) -> int:
@@ -85,14 +92,22 @@ class TrustLayerBackfill:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_RETRY,
         )
+        failed = 0
         for upload in batch:
-            await workflow.execute_activity(
-                "upload.words",
-                upload,
-                result_type=int,
-                start_to_close_timeout=_TIMEOUT,
-                retry_policy=_RETRY,
-            )
+            try:
+                await workflow.execute_activity(
+                    "upload.words",
+                    upload,
+                    result_type=int,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                failed += 1
+                workflow.logger.warning(
+                    "trust_layer.upload_failed",
+                    extra={"kind": upload.kind, "source_id": upload.source_id},
+                )
         versions = [u.source_id for u in batch if u.kind == VERSION]
         inbox = [u.source_id for u in batch if u.kind != VERSION]
         reached = BackfillInput(
@@ -100,6 +115,7 @@ class TrustLayerBackfill:
             versions[-1] if versions else given.after_version,
             inbox[-1] if inbox else given.after_inbox,
             given.done + len(batch),
+            given.failed + failed,
         )
         if len(batch) >= BACKFILL_BATCH:
             workflow.continue_as_new(reached)

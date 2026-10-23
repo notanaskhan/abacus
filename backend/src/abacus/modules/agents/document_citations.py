@@ -58,7 +58,7 @@ def verify(
             if rows is None and len(sheets) == 1:
                 rows = next(iter(sheets.values()))  # one sheet: its name may be left out
             cell = citation_cell_text(rows, c.cell or "") if rows is not None else None
-            reason = citation_cell_reason(cell, None, c.quote, None, exact_quote=False)
+            reason = citation_cell_reason(cell, None, c.quote, None, quote_rule="lines")
         results.append(
             VerifiedDocumentCitation(c.page, c.sheet, c.cell, c.quote, reason is None, reason)
         )

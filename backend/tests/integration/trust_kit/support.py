@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Protocol, cast
 
 import asyncpg
@@ -21,6 +22,7 @@ from abacus.modules.evidence.api import (
     add_version,
     stage_content,
 )
+from abacus.modules.identity.api import AuthContext
 
 MASTER = b"trust-layer-test-master-key-0123456789abcd"
 BUCKET = f"trust-layer-{uuid.uuid4().hex[:12]}"
@@ -74,6 +76,34 @@ class Firm:
     @property
     def system(self) -> TenantContext:
         return TenantContext(self.tenant_id, "system", "evidence.upload_processing")
+
+    def person(self, user_id: uuid.UUID | None = None) -> AuthContext:
+        """The firm's staff member (or another of its people) as a signed-in person."""
+        who = user_id or self.user_id
+        return AuthContext(
+            tenant=TenantContext(self.tenant_id, "human", str(who)),
+            user_id=who,
+            membership_id=uuid.uuid4(),
+            firm_role=None,
+            mfa_at=datetime.now(UTC) - timedelta(minutes=1),
+        )
+
+    async def outsider(self) -> uuid.UUID:
+        """Another active member of the firm, on none of its engagements."""
+        subject = f"sub-{uuid.uuid4().hex}"
+        user_id = await self.seed.id(
+            "INSERT INTO users (idp_issuer, idp_subject, email, display_name) "
+            "VALUES ('https://identity.abacus.local', $1, $2, 'Outsider') RETURNING id",
+            subject,
+            f"{subject}@example.test",
+        )
+        await self.seed.run(
+            "INSERT INTO memberships (tenant_id, user_id, firm_role, status) "
+            "VALUES ($1, $2, NULL, 'active')",
+            self.tenant_id,
+            user_id,
+        )
+        return user_id
 
     async def version(
         self,

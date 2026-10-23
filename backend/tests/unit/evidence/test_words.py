@@ -120,3 +120,34 @@ def test_p03t05_adr110_a_child_that_fails_is_crashed_not_an_error(
         "unreadable",
         "crashed",
     )
+
+
+class _Page:
+    """A pdfplumber page as far as `_page_words` reads one."""
+
+    def __init__(self, width: float, height: float) -> None:
+        self.width, self.height, self.rotation = width, height, 0
+
+    def extract_words(self, **_options: object) -> list[dict[str, object]]:
+        return [{"text": "Total", "x0": 1.0, "top": 1.0, "x1": 2.0, "bottom": 2.0}]
+
+
+@pytest.mark.parametrize(
+    ("width", "height"),
+    [(0.0, 792.0), (0.001, 0.001), (-612.0, 792.0), (2_000_000.0, 792.0), (612.0, float("nan"))],
+)
+def test_review_a_hostile_page_size_has_no_text_layer_and_storable_geometry(
+    width: float, height: float
+) -> None:
+    """Security review (#1): `evidence_pages` holds numeric(8, 2) > 0; a hostile MediaBox must
+    never reach the insert. Such a page is unreadable: no words, geometry within the cap."""
+    page = words._page_words(1, _Page(width, height))  # pyright: ignore[reportPrivateUsage] -- the page reader itself
+    assert page.words == ()
+    for side in (page.width, page.height):
+        assert 0 < side <= words.MAX_PAGE_PT
+
+
+def test_review_a_zero_size_pdf_page_is_unreadable_not_an_error() -> None:
+    raw = positioned_pdf([LINE]).replace(b"/MediaBox [0 0 612 792]", b"/MediaBox [0 0 0 0]")
+    layer = extract_words(raw, PDF)
+    assert all(not p.words and 0 < p.width <= words.MAX_PAGE_PT for p in layer.pages)

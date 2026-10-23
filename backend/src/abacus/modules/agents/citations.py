@@ -135,7 +135,7 @@ def verify(content: bytes, citations: list[Citation]) -> list[VerifiedCitation]:
             _as_decimal(raw),
             citation.quote,
             citation.value,
-            exact_quote=True,
+            quote_rule="exact",
         )
         reason = _LEGACY_REASONS.get(found, found) if found is not None else None
         verified.append(

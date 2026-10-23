@@ -207,3 +207,17 @@ async def test_p03t04_extraction_and_previews_still_record_once_after_0109(seed:
         version,
     )
     assert (counts[0]["e"], counts[0]["p"]) == (1, 1)
+
+
+async def test_review_a_hostile_page_size_writes_rows_without_a_layer(seed: Seeder) -> None:
+    """Security review (#1): a 0 x 0 or oversized MediaBox never fails the step (the insert's
+    numeric(8, 2) > 0 check would refuse it, and every retry with it)."""
+    firm = await make_firm(seed)
+    hostile = positioned_pdf([[(72.0, 700.0, "Tiny")], [(72.0, 700.0, "Huge")]])
+    hostile = hostile.replace(b"/MediaBox [0 0 612 792]", b"/MediaBox [0 0 0 0]", 1).replace(
+        b"/MediaBox [0 0 612 792]", b"/MediaBox [0 0 9000000 9000000]", 1
+    )
+    version = await firm.version(hostile)
+    assert await words_upload(as_version(firm, version)) == 2
+    pages = await _pages(firm.tenant_id, version)
+    assert [(p.has_text_layer, p.word_count) for p in pages] == [(False, 0), (False, 0)]
