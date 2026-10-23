@@ -12,8 +12,10 @@ import hashlib
 import secrets
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID, uuid4
+
+from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -278,3 +280,28 @@ async def accept_staff_invitation(identity: VerifiedIdentity, token: str) -> UUI
         )
     _log.info("staff_invitation.accepted", tenant_id=tenant_id, invitation_id=invitation_id)
     return tenant_id
+
+
+async def invite_first_admins(ctx: TenantContext, emails: tuple[str, ...]) -> list[UUID]:
+    """Q-01-T45: a new firm's first administrators, invited by the provisioning operator (`ctx` is
+    `operator:<handle>`). Allowed only while the firm has no active member (`invite_first_admin`,
+    migration 0107); a retried call returns the same invitations. Each one's email follows from
+    `staff_invitation.issued`, as for any staff invitation."""
+    issued: list[UUID] = []
+    async with uow(ctx) as tx:
+        for email in emails:
+            invitation_id = cast(
+                UUID,
+                (
+                    await tx.session.execute(
+                        text("SELECT invite_first_admin(:tenant, :email, :operator)"),
+                        {"tenant": ctx.tenant_id, "email": email, "operator": ctx.actor_id},
+                    )
+                ).scalar_one(),
+            )
+            issued.append(invitation_id)
+            tx.emit(StaffInvitationIssued(invitation_id=invitation_id))
+            tx.record("staff_invitation.issued", target=Target("staff_invitation", invitation_id))
+        if not emails:
+            tx.record("staff_invitation.none_issued", target=Target("firm", ctx.tenant_id))
+    return issued

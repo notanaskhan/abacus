@@ -19,7 +19,10 @@ IDS = [p.stem for p in ALL]
 
 
 def test_the_histories_are_committed() -> None:
-    assert IDS == ["tenant-provisioning-v1-provisioned"]
+    assert IDS == [
+        "tenant-provisioning-v1-provisioned",
+        "tenant-provisioning-v2-provisioned",  # 0107: entitlements and first admins
+    ]
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)

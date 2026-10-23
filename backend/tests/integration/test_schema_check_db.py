@@ -1752,6 +1752,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
         | {"access_events_partition"}  # 0105 (Q-02-T20)
+        | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}  # 0107
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
