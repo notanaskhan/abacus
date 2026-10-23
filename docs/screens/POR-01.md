@@ -7,9 +7,9 @@
 | Surface | portal (white-labelled: the firm's mark, name, address and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-01 Portal sign-in - Brightwater Hale/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-08 · contract P-08-T03; glossary P-08-T04; ADR P-11 P-08-T30; branding P-08-T05; WorkOS port P-08-T06; portal entry P-08-T07; data P-08-T08; a, b, e, f, g P-08-T09; BFF P-08-T10; auth client P-08-T11; c, c′ and d P-08-T19 (over MFA P-08-T17 and invitations v2 P-08-T18; AC suites T20 and T24); parity and accessibility P-08-T27 |
-| Manifest status | planned (`routes/manifest/por.ts`, `entry: true`: no designed link targets POR-01; it is reached from POR-20 emails and the CLI-04 invite) |
+| Manifest status | fixture (`routes/manifest/por.ts`, `entry: true`, no firm path: the screen is served by the portal entry at `/sign-in`, `routes/portal/index.tsx`; P-08-T09). a, b, e, f, g and 390 are built; c, c′ and d are P-08-T19's |
 
-Code to come (P-08 §5.2): `src/routes/portal/public.tsx`, `src/app-core/auth/bff.ts` (P-08-T11), `src/domain/portal/{queries,mutations,messages}.ts`, `src/screens/POR-01/{index.tsx, scenarios.ts, copy.ts, POR-01.test.tsx}`.
+Code (P-08-T07, T08, T09): `portal.html`, `src/entries/portal.tsx`, `src/routes/portal/index.tsx` (the portal's own route tree; P-08 §5.2 named it `public.tsx`), `src/portal/{PortalRoot,PortalShell,EntitySwitcher}.tsx`, `src/app-core/{portal-contracts,portal-session}.ts`, `src/domain/portal/{sign-in,shell,messages,index}.ts`, `src/screens/POR-01/{index.tsx, scenarios.ts, copy.ts, POR-01.test.tsx}`, `src/fixtures/{handlers/portal.ts, seed/portal-home.ts, scenarios/POR-01.ts, scenarios/POR-02.ts, install-portal.ts, portal.foot.test.ts}`, `scripts/portal-dist-check.mjs`, `e2e/screens/POR-01.spec.ts`. `src/app-core/auth/bff.ts` (refresh, CSRF) is P-08-T11's.
 
 **White label (AGENTS frontend rule 7, DEC-01, ADR-133, DEC-59).** Portal code never renders "Accrued": not in copy, `title`, favicon, alt text, aria labels, error messages, email previews or bundle strings. The firm's name, mark, address, help and privacy links and support contact come from `GET /v1/portal/branding`; the "Secured by Accrued" footer is off (`secured_footer: false`). The L7 white-label crawl (F-05-T39) and the `vite build --mode portal` string check (P-08-T07) enforce it.
 
@@ -35,16 +35,16 @@ Non-artboard states (C-20 kit; data conditions, never an `st` prop):
 
 | State | Data condition | Copy |
 |---|---|---|
-| Code expired | `verify` answers `410 code_expired` (code older than 10 minutes) | key `error.codeExpired`; helper offers Resend |
-| Resend too soon | `resend` answers `429 resend_too_soon {resend_available_at}` | key `error.resendTooSoon`; the countdown restarts |
+| Code expired | `verify` answers `410 code_expired` (code older than 10 minutes) | `SIGN_IN_WORDS.codeExpired`: "That code has expired. Use Resend code to get a new one." |
+| Resend too soon | `resend` answers `429 resend_too_soon {resend_available_at}` | `SIGN_IN_WORDS.resendTooSoon`: "A new code can be sent when the countdown ends."; the countdown restarts from the server's time |
 | MFA wrong / locked | `401 mfa_mismatch {tries_left}` · `423 mfa_locked {locked_until}` | reuse f's helper and g's card |
-| Sign-in paused | `503 sign_in_paused` (per-firm kill switch) | key `error.paused`; names the branding support contact |
-| Unknown portal host | `GET /v1/portal/branding` returns neutral values (same shape) | key `neutral.*`; no firm mark, name or address |
-| Network error | request fails | F-05 `ErrorRow` |
+| Sign-in paused | `503 sign_in_paused` (per-firm kill switch) | `SIGN_IN_WORDS.paused`: "Sign-in is paused for now. If you need help, contact {person} at {firm}." (without a contact: "Sign-in is paused for now. Please try again later.") |
+| Unknown portal host | `GET /v1/portal/branding` returns neutral values (same shape) | `COPY.neutral`: "Use your email address. We'll send you a 6-digit code — no password needed.", "Codes expire after 10 minutes.", locked "For your security, sign-in is paused for 15 minutes."; no firm mark, name, address or person; the tab reads "Client portal" |
+| Network error | request fails | `SIGN_IN_WORDS.network`: "We couldn't reach the sign-in service. Check your connection and try again." in the helper (the card stays; T09) |
 | Flag off | `portal.sign_in_v2` false | legacy hosted OIDC sign-in (`ClientAccept.tsx` path) |
 | Unbuilt landing (fixture builds) | landing screen is `planned` | "Not built yet" (manifest rule) |
 
-The strings for these keys are not handoff copy: they are written by the building task (T09, T19) on the C-20 grammar, recorded back into this table, and pass the portal copy bans below. Until then the keys are open (see Open gaps).
+The strings for these keys are not handoff copy: P-08-T09 wrote them on the C-20 grammar (what happened, then what to do) in `domain/portal/messages.ts` and `screens/POR-01/copy.ts`, recorded above, inside the portal copy bans below. Also not handoff copy: the spinner's accessible name "Sending your code", "1 try left" (the singular of f's helper) and "Not built yet" on a planned landing (fixture builds only).
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
@@ -167,13 +167,20 @@ Each becomes a test in `POR-01.test.tsx` ("POR-01 avoid: …"): gradients in pro
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | reported, then locked (blocking) at P-08 exit (T27); b masks the countdown; d at the Sep 2 clock |
+| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (a, b, e, f, g built; axe 0 serious at 1400, 720 and 390 in `e2e/screens/POR-01.spec.ts`) | reported, then locked (blocking) at P-08 exit (T27); b masks the countdown; d at the Sep 2 clock |
 | c′, 390 | D | — | no PNG; Tier D only |
 | host | D | — | card 400 wide, radius 14, top 196, padding 28 28 24; code boxes 44×52 r10 gap 8 (42×50 gap 6 at 390); button 36 h; mark 34 px; body 13/15.6 Geist |
 
 Tier B for T15 is F-05's (F-05-T49).
 
 ## Open gaps
+- **Pre-session routes unserved (T09).** `/v1/portal/branding`, `/v1/portal/auth/*`, `/v1/portal/links/renew` and `/v1/invitations/preview` have no OpenAPI schema yet (DEC-139), so the generated client has no type or function for them. `app-core/portal-contracts.ts` drafts their types field for field from the backend contract models (as the P-08-T02 tests read them) and `domain/portal/sign-in.ts` calls their paths on the generated `client`; both are replaced by `make generate` when P-08-T05 and T10 serve the routes.
+- **Expired reminder link (T09).** The contract has no answer that says a reminder link is expired (`start` is 202 for any input). The fixture answers `POST /v1/portal/auth/start {link_token}` with `410 link_expired` for a link older than 14 days, and the screen shows e for it. P-08-T10/T21 must add this answer (or a link-status read) to the pre-session family.
+- **Fixture email (T08).** The seed's mailboxes are on the synthetic sink domain (SPEC-307 AC-5), so the fixtures show `claire.feld@sink.brightwaterhale.test` where the handoff shows `claire.feld@gmail.com`. Parity masks the address.
+- **Firm mark (T09).** The branding has no mark slot, only `logo_url`; without a logo the card draws the firm's initials ("BH") where the handoff draws Brightwater Hale's wave mark. The wave arrives as the firm's uploaded logo (ADM-10).
+- **Keystone's 9 items (T08).** d's 9 comes from CLI-04's delegation split (10 + 9 + 2 + 2 + 1 = 24, footed against Northwind's 24 requests); the interim seed's per-request owner column names Keystone on 7. The seed's owners follow the Python scenario when F-04-T31 exports it.
+- **Secured-footer label in the portal dist (T07).** The design system's wordmark carries the product's name as its default accessible name, and the portal kit (AuthFrame, AppShell) imports the opt-in "Secured by" footer, so one string reaches dist/portal. `scripts/portal-dist-check.mjs` allows exactly that one occurrence; loading the footer only when `secured_footer` is on (an F-05 follow-up) removes it.
+- **Legacy client screens in the portal entry (T07).** The legacy `ClientHome`, `ClientEngagement` and `ClientAccept` stay in the firm bundle at `/client/*` (`routes/portal.tsx`): the INV-4 lint forbids the portal entry from importing `src/legacy`, so they are not mounted there. R-01 and P-08-T28 replace and retire them.
 - **README vs spec clock for a.** README renders a as "Mon Sep 14, 9:22 AM", the others "Mon 14 Sep 2026, 9:22 AM": the same instant; the contract uses Mon Sep 14, 2026, 9:22 AM CT for a–c and e–g and Wed Sep 2, 2026 for d (P-08 §5.4).
 - **Non-artboard copy.** No handoff string exists for code expired, resend too soon, sign-in paused, the unknown-host neutral card or c′. Decided: the keys are reserved here; T09 and T19 write the strings on the C-20 grammar, record them in this contract and keep them inside the copy bans. They are not handoff copy and are flagged as such in `copy.ts`.
 - **OQ-2.** The pre-session routes and `/branding/logo` must be on the ADR P-45 or P-54 exception list before T05/T10 merge (P-08 §11.2).

@@ -2,8 +2,9 @@
 // JavaScript file the build manifest names and fail when
 //   - the firm app's initial JavaScript (its entry chunk and everything it imports statically) is
 //     over 250 KB,
-//   - the portal's initial JavaScript is over 150 KB (once a build has a portal entry; today there
-//     is one entry, so it is reported as not built), or
+//   - the portal's initial JavaScript is over 150 KB (a build with a portal entry: `vite build
+//     --mode portal` into dist/portal, P-08-T07, where route chunks count against the portal's
+//     initial load), or
 //   - one route chunk (a dynamically imported screen, with the static imports it adds to the initial
 //     load) is over 120 KB.
 // KB is 1000 bytes of gzip output at level 9. Dependency-free: reads dist/.vite/manifest.json
@@ -58,11 +59,15 @@ export function budgetLines(manifest, size) {
     lines.push({ name: `firm initial (${firm[0]})`, bytes: js(initial), budget: BUDGETS.firm });
   }
   if (portal !== undefined) {
+    const portalInitial = staticClosure(manifest, portal[0]);
     lines.push({
       name: `portal initial (${portal[0]})`,
-      bytes: js(staticClosure(manifest, portal[0])),
+      bytes: js(portalInitial),
       budget: BUDGETS.portal,
     });
+    // P-08-T07: the portal is its own build (dist/portal) with no firm entry; its route chunks
+    // add to the portal's initial load, not to nothing.
+    if (firm === undefined) initial = portalInitial;
   }
   for (const [key, chunk] of Object.entries(manifest)) {
     if (chunk.isDynamicEntry !== true) continue;

@@ -15,6 +15,8 @@ Code to come (P-08 §5.2): `src/routes/portal/{root,home}.tsx`, `src/shell/porta
 
 ## States
 
+Fixture scenarios (P-08-T08, `fixtures/scenarios/POR-02.ts`, data in `fixtures/seed/portal-home.ts`): a, b, c, d, e, f and M are written and footed (`fixtures/portal.foot.test.ts`: Upload 2 = Intake 2, 3 = 2 + 1, binder 19 of 21 with 37 sorted, Copperleaf 7 of 9); g and h (R2 waves 6 and 7) wait for their epochs. The screen is P-08-T15's.
+
 9 artboards in the handoff (a–f from spec.md; g and h from revision R2; M at 390), 9 built here.
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
