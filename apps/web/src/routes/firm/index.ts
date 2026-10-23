@@ -1,4 +1,5 @@
 import { areaRoutes } from "./areas";
+import { binderRoutes } from "./binders";
 import { clientRoutes } from "./clients";
 import { engagementRoutes } from "./engagements";
 import { homeRoutes } from "./home";
@@ -16,7 +17,7 @@ export const FIRM_AREAS = [
   { key: "workbench", label: "Workbench", routes: [] },
   { key: "inbox", label: "Inbox", routes: [] },
   { key: "clients", label: "Clients", routes: clientRoutes },
-  { key: "binders", label: "Binders", routes: [] },
+  { key: "binders", label: "Binders", routes: binderRoutes },
   { key: "notices", label: "Notices", routes: [] },
   { key: "audits", label: "Audits", routes: [] },
   { key: "closes", label: "Closes", routes: [] },
@@ -29,6 +30,7 @@ export const firmRoutes = [
   ...engagementRoutes,
   ...knowledgeRoutes,
   ...clientRoutes,
+  ...binderRoutes,
   ...settingsRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,

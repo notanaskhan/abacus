@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/BND-01 Binders index/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-06 · contract P-06-T03 (TASK-404); a, c, d, e P-06-T09; b and the follow-up sheet P-06-T16; read model P-06-T11; data P-06-T08; parity P-06-T26 |
-| Manifest status | planned (`routes/manifest/bnd.ts`, `navArea: "Binders"`) |
+| Manifest status | fixture, path `/binders` behind `binders.engine` (`routes/manifest/bnd.ts`, `navArea: "Binders"`; P-06-T09, TASK-931) |
 
 Code to come (P-06 §5.2): `src/routes/firm/binders.tsx`, `src/domain/requests/` (`queries.ts`, `mutations.ts`, `filters.ts`, `messages.ts`, `FollowUpSheet.tsx`), `src/screens/BND-01/{index.tsx, scenarios.ts, copy.ts, BND-01.test.tsx}`.
 
@@ -113,14 +113,26 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | DV-7 | UI keeps "Send reminder(s)…"; code identifiers say `follow_up` (L12 applies to identifiers only) | DEC-74 vocabulary; the handoff copy is final | P-06 §2.4 |
 | — | Bulk send drafts come from the firm's Reminder template (C16), never model text; the agent never sends | DEC-74, DEC-79 off, ADR-111 | P-06 §3.2 Story 2.2 |
 | — | No "Binders · Requests" segmented control until N-03 builds BND-04 | BND-04 is N-03's | P-06 §2.1 |
+| DV-12 | "+ New binder" reads "New binder…" with the plus as the button's icon; the row menu's "Unpublish" reads "Unpublish…" (it opens the reason dialog: 422 `reason_required` without one) | Plan 04 rule 9: an opener of a dialog or sheet ends in "…" (asserted by `Button`/`Menu` in development) | P-06-T09 (TASK-931) |
+| DV-13 | e: the tile row is hidden while the list loads, instead of skeleton tile counts | T1's `StatusTile` has no skeleton, and a loading tile must never read 0; skeleton tiles are a T1 template change (`ui-kit-component`) | P-06-T09 (TASK-931) |
+| DV-14 | Tiles: Unpublished and Closed draw T1's neutral tile pill (`StatusTile` has no `muted` or `soon` variant); rows use the registry pills (muted, soon). Requests: the C-19 `ProgressBar` puts "5 of 7" before the bar and fills espresso when complete, amber when partial (the kit never fills green) | Kits as merged (F-05-T19, T28); no kit is built in a screen task | P-06-T09 (TASK-931) |
+| DV-15 | "Send reminders…" is not in the pane header yet, and the filters live in the page state rather than the URL | The button opens the follow-up sheet (P-06-T16), and T1 has no slot for a second header action; the search-param mirror lands with the live swap (T16) | P-06-T09 (TASK-931) |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–e | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | locked (blocking) at the end of S10; mask the skeleton pulse in e |
+| a, c, d, e | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26) | `e2e/screens/BND-01.spec.ts` renders each at 1440×900 DPR 2 with axe at 0 serious or critical; locked (blocking) at the end of S10; mask the skeleton pulse in e |
+| b | C | not run | P-06-T16 |
 | host | D | — | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12 |
 
 ## Open gaps
 - Last client activity is the `binder_activity` projection (portal upload, answer, sign and `inbox_file.added` events); the inbound-email part may move to N-01 under cut order item 3 (P-06 §11.3).
 - The Ferris "§7216 consents 1 of 2" tag needs P-07/T-01 to register the consent-tag hook; until then the tag renders only in fixture mode.
-- Personas `grace-holloway` and `remy-vidal` are added to the scenario by P-06-T08 if F-04 has not.
+- Personas `grace-holloway` and `remy-vidal` are seat holders of the TS seed (`fixtures/seed/people.ts`); resolved.
+- **Row facts the C5 row does not carry (P-06-T09 stopped these pieces; P-06-T11 owns the read model).** `BinderRowOut` has no status sub-line facts: the Complete line "Marked done by {person} · {date}" (`marked_done_by`/`_at` are on `BinderOut` only), the Closed line "Return accepted Apr 10", the overdue Count "3 overdue", the internal-draft line "K-1 from Ridgeline · Draft K-1 · pre-release", and "2 requested Sep 8–10". Last client activity is only `last_client_activity_at`: no actor or summary ("Claire emailed 2 files (Inbox) · uploading 2 now") and no thread link for INB-04. Until they land, a row shows its pill (plus the Unpublished line, whose facts exist) and the activity date ("9:12 AM", "Yesterday", "Sep 9"; brick when a published binder is silent over 30 days).
+- The summary "224 returns · 17 second-part binders" reads a `part` facet (`{value: "1" | "2+", n}`) that the fixture gives and P-06-T11 must emit (facets are open-keyed, so no contract change); without it the summary is not drawn.
+- `tags` are codes with no label registry yet, so the Ferris "§7216 consents 1 of 2" tag is not drawn, in fixture mode either.
+- Osterberg's progress: the c screenshot reads "0 of 9"; the Python slice (P-06-T08) declares `(0, 0)`. The TS fixture follows the artboard; T11 or T29 settles the figure.
+- The fixture's `allowed_actions` and capabilities give Grace and Remy `binder.publish` and `binder.create`, i.e. Brightwater Hale's `client_service_can_publish` on (the canvas has Grace publish and unpublish from the row menu); the firm-settings row is P-06-T08's.
+- "New binder…": C5 has no list of firm binder templates, so the sheet offers Blank only (`template_ref` unset). The sheet's "Create" and "Choose", the dialog title "Unpublish binder" and the toasts are not in the handoff; they follow the toast and dialog rules until a revision words them.
+- `GET /v1/binders` is still the C5 stub (501) until P-06-T11: BND-01 runs on the fixture scenarios (`fixtures/scenarios/BND-01.ts`, typed with the generated client), and the TS rows are the handoff's until `make fixtures` exports the Python slice (F-04-T31).

@@ -298,7 +298,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
       "Files",
       "Workbench",
       "Inbox",
-      "Binders",
+      // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
       "Notices",
       "Audits",
       "Closes",
