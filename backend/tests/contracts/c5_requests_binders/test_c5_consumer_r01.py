@@ -202,9 +202,10 @@ def _client_filter() -> str:
 
 def test_r01_every_client_reach_of_the_request_filter_needs_client_visible() -> None:
     sql = _client_filter()
-    grants = sql.count("FROM client_access_grants")
-    assert grants == 2  # client admin and contributor
-    assert sql.count("request_items.client_visible IS true") == grants
+    # Client admin and contributor each reach through grants on the engagement, its client or
+    # its client entity (DEC-211): three grant subqueries per reach, one client_visible each.
+    assert sql.count("FROM client_access_grants") == 6
+    assert sql.count("request_items.client_visible IS true") == 2
 
 
 def test_r01_the_store_keeps_every_draft_off_the_client() -> None:

@@ -28,6 +28,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
+from abacus.modules.identity.repository import GRANT_ROLES_OF
 from abacus_tools.codegen import permission_matrix as pm
 
 DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
@@ -313,10 +314,10 @@ def test_ac7_visible_requires_a_confirmation_for_staff_roles(fakes: Fakes) -> No
     sql = _sql(visible(_person(), "connection.read_log", column("engagement_id", Uuid())))
     assert "independence_confirmed" in sql
     # Staff roles need the confirmation; client roles reach their rows without one, through
-    # their engagement-scope grants (F-03-T26).
+    # their grants on the engagement, its client or its client entity (F-03-T26, DEC-211).
     assert sql.count("engagement_members.role IN") == 1
-    assert sql.count("client_access_grants.role IN") == 1
-    assert sql.startswith("(engagement_id IN (SELECT client_access_grants.scope_id")
+    assert sql.count("client_access_grants.role IN") == 3
+    assert sql.startswith("(engagement_id IN (SELECT anon_1.scope_id")
     assert " OR engagement_id IN (SELECT engagement_members.engagement_id" in sql
     assert sql.index("independence_confirmed") > sql.index("engagement_members.role IN")
 
@@ -328,8 +329,10 @@ def test_ac7_visible_unregistered_leaves_only_client_reach(
     expression = visible(_person(), "connection.read_log", column("engagement_id", Uuid()))
     assert "independence_confirmed" not in _sql(expression)
     assert "engagement_members" not in _sql(expression)
-    assert _sql(expression).count("client_access_grants.role IN") == 1
-    assert expression.compile().params["role_1"] == ["owner"]  # client_admin's grant role
+    assert _sql(expression).count("client_access_grants.role IN") == 3  # three scope kinds
+    # client_admin's grant roles (DEC-211), on every scope kind alike.
+    params = expression.compile().params
+    assert [params[f"role_{i}"] for i in (1, 2, 3)] == [sorted(GRANT_ROLES_OF["client_admin"])] * 3
 
 
 def test_ac7_visible_with_only_staff_roles_unregistered_is_false(

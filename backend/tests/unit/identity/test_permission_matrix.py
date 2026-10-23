@@ -30,7 +30,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.authz import matrix
 from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.identity.repository import GRANT_ROLE_OF
+from abacus.modules.identity.repository import GRANT_ROLES_OF
 from abacus_tools.codegen import permission_matrix as pm
 
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
@@ -717,8 +717,8 @@ def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(acti
     compiled = expression.compile()
     sql = _sql(expression)
     assert staff or client
-    # Staff roles from the team; client roles from engagement-scope grants (F-03-T26), each
-    # filtered on the person and the tenant.
+    # Staff roles from the team; client roles from grants on the engagement, its client or its
+    # client entity (F-03-T26, DEC-211), each filtered on the person and the tenant.
     n = 1
     if staff:
         assert (
@@ -730,11 +730,13 @@ def test_ac20_visible_without_a_firm_allow_filters_on_engagement_membership(acti
     else:
         assert "engagement_members" not in sql
     if client:
-        assert "engagement_id IN (SELECT client_access_grants.scope_id" in sql
-        assert sorted(compiled.params[f"role_{n}"]) == sorted(GRANT_ROLE_OF[r] for r in client)
+        assert sql.count("FROM client_access_grants") == 3  # the three scope kinds
+        expected = sorted({g for r in client for g in GRANT_ROLES_OF[r]})
+        for i in (n, n + 1, n + 2):
+            assert sorted(compiled.params[f"role_{i}"]) == expected
     else:
         assert "client_access_grants" not in sql
-    for i in range(1, n + (1 if client else 0)):
+    for i in range(1, n + (3 if client else 0)):
         assert compiled.params[f"tenant_id_{i}"] == ctx.tenant_id
         assert compiled.params[f"user_id_{i}"] == ctx.user_id
 
@@ -754,10 +756,11 @@ def test_spec020_visible_counts_a_client_role_allowed_by_the_matrix(
 ) -> None:
     monkeypatch.setitem(RULES, "probe.read", make_rule("probe.read", {"client_admin": "allow"}))
     expression = visible(_ctx(), "probe.read", column("engagement_id", Uuid()))
-    # F-03-T26: a client role reaches through its engagement-scope grant.
+    # F-03-T26, DEC-211: a client role reaches through its grants on the engagement, its
+    # client or its client entity.
     assert "client_access_grants.role IN" in _sql(expression)
     assert "engagement_members" not in _sql(expression)
-    assert list(expression.compile().params["role_1"]) == ["owner"]
+    assert list(expression.compile().params["role_1"]) == sorted(GRANT_ROLES_OF["client_admin"])
 
 
 @pytest.mark.parametrize(
