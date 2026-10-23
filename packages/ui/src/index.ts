@@ -376,3 +376,6 @@ export * from "./attribution";
 
 // C-16 Request kit, portal variant (F-05-T36).
 export * from "./requests";
+
+// C-03 Rail kit and C-04 Record kit (F-05-T40).
+export * from "./record";

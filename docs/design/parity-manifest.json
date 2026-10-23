@@ -408,6 +408,46 @@
         1744
       ],
       "tier": "B"
+    },
+    "t2-record-cockpit.t2a": {
+      "selector": "[data-artboard=\"t2a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T2 Record cockpit/screenshots/T2a.png",
+      "sha256": "84bff93cc34137dcf9f64e46aff5547bca144a93a331beb4c6b08d49f4efba8d",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T40 frame: the canvas and dock hold slot notes until the C-02 Workpaper, C-12 run rows and SHL-11 decision kits merge (F-05-T50, P-04, P-09), and the T2a canvas draws the seed's Northwind net assets, not the handoff's fund table"
+    },
+    "t2-record-cockpit.t2b": {
+      "selector": "[data-artboard=\"t2b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T2 Record cockpit/screenshots/T2b.png",
+      "sha256": "bd074def666665f0ea46adce6e8ef397a107b0d15652845d1302eb63a539b6d8",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T40 frame: the canvas and dock hold slot notes until the C-02 Workpaper, C-12 run rows and SHL-11 decision kits merge (F-05-T50, P-04, P-09), and the T2a canvas draws the seed's Northwind net assets, not the handoff's fund table"
+    },
+    "t2-record-cockpit.t2c": {
+      "selector": "[data-artboard=\"t2c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T2 Record cockpit/screenshots/T2c.png",
+      "sha256": "be1f3d350612742ad54c611224f8b228f16f20dd34dca825e7ae4f541586a564",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T40 frame: the canvas and dock hold slot notes until the C-02 Workpaper, C-12 run rows and SHL-11 decision kits merge (F-05-T50, P-04, P-09), and the T2a canvas draws the seed's Northwind net assets, not the handoff's fund table"
+    },
+    "t2-record-cockpit.t2d": {
+      "selector": "[data-artboard=\"t2d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T2 Record cockpit/screenshots/T2d.png",
+      "sha256": "83b193eb2373663ecbd036f6ce0f443973417e732935a87ea8a29b40ad75203d",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T40 frame: the canvas and dock hold slot notes until the C-02 Workpaper, C-12 run rows and SHL-11 decision kits merge (F-05-T50, P-04, P-09), and the T2a canvas draws the seed's Northwind net assets, not the handoff's fund table"
+    },
+    "t2-record-cockpit.t2e": {
+      "selector": "[data-artboard=\"t2e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T2 Record cockpit/screenshots/T2e.png",
+      "sha256": "2e4a6ff4f912e88a05cc3b07b008ca13b9e60e417b5117dcc7388c063f280c30",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T40 frame: the canvas and dock hold slot notes until the C-02 Workpaper, C-12 run rows and SHL-11 decision kits merge (F-05-T50, P-04, P-09), and the T2a canvas draws the seed's Northwind net assets, not the handoff's fund table"
     }
   }
 }

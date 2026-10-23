@@ -34,3 +34,14 @@ export {
   CodeInput,
   type CodeInputProps,
 } from "./auth-card";
+// T2 RecordCockpit (F-05-T40): rail, canvas and dock under the audit record bar.
+export {
+  type CockpitCanvas,
+  type CockpitDock,
+  DOCK_VIEWS,
+  DockComposer,
+  type DockComposerProps,
+  type DockView,
+  RecordCockpit,
+  type RecordCockpitProps,
+} from "./record-cockpit";
