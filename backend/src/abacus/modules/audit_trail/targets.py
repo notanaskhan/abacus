@@ -47,10 +47,12 @@ FIRM_LEVEL: Final = frozenset(
         "retention",
         "event",
         "usage_record",  # an id with no engagement on it; the follow-up makes it exact
+        "auth_session",  # P-01-T09: a person's sign-in session spans the firm's engagements
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.
-OPTIONAL_OWNER: Final = frozenset({"notification"})
+# P-04-T10: an approval grant belongs to its decision's engagement, or to the firm.
+OPTIONAL_OWNER: Final = frozenset({"notification", "approval_grant"})
 
 # The modules register what they own (`kernel.audit_owners`), read when asked so that a module
 # loaded later is still seen; a kind nobody registered is unknown and hidden.

@@ -82,6 +82,9 @@ def test_the_sign_in_fake_serves_and_accepts_only_its_own_ports(
         assert {
             "http://localhost:5183/signin/callback",
             "http://127.0.0.1:5183/signin/callback",
+            # P-01-T09: the staff session BFF's callback, on the same SPA origins.
+            "http://localhost:5183/v1/auth/callback",
+            "http://127.0.0.1:5183/v1/auth/callback",
         } == offset.REDIRECT_URIS
     finally:
         monkeypatch.delenv("ABACUS_PORT_OFFSET")

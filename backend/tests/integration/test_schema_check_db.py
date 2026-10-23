@@ -1135,11 +1135,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "clients": frozenset(
             {"kind", "status", "primary_office_id", "relationship_partner_id", "risk_tier"}
             | {"portal_status", "practice_mgmt_ref"}
+            | {"descriptor"}  # P-07-T07 (0103)
         ),
         "client_entities": frozenset(
             {"entity_type", "fye_month_day", "state_of_formation", "plan_number"}
             | {"date_of_death", "grantor_status"}
+            # P-07-T07 (0103): the sealed TIN set, written only by P-07-T10's sealing.
+            | {"tin_sealed", "tin_last4", "tin_kind", "tin_status", "tin_fingerprint"}
         ),
+        "entity_relationships": frozenset({"effective_to"}),  # P-07-T07 (0103)
+        "approval_grants": frozenset({"used_at", "consumer_ref", "voided_at"}),  # P-04-T10
+        "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46 (0104)
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
         ),
@@ -1344,6 +1350,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
     assert sc.IMMUTABLE_TABLES == {
         "evidence_versions": IMMUTABLE_FUNCTION,
         "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
+        "message_deliveries": "message_deliveries_immutable",  # 0104 (Q-01-T46)
         "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
         "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)

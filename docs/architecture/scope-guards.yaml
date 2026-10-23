@@ -36,7 +36,10 @@ excluded_identifiers:
 # D9: single audit exists only as the Coming soon catalogue entry (P-07, ENG-03f).
 single_audit:
   identifier: single_audit
-  allowed_in: []   # the engagement-type catalogue file joins when P-07 builds it
+  # The engagement-type catalogue file joins when P-07 builds it. P-07-T06's consumer test names
+  # the code only to assert that the catalogue never offers it (D9).
+  allowed_in:
+    - apps/web/src/fixtures/contracts/clients-engagements.test.ts
 
 # UI and product-text terms (rule IDs from chapter 09 section 9.5.7). Found in string literals,
 # JSX text and templates by ESLint, and in backend constants, prompts and seed by scope_guards.py.

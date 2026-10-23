@@ -100,6 +100,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
 IMMUTABLE_TABLES: dict[str, str] = {
     "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
+    "message_deliveries": "message_deliveries_immutable",  # 0104 (Q-01-T46)
     "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
     "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
     "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)

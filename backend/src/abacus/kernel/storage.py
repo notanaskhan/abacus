@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from types_boto3_kms import KMSClient
     from types_boto3_s3 import S3Client
     from types_boto3_sesv2 import SESV2Client
+    from types_boto3_sqs import SQSClient
 
 
 def s3_client(
@@ -70,6 +71,13 @@ def sesv2_client(*, region: str | None = None) -> SESV2Client:
     """An SES v2 client for `region` (the settings' `ses_region`), on the default credentials."""
     return boto3.client(  # pyright: ignore[reportUnknownMemberType] -- see s3_client
         "sesv2", region_name=region or settings().ses_region, config=_service_config()
+    )
+
+
+def sqs_client(*, region: str | None = None) -> SQSClient:
+    """An SQS client for `region` (the settings' `ses_region`): SES delivery events (Q-01-T46)."""
+    return boto3.client(  # pyright: ignore[reportUnknownMemberType] -- see s3_client
+        "sqs", region_name=region or settings().ses_region, config=_service_config()
     )
 
 

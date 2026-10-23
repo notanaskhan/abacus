@@ -9,7 +9,6 @@ counts and a portal link, never evidence content.
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Sequence
 from typing import Final
 from uuid import UUID, uuid4
@@ -18,9 +17,9 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, uow
+from abacus.modules.communications.deliveries import SUPPRESSED, send_email
 from abacus.modules.communications.invitations import firm_wording
 from abacus.modules.communications.repository import insert_message
-from abacus.modules.communications.transport import transport
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import Actor, AgentContext, AuthContext, authorise, contact_emails
 
@@ -74,8 +73,7 @@ async def send_follow_up(
     names = await firm_wording(ctx.tenant_id, engagement_id)
     subject, body = await render_follow_up(ctx.tenant_id, engagement_id, descriptions, note)
     message_id = uuid4()
-    await asyncio.to_thread(
-        transport().send,
+    sent = await send_email(
         to=email,
         subject=subject,
         body=body,
@@ -93,9 +91,11 @@ async def send_follow_up(
             channel="email",
             recipient_ref=f"user:{recipient_user_id}",
             body=body,
-            status="sent",
-            violations=[],
+            status="sent" if sent else "blocked",
+            violations=[] if sent else [SUPPRESSED],
             created_by=_creator(ctx),
         )
-        tx.record("message.sent", target=Target("message", message_id))
+        tx.record(
+            "message.sent" if sent else "message.blocked", target=Target("message", message_id)
+        )
     return message_id

@@ -287,6 +287,11 @@ class Settings(BaseSettings):
     ses_region: Annotated[str, classified("internal")] = "us-east-2"
     ses_configuration_set: Annotated[str | None, classified("internal")] = None
     ses_from_address: Annotated[str | None, classified("internal")] = None
+    # Q-01-T46: SES delivery events reach this SQS queue (configuration set to EventBridge to
+    # SQS); unset, nothing drains. Suppressed addresses are kept only as an HMAC under the
+    # pepper; local and test runs use a fixed one when it is unset.
+    ses_events_queue_url: Annotated[str | None, classified("internal")] = None
+    email_suppression_pepper: Annotated[SecretStr | None, classified("restricted")] = None
     # Observability (ADR-022; TASK-013). Traces export over OTLP only when an endpoint is set;
     # errors go to Sentry only when a DSN is set. Neither is required locally.
     # None: debug locally and in tests, info elsewhere.

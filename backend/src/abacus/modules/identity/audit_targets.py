@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.identity.context import AuthContext
@@ -17,12 +17,20 @@ from abacus.modules.identity.repository import (
     walled_clients,
 )
 
-AUDIT_KINDS = frozenset({"client_invitation"})
+AUDIT_KINDS = frozenset({"client_invitation", "approval_grant"})
+_GRANT_ENGAGEMENTS = text(
+    "SELECT id, engagement_id FROM approval_grants "
+    "WHERE id = ANY(:ids) AND engagement_id IS NOT NULL"
+)
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
-    """Invitation id -> its engagement."""
+    """Invitation id -> its engagement; approval grant id -> its engagement (a firm-level grant
+    has none, and is then shown at firm level: `audit_trail.targets.OPTIONAL_OWNER`)."""
     async with tenant_session(tenant) as session:
+        if kind == "approval_grant":
+            rows = await session.execute(_GRANT_ENGAGEMENTS, {"ids": list(ids)})
+            return {grant: engagement for grant, engagement in rows.all()}
         return await invitation_engagements(session, ids)
 
 

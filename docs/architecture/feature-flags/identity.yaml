@@ -6,6 +6,7 @@ flags:
     description: 'Portal sign-in v2 (C5 v1.1 portal half, P-08): the in-product POR-01 sign-in through the portal BFF, MFA for the DEC-34 floor, invitations v2, and the firm-side contact unlock and MFA reset routes. Off: those routes answer 404 and the portal entry falls back to the hosted OIDC client sign-in (the ClientAccept path). On: 501 not_implemented until P-08-T10, T17, T18 and T21 land. Off by default. Renewal before expiry or retirement with the legacy path is P-08-T28.'
     owner: notanaskhan
     created: 2026-10-23
-    expires: 2027-01-21
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false
