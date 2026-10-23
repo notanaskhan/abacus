@@ -195,49 +195,56 @@
       "source": "handoff/screens/T7 Client portal/screenshots/T7a.png",
       "sha256": "b1e3a18fbcb7df791ebb39814962ee91d5b0dd3eacfeef13fe3d277f0cce31df",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7b": {
       "selector": "[data-artboard=\"t7b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T7 Client portal/screenshots/T7b.png",
       "sha256": "deb2701a6ff03cbd8196c870219e438fb9bff5729809cdccacba94c0afaf0767",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7c": {
       "selector": "[data-artboard=\"t7c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T7 Client portal/screenshots/T7c.png",
       "sha256": "7fffb432b497d19e3dd86c1d975dc7e34e39da220f2eb51b2b6f7e5317f2f433",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7d": {
       "selector": "[data-artboard=\"t7d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T7 Client portal/screenshots/T7d.png",
       "sha256": "d9b644dd6039bd0fe0c05fa2556b901df901b8a7fc10a43a7860b3138db3004c",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7e": {
       "selector": "[data-artboard=\"t7e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T7 Client portal/screenshots/T7e.png",
       "sha256": "92bb551811bc2879b576ce801f0d9e735c91632b4b790f4abc1512b678943496",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7f": {
       "selector": "[data-artboard=\"t7f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T7 Client portal/screenshots/T7f.png",
       "sha256": "220277fbce25127afd39f294ad0e904480fffe4bf8ea42fc59471b66d9f18f35",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7g": {
       "selector": "[data-artboard=\"t7g\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T7 Client portal/screenshots/T7g.png",
       "sha256": "844e355a08e040b06795a185697772fdb58a8f4dee2ba696f94f8b035b2b90ea",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t7-client-portal.t7-m": {
       "selector": "[data-artboard=\"t7-m\"] [data-shell=\"app\"]",
@@ -257,42 +264,48 @@
       "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07a.png",
       "sha256": "c35d58ae4b29b9e5a759c5034a7a70893091520052ac5243cfd29f864b9d2553",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-07.b": {
       "selector": "[data-artboard=\"tpl-07b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07b.png",
       "sha256": "d6ce3b56ff0a36d0d1d5c84a8585b2e82c93fab6f145cd285869083f42e045e0",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-07.c": {
       "selector": "[data-artboard=\"tpl-07c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07c.png",
       "sha256": "b6321023b0ea8fbcbe90b95db67be3ba814f67cb1db4e636cd242f68772a12de",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-07.d": {
       "selector": "[data-artboard=\"tpl-07d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07d.png",
       "sha256": "f721081439f1d9ff27c91ec6389a0b257efd754828578e260f31326395cb7f7a",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-07.e": {
       "selector": "[data-artboard=\"tpl-07e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07e.png",
       "sha256": "03165d8fb5f5501e18309ce6e253569b1929da493816d58f812b353ae2c7ed97",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-07.f": {
       "selector": "[data-artboard=\"tpl-07f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-07 Client portal specimen - Feld 2025 Binder - 1400 - 390/screenshots/TPL-07f.png",
       "sha256": "fb54c57c5fa7be6df385302e476deca6e34905b1d9597cd62ac7d2e64ac4b02a",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-07.m": {
       "selector": "[data-artboard=\"tpl-07-m\"] [data-shell=\"app\"]",
@@ -312,35 +325,40 @@
       "source": "handoff/screens/T15 Auth card/screenshots/T15a.png",
       "sha256": "ad9613e0d108a24c7c9532a98a5df35f5d71d2c264bacf94828453251ed4a736",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t15-auth-card.t15b": {
       "selector": "[data-artboard=\"t15b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T15 Auth card/screenshots/T15b.png",
       "sha256": "74f42d6479fc2646d0f7a07acbff3485232e4af63aea0b2d073029ac294a744e",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t15-auth-card.t15c": {
       "selector": "[data-artboard=\"t15c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T15 Auth card/screenshots/T15c.png",
       "sha256": "1e7f2d4fe30c377319bb756e6c078f69c554fc09d9736113e5806cd3dffcc09d",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.a": {
       "selector": "[data-artboard=\"tpl-15a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15a.png",
       "sha256": "2d77824571610190ca80000483259d701e8fc66d2e930cef18fa21fea9e0e096",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.b": {
       "selector": "[data-artboard=\"tpl-15b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15b.png",
       "sha256": "3d5f6c64685d206720beed6cc816a3f017b0bd28e4166045ba243d5d565d559b",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.c": {
       "selector": "[data-artboard=\"tpl-15c\"] [data-shell=\"app\"]",
@@ -355,7 +373,8 @@
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15d.png",
       "sha256": "4e73e63c8603cedc8bfdd837b3f8ce28641ae6c87da54f291eec4205cb83286d",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.e": {
       "selector": "[data-artboard=\"tpl-15e\"] [data-shell=\"app\"]",
@@ -367,35 +386,40 @@
         830,
         1744
       ],
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.f": {
       "selector": "[data-artboard=\"tpl-15f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15f.png",
       "sha256": "6814895585017813bd2109257b163381fac60989593ea88fee0e0e34c59b0b16",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.g": {
       "selector": "[data-artboard=\"tpl-15g\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15g.png",
       "sha256": "5036b84bae7128faaaf0c1296e356a16918da5b6e8e3ef03c99a2042f211bfdb",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.h": {
       "selector": "[data-artboard=\"tpl-15h\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15h.png",
       "sha256": "9df10985c118745cecad470a36ca9cafa5d6bd5e249af2a1b2ef796d39bd340e",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.i": {
       "selector": "[data-artboard=\"tpl-15i\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-15 Auth card specimen - portal sign-in and confirmation response/screenshots/TPL-15i.png",
       "sha256": "98cb4e3698e5701d1b6aa5b7166a7bfc66c3c6b6d457d7bf3f56eb3176e94541",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-15.j": {
       "selector": "[data-artboard=\"tpl-15j\"] [data-shell=\"app\"]",
@@ -463,7 +487,7 @@
       "sha256": "9f37940aa07947f1faed67206a4355c48d66c865f771e174bd577dbd4bfc01f2",
       "crop": "window",
       "tier": "B",
-      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+      "locked": true
     },
     "tpl-18.b": {
       "selector": "[data-artboard=\"tpl-18b\"] [data-shell=\"app\"]",
@@ -471,7 +495,7 @@
       "sha256": "ef5937da0ba65673f06230757457a2a51585d02330fec9b2ae48ae7d30faeffa",
       "crop": "window",
       "tier": "B",
-      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+      "locked": true
     },
     "tpl-18.c": {
       "selector": "[data-artboard=\"tpl-18c\"] [data-shell=\"app\"]",
@@ -479,7 +503,7 @@
       "sha256": "cd47de3e305928a6bc53e2354d7b8a22c449bdb4d35489fe061750ce2cc26aca",
       "crop": "window",
       "tier": "B",
-      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+      "locked": true
     },
     "tpl-18.d": {
       "selector": "[data-artboard=\"tpl-18d\"] [data-shell=\"app\"]",
@@ -487,7 +511,7 @@
       "sha256": "79ede1abd01a4b6fd75ff39629c0e99ed2ae2555fd8bd682ccf90309f66608ac",
       "crop": "window",
       "tier": "B",
-      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+      "locked": true
     },
     "tpl-18.e": {
       "selector": "[data-artboard=\"tpl-18e\"] [data-shell=\"app\"]",
@@ -495,84 +519,95 @@
       "sha256": "e291ba760fef14e27b953e830fd77216047240e975562ebb39c0754008cff5a8",
       "crop": "window",
       "tier": "B",
-      "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+      "locked": true
     },
     "t11-dashboard.t11a": {
       "selector": "[data-artboard=\"t11a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T11 Dashboard/screenshots/T11a.png",
       "sha256": "4e5e7b9d6476fe8260d32077bfdc86246081580004e9767c18d01974c7390c84",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t11-dashboard.t11b": {
       "selector": "[data-artboard=\"t11b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T11 Dashboard/screenshots/T11b.png",
       "sha256": "8c2dd67c3392155c3f50ec83d06bb6992b6cd86bc81aa4352f7af88e85a99891",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t11-dashboard.t11c": {
       "selector": "[data-artboard=\"t11c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T11 Dashboard/screenshots/T11c.png",
       "sha256": "f82e934983ac53c0ddd3368789dfad730a902a8109a1ee55d82a6e905a4ea031",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t11-dashboard.t11d": {
       "selector": "[data-artboard=\"t11d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T11 Dashboard/screenshots/T11d.png",
       "sha256": "e21a1dab84e06344961a75718702c7bcd3f68b16ee243bf847ea2676807a90ef",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t11-dashboard.t11e": {
       "selector": "[data-artboard=\"t11e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T11 Dashboard/screenshots/T11e.png",
       "sha256": "efa3903dd64617f7588574c1b0d96c1b159f0391f72d7f657bc03054678d8691",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t11-dashboard.t11f": {
       "selector": "[data-artboard=\"t11f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T11 Dashboard/screenshots/T11f.png",
       "sha256": "35fb3fd2f5755748697faf48adaf097bdc8f8646c010b5f2bb1fc29c8408ab4d",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t12-settings.t12a": {
       "selector": "[data-artboard=\"t12a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T12 Settings form/screenshots/T12a.png",
       "sha256": "f56e641cfd444e73a1bd7d236fed978dfc6eb6d791fde8b362be88bfdceae928",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t12-settings.t12b": {
       "selector": "[data-artboard=\"t12b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T12 Settings form/screenshots/T12b.png",
       "sha256": "d6c052d176deb9ed5e1a763cc6b9530b9c1731e0cf69d6ec8e4c3804230512d9",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t12-settings.t12c": {
       "selector": "[data-artboard=\"t12c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T12 Settings form/screenshots/T12c.png",
       "sha256": "d4548c7555f4b623383a5775cf27386493b74474faac4f3ec8ca3d96fb30de8d",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "t12-settings.t12d": {
       "selector": "[data-artboard=\"t12d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T12 Settings form/screenshots/T12d.png",
       "sha256": "e4c1a299ca16402cd23159c6c8e21010b6ac37f3b9c031d0ab7ed6e67515090e",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-11.a": {
       "selector": "[data-artboard=\"tpl-11a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11a.png",
       "sha256": "1a8cf0ca7477f704c8681d972a664b1922d384a5e1118e3aba637a140f720759",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-11.b": {
       "selector": "[data-artboard=\"tpl-11b\"] [data-shell=\"app\"]",
@@ -586,63 +621,72 @@
       "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11c.png",
       "sha256": "7e8b826abd3181c1635b336eb2f83ecb4d54f86e39a775e4c0f7eac5b87b19bf",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-11.d": {
       "selector": "[data-artboard=\"tpl-11d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11d.png",
       "sha256": "5d6b76d54517b76ad5d55f2e77dea0e36691d72c7fa01df502a7eaf43d5953f5",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-11.e": {
       "selector": "[data-artboard=\"tpl-11e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11e.png",
       "sha256": "f6bd774cec67f67377457b0628b0ad7c0a3e05d043636a2360713b7696988f99",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-11.f": {
       "selector": "[data-artboard=\"tpl-11f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11f.png",
       "sha256": "04dfcb15ba00bcff0bed1a03b559bd66e8413075785c719fa7be74217dac4c4e",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-12.a": {
       "selector": "[data-artboard=\"tpl-12a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12a.png",
       "sha256": "dea3d430bd757a48f0bef3909bb8811a3095efdc0eba7563475d590ab92122ee",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-12.b": {
       "selector": "[data-artboard=\"tpl-12b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12b.png",
       "sha256": "59b7d06ca7d6a818cdfa4d3a89eb10781ddc196f49f6963900678af24f7fb06e",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-12.c": {
       "selector": "[data-artboard=\"tpl-12c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12c.png",
       "sha256": "a9bc26dd0234f48ccba429fb7ba0cc09474de687c86e084469dcca941d2da4a9",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-12.d": {
       "selector": "[data-artboard=\"tpl-12d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12d.png",
       "sha256": "821aa5c8496226fe32b4ff6ae89af465453fb0da526d0e622e17f429e025a54f",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     },
     "tpl-12.e": {
       "selector": "[data-artboard=\"tpl-12e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12e.png",
       "sha256": "eeeab22e8513dabf7841f9f88bb2c12dfd905f1f55a501d79fdf7f4f6e72cde8",
       "crop": "window",
-      "tier": "B"
+      "tier": "B",
+      "locked": true
     }
   }
 }

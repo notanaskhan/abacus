@@ -480,3 +480,115 @@ test.describe("tier D: T2 record cockpit", () => {
     expect(await board.evaluate(widths)).toEqual({ rail: 330, canvas: 696, dock: 330, bar: 59 });
   });
 });
+
+// The M5 lock (F-05-T49): T11 DashboardLayout, T12 SettingsLayout and the O6 wizard, at the numbers
+// their canvases state (Wave 0 - Foundations `#t11`, `#t12`; Wave 0 - Templates TPL-11, TPL-12,
+// TPL-18). Box sizes are measured inside the 1400 window, so they hold at any page offset.
+test.describe("tier D: T11, T12 and O6 (M5 lock)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  test("TPL-11a: tiles row 109, tiles 120 x 99, KPI 22px, column 420, deadlines 360", async ({
+    page,
+  }) => {
+    const facts = await specimen(
+      page,
+      "tpl-11",
+      '[data-artboard="tpl-11a"] [data-shell="app"]',
+    ).evaluate((win) => {
+      const tile = win.querySelector('[data-tile="single"]')?.getBoundingClientRect();
+      const kpi = win.querySelector('[data-tile="single"] > span');
+      const panes = [...win.querySelectorAll('[data-shell="cols"] [data-shell="pane"]')].map((p) =>
+        p.getBoundingClientRect(),
+      );
+      return {
+        tilesRow: win.querySelector('[data-dashboard="tiles"]')?.getBoundingClientRect().height,
+        tile: tile === undefined ? null : [tile.width, tile.height],
+        kpi: kpi === null ? null : getComputedStyle(kpi).fontSize,
+        column: panes[1]?.width,
+        deadlines: panes[1]?.height,
+        paneHeader: win.querySelector('[data-shell="pane-header"]')?.getBoundingClientRect()
+          .height,
+      };
+    });
+    expect(facts).toEqual({
+      tilesRow: 109,
+      tile: [120, 99],
+      kpi: "22px",
+      column: 420,
+      deadlines: 360,
+      paneHeader: 46,
+    });
+  });
+
+  test("T11a: the deadlines pane is 334 and the queue rows 52", async ({ page }) => {
+    const facts = await specimen(page, "t11-dashboard", '[data-artboard="t11a"]').evaluate(
+      (b) => ({
+        deadlines: b
+          .querySelectorAll('[data-shell="cols"] [data-shell="pane"]')[1]
+          ?.getBoundingClientRect().height,
+        row: b.querySelector("a[data-queue-row]")?.getBoundingClientRect().height,
+      }),
+    );
+    expect(facts).toEqual({ deadlines: 334, row: 52 });
+  });
+
+  test("TPL-12a: settings bar 42, section list 240, nav rows 33, value rows 34, fieldsets 760", async ({
+    page,
+  }) => {
+    const facts = await specimen(
+      page,
+      "tpl-12",
+      '[data-artboard="tpl-12a"] [data-shell="app"]',
+    ).evaluate((win) => {
+      const panes = [...win.querySelectorAll('[data-shell="cols"] [data-shell="pane"]')];
+      const fieldset = win.querySelector('[data-settings="form"] section');
+      return {
+        bar: win.querySelector('[data-variant="settings"]')?.getBoundingClientRect().height,
+        list: panes[0]?.getBoundingClientRect().width,
+        navRow: win.querySelector('nav[aria-label="Sections"] button')?.getBoundingClientRect()
+          .height,
+        valueRow: fieldset?.querySelector("label")?.parentElement?.getBoundingClientRect().height,
+        fieldset: fieldset?.getBoundingClientRect().width,
+      };
+    });
+    expect(facts).toEqual({ bar: 42, list: 240, navRow: 33, valueRow: 34, fieldset: 760 });
+  });
+
+  test("TPL-18a: the O6 sheet is inset 14 from top 60, radius 14; list 220, header 46, footer 56, steps 38", async ({
+    page,
+  }) => {
+    const facts = await specimen(
+      page,
+      "tpl-18",
+      '[data-artboard="tpl-18a"] [data-shell="app"]',
+    ).evaluate((win) => {
+      const w = win.getBoundingClientRect();
+      const sheet = win.querySelector('[role="group"][aria-label="New engagement"]');
+      const s = sheet?.getBoundingClientRect();
+      return {
+        left: s === undefined ? null : s.left - w.left,
+        top: s === undefined ? null : s.top - w.top,
+        right: s === undefined ? null : w.right - s.right,
+        bottom: s === undefined ? null : w.bottom - s.bottom,
+        radius: sheet === null ? null : getComputedStyle(sheet).borderTopLeftRadius,
+        list: sheet?.querySelector('nav[aria-label="Steps"]')?.getBoundingClientRect().width,
+        header: sheet?.querySelector("header")?.getBoundingClientRect().height,
+        footer: sheet?.querySelector("footer")?.getBoundingClientRect().height,
+        step: sheet?.querySelector('[aria-current="step"]')?.getBoundingClientRect().height,
+      };
+    });
+    expect(facts).toEqual({
+      left: 14,
+      top: 60,
+      right: 14,
+      bottom: 14,
+      radius: "14px",
+      list: 220,
+      header: 46,
+      footer: 56,
+      step: 38,
+    });
+  });
+});

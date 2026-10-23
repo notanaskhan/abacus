@@ -1,11 +1,9 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { PRACTICE_VIEWS, T11Specimen, Tpl11Specimen } from "../specimens/dashboard";
 import { RETURNS_BY_OFFICE } from "../specimens/seed-figures";
 import { installDomShims } from "../test-dom";
+import { KPI_NUMBER } from "./dashboard-layout";
 
 // F-05-T46 acceptance: "Role variants, the quiet day and Office Denver recompute from fixtures
 // with every count tying to blueprint section 9.5 and KPI type at 22px or less." Plus Home offers
@@ -130,13 +128,24 @@ describe("T11", () => {
 });
 
 describe("KPI type stays at 22px or less", () => {
-  it("tile numbers use the dashboard role, which theme.css sets at 20px", () => {
-    const here = dirname(fileURLToPath(import.meta.url));
-    const theme = readFileSync(join(here, "..", "theme.css"), "utf8");
-    const size = /--text-dashboard:\s*(\d+(?:\.\d+)?)px/.exec(theme)?.[1];
-    expect(Number(size)).toBeLessThanOrEqual(22);
-    const { container } = render(<Tpl11Specimen />);
-    for (const tile of container.querySelectorAll("[data-tile='single'] > span:first-child"))
-      expect(tile.className).toContain("text-dashboard");
+  it("every tile number, in every T11 and TPL-11 frame, is sized at 22px or under", () => {
+    const px = (cls: string): number | null => {
+      const m = /text-\[(\d+(?:\.\d+)?)px\]/.exec(cls);
+      return m?.[1] === undefined ? null : Number(m[1]);
+    };
+    expect(px(KPI_NUMBER)).toBe(22);
+    for (const tree of [<T11Specimen key="t11" />, <Tpl11Specimen key="tpl" />]) {
+      const { container, unmount } = render(tree);
+      const numbers = container.querySelectorAll(
+        "[data-tile='single'] > span:first-child, [data-tile='stat'] > span:first-child, [data-tile='meter'] > span:first-child > span:first-child, [data-tile='group'] li > span:first-child",
+      );
+      expect(numbers.length).toBeGreaterThan(20);
+      for (const n of numbers) {
+        const size = px(n.className);
+        expect(size, n.className).not.toBeNull();
+        expect(size).toBeLessThanOrEqual(22);
+      }
+      unmount();
+    }
   });
 });

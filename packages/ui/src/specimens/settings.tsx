@@ -21,6 +21,7 @@ const TOOLBAR = {
   firmShort: "Brightwater",
   firmTitle: "Brightwater Hale LLP",
   holdLabelWidth: false,
+  moreFirst: true,
 } as const;
 
 const READ_ONLY = "Only firm admins can edit these settings.";

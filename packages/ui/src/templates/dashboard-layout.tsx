@@ -50,6 +50,10 @@ export interface DashboardLayoutProps {
   queue: { title: string; count?: number; children: ReactNode };
   /** The right column, top to bottom: Deadlines, then Client activity. */
   side: readonly { title: string; children: ReactNode }[];
+  /** A fixed height for the first right-hand pane (Deadlines): 334 on T11, 360 on TPL-11. */
+  sideTopHeight?: number;
+  /** The gap between the queue and the right column: 10 (T11) or 12 (TPL-11). */
+  columnsGap?: number;
 }
 
 // ---- Tiles ----------------------------------------------------------------------------------------
@@ -84,18 +88,20 @@ export type DashTileProps =
       caption: string;
     };
 
-const TILE = "flex min-h-[98px] flex-col rounded-pane bg-card shadow-e1";
+const TILE = "flex h-[99px] flex-col rounded-dialog bg-card shadow-e1";
+/** The KPI number: 22/400 tabular, the ceiling F-05 sets for Home (no larger type). */
+export const KPI_NUMBER = "text-[22px] leading-[22px] tracking-[-0.01em] tabular-nums";
 
-/** One Home tile. The number is the `dashboard` type role (20px); words carry every state. */
+/** One Home tile (T11, TPL-11): a 99-high card of radius 14; words carry every state. */
 export function DashTile(props: DashTileProps): JSX.Element {
   if (props.kind === "single") {
     return (
       <section
         data-tile="single"
         aria-label={`${props.value} ${props.label}`}
-        className={cn(TILE, "w-[120px] flex-none items-center justify-center gap-[6px]")}
+        className={cn(TILE, "w-[120px] flex-none items-center justify-center gap-[9px]")}
       >
-        <span className="text-dashboard font-medium">{props.value}</span>
+        <span className={KPI_NUMBER}>{props.value}</span>
         <Pill variant={props.variant} size="state">
           {props.label}
         </Pill>
@@ -103,23 +109,35 @@ export function DashTile(props: DashTileProps): JSX.Element {
     );
   }
   if (props.kind === "group") {
+    const grid = props.width !== undefined;
     return (
       <section
         data-tile="group"
         aria-label={props.title}
-        {...(props.width === undefined ? {} : { style: { width: props.width } })}
+        {...(grid ? { style: { width: props.width } } : {})}
         className={cn(
           TILE,
-          "min-w-0 gap-[8px] px-[16px] pt-[14px] pb-[12px]",
-          props.width === undefined ? "flex-[1_1_0%]" : "flex-none",
+          "min-w-0",
+          grid
+            ? "flex-none justify-between px-[14px] pt-[12px] pb-[14px]"
+            : "flex-[1_1_0%] justify-center gap-[12px] px-[16px]",
         )}
       >
-        <h3 className="text-body font-medium">{props.title}</h3>
-        <ul className="flex flex-wrap gap-x-[18px] gap-y-[4px]">
+        <h3
+          className={cn(
+            "whitespace-nowrap",
+            grid ? "text-dense font-medium text-ink-2" : "text-body font-medium",
+          )}
+        >
+          {props.title}
+        </h3>
+        <ul className={grid ? "grid grid-cols-5 gap-[6px]" : "flex gap-[18px]"}>
           {props.counts.map((c) => (
-            <li key={c.label} className="flex max-w-[64px] flex-col">
-              <span className="text-[15px] leading-[18px] font-medium">{c.value}</span>
-              <span className="text-meta text-ink-3">{c.label}</span>
+            <li key={c.label} className="flex min-w-0 flex-col gap-[3px]">
+              <span className="text-[15px] leading-[18px] tracking-[-0.01em] tabular-nums">
+                {c.value}
+              </span>
+              <span className="text-meta leading-[1.2] text-ink-3">{c.label}</span>
             </li>
           ))}
         </ul>
@@ -134,12 +152,12 @@ export function DashTile(props: DashTileProps): JSX.Element {
           "  ",
           " ",
         )}
-        className={cn(TILE, "w-[160px] flex-none justify-center gap-[4px] px-[16px]")}
+        className={cn(TILE, "w-[160px] flex-none justify-center gap-[6px] px-[16px]")}
       >
         <span className="flex items-center gap-[8px]">
-          <span className="text-dashboard font-medium">{props.value}</span>
+          <span className={KPI_NUMBER}>{props.value}</span>
           {props.pill !== undefined && (
-            <Pill variant={props.pill.variant} size="sm">
+            <Pill variant={props.pill.variant} size="state">
               {props.pill.label}
             </Pill>
           )}
@@ -152,9 +170,9 @@ export function DashTile(props: DashTileProps): JSX.Element {
     <section
       data-tile="stat"
       aria-label={`${props.value} ${props.caption}`}
-      className={cn(TILE, "w-[160px] flex-none justify-center gap-[4px] px-[16px]")}
+      className={cn(TILE, "w-[160px] flex-none justify-center gap-[6px] px-[16px]")}
     >
-      <span className="text-dashboard font-medium">{props.value}</span>
+      <span className={KPI_NUMBER}>{props.value}</span>
       <span className="text-meta text-ink-3">{props.caption}</span>
     </section>
   );
@@ -172,17 +190,30 @@ export interface QueueRowProps {
   href: string;
   /** For readers and the hint: "Opens AUD-07 with the decision card (SHL-11)". */
   hint?: string;
+  /** T11's 52-high row (padding 16 at the left) rather than TPL-11's 56. */
+  compact?: boolean;
 }
 
 /** One item waiting on the viewer: a link to where it is decided, never the decision itself. */
-export function QueueRow({ icon, title, context, due, href, hint }: QueueRowProps): JSX.Element {
+export function QueueRow({
+  icon,
+  title,
+  context,
+  due,
+  href,
+  hint,
+  compact = false,
+}: QueueRowProps): JSX.Element {
   return (
     <li>
       <a
         href={href}
         data-queue-row=""
         {...(hint === undefined ? {} : { title: hint })}
-        className="flex min-h-[52px] items-center gap-[12px] px-[14px] py-[8px] hairline-b hover:bg-shell"
+        className={cn(
+          "flex items-center gap-[12px] pr-[12px] hairline-b hover:bg-shell",
+          compact ? "h-[52px] pl-[16px]" : "min-h-[56px] py-[8px] pl-[14px]",
+        )}
       >
         <span
           aria-hidden="true"
@@ -190,9 +221,9 @@ export function QueueRow({ icon, title, context, due, href, hint }: QueueRowProp
         >
           <Icon name={icon} size={12} />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
-          <span className="text-body font-medium">{title}</span>
-          <span className="text-meta text-ink-3">{context}</span>
+        <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+          <span className="text-body leading-[1.3] font-medium">{title}</span>
+          <span className="text-meta leading-[1.4] text-ink-3">{context}</span>
         </span>
         <Pill variant={due.variant} size="state" className="shrink-0">
           {due.label}
@@ -227,17 +258,22 @@ export function DeadlineRow({
   return (
     <li
       data-deadline=""
-      className="flex min-h-[42px] items-center gap-[12px] px-[12px] py-[5px] hairline-b"
+      className="flex min-h-[40px] items-center gap-[10px] px-[12px] py-[5px] hairline-b"
     >
-      <span className={cn("w-[44px] shrink-0 text-body font-medium", DATE_TONE[dateTone])}>
+      <span
+        className={cn(
+          "w-[46px] shrink-0 text-dense font-medium tabular-nums",
+          DATE_TONE[dateTone],
+        )}
+      >
         {date}
       </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-body">{client}</span>
-        <span className="truncate text-meta text-ink-3">{form}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-[1px]">
+        <span className="truncate text-body leading-[15px]">{client}</span>
+        <span className="truncate text-meta leading-[14px] text-ink-3">{form}</span>
       </span>
       {link !== undefined ? (
-        <a href={link.href} className="shrink-0 text-body font-medium">
+        <a href={link.href} className="shrink-0 text-dense font-medium whitespace-nowrap">
           {link.label}
         </a>
       ) : (
@@ -268,7 +304,14 @@ export function ActivityRow({
   layout = "right",
 }: ActivityRowProps): JSX.Element {
   return (
-    <li className="flex gap-[10px] px-[12px] py-[7px]">
+    <li
+      className={cn(
+        "flex min-h-[44px]",
+        layout === "lead"
+          ? "items-start gap-[10px] px-[12px] py-[6px]"
+          : "items-center gap-[12px] px-[14px]",
+      )}
+    >
       <span
         aria-hidden="true"
         className="mt-[1px] inline-flex size-[20px] shrink-0 items-center justify-center rounded-full bg-nested text-ink-3"
@@ -276,8 +319,8 @@ export function ActivityRow({
         <Icon name={icon} size={12} />
       </span>
       {layout === "lead" ? (
-        <span className="min-w-0 flex-1 text-body">
-          <span className="text-ink-3">{when} · </span>
+        <span className="min-w-0 flex-1 text-dense leading-[1.45]">
+          <span className="text-ink-3 tabular-nums">{when} · </span>
           {text}
         </span>
       ) : (
@@ -360,42 +403,36 @@ export function DashboardLayout({
   tiles,
   queue,
   side,
+  sideTopHeight,
+  columnsGap = 10,
 }: DashboardLayoutProps): JSX.Element {
   const head = (
-    <div className="relative flex flex-none items-start justify-between px-(--edge-app) pt-[8px]">
-      <div className="flex min-h-[42px] flex-col justify-center">
-        <p className="flex items-baseline gap-[10px]">
-          <span className="text-dashboard font-medium tracking-[-0.015em]">{greeting}</span>
-          <span className="text-body text-ink-2">{date}</span>
-        </p>
-        {caption !== undefined && (
-          <p data-dashboard="caption" className="pl-[2px] text-meta text-ink-3">
-            {caption}
-          </p>
-        )}
-      </div>
-      <div className="flex items-center gap-[8px] pt-[1px]">
-        {office !== undefined && (
-          <FilterChip
-            label={office.label}
-            icon="map-pin"
-            options={office.options.map((o) => ({ value: o, label: o }))}
-            value={office.value}
-            placeholder={office.allLabel}
-            clearLabel={office.allLabel}
-            {...(office.onChange === undefined ? {} : { onChange: office.onChange })}
-          />
-        )}
-        {running !== undefined && (
-          <span
-            data-dashboard="running"
-            className="inline-flex h-[29px] items-center gap-[7px] rounded-pill bg-card pr-[11px] pl-[10px] text-body shadow-e1"
-          >
-            <Ring size={12} width={1.5} track="stroke-chip" rotate={-140} className="text-ink-2" />
-            {running}
-          </span>
-        )}
-      </div>
+    <div className="flex h-[42px] flex-none items-center gap-[10px] px-(--edge-app)">
+      <span className="text-[20px] leading-[1.2] font-medium tracking-[-0.015em] whitespace-nowrap">
+        {greeting}
+      </span>
+      <span className="text-body whitespace-nowrap text-ink-3">{date}</span>
+      <span className="flex-1" />
+      {office !== undefined && (
+        <FilterChip
+          label={office.label}
+          icon="map-pin"
+          options={office.options.map((o) => ({ value: o, label: o }))}
+          value={office.value}
+          placeholder={office.allLabel}
+          clearLabel={office.allLabel}
+          {...(office.onChange === undefined ? {} : { onChange: office.onChange })}
+        />
+      )}
+      {running !== undefined && (
+        <span
+          data-dashboard="running"
+          className="inline-flex h-[29px] flex-none items-center gap-[7px] rounded-pill bg-card pr-[12px] pl-[10px] text-body whitespace-nowrap shadow-e1"
+        >
+          <Ring size={12} width={1.5} track="stroke-chip" rotate={-140} className="text-ink-2" />
+          {running}
+        </span>
+      )}
     </div>
   );
   return (
@@ -409,8 +446,16 @@ export function DashboardLayout({
           <div
             data-dashboard="tiles"
             {...(loading ? { "aria-busy": true } : {})}
-            className="flex flex-none gap-(--gutter-pane) px-(--edge-app) pt-[6px]"
+            className="relative flex h-[109px] flex-none gap-[8px] px-(--edge-app) pt-[10px]"
           >
+            {caption !== undefined && (
+              <p
+                data-dashboard="caption"
+                className="absolute top-[-9px] left-[14px] text-dense whitespace-nowrap text-ink-3"
+              >
+                {caption}
+              </p>
+            )}
             {loading ? <LoadingTiles /> : tiles}
           </div>
         </>
@@ -423,17 +468,24 @@ export function DashboardLayout({
       >
         {loading ? <LoadingRows /> : queue.children}
       </Pane>
-      <div className="flex w-[420px] flex-none flex-col gap-(--gutter-pane)">
-        {side.map((pane) => (
-          <Pane
-            key={pane.title}
-            title={pane.title}
-            scrollLabel={pane.title}
-            className="flex-[1_1_0%]"
-          >
-            {loading ? <LoadingRows /> : pane.children}
-          </Pane>
-        ))}
+      <div
+        style={columnsGap === 10 ? undefined : { marginLeft: columnsGap - 10 }}
+        className="flex w-[420px] flex-none flex-col gap-(--gutter-pane)"
+      >
+        {side.map((pane, i) => {
+          const fixed = i === 0 && sideTopHeight !== undefined;
+          return (
+            <div
+              key={pane.title}
+              style={fixed ? { height: sideTopHeight } : undefined}
+              className={cn("flex min-h-0", fixed ? "flex-none" : "flex-[1_1_0%]")}
+            >
+              <Pane title={pane.title} scrollLabel={pane.title}>
+                {loading ? <LoadingRows /> : pane.children}
+              </Pane>
+            </div>
+          );
+        })}
       </div>
     </AppShell>
   );

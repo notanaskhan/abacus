@@ -29,6 +29,7 @@ const TOOLBAR = {
   firmShort: "Brightwater",
   firmTitle: "Brightwater Hale LLP",
   holdLabelWidth: false,
+  moreFirst: true,
 } as const;
 
 const DATE = "Monday, September 14";
@@ -453,6 +454,7 @@ function T11Frame({ role }: { role: T11Role }): JSX.Element {
         height={860}
         toolbar={TOOLBAR}
         greeting={role.greet}
+        sideTopHeight={334}
         date={DATE}
         office={office(where, setWhere)}
         running={RUNNING}
@@ -473,6 +475,7 @@ function T11Frame({ role }: { role: T11Role }): JSX.Element {
                 {queue.map((q) => (
                   <QueueRow
                     key={q.title}
+                    compact
                     icon={QUEUE_ICON[q.type]}
                     title={q.title}
                     context={q.ctx}
@@ -900,6 +903,8 @@ function Tpl11Board({ frame }: { frame: Tpl11Frame }): JSX.Element {
         height={860}
         toolbar={TOOLBAR}
         greeting={`Good morning, ${frame.greet}`}
+        sideTopHeight={360}
+        columnsGap={12}
         date={DATE}
         caption={view.caption}
         office={{
@@ -935,7 +940,7 @@ function Tpl11Board({ frame }: { frame: Tpl11Frame }): JSX.Element {
               )}
               {engagements.length > 0 && (
                 <section aria-label="Your engagements">
-                  <h3 className="flex h-[30px] items-center bg-band-hd px-[14px] text-dense font-medium hairline-b">
+                  <h3 className="flex h-[31px] items-center bg-band-hd px-[14px] text-section hairline-t hairline-b">
                     Your engagements
                   </h3>
                   <ul>
@@ -945,7 +950,9 @@ function Tpl11Board({ frame }: { frame: Tpl11Frame }): JSX.Element {
                         className="flex h-[38px] items-center gap-[10px] px-[14px] text-body hairline-b"
                       >
                         <span className="min-w-0 flex-1 truncate">{t}</span>
-                        {meta !== "" && <span className="text-meta text-ink-3">{meta}</span>}
+                        {meta !== "" && (
+                          <span className="text-cell whitespace-nowrap text-ink-3">{meta}</span>
+                        )}
                         <Pill variant="amber" size="state">
                           {state}
                         </Pill>

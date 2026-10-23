@@ -8,7 +8,15 @@
 // with a recorded `deviation` is report-only too, and says why.
 import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { TIERS, openGallery, pngSize, readManifest, specimen, specimenOf } from "./support";
+import {
+  TIERS,
+  openGallery,
+  pngSize,
+  readManifest,
+  shootWhole,
+  specimen,
+  specimenOf,
+} from "./support";
 
 const manifest = readManifest();
 
@@ -54,7 +62,11 @@ for (const [key, entry] of Object.entries(manifest)) {
         : page.locator(entry.selector ?? "body")
     ).first();
     await target.scrollIntoViewIfNeeded();
-    const actual = await target.screenshot({ animations: "disabled", caret: "hide" });
+    // A whole frame (a window or phone) is shot at its exact box; a part keeps the element shot its
+    // crop was cut for (the C-06 and FND-01 crops include the outward pixel).
+    const actual = entry.selector?.includes('[data-shell="app"]')
+      ? await shootWhole(page, target)
+      : await target.screenshot({ animations: "disabled", caret: "hide" });
 
     const gate =
       entry.deviation !== undefined

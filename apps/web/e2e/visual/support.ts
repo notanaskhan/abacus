@@ -64,6 +64,36 @@ export function specimenOf(key: string): string {
   return key.split(".")[0] ?? key;
 }
 
+/**
+ * A screenshot of exactly the element's own box. An element at a fractional page offset (the
+ * gallery stacks specimens whose text lines are fractional, so a frame can sit at y 19.875) is shot
+ * by `locator.screenshot()` with its box rounded outward: a 860-high window comes back 1722 device
+ * pixels high against a 1720 baseline, and the size check fails before any pixel is compared
+ * (F-05-T49). Rounding the box's origin to the nearest CSS pixel keeps its own width and height.
+ */
+export async function shootWhole(page: Page, target: Locator): Promise<Buffer> {
+  const box = await target.boundingBox();
+  const viewport = page.viewportSize();
+  // A box that does not fit the viewport is shot the usual way (the size check then says so).
+  if (
+    box === null ||
+    viewport === null ||
+    box.y < 0 ||
+    Math.round(box.y) + Math.round(box.height) > viewport.height
+  )
+    return target.screenshot({ animations: "disabled", caret: "hide" });
+  return page.screenshot({
+    animations: "disabled",
+    caret: "hide",
+    clip: {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+    },
+  });
+}
+
 /** A PNG's pixel size, from its IHDR chunk. */
 export function pngSize(png: Uint8Array): { width: number; height: number } {
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
