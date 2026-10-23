@@ -1,6 +1,11 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
 from abacus.modules.identity.api import AbacusRouter, register_office_list, register_settings_area
+from abacus.modules.organisations.contacts_contract import (
+    client_contacts_router,
+    contact_invitations_router,
+    contacts_router,
+)
 from abacus.modules.organisations.contract import client_entities_router, clients_router
 from abacus.modules.organisations.live import (
     NewRelationship,
@@ -67,6 +72,9 @@ from abacus.modules.organisations.tin import (
 ROUTERS: tuple[AbacusRouter, ...] = (
     clients_router,  # the clients family contract, v1 stub (P-07-T04)
     client_entities_router,
+    client_contacts_router,  # contacts and portal access, v1 stub (P-07-T17)
+    contacts_router,
+    contact_invitations_router,
     org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
 )
 

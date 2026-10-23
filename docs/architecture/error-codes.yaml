@@ -203,6 +203,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.draft_start.DraftAlreadyDecided
+  draft_incomplete:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.drafts.DraftIncomplete
+    summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
   draft_not_waiting:
     status: 409
     raised_by:
@@ -257,6 +262,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.service.EntityExists
     summary: 'The client already has an entity with this name: pick it instead.'
+  entity_outside_client:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.drafts.EntityOutsideClient
+    summary: The client entity is not one of the draft's client's entities.
   fieldwork_unavailable:
     status: 409
     raised_by:
@@ -346,6 +356,11 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.InvalidState
     summary: 'The state is unknown, someone else''s, already used or expired: nothing is created.'
+  invitation_expired:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contacts_contract.InvitationExpired
+    summary: 'The invitation link is older than 14 days: ask the firm to resend it.'
   invitation_invalid:
     status: 422
     raised_by:
@@ -355,6 +370,11 @@ codes:
     raised_by:
     - abacus.modules.identity.invitations.InvitationLimit
     summary: 50 invitations per engagement per day (SPEC-015 Q4).
+  invitation_used:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contacts_contract.InvitationUsed
+    summary: 'The invitation link was already used: it works once.'
   item_closed:
     status: 409
     raised_by:
@@ -746,6 +766,11 @@ codes:
     - abacus.modules.fieldwork.workpapers.SampleNotApproved
     summary: 'SPEC-040 AC-3: a manager or the partner approves the sample before anyone tests it, asks
       the client for support, or signs a row.'
+  scope_outside_client:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
+    summary: A grant's scope, or a delegated request, is not the contact's client's.
   setting_invalid:
     status: 422
     raised_by:
@@ -794,7 +819,7 @@ codes:
   stale_version:
     status: 409
     raised_by:
-    - abacus.modules.engagements.contract.DraftStaleVersion
+    - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
@@ -904,7 +929,7 @@ codes:
   unknown_engagement_type:
     status: 422
     raised_by:
-    - abacus.modules.engagements.contract.UnknownEngagementType
+    - abacus.modules.engagements.drafts.UnknownEngagementType
     summary: The type is not in the engagement-type catalogue (single audit included, DEC-19).
   unknown_firm_setting:
     status: 422

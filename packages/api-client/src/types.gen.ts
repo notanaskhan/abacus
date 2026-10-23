@@ -3617,6 +3617,113 @@ export type ConnectionOut = {
 };
 
 /**
+ * ContactAccessIn
+ *
+ * CLI-04 e "Change scope": the contact's whole grant set after the change.
+ */
+export type ContactAccessIn = {
+    /**
+     * Grants
+     */
+    grants: Array<GrantIn>;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * ContactAccessOut
+ */
+export type ContactAccessOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Grants
+     */
+    grants: Array<GrantOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ContactCountsOut
+ *
+ * The header: "3 active · 1 invited · 2 not invited" (and locked when any).
+ */
+export type ContactCountsOut = {
+    /**
+     * Active
+     */
+    active: number;
+    /**
+     * Invited
+     */
+    invited: number;
+    /**
+     * Locked
+     */
+    locked: number;
+    /**
+     * Not Invited
+     */
+    not_invited: number;
+};
+
+/**
+ * ContactDetailOut
+ */
+export type ContactDetailOut = {
+    contact: ContactRowOut;
+    /**
+     * Delegated Request Ids
+     */
+    delegated_request_ids?: Array<string>;
+    /**
+     * Grants
+     */
+    grants?: Array<GrantOut>;
+    /**
+     * Sign Ins
+     */
+    sign_ins?: Array<SignInEventOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ContactIn
+ */
+export type ContactIn = {
+    /**
+     * Email
+     */
+    email?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Party Kind
+     */
+    party_kind?: 'person' | 'organisation' | 'group';
+    /**
+     * Phone
+     */
+    phone?: string | null;
+    /**
+     * Roles
+     */
+    roles?: Array<ContactRoleIn>;
+};
+
+/**
  * ContactMfaResetOut
  *
  * After a reset the next sign-in goes to two-step setup (POR-01, the setup state).
@@ -3645,6 +3752,45 @@ export type ContactMfaResetOut = {
 };
 
 /**
+ * ContactOut
+ */
+export type ContactOut = {
+    contact: ContactRowOut;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ContactPatchIn
+ *
+ * Absent fields are unchanged; `roles` replaces the list when present.
+ */
+export type ContactPatchIn = {
+    /**
+     * Email
+     */
+    email?: string | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Phone
+     */
+    phone?: string | null;
+    /**
+     * Roles
+     */
+    roles?: Array<ContactRoleIn> | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
  * ContactPortalStatusOut
  *
  * The contact's portal access after an unlock (CLI-04 badge; `invitation` status words).
@@ -3663,6 +3809,162 @@ export type ContactPortalStatusOut = {
      */
     locked_until?: string | null;
     portal_status: InvitationStatus;
+};
+
+/**
+ * ContactRoleIn
+ */
+export type ContactRoleIn = {
+    /**
+     * Role
+     */
+    role: 'owner' | 'cfo' | 'controller' | 'trustee' | 'executor' | 'taxpayer' | 'spouse' | 'plan_sponsor_officer' | 'recordkeeper' | 'tpa' | 'custodian' | 'payroll_provider' | 'other';
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'client' | 'client_entity';
+    /**
+     * Title Text
+     */
+    title_text?: string | null;
+};
+
+/**
+ * ContactRoleOut
+ */
+export type ContactRoleOut = {
+    /**
+     * Role
+     */
+    role: 'owner' | 'cfo' | 'controller' | 'trustee' | 'executor' | 'taxpayer' | 'spouse' | 'plan_sponsor_officer' | 'recordkeeper' | 'tpa' | 'custodian' | 'payroll_provider' | 'other';
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'client' | 'client_entity';
+    /**
+     * Scope Name
+     */
+    scope_name: string;
+    /**
+     * Title Text
+     */
+    title_text?: string | null;
+};
+
+/**
+ * ContactRowOut
+ *
+ * A CLI-04 row: roles per entity, portal state, MFA, last seen and delegated requests.
+ */
+export type ContactRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Delegated Request Count
+     */
+    delegated_request_count?: number;
+    /**
+     * Email
+     */
+    email?: string | null;
+    /**
+     * Expires On
+     */
+    expires_on?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Invited On
+     */
+    invited_on?: string | null;
+    /**
+     * Last Seen At
+     */
+    last_seen_at?: string | null;
+    /**
+     * Mfa Enrolled
+     */
+    mfa_enrolled?: boolean | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Party Kind
+     */
+    party_kind: 'person' | 'organisation' | 'group';
+    portal_status: InvitationStatus;
+    /**
+     * Roles
+     */
+    roles?: Array<ContactRoleOut>;
+};
+
+/**
+ * ContactUnlockedOut
+ *
+ * CLI-04 d "Unlock…": the portal lock cleared; `contact.unlocked` audited.
+ */
+export type ContactUnlockedOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    portal_status: InvitationStatus;
+    /**
+     * Unlocked At
+     */
+    unlocked_at: string;
+};
+
+/**
+ * ContactsPage
+ *
+ * The P-36 envelope plus the header counts and the delegated-requests footer.
+ */
+export type ContactsPage = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    delegated: DelegatedFooterOut;
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ContactRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    summary: ContactCountsOut;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -4210,6 +4512,27 @@ export type DelegateIn = {
      * Contact Id
      */
     contact_id: string;
+};
+
+/**
+ * DelegatedFooterOut
+ *
+ * The footer: "10 + 9 + 2 + 2 + 1 = 24" and "PBC received 11 of 24". `parts` are the
+ * non-zero per-contact delegated counts in row order; `total` is their sum.
+ */
+export type DelegatedFooterOut = {
+    /**
+     * Parts
+     */
+    parts: Array<number>;
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -7048,6 +7371,64 @@ export type GoingConcernBody = {
 };
 
 /**
+ * GrantIn
+ *
+ * One grant: a role on a scope; a delegate or third party names its request items.
+ */
+export type GrantIn = {
+    /**
+     * Request Item Ids
+     */
+    request_item_ids?: Array<string>;
+    /**
+     * Role
+     */
+    role: 'owner' | 'contributor' | 'plan_administrator' | 'trustee' | 'taxpayer' | 'spouse' | 'delegate' | 'third_party' | 'k1_recipient' | 'tcwg' | 'prospect' | 'component_auditor';
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'client' | 'client_entity' | 'engagement' | 'work_item' | 'request_item' | 'k1_package' | 'governance_room' | 'component' | 'intake';
+};
+
+/**
+ * GrantOut
+ */
+export type GrantOut = {
+    /**
+     * Granted At
+     */
+    granted_at?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids?: Array<string>;
+    /**
+     * Role
+     */
+    role: 'owner' | 'contributor' | 'plan_administrator' | 'trustee' | 'taxpayer' | 'spouse' | 'delegate' | 'third_party' | 'k1_recipient' | 'tcwg' | 'prospect' | 'component_auditor';
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'client' | 'client_entity' | 'engagement' | 'work_item' | 'request_item' | 'k1_package' | 'governance_room' | 'component' | 'intake';
+    /**
+     * Status
+     */
+    status: 'pending' | 'active' | 'revoked';
+};
+
+/**
  * GrantScopeOut
  */
 export type GrantScopeOut = {
@@ -7686,6 +8067,83 @@ export type IndependenceIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * InvitationIn
+ *
+ * O3 "Invite…": MFA from firm policy, 14 days; the email is the firm's Invitation template.
+ */
+export type InvitationIn = {
+    /**
+     * Expires In Days
+     */
+    expires_in_days?: 14;
+    /**
+     * Grants
+     */
+    grants: Array<GrantIn>;
+};
+
+/**
+ * InvitationOut
+ *
+ * CLI-04 c: "Invited · Sent Sep 14". Never the token: it goes only in the email.
+ */
+export type InvitationOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Grants
+     */
+    grants: Array<GrantOut>;
+    /**
+     * Invitation Id
+     */
+    invitation_id: string;
+    /**
+     * Mfa Policy
+     */
+    mfa_policy: 'required_by_firm' | 'optional';
+    portal_status: InvitationStatus;
+    /**
+     * Sent At
+     */
+    sent_at: string;
+};
+
+/**
+ * InvitationRevokedOut
+ *
+ * Grants revoked, sessions ended; the delegated requests stay with the client.
+ */
+export type InvitationRevokedOut = {
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Invitation Id
+     */
+    invitation_id: string;
+    /**
+     * Kept Request Item Ids
+     */
+    kept_request_item_ids?: Array<string>;
+    /**
+     * Revoked At
+     */
+    revoked_at: string;
+    /**
+     * Revoked Grant Ids
+     */
+    revoked_grant_ids: Array<string>;
 };
 
 /**
@@ -13682,6 +14140,22 @@ export type SheetPreviewOut = {
 };
 
 /**
+ * SignInEventOut
+ *
+ * A sign-in history line (P-08 events): what happened and when, never an address.
+ */
+export type SignInEventOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Kind
+     */
+    kind: 'signed_in' | 'code_failed' | 'locked' | 'unlocked';
+};
+
+/**
  * SignInOut
  */
 export type SignInOut = {
@@ -18362,6 +18836,139 @@ export type UpdateClientResponses = {
 
 export type UpdateClientResponse = UpdateClientResponses[keyof UpdateClientResponses];
 
+export type ListContactsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: {
+        /**
+         * Portal Status
+         */
+        portal_status?: InvitationStatus | null;
+        /**
+         * Sort
+         */
+        sort?: 'name' | 'portal_status' | 'last_seen';
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/clients/{client_id}/contacts';
+};
+
+export type ListContactsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListContactsError = ListContactsErrors[keyof ListContactsErrors];
+
+export type ListContactsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactsPage;
+};
+
+export type ListContactsResponse = ListContactsResponses[keyof ListContactsResponses];
+
+export type CreateContactData = {
+    body: ContactIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/contacts';
+};
+
+export type CreateContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateContactError = CreateContactErrors[keyof CreateContactErrors];
+
+export type CreateContactResponses = {
+    /**
+     * Successful Response
+     */
+    201: ContactOut;
+};
+
+export type CreateContactResponse = CreateContactResponses[keyof CreateContactResponses];
+
 export type ResetContactMfaData = {
     body?: never;
     headers: {
@@ -18645,6 +19252,302 @@ export type CompleteResponses = {
 };
 
 export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
+
+export type GetContactData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/contacts/{contact_id}';
+};
+
+export type GetContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetContactError = GetContactErrors[keyof GetContactErrors];
+
+export type GetContactResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactDetailOut;
+};
+
+export type GetContactResponse = GetContactResponses[keyof GetContactResponses];
+
+export type UpdateContactData = {
+    body: ContactPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/contacts/{contact_id}';
+};
+
+export type UpdateContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateContactError = UpdateContactErrors[keyof UpdateContactErrors];
+
+export type UpdateContactResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactOut;
+};
+
+export type UpdateContactResponse = UpdateContactResponses[keyof UpdateContactResponses];
+
+export type ChangeContactAccessData = {
+    body: ContactAccessIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/contacts/{contact_id}/access';
+};
+
+export type ChangeContactAccessErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChangeContactAccessError = ChangeContactAccessErrors[keyof ChangeContactAccessErrors];
+
+export type ChangeContactAccessResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactAccessOut;
+};
+
+export type ChangeContactAccessResponse = ChangeContactAccessResponses[keyof ChangeContactAccessResponses];
+
+export type InviteContactData = {
+    body: InvitationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/contacts/{contact_id}/invitations';
+};
+
+export type InviteContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InviteContactError = InviteContactErrors[keyof InviteContactErrors];
+
+export type InviteContactResponses = {
+    /**
+     * Successful Response
+     */
+    201: InvitationOut;
+};
+
+export type InviteContactResponse = InviteContactResponses[keyof InviteContactResponses];
+
+export type UnlockContactData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Contact Id
+         */
+        contact_id: string;
+    };
+    query?: never;
+    url: '/v1/contacts/{contact_id}/unlock';
+};
+
+export type UnlockContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UnlockContactError = UnlockContactErrors[keyof UnlockContactErrors];
+
+export type UnlockContactResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactUnlockedOut;
+};
+
+export type UnlockContactResponse = UnlockContactResponses[keyof UnlockContactResponses];
 
 export type DecisionCardListData = {
     body?: never;
@@ -19036,10 +19939,6 @@ export type CreateEngagementDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateEngagementDraftError = CreateEngagementDraftErrors[keyof CreateEngagementDraftErrors];
@@ -19092,10 +19991,6 @@ export type DiscardEngagementDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardEngagementDraftError = DiscardEngagementDraftErrors[keyof DiscardEngagementDraftErrors];
@@ -19148,10 +20043,6 @@ export type GetEngagementDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetEngagementDraftError = GetEngagementDraftErrors[keyof GetEngagementDraftErrors];
@@ -19208,10 +20099,6 @@ export type UpdateEngagementDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEngagementDraftError = UpdateEngagementDraftErrors[keyof UpdateEngagementDraftErrors];
@@ -19272,10 +20159,6 @@ export type CreateEngagementFromDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateEngagementFromDraftError = CreateEngagementFromDraftErrors[keyof CreateEngagementFromDraftErrors];
@@ -19388,10 +20271,6 @@ export type ValidateEngagementDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateEngagementDraftError = ValidateEngagementDraftErrors[keyof ValidateEngagementDraftErrors];
@@ -19439,10 +20318,6 @@ export type EngagementTypesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngagementTypesError = EngagementTypesErrors[keyof EngagementTypesErrors];
@@ -36508,6 +37383,122 @@ export type AcceptStaffInvitationResponses = {
 };
 
 export type AcceptStaffInvitationResponse = AcceptStaffInvitationResponses[keyof AcceptStaffInvitationResponses];
+
+export type ResendInvitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/v1/invitations/{invitation_id}/resend';
+};
+
+export type ResendInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
+
+export type ResendInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvitationOut;
+};
+
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
+
+export type RevokeInvitationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/v1/invitations/{invitation_id}/revoke';
+};
+
+export type RevokeInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevokeInvitationError = RevokeInvitationErrors[keyof RevokeInvitationErrors];
+
+export type RevokeInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvitationRevokedOut;
+};
+
+export type RevokeInvitationResponse = RevokeInvitationResponses[keyof RevokeInvitationResponses];
 
 export type IssueListData = {
     body?: never;

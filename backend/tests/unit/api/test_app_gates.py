@@ -188,6 +188,10 @@ NOT_CREATING = {
     "/v1/auth/sign-out",
     # P-07-T04 (clients stub): a reveal returns the value once and stores nothing but its audit.
     "/v1/client-entities/{entity_id}/tin/reveal",
+    # P-07-T17 (contacts stub): a resend replaces the token and an unlock clears a lock, so 200.
+    "/v1/invitations/{invitation_id}/resend",
+    "/v1/invitations/{invitation_id}/revoke",
+    "/v1/contacts/{contact_id}/unlock",
     # P-07-T05 (engagements v2 stub): per-step validation returns findings, nothing stored.
     "/v1/engagement-drafts/{draft_id}/validate",
 }
@@ -236,6 +240,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagement-drafts",
         "/v1/engagement-drafts/{draft_id}/start-acceptance",
         "/v1/engagement-drafts/{draft_id}/create",
+        # P-07-T17 (contacts stub): a contact, and an invitation with its pending grants.
+        "/v1/clients/{client_id}/contacts",
+        "/v1/contacts/{contact_id}/invitations",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded

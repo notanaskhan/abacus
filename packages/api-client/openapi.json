@@ -7813,6 +7813,208 @@
         "title": "ConnectionOut",
         "type": "object"
       },
+      "ContactAccessIn": {
+        "additionalProperties": false,
+        "description": "CLI-04 e \"Change scope\": the contact's whole grant set after the change.",
+        "properties": {
+          "grants": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GrantIn"
+            },
+            "maxItems": 20,
+            "title": "Grants",
+            "type": "array"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version",
+          "grants"
+        ],
+        "title": "ContactAccessIn",
+        "type": "object"
+      },
+      "ContactAccessOut": {
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "grants": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GrantOut"
+            },
+            "title": "Grants",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contact_id",
+          "grants",
+          "version"
+        ],
+        "title": "ContactAccessOut",
+        "type": "object"
+      },
+      "ContactCountsOut": {
+        "description": "The header: \"3 active \u00b7 1 invited \u00b7 2 not invited\" (and locked when any).",
+        "properties": {
+          "active": {
+            "cls": "internal",
+            "title": "Active",
+            "type": "integer"
+          },
+          "invited": {
+            "cls": "internal",
+            "title": "Invited",
+            "type": "integer"
+          },
+          "locked": {
+            "cls": "internal",
+            "title": "Locked",
+            "type": "integer"
+          },
+          "not_invited": {
+            "cls": "internal",
+            "title": "Not Invited",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "active",
+          "invited",
+          "not_invited",
+          "locked"
+        ],
+        "title": "ContactCountsOut",
+        "type": "object"
+      },
+      "ContactDetailOut": {
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/ContactRowOut",
+            "cls": "confidential"
+          },
+          "delegated_request_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Delegated Request Ids",
+            "type": "array"
+          },
+          "grants": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GrantOut"
+            },
+            "title": "Grants",
+            "type": "array"
+          },
+          "sign_ins": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SignInEventOut"
+            },
+            "title": "Sign Ins",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contact",
+          "version"
+        ],
+        "title": "ContactDetailOut",
+        "type": "object"
+      },
+      "ContactIn": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Email"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "party_kind": {
+            "cls": "internal",
+            "default": "person",
+            "enum": [
+              "person",
+              "organisation",
+              "group"
+            ],
+            "title": "Party Kind",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Phone"
+          },
+          "roles": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ContactRoleIn"
+            },
+            "maxItems": 20,
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ContactIn",
+        "type": "object"
+      },
       "ContactMfaResetOut": {
         "description": "After a reset the next sign-in goes to two-step setup (POR-01, the setup state).",
         "properties": {
@@ -7856,6 +8058,99 @@
         "title": "ContactMfaResetOut",
         "type": "object"
       },
+      "ContactOut": {
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/ContactRowOut",
+            "cls": "confidential"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contact",
+          "version"
+        ],
+        "title": "ContactOut",
+        "type": "object"
+      },
+      "ContactPatchIn": {
+        "additionalProperties": false,
+        "description": "Absent fields are unchanged; `roles` replaces the list when present.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Phone"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContactRoleIn"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Roles"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "ContactPatchIn",
+        "type": "object"
+      },
       "ContactPortalStatusOut": {
         "description": "The contact's portal access after an unlock (CLI-04 badge; `invitation` status words).",
         "properties": {
@@ -7895,6 +8190,354 @@
           "portal_status"
         ],
         "title": "ContactPortalStatusOut",
+        "type": "object"
+      },
+      "ContactRoleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "owner",
+              "cfo",
+              "controller",
+              "trustee",
+              "executor",
+              "taxpayer",
+              "spouse",
+              "plan_sponsor_officer",
+              "recordkeeper",
+              "tpa",
+              "custodian",
+              "payroll_provider",
+              "other"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          },
+          "title_text": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title Text"
+          }
+        },
+        "required": [
+          "role",
+          "scope_kind",
+          "scope_id"
+        ],
+        "title": "ContactRoleIn",
+        "type": "object"
+      },
+      "ContactRoleOut": {
+        "properties": {
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "owner",
+              "cfo",
+              "controller",
+              "trustee",
+              "executor",
+              "taxpayer",
+              "spouse",
+              "plan_sponsor_officer",
+              "recordkeeper",
+              "tpa",
+              "custodian",
+              "payroll_provider",
+              "other"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          },
+          "scope_name": {
+            "cls": "confidential",
+            "title": "Scope Name",
+            "type": "string"
+          },
+          "title_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title Text"
+          }
+        },
+        "required": [
+          "role",
+          "scope_kind",
+          "scope_id",
+          "scope_name"
+        ],
+        "title": "ContactRoleOut",
+        "type": "object"
+      },
+      "ContactRowOut": {
+        "description": "A CLI-04 row: roles per entity, portal state, MFA, last seen and delegated requests.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "delegated_request_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Delegated Request Count",
+            "type": "integer"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Email"
+          },
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expires On"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invited_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Invited On"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Seen At"
+          },
+          "mfa_enrolled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mfa Enrolled"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "party_kind": {
+            "cls": "internal",
+            "enum": [
+              "person",
+              "organisation",
+              "group"
+            ],
+            "title": "Party Kind",
+            "type": "string"
+          },
+          "portal_status": {
+            "$ref": "#/components/schemas/InvitationStatus",
+            "cls": "internal"
+          },
+          "roles": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ContactRoleOut"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "party_kind",
+          "portal_status"
+        ],
+        "title": "ContactRowOut",
+        "type": "object"
+      },
+      "ContactUnlockedOut": {
+        "description": "CLI-04 d \"Unlock\u2026\": the portal lock cleared; `contact.unlocked` audited.",
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "portal_status": {
+            "$ref": "#/components/schemas/InvitationStatus",
+            "cls": "internal"
+          },
+          "unlocked_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Unlocked At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contact_id",
+          "portal_status",
+          "unlocked_at"
+        ],
+        "title": "ContactUnlockedOut",
+        "type": "object"
+      },
+      "ContactsPage": {
+        "description": "The P-36 envelope plus the header counts and the delegated-requests footer.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "delegated": {
+            "$ref": "#/components/schemas/DelegatedFooterOut",
+            "cls": "internal"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ContactRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ContactCountsOut",
+            "cls": "internal"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "summary",
+          "delegated"
+        ],
+        "title": "ContactsPage",
         "type": "object"
       },
       "CoverageGapsOut": {
@@ -9046,6 +9689,36 @@
           "contact_id"
         ],
         "title": "DelegateIn",
+        "type": "object"
+      },
+      "DelegatedFooterOut": {
+        "description": "The footer: \"10 + 9 + 2 + 2 + 1 = 24\" and \"PBC received 11 of 24\". `parts` are the\nnon-zero per-contact delegated counts in row order; `total` is their sum.",
+        "properties": {
+          "parts": {
+            "cls": "internal",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Parts",
+            "type": "array"
+          },
+          "received": {
+            "cls": "internal",
+            "title": "Received",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "parts",
+          "total",
+          "received"
+        ],
+        "title": "DelegatedFooterOut",
         "type": "object"
       },
       "DelegationOut": {
@@ -14964,6 +15637,164 @@
         "title": "GoingConcernBody",
         "type": "object"
       },
+      "GrantIn": {
+        "additionalProperties": false,
+        "description": "One grant: a role on a scope; a delegate or third party names its request items.",
+        "properties": {
+          "request_item_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Request Item Ids",
+            "type": "array"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "owner",
+              "contributor",
+              "plan_administrator",
+              "trustee",
+              "taxpayer",
+              "spouse",
+              "delegate",
+              "third_party",
+              "k1_recipient",
+              "tcwg",
+              "prospect",
+              "component_auditor"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement",
+              "work_item",
+              "request_item",
+              "k1_package",
+              "governance_room",
+              "component",
+              "intake"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "scope_kind",
+          "scope_id"
+        ],
+        "title": "GrantIn",
+        "type": "object"
+      },
+      "GrantOut": {
+        "properties": {
+          "granted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Granted At"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "request_item_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Request Item Ids",
+            "type": "array"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "owner",
+              "contributor",
+              "plan_administrator",
+              "trustee",
+              "taxpayer",
+              "spouse",
+              "delegate",
+              "third_party",
+              "k1_recipient",
+              "tcwg",
+              "prospect",
+              "component_auditor"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement",
+              "work_item",
+              "request_item",
+              "k1_package",
+              "governance_room",
+              "component",
+              "intake"
+            ],
+            "title": "Scope Kind",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "pending",
+              "active",
+              "revoked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "scope_kind",
+          "scope_id",
+          "status"
+        ],
+        "title": "GrantOut",
+        "type": "object"
+      },
       "GrantScopeOut": {
         "properties": {
           "role": {
@@ -16234,6 +17065,145 @@
           "confirm"
         ],
         "title": "IndependenceIn",
+        "type": "object"
+      },
+      "InvitationIn": {
+        "additionalProperties": false,
+        "description": "O3 \"Invite\u2026\": MFA from firm policy, 14 days; the email is the firm's Invitation template.",
+        "properties": {
+          "expires_in_days": {
+            "cls": "internal",
+            "const": 14,
+            "default": 14,
+            "title": "Expires In Days",
+            "type": "integer"
+          },
+          "grants": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GrantIn"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Grants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "grants"
+        ],
+        "title": "InvitationIn",
+        "type": "object"
+      },
+      "InvitationOut": {
+        "description": "CLI-04 c: \"Invited \u00b7 Sent Sep 14\". Never the token: it goes only in the email.",
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "grants": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GrantOut"
+            },
+            "title": "Grants",
+            "type": "array"
+          },
+          "invitation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Invitation Id",
+            "type": "string"
+          },
+          "mfa_policy": {
+            "cls": "internal",
+            "enum": [
+              "required_by_firm",
+              "optional"
+            ],
+            "title": "Mfa Policy",
+            "type": "string"
+          },
+          "portal_status": {
+            "$ref": "#/components/schemas/InvitationStatus",
+            "cls": "internal"
+          },
+          "sent_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invitation_id",
+          "contact_id",
+          "grants",
+          "mfa_policy",
+          "sent_at",
+          "expires_at",
+          "portal_status"
+        ],
+        "title": "InvitationOut",
+        "type": "object"
+      },
+      "InvitationRevokedOut": {
+        "description": "Grants revoked, sessions ended; the delegated requests stay with the client.",
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "invitation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Invitation Id",
+            "type": "string"
+          },
+          "kept_request_item_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Kept Request Item Ids",
+            "type": "array"
+          },
+          "revoked_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Revoked At",
+            "type": "string"
+          },
+          "revoked_grant_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Revoked Grant Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "invitation_id",
+          "contact_id",
+          "revoked_grant_ids",
+          "revoked_at"
+        ],
+        "title": "InvitationRevokedOut",
         "type": "object"
       },
       "InvitationStatus": {
@@ -28841,6 +29811,34 @@
         "title": "SheetPreviewOut",
         "type": "object"
       },
+      "SignInEventOut": {
+        "description": "A sign-in history line (P-08 events): what happened and when, never an address.",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "signed_in",
+              "code_failed",
+              "locked",
+              "unlocked"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "at"
+        ],
+        "title": "SignInEventOut",
+        "type": "object"
+      },
       "SignInOut": {
         "properties": {
           "at": {
@@ -39097,6 +40095,318 @@
         "x-abacus-action": "client.update"
       }
     },
+    "/v1/clients/{client_id}/contacts": {
+      "get": {
+        "description": "CLI-04 a: `counts` per portal status (the header) and the delegated footer.",
+        "operationId": "list_contacts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "portal_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InvitationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Portal Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "portal_status",
+                "last_seen"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactsPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Contacts Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "contact.read"
+      },
+      "post": {
+        "description": "409 `contact_exists` for an email already on the client; one `contact.created` event.",
+        "operationId": "create_contact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Contact Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "contact.manage"
+      }
+    },
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset": {
       "post": {
         "description": "Remove the factor, the backup codes and the trusted devices; email the client in the\nfirm's name. Needs fresh MFA. Audited as `portal.mfa.reset`.",
@@ -39707,6 +41017,660 @@
           "connection"
         ],
         "x-abacus-action": "connection.create"
+      }
+    },
+    "/v1/contacts/{contact_id}": {
+      "get": {
+        "description": "The O2 drawer: roles, grants, sign-in history and delegated requests.",
+        "operationId": "get_contact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Contact Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "contact.read"
+      },
+      "patch": {
+        "description": "409 `stale_version`; one `contact.updated` event naming the fields, never values.",
+        "operationId": "update_contact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Update Contact Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "contact.manage"
+      }
+    },
+    "/v1/contacts/{contact_id}/access": {
+      "put": {
+        "description": "CLI-04 e: the new grant set; 409 `stale_version`; `contact.access_changed`.",
+        "operationId": "change_contact_access",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactAccessIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactAccessOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Change Contact Access Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "client_access.grant"
+      }
+    },
+    "/v1/contacts/{contact_id}/invitations": {
+      "post": {
+        "description": "Human-only: pending grants and a single-use invitation in one unit of work, `contact.invited`\nemitted; 409 `gate_unmet` (G1) for a full-client grant before acceptance; 422\n`scope_outside_client`.",
+        "operationId": "invite_contact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Invite Contact Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "client_access.grant"
+      }
+    },
+    "/v1/contacts/{contact_id}/unlock": {
+      "post": {
+        "description": "Human-only: clears a portal lock (P-08 state); `contact.unlocked` audited.",
+        "operationId": "unlock_contact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactUnlockedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Unlock Contact Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "contact.unlock"
       }
     },
     "/v1/decision-cards": {
@@ -40607,16 +42571,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Engagement Draft Route",
@@ -40724,16 +42678,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Engagement Draft Route",
@@ -40839,16 +42783,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Engagement Draft Route",
@@ -40973,16 +42907,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Engagement Draft Route",
@@ -40994,7 +42918,7 @@
     },
     "/v1/engagement-drafts/{draft_id}/create": {
       "post": {
-        "description": "Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409\n`gate_unmet` (G1), 422 `unknown_engagement_type`.",
+        "description": "Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409\n`gate_unmet` (G1), 422 `unknown_engagement_type`, 422 `draft_incomplete`.",
         "operationId": "create_engagement_from_draft",
         "parameters": [
           {
@@ -41121,16 +43045,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Engagement From Draft Route",
@@ -41374,16 +43288,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Engagement Draft Route",
@@ -41481,16 +43385,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engagement Types Route",
@@ -78527,6 +80421,250 @@
           "invitations"
         ],
         "x-abacus-action": "identity"
+      }
+    },
+    "/v1/invitations/{invitation_id}/resend": {
+      "post": {
+        "description": "A new token; the old link stops working; `invitation.resent`.",
+        "operationId": "resend_invitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Resend Invitation Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "client_access.grant"
+      }
+    },
+    "/v1/invitations/{invitation_id}/revoke": {
+      "post": {
+        "description": "Human-only: grants revoked, sessions ended (`access.changed`), requests kept.",
+        "operationId": "revoke_invitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationRevokedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Revoke Invitation Route",
+        "tags": [
+          "contacts"
+        ],
+        "x-abacus-action": "client_access.revoke"
       }
     },
     "/v1/issues": {
