@@ -295,6 +295,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.transitions.IllegalTransition
+    - abacus.modules.organisations.live.IllegalTransition
     summary: The engagement cannot move from its state to the one asked for (DEC-39).
   inbox_file_gone:
     status: 409
@@ -701,7 +702,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.contract.DraftStaleVersion
-    - abacus.modules.organisations.contract.ClientStaleVersion
+    - abacus.modules.organisations.live.StaleVersion
     summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
   statement_already_approved:
     status: 409

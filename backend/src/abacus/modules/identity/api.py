@@ -23,6 +23,7 @@ from abacus.modules.identity.authz import (
     register_independence,
     serving_request,
     visible,
+    visible_clients,
     visible_items,
     visible_scope,
 )
@@ -109,6 +110,7 @@ from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.repository import (
     EngagementRole,
     MemberFacts,
+    engagement_team_query,
     member_facts,
     my_engagement_roles,
 )
@@ -324,6 +326,7 @@ __all__ = [
     "engagement_resource",
     "engagement_role_of",
     "engagement_team",
+    "engagement_team_query",
     "firm_admins",
     "firm_facts",
     "firm_name",
@@ -384,6 +387,7 @@ __all__ = [
     "team_of",
     "token_verifier",
     "visible",
+    "visible_clients",
     "visible_items",
     "visible_scope",
     "void_grant",

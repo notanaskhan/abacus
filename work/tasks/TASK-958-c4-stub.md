@@ -1,5 +1,5 @@
 ---
-id: TASK-943
+id: TASK-958
 title: C4 stub — citations v2, viewer, regions, search, PII reveal and unlock routes; evidence matrix and flags; make generate (P-03-T02)
 spec: SPEC-322
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10]

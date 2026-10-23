@@ -234,6 +234,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
     },
     "client.read": {
+        "firm_partner": "allow",
         "firm_admin": "allow",
         "practice_leader": "allow",
         "quality_partner": "allow",

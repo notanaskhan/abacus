@@ -17079,10 +17079,6 @@ export type ListClientsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListClientsError = ListClientsErrors[keyof ListClientsErrors];
@@ -17135,10 +17131,6 @@ export type GetClientErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetClientError = GetClientErrors[keyof GetClientErrors];
@@ -17195,10 +17187,6 @@ export type UpdateClientErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateClientError = UpdateClientErrors[keyof UpdateClientErrors];
@@ -17375,10 +17363,6 @@ export type ClientOverviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClientOverviewError = ClientOverviewErrors[keyof ClientOverviewErrors];
@@ -17436,10 +17420,6 @@ export type ClientRelationshipsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClientRelationshipsError = ClientRelationshipsErrors[keyof ClientRelationshipsErrors];

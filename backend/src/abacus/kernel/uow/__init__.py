@@ -25,7 +25,8 @@ from typing import Annotated, ClassVar, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import text
+from sqlalchemy import BigInteger, DateTime, Select, Text, column, select, table, text
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from abacus.kernel.classification import classified, sensitive_paths
@@ -358,6 +359,7 @@ __all__ = [
     "Target",
     "TargetEvent",
     "UnitOfWork",
+    "audit_activity",
     "audit_facets",
     "audit_of_targets",
     "audit_page",
@@ -433,6 +435,28 @@ async def audit_of_targets(
         },
     )
     return [TargetEvent(*row) for row in rows.all()]
+
+
+_audit_events = table(
+    "audit_events",
+    column("seq", BigInteger),
+    column("engagement_id", PgUUID(as_uuid=True)),
+    column("target_type", Text),
+    column("target_id", Text),
+    column("effective_at", DateTime(timezone=True)),
+    column("action", Text),
+)
+
+
+def audit_activity() -> Select[int, UUID | None, str, str, datetime, str]:
+    """Every event's `(seq, engagement_id, target_type, target_id, effective_at, action)`, as a
+    subquery for a caller composing "last activity" over records it may read (P-07-T08: the
+    clients index). Identifiers only; RLS keeps it to the active tenant."""
+    c = _audit_events.c
+    return cast(
+        Select[int, UUID | None, str, str, datetime, str],
+        select(c.seq, c.engagement_id, c.target_type, c.target_id, c.effective_at, c.action),
+    )
 
 
 async def audit_total_of_targets(

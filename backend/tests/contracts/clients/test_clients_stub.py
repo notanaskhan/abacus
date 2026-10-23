@@ -58,11 +58,18 @@ def _granted(action: str) -> set[str]:
     return {r for r, d in RULES[action].decisions.items() if d != "deny"}
 
 
+# Live since P-07-T08 (the index) and P-07-T09 (record, overview, PATCH, relationships); the
+# reveal stays a stub until P-07-T10.
+STUBBED = {("post", "/v1/client-entities/{entity_id}/tin/reveal")}
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_ac1_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == ((method, path) in STUBBED)
 
 
 def test_ac2_statuses_are_the_registry_enums() -> None:
@@ -97,8 +104,8 @@ def test_ac2_no_clients_model_has_a_wall_count() -> None:
 
 
 def test_ac3_client_read_is_every_firm_role_and_no_one_else() -> None:
-    # A partner reads through their engagement roles until P-07-T08 adds `firm_partner` (DEC-141).
-    assert _granted("client.read") == FIRM_ROLES - {"firm_partner"}
+    # P-07-T08 (DEC-141): a partner with no firm role reads through the derived `firm_partner`.
+    assert _granted("client.read") == FIRM_ROLES
     rule = RULES["client.read"]
     assert rule.decisions["agent"] == rule.decisions["system"] == "deny"
 

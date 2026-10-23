@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import FetchedValue
@@ -29,6 +30,9 @@ class Client(Base):
     is_attest_client: Mapped[bool] = mapped_column(server_default=FetchedValue())
     portal_status: Mapped[str] = mapped_column(server_default=FetchedValue())
     practice_mgmt_ref: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    descriptor: Mapped[str | None] = mapped_column(server_default=FetchedValue())  # P-07-T07
+    # P-07-T09 (0110): bumped by the database on every change; a PATCH names the one it read.
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 
 class ClientEntity(Base):
@@ -47,6 +51,11 @@ class ClientEntity(Base):
     plan_number: Mapped[str | None] = mapped_column(server_default=FetchedValue())
     date_of_death: Mapped[date | None] = mapped_column(server_default=FetchedValue())
     grantor_status: Mapped[bool | None] = mapped_column(server_default=FetchedValue())
+    # P-07-T07 (0103): what any payload may show of a sealed TIN. The envelope and fingerprint
+    # are not mapped here; only P-07-T10's sealing reads or writes them.
+    tin_last4: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    tin_kind: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    tin_status: Mapped[str] = mapped_column(server_default=FetchedValue())
 
 
 class Office(Base):
@@ -98,6 +107,24 @@ class Contact(Base):
     title: Mapped[str | None]
     organisation_name: Mapped[str | None]
     contact_kind: Mapped[str]
+    normalised_name: Mapped[str] = mapped_column(server_default=FetchedValue())  # 0103
     user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
     portal_state: Mapped[str] = mapped_column(server_default=FetchedValue())
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class EntityRelationship(Base):
+    """How two of the firm's entities relate (P-07-T07); ended by `effective_to`, never deleted."""
+
+    __tablename__ = "entity_relationships"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    from_entity_id: Mapped[UUID]
+    to_entity_id: Mapped[UUID]
+    kind: Mapped[str]
+    percent: Mapped[Decimal | None]
+    effective_from: Mapped[date]
+    effective_to: Mapped[date | None]
+    created_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

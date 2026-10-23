@@ -6,9 +6,10 @@ actions:
   # `client.read` moved here from engagements.yaml and widened to every firm role (metadata only;
   # walls in `visible(scope=client)`, 404 semantics, DEC-43). It also guards the live client
   # picker, GET /v1/firm/clients/search, which already drops walled clients (SPEC-025). A partner
-  # reads through their engagement roles (SPEC-014); the derived `firm_partner` cell (a partner
-  # with no active engagement) lands with the live index, P-07-T08 (DEC-141).
+  # with no firm role reads every client they aren't walled off from through the derived
+  # `firm_partner` cell (P-07-T08, DEC-141; `visible_clients`).
   client.read:
+    firm_partner: allow
     firm_admin: allow
     practice_leader: allow
     quality_partner: allow
