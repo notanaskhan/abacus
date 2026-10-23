@@ -115,6 +115,7 @@ Checked and not needed:
   - backend unit and web 172 passed; the gates pass; migration 0033 applies, rolls back and reapplies;
   - a local smoke passed: a founder signed up and invited a practice leader; the invitation was accepted (email matched regardless of case) and its reuse refused; demoting the last admin was refused; admin was handed over and the founder's access revoked. The smoke data was removed.
 - `2026-10-09` — Design written for founder review; SSO held for the vendor decision.
+- `2026-10-23` — Q-03 back-fill (S6, Q-03-T006): independent AC suite `backfill/test_staff_people.py` (extended) and `apps/web/src/legacy/spec024states.test.tsx`; triage, defects and spec drift in `work/tasks/TASK-992-s6-backfill-suites.md` and `docs/quality/backfill.md`. test_author: ayushkbhatia; test_session: 2026-10-23.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -123,6 +123,7 @@ Not needed:
   - a local smoke passed: a new engagement started closed with the creator asked to confirm; the invitation was refused for missing acceptance, then for the missing conclusion, then allowed; with the letter required it was refused until the letter was signed; declining closed it again; 4 refusals were audited; a signed-letter PDF round-tripped verified;
   - predecessor fields now carry forward when acceptance is recorded again.
 - `2026-10-09` — Design written for founder review after TASK-043 merged (#79).
+- `2026-10-23` — Q-03 back-fill (S6, Q-03-T008): independent AC suite `backfill/test_acceptance_independence_letter.py` and `legacy/spec025states.test.tsx`; triage, defects and spec drift in `work/tasks/TASK-992-s6-backfill-suites.md` and `docs/quality/backfill.md`. test_author: ayushkbhatia; test_session: 2026-10-23.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

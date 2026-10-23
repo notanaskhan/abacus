@@ -81,6 +81,7 @@ All of SPEC-017.
 
   Backend unit (8,902) and web (119) tests, the gates and the schema check pass. A local Postgres smoke run passed: candidates, add, the manager limits refused, the last partner refused, role change, removal.
 - `2026-10-08` — SPEC-017 approved and merged (#59). Design written for founder review.
+- `2026-10-23` — Q-03 back-fill (S6, Q-03-T007): independent AC suite `backfill/test_team_management.py` and `apps/web/src/legacy/spec017people.test.tsx`; triage, defects and spec drift in `work/tasks/TASK-992-s6-backfill-suites.md` and `docs/quality/backfill.md`. test_author: ayushkbhatia; test_session: 2026-10-23.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
