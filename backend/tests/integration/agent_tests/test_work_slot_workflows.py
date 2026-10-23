@@ -179,6 +179,18 @@ async def _ledger_empty(seed: Seeder, tenant: uuid.UUID) -> bool:
     )
 
 
+async def _ledger_drains(seed: Seeder, tenant: uuid.UUID, seconds: float = 10.0) -> bool:
+    """The ledger empties within `seconds`. A run's terminal status is written before its
+    release activity commits, so an immediate check races the release (seen on CI)."""
+    deadline = asyncio.get_running_loop().time() + seconds
+    while True:
+        if await _ledger_empty(seed, tenant):
+            return True
+        if asyncio.get_running_loop().time() >= deadline:
+            return False
+        await asyncio.sleep(0.1)
+
+
 async def _activities(handle: WorkflowHandle[Any, Any]) -> list[str]:  # a recorded call
     history = await handle.fetch_history()
     return [
@@ -362,7 +374,7 @@ async def test_ac6_the_run_proceeds_to_success_when_a_slot_frees_and_resumed_is_
     assert names.count("retrieval.acquire_slot") >= 2  # it asked again after waiting
     assert await _timers(handle) >= 1  # waiting is a durable timer, not a held worker
     assert names[-1] == "retrieval.release_slot"
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -386,7 +398,7 @@ async def test_ac6_a_run_with_free_slots_asks_once_and_never_sleeps(
     actions = await seed.actions(world.tenant_id)
     assert "sync_run.queued" not in actions
     assert "sync_run.resumed" not in actions
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -407,7 +419,7 @@ async def test_ac14_a_run_waiting_past_the_max_wait_fails_capacity_timeout(
     assert actions.count("sync_run.failed") == 1  # through the audited fail path, never silent
     assert "sync_run.raw_stored" not in actions
     assert await seed.count("evidence_versions", world.tenant_id) == 0
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
     assert (await _activities(_retrieval_handle(temporal, run_id)))[-2:] == [
         "retrieval.fail_run",
         "retrieval.release_slot",
@@ -444,7 +456,7 @@ async def test_ac6_the_slot_is_held_while_running_and_released_on_success(
 ) -> None:
     run_id = (await api.post())["sync_run_id"]
     await api.until(run_id, lambda r: r["status"] == "succeeded")
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -456,7 +468,7 @@ async def test_ac6_the_slot_is_released_when_the_run_fails(
     run_id = (await api.post())["sync_run_id"]
     failed = await api.until(run_id, lambda r: r["status"] in ("failed", "failed_validation"))
     assert failed["failure_code"] == "no_data"
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -498,7 +510,7 @@ async def test_ac6_the_slot_is_released_when_the_workflow_is_cancelled_mid_run(
     with pytest.raises(WorkflowFailureError) as raised:
         await handle.result()
     assert isinstance(raised.value.cause, CancelledError)
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
     got = await api.get(run_id)
     assert (got["status"], got["failure_code"]) == ("failed", "cancelled")
     assert (await _activities(handle))[-1] == "retrieval.release_slot"
@@ -729,7 +741,7 @@ async def test_ac6_a_screening_proceeds_when_a_slot_frees_and_completes(
     assert names.count("screening.acquire_slot") >= 2
     assert names[-2:] == ["screening.screen", "screening.release_slot"]
     assert await _timers(handle) >= 1
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -750,7 +762,7 @@ async def test_ac14_a_screening_waiting_past_the_max_wait_fails_capacity_timeout
     assert "agent_run.queued" in actions
     assert actions.count("agent_run.failed") == 1
     assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -767,7 +779,7 @@ async def test_ac6_the_screening_slot_is_released_on_success(
         "screening.release_slot",
     ]
     assert await _timers(handle) == 0
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 @pytest.mark.usefixtures("worker")
@@ -786,7 +798,7 @@ async def test_ac6_the_screening_slot_is_released_when_the_run_fails(
     outcome = await handle.result()
     assert (outcome.status, outcome.code) == ("failed", "forbidden")
     assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
-    assert await _ledger_empty(seed, world.tenant_id)
+    assert await _ledger_drains(seed, world.tenant_id)
 
 
 class Gate:
@@ -817,7 +829,7 @@ async def test_ac6_the_screening_slot_is_released_when_the_workflow_is_cancelled
             await handle.result()
         assert isinstance(raised.value.cause, CancelledError)
         assert await _agent_row(seed, world.tenant_id) == ("failed", "cancelled", None)
-        assert await _ledger_empty(seed, world.tenant_id)
+        assert await _ledger_drains(seed, world.tenant_id)
         assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
     finally:
         gate.release.set()
