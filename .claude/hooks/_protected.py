@@ -39,6 +39,7 @@ GENERATED = [
     ("**/_human_only_actions.py", "python -m abacus_tools.codegen.human_only_actions"),
     ("**/_specs.py", "python -m abacus_tools.codegen.agent_specs"),
     ("**/_eval_suites.py", "python -m abacus_tools.codegen.eval_suites"),
+    ("docs/operations/sub-processors.md", "python -m abacus_tools.codegen.sub_processors"),
     ("backend/tests/durations.json", "python -m abacus_tools.ci.shard --record <report>"),
     ("backend/tests/workflows/histories/*.json", "the workflow's replay recorder (abacus_tools.workflows)"),
 ]
