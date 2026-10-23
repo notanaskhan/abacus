@@ -228,7 +228,13 @@ def test_a01_the_live_poll_and_the_activity_feed_are_identifiers_and_counts() ->
 # Contract §3: names, titles, client wording, reasons, notes and `supports_ref` are confidential;
 # everything else internal; nothing Restricted.
 CONFIDENTIAL = {
-    "BinderRowOut": {"client_name", "work_item_label", "name", "unpublish_reason"},
+    "BinderRowOut": {
+        "client_name",
+        "work_item_label",
+        "name",
+        "unpublish_reason",
+        "marked_done_by_name",  # P-06-T11: a person's name
+    },
     "BinderOut": {"name", "unpublish_reason"},
     "BinderCategoryOut": {"name"},
     "BinderRecipientOut": {"name"},

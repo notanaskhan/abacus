@@ -1421,6 +1421,14 @@ export type BinderRowOut = {
      */
     client_name: string;
     /**
+     * Closed At
+     */
+    closed_at?: string | null;
+    /**
+     * Closed Reason
+     */
+    closed_reason?: string | null;
+    /**
      * Done Count
      */
     done_count: number;
@@ -1441,9 +1449,29 @@ export type BinderRowOut = {
      */
     last_client_activity_at: string | null;
     /**
+     * Marked Done At
+     */
+    marked_done_at?: string | null;
+    /**
+     * Marked Done By
+     */
+    marked_done_by?: string | null;
+    /**
+     * Marked Done By Name
+     */
+    marked_done_by_name?: string | null;
+    /**
      * Name
      */
     name: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Overdue Count
+     */
+    overdue_count?: number;
     /**
      * Part
      */
@@ -1452,6 +1480,30 @@ export type BinderRowOut = {
      * Preparer User Id
      */
     preparer_user_id: string | null;
+    /**
+     * Published At
+     */
+    published_at?: string | null;
+    /**
+     * Requested Count
+     */
+    requested_count?: number;
+    /**
+     * Requested From
+     */
+    requested_from?: string | null;
+    /**
+     * Requested To
+     */
+    requested_to?: string | null;
+    /**
+     * Season
+     */
+    season?: string | null;
+    /**
+     * Service
+     */
+    service?: string | null;
     status: BinderStatus;
     /**
      * Tags
@@ -15453,10 +15505,6 @@ export type ListBindersErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListBindersError = ListBindersErrors[keyof ListBindersErrors];

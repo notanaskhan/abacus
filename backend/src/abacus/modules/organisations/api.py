@@ -2,6 +2,9 @@
 
 from abacus.modules.identity.api import AbacusRouter, register_office_list
 from abacus.modules.organisations.contract import client_entities_router, clients_router
+
+# P-06-T11: correlated name columns for another module's list (BND-01's client and office).
+from abacus.modules.organisations.repository import client_name_column, office_name_column
 from abacus.modules.organisations.service import (
     ClientChoice,
     ClientNames,
@@ -62,6 +65,7 @@ __all__ = [
     "add_contact",
     "attest_client_of",
     "client_exists",
+    "client_name_column",
     "client_names",
     "client_record",
     "client_with_entity",
@@ -71,6 +75,7 @@ __all__ = [
     "find_clients",
     "firm_names",
     "normalise",
+    "office_name_column",
     "set_client_record",
     "set_entity_attributes",
 ]
