@@ -22,10 +22,12 @@ export const engScreens = {
   },
   // ENG-03 artboards e (§7216 consent gate), g (group audit) and h (SOC 2) are fixture-only until
   // T-01, A-09 and X-01 register their targets, not missing (docs/screens/ENG-03.md, P-07 §2.1).
+  // P-07-T21 built a, b, c, d, f on fixtures at /engagements/new behind `engagements.v2`; planned
+  // for the reason CLI-02 is (cli.ts, DEC-195). e, g, h are P-07-T34's.
   "ENG-03": {
     name: "New engagement wizard · Fairhaven Foods 401(k) Plan",
     status: "planned",
-    path: null,
+    path: "/engagements/new",
   },
   "ENG-04": {
     name: "Engagement letter composer · Ridgeline cost segregation & §754 analysis",

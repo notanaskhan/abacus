@@ -33,6 +33,13 @@ import {
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
 import { EngagementRecordPage } from "./ENG-02";
+import { ENG03 } from "./ENG-03";
+import {
+  OPENS as ENG03_OPENS,
+  STATES as ENG03_STATES,
+  type Eng03State,
+  scenarios as eng03Scenarios,
+} from "./ENG-03/scenarios";
 import {
   OPENS as ENG02_OPENS,
   STATES as ENG02_STATES,
@@ -370,6 +377,31 @@ function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-14", { title: "Request composer drawer", Component: Shl14Artboard });
+
+// ENG-03 (P-07-T21): the wizard over an empty frame, on the artboard's draft.
+function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng03State = ENG03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <ENG03 draftId={ENG03_OPENS[state]} />
+    </div>
+  );
+}
+
+registerScreen("ENG-03", { title: "New engagement wizard", Component: Eng03Artboard });
 
 const stayOnCard = (): void => undefined;
 

@@ -37,7 +37,11 @@ export const REVEAL_REASONS: readonly RevealReason[] = [
 ];
 
 export function useClientRecord(clientId: string) {
-  return useQuery({ ...getClientOptions({ path: { client_id: clientId } }), retry: false });
+  return useQuery({
+    ...getClientOptions({ path: { client_id: clientId } }),
+    enabled: clientId !== "",
+    retry: false,
+  });
 }
 
 export function useClientOverview(clientId: string) {
