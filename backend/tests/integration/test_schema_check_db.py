@@ -1233,6 +1233,15 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "gl_snapshot_id", "line_count", "failure_code", "failure_details"}
             | {"updated_at"}
         ),
+        "portal_branding": frozenset(  # P-08-T05 (0111)
+            {"display_name", "portal_name", "logo_png", "logo_sha256", "address_line"}
+            | {"help_url", "privacy_url", "terms_url", "terms_version"}
+            | {"support_contact_user_id", "support_contact_name", "secured_footer"}
+            | {"maintenance_banner", "version", "updated_by", "updated_at"}
+        ),
+        "portal_preferences": frozenset(  # P-08-T05 (0111)
+            {"welcome_dismissed_at", "version", "updated_at"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1760,6 +1769,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
         | {"access_events_partition"}  # 0105 (Q-02-T20)
         | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}  # 0107
+        | {"portal_resolve_host", "portal_host_logo", "portal_domain_add"}  # 0111
+        | {"portal_domain_activate"}  # 0111
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

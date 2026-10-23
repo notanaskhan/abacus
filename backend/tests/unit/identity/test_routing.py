@@ -31,6 +31,7 @@ from abacus.modules.identity.api import (
     ACTION_KEY,
     IDENTITY,
     OWN,
+    PORTAL_PUBLIC,
     PRE_SESSION,
     SELF,
     STAFF,
@@ -50,7 +51,7 @@ from abacus.modules.identity.api import (
     reset_verifier,
     visible,
 )
-from abacus.modules.identity.routing import pre_session
+from abacus.modules.identity.routing import portal_public, pre_session
 from abacus_tools.codegen import permission_matrix as pm
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
@@ -230,7 +231,7 @@ def test_ac20_every_route_declares_an_action_in_the_matrix_or_self() -> None:
     for route in _routes():
         action = declared_action(route)
         assert action is not None, route.path
-        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION)
+        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
         assert action in markers or action in MATRIX, (route.path, action)
 
 
@@ -248,6 +249,19 @@ def test_adr165_the_router_refuses_pre_session_on_any_other_path() -> None:
     with pytest.raises(ValueError, match="pre-session"):
         router.add_api_route(
             "/anything", lambda: None, action=PRE_SESSION, response_model=dict, methods=["GET"]
+        )
+
+
+def test_adr163_portal_public_is_used_only_on_the_two_branding_routes() -> None:
+    paths = {r.path for r in _routes() if declared_action(r) == PORTAL_PUBLIC}
+    assert paths == {"/v1/portal/branding", "/v1/portal/branding/logo"}
+
+
+def test_adr163_the_router_refuses_portal_public_on_any_other_path() -> None:
+    router = AbacusRouter(prefix="/v1/portal")
+    with pytest.raises(ValueError, match="only portal branding is public"):
+        router.add_api_route(
+            "/home", lambda: None, action=PORTAL_PUBLIC, response_model=dict, methods=["GET"]
         )
 
 
@@ -273,6 +287,7 @@ def test_ac20_every_route_has_the_authentication_dependency() -> None:
             current_member,
             current_identity,
             pre_session,  # ADR-165: the three sign-in routes authenticate themselves
+            portal_public,  # ADR-163: portal branding, Public fields to anyone
         )
         assert any(d in dependencies for d in auth), route.path
 

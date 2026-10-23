@@ -408,6 +408,11 @@ codes:
     raised_by:
     - abacus.modules.requests.client_responses.ListNotDone
     summary: 'AC-4: every request is done or doesn''t apply first.'
+  logo_unreadable:
+    status: 422
+    raised_by:
+    - abacus.modules.portal.branding.LogoUnreadable
+    summary: The logo isn't a PNG or JPEG this server can decode, or is too large.
   mapping_invalid:
     status: 422
     raised_by:
@@ -569,6 +574,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.planning.PlanningInvalid
+  portal_host_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.portal.branding.HostInvalid
+    summary: Not a hostname a portal can answer on.
   possible_duplicate:
     status: 409
     raised_by:

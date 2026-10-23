@@ -613,6 +613,9 @@ _WEB_METHODS = frozenset(
 # pre-session routes, which stay inside `AbacusRouter` under the `PRE_SESSION` marker.
 PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     {"/healthz", "/readyz", "/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"}
+    # P-08-T05 (ADR-163 §6): portal branding, Public fields only, inside `AbacusRouter` under the
+    # `PORTAL_PUBLIC` marker.
+    | {"/v1/portal/branding", "/v1/portal/branding/logo"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"
