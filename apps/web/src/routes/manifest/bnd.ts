@@ -10,7 +10,15 @@ export const bndScreens = {
     path: "/binders",
     navArea: "Binders",
   },
-  "BND-02": { name: "Binder builder & tracker · Feld 2025 Binder", status: "planned", path: null },
+  // P-06-T12 built a–f on fixtures at /binders/$binderId. It stays planned until every designed link
+  // into it can be wired: CLI-01's "Opens BND-02 · open binder" needs a binder id on ClientRowOut
+  // (docs/screens/BND-02.md, Open gaps). BND-01 → BND-02 and BND-02 → BND-01 are wired already.
+  "BND-02": {
+    name: "Binder builder & tracker · Feld 2025 Binder",
+    status: "planned",
+    path: "/binders/$binderId",
+    navArea: "Binders",
+  },
   "BND-03": { name: "Questionnaire editor", status: "planned", path: null, entry: true },
   "BND-04": { name: "Request tracker", status: "planned", path: null, navArea: "Binders" },
   // seed-manifest: new screens are added above this line
