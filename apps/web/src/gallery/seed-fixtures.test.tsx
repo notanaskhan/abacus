@@ -6,9 +6,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { cleanup, render, screen } from "@testing-library/react";
 import { type JSX, useEffect, useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.setConfig({ testTimeout: 30_000 });
+
+// The lazy gallery chunk is large: transform it once before the first visit, so each visit's
+// `findBy` waits on rendering rather than on the compile (F-05-T43 grew the registry).
+beforeAll(async () => {
+  await import("./pages");
+}, 60_000);
 
 afterEach(() => {
   cleanup();
