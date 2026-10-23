@@ -45,3 +45,9 @@ actions:
     verb: approve
   - action: firm.ai_client_data_opted_in
     verb: confirm
+  - action: engagement.acceptance_recorded
+    verb: accept  # SPEC-025 §14 gate fact G1 (ED-011)
+  - action: engagement.letter_recorded
+    verb: confirm  # SPEC-025 §14 gate fact G3 (ED-011)
+  - action: independence.declined
+    verb: decide  # SPEC-025 §14, the counterpart of independence.confirmed (ED-011)

@@ -8,13 +8,16 @@ from typing import Final
 # Audit actions an agent or a policy may never write (I-AGENT-NEVER).
 HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
     {
+        "engagement.acceptance_recorded",
         "engagement.accepted",
+        "engagement.letter_recorded",
         "evidence.accepted",
         "firm.ai_client_data_opted_in",
         "firm_export.approved",
         "going_concern.decided",
         "guidance_draft.approved",
         "independence.confirmed",
+        "independence.declined",
         "legal_hold.placed",
         "materiality.decided",
         "procedure.concluded",
