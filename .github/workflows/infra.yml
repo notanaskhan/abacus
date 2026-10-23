@@ -8,6 +8,7 @@ on:
     paths:
       - "infra/**"
       - ".github/workflows/infra.yml"
+      - ".github/workflows/preview.yml" # infra/tests/test_previews.py holds its label gate
   schedule:
     - cron: "17 5 * * *" # nightly drift plan, runs on the default branch
   workflow_dispatch:
@@ -122,7 +123,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         if: steps.gate.outputs.configured == 'true'
         with:
-          role-to-arn: ${{ env.PLAN_ROLE }}
+          role-to-assume: ${{ env.PLAN_ROLE }}
           aws-region: ${{ matrix.region }}
           role-session-name: infra-plan-${{ matrix.env }}
       - name: terraform plan
@@ -213,7 +214,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         if: steps.gate.outputs.configured == 'true'
         with:
-          role-to-arn: ${{ env.PLAN_ROLE }}
+          role-to-assume: ${{ env.PLAN_ROLE }}
           aws-region: ${{ matrix.region }}
           role-session-name: infra-drift-${{ matrix.env }}
       - name: terraform plan -detailed-exitcode

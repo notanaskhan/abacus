@@ -1,0 +1,146 @@
+# Opt-in PR previews (Q-01-T49, D-OPS-13; chapter 06 section 2.7). The `preview` label is the only
+# trigger: a PR without it builds nothing, so a push costs no runner minutes and no upload. With the
+# label, each push builds the SPA in fixture mode (no backend, no database), uploads it to
+# s3://abacus-shared-previews/pr-<n>/ and comments the link; removing the label or closing the PR
+# deletes the prefix, and the bucket expires everything after 14 days anyway.
+#
+# The host is cookie-gated (infra/modules/previews). The comment carries no secret: the link only
+# works in a browser that already holds the gate cookie from the founder-only link.
+#
+# Needs repository variables AWS_PREVIEW_ROLE (role ARN) and PREVIEW_HOST (CloudFront domain), from
+# `terraform -chdir=infra/envs/shared output`. While either is unset the jobs skip with a notice.
+# Fork PRs never get an OIDC token, so they never build. Every action is pinned to a full commit SHA.
+name: preview
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+# A newer push, a removed label or a close supersedes a running build. Adding or removing some other
+# label gets a group of its own, so it cancels nothing.
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}-${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'preview' && github.run_id || 'preview' }}
+  cancel-in-progress: true
+
+env:
+  BUCKET: abacus-shared-previews
+  REGION: us-east-2
+  PREFIX: pr-${{ github.event.pull_request.number }}
+
+jobs:
+  build:
+    # Labelled PRs of this repository only; adding some other label does not rebuild.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.action != 'unlabeled' &&
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'preview') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the previews role
+      pull-requests: write # the preview link comment
+    env:
+      PREVIEW_ROLE: ${{ vars.AWS_PREVIEW_ROLE }}
+      PREVIEW_HOST: ${{ vars.PREVIEW_HOST }}
+    steps:
+      - name: Preview host configured?
+        id: gate
+        run: |
+          if [ -n "$PREVIEW_ROLE" ] && [ -n "$PREVIEW_HOST" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=preview skipped::repository variables AWS_PREVIEW_ROLE and PREVIEW_HOST are not both set; see infra/README.md"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          node-version: 24
+      - name: Install
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm -C packages/api-client build:types
+      - name: Fixture build
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          VITE_FIXTURES: "1" # the Brightwater Hale seed compiled in; no API, no database
+          VITE_UI_GALLERY: "1" # the /components gallery, for parity review
+        run: pnpm -C apps/web exec vite build --mode fixtures
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.PREVIEW_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: preview-${{ github.event.pull_request.number }}
+      - name: Upload
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          # Hashed assets are immutable; everything else (index.html, fonts, seed files) revalidates,
+          # so a new push shows without an invalidation.
+          aws s3 sync apps/web/dist/assets "s3://$BUCKET/$PREFIX/assets" --delete --only-show-errors \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync apps/web/dist "s3://$BUCKET/$PREFIX" --delete --only-show-errors \
+            --exclude "assets/*" --exclude ".vite/*" --cache-control "no-cache"
+      - name: Comment the link
+        if: steps.gate.outputs.configured == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const url = `https://${process.env.PREVIEW_HOST}/__preview/pr/${issue_number}`;
+            const marker = '<!-- preview-link -->';
+            const body = `${marker}\n### Preview (fixture build of \`${sha}\`)\n${url}\n\nPrivate: answers 403 unless this browser holds the gate cookie from the founder-only link. Deleted when the PR closes or the \`preview\` label is removed; expires after 14 days.`;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  delete:
+    # Closing a labelled PR, or removing the label, deletes its prefix. No build, no checkout.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      ((github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview')) ||
+       (github.event.action == 'unlabeled' && github.event.label.name == 'preview'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the previews role
+    env:
+      PREVIEW_ROLE: ${{ vars.AWS_PREVIEW_ROLE }}
+    steps:
+      - name: Preview role configured?
+        id: gate
+        run: |
+          if [ -n "$PREVIEW_ROLE" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=preview delete skipped::repository variable AWS_PREVIEW_ROLE is not set"
+          fi
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.PREVIEW_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: preview-delete-${{ github.event.pull_request.number }}
+      - name: Delete the prefix
+        if: steps.gate.outputs.configured == 'true'
+        run: aws s3 rm "s3://$BUCKET/$PREFIX/" --recursive --only-show-errors

@@ -115,6 +115,27 @@ One-time, run by hand on your laptop after the `shared` account and its SSO prof
 
 Notes: the plan roles carry AWS `ReadOnlyAccess`, which can read objects in their own account, including state in `shared`; they are assumable only by workflows of this repository on pull requests and `main`. The apply roles carry `AdministratorAccess` bounded by the organisation SCPs until each environment narrows it. Environment backends use `use_lockfile = true` and the bucket's default KMS encryption.
 
+## PR previews (Q-01-T49, D-OPS-13)
+
+Opt-in only: `.github/workflows/preview.yml` builds nothing unless the PR carries the `preview` label. With it, each push runs `vite build --mode fixtures` (no backend, no database) into `s3://abacus-shared-previews/pr-<n>/` and comments `https://<preview host>/__preview/pr/<n>`; removing the label or closing the PR deletes the prefix, and the bucket expires everything after 14 days. The host answers 403 to any browser without the gate cookie. Module: `infra/modules/previews`. There is no Vercel or other hosted preview in this repo, so nothing else builds per push.
+
+One-time, by hand, after `infra/envs/shared` is applied with the `shared` apply role or a `PlatformAdmin` session:
+
+1. `terraform -chdir=infra/envs/shared output` gives `preview_host`, `preview_ci_role_name` and `preview_gate_store_name`.
+2. Generate a gate key (at least 32 characters; e.g. `openssl rand -hex 32`) and keep it in the vault. Put it into the store; it never goes into git, Terraform or a PR:
+
+   ```bash
+   arn=$(aws cloudfront describe-key-value-store --name abacus-shared-previews-gate --query KeyValueStore.ARN --output text --profile shared)
+   etag=$(aws cloudfront-keyvaluestore describe-key-value-store --kvs-arn "$arn" --query ETag --output text --profile shared)
+   aws cloudfront-keyvaluestore put-key --kvs-arn "$arn" --if-match "$etag" --key gate-key --value "<gate key>" --profile shared
+   ```
+
+   Until the key is in the store, the host refuses every request. Rotate by putting a new value; old cookies stop working at once.
+3. Repository Settings, Secrets and variables, Actions, tab **Variables**: `AWS_PREVIEW_ROLE` = `arn:aws:iam::<shared account id>:role/abacus-ci-previews` and `PREVIEW_HOST` = the `preview_host` output. While either is unset, `preview.yml` skips with a notice.
+4. Create the `preview` label (Issues, Labels, New label).
+5. Bookmark the founder-only link `https://<preview host>/__preview/login?k=<gate key>` and open it once per browser (the cookie lasts 14 days). Never paste it anywhere.
+6. Check: label a PR; its comment link opens the fixture build; the same link in a private window answers 403; closing the PR leaves `aws s3 ls s3://abacus-shared-previews/pr-<n>/ --profile shared` empty. Log it below.
+
 ## 4. Console log
 
 Every one-time console step, newest last. Operator is the person at the keyboard.
