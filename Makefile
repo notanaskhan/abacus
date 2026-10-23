@@ -221,9 +221,11 @@ seed-demo: db-guard
 # Staging demo tenant (F-04.17), run as the ECS one-off task after taking the deploy lock:
 # `make seed-staging RESET_CLOCK=E0`. The loader refuses production, a real firm and a
 # deploy-staging run in flight (it names the run). No db-guard: staging is hosted by design.
+# The portal slice (P-08-T14, with the binders it needs) gives staging the branded portal host
+# `brightwaterhale.<portal_base_domain>` and every portal persona; it refuses without the domain.
 RESET_CLOCK ?= E0
 seed-staging:
-	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK)
+	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK) --slice portal
 
 # Fixture JSON from the Python scenario arrives with F-04-T31 (S10); the TS seed is interim.
 fixtures:

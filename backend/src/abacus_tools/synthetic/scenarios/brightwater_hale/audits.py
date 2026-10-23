@@ -7,7 +7,7 @@
   list (41 requests, all still draft while the engagement letter is out, ENG-01 / G3).
 - The portal minimum's client people of Northwind and Granite Peak (blueprint §9.3): Dana
   Kowalski and Luis Ferrante as owners, the benefits committee (Victoria Lam, Robert Haines) as
-  `tcwg`. Sam Ortiz (Keystone) waits for P-08-T14, which seeds his pending invitation.
+  `tcwg`. Sam Ortiz's (Keystone) pending invitation is the `portal` slice's (P-08-T14).
 - The firm setting `staff_can_accept_evidence` on (DEC-37).
 
 Mirrors `apps/web/src/fixtures/seed/{audits,requests,portal}.ts` row for row, with the same
