@@ -8,9 +8,11 @@ Patch points. Each step that is not in v1 lands with its own change, behind its 
 `workflow.patched(...)` id and before `emit_tenant_provisioned`, so the recorded v1 history
 (`tenant-provisioning-v1-provisioned.json`) keeps replaying:
 
-- `KMS_CHILD_PATCH`: the child `TenantKeyWorkflow` (`tenant_key:<tenant_id>`, keyops queue)
-  arrives with Q-01-T27. Until then a provisioned firm keeps `kms_key_status = 'none'`, and a firm
-  without a `replica_verified` key stores no client content (ADR-156).
+- `KMS_CHILD_PATCH` (on, Q-01-T27): `platform.request_tenant_key` starts `TenantKeyWorkflow`
+  (`tenant_key:<tenant_id>`) on the keyops queue through `kernel.dispatch`. It is a separate run,
+  not a child, because a workflow module never names a task queue (DISPATCH-001). Provisioning
+  doesn't wait for the key: a firm without a `replica_verified` key stores no client content
+  (ADR-156), so the gate holds until the key run ends.
 - `PLAN_ENTITLEMENTS_PATCH` (on, migration 0107): `set_plan_entitlements` writes the plan's
   modules (`plan_modules`) through `apply_plan_entitlements`, for a newly provisioned firm only.
 - `FIRST_ADMINS_PATCH` (on, migration 0107): `invite_first_admins` issues operator-sent staff
@@ -27,7 +29,11 @@ from temporalio import workflow
 from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
-    from abacus.modules.platform.workflow_types import ProvisionTenantInput, ProvisionTenantResult
+    from abacus.modules.platform.workflow_types import (
+        ProvisionTenantInput,
+        ProvisionTenantResult,
+        TenantKeyInput,
+    )
 
 KMS_CHILD_PATCH: Final = "tenant_key_v1"
 PLAN_ENTITLEMENTS_PATCH: Final = "plan_entitlements_v1"
@@ -71,6 +77,15 @@ class TenantProvisioningWorkflow:
                 start_to_close_timeout=_TIMEOUT,
                 retry_policy=_RETRY,
             )
+        # v3 (Q-01-T27): the tenant key, on the keyops queue; this run never holds CreateKey.
+        if workflow.patched(KMS_CHILD_PATCH):
+            await workflow.execute_activity(
+                "platform.request_tenant_key",
+                input,
+                result_type=bool,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
         # v1: provision_firm created the firm; record it as provisioned, by the operator.
         key_status = await workflow.execute_activity(
             "platform.emit_tenant_provisioned",
@@ -80,3 +95,48 @@ class TenantProvisioningWorkflow:
             retry_policy=_RETRY,
         )
         return ProvisionTenantResult(input.tenant_id, key_status, rows, invited)
+
+
+def tenant_key_workflow_id(tenant_id: str) -> str:
+    return f"tenant_key:{tenant_id}"
+
+
+# A replica that doesn't verify yet (KMS replication is eventually consistent) is retried for a
+# while; a firm that doesn't exist is never retried.
+_KEY_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=5),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=5),
+    maximum_attempts=20,
+    non_retryable_error_types=["FirmNotFound"],
+)
+
+
+@workflow.defn(name="TenantKey")
+class TenantKeyWorkflow:
+    """Q-01-T27 (P-65): create, replicate and verify one firm's tenant key, on the keyops queue.
+    Every step is idempotent, so a rerun converges on the same key."""
+
+    @workflow.run
+    async def run(self, given: TenantKeyInput) -> str:
+        key_arn = await workflow.execute_activity(
+            "keyops.create_tenant_key",
+            given,
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_KEY_RETRY,
+        )
+        replica_arn = await workflow.execute_activity(
+            "keyops.replicate_tenant_key",
+            args=[given, key_arn],
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_KEY_RETRY,
+        )
+        return await workflow.execute_activity(
+            "keyops.verify_tenant_key",
+            args=[given, key_arn, replica_arn],
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_KEY_RETRY,
+        )

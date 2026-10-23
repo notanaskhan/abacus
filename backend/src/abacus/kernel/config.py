@@ -11,7 +11,7 @@ import re
 from datetime import date
 from decimal import Decimal
 from functools import lru_cache
-from typing import Annotated, Literal, Self, cast
+from typing import Annotated, Final, Literal, Self, cast
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -173,6 +173,18 @@ class ProviderLimits(BaseModel):
     tpm: Annotated[int, Field(ge=1, le=100_000_000), classified("internal")]
 
 
+# Q-01-T27 (P-65): tenant keys, one at a time, never competing with firms' work.
+KEYOPS_LIMITS: Final = WorkClassLimits(
+    max_activities=2,
+    max_workflow_tasks=2,
+    firm_cap=1,
+    engagement_cap=1,
+    class_capacity=4,
+    max_wait_seconds=3600,
+    admission_reserve_pct=0,
+)
+
+
 class Settings(BaseSettings):
     # hide_input_in_errors: a validation error must never echo environment values (secrets).
     model_config = SettingsConfigDict(
@@ -266,6 +278,7 @@ class Settings(BaseSettings):
             max_wait_seconds=24 * 3600,
             admission_reserve_pct=50,
         ),
+        "keyops": KEYOPS_LIMITS,  # Q-01-T27
     }
     # Temporal Cloud needs TLS and an API key; both are required outside local and test.
     temporal_tls: Annotated[bool, classified("internal")] = False
@@ -284,6 +297,9 @@ class Settings(BaseSettings):
     # (P1); the platform key is the one `/readyz` probes. Regions are the primary or the DR one.
     kms_alias_prefix: Annotated[str, classified("internal")] = "alias/abacus/tenant/"
     kms_region: Annotated[str, classified("internal")] = "us-east-2"
+    # Q-01-T27 (P-65): each tenant key is multi-Region and replicated here; a firm stores client
+    # content only once a decrypt has been verified in this region (ADR-156).
+    kms_replica_region: Annotated[str, classified("internal")] = "us-west-2"
     kms_platform_key_alias: Annotated[str | None, classified("internal")] = None
     # The ClamAV scanner service, `host:port` (P4). Unset: the local scanner (synthetic only).
     scanner_endpoint: Annotated[str | None, classified("internal")] = None
@@ -471,7 +487,7 @@ class Settings(BaseSettings):
             self.kms_alias_prefix.startswith("alias/") and self.kms_alias_prefix.endswith("/")
         ):
             raise ValueError("kms_alias_prefix looks like 'alias/abacus/tenant/'")
-        for name in ("kms_region", "ses_region"):
+        for name in ("kms_region", "kms_replica_region", "ses_region"):
             if getattr(self, name) not in _US_REGIONS:
                 raise ValueError(f"{name} must be one of {', '.join(_US_REGIONS)} (ADR-142)")
         if self.scanner_endpoint is not None and not _HOST_PORT.fullmatch(self.scanner_endpoint):
@@ -480,9 +496,17 @@ class Settings(BaseSettings):
             raise ValueError("ses_from_address is an email address")
         return self
 
+    @field_validator("work_classes", mode="after")
+    @classmethod
+    def _keyops_by_default(
+        cls, value: dict[WorkClass, WorkClassLimits]
+    ) -> dict[WorkClass, WorkClassLimits]:
+        # Q-01-T27: an override written for the four admission classes keeps keyops' own limits.
+        return value if "keyops" in value else {**value, "keyops": KEYOPS_LIMITS}
+
     @model_validator(mode="after")
     def _every_work_class(self) -> Self:
-        # Limits for exactly the four classes: an override names all of them.
+        # Limits for exactly the classes: an override names all of them (keyops has a default).
         if set(self.work_classes) != set(WORK_CLASSES):
             raise ValueError(f"work_classes needs limits for exactly {', '.join(WORK_CLASSES)}")
         return self

@@ -33,12 +33,14 @@ from abacus.kernel.temporal import configure_temporal_client
 from abacus.modules.agents import api as agents
 from abacus.modules.connections import api as connections
 
-CLASSES = ("interactive", "time_sensitive", "background", "batch")
+# Q-01-T27 added `keyops` (P-65): tenant keys, served only by the keyops worker.
+CLASSES = ("interactive", "time_sensitive", "background", "batch", "keyops")
 QUEUES = {
     "interactive": "abacus-interactive",
     "time_sensitive": "abacus-time-sensitive",
     "background": "abacus-background",
     "batch": "abacus-batch",
+    "keyops": "abacus-keyops",
 }
 
 
@@ -84,7 +86,7 @@ def test_ac1_each_class_has_its_own_queue_named_after_the_base(work_class: WorkC
 
 
 def test_ac1_the_four_queues_are_distinct() -> None:
-    assert len({queue_for(c) for c in WORK_CLASSES}) == 4
+    assert len({queue_for(c) for c in WORK_CLASSES}) == len(CLASSES)
 
 
 def test_ac1_queue_names_follow_the_configured_base(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -96,6 +98,7 @@ def test_ac1_queue_names_follow_the_configured_base(monkeypatch: pytest.MonkeyPa
             "custom-time-sensitive",
             "custom-background",
             "custom-batch",
+            "custom-keyops",
         ]
     finally:
         monkeypatch.undo()

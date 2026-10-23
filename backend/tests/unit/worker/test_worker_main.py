@@ -356,7 +356,7 @@ async def test_ac1_one_worker_per_class_polls_its_queue_then_the_legacy_queue(
 
 async def test_ac1_each_class_has_its_own_concurrency_limits(boot: _Boot) -> None:
     await worker_main.build_workers()
-    expected = {"interactive": 10, "time_sensitive": 10, "background": 5, "batch": 2}
+    expected = {"interactive": 10, "time_sensitive": 10, "background": 5, "batch": 2, "keyops": 2}
     for kwargs, work_class in zip(boot.built, WORK_CLASSES, strict=False):
         assert kwargs["max_concurrent_activities"] == expected[work_class]
         assert kwargs["max_concurrent_workflow_tasks"] == expected[work_class]
@@ -392,9 +392,10 @@ async def test_ac1_limits_come_from_the_settings_by_class(
     finally:
         monkeypatch.undo()
         settings.cache_clear()
-    # the legacy queue drains with the interactive limits
-    assert [w["max_concurrent_activities"] for w in boot.built] == [7, 6, 1, 2, 7]
-    assert [w["max_concurrent_workflow_tasks"] for w in boot.built] == [17, 16, 11, 12, 17]
+    # keyops keeps its own limits when an override leaves it out (Q-01-T27); the legacy queue
+    # drains with the interactive limits
+    assert [w["max_concurrent_activities"] for w in boot.built] == [7, 6, 1, 2, 2, 7]
+    assert [w["max_concurrent_workflow_tasks"] for w in boot.built] == [17, 16, 11, 12, 2, 17]
 
 
 async def test_ac1_a_process_serves_only_the_classes_it_is_given(boot: _Boot) -> None:
@@ -452,6 +453,7 @@ async def test_ac16_the_legacy_queue_is_the_configured_base_queue(
         "custom-base-time-sensitive",
         "custom-base-background",
         "custom-base-batch",
+        "custom-base-keyops",  # local and test serve keyops by default (Q-01-T27)
         "custom-base",
     ]
 
@@ -483,7 +485,7 @@ async def test_ac15_build_workers_configures_tracing_metrics_and_error_tracking(
 
 
 def test_ac1_the_default_pool_sizes_are_set_per_class() -> None:
-    expected = {"interactive": 10, "time_sensitive": 10, "background": 5, "batch": 2}
+    expected = {"interactive": 10, "time_sensitive": 10, "background": 5, "batch": 2, "keyops": 2}
     assert {c: v.max_activities for c, v in settings().work_classes.items()} == expected
     assert {c: v.max_workflow_tasks for c, v in settings().work_classes.items()} == expected
 
@@ -492,8 +494,20 @@ def test_ac1_the_default_pool_sizes_are_set_per_class() -> None:
 
 
 def test_ac1_classes_default_to_all_four_in_order() -> None:
-    assert worker_main.classes_from([]) == WORK_CLASSES
-    assert WORK_CLASSES == ("interactive", "time_sensitive", "background", "batch")
+    assert worker_main.classes_from([]) == WORK_CLASSES  # in test, keyops included
+    assert WORK_CLASSES == ("interactive", "time_sensitive", "background", "batch", "keyops")
+
+
+def test_q01t27_outside_local_and_test_keyops_is_served_only_when_named(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """P-65: the general worker never polls the keyops queue (only its task role holds
+    `kms:CreateKey`); the keyops service runs `--classes keyops`."""
+    monkeypatch.setattr(
+        worker_main, "settings", lambda: type("S", (), {"environment": "staging"})()
+    )
+    assert "keyops" not in worker_main.classes_from([])
+    assert worker_main.classes_from(["--classes", "keyops"]) == ("keyops",)
 
 
 def test_ac1_classes_parse_a_comma_separated_list() -> None:

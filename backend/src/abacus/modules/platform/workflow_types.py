@@ -24,3 +24,11 @@ class ProvisionTenantResult:
     key_status: str  # firms.kms_key_status when the workflow ended
     entitlement_rows: int
     invitations_sent: int
+
+
+@dataclass(frozen=True)
+class TenantKeyInput:
+    """Q-01-T27: whose key, and the operator who provisioned the firm (every step names them)."""
+
+    tenant_id: str
+    operator: str

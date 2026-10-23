@@ -25,13 +25,21 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import firm_tenancy, invite_first_admins
 from abacus.modules.platform.events import TenantProvisioned
-from abacus.modules.platform.workflow_types import ProvisionTenantInput
-from abacus.modules.platform.workflows import TenantProvisioningWorkflow, provisioning_workflow_id
+from abacus.modules.platform.workflow_types import ProvisionTenantInput, TenantKeyInput
+from abacus.modules.platform.workflows import (
+    TenantKeyWorkflow,
+    TenantProvisioningWorkflow,
+    provisioning_workflow_id,
+    tenant_key_workflow_id,
+)
 
 # An operator handle (`--operator`): a short name, never an email address (contract 3.5).
 OPERATOR_HANDLE: Final = re.compile(r"[a-z][a-z0-9._-]{0,60}")
 _log = get_logger(__name__)
-WORKFLOWS: dict[type, WorkClass] = {TenantProvisioningWorkflow: "background"}
+WORKFLOWS: dict[type, WorkClass] = {
+    TenantProvisioningWorkflow: "background",
+    TenantKeyWorkflow: "keyops",  # Q-01-T27 (P-65): only the keyops worker serves it
+}
 register_work_classes(WORKFLOWS)
 
 
@@ -127,3 +135,27 @@ async def invite_admins(given: ProvisionTenantInput) -> int:
 @activity.defn(name="platform.invite_first_admins")
 async def invite_first_admins_activity(given: ProvisionTenantInput) -> int:
     return await invite_admins(given)
+
+
+async def request_tenant_key(given: ProvisionTenantInput) -> bool:
+    """Start the firm's `TenantKeyWorkflow` on the keyops queue (Q-01-T27); False when a run
+    for it already exists (a retried activity, or a provision run again)."""
+    tenant_id = UUID(given.tenant_id)
+    if await firm_tenancy(operator_context(tenant_id, given.operator)) is None:
+        raise ApplicationError("FirmNotFound", type="FirmNotFound", non_retryable=True)
+    try:
+        await dispatch(
+            TenantKeyWorkflow,
+            TenantKeyInput(given.tenant_id, given.operator),
+            id=tenant_key_workflow_id(given.tenant_id),
+            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+            id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
+        )
+    except WorkflowAlreadyStartedError:
+        return False
+    return True
+
+
+@activity.defn(name="platform.request_tenant_key")
+async def request_tenant_key_activity(given: ProvisionTenantInput) -> bool:
+    return await request_tenant_key(given)

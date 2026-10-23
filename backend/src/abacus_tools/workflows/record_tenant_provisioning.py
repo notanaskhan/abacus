@@ -23,8 +23,11 @@ from temporalio.worker import Worker
 from abacus.kernel.temporal import payload_codec
 from abacus.modules.platform.api import (
     ProvisionTenantInput,
+    TenantKeyInput,
+    TenantKeyWorkflow,
     TenantProvisioningWorkflow,
     provisioning_workflow_id,
+    tenant_key_workflow_id,
 )
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
@@ -48,6 +51,40 @@ async def _entitle(given: ProvisionTenantInput) -> int:
 @activity.defn(name="platform.invite_first_admins")  # v2 (migration 0107)
 async def _invite(given: ProvisionTenantInput) -> int:
     return len(given.admins)
+
+
+@activity.defn(name="platform.request_tenant_key")  # v3 (Q-01-T27)
+async def _request_key(given: ProvisionTenantInput) -> bool:
+    return True
+
+
+_KEY_ARN = "arn:aws:kms:us-east-2:000000000000:key/mrk-recorder"
+
+
+@activity.defn(name="keyops.create_tenant_key")
+async def _create_key(given: TenantKeyInput) -> str:
+    return _KEY_ARN
+
+
+@activity.defn(name="keyops.replicate_tenant_key")
+async def _replicate_key(given: TenantKeyInput, key_arn: str) -> str:
+    return key_arn.replace("us-east-2", "us-west-2")
+
+
+@activity.defn(name="keyops.verify_tenant_key")
+async def _verify_key(given: TenantKeyInput, key_arn: str, replica_arn: str) -> str:
+    return "replica_verified"
+
+
+async def _run_key(client: Client) -> WorkflowHistory:
+    handle = await client.start_workflow(
+        TenantKeyWorkflow.run,
+        TenantKeyInput(_TENANT, "recorder"),
+        id=tenant_key_workflow_id(_TENANT),
+        task_queue=_TASK_QUEUE,
+    )
+    await handle.result()
+    return await handle.fetch_history()
 
 
 async def _run(client: Client) -> WorkflowHistory:
@@ -74,13 +111,27 @@ async def _record(out: Path, version: str, stack: Stack) -> None:
     async with Worker(
         client,
         task_queue=_TASK_QUEUE,
-        workflows=[TenantProvisioningWorkflow],
-        activities=[_emit, _entitle, _invite],
+        workflows=[TenantProvisioningWorkflow, TenantKeyWorkflow],
+        activities=[
+            _emit,
+            _entitle,
+            _invite,
+            _request_key,
+            _create_key,
+            _replicate_key,
+            _verify_key,
+        ],
     ):
         scrubbed = await decoded_and_scrubbed(await _run(client), payload_codec())
         path = out / f"tenant-provisioning-{version}-provisioned.json"
         path.write_text(scrubbed.to_json())
         print(f"recorded {path}")
+        if version != "v1" and version != "v2":  # the key workflow exists from v3 (Q-01-T27)
+            key = await decoded_and_scrubbed(await _run_key(client), payload_codec())
+            key_path = out / "tenant-key-v1-verified.json"
+            if not key_path.exists():
+                key_path.write_text(key.to_json())
+                print(f"recorded {key_path}")
 
 
 def main(argv: list[str]) -> int:

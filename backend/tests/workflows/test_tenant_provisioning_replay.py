@@ -11,18 +11,21 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from abacus.modules.platform.api import TenantProvisioningWorkflow
+from abacus.modules.platform.api import TenantKeyWorkflow, TenantProvisioningWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ALL = sorted(HISTORIES.glob("tenant-provisioning-v*.json"))
 IDS = [p.stem for p in ALL]
+KEY = sorted(HISTORIES.glob("tenant-key-v*.json"))
 
 
 def test_the_histories_are_committed() -> None:
     assert IDS == [
         "tenant-provisioning-v1-provisioned",
         "tenant-provisioning-v2-provisioned",  # 0107: entitlements and first admins
+        "tenant-provisioning-v3-provisioned",  # Q-01-T27: the tenant key is requested
     ]
+    assert [p.stem for p in KEY] == ["tenant-key-v1-verified"]
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)
@@ -31,3 +34,9 @@ async def test_the_workflow_replays_its_recorded_history(path: Path) -> None:
         "test-tenant-provisioning", path.read_text(encoding="utf-8")
     )
     await Replayer(workflows=[TenantProvisioningWorkflow]).replay_workflow(history)
+
+
+@pytest.mark.parametrize("path", KEY, ids=[p.stem for p in KEY])
+async def test_the_tenant_key_workflow_replays_its_recorded_history(path: Path) -> None:
+    history = WorkflowHistory.from_json("test-tenant-key", path.read_text(encoding="utf-8"))
+    await Replayer(workflows=[TenantKeyWorkflow]).replay_workflow(history)
