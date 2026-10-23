@@ -5,6 +5,9 @@
   "description": "Design-system components (ADR-011): shadcn-style primitives on Radix, and AgentText for model output (ADR-065).",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
     ".": {
       "types": "./src/index.ts",
