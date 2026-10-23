@@ -136,8 +136,11 @@ export interface AuthCardProps {
   /** Under the title: 12.5/1.5 ink-2. */
   lead?: ReactNode;
   /** The firm's mark above the card with its name (TPL-15), or in the card over a centred title
-   * (T15a). */
-  brand?: "above" | "inside";
+   * (T15a). `marks` draws the caller's `marks` instead (the firm app's own sign-in, SHL-06). */
+  brand?: "above" | "inside" | "marks";
+  /** With `brand="marks"`: what sits above the card (centred, 35 over it) and the 34 mark in the
+   * card over a centred title. The portal never passes these; it draws the firm's brand. */
+  marks?: { above: ReactNode; inside: ReactNode };
   /** A 34 tile over the title: the expired clock, the done check. */
   tile?: { icon: IconName; tone: "red" | "green" };
   /** Fill the width (390) instead of 400. */
@@ -152,15 +155,23 @@ export function AuthCard({
   title,
   lead,
   brand = "above",
+  marks,
   tile,
   fluid = false,
   footer,
   children,
 }: AuthCardProps): JSX.Element {
-  const centred = brand === "inside";
+  const own = brand === "marks" ? marks : undefined;
+  const centred = brand === "inside" || brand === "marks";
   return (
     <div className={cn("flex flex-col", fluid ? "w-full" : "w-[400px] max-w-full")}>
       {brand === "above" && !fluid && <AuthBrand placement="above" />}
+      {own !== undefined && (
+        // SHL-06: the mark above centred at y150 of the window, the card at y196.
+        <div data-auth="brand" className="mt-[6px] mb-[35px] flex justify-center">
+          {own.above}
+        </div>
+      )}
       <section
         data-auth="card"
         aria-label={title}
@@ -169,12 +180,16 @@ export function AuthCard({
           centred && "text-center",
         )}
       >
-        {centred && <AuthBrand placement="inside" />}
+        {brand === "inside" && <AuthBrand placement="inside" />}
+        {own !== undefined && tile === undefined && (
+          <div className="flex justify-center pb-[14px]">{own.inside}</div>
+        )}
         {tile !== undefined && (
           <span
             aria-hidden="true"
             className={cn(
               "inline-flex size-[34px] items-center justify-center rounded-tile-lg",
+              centred && "self-center",
               tile.tone === "red" ? "bg-red-tint text-red-ink" : "bg-green-tint text-green-ink",
             )}
           >
