@@ -11,6 +11,13 @@ import {
   type Bnd01State,
   scenarios as bnd01Scenarios,
 } from "./BND-01/scenarios";
+import { ClientsIndex } from "./CLI-01";
+import {
+  STATES as CLI01_STATES,
+  SEARCH as CLI01_SEARCH,
+  type Cli01State,
+  scenarios as cli01Scenarios,
+} from "./CLI-01/scenarios";
 import { SHL01 } from "./SHL-01";
 import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
@@ -126,3 +133,39 @@ function Bnd01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("BND-01", { title: "Binders index", Component: Bnd01Artboard });
+
+function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/clients" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <ClientsIndex initial={CLI01_SEARCH[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli01State = CLI01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Cli01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
