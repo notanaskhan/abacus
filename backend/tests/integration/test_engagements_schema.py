@@ -829,7 +829,8 @@ async def test_ac20_the_app_may_update_only_status_on_engagements(
 @pytest.mark.parametrize(
     "sql",
     [
-        "UPDATE request_items SET description = 'x' WHERE id = :i",
+        # `description` (the client wording) is editable since P-06-T10 (0113, DEC-158); the
+        # columns below stay the creator's.
         "UPDATE request_items SET audit_area = 'x' WHERE id = :i",
         "UPDATE request_items SET created_by = :u WHERE id = :i",
         "UPDATE request_items SET request_list_id = :l WHERE id = :i",
