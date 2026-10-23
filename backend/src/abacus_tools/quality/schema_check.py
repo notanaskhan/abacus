@@ -251,9 +251,10 @@ DEFINER_FUNCTIONS = frozenset(
     # 0111 (P-08-T05, ADR-163): branding before sign-in, and a firm's own portal hosts.
     | {"portal_resolve_host", "portal_host_logo", "portal_domain_add", "portal_domain_activate"}
     # 0116 (P-08-T10, ADR-168): the portal's code sign-in and its host-pinned sessions.
-    | {"portal_sign_in_start", "portal_sign_in_issue", "portal_sign_in_check"}
-    | {"portal_sign_in_fail", "portal_sign_in_consume", "portal_sign_in_resend"}
+    | {"portal_sign_in_start", "portal_sign_in_issue", "portal_sign_in_attempt"}
+    | {"portal_sign_in_missed", "portal_sign_in_consume", "portal_sign_in_resend"}
     | {"portal_session_start", "portal_session_resolve", "portal_session_rotate"}
+    | {"portal_session_end_id"}
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}

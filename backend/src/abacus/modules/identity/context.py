@@ -29,6 +29,8 @@ class AuthContext:
     # A client user (a client membership), from the membership the request chose: another
     # client's engagement then answers as if it did not exist (F-03 story 5.2, DEC-43).
     client: bool = False
+    # P-08-T10 (ADR-168): the portal session a portal access token resolved to; None otherwise.
+    portal_session_id: UUID | None = None
 
     @property
     def is_support(self) -> bool:

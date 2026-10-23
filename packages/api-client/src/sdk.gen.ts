@@ -4884,7 +4884,8 @@ export const portalResend = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Portal Sign Out Route
  *
- * End the person's own portal session and clear the cookie.
+ * End the person's own portal session (the token signed out with, and the cookie's) and
+ * clear the cookie.
  */
 export const portalSignOut = <ThrowOnError extends boolean = false>(options?: Options<PortalSignOutData, ThrowOnError>): RequestResult<PortalSignOutResponses, PortalSignOutErrors, ThrowOnError> => (options?.client ?? client).post<PortalSignOutResponses, PortalSignOutErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

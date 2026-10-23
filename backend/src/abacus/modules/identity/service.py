@@ -115,7 +115,9 @@ def choose_tenant(signed_in: SignedIn, requested: str | None) -> AuthContext:
     )
 
 
-def portal_member_context(user_id: UUID, membership: MembershipRecord) -> AuthContext:
+def portal_member_context(
+    user_id: UUID, membership: MembershipRecord, session_id: UUID
+) -> AuthContext:
     """P-08-T10 (ADR-168): a portal person's context from their validated, active client
     membership in the firm their session is pinned to. No second step yet (P-08-T17)."""
     return AuthContext(
@@ -125,6 +127,7 @@ def portal_member_context(user_id: UUID, membership: MembershipRecord) -> AuthCo
         firm_role=None,
         mfa_at=None,
         client=True,
+        portal_session_id=session_id,
     )
 
 

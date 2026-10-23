@@ -48,8 +48,9 @@ RESEND_SECONDS: Final = 60
 MAX_TRIES: Final = 3
 LOCK_SECONDS: Final = 15 * 60
 ACCESS_SECONDS: Final = 15 * 60
-# Every start answers after at least this long, so a known email can't be told by its timing.
-START_FLOOR_SECONDS: Final = 0.35
+# Every pre-session answer that a known email changes (start, resend, a wrong code) takes at
+# least this long, so a known email can't be told by its timing.
+FLOOR_SECONDS: Final = 0.5
 # A portal access token is told from a provider JWT by its prefix: no dots, no claims.
 PORTAL_MARK: Final = "pst_"
 _MAX_TOKEN: Final = 64
@@ -132,6 +133,13 @@ async def _audit(
         tx.record(action, target=target, after=after)
 
 
+async def _floor(began: float) -> None:
+    """Pad an answer to the floor, so a known email's extra work can't be timed."""
+    left = FLOOR_SECONDS - (time.monotonic() - began)
+    if left > 0:
+        await asyncio.sleep(left)
+
+
 async def _requested(tenant_id: UUID, user_id: UUID, challenge_id: UUID) -> None:
     """The code email, only where the firm has the portal sign-in on (`portal.sign_in_v2`)."""
     if not await flag_enabled(
@@ -158,16 +166,15 @@ async def start_sign_in(host: str | None, email: str) -> Challenge:
                 },
             )
         ).one()
-    if row.user_id is not None and not row.locked:
+    if row.send:
         await _requested(cast(UUID, row.tenant_id), cast(UUID, row.user_id), row.challenge_id)
-    left = START_FLOOR_SECONDS - (time.monotonic() - began)
-    if left > 0:
-        await asyncio.sleep(left)
+    await _floor(began)
     return Challenge(row.challenge_id, row.code_expires_at, row.resend_available_at)
 
 
 async def resend_code(host: str | None, challenge_id: UUID) -> Challenge:
     """A new code; the old one is void and the tries are kept. 429 inside the 60 seconds."""
+    began = time.monotonic()
     async with platform_transaction("portal:sign_in") as conn:
         row = (
             await conn.execute(
@@ -184,8 +191,9 @@ async def resend_code(host: str | None, challenge_id: UUID) -> Challenge:
         raise CodeExpired
     if row.outcome == "too_soon":
         raise ResendTooSoon(row.resend_available_at)
-    if row.user_id is not None and not row.locked:
+    if row.send:
         await _requested(cast(UUID, row.tenant_id), cast(UUID, row.user_id), challenge_id)
+    await _floor(began)
     return Challenge(challenge_id, row.code_expires_at, row.resend_available_at)
 
 
@@ -225,21 +233,25 @@ def landing_of(roles: Iterable[str]) -> str:
     return "none"
 
 
-async def verify_code(host: str | None, challenge_id: UUID, code: str) -> PortalTokens:
-    """The code against its challenge on this host; a session on success."""
+async def verify_code(
+    host: str | None, challenge_id: UUID, code: str, *, previous_cookie: str | None = None
+) -> PortalTokens:
+    """The code against its challenge on this host; a session on success. Each guess is counted
+    before it is compared (`portal_sign_in_attempt`)."""
+    began = time.monotonic()
     pinned = _host(host)
     async with platform_transaction("portal:sign_in") as conn:
         row = (
             await conn.execute(
-                text("SELECT * FROM portal_sign_in_check(:id, :host)"),
-                {"id": challenge_id, "host": pinned},
+                text("SELECT * FROM portal_sign_in_attempt(:id, :host, :max, :lock)"),
+                {"id": challenge_id, "host": pinned, "max": MAX_TRIES, "lock": LOCK_SECONDS},
             )
-        ).first()
-    if row is None:
-        raise CodeExpired
-    if row.locked_until is not None:
+        ).one()
+    if row.outcome == "locked":
+        await _floor(began)
         raise SignInLocked(row.locked_until)
-    if row.expired:
+    if row.outcome != "ok":
+        await _floor(began)
         raise CodeExpired
     matched = row.code_digest is not None and email_code_matches(
         bytes(row.code_salt), bytes(row.code_digest), code
@@ -247,22 +259,24 @@ async def verify_code(host: str | None, challenge_id: UUID, code: str) -> Portal
     tenant_id, user_id = cast(UUID | None, row.tenant_id), cast(UUID | None, row.user_id)
     if not matched:
         async with platform_transaction("portal:sign_in") as conn:
-            failed = (
-                await conn.execute(
-                    text("SELECT * FROM portal_sign_in_fail(:id, :max, :lock)"),
-                    {"id": challenge_id, "max": MAX_TRIES, "lock": LOCK_SECONDS},
-                )
-            ).first()
-        if failed is None:
-            raise CodeExpired
+            locked_until = cast(
+                datetime | None,
+                (
+                    await conn.execute(
+                        text("SELECT portal_sign_in_missed(:id, :max, :lock)"),
+                        {"id": challenge_id, "max": MAX_TRIES, "lock": LOCK_SECONDS},
+                    )
+                ).scalar_one(),
+            )
         if tenant_id is not None and user_id is not None:
             target = Target("user", user_id)
             await _audit(tenant_id, user_id, "portal_sign_in.failed", target)
-            if failed.locked_until is not None:
+            if locked_until is not None:
                 await _audit(tenant_id, user_id, "portal_sign_in.locked", target)
-        if failed.locked_until is not None:
-            raise SignInLocked(failed.locked_until)
-        raise CodeMismatch(int(failed.tries_left))
+        await _floor(began)
+        if locked_until is not None:
+            raise SignInLocked(locked_until)
+        raise CodeMismatch(int(row.tries_left))
     if tenant_id is None or user_id is None:  # a digest only exists for a known person
         raise CodeExpired
     access, cookie = _access_token(), secrets.token_urlsafe(32)
@@ -294,6 +308,8 @@ async def verify_code(host: str | None, challenge_id: UUID, code: str) -> Portal
         )
     await _audit(tenant_id, user_id, "portal_sign_in.succeeded", Target("user", user_id))
     await _audit(tenant_id, user_id, "session.started", Target("auth_session", session_id))
+    if previous_cookie is not None:  # a second sign-in in the same browser replaces the old one
+        await end_session(user_id, previous_cookie, reason="revoked")
     grants = await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id)
     landing = landing_of(g.role for g in grants)
     return PortalTokens(access, ACCESS_SECONDS, cookie, landing, session_id)
@@ -320,7 +336,9 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
     ]
     if not found:
         return None  # the membership ended after sign-in
-    return portal_member_context(user_id, found[0])
+    if not await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id):
+        return None  # every grant was revoked or expired after sign-in
+    return portal_member_context(user_id, found[0], cast(UUID, row.session_id))
 
 
 async def refresh_portal_session(cookie: str | None, host: str | None) -> PortalTokens:
@@ -365,5 +383,24 @@ async def refresh_portal_session(cookie: str | None, host: str | None) -> Portal
 
 
 async def sign_out_portal(ctx: AuthContext, cookie: str | None) -> bool:
-    """End the person's own session behind the cookie; its access token stops at once."""
-    return await end_session(ctx.user_id, cookie)
+    """End the person's own session: the one their access token resolved to (its token stops at
+    once), and the cookie's if it names another."""
+    ended = None
+    if ctx.portal_session_id is not None:
+        async with platform_transaction(f"user:{ctx.user_id}") as conn:
+            ended = (
+                await conn.execute(
+                    text("SELECT portal_session_end_id(:id, :user)"),
+                    {"id": ctx.portal_session_id, "user": ctx.user_id},
+                )
+            ).scalar_one()
+    if ended is not None:
+        await _audit(
+            ctx.tenant_id,
+            ctx.user_id,
+            "session.ended",
+            Target("auth_session", ended),
+            Ref(reason=1),
+        )
+    by_cookie = await end_session(ctx.user_id, cookie)
+    return ended is not None or by_cookie

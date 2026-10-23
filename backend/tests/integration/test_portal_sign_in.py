@@ -4,6 +4,7 @@ session pinned to its tenant and host, refreshed with rotation and reuse detecti
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import uuid
 from collections.abc import AsyncIterator
@@ -50,7 +51,7 @@ async def engines(
         return True
 
     monkeypatch.setattr(portal_session, "flag_enabled", on)  # `portal.sign_in_v2` on
-    monkeypatch.setattr(portal_session, "START_FLOOR_SECONDS", 0.0)
+    monkeypatch.setattr(portal_session, "FLOOR_SECONDS", 0.0)
     yield
     await dispose_engine()
     settings.cache_clear()
@@ -128,12 +129,19 @@ async def test_ac6_every_email_gets_the_same_answer_and_only_a_client_gets_a_cod
         assert response.status_code == 202
         answers.append(set(cast(dict[str, object], response.json())))
     assert all(a == {"challenge_id", "code_expires_at", "resend_available_at"} for a in answers)
-    assert await _events(seed, tenant) == 2  # Claire, twice (case-folded); no one else
+    # Claire once: the case-folded second start within 60 s sends nothing more (no mail bombing).
+    assert await _events(seed, tenant) == 1
     other_host = await client.post(
         "/v1/portal/auth/start", json={"email": email}, headers={"host": "unknown.example.test"}
     )
     assert other_host.status_code == 202
-    assert await _events(seed, tenant) == 2
+    assert await _events(seed, tenant) == 1
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM sign_in_challenges WHERE host = 'unknown.example.test'"
+        )
+        == 0
+    )  # a host no firm has active writes nothing
     # Nothing is issued for a challenge without a person.
     unknown = await start_sign_in(host, "nobody@example.test")
     assert await issue_sign_in_code(unknown.challenge_id) is None
@@ -189,8 +197,9 @@ async def test_ac7_three_wrong_codes_lock_the_email_on_the_host_for_15_minutes(
     with pytest.raises(SignInLocked) as locked:
         await verify_code(host, started.challenge_id, wrong)
     minutes = await seed.value(
-        "SELECT extract(epoch FROM locked_until - now()) / 60 FROM sign_in_locks WHERE host = $1",
-        host,
+        "SELECT extract(epoch FROM locked_until - now()) / 60 FROM sign_in_locks "
+        "WHERE host_tenant_id = $1 AND locked_until IS NOT NULL",
+        tenant,
     )
     assert 14 < float(cast(float, minutes)) <= 15 and locked.value.locked_until
     # A new start sends nothing while locked, and its verify is locked too.
@@ -310,3 +319,78 @@ def test_ac8_landing_follows_the_role_union() -> None:
     assert landing_of(["prospect"]) == "intake"
     assert landing_of(["component_auditor"]) == "component_room"
     assert landing_of([]) == "none"
+
+
+async def test_ac7_parallel_or_fresh_challenges_never_get_more_than_three_guesses(
+    seed: Seeder,
+) -> None:
+    """Each guess is counted before it is compared, per firm and email over every challenge."""
+    _, host, _, email = await _portal(seed)
+    started = await start_sign_in(host, email)
+    issued = await issue_sign_in_code(started.challenge_id)
+    assert issued is not None
+    wrong = "000000" if issued.code != "000000" else "111111"
+    outcomes = await asyncio.gather(
+        *(verify_code(host, started.challenge_id, wrong) for _ in range(8)),
+        return_exceptions=True,
+    )
+    assert sum(isinstance(o, CodeMismatch) for o in outcomes) <= 2
+    assert all(isinstance(o, CodeMismatch | SignInLocked | CodeExpired) for o in outcomes)
+    with pytest.raises(SignInLocked):  # the right code no longer helps
+        await verify_code(host, started.challenge_id, issued.code)
+
+    _, host, _, email = await _portal(seed)
+    fresh = [await start_sign_in(host, email) for _ in range(3)]
+    for challenge in fresh[:2]:
+        with pytest.raises(CodeMismatch):
+            await verify_code(host, challenge.challenge_id, "123456")
+    with pytest.raises(SignInLocked):
+        await verify_code(host, fresh[2].challenge_id, "123456")
+
+
+async def test_ac7_a_revoked_grant_ends_what_the_token_reaches(seed: Seeder) -> None:
+    tenant, host, claire, email = await _portal(seed)
+    tokens = await _signed_in(host, email)
+    assert await portal_context(tokens.access_token, host) is not None
+    await seed.run(
+        "UPDATE client_access_grants SET status = 'revoked' WHERE tenant_id = $1 AND user_id = $2",
+        tenant,
+        claire.user_id,
+    )
+    assert await portal_context(tokens.access_token, host) is None
+
+
+async def test_ac7_sign_out_without_the_cookie_still_ends_the_token(
+    seed: Seeder, client: httpx.AsyncClient
+) -> None:
+    _, host, _, email = await _portal(seed)
+    tokens = await _signed_in(host, email)
+    bearer = {"authorization": f"Bearer {tokens.access_token}", "host": host}
+    client.cookies.clear()
+    out = await client.post("/v1/portal/auth/sign-out", headers=bearer)
+    assert out.status_code == 200 and out.json() == {"ended": True}
+    assert await portal_context(tokens.access_token, host) is None
+    with pytest.raises(PortalSessionEnded):  # the session behind the cookie is gone too
+        await refresh_portal_session(tokens.cookie, host)
+
+
+async def test_ac6_resend_and_wrong_codes_wait_for_the_same_floor(
+    seed: Seeder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A known and an unknown email's resend and wrong code take at least the floor."""
+    monkeypatch.setattr(portal_session, "FLOOR_SECONDS", 0.3)
+    _, host, _, email = await _portal(seed)
+    for asked in (email, "nobody@example.test"):
+        started = await start_sign_in(host, asked)
+        await seed.run(
+            "UPDATE sign_in_challenges SET resend_available_at = now() WHERE id = $1",
+            started.challenge_id,
+        )
+        loop = asyncio.get_running_loop()
+        began = loop.time()
+        await resend_code(host, started.challenge_id)
+        assert loop.time() - began >= 0.3
+        began = loop.time()
+        with pytest.raises(CodeMismatch):
+            await verify_code(host, started.challenge_id, "123456")
+        assert loop.time() - began >= 0.3
