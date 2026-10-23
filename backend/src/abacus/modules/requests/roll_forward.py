@@ -90,8 +90,9 @@ async def copy_items(
                 old.guidance_approved_by,
             ),
         )
-        if old.client_visible:
-            await set_client_fields(tx.session, item_id, client_visible=True)
+        # Last year's visibility, either way: a new item defaults to visible, so an internal item
+        # must be set back, or the roll-forward would show it to the client.
+        await set_client_fields(tx.session, item_id, client_visible=old.client_visible)
         tx.record(
             "request_item.created",
             target=Target("request_item", item_id),
