@@ -86,7 +86,7 @@ Served as a static file next to the SPA at `/runtime-config.json` on each host (
 {
   "environment": "staging",
   "oidc": { "authority": "https://auth.example.test", "client_id": "client_example" },
-  "sentry": { "dsn": "https://key@o0.ingest.example.test/0" },
+  "sentry": { "dsn": "https://key@o0.ingest.example.test/0", "tunnel": "/v1/telemetry/errors" },
   "release": "0123456789abcdef0123456789abcdef01234567",
   "portal_base_domain": "portal.example.test"
 }
@@ -98,6 +98,7 @@ Served as a static file next to the SPA at `/runtime-config.json` on each host (
 | `oidc.authority` | URL string | required; the only place the identity authority is configured for a deployed bundle | Public |
 | `oidc.client_id` | string | required | Public |
 | `sentry.dsn` | URL string | optional; absent means browser error reporting is off | Public |
+| `sentry.tunnel` | same-origin path string | optional; the browser posts error envelopes here (`/v1/telemetry/errors`, Q-01-T48) and never to the ingest directly; absent, or not a path on this origin, means browser error reporting is off (Q-01-T50) | Public |
 | `release` | string | required; the git SHA of the build | Public |
 | `portal_base_domain` | hostname string | required | Public |
 

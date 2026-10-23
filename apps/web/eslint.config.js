@@ -360,5 +360,11 @@ export default defineConfig(
   },
   // The OIDC token endpoint is the identity provider, not our API (src/auth/session.ts).
   { files: ["src/auth/session.ts"], rules: { "no-restricted-globals": "off" } },
+  // Q-01-T50: the static runtime config beside the SPA, and the telemetry tunnel, which takes a
+  // Sentry envelope rather than a JSON body. Neither is a call the generated client describes.
+  {
+    files: ["src/app-core/runtime-config.ts", "src/app-core/telemetry.ts"],
+    rules: { "no-restricted-globals": "off" },
+  },
   { files: ["**/*.js", "**/*.mjs"], extends: [tseslint.configs.disableTypeChecked] },
 );

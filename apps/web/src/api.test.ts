@@ -26,3 +26,20 @@ describe("ac18 errorMessage", () => {
     expect(errorMessage(null)).toBe("Something went wrong. Try again.");
   });
 });
+
+describe("Q-01-T50 platform error copy", () => {
+  it("maps read_only, service_unavailable and unscannable to their copy", () => {
+    expect(errorMessage({ detail: "read_only" })).toBe(
+      "This workspace is read-only for maintenance. Changes are paused.",
+    );
+    expect(errorMessage({ detail: "service_unavailable" })).toBe(
+      "This isn't available right now. Try again in a few minutes.",
+    );
+    expect(errorMessage({ detail: "service unavailable" })).toBe(
+      "This isn't available right now. Try again in a few minutes.",
+    );
+    expect(errorMessage({ detail: "unscannable" })).toBe(
+      "We couldn't check this file just now, so nothing was saved. Try uploading it again.",
+    );
+  });
+});
