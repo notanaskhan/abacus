@@ -17,10 +17,22 @@ from abacus.kernel.listing import Position, decode_cursor, encode_cursor, query_
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import MissingAuditEvent, OutboxEvent, Ref, Target, uow
-from abacus.modules.identity.api import AuthContext, engagement_resource, walled_from
+from abacus.modules.identity.api import (
+    AuthContext,
+    engagement_resource,
+    member_facts,
+    walled_from,
+)
 from abacus.modules.notifications.catalogue import CATALOGUE
 from abacus.modules.notifications.email import queue_emails, start_queued
-from abacus.modules.notifications.kinds import Fact, InlineAction, Row, kind_of, registered
+from abacus.modules.notifications.kinds import (
+    AGENT_KINDS,
+    Fact,
+    InlineAction,
+    Row,
+    kind_of,
+    registered,
+)
 from abacus.modules.notifications.repository import (
     insert_notifications,
     list_own,
@@ -69,8 +81,11 @@ def _uuid(value: object) -> UUID | None:
 async def _reauthorised(
     ctx: TenantContext, engagement_id: UUID | None, recipients: list[UUID]
 ) -> list[UUID]:
-    """INV-3 at fan-out (P-01-T06): nobody walled from the engagement's client gets a row. Read
-    time checks again, so a wall added later hides rows already made."""
+    """INV-3 at fan-out (P-01-T06): only active members of the firm (SPEC-013 AC-2), and nobody
+    walled from the engagement's client, get a row. Read time checks again, so a wall added
+    later hides rows already made. P-01-T14: a payload naming a revoked member or someone of
+    another firm no longer makes their row (or, for the latter, fails the whole event)."""
+    recipients = [user for user in recipients if await member_facts(ctx, user) is not None]
     if engagement_id is None or not recipients:
         return recipients
     try:
@@ -112,7 +127,14 @@ async def notify(event: OutboxEvent) -> None:
             "subject_id": subject,
             "category": kind.category,
             "actor_user_id": actor,
-            "actor_kind": "human" if actor is not None else "system",
+            # INV-5 (P-01-T14): an agent-originated kind's row reads as the agent's.
+            "actor_kind": (
+                "agent"
+                if entry.kind in AGENT_KINDS
+                else "human"
+                if actor is not None
+                else "system"
+            ),
             "client_id": _uuid(payload.get("client_id")),
             "work_item_id": _uuid(payload.get("work_item_id")),
         }
