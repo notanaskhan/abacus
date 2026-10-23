@@ -7,13 +7,13 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-02 Client record - Overview/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T01 · fixtures P-07-T11 · screen P-07-T19 · read models P-07-T09 (record, overview), P-07-T10 (TIN reveal) · Activity tab P-07-T57/T61 · parity lock P-07-T63 |
-| Manifest status | planned (`routes/manifest/cli.ts`, path `/clients/$clientId`, `navArea: "Clients"`) |
+| Manifest status | planned (`routes/manifest/cli.ts`, path `/clients/$clientId`, `navArea: "Clients"`); built on fixtures behind `clients.v2` by P-07-T19 (TASK-988) and kept `planned` until `to.<ID>()` can ship without the manifest names (DEC-195) |
 
 Code to come (P-07 §5): `src/screens/CLI-02/{index.tsx, scenarios.ts, copy.ts, CLI-02.test.tsx}`, `src/domain/clients/{queries.ts, mutations.ts, MaskedTin.tsx}` (F-05-T14's Reveal primitive inside `MaskedTin`). Flag `clients.v2`.
 
 ## States
 
-7 artboards post-revision (a, a2, b, c, d, e from spec.md; f from revision.md R2), 7 built here: 5 live in production, 2 fixture-only until their epic registers the target.
+7 artboards post-revision (a, a2, b, c, d, e from spec.md; f from revision.md R2). P-07-T19 built 6 (a, a2, b, c, e, f; scenarios in `fixtures/scenarios/CLI-02.ts`, tests in `screens/CLI-02/CLI-02.test.tsx`, axe in `e2e/screens/CLI-02.spec.ts`); d waits on P-09-T09 (Deviations).
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
@@ -21,7 +21,7 @@ Code to come (P-07 §5): `src/screens/CLI-02/{index.tsx, scenarios.ts, copy.ts, 
 | a2 | daniel-reyes | same | E0 | a with the rail scrolled: the Client Portal and Links bands | built · live (T19) |
 | b | daniel-reyes | same | E0 | Jonah & Claire Feld (household kind): SSN masked, filing status MFJ, one 1040 holding a draft Ridgeline K-1 | built · live (T19); the §7216 consent summary row and the CCH sync chip are fixture until T-01 |
 | c | daniel-reyes | same | E0 | Northwind Robotics, Inc. (plan sponsor, attest client by DEC-128): PBC 11 of 24, run "Processing", SKE designee Dana Kowalski, independence 4 of 5 confirmed | built · live (T19) |
-| d | daniel-reyes | same | E0 | The agent dock is answering ("Searching K-1 packages and relationships…"): a scripted run fixture | built · fixture until P-09 (SHL-13 dock host) on P-10 runtime v2 |
+| d | daniel-reyes | same | E0 | The agent dock is answering ("Searching K-1 packages and relationships…"): a scripted run fixture | not built: no API carries the dock thread until P-09-T09 (SHL-13 dock host) on P-10 runtime v2 |
 | e | daniel-reyes | same | E0 | Copperleaf Coffee Roasters, Inc. on its onboarding day: no engagements | built · live (T19) |
 | f | margaret-okonkwo (Margaret Okonkwo) | Thu Oct 1, 2026, 10:30 AM CT | E0 + Oct 1 snapshot | Granite Peak Outdoor Supply, Inc. with entitlement `insights` on: the Client responsiveness card | built · fixture until I-03 (INS-05 read model, entitlement `insights`) |
 
@@ -144,11 +144,41 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | Tax profile, Files and Messages tabs, "Message…", and the Links rows "Files" and "Messages" are hidden in production until T-01, N-01 and N-03 | Planned targets are hidden in production (chapter 04 §2.1 rule 4) | P-07 §2.1 |
 | — | The Activity tab is hidden until P-07-T61 wires it to G-02's audit_trail read API; the Overview "Recent activity" card renders the same projection | Cut order item 4 | P-07 §2.3 |
 | — | f's flag line drops the parenthesised "(CLI-07)": screen IDs inside handoff strings are canvas cross-references, and the line itself links to CLI-07 | Internal codes never show in product chrome | DEC-138 |
+| — | No dock in any build, and d is not built | The dock thread has no API until P-09-T09; screens read data only through the generated client | DEC-195 |
+| — | The tab track holds seven options: Activity is dropped rather than hidden-but-drawn | C-05's seven-option limit; Activity is hidden until P-07-T61 anyway | DEC-195 |
+| — | The Engagements tab lists the record's active engagements in the canvas (each opens ENG-02) instead of opening ENG-01 filtered | ENG-01 is planned (P-07-T27) | DEC-195 |
+| — | Links into and out of CLI-02 are wired in `routes/firm/clients.tsx`, and the manifest entry stays `planned` | `to.<ID>()` carries the manifest names the production dist must not hold | DEC-195 |
+| G-1…G-9 | See Contract gaps | The contract's generic section item | DEC-195 |
+
+### Reveal dialog (P-07-T19; undesigned, P-07 R-9)
+| Key | String |
+|---|---|
+| `tin.title` | "Reveal taxpayer ID" |
+| `tin.description` | "The reveal is logged with your reason." |
+| `tin.reason` | "Reason" — options "Prepare the return" · "Review the return" · "File or correct a filing" · "Respond to a notice" · "Verify identity" (DEC-141's codes) |
+| `tin.confirm` | "Reveal" |
+| `tin.revealed` (live region) | "Taxpayer ID shown for {n} seconds." |
+| `tin.remasked` (live region) | "Taxpayer ID masked again." |
+| `partner.saved` · `partner.stale` | "Partner updated" · "This client changed since you opened it. Reload to see the latest." |
+
+### Contract gaps (P-07-T19)
+The overview is a list of generic sections (`ClientOverviewItemOut`: `key`, `text`, `figure`, `on`, `at`, `pill_object`, `pill_code`, `ref`). The screen draws what an item carries and invents nothing (DEC-195):
+| Gap | What the handoff draws | What the screen draws until the provider carries it | Owner |
+|---|---|---|---|
+| G-1 | Active-work sub-lines ("Extended due Sep 15 · OB / SI · DR signs · Form 7004 filed Mar 12, 2026") | title, pill, open-issue count | T-02, T-09 |
+| G-2 | the review level in "In review · Partner" | "In review" (`return.in_review`) | T-02 |
+| G-3 | the white sync chip "Not yet exported ⌄" / "Synced Sep 10 ⌄" on a work item | nothing | T-01 (TAX-09) |
+| G-4 | K-1 "Feeds" labels ("Shah 1040 →", "Feld 1040 →") | an arrow with the TAX-02 hint when the item has a `ref` | T-05 |
+| G-5 | the waiting-on-client requester ("Owen Calder · sent Sep 11") | the sent date | T-05 |
+| G-6 | the §7216 consent pill ("Signed · expires Dec 31 2026") | the consent text | T-01 |
+| G-7 | the "x of y" stats ("2 of 5", "11 of 24") | two items, `<key>` and `<key>.of` | P-07 (an additive `denominator` on the item) |
+| G-8 | "Accounting method: Accrual · income-tax basis books" (a) | the row is absent: the value is T-01's, and its first word is the one the brand lint bans in source | T-01 |
+| G-9 | the dock thread (a–e) and d | not built | P-09-T09 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, e | C (locked before M8) | not run (unbuilt) | P0 lock at Tier C (T63), fixture build with the dock |
+| a, b, c, e | C (locked before M8) | not run (P-07-T63) | P0 lock at Tier C (T63); built without the dock |
 | a2 | C (report) | not run | rail scrolled |
 | d | C (report) | not run | fixture only; mask the spinner |
 | f | C (report) | not run | fixture only (I-03); canvas crop 696 wide |

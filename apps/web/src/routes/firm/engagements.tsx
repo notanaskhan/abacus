@@ -1,9 +1,15 @@
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
+import { FeatureGate } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
-// An engagement (SPEC-016): one header over its tabs; each tab's screen is its own chunk.
+// An engagement (SPEC-016): one header over its tabs; each tab's screen is its own chunk. Behind
+// `engagements.v2` the record is ENG-02 (P-07-T20) with its own in-screen tabs; the legacy layout
+// and its tab routes answer while the flag is off.
+const EngagementRecord = lazyScreen(
+  async () => (await import("../../screens/ENG-02")).EngagementRecordPage,
+);
 const EngagementLayout = lazyScreen(
   async () => (await import("../../legacy/EngagementLayout")).EngagementLayout,
 );
@@ -43,7 +49,25 @@ export const engagementRoute = createRoute({
   path: "/engagements/$engagementId",
   component: function EngagementPage(): JSX.Element {
     const engagementId = useParam("engagementId");
-    return <EngagementLayout engagementId={engagementId} />;
+    const navigate = useNavigate();
+    return (
+      <FeatureGate
+        flag="engagements.v2"
+        fallback={<EngagementLayout engagementId={engagementId} />}
+      >
+        <div className="flex min-h-0 flex-1 flex-col">
+          <EngagementRecord
+            engagementId={engagementId}
+            onNavigate={(target) => {
+              if (target.screen === "ENG-01") void navigate({ to: "/engagements" });
+              else {
+                void navigate({ to: "/clients/$clientId", params: { clientId: target.clientId } });
+              }
+            }}
+          />
+        </div>
+      </FeatureGate>
+    );
   },
 });
 

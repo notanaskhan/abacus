@@ -10,12 +10,14 @@ export const engScreens = {
     path: "/engagements", // legacy Engagements
     navArea: "Engagements",
   },
-  // ENG-02 artboards f (Dashboard tab) and g (Board tab) are fixture-only until K-04 registers
-  // ENG-12 and ENG-10, not missing (docs/screens/ENG-02.md, P-07 §2.1).
+  // P-07-T20 built b, c, d, e and the prospect state on fixtures behind `engagements.v2` (the
+  // legacy EngagementLayout answers while it is off). It stays planned for the reason CLI-02 does
+  // (cli.ts): ENG-02 → CLI-02 is wired in routes/firm. f (Dashboard tab) and g (Board tab) are
+  // fixture-only until K-04 registers ENG-12 and ENG-10 (docs/screens/ENG-02.md, P-07 §2.1).
   "ENG-02": {
     name: "Engagement record",
     status: "planned",
-    path: "/engagements/$engagementId", // legacy EngagementLayout
+    path: "/engagements/$engagementId",
     navArea: "Engagements",
   },
   // ENG-03 artboards e (§7216 consent gate), g (group audit) and h (SOC 2) are fixture-only until

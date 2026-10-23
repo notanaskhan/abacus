@@ -25,6 +25,20 @@ import {
   type Cli01State,
   scenarios as cli01Scenarios,
 } from "./CLI-01/scenarios";
+import { ClientRecordPage } from "./CLI-02";
+import {
+  OPENS as CLI02_OPENS,
+  STATES as CLI02_STATES,
+  type Cli02State,
+  scenarios as cli02Scenarios,
+} from "./CLI-02/scenarios";
+import { EngagementRecordPage } from "./ENG-02";
+import {
+  OPENS as ENG02_OPENS,
+  STATES as ENG02_STATES,
+  type Eng02State,
+  scenarios as eng02Scenarios,
+} from "./ENG-02/scenarios";
 import { PortalSignIn } from "./POR-01";
 import {
   START as POR01_START,
@@ -229,6 +243,90 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
+
+function Cli02Frame({ state }: { state: Cli02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/clients" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  // a2 is a with the rail scrolled to its Client Portal and Links bands.
+  useEffect(() => {
+    if (state !== "a2") return undefined;
+    const timer = window.setInterval(() => {
+      const body = document.querySelector<HTMLElement>(
+        `[data-artboard='a2'] [data-cockpit='rail'] .overflow-auto`,
+      );
+      if (body !== null && body.scrollHeight > body.clientHeight) {
+        body.scrollTop = body.scrollHeight;
+        window.clearInterval(timer);
+      }
+    }, 50);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [state]);
+  return (
+    <div data-artboard={state}>
+      <ClientRecordPage clientId={CLI02_OPENS[state]} toolbar={bar.toolbar} frame />
+    </div>
+  );
+}
+
+function Cli02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli02State = CLI02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Cli02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("CLI-02", { title: "Client record · Overview", Component: Cli02Artboard });
+
+function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/engagements" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <EngagementRecordPage engagementId={ENG02_OPENS[state]} toolbar={bar.toolbar} frame />
+    </div>
+  );
+}
+
+function Eng02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng02State = ENG02_STATES.find((s) => s === params.st) ?? "b";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Eng02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ENG-02", { title: "Engagement record", Component: Eng02Artboard });
 
 const stayOnCard = (): void => undefined;
 

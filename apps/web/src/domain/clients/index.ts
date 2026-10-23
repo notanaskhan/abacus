@@ -15,3 +15,23 @@ export {
   useClients,
 } from "./queries";
 export { ACTIVITY_WORDS, KIND_WORDS, activityWords } from "./messages";
+export {
+  REVEAL_REASONS,
+  type RevealReason,
+  type StatItem,
+  daysUntil,
+  givenName,
+  itemOf,
+  maskTin,
+  patchOf,
+  sectionOf,
+  statItems,
+  sumFigures,
+  tinEntity,
+  useClientOverview,
+  useClientRecord,
+  useRevealTin,
+  useStaff,
+  useUpdateClient,
+} from "./record";
+export { MaskedTin, TIN_COPY } from "./MaskedTin";
