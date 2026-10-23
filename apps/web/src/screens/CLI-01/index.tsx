@@ -58,6 +58,8 @@ import { COPY } from "./copy";
 export interface CLI01Props {
   filters: ClientFilters;
   onFilters: (next: ClientFilters) => void;
+  /** Open a client's record (CLI-02); without it the row's Open is the disabled item. */
+  onOpen?: (clientId: string) => void;
 }
 
 /** "9:12 AM" today, else "Sep 12", then " · " and the event's words when it has any. */
@@ -71,15 +73,27 @@ export function activityText(row: ClientRowOut, now: Date, tz: string): string {
 
 /** The screen with its own filters: the route's page and the gallery's artboard. `initial` is what
  * an artboard opens on (b: Service line │ Audit; d: the search "Schwab"). */
-export function ClientsIndex({ initial = {} }: { initial?: Partial<ClientFilters> }): JSX.Element {
+export function ClientsIndex({
+  initial = {},
+  onOpen,
+}: {
+  initial?: Partial<ClientFilters>;
+  onOpen?: (clientId: string) => void;
+}): JSX.Element {
   const [filters, setFilters] = useState<ClientFilters>(() => ({
     ...DEFAULT_CLIENT_FILTERS,
     ...initial,
   }));
-  return <CLI01 filters={filters} onFilters={setFilters} />;
+  return (
+    <CLI01
+      filters={filters}
+      onFilters={setFilters}
+      {...(onOpen === undefined ? {} : { onOpen })}
+    />
+  );
 }
 
-export function CLI01({ filters, onFilters }: CLI01Props): JSX.Element {
+export function CLI01({ filters, onFilters, onOpen }: CLI01Props): JSX.Element {
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const list = useClients(filters);
@@ -193,16 +207,26 @@ export function CLI01({ filters, onFilters }: CLI01Props): JSX.Element {
   };
 
   const menuFor = (row: ClientRowOut): MenuItem[][] => {
+    const open: MenuItem =
+      onOpen === undefined
+        ? { label: COPY.menu.open, disabled: true, onSelect: () => undefined }
+        : {
+            label: COPY.menu.open,
+            onSelect: () => {
+              onOpen(row.id);
+            },
+          };
     const planned: MenuItem[] = PLANNED_VISIBLE
       ? [
-          // CLI-02, INB-04 and ENG-03 are planned (docs/screens/CLI-01.md, Links).
-          { label: COPY.menu.open, disabled: true, onSelect: () => undefined },
+          // INB-04 and ENG-03 are planned (docs/screens/CLI-01.md, Links).
+          open,
           { label: COPY.menu.message, disabled: true, onSelect: () => undefined },
           { label: COPY.menu.newEngagement, disabled: true, onSelect: () => undefined },
         ]
       : [];
     const own: MenuItem[] = [{ label: COPY.menu.copyId, onSelect: () => void copyId(row) }];
-    return planned.length === 0 ? [own] : [planned, own];
+    if (planned.length === 0) return onOpen === undefined ? [own] : [[open], own];
+    return [planned, own];
   };
 
   const columns: IndexColumn<ClientRowOut>[] = [
@@ -357,6 +381,13 @@ export function CLI01({ filters, onFilters }: CLI01Props): JSX.Element {
         envelope={envelope}
         columns={columns}
         rowKey={(r) => r.id}
+        {...(onOpen === undefined
+          ? {}
+          : {
+              onOpen: (r: ClientRowOut) => {
+                onOpen(r.id);
+              },
+            })}
         twoLine={() => true}
         chips={chips}
         onChip={onChip}

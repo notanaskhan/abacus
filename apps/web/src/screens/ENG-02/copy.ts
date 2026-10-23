@@ -1,0 +1,95 @@
+// ENG-02 copy, verbatim from the handoff spec.md (docs/screens/ENG-02.md, Copy). Rail values, gate
+// facts and work-item rows are data, never copy. The Record signed letter sheet is undesigned
+// (P-07 R-9); its strings are recorded in the screen contract by P-07-T20.
+
+export const COPY = {
+  back: "‹ All Engagements",
+  backHint: "Opens ENG-01 · all engagements",
+  contracted: (d: string) => `Contracted ${d}`,
+  tabs: {
+    label: "Engagement sections",
+    overview: "Overview",
+    workItems: "Work items",
+    team: "Team",
+    letter: "Letter & terms",
+  },
+  rail: {
+    title: "Summary",
+    bands: {
+      details: "Details",
+      review_delivery: "Review and Delivery",
+      client_portal: "Client Portal",
+    },
+  },
+  keys: {
+    client: "Client",
+    entity: "Entity",
+    service: "Service",
+    type: "Type",
+    standards: "Standards",
+    methodology: "Methodology",
+    period: "Period",
+    office: "Office",
+    close_plan: "Close plan",
+    letter: "Letter",
+    fee: "Fee",
+    due_date: "Due date",
+    partner: "Partner (reviewer)",
+    preparer: "Preparer",
+    client_service: "Client service",
+    contact: "Contact",
+    approver_of_record: "Approver of record",
+    portal: "Portal",
+    connections: "Connections",
+    reminder: "Reminder",
+  } as Readonly<Record<string, string>>,
+  clientHint: "Opens CLI-02 · client record",
+  letterHint: "Opens ENG-04 · engagement letter",
+  archiveLocked: (d: string) => `Archive locked ${d} · WORM`,
+  postLock: (n: string) => `Post-lock additions: ${n}`,
+  canvas: {
+    title: "Overview",
+    activity: "Activity ›",
+  },
+  group: {
+    gates: "Gates",
+    workItems: "Work items",
+  },
+  banner: {
+    g3: (person: string, d: string) =>
+      `Work items open when the letter is signed (G3). Letter viewed by ${person} · ${d}.`,
+    g3NoView: "Work items open when the letter is signed (G3).",
+    g3Action: "Open letter",
+    prospect: (partner: string) => `Acceptance pending — ${partner}`,
+    prospectAction: "Open acceptance ›",
+    prospectHint: "Opens CLI-07 · acceptance and continuance",
+  },
+  empty: {
+    workItems: "No work items yet.",
+  },
+  workItemHint: "Opens AUD-02 · audit cockpit",
+  letter: {
+    title: "Letter & terms",
+    status: "Status",
+    signedOn: "Signed",
+    record: "Record signed letter…",
+    sheetTitle: "Record signed letter",
+    sheetDescription:
+      "Record the letter both parties signed. The dates must fall after the acceptance decision.",
+    clientSignedOn: "Client signed on",
+    clientSigner: "Client signer",
+    firmSignedOn: "Firm signed on",
+    firmSigner: "Firm signer",
+    datePlaceholder: "YYYY-MM-DD",
+    choose: "Choose",
+    save: "Record letter",
+    saved: "Letter recorded",
+    errors: {
+      letter_before_acceptance: "The signature dates must fall after the acceptance decision.",
+      gate_unmet: "The acceptance decision (G1) is not recorded yet.",
+      engagement_archived: "This engagement is archived.",
+      date: "Enter a date as YYYY-MM-DD.",
+      failed: "Couldn’t record the letter.",
+    },
+  },
+} as const;

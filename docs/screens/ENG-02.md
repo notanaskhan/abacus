@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ENG-02 Engagement record/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T01 · fixtures P-07-T11 · record projection and interim G3 P-07-T15 · screen core P-07-T20 (b, c, d, e, prospect banner, Record signed letter sheet) · remaining P-07-T28 (a, Work items, Team host, On hold, f, g) · Activity P-07-T57/T61 · parity lock P-07-T63 |
-| Manifest status | planned (`routes/manifest/eng.ts`, path `/engagements/$engagementId`, `navArea: "Engagements"`) |
+| Manifest status | planned (`routes/manifest/eng.ts`, path `/engagements/$engagementId`, `navArea: "Engagements"`); core built on fixtures behind `engagements.v2` by P-07-T20 (TASK-988), kept `planned` for CLI-02's reason (DEC-195) |
 
 Code to come (P-07 §5): `src/screens/ENG-02/{index.tsx, scenarios.ts, copy.ts, ENG-02.test.tsx}`, `src/domain/engagements/{queries.ts, mutations.ts, GateBlock.tsx}`. Flag `engagements.v2`.
 
@@ -144,6 +144,33 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | The prospect pre-acceptance banner is built without a frame, from spec.md's ENG-01 interaction text | Spec'd, undesigned state | P-07 §2.1 |
 | — | a's RunCard and close task groups render only in fixture builds until C-01 registers the close kind provider; production shows the engagement's work-item rows | C-01 owns closes | P-07 §2.1 |
 | — | The Activity tab is hidden until P-07-T61 | Cut order item 4 | P-07 §2.3 |
+| — | The core's tabs are in-screen state (Overview, Work items, Letter & terms; Team drawn disabled in fixture builds), not the `/work-items`, `/team`, `/letter` routes | P-07-T28 adds the tab routes with the Team host | DEC-195 |
+| — | The status pill has no ⌄ menu yet | The hold route lands with P-07-T15 | DEC-195 |
+| — | ENG-02 → CLI-02 is wired in `routes/firm/engagements.tsx`, and the manifest entry stays `planned` | As CLI-02 | DEC-195 |
+| G-1…G-4 | See Contract gaps | The v2 record projection | DEC-195 |
+
+### Record signed letter sheet (O3 500; P-07-T20; undesigned, P-07 R-9)
+Opened by "Record signed letter…" on the Letter & terms card, enabled when the record allows `letter.record`, G1 is met, the letter is not signed and the record is not archived.
+| Key | String |
+|---|---|
+| `letter.title` | "Letter & terms" (card) · rows "Status" (the `letter_record` word) and "Signed" (the date) |
+| `letter.record` | "Record signed letter…" |
+| `letter.sheetTitle` | "Record signed letter" |
+| `letter.sheetDescription` | "Record the letter both parties signed. The dates must fall after the acceptance decision." |
+| rows | "Client signed on" · "Client signer" · "Firm signed on" · "Firm signer"; date placeholder "YYYY-MM-DD"; select placeholder "Choose" |
+| `letter.save` | "Record letter" (disabled until both dates are YYYY-MM-DD) |
+| `letter.saved` (toast) | "Letter recorded" |
+| errors | `letter_before_acceptance` "The signature dates must fall after the acceptance decision." · `gate_unmet` "The acceptance decision (G1) is not recorded yet." · `engagement_archived` "This engagement is archived." · a malformed date "Enter a date as YYYY-MM-DD." · otherwise "Couldn’t record the letter." |
+
+The signed copy (`signed_copy_version_id`) is not uploaded from the sheet yet: the evidence upload intent for a firm-side document is not on this surface (gap G-3 below).
+
+### Contract gaps (P-07-T20)
+| Gap | What the handoff draws | What the screen draws | Owner |
+|---|---|---|---|
+| G-1 | gate facts as sentences ("Continuance approved by MO · May 28", "5 of 5 confirmed · Kira Ross pending assignment", "Materiality blocked on a partner decision") | the gate payload in registry words: "MO · May 28", G3 "Letter signed by Dana Kowalski and MO · Jun 2", "Blocked on a partner decision", "Not started" | P-07-T15 (an additive facts line per provider) |
+| G-2 | who viewed the letter in the G3 banner | the record's `signing_officer` designation | P-07-T15 (`viewed_by` on the letter summary) |
+| G-3 | the signed copy on the recorded letter | dates and signers only | P-07-T15, N-02 |
+| G-4 | the work-item row's sub-line ("Processing · PBC 11 of 24 received") | the name and the phase pill | P-07-T15, A-01 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
