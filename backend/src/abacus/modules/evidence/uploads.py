@@ -26,6 +26,7 @@ from abacus.kernel.scanning import scan
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.events import EvidenceUploaded
 from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
 from abacus.modules.evidence.repository import (
@@ -553,9 +554,11 @@ async def upload_preview_page(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID, page_no: int
 ) -> bytes:
     await _authorised_version(ctx, engagement_id, item_id, version_id)
-    return await preview_page_of(
+    page = await preview_page_of(
         ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
     )
+    await record_content_read(ctx, engagement_id, "evidence_version", version_id)
+    return page
 
 
 # --- A version's preview without its request (TASK-334) ---------------------------------------
@@ -583,6 +586,8 @@ async def version_preview_page(
     ctx: AuthContext, engagement_id: UUID, version_id: UUID, page_no: int
 ) -> bytes:
     await _authorised_any_version(ctx, engagement_id, version_id)
-    return await preview_page_of(
+    page = await preview_page_of(
         ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
     )
+    await record_content_read(ctx, engagement_id, "evidence_version", version_id)
+    return page

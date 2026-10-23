@@ -12,6 +12,7 @@ from .isolation import problems
 from .support import Seeder, TwoFirms, two_firms
 
 TABLES: tuple[str, ...] = (
+    "access_events",
     "adjustment_events",
     "adjustment_lines",
     "adjustments",

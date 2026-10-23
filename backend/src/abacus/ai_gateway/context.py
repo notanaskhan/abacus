@@ -17,6 +17,7 @@ import json
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from typing import Literal, cast
+from uuid import UUID
 
 LayerName = Literal["instructions", "firm", "engagement", "examples", "task"]
 LAYERS: tuple[LayerName, ...] = ("instructions", "firm", "engagement", "examples", "task")
@@ -77,6 +78,9 @@ class Layer:
 @dataclass(frozen=True)
 class AssembledContext:
     layers: tuple[Layer, ...]
+    # Q-02-T20: the evidence versions whose content is in the context. The gateway records one
+    # `model_context.built` access event for each when it sends the context to a model.
+    sources: tuple[UUID, ...] = ()
 
     def render(self) -> str:
         return "\n\n".join(f"## {layer.name}\n{layer.text}" for layer in self.layers if layer.text)
@@ -95,6 +99,12 @@ class ContextBuilder:
     budgets: Mapping[LayerName, int] = field(default_factory=lambda: dict(DEFAULT_BUDGETS))
     _texts: dict[LayerName, str] = field(default_factory=dict[LayerName, str])
     _trimmed: bool = False
+    _sources: tuple[UUID, ...] = ()
+
+    def sources(self, *evidence_version_ids: UUID) -> ContextBuilder:
+        """The evidence versions whose content goes into this context (access events)."""
+        self._sources = tuple(dict.fromkeys((*self._sources, *evidence_version_ids)))
+        return self
 
     def text(self, layer: LayerName, text: str) -> ContextBuilder:
         if layer == "task":
@@ -140,4 +150,4 @@ class ContextBuilder:
                 continue
             limit = self.budgets.get(name, DEFAULT_BUDGETS[name]) * CHARS_PER_TOKEN
             layers.append(Layer(name, text[:limit], len(text) > limit))
-        return AssembledContext(tuple(layers))
+        return AssembledContext(tuple(layers), self._sources)

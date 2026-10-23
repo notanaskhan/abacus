@@ -21,6 +21,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, gate_client_data, get_ref
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.client_view import covered_digits, statement_gap, year_end_cash
 from abacus.modules.evidence.events import InboxFileAdded
 from abacus.modules.evidence.matching import (
@@ -345,6 +346,8 @@ async def inbox_preview_page(
     ctx: AuthContext, engagement_id: UUID, file_id: UUID, page_no: int
 ) -> bytes:
     await _seen_file(ctx, engagement_id, file_id)
-    return await preview_page_of(
+    page = await preview_page_of(
         ctx.tenant, evidence_version_id=None, inbox_file_id=file_id, page_no=page_no
     )
+    await record_content_read(ctx, engagement_id, "inbox_file", file_id)
+    return page
