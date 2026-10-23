@@ -382,3 +382,6 @@ export * from "./record";
 
 // E1 MatchProvider, E2 anchored popover host and the C-07 Cite kit (F-05-T41).
 export * from "./tracing";
+
+// E5 SourceViewer shell, ReviewTree and FileChip: the C-08 Doc Kit on server page images (F-05-T47).
+export * from "./viewer";

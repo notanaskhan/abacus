@@ -333,6 +333,16 @@ interface RowBase {
   error?: string;
   /** Under a schedule: 24px of left padding rather than 12. */
   indented?: boolean;
+  /** A line under the label, 11.5 ink-3 ("A person sends every client message."), or amber ink
+   * for a limit reached (TPL-12 "All seats are assigned."). */
+  help?: ReactNode;
+  helpTone?: "muted" | "amber";
+  /** Where `error` is said: under the value (the default) or under the label (T12, TPL-12c). */
+  errorAt?: "value" | "label";
+  /** The viewer may not edit (T12c, TPL-12d): the value reads in ink-2 and nothing opens. */
+  readOnly?: boolean;
+  /** A 12px lock before the value (T12c: every row of a read-only form). */
+  lock?: boolean;
   className?: string;
 }
 
@@ -365,6 +375,13 @@ export type ValueRowProps = RowBase &
         disabled?: boolean;
       }
     | { kind: "info"; children: ReactNode }
+    | {
+        /** A fixed value, 500 ink ("46 of 46 used"), with an optional glyph after it: a lock for a
+         * value set at provisioning, a chevron for a row that opens its own screen. */
+        kind: "value";
+        children: ReactNode;
+        trailing?: IconName;
+      }
     | {
         /** A stacked row: the label, then a borderless multi-line field. */
         kind: "paragraph";
@@ -477,6 +494,7 @@ export function ValueRow(props: ValueRowProps): JSX.Element {
   const labelId = `${id}-label`;
   const helpId = props.error === undefined ? undefined : `${id}-help`;
   const pad = props.indented === true ? "pl-[24px]" : "";
+  const readOnly = props.readOnly === true;
 
   if (props.kind === "paragraph") {
     return (
@@ -505,7 +523,10 @@ export function ValueRow(props: ValueRowProps): JSX.Element {
         <label id={labelId} htmlFor={id} className="flex-none whitespace-nowrap text-ink-2">
           {props.label}
         </label>
-        <span className="flex min-w-0 flex-1 items-center justify-end">
+        <span className="flex min-w-0 flex-1 items-center justify-end gap-[8px]">
+          {props.lock === true && (
+            <Icon name="lock" size={12} label="Locked" className="shrink-0 text-ink-4" />
+          )}
           {props.kind === "toggle" ? (
             <Toggle
               id={id}
@@ -513,10 +534,40 @@ export function ValueRow(props: ValueRowProps): JSX.Element {
               aria-labelledby={labelId}
               {...(props.checked === undefined ? {} : { checked: props.checked })}
               {...(props.onChange === undefined ? {} : { onChange: props.onChange })}
-              {...(props.disabled === undefined ? {} : { disabled: props.disabled })}
+              {...(props.disabled === undefined && !readOnly
+                ? {}
+                : { disabled: readOnly || props.disabled === true })}
             />
           ) : props.kind === "info" ? (
             <span className="text-right text-ink-3">{props.children}</span>
+          ) : props.kind === "value" ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-[5px] text-right font-medium",
+                readOnly ? "text-ink-2" : "text-ink",
+              )}
+            >
+              {props.children}
+              {props.trailing !== undefined && (
+                <Icon name={props.trailing} size={12} className="text-ink-3" />
+              )}
+            </span>
+          ) : readOnly ? (
+            <span
+              id={id}
+              className="inline-flex items-center gap-[5px] pr-[2px] text-right font-medium text-ink-2"
+            >
+              {props.kind === "text"
+                ? (props.value ?? props.defaultValue ?? "")
+                : (props.options.find((o) => o.value === props.value)?.label ?? props.value ?? "")}
+              {props.kind !== "text" && (
+                <Icon
+                  name={props.kind === "time" ? "clock" : "chevrons-up-down"}
+                  size={12}
+                  className="text-ink-3"
+                />
+              )}
+            </span>
           ) : props.kind === "text" ? (
             <TextValue
               id={id}
@@ -533,12 +584,24 @@ export function ValueRow(props: ValueRowProps): JSX.Element {
           )}
         </span>
       </div>
+      {props.help !== undefined && (props.error === undefined || props.errorAt !== "label") && (
+        <p
+          className={cn(
+            "-mt-[4px] px-[12px] pb-[8px] text-meta",
+            props.helpTone === "amber" ? "text-amber-ink" : "text-ink-3",
+            pad && "pl-[24px]",
+          )}
+        >
+          {props.help}
+        </p>
+      )}
       {props.error !== undefined && (
         <p
           id={helpId}
           role="alert"
           className={cn(
-            "px-[12px] pb-[8px] text-right text-meta text-red-ink",
+            "px-[12px] pb-[8px] text-meta text-red-ink",
+            props.errorAt === "label" ? "-mt-[4px] text-left" : "text-right",
             pad && "pl-[24px]",
           )}
         >

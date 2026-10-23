@@ -496,6 +496,153 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T38: the ENG-01 index under the scrim is an empty pane until P-07 builds ENG-01; the sheet, the step list and every step body are drawn"
+    },
+    "t11-dashboard.t11a": {
+      "selector": "[data-artboard=\"t11a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T11 Dashboard/screenshots/T11a.png",
+      "sha256": "4e5e7b9d6476fe8260d32077bfdc86246081580004e9767c18d01974c7390c84",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t11-dashboard.t11b": {
+      "selector": "[data-artboard=\"t11b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T11 Dashboard/screenshots/T11b.png",
+      "sha256": "8c2dd67c3392155c3f50ec83d06bb6992b6cd86bc81aa4352f7af88e85a99891",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t11-dashboard.t11c": {
+      "selector": "[data-artboard=\"t11c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T11 Dashboard/screenshots/T11c.png",
+      "sha256": "f82e934983ac53c0ddd3368789dfad730a902a8109a1ee55d82a6e905a4ea031",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t11-dashboard.t11d": {
+      "selector": "[data-artboard=\"t11d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T11 Dashboard/screenshots/T11d.png",
+      "sha256": "e21a1dab84e06344961a75718702c7bcd3f68b16ee243bf847ea2676807a90ef",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t11-dashboard.t11e": {
+      "selector": "[data-artboard=\"t11e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T11 Dashboard/screenshots/T11e.png",
+      "sha256": "efa3903dd64617f7588574c1b0d96c1b159f0391f72d7f657bc03054678d8691",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t11-dashboard.t11f": {
+      "selector": "[data-artboard=\"t11f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T11 Dashboard/screenshots/T11f.png",
+      "sha256": "35fb3fd2f5755748697faf48adaf097bdc8f8646c010b5f2bb1fc29c8408ab4d",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t12-settings.t12a": {
+      "selector": "[data-artboard=\"t12a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T12 Settings form/screenshots/T12a.png",
+      "sha256": "f56e641cfd444e73a1bd7d236fed978dfc6eb6d791fde8b362be88bfdceae928",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t12-settings.t12b": {
+      "selector": "[data-artboard=\"t12b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T12 Settings form/screenshots/T12b.png",
+      "sha256": "d6c052d176deb9ed5e1a763cc6b9530b9c1731e0cf69d6ec8e4c3804230512d9",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t12-settings.t12c": {
+      "selector": "[data-artboard=\"t12c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T12 Settings form/screenshots/T12c.png",
+      "sha256": "d4548c7555f4b623383a5775cf27386493b74474faac4f3ec8ca3d96fb30de8d",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t12-settings.t12d": {
+      "selector": "[data-artboard=\"t12d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T12 Settings form/screenshots/T12d.png",
+      "sha256": "e4c1a299ca16402cd23159c6c8e21010b6ac37f3b9c031d0ab7ed6e67515090e",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-11.a": {
+      "selector": "[data-artboard=\"tpl-11a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11a.png",
+      "sha256": "1a8cf0ca7477f704c8681d972a664b1922d384a5e1118e3aba637a140f720759",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-11.b": {
+      "selector": "[data-artboard=\"tpl-11b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11b.png",
+      "sha256": "8e6398a491e00822c8cbfa72f322d05dab4d8f9843230f8784eb3d1628e18170",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-11.c": {
+      "selector": "[data-artboard=\"tpl-11c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11c.png",
+      "sha256": "7e8b826abd3181c1635b336eb2f83ecb4d54f86e39a775e4c0f7eac5b87b19bf",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-11.d": {
+      "selector": "[data-artboard=\"tpl-11d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11d.png",
+      "sha256": "5d6b76d54517b76ad5d55f2e77dea0e36691d72c7fa01df502a7eaf43d5953f5",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-11.e": {
+      "selector": "[data-artboard=\"tpl-11e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11e.png",
+      "sha256": "f6bd774cec67f67377457b0628b0ad7c0a3e05d043636a2360713b7696988f99",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-11.f": {
+      "selector": "[data-artboard=\"tpl-11f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-11 Dashboard specimen - Home/screenshots/TPL-11f.png",
+      "sha256": "04dfcb15ba00bcff0bed1a03b559bd66e8413075785c719fa7be74217dac4c4e",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-12.a": {
+      "selector": "[data-artboard=\"tpl-12a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12a.png",
+      "sha256": "dea3d430bd757a48f0bef3909bb8811a3095efdc0eba7563475d590ab92122ee",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-12.b": {
+      "selector": "[data-artboard=\"tpl-12b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12b.png",
+      "sha256": "59b7d06ca7d6a818cdfa4d3a89eb10781ddc196f49f6963900678af24f7fb06e",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-12.c": {
+      "selector": "[data-artboard=\"tpl-12c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12c.png",
+      "sha256": "a9bc26dd0234f48ccba429fb7ba0cc09474de687c86e084469dcca941d2da4a9",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-12.d": {
+      "selector": "[data-artboard=\"tpl-12d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12d.png",
+      "sha256": "821aa5c8496226fe32b4ff6ae89af465453fb0da526d0e622e17f429e025a54f",
+      "crop": "window",
+      "tier": "B"
+    },
+    "tpl-12.e": {
+      "selector": "[data-artboard=\"tpl-12e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-12 Settings form specimen - Firm settings - General/screenshots/TPL-12e.png",
+      "sha256": "eeeab22e8513dabf7841f9f88bb2c12dfd905f1f55a501d79fdf7f4f6e72cde8",
+      "crop": "window",
+      "tier": "B"
     }
   }
 }

@@ -50,6 +50,30 @@ export {
   WizardSummary,
   typeAvailability,
 } from "./wizard-kit";
+// T11 DashboardLayout (F-05-T46): greeting row, tiles, queue, deadlines and client activity.
+export {
+  ActivityRow,
+  type ActivityRowProps,
+  DashTile,
+  type DashTileProps,
+  DashboardLayout,
+  type DashboardLayoutProps,
+  type DashboardOffice,
+  DeadlineRow,
+  type DeadlineRowProps,
+  QueueEmpty,
+  QueueRow,
+  type QueueRowProps,
+} from "./dashboard-layout";
+// T12 SettingsLayout (F-05-T45): section list, form pane, Save and Discard, the step-up slot.
+export {
+  type SettingsGroup,
+  SettingsLayout,
+  type SettingsLayoutProps,
+  SettingsLock,
+  type SettingsSection,
+  canSave,
+} from "./settings-layout";
 // T2 RecordCockpit (F-05-T40): rail, canvas and dock under the audit record bar.
 export {
   type CockpitCanvas,
