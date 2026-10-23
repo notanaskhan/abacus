@@ -409,8 +409,9 @@ async def test_ac514_the_limits_are_dec_140(
     _, user_id, subject = await _member(dsn)
     await _sign_in(http, idp, subject)
     idle, absolute = await _limits(dsn, user_id)
-    assert 29 * 60 < idle <= 30 * 60
-    assert 11.9 * 3600 < absolute <= 12 * 3600
+    # Both expiries are stamped a few microseconds after created_at, within one statement.
+    assert 29 * 60 < idle <= 30 * 60 + 1
+    assert 11.9 * 3600 < absolute <= 12 * 3600 + 1
 
 
 async def _limits(dsn: str, user_id: uuid.UUID) -> tuple[float, float]:

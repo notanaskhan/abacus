@@ -65,7 +65,10 @@ async def test_held_events_wait_for_their_time_and_their_grant(
         tx.emit(held, grant_id=granted)
         tx.emit(void, grant_id=voided)
 
-    async def consume(_tenant: uuid.UUID, grant: uuid.UUID) -> bool:
+    # P-04-T10: the relay hands the consumer the event and its payload digest as well.
+    async def consume(
+        _tenant: uuid.UUID, grant: uuid.UUID, _event: uuid.UUID, _digest: str
+    ) -> bool:
         return grant == granted
 
     monkeypatch.setattr(relay_module, "_GRANT_CONSUMER", [consume])
