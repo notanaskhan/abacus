@@ -44,6 +44,44 @@ const screens = {
   TrialBalance: lazyScreen(async () => (await import("../../legacy/TrialBalance")).TrialBalance),
 };
 
+// ENG-03 (P-07-T21): `/engagements/new` behind `engagements.v2`, resuming `?draft=` or starting
+// a draft (prefilled with `?client=`); Create opens the new engagement's record.
+const NewEngagement = lazyScreen(
+  async () => (await import("../../screens/ENG-03")).NewEngagementPage,
+);
+
+interface NewEngagementSearch {
+  draft?: string;
+  client?: string;
+}
+
+export const newEngagementRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/engagements/new",
+  validateSearch: (search: Record<string, unknown>): NewEngagementSearch => ({
+    ...(typeof search.draft === "string" ? { draft: search.draft } : {}),
+    ...(typeof search.client === "string" ? { client: search.client } : {}),
+  }),
+  component: function NewEngagementRoutePage(): JSX.Element {
+    const search = newEngagementRoute.useSearch();
+    const navigate = useNavigate();
+    return (
+      <FeatureGate flag="engagements.v2">
+        <NewEngagement
+          draftId={search.draft}
+          clientId={search.client}
+          onClose={() => {
+            void navigate({ to: "/engagements" });
+          }}
+          onCreated={(engagementId) => {
+            void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+          }}
+        />
+      </FeatureGate>
+    );
+  },
+});
+
 export const engagementRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/engagements/$engagementId",
@@ -244,6 +282,7 @@ const dashboardRoute = createRoute({
 });
 
 export const engagementRoutes = [
+  newEngagementRoute,
   engagementRoute.addChildren([
     overviewRoute,
     boardRoute,

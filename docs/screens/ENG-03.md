@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ENG-03 New engagement wizard - Fairhaven Foods 401-k- Plan/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T01 · fixtures P-07-T11 · catalogue, drafts and create P-07-T16 · screen core P-07-T21 (a, b, c, d, f) · remaining types P-07-T34 (e, g, h) · parity lock P-07-T63 |
-| Manifest status | planned (`routes/manifest/eng.ts`, path null until P-07-T21 routes `/engagements/new`) |
+| Manifest status | planned (`routes/manifest/eng.ts`, path `/engagements/new`): a, b, c, d, f built on fixtures by P-07-T21 (TASK-990) behind `engagements.v2`; kept `planned` for CLI-02's reason (DEC-195) |
 
 Code to come (P-07 §5): `src/screens/ENG-03/{index.tsx, scenarios.ts, copy.ts, ENG-03.test.tsx}`, `src/domain/engagements/{TypeCatalogue.ts, GateBlock.tsx, IndependenceChip.tsx, mutations.ts}`. Flag `engagements.v2`.
 
@@ -132,6 +132,12 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | d adds "Start acceptance" (save the draft, create a Prospect engagement and an acceptance record, open CLI-07) | DEC-39: Prospect engagements exist before acceptance | DEC-39; P-07 §3.6 Story 6.3 |
 | — | Screen IDs in parentheses inside handoff strings ("…decision in CLI-07.", "(ADM-04)") are canvas cross-references, not product copy: `copy.ts` drops them and the reference becomes the link or action beside the string | Internal codes never show in product chrome (DF-22's rule for ENG-14 "A28"; ENG-02 "no internal engagement number") | DEC-138 |
 | — | The CAS "Close plan template" step is planned until C-01 and the "PBC list — Build from template" toggle seeds requests deterministically from the pinned methodology (no agent run) | C-01 owns close plans; agents propose only | P-07 §2.1 |
+
+### Core notes and contract gaps (P-07-T21)
+- The G1 reason is the gate card's status region; Next is disabled while G1 is unmet (DEC-197).
+- Discard dialog: title "Discard this draft?", buttons "Discard" · "Keep editing" (written for this task). Save failure toast: "Couldn’t save the draft."
+- Gaps, drawn as the draft's facts or "—" until P-07-T16's step schemas and a methodology read: the methodology chip and its version line, the independence request time, the Relationship, Proposal and Office rows, the Display line, the Agent defaults card, and the editors of steps 3, 5 and 6 (DEC-197).
+- Fixture names follow the handoff: client "Fairhaven Foods, Inc.", entity "Fairhaven Foods 401(k) Plan" (the TS seed names the client after the plan; open gap for F-04-T31's exported seed).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

@@ -71,19 +71,70 @@ test.describe("J02-audit-core", () => {
     },
   );
 
+  // P-07-T22: CLI-02, ENG-03 and ENG-02 are built on fixtures (P-07-T19, T20, T21; DEC-195,
+  // DEC-197). In the running app they sit behind `clients.v2` and `engagements.v2`, which E0 does
+  // not turn on, and their live routes land with P-07-T15 and T16; the steps below are written
+  // against the built screens and walk once both hold.
+  test.fixme(
+    "J02 3b: the client record opens from the Clients index (CLI-02)",
+    owner(
+      "P-07 · P-07-T19 built; clients.v2 on in E0 and live record P-07-T15 · S6, Fri Jan 22, 2027",
+    ),
+    async ({ journey }) => {
+      await journey.as("grace-holloway", "/clients", { clock: DEMO_INSTANT });
+      await journey.step("J02 step 3b: Northwind's record from its row", async (page) => {
+        await page.getByRole("button", { name: "Northwind Robotics, Inc. actions" }).click();
+        await page.getByRole("menuitem", { name: "Open" }).click();
+        await expect(
+          page.getByRole("heading", { name: /Northwind Robotics, Inc\./ }),
+        ).toBeVisible();
+        await expect(page.getByRole("region", { name: "Summary" })).toBeVisible();
+      });
+    },
+  );
+
   test.fixme(
     "J02 4: Hannah Leclerc creates the PY2025 EBP audit in the wizard (ENG-03)",
-    owner("P-07 · P-07-T21 ENG-03 wizard core, audit family · S6, Fri Jan 22, 2027"),
+    owner(
+      "P-07 · P-07-T21 built; engagements.v2 on in E0 and drafts and create P-07-T16 · S6, Fri Jan 22, 2027",
+    ),
     async ({ journey }) => {
-      await journey.as("hannah-leclerc", "/engagements", { clock: DEMO_INSTANT });
+      await journey.as("hannah-leclerc", "/engagements/new", { clock: DEMO_INSTANT });
+      await journey.step("J02 step 4: the wizard opens with G1 met", async (page) => {
+        await expect(page.getByRole("dialog")).toBeVisible();
+        await expect(page.getByText(/^G1 Continuance approved/)).toBeVisible();
+      });
+      await journey.step(
+        "J02 step 4: Create, a person's click, opens the record",
+        async (page) => {
+          for (let i = 0; i < 5; i += 1) await page.getByRole("button", { name: "Next" }).click();
+          await page.getByRole("button", { name: "Create" }).click();
+          await expect(page.getByRole("region", { name: "Summary" })).toBeVisible();
+        },
+      );
     },
   );
 
   test.fixme(
     "J02 5: the engagement record shows G1 to G3 recorded (ENG-02b)",
-    owner("P-07 · P-07-T20 ENG-02 record core with gate rows · S6, Fri Jan 22, 2027"),
+    owner(
+      "P-07 · P-07-T20 built; engagements.v2 on in E0 and the record P-07-T15 · S6, Fri Jan 22, 2027",
+    ),
     async ({ journey }) => {
       await journey.as("hannah-leclerc", "/engagements", { clock: DEMO_INSTANT });
+      await journey.step("J02 step 5: the letter is recorded and G3 is met", async (page) => {
+        await page.getByRole("tab", { name: "Letter & terms" }).click();
+        await page.getByRole("button", { name: "Record signed letter…" }).click();
+        const sheet = page.getByRole("dialog", { name: "Record signed letter" });
+        await sheet.getByLabel("Client signed on").fill("2026-09-14");
+        await sheet.getByLabel("Firm signed on").fill("2026-09-14");
+        await sheet.getByRole("button", { name: "Record letter" }).click();
+        await page.getByRole("tab", { name: "Overview" }).click();
+        for (const gate of ["G1", "G2", "G3"]) {
+          await expect(page.locator(`[data-gate='${gate}'][data-met='met']`)).toBeVisible();
+        }
+        await expect(page.getByText(/Work items open when the letter is signed/)).toHaveCount(0);
+      });
     },
   );
 
