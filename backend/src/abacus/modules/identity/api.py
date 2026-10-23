@@ -173,7 +173,7 @@ from abacus.modules.identity.slots import (
     register_scope_resolver,
     resolve_scope,
 )
-from abacus.modules.identity.staff import issue_staff_invitation_token
+from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
 from abacus.modules.identity.support import Staff
 from abacus.modules.identity.team import (
     Candidate,
@@ -331,6 +331,7 @@ __all__ = [
     "firm_time_zone",
     "grant_client_access",
     "invitation_router",
+    "invite_first_admins",
     "is_active_member",
     "is_synthetic_firm",
     "issue_grant",

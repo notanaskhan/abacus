@@ -12,14 +12,18 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import AsyncIterator, Callable
+from dataclasses import replace
 from datetime import timedelta
 from typing import cast
 
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 from temporalio.client import Client
 from temporalio.worker import Worker
 
 from abacus.kernel.config import settings
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.db.session import configure_engine, dispose_engine
 from abacus.kernel.dispatch import queue_for
 from abacus.kernel.temporal import configure_temporal_client, data_converter
@@ -32,6 +36,8 @@ from abacus.modules.platform.api import (
     operator_context,
     provisioning_workflow_id,
 )
+from abacus.modules.platform.provisioning import invite_admins, set_plan_entitlements
+from abacus.modules.platform.workflow_types import ProvisionTenantInput
 from abacus_tools import tenants
 from abacus_tools.tenants import ProvisionRequest, Refused
 
@@ -122,7 +128,8 @@ async def test_ac_rerunning_a_provision_with_the_same_key_returns_the_same_tenan
     assert first.already_provisioned is False
     assert first.workflow_id == f"tenant_provision:{first.tenant_id}"
     result = await _finished(temporal, first.tenant_id)
-    assert result == ProvisionTenantResult(str(first.tenant_id), "none", 0, 0)
+    # 0107: "pilot" holds no modules here (0 rows); its one first administrator is invited.
+    assert result == ProvisionTenantResult(str(first.tenant_id), "none", 0, 1)
 
     again = await tenants.provision(_ops_url(migrated_db), _request(key))
     assert again.tenant_id == first.tenant_id
@@ -168,8 +175,10 @@ async def test_ac_the_audit_trail_names_the_operator_on_every_step(
     )
     trail = await _audit(seed, outcome.tenant_id)
     assert [action for _, _, action in trail] == [
+        "tenant.entitlements_changed",  # the plan's (0107)
+        "staff_invitation.issued",  # the first administrator (0107)
         "tenant.provisioned",
-        "tenant.entitlements_changed",
+        "tenant.entitlements_changed",  # the operator's `make entitlement`
     ]
     assert {(kind, actor) for kind, actor, _ in trail} == {("system", f"operator:{OPERATOR}")}
 
@@ -282,3 +291,108 @@ async def test_an_entitlement_for_an_unknown_firm_is_refused(
             operator=OPERATOR,
             reason="pilot plan",
         )
+
+
+# --- 0107: the plan's entitlements and the first administrators' invitations ------------------
+
+
+async def _plan(seed: Seeder, migrated_db: MigratedDatabase) -> str:
+    code = f"plan_{uuid.uuid4().hex[:10]}"
+    await seed.run("INSERT INTO plans (code, name) VALUES ($1, 'Probe plan')", code)
+    for module, seats in (("attest", 12), ("insights", None)):
+        await tenants.set_plan_module(
+            _ops_url(migrated_db),
+            plan=code,
+            module=module,
+            seats=seats,
+            minutes=None,
+            operator=OPERATOR,
+        )
+    return code
+
+
+@pytest.mark.usefixtures("worker")
+async def test_q01t45_a_new_firm_gets_its_plans_entitlements_and_first_admin_invitations(
+    migrated_db: MigratedDatabase, seed: Seeder, temporal: Client
+) -> None:
+    plan = await _plan(seed, migrated_db)
+    request = replace(
+        _request(f"provision-{uuid.uuid4().hex}"),
+        plan=plan,
+        admins=("first.admin@sink.example.test", "second.admin@sink.example.test"),
+    )
+    outcome = await tenants.provision(_ops_url(migrated_db), request)
+    result = await _finished(temporal, outcome.tenant_id)
+    assert (result.entitlement_rows, result.invitations_sent) == (2, 2)
+    held = await seed.rows(
+        "SELECT module, seats, plan_code, set_by FROM tenant_entitlements WHERE tenant_id = $1 "
+        "ORDER BY module",
+        outcome.tenant_id,
+    )
+    assert [(r["module"], r["seats"], r["plan_code"]) for r in held] == [
+        ("attest", 12, plan),
+        ("insights", None, plan),
+    ]
+    assert {r["set_by"] for r in held} == {f"operator:{OPERATOR}"}
+    invited = await seed.rows(
+        "SELECT email, firm_role, invited_by, issued_by_operator FROM staff_invitations "
+        "WHERE tenant_id = $1 ORDER BY email",
+        outcome.tenant_id,
+    )
+    assert [(r["email"], r["firm_role"], r["invited_by"]) for r in invited] == [
+        ("first.admin@sink.example.test", "firm_admin", None),
+        ("second.admin@sink.example.test", "firm_admin", None),
+    ]
+    assert {r["issued_by_operator"] for r in invited} == {f"operator:{OPERATOR}"}
+    events = await seed.value(
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 "
+        "AND event_type = 'staff_invitation.issued'",
+        outcome.tenant_id,
+    )
+    assert events == 2
+
+
+async def test_q01t45_the_writers_refuse_anything_but_a_new_firm(
+    migrated_db: MigratedDatabase, seed: Seeder
+) -> None:
+    unprovisioned = await seed.firm()
+    with pytest.raises(DBAPIError, match="was not provisioned"):
+        await _as_app(
+            unprovisioned, "SELECT apply_plan_entitlements(:tenant, 'pilot', 'operator:probe-op')"
+        )
+    staffed = await seed.firm()
+    await seed.person(staffed)  # an active member: no more operator-issued admin invitations
+    with pytest.raises(DBAPIError, match="already has members"):
+        await _as_app(
+            staffed,
+            "SELECT invite_first_admin(:tenant, 'late@sink.example.test', 'operator:probe-op')",
+        )
+
+
+async def _as_app(tenant: uuid.UUID, sql: str) -> None:
+    async with tenant_session(TenantContext(tenant, "system", "operator:probe-op")) as session:
+        await session.execute(text(sql), {"tenant": tenant})
+
+
+async def test_q01t45_a_retried_step_writes_nothing_twice(
+    migrated_db: MigratedDatabase, seed: Seeder
+) -> None:
+    plan = await _plan(seed, migrated_db)
+    tenant = await tenants.create_firm(
+        _ops_url(migrated_db), _request(f"provision-{uuid.uuid4().hex}")
+    )
+    given = ProvisionTenantInput(
+        tenant_id=str(tenant),
+        slug="canary-co",
+        synthetic=True,
+        plan=plan,
+        admins=("only.admin@sink.example.test",),
+        idempotency_key="x" * 12,
+        operator=OPERATOR,
+    )
+    assert await set_plan_entitlements(given) == 2
+    assert await set_plan_entitlements(given) == 0
+    assert await invite_admins(given) == 1
+    assert await invite_admins(given) == 1
+    count = await seed.value("SELECT count(*) FROM staff_invitations WHERE tenant_id = $1", tenant)
+    assert count == 1

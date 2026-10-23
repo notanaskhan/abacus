@@ -11,9 +11,10 @@ firm exists: each activity reads the firm under its row-level security first.
 from __future__ import annotations
 
 import re
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
+from sqlalchemy import text
 from temporalio import activity
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import ApplicationError, WorkflowAlreadyStartedError
@@ -21,8 +22,8 @@ from temporalio.exceptions import ApplicationError, WorkflowAlreadyStartedError
 from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Target, uow
-from abacus.modules.identity.api import firm_tenancy
+from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.identity.api import firm_tenancy, invite_first_admins
 from abacus.modules.platform.events import TenantProvisioned
 from abacus.modules.platform.workflow_types import ProvisionTenantInput
 from abacus.modules.platform.workflows import TenantProvisioningWorkflow, provisioning_workflow_id
@@ -84,3 +85,45 @@ async def emit_tenant_provisioned(given: ProvisionTenantInput) -> str:
 @activity.defn(name="platform.emit_tenant_provisioned")
 async def emit_tenant_provisioned_activity(given: ProvisionTenantInput) -> str:
     return await emit_tenant_provisioned(given)
+
+
+async def set_plan_entitlements(given: ProvisionTenantInput) -> int:
+    """The firm's entitlements from its plan (`apply_plan_entitlements`, migration 0107), as the
+    operator. Only for a newly provisioned firm with none yet: a retry writes nothing more."""
+    tenant_id = UUID(given.tenant_id)
+    ctx = operator_context(tenant_id, given.operator)
+    if await firm_tenancy(ctx) is None:
+        raise ApplicationError("FirmNotFound", type="FirmNotFound", non_retryable=True)
+    async with uow(ctx) as tx:
+        rows = cast(
+            int,
+            (
+                await tx.session.execute(
+                    text("SELECT apply_plan_entitlements(:tenant, :plan, :operator)"),
+                    {"tenant": tenant_id, "plan": given.plan, "operator": ctx.actor_id},
+                )
+            ).scalar_one(),
+        )
+        tx.record(
+            "tenant.entitlements_changed", target=Target("firm", tenant_id), after=Ref(rows=rows)
+        )
+    return rows
+
+
+@activity.defn(name="platform.set_plan_entitlements")
+async def set_plan_entitlements_activity(given: ProvisionTenantInput) -> int:
+    return await set_plan_entitlements(given)
+
+
+async def invite_admins(given: ProvisionTenantInput) -> int:
+    """The firm's first administrators, invited as the operator (identity, migration 0107)."""
+    tenant_id = UUID(given.tenant_id)
+    ctx = operator_context(tenant_id, given.operator)
+    if await firm_tenancy(ctx) is None:
+        raise ApplicationError("FirmNotFound", type="FirmNotFound", non_retryable=True)
+    return len(await invite_first_admins(ctx, given.admins))
+
+
+@activity.defn(name="platform.invite_first_admins")
+async def invite_first_admins_activity(given: ProvisionTenantInput) -> int:
+    return await invite_admins(given)

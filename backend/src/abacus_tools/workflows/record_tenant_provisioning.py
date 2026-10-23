@@ -5,7 +5,8 @@ Run: python -m abacus_tools.workflows.record_tenant_provisioning <output-directo
 
 Records the real `TenantProvisioningWorkflow` against throwaway containers with its activity
 replaced by a stub (replay never runs activities):
-- `tenant-provisioning-<version>-provisioned.json`: `tenant.provisioned` is recorded.
+- `tenant-provisioning-<version>-provisioned.json`: `tenant.provisioned` is recorded; from v2,
+  after the plan's entitlements and the first administrators' invitations.
 Synthetic values only (a `.test` sink address, a made-up operator handle). Refuses to overwrite an
 existing file.
 """
@@ -39,6 +40,16 @@ async def _emit(given: ProvisionTenantInput) -> str:
     return "none"
 
 
+@activity.defn(name="platform.set_plan_entitlements")  # v2 (migration 0107)
+async def _entitle(given: ProvisionTenantInput) -> int:
+    return 2
+
+
+@activity.defn(name="platform.invite_first_admins")  # v2 (migration 0107)
+async def _invite(given: ProvisionTenantInput) -> int:
+    return len(given.admins)
+
+
 async def _run(client: Client) -> WorkflowHistory:
     handle = await client.start_workflow(
         TenantProvisioningWorkflow.run,
@@ -61,7 +72,10 @@ async def _run(client: Client) -> WorkflowHistory:
 async def _record(out: Path, version: str, stack: Stack) -> None:
     client = await connect(stack)
     async with Worker(
-        client, task_queue=_TASK_QUEUE, workflows=[TenantProvisioningWorkflow], activities=[_emit]
+        client,
+        task_queue=_TASK_QUEUE,
+        workflows=[TenantProvisioningWorkflow],
+        activities=[_emit, _entitle, _invite],
     ):
         scrubbed = await decoded_and_scrubbed(await _run(client), payload_codec())
         path = out / f"tenant-provisioning-{version}-provisioned.json"

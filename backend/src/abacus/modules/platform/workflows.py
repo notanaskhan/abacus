@@ -11,12 +11,10 @@ Patch points. Each step that is not in v1 lands with its own change, behind its 
 - `KMS_CHILD_PATCH`: the child `TenantKeyWorkflow` (`tenant_key:<tenant_id>`, keyops queue)
   arrives with Q-01-T27. Until then a provisioned firm keeps `kms_key_status = 'none'`, and a firm
   without a `replica_verified` key stores no client content (ADR-156).
-- `PLAN_ENTITLEMENTS_PATCH`: `set_plan_entitlements` needs a writer the worker may use (the app
-  role only reads `tenant_entitlements`, and `plans` names no modules). Until then an operator
-  sets entitlements with `make entitlement`.
-- `FIRST_ADMINS_PATCH`: `invite_first_admins` needs a staff invitation no member sent
-  (`staff_invitations.invited_by` is a NOT NULL membership). Until then the input carries the
-  addresses and nothing is sent.
+- `PLAN_ENTITLEMENTS_PATCH` (on, migration 0107): `set_plan_entitlements` writes the plan's
+  modules (`plan_modules`) through `apply_plan_entitlements`, for a newly provisioned firm only.
+- `FIRST_ADMINS_PATCH` (on, migration 0107): `invite_first_admins` issues operator-sent staff
+  invitations through `invite_first_admin`, while the firm has no member.
 - `G04_PLAN_PATCH`: G-04's console plan step (`g04_plan_v2`).
 """
 
@@ -54,6 +52,25 @@ def provisioning_workflow_id(tenant_id: str) -> str:
 class TenantProvisioningWorkflow:
     @workflow.run
     async def run(self, input: ProvisionTenantInput) -> ProvisionTenantResult:
+        # v2 (0107): the plan's entitlements, then the first administrators' invitations. A v1
+        # history (no markers) replays without them.
+        rows = invited = 0
+        if workflow.patched(PLAN_ENTITLEMENTS_PATCH):
+            rows = await workflow.execute_activity(
+                "platform.set_plan_entitlements",
+                input,
+                result_type=int,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
+        if workflow.patched(FIRST_ADMINS_PATCH):
+            invited = await workflow.execute_activity(
+                "platform.invite_first_admins",
+                input,
+                result_type=int,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
         # v1: provision_firm created the firm; record it as provisioned, by the operator.
         key_status = await workflow.execute_activity(
             "platform.emit_tenant_provisioned",
@@ -62,4 +79,4 @@ class TenantProvisioningWorkflow:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_RETRY,
         )
-        return ProvisionTenantResult(input.tenant_id, key_status, 0, 0)
+        return ProvisionTenantResult(input.tenant_id, key_status, rows, invited)

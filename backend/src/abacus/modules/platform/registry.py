@@ -12,6 +12,7 @@ TABLES: frozenset[str] = frozenset(
     {"platform_controls", "platform_control_changes", "firm_provisioning_requests"}
     # F-03-T28 (ADR-148): plans (global) and the firms' module entitlements (read-only to the app).
     | {"plans", "tenant_entitlements"}
+    | {"plan_modules"}  # Q-01-T45 (0107)
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset({"platform_control_changes"})

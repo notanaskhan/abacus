@@ -16,7 +16,9 @@ from abacus.modules.platform.provisioning import (
     OPERATOR_HANDLE,
     WORKFLOWS,
     emit_tenant_provisioned_activity,
+    invite_first_admins_activity,
     operator_context,
+    set_plan_entitlements_activity,
     start_provisioning,
 )
 from abacus.modules.platform.routes import router
@@ -38,7 +40,11 @@ ROUTERS: tuple[AbacusRouter, ...] = (router,)
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156).
 SUBSCRIPTIONS: dict[str, Handler] = {}
-ACTIVITIES: tuple[object, ...] = (emit_tenant_provisioned_activity,)
+ACTIVITIES: tuple[object, ...] = (
+    emit_tenant_provisioned_activity,
+    set_plan_entitlements_activity,  # Q-01-T45 (0107)
+    invite_first_admins_activity,
+)
 
 __all__ = [
     "ACTIVITIES",

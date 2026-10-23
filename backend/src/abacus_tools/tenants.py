@@ -255,6 +255,35 @@ async def set_entitlement(
         await connection.close()
 
 
+async def set_plan_module(
+    ops_dsn: str,
+    *,
+    plan: str,
+    module: str,
+    seats: int | None,
+    minutes: int | None,
+    operator: str,
+) -> None:
+    """A plan's module, as `abacus_ops` (`set_plan_module`, migration 0107): plan contents are
+    operator data the provisioning workflow applies to a new firm, never code."""
+    if module not in _MODULES:
+        raise Refused(f"unknown module {module!r}")
+    connection = await asyncpg.connect(_dsn(ops_dsn))
+    try:
+        await connection.execute(
+            "SELECT set_plan_module($1, $2, $3, $4, $5)",
+            plan,
+            module,
+            seats,
+            minutes,
+            f"operator:{_operator(operator)}",
+        )
+    except asyncpg.ForeignKeyViolationError:
+        raise Refused(f"no plan {plan!r}") from None
+    finally:
+        await connection.close()
+
+
 def _boolean(value: str) -> bool:
     lowered = value.strip().lower()
     if lowered not in ("true", "false"):
@@ -274,6 +303,12 @@ def _parser() -> argparse.ArgumentParser:
     provisioning.add_argument("--idempotency-key", required=True)
     provisioning.add_argument("--operator", required=True)
     provisioning.add_argument("--time-zone", default=DEFAULT_TIME_ZONE)
+    planning = sub.add_parser("plan-module")
+    planning.add_argument("--plan", required=True)
+    planning.add_argument("--module", required=True, choices=_MODULES)
+    planning.add_argument("--seats", type=int, default=None)
+    planning.add_argument("--agent-minutes", type=int, default=None)
+    planning.add_argument("--operator", required=True)
     showing = sub.add_parser("status")
     showing.add_argument("--tenant", type=UUID, required=True)
     entitling = sub.add_parser("entitlement")
@@ -306,6 +341,21 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
             print(f"{args.module} for {args.firm}: enabled={args.enabled} seats={args.seats}")
+            return 0
+        if args.command == "plan-module":
+            if s.ops_database_url is None:
+                raise Refused("ops_database_url (the abacus_ops role) is not set")
+            asyncio.run(
+                set_plan_module(
+                    s.ops_database_url.get_secret_value(),
+                    plan=args.plan,
+                    module=args.module,
+                    seats=args.seats,
+                    minutes=args.agent_minutes,
+                    operator=args.operator,
+                )
+            )
+            print(f"plan {args.plan}: {args.module} seats={args.seats}")
             return 0
         if s.database_url is None:
             raise Refused("database_url is not set")
