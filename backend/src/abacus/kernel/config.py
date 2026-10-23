@@ -466,6 +466,9 @@ class Settings(BaseSettings):
     def _edge_hosts(self) -> Self:
         if self.portal_base_domain is not None and not _DOMAIN.fullmatch(self.portal_base_domain):
             raise ValueError("portal_base_domain must be a lower-case DNS name")
+        # ADR-163 section 2: the neutral portal domain never names the product in any label.
+        if self.portal_base_domain is not None and "accrued" in self.portal_base_domain.lower():
+            raise ValueError("portal_base_domain must be a neutral domain (ADR-163)")
         if self.environment not in LOCAL_STACK:
             # Unset is reported by `_explicit_outside_local`; a bad value is reported here.
             if self.trusted_hosts is not None and (

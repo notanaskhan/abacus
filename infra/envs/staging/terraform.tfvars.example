@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Placeholders use the reserved .test suffix.
+# Never commit real domains or account IDs: the repository is public.
+
+# The neutral portal domain (F-09-T09). Must not contain the product name (ADR-163).
+portal_base_domain = "portal-domain.example.test"
+
+# Set only after its CNAME points at the default connection group (infra/README.md "Portal edge").
+# portal_canary_custom_domain = "portal.canary-firm.example.test"
+
+# From Q-01-T15's load balancer and VPC origin.
+api_vpc_origin_id      = "vo_0000000000000000"
+api_origin_domain_name = "internal-api.staging.example.test"
+
+# count for the first two weeks, then block.
+portal_managed_rules_action = "count"

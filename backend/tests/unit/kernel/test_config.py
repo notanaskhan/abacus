@@ -338,3 +338,21 @@ def test_ac20_non_local_environments_load_without_a_fake_connector_dir(
     monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
     _explicit_connection_env(monkeypatch)
     assert Settings().fake_connector_dir is None
+
+
+# ADR-163 section 2 and its enforcement list (Q-01-T56): the neutral portal domain is a setting
+# and never names the product.
+@pytest.mark.parametrize(
+    "domain", ["accrued.example.test", "portal.accrued.test", "myaccruedportal.example.test"]
+)
+def test_a_portal_base_domain_naming_the_product_is_refused(
+    monkeypatch: pytest.MonkeyPatch, domain: str
+) -> None:
+    monkeypatch.setenv("ABACUS_PORTAL_BASE_DOMAIN", domain)
+    with pytest.raises(ValueError, match="neutral domain"):
+        Settings()
+
+
+def test_a_neutral_portal_base_domain_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ABACUS_PORTAL_BASE_DOMAIN", "portal-domain.example.test")
+    assert Settings().portal_base_domain == "portal-domain.example.test"
