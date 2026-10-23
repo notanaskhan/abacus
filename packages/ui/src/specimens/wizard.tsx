@@ -31,6 +31,7 @@ const TOOLBAR = {
   firmTitle: "Brightwater Hale LLP",
   active: "Engagements",
   holdLabelWidth: false,
+  moreFirst: true,
 } as const;
 
 const STEPS = [
