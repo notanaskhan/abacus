@@ -12,21 +12,24 @@ from uuid import UUID, uuid4
 
 from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.listing import Position, decode_cursor, encode_cursor, query_hash
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import MissingAuditEvent, OutboxEvent, Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, engagement_resource, walled_from
 from abacus.modules.notifications.catalogue import CATALOGUE
-from abacus.modules.notifications.kinds import Fact, InlineAction, Row, kind_of
+from abacus.modules.notifications.email import queue_emails, start_queued
+from abacus.modules.notifications.kinds import Fact, InlineAction, Row, kind_of, registered
 from abacus.modules.notifications.repository import (
     insert_notifications,
     list_own,
     list_window,
     mark_all_read,
     mark_read,
+    own_preferences,
     purge,
+    save_preference,
     unread_count,
 )
 
@@ -117,6 +120,7 @@ async def notify(event: OutboxEvent) -> None:
     ]
     if not rows:
         return
+    made = 0
     try:
         async with uow(ctx) as tx:
             made = await insert_notifications(tx.session, rows)
@@ -127,8 +131,12 @@ async def notify(event: OutboxEvent) -> None:
                     after=Ref(count=made),
                 )
     except MissingAuditEvent:
-        return  # a redelivery: every row already existed
-    _created.add(made, {"kind": entry.kind})
+        pass  # a redelivery: every row already existed; their emails are still checked
+    if made:
+        _created.add(made, {"kind": entry.kind})
+    # P-01-T12: the email channel. Delivery rows once, then each queued email starts once.
+    await queue_emails(ctx, event.event_id, entry.kind)
+    await start_queued(ctx, event.event_id)
 
 
 async def my_notifications(
@@ -208,6 +216,9 @@ async def feed(
     since = await now(ctx.tenant) - timedelta(days=days)
     async with tenant_session(ctx.tenant) as session:
         window = await list_window(session, ctx, since=since, cap=WINDOW_CAP)
+        chosen = await own_preferences(session, ctx.user_id)
+    # P-01-T12: a kind the person turned off in the app is neither shown nor counted.
+    window = [r for r in window if chosen.get(str(r.kind), (True, False))[0]]
     resolved: list[tuple[Row, object, bool]] = []
     for r in window:
         row = Row(r.id, r.kind, r.engagement_id, r.subject_type, r.subject_id, r.created_at)
@@ -317,3 +328,56 @@ async def run_purge_job(stop: asyncio.Event) -> None:
             _log.warning("notifications.purge_failed", error=type(exc).__name__)
         with contextlib.suppress(TimeoutError):
             await asyncio.wait_for(stop.wait(), PURGE_INTERVAL_SECONDS)
+
+
+# --- P-01-T12: the person's own per-kind preferences (C16; OWN) ---------------------------------
+
+
+class UnknownNotificationKind(DomainInvalid):
+    """A preference names a kind that is not registered, or names one twice."""
+
+    code = "unknown_notification_kind"
+
+
+@dataclass(frozen=True)
+class Preference:
+    kind: str
+    in_app: bool
+    email: bool
+
+
+def _default(code: str) -> tuple[bool, bool]:
+    kind = kind_of(code)
+    return (True, kind.email_default if kind is not None else False)
+
+
+async def my_preferences(ctx: AuthContext) -> list[Preference]:
+    """Every registered kind with the caller's choice, else the kind's default (in the app on;
+    email as the kind declares)."""
+    async with tenant_session(ctx.tenant) as session:
+        stored = await own_preferences(session, ctx.user_id)
+    return [Preference(code, *stored.get(code, _default(code))) for code in registered()]
+
+
+async def set_my_preferences(ctx: AuthContext, items: list[Preference]) -> list[Preference]:
+    """The caller's own choices only (OWN). An unchanged choice writes nothing."""
+    codes = [i.kind for i in items]
+    unknown = {c for c in codes if kind_of(c) is None or codes.count(c) > 1}
+    if unknown:
+        raise UnknownNotificationKind(facts={"kind": sorted(unknown)[0], "count": len(unknown)})
+    try:
+        async with uow(ctx.tenant) as tx:
+            changed = 0
+            for item in items:
+                changed += await save_preference(
+                    tx.session, ctx.tenant_id, ctx.user_id, item.kind, item.in_app, item.email
+                )
+            if changed:
+                tx.record(
+                    "notification_preference.changed",
+                    target=Target("user", ctx.user_id),
+                    after=Ref(count=changed),
+                )
+    except MissingAuditEvent:
+        pass  # nothing changed
+    return await my_preferences(ctx)

@@ -71,22 +71,46 @@ class LocalMailbox:
         message_id: UUID | None = None,
     ) -> None:
         ensure_sendable(subject, body)
-        self._dir.mkdir(parents=True, exist_ok=True)
-        sent = system_now()
-        path = self._dir / f"{sent:%Y%m%dT%H%M%S}-{uuid4().hex[:8]}.json"
-        record: dict[str, str | None] = {
-            "to": to,
-            "sender_name": sender_name,
-            "subject": subject,
-            "body": body,
-            "sent_at": sent.isoformat(),
-        }
-        if reply_to is not None:
-            record["reply_to"] = reply_to
-        path.write_text(json.dumps(record), encoding="utf-8")
+        write_mailbox_record(
+            self._dir,
+            to=to,
+            subject=subject,
+            body=body,
+            sender_name=sender_name,
+            reply_to=reply_to,
+        )
 
 
-def _header_safe(value: str, what: str) -> str:
+def write_mailbox_record(
+    directory: Path,
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    sender_name: str | None,
+    reply_to: str | None,
+    extra: dict[str, str] | None = None,
+) -> Path:
+    """One message as a JSON file in the local mailbox: what `LocalMailbox` and
+    `FakeSesTransport` write and the harness's mailbox reader reads (F-04-T22)."""
+    directory.mkdir(parents=True, exist_ok=True)
+    sent = system_now()
+    path = directory / f"{sent:%Y%m%dT%H%M%S%f}-{uuid4().hex[:8]}.json"
+    record: dict[str, str | None] = {
+        "to": to,
+        "sender_name": sender_name,
+        "subject": subject,
+        "body": body,
+        "sent_at": sent.isoformat(),
+    }
+    if reply_to is not None:
+        record["reply_to"] = reply_to
+    record.update(extra or {})
+    path.write_text(json.dumps(record), encoding="utf-8")
+    return path
+
+
+def header_safe(value: str, what: str) -> str:
     """A header value without line breaks: anything that could add a header is refused."""
     if "\r" in value or "\n" in value or "\0" in value:
         raise ValueError(f"{what} has a line break")
@@ -105,7 +129,7 @@ class SesTransport:
     def __init__(self, client: SESV2Client, *, configuration_set: str, from_address: str) -> None:
         self._client = client
         self._configuration_set = configuration_set
-        self._from = _header_safe(from_address, "from address")
+        self._from = header_safe(from_address, "from address")
 
     def send(
         self,
@@ -122,12 +146,12 @@ class SesTransport:
             raise ValueError("a send carries its tenant ID and message ID")
         ensure_sendable(subject, body)
         source = (
-            formataddr((_header_safe(sender_name, "sender name"), self._from))
+            formataddr((header_safe(sender_name, "sender name"), self._from))
             if sender_name
             else self._from
         )
-        recipients = [_header_safe(to, "recipient")]
-        replies = [_header_safe(reply_to, "reply-to")] if reply_to else []
+        recipients = [header_safe(to, "recipient")]
+        replies = [header_safe(reply_to, "reply-to")] if reply_to else []
         try:
             self._client.send_email(
                 FromEmailAddress=source,
@@ -135,7 +159,7 @@ class SesTransport:
                 ReplyToAddresses=replies,
                 Content={
                     "Simple": {
-                        "Subject": {"Data": _header_safe(subject, "subject"), "Charset": "UTF-8"},
+                        "Subject": {"Data": header_safe(subject, "subject"), "Charset": "UTF-8"},
                         "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
                     }
                 },

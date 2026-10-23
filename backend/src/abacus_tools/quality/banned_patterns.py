@@ -1160,7 +1160,8 @@ _BASE = frozenset({"identity", "platform"})
 MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "identity": frozenset(),
     "platform": frozenset({"identity"}),
-    "notifications": _BASE,
+    # P-01-T12: the email channel renders and sends through communications (COMM-001).
+    "notifications": _BASE | {"communications"},
     # SPEC-002 AC-5, DEC-121: the audit explorer hides events about engagements the reader may not
     # see; each owner registers which engagement its targets belong to (kernel.audit_owners),
     # so this reads the registry and depends only on identity and engagements; nothing imports it.

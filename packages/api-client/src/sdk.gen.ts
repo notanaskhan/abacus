@@ -4353,6 +4353,8 @@ export const myCapabilities = <ThrowOnError extends boolean = false>(options?: O
 
 /**
  * Notification Preferences Route
+ *
+ * P-01-T12: every registered kind with the caller's own choice, or its default.
  */
 export const notificationPreferences = <ThrowOnError extends boolean = false>(options?: Options<NotificationPreferencesData, ThrowOnError>): RequestResult<NotificationPreferencesResponses, NotificationPreferencesErrors, ThrowOnError> => (options?.client ?? client).get<NotificationPreferencesResponses, NotificationPreferencesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4362,6 +4364,9 @@ export const notificationPreferences = <ThrowOnError extends boolean = false>(op
 
 /**
  * Set Notification Preferences Route
+ *
+ * P-01-T12: the caller's own choices (OWN); 422 `unknown_notification_kind` for a kind not
+ * registered or named twice. Email for a kind sends only while `notifications.email` is on.
  */
 export const setNotificationPreferences = <ThrowOnError extends boolean = false>(options: Options<SetNotificationPreferencesData, ThrowOnError>): RequestResult<SetNotificationPreferencesResponses, SetNotificationPreferencesErrors, ThrowOnError> => (options.client ?? client).put<SetNotificationPreferencesResponses, SetNotificationPreferencesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -76232,6 +76232,7 @@
     },
     "/v1/me/notification-preferences": {
       "get": {
+        "description": "P-01-T12: every registered kind with the caller's own choice, or its default.",
         "operationId": "notification_preferences",
         "parameters": [
           {
@@ -76317,16 +76318,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Notification Preferences Route",
@@ -76336,6 +76327,7 @@
         "x-abacus-action": "own"
       },
       "put": {
+        "description": "P-01-T12: the caller's own choices (OWN); 422 `unknown_notification_kind` for a kind not\nregistered or named twice. Email for a kind sends only while `notifications.email` is on.",
         "operationId": "set_notification_preferences",
         "parameters": [
           {
@@ -76431,16 +76423,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Notification Preferences Route",

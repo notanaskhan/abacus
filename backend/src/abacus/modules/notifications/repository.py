@@ -1,14 +1,18 @@
-"""Notifications data access: the `notifications` table only (ADR-008, ADR-103)."""
+"""Notifications data access: `notifications`, `notification_preferences` and
+`notification_deliveries` only (ADR-008, ADR-103)."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
+    FetchedValue,
     MetaData,
     String,
     Table,
@@ -161,3 +165,159 @@ async def mark_all_read(session: AsyncSession, ctx: AuthContext) -> int:
 async def purge(session: AsyncSession, days: int) -> int:
     count = await session.scalar(text("SELECT notifications_purge(:days)"), {"days": days})
     return int(count or 0)
+
+
+# --- P-01-T12: per-kind preferences and the email channel's delivery rows (C16) ----------------
+
+preferences = Table(
+    "notification_preferences",
+    MetaData(),
+    Column("tenant_id", PgUUID(as_uuid=True), primary_key=True),
+    Column("user_id", PgUUID(as_uuid=True), primary_key=True),
+    Column("kind", String, primary_key=True),
+    Column("in_app", Boolean),
+    Column("email", Boolean),
+    Column("updated_at", DateTime(timezone=True)),
+)
+deliveries = Table(
+    "notification_deliveries",
+    MetaData(),
+    Column("id", PgUUID(as_uuid=True), primary_key=True, server_default=FetchedValue()),
+    Column("tenant_id", PgUUID(as_uuid=True)),
+    Column("notification_id", PgUUID(as_uuid=True)),
+    Column("channel", String),
+    Column("status", String),
+    Column("message_ref", String),
+    Column("created_at", DateTime(timezone=True)),
+)
+
+
+async def own_preferences(session: AsyncSession, user_id: UUID) -> dict[str, tuple[bool, bool]]:
+    """The person's stored choices, kind to (in app, email); a kind not stored has none."""
+    rows = await session.execute(
+        select(preferences.c.kind, preferences.c.in_app, preferences.c.email).where(
+            preferences.c.user_id == user_id
+        )
+    )
+    return {str(kind): (bool(in_app), bool(email)) for kind, in_app, email in rows}
+
+
+async def email_choices(
+    session: AsyncSession, kind: str, user_ids: list[UUID]
+) -> dict[UUID, bool]:
+    """Stored email choices for one kind, by person (the platform at fan-out)."""
+    if not user_ids:
+        return {}
+    rows = await session.execute(
+        select(preferences.c.user_id, preferences.c.email).where(
+            preferences.c.kind == kind, preferences.c.user_id.in_(user_ids)
+        )
+    )
+    return {user: bool(email) for user, email in rows}
+
+
+async def save_preference(
+    session: AsyncSession, tenant_id: UUID, user_id: UUID, kind: str, in_app: bool, email: bool
+) -> bool:
+    """Insert or change one choice; True when something changed."""
+    stored = await session.execute(
+        pg_insert(preferences)
+        .values(tenant_id=tenant_id, user_id=user_id, kind=kind, in_app=in_app, email=email)
+        .on_conflict_do_update(
+            index_elements=[preferences.c.tenant_id, preferences.c.user_id, preferences.c.kind],
+            set_={"in_app": in_app, "email": email, "updated_at": func.abacus_now()},
+            where=(preferences.c.in_app != in_app) | (preferences.c.email != email),
+        )
+        .returning(preferences.c.kind)
+    )
+    return stored.first() is not None
+
+
+async def made_for_event(
+    session: AsyncSession, event_id: UUID, kind: str
+) -> dict[UUID, tuple[UUID, UUID | None]]:
+    """The event's notifications of one kind: id to (recipient, engagement). For the platform's
+    fan-out of the same event, never returned to a caller."""
+    rows = await session.execute(
+        select(
+            notifications.c.id,
+            notifications.c.recipient_user_id,
+            notifications.c.engagement_id,
+        ).where(notifications.c.event_id == event_id, notifications.c.kind == kind)
+    )
+    return {nid: (user, engagement) for nid, user, engagement in rows}
+
+
+async def insert_delivery(
+    session: AsyncSession, tenant_id: UUID, notification_id: UUID, status: str
+) -> bool:
+    """One email delivery row per notification (the UNIQUE makes a redelivery a no-op)."""
+    made = await session.execute(
+        pg_insert(deliveries)
+        .values(
+            tenant_id=tenant_id, notification_id=notification_id, channel="email", status=status
+        )
+        .on_conflict_do_nothing(constraint="notification_deliveries_once")
+        .returning(deliveries.c.id)
+    )
+    return made.first() is not None
+
+
+async def queued_for_event(session: AsyncSession, event_id: UUID) -> list[UUID]:
+    """The event's notifications whose email is still queued: the ones to start."""
+    rows = await session.execute(
+        select(deliveries.c.notification_id)
+        .join(notifications, notifications.c.id == deliveries.c.notification_id)
+        .where(
+            notifications.c.event_id == event_id,
+            deliveries.c.channel == "email",
+            deliveries.c.status == "queued",
+        )
+    )
+    return [nid for (nid,) in rows]
+
+
+@dataclass(frozen=True)
+class DeliveryFacts:
+    status: str
+    kind: str
+    recipient_user_id: UUID
+    engagement_id: UUID | None
+
+
+async def delivery_facts(session: AsyncSession, notification_id: UUID) -> DeliveryFacts | None:
+    """What the email activity proves itself from: the delivery row and its notification."""
+    row = (
+        await session.execute(
+            select(
+                deliveries.c.status,
+                notifications.c.kind,
+                notifications.c.recipient_user_id,
+                notifications.c.engagement_id,
+            )
+            .join(notifications, notifications.c.id == deliveries.c.notification_id)
+            .where(
+                deliveries.c.notification_id == notification_id, deliveries.c.channel == "email"
+            )
+        )
+    ).first()
+    if row is None:
+        return None
+    return DeliveryFacts(str(row.status), str(row.kind), row.recipient_user_id, row.engagement_id)
+
+
+async def settle_delivery(
+    session: AsyncSession, notification_id: UUID, status: str, message_ref: str | None
+) -> bool:
+    """A queued email's outcome, once: True when this call moved it."""
+    moved = await session.execute(
+        update(deliveries)
+        .where(
+            deliveries.c.notification_id == notification_id,
+            deliveries.c.channel == "email",
+            deliveries.c.status == "queued",
+        )
+        .values(status=status, message_ref=message_ref)
+        .returning(deliveries.c.id)
+    )
+    return moved.first() is not None

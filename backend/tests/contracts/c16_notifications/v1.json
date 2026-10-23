@@ -1,0 +1,381 @@
+{
+  "EmailTemplateImportIn": {
+    "additionalProperties": false,
+    "description": "Platform staff author the text here, never in code (AGENTS 16).",
+    "properties": {
+      "body_text": {
+        "cls": "internal",
+        "maxLength": 20000,
+        "title": "Body Text",
+        "type": "string"
+      },
+      "key": {
+        "cls": "internal",
+        "maxLength": 80,
+        "title": "Key",
+        "type": "string"
+      },
+      "locale": {
+        "cls": "internal",
+        "default": "en-US",
+        "maxLength": 5,
+        "title": "Locale",
+        "type": "string"
+      },
+      "subject": {
+        "cls": "internal",
+        "maxLength": 200,
+        "title": "Subject",
+        "type": "string"
+      },
+      "variables": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 10,
+        "title": "Variables",
+        "type": "array"
+      }
+    },
+    "required": [
+      "key",
+      "subject",
+      "body_text",
+      "variables"
+    ],
+    "title": "EmailTemplateImportIn",
+    "type": "object"
+  },
+  "EmailTemplateImportOut": {
+    "properties": {
+      "content_sha256": {
+        "cls": "internal",
+        "title": "Content Sha256",
+        "type": "string"
+      },
+      "created": {
+        "cls": "internal",
+        "title": "Created",
+        "type": "boolean"
+      },
+      "template_id": {
+        "cls": "internal",
+        "title": "Template Id",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "template_id",
+      "version",
+      "content_sha256",
+      "created"
+    ],
+    "title": "EmailTemplateImportOut",
+    "type": "object"
+  },
+  "NotificationActorOut": {
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "human",
+          "agent",
+          "system",
+          "policy"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "User Id"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "title": "NotificationActorOut",
+    "type": "object"
+  },
+  "NotificationCountsOut": {
+    "properties": {
+      "approvals": {
+        "cls": "internal",
+        "title": "Approvals",
+        "type": "integer"
+      },
+      "client_activity": {
+        "cls": "internal",
+        "title": "Client Activity",
+        "type": "integer"
+      },
+      "mentions": {
+        "cls": "internal",
+        "title": "Mentions",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "approvals",
+      "mentions",
+      "client_activity"
+    ],
+    "title": "NotificationCountsOut",
+    "type": "object"
+  },
+  "NotificationFeedOut": {
+    "description": "The P-36 list envelope plus the tab counts and the bell's unread count.",
+    "properties": {
+      "counts": {
+        "$ref": "#/components/schemas/NotificationCountsOut",
+        "cls": "internal"
+      },
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/NotificationItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Cursor"
+      },
+      "unread_count": {
+        "cls": "internal",
+        "title": "Unread Count",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "items",
+      "next_cursor",
+      "counts",
+      "unread_count"
+    ],
+    "title": "NotificationFeedOut",
+    "type": "object"
+  },
+  "NotificationItemOut": {
+    "description": "A row as the drawer shows it. Rows store identifiers and codes only; `facts` are\nresolved at read time and may hold client content, so they are Restricted and never logged.",
+    "properties": {
+      "actor": {
+        "$ref": "#/components/schemas/NotificationActorOut",
+        "cls": "internal"
+      },
+      "category": {
+        "cls": "internal",
+        "enum": [
+          "approval",
+          "mention",
+          "client_activity",
+          "run",
+          "deadline",
+          "system",
+          "other"
+        ],
+        "title": "Category",
+        "type": "string"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "engagement_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Engagement Id"
+      },
+      "facts": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cls": "restricted",
+        "title": "Facts",
+        "type": "object"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "inline_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "accept_document",
+            "return_document",
+            "open_sign_off"
+          ],
+          "type": "string"
+        },
+        "title": "Inline Actions",
+        "type": "array"
+      },
+      "kind": {
+        "cls": "internal",
+        "title": "Kind",
+        "type": "string"
+      },
+      "pending": {
+        "cls": "internal",
+        "title": "Pending",
+        "type": "boolean"
+      },
+      "read": {
+        "cls": "internal",
+        "title": "Read",
+        "type": "boolean"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/ObjectRefOut",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "category",
+      "created_at",
+      "read",
+      "actor",
+      "subject",
+      "engagement_id",
+      "facts",
+      "inline_actions",
+      "pending"
+    ],
+    "title": "NotificationItemOut",
+    "type": "object"
+  },
+  "NotificationPreferenceOut": {
+    "properties": {
+      "email": {
+        "cls": "internal",
+        "title": "Email",
+        "type": "boolean"
+      },
+      "in_app": {
+        "cls": "internal",
+        "title": "In App",
+        "type": "boolean"
+      },
+      "kind": {
+        "cls": "internal",
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "in_app",
+      "email"
+    ],
+    "title": "NotificationPreferenceOut",
+    "type": "object"
+  },
+  "NotificationPreferencesIn": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/NotificationPreferenceOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "NotificationPreferencesIn",
+    "type": "object"
+  },
+  "NotificationPreferencesOut": {
+    "properties": {
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/NotificationPreferenceOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "NotificationPreferencesOut",
+    "type": "object"
+  },
+  "ObjectRefOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "type": {
+        "cls": "internal",
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "id"
+    ],
+    "title": "ObjectRefOut",
+    "type": "object"
+  }
+}

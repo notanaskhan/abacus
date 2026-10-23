@@ -1529,6 +1529,8 @@ def test_ac20_bound_002_applies_only_inside_modules(tmp_path: Path, rel: str) ->
         ("organisations", {"identity", "platform"}),
         ("engagements", {"identity", "platform", "organisations", "methodology"}),
         ("requests", {"identity", "platform", "engagements"}),
+        # P-01-T12: notification email renders and sends through communications (COMM-001).
+        ("notifications", {"identity", "platform", "communications"}),
         ("ledger", set[str]()),
         (
             "connections",

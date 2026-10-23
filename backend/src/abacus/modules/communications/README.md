@@ -20,6 +20,16 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
   - `delete_identity(domain=)` is quiet when SES has no identity for the domain.
   - `SesIdentities` calls SES v2 through `kernel.storage.sesv2_client()` when `ses_configuration_set` is set. `InMemorySesIdentities` serves local and test runs. An SES error raises `SesIdentityUnavailable`, carrying the error code only. No tag or name carries a tenant: which firm owns a domain is R-01's record.
 
+- `send_email(...)`: the one path to a transport. It refuses a suppressed address (Q-01-T46). For a synthetic firm it first routes the recipient to the mail sink (`sink.py`, F-04-T22):
+  - an address on the sink domain is kept;
+  - any other is rewritten to `<local-part>+<tenant-short>@<sink>`;
+  - with no sink (an environment that set no `mail_sink_domain` and isn't local, test or evaluation), or an address the sink can't take, it is refused. The refusal is logged with IDs only, never the address.
+- `send_notification_email(NotificationMail)` (P-01-T12): renders the published C16 template `notification.<kind>` with the four whitelisted values and sends through `send_email`. The message ID is the notification's ID.
+- `FakeSesTransport` and `FakeSesEventQueue` (`fake_ses.py`, F-04.23; synthetic environments only): SES's contract at its edges. The mail goes to the local mailbox, and the delivery events SES would publish go to an in-memory queue that `drain_ses_events` reads. The mailbox simulator gives:
+  - `bounce@` and `suppressionlist@`: a permanent bounce;
+  - `complaint@`: a complaint.
+- The harness reads the mail back with `abacus_tools.harness.mailbox.mail().latest(to)`: the local mailbox, or on staging the sink bucket (`mail_sink_bucket`).
+
 ## Rules
 - COMM-001: nothing outside this module imports a mail or messaging library or emits `message.ready`.
 - No transport yet: delivery comes with Phase 2 increments 2 and 8.

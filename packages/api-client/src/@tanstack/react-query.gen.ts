@@ -7314,6 +7314,8 @@ export const notificationPreferencesQueryKey = (options?: Options<NotificationPr
 
 /**
  * Notification Preferences Route
+ *
+ * P-01-T12: every registered kind with the caller's own choice, or its default.
  */
 export const notificationPreferencesOptions = (options?: Options<NotificationPreferencesData>) => queryOptions<NotificationPreferencesResponse, NotificationPreferencesError, NotificationPreferencesResponse, ReturnType<typeof notificationPreferencesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7330,6 +7332,9 @@ export const notificationPreferencesOptions = (options?: Options<NotificationPre
 
 /**
  * Set Notification Preferences Route
+ *
+ * P-01-T12: the caller's own choices (OWN); 422 `unknown_notification_kind` for a kind not
+ * registered or named twice. Email for a kind sends only while `notifications.email` is on.
  */
 export const setNotificationPreferencesMutation = (options?: Partial<Options<SetNotificationPreferencesData>>): UseMutationOptions<SetNotificationPreferencesResponse, SetNotificationPreferencesError, Options<SetNotificationPreferencesData>> => {
     const mutationOptions: UseMutationOptions<SetNotificationPreferencesResponse, SetNotificationPreferencesError, Options<SetNotificationPreferencesData>> = {
