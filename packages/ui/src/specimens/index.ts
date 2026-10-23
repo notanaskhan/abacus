@@ -98,6 +98,9 @@ import {
 } from "./shell";
 import { CheckboxSpecimen, RadioSpecimen, ToggleSpecimen } from "./toggles";
 import { Tpl18Specimen } from "./wizard";
+import { T12Specimen, Tpl12Specimen } from "./settings";
+import { T11Specimen, Tpl11Specimen } from "./dashboard";
+import { SourceViewerSpecimen } from "./viewer";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
 // "@abacus/ui/specimens": only the gallery subtree, which a production build does not compile,
@@ -364,6 +367,19 @@ export const SPECIMENS: readonly Specimen[] = [
     title: "ConfirmDialog",
     Component: ConfirmDialogSpecimen,
   },
+  // E5 SourceViewer shell (F-05-T47): C-08, full and evidence variants, reveal slot, states
+  {
+    id: "c-08-source-viewer",
+    kit: "C-08",
+    title: "SourceViewer",
+    Component: SourceViewerSpecimen,
+  },
+  // T11 DashboardLayout (F-05-T46): T11a to T11f and TPL-11a to TPL-11f
+  { id: "t11-dashboard", kit: "T11", title: "Dashboard", Component: T11Specimen },
+  { id: "tpl-11", kit: "TPL-11", title: "Dashboard specimen", Component: Tpl11Specimen },
+  // T12 SettingsLayout (F-05-T45): T12a to T12d and TPL-12a to TPL-12e
+  { id: "t12-settings", kit: "T12", title: "Settings form", Component: T12Specimen },
+  { id: "tpl-12", kit: "TPL-12", title: "Settings form specimen", Component: Tpl12Specimen },
   // O6 wizard specimen (F-05-T38): TPL-18a to TPL-18e, the type catalogue and the gate cards
   { id: "tpl-18", kit: "TPL-18", title: "Stepper wizard specimen", Component: Tpl18Specimen },
   {

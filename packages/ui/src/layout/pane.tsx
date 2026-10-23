@@ -231,6 +231,9 @@ export interface PaneProps extends Omit<PaneHeaderProps, "titleId" | "className"
   well?: boolean;
   /** A footer row: padding 10, gap 8, a hairline above. */
   footer?: ReactNode;
+  /** The body scrolls and may hold no control (a feed, a read-only form): it becomes a focusable
+   * region of this name so the keyboard can scroll it (axe scrollable-region-focusable). */
+  scrollLabel?: string;
   className?: string;
   children?: ReactNode;
 }
@@ -244,6 +247,7 @@ export function Pane({
   left,
   right,
   footer,
+  scrollLabel,
   className,
   children,
 }: PaneProps): JSX.Element {
@@ -269,7 +273,14 @@ export function Pane({
           titleId={id}
         />
       )}
-      <div className={cn("min-h-0 flex-1 overflow-auto", well && "bg-shell")}>{children}</div>
+      <div
+        {...(scrollLabel === undefined
+          ? {}
+          : { role: "region", "aria-label": scrollLabel, tabIndex: 0 })}
+        className={cn("min-h-0 flex-1 overflow-auto", well && "bg-shell")}
+      >
+        {children}
+      </div>
       {footer !== undefined && (
         <div className="flex flex-none items-center gap-[8px] p-[10px] hairline-t">{footer}</div>
       )}
