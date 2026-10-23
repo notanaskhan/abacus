@@ -1,0 +1,29 @@
+{
+  "document": "northwind_net_trust_assets",
+  "prompt_ref": "evidence.inbox_match@v2",
+  "content_sha256": "b2e6817212f91827cfe9ad410a46a52ef7ef2d1088239c6c45df0f6c854daa75",
+  "response": {
+    "none_fit": false,
+    "proposals": [
+      {
+        "request": "R1",
+        "confidence": 0.92,
+        "rationale": "The trustee's summary of net trust assets for the Northwind Robotics 401(k) Plan, plan year 2025.",
+        "citations": [
+          {
+            "page": 1,
+            "sheet": null,
+            "cell": null,
+            "quote": "Summary of net trust assets (trust basis)"
+          },
+          {
+            "page": 1,
+            "sheet": null,
+            "cell": null,
+            "quote": "Northwind Robotics 401(k) Plan"
+          }
+        ]
+      }
+    ]
+  }
+}

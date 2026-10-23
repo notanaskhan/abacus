@@ -76,6 +76,20 @@ def _text_page(lines: Sequence[str]) -> bytes:
     return f"BT /F1 10 Tf 14 TL 50 750 Td {body}ET".encode("latin-1")
 
 
+def positioned_pdf(pages: Sequence[Sequence[tuple[float, float, str]]]) -> bytes:
+    """A text PDF whose every run sits at a fixed place: `(x, baseline, text)` in page points,
+    bottom-left origin, Helvetica 10 on a US Letter page. Scenario documents use it so that each
+    cited value has a fixed page region (F-04-T25). Text is ASCII."""
+    streams = [
+        "".join(
+            f"BT /F1 10 Tf 1 0 0 1 {x:.2f} {y:.2f} Tm ({_escape(text)}) Tj ET "
+            for x, y, text in runs
+        ).encode("ascii")
+        for runs in pages
+    ]
+    return _pdf(streams)
+
+
 def _money(value: Decimal) -> str:
     return f"${value:,.2f}" if value >= 0 else f"(${-value:,.2f})"
 

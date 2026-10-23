@@ -1,0 +1,29 @@
+{
+  "document": "northwind_loan_rollforward",
+  "prompt_ref": "evidence.inbox_match@v2",
+  "content_sha256": "dda6d5436a669228b3ea5b9078c39709c423e29e8ea1da3a023d1e7c735efeef",
+  "response": {
+    "none_fit": false,
+    "proposals": [
+      {
+        "request": "R1",
+        "confidence": 0.9,
+        "rationale": "The recordkeeper's annual loan balance roll-forward for the Northwind Robotics 401(k) Plan.",
+        "citations": [
+          {
+            "page": 1,
+            "sheet": null,
+            "cell": null,
+            "quote": "Annual loan balance roll-forward"
+          },
+          {
+            "page": 1,
+            "sheet": null,
+            "cell": null,
+            "quote": "Balance at December 31, 2025"
+          }
+        ]
+      }
+    ]
+  }
+}

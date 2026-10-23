@@ -73,6 +73,7 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.error_codes
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
 	cd backend && uv run python -m abacus_tools.quality.scope_guards
+	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies

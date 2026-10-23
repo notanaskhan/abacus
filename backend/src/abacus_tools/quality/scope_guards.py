@@ -7,8 +7,9 @@ Reads docs/architecture/scope-guards.yaml. Scans, as whole identifiers (never su
   migrations, for excluded identifiers and `single_audit`, and its string constants for banned
   terms;
 - the permission matrix, feature flags and status registry, for excluded identifiers;
-- prompts, and seed scenarios and fixtures when they exist, for both; eval suites for excluded
-  identifiers only (their cases are adversarial data, not product text).
+- prompts, the seed scenarios (`abacus_tools/synthetic/scenarios`, F-04-T09) and the fixtures,
+  for both; eval suites for excluded identifiers only (their cases are adversarial data, not
+  product text).
 Tests are not scanned: they assert the absence. `--write` regenerates
 packages/ui/scope-guards.gen.json (checked for drift without it).
 """
@@ -31,6 +32,9 @@ BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
 SOURCE = REPO / "docs" / "architecture" / "scope-guards.yaml"
 GENERATED = REPO / "packages" / "ui" / "scope-guards.gen.json"
+# The seed scenarios are registered with the guard (F-04-T09; F-04.14): their Python is scanned
+# like product code, and their data files (recorded responses, documents' text) like the seed.
+SCENARIOS = (BACKEND / "src" / "abacus_tools" / "synthetic" / "scenarios",)
 
 
 @dataclass(frozen=True)
@@ -111,7 +115,7 @@ def _files(roots: Iterable[Path], suffixes: tuple[str, ...]) -> Iterator[Path]:
 def scan(guards: Guards | None = None) -> list[Finding]:
     g = guards or load()
     findings: list[Finding] = []
-    python = [BACKEND / "src" / "abacus", BACKEND / "migrations"]
+    python = [BACKEND / "src" / "abacus", BACKEND / "migrations", *SCENARIOS]
     for path in _files(python, (".py",)):
         rel = str(path.relative_to(REPO))
         for line, text in _python_strings(path.read_text()):
@@ -124,7 +128,7 @@ def scan(guards: Guards | None = None) -> list[Finding]:
         REPO / "docs" / "architecture" / "feature-flags",
         REPO / "docs" / "product" / "status-vocabulary.yaml",
         REPO / "evals",
-        REPO / "scenarios",
+        *SCENARIOS,
         REPO / "apps" / "web" / "src" / "fixtures",
         BACKEND / "src" / "abacus" / "ai_gateway" / "prompts",
     ]

@@ -3,6 +3,11 @@
 Each `responses/*.json` file holds `{prompt_ref, content_sha256, response}`. `install(fake)`
 records them on a `FakeModel`, which refuses to exist outside local runs and tests, so recorded
 responses can only ever answer in a synthetic environment.
+
+F-04-T25 adds the files, written by hand from the scenario documents (`documents.py`): every
+citation resolves to one of the document's fixed regions and is verified by code, except the one
+planted unsupported value, `PLANTED_UNSUPPORTED`, which verification marks unverified so that
+SHL-10c and SHL-09e show "Uncited" with the approve control disabled (INV-2).
 """
 
 from __future__ import annotations
@@ -14,6 +19,10 @@ from typing import Final, cast
 from abacus.ai_gateway import FakeModel
 
 DIRECTORY: Final = Path(__file__).parent / "responses"
+# (file, citation index): the screener cites the accrual-basis contributions, 1,366,900.00 (which
+# include the 48,600 receivable fieldwork finds later), against the trust-basis trial balance's
+# cell D11, which holds 1,318,300.00. Code finds the value mismatch: the value is "Uncited".
+PLANTED_UNSUPPORTED: Final = ("northwind_trial_balance.screen.json", 3)
 
 
 class ResponseFileInvalid(ValueError):
