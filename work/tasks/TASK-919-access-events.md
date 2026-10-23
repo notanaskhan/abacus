@@ -1,5 +1,5 @@
 ---
-id: TASK-917
+id: TASK-919
 title: Access events - partitioned insert-only table, kernel.access writer, first emitters (Q-02-T20)
 spec: SPEC-319
 acceptance_criteria: [AC-6]

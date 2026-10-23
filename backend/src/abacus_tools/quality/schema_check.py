@@ -72,6 +72,7 @@ _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
     {"audit_events", "eval_case_results", "outbox", "usage_records"}
     | {"idempotency_keys"}  # P-06-T06
     | {"access_events"}  # Q-02-T20
+    | {"audit_checkpoints", "audit_anchors"}  # Q-02-T21
 )
 # Insert columns for tables outside the modules (TASK-006); modules declare theirs.
 _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -96,12 +97,22 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "budgets": frozenset({"tenant_id", "monthly_soft_usd", "monthly_hard_usd", "updated_by"}),
     # Feature flags (SPEC-011): set per firm by operators.
     "feature_flag_states": frozenset({"tenant_id", "flag", "value", "set_by", "reason"}),
+    "audit_checkpoints": frozenset(  # Q-02-T21
+        {"tenant_id", "checkpoint_no", "seq_from", "seq_to", "event_count", "leaf_version"}
+        | {"merkle_root", "prev_chain_hash", "chain_hash"}
+    ),
+    "audit_anchors": frozenset(  # Q-02-T21
+        {"tenant_id", "anchor_date", "through_checkpoint_no", "chain_hash", "object_key"}
+        | {"object_version_id", "retain_until"}
+    ),
 }
 # Tables whose rows no role may change or remove: a BEFORE UPDATE OR DELETE trigger and a BEFORE
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
 IMMUTABLE_TABLES: dict[str, str] = {
     "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
     "access_events": "access_events_immutable",  # 0105 (Q-02-T20)
+    "audit_checkpoints": "audit_chain_immutable",  # 0106 (Q-02-T21)
+    "audit_anchors": "audit_chain_immutable",  # 0106 (Q-02-T21)
     "message_deliveries": "message_deliveries_immutable",  # 0104 (Q-01-T46)
     "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
     "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
@@ -134,6 +145,9 @@ _PLATFORM_TABLE_OWNERS: dict[str, str] = {
     "outbox": "kernel.uow",
     "idempotency_keys": "kernel.uow",  # P-06-T06 (migration 0099)
     "access_events": "kernel.access",  # Q-02-T20 (0105): monthly partitions, insert-only
+    # Q-02-T21 (0106): the audit hash chain, beside the events it seals.
+    "audit_checkpoints": "kernel.uow",
+    "audit_anchors": "kernel.uow",
     # Evaluation runs (SPEC-005 Q2): written only by the evaluation tooling.
     "eval_runs": "abacus_tools.evals",
     "eval_case_results": "abacus_tools.evals",

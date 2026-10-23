@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify
 
 setup:
 	cd backend && uv sync --locked
@@ -175,6 +175,10 @@ evals:
 # SPEC-012: the quarterly break-glass access review (owner credentials). QUARTER=2026Q4
 access-review:
 	cd backend && uv run python -m abacus_tools.access_review --quarter $(QUARTER)
+
+# Q-02-T21: recompute a firm's audit checkpoints from their rows; exits 1 on any mismatch.
+audit-chain-verify:
+	cd backend && uv run python -m abacus_tools.audit_chain verify --tenant $(TENANT)
 
 # SPEC-011: set a firm's feature flag (operators; audited).
 flag:
