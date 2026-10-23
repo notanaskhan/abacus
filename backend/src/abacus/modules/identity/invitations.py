@@ -158,12 +158,14 @@ async def revoke_invitation(
 async def resend_invitation(
     tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, invitation_id: UUID
 ) -> None:
-    """AC-10: a new token at delivery (the old one stops working) and a fresh 7 days."""
+    """AC-10: the old link stops working now, a new token comes at delivery, and a fresh 7
+    days (Q-03-T007: the old hash used to live until the new email went out)."""
     row = await get_invitation(tx.session, invitation_id, lock=True)
     if row is None or row["engagement_id"] != engagement_id or row["status"] != "pending":
         raise NotFound("client_invitation")
     await _client_admin_limited(ctx, engagement_id, str(row["role"]))
     await extend_invitation(tx.session, invitation_id, INVITATION_DAYS)
+    await set_token_hash(tx.session, invitation_id, None)
     tx.record("client_invitation.resent", target=Target("client_invitation", invitation_id))
     tx.emit(ClientInvitationIssued(invitation_id=invitation_id))
 
