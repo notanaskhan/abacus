@@ -469,7 +469,9 @@ async def inherit_holds(tx: UnitOfWork, version_id: UUID, engagement_id: UUID) -
             await session.execute(
                 text(
                     "SELECT id, scope_kind, client_id, tax_year, engagement_id FROM legal_holds "
-                    "WHERE status IN ('applying', 'active')"
+                    # FOR SHARE: a lift's status change waits for this upload's transaction, so
+                    # its release pass sees the row inherited here (self-review, S6).
+                    "WHERE status IN ('applying', 'active') FOR SHARE"
                 )
             )
         )
