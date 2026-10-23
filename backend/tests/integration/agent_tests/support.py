@@ -9,7 +9,8 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -108,6 +109,16 @@ class Seeder:
         conn = await asyncpg.connect(self._dsn)
         try:
             return list(await conn.fetch(sql, *args))
+        finally:
+            await conn.close()
+
+    @asynccontextmanager
+    async def held(self) -> AsyncGenerator[asyncpg.Connection]:
+        """One superuser connection held across several statements (P-06-T29 reads goldens
+        before and inside a rolled-back change on the same connection)."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            yield conn
         finally:
             await conn.close()
 
