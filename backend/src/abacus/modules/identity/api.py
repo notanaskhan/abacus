@@ -107,6 +107,16 @@ from abacus.modules.identity.invitations import (
 from abacus.modules.identity.labels import ROLE_LABELS
 from abacus.modules.identity.member_hooks import register_member_added
 from abacus.modules.identity.portal_contract import contacts_router
+from abacus.modules.identity.portal_idp import (
+    CODE_DIGITS,
+    TOTP_STEP_SECONDS,
+    TOTP_WINDOW,
+    PortalIdp,
+    PortalIdpUnavailable,
+    TotpEnrolment,
+    check_issuer,
+    totp_at,
+)
 from abacus.modules.identity.repository import (
     EngagementRole,
     MemberFacts,
@@ -228,6 +238,7 @@ register_tenant_clock(tenant_demo_time)
 
 __all__ = [
     "ACTION_KEY",
+    "CODE_DIGITS",
     "EQR_ROLES",
     "IDENTITY",
     "MFA_RECENT",
@@ -240,6 +251,8 @@ __all__ = [
     "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)
     "SELF",
     "STAFF",
+    "TOTP_STEP_SECONDS",
+    "TOTP_WINDOW",
     "WALL_SAFE",
     "AbacusRoute",
     "AbacusRouter",
@@ -273,6 +286,8 @@ __all__ = [
     "LevelNotAvailable",
     "MemberFacts",
     "NoActiveTenant",
+    "PortalIdp",
+    "PortalIdpUnavailable",
     "PortalScopes",
     "Resource",
     "Rule",
@@ -284,6 +299,7 @@ __all__ = [
     "SystemContext",
     "TeamMember",
     "TokenVerifier",
+    "TotpEnrolment",
     "UnknownAction",
     "VerifiedIdentity",
     "VisibleScopeKind",
@@ -304,6 +320,7 @@ __all__ = [
     "available_staff",
     "candidates",
     "change_role",
+    "check_issuer",
     "client_admins",
     "clock_view",
     "configure_staff_verifier",
@@ -388,6 +405,7 @@ __all__ = [
     "system_context_for_run",
     "team_of",
     "token_verifier",
+    "totp_at",
     "visible",
     "visible_clients",
     "visible_items",

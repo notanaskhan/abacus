@@ -4,7 +4,8 @@
 //              page clock fixed at the scenario instant; the API is the in-page fixture, so there
 //              is nothing to probe over HTTP.
 //   fullstack  `make dev` + `make seed-demo` + fakes + the injected clock, never a hosted database:
-//              the local OIDC server's chooser signs the persona in by name.
+//              the local OIDC server's chooser signs the persona in by name, or, for the
+//              scenario's staff, the WorkOS fake's email code and authenticator (F-04-T27).
 //   staging    the demo tenant: real WorkOS, codes from the staging sink.
 //   canary     the production canary tenant: real clock, no loader.
 //
@@ -87,6 +88,40 @@ const fixture: PersonaAdapter = {
   probe: () => Promise.resolve(null),
 };
 
+/** A seat's work email, as the scenario writes it (people.py `email_of`). */
+export function staffEmail(name: string): string {
+  const [first = "", ...rest] = name.toLowerCase().split(" ");
+  return `${first}.${rest.join("")}@brightwaterhale.com`;
+}
+
+async function harnessCode(page: Page, url: string): Promise<string> {
+  const response = await page.request.get(url, { failOnStatusCode: true });
+  const body = (await response.json()) as { code?: string | null };
+  if (typeof body.code !== "string") throw new Error(`no sign-in code at ${url}`);
+  return body.code;
+}
+
+/**
+ * F-04-T27: the WorkOS fake's hosted email-code sign-in on the local sign-in server (SHL-06a →
+ * b → c → g). The emailed code and the authenticator code come from the fake's harness readers,
+ * which exist only on that local server.
+ */
+export async function signInWithEmailCode(page: Page, persona: Persona): Promise<void> {
+  const email = staffEmail(persona.name);
+  const idp = new URL(page.url()).origin;
+  const query = `email=${encodeURIComponent(email)}`;
+  await page.getByLabel("Work email").fill(email);
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("heading", { name: "Check your email" }).waitFor();
+  await page.getByLabel("Code").fill(await harnessCode(page, `${idp}/_harness/code?${query}`));
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("heading", { name: "Two-step verification" }).waitFor();
+  const totp = await harnessCode(page, `${idp}/_harness/totp?${query}`);
+  await page.getByLabel("Authenticator code").fill(totp);
+  await page.getByRole("button", { name: "Verify" }).click();
+  await page.waitForURL((url) => url.origin !== idp);
+}
+
 const fullstack: PersonaAdapter = {
   project: "fullstack",
   async open(page, persona, path) {
@@ -95,6 +130,9 @@ const fullstack: PersonaAdapter = {
     if ((await choose.count()) > 0) {
       await choose.first().click();
       await page.getByText(persona.name).first().waitFor();
+    } else if (persona.kind === "staff" && (await page.getByLabel("Work email").count()) > 0) {
+      // The scenario's staff (make seed-demo) are not on the chooser: they sign in by email code.
+      await signInWithEmailCode(page, persona);
     }
     if (path !== "/") await page.goto(path);
   },

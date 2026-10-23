@@ -1,0 +1,29 @@
+{
+  "document": "northwind_trial_balance",
+  "prompt_ref": "evidence.screen@v0",
+  "content_sha256": "4e73ac631ca55be70ce4cee9a97ffaad968710aeeb6b8480202ba9c4c6905901",
+  "response": {
+    "action": "ready_for_review",
+    "confidence": 0.88,
+    "rationale": "Code reports equal debit and credit totals, and the trial balance covers the 2025 plan year on the trust basis. Contributions are as received.",
+    "citations": [
+      {
+        "cell": "C17",
+        "value": "17663450.00"
+      },
+      {
+        "cell": "D17",
+        "value": "17663450.00"
+      },
+      {
+        "cell": "B2",
+        "quote": "KRS 500 Index Fund"
+      },
+      {
+        "cell": "D11",
+        "value": "1366900.00"
+      }
+    ],
+    "unverified": []
+  }
+}

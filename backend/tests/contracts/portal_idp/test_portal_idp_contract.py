@@ -1,8 +1,8 @@
 """P-08-T06: the portal identity provider port's contract (DEC-155). Every implementation passes
 the same tests: the in-memory provider always, WorkOS staging when `ABACUS_TEST_WORKOS_API_KEY` and
 `ABACUS_TEST_WORKOS_CLIENT_ID` are set (the persona users live on the sink domain), and F-04-T27's
-WorkOS fake when it lands. No code path sends a client a WorkOS-branded email: Magic Auth is never
-called, and sign-in codes are the portal's own."""
+WorkOS fake (`abacus_tools.fakes.workos`) always. No code path sends a client a WorkOS-branded
+email: Magic Auth is never called, and sign-in codes are the portal's own."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from abacus.modules.identity.portal_idp import (
     issue_email_code,
     totp_at,
 )
+from abacus_tools.fakes.workos import FakeWorkOsPortalIdp
 
 SRC = Path(port.__file__).parents[2]  # src/abacus
 SINK = os.environ.get("ABACUS_TEST_WORKOS_SINK_DOMAIN", "sink.example.test")
@@ -39,12 +40,21 @@ def _workos() -> PortalIdp:
 
 # WorkOS staging joins only where its test credentials are present (a CI job or a person's
 # shell), so the suite never needs a skip.
-PROVIDERS = ["memory", *(["workos"] if os.environ.get("ABACUS_TEST_WORKOS_API_KEY") else [])]
+PROVIDERS = [
+    "memory",
+    "workos-fake",
+    *(["workos"] if os.environ.get("ABACUS_TEST_WORKOS_API_KEY") else []),
+]
 
 
 @pytest.fixture(params=PROVIDERS)
 async def idp(request: pytest.FixtureRequest) -> AsyncIterator[PortalIdp]:
-    yield InMemoryPortalIdp() if request.param == "memory" else _workos()
+    if request.param == "memory":
+        yield InMemoryPortalIdp()
+    elif request.param == "workos-fake":
+        yield FakeWorkOsPortalIdp()
+    else:
+        yield _workos()
 
 
 def _email() -> str:
