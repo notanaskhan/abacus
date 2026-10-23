@@ -221,6 +221,11 @@ class Settings(BaseSettings):
     staff_issuer: Annotated[str | None, classified("internal")] = None
     staff_audience: Annotated[str | None, classified("internal")] = None
     staff_jwks: Annotated[str | None, classified("internal")] = None
+    # P-08-T06 (DEC-155): WorkOS User Management and MFA for portal clients. Unset outside AWS:
+    # local runs and tests use the in-memory provider, and a deployed process without them answers
+    # portal sign-in with 503 rather than fall back.
+    workos_api_key: Annotated[SecretStr | None, classified("restricted")] = None
+    workos_client_id: Annotated[str | None, classified("internal")] = None
     database_statement_timeout_ms: Annotated[int, classified("internal")] = 30_000
     s3_endpoint_url: Annotated[str | None, classified("internal")] = None
     s3_access_key: Annotated[SecretStr | None, classified("restricted")] = None
