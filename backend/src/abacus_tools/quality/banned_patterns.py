@@ -434,6 +434,18 @@ def _check_clock(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+def _check_policy_context(src: SourceFile) -> Iterator[Finding]:
+    """Q-02 AC-16: the dormant policy actor is the kernel's alone. A `TenantContext` whose actor
+    kind is "policy" (the second argument, or `actor_kind=`) anywhere else is refused."""
+    for node in ast.walk(src.tree):
+        if not isinstance(node, ast.Call) or _terminal_name(node.func) != "TenantContext":
+            continue
+        kinds = [node.args[1]] if len(node.args) > 1 else []
+        kinds += [k.value for k in node.keywords if k.arg == "actor_kind"]
+        if any(isinstance(k, ast.Constant) and k.value == "policy" for k in kinds):
+            yield Finding(node.lineno, "only abacus.kernel acts as the policy actor (Q-02 AC-16)")
+
+
 # The unit of work's own connection, and the relay's BYPASSRLS engine.
 _UOW_ONLY = frozenset({"tenant_connection", "relay_engine", "configure_relay_engine"})
 
@@ -1978,6 +1990,14 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/identity/routes.py",
             "src/abacus/modules/identity/api.py",
         ),
+    ),
+    Rule(
+        id="POLICY-001",
+        description="Only the kernel constructs a policy-actor context",
+        adr="ADR-005, ADR-161",
+        check=_check_policy_context,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/*",),
     ),
     Rule(
         id="CTX-001",

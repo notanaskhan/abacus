@@ -2572,3 +2572,33 @@ def test_f04_t17_clock_001_leaves_the_clock_its_import_cycle_and_tests_alone(
 def test_f04_t17_clock_001_allows_the_clock_api_and_unrelated_now(tmp_path: Path) -> None:
     _write(tmp_path, SERVICE, "a = system_now()\nb = await now(tenant)\nc = frame.now()\n")
     assert [v for v in bp.scan(tmp_path) if v.rule_id == "CLOCK-001"] == []
+
+
+# --- POLICY-001 (Q-02 AC-16): the policy actor is the kernel's ---------------------------------
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        'TenantContext(tenant, "policy", "policy:thresholds:v1")\n',
+        'TenantContext(tenant, actor_kind="policy", actor_id="policy:x")\n',
+        'db.TenantContext(tenant, "policy", "p")\n',
+    ],
+)
+def test_q02_policy_001_flags_a_policy_context_outside_the_kernel(
+    tmp_path: Path, source: str
+) -> None:
+    assert _flags(tmp_path, "POLICY-001", "src/abacus/modules/engagements/service.py", source)
+
+
+@pytest.mark.parametrize(
+    ("rel", "source"),
+    [
+        ("src/abacus/kernel/policy.py", 'TenantContext(tenant, "policy", "policy:x")\n'),
+        ("src/abacus/modules/engagements/service.py", 'TenantContext(tenant, "system", "x")\n'),
+    ],
+)
+def test_q02_policy_001_allows_the_kernel_and_other_actors(
+    tmp_path: Path, rel: str, source: str
+) -> None:
+    assert not _flags(tmp_path, "POLICY-001", rel, source)
