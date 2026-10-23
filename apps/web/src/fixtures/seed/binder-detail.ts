@@ -416,7 +416,14 @@ function build(spec: BinderSpec): BinderFixture {
     closed_reason: null,
     follow_up_override: { every_days: 7, max: 4 },
     undo_until: null,
-    allowed_actions: ["binder.read", "binder.publish", "binder.update", "binder.create"],
+    allowed_actions: [
+      "binder.read",
+      "binder.publish",
+      "binder.update",
+      "binder.create",
+      "follow_up.draft", // P-06-T16: "Send reminder…"
+      "follow_up.send",
+    ],
   };
   const live: BinderLiveOut = {
     as_of: "2026-09-14T14:24:00.000Z",

@@ -225,7 +225,13 @@ export const OSTERBERG_UNPUBLISH = {
 /** What a firm person may do on a TY2025 binder in the fixture. Assumes Brightwater Hale's
  * `client_service_can_publish` is on (the BND-01 canvas has Grace publish and unpublish from the
  * row menu); P-06-T08's firm settings own the real value. */
-export const BINDER_ACTIONS = ["binder.read", "binder.publish", "binder.create"] as const;
+export const BINDER_ACTIONS = [
+  "binder.read",
+  "binder.publish",
+  "binder.create",
+  "follow_up.draft", // P-06-T16: "Send reminder(s)…"
+  "follow_up.send",
+] as const;
 
 function userIdOf(initials: string): string | null {
   const seat = SEATS.find((s) => s.initials === initials);

@@ -19,6 +19,10 @@ export const COPY = {
   /** "+ New binder" in spec.md: the plus is the button's icon, and an opener of a sheet ends in
    * "…" (plan 04 rule 9; DV-12 in docs/screens/BND-01.md). */
   newBinder: "New binder…",
+  /** The pane header's "Send reminders…"; with a row selected, the bulk bar's "Send reminder…"
+   * (spec.md layout and state b). UI words stay "reminder"; identifiers say follow_up (DV-7). */
+  sendReminders: "Send reminders…",
+  sendReminder: "Send reminder…",
   columns: {
     binder: "Binder",
     client: "Client",

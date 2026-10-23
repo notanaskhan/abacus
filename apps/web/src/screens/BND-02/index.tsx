@@ -42,6 +42,8 @@ import { useSession } from "../../app-core/session";
 import {
   BinderRequestRow,
   CategoryList,
+  type FollowUpSelection,
+  FollowUpSheet,
   allows,
   categoryIcon,
   isSatisfied,
@@ -133,6 +135,9 @@ export function BND02({
   const writes = useBinderWrites(binderId, binder?.engagement_id);
   const [category, setCategory] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [followUp, setFollowUp] = useState<FollowUpSelection | null>(null);
+  const canFollowUp = binder !== undefined && allows(binder, "follow_up.draft");
+  const person = useSession().user?.displayName ?? "";
   const [publishing, setPublishing] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
   const [waiving, setWaiving] = useState<BinderRequestRowOut | null>(null);
@@ -313,6 +318,11 @@ export function BND02({
   const ignored = rows.filter((r) => r.client_ignored_at != null).length;
   const canPublish = allows(binder, "binder.publish");
   const reminderPrimary = overdue > 0;
+  // BND-02 d: "Send reminder…" drafts for the open items only (Requested or Returned, visible to
+  // the client); the follow-up sheet lists each once (P-06-T16).
+  const openIds = rows
+    .filter((r) => (r.status === "requested" || r.status === "returned") && r.client_visible)
+    .map((r) => r.id);
   const actions = (
     <span className="flex items-center gap-[8px]">
       <Button
@@ -329,8 +339,10 @@ export function BND02({
       <Button
         variant={reminderPrimary ? "primary" : "secondary"}
         size="sm"
-        disabled
-        title={COPY.canvas.sendReminderHint}
+        disabled={!canFollowUp || openIds.length === 0}
+        onClick={() => {
+          setFollowUp({ kind: "requests", requestItemIds: openIds });
+        }}
       >
         {COPY.canvas.sendReminder}
       </Button>
@@ -541,6 +553,13 @@ export function BND02({
           onReturn={() => {
             setReturning(selected);
           }}
+          {...(canFollowUp
+            ? {
+                onRemind: () => {
+                  setFollowUp({ kind: "requests", requestItemIds: [selected.id] });
+                },
+              }
+            : {})}
         />
       ),
   };
@@ -556,6 +575,13 @@ export function BND02({
         rail={rail}
         canvas={canvas}
         dock={dock}
+      />
+      <FollowUpSheet
+        selection={followUp}
+        person={person}
+        onClose={() => {
+          setFollowUp(null);
+        }}
       />
       <ClientPreviewSheet
         open={previewing}
@@ -717,6 +743,7 @@ function RequestDock({
   onVisible,
   onWaive,
   onReturn,
+  onRemind,
 }: {
   row: BinderRequestRowOut;
   binder: BinderOut;
@@ -728,6 +755,8 @@ function RequestDock({
   onVisible: (visible: boolean) => void;
   onWaive: () => void;
   onReturn: () => void;
+  /** "Send reminder…" for this one request (P-06-T16); absent when the person may not draft. */
+  onRemind?: () => void;
 }): JSX.Element {
   const now = useNow();
   const detail = useRequestDetail(binder.engagement_id, row.id);
@@ -847,8 +876,7 @@ function RequestDock({
             </Button>
           </>
         ) : row.overdue ? (
-          // The follow-up sheet is P-06-T16's.
-          <Button variant="secondary" disabled title={COPY.canvas.sendReminderHint}>
+          <Button variant="secondary" disabled={onRemind === undefined} onClick={onRemind}>
             {COPY.dock.remind}
           </Button>
         ) : first !== undefined ? (

@@ -112,6 +112,9 @@ _BINDER_ACTIONS: Final = (
     "binder.mark_done",
     "request_item.read",
     "activity.read",
+    # P-06-T16: BND-02's "Send reminder…" (follow-ups v2; DEC-74).
+    "follow_up.draft",
+    "follow_up.send",
 )
 # Actions a client principal takes on a binder: denied on one it can't see answers 404 (INV-4).
 _CLIENT_READS: Final = frozenset({"binder.read", "binder.mark_done", "request_item.read"})
@@ -424,7 +427,7 @@ async def _view(ctx: AuthContext, binder_id: UUID) -> BinderView:
         undo_until = ends if now < ends else None
     allowed = set(await allowed_actions(ctx, resource, _BINDER_ACTIONS))
     if binder.status == "closed":
-        allowed -= {"binder.publish", "binder.update"}
+        allowed -= {"binder.publish", "binder.update", "follow_up.draft", "follow_up.send"}
     if binder.status != "published":
         allowed.discard("binder.mark_done")
     by_category = {c.id: [i for i in items if i.category_id == c.id] for c in categories}

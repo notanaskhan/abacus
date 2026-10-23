@@ -6,7 +6,7 @@ import type { Manifest } from "./types";
 export const bndScreens = {
   "BND-01": {
     name: "Binders index",
-    status: "fixture", // P-06-T09: a, c, d, e on fixtures; live with P-06-T11 and T16
+    status: "fixture", // P-06-T09 a, c, d, e; P-06-T16 b and the follow-up sheet; live once walked on staging
     path: "/binders",
     navArea: "Binders",
   },
