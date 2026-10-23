@@ -93,3 +93,12 @@ class AccessChanged(DomainEvent):
     event_type: ClassVar[str] = "access.changed"
 
     user_id: Annotated[UUID, classified("internal")]
+
+
+class PortalSignInCodeRequested(DomainEvent):
+    """A portal sign-in needs its code emailed: communications issues the code at delivery, so it
+    is never stored (P-08-T10; the invitation pattern). Never an email, code or IP."""
+
+    event_type: ClassVar[str] = "portal.sign_in_code_requested"
+
+    challenge_id: Annotated[UUID, classified("internal")]

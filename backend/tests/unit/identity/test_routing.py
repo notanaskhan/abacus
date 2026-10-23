@@ -241,7 +241,13 @@ def test_ac20_self_is_used_only_on_v1_me() -> None:
 
 def test_adr165_pre_session_is_used_only_on_the_three_sign_in_routes() -> None:
     paths = {r.path for r in _routes() if declared_action(r) == PRE_SESSION}
-    assert paths == {"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"}
+    assert paths == {"/v1/auth/sign-in", "/v1/auth/callback", "/v1/auth/refresh"} | {
+        # P-08-T10 (ADR-168): the portal's code sign-in.
+        "/v1/portal/auth/start",
+        "/v1/portal/auth/verify",
+        "/v1/portal/auth/resend",
+        "/v1/portal/auth/refresh",
+    }
 
 
 def test_adr165_the_router_refuses_pre_session_on_any_other_path() -> None:

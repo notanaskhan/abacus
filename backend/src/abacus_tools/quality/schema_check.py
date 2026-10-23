@@ -69,6 +69,8 @@ NON_TENANT_TABLES = frozenset(
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05): definers only
     # 0101 (P-01-T09, ADR-165): staff sessions span firms; definers only.
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}
+    # 0116 (P-08-T10, ADR-168): portal sign-in comes before any tenant; definers only.
+    | {"sign_in_challenges", "sign_in_locks"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -211,6 +213,7 @@ GLOBAL_TABLES = frozenset(
     | {"retention_floors", "retention_policy_defaults"}  # 0112 (Q-02-T23)
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
+    | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -247,6 +250,10 @@ DEFINER_FUNCTIONS = frozenset(
     | {"apply_plan_entitlements", "invite_first_admin", "set_plan_module"}
     # 0111 (P-08-T05, ADR-163): branding before sign-in, and a firm's own portal hosts.
     | {"portal_resolve_host", "portal_host_logo", "portal_domain_add", "portal_domain_activate"}
+    # 0116 (P-08-T10, ADR-168): the portal's code sign-in and its host-pinned sessions.
+    | {"portal_sign_in_start", "portal_sign_in_issue", "portal_sign_in_check"}
+    | {"portal_sign_in_fail", "portal_sign_in_consume", "portal_sign_in_resend"}
+    | {"portal_session_start", "portal_session_resolve", "portal_session_rotate"}
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}

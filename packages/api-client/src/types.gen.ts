@@ -11016,6 +11016,103 @@ export type PortalSignInPolicyOut = {
 };
 
 /**
+ * PortalSignInResendIn
+ *
+ * New code, old code void, tries not reset; 429 `resend_too_soon {resend_available_at}`.
+ */
+export type PortalSignInResendIn = {
+    /**
+     * Challenge Id
+     */
+    challenge_id: string;
+};
+
+/**
+ * PortalSignInStartIn
+ *
+ * `POST /v1/portal/auth/start`. At most one of the two tokens.
+ */
+export type PortalSignInStartIn = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Invitation Token
+     */
+    invitation_token?: string | null;
+    /**
+     * Link Token
+     */
+    link_token?: string | null;
+};
+
+/**
+ * PortalSignInStartOut
+ *
+ * Always 202 with this shape, for any email (unknown, staff, no grant, another firm's,
+ * locked): identical status, body and padded timing. No email is sent unless eligible.
+ */
+export type PortalSignInStartOut = {
+    /**
+     * Challenge Id
+     */
+    challenge_id: string;
+    /**
+     * Code Expires At
+     */
+    code_expires_at: string;
+    /**
+     * Resend Available At
+     */
+    resend_available_at: string;
+};
+
+/**
+ * PortalSignInVerifyIn
+ */
+export type PortalSignInVerifyIn = {
+    /**
+     * Challenge Id
+     */
+    challenge_id: string;
+    /**
+     * Code
+     */
+    code: string;
+};
+
+/**
+ * PortalSignInVerifyOut
+ *
+ * 200. `signed_in` carries the access token and the landing; the MFA states carry a
+ * 5-minute single-use `mfa_token`. Errors: 401 `code_mismatch {tries_left}`, 423
+ * `sign_in_locked {locked_until}`, 410 `code_expired`, 503 `sign_in_paused`.
+ */
+export type PortalSignInVerifyOut = {
+    /**
+     * Access Token
+     */
+    access_token?: string | null;
+    /**
+     * Expires In
+     */
+    expires_in?: number | null;
+    /**
+     * Landing
+     */
+    landing?: 'home' | 'requests' | 'k1s' | 'governance' | 'intake' | 'component_room' | 'none' | null;
+    /**
+     * Mfa Token
+     */
+    mfa_token?: string | null;
+    /**
+     * State
+     */
+    state: 'signed_in' | 'mfa_required' | 'mfa_setup_required';
+};
+
+/**
  * PreferencesIn
  */
 export type PreferencesIn = {
@@ -38761,6 +38858,249 @@ export type PublishRetentionFloorsResponses = {
 };
 
 export type PublishRetentionFloorsResponse = PublishRetentionFloorsResponses[keyof PublishRetentionFloorsResponses];
+
+export type PortalRefreshData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Csrf
+         */
+        'X-Abacus-CSRF'?: string | null;
+        /**
+         * Origin
+         */
+        origin?: string | null;
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/refresh';
+};
+
+export type PortalRefreshErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalRefreshError = PortalRefreshErrors[keyof PortalRefreshErrors];
+
+export type PortalRefreshResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSignInVerifyOut;
+};
+
+export type PortalRefreshResponse = PortalRefreshResponses[keyof PortalRefreshResponses];
+
+export type PortalResendData = {
+    body: PortalSignInResendIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/resend';
+};
+
+export type PortalResendErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Gone: the sign-in code expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Too soon: wait before asking again
+     */
+    429: ErrorOut;
+};
+
+export type PortalResendError = PortalResendErrors[keyof PortalResendErrors];
+
+export type PortalResendResponses = {
+    /**
+     * Successful Response
+     */
+    202: PortalSignInStartOut;
+};
+
+export type PortalResendResponse = PortalResendResponses[keyof PortalResendResponses];
+
+export type PortalSignOutData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/sign-out';
+};
+
+export type PortalSignOutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalSignOutError = PortalSignOutErrors[keyof PortalSignOutErrors];
+
+export type PortalSignOutResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignedOutOut;
+};
+
+export type PortalSignOutResponse = PortalSignOutResponses[keyof PortalSignOutResponses];
+
+export type PortalStartData = {
+    body: PortalSignInStartIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/start';
+};
+
+export type PortalStartErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalStartError = PortalStartErrors[keyof PortalStartErrors];
+
+export type PortalStartResponses = {
+    /**
+     * Successful Response
+     */
+    202: PortalSignInStartOut;
+};
+
+export type PortalStartResponse = PortalStartResponses[keyof PortalStartResponses];
+
+export type PortalVerifyData = {
+    body: PortalSignInVerifyIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/verify';
+};
+
+export type PortalVerifyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Gone: the sign-in code expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Locked: too many wrong codes
+     */
+    423: ErrorOut;
+};
+
+export type PortalVerifyError = PortalVerifyErrors[keyof PortalVerifyErrors];
+
+export type PortalVerifyResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSignInVerifyOut;
+};
+
+export type PortalVerifyResponse = PortalVerifyResponses[keyof PortalVerifyResponses];
 
 export type MarkBinderDoneData = {
     body?: never;

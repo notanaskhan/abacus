@@ -64,6 +64,7 @@ from abacus.modules.identity.context import (
 from abacus.modules.identity.events import (
     ClientInvitationIssued,
     FirmAgentsResumed,
+    PortalSignInCodeRequested,
     StaffInvitationIssued,
 )
 from abacus.modules.identity.firm_settings import (
@@ -108,6 +109,7 @@ from abacus.modules.identity.invitations import (
 )
 from abacus.modules.identity.labels import ROLE_LABELS
 from abacus.modules.identity.member_hooks import register_member_added
+from abacus.modules.identity.portal_auth_routes import portal_auth_router
 from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.portal_idp import (
     CODE_DIGITS,
@@ -119,6 +121,7 @@ from abacus.modules.identity.portal_idp import (
     check_issuer,
     totp_at,
 )
+from abacus.modules.identity.portal_session import IssuedCode, issue_sign_in_code
 from abacus.modules.identity.repository import (
     EngagementRole,
     MemberFacts,
@@ -239,6 +242,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     signup_router,
     contacts_router,  # C5 v1.1 portal half (P-08-T01 stub)
     auth_router,
+    portal_auth_router,  # P-08-T10 (ADR-168): the portal's sign-in by emailed code
     settings_router,  # firm-settings family v1 (G-01-T02 stub)
     walls_v2_router,
     me_annual_router,
@@ -302,6 +306,7 @@ __all__ = [
     "GrantScopeInvalid",
     "InvalidToken",
     "InvitationLimit",
+    "IssuedCode",
     "IssuedInvitation",
     "ItemFacts",
     "JwtVerifier",
@@ -312,6 +317,7 @@ __all__ = [
     "PortalIdp",
     "PortalIdpUnavailable",
     "PortalScopes",
+    "PortalSignInCodeRequested",
     "Resource",
     "Rule",
     "ScopeFacts",
@@ -384,6 +390,7 @@ __all__ = [
     "is_synthetic_firm",
     "issue_grant",
     "issue_invitation_token",
+    "issue_sign_in_code",
     "issue_staff_invitation_token",
     "letter_policy",
     "member_context",
