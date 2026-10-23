@@ -98,8 +98,11 @@ def object_key(tenant_id: UUID, content_fingerprint: str) -> str:
     return f"tenants/{tenant_id}/sha256/{content_fingerprint}"
 
 
-def _retain_until() -> datetime:
-    return system_now() + timedelta(days=settings().evidence_retention_days)
+def _retain_until(at_least: datetime | None = None) -> datetime:
+    """The default period from now (`evidence_retention_days`), or a record class's later date
+    (Q-02-T24): an object is never locked for less than either."""
+    default = system_now() + timedelta(days=settings().evidence_retention_days)
+    return default if at_least is None or at_least < default else at_least
 
 
 async def _versions(target: _Target, key: str) -> list[str]:
@@ -138,11 +141,14 @@ async def _retained_until(target: _Target, key: str, version_id: str) -> datetim
     return current.get("Retention", {}).get("RetainUntilDate")
 
 
-async def _extend_retention(target: _Target, key: str, version_id: str) -> None:
-    """A reused version is locked for the full period from now. Governance mode only extends.
-    Concurrent reusers each ask for "now + period", so a slower one may ask for slightly less than
-    a faster one already set; the store refuses that as a shortening, which is fine."""
-    required = _retain_until()
+async def _extend_retention(
+    target: _Target, key: str, version_id: str, at_least: datetime | None = None
+) -> None:
+    """A reused version is locked for the full period from now (or a record class's later date).
+    Governance mode only extends. Concurrent reusers each ask for "now + period", so a slower one
+    may ask for slightly less than a faster one already set; the store refuses that as a
+    shortening, which is fine."""
+    required = _retain_until(at_least)
     until = await _retained_until(target, key, version_id)
     if until is not None and until >= required:
         return
@@ -162,7 +168,9 @@ async def _extend_retention(target: _Target, key: str, version_id: str) -> None:
             raise
 
 
-async def _write(target: _Target, key: str, sealed: bytes, *, conditional: bool) -> str | None:
+async def _write(
+    target: _Target, key: str, sealed: bytes, *, conditional: bool, at_least: datetime | None
+) -> str | None:
     """A new version; None if a conditional write lost a race."""
     try:
         if conditional:
@@ -174,7 +182,7 @@ async def _write(target: _Target, key: str, sealed: bytes, *, conditional: bool)
                 ContentType="application/octet-stream",
                 IfNoneMatch="*",
                 ObjectLockMode="GOVERNANCE",
-                ObjectLockRetainUntilDate=_retain_until(),
+                ObjectLockRetainUntilDate=_retain_until(at_least),
             )
         else:
             response = await asyncio.to_thread(
@@ -184,7 +192,7 @@ async def _write(target: _Target, key: str, sealed: bytes, *, conditional: bool)
                 Body=sealed,
                 ContentType="application/octet-stream",
                 ObjectLockMode="GOVERNANCE",
-                ObjectLockRetainUntilDate=_retain_until(),
+                ObjectLockRetainUntilDate=_retain_until(at_least),
             )
     except StorageError as exc:
         if conditional and error_code(exc) in _RACE:
@@ -197,7 +205,11 @@ async def _write(target: _Target, key: str, sealed: bytes, *, conditional: bool)
     return version_id
 
 
-async def put(tenant_id: UUID, content: bytes) -> StoredObject:
+async def put(
+    tenant_id: UUID, content: bytes, *, retain_until: datetime | None = None
+) -> StoredObject:
+    """Store `content`; `retain_until` is its record class's policy expiry, when known
+    (Q-02-T24, provisional at upload): the lock is never shorter than it or the default."""
     if len(content) > MAX_CONTENT_BYTES:
         raise ContentTooLarge(f"content over {MAX_CONTENT_BYTES} bytes")
     target = _storage()
@@ -207,20 +219,26 @@ async def put(tenant_id: UUID, content: bytes) -> StoredObject:
         if await _versions(target, key):
             existing = await _verified(target, tenant_id, key, digest)
             if existing is not None:
-                await _extend_retention(target, key, existing)
+                await _extend_retention(target, key, existing, retain_until)
                 return StoredObject(key, existing, digest, len(content))
             # Only invalid versions under this key: add a valid one beside them.
             sealed = await seal(tenant_id, content, digest)
-            fresh = await _write(target, key, sealed, conditional=False)
+            fresh = await _write(target, key, sealed, conditional=False, at_least=retain_until)
             if fresh is None:  # unreachable: unconditional writes don't race
                 raise IntegrityError("unconditional write reported a conflict")
             return StoredObject(key, fresh, digest, len(content))
         sealed = await seal(tenant_id, content, digest)
-        written = await _write(target, key, sealed, conditional=True)
+        written = await _write(target, key, sealed, conditional=True, at_least=retain_until)
         if written is not None:
             return StoredObject(key, written, digest, len(content))
         # Lost a race to another writer of the same key: loop and verify what it wrote.
     raise IntegrityError("could not store or verify content after repeated conflicts")
+
+
+async def extend_retention(stored: StoredObject, until: datetime) -> None:
+    """Lock a stored version until at least `until` (an anchor event moved its policy expiry,
+    Q-02-T24). Governance mode only ever extends."""
+    await _extend_retention(_storage(), stored.key, stored.version_id, until)
 
 
 async def get(tenant_id: UUID, stored: StoredObject) -> bytes:

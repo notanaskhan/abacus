@@ -19,12 +19,12 @@ from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
-from abacus.kernel.clock import now
+from abacus.kernel.clock import now, system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.scanning import scan
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
+from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref, service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.events import EvidenceUploaded
@@ -37,6 +37,7 @@ from abacus.modules.evidence.repository import (
     preview_page,
     uploaded_versions,
 )
+from abacus.modules.evidence.retention import retain_until_for
 from abacus.modules.evidence.service import NewItem, Provenance, add_version, version_view
 from abacus.modules.identity.api import (
     AuthContext,
@@ -311,7 +312,15 @@ async def upload(
     async with tenant_session(ctx.tenant) as session:
         if await fingerprint_among(session, await read_item_versions(ctx.tenant, item_id), digest):
             raise DuplicateUpload
-    stored = await storage.put(ctx.tenant_id, content)
+    # Q-02-T24: locked at least until the client document's policy expiry, anchored at upload
+    # for now (provisional; an anchor event extends it later).
+    keep = await retain_until_for(
+        ctx.tenant,
+        "client_document",
+        await service_line_of(ctx.tenant, engagement_id) or "any",
+        system_now(),
+    )
+    stored = await storage.put(ctx.tenant_id, content, retain_until=keep)
     name = clean_name(file_name)
     kept_note = clean_note(note) if on_behalf else None
     async with uow(ctx.tenant) as tx:
