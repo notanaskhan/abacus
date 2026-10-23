@@ -189,3 +189,21 @@ async def test_p03t05_the_layer_rows_are_insert_only(seed: Seeder) -> None:
         async with uow(firm.system) as tx:
             await tx.session.execute(text("UPDATE evidence_pages SET word_count = 0"))
             tx.record("upload.words_extracted", target=Target("evidence_version", version))
+
+
+async def test_p03t04_extraction_and_previews_still_record_once_after_0109(seed: Seeder) -> None:
+    """0109 put `derivation_id` in the one-per-source indexes; the extraction and preview
+    inserts name that index again, so each records once and a rerun is a no-op."""
+    from abacus.modules.evidence.processing import preview_upload, process_upload
+
+    firm = await make_firm(seed)
+    version = await firm.version(TWO_PAGES)
+    for _ in range(2):
+        assert await process_upload(as_version(firm, version)) == "extracted"
+        assert await preview_upload(as_version(firm, version)) == "pages"
+    counts = await seed.rows(
+        "SELECT (SELECT count(*) FROM upload_extractions WHERE evidence_version_id = $1) AS e, "
+        "(SELECT count(*) FROM upload_previews WHERE evidence_version_id = $1) AS p",
+        version,
+    )
+    assert (counts[0]["e"], counts[0]["p"]) == (1, 1)

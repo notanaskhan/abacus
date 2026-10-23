@@ -4,7 +4,7 @@ title: Word-box layer — UploadProcessing patched step `words` (pdfplumber extr
 spec: SPEC-322
 acceptance_criteria: [AC-1, AC-3, AC-32]
 risk_zone: red
-status: in-progress
+status: done
 epic: P-03
 plan_key: P-03-T05
 branch: s6-citations
@@ -23,13 +23,14 @@ updated: 2026-10-24
 - **Tooling:** `abacus_tools/workflows/record_upload_processing.py` stubs `upload.words` and names v4 `upload-processing-v4-words.json`; new `abacus_tools/workflows/record_trust_layer_backfill.py`; new operator command `abacus_tools/trust_layer_backfill.py <tenant>` (starts the workflow through `evidence.api`; DISPATCH-001). The backfill runs on staging as an ECS one-off task, never from a laptop (P-03 §4.5).
 - **Histories:** `upload-processing-v4-words.json`, `trust-layer-backfill-v1-done.json` (recorded, never re-recorded).
 - **Migration 0119** (`word_layer_size`): `evidence_pages.text_layer_size` (storage opens an object only against its recorded size; 0109 had no column for it). Expand-only. Down: drop the column.
-- **Tests:** `tests/unit/evidence/test_words.py` (coordinates, rotation, scanned and encrypted pages, control characters, caps, the isolated child); `tests/workflows/test_upload_processing_replay.py` (v4 committed, v1 to v4 replay, words after previews); `tests/workflows/test_trust_layer_backfill_replay.py`; `tests/integration/test_trust_word_layer.py` (rows, sealed layer, idempotent, evidence bytes and fingerprint unchanged, backfill pending list).
+- **Tests:** `tests/unit/evidence/test_words.py` (coordinates, rotation, scanned and encrypted pages, control characters, caps, the isolated child); `tests/workflows/test_upload_processing_replay.py` (v4 committed, v1 to v4 replay, words after previews); `tests/workflows/test_trust_layer_backfill_replay.py`; `tests/integration/trust_kit/test_word_layer.py` (rows, sealed layer, idempotent, evidence bytes and fingerprint unchanged, backfill pending list).
 - **Decision:** DEC-217 (coordinate space, page cap, what a page without text records).
 - **Rollback:** revert the commit. Histories recorded with `patched("words")` replay only against code that has the patch, so once v4 runs in production the patch stays (ADR-090); remove it later with `deprecate_patch`. `evidence_pages` rows and layer objects are derived and harmless if left.
 
 ## Progress log
 - 2026-10-24: plan written.
 - 2026-10-24: built. Found 0109's `evidence_pages` can't be read back (storage checks size; no size column): migration 0119 adds `text_layer_size`. Histories `upload-processing-v4-words.json` and `trust-layer-backfill-v1-done.json` recorded; v1 to v4 replay. Tests live in `tests/integration/trust_kit/` (own conftest; parent-relative imports are banned, so a small superuser seeder is local). 13 unit, 9 integration, 14 replay tests pass; schema_check, trust kit schema and migrations-env integration files pass (199). Backend gates of `make check-fast` pass; its frontend `tsc` step fails in generated `packages/api-client/src/core/*.gen.ts`, which this branch does not touch.
+- 2026-10-24 (with TASK-1005): found `insert_extraction` and `insert_preview` still name 0109's dropped one-per-source index in `ON CONFLICT`, so every extraction and preview insert failed after 0109 (no test ran them). Fixed in the T06 commit (`derivation_id` added to the conflict target) with a regression test in `trust_kit/test_word_layer.py`.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

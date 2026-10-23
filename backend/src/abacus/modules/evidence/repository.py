@@ -534,7 +534,8 @@ async def insert_extraction(session: AsyncSession, **values: object) -> UploadEx
             pg_insert(UploadExtraction)
             .values(**values)
             .on_conflict_do_nothing(
-                index_elements=["tenant_id", where, "extractor_version"],
+                # 0109 (P-03-T04): the one-per-source index includes the derivation.
+                index_elements=["tenant_id", where, "extractor_version", "derivation_id"],
                 index_where=present,
             )
             .returning(UploadExtraction)
@@ -666,7 +667,9 @@ async def insert_preview(session: AsyncSession, **values: object) -> UploadPrevi
             pg_insert(UploadPreview)
             .values(**values)
             .on_conflict_do_nothing(
-                index_elements=["tenant_id", where, "renderer_version"], index_where=present
+                # 0109 (P-03-T04): the one-per-source index includes the derivation.
+                index_elements=["tenant_id", where, "renderer_version", "derivation_id"],
+                index_where=present,
             )
             .returning(UploadPreview)
         )

@@ -287,7 +287,9 @@ class Citation(Base):
     cited_from_type: Mapped[str]
     cited_from_id: Mapped[UUID]
     cited_from_ref: Mapped[str | None]
-    cited_from_locator: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
+    cited_from_locator: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
     n: Mapped[int]
     kind: Mapped[str]
     source_type: Mapped[str]
