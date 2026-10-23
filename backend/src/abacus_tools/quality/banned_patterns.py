@@ -1032,6 +1032,8 @@ LIST_EXEMPT = frozenset(
         # SPEC-020: one request item's versions and its uploads, read after `authorise` on that
         # item with its client facts (`evidence.upload` / `evidence.read`).
         ("src/abacus/modules/requests/repository.py", "fulfilling_versions"),
+        # P-06-T10: live upload hints for a binder's requests, after `check_action` on it.
+        ("src/abacus/modules/requests/repository.py", "live_upload_intents"),
         ("src/abacus/modules/evidence/repository.py", "uploaded_versions"),
         # SPEC-021: one item's versions with their decisions, after `authorise(evidence.read)`.
         ("src/abacus/modules/evidence/repository.py", "item_versions_with_decisions"),

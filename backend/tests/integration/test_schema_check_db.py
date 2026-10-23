@@ -1103,6 +1103,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             # P-06-T05 (0100): request fields and the soft delete of unsent drafts.
             | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end"}
             | {"wave", "supports_ref", "linked_ref", "sent_by", "deleted_at", "deleted_by"}
+            | {"description"}  # P-06-T10 (0113)
         ),
         "request_lists": frozenset(  # F-05: the binder's list is published and marked done
             {"status", "default_due_on", "published_at", "published_by"}

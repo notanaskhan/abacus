@@ -109,6 +109,19 @@ async def client_contact_names(
     return {cid: f.display_name for cid, f in found.items() if f.client_id == client}
 
 
+async def contact_portal_user(
+    tenant: TenantContext, engagement_id: UUID, contact_id: UUID
+) -> UUID | None:
+    """P-06-T10 (delegation): the portal user of one of the engagement's client's contacts, or
+    None (another client's, unknown, or not signed in yet). For a caller that authorised."""
+    client = await client_of(tenant, engagement_id)
+    if client is None:
+        return None
+    async with tenant_session(tenant) as session:
+        found = (await contact_facts(session, [contact_id])).get(contact_id)
+    return found.user_id if found is not None and found.client_id == client else None
+
+
 async def attest_of(tenant: TenantContext, engagement_id: UUID) -> bool | None:
     """F-03-T24 `attest_client`: whether the engagement's client is an attest client (DEC-128)."""
     client = await client_of(tenant, engagement_id)

@@ -185,12 +185,17 @@ async def grant_client_access(
     contact_id: UUID | None = None,
     document_classes: Sequence[str] | None = None,
     expires_at: datetime | None = None,
+    action: Literal["client_access.grant", "request_item.delegate"] = "client_access.grant",
 ) -> UUID:
     """Grant a client user a role on a scope. `resource` is the scope's engagement (built from
-    its row by the caller), or the firm for client-wide scopes. Returns the grant's id."""
+    its row by the caller), or the firm for client-wide scopes. Returns the grant's id. A
+    request's delegation (P-06-T10) is checked as `request_item.delegate` and only ever grants
+    the `delegate` role on that one `request_item`."""
     if role not in GRANT_ROLES or scope_kind not in SCOPE_KINDS:
         raise GrantScopeInvalid
-    await authorise(ctx, "client_access.grant", resource)
+    if action == "request_item.delegate" and (role, scope_kind) != ("delegate", "request_item"):
+        raise GrantScopeInvalid
+    await authorise(ctx, action, resource)
     if not _resource_matches(resource, scope_kind, await _facts(ctx.tenant, scope_kind, scope_id)):
         raise GrantScopeInvalid
     async with uow(ctx.tenant) as tx:

@@ -198,6 +198,10 @@ async def _world(seed: Seeder) -> World:
     return World(seed, tenant, partner.context(), engagement, work_item, client)
 
 
+# P-06-T10's suite builds the same world.
+make_world = _world
+
+
 async def _drain() -> None:
     """Leftovers from other tests are marked published, so a relay pass sees only its own."""
     async with relay_engine().begin() as conn:

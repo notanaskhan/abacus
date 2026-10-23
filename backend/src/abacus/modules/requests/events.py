@@ -60,6 +60,17 @@ class BinderPublished(DomainEvent):
     request_item_ids: Annotated[list[UUID], classified("internal")]
 
 
+class RequestItemSent(DomainEvent):
+    """A person sent one request (P-06-T10). Held by an approval grant until the 10-s Undo
+    window ends, as a binder's publish (ADR-161): delivery emails the client only then."""
+
+    event_type: ClassVar[str] = "request_item.sent"
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    sent_by: Annotated[UUID, classified("internal")]
+
+
 class BinderUnpublished(DomainEvent):
     event_type: ClassVar[str] = "binder.unpublished"
 

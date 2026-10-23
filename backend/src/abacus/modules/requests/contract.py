@@ -18,12 +18,13 @@ deny the agent (INV-1, ADR-005).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import clock
 from abacus.kernel._flags import BINDERS_ENGINE
 from abacus.kernel._statuses import BinderStatus, EvidenceScreeningStatus, RequestStatus
 from abacus.kernel.classification import classified
@@ -33,7 +34,7 @@ from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
-from abacus.modules.requests import binder_index, binders
+from abacus.modules.requests import binder_index, binders, lifecycle
 from abacus.modules.requests.binders import engine_on
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -468,6 +469,50 @@ class UploadIntentOut(BaseModel):
     expires_at: Annotated[datetime, classified("internal")]
 
 
+async def _item(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> RequestItemV2Out:
+    """The SHL-14 record after a move, read back as the caller may see it."""
+    v = await lifecycle.view(ctx, engagement_id, item_id)
+    i = v.item
+    today = (await clock.now(ctx.tenant)).date()
+    return RequestItemV2Out(
+        id=i.id,
+        engagement_id=i.engagement_id,
+        binder_id=v.binder_id,
+        category_id=i.category_id,
+        title=i.title,
+        description=i.description,
+        status=RequestStatus(i.status),
+        overdue=i.due_on is not None
+        and i.due_on < today
+        and i.status in ("requested", "returned"),
+        client_visible=i.client_visible,
+        kind=cast(ItemKind, i.kind),
+        wave=cast(Wave | None, i.wave),
+        period_start=i.period_start,
+        period_end=i.period_end,
+        due_on=i.due_on,
+        client_assignee_user_id=i.client_assignee_user_id,
+        firm_owner_user_id=i.firm_owner_user_id,
+        supports_ref=i.supports_ref,
+        linked_ref=None if i.linked_ref is None else LinkedRefOut.model_validate(i.linked_ref),
+        source_tag=cast(Literal["prior_year"] | None, i.source_tag),
+        requested_at=i.requested_at,
+        sent_at=i.sent_at,
+        sent_by=i.sent_by,
+        drafted_by_run_id=i.drafted_by_run_id,
+        drafted_wording_source=cast(WordingSource | None, i.drafted_wording_source),
+        na_reason=cast(NaReason | None, i.na_reason),
+        na_by=i.na_by,
+        na_at=i.na_at,
+        client_ignored_at=i.client_ignored_at,
+        incorporation_state=cast(IncorporationState, i.incorporation_state),
+        incorporated_by=i.incorporated_by,
+        incorporated_at=i.incorporated_at,
+        undo_until=v.undo_until,
+        allowed_actions=v.allowed_actions,
+    )
+
+
 def _binder(view: binders.BinderView) -> BinderOut:
     return BinderOut.model_validate(view, from_attributes=True)
 
@@ -574,11 +619,13 @@ async def binder_requests_route(
     )
 
 
-@binders_router.get(
-    "/{binder_id}/live", action="request_item.read", response_model=BinderLiveOut, errors=(501,)
-)
+@binders_router.get("/{binder_id}/live", action="request_item.read", response_model=BinderLiveOut)
 async def binder_live_route(binder_id: UUID, ctx: Ctx) -> BinderLiveOut:
-    await _stub(ctx)
+    await engine_on(ctx)
+    items, at = await lifecycle.binder_live(ctx, binder_id)
+    return BinderLiveOut(
+        items=[LiveItemOut.model_validate(i, from_attributes=True) for i in items], as_of=at
+    )
 
 
 @binders_router.post(
@@ -697,71 +744,95 @@ async def binder_activity_route(
 
 
 @items_router.patch(
-    "/{item_id}", action="request_item.update", response_model=RequestItemV2Out, errors=(409, 501)
+    "/{item_id}", action="request_item.update", response_model=RequestItemV2Out, errors=(409,)
 )
 async def update_request_item_route(
     engagement_id: UUID, item_id: UUID, body: RequestItemPatchIn, ctx: Ctx
 ) -> RequestItemV2Out:
-    await _stub(ctx)
+    await engine_on(ctx)
+    values = body.model_dump(exclude_unset=True)
+    if "linked_ref" in values and body.linked_ref is not None:
+        values["linked_ref"] = body.linked_ref.model_dump(mode="json")
+    await lifecycle.update_item(ctx, engagement_id, item_id, lifecycle.ItemPatch(values))
+    return await _item(ctx, engagement_id, item_id)
 
 
 @items_router.delete(
     "/{item_id}",
     action="request_item.update",
     response_model=RequestItemDeletedOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def delete_request_item_route(
     engagement_id: UUID, item_id: UUID, ctx: Ctx
 ) -> RequestItemDeletedOut:
     """Never-sent Drafts only (soft); a sent one answers 409 `request_already_sent`."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    at = await lifecycle.delete_item(ctx, engagement_id, item_id)
+    return RequestItemDeletedOut(request_item_id=item_id, deleted_at=at)
 
 
 @items_router.post(
     "/{item_id}/send",
     action="request_item.send",
     response_model=RequestItemV2Out,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def send_request_item_route(
     engagement_id: UUID, item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RequestItemV2Out:
     """Human-only. Draft to Requested: 422 `due_date_required`, 409 `out_of_scope`, 409
     `model_text_not_permitted` (DV-11); email after the 10-s Undo window."""
-    await _stub(ctx)
+    await engine_on(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        await lifecycle.send_item(ctx, engagement_id, item_id)
+        return 200, (await _item(ctx, engagement_id, item_id)).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="request_item.send",
+        key=idempotency_key,
+        body={"engagement_id": str(engagement_id), "request_item_id": str(item_id)},
+        run=run,
+    )
+    return RequestItemV2Out.model_validate(stored.body)
 
 
 @items_router.post(
     "/{item_id}/send/undo",
     action="request_item.send",
     response_model=RequestItemV2Out,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_send_request_item_route(
     engagement_id: UUID, item_id: UUID, ctx: Ctx
 ) -> RequestItemV2Out:
-    await _stub(ctx)
+    await engine_on(ctx)
+    await lifecycle.undo_send(ctx, engagement_id, item_id)
+    return await _item(ctx, engagement_id, item_id)
 
 
 @items_router.post(
     "/{item_id}/waive",
     action="request_item.waive",
     response_model=RequestItemV2Out,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def waive_request_item_route(
     engagement_id: UUID, item_id: UUID, body: WaiveIn, ctx: Ctx
 ) -> RequestItemV2Out:
     """To `not_applicable` with a reason (Story 4.1)."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    await lifecycle.waive_item(ctx, engagement_id, item_id, body.na_reason, body.note)
+    return await _item(ctx, engagement_id, item_id)
 
 
 @items_router.post(
     "/{item_id}/return-to-client",
     action="request_item.return",
     response_model=RequestItemV2Out,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def return_request_item_to_client_route(
     engagement_id: UUID,
@@ -771,7 +842,20 @@ async def return_request_item_to_client_route(
     idempotency_key: IdempotencyKey,
 ) -> RequestItemV2Out:
     """Human-only. Clears a client Ignore; the client is told after the Undo window."""
-    await _stub(ctx)
+    await engine_on(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        await lifecycle.return_to_client(ctx, engagement_id, item_id)
+        return 200, (await _item(ctx, engagement_id, item_id)).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="request_item.return",
+        key=idempotency_key,
+        body={"engagement_id": str(engagement_id), "request_item_id": str(item_id)},
+        run=run,
+    )
+    return RequestItemV2Out.model_validate(stored.body)
 
 
 @items_router.post(
@@ -779,33 +863,36 @@ async def return_request_item_to_client_route(
     action="request_item.delegate",
     response_model=DelegationOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def delegate_request_item_route(
     engagement_id: UUID, item_id: UUID, body: DelegateIn, ctx: Ctx
 ) -> DelegationOut:
     """A third party gets this one request (P-09 `scope_kind=request_item`)."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    found = await lifecycle.delegate_item(ctx, engagement_id, item_id, body.contact_id)
+    return DelegationOut.model_validate(found, from_attributes=True)
 
 
 @items_router.post(
     "/{item_id}/incorporate",
     action="request_item.update",
     response_model=RequestItemV2Out,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def incorporate_request_item_route(
     engagement_id: UUID, item_id: UUID, ctx: Ctx
 ) -> RequestItemV2Out:
     """Close variant: `pending_incorporation` to `incorporated` (SHL-14 d)."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    await lifecycle.incorporate_item(ctx, engagement_id, item_id)
+    return await _item(ctx, engagement_id, item_id)
 
 
 @items_router.get(
     "/{item_id}/activity",
     action="activity.read",
     response_model=ListPage[ActivityEventOut],
-    errors=(501,),
 )
 async def request_item_activity_route(
     engagement_id: UUID,
@@ -813,7 +900,14 @@ async def request_item_activity_route(
     ctx: Ctx,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> ListPage[ActivityEventOut]:
-    await _stub(ctx)
+    await engine_on(ctx)
+    page = await lifecycle.item_activity(ctx, engagement_id, item_id, cursor)
+    return ListPage[ActivityEventOut](
+        items=[ActivityEventOut.model_validate(e, from_attributes=True) for e in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+    )
 
 
 # --- /v1/portal (the client; P-06-T07, T10) ----------------------------------------------------
@@ -836,11 +930,15 @@ async def mark_binder_done_route(binder_id: UUID, ctx: Ctx) -> BinderMarkedDoneO
     "/request-items/{item_id}/ignore",
     action="request_item.ignore",
     response_model=IgnoredOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def ignore_request_item_route(item_id: UUID, body: IgnoreIn, ctx: Ctx) -> IgnoredOut:
     """The client's Ignore, with a reason; the firm returns or waives (OQ-3)."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    at = await lifecycle.ignore_item(ctx, item_id, body.reason, body.note)
+    return IgnoredOut(
+        request_item_id=item_id, status=RequestStatus.REQUESTED, client_ignored_at=at
+    )
 
 
 @portal_router.post(
@@ -848,10 +946,13 @@ async def ignore_request_item_route(item_id: UUID, body: IgnoreIn, ctx: Ctx) -> 
     action="evidence.upload",
     response_model=UploadIntentOut,
     status_code=201,
-    errors=(501,),
 )
 async def announce_upload_intent_route(
     item_id: UUID, body: UploadIntentIn, ctx: Ctx
 ) -> UploadIntentOut:
     """R-01 announces an upload in progress, for BND-02's "Uploading n files…"."""
-    await _stub(ctx)
+    await engine_on(ctx)
+    expires = await lifecycle.announce_upload(ctx, item_id, body.files_expected)
+    return UploadIntentOut(
+        request_item_id=item_id, files_expected=body.files_expected, expires_at=expires
+    )

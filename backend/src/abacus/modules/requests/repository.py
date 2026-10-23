@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, Subquery, and_, func, insert, or_, select, update
+from sqlalchemy import Select, Subquery, and_, func, insert, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1072,3 +1072,81 @@ def open_requests_by_engagement() -> Select[UUID, int]:
         .where(RequestItem.status.in_(_WAITING_ON_CLIENT))
         .group_by(RequestItem.engagement_id)
     )
+
+
+# --- P-06-T10: the request lifecycle's writes ----------------------------------------------------
+
+
+async def set_item_fields(
+    session: AsyncSession, item_id: UUID, values: Mapping[str, object]
+) -> None:
+    """Set the named columns of one request the caller locked and authorised."""
+    if values:
+        await session.execute(
+            update(RequestItem).where(RequestItem.id == item_id).values(**values)
+        )
+
+
+async def insert_delegation(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    request_item_id: UUID,
+    contact_id: UUID,
+    grant_id: UUID,
+    granted_by: UUID,
+) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO request_delegations (tenant_id, request_item_id, contact_id, grant_id, "
+            "granted_by) VALUES (:tenant, :item, :contact, :grant, :by)"
+        ),
+        {
+            "tenant": tenant_id,
+            "item": request_item_id,
+            "contact": contact_id,
+            "grant": grant_id,
+            "by": granted_by,
+        },
+    )
+
+
+async def insert_upload_intent(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    request_item_id: UUID,
+    user_id: UUID,
+    files_expected: int,
+) -> datetime:
+    """A 90-second upload hint; when it expires."""
+    return (
+        await session.execute(
+            text(
+                "INSERT INTO request_upload_intents (tenant_id, request_item_id, user_id, "
+                "files_expected) VALUES (:tenant, :item, :user, :files) RETURNING expires_at"
+            ),
+            {
+                "tenant": tenant_id,
+                "item": request_item_id,
+                "user": user_id,
+                "files": files_expected,
+            },
+        )
+    ).scalar_one()
+
+
+async def live_upload_intents(session: AsyncSession, item_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """Files expected by unexpired intents, per request the caller already read
+    (LIST_EXEMPT: the binder's requests, authorised by the caller)."""
+    if not item_ids:
+        return {}
+    rows = await session.execute(
+        text(
+            "SELECT request_item_id, sum(files_expected) FROM request_upload_intents "
+            "WHERE request_item_id = ANY(:items) AND expires_at > clock_timestamp() "
+            "GROUP BY request_item_id"
+        ),
+        {"items": list(item_ids)},
+    )
+    return {item: int(n) for item, n in rows.tuples().all()}
