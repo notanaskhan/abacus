@@ -444,6 +444,9 @@ async def remove_team_member_route(
     engagement_id: UUID, user_id: UUID, ctx: Ctx
 ) -> list[TeamMemberOut]:
     await remove_from_team(ctx, engagement_id, user_id)
+    if user_id == ctx.user_id:
+        # SPEC-017 §12: a person may leave; they can no longer read the team (Q-03-T007).
+        return []
     return await team_route(engagement_id, ctx)
 
 

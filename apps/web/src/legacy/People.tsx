@@ -36,7 +36,11 @@ export function People({ engagementId }: { engagementId: string }): JSX.Element 
   );
 }
 
-type Pending = { kind: "remove"; userId: string; name: string } | null;
+// SPEC-017 AC-7: every change asks first (Q-03-T007: role changes used to send on select).
+type Pending =
+  | { kind: "remove"; userId: string; name: string }
+  | { kind: "change"; userId: string; name: string; role: StaffRole }
+  | null;
 
 function Team({ engagementId }: { engagementId: string }): JSX.Element {
   const queryClient = useQueryClient();
@@ -118,9 +122,11 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
                         id={`role-${m.user_id}`}
                         value={m.role}
                         onChange={(event) => {
-                          change.mutate({
-                            path: { ...path, user_id: m.user_id },
-                            body: { role: event.target.value as StaffRole },
+                          setPending({
+                            kind: "change",
+                            userId: m.user_id,
+                            name: m.display_name,
+                            role: event.target.value as StaffRole,
                           });
                         }}
                         className="h-8 rounded-[var(--radius-control)] border border-hair bg-surface px-2 text-body"
@@ -172,8 +178,16 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
         onOpenChange={(open) => {
           if (!open) setPending(null);
         }}
-        title={`Remove ${pending?.name ?? "this person"}?`}
-        description="They lose access to this engagement on their next request. Reviews assigned to them here go back to the queue."
+        title={
+          pending?.kind === "change"
+            ? `Change ${pending.name}'s role?`
+            : `Remove ${pending?.name ?? "this person"}?`
+        }
+        description={
+          pending?.kind === "change"
+            ? `They become ${LABEL[pending.role] ?? pending.role} on this engagement from their next request.`
+            : "They lose access to this engagement on their next request. Reviews assigned to them here go back to the queue."
+        }
       >
         <div className="flex justify-end gap-2">
           <Button
@@ -184,15 +198,30 @@ function Team({ engagementId }: { engagementId: string }): JSX.Element {
           >
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              if (pending !== null) remove.mutate({ path: { ...path, user_id: pending.userId } });
-              setPending(null);
-            }}
-          >
-            Remove
-          </Button>
+          {pending?.kind === "change" ? (
+            <Button
+              onClick={() => {
+                change.mutate({
+                  path: { ...path, user_id: pending.userId },
+                  body: { role: pending.role },
+                });
+                setPending(null);
+              }}
+            >
+              Change role
+            </Button>
+          ) : (
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (pending !== null)
+                  remove.mutate({ path: { ...path, user_id: pending.userId } });
+                setPending(null);
+              }}
+            >
+              Remove
+            </Button>
+          )}
         </div>
       </Dialog>
     </section>
