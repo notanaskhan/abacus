@@ -46,7 +46,7 @@ from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
 
 T0 = datetime(2026, 9, 14, 14, 24, tzinfo=UTC)  # the demo instant, 9:24 AM Central
-KEY = "publish-attempt-0001"  # an Idempotency-Key value (not a credential)
+ATTEMPT = "publish-attempt-0001"  # the Idempotency-Key header value
 
 
 @pytest.fixture(autouse=True)
@@ -352,9 +352,9 @@ async def test_ac6_a_retried_publish_with_the_same_key_sends_nothing_twice(seed:
     binder = await world.binder()
     await world.item(binder)
     with clock.frozen(T0):
-        first = await contract.publish_binder_route(binder, world.partner, KEY)
+        first = await contract.publish_binder_route(binder, world.partner, ATTEMPT)
     with clock.frozen(T0 + timedelta(seconds=2)):
-        again = await contract.publish_binder_route(binder, world.partner, KEY)
+        again = await contract.publish_binder_route(binder, world.partner, ATTEMPT)
     assert again == first and first.status == "published"
     held = await seed.value(
         "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = 'binder.published'",
@@ -374,7 +374,7 @@ async def test_flag_off_every_binder_route_answers_404(seed: Seeder) -> None:
     with pytest.raises(NotFound):
         await contract.get_binder_route(binder, world.partner)
     with pytest.raises(NotFound):
-        await contract.publish_binder_route(binder, world.partner, KEY)
+        await contract.publish_binder_route(binder, world.partner, ATTEMPT)
 
 
 # --- AC-7: unpublish ----------------------------------------------------------------------------

@@ -17,6 +17,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.logging import get_logger
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.repository import get_item, get_version, item_versions_with_decisions
 from abacus.modules.evidence.service import read_version
 from abacus.modules.identity.api import (
@@ -178,6 +179,7 @@ async def download(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> D
     except storage.IntegrityError:
         _log.error("evidence.integrity_failed", evidence_version_id=str(version_id))
         raise IntegrityFailed from None
+    await record_content_read(ctx, engagement_id, "evidence_version", version_id)
     title = item.title if version.method == "uploaded" else None
     return Download(
         content,

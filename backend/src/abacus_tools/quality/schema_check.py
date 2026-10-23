@@ -71,6 +71,7 @@ NON_TENANT_TABLES = frozenset(
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
     {"audit_events", "eval_case_results", "outbox", "usage_records"}
     | {"idempotency_keys"}  # P-06-T06
+    | {"access_events"}  # Q-02-T20
 )
 # Insert columns for tables outside the modules (TASK-006); modules declare theirs.
 _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -100,6 +101,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
 # TRUNCATE trigger must call this function (ADR-004 second layer, TASK-009).
 IMMUTABLE_TABLES: dict[str, str] = {
     "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
+    "access_events": "access_events_immutable",  # 0105 (Q-02-T20)
     "message_deliveries": "message_deliveries_immutable",  # 0104 (Q-01-T46)
     "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
     "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
@@ -131,6 +133,7 @@ _PLATFORM_TABLE_OWNERS: dict[str, str] = {
     "audit_events": "kernel.uow",
     "outbox": "kernel.uow",
     "idempotency_keys": "kernel.uow",  # P-06-T06 (migration 0099)
+    "access_events": "kernel.access",  # Q-02-T20 (0105): monthly partitions, insert-only
     # Evaluation runs (SPEC-005 Q2): written only by the evaluation tooling.
     "eval_runs": "abacus_tools.evals",
     "eval_case_results": "abacus_tools.evals",
@@ -212,6 +215,7 @@ DEFINER_FUNCTIONS = frozenset(
     # 0101 (P-01-T09, ADR-165): the staff session BFF's sign-in state and sessions.
     | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
     | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
+    | {"access_events_partition"}  # 0105 (Q-02-T20): next month's partition, ahead of time
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -298,7 +302,10 @@ def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
 
 
 _TABLES = """
-SELECT c.relname, pg_get_userbyid(c.relowner) AS owner, c.relrowsecurity, c.relforcerowsecurity
+SELECT c.relname, pg_get_userbyid(c.relowner) AS owner, c.relrowsecurity, c.relforcerowsecurity,
+       c.relispartition,
+       (SELECT p.relname FROM pg_inherits i JOIN pg_class p ON p.oid = i.inhparent
+        WHERE i.inhrelid = c.oid) AS parent
 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') ORDER BY c.relname
 """
@@ -583,6 +590,30 @@ async def _immutability_problems(conn: asyncpg.Connection, table: str, function:
     ]
 
 
+async def _partition_problems(
+    conn: asyncpg.Connection, name: str, parent: str, canonical: tuple[str, str]
+) -> list[str]:
+    """Q-02-T20: a partition of a listed table, written only through its parent. Row-level
+    security must still be forced on it, under the tenant policy, and the app must hold nothing on
+    it (routed inserts check the parent's privileges)."""
+    problems: list[str] = []
+    if parent not in TABLE_OWNERS:
+        problems.append(f"{name}: partition of {parent}, which has no owner in TABLE_OWNERS")
+    flags = await conn.fetchrow(
+        "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = $1::regclass",
+        f"public.{name}",
+    )
+    if flags is None or not flags["relrowsecurity"] or not flags["relforcerowsecurity"]:
+        problems.append(f"{name}: partition without forced row-level security")
+    problems += _policy_problems(name, list(await conn.fetch(_POLICIES, name)), canonical)
+    for privilege in _TABLE_PRIVILEGES:
+        if await conn.fetchval(
+            "SELECT has_table_privilege($1, $2, $3)", APP, f"public.{name}", privilege
+        ):
+            problems.append(f"{name}: {APP} has {privilege} on a partition")
+    return problems
+
+
 # DEC-52 (P-07-T07): a taxpayer ID is only ever sealed. A column named like a plaintext one fails.
 _PLAINTEXT_TIN = """
 SELECT c.relname AS table_name, a.attname AS column_name
@@ -650,7 +681,8 @@ async def _inspect(owner_dsn: str) -> list[str]:
     try:
         canonical = await _canonical_policy(conn)
         tables = list(await conn.fetch(_TABLES))
-        present = {str(table["relname"]) for table in tables}
+        # A partition belongs to its parent's owner (Q-02-T20): it is checked as a partition.
+        present = {str(table["relname"]) for table in tables if not table["relispartition"]}
         problems += [
             f"{name}: no owner in TABLE_OWNERS" for name in sorted(present - TABLE_OWNERS.keys())
         ]
@@ -662,6 +694,9 @@ async def _inspect(owner_dsn: str) -> list[str]:
             name = str(table["relname"])
             if str(table["owner"]) != OWNER:
                 problems.append(f"{name}: owned by {table['owner']}, not {OWNER}")
+            if table["relispartition"]:
+                problems += await _partition_problems(conn, name, str(table["parent"]), canonical)
+                continue
             if name in NON_TENANT_TABLES or name in GLOBAL_TABLES:
                 for privilege in _TABLE_PRIVILEGES:
                     if await conn.fetchval(

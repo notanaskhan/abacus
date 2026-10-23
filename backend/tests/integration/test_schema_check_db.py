@@ -943,10 +943,11 @@ def _public_tables(dsn: str) -> set[str]:
         try:
             rows = await conn.fetch(
                 "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
-                "WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')"
+                "WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND NOT c.relispartition"
             )
         finally:
             await conn.close()
+        # Q-02-T20: a partition belongs to its parent and is checked as one (schema_check).
         return {str(row["relname"]) for row in rows}
 
     return asyncio.run(fetch())
@@ -1351,6 +1352,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "evidence_versions": IMMUTABLE_FUNCTION,
         "email_template_versions": "email_template_versions_immutable",  # 0092 (P-01-T05)
         "message_deliveries": "message_deliveries_immutable",  # 0104 (Q-01-T46)
+        "access_events": "access_events_immutable",  # 0105 (Q-02-T20)
         "field_value_versions": "field_value_versions_immutable",  # 0093 (P-04-T03)
         "decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
@@ -1746,6 +1748,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0101 (P-01-T09): the staff session BFF.
         | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
+        | {"access_events_partition"}  # 0105 (Q-02-T20)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
@@ -1771,3 +1774,29 @@ def test_p07t07_sealed_tin_columns_and_lookalikes_pass(tin_db: Cluster, column: 
     _sql(tin_db.owner_url, f"CREATE TABLE tin_probe ({column} text)")
     problems = [m for m in sc.check(tin_db.owner_url, tin_db.app_url) if "plaintext TIN" in m]
     assert problems == []
+
+
+# --- Q-02-T20: partitions are checked as partitions -------------------------------------------
+
+
+def test_q02t20_the_migrated_partitions_pass_and_a_naked_one_is_reported(
+    migrated_db: Migrated,
+) -> None:
+    assert [
+        m for m in sc.check(migrated_db.owner_url, migrated_db.app_url) if "access_ev" in m
+    ] == []
+    _sql(
+        migrated_db.superuser_dsn,
+        "CREATE TABLE access_events_2031_01 PARTITION OF access_events "
+        "FOR VALUES FROM ('2031-01-01') TO ('2031-02-01')",
+        "ALTER TABLE access_events_2031_01 OWNER TO abacus_owner",
+        "GRANT SELECT ON access_events_2031_01 TO abacus_app",
+    )
+    try:
+        problems = [
+            m for m in sc.check(migrated_db.owner_url, migrated_db.app_url) if "2031_01" in m
+        ]
+        assert "access_events_2031_01: partition without forced row-level security" in problems
+        assert any("has SELECT on a partition" in m for m in problems)
+    finally:
+        _sql(migrated_db.superuser_dsn, "DROP TABLE access_events_2031_01")

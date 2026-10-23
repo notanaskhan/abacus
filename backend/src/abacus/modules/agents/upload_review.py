@@ -156,11 +156,17 @@ def document_blocks(material: ReviewMaterial) -> list[str]:
 
 
 def build_context(
-    material: ReviewMaterial, year_end: str, entity: str, untrusted: list[str]
+    material: ReviewMaterial,
+    year_end: str,
+    entity: str,
+    untrusted: list[str],
+    evidence_version_id: UUID | None = None,
 ) -> AssembledContext:
+    builder = ContextBuilder()
+    if evidence_version_id is not None:
+        builder.sources(evidence_version_id)  # Q-02-T20: an access event when it is sent
     return (
-        ContextBuilder()
-        .text("engagement", f"Year end {year_end}. Client entity: {entity}.")
+        builder.text("engagement", f"Year end {year_end}. Client entity: {entity}.")
         .task(
             {
                 "request": material.item_description,
@@ -211,6 +217,7 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
         facts.fiscal_period_end.isoformat(),
         facts.client_entity_name,
         list(reviewer.untrusted_inputs),
+        run.evidence_version_id,
     )
     result = await call(
         GatewayCall(

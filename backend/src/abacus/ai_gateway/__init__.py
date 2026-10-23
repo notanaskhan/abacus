@@ -93,6 +93,7 @@ from abacus.ai_gateway.providers import (
 from abacus.ai_gateway.routes import configure_route, model_id, route_enabled, route_provider
 from abacus.ai_gateway.sanitise import sanitise_text
 from abacus.kernel._flags import FLAGS
+from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, Route, settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_variant
@@ -633,6 +634,24 @@ async def barred_routes(tenant: TenantContext) -> frozenset[Route]:
     return frozenset(r for r in ("direct", "bedrock") if r not in CLIENT_DATA_ROUTES)
 
 
+register_access_kind("model_context.built", ["restricted"])
+
+
+async def _record_context_reads[T: BaseModel](c: GatewayCall[T]) -> None:
+    """One identifier-only access event per evidence version sent to a model (Q-02-T20)."""
+    if not c.context.sources:
+        return
+    await record_reads(
+        c.attribution.tenant,
+        "model_context.built",
+        [
+            AccessSubject("evidence_version", source, engagement_id=c.attribution.engagement_id)
+            for source in c.context.sources
+        ],
+        run_id=c.attribution.agent_run_id,
+    )
+
+
 async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult[T]:
     pinned = _evaluation_tier.get()
     tier = pinned or c.tier
@@ -657,6 +676,7 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
             engagement_id=c.attribution.engagement_id,
         )
     basis: Basis | None = None
+    read_recorded = False
     for attempt in (1, 2):
         estimate = cost(tier, estimate_tokens(request.system + request.user), c.max_output_tokens)
         if earlier + spent + estimate > c.budget_usd:
@@ -699,6 +719,9 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
                         agent_id=c.attribution.agent_id,
                         engagement_id=c.attribution.engagement_id,
                     )
+                    if not read_recorded:  # Q-02-T20: once per call, as the content leaves
+                        await _record_context_reads(c)
+                        read_recorded = True
                     response = await route_provider(route).complete(request)
                 break
             except (ProviderError, TimeoutError) as exc:
