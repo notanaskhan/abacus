@@ -1,0 +1,90 @@
+# The weekly quality report (Q-03-T003; chapter 10 §10.14.1). Fridays, and on demand. It reads
+# the GitHub API, the last main run's coverage data, eval summaries and Playwright results, and
+# publishes the report as this job's summary and an artifact. It commits nothing, builds no image
+# and deploys nothing (working agreement): no write permission, no deploy step, nothing pushed.
+name: quality-report
+
+on:
+  schedule:
+    - cron: "0 15 * * 5" # Fridays, 9:00 CT (10:00 in daylight time)
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "First day (YYYY-MM-DD); default: 13 days before until"
+        required: false
+      until:
+        description: "Last day (YYYY-MM-DD); default: today"
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: quality-report
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: weekly quality report
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install the backend tools (no build)
+        run: cd backend && uv sync --frozen
+      - name: Gather the inputs
+        run: |
+          INPUTS="$RUNNER_TEMP/quality-inputs"
+          mkdir -p "$INPUTS"
+          gh run list --repo "$GITHUB_REPOSITORY" --branch main --limit 500 \
+            --json workflowName,status,conclusion,createdAt,updatedAt,event > "$INPUTS/runs.json"
+          gh pr list --repo "$GITHUB_REPOSITORY" --state merged --limit 200 \
+            --json number,additions,deletions,createdAt,mergedAt,reviews > "$INPUTS/prs.json"
+          latest() {
+            gh run list --repo "$GITHUB_REPOSITORY" --branch main --workflow "$1" \
+              --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty'
+          }
+          ci_run="$(latest ci.yml)"
+          if [ -n "$ci_run" ]; then
+            gh run download "$ci_run" --repo "$GITHUB_REPOSITORY" --pattern 'coverage-*' \
+              --dir "$INPUTS/coverage-data" || true
+            if ls "$INPUTS"/coverage-data/*/.coverage.* >/dev/null 2>&1; then
+              cp "$INPUTS"/coverage-data/*/.coverage.* backend/
+              (cd backend && uv run coverage combine && uv run coverage json -o "$INPUTS/coverage.json") || true
+            fi
+          fi
+          evals_run="$(latest evals.yml)"
+          if [ -n "$evals_run" ]; then
+            gh run download "$evals_run" --repo "$GITHUB_REPOSITORY" --name eval-summaries \
+              --dir "$INPUTS/evals" || true
+          fi
+      - name: Build the report
+        env:
+          SINCE: ${{ inputs.since }}
+          UNTIL: ${{ inputs.until }}
+        run: |
+          OUT="$RUNNER_TEMP/quality-report"
+          mkdir -p "$OUT"
+          args=(--inputs "$RUNNER_TEMP/quality-inputs")
+          # The dates are parsed by the report (date.fromisoformat), never by the shell.
+          if [ -n "$SINCE" ]; then args+=(--since "$SINCE"); fi
+          if [ -n "$UNTIL" ]; then args+=(--until "$UNTIL"); fi
+          cd backend
+          uv run python -m abacus_tools.quality.report "${args[@]}" \
+            --out "$OUT/quality-report.md" --json "$OUT/quality-report.json"
+          cat "$OUT/quality-report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quality-report
+          path: ${{ runner.temp }}/quality-report
+          retention-days: 90

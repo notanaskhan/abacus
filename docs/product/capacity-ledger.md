@@ -22,3 +22,67 @@ Delivered (done plus in review): 18 rows, 15.25 of 53.5 task-equivalents (29%).
 **What this means for dates.** Every row that needs an AWS account is still open: the landing zone (T01) is mid-way, so nothing is applied on staging or production, and R0 (M2, Fri Nov 13) and R1 (M4, Fri Dec 11) depend on T01, T03, T07, T14, T15, T17, T18 and T20. The rows that are done or in review are the code that needs no account: adapters, migrations, workflows, routes and the register. They were pulled forward from S1 to S4. TASK-014, and so SPEC-000 AC-21, stays open until a staging deploy runs the Stories 1 to 6 flow.
 
 **Pulled forward, not re-dated.** Chapter 01 dates are unchanged. T56 and T57 (S5) were started on 2026-10-23 because they need no account. T56 lands as Terraform that plans to nothing until the portal domain (F-09-T09) and T15's VPC origin exist.
+
+## Q-03 Hardening and test back-fill: the reserve (set up 2026-10-23, Q-03-T001)
+
+Q-03 is the plan's reserve, not a feature epic: 22.5% of every sprint from S6 to S73 (chapter 01 §1.8.1; Q-03 §9.1). Solo edition: the plan's two founder columns are added into one builder column (`AMENDMENT-solo.md` item 1). Rows are activities sized in task-equivalents (te), typed TEST, OPS or VENDOR. **No reserve row is a feature**, and none may become one.
+
+### Reserve per sprint
+
+| Sprint kind | Sprints | Reserve (te) | Plan's split, kept for reading the epic |
+|---|---|---|---|
+| S6, the first reserve sprint | S6 | **8.57** | 5.36 + 3.21 |
+| Normal sprint | S7–S73, except below | **9.38** | 5.36 + 4.02 |
+| Thanksgiving (×0.9) | S28, S54 | **8.44** | 4.82 + 3.62 |
+| Holiday (×0.6) | S30, S31, S56, S57 | **5.63** | 3.22 + 2.41 |
+
+S6 plans 9.5 te against 8.57 (111%): the identity and client-access back-fill must be green on the pen-test build pinned Fri Feb 12, 2027 (Q-03 §9.1, "AY's S6–S7 crunch is deliberate"). 2027 Q1 as a whole plans 65 te against 64.8.
+
+### Reserve per workstream (whole epic, S6–S73)
+
+| Workstream | Rows | te | Kind |
+|---|---|---|---|
+| A · Programme, skills and gates | 37 | 19 | committed |
+| B · Back-fill and coverage | 28 | 27.5 | committed |
+| C · Mutation | 23 | 18.5 | committed |
+| D · Security assurance | 71 | 82 | committed |
+| E · Performance and load | 31 | 37.5 | committed |
+| F · Resilience and data safety | 34 | 26.25 | committed |
+| G · SOC 2 and Safeguards | 20 | 17 | committed |
+| H · Accessibility | 7 | 7 | committed |
+| I · Continuous upkeep | 72 | 51.5 | committed |
+| J · Window hardening | 29 | 46 | committed |
+| K · Named call-offs | 11 | 6.75 | conditional (4.25 te return to the lanes if not invoked) |
+| L · Standing lanes | 153 | 281.75 | lanes, re-sized at each quarterly review |
+| V · Assurance vendors (non-code) | 9 | 5 | outside the reserve |
+| **Total** | **525** | **625.75** | |
+
+### Order of spend (chapter 01 §1.8.6 rule 1)
+
+1. **The sprint's back-fill commitment first.** Until the sprint's back-fill rows (workstream B) are met, the reserve funds nothing else: not an integration overrun, and never a feature.
+2. **Then integration and conflict overruns** (the L lanes), inside the sprint.
+3. **Never a feature.** A feature overrun that asks for reserve time is refused and the refusal is written in the table below; the weekly quality report (`abacus_tools.quality.report`, Q-03-T003) prints this table.
+4. **Unspent lane te** moves to the next lane or the next sprint, never to a feature row of another epic, and the move is written below at the quarterly review.
+
+### Refused requests and moved te
+
+| Date | Sprint | Request or move | From → to | te | Why |
+|---|---|---|---|---|---|
+
+### S6 (Mon Jan 11 – Fri Jan 22, 2027), pulled forward to 2026-10-23
+
+| Row | Workstream | te | State | Task file |
+|---|---|---|---|---|
+| T001 programme set-up | A | 0.5 | done | TASK-991 |
+| T002 back-fill tracker (`docs/quality/backfill.md`) | B | 0.5 | done | TASK-991 |
+| T003 weekly quality report | A | 1 | done | TASK-991 |
+| T004 DAST | D | 1 | not started: the ZAP container needs a dependency-allowlist decision first | — |
+| T005 call-off (F-01 cut list) | K | 1 | not invoked this sprint; if it stays uninvoked its te return to the lanes | — |
+| T006 back-fill TASK-041, TASK-045 | B | 1 | see TASK-992 | TASK-992 |
+| T007 back-fill TASK-030, TASK-032 | B | 1 | see TASK-992 | TASK-992 |
+| T008 back-fill TASK-040, TASK-044 | B | 1 | see TASK-992 | TASK-992 |
+| T009 S6 defect triage | B | 1 | see TASK-992 | TASK-992 |
+| T010 `ac-test-author` skill | A | 0.5 | done | TASK-991 |
+| T011 ADR-078 catch-up lane 2027 Q1 | L | 1 | see TASK-992 | TASK-992 |
+
+**Labels and burn-down issues.** T001 names GitHub labels (`reserve:q03`, `backfill`, `pen-finding`, `drill`) and a burn-down issue per workstream. Under the solo edition there are no issue queues to route (`AMENDMENT-solo.md` item 4), and the builder works without GitHub issues, so the burn-down lives in files instead: this section for the reserve, `docs/quality/backfill.md` for the 55 owed suites and `docs/quality/escaped-defects.md` for the defects they find (DEC-200).
