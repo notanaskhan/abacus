@@ -16,9 +16,13 @@ from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
+# The transaction acts for the row's person, as the unit of work sets it (0108, Q-02 AC-15).
 AUDIT = (
+    "WITH s AS (SELECT set_config('app.on_behalf_of', coalesce($5::uuid::text, ''), true) AS v) "
     "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, target_id, "
-    "on_behalf_of_user_id, policy_ref) VALUES ($1, $2, $3, 'probe.recorded', 'probe', $4, $5, $6)"
+    "on_behalf_of_user_id, policy_ref) "
+    "SELECT $1::uuid, $2::text, $3::text, 'probe.recorded', 'probe', $4::text, $5::uuid, $6::text "
+    "FROM s"
 )
 
 

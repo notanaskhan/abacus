@@ -192,14 +192,22 @@ async def _begin_tenant(conn: AsyncConnection, ctx: TenantContext) -> None:
     await conn.execute(text("RESET app.actor_id"))
     await conn.execute(text("RESET app.now"))
     await conn.execute(text("RESET app.demo_clocks"))
-    # Transaction-local (`true`): gone when this transaction ends, whatever happens.
+    await conn.execute(text("RESET app.on_behalf_of"))
+    # Transaction-local (`true`): gone when this transaction ends, whatever happens. The person
+    # an agent or the platform acts for binds `audit_events.on_behalf_of_user_id` (0108, AC-15).
     await conn.execute(
         text(
             "SELECT set_config('app.tenant_id', :tenant, true), "
             "set_config('app.actor_kind', :kind, true), "
-            "set_config('app.actor_id', :actor, true)"
+            "set_config('app.actor_id', :actor, true), "
+            "set_config('app.on_behalf_of', :behalf, true)"
         ),
-        {"tenant": str(ctx.tenant_id), "kind": ctx.actor_kind, "actor": ctx.actor_id},
+        {
+            "tenant": str(ctx.tenant_id),
+            "kind": ctx.actor_kind,
+            "actor": ctx.actor_id,
+            "behalf": "" if ctx.on_behalf_of_user_id is None else str(ctx.on_behalf_of_user_id),
+        },
     )
     # `abacus_now()` honours both only for a synthetic firm (F-04.3); never a demo clock in
     # production (F-04.2).

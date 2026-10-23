@@ -250,15 +250,6 @@ async def test_q02_t22_an_agent_row_naming_its_transactions_person_is_written(
     assert row["on_behalf_of_user_id"] == firm.person.user_id
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Bug: AC-15 binds on_behalf_of_user_id to the transaction setting app.on_behalf_of, as "
-        "migration 0003 binds the actor (§5: audit_events_behalf_is_transaction). Migration 0096 "
-        "adds no such check and the unit of work sets no app.on_behalf_of, so a row may name any "
-        "person, not the one its transaction acts for; see #272"
-    ),
-)
 async def test_q02_t22_an_agent_row_names_the_transactions_person_and_no_other(
     seed: Seeder, firm: Firm
 ) -> None:
@@ -296,15 +287,6 @@ async def test_q02_t22_a_policy_context_built_outside_the_kernel_records_nothing
     assert await _rows(seed, firm.tenant_id) == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Bug: AC-16 says no code outside kernel can construct a policy context, enforced by a "
-        "banned pattern. No banned-pattern rule flags TenantContext(..., 'policy', ...) in a "
-        "module; only the ActorKind Literal (a type hint) and the policy_ref CHECK stand in "
-        "the way; see #272"
-    ),
-)
 def test_q02_t22_a_banned_pattern_refuses_a_policy_context_in_a_module(tmp_path: Path) -> None:
     module = tmp_path / "src/abacus/modules/engagements/service.py"
     module.parent.mkdir(parents=True)
