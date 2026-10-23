@@ -5,7 +5,7 @@ import { Pill } from "../components/pill";
 import { Segmented, type Opt } from "../components/tabs";
 import { SyncChip } from "../components/status";
 import { Icon, type IconName } from "../icons";
-import type { RegistryCode } from "../status";
+import type { PillVariant, RegistryCode } from "../status";
 
 // The RecordHeader (C-00 Shell Kit spec 04; F-05-T18): the bar under the toolbar on the shell
 // ground, no fill and no border. Four variants:
@@ -86,6 +86,9 @@ export interface CloseRecordHeaderProps extends Common {
 
 export interface SettingsRecordHeaderProps extends Common {
   variant: "settings";
+  /** The state pill's variant when it is a record status rather than the amber work state (a
+   * binder reads Draft neutral, Published state, Complete green-tint). Default amber. */
+  stateTone?: PillVariant;
   backLabel?: string;
   onBack?: () => void;
 }
@@ -162,9 +165,11 @@ function Centre({
   state,
   chip,
   onChip,
+  tone = "amber",
 }: Pick<Common, "title" | "context" | "state"> & {
   chip?: string | undefined;
   onChip?: (() => void) | undefined;
+  tone?: PillVariant | undefined;
 }): JSX.Element {
   const parts = context === undefined || context === "" ? [] : context.split(" · ");
   return (
@@ -186,7 +191,7 @@ function Centre({
         </Chip>
       )}
       {state !== undefined && state !== "" && (
-        <Pill variant="amber" size="state">
+        <Pill variant={tone} size="state">
           {state}
         </Pill>
       )}
@@ -435,6 +440,7 @@ function SettingsHeader({
   className,
   backLabel = "Back",
   onBack,
+  stateTone,
 }: SettingsRecordHeaderProps): JSX.Element {
   return (
     <div
@@ -443,7 +449,7 @@ function SettingsHeader({
       className={cn(ROW, "h-(--subbar-h)", className)}
     >
       {left ?? <Back label={backLabel} onClick={onBack} />}
-      <Centre title={title} context={context} state={state} />
+      <Centre title={title} context={context} state={state} tone={stateTone} />
       {right !== undefined && <div className="ml-auto flex items-center gap-[8px]">{right}</div>}
     </div>
   );

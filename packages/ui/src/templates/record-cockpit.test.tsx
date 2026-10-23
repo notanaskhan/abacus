@@ -178,3 +178,47 @@ describe("T2a to T2e specimens", () => {
     }
   });
 });
+
+// P-06-T12 (BND-02): a record's own subbar and tabs in the bar's slot, a single-purpose dock's
+// title, and the frame drawn inside a shell that already has the toolbar.
+describe("T2 RecordCockpit slots", () => {
+  it("a header and tabs replace the audit bar", () => {
+    render(
+      <RecordCockpit
+        toolbar={{ nav: [{ label: "Audits" }], firm: "Brightwater Hale", active: "Audits" }}
+        rail={BASE.rail}
+        canvas={BASE.canvas}
+        header={<div data-testid="subbar">2025 Binder</div>}
+        tabs={<div data-testid="tabs" />}
+      />,
+    );
+    expect(screen.getByTestId("subbar")).toBeTruthy();
+    expect(screen.getByTestId("tabs")).toBeTruthy();
+    expect(screen.queryByText("Northwind Robotics 401(k) Plan")).toBeNull();
+  });
+
+  it("a single-view dock can carry its own title", () => {
+    render(
+      <RecordCockpit
+        {...BASE}
+        dock={{ view: "Viewer", views: ["Viewer"], title: "Request", children: <p>card</p> }}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Request" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Request dock" })).toBeTruthy();
+  });
+
+  it("without a toolbar it draws the bar, tabs and columns with no window", () => {
+    const { container } = render(
+      <RecordCockpit
+        record={{ title: "Northwind Robotics 401(k) Plan" }}
+        rail={BASE.rail}
+        canvas={BASE.canvas}
+      />,
+    );
+    expect(container.querySelector('[data-cockpit="bare"]')).not.toBeNull();
+    expect(container.querySelector('[data-shell="app"]')).toBeNull();
+    expect(screen.getByTestId("rail")).toBeTruthy();
+    expect(screen.getByText("Northwind Robotics 401(k) Plan")).toBeTruthy();
+  });
+});
