@@ -221,9 +221,11 @@ fixtures:
 	@echo "not implemented: F-04-T31 (fixture export from the scenario)" >&2; exit 1
 
 # Journeys (F-04 §3.8): fixture mode, gated on pull requests; full stack nightly, against
-# `make dev` + `make seed-demo` with fakes and the injected clock, never a hosted database.
+# `make dev` + `make seed-demo` with fakes and the injected clock, never a hosted database. The
+# harness (F-04-T21) gives each its Playwright project and persona adapter; ABACUS_FIXTURES=1 starts
+# the fixture server. Staging and canary are `--project=staging` / `canary` with their URL set.
 journeys:
-	VITE_FIXTURES=1 ABACUS_JOURNEY_MODE=fixture pnpm -C apps/web exec playwright test --project=chromium --pass-with-no-tests e2e/journeys
+	ABACUS_FIXTURES=1 pnpm -C apps/web exec playwright test --project=fixture
 
 journeys-full: db-guard
-	ABACUS_JOURNEY_MODE=fullstack pnpm -C apps/web exec playwright test --project=chromium --pass-with-no-tests e2e/journeys
+	pnpm -C apps/web exec playwright test --project=fullstack
