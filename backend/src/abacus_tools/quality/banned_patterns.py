@@ -1058,6 +1058,8 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/workpapers/repository.py", "citations_of"),
         ("src/abacus/modules/workpapers/repository.py", "versions_of"),
         ("src/abacus/modules/review/repository.py", "sign_offs_of"),
+        # P-04-T14: the computed staleness query over the same targets, after the same check.
+        ("src/abacus/modules/review/repository.py", "stale_sign_offs"),
         # SPEC-309 (TASK-320): ledger stays dependency-free (no visible()); the assurance read
         # model authorises `trial_balance.read` on the engagement before any of these run.
         ("src/abacus/modules/ledger/tb_repository.py", "snapshots_of_entity"),

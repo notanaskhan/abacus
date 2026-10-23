@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from uuid import UUID
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import Text, func, insert, select, update
+from sqlalchemy import cast as sql_cast
+from sqlalchemy.dialects.postgresql import ARRAY, distinct_on
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from abacus.modules.review.models import ReviewableNote, ReviewableNoteEvent, SignOff
 
@@ -28,6 +32,40 @@ async def sign_offs_of(
         .scalars()
         .all()
     )
+
+
+async def stale_sign_offs(
+    session: AsyncSession, target_type: str, current: Mapping[UUID, str]
+) -> Sequence[SignOff]:
+    """P-04-T14: the newest sign-off of each target and level whose recorded hash differs from
+    the target's current one, computed in one query (no stale column exists: staleness is
+    `content_hash <> target hash`). LIST_EXEMPT: the caller authorised on the engagement."""
+    if not current:
+        return []
+    ids = list(current)
+    newest = (
+        select(SignOff)
+        .where(SignOff.target_type == target_type, SignOff.target_id.in_(ids))
+        .ext(distinct_on(SignOff.target_id, SignOff.level))
+        .order_by(SignOff.target_id, SignOff.level, SignOff.created_at.desc(), SignOff.id.desc())
+        .subquery()
+    )
+    signed = aliased(SignOff, newest)
+    now = (
+        func.unnest(
+            sql_cast(ids, ARRAY(PG_UUID(as_uuid=True))),
+            sql_cast([current[i] for i in ids], ARRAY(Text)),
+        )
+        .table_valued("target_id", "content_hash")
+        .render_derived(name="current_hash")
+    )
+    query = (
+        select(signed)
+        .join(now, now.c.target_id == signed.target_id)
+        .where(signed.content_hash != now.c.content_hash)
+        .order_by(signed.target_id, signed.level)
+    )
+    return (await session.execute(query)).scalars().all()
 
 
 async def insert_sign_off(session: AsyncSession, **values: object) -> None:

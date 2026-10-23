@@ -1,0 +1,47 @@
+{
+  "_about": "P-04-T14 golden content-hash vectors (RFC 8785 canonical JSON, SHA-256 hex). `input` is JSON text; `canonical` is the expected RFC 8785 form, written by hand (the two RFC 8785 section 3.2.3 examples are the RFC's own); `sha256` is the hash of `canonical` as UTF-8. `owner` names the owner adapter that must hash it identically.",
+  "vectors": [
+    {
+      "name": "rfc8785_3_2_3_example",
+      "owner": null,
+      "input": "{\"numbers\": [333333333.33333329, 1E30, 4.50, 2e-3, 0.000000000000000000000000001], \"string\": \"\\u20ac$\\u000F\\u000aA'\\u0042\\u0022\\u005c\\\\\\\"\\/\", \"literals\": [null, true, false]}",
+      "canonical": "{\"literals\":[null,true,false],\"numbers\":[333333333.3333333,1e+30,4.5,0.002,1e-27],\"string\":\"\u20ac$\\u000f\\nA'B\\\"\\\\\\\\\\\"/\"}",
+      "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
+    },
+    {
+      "name": "rfc8785_3_2_3_sorting",
+      "owner": null,
+      "input": "{\"\\u20ac\": \"Euro Sign\", \"\\r\": \"Carriage Return\", \"\\ufb33\": \"Hebrew Letter Dalet With Dagesh\", \"1\": \"One\", \"\\ud83d\\ude00\": \"Emoji: Grinning Face\", \"\\u0080\": \"Control\", \"\\u00f6\": \"Latin Small Letter O With Diaeresis\"}",
+      "canonical": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\u0080\":\"Control\",\"\u00f6\":\"Latin Small Letter O With Diaeresis\",\"\u20ac\":\"Euro Sign\",\"\ud83d\ude00\":\"Emoji: Grinning Face\",\"\ufb33\":\"Hebrew Letter Dalet With Dagesh\"}",
+      "sha256": "5e321556d22018a9656991a9e94f77ec175fa193e52a2429d312f8419ec8b08c"
+    },
+    {
+      "name": "ecmascript_numbers",
+      "owner": null,
+      "input": "[0, -0.0, 5e-324, 1.7976931348623157e308, 295147905179352830000.0, 1e21, 1e20, 1e-7, 1e-6, -1.5, 100.0, 1.23e-18, 9007199254740991]",
+      "canonical": "[0,0,5e-324,1.7976931348623157e+308,295147905179352830000,1e+21,100000000000000000000,1e-7,0.000001,-1.5,100,1.23e-18,9007199254740991]",
+      "sha256": "e520aff092337b0d8b63a6ba6d9e641822dface319554f4eb4b3da49e7d46082"
+    },
+    {
+      "name": "field_value_decimal_as_string",
+      "owner": null,
+      "input": "{\"v\": \"2310.00\", \"t\": \"decimal\"}",
+      "canonical": "{\"t\":\"decimal\",\"v\":\"2310.00\"}",
+      "sha256": "0a211fe80a732fad24e2fba0bb6655236968c5de6997c8865dd212ffd8b0ac6d"
+    },
+    {
+      "name": "workpaper_ascii",
+      "owner": "workpaper",
+      "input": "{\"tb\": {\"version_no\": 1, \"id\": \"7f1c2d3e-0000-4000-8000-000000000002\"}, \"citations\": [[\"C14\", \"7f1c2d3e-0000-4000-8000-000000000001\", \"p. 3\"]], \"cells\": {\"C14\": {\"tickmarks\": [], \"raw\": \"2310\"}, \"B4\": {\"tickmarks\": [\"agreed\", \"footed\"], \"raw\": \"=TB(\\\"1000\\\")\"}}}",
+      "canonical": "{\"cells\":{\"B4\":{\"raw\":\"=TB(\\\"1000\\\")\",\"tickmarks\":[\"agreed\",\"footed\"]},\"C14\":{\"raw\":\"2310\",\"tickmarks\":[]}},\"citations\":[[\"C14\",\"7f1c2d3e-0000-4000-8000-000000000001\",\"p. 3\"]],\"tb\":{\"id\":\"7f1c2d3e-0000-4000-8000-000000000002\",\"version_no\":1}}",
+      "sha256": "0738b14d47ff4979f6a02afd5367c6930bda012c3f4b8997a3b832e1f99c4f55"
+    },
+    {
+      "name": "workpaper_non_ascii",
+      "owner": "workpaper",
+      "input": "{\"cells\": {\"A1\": {\"raw\": \"Cash \\u2014 operating\", \"tickmarks\": []}}, \"citations\": []}",
+      "canonical": "{\"cells\":{\"A1\":{\"raw\":\"Cash \u2014 operating\",\"tickmarks\":[]}},\"citations\":[]}",
+      "sha256": "9fe13a2944a2c8d87028d3b816dd21a72cf8e17ad511b3721dfc0e328b84c90e"
+    }
+  ]
+}

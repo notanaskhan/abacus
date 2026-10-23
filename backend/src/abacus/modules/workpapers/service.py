@@ -9,14 +9,12 @@ snapshots a numbered version, and any later change shows the sign-off as stale.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
 from abacus.kernel._statuses import AuditSectionStatus
@@ -27,7 +25,15 @@ from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
 from abacus.modules.evidence.api import version_view
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
 from abacus.modules.ledger.api import TbLine, engagement_trial_balances, trial_balance_view
-from abacus.modules.review.api import LevelState, Reviewable, record_sign_off, sign_off_states
+from abacus.modules.review.api import (
+    Json,
+    LevelState,
+    Reviewable,
+    ReviewableFacts,
+    record_sign_off,
+    sign_off_states,
+)
+from abacus.modules.review.api import content_hash as review_content_hash
 from abacus.modules.workpapers.formulas import TbSource, evaluate, is_formula
 from abacus.modules.workpapers.models import Workpaper, WorkpaperCell, WorkpaperCellCitation
 from abacus.modules.workpapers.repository import (
@@ -208,9 +214,9 @@ async def tb_link(tenant: TenantContext, engagement_id: UUID) -> TbLink | None:
 
 
 def content_hash(content: dict[str, object]) -> str:
-    return hashlib.sha256(
-        json.dumps(content, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    """The review grammar's one content hash (P-04-T14: RFC 8785 canonical JSON, SHA-256). For
+    ASCII content it is byte for byte the sorted compact `json.dumps` used before (DEC-215)."""
+    return review_content_hash(cast(Json, content))
 
 
 def status_of(has_content: bool, levels: Sequence[LevelState]) -> AuditSectionStatus:
@@ -531,6 +537,28 @@ async def sign_off(ctx: AuthContext, engagement_id: UUID, workpaper_id: UUID, le
             content=content,
             created_by=ctx.user_id,
         )
+
+
+async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> ReviewableFacts | None:
+    """P-04-T14: one paper's facts for the sign-off rules, for callers authorised on its
+    engagement. The paper records no preparer function yet (A-04's work-item functions), so the
+    review module adds the current L1 signers itself."""
+    async with tenant_session(tenant) as session:
+        paper = await get_workpaper(session, workpaper_id)
+        if paper is None:
+            return None
+        cells = await newest_cells(session, [paper.id])
+        citations = await citations_of(session, [paper.id])
+        version_no = await next_version_no(session, paper.id) - 1
+    tb = await tb_link(tenant, paper.engagement_id)
+    return ReviewableFacts(
+        TARGET,
+        paper.id,
+        paper.engagement_id,
+        content_hash(content_of(cells, citations, tb)),
+        version_no,
+        frozenset(),
+    )
 
 
 async def workpaper_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Reviewable]:

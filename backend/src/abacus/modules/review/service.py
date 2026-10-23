@@ -24,6 +24,7 @@ from abacus.modules.review.repository import (
     note_events_of,
     notes_of_target,
     sign_offs_of,
+    stale_sign_offs,
 )
 
 LEVELS: Final = {1: "preparer", 2: "reviewer", 3: "manager", 4: "partner", 5: "eqr"}
@@ -97,6 +98,33 @@ async def sign_off_states(
     return {
         tid: states_of([r for r in rows if r.target_id == tid], hashes[tid]) for tid in target_ids
     }
+
+
+@dataclass(frozen=True)
+class StaleSignOff:
+    """A sign-off whose target changed since (P-04-T14): shown struck, never updated."""
+
+    target_id: UUID
+    level: int
+    signed_by: UUID
+    signed_at: datetime
+    signed_hash: str
+    current_hash: str
+
+
+async def stale_of(
+    tenant: TenantContext, target_type: str, hashes: dict[UUID, str]
+) -> list[StaleSignOff]:
+    """The computed staleness query: each target's newest sign-off per level that no longer
+    matches the target's current hash. For callers authorised on the targets' engagement."""
+    async with tenant_session(tenant) as session:
+        rows = await stale_sign_offs(session, target_type, hashes)
+    return [
+        StaleSignOff(
+            r.target_id, r.level, r.signed_by, r.created_at, r.content_hash, hashes[r.target_id]
+        )
+        for r in rows
+    ]
 
 
 async def _open_notes(tx: UnitOfWork, target_id: UUID) -> bool:
