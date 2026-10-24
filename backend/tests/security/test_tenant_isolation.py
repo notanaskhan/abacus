@@ -176,6 +176,7 @@ TABLES: tuple[str, ...] = (
     "risk_approvals",
     "risk_versions",
     "risks",
+    "screening_feedback",
     "screening_results",
     "security_incidents",
     "selected_items",

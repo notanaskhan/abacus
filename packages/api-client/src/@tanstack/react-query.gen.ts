@@ -4824,7 +4824,8 @@ export const screeningCardQueryKey = (options: Options<ScreeningCardData>) => cr
 /**
  * Screening Card Route
  *
- * SHL-20 a-e. 404 with `screening.card` off; 501 until P-06-T20.
+ * SHL-20 a-e: the request batch's screening, composed by code. 404 with `screening.card`
+ * off.
  */
 export const screeningCardOptions = (options: Options<ScreeningCardData>) => queryOptions<ScreeningCardResponse, ScreeningCardError, ScreeningCardResponse, ReturnType<typeof screeningCardQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

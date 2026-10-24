@@ -905,6 +905,11 @@ codes:
     - abacus.modules.identity.contact_access.ScopeOutsideClient
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
+  screening_running:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.screening_card.ScreeningRunning
+    summary: 'A screening of this request''s files is still running: wait for it, then rerun.'
   seats_full:
     status: 409
     raised_by:

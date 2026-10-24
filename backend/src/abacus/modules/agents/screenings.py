@@ -25,12 +25,13 @@ from abacus.modules.agents.assess_start import WORKFLOWS as ASSESS_WORKFLOWS
 from abacus.modules.agents.draft_start import WORKFLOWS as DRAFT_WORKFLOWS
 from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_agent
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
-from abacus.modules.agents.events import KnowledgeDocumentAdded
+from abacus.modules.agents.events import KnowledgeDocumentAdded, UploadReviewRecorded
 from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
 from abacus.modules.agents.match_start import WORKFLOWS as MATCH_WORKFLOWS
 from abacus.modules.agents.match_start import start_match
 from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
 from abacus.modules.agents.review_start import start_upload_review
+from abacus.modules.agents.screening_aggregate import on_version_event, on_version_withdrawn
 from abacus.modules.agents.service import SCREENER
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.workflow_types import KnowledgeInput, ScreeningInput
@@ -38,6 +39,7 @@ from abacus.modules.agents.workflows import ScreeningWorkflow
 from abacus.modules.engagements.api import EngagementCreated, get_ref
 from abacus.modules.evidence.api import (
     EvidenceVersionCreated,
+    EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
     UploadChecksRecorded,
@@ -123,6 +125,13 @@ async def start_knowledge_embedding(event: OutboxEvent) -> None:
         )
 
 
+async def on_upload_checks_recorded(event: OutboxEvent) -> None:
+    """The reviewer may start (SPEC-030), then the aggregate recomposes from the code checks
+    (P-06-T20): the period check is code's, so it needs no review."""
+    await start_upload_review(event)
+    await on_version_event(event)
+
+
 SUBSCRIPTIONS = {
     EVIDENCE_VERSION_CREATED: start_screening,
     KnowledgeDocumentAdded.event_type: start_knowledge_embedding,
@@ -133,8 +142,12 @@ SUBSCRIPTIONS = {
     InboxFileAdded.event_type: to_agent,
     DueDatesChanged.event_type: to_agent,  # SPEC-027 (TASK-051): reminders start again
     FirmAgentsResumed.event_type: firm_resumed,
-    # SPEC-030 (TASK-059): checks recorded for an upload; the reviewer may follow (P-6).
-    UploadChecksRecorded.event_type: start_upload_review,
+    # SPEC-030 (TASK-059): checks recorded for an upload; the reviewer may follow (P-6), and
+    # P-06-T20's aggregate recomposes from the code checks.
+    UploadChecksRecorded.event_type: on_upload_checks_recorded,
+    # P-06-T20: a review recorded, or a client's withdrawal: the request batches recompose.
+    UploadReviewRecorded.event_type: on_version_event,
+    EvidenceVersionWithdrawn.event_type: on_version_withdrawn,
     # SPEC-033 (TASK-066): an inbox file was read; the matcher may follow (P-7).
     InboxFileExtracted.event_type: start_match,
 }

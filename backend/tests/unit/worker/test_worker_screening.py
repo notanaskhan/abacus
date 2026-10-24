@@ -90,6 +90,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "client_access.revoked",
         "gate.met",  # A-01-T05: the phase a computed gate opens is derived
         "evidence_version.withdrawn",  # P-06-T19: the withdrawal purge starts
+        "upload_review.recorded",  # P-06-T20: the screening aggregate recomposes
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

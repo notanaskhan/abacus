@@ -2820,7 +2820,8 @@ export const returnRequestItemToClient = <ThrowOnError extends boolean = false>(
 /**
  * Screening Card Route
  *
- * SHL-20 a-e. 404 with `screening.card` off; 501 until P-06-T20.
+ * SHL-20 a-e: the request batch's screening, composed by code. 404 with `screening.card`
+ * off.
  */
 export const screeningCard = <ThrowOnError extends boolean = false>(options: Options<ScreeningCardData, ThrowOnError>): RequestResult<ScreeningCardResponses, ScreeningCardErrors, ThrowOnError> => (options.client ?? client).get<ScreeningCardResponses, ScreeningCardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

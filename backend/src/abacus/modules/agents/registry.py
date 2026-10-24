@@ -26,6 +26,7 @@ TABLES: frozenset[str] = frozenset(
         "follow_up_returns",  # P-06-T14 (migration 0121)
         "agent_runs",
         "screening_results",
+        "screening_feedback",  # P-06-T20 (migration 0154): SHL-20 f
         "knowledge_documents",  # SPEC-009 Q5
         "knowledge_chunks",
         # P-04-T05 (migration 0095, ADR-161): suggestions and proposals with their decisions.
@@ -51,7 +52,8 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "inbox_match_proposals",  # SPEC-033 (TASK-065): proposals, as made
         "follow_up_items",  # SPEC-027 (TASK-051)
         "follow_up_returns",  # P-06-T14: the files a screening return named, as sent
-        "screening_results",
+        "screening_results",  # P-06-T20: aggregates supersede, never update (0154)
+        "screening_feedback",  # P-06-T20: a person's feedback, as given
         "suggestion_decisions",  # P-04-T05
         "proposal_rows",
         "proposal_decisions",
@@ -133,6 +135,14 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "screening_results": frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
         | {"action", "confidence", "rationale", "citations", "unverified"}
+        # P-06-T20 (0154): the request-batch aggregate; CHECKs pair kind and author.
+        | {"subject_kind", "created_by_kind", "request_item_id", "batch_no", "verdict"}
+        | {"source_result_ids", "source_review_ids", "evidence_version_ids", "checks"}
+        | {"file_flags", "supersedes_id"}
+    ),
+    "screening_feedback": frozenset(
+        {"id", "tenant_id", "engagement_id", "screening_result_id", "user_id", "thumb"}
+        | {"reason_code", "note_sealed"}
     ),
     # Knowledge (SPEC-009): vectors and status are set later by the embedding workflow.
     "knowledge_documents": frozenset(

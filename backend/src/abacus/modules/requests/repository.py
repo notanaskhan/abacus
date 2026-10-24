@@ -7,7 +7,18 @@ from datetime import date, datetime
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, Subquery, and_, bindparam, func, insert, or_, select, text, update
+from sqlalchemy import (
+    Select,
+    Subquery,
+    and_,
+    bindparam,
+    func,
+    insert,
+    or_,
+    select,
+    text,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1377,3 +1388,25 @@ async def binder_statuses(
         )
     )
     return {i: str(st) for i, st in rows.all()}
+
+
+# --- P-06-T20: what the screening aggregate composes against -------------------------------------
+
+
+async def screening_subject_row(
+    session: AsyncSession, item_id: UUID, work_items: Subquery
+) -> tuple[RequestItem, str | None] | None:
+    """One item and its binder's work-item kind (engagements' `work_item_index`), for a system
+    caller composing the item's screening (P-06-T20); keyed, not listed."""
+    row = (
+        await session.execute(
+            select(RequestItem, work_items.c.kind)
+            .join(RequestList, RequestList.id == RequestItem.request_list_id)
+            .outerjoin(work_items, work_items.c.id == RequestList.work_item_id)
+            .where(RequestItem.id == item_id)
+        )
+    ).first()
+    if row is None:
+        return None
+    kind = row[1]
+    return row[0], str(kind) if kind is not None else None

@@ -2,16 +2,18 @@
 screening-return follow-up draft (P-06-T15; P-06 §4.3; contract `docs/contracts/c5-requests-
 binders.md` §12). The follow-up's edit and send are the live follow-ups v2 routes (P-06-T14).
 
-Behind `screening.card`: off, every route here answers 404 (the card area shows nothing extra);
-on, 501 `not_implemented` until P-06-T20 (the aggregate, rerun and feedback) and P-06-T22 with
-T20 (the screening-return draft and its send). The card is composed by code from the per-file
-screenings and verified reviewer flags; it never carries a confidence (P-06 §7) and its flags
-carry only code-verified quotes, through C4 regions (INV-2). The agent screens; a person
-returns, sends and gives feedback (INV-1): `screening.feedback` denies the agent.
+Behind `screening.card`: off, every route here answers 404 (the card area shows nothing extra).
+On, the card, its rerun and feedback are live (P-06-T20, `screening_card`), and the
+screening-return draft answers 501 `not_implemented` until P-06-T22. The card is composed by
+code from the per-file screenings and verified reviewer flags (`screening_aggregate`). It never
+carries a confidence (P-06 §7), and its flags carry only code-verified quotes, through C4
+regions (INV-2). The agent screens; a person returns, sends and gives feedback (INV-1):
+`screening.feedback` denies the agent.
 """
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
@@ -26,6 +28,13 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText
 from abacus.modules.agents.follow_up_routes import FollowUpOut
+from abacus.modules.agents.screening_card import (
+    CardView,
+    FeedbackView,
+    give_feedback,
+    rerun_screening,
+    screening_card,
+)
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -147,12 +156,27 @@ class ScreeningReturnDraftIn(BaseModel):
     reason_code: Annotated[ReturnReason, classified("internal")] = "wrong_document"
 
 
+def _feedback_out(view: FeedbackView) -> ScreeningFeedbackOut:
+    return ScreeningFeedbackOut.model_validate(asdict(view))
+
+
+def _card_out(view: CardView) -> ScreeningCardOut:
+    """Validated as data: the codes are the table's CHECK values, composed by code."""
+    provenance = ("prompt_ref", "duration_ms", "screened_at")
+    found = asdict(view)
+    return ScreeningCardOut.model_validate(
+        {k: v for k, v in found.items() if k not in provenance}
+        | {"provenance": {k: found[k] for k in provenance}}
+    )
+
+
 @screening_items_router.get(
-    "/screening", action="upload_review.read", response_model=ScreeningCardOut, errors=(501,)
+    "/screening", action="upload_review.read", response_model=ScreeningCardOut
 )
 async def screening_card_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> ScreeningCardOut:
-    """SHL-20 a-e. 404 with `screening.card` off; 501 until P-06-T20."""
-    await _stub(ctx)
+    """SHL-20 a-e: the request batch's screening, composed by code. 404 with `screening.card`
+    off."""
+    return _card_out(await screening_card(ctx, engagement_id, item_id))
 
 
 @screening_items_router.post(
@@ -160,11 +184,14 @@ async def screening_card_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> 
     action="screening.request",
     response_model=ScreeningRerunOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def rerun_screening_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> ScreeningRerunOut:
     """Re-screen the current files (SHL-20 c); 409 `screening_running` while one runs."""
-    await _stub(ctx)
+    view = await rerun_screening(ctx, engagement_id, item_id)
+    return ScreeningRerunOut(
+        request_item_id=view.request_item_id, running=view.running, as_of=view.as_of
+    )
 
 
 @screenings_router.post(
@@ -172,13 +199,13 @@ async def rerun_screening_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) ->
     action="screening.feedback",
     response_model=ScreeningFeedbackOut,
     status_code=201,
-    errors=(501,),
 )
 async def screening_feedback_route(
     screening_result_id: UUID, body: ScreeningFeedbackIn, ctx: Ctx
 ) -> ScreeningFeedbackOut:
     """SHL-20 f: a person's thumbs up or down on a card, insert-only."""
-    await _stub(ctx)
+    view = await give_feedback(ctx, screening_result_id, body.thumb, body.reason_code, body.note)
+    return _feedback_out(view)
 
 
 @screening_items_router.post(

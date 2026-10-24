@@ -1314,7 +1314,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
         | {"confidence", "rationale", "citations", "unverified"}
+        # P-06-T20 (0154): the request-batch aggregate; CHECKs pair kind and author, and the
+        # insert guard requires the system actor.
+        | {"subject_kind", "created_by_kind", "request_item_id", "batch_no", "verdict"}
+        | {"source_result_ids", "source_review_ids", "evidence_version_ids", "checks"}
+        | {"file_flags", "supersedes_id"}
     )
+    assert sc.APP_INSERT_COLUMNS["screening_feedback"] == frozenset(
+        {"id", "tenant_id", "engagement_id", "screening_result_id", "user_id", "thumb"}
+        | {"reason_code", "note_sealed"}
+    )
+    assert {"screening_feedback"} <= sc.INSERT_ONLY_TABLES
     assert sc.APP_INSERT_COLUMNS["usage_records"] == frozenset(
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}

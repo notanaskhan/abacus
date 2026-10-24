@@ -50,6 +50,7 @@ from abacus.modules.requests.service import (
     RequestItemSummary,
     RequestItemView,
     ReviewTarget,
+    ScreeningSubject,
     add_request_item,
     apply_drafted_guidance,
     fulfil_by_rule,
@@ -67,6 +68,7 @@ from abacus.modules.requests.service import (
     reopen_after_undo,
     request_items_for,
     review_targets,
+    screening_subject,
     upload_item_of,
     withdraw_upload,
 )
@@ -125,6 +127,7 @@ __all__ = [
     "RequestLatestUploadOut",
     "RequestOwedByOut",
     "ReviewTarget",
+    "ScreeningSubject",
     "add_request_item",
     "apply_drafted_guidance",
     "classify",
@@ -154,6 +157,7 @@ __all__ = [
     "request_items_for",
     "review_targets",
     "router",
+    "screening_subject",
     "upload_item_of",
     "withdraw_upload",
 ]

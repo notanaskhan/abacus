@@ -1164,3 +1164,24 @@ async def verified_citations_into(
         .scalars()
         .all()
     )
+
+
+async def verified_citations_of(
+    session: AsyncSession, cited_from_type: str, cited_from_ids: Sequence[UUID]
+) -> Sequence[tuple[UUID, UUID, str | None]]:
+    """P-06-T20: the verified citations written for these anchors (id, anchor, ref), whose
+    source the client has not withdrawn, in order. LIST_EXEMPT: keyed by anchors the caller
+    composed from (the screening aggregate, a system caller) or authorised on."""
+    if not cited_from_ids:
+        return []
+    rows = await session.execute(
+        select(Citation.id, Citation.cited_from_id, Citation.cited_from_ref)
+        .where(
+            Citation.cited_from_type == cited_from_type,
+            Citation.cited_from_id.in_(list(cited_from_ids)),
+            Citation.verified.is_(True),
+            live_citation_source(),
+        )
+        .order_by(Citation.cited_from_id, Citation.n, Citation.id)
+    )
+    return [(r.id, r.cited_from_id, r.cited_from_ref) for r in rows.all()]
