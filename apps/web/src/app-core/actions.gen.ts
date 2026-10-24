@@ -151,6 +151,7 @@ export const ACTIONS = [
   "org_structure.manage",
   "org_structure.read",
   "pii.reveal",
+  "portal_documents.read",
   "portal_home.read",
   "portal_preferences.update",
   "procedure.configure",

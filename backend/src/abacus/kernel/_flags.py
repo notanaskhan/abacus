@@ -116,6 +116,16 @@ NOTIFICATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+PORTAL_DOCUMENTS_V2 = Flag(
+    name="portal.documents_v2",
+    kind="boolean",
+    default="false",
+)
+PORTAL_DROP_SORT = Flag(
+    name="portal.drop_sort",
+    kind="boolean",
+    default="false",
+)
 PORTAL_HOME_V2 = Flag(
     name="portal.home_v2",
     kind="boolean",
@@ -123,6 +133,11 @@ PORTAL_HOME_V2 = Flag(
 )
 PORTAL_SIGN_IN_V2 = Flag(
     name="portal.sign_in_v2",
+    kind="boolean",
+    default="false",
+)
+PORTAL_THIRD_PARTY_ROOM = Flag(
+    name="portal.third_party_room",
     kind="boolean",
     default="false",
 )
@@ -183,8 +198,11 @@ FLAGS: dict[str, Flag] = {
     "matching.enabled": MATCHING_ENABLED,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
+    "portal.documents_v2": PORTAL_DOCUMENTS_V2,
+    "portal.drop_sort": PORTAL_DROP_SORT,
     "portal.home_v2": PORTAL_HOME_V2,
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
+    "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,

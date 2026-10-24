@@ -209,6 +209,12 @@ NOT_CREATING = {
     "/v1/contacts/{contact_id}/unlock",
     # P-07-T05 (engagements v2 stub): per-step validation returns findings, nothing stored.
     "/v1/engagement-drafts/{draft_id}/validate",
+    # R-01-T01 (C5 portal-pbc stub): undos are compensating events on an existing record, a void
+    # stamps an existing fulfilment, and the room's suggest reads file names and stores nothing.
+    "/v1/portal/request-items/{item_id}/ignore/undo",
+    "/v1/portal/binders/{binder_id}/mark-done/undo",
+    "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void",
+    "/v1/portal/room/suggest",
 }
 
 
@@ -235,6 +241,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/legal-holds/{hold_id}/release",
         # P-08-T10 (SPEC-320): a sign-in start and a resend answer 202 for any email.
         "/v1/portal/auth/start",
+        # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
+        "/v1/portal/binders/{binder_id}/drops",
         "/v1/portal/auth/resend",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}

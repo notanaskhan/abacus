@@ -18,6 +18,7 @@ from abacus.modules.requests.events import (
 )
 from abacus.modules.requests.follow_up_reads import FollowUpCandidate, follow_up_candidates
 from abacus.modules.requests.lifecycle import register_live_facts, request_item_scope
+from abacus.modules.requests.pbc_contract import pbc_firm_router, pbc_portal_router
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
@@ -67,6 +68,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     binders_router,  # C5 v1 stub (P-06-T01)
     items_router,
     portal_router,
+    pbc_portal_router,  # C5 portal-pbc stub (R-01-T01): undo an Ignore, undo Mark as Done
+    pbc_firm_router,  # C5 portal-pbc stub (R-01-T01): void a rule fulfilment
 )
 
 # P-07-T08: the clients index's open-request count.

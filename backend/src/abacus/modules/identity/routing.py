@@ -112,6 +112,9 @@ _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
     # P-08-T10 (SPEC-320 §6): the portal sign-in's answers.
     410: {"model": ErrorOut, "description": "Gone: the sign-in code expired or was used"},
+    # R-01-T01 (DEC-58 c): a portal drop over the size limit or of a type the portal refuses.
+    413: {"model": ErrorOut, "description": "The file is too large"},
+    415: {"model": ErrorOut, "description": "The file type is not accepted"},
     423: {"model": ErrorOut, "description": "Locked: too many wrong codes"},
     429: {"model": ErrorOut, "description": "Too soon or too many: retry after Retry-After"},
     501: {"model": ErrorOut, "description": "Contract stub: not implemented yet"},

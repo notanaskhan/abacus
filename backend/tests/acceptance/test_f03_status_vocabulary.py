@@ -585,6 +585,14 @@ NOT_A_STATUS = {
     # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
     "PortalHomeTodoOut.state": "a to-do card's state on POR-02 (open, none, overdue)",
     "PortalHomeStageOut.state": "a client stage's place in the tracker (done, current, upcoming)",
+    # C5 section portal-pbc (R-01-T01): the client's words for a request (status-vocabulary's
+    # `request.client_label`, To do · Done · Ignored · Returned, as codes) and the screens' own
+    # control states, never a firm object's status (docs/contracts/portal-pbc.md §4).
+    "PortalRowOut.client_status": "a request's client words (to_do, done, ignored, returned)",
+    "PortalRequestOut.client_status": "a request's client words (to_do, done, ignored, returned)",
+    "IgnoreUndoneOut.client_status": "a request's client words after an undo (to_do)",
+    "PortalMarkDoneOut.state": "the Mark as Done button (tonal, ready, marked)",
+    "PortalRoomRowOut.state": "a room row's sub-line (uploaded, due, in_review, returned)",
 }
 # The 3.3.1 object a field's literals must all belong to (named from the sources: Deficiency,
 # Review note, Tie-out tally, Integration / connection, Proposed entry (AJE), Audit section /
