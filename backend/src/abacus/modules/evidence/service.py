@@ -32,6 +32,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceVersionCreated, ReviewAssigned
+from abacus.modules.evidence.holds import inherit_holds
 from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.repository import (
     assignment_for,
@@ -220,6 +221,8 @@ async def add_version(
         target=Target("evidence_version", version.id),
         after=Ref(evidence_item_id=item_id, fingerprint=stored.fingerprint),
     )
+    # Q-02-T29 (AC-36): a version in a held scope is held from its creating transaction.
+    await inherit_holds(tx, version.id, engagement_id)
     tx.emit(
         EvidenceVersionCreated(
             evidence_version_id=version.id,

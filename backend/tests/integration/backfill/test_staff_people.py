@@ -524,15 +524,6 @@ async def test_ac3_resend_ends_the_old_link_at_once(firm: Firm) -> None:
     assert fresh.status_code == 200, fresh.text
 
 
-_P10 = pytest.mark.xfail(
-    strict=True,
-    reason="P-10 (DEC-21) adds security_admin to the firm roles, but the /v1/firm/staff models "
-    "still allow only the three SPEC-024 roles: listing such a member answers 500 and inviting "
-    "or changing to it 422; the fix changes the API contract (make generate); "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#378)",
-)
-
-
 async def test_ac3_a_security_admin_does_not_manage_people(firm: Firm, seed: Seeder) -> None:
     """P-10: `security_admin` is a firm role, but people stay `firm.manage_users` (firm admin)."""
     security = await seed.person(firm.tenant_id, "security_admin")
@@ -552,7 +543,6 @@ async def test_ac3_a_security_admin_does_not_manage_people(firm: Firm, seed: See
     assert await firm.status(invitation_id) == "pending"
 
 
-@_P10
 async def test_ac4_a_firm_with_a_security_admin_still_lists_its_people(
     firm: Firm, seed: Seeder
 ) -> None:
@@ -564,7 +554,6 @@ async def test_ac4_a_firm_with_a_security_admin_still_lists_its_people(
     assert roles[str(security.user_id)] == "security_admin"
 
 
-@_P10
 async def test_ac3_an_administrator_invites_a_security_admin(firm: Firm, seed: Seeder) -> None:
     """P-10: an invitation may carry any firm role of the catalogue, `security_admin` included."""
     invitation_id = await firm.invite("sec@example.test", "security_admin")
@@ -574,7 +563,6 @@ async def test_ac3_an_administrator_invites_a_security_admin(firm: Firm, seed: S
     assert await firm.membership(who.user_id) == ("security_admin", "active")
 
 
-@_P10
 async def test_ac4_an_administrator_changes_a_member_to_security_admin(
     firm: Firm, seed: Seeder, net: Net
 ) -> None:

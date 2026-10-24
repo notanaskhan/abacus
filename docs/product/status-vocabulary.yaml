@@ -700,6 +700,14 @@ objects:
       awaiting: {label: "Awaiting approval", variant: amber, terminal: false, derived: false}   # active at once; the named partner approves
       approved: {label: "Approved", variant: null, terminal: true, derived: false}
 
+  legal_hold:
+    source: "Q-02 section 4.2 (FIL-02 b; DEC-71 / P-14)"
+    codes:
+      applying:  {label: "Applying", variant: state, terminal: false, derived: false}   # S3 holds being set on every version in scope; the database already counts them
+      active:    {label: "Active", variant: amber, terminal: false, derived: false}
+      releasing: {label: "Releasing", variant: state, terminal: false, derived: false}   # lifted; S3 holds coming off where no other hold covers the object
+      released:  {label: "Released", variant: muted, terminal: true, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

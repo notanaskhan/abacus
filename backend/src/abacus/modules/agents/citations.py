@@ -2,6 +2,9 @@
 
 A cited cell must exist in the evidence spreadsheet; a quoted text must equal the cell's text; a
 cited value must equal the cell's number. Anything else is unverified (AC-15), with a reason.
+
+P-03-T06: `verify` is an adapter over evidence's citation rules (`evidence.api`,
+`citation_cell_reason`, exact quotes); the screener's stored codes are kept (`quote_mismatch`).
 """
 
 from __future__ import annotations
@@ -24,7 +27,12 @@ from abacus.modules.evidence.api import (
     FIRST_LINE_ROW,
     NAME_COLUMN,
     TOTAL_LABEL,
+    citation_cell_reason,
 )
+
+# The screener's results keep their own code for a quote that isn't the cell's text (v2 rows say
+# `quote_not_found`).
+_LEGACY_REASONS = {"quote_not_found": "quote_mismatch"}
 
 
 @dataclass(frozen=True)
@@ -121,17 +129,15 @@ def verify(content: bytes, citations: list[Citation]) -> list[VerifiedCitation]:
     verified: list[VerifiedCitation] = []
     for citation in citations:
         column, row = coordinate_from_string(citation.cell)
-        reason: str | None = None
-        if row > sheet.max_row or row < 1:
-            reason = "cell_not_found"
-        else:
-            raw = cast(Cell, sheet[f"{column}{row}"]).value
-            if raw is None:
-                reason = "cell_not_found"
-            elif citation.quote is not None and str(raw) != citation.quote:
-                reason = "quote_mismatch"
-            elif citation.value is not None and _as_decimal(raw) != citation.value:
-                reason = "value_mismatch"
+        raw = None if row > sheet.max_row or row < 1 else cast(Cell, sheet[f"{column}{row}"]).value
+        found = citation_cell_reason(
+            None if raw is None else str(raw),
+            _as_decimal(raw),
+            citation.quote,
+            citation.value,
+            quote_rule="exact",
+        )
+        reason = _LEGACY_REASONS.get(found, found) if found is not None else None
         verified.append(
             VerifiedCitation(
                 cell=citation.cell,

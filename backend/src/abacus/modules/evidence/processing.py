@@ -72,7 +72,7 @@ from abacus.modules.evidence.repository import (
 )
 from abacus.modules.evidence.service import engagement_snapshots
 from abacus.modules.evidence.workflow_types import INBOX, VERSION, UploadInput
-from abacus.modules.evidence.workflows import UploadProcessing
+from abacus.modules.evidence.workflows import TrustLayerBackfill, UploadProcessing
 from abacus.modules.ledger.api import snapshot_view
 from abacus.modules.requests.api import (
     RequestItemDocumentKindChanged,
@@ -82,7 +82,11 @@ from abacus.modules.requests.api import (
 
 _log = get_logger(__name__)
 # Interactive: a client is waiting to hear whether the file is usable (SPEC-029 story 1).
-WORKFLOWS: dict[type, WorkClass] = {UploadProcessing: "interactive"}
+# P-03-T05: the trust layer backfill is bulk work and never delays a person.
+WORKFLOWS: dict[type, WorkClass] = {
+    UploadProcessing: "interactive",
+    TrustLayerBackfill: "background",
+}
 register_work_classes(WORKFLOWS)
 
 

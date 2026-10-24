@@ -231,22 +231,13 @@ async def test_ac4_the_agent_is_refused_every_gate_fact_even_for_the_partner(
         await authorise(agent, action, resource)
 
 
-_NOT_REGISTERED = pytest.mark.xfail(
-    strict=True,
-    reason="the human-only audit register (docs/architecture/human-only-actions.yaml, "
-    "abacus_human_only_actions()) lacks this gate fact, so the data layer would accept it with "
-    "actor_kind agent; adding it needs the protected register, a migration and codegen; "
-    "recorded in work/tasks/TASK-992-s6-backfill-suites.md (#378)",
-)
-
-
 @pytest.mark.parametrize(
     "action",
     [
-        pytest.param("engagement.acceptance_recorded", marks=_NOT_REGISTERED),
-        pytest.param("engagement.letter_recorded", marks=_NOT_REGISTERED),
+        "engagement.acceptance_recorded",
+        "engagement.letter_recorded",
         "independence.confirmed",
-        pytest.param("independence.declined", marks=_NOT_REGISTERED),
+        "independence.declined",
     ],
 )
 async def test_ac4_the_database_refuses_a_gate_fact_audited_as_the_agent(

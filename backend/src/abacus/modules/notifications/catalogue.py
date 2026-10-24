@@ -14,11 +14,14 @@ from dataclasses import dataclass
 from typing import Final, cast
 from uuid import UUID
 
+from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import (
     engagement_leads,
     engagement_partners,
     firm_admins,
+    member_facts,
     team_of,
+    walled_from,
 )
 from abacus.modules.notifications.kinds import NotificationKind, register_kind
 
@@ -95,6 +98,33 @@ async def _partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return [u for u in await engagement_partners(tenant_id, engagement_id) if u != by]
 
 
+def _uuids(payload: dict[str, object], key: str) -> list[UUID]:
+    raw = payload.get(key)
+    return [UUID(str(u)) for u in cast(list[object], raw)] if isinstance(raw, list) else []
+
+
+async def _hold_notify(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T29 (Q-02 §4.8): the hold's notify list and the partners of the engagements in scope;
+    firm staff only, and nobody walled from the held client. Never the person who placed it."""
+    people = set(_uuids(payload, "notify_user_ids"))
+    for engagement_id in _uuids(payload, "engagement_ids"):
+        people |= set(await engagement_partners(tenant_id, engagement_id))
+    by = _uuid(payload, "by_user")
+    if by is not None:
+        people.discard(by)
+    tenant = TenantContext(tenant_id, "system", "notifications")
+    client = _uuid(payload, "client_id")
+    out: list[UUID] = []
+    for user in sorted(people):
+        member = await member_facts(tenant, user)
+        if member is None or member.client:
+            continue
+        if client is not None and client in await walled_from(tenant, user):
+            continue
+        out.append(user)
+    return out
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -144,6 +174,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "finding.severity_proposed": Kind(
         "finding.severity_proposed", _partners, "finding", "finding_id"
     ),
+    # Q-02-T29: a legal hold was placed (the evidence module's `legal_hold.placed`).
+    "legal_hold.placed": Kind("legal_hold_placed", _hold_notify, "legal_hold", "hold_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -167,6 +199,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "materiality.proposed": "Materiality on {engagement} is waiting for your decision.",
     "risk.approval_requested": "A risk on {engagement} is waiting for your approval.",
     "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
+    "legal_hold.placed": "A legal hold was placed on {subject}.",
 }
 
 
@@ -195,6 +228,14 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("materiality.proposed", "approval", "Scale"),
     NotificationKind("risk.approval_requested", "approval", "TriangleAlert"),
     NotificationKind("finding.severity_proposed", "approval", "Flag"),
+    # Q-02-T30 (Q-02 §4.8): the compliance kernel's kinds. Email text is database rows, loaded
+    # through the admin import; none is committed.
+    NotificationKind("ai_client_data_changed", "system", "ShieldCheck"),
+    NotificationKind("legal_hold_placed", "system", "Lock"),
+    NotificationKind("incident_recorded", "system", "ShieldAlert"),
+    NotificationKind("incident_from_accrued", "system", "ShieldAlert", email_default=True),
+    NotificationKind("firm_export_approval_requested", "approval", "Download"),
+    NotificationKind("firm_export_ready", "system", "Download"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

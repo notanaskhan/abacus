@@ -42,3 +42,19 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: compliance.legal_holds
+    description: 'Legal holds (Q-02-T29; DEC-71 / P-14): GET and POST /v1/legal-holds and POST /v1/legal-holds/{id}/release. Off: those routes answer 404. The hold check, inheritance and the hold workflows are never flagged: a hold already placed stays in force.'
+    owner: notanaskhan
+    created: 2026-10-24
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: compliance.firm_export
+    description: 'Firm export with dual approval (Q-02-T43; DEC-72): the request, approve and link routes under /v1/firm/data-exports. Off: 404.'
+    owner: notanaskhan
+    created: 2026-10-24
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

@@ -1085,6 +1085,13 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/assurance/completion_repository.py", "records_of"),
         # TASK-344: PDFs the current extractor hasn't read, for the system re-read tool.
         ("src/abacus/modules/evidence/repository.py", "stale_pdf_uploads"),
+        # P-03-T05, T06: one source's word-layer pages, read by the system (upload processing,
+        # the backfill) or by a citation verifier only after `authorise(evidence.read)` on the
+        # anchor's engagement and a check that the version is in it; the pages just written;
+        # and the backfill's next batch (the system only).
+        ("src/abacus/modules/evidence/repository.py", "pages_of"),
+        ("src/abacus/modules/evidence/repository.py", "insert_pages"),
+        ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
         # SPEC-316 (TASK-345): firm taxonomy content (after a firm-level check) and a mapping
         # set's edits (after authorising on its engagement).
         ("src/abacus/modules/ledger/mapping_repository.py", "grouping_sets"),
@@ -1770,6 +1777,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
             "tests/security/support.py",  # the security suite seeds as the superuser
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).

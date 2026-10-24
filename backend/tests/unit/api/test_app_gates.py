@@ -214,6 +214,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/issues/{issue_id}/fix-instructions",
         "/v1/issues/fix-instructions:bulk",
         "/v1/issues/{issue_id}/explanations",
+        # Q-02-T29: placing and releasing a legal hold start their workflows, so 202.
+        "/v1/legal-holds",
+        "/v1/legal-holds/{hold_id}/release",
         # P-08-T10 (SPEC-320): a sign-in start and a resend answer 202 for any email.
         "/v1/portal/auth/start",
         "/v1/portal/auth/resend",

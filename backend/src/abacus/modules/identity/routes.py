@@ -459,7 +459,8 @@ async def signup_route(
 
 # --- Staff: invitations, firm roles, revocation (SPEC-024 AC-3, AC-4; TASK-041) ---------------
 
-StaffRole = Literal["firm_admin", "practice_leader", "quality_partner"]
+# The catalogue's four firm roles, P-10's `security_admin` included (DEC-21; ED-009).
+StaffRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
 
 
 class StaffMemberOut(BaseModel):

@@ -2,8 +2,11 @@
 # module's file into identity/authz/_matrix.py by `make regenerate`.
 
 actions:
-  legal_hold.place:         {firm_admin: allow, mfa_recent: required}
-  legal_hold.lift:          {firm_admin: allow, mfa_recent: required}
+  # --- Legal holds (Q-02-T29, T30; conflict C-10; DEC-71 / P-14) ---
+  # `level_in(partner)` is the derived `firm_partner` (DEC-132). Placing and lifting are human-only.
+  legal_hold.read:          {firm_admin: allow, security_admin: allow, firm_partner: allow, quality_partner: allow, agent: deny, system: deny}   # metadata and counts; never the details text
+  legal_hold.place:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
+  legal_hold.lift:          {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
   # --- Evidence ---
   evidence.read:
     independence: required   # SPEC-025 (TASK-045): client data, per person
@@ -89,5 +92,13 @@ actions:
   evidence.unlock:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, client_admin: deny, client_contributor: deny, independence: required}   # SHL-08d: the password is never stored or logged
   # --- Retention policies (Q-02-T23; ADM-06h, FIL-02a) ---
   # Firm-level; floors and defaults are platform content set by staff routes (STAFF marker).
-  retention_policy.read:    {firm_admin: allow, security_admin: allow, quality_partner: allow, practice_leader: allow, agent: deny, system: deny}
+  # Q-02-T30 (DEC-227): `retention_policy.read` is the plan's `retention.read` (every firm role,
+  # metadata only) and `retention_policy.update` its `retention_policy.manage`.
+  retention_policy.read:    {firm_admin: allow, security_admin: allow, quality_partner: allow, practice_leader: allow, firm_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}
   retention_policy.update:  {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # 422 below_floor; a locked policy is never shortened
+  # --- Firm export with dual approval (Q-02-T30 rows; routes with Q-02-T43; DEC-72, C-11) ---
+  # The service holds requester != approver and that download is the requester's or approver's.
+  firm_export.request:      {security_admin: allow, agent: deny, system: deny, mfa_recent: required}
+  firm_export.approve:      {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
+  firm_export.download:     {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
+  firm_export.read:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}

@@ -245,3 +245,66 @@ class StatementTransaction(Base):
     excluded: Mapped[bool]
     exclusion_reason: Mapped[str | None]
     box: Mapped[list[float] | None] = mapped_column(ARRAY(Float(asdecimal=False)))  # TASK-334
+
+
+class EvidencePage(Base):
+    """One page of a version's (or inbox file's) word layer and its geometry (P-03-T04, T05).
+    The words themselves are a sealed object in storage. Insert-only."""
+
+    __tablename__ = "evidence_pages"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID | None]
+    inbox_file_id: Mapped[UUID | None]
+    derivation_id: Mapped[UUID | None]
+    page_no: Mapped[int]
+    width_pt: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+    height_pt: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+    rotation: Mapped[int] = mapped_column(server_default=FetchedValue())
+    has_text_layer: Mapped[bool]
+    word_count: Mapped[int] = mapped_column(server_default=FetchedValue())
+    text_layer_key: Mapped[str | None]
+    text_layer_version_id: Mapped[str | None]
+    text_layer_fingerprint: Mapped[str | None]
+    text_layer_size: Mapped[int | None]  # 0119
+    ocr_used: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    extractor_version: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class Citation(Base):
+    """A cited value, verified by code before anyone sees it (P-03-T04, T06; ADR-166). No quote
+    text: only the hash of the words read from the layer. Insert-only."""
+
+    __tablename__ = "citations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    work_item_id: Mapped[UUID | None]
+    client_id: Mapped[UUID | None]
+    cited_from_type: Mapped[str]
+    cited_from_id: Mapped[UUID]
+    cited_from_ref: Mapped[str | None]
+    cited_from_locator: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
+    n: Mapped[int]
+    kind: Mapped[str]
+    source_type: Mapped[str]
+    source_id: Mapped[UUID]
+    source_version: Mapped[str | None]
+    locator: Mapped[dict[str, Any]] = mapped_column(JSONB)  # Any: JSON
+    match_id: Mapped[str | None]
+    quote_sha256: Mapped[bytes | None]
+    value_text: Mapped[str | None]
+    verified: Mapped[bool]
+    verification_reason: Mapped[str | None]
+    verifier_version: Mapped[str]
+    supersedes_id: Mapped[UUID | None]
+    created_by_kind: Mapped[str]
+    created_by_user_id: Mapped[UUID | None]
+    created_by_run_id: Mapped[UUID | None]
+    on_behalf_of_user_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

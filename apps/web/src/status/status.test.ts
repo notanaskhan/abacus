@@ -58,13 +58,15 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // P-07-T03 added client, invitation, acceptance_record, letter_record, conflict_assessment,
     // nas_evaluation and independence_conclusion (+7). P-03-T02 added citation, viewer and
     // evidence_unlock (+3). G-01-T02 added membership, wall_approval and annual_independence (+3).
-    expect(Object.keys(REGISTRY)).toHaveLength(74);
+    // Q-02-T30 added legal_hold (+1).
+    expect(Object.keys(REGISTRY)).toHaveLength(75);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
     // +11 (P-03-T02): citation 4, viewer 5, evidence_unlock 2.
     // +8 (G-01-T02): membership 3, wall_approval 2, annual_independence 3.
-    expect(ROWS).toHaveLength(357);
+    // +4 (Q-02-T30): legal_hold 4.
+    expect(ROWS).toHaveLength(361);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {
