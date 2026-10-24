@@ -145,3 +145,68 @@ def test_p08_t04_link_stays_banned_outside_the_compound(tmp_path: Path) -> None:
     assert bp.glossary_bans()["link"] == "fulfilment"
     source = "class Link:\n    pass\n"
     assert "L12" in _ids(tmp_path, "src/abacus/modules/communications/l.py", source)
+
+
+# R-01-T04: the R-01 tables and their classes, as R-01-T19, T24, T26 and T27 will name them.
+R01_TABLES = {
+    "email_template_drafts": "EmailTemplateDraft",
+    "email_template_versions": "EmailTemplateVersion",
+    "sending_domains": "SendingDomain",
+    "email_suppressions": "EmailSuppression",
+    "firm_mail_policies": "FirmMailPolicy",
+    "follow_up_policies": "FollowUpPolicy",
+    "portal_settings_versions": "PortalSettingsVersion",
+    "portal_settings_drafts": "PortalSettingsDraft",
+    "portal_client_experience": "PortalClientExperience",
+}
+
+
+def test_r01_t04_the_new_code_names_are_glossary_rows() -> None:
+    text = bp.GLOSSARY.read_text(encoding="utf-8")
+    for table in R01_TABLES:
+        assert f"`{table}`" in text, table
+    for code in (
+        "`drop_batch_id`",
+        "`fulfilments.created_by_kind = 'rule'`",
+        "`fulfilments.voided_at`",
+    ):
+        assert code in text, code
+    for ui_term in (
+        "| Mark as Done |",
+        "| Ignore |",
+        "| Third-party room |",
+        "| Reminder |",
+        '"Sender domain"',
+    ):
+        assert ui_term in text, ui_term
+
+
+def test_r01_t04_l12_accepts_the_r01_identifiers(tmp_path: Path) -> None:
+    source = "".join(
+        f'class {cls}:\n    __tablename__ = "{table}"\n' for table, cls in R01_TABLES.items()
+    )
+    source += "def drop_batch_outcome(drop_batch_id: str) -> str:\n    return drop_batch_id\n"
+    assert "L12" not in _ids(tmp_path, "src/abacus/modules/communications/models.py", source)
+
+
+def test_r01_t04_reminder_stays_banned_in_code(tmp_path: Path) -> None:
+    assert bp.glossary_bans()["reminder"] == "follow_up"
+    source = "class Reminder:\n    pass\n"
+    assert "L12" in _ids(tmp_path, "src/abacus/modules/communications/r.py", source)
+
+
+def test_r01_t04_a_compound_the_glossary_does_not_name_still_fails(tmp_path: Path) -> None:
+    assert "email_template_drafts" in bp.glossary_compounds()
+    assert "email_threads" not in bp.glossary_compounds()
+    source = 'class EmailThread:\n    __tablename__ = "email_threads"\n'
+    assert "L12" in _ids(tmp_path, "src/abacus/modules/communications/t.py", source)
+
+
+def test_r01_t04_the_legacy_table_never_allows_a_compound() -> None:
+    text = (
+        "| Term | Meaning | Code name | Don't use |\n|---|---|---|---|\n"
+        "| Follow-up | x | `follow_up` | `reminder` |\n\n"
+        "| Identifier | Problem | Action |\n|---|---|---|\n"
+        "| `reminder_items` | x | `reminder_items` kept | y |\n"
+    )
+    assert bp.glossary_compounds(text) == frozenset({"follow_up"})
