@@ -13,6 +13,7 @@ from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.models import (
+    Citation,
     EvidenceItem,
     EvidenceVersion,
     InboxFile,
@@ -26,6 +27,7 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | Non
     "inbox_file": (InboxFile.id, InboxFile.engagement_id),
     "review_decision": (ReviewDecision.id, ReviewDecision.engagement_id),
     "statement_dataset": (StatementDataset.id, StatementDataset.engagement_id),  # SPEC-312
+    "citation": (Citation.id, Citation.engagement_id),  # P-03-T06: a recorded citation
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 
