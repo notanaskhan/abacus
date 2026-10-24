@@ -180,6 +180,16 @@ async def test_ac4_firm_level_resources_are_never_walled(fakes: Fakes) -> None:
     await authorise(ctx, "engagement.create", Resource.firm(ctx.tenant_id))
 
 
+async def test_ac4_a_client_level_resource_is_walled_like_its_engagements(fakes: Fakes) -> None:
+    """DEC-233: `Resource.client` names its client, so a walled person is denied there too,
+    whatever their firm role; someone walled from another client is not."""
+    ctx = _ctx("firm_admin")
+    walled, free = uuid.uuid4(), uuid.uuid4()
+    fakes.walls[ctx.user_id] = frozenset({walled})
+    assert await _layer(ctx, "client.update", Resource.client(ctx.tenant_id, walled)) == "wall"
+    await authorise(ctx, "client.update", Resource.client(ctx.tenant_id, free))
+
+
 async def test_ac4_several_walls_apply_as_a_union(fakes: Fakes) -> None:
     ctx = _ctx("firm_admin")
     first, second, free = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()

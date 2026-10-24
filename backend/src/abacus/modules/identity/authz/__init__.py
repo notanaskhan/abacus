@@ -638,8 +638,10 @@ def _person(ctx: Actor) -> UUID:
 
 
 async def _walled(ctx: Actor, resource: Resource) -> bool:
-    if resource.engagement_id is None:
-        return False  # walls are on clients' engagements; firm-level actions aren't walled
+    if resource.engagement_id is None and resource.client_id is None:
+        return False  # a firm-level action names no client, so no wall applies
+    # A client-level resource (`Resource.client`, P-07-T09) names its client: walled the same as
+    # that client's engagements (ADR-026; S6 review, DEC-233).
     person = _person(ctx)
     cache = _walls.get()
     walls = cache.get(person) if cache is not None else None
@@ -650,7 +652,7 @@ async def _walled(ctx: Actor, resource: Resource) -> bool:
     if not walls:
         return False
     client = resource.client_id
-    if client is None:
+    if client is None and resource.engagement_id is not None:
         if _engagement_client is None:
             return True  # can't tell which client: a walled person is denied (fail closed)
         client = await _engagement_client[1](ctx.tenant, resource.engagement_id)
