@@ -13,3 +13,10 @@ api_origin_domain_name = "internal-api.staging.example.test"
 
 # count for the first two weeks, then block.
 portal_managed_rules_action = "count"
+
+# Pen test read-only configuration review (DEC-306; infra/README.md "Pen-test review role").
+# Set only for the test window, then set back to null and apply to remove the role.
+# pentest_review_principal_arn = "arn:aws:iam::000000000000:role/tester-review"
+# pentest_review_external_id   = "<from the vault, at least 32 characters>"
+# pentest_review_starts_at     = "2027-02-15T14:00:00Z"
+# pentest_review_ends_at       = "2027-03-05T23:00:00Z"
