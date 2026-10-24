@@ -15,6 +15,7 @@ from abacus.modules.identity.authz.matrix import RULES
 REGISTER = Path(__file__).resolve().parents[4] / "docs" / "architecture" / "fresh-mfa-actions.yaml"
 GROUPS = frozenset(
     {"wall", "ai_policy", "export", "legal_hold", "independence", "data_boundary", "reveal"}
+    | {"portal_access"}  # P-07-T25 (DEC-303): clearing a client's portal sign-in lock
 )
 
 

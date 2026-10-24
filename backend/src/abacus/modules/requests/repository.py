@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, Subquery, and_, func, insert, or_, select, text, update
+from sqlalchemy import Select, Subquery, and_, bindparam, func, insert, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1109,6 +1109,44 @@ async def insert_delegation(
             "by": granted_by,
         },
     )
+
+
+async def end_delegations(
+    session: AsyncSession, grant_ids: Sequence[UUID]
+) -> list[tuple[UUID, UUID]]:
+    """The open delegations under these grants ended now (P-07-T25): (request item, engagement)
+    for each. The requests themselves are untouched."""
+    if not grant_ids:
+        return []
+    rows = await session.execute(
+        text(
+            "UPDATE request_delegations d SET revoked_at = abacus_now() FROM request_items i "
+            "WHERE d.grant_id IN :grants AND d.revoked_at IS NULL "
+            "AND i.tenant_id = d.tenant_id AND i.id = d.request_item_id "
+            "RETURNING d.request_item_id, i.engagement_id"
+        ).bindparams(bindparam("grants", expanding=True)),
+        {"grants": list(grant_ids)},
+    )
+    return [(cast(UUID, r[0]), cast(UUID, r[1])) for r in rows.all()]
+
+
+async def open_delegations(
+    session: AsyncSession, contact_ids: Sequence[UUID]
+) -> list[tuple[UUID, UUID, str]]:
+    """(contact, request item, item status) for each open delegation of these contacts to a
+    request that still exists, oldest first."""
+    if not contact_ids:
+        return []
+    rows = await session.execute(
+        text(
+            "SELECT d.contact_id, d.request_item_id, i.status FROM request_delegations d "
+            "JOIN request_items i ON i.tenant_id = d.tenant_id AND i.id = d.request_item_id "
+            "WHERE d.contact_id IN :contacts AND d.revoked_at IS NULL AND i.deleted_at IS NULL "
+            "ORDER BY d.granted_at, d.request_item_id"
+        ).bindparams(bindparam("contacts", expanding=True)),
+        {"contacts": list(contact_ids)},
+    )
+    return [(cast(UUID, r[0]), cast(UUID, r[1]), str(r[2])) for r in rows.all()]
 
 
 async def insert_upload_intent(

@@ -829,10 +829,12 @@ async def insert_invitation(session: AsyncSession, values: dict[str, object]) ->
     await session.execute(
         text(
             "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
-            "invited_by, expires_at, kind, contact_id, grant_template, terms_version, terms_url) "
+            "invited_by, expires_at, kind, contact_id, grant_template, terms_version, terms_url, "
+            "grant_ids) "
             "VALUES (:id, :tenant_id, :engagement_id, :email, :role, :invited_by, "
             "clock_timestamp() + make_interval(days => :days), :kind, :contact_id, "
-            "CAST(:grant_template AS jsonb), :terms_version, :terms_url)"
+            "CAST(:grant_template AS jsonb), :terms_version, :terms_url, "
+            "CAST(:grant_ids AS uuid[]))"
         ),
         {
             "kind": "firm_invite",
@@ -840,6 +842,7 @@ async def insert_invitation(session: AsyncSession, values: dict[str, object]) ->
             "grant_template": None,
             "terms_version": None,
             "terms_url": None,
+            "grant_ids": None,
         }
         | values,
     )
@@ -872,13 +875,13 @@ async def get_invitation(
 ) -> RowMapping | None:
     plain = text(
         "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
-        "kind, contact_id, grant_template, terms_version, terms_url, "
+        "kind, contact_id, grant_template, terms_version, terms_url, grant_ids, used_at, "
         "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
         "FROM client_invitations WHERE id = :id"
     )
     locked = text(
         "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
-        "kind, contact_id, grant_template, terms_version, terms_url, "
+        "kind, contact_id, grant_template, terms_version, terms_url, grant_ids, used_at, "
         "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
         "FROM client_invitations WHERE id = :id FOR UPDATE"
     )
@@ -919,7 +922,7 @@ async def accept_invitation_row(
     await session.execute(
         text(
             "UPDATE client_invitations SET status = 'accepted', accepted_by = :by, "
-            "accepted_at = clock_timestamp(), "
+            "accepted_at = clock_timestamp(), used_at = clock_timestamp(), "
             "terms_accepted_at = CASE WHEN :terms THEN clock_timestamp() END "
             "WHERE id = :id AND status = 'pending'"
         ),
@@ -1468,4 +1471,190 @@ async def set_demo_clock_row(
         return
     await session.execute(
         _SET_DEMO_CLOCK, {"t": tenant_id, "mode": mode, "anchor_at": anchor_at, "set_by": by}
+    )
+
+
+# --- Contact invitations and pending grants (P-07-T25; DEC-300) ---------------------------------
+
+
+@dataclass(frozen=True)
+class ContactGrantRow:
+    """A grant made for a contact: pending (no person yet), active or revoked."""
+
+    id: UUID
+    user_id: UUID | None
+    contact_id: UUID
+    role: str
+    scope_kind: str
+    scope_id: UUID
+    status: str
+    created_at: datetime
+    granted_by: UUID | None
+
+
+_CONTACT_GRANTS = text(
+    "SELECT id, user_id, contact_id, role, scope_kind, scope_id, status, created_at, granted_by "
+    "FROM client_access_grants WHERE contact_id IN :ids ORDER BY created_at, scope_kind, scope_id"
+).bindparams(bindparam("ids", expanding=True))
+_GRANTS_BY_ID = text(
+    "SELECT id, user_id, contact_id, role, scope_kind, scope_id, status, created_at, granted_by "
+    "FROM client_access_grants WHERE id IN :ids ORDER BY created_at, scope_kind, scope_id"
+).bindparams(bindparam("ids", expanding=True))
+_GRANTS_BY_ID_LOCKED = text(
+    "SELECT id, user_id, contact_id, role, scope_kind, scope_id, status, created_at, granted_by "
+    "FROM client_access_grants WHERE id IN :ids ORDER BY created_at, scope_kind, scope_id "
+    "FOR UPDATE"
+).bindparams(bindparam("ids", expanding=True))
+_CONTACT_INVITATIONS = text(
+    "SELECT id, engagement_id, contact_id, email, status, expires_at, created_at, "
+    "grant_ids, invited_by, (status = 'pending' AND expires_at > clock_timestamp()) AS live "
+    "FROM client_invitations WHERE contact_id IN :ids ORDER BY created_at DESC, id"
+).bindparams(bindparam("ids", expanding=True))
+_CONTACT_INVITATIONS_LOCKED = text(
+    "SELECT id, engagement_id, contact_id, email, status, expires_at, created_at, "
+    "grant_ids, invited_by, (status = 'pending' AND expires_at > clock_timestamp()) AS live "
+    "FROM client_invitations WHERE contact_id IN :ids ORDER BY created_at DESC, id FOR UPDATE"
+).bindparams(bindparam("ids", expanding=True))
+
+
+def _contact_grant(row: Row[Any]) -> ContactGrantRow:  # Any: a text() row's columns are untyped
+    return ContactGrantRow(
+        cast(UUID, row.id),
+        cast(UUID | None, row.user_id),
+        cast(UUID, row.contact_id),
+        str(row.role),
+        str(row.scope_kind),
+        cast(UUID, row.scope_id),
+        str(row.status),
+        cast(datetime, row.created_at),
+        cast(UUID | None, row.granted_by),
+    )
+
+
+async def contact_grants(
+    session: AsyncSession, contact_ids: Sequence[UUID]
+) -> list[ContactGrantRow]:
+    """Every grant made for these contacts, oldest first."""
+    if not contact_ids:
+        return []
+    rows = await session.execute(_CONTACT_GRANTS, {"ids": list(contact_ids)})
+    return [_contact_grant(r) for r in rows.all()]
+
+
+async def grants_by_id(
+    session: AsyncSession, grant_ids: Sequence[UUID], *, lock: bool = False
+) -> list[ContactGrantRow]:
+    if not grant_ids:
+        return []
+    statement = _GRANTS_BY_ID_LOCKED if lock else _GRANTS_BY_ID
+    rows = await session.execute(statement, {"ids": list(grant_ids)})
+    return [_contact_grant(r) for r in rows.all()]
+
+
+async def insert_pending_grant(session: AsyncSession, values: dict[str, object]) -> UUID:
+    """A grant waiting for its contact's first sign-in: no person, status `pending`."""
+    found = await session.scalar(
+        text(
+            "INSERT INTO client_access_grants (tenant_id, user_id, contact_id, role, scope_kind, "
+            "scope_id, granted_by, status) VALUES (:tenant_id, NULL, :contact_id, :role, "
+            ":scope_kind, :scope_id, :granted_by, 'pending') RETURNING id"
+        ),
+        values,
+    )
+    return cast(UUID, found)
+
+
+async def activate_grant(session: AsyncSession, grant_id: UUID, user_id: UUID) -> bool:
+    """The pending grant becomes the person's (once: `client_access_grants_bind`)."""
+    row = (
+        await session.execute(
+            text(
+                "UPDATE client_access_grants SET user_id = :user, status = 'active' "
+                "WHERE id = :id AND status = 'pending' AND user_id IS NULL RETURNING id"
+            ),
+            {"id": grant_id, "user": user_id},
+        )
+    ).first()
+    return row is not None
+
+
+async def held_grant(
+    session: AsyncSession, user_id: UUID, role: str, scope_kind: str, scope_id: UUID
+) -> tuple[UUID, str] | None:
+    """The person's one row for this role on this scope (unique per firm), whatever its status:
+    its id and status, locked, or None."""
+    row = (
+        await session.execute(
+            text(
+                "SELECT id, status FROM client_access_grants WHERE user_id = :user "
+                "AND role = :role AND scope_kind = :kind AND scope_id = :scope FOR UPDATE"
+            ),
+            {"user": user_id, "role": role, "kind": scope_kind, "scope": scope_id},
+        )
+    ).first()
+    return None if row is None else (cast(UUID, row[0]), str(row[1]))
+
+
+async def contact_invitations(
+    session: AsyncSession, contact_ids: Sequence[UUID], *, lock: bool = False
+) -> list[RowMapping]:
+    """The contacts' invitations, newest first."""
+    if not contact_ids:
+        return []
+    statement = _CONTACT_INVITATIONS_LOCKED if lock else _CONTACT_INVITATIONS
+    rows = await session.execute(statement, {"ids": list(contact_ids)})
+    return list(rows.mappings().all())
+
+
+async def set_invitation_grants(
+    session: AsyncSession, invitation_id: UUID, grant_ids: Sequence[UUID]
+) -> None:
+    await session.execute(
+        text(
+            "UPDATE client_invitations SET grant_ids = CAST(:ids AS uuid[]) "
+            "WHERE id = :id AND status = 'pending'"
+        ),
+        {"id": invitation_id, "ids": list(grant_ids)},
+    )
+
+
+async def unlock_sign_in(session: AsyncSession, email: str) -> bool:
+    """The firm's portal sign-in lock on this address cleared; whether there was one."""
+    return bool(
+        await session.scalar(text("SELECT portal_sign_in_unlock(:email)"), {"email": email})
+    )
+
+
+async def locked_emails(session: AsyncSession, emails: Sequence[str]) -> set[str]:
+    """Which of these addresses the firm's portal has locked now (lower-cased)."""
+    if not emails:
+        return set()
+    rows = await session.execute(
+        text("SELECT * FROM portal_sign_in_locked(CAST(:emails AS text[]))"),
+        {"emails": list(emails)},
+    )
+    return {str(r[0]) for r in rows.all()}
+
+
+async def end_portal_access(
+    session: AsyncSession, tenant_id: UUID, user_id: UUID
+) -> list[Any]:  # Any: a text() row's columns are untyped
+    """The person's portal sessions and trusted devices in the firm, ended now (0133)."""
+    rows = await session.execute(
+        text("SELECT * FROM portal_access_revoke(:tenant, :user)"),
+        {"tenant": tenant_id, "user": user_id},
+    )
+    return list(rows.all())
+
+
+async def insert_grant_event_of(
+    session: AsyncSession, grant_id: UUID, event: str, by: UUID | None
+) -> None:
+    """A grant's event row in the grant's own firm (a caller that holds no tenant id)."""
+    await session.execute(
+        text(
+            "INSERT INTO client_access_events (tenant_id, grant_id, event, by_user_id) "
+            "SELECT tenant_id, id, :event, :by FROM client_access_grants WHERE id = :id"
+        ),
+        {"id": grant_id, "event": event, "by": by},
     )

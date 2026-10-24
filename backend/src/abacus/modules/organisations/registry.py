@@ -18,6 +18,8 @@ TABLES: frozenset[str] = frozenset(
         "contacts",  # F-03-T25 (0082)
         "entity_relationships",  # P-07-T07 (0103): ended, never deleted
         "tin_reveals",  # P-07-T10 (0123): every logged TIN reveal, by a person
+        "contact_roles",  # P-07-T25 (0146): roles per entity, replaced as a set
+        "contact_group_members",  # P-07-T25 (0146)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -32,6 +34,13 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "contacts": frozenset(  # F-03-T25 (0082)
         {"id", "tenant_id", "client_id", "display_name", "email", "phone", "title"}
         | {"organisation_name", "contact_kind"}
+        | {"party_kind"}  # P-07-T25 (0146)
+    ),
+    "contact_roles": frozenset(  # P-07-T25 (0146)
+        {"tenant_id", "contact_id", "scope_kind", "scope_id", "role", "title_text"}
+    ),
+    "contact_group_members": frozenset(  # P-07-T25 (0146)
+        {"tenant_id", "group_contact_id", "member_contact_id"}
     ),
     "entity_relationships": frozenset(  # P-07-T07 (0103)
         {"tenant_id", "from_entity_id", "to_entity_id", "kind", "percent", "effective_from"}
@@ -58,6 +67,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "contacts": frozenset(
         {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
+        | {"email", "party_kind", "version"}  # P-07-T25 (0146): the drawer's edit
     ),
     "entity_relationships": frozenset({"effective_to"}),  # P-07-T07: a relationship ends
 }

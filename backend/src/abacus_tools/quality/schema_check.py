@@ -275,6 +275,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"portal_invitation_preview", "portal_invitation_start", "portal_invitee_resolve"}
     | {"portal_access_revoke_except", "portal_mfa_begin_session"}
     | {"portal_session_mark_device", "client_invitations_revoke_by"}  # DEC-277
+    # 0146 (P-07-T25): CLI-04's unlock and the list's locked state, in the session's firm only.
+    | {"portal_sign_in_unlock", "portal_sign_in_locked"}
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}

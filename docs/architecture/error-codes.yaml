@@ -176,6 +176,12 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  contact_bound:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contacts.ContactBound
+    summary: 'The contact signs in as a person already: the address is that person''s own sign-in email,
+      not the contact record''s to change.'
   contact_exists:
     status: 409
     raised_by:
@@ -328,6 +334,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.record.GateUnmet
+    - abacus.modules.organisations.contacts.GateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
@@ -873,6 +880,7 @@ codes:
   scope_outside_client:
     status: 422
     raised_by:
+    - abacus.modules.identity.contact_access.ScopeOutsideClient
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
   seats_full:

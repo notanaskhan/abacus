@@ -51,6 +51,8 @@ TABLES: tuple[str, ...] = (
     "connection_secrets",
     "connection_states",
     "connections",
+    "contact_group_members",
+    "contact_roles",
     "contacts",
     "decision_cards",
     "decisions",

@@ -21973,10 +21973,6 @@ export type ListContactsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListContactsError = ListContactsErrors[keyof ListContactsErrors];
@@ -22033,10 +22029,6 @@ export type CreateContactErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateContactError = CreateContactErrors[keyof CreateContactErrors];
@@ -22373,10 +22365,6 @@ export type GetContactErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetContactError = GetContactErrors[keyof GetContactErrors];
@@ -22433,10 +22421,6 @@ export type UpdateContactErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateContactError = UpdateContactErrors[keyof UpdateContactErrors];
@@ -22493,10 +22477,6 @@ export type ChangeContactAccessErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ChangeContactAccessError = ChangeContactAccessErrors[keyof ChangeContactAccessErrors];
@@ -22557,10 +22537,6 @@ export type InviteContactErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InviteContactError = InviteContactErrors[keyof InviteContactErrors];
@@ -22613,10 +22589,6 @@ export type UnlockContactErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UnlockContactError = UnlockContactErrors[keyof UnlockContactErrors];
@@ -41329,10 +41301,6 @@ export type ResendInvitationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
@@ -41385,10 +41353,6 @@ export type RevokeInvitationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RevokeInvitationError = RevokeInvitationErrors[keyof RevokeInvitationErrors];

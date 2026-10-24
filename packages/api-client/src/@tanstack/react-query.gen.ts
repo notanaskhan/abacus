@@ -1323,7 +1323,9 @@ export const getContactOptions = (options: Options<GetContactData>) => queryOpti
 /**
  * Update Contact Route
  *
- * 409 `stale_version`; one `contact.updated` event naming the fields, never values.
+ * 409 `stale_version`; one `contact.updated` event naming the fields, never values. A new
+ * address revokes a pending invitation sent to the old one; 409 `contact_bound` for a contact
+ * that already signs in (its address is the person's own).
  */
 export const updateContactMutation = (options?: Partial<Options<UpdateContactData>>): UseMutationOptions<UpdateContactResponse, UpdateContactError, Options<UpdateContactData>> => {
     const mutationOptions: UseMutationOptions<UpdateContactResponse, UpdateContactError, Options<UpdateContactData>> = {
