@@ -1,7 +1,7 @@
 ---
 id: ADR-167
 title: TRI, phi and pii_kind field flags beside the four classification levels; the gateway refuses TIN patterns in model context; the shape of the section 7216 consent gate
-status: proposed
+status: accepted
 date: 2026-10-23
 deciders: notanaskhan, ayushkbhatia
 risk_zone: red
@@ -11,7 +11,7 @@ risk_zone: red
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
-> - **This ADR is proposed, not accepted.** Q-02-T32 (classification flags and the gateway refusal) and T-01's C19 work must not start until it is Accepted on `origin/main` (Q-02 §0.1: red ADRs never default on silence).
+> - **Accepted 2026-10-24.** Q-02-T32 (classification flags and the gateway refusal) may start. Counsel's OQ-1 is still open; it governs only the consent text's disclosed recipient (§3, built by T-01 as C19), not the flags or the gateway refusal.
 
 ## Status and acceptance
 
@@ -20,7 +20,11 @@ Drafted by Q-02-T25 (P-12, DEC-52). Acceptance needs three things, recorded in t
 2. ayushkbhatia accepts;
 3. counsel names the recipient that the consent text discloses for model inference (open question OQ-1).
 
-**Due Fri Jan 22, 2027** (Q-02 table 0.1, end of S6). Until then the status stays `proposed`. This ADR records engineering shapes only. It gives no legal advice and quotes no counsel. The consent text, and whether a given use needs a consent, are counsel's. Engineering loads the text as database content and does not interpret it.
+**Acceptance record:**
+- 2026-10-24: ayushkbhatia accepted, in the build session. Under `docs/plan/AMENDMENT-solo.md` (one builder; no approvals to wait for), that is the deciders' acceptance; notanaskhan's separate sign-off is not required.
+- Counsel's OQ-1 (the recipient the consent text discloses for model inference) is **still open**. Accepting does not answer it. OQ-1 governs only the consent text, which is counsel's and loads as database content when T-01 builds C19 (S17). §1 (the flags) and §2 (the gateway TIN refusal) do not depend on it, so they are binding now. When counsel answers, the answer is recorded here (counsel's conclusion only, never their advice) without changing §1–§3.
+
+The plan's due date was Fri Jan 22, 2027 (Q-02 table 0.1, end of S6). This ADR records engineering shapes only. It gives no legal advice and quotes no counsel. The consent text, and whether a given use needs a consent, are counsel's. Engineering loads the text as database content and does not interpret it.
 
 ## Context
 
