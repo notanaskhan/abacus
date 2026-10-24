@@ -27,7 +27,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Resource, authorise
-from abacus.modules.identity.authz.matrix import FIRM_SETTING_KEYS
+from abacus.modules.identity.authz.matrix import STORED_SETTING_KEYS
 from abacus.modules.identity.authz.overrides import refusal
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import FirmAgentsResumed
@@ -461,7 +461,8 @@ async def set_ai_client_data_setting(ctx: AuthContext, on: bool) -> AiClientData
 
 
 class UnknownFirmSetting(DomainInvalid):
-    """Only the registered keys a matrix cell can name (`authz.matrix.FIRM_SETTING_KEYS`)."""
+    """Only the registered keys: those a matrix cell can name and the stricter-only ones
+    (`authz.matrix.STORED_SETTING_KEYS`)."""
 
     code = "unknown_firm_setting"
 
@@ -476,7 +477,7 @@ async def set_firm_setting(ctx: AuthContext, key: str, value: bool) -> int:
     """Switch a registered firm setting on or off (firm administrator, fresh MFA); its version
     afterwards. Read by `authorise` from the next request."""
     await authorise(ctx, "firm.manage_settings", Resource.firm(ctx.tenant_id))
-    if key not in FIRM_SETTING_KEYS:
+    if key not in STORED_SETTING_KEYS:
         raise UnknownFirmSetting
     async with uow(ctx.tenant) as tx:
         version = await upsert_firm_setting(

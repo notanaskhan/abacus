@@ -447,8 +447,14 @@ async def test_review5_a_dismissed_follow_up_offers_nothing(seed: Seeder) -> Non
 
 async def test_review5_an_unconfirmed_staff_member_may_read_but_not_send(seed: Seeder) -> None:
     """A draft is not client data (SPEC-027 AC-8), so reading it needs no independence
-    confirmation; sending it to the client does (DEC-220)."""
+    confirmation; sending it to the client does (DEC-220). G2 v2 (SPEC-332 AC-13, AC-14;
+    P-07-T24): the send is gated on an attest client's engagement, which this one is made."""
     chase = await _chase(seed)
+    await seed.run(  # the derived flag (DEC-128), set as the trigger would for an active audit
+        "UPDATE clients SET is_attest_client = true "
+        "WHERE id = (SELECT client_id FROM engagements WHERE id = $1)",
+        chase.world.engagement,
+    )
     with clock.frozen(T0):
         [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
     staff = await seed.person(chase.world.tenant)

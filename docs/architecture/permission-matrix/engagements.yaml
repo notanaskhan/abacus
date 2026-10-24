@@ -34,6 +34,7 @@ actions:
     client_admin: allow       # SPEC-020: their own engagement's name, firm and period
     client_contributor: allow
   work_item.create:         {engagement_partner: allow, manager: allow, agent: deny}   # F-03-T22: a return, close, notice or project on the engagement
+  work_item.assign:         {engagement_partner: allow, manager: allow, agent: deny, system: deny}   # P-07-T24 (ADR-164 item 2): assign a function on a work item; 409 gate_unmet G2 for an uncleared assignee on an attest client
   work_item.read_metadata:  # F-03-T05 (C1): an engagement's work items; firm staff only for now
     firm_admin: allow
     practice_leader: in_scope

@@ -33,6 +33,9 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from uuid import UUID
 
+from sqlalchemy import ColumnElement
+from sqlalchemy.orm import QueryableAttribute
+
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.authz.matrix import Rule
 
@@ -98,10 +101,16 @@ ServiceLineLookup = Callable[[TenantContext, UUID], Awaitable[str | None]]
 ScopeLookup = Callable[[TenantContext, UUID, UUID, UUID | None], Awaitable[bool]]
 
 
+# P-07-T24 (ADR-164 item 3): the attest flag as a column, for `visible()` under `g2_blocks_view`:
+# an engagement-ID column -> whether its client is an attest client.
+AttestColumn = Callable[[ColumnElement[UUID] | QueryableAttribute[UUID]], ColumnElement[bool]]
+
+
 @dataclass
 class _Lookups:
     functions: FunctionsLookup | None = None
     attest: AttestLookup | None = None
+    attest_column: AttestColumn | None = None
     gates: GatesLookup | None = None
     service_line: ServiceLineLookup | None = None
     scope: ScopeLookup | None = None
@@ -131,6 +140,12 @@ def register_attest_client(lookup: AttestLookup) -> None:
     """engagements: (tenant, engagement_id) -> whether its client is an attest client."""
     _once("attest", lookup)
     LOOKUPS.attest = lookup
+
+
+def register_attest_client_column(builder: AttestColumn) -> None:
+    """engagements: an engagement-ID column -> whether its client is an attest client (SQL)."""
+    _once("attest_column", builder)
+    LOOKUPS.attest_column = builder
 
 
 def register_gates(lookup: GatesLookup) -> None:

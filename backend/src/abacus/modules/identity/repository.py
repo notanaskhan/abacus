@@ -16,6 +16,7 @@ from typing import Any, Final, Literal, cast, get_args
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     MetaData,
@@ -155,6 +156,18 @@ def client_grant_engagements(
 
 
 _CLIENT_WIDE: Final = ("client", "client_entity")
+
+
+# F-03-T24 (migration 0081): the firm settings a firm switched on. `visible()` reads the
+# stricter-only `g2_blocks_view` here (ADR-164 item 3, P-07-T24); `authorise` reads them all once
+# per request through `firm_policy`.
+firm_setting_values = Table(
+    "firm_setting_values",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("key", String, nullable=False),
+    Column("value", Boolean, nullable=False),
+)
 
 
 # Ethical walls (migration 0012; SPEC-002): `authorise` and `visible()` read active ones.

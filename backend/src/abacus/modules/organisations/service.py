@@ -9,6 +9,7 @@ from datetime import date
 from typing import Final, Literal
 from uuid import UUID, uuid4
 
+from sqlalchemy import Select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,9 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Target, UnitOfWork
 from abacus.modules.organisations.models import Contact
+from abacus.modules.organisations.repository import (
+    attest_client_ids as _attest_client_ids,
+)
 from abacus.modules.organisations.repository import (
     clients_matching,
     contact_ids_of_user,
@@ -408,6 +412,11 @@ async def contacts_of_user(session: AsyncSession, user_id: UUID) -> list[UUID]:
     """The firm's contacts the portal user is linked to (P-08-T17: the MFA floor), read in the
     caller's tenant session."""
     return await contact_ids_of_user(session, user_id)
+
+
+def attest_client_ids() -> Select[UUID]:
+    """The attest clients' ids as a subquery (P-07-T24; `repository.attest_client_ids`)."""
+    return _attest_client_ids()
 
 
 async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | None:

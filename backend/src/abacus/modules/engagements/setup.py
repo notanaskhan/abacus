@@ -22,11 +22,13 @@ from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.contacts import attest_of
 from abacus.modules.engagements.events import IndependenceRequested
 from abacus.modules.engagements.gate_policy import required_gates
 from abacus.modules.engagements.models import Engagement, EngagementAcceptance, EngagementLetter
 from abacus.modules.engagements.repository import (
     answer_confirmation,
+    client_column,
     confirmations_of,
     confirmed_column,
     get_engagement,
@@ -60,7 +62,7 @@ from abacus.modules.identity.api import (
     letter_policy,
     names_of,
 )
-from abacus.modules.organisations.api import client_names
+from abacus.modules.organisations.api import attest_client_ids, client_names
 
 STATEMENT_VERSION: Final = "v1"
 STATEMENT: Final = (
@@ -564,3 +566,31 @@ async def confirmed_for(tenant: TenantContext, engagement_id: UUID, user_id: UUI
     """For identity's `authorise` (TASK-045 D2): the person confirmed for this engagement."""
     async with tenant_session(tenant) as session:
         return await is_confirmed(session, engagement_id, user_id)
+
+
+# --- P-07-T24: G2 v2's one answer (ADR-164 item 4) ----------------------------------------------
+
+
+async def independence_cleared(tenant: TenantContext, engagement_id: UUID, user_id: UUID) -> bool:
+    """Whether the person is cleared on this engagement: their own confirmation for it, which no
+    later decline supersedes (one row per person and engagement). Unknown answers False (fail
+    closed). The one answer for P-04's sign-off, assignment and `authorise` (ADR-164 item 4);
+    the annual firm-wide confirmation joins it when G-01 delivers it (DEC-91)."""
+    return await confirmed_for(tenant, engagement_id, user_id)
+
+
+async def g2_blocks(tenant: TenantContext, engagement_id: UUID, user_id: UUID) -> bool:
+    """Whether G2 keeps this person from being assigned or signing off here: the engagement's
+    client is an attest client (unknown counts as attest) and the person is not cleared
+    (ADR-164 item 2). A non-attest client's engagement is never gated."""
+    if await independence_cleared(tenant, engagement_id, user_id):
+        return False
+    return await attest_of(tenant, engagement_id) is not False
+
+
+def attest_column(
+    engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID],
+) -> ColumnElement[bool]:
+    """For identity's `visible()` under `g2_blocks_view`: the row's engagement's client is an
+    attest client (P-07-T24, ADR-164 item 3)."""
+    return client_column(engagement_id).in_(attest_client_ids().scalar_subquery())
