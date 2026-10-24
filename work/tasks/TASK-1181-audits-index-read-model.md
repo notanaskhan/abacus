@@ -4,7 +4,7 @@ title: AUD-01 index read model GET /v1/audits - tiles minus the active tile, seg
 spec: SPEC-330
 acceptance_criteria: [AC-18, AC-19, AC-20, AC-21]
 risk_zone: amber
-status: in-progress
+status: done
 epic: A-01
 plan_key: A-01-T08
 branch: s8a-audits-read

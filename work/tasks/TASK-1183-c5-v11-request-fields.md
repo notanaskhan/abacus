@@ -4,7 +4,7 @@ title: C5 v1.1 additive fields on P-06's binder-requests projection, the Source 
 spec: SPEC-330
 acceptance_criteria: [AC-25, AC-26, AC-27]
 risk_zone: amber
-status: in-progress
+status: done
 epic: A-01
 plan_key: A-01-T10
 branch: s8a-audits-read

@@ -4,7 +4,7 @@ title: Cockpit projection and A-01's providers - Overview links, Source Document
 spec: SPEC-330
 acceptance_criteria: [AC-22, AC-23, AC-24]
 risk_zone: amber
-status: in-progress
+status: done
 epic: A-01
 plan_key: A-01-T09
 branch: s8a-audits-read
