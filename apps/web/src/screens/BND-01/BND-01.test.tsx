@@ -1,6 +1,7 @@
-// BND-01 · Binders index (P-06-T09). One test per artboard this task builds (a, c, d, e) on its
-// fixture scenario, the spec's acceptance checklist, the error and filtered-empty states, the tiles
-// filtering the rows, and the row ··· menu and "New binder…" sheet against the C5 routes.
+// BND-01 · Binders index (P-06-T09, P-06-T16). One test per artboard (a–e) on its fixture
+// scenario, the spec's acceptance checklist, the error and filtered-empty states, the tiles
+// filtering the rows, the row ··· menu and "New binder…" sheet against the C5 routes, and the
+// follow-up sheet ("Send reminder(s)…") against the follow-ups v2 routes.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -16,9 +17,9 @@ import {
 import { type BinderFilters, defaultBinderFilters } from "../../domain/requests";
 import { BINDER_COUNTS, BINDER_PARTS } from "../../fixtures/seed/binders";
 import { bindersRoute } from "../../routes/firm/binders";
-import { newQueryClient } from "../../testing/support";
+import { newQueryClient, renderRoutes } from "../../testing/support";
 import { BND01 } from ".";
-import { type Bnd01State, SEARCH, STATES, scenarios } from "./scenarios";
+import { type Bnd01State, SEARCH, SELECTED, STATES, scenarios } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -56,16 +57,25 @@ function install(scenario: Scenario): Seen {
   return seen;
 }
 
-function Harness({ initial }: { initial: BinderFilters }): JSX.Element {
+function Harness({
+  initial,
+  selected = null,
+}: {
+  initial: BinderFilters;
+  selected?: string | null;
+}): JSX.Element {
   const [filters, setFilters] = useState(initial);
-  return <BND01 filters={filters} onFilters={setFilters} />;
+  return <BND01 filters={filters} onFilters={setFilters} initialSelected={selected} />;
 }
 
 function show(state: Bnd01State, scenario: Scenario = scenarios[state]): Seen {
   const seen = install(scenario);
   render(
     <QueryClientProvider client={newQueryClient()}>
-      <Harness initial={{ ...defaultBinderFilters("2026-09-14"), ...SEARCH[state] }} />
+      <Harness
+        initial={{ ...defaultBinderFilters("2026-09-14"), ...SEARCH[state] }}
+        selected={SELECTED[state] ?? null}
+      />
     </QueryClientProvider>,
   );
   return seen;
@@ -111,8 +121,8 @@ function openMenu(row: HTMLElement): HTMLElement {
 }
 
 describe("BND-01 artboards", () => {
-  it("defines exactly the artboards P-06-T09 builds", () => {
-    expect(STATES).toEqual(["a", "c", "d", "e"]);
+  it("defines every artboard: a, c, d, e (P-06-T09) and b (P-06-T16)", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e"]);
     for (const s of STATES) expect(scenarios[s].clock).toBe("2026-09-14T09:24:00-05:00");
     expect(scenarios.a.persona).toBe("grace-holloway");
     expect(scenarios.c.persona).toBe("remy-vidal");
@@ -148,6 +158,21 @@ describe("BND-01 artboards", () => {
     expect(cell(rowOf("Ridgeline Property Partners, LP", "2025 Binder pt 2"), 3)).toContain(
       "1 of 3",
     );
+  });
+
+  it("BND-01b no client activity in 30 days", async () => {
+    show("b");
+    const list = await rows();
+    expect(list).toHaveLength(1);
+    expect(screen.getByText(/^Showing 1/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Client activity: None in 30 days" })).toBeTruthy();
+    const fenwick = rowOf("Fenwick Family Foundation");
+    expect(cell(fenwick, 2)).toBe("2025 Form 990-PF");
+    expect(cell(fenwick, 3)).toContain("5 of 14");
+    expect(statusOf(fenwick)).toBe("Published");
+    // Selected for a Request Chaser reminder.
+    expect(fenwick.getAttribute("aria-selected")).toBe("true");
+    expect(await screen.findByRole("button", { name: "Send reminder…" })).toBeTruthy();
   });
 
   it("BND-01c unpublished row", async () => {
@@ -288,25 +313,15 @@ describe("BND-01 acceptance (spec.md checklist)", () => {
 });
 
 describe("BND-01 route /binders", () => {
-  function route(scenario: Scenario): void {
+  function route(scenario: Scenario, at = "/binders"): void {
     install(scenario);
     const Page = bindersRoute.options.component as () => JSX.Element;
-    render(
-      <QueryClientProvider client={newQueryClient()}>
-        <Page />
-      </QueryClientProvider>,
-    );
+    renderRoutes([{ path: "/binders", component: Page }], { at });
   }
 
-  it("flag off (binders.engine): the flag-off state, never a 404", async () => {
-    route(scenarios.a);
-    expect(await screen.findByText("Binders is not turned on for this firm.")).toBeTruthy();
-    expect(document.querySelector("[data-flag-off='binders.engine']")).not.toBeNull();
-  });
-
-  it("flag on: BND-01 on the current season", async () => {
+  function flagOn(): Scenario {
     const base = scenarios.a.handlers["GET /v1/me/capabilities"];
-    route({
+    return {
       ...scenarios.a,
       handlers: {
         ...scenarios.a.handlers,
@@ -317,9 +332,26 @@ describe("BND-01 route /binders", () => {
           return json({ ...(await body), flags: { "binders.engine": true } });
         },
       },
-    });
+    };
+  }
+
+  it("flag off (binders.engine): the flag-off state, never a 404", async () => {
+    route(scenarios.a);
+    expect(await screen.findByText("Binders is not turned on for this firm.")).toBeTruthy();
+    expect(document.querySelector("[data-flag-off='binders.engine']")).not.toBeNull();
+  });
+
+  it("flag on: BND-01 on the current season", async () => {
+    route(flagOn());
     expect(await screen.findByText("Showing 15 of 241")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Season: TY2025" })).toBeTruthy();
+  });
+
+  it("the filters live in the URL: a shared link reopens the same list (P-06-T16)", async () => {
+    route(flagOn(), "/binders?client_activity=none_30_days");
+    expect(await screen.findByText(/^Showing 1/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Client activity: None in 30 days" })).toBeTruthy();
+    expect(rowOf("Fenwick Family Foundation")).toBeTruthy();
   });
 });
 
@@ -405,6 +437,74 @@ describe("BND-01 behaviour", () => {
       expect(within(sheet).getByText(label)).toBeTruthy();
     }
     expect(seen.calls.some((c) => c.path === "/v1/engagements")).toBe(true);
+  });
+
+  it("Send reminder… drafts one follow-up per client contact and sends nothing until Send", async () => {
+    const seen = show("b");
+    await rows();
+    fireEvent.click(await screen.findByRole("button", { name: "Send reminder…" }));
+    const sheet = await screen.findByRole("dialog", { name: "Send follow-ups · 1" });
+    expect(within(sheet).getByText("To Fenwick Family Foundation (portal contacts)")).toBeTruthy();
+    expect(within(sheet).getByText("5 items, 5 overdue")).toBeTruthy();
+    expect(within(sheet).getByText(/^We haven’t heard from you since Aug 11/)).toBeTruthy();
+    expect(
+      within(sheet).getByText("Grants paid in 2025 — grantee, purpose, amount and date"),
+    ).toBeTruthy();
+    expect(
+      within(sheet).getByText(
+        "Drafted by Accrued Agent (Request Chaser) · not sent · Reminder template (POR-20)",
+      ),
+    ).toBeTruthy();
+    expect(within(sheet).getByText("Nothing is sent until you click Send.")).toBeTruthy();
+    const drafted = seen.calls.find((c) => c.path === "/v1/follow-ups/drafts");
+    expect(drafted?.body).toEqual({
+      binder_ids: [rowOf("Fenwick Family Foundation").dataset.row],
+    });
+    expect(seen.calls.some((c) => c.path === "/v1/follow-ups/send")).toBe(false);
+
+    fireEvent.click(within(sheet).getByRole("button", { name: "Send 1 follow-up" }));
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path === "/v1/follow-ups/send")).toBe(true);
+    });
+    const sent = seen.calls.find((c) => c.path === "/v1/follow-ups/send");
+    expect((sent?.body as { ids: string[] }).ids).toHaveLength(1);
+    await waitFor(() => {
+      expect(toastStore.list()[0]?.text).toMatch(/^1 follow-up sent by /);
+    });
+    expect(toastStore.list()[0]?.action).toBe("Undo");
+  });
+
+  it("Edit replaces the drafted text with the person's own before sending", async () => {
+    const seen = show("b");
+    await rows();
+    fireEvent.click(await screen.findByRole("button", { name: "Send reminder…" }));
+    const sheet = await screen.findByRole("dialog");
+    fireEvent.click(within(sheet).getByRole("button", { name: "Edit" }));
+    const field = within(sheet).getByRole("textbox", {
+      name: "Follow-up to Fenwick Family Foundation (portal contacts)",
+    });
+    fireEvent.change(field, {
+      target: { value: "Could you upload the grant records this week?" },
+    });
+    fireEvent.blur(field);
+    expect(
+      await within(sheet).findByText("Could you upload the grant records this week?"),
+    ).toBeTruthy();
+    const edit = seen.calls.find((c) => c.method === "PATCH");
+    expect(edit?.body).toEqual({ body: "Could you upload the grant records this week?" });
+  });
+
+  it("with no row selected, Send reminders… drafts over the published binders in view", async () => {
+    const seen = show("a");
+    await rows();
+    fireEvent.click(await screen.findByRole("button", { name: "Send reminders…" }));
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path === "/v1/follow-ups/drafts")).toBe(true);
+    });
+    const drafted = seen.calls.find((c) => c.path === "/v1/follow-ups/drafts");
+    const ids = (drafted?.body as { binder_ids: string[] }).binder_ids;
+    const published = (await rows()).filter((r) => statusOf(r).startsWith("Published"));
+    expect(ids).toEqual(published.map((r) => r.dataset.row));
   });
 
   it("no control on the screen is an agent-owned send, approve or sign-off", async () => {

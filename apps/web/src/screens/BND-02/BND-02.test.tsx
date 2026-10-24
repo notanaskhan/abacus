@@ -171,6 +171,29 @@ describe("BND-02 artboards", () => {
     expect(within(dock()).getByText("Send reminder for this request")).toBeTruthy();
   });
 
+  it("BND-02d Send reminder… drafts the open items once, to Paul Thornbury, and Kevin sends", async () => {
+    const seen = show("d");
+    await screen.findByText("3 overdue");
+    const send = await screen.findByRole("button", { name: "Send reminder…" });
+    await waitFor(() => {
+      expect((send as HTMLButtonElement).disabled).toBe(false);
+    });
+    fireEvent.click(send);
+    const sheet = await screen.findByRole("dialog", { name: "Send follow-ups · 1" });
+    expect(within(sheet).getByText("To Paul Thornbury")).toBeTruthy();
+    expect(within(sheet).getByText("9 items, 3 overdue")).toBeTruthy();
+    expect(within(sheet).getByText("+ 4 more open items listed once in the email")).toBeTruthy();
+    expect(within(sheet).getAllByText("overdue")).toHaveLength(3);
+    const drafted = seen.calls.find((c) => c.path === "/v1/follow-ups/drafts");
+    expect((drafted?.body as { request_item_ids: string[] }).request_item_ids).toHaveLength(9);
+    expect(seen.calls.some((c) => c.path === "/v1/follow-ups/send")).toBe(false);
+    fireEvent.click(within(sheet).getByRole("button", { name: "Send 1 follow-up" }));
+    await waitFor(() => {
+      expect(toastStore.list()[0]?.text).toMatch(/^1 follow-up sent by /);
+    });
+    expect(toastStore.list()[0]?.action).toBe("Undo");
+  });
+
   it("BND-02e ignored", async () => {
     show("e");
     expect(

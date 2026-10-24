@@ -120,7 +120,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.requests.binders.BinderNotPublished
-    summary: Unpublish and mark-done act on a Published binder only.
+    summary: Unpublish, mark-done and follow-ups act on a Published binder only.
   branding_not_set_up:
     status: 422
     raised_by:
@@ -203,10 +203,6 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.draft_start.DraftAlreadyDecided
-  draft_not_waiting:
-    status: 409
-    raised_by:
-    - abacus.modules.agents.engagement_agent.DraftGone
   drafted_guidance_not_allowed:
     status: 409
     raised_by:
@@ -232,6 +228,7 @@ codes:
   effect_started:
     status: 409
     raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
   empty_comment:
@@ -270,6 +267,26 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.findings.FindingInvalid
+  follow_up_already_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpAlreadySent
+    summary: 'The follow-up was sent: it can no longer be edited, sent again or dismissed.'
+  follow_up_not_waiting:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpNotWaiting
+    summary: 'The follow-up was dismissed: nothing is waiting to be sent.'
+  follow_up_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.communications.follow_ups.FollowUpTemplateMissing
+    summary: No follow-up template is published yet; platform staff import it (C16).
+  follow_up_v2_only:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
+    summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
   gate_unmet:
     status: 409
     raised_by:
@@ -593,6 +610,7 @@ codes:
   out_of_scope:
     status: 409
     raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpOutOfScope
     - abacus.modules.communications.service.OutOfScope
     - abacus.modules.requests.comments.CommentOutOfScope
     - abacus.modules.requests.lifecycle.OutOfScope
@@ -886,6 +904,7 @@ codes:
   undo_window_closed:
     status: 409
     raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpUndoClosed
     - abacus.modules.requests.binders.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
   unknown_engagement_type:

@@ -178,6 +178,11 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
     "/v1/portal/binders/{binder_id}/mark-done",
     "/v1/portal/request-items/{item_id}/ignore",
+    # P-06-T14 (follow-ups v2): sending, its Undo and dismissing return the follow-up.
+    "/v1/follow-ups/{follow_up_id}/send",
+    "/v1/follow-ups/send",
+    "/v1/follow-ups/{follow_up_id}/undo",
+    "/v1/follow-ups/{follow_up_id}/dismiss",
     # P-08-T01 (C5 v1.1 portal half): firm-side recovery returns the contact's portal access.
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock",
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset",
@@ -210,6 +215,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         TEMPLATE_DRAFTS,
         SELECT,
         ASSESS,
+        # P-06-T15 (C5 v1.2 SHL-20 stub): a rerun starts screening, so 202.
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun",
         # P-04-T11 (C3 stub 3): fix instructions and Explain start an agent run, so 202.
         "/v1/issues/{issue_id}/fix-instructions",
         "/v1/issues/fix-instructions:bulk",
@@ -241,6 +248,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # P-06-T01 (C5 stub): a binder, its copy, a delegation and an upload intent.
         "/v1/binders",
         "/v1/binders/{binder_id}/duplicate",
+        "/v1/follow-ups/drafts",  # P-06-T14: one draft per client contact
+        # P-06-T15 (SHL-20 stub): a feedback row and a screening-return draft.
+        "/v1/screenings/{screening_result_id}/feedback",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "/v1/portal/request-items/{item_id}/upload-intents",
         # P-07-T05 (engagements v2 stub): a draft, a Prospect engagement, an engagement.

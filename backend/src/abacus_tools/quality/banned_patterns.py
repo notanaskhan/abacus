@@ -973,6 +973,11 @@ LIST_EXEMPT = frozenset(
         # already authorised (request IDs only); client roles can't read matches themselves.
         ("src/abacus/modules/agents/repository.py", "shown_picks"),
         ("src/abacus/modules/agents/repository.py", "drafted_follow_ups"),
+        # P-06-T14: follow-ups v2's own records, read for requests the caller just read through
+        # `visible()` (identifiers only), and those binders' recipient histories.
+        ("src/abacus/modules/agents/repository.py", "waiting_pairs"),
+        ("src/abacus/modules/agents/repository.py", "follow_up_item_rows"),
+        ("src/abacus/modules/requests/repository.py", "binders_recipient_rows"),
         # Recipients' addresses and the engagement's client admins (one engagement, read for a
         # reminder after `follow_up.send` or by the agent); the items whose due date was set.
         ("src/abacus/modules/identity/repository.py", "emails_of"),

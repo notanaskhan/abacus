@@ -1191,8 +1191,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
         ),
         "follow_up_schedules": frozenset(
-            {"status", "note", "decided_by", "decided_at"}
-        ),  # TASK-051
+            {"status", "note", "decided_by", "decided_at"}  # TASK-051
+            # P-06-T14 (0121): the person's edit and the send with its Undo window.
+            | {"body_sealed", "edit_fingerprint", "sent_by", "sent_at", "not_before", "undone_at"}
+        ),
         # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
         "independence_confirmations": frozenset(
             {"status", "statement_version", "note", "answered_at"}

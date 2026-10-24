@@ -57,3 +57,5 @@ actions:
     verb: confirm  # SPEC-025 §14 gate fact G3 (ED-011)
   - action: independence.declined
     verb: decide  # SPEC-025 §14, the counterpart of independence.confirmed (ED-011)
+  - action: follow_up.sent
+    verb: send  # P-06-T14 (DEC-74): a follow-up to a client is sent by a person

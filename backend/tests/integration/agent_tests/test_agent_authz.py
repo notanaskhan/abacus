@@ -250,11 +250,12 @@ async def test_ac17_a_firm_setting_grant_is_not_a_grant_for_an_agent_at_advise(
     assert await _denied(agent, "follow_up.send", _resource(world)) == "role"
 
 
-async def test_ac17_at_routine_the_policy_still_cannot_exceed_the_initiator(world: World) -> None:
-    # SPEC-027 (TASK-051 D2): at Routine (the default) the policy passes the role layer, and the
-    # initiator intersection (ADR-025) still applies: the world's staff requester can't send.
+async def test_dec74_at_routine_the_agent_still_may_not_send(world: World) -> None:
+    # SPEC-027 (TASK-051 D2) let the policy pass the role layer at Routine (the default); DEC-74
+    # (P-06-T14) denies the agent `follow_up.send` at every level, before the initiator
+    # intersection (ADR-025) is reached.
     agent = await _agent(world, scope=frozenset({"follow_up.send"}))
-    assert await _denied(agent, "follow_up.send", _resource(world)) == "delegation"
+    assert await _denied(agent, "follow_up.send", _resource(world)) == "role"
 
 
 async def test_ac17_an_unknown_action_is_a_programming_error(world: World) -> None:

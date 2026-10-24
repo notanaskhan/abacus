@@ -18,13 +18,25 @@ class KnowledgeDocumentAdded(DomainEvent):
 
 
 class FollowUpsDrafted(DomainEvent):
-    """At Advise, the engagement agent drafted overdue reminders for a person to send or dismiss
-    (SPEC-027 P-4; TASK-051): the partner and managers are notified."""
+    """The engagement agent drafted follow-ups on overdue requests for a person to send or
+    dismiss (SPEC-027 P-4; DEC-74): the partner and managers are notified in the app
+    (`follow_up_drafted`, C16; P-06-T14 renamed the event from the dotted `reminders.drafted`)."""
 
-    event_type: ClassVar[str] = "reminders.drafted"
+    event_type: ClassVar[str] = "follow_up.drafted"
 
     engagement_id: Annotated[UUID, classified("internal")]
     count: Annotated[int, classified("internal")]
+
+
+class FollowUpSent(DomainEvent):
+    """A person sent a follow-up (P-06-T14). Held by an approval grant until the 10-s Undo
+    window ends (ADR-161); its delivery sends the email (communications)."""
+
+    event_type: ClassVar[str] = "follow_up.sent"
+
+    follow_up_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    sent_by: Annotated[UUID, classified("internal")]
 
 
 class AgentDigest(DomainEvent):

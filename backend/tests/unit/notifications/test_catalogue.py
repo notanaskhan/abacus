@@ -29,6 +29,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "connection.revoked",
         "independence.requested",  # SPEC-025 (TASK-044)
         "reminders.drafted",  # SPEC-027 (TASK-051)
+        "follow_up.drafted",  # P-06-T14: the same under its C16 code, follow_up_drafted
         "agent.digest",
         "comment.mentioned",  # SPEC-032 (TASK-062)
         "materiality.proposed",  # SPEC-305 (TASK-306)

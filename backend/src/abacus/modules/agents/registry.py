@@ -23,6 +23,7 @@ TABLES: frozenset[str] = frozenset(
         "inbox_match_proposals",
         "follow_up_schedules",  # SPEC-027 (TASK-051); renamed by F-03-T16
         "follow_up_items",
+        "follow_up_returns",  # P-06-T14 (migration 0121)
         "agent_runs",
         "screening_results",
         "knowledge_documents",  # SPEC-009 Q5
@@ -49,6 +50,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "template_guidance_decisions",  # SPEC-035 Q3 (TASK-074)
         "inbox_match_proposals",  # SPEC-033 (TASK-065): proposals, as made
         "follow_up_items",  # SPEC-027 (TASK-051)
+        "follow_up_returns",  # P-06-T14: the files a screening return named, as sent
         "screening_results",
         "suggestion_decisions",  # P-04-T05
         "proposal_rows",
@@ -57,6 +59,15 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # Follow-ups v2 (P-06-T14, migration 0121).
+    "follow_up_schedules": frozenset(
+        {"tenant_id", "engagement_id", "recipient_user_id", "status", "note", "agent_run_id"}
+        | {"binder_id", "recipient_contact_id", "kind", "template_key", "body_fingerprint"}
+        | {"drafted_by_kind"}
+    ),
+    "follow_up_returns": frozenset(
+        {"tenant_id", "follow_up_id", "evidence_version_id", "reason_code"}
+    ),
     # P-04-T05 (migration 0095)
     "suggestions": frozenset(
         {"tenant_id", "engagement_id", "target_type", "target_id", "field_key", "proposed_value"}
@@ -142,7 +153,11 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     # SPEC-028 (TASK-052): an import's scan result and what became of it.
     # SPEC-027 (TASK-051): a drafted reminder is sent or dismissed by a person.
-    "follow_up_schedules": frozenset({"status", "note", "decided_by", "decided_at"}),
+    # P-06-T14: edited, sent (with its Undo window) or undone by a person.
+    "follow_up_schedules": frozenset(
+        {"status", "note", "decided_by", "decided_at", "body_sealed", "edit_fingerprint"}
+        | {"sent_by", "sent_at", "not_before", "undone_at"}
+    ),
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
         | {"queued_reason", "estimated_start_at"}

@@ -165,6 +165,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # SPEC-027 (TASK-051): the engagement agent's drafted reminders (Advise) and daily digest.
     "reminders.drafted": Kind("reminders.drafted", _leads, "engagement", "engagement_id"),
+    # P-06-T14: the same, under its C16 code (events from before the rename keep the legacy one).
+    "follow_up.drafted": Kind("follow_up_drafted", _leads, "engagement", "engagement_id"),
     "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
     # SPEC-032 (TASK-062): a person mentioned in a comment, on the request it's about.
     "comment.mentioned": Kind("mention", _mentioned, "request_item", "request_item_id"),
@@ -194,6 +196,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
+    "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",
     "agent.digest": "Items are overdue on {engagement}: see its activity for today's reminders.",
     "comment.mentioned": "You were mentioned in a comment on {engagement}.",
     "materiality.proposed": "Materiality on {engagement} is waiting for your decision.",
@@ -223,6 +226,10 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("connection.revoked", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),
+    NotificationKind("follow_up_drafted", "approval", "Send"),  # P-06-T14 (C16)
+    # P-06-T14: a follow-up a person sent; its email is the follow-up itself (communications
+    # sends it from the Reminder or Return template), so no catalogue event fans it out.
+    NotificationKind("follow_up_sent", "client_activity", "Send"),
     NotificationKind("agent.digest", "run", "Sparkles"),
     NotificationKind("mention", "mention", "AtSign", email_default=True),
     NotificationKind("materiality.proposed", "approval", "Scale"),

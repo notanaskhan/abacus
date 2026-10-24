@@ -144,6 +144,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.conclude_severity",
         "finding.propose_severity",
         "finding.raise",  # SPEC-043 (TASK-107)
+        "follow_up.draft",  # P-06-T14 review: client data, per person (staff now send)
+        "follow_up.send",
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
@@ -182,6 +184,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "risk.assess",
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
+        "screening.feedback",  # P-06-T15 (SHL-20 f)
         "screening.request",
         "sign_off.bulk",  # P-04-T07 (TASK-413)
         "sign_off.create",  # P-04-T07 (TASK-413)

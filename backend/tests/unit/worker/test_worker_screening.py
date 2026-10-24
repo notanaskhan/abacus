@@ -79,6 +79,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "request_item.document_kind_changed",  # SPEC-029 (TASK-055 D5): re-check the upload
         "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer may follow
         "inbox_file.extracted",  # SPEC-033 (TASK-066): the matcher may follow
+        "follow_up.sent",  # P-06-T14: a sent follow-up's email, after the Undo window
         "ledger_snapshot.recorded",  # SPEC-034 (TASK-069): waiting general ledgers follow
         "work_item.status_changed",  # P-06-T07: binders close
         "engagement.status_changed",

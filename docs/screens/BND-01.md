@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/binders` (P-06 §5.1). Search params `service`, `season`, `office`, `preparer`, `activity`, `status`, `q`, `cursor`; a tile toggles `status`. Artboards: `/components/screens/BND-01?st=a…e` |
+| Route and params | `/binders` (P-06 §5.1). Search params `service`, `season`, `office`, `preparer`, `client_activity`, `status`, `q` (P-06-T16: only what differs from the defaults; `routes/firm/binders.tsx` → `BindersSearchPage`); a tile toggles `status`. Artboards: `/components/screens/BND-01?st=a…e` |
 | Template and host frame | T1 `IndexList` (FilterBar, StatusTileRow, ledger DataTable) · `Wave 1 - Module Shells.dc.html#bnd01` |
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/BND-01 Binders index/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-06 · contract P-06-T03 (TASK-404); a, c, d, e P-06-T09; b and the follow-up sheet P-06-T16; read model P-06-T11; data P-06-T08; parity P-06-T26 |
 | Manifest status | fixture, path `/binders` behind `binders.engine` (`routes/manifest/bnd.ts`, `navArea: "Binders"`; P-06-T09, TASK-931) |
 
-Code to come (P-06 §5.2): `src/routes/firm/binders.tsx`, `src/domain/requests/` (`queries.ts`, `mutations.ts`, `filters.ts`, `messages.ts`, `FollowUpSheet.tsx`), `src/screens/BND-01/{index.tsx, scenarios.ts, copy.ts, BND-01.test.tsx}`.
+Code: `src/routes/firm/binders.tsx`, `src/domain/requests/` (`binders.ts` with the search mirror, `followUps.ts`, `FollowUpSheet.tsx`), `src/screens/BND-01/{index.tsx, scenarios.ts, copy.ts, BND-01.test.tsx}`, `src/fixtures/{scenarios/BND-01.ts, handlers/follow-ups.ts}`.
 
 ## States
 
@@ -18,7 +18,7 @@ Code to come (P-06 §5.2): `src/routes/firm/binders.tsx`, `src/domain/requests/`
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
 | a | grace-holloway (Grace Holloway, Firm Admin) | Mon Sep 14, 2026, 9:24 AM CT | E0 | Service │ Tax returns, Season │ TY2025; the 241 TY2025 tax-return binders, first 15 rows by newest client activity within each state | built · fixture (T09) |
-| b | grace-holloway | same | E0 | Client activity │ None in 30 days (published binders only): one row, Fenwick Family Foundation (last activity Aug 11); the row is selected, so the bulk bar shows | built · fixture (T16, with the follow-up sheet) |
+| b | grace-holloway | same | E0 | Client activity │ None in 30 days (published binders only): one row, Fenwick Family Foundation (last activity Aug 11); the row is selected (`SELECTED.b`), so "Send reminder…" drafts for it | built · fixture (P-06-T16, TASK-1008) |
 | c | remy-vidal (Remy Vidal) | same | E0 | Benjamin Osterberg's binder is `unpublished` with `unpublish_reason` "fixing 2 requests", Sep 2 by Remy Vidal | built · fixture (T09) |
 | d | grace-holloway | same | E0 | Season │ TY2026: no binders in the season | built · fixture (T09) |
 | e | grace-holloway | same | E0 | `GET /v1/binders` never answers (`never()` handler) | built · fixture (T09) |
@@ -116,13 +116,14 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | DV-12 | "+ New binder" reads "New binder…" with the plus as the button's icon; the row menu's "Unpublish" reads "Unpublish…" (it opens the reason dialog: 422 `reason_required` without one) | Plan 04 rule 9: an opener of a dialog or sheet ends in "…" (asserted by `Button`/`Menu` in development) | P-06-T09 (TASK-931) |
 | DV-13 | e: the tile row is hidden while the list loads, instead of skeleton tile counts | T1's `StatusTile` has no skeleton, and a loading tile must never read 0; skeleton tiles are a T1 template change (`ui-kit-component`) | P-06-T09 (TASK-931) |
 | DV-14 | Tiles: Unpublished and Closed draw T1's neutral tile pill (`StatusTile` has no `muted` or `soon` variant); rows use the registry pills (muted, soon). Requests: the C-19 `ProgressBar` puts "5 of 7" before the bar and fills espresso when complete, amber when partial (the kit never fills green) | Kits as merged (F-05-T19, T28); no kit is built in a screen task | P-06-T09 (TASK-931) |
-| DV-15 | "Send reminders…" is not in the pane header yet, and the filters live in the page state rather than the URL | The button opens the follow-up sheet (P-06-T16), and T1 has no slot for a second header action; the search-param mirror lands with the live swap (T16) | P-06-T09 (TASK-931) |
+| DV-15 | b: no 40h bulk bar. The selection drives the pane header's action instead: "Send reminders…" (the published binders in view) reads "Send reminder…" while a row is selected; selection is T1's single `selected` row | T1 has an `actions` slot but no bulk-bar slot or multi-select; both are a T1 change (`ui-kit-component`). Resolved in P-06-T16: the action is in the header, and the filters live in the URL | P-06-T16 (DEC-222) |
+| DV-16 | The follow-up sheet is drawn as BND-04 c draws the same O3 sheet ("Send follow-ups · n", "To …", items with "overdue", the C-31 marker, "Edit", "Nothing is sent until you click Send.", "Send n follow-ups"); BND-01 has no artboard of it | The one designed follow-up sheet; same flow (one draft per client contact, a person sends) | DEC-222 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
 | a, c, d, e | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26) | `e2e/screens/BND-01.spec.ts` renders each at 1440×900 DPR 2 with axe at 0 serious or critical; locked (blocking) at the end of S10; mask the skeleton pulse in e |
-| b | C | not run | P-06-T16 |
+| b | C | not run (P-06-T26) | fixture built in P-06-T16 |
 | host | D | — | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12 |
 
 ## Open gaps
@@ -137,3 +138,6 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 - The fixture's `allowed_actions` and capabilities give Grace and Remy `binder.publish` and `binder.create`, i.e. Brightwater Hale's `client_service_can_publish` on (the canvas has Grace publish and unpublish from the row menu); the firm-settings row is P-06-T08's.
 - "New binder…": C5 has no list of firm binder templates, so the sheet offers Blank only (`template_ref` unset). The sheet's "Create" and "Choose", the dialog title "Unpublish binder" and the toasts are not in the handoff; they follow the toast and dialog rules until a revision words them.
 - `GET /v1/binders` is still the C5 stub (501) until P-06-T11: BND-01 runs on the fixture scenarios (`fixtures/scenarios/BND-01.ts`, typed with the generated client), and the TS rows are the handoff's until `make fixtures` exports the Python slice (F-04-T31).
+- **Follow-up sheet (P-06-T16):** BND-01 b's fixture draft is BND-04 c's Fenwick card verbatim, but it lists only the five requests the handoff names (FEN-04 to FEN-08), so it reads "5 items, 5 overdue" where BND-04 c reads "9 items, 6 overdue"; the other four wait for the Fenwick request slice. Request keys ("FEN-04") and the card's work-item label ("· 2025 Form 990-PF") are not on `FollowUpOut`. The "nothing to draft" and failure toasts are not in the handoff (DEC-222).
+- **Live swap (P-06-T16):** the screen reads only the generated client; rows carry `follow_up.draft`/`follow_up.send` in `allowed_actions`, which gate "Send reminder(s)…". Not verified on staging (no staging access in this task): the manifest stays `fixture` until Grace's send is walked there (P-06-T16 acceptance), with the Reminder template imported (`notification.follow_up_sent`).
+

@@ -29,7 +29,9 @@ import {
 } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
+import { type FollowUpSpec, followUpHandlers } from "../handlers/follow-ups";
 import { type BinderFixture, binderSet } from "../seed/binder-detail";
+import { stableId } from "../seed/prng";
 
 const E0 = seedScenario();
 const seed = getSeed();
@@ -45,6 +47,43 @@ function rowId(fixture: BinderFixture, key: string): string {
   const found = Object.entries(fixture.keys).find(([, k]) => k === key);
   if (found === undefined) throw new Error(`no request ${key}`);
   return found[0];
+}
+
+// BND-04 c's Paul Thornbury card, verbatim (DEC-221): the Request Chaser's draft for the
+// Thornbury binder's open requests. The Feld binders have no designed draft, so they draft none.
+const THORNBURY_DRAFT =
+  "Hi Paul, thank you for what you have sent so far. 9 items are still open for 2025 Form 1040, " +
+  "3 of them past the due date. You can upload them in the portal. Bianca Novak is your contact " +
+  "at Brightwater Hale.";
+
+function followUpsOf(data: () => BinderFixture, thorn: boolean): Record<string, FixtureHandler> {
+  const kevin = seed.people.find((p) => p.slug === "kevin-osei")?.userId ?? "";
+  return followUpHandlers(
+    (asked): FollowUpSpec[] => {
+      if (!thorn) return [];
+      const { binder, rows } = data();
+      const ids = new Set(asked.request_item_ids ?? []);
+      const items = rows
+        .filter(
+          (r) =>
+            ids.has(r.id) &&
+            (r.status === "requested" || r.status === "returned") &&
+            r.client_visible,
+        )
+        .map((r) => ({ id: r.id, title: r.title, due_on: r.due_on ?? null, overdue: r.overdue }));
+      return [
+        {
+          engagementId: binder.engagement_id,
+          binderId: binder.id,
+          recipientUserId: stableId("contact:Paul Thornbury"),
+          recipientName: "Paul Thornbury",
+          body: THORNBURY_DRAFT,
+          items,
+        },
+      ];
+    },
+    () => kevin,
+  );
 }
 
 function page<T>(items: T[]): { items: T[]; next_cursor: null; total: number } {
@@ -63,6 +102,7 @@ function handlers(start: BinderFixture): Record<string, FixtureHandler> {
   const draft = data.binder.work_item_id === BINDERS.feldDraftWorkItem.id;
   return {
     ...E0.handlers,
+    ...followUpsOf(() => data, thorn),
     "GET /v1/binders/{binder_id}": (r) => (mine(r) ? json(data.binder) : json(NOT_FOUND, 404)),
     "GET /v1/binders/{binder_id}/requests": (r) => {
       if (!mine(r)) return json(NOT_FOUND, 404);

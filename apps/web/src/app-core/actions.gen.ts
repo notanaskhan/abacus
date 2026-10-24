@@ -190,6 +190,7 @@ export const ACTIONS = [
   "run_trace.export",
   "sample.approve",
   "sample_set.create",
+  "screening.feedback",
   "screening.request",
   "screening.run",
   "security_role.assign",

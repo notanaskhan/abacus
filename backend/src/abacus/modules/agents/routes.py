@@ -544,7 +544,12 @@ async def drafts_route(engagement_id: UUID, ctx: Ctx) -> list[DraftOut]:
     ]
 
 
-@router.post("/follow-ups/{follow_up_id}/send", action="follow_up.send", response_model=SettledOut)
+@router.post(
+    "/follow-ups/{follow_up_id}/send",
+    action="follow_up.send",
+    response_model=SettledOut,
+    errors=(409,),
+)
 async def send_draft_route(
     engagement_id: UUID, follow_up_id: UUID, body: SendDraftIn, ctx: Ctx
 ) -> SettledOut:
@@ -553,7 +558,10 @@ async def send_draft_route(
 
 
 @router.post(
-    "/follow-ups/{follow_up_id}/dismiss", action="follow_up.send", response_model=SettledOut
+    "/follow-ups/{follow_up_id}/dismiss",
+    action="follow_up.send",
+    response_model=SettledOut,
+    errors=(409,),
 )
 async def dismiss_draft_route(engagement_id: UUID, follow_up_id: UUID, ctx: Ctx) -> SettledOut:
     await settle_draft(ctx, engagement_id, follow_up_id, send=False)

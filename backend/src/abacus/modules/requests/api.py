@@ -16,6 +16,7 @@ from abacus.modules.requests.events import (
     RequestItemCreated,
     RequestItemDocumentKindChanged,
 )
+from abacus.modules.requests.follow_up_reads import FollowUpCandidate, follow_up_candidates
 from abacus.modules.requests.lifecycle import register_live_facts, request_item_scope
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
 from abacus.modules.requests.repository import open_requests_by_engagement
@@ -82,6 +83,7 @@ __all__ = [
     "BinderProgress",
     "ClientHome",
     "DueDatesChanged",
+    "FollowUpCandidate",
     "FulfilledVersion",
     "FulfilmentRef",
     "ItemKind",
@@ -101,6 +103,7 @@ __all__ = [
     "client_home",
     "document_kind",
     "firm_router",
+    "follow_up_candidates",
     "fulfil_by_rule",
     "fulfil_by_upload",
     "fulfilled_items",
