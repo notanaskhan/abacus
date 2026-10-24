@@ -881,7 +881,8 @@ async def undo_publish(ctx: AuthContext, binder_id: UUID) -> BinderView:
         published_at = binder.published_at
         if binder.status != "published" or published_at is None:
             raise UndoWindowClosed
-        if now >= published_at + UNDO_WINDOW:
+        # ADR-161 clause 6: only the person who published may undo it (ED-022).
+        if binder.published_by != ctx.user_id or now >= published_at + UNDO_WINDOW:
             raise UndoWindowClosed
         published = await _last_ref(tx.session, binder.id, "binder.published")
         grant = _uuid_of(published.get("grant")) if published else None
