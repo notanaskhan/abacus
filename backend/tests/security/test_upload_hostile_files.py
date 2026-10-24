@@ -390,7 +390,7 @@ async def test_dec58_a_file_over_50_mb_is_refused_before_it_is_stored(firm: Firm
     strict=True,
     reason="ED-018: uploads stop at 25 MB (SPEC-029 §7), not DEC-58 (c)'s 50 MB; raising the "
     "limit is held for the main session with the extraction memory limits; "
-    "TASK-1140 (#0: the S7 batch PR, set at merge)",
+    "TASK-1140 (#393: the S7 batch PR)",
 )
 async def test_dec58_a_30_mb_pdf_is_within_the_limit(firm: Firm) -> None:
     content = bank_statement_pdf() + b"\n%" + bytes(30 * MB)
@@ -403,7 +403,7 @@ ED019: Final = pytest.mark.xfail(
     reason="ED-019: the type is judged by bytes alone and any text is kept as text/csv, and "
     "legacy OLE files and macro workbooks pass, so types outside DEC-58 (c) are stored; held "
     "for a type-policy change; "
-    "TASK-1140 (#0: the S7 batch PR, set at merge)",
+    "TASK-1140 (#393: the S7 batch PR)",
 )
 
 OUTSIDE: Final = {
@@ -524,7 +524,7 @@ async def test_ac3_a_password_protected_pdf_is_stored_locked_and_never_extracted
     strict=True,
     reason="ED-021: a PDF carrying JavaScript is stored, extracted and previewed like any other; "
     "refusing or quarantining it needs a scanner rule or a PDF policy; "
-    "TASK-1140 (#0: the S7 batch PR, set at merge)",
+    "TASK-1140 (#393: the S7 batch PR)",
 )
 async def test_q03_a_pdf_with_javascript_is_quarantined_not_previewed(firm: Firm) -> None:
     """Q-03 §D1: a PDF carrying JavaScript (OpenAction, page open, names tree) is refused, or
@@ -544,7 +544,7 @@ async def test_q03_a_pdf_with_javascript_is_quarantined_not_previewed(firm: Firm
     strict=True,
     reason="ED-020: HEIC answers 422 upload_type_not_allowed, though DEC-58 (c) accepts it and "
     "POR-03 keeps it as-is until P-11-T25 renders it; "
-    "TASK-1140 (#0: the S7 batch PR, set at merge)",
+    "TASK-1140 (#393: the S7 batch PR)",
 )
 async def test_dec58_heic_is_kept_as_is_with_no_preview_yet(firm: Firm) -> None:
     """DEC-58 (c) accepts HEIC; POR-03 and POR-04: stored as-is, "Preview not available yet"

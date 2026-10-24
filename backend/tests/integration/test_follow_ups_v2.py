@@ -23,6 +23,7 @@ from abacus.kernel import clock
 from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, configure_relay_engine, dispose_engine
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.agents import follow_up_drafts as follow_ups
@@ -331,6 +332,23 @@ async def test_ac20_staff_may_now_send_and_a_reviewer_may_not(seed: Seeder) -> N
             await follow_ups.send(reviewer.context(), draft.id)
         sent = await follow_ups.send(staff.context(), draft.id)
     assert sent.sent_by == staff.user_id
+
+
+async def test_a_retried_send_is_authorised_again_before_its_stored_answer(seed: Seeder) -> None:
+    """ED-023's shape on the follow-up send routes: the route checks `follow_up.send` before the
+    idempotency lookup, so a replay reaches only someone who may send now."""
+    chase = await _chase(seed)
+    reviewer = await seed.person(chase.world.tenant)
+    await seed.member(chase.world.engagement, reviewer, "reviewer")
+    with clock.frozen(T0):
+        [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
+        await follow_ups.check_send(chase.partner, [draft.id])  # the first send's check passes
+        await follow_ups.send(chase.partner, draft.id)
+        await follow_ups.check_send(chase.partner, [draft.id])  # a replay is checked the same
+        with pytest.raises(Forbidden):
+            await follow_ups.check_send(reviewer.context(), [draft.id])
+        with pytest.raises(NotFound):
+            await follow_ups.check_send(chase.partner, [draft.id, uuid.uuid4()])
 
 
 async def test_ac19_the_database_refuses_follow_up_sent_from_an_agent(seed: Seeder) -> None:
