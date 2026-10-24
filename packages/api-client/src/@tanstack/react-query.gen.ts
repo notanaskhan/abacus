@@ -818,8 +818,10 @@ export const relinkCitationMutation = (options?: Partial<Options<RelinkCitationD
  *
  * Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on
  * one of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or
- * unknown entity or no TIN on file. One `tin_reveals` row and one `tin.revealed` audit event in
- * the same unit of work (the reason, never the value); `Cache-Control: no-store`.
+ * unknown entity or no TIN on file; 403 `mfa_step_up_required` when only MFA is stale; 429
+ * `tin_reveal_rate_limited` past 20 reveals an hour (DEC-227). One `tin_reveals` row and one
+ * `tin.revealed` audit event in the same unit of work (the reason, never the value);
+ * `Cache-Control: no-store`.
  */
 export const revealTinMutation = (options?: Partial<Options<RevealTinData>>): UseMutationOptions<RevealTinResponse, RevealTinError, Options<RevealTinData>> => {
     const mutationOptions: UseMutationOptions<RevealTinResponse, RevealTinError, Options<RevealTinData>> = {
@@ -1189,9 +1191,9 @@ export const changeContactAccessMutation = (options?: Partial<Options<ChangeCont
 /**
  * Invite Contact Route
  *
- * Human-only: pending grants and a single-use invitation in one unit of work, `contact.invited`
- * emitted; 409 `gate_unmet` (G1) for a full-client grant before acceptance; 422
- * `scope_outside_client`.
+ * Human-only: pending grants and a single-use invitation in one unit of work and
+ * `contact.invited` emitted; 409 `gate_unmet` (G1) for a full-client grant before acceptance;
+ * 422 `scope_outside_client`.
  */
 export const inviteContactMutation = (options?: Partial<Options<InviteContactData>>): UseMutationOptions<InviteContactResponse, InviteContactError, Options<InviteContactData>> => {
     const mutationOptions: UseMutationOptions<InviteContactResponse, InviteContactError, Options<InviteContactData>> = {

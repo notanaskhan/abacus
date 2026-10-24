@@ -901,7 +901,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.organisations.tin.TinConflict
-    summary: This taxpayer ID is already on file for another of the firm's entities.
+    summary: 'This taxpayer ID can''t be stored for this entity. Generic on purpose: it never says which
+      entity, or whose client, holds it (DEC-227).'
   tin_invalid:
     status: 422
     raised_by:

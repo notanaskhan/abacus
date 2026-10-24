@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 import abacus.modules.engagements.api  # registers the client facts and authz lookups
 from abacus.api import create_app
@@ -31,7 +32,13 @@ from abacus.modules.organisations.api import (
     TinKindNotAllowed,
     seal_tin,
 )
-from abacus.modules.organisations.tin import reveal_tin
+from abacus.modules.organisations.tin import (
+    REVEAL_LIMIT,
+    TinRevealNeedsMfa,
+    TinRevealRateLimited,
+    clear_tin,
+    reveal_tin,
+)
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
 from .agent_tests.support import Seeder
@@ -62,6 +69,7 @@ class _Firm:
     def __init__(self, seed: Seeder) -> None:
         self.seed = seed
         self.tenant = uuid.uuid4()
+        self.admin: AuthContext | None = None
 
     async def make(self, *, synthetic: bool = True) -> _Firm:
         await self.seed.run(
@@ -171,9 +179,14 @@ class _Firm:
             role,
         )
 
-    async def seal(self, entity: uuid.UUID, raw: str, kind: str) -> None:
-        async with uow(self.tenant_ctx) as tx:
-            await seal_tin(tx, self.tenant_ctx, entity, raw, kind)  # pyright: ignore[reportArgumentType] -- a TIN kind code
+    async def seal(
+        self, entity: uuid.UUID, raw: str, kind: str, *, by: AuthContext | None = None
+    ) -> None:
+        """Seal as a person who may edit the client (a firm admin unless `by` is given)."""
+        who = by or self.admin or (await self.person(firm_role="firm_admin"))[0]
+        self.admin = self.admin or who
+        async with uow(who.tenant) as tx:
+            await seal_tin(tx, who, entity, raw, kind)  # pyright: ignore[reportArgumentType] -- a TIN kind code
 
     async def count(self, sql: str, *args: object) -> int:
         return int(str(await self.seed.value(sql, *args)))
@@ -278,9 +291,14 @@ async def test_ac9_no_recent_mfa_no_role_or_a_firm_role_alone_is_403(
     await firm.member(engagement, staff, "staff")
     admin, _ = await firm.person(firm_role="firm_admin")
 
-    for who in (stale, staff, admin):
-        with pytest.raises(Forbidden):
+    # Stale MFA is the step-up answer (the role allowed it); no role or a firm role alone is a
+    # plain denial at the role layer (security review, DEC-227).
+    with pytest.raises(TinRevealNeedsMfa):
+        await reveal_tin(stale, entity, "verify_identity")
+    for who in (staff, admin):
+        with pytest.raises(Forbidden) as denied:
             await reveal_tin(who, entity, "verify_identity")
+        assert denied.value.layer != "attribute"
     # Stale MFA still shows the control: the UI steps up (allowed_actions leaves MFA to acting).
     assert "tin.reveal" in (await live.client_record(stale, client)).allowed_actions
     assert "tin.reveal" not in (await live.client_record(admin, client)).allowed_actions
@@ -360,6 +378,7 @@ async def test_ac9_the_route_answers_no_store_and_refuses_without_mfa(
             headers={"Authorization": f"Bearer {idp.token(subject)}"},
         )
         assert no_mfa.status_code == 403
+        assert no_mfa.json()["detail"] == "mfa_step_up_required"  # the UI steps up on this
         assert FAKE_SSN_DIGITS not in no_mfa.text
         answer = await http.post(
             path,
@@ -382,3 +401,104 @@ async def test_ac9_the_route_answers_no_store_and_refuses_without_mfa(
         )
         == 1
     )
+
+
+# --- security review (DEC-227) ------------------------------------------------------------------
+
+
+async def test_ac9_reveals_beyond_the_hourly_cap_are_429_logged_and_audited(
+    migrated_db: MigratedDatabase, capsys: pytest.CaptureFixture[str]
+) -> None:
+    firm, partner, _, entity, engagement = await _world(migrated_db)
+    await firm.seal(entity, FAKE_SSN, "ssn")
+    # An old reveal falls outside the rolling hour; REVEAL_LIMIT - 1 recent ones leave one.
+    for minutes in [90] + [5] * (REVEAL_LIMIT - 1):
+        await firm.seed.run(
+            "INSERT INTO tin_reveals (tenant_id, client_entity_id, engagement_id, user_id, "
+            "reason_code, mfa_at, actor_kind, revealed_at) VALUES ($1, $2, $3, $4, "
+            "'prepare_return', now(), 'human', now() - make_interval(mins => $5))",
+            firm.tenant,
+            entity,
+            engagement,
+            partner.user_id,
+            minutes,
+        )
+    await reveal_tin(partner, entity, "prepare_return")  # the last one inside the cap
+    capsys.readouterr()
+    with pytest.raises(TinRevealRateLimited) as limited:
+        await reveal_tin(partner, entity, "review_return")
+    facts = limited.value.facts
+    assert facts["limit"] == REVEAL_LIMIT
+    assert isinstance(facts["retry_after"], int) and 0 < facts["retry_after"] <= 3600
+    out = capsys.readouterr().out
+    assert "tin.reveal_throttled" in out and str(partner.user_id) in out
+    assert "review_return" in out and FAKE_SSN_DIGITS not in out and "3456" not in out
+    assert (
+        await firm.count(
+            "SELECT count(*) FROM tin_reveals WHERE tenant_id = $1 AND revealed_at > "
+            "now() - interval '1 hour'",
+            firm.tenant,
+        )
+        == REVEAL_LIMIT
+    )
+    assert (
+        await firm.count(
+            "SELECT count(*) FROM audit_events WHERE tenant_id = $1 "
+            "AND action = 'tin.reveal_throttled'",
+            firm.tenant,
+        )
+        == 1
+    )
+    # Another person's cap is their own.
+    other, _ = await firm.person()
+    await firm.member(engagement, other, "manager")
+    assert (await reveal_tin(other, entity, "prepare_return")).value == FAKE_SSN_DIGITS
+
+
+async def test_ac9_sealing_needs_a_person_who_may_edit_the_client(
+    migrated_db: MigratedDatabase,
+) -> None:
+    firm, partner_on_team, client, entity, engagement = await _world(migrated_db)
+    manager, _ = await firm.person()
+    await firm.member(engagement, manager, "manager")  # reads the client, can't edit it
+    with pytest.raises(Forbidden):  # no `client.update`: nothing is touched
+        await firm.seal(entity, FAKE_SSN, "ssn", by=manager)
+    outsider, _ = await firm.person()
+    with pytest.raises(NotFound):  # off the client entirely: absent
+        await firm.seal(entity, FAKE_SSN, "ssn", by=outsider)
+    admin, _ = await firm.person(firm_role="firm_admin")
+    walled_admin, _ = await firm.person(firm_role="firm_admin")
+    await firm.seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, $3, $4)",
+        firm.tenant,
+        walled_admin.user_id,
+        client,
+        admin.user_id,
+    )
+    with pytest.raises(NotFound):  # a wall reads as absence, never as a conflict
+        await firm.seal(entity, FAKE_SSN, "ssn", by=walled_admin)
+    with pytest.raises(NotFound):
+        async with uow(walled_admin.tenant) as tx:
+            await clear_tin(tx, walled_admin, entity)
+    assert (
+        await firm.count(
+            "SELECT count(*) FROM client_entities WHERE id = $1 AND tin_status = 'on_file'",
+            entity,
+        )
+        == 0
+    )
+    assert partner_on_team.user_id != admin.user_id
+
+
+async def test_ac9_a_conflict_is_generic_and_a_check_failure_is_not_a_conflict(
+    migrated_db: MigratedDatabase,
+) -> None:
+    firm, _, _, entity, _ = await _world(migrated_db)
+    _, other = await firm.client("Marcus Feld")
+    await firm.seal(entity, FAKE_SSN, "ssn")
+    with pytest.raises(TinConflict) as conflict:
+        await firm.seal(other, FAKE_SSN, "ssn")
+    assert conflict.value.facts == {}  # no hint of which entity holds it
+    with pytest.raises(IntegrityError):  # a CHECK violation (bad kind) is not `tin_conflict`
+        await firm.seal(other, "900-55-1234", "passport")

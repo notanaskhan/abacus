@@ -18627,6 +18627,10 @@ export type RevealTinErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too many in the window: retry after Retry-After
+     */
+    429: ErrorOut;
 };
 
 export type RevealTinError = RevealTinErrors[keyof RevealTinErrors];

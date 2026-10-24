@@ -17,18 +17,29 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import math
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Final, Literal
 from uuid import UUID
 
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
-from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
+from abacus.kernel.db import tenant_session
+from abacus.kernel.errors import (
+    DomainConflict,
+    DomainForbidden,
+    DomainInvalid,
+    DomainRateLimited,
+    NotFound,
+    ServiceUnavailable,
+)
+from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.identity.api import (
@@ -52,6 +63,14 @@ RevealReason = Literal[
     "verify_identity",
 ]
 REVEAL: Final = "tin.reveal"
+# DEC-227: at most this many reveals per person per firm in a rolling hour. A preparer working a
+# household's returns or a notice reveals a handful; twenty an hour covers a busy afternoon of
+# e-file corrections and bounds what one stolen session can read to twenty TINs an hour.
+REVEAL_LIMIT: Final = 20
+REVEAL_WINDOW_SECONDS: Final = 3600
+_UNIQUE_VIOLATION: Final = "23505"
+_TIN_UNIQUE_INDEX: Final = "client_entities_one_tin"
+WriteAction = Literal["client.update", "client.intake"]
 # Until C19 (T-01) gates §7216 consent, only a synthetic firm may hold an individual's TIN.
 _GATED_KINDS: Final = frozenset({"ssn", "itin"})
 _SEPARATORS: Final = re.compile(r"[\s-]")
@@ -64,6 +83,12 @@ _reveals = meter(__name__).create_counter(
     unit="{reveal}",
     description="Logged TIN reveals, by reason code (never the entity or the value).",
 )
+_throttled = meter(__name__).create_counter(
+    "abacus.organisations.tin_reveals_throttled",
+    unit="{refusal}",
+    description="TIN reveals refused by the per-person hourly cap, by reason code.",
+)
+_log = get_logger(__name__)
 
 
 class TinInvalid(DomainInvalid):
@@ -80,9 +105,23 @@ class TinKindNotAllowed(DomainInvalid):
 
 
 class TinConflict(DomainConflict):
-    """This taxpayer ID is already on file for another of the firm's entities."""
+    """This taxpayer ID can't be stored for this entity. Generic on purpose: it never says
+    which entity, or whose client, holds it (DEC-227)."""
 
     code = "tin_conflict"
+
+
+class TinRevealNeedsMfa(DomainForbidden):
+    """Your role allows the reveal, but your last MFA is older than 15 minutes: verify again,
+    then retry (the UI's step-up)."""
+
+    code = "mfa_step_up_required"
+
+
+class TinRevealRateLimited(DomainRateLimited):
+    """You have revealed the most TINs allowed in an hour: retry after `retry_after` seconds."""
+
+    code = "tin_reveal_rate_limited"
 
 
 def normalise_tin(raw: str) -> str:
@@ -138,16 +177,59 @@ _CLEAR = text(
 _SEALED = text("SELECT tin_sealed, tin_kind FROM client_entities WHERE id = :id")
 
 
+async def _writable_entity(
+    session: AsyncSession, ctx: AuthContext, entity_id: UUID, action: WriteAction
+) -> UUID:
+    """The entity's client, after `action` is authorised on it. A walled or unknown entity is
+    404 before anything is touched, so a write can't tell a wall from a missing entity."""
+    seen = await visible_clients(ctx, "client.read", Client.id)
+    client_id = (
+        await session.execute(
+            select(ClientEntity.client_id)
+            .join(Client, Client.id == ClientEntity.client_id)
+            .where(ClientEntity.id == entity_id, seen)
+        )
+    ).scalar_one_or_none()
+    if client_id is None:
+        raise NotFound("client_entity")
+    try:
+        await authorise(ctx, action, Resource.client(ctx.tenant_id, client_id))
+    except Forbidden as denied:
+        if denied.layer == "wall":
+            raise NotFound("client_entity") from None
+        raise
+    return client_id
+
+
+def _is_tin_duplicate(exc: IntegrityError) -> bool:
+    orig = exc.orig
+    cause = getattr(orig, "__cause__", None)
+    constraint = getattr(orig, "constraint_name", None) or getattr(cause, "constraint_name", None)
+    return getattr(orig, "sqlstate", None) == _UNIQUE_VIOLATION and constraint in (
+        _TIN_UNIQUE_INDEX,
+        None,
+    )
+
+
 async def seal_tin(
-    tx: UnitOfWork, tenant: TenantContext, entity_id: UUID, raw: str, kind: TinKind
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    entity_id: UUID,
+    raw: str,
+    kind: TinKind,
+    *,
+    action: WriteAction = "client.update",
 ) -> MaskedTin:
     """Seal and store `raw` as the entity's TIN, in the caller's unit of work, with one
-    `client_entity.updated` audit event naming the field, never the value. 422 `tin_invalid`,
-    422 `tin_kind_not_allowed`, 409 `tin_conflict`, 404 for an unknown entity."""
+    `client_entity.updated` audit event naming the field, never the value. `action` is
+    authorised on the entity's client first (walled or unknown: 404). 422 `tin_invalid`, 422
+    `tin_kind_not_allowed`, 409 `tin_conflict` (generic). Any other integrity failure is raised
+    as it is, never read as a conflict (DEC-227)."""
+    await _writable_entity(tx.session, ctx, entity_id, action)
     digits = normalise_tin(raw)
-    if kind in _GATED_KINDS and not await is_synthetic_firm(tenant):
+    if kind in _GATED_KINDS and not await is_synthetic_firm(ctx.tenant):
         raise TinKindNotAllowed(facts={"client_entity_id": str(entity_id)})
-    sealed = await seal(tenant.tenant_id, digits.encode(), _aad(entity_id))
+    sealed = await seal(ctx.tenant_id, digits.encode(), _aad(entity_id))
     try:
         async with tx.session.begin_nested():
             written = await tx.session.execute(
@@ -156,22 +238,31 @@ async def seal_tin(
                     "sealed": sealed,
                     "last4": digits[-4:],
                     "kind": kind,
-                    "fingerprint": fingerprint_tin(tenant.tenant_id, digits),
+                    "fingerprint": fingerprint_tin(ctx.tenant_id, digits),
                     "id": entity_id,
                 },
             )
             if written.scalar_one_or_none() is None:
                 raise NotFound("client_entity")
-    except IntegrityError:
-        raise TinConflict(facts={"client_entity_id": str(entity_id)}) from None
+    except IntegrityError as exc:
+        if _is_tin_duplicate(exc):
+            raise TinConflict from None
+        raise
     tx.record("client_entity.updated", target=Target("client_entity", entity_id), after=Ref(tin=1))
     return MaskedTin(kind, digits[-4:])
 
 
 async def clear_tin(
-    tx: UnitOfWork, entity_id: UUID, status: Literal["none", "applied_for"] = "none"
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    entity_id: UUID,
+    status: Literal["none", "applied_for"] = "none",
+    *,
+    action: WriteAction = "client.update",
 ) -> None:
-    """Remove the entity's TIN (or mark it applied for); the envelope goes with it."""
+    """Remove the entity's TIN (or mark it applied for); the envelope goes with it. Authorised as
+    `seal_tin` is."""
+    await _writable_entity(tx.session, ctx, entity_id, action)
     cleared = await tx.session.execute(_CLEAR, {"status": status, "id": entity_id})
     if cleared.scalar_one_or_none() is None:
         raise NotFound("client_entity")
@@ -221,8 +312,10 @@ async def may_reveal(ctx: AuthContext, client_id: UUID) -> bool:
 
 async def reveal_tin(ctx: AuthContext, entity_id: UUID, reason: RevealReason) -> RevealedTin:
     """The one call that returns a plain TIN. 404 when the entity's client isn't visible to the
-    caller (walls first, DEC-43) or no TIN is on file; 403 when no open engagement of the client
-    gives the caller `tin.reveal` (offshore, no recent MFA, no role)."""
+    caller (walls first, DEC-43) or no TIN is on file; 403 `mfa_step_up_required` when a role
+    allows it but MFA is missing or older than 15 minutes (the UI steps up); a plain 403 when no
+    open engagement of the client gives the caller `tin.reveal` (offshore, no role); 429
+    `tin_reveal_rate_limited` past `REVEAL_LIMIT` reveals in a rolling hour (DEC-227)."""
     async with tenant_session(ctx.tenant) as session:
         seen = await visible_clients(ctx, "client.read", Client.id)
         client_id = (
@@ -234,19 +327,65 @@ async def reveal_tin(ctx: AuthContext, entity_id: UUID, reason: RevealReason) ->
         ).scalar_one_or_none()
     if client_id is None:
         raise NotFound("client_entity")
+    mfa_at = ctx.mfa_at
+    if mfa_at is None:  # no MFA in this session at all: step up before any check
+        raise TinRevealNeedsMfa(facts={"client_entity_id": str(entity_id)})
     allowed_on: UUID | None = None
+    denied: Forbidden | None = None
     for resource in await _client_engagements(ctx, client_id):
         try:
             await authorise(ctx, REVEAL, resource, reason=reason)
-        except Forbidden:
+        except Forbidden as refused:
+            # Keep the attribute layer (stale MFA) over a role or condition denial elsewhere:
+            # the role allowed it, so the person can step up and retry (DEC-227).
+            if denied is None or refused.layer == "attribute":
+                denied = refused
             continue
         allowed_on = resource.engagement_id
         break
     if allowed_on is None:
-        raise Forbidden(REVEAL, "role")
-    if ctx.mfa_at is None:  # authorise required recent MFA; the row records when
-        raise Forbidden(REVEAL, "attribute")
+        if denied is not None and denied.layer == "attribute":
+            raise TinRevealNeedsMfa(facts={"client_entity_id": str(entity_id)})
+        raise denied or Forbidden(REVEAL, "relationship")
+    try:
+        return await _reveal_once(ctx, entity_id, reason, allowed_on, mfa_at)
+    except _OverCap as over:
+        await _record_throttle(ctx, entity_id, reason, allowed_on)
+        raise TinRevealRateLimited(
+            facts={"limit": REVEAL_LIMIT, "retry_after": over.retry_after}
+        ) from None
+
+
+class _OverCap(Exception):
+    def __init__(self, retry_after: int) -> None:
+        super().__init__("over the hourly reveal cap")
+        self.retry_after = retry_after
+
+
+_LOCK_PERSON = text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
+_RECENT = text(
+    "SELECT count(*) AS n, min(revealed_at) AS oldest, clock_timestamp() AS now "
+    "FROM tin_reveals WHERE user_id = :user "
+    "AND revealed_at > clock_timestamp() - make_interval(secs => :window)"
+)
+
+
+async def _reveal_once(
+    ctx: AuthContext, entity_id: UUID, reason: RevealReason, allowed_on: UUID, mfa_at: datetime
+) -> RevealedTin:
     async with uow(ctx.tenant) as tx:
+        # One person's reveals are counted one at a time, so parallel calls can't pass the cap.
+        await tx.session.execute(
+            _LOCK_PERSON, {"key": f"tin_reveal:{ctx.tenant_id}:{ctx.user_id}"}
+        )
+        recent = (
+            await tx.session.execute(
+                _RECENT, {"user": ctx.user_id, "window": REVEAL_WINDOW_SECONDS}
+            )
+        ).one()
+        if int(recent.n) >= REVEAL_LIMIT:
+            elapsed = (recent.now - recent.oldest).total_seconds()
+            raise _OverCap(max(1, math.ceil(REVEAL_WINDOW_SECONDS - elapsed)))
         found = (await tx.session.execute(_SEALED, {"id": entity_id})).one_or_none()
         if found is None or found.tin_sealed is None:
             raise NotFound("tin")
@@ -263,7 +402,7 @@ async def reveal_tin(ctx: AuthContext, entity_id: UUID, reason: RevealReason) ->
                     "engagement": allowed_on,
                     "user": ctx.user_id,
                     "reason": reason,
-                    "mfa": ctx.mfa_at,
+                    "mfa": mfa_at,
                 },
             )
         ).scalar_one()
@@ -279,7 +418,32 @@ async def reveal_tin(ctx: AuthContext, entity_id: UUID, reason: RevealReason) ->
     return RevealedTin(entity_id, kind, plain.decode(), reveal_id)
 
 
+async def _record_throttle(
+    ctx: AuthContext, entity_id: UUID, reason: RevealReason, engagement_id: UUID
+) -> None:
+    """The security record of a refused reveal: an audit event in its own unit of work (the
+    reveal's rolled back), a warning log naming the person and the reason, and a counter by
+    reason. Identifiers and codes only; never the TIN."""
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "tin.reveal_throttled",
+            target=Target("client_entity", entity_id),
+            after=Ref(limit=REVEAL_LIMIT),
+            scope=Scope(engagement_id=engagement_id),
+        )
+    _throttled.add(1, {"reason": reason})
+    _log.warning(
+        "tin.reveal_throttled",
+        tenant_id=ctx.tenant_id,
+        user_id=ctx.user_id,
+        client_entity_id=entity_id,
+        reason=reason,
+        limit=REVEAL_LIMIT,
+    )
+
+
 __all__ = [
+    "REVEAL_LIMIT",
     "MaskedTin",
     "RevealReason",
     "RevealedTin",
@@ -287,6 +451,8 @@ __all__ = [
     "TinInvalid",
     "TinKind",
     "TinKindNotAllowed",
+    "TinRevealNeedsMfa",
+    "TinRevealRateLimited",
     "clear_tin",
     "fingerprint_tin",
     "mask_tin",

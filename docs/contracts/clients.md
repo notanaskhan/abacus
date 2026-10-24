@@ -63,9 +63,11 @@ Code: `backend/src/abacus/modules/organisations/contract.py`. Tags: **R** restri
 | Status | Body | When |
 |---|---|---|
 | 404 | `{"detail": "not found"}` | `clients.v2` off; a walled or unknown client or entity |
-| 403 | `{"detail": "forbidden"}` | no action; an offshore member, stale MFA or no role on the client's open engagements on reveal |
+| 403 | `{"detail": "forbidden"}` | no action; an offshore member or no role on the client's open engagements on reveal |
+| 403 | `{"detail": "mfa_step_up_required", "facts": {"client_entity_id": "…"}}` | reveal: a role allows it but MFA is missing or older than 15 minutes; verify again and retry (DEC-227) |
+| 429 | `{"detail": "tin_reveal_rate_limited", "facts": {"limit": 20, "retry_after": 1234}}` + `Retry-After` | reveal: the person's 20 reveals in a rolling hour are used (DEC-227) |
 | 404 | `{"detail": "not found"}` | reveal: no TIN on file for the entity |
-| 409 | `{"detail": "tin_conflict", "facts": {"client_entity_id": "…"}}` | `seal_tin` (no route yet): the TIN is on file for another entity of the firm |
+| 409 | `{"detail": "tin_conflict"}` | `seal_tin` (no route yet): the TIN can't be stored for this entity; no facts, so nothing says where it is on file (DEC-227) |
 | 422 | `{"detail": "tin_kind_not_allowed", "facts": {"client_entity_id": "…"}}` | `seal_tin`: an SSN or ITIN on a firm that is not synthetic, until C19 |
 | 409 | `{"detail": "stale_version", "facts": {"client_id": "…"}}` | PATCH with an old `seen_version` |
 | 409 | `{"detail": "illegal_transition", "facts": {"client_id": "…"}}` | a person moves a prospect to active |
@@ -110,6 +112,7 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | v1 | | | stub 2026-10-23 (P-07-T04); index, record, overview, relationships and PATCH live 2026-10-23 (P-07-T08, T09) |
 
 ## 11. Open points
+- DEC-227 (security review): a per-person cap of 20 reveals per rolling hour (429, audited `tin.reveal_throttled`, warning log, counter); `seal_tin` and `clear_tin` authorise `client.update` (or `client.intake`) on the entity's client first, walled 404; a generic `tin_conflict`; stale MFA answers `mfa_step_up_required`.
 - DEC-223 (P-07-T10): the reveal is authorised per open engagement of the client; the response is `Cache-Control: no-store`; 422 `tin_kind_not_allowed` and 409 `tin_conflict` come from `organisations.api.seal_tin` (intake, P-07-T42, is its first route); a counter counts reveals by reason; ADR-167's `pii_kind` flag waits for its acceptance.
 - DEC-141: `not_offshore` on the reveal and `firm_partner` on reads land with the live routes (a condition without its registered facts fails closed); the PATCH status change is nested (`status_change`) so that every status field in the document is a plain enum; the reveal reason codes; the manager and preparer paths added when live; the reveal response as the one plain-TIN payload.
 - The facet keys and the `last_activity_event_type` wording table are confirmed by P-07-T08 and P-07-T11.

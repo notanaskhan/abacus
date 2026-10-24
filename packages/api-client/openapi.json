@@ -39487,7 +39487,7 @@
     },
     "/v1/client-entities/{entity_id}/tin/reveal": {
       "post": {
-        "description": "Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on\none of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or\nunknown entity or no TIN on file. One `tin_reveals` row and one `tin.revealed` audit event in\nthe same unit of work (the reason, never the value); `Cache-Control: no-store`.",
+        "description": "Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on\none of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or\nunknown entity or no TIN on file; 403 `mfa_step_up_required` when only MFA is stale; 429\n`tin_reveal_rate_limited` past 20 reveals an hour (DEC-227). One `tin_reveals` row and one\n`tin.revealed` audit event in the same unit of work (the reason, never the value);\n`Cache-Control: no-store`.",
         "operationId": "reveal_tin",
         "parameters": [
           {
@@ -39593,6 +39593,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too many in the window: retry after Retry-After"
           }
         },
         "summary": "Reveal Tin Route",
@@ -41410,7 +41420,7 @@
     },
     "/v1/contacts/{contact_id}/invitations": {
       "post": {
-        "description": "Human-only: pending grants and a single-use invitation in one unit of work, `contact.invited`\nemitted; 409 `gate_unmet` (G1) for a full-client grant before acceptance; 422\n`scope_outside_client`.",
+        "description": "Human-only: pending grants and a single-use invitation in one unit of work and\n`contact.invited` emitted; 409 `gate_unmet` (G1) for a full-client grant before acceptance;\n422 `scope_outside_client`.",
         "operationId": "invite_contact",
         "parameters": [
           {

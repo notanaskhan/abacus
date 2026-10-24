@@ -30,3 +30,4 @@ updated: 2026-10-24
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-225 | Draft G1, completing the accepted engagement, cardinality, start-acceptance deferral | No |
+- 2026-10-24: security review fix (DEC-227), failing test first: a draft naming only an entity skipped the client check, and the G1 lookup read the entity's engagements unfiltered. `_check_scope` now always resolves the entity's client, reads the person's walls (`authorise` does not wall a firm-level client resource) and authorises `engagement.create` on it (walled or unknown 404); reads, validation and create re-check it, and the G1 lookup is limited to that client. 6 integration tests pass.

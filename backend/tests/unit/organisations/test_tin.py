@@ -69,3 +69,21 @@ def test_only_the_reveal_schema_carries_a_plain_tin() -> None:
             continue
         refs = [p.get("$ref", "") for p in prop.get("anyOf", [prop])]
         assert any(r.endswith(f"/{MaskedTinOut.__name__}") for r in refs), carrier
+
+
+async def test_a_rate_limit_answers_429_with_retry_after_and_identifier_facts() -> None:
+    """DEC-227: the cap's refusal is 429, `Retry-After` in seconds, facts `limit` and
+    `retry_after` only."""
+    import json
+
+    from abacus.api import app as app_module
+    from abacus.modules.organisations.tin import REVEAL_LIMIT, TinRevealRateLimited
+
+    refused = TinRevealRateLimited(facts={"limit": REVEAL_LIMIT, "retry_after": 1234})
+    answer = await app_module._rate_limited(None, refused)  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the handler itself
+    assert answer.status_code == 429
+    assert answer.headers["retry-after"] == "1234"
+    assert json.loads(bytes(answer.body)) == {
+        "detail": "tin_reveal_rate_limited",
+        "facts": {"limit": REVEAL_LIMIT, "retry_after": 1234},
+    }

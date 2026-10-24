@@ -484,15 +484,17 @@ async def client_relationships_route(
 
 
 @client_entities_router.post(
-    "/{entity_id}/tin/reveal", action="tin.reveal", response_model=TinRevealOut
+    "/{entity_id}/tin/reveal", action="tin.reveal", response_model=TinRevealOut, errors=(429,)
 )
 async def reveal_tin_route(
     entity_id: UUID, body: TinRevealIn, ctx: Ctx, response: Response
 ) -> TinRevealOut:
     """Human-only: a live, onshore person with recent MFA and a reason, holding `tin.reveal` on
     one of the client's open engagements (P-07-T10, DEC-223); 403 otherwise, 404 for a walled or
-    unknown entity or no TIN on file. One `tin_reveals` row and one `tin.revealed` audit event in
-    the same unit of work (the reason, never the value); `Cache-Control: no-store`."""
+    unknown entity or no TIN on file; 403 `mfa_step_up_required` when only MFA is stale; 429
+    `tin_reveal_rate_limited` past 20 reveals an hour (DEC-227). One `tin_reveals` row and one
+    `tin.revealed` audit event in the same unit of work (the reason, never the value);
+    `Cache-Control: no-store`."""
     await _gate(ctx)
     revealed = await tin.reveal_tin(ctx, entity_id, body.reason)
     response.headers["Cache-Control"] = "no-store"

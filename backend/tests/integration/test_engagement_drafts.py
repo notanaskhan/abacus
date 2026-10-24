@@ -316,3 +316,66 @@ async def test_ac19_a_duplicate_answers_409_until_confirmed(migrated_db: Migrate
         "SELECT form, tax_year FROM tax_returns WHERE engagement_id = $1", target
     )
     assert [(r["form"], r["tax_year"]) for r in forms] == [("1040", 2025)]
+
+
+# --- security review (DEC-227) ------------------------------------------------------------------
+
+
+async def _wall(firm: _Firm, who: AuthContext, client: uuid.UUID, by: AuthContext) -> None:
+    await firm.seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, $3, $4)",
+        firm.tenant,
+        who.user_id,
+        client,
+        by.user_id,
+    )
+
+
+async def test_ac19_a_walled_person_cannot_name_the_entity_alone_or_read_its_gates(
+    migrated_db: MigratedDatabase,
+) -> None:
+    firm, hannah, margaret = await _world(migrated_db)
+    staff = await firm.person()
+    ashford = await firm.client("Ashford")
+    await firm.prospect(ashford, margaret)
+    await _wall(firm, margaret, ashford[0], hannah)
+
+    for client_id in (None, ashford[0]):
+        with pytest.raises(NotFound):  # a wall reads as absence (DEC-43)
+            await drafts.create_draft(
+                margaret,
+                client_id=client_id,
+                client_entity_id=ashford[1],
+                type_code="ebp_audit",
+                step="client_type",
+                payload=_payload(margaret, staff),
+            )
+    with pytest.raises(NotFound):  # an unknown entity, too
+        await drafts.create_draft(
+            margaret,
+            client_id=None,
+            client_entity_id=uuid.uuid4(),
+            type_code="ebp_audit",
+            step="client_type",
+            payload={},
+        )
+    # A draft saved before the wall reads as absent once the wall is up, gates included.
+    open_client = await firm.client("Bluestem")
+    await firm.prospect(open_client, margaret)
+    draft = await drafts.create_draft(
+        margaret,
+        client_id=None,
+        client_entity_id=open_client[1],
+        type_code="ebp_audit",
+        step="client_type",
+        payload=_payload(margaret, staff),
+    )
+    assert draft.client_id is None
+    await _wall(firm, margaret, open_client[0], hannah)
+    with pytest.raises(NotFound):
+        await drafts.get_draft(margaret, draft.id)
+    with pytest.raises(NotFound):
+        await drafts.validate_draft(margaret, draft.id, "client_type")
+    with pytest.raises(NotFound):
+        await drafts.create_from_draft(margaret, draft.id, confirm_duplicate=False)

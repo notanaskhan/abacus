@@ -60,10 +60,12 @@ from abacus.modules.engagements.type_catalogue import (
 )
 from abacus.modules.identity.api import (
     AuthContext,
+    Forbidden,
     Resource,
     add_member,
     authorise,
     engagement_team_query,
+    walled_from,
 )
 from abacus.modules.organisations.api import client_of_entity
 
@@ -174,15 +176,34 @@ def _check_type(code: str | None) -> None:
         raise UnknownEngagementType(facts={"type_code": code})
 
 
-async def _check_scope(ctx: AuthContext, client_id: UUID | None, entity_id: UUID | None) -> None:
-    """The client must be one the person may act on (walls first, 404); an entity must be the
-    client's."""
-    if client_id is not None:
-        await authorise(ctx, CREATE, Resource.client(ctx.tenant_id, client_id))
+async def _check_scope(
+    ctx: AuthContext, client_id: UUID | None, entity_id: UUID | None
+) -> UUID | None:
+    """The client the draft names, after `engagement.create` is authorised on it: given an
+    entity, always the entity's own client (an entity alone never skips the check). A walled or
+    unknown client or entity is 404 before anything else is said about it (DEC-43, DEC-227); an
+    entity of another client the person may see is 422 `entity_outside_client`."""
+    owner = client_id
     if entity_id is not None:
         owner = await client_of_entity(ctx.tenant, entity_id)
-        if owner is None or (client_id is not None and owner != client_id):
-            raise EntityOutsideClient(facts={"client_entity_id": str(entity_id)})
+        if owner is None:
+            raise NotFound("client_entity")
+    if owner is None:
+        return None
+    # `authorise` does not wall a firm-level resource (identity's `_walled` needs an engagement),
+    # so the person's walls are read here, before the role check (create_engagement's way).
+    if owner in await walled_from(ctx.tenant, ctx.user_id):
+        raise NotFound("client")
+    try:
+        await authorise(ctx, CREATE, Resource.client(ctx.tenant_id, owner))
+    except Forbidden as denied:
+        if denied.layer == "wall":
+            raise NotFound("client") from None
+        raise
+    if client_id is not None and owner != client_id:
+        await _check_scope(ctx, client_id, None)  # the named client is checked as well
+        raise EntityOutsideClient(facts={"client_entity_id": str(entity_id)})
+    return owner
 
 
 def _view(r: RowMapping) -> DraftView:
@@ -259,9 +280,11 @@ async def create_draft(
 
 
 async def get_draft(ctx: AuthContext, draft_id: UUID) -> DraftView:
+    """The owner's draft; 404 once a wall stands between them and its client (DEC-227)."""
     await authorise(ctx, CREATE, Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
         found = await _own(session, ctx, draft_id)
+    await _check_scope(ctx, found.client_id, found.client_entity_id)
     return await _with_gates(ctx, found)
 
 
@@ -347,11 +370,17 @@ def _date(payload: dict[str, object], key: str) -> date | None:
     return date.fromisoformat(value) if isinstance(value, str) else None
 
 
-async def _g1_engagement(session: AsyncSession, d: DraftView) -> Engagement | None:
+async def _g1_engagement(
+    session: AsyncSession, d: DraftView, client_id: UUID | None
+) -> Engagement | None:
     """The engagement whose acceptance the draft's G1 reads: the draft's own prospect, or the
-    client entity's engagement of this type and period that is waiting to be completed."""
+    client entity's engagement of this type and period that is waiting to be completed. Only
+    within `client_id`, the client `_check_scope` authorised (DEC-227)."""
+    if client_id is None:
+        return None
     if d.prospect_engagement_id is not None:
-        return await session.get(Engagement, d.prospect_engagement_id)
+        found = await session.get(Engagement, d.prospect_engagement_id)
+        return found if found is not None and found.client_id == client_id else None
     entry = entry_of(d.type_code)
     end = _date(d.payload, "fiscal_period_end")
     if entry is None or d.client_entity_id is None or end is None:
@@ -360,6 +389,7 @@ async def _g1_engagement(session: AsyncSession, d: DraftView) -> Engagement | No
         await session.execute(
             select(Engagement)
             .where(
+                Engagement.client_id == client_id,
                 Engagement.client_entity_id == d.client_entity_id,
                 Engagement.type == entry.engagement_type,
                 Engagement.fiscal_period_end == end,
@@ -375,8 +405,9 @@ async def _gates(ctx: AuthContext, d: DraftView) -> list[GateView]:
     entry = entry_of(d.type_code)
     if entry is None:
         return []
+    client_id = await _check_scope(ctx, d.client_id, d.client_entity_id)
     async with tenant_session(ctx.tenant) as session:
-        target = await _g1_engagement(session, d)
+        target = await _g1_engagement(session, d, client_id)
         acceptance = None if target is None else await latest_acceptance(session, target.id)
     views: list[GateView] = []
     for gate in required_gates(entry.engagement_type):
@@ -523,6 +554,7 @@ async def create_from_draft(
     await authorise(ctx, CREATE, Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
         d = await _own(session, ctx, draft_id)
+    scoped = await _check_scope(ctx, d.client_id, d.client_entity_id)
     entry = entry_of(d.type_code)
     if d.type_code is not None and entry is None:
         raise UnknownEngagementType(facts={"type_code": d.type_code})
@@ -539,7 +571,7 @@ async def create_from_draft(
     if group_audit and not (entry.group_audit_allowed and await _entitled(ctx, "group_audit")):
         raise DraftIncomplete(facts={"step": "client_type", "draft_id": str(draft_id)})
     async with tenant_session(ctx.tenant) as session:
-        target = await _g1_engagement(session, d)
+        target = await _g1_engagement(session, d, scoped)
         acceptance = None if target is None else await latest_acceptance(session, target.id)
     if (
         target is None
