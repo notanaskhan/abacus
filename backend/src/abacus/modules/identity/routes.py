@@ -33,7 +33,9 @@ from abacus.modules.identity.firm_settings import (
 )
 from abacus.modules.identity.invitations import accept_invitation
 from abacus.modules.identity.me import FirmFacts, firm_facts, me_details, set_default_office
+from abacus.modules.identity.mfa_floor import mfa_required
 from abacus.modules.identity.portal_contract import MeMfaOut, MePortalOut
+from abacus.modules.identity.portal_session import factor_enrolled
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
     IDENTITY,
@@ -169,6 +171,15 @@ async def me(
     tenant = TenantContext(active, "human", user) if active is not None else None
     view = await clock_view(tenant)
     details = await me_details(tenant, signed_in.user.id) if tenant is not None else None
+    # P-08-T17: a client person's second step in the active firm (never a factor or a code).
+    mfa = None
+    if active is not None and any(
+        m.tenant_id == active and m.kind == "client" for m in memberships
+    ):
+        mfa = MeMfaOut(
+            enrolled=await factor_enrolled(signed_in.user.id),
+            required=await mfa_required(active, signed_in.user.id),
+        )
     return MeOut(
         user_id=signed_in.user.id,
         email=signed_in.user.email,
@@ -190,6 +201,7 @@ async def me(
         job_title=details.job_title if details else None,
         default_office_id=details.default_office_id if details else None,
         offices=[OfficeOut(id=o.id, name=o.name) for o in details.offices] if details else [],
+        mfa=mfa,
     )
 
 

@@ -70,7 +70,9 @@ async def client() -> AsyncIterator[httpx.AsyncClient]:
 
 
 async def _portal(seed: Seeder) -> tuple[uuid.UUID, str, Person, str]:
-    """A firm with an active portal host and one client person (Claire) with a grant."""
+    """A firm with an active portal host and one client person (Claire) with a grant. A
+    `contributor` grant: the MFA floor (P-08-T17) asks an `owner` for a second step, which
+    `test_portal_mfa.py` covers."""
     tenant = await seed.firm()
     host = f"brightwaterhale-{uuid.uuid4().hex[:8]}.portal-example.test"
     ctx = TenantContext(tenant, "human", str(uuid.uuid4()))
@@ -88,7 +90,7 @@ async def _portal(seed: Seeder) -> tuple[uuid.UUID, str, Person, str]:
     )
     await seed.run(
         "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
-        "VALUES ($1, $2, 'owner', 'engagement', $3)",
+        "VALUES ($1, $2, 'contributor', 'engagement', $3)",
         tenant,
         claire.user_id,
         engagement,

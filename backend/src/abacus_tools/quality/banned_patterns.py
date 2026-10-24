@@ -619,6 +619,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     # P-08-T10 (ADR-168): the portal's sign-in by emailed code, under `PRE_SESSION`.
     | {"/v1/portal/auth/start", "/v1/portal/auth/verify", "/v1/portal/auth/resend"}
     | {"/v1/portal/auth/refresh"}
+    # P-08-T17 (ADR-168): the second step and its first-time setup, under `PRE_SESSION`.
+    | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

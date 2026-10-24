@@ -63,6 +63,8 @@ from abacus.modules.identity.context import (
     system_context_for_run,
 )
 from abacus.modules.identity.events import (
+    AccessChanged,
+    ClientAccessRevoked,
     ClientInvitationIssued,
     FirmAgentsResumed,
     PortalSignInCodeRequested,
@@ -110,6 +112,12 @@ from abacus.modules.identity.invitations import (
 )
 from abacus.modules.identity.labels import ROLE_LABELS
 from abacus.modules.identity.member_hooks import register_member_added
+from abacus.modules.identity.mfa_floor import (
+    MfaRequirement,
+    mfa_required,
+    owner_grant,
+    register_mfa_requirement,
+)
 from abacus.modules.identity.portal_auth_routes import portal_auth_router
 from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.portal_idp import (
@@ -122,6 +130,7 @@ from abacus.modules.identity.portal_idp import (
     check_issuer,
     totp_at,
 )
+from abacus.modules.identity.portal_mfa import revoke_portal_access
 from abacus.modules.identity.portal_session import IssuedCode, issue_sign_in_code
 from abacus.modules.identity.repository import (
     EngagementRole,
@@ -261,8 +270,19 @@ register_tenant_clock(tenant_demo_time)
 # G-01-T04: identity's own firm-settings keys and its At a glance row.
 register_identity_settings()
 
+# P-08-T17 (DEC-34): identity's floor predicate; engagements registers the designations.
+register_mfa_requirement("owner_grant", owner_grant)
+# P-08 Story 3.4: a person's access changed, so their portal sessions and trusted devices go.
+SUBSCRIPTIONS = {
+    AccessChanged.event_type: revoke_portal_access,
+    ClientAccessRevoked.event_type: revoke_portal_access,
+}
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
+
 __all__ = [
     "ACTION_KEY",
+    "ACTIVITIES",
     "CODE_DIGITS",
     "EQR_ROLES",
     "FULL_ROLES",
@@ -277,9 +297,11 @@ __all__ = [
     "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)
     "SELF",
     "STAFF",
+    "SUBSCRIPTIONS",
     "TOTP_STEP_SECONDS",
     "TOTP_WINDOW",
     "WALL_SAFE",
+    "WORKFLOWS",
     "AbacusRoute",
     "AbacusRouter",
     "Actor",
@@ -314,6 +336,7 @@ __all__ = [
     "LastPartner",
     "LevelNotAvailable",
     "MemberFacts",
+    "MfaRequirement",
     "NoActiveTenant",
     "PortalIdp",
     "PortalIdpUnavailable",
@@ -397,6 +420,7 @@ __all__ = [
     "letter_policy",
     "member_context",
     "member_facts",
+    "mfa_required",
     "my_engagement_roles",
     "my_engagements",
     "names_of",
@@ -419,6 +443,7 @@ __all__ = [
     "register_independence",
     "register_member_added",
     "register_member_removed",
+    "register_mfa_requirement",
     "register_office_list",
     "register_scope_resolver",
     "register_settings_area",

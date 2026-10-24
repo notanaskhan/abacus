@@ -71,6 +71,8 @@ NON_TENANT_TABLES = frozenset(
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}
     # 0116 (P-08-T10, ADR-168): portal sign-in comes before any tenant; definers only.
     | {"sign_in_challenges", "sign_in_locks"}
+    # 0133 (P-08-T17): a person's second step and the firm's trusted devices; definers only.
+    | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -214,6 +216,7 @@ GLOBAL_TABLES = frozenset(
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
     | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
+    | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}  # 0133 (P-08-T17)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -255,6 +258,11 @@ DEFINER_FUNCTIONS = frozenset(
     | {"portal_sign_in_missed", "portal_sign_in_consume", "portal_sign_in_resend"}
     | {"portal_session_start", "portal_session_resolve", "portal_session_rotate"}
     | {"portal_session_end_id"}
+    # 0133 (P-08-T17): the second step, its setup, trusted devices and revocation.
+    | {"portal_mfa_begin", "portal_mfa_attempt", "portal_mfa_missed", "portal_mfa_backup_use"}
+    | {"portal_mfa_setup_claim", "portal_mfa_factor_pending", "portal_mfa_enrol"}
+    | {"portal_mfa_complete", "portal_mfa_enrolled", "portal_session_mark_mfa"}
+    | {"portal_device_trust", "portal_device_check", "portal_access_revoke"}
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}

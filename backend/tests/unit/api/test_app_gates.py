@@ -196,6 +196,11 @@ NOT_CREATING = {
     "/v1/portal/auth/verify",
     "/v1/portal/auth/refresh",
     "/v1/portal/auth/sign-out",
+    # P-08-T17: the second step and its setup return a session or a key; nothing is created
+    # the caller can address.
+    "/v1/portal/auth/mfa",
+    "/v1/portal/auth/mfa/setup",
+    "/v1/portal/auth/mfa/setup/verify",
     # P-07-T04 (clients stub): a reveal returns the value once and stores nothing but its audit.
     "/v1/client-entities/{entity_id}/tin/reveal",
     # P-07-T17 (contacts stub): a resend replaces the token and an unlock clears a lock, so 200.

@@ -1796,6 +1796,11 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_sign_in_missed", "portal_sign_in_consume", "portal_sign_in_resend"}  # 0116
         | {"portal_session_end_id"}  # 0116
         | {"portal_session_start", "portal_session_resolve", "portal_session_rotate"}  # 0116
+        | {"portal_mfa_begin", "portal_mfa_attempt", "portal_mfa_missed"}  # 0133
+        | {"portal_mfa_backup_use", "portal_mfa_setup_claim", "portal_mfa_factor_pending"}  # 0133
+        | {"portal_mfa_enrol", "portal_mfa_complete", "portal_mfa_enrolled"}  # 0133
+        | {"portal_session_mark_mfa", "portal_device_trust", "portal_device_check"}  # 0133
+        | {"portal_access_revoke"}  # 0133
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

@@ -14,6 +14,7 @@ from abacus.modules.engagements.contacts import (
     contact_portal_user,
     designate_contact,
     engagement_contacts,
+    mfa_designated,
     work_item_scope,
 )
 from abacus.modules.engagements.contract import (
@@ -131,6 +132,7 @@ from abacus.modules.identity.api import (
     register_engagements_of_scope,
     register_independence,
     register_member_added,
+    register_mfa_requirement,
     register_scope_resolver,
     register_work_item_functions,
 )
@@ -179,6 +181,8 @@ register_work_item_kind("assurance", AssuranceKind())
 register_work_item_kind("advisory_project", AdvisoryProjectKind())
 register_scope_resolver("client", client_scope)
 register_scope_resolver("client_entity", client_entity_scope)
+# P-08-T17 (DEC-34, DEC-63): approvers, signing officers and SKE designees need the second step.
+register_mfa_requirement("engagement_designation", mfa_designated)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
 register_clients_of_engagements(clients_of_engagements)
 register_engagements_of_scope(engagements_of_scope)

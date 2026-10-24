@@ -24,6 +24,7 @@ from abacus.modules.organisations.api import (
     client_of_entity,
     contact_client,
     contact_facts,
+    contacts_of_user,
 )
 
 Designation = Literal[
@@ -40,6 +41,14 @@ _INSERT = text(
     "(tenant_id, engagement_id, contact_id, designation, designated_by) "
     "VALUES (:tenant_id, :engagement_id, :contact_id, :designation, :designated_by) "
     "ON CONFLICT DO NOTHING RETURNING contact_id"
+)
+# DEC-34, DEC-63: the designations that sign or approve, so require the portal's second step.
+MFA_DESIGNATIONS: frozenset[str] = frozenset(
+    {"approver_of_record", "signing_officer", "ske_designee"}
+)
+_DESIGNATED = text(
+    "SELECT EXISTS (SELECT 1 FROM engagement_contacts WHERE contact_id = ANY(:ids) "
+    "AND designation = ANY(:designations))"
 )
 _OF = text(
     "SELECT contact_id, designation, designated_by, designated_at FROM engagement_contacts "
@@ -153,3 +162,16 @@ async def client_entity_scope(tenant: TenantContext, entity_id: UUID) -> ScopeFa
     entity's engagements (DEC-211), so `scope_only` never reaches past them."""
     client_id = await client_of_entity(tenant, entity_id)
     return ScopeFacts(client_id) if client_id is not None else None
+
+
+async def mfa_designated(tenant: TenantContext, user_id: UUID) -> bool:
+    """The MFA floor's `engagement_designation` predicate (P-08-T17): whether any of the person's
+    contacts in the firm is designated to sign or approve on any engagement."""
+    async with tenant_session(tenant) as session:
+        contact_ids = await contacts_of_user(session, user_id)
+        if not contact_ids:
+            return False
+        found = await session.execute(
+            _DESIGNATED, {"ids": contact_ids, "designations": sorted(MFA_DESIGNATIONS)}
+        )
+        return bool(found.scalar_one())

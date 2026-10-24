@@ -50,16 +50,18 @@ CLIENT_ONLY = {"portal_home.read", "portal_preferences.update"}
 # (tests/integration/test_portal_branding.py).
 # P-08-T10 serves start, verify, resend and refresh (ADR-168; tests/integration/
 # test_portal_sign_in.py): still never on the public-route list, only under `PRE_SESSION`.
+# P-08-T17 serves the second step and its setup the same way (tests/integration/
+# test_portal_mfa.py).
 SERVED_PRE_SESSION = (
     "/v1/portal/auth/start",
     "/v1/portal/auth/verify",
     "/v1/portal/auth/resend",
     "/v1/portal/auth/refresh",
-)
-PRE_SESSION = (
     "/v1/portal/auth/mfa",
     "/v1/portal/auth/mfa/setup",
     "/v1/portal/auth/mfa/setup/verify",
+)
+PRE_SESSION = (
     "/v1/portal/links/renew",
     "/v1/invitations/preview",
 )

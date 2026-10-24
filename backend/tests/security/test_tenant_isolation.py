@@ -142,6 +142,7 @@ TABLES: tuple[str, ...] = (
     "populations",
     "portal_branding",
     "portal_preferences",
+    "portal_security_policies",
     "procedure_conclusions",
     "procedure_session_events",
     "procedure_workpaper_signatures",
