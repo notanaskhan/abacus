@@ -120,7 +120,9 @@ class MaskedTinOut(BaseModel):
 
     kind: Annotated[TinKind, classified("internal")]
     presence: Annotated[TinPresence, classified("internal")]
-    last4: Annotated[str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted")] = None
+    last4: Annotated[
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
 
 
 class ClientEntityBriefOut(BaseModel):
@@ -287,7 +289,7 @@ class TinRevealOut(BaseModel):
 
     entity_id: Annotated[UUID, classified("internal")]
     kind: Annotated[TinKind, classified("internal")]
-    value: Annotated[str, classified("restricted")]
+    value: Annotated[str, classified("restricted", pii_kind="tin")]
     remask_after_seconds: Annotated[int, classified("internal")] = 10
 
 

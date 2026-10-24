@@ -13,6 +13,7 @@ import abacus
 from abacus.kernel.classification import (
     Classification,
     classified,
+    flag_errors,
     level_of,
     restricted_fields,
     unclassified_fields,
@@ -104,5 +105,15 @@ def test_ac20_every_abacus_model_field_is_classified() -> None:
         f"{model.__module__}.{model.__qualname__}": missing
         for model in _all_abacus_models()
         if (missing := unclassified_fields(model))
+    }
+    assert offenders == {}
+
+
+def test_ac19_every_abacus_model_flag_is_restricted_and_well_formed() -> None:
+    """Q-02-T32 (ADR-167): the classification-tag check covers the tri, phi and pii_kind flags."""
+    offenders = {
+        f"{model.__module__}.{model.__qualname__}": bad
+        for model in _all_abacus_models()
+        if (bad := flag_errors(model))
     }
     assert offenders == {}

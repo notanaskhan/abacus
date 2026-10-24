@@ -11,6 +11,9 @@ objects, no Decimal amounts — client financial figures are Restricted). An exc
 passed as a field (`error=exc`): only its class name is logged, never its message, which can
 carry data. `log_level` filters; third-party libraries' own logs (warnings and up) are rendered
 as the same JSON lines, as `event="library.log"` with the logger name and level only.
+
+Every string that reaches a line, a model's dumped strings included, passes the TIN backstop
+(`kernel.tin_patterns`, ADR-167): an unmasked SSN, ITIN or EIN form is written as its mask.
 """
 
 from __future__ import annotations
@@ -29,14 +32,28 @@ from structlog.types import EventDict
 from abacus.kernel.classification import sensitive_paths
 from abacus.kernel.config import settings
 from abacus.kernel.telemetry import current_span_id, current_trace_id
+from abacus.kernel.tin_patterns import scrub_tins
 
 _SCALARS = (str, int, float, bool, UUID, date)
 _configured = False
 
 
+def _scrubbed(value: object) -> object:
+    """A dumped model with every string through the TIN backstop."""
+    if isinstance(value, str):
+        return scrub_tins(value)
+    if isinstance(value, Mapping):
+        return {k: _scrubbed(v) for k, v in cast(Mapping[str, object], value).items()}
+    if isinstance(value, list):
+        return [_scrubbed(v) for v in cast(list[object], value)]
+    return value
+
+
 def _clean(name: str, value: object) -> object:
     if isinstance(value, BaseException):
         return type(value).__name__  # never the message: it can carry client data
+    if isinstance(value, str):
+        return scrub_tins(value)
     if value is None or isinstance(value, _SCALARS):
         return str(value) if isinstance(value, UUID | date) else value
     if isinstance(value, BaseModel):
@@ -46,7 +63,7 @@ def _clean(name: str, value: object) -> object:
                 f"log field {name!r}: {type(value).__name__} carries Restricted data "
                 f"({', '.join(restricted)}); log identifiers instead"
             )
-        return value.model_dump(mode="json")
+        return _scrubbed(value.model_dump(mode="json"))
     if isinstance(value, Sequence) and not isinstance(value, str | bytes):
         return [_clean(name, item) for item in cast(Sequence[object], value)]
     raise ValueError(
