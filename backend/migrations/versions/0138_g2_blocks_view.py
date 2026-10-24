@@ -44,5 +44,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute("DELETE FROM firm_setting_values WHERE key = 'g2_blocks_view'")
+    op.execute("DELETE FROM firm_setting_values WHERE key IN ('g2_blocks_view')")
     _check(_BEFORE)
