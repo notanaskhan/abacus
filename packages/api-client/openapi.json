@@ -15618,6 +15618,248 @@
         "title": "FirmClientOut",
         "type": "object"
       },
+      "FirmExportDeclineIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "title": "FirmExportDeclineIn",
+        "type": "object"
+      },
+      "FirmExportLinkOut": {
+        "description": "A presigned download link for 15 minutes; Restricted (it opens the firm's whole archive)\nand never logged.",
+        "properties": {
+          "expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "url": {
+            "cls": "restricted",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "expires_at",
+          "manifest_sha256"
+        ],
+        "title": "FirmExportLinkOut",
+        "type": "object"
+      },
+      "FirmExportOut": {
+        "properties": {
+          "approver": {
+            "$ref": "#/components/schemas/FirmExportPersonOut",
+            "cls": "internal"
+          },
+          "available_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Available Until"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Manifest Sha256"
+          },
+          "origin": {
+            "cls": "internal",
+            "enum": [
+              "on_demand",
+              "scheduled"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "ready_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ready At"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by": {
+            "$ref": "#/components/schemas/FirmExportPersonOut",
+            "cls": "internal"
+          },
+          "scope": {
+            "cls": "internal",
+            "const": "all",
+            "title": "Scope",
+            "type": "string"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Size Bytes"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "awaiting_approval",
+              "declined",
+              "building",
+              "ready",
+              "downloaded",
+              "expired",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "scope",
+          "origin",
+          "requested_by",
+          "requested_at",
+          "approver"
+        ],
+        "title": "FirmExportOut",
+        "type": "object"
+      },
+      "FirmExportPageOut": {
+        "description": "The last 12 exports, newest first.",
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FirmExportOut"
+            },
+            "maxItems": 12,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FirmExportPageOut",
+        "type": "object"
+      },
+      "FirmExportPersonOut": {
+        "description": "A person named on the export, for the card's line (\"Waiting for approval \u00b7 Margaret\nOkonkwo\"); the id links to ADM-02.",
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name"
+        ],
+        "title": "FirmExportPersonOut",
+        "type": "object"
+      },
+      "FirmExportRequestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "approver_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Approver User Id",
+            "type": "string"
+          },
+          "scope": {
+            "cls": "internal",
+            "const": "all",
+            "default": "all",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approver_user_id"
+        ],
+        "title": "FirmExportRequestIn",
+        "type": "object"
+      },
       "FirmFactsOut": {
         "description": "P-01-T04 (SHL-03): what the firm switcher shows for a membership.",
         "properties": {
@@ -82105,6 +82347,640 @@
         "x-abacus-action": "own"
       }
     },
+    "/v1/firm/data-exports": {
+      "get": {
+        "description": "ADM-06 a and c: the export card and the history tray.",
+        "operationId": "list_firm_exports",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirmExportPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Firm Exports Route",
+        "tags": [
+          "firm export"
+        ],
+        "x-abacus-action": "firm_export.read"
+      },
+      "post": {
+        "description": "ADM-06 b and g: `awaiting_approval`; 422 `approver_invalid` when the approver is the\nrequester or holds no partner-level membership. Audited `firm_export.requested`.",
+        "operationId": "request_firm_export",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FirmExportRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirmExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Request Firm Export Route",
+        "tags": [
+          "firm export"
+        ],
+        "x-abacus-action": "firm_export.request"
+      }
+    },
+    "/v1/firm/data-exports/{export_id}/approve": {
+      "post": {
+        "description": "ADM-06 f: the named approver starts the build (`building`). 409 `approver_must_differ` for\nthe requester, `export_not_awaiting_approval` once decided. Audited `firm_export.approved`.",
+        "operationId": "approve_firm_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirmExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Approve Firm Export Route",
+        "tags": [
+          "firm export"
+        ],
+        "x-abacus-action": "firm_export.approve"
+      }
+    },
+    "/v1/firm/data-exports/{export_id}/decline": {
+      "post": {
+        "description": "The named approver declines (`declined`); the same 409s as approve. Audited\n`firm_export.declined`.",
+        "operationId": "decline_firm_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FirmExportDeclineIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirmExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decline Firm Export Route",
+        "tags": [
+          "firm export"
+        ],
+        "x-abacus-action": "firm_export.approve"
+      }
+    },
+    "/v1/firm/data-exports/{export_id}/link": {
+      "post": {
+        "description": "A 15-minute link for the requester or the approver while the archive is `ready` or\n`downloaded` (409 `export_not_ready` before); 410 `export_expired` after the 7 days. Audited\n`firm_export.downloaded`.",
+        "operationId": "link_firm_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirmExportLinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the code, link or window expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Link Firm Export Route",
+        "tags": [
+          "firm export"
+        ],
+        "x-abacus-action": "firm_export.download"
+      }
+    },
     "/v1/firm/drafted-guidance": {
       "get": {
         "operationId": "drafted_guidance",
@@ -94569,7 +95445,7 @@
                 }
               }
             },
-            "description": "Gone: the sign-in code expired or was used"
+            "description": "Gone: the code, link or window expired or was used"
           },
           "422": {
             "content": {
@@ -94690,7 +95566,7 @@
                 }
               }
             },
-            "description": "Gone: the sign-in code expired or was used"
+            "description": "Gone: the code, link or window expired or was used"
           },
           "422": {
             "content": {
@@ -94817,7 +95693,7 @@
                 }
               }
             },
-            "description": "Gone: the sign-in code expired or was used"
+            "description": "Gone: the code, link or window expired or was used"
           },
           "422": {
             "content": {
@@ -95066,7 +95942,7 @@
                 }
               }
             },
-            "description": "Gone: the sign-in code expired or was used"
+            "description": "Gone: the code, link or window expired or was used"
           },
           "422": {
             "content": {
@@ -95412,7 +96288,7 @@
                 }
               }
             },
-            "description": "Gone: the sign-in code expired or was used"
+            "description": "Gone: the code, link or window expired or was used"
           },
           "422": {
             "content": {

@@ -7318,6 +7318,128 @@ export type FirmClientOut = {
 };
 
 /**
+ * FirmExportDeclineIn
+ */
+export type FirmExportDeclineIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * FirmExportLinkOut
+ *
+ * A presigned download link for 15 minutes; Restricted (it opens the firm's whole archive)
+ * and never logged.
+ */
+export type FirmExportLinkOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
+ * FirmExportOut
+ */
+export type FirmExportOut = {
+    approver: FirmExportPersonOut;
+    /**
+     * Available Until
+     */
+    available_until?: string | null;
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256?: string | null;
+    /**
+     * Origin
+     */
+    origin: 'on_demand' | 'scheduled';
+    /**
+     * Ready At
+     */
+    ready_at?: string | null;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    requested_by: FirmExportPersonOut;
+    /**
+     * Scope
+     */
+    scope: 'all';
+    /**
+     * Size Bytes
+     */
+    size_bytes?: number | null;
+    /**
+     * Status
+     */
+    status: 'awaiting_approval' | 'declined' | 'building' | 'ready' | 'downloaded' | 'expired' | 'failed';
+};
+
+/**
+ * FirmExportPageOut
+ *
+ * The last 12 exports, newest first.
+ */
+export type FirmExportPageOut = {
+    /**
+     * Items
+     */
+    items: Array<FirmExportOut>;
+};
+
+/**
+ * FirmExportPersonOut
+ *
+ * A person named on the export, for the card's line ("Waiting for approval · Margaret
+ * Okonkwo"); the id links to ADM-02.
+ */
+export type FirmExportPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * FirmExportRequestIn
+ */
+export type FirmExportRequestIn = {
+    /**
+     * Approver User Id
+     */
+    approver_user_id: string;
+    /**
+     * Scope
+     */
+    scope?: 'all';
+};
+
+/**
  * FirmFactsOut
  *
  * P-01-T04 (SHL-03): what the firm switcher shows for a membership.
@@ -38230,6 +38352,296 @@ export type MyConfirmationsResponses = {
 
 export type MyConfirmationsResponse = MyConfirmationsResponses[keyof MyConfirmationsResponses];
 
+export type ListFirmExportsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports';
+};
+
+export type ListFirmExportsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListFirmExportsError = ListFirmExportsErrors[keyof ListFirmExportsErrors];
+
+export type ListFirmExportsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportPageOut;
+};
+
+export type ListFirmExportsResponse = ListFirmExportsResponses[keyof ListFirmExportsResponses];
+
+export type RequestFirmExportData = {
+    body: FirmExportRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports';
+};
+
+export type RequestFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestFirmExportError = RequestFirmExportErrors[keyof RequestFirmExportErrors];
+
+export type RequestFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    202: FirmExportOut;
+};
+
+export type RequestFirmExportResponse = RequestFirmExportResponses[keyof RequestFirmExportResponses];
+
+export type ApproveFirmExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/approve';
+};
+
+export type ApproveFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveFirmExportError = ApproveFirmExportErrors[keyof ApproveFirmExportErrors];
+
+export type ApproveFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportOut;
+};
+
+export type ApproveFirmExportResponse = ApproveFirmExportResponses[keyof ApproveFirmExportResponses];
+
+export type DeclineFirmExportData = {
+    body: FirmExportDeclineIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/decline';
+};
+
+export type DeclineFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeclineFirmExportError = DeclineFirmExportErrors[keyof DeclineFirmExportErrors];
+
+export type DeclineFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportOut;
+};
+
+export type DeclineFirmExportResponse = DeclineFirmExportResponses[keyof DeclineFirmExportResponses];
+
+export type LinkFirmExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/link';
+};
+
+export type LinkFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LinkFirmExportError = LinkFirmExportErrors[keyof LinkFirmExportErrors];
+
+export type LinkFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportLinkOut;
+};
+
+export type LinkFirmExportResponse = LinkFirmExportResponses[keyof LinkFirmExportResponses];
+
 export type DraftedGuidanceData = {
     body?: never;
     headers?: {
@@ -43896,7 +44308,7 @@ export type PortalMfaErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -43951,7 +44363,7 @@ export type PortalMfaSetupErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -44002,7 +44414,7 @@ export type PortalMfaSetupVerifyErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -44108,7 +44520,7 @@ export type PortalResendErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -44249,7 +44661,7 @@ export type PortalVerifyErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**

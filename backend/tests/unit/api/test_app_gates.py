@@ -217,6 +217,10 @@ NOT_CREATING = {
     "/v1/portal/room/suggest",
     # P-08-T18 (SPEC-320 AC-12): the invitation preview reads; nothing is created.
     "/v1/invitations/preview",
+    # Q-02-T38 (compliance-kernel v1.1 stub): a decision on an existing export, and a link.
+    "/v1/firm/data-exports/{export_id}/approve",
+    "/v1/firm/data-exports/{export_id}/decline",
+    "/v1/firm/data-exports/{export_id}/link",
 }
 
 
@@ -248,6 +252,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
         "/v1/portal/binders/{binder_id}/drops",
         "/v1/portal/auth/resend",
+        # Q-02-T38: a firm-export request waits for its approver, then builds, so 202.
+        "/v1/firm/data-exports",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)

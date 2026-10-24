@@ -7,7 +7,7 @@
 | Status | live behind `compliance.incidents` (Q-02-T33, 2026-10-24) |
 | Provider epic | Q-02 (`platform`, OQ-5) |
 | Consumers | ADM-06 a, d (G-02), G-02-T18 (timeline and decisions), Q-02-T38 (contract stub with seed fixtures), Q-02-T46 (independent AC tests), RB-27 (Q-02-T51) |
-| Freeze sprint | with compliance-kernel v1.1 (Q-02-T38, S8) |
+| Freeze sprint | with compliance-kernel v1.1 (Q-02-T38, S8; `compliance-kernel.md` indexes this half and its seed fixtures) |
 | Flag | `compliance.incidents` (off: both routes answer 404; the staff route answers 404 if any named firm has it off, and nothing starts) |
 | Spec | Q-02 §3.9 (AC-38, AC-39), §4.2, §4.3, §4.5 to §4.8 (`docs/plan/epics/Q-02.md`) |
 | ADRs | ADR-097, ADR-017, ADR-071, ADR-090; DEC-227, DEC-290 |

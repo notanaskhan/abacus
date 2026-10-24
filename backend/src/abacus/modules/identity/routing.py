@@ -118,8 +118,8 @@ _RESPONSES: dict[int | str, dict[str, object]] = {
 # (NotImplementedYet).
 _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
-    # P-08-T10 (SPEC-320 §6): the portal sign-in's answers.
-    410: {"model": ErrorOut, "description": "Gone: the sign-in code expired or was used"},
+    # P-08-T10 (SPEC-320 §6): the portal sign-in's answers; Q-02-T38: a firm export's window.
+    410: {"model": ErrorOut, "description": "Gone: the code, link or window expired or was used"},
     # R-01-T01 (DEC-58 c): a portal drop over the size limit or of a type the portal refuses.
     413: {"model": ErrorOut, "description": "The file is too large"},
     415: {"model": ErrorOut, "description": "The file type is not accepted"},
