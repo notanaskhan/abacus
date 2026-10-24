@@ -52,7 +52,8 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - **Upload:**
   - takes the raw body and the query `filename`;
   - authorises `evidence.upload` with the item's facts before reading the body;
-  - limits: 25 MB; types judged by the leading bytes (PDF, PNG, JPEG, OOXML xlsx/docx, OLE xls/doc, UTF-8 CSV); the same SHA-256 on the item twice is refused;
+  - limits (DEC-296, DEC-58 c): 50 MB, answered by the route (the edge allows the file routes 1 MB more); the type is judged by the leading bytes and must be PDF, JPEG, PNG, HEIC/HEIF, TIFF, GIF, CSV (UTF-8 text that parses as CSV), XLSX or DOCX, and the file name's extension must agree (else 422 `upload_type_not_allowed`; legacy OLE and macro-enabled Office are refused); malware is scanned first; the same SHA-256 on the item twice is refused;
+  - a PDF with active content (`active_content.py`: JavaScript, launch actions, embedded files, open or page actions that run them) is kept but never extracted, previewed, read for words or served by the viewer (409 `active_content`); the upload audits `evidence_version.flagged` and the checks add a firm `active_content` problem;
   - stores a new evidence item titled with the cleaned file name, whose first version has provenance `uploaded` / `client_upload`, links it, audits `evidence.uploaded` and emits `EvidenceUploaded` (which notifies the firm team).
 - **Never opened:** no file is opened, parsed or rendered; file names are plain text only.
 

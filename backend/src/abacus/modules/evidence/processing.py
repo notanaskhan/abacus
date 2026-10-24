@@ -36,6 +36,7 @@ from abacus.modules.evidence import storage
 from abacus.modules.evidence.checks import (
     CHECKER_VERSION,
     ExtractedFields,
+    active_content,
     aging_checks,
     closing_consistent,
     duplicate,
@@ -321,6 +322,9 @@ async def check_upload(given: UploadInput) -> int:
         readable(_fields(row, None)),
         duplicate(other_items[0].id if other_items else None, other is not None),
     ]
+    flagged = active_content(_fields(row, None))
+    if flagged is not None:
+        results.append(flagged)
     if row.status == "extracted" and kind is not None:
         document = await _document(tenant_id, row)
         fields = _fields(row, document)

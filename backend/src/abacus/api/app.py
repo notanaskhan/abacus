@@ -42,7 +42,11 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules import MODULES
-from abacus.modules.evidence.api import MAX_CONTENT_BYTES
+from abacus.modules.evidence.api import (
+    MAX_CONTENT_BYTES,
+    UPLOAD_EDGE_BYTES,
+    UPLOAD_ROUTE_PATHS,
+)
 from abacus.modules.identity import api as identity
 
 # Every module's routers, in MODULES order (P-39; F-03-T07): adding a router edits only that
@@ -171,7 +175,12 @@ def _add_edge_middleware(app: FastAPI) -> None:
     """Innermost first (the last one added is outermost): proxy headers are corrected for the
     trusted load balancer, then the Host is checked, then the body is bounded."""
     s = settings()
-    app.add_middleware(BodyLimit, upload_bytes=MAX_CONTENT_BYTES)
+    app.add_middleware(
+        BodyLimit,
+        upload_bytes=MAX_CONTENT_BYTES,
+        route_bytes=UPLOAD_EDGE_BYTES,
+        route_paths=UPLOAD_ROUTE_PATHS,
+    )
     hosts = list(s.trusted_hosts or ())
     if s.portal_base_domain:
         hosts.append(f"*.{s.portal_base_domain}")  # portal hosts: a branding hint only (INV-4)

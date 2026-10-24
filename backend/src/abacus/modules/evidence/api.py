@@ -119,7 +119,7 @@ from abacus.modules.evidence.storage import (
     check_ready,
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
-from abacus.modules.evidence.uploads import upload
+from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATHS, upload
 from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
@@ -176,7 +176,9 @@ __all__ = [
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
+    "UPLOAD_EDGE_BYTES",
     "UPLOAD_INBOX",
+    "UPLOAD_ROUTE_PATHS",
     "UPLOAD_VERSION",
     "WORDS_VERSION",
     "WORKFLOWS",

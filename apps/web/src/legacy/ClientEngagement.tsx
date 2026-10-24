@@ -54,7 +54,7 @@ import { longDate } from "./importMessages";
 
 // SPEC-020 AC-9: refusals in plain words (the API returns fixed codes).
 const UPLOAD_ERRORS: Record<string, string> = {
-  upload_too_large: "The file is over 25 MB.",
+  upload_too_large: "The file is over 50 MB.",
   upload_type_not_allowed: "Only PDF, Excel, Word, CSV, PNG and JPEG files can be uploaded.",
   // SPEC-029 AC-1: the malware scan refused it; nothing was stored.
   file_refused:

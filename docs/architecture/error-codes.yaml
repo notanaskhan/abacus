@@ -26,6 +26,12 @@ codes:
     raised_by:
     - abacus.modules.connections.service.ActionCapReached
     summary: The engagement reached its daily cap for this action (SPEC-007 AC-4).
+  active_content:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.viewer.ActiveContent
+    summary: 'A PDF with active content is kept but never shown (DEC-296, ED-021): every viewer read
+      refuses it, whatever was derived before the rule existed.'
   adjustment_state:
     status: 409
     raised_by:

@@ -22,6 +22,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import check_facts, gate_client_data, get_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
+from abacus.modules.evidence.active_content import REASON_CODES
 from abacus.modules.evidence.client_view import covered_digits, statement_gap, year_end_cash
 from abacus.modules.evidence.events import InboxFileAdded
 from abacus.modules.evidence.matching import (
@@ -152,7 +153,8 @@ async def add_to_inbox(
     """AC-2: store the file and list it as waiting."""
     role = await _role(ctx, engagement_id)
     await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
-    media_type, digest = await screened(ctx, engagement_id, content)
+    found = await screened(ctx, engagement_id, content, file_name)
+    media_type, digest = found.media_type, found.fingerprint
     async with tenant_session(ctx.tenant) as session:
         if await waiting_with_fingerprint(session, engagement_id, digest):
             raise DuplicateUpload
@@ -181,6 +183,12 @@ async def add_to_inbox(
                 target=Target("inbox_file", row.id),
                 after=Ref(engagement_id=engagement_id, fingerprint=digest, size=len(content)),
             )
+            if found.active_content is not None:  # DEC-296: kept, flagged, never derived from
+                tx.record(
+                    "inbox_file.flagged",
+                    target=Target("inbox_file", row.id),
+                    after=Ref(reason=REASON_CODES[found.active_content]),
+                )
             tx.emit(
                 InboxFileAdded(
                     engagement_id=engagement_id, inbox_file_id=row.id, suggestions=suggested

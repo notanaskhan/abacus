@@ -9,8 +9,10 @@ whose first version has provenance `uploaded` / `client_upload` (ADR-004).
 from __future__ import annotations
 
 import asyncio
+import csv
 import io
 import json
+import re
 import unicodedata
 import zipfile
 from dataclasses import dataclass
@@ -27,6 +29,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref, service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
+from abacus.modules.evidence.active_content import REASON_CODES, reason_of
 from abacus.modules.evidence.events import EvidenceUploaded
 from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
 from abacus.modules.evidence.repository import (
@@ -57,18 +60,50 @@ from abacus.modules.requests.api import (
     read_item_versions,
 )
 
-MAX_UPLOAD_BYTES: Final = 25 * 1024 * 1024
+MAX_UPLOAD_BYTES: Final = 50 * 1024 * 1024  # DEC-58 (c), DEC-296; was SPEC-020's 25 MB
+# The edge lets a file route's body run this far past the limit, so the route answers 422
+# `upload_too_large` itself (DEC-296; ED-018): the item upload, the inbox and the setup files.
+UPLOAD_EDGE_BYTES: Final = MAX_UPLOAD_BYTES + 1024 * 1024
+UPLOAD_ROUTE_PATHS: Final = re.compile(
+    r"/v1/engagements/[^/]+/(?:request-items/[^/]+/uploads|inbox|acceptance/file|letter/file)"
+)
 MAX_NAME: Final = 200
 SOURCE: Final = "client_upload"
 
 PDF: Final = "application/pdf"
 PNG: Final = "image/png"
 JPEG: Final = "image/jpeg"
+HEIC: Final = "image/heic"
+HEIF: Final = "image/heif"
+TIFF: Final = "image/tiff"
+GIF: Final = "image/gif"
 CSV: Final = "text/csv"
 XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 DOCX: Final = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-OLE: Final = "application/x-ole-storage"  # legacy .xls and .doc
+OLE: Final = "application/x-ole-storage"  # legacy .xls and .doc: recognised, never allowed
+XLSM: Final = "application/vnd.ms-excel.sheet.macroEnabled.12"  # recognised, never allowed
+DOCM: Final = "application/vnd.ms-word.document.macroEnabled.12"  # recognised, never allowed
 _OLE_MAGIC: Final = bytes.fromhex("d0cf11e0a1b11ae1")
+# DEC-58 (c) as decided on 2026-10-24 (DEC-296): what an upload may be, and the extensions that
+# agree with each type. The bytes decide the type; the name must agree; anything else is 422.
+ALLOWED_TYPES: Final[dict[str, frozenset[str]]] = {
+    PDF: frozenset({"pdf"}),
+    JPEG: frozenset({"jpg", "jpeg"}),
+    PNG: frozenset({"png"}),
+    HEIC: frozenset({"heic", "heif"}),
+    HEIF: frozenset({"heic", "heif"}),
+    TIFF: frozenset({"tif", "tiff"}),
+    GIF: frozenset({"gif"}),
+    CSV: frozenset({"csv"}),
+    XLSX: frozenset({"xlsx"}),
+    DOCX: frozenset({"docx"}),
+}
+# ISO-BMFF `ftyp` brands of HEIC (HEVC-coded) and other HEIF images.
+_HEIC_BRANDS: Final = frozenset({b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis"})
+_HEIF_BRANDS: Final = frozenset({b"mif1", b"msf1", b"heif"})
+_CSV_SAMPLE: Final = 256 * 1024
+_CSV_DELIMITERS: Final = (",", ";", "\t", "|")
+_MACRO_PARTS: Final = ("vbaproject.bin", "vbadata.xml")
 
 
 class UploadTooLarge(DomainInvalid):
@@ -102,23 +137,44 @@ class ItemClosed(DomainConflict):
 
 
 def sniff(content: bytes) -> str | None:
-    """The allowed media type the content is, judged by its bytes alone (D6), or None."""
+    """The media type the content is, judged by its bytes alone (D6), or None. Legacy OLE and
+    macro-enabled Office files are recognised so they can be named in a refusal; `allowed_type`
+    decides what may be kept."""
     if content.startswith(b"%PDF-"):
         return PDF
     if content.startswith(b"\x89PNG\r\n\x1a\n"):
         return PNG
     if content.startswith(b"\xff\xd8\xff"):
         return JPEG
+    if content.startswith((b"GIF87a", b"GIF89a")):
+        return GIF
+    if content.startswith((b"II*\x00", b"MM\x00*")):
+        return TIFF
+    if content[4:8] == b"ftyp":
+        return _heif(content)
     if content.startswith(_OLE_MAGIC):
         return OLE
     if content.startswith(b"PK\x03\x04"):
         return _ooxml(content)
-    return CSV if _is_text(content) else None
+    return CSV if _is_csv(content) else None
+
+
+def _heif(content: bytes) -> str | None:
+    """An ISO-BMFF file whose major or compatible brands are HEIC or HEIF (a phone photo)."""
+    size = int.from_bytes(content[:4], "big")
+    box = content[8 : max(16, min(size, 256))]
+    brands = {box[i : i + 4] for i in range(0, len(box) - 3, 4) if i != 4}
+    if brands & _HEIC_BRANDS:
+        return HEIC
+    if brands & _HEIF_BRANDS:
+        return HEIF
+    return None
 
 
 def _ooxml(content: bytes) -> str | None:
     """An Office Open XML package: a zip with `[Content_Types].xml` and a workbook or document
-    part. Only the central directory is read; no member is extracted."""
+    part. Only the central directory is read; no member is extracted. A package carrying a VBA
+    project is the macro-enabled type, whatever it is named."""
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as package:
             names = set(package.namelist())
@@ -126,10 +182,11 @@ def _ooxml(content: bytes) -> str | None:
         return None
     if "[Content_Types].xml" not in names:
         return None
+    macros = any(n.casefold().rsplit("/", 1)[-1] in _MACRO_PARTS for n in names)
     if "xl/workbook.xml" in names:
-        return XLSX
+        return XLSM if macros or any(n.startswith("xl/macrosheets/") for n in names) else XLSX
     if "word/document.xml" in names:
-        return DOCX
+        return DOCM if macros else DOCX
     return None
 
 
@@ -141,6 +198,46 @@ def _is_text(content: bytes) -> bool:
     except UnicodeDecodeError:
         return False
     return True
+
+
+def _is_csv(content: bytes) -> bool:
+    """UTF-8 text that parses as CSV (DEC-296): not markup (HTML, SVG, XML start with `<`), and
+    its first rows read strictly with one of the usual delimiters, at least one row holding two
+    or more fields. Other text (a script, prose) is not kept as `text/csv`."""
+    if not _is_text(content):
+        return False
+    text = content[:_CSV_SAMPLE].decode("utf-8", errors="ignore").lstrip("\ufeff")
+    stripped = text.lstrip()
+    if not stripped or stripped.startswith("<"):
+        return False
+    if len(content) > _CSV_SAMPLE:  # the sample may end mid-row
+        text = text[: text.rfind("\n") + 1] or text
+    for delimiter in _CSV_DELIMITERS:
+        try:
+            rows = list(csv.reader(io.StringIO(text), delimiter=delimiter, strict=True))
+        except csv.Error:
+            continue
+        if any(len(row) >= 2 for row in rows):
+            return True
+    return False
+
+
+def extension_of(file_name: str) -> str:
+    """The name's extension, lower case, after the name is cleaned; "" without one."""
+    base = clean_name(file_name)
+    return base.rsplit(".", 1)[-1].casefold() if "." in base.strip(".") else ""
+
+
+def allowed_type(content: bytes, file_name: str | None) -> str:
+    """DEC-58 (c) and DEC-296: the bytes decide the type, it must be one of `ALLOWED_TYPES`, and
+    the file's extension must agree with it (None: a caller with no client-given name). Raises
+    `UploadTypeNotAllowed` otherwise."""
+    media_type = sniff(content)
+    if media_type is None or media_type not in ALLOWED_TYPES:
+        raise UploadTypeNotAllowed
+    if file_name is not None and extension_of(file_name) not in ALLOWED_TYPES[media_type]:
+        raise UploadTypeNotAllowed
+    return media_type
 
 
 def clean_name(name: str) -> str:
@@ -205,29 +302,46 @@ async def authorise_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID)
 
 
 async def check_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> None:
-    """Authorise before the body is read, so a stranger can't make the server take 25 MB."""
+    """Authorise before the body is read, so a stranger can't make the server take 50 MB."""
     await authorise_upload(ctx, engagement_id, item_id)
 
 
-def checked(content: bytes) -> tuple[str, str]:
-    """The content's allowed media type and fingerprint, or the AC-9 refusal."""
+def checked(content: bytes, file_name: str | None = None) -> tuple[str, str]:
+    """The content's allowed media type and fingerprint, or the AC-9 refusal (DEC-296: the
+    name's extension must agree with the bytes; None only for a caller with no client name)."""
     if not content:
         raise UploadEmpty
     if len(content) > MAX_UPLOAD_BYTES:
         raise UploadTooLarge
-    media_type = sniff(content)
-    if media_type is None:
-        raise UploadTypeNotAllowed
-    if not scan(content).clean:  # SPEC-029 AC-1: before anything stores or parses it
+    # SPEC-029 AC-1: scanned before anything stores or parses it, and first, so malware is
+    # answered as malware whatever it claims to be.
+    if not scan(content).clean:
         raise UploadRefused
+    media_type = allowed_type(content, file_name)
     return media_type, storage.fingerprint(content)
 
 
-async def screened(ctx: AuthContext, engagement_id: UUID, content: bytes) -> tuple[str, str]:
+@dataclass(frozen=True)
+class Screened:
+    media_type: str
+    fingerprint: str
+    # DEC-296 (ED-021): why a PDF carries active content, or None. Stored, never derived from.
+    active_content: str | None
+
+
+def _screen(content: bytes, file_name: str) -> Screened:
+    media_type, digest = checked(content, file_name)
+    flag = reason_of(content) if media_type == PDF else None
+    return Screened(media_type, digest, flag)
+
+
+async def screened(
+    ctx: AuthContext, engagement_id: UUID, content: bytes, file_name: str
+) -> Screened:
     """`checked`, off the event loop, auditing a refused file (SPEC-029 AC-1): nothing is
     stored, and only the size is recorded."""
     try:
-        return await asyncio.to_thread(checked, content)
+        return await asyncio.to_thread(_screen, content, file_name)
     except UploadRefused:
         async with uow(ctx.tenant) as tx:
             tx.record(
@@ -249,6 +363,7 @@ async def attach(
     media_type: str,
     source: str,
     note: str | None,
+    active_content: str | None = None,
 ) -> UUID:
     """Inside the caller's unit of work: re-check the item (its facts may have changed), refuse
     a closed item or a duplicate, add the version, link it and announce it. Shared by uploads
@@ -281,6 +396,12 @@ async def attach(
         target=Target("evidence_version", version.id),
         after=Ref(request_item_id=item_id, fingerprint=stored.fingerprint, size=stored.size),
     )
+    if active_content is not None:  # DEC-296: kept, flagged for the team, never derived from
+        tx.record(
+            "evidence_version.flagged",
+            target=Target("evidence_version", version.id),
+            after=Ref(reason=REASON_CODES[active_content]),
+        )
     tx.emit(
         EvidenceUploaded(
             engagement_id=engagement_id,
@@ -308,7 +429,8 @@ async def upload(
     await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
     if on_behalf and not await is_staff_on(ctx, engagement_id):
         raise NotStaff
-    media_type, digest = await screened(ctx, engagement_id, content)
+    found = await screened(ctx, engagement_id, content, file_name)
+    media_type, digest = found.media_type, found.fingerprint
     async with tenant_session(ctx.tenant) as session:
         if await fingerprint_among(session, await read_item_versions(ctx.tenant, item_id), digest):
             raise DuplicateUpload
@@ -334,6 +456,7 @@ async def upload(
             media_type=media_type,
             source=ON_BEHALF_SOURCE if on_behalf else SOURCE,
             note=kept_note,
+            active_content=found.active_content,
         )
     names = await names_of([ctx.user_id])
     return UploadView(

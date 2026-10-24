@@ -40,6 +40,7 @@ from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.repository import (
     get_inbox_file,
@@ -158,6 +159,8 @@ def extract_words(content: bytes, media_type: str) -> WordLayer:
     """In-process (tests, and inside the isolated child): a PDF's words page by page."""
     if media_type != PDF:
         return WordLayer("not_applicable")
+    if is_active(content):  # DEC-296 (ED-021): kept, never read for words
+        return WordLayer("not_applicable", "active_content")
     import pdfplumber
 
     try:

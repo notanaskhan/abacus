@@ -131,6 +131,7 @@ The YAML is the authority for labels. Never invent a synonym.
 | 403 | `{"detail": "forbidden", "facts": {"reason": "offshore"}}` | an offshore member on a reveal or an unscannable page |
 | 403 | `{"detail": "forbidden", "facts": {"reason": "mfa_required"}}` | a TIN-kind reveal with MFA older than the window; the shell runs step-up and retries |
 | 409 | `{"detail": "preview_outdated"}` | the page was rendered before masking existed, until the backfill re-renders it |
+| 409 | `{"detail": "active_content"}` | the manifest, a page, regions or search of a PDF with active content (DEC-296): kept, never shown |
 | 409 | `{"detail": "not_password_protected"}` | unlock on a version that is not locked |
 | 409 | `{"detail": "not_moved"}` | relink on a citation whose state is not `moved` |
 | 422 | `{"detail": "relink_unverified"}` | the old text is not on the successor; the UI offers "Open source" |
