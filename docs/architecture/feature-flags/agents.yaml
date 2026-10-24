@@ -47,6 +47,7 @@ flags:
     description: 'The SHL-20 evidence-screening family (C5 v1.2, P-06-T15): the request-batch screening card, its rerun, feedback and the screening-return follow-up draft routes. When off, those routes answer 404 and the card area shows nothing extra. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. The routes answer 501 until P-06-T20 and P-06-T22.'
     owner: notanaskhan
     created: 2026-10-24
-    expires: 2027-01-22
+    expires: 2027-04-21
+    override: DEC-137
     kind: boolean
     default: false

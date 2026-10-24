@@ -49,6 +49,7 @@ FIRM_LEVEL: Final = frozenset(
         "usage_record",  # an id with no engagement on it; the follow-up makes it exact
         "auth_session",  # P-01-T09: a person's sign-in session spans the firm's engagements
         "legal_hold",  # Q-02-T29: a hold may cover a client or a tax year, not one engagement
+        "engagement_draft",  # P-07-T16: a person's draft, before any engagement exists
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.
