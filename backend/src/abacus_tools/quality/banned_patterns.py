@@ -638,6 +638,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
     # P-08-T18 (DEC-139): the invitation preview, under `PRE_SESSION`.
     | {"/v1/invitations/preview"}
+    # P-08-T21 (DEC-139): a recipient's link renewal, always 202, under `PRE_SESSION`.
+    | {"/v1/portal/links/renew"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

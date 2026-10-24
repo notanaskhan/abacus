@@ -20,11 +20,12 @@ from abacus.api.public_routes import PUBLIC_ROUTES
 from abacus.kernel._flags import PORTAL_HOME_V2, PORTAL_SIGN_IN_V2
 from abacus.kernel.classification import level_of, unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.identity import portal_contract as identity_contract
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
+from abacus.modules.organisations import contacts_contract
 from abacus.modules.portal import contract as portal_contract
 
 Json = dict[str, object]
@@ -42,7 +43,14 @@ ROUTES: dict[tuple[str, str], str] = {
 }
 # Live since P-08-T13 (the home read model): 404 with the flag off, served with it on
 # (tests/integration/test_portal_home.py).
-LIVE = {("get", "/v1/portal/home"), ("put", "/v1/portal/preferences")}
+LIVE = {
+    ("get", "/v1/portal/home"),
+    ("put", "/v1/portal/preferences"),
+    # Live since P-08-T21 (tests/integration/test_portal_recovery.py), served by organisations,
+    # which owns the contact, behind `portal.sign_in_v2`.
+    ("post", f"{CONTACT}/portal-unlock"),
+    ("post", f"{CONTACT}/mfa-reset"),
+}
 HUMAN_ONLY = {"contact.unlock", "contact.mfa_reset"}
 CLIENT_ONLY = {"portal_home.read", "portal_preferences.update"}
 # Pre-session routes: answer before any session, so they wait for ADR-152's list (DEC-139).
@@ -62,8 +70,9 @@ SERVED_PRE_SESSION = (
     "/v1/portal/auth/mfa/setup/verify",
     # P-08-T18 (tests/integration/test_portal_invitations.py): one 404 for every failure.
     "/v1/invitations/preview",
+    # P-08-T21 (tests/integration/test_portal_recovery.py): always 202, one body.
+    "/v1/portal/links/renew",
 )
-PRE_SESSION = ("/v1/portal/links/renew",)
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:
@@ -148,16 +157,20 @@ def test_ac3_the_home_reads_one_covered_scope_and_recovery_is_firm_side() -> Non
 Stub = Callable[[AuthContext], Awaitable[object]]
 
 
+# Both gates serve once their flag is on: the home since P-08-T13, the firm-side recovery
+# (organisations' `_portal_gate`) since P-08-T21.
 @pytest.mark.parametrize(
-    ("module", "flag"),
-    [(portal_contract, PORTAL_HOME_V2), (identity_contract, PORTAL_SIGN_IN_V2)],
+    ("module", "flag", "gate"),
+    [
+        (portal_contract, PORTAL_HOME_V2, "_flag"),
+        (contacts_contract, PORTAL_SIGN_IN_V2, "_portal_gate"),
+    ],
     ids=["portal.home_v2", "portal.sign_in_v2"],
 )
 async def test_ac4_flag_off_is_404_and_flag_on_serves_or_is_501(
-    module: ModuleType, flag: Flag, monkeypatch: pytest.MonkeyPatch
+    module: ModuleType, flag: Flag, gate: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    live = module is portal_contract  # its gate serves once the flag is on (P-08-T13)
-    stub = cast(Stub, module._flag if live else module._stub)  # the gate, tested directly
+    stub = cast(Stub, getattr(module, gate))  # the gate, tested directly
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -176,11 +189,7 @@ async def test_ac4_flag_off_is_404_and_flag_on_serves_or_is_501(
         await stub(ctx)
     assert seen == [flag]
     monkeypatch.setattr(module, "flag_enabled", on)
-    if live:
-        await stub(ctx)
-        return
-    with pytest.raises(NotImplementedYet):
-        await stub(ctx)
+    await stub(ctx)  # served: no 404 and no 501
 
 
 @pytest.mark.parametrize("flag", [PORTAL_HOME_V2, PORTAL_SIGN_IN_V2], ids=lambda f: f.name)
@@ -196,9 +205,11 @@ def test_ac5_me_gains_only_optional_portal_and_mfa_fields() -> None:
     assert not {"portal", "mfa"} & set(cast(list[str], me.get("required", [])))
 
 
-@pytest.mark.parametrize("path", PRE_SESSION)
-def test_ac5_the_pre_session_family_is_not_served_by_the_stub(path: str) -> None:
-    assert path not in PATHS
+@pytest.mark.parametrize("path", SERVED_PRE_SESSION)
+def test_ac5_the_pre_session_family_is_never_on_the_public_route_list(path: str) -> None:
+    """AC-5 (DEC-139): before P-08-T21 this said the stub did not serve them; every one is
+    served now, under `PRE_SESSION`, and none is a public route."""
+    assert path in PATHS
     assert path not in PUBLIC_ROUTES
 
 

@@ -153,3 +153,8 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - `portal_scopes(ctx)`: the role union. Shell "full" with any full-client role, "k1" with only K-1 recipient grants, "limited" otherwise, "none" without grants.
 - `scope_only`: `client_access.scope_covers` answers for the target's own scope only. Scope kinds resolve through `slots.register_scope_resolver` (engagements: `work_item`, `client`); `engagement` is built in; an unregistered kind covers nothing.
 - Contract step (migration 0084, TASK-373): `engagement_members` holds staff roles only. A client role on an engagement is its engagement-scope grant: `owner` is the matrix's `client_admin`, `contributor` its `client_contributor`. `engagement_role`, `visible()`, `client_admins`, client contacts, invitation acceptance (`grant_engagement_role`) and `remove_client_member` (revokes) all read or write grants. A grant needs a client membership.
+
+## Recovery, links and the pause (P-08-T21; DEC-329)
+- `portal_recovery.py`: `reset_portal_mfa` (factor, backup codes, this firm's trusted devices and portal sessions; `portal_mfa.reset`; notice through the outbox), `unlock_portal_mfa` (the factor's second-step lock), `renew_invitation` (a recipient's renewal of an expired invitation, at most twice). Organisations serves the routes, since it owns the contact.
+- `portal_session.check_not_paused`: 503 `sign_in_paused` on the sign-in routes while the firm's `portal_sign_in` control is on (`kernel.controls.control_active`, 10 s cache).
+- `start_sign_in(link_token=…)`: a portal email's link through `slots.claim_link` (communications registers it); every bad link raises `LinkUnusable` (404 `link_expired`).

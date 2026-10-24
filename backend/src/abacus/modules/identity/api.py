@@ -90,6 +90,7 @@ from abacus.modules.identity.events import (
     ClientAccessRevoked,
     ClientInvitationIssued,
     FirmAgentsResumed,
+    PortalMfaResetNoticeRequested,
     PortalSignInCodeRequested,
     StaffInvitationIssued,
 )
@@ -143,7 +144,12 @@ from abacus.modules.identity.mfa_floor import (
 )
 from abacus.modules.identity.people import MemberProfile, set_member_profile
 from abacus.modules.identity.portal_auth_routes import portal_auth_router
-from abacus.modules.identity.portal_contract import contacts_router
+from abacus.modules.identity.portal_contract import (
+    ContactMfaResetOut,
+    ContactPortalStatusOut,
+    PortalLinkRenewIn,
+    PortalLinkRenewOut,
+)
 from abacus.modules.identity.portal_idp import (
     CODE_DIGITS,
     TOTP_STEP_SECONDS,
@@ -155,7 +161,20 @@ from abacus.modules.identity.portal_idp import (
     totp_at,
 )
 from abacus.modules.identity.portal_mfa import revoke_portal_access
-from abacus.modules.identity.portal_session import IssuedCode, factor_enrolled, issue_sign_in_code
+from abacus.modules.identity.portal_recovery import (
+    MfaReset,
+    remove_provider_factor,
+    renew_invitation,
+    reset_portal_mfa,
+    unlock_portal_mfa,
+)
+from abacus.modules.identity.portal_session import (
+    IssuedCode,
+    SignInPaused,
+    check_not_paused,
+    factor_enrolled,
+    issue_sign_in_code,
+)
 from abacus.modules.identity.repository import (
     ContactGrantRow,
     EngagementRole,
@@ -236,6 +255,7 @@ from abacus.modules.identity.settings_registry import (
 )
 from abacus.modules.identity.slots import (
     InvitationParties,
+    LinkOutcome,
     ScopeFacts,
     consent_given,
     contact_delegations_provider,
@@ -245,6 +265,7 @@ from abacus.modules.identity.slots import (
     register_contact_delegations,
     register_engagement_resource,
     register_invitation_parties,
+    register_link_claim,
     register_member_teams,
     register_office_list,
     register_scope_resolver,
@@ -286,7 +307,6 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_support_router,
     invitation_router,
     signup_router,
-    contacts_router,  # C5 v1.1 portal half (P-08-T01 stub)
     auth_router,
     portal_auth_router,  # P-08-T10 (ADR-168): the portal's sign-in by emailed code
     settings_router,  # firm-settings family v1 (G-01-T02 stub)
@@ -354,6 +374,8 @@ __all__ = [
     "ContactGrant",
     "ContactGrantRow",
     "ContactInvitation",
+    "ContactMfaResetOut",
+    "ContactPortalStatusOut",
     "ContactView",
     "DemoClockRefused",
     "DisplayNameRequired",
@@ -378,12 +400,17 @@ __all__ = [
     "JwtVerifier",
     "LastPartner",
     "LevelNotAvailable",
+    "LinkOutcome",
     "MemberFacts",
     "MemberProfile",
     "MfaRequirement",
+    "MfaReset",
     "NoActiveTenant",
     "PortalIdp",
     "PortalIdpUnavailable",
+    "PortalLinkRenewIn",
+    "PortalLinkRenewOut",
+    "PortalMfaResetNoticeRequested",
     "PortalScopes",
     "PortalSignInCodeRequested",
     "Resource",
@@ -392,6 +419,7 @@ __all__ = [
     "ScopeFacts",
     "ScopeKind",
     "SettingKey",
+    "SignInPaused",
     "Staff",
     "StaffInvitationIssued",
     "StaffRole",
@@ -424,6 +452,7 @@ __all__ = [
     "change_contact_grants",
     "change_role",
     "check_issuer",
+    "check_not_paused",
     "client_admins",
     "clock_view",
     "close_contact_invitations",
@@ -505,6 +534,7 @@ __all__ = [
     "register_gates",
     "register_independence",
     "register_invitation_parties",
+    "register_link_claim",
     "register_member_added",
     "register_member_removed",
     "register_member_teams",
@@ -515,8 +545,11 @@ __all__ = [
     "register_work_item_functions",
     "remove_client",
     "remove_member",
+    "remove_provider_factor",
+    "renew_invitation",
     "resend_contact_invitation",
     "resend_invitation",
+    "reset_portal_mfa",
     "reset_verifier",
     "resolve_scope",
     "revoke_client_access",
@@ -541,6 +574,7 @@ __all__ = [
     "token_verifier",
     "totp_at",
     "unlock_contact_sign_in",
+    "unlock_portal_mfa",
     "visible",
     "visible_clients",
     "visible_items",

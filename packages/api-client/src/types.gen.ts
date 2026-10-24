@@ -13058,6 +13058,29 @@ export type PortalHomeWorkCardOut = {
 };
 
 /**
+ * PortalLinkRenewIn
+ */
+export type PortalLinkRenewIn = {
+    /**
+     * Link Token
+     */
+    link_token: string;
+};
+
+/**
+ * PortalLinkRenewOut
+ *
+ * Always 202 with this shape, for any token; a new link goes only to the address the old one
+ * was sent to. The toast names that address from the SPA's own state, never from here.
+ */
+export type PortalLinkRenewOut = {
+    /**
+     * Accepted
+     */
+    accepted?: true;
+};
+
+/**
  * PortalMarkDoneOut
  */
 export type PortalMarkDoneOut = {
@@ -22223,10 +22246,6 @@ export type ResetContactMfaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResetContactMfaError = ResetContactMfaErrors[keyof ResetContactMfaErrors];
@@ -22283,10 +22302,6 @@ export type UnlockContactPortalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UnlockContactPortalError = UnlockContactPortalErrors[keyof UnlockContactPortalErrors];
@@ -44531,6 +44546,10 @@ export type PortalResendErrors = {
      * Too soon or too many: retry after Retry-After
      */
     429: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type PortalResendError = PortalResendErrors[keyof PortalResendErrors];
@@ -44621,6 +44640,10 @@ export type PortalStartErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type PortalStartError = PortalStartErrors[keyof PortalStartErrors];
@@ -44672,6 +44695,10 @@ export type PortalVerifyErrors = {
      * Locked: too many wrong codes
      */
     423: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type PortalVerifyError = PortalVerifyErrors[keyof PortalVerifyErrors];
@@ -45198,6 +45225,49 @@ export type GetPortalHomeResponses = {
 };
 
 export type GetPortalHomeResponse = GetPortalHomeResponses[keyof GetPortalHomeResponses];
+
+export type PortalLinkRenewData = {
+    body: PortalLinkRenewIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/links/renew';
+};
+
+export type PortalLinkRenewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalLinkRenewError = PortalLinkRenewErrors[keyof PortalLinkRenewErrors];
+
+export type PortalLinkRenewResponses = {
+    /**
+     * Successful Response
+     */
+    202: PortalLinkRenewOut;
+};
+
+export type PortalLinkRenewResponse = PortalLinkRenewResponses[keyof PortalLinkRenewResponses];
 
 export type UpdatePortalPreferencesData = {
     body: PortalPreferencesIn;

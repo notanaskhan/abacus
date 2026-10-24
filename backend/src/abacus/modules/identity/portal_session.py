@@ -35,6 +35,7 @@ from uuid import UUID
 from sqlalchemy import TextClause, text
 
 from abacus.kernel._flags import PORTAL_SIGN_IN_V2
+from abacus.kernel.controls import control_active
 from abacus.kernel.db import TenantContext, platform_transaction
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
@@ -46,6 +47,7 @@ from abacus.modules.identity.mfa_floor import mfa_required, portal_security_poli
 from abacus.modules.identity.portal_idp import email_code_matches, issue_email_code
 from abacus.modules.identity.repository import active_memberships
 from abacus.modules.identity.service import portal_member_context
+from abacus.modules.identity.slots import claim_link
 from abacus.modules.identity.staff_session import ABSOLUTE_SECONDS, IDLE_SECONDS, end_session
 
 COOKIE_NAME: Final = "__Host-abacus-portal"
@@ -84,6 +86,14 @@ class ResendTooSoon(Exception):
     def __init__(self, resend_available_at: datetime) -> None:
         super().__init__("resend_too_soon")
         self.resend_available_at = resend_available_at
+
+
+class LinkUnusable(Exception):
+    """P-08-T21: a sign-in link that can't be used; one answer for every reason (no oracle)."""
+
+
+class SignInPaused(Exception):
+    """P-08-T21 (Story 7.3): the firm's portal sign-in is paused (`portal_sign_in` control)."""
 
 
 class PortalSessionEnded(Exception):
@@ -170,13 +180,44 @@ async def _requested(tenant_id: UUID, user_id: UUID, challenge_id: UUID) -> None
         tx.emit(PortalSignInCodeRequested(challenge_id=challenge_id))
 
 
+async def host_tenant(host: str | None) -> UUID | None:
+    """The firm whose active portal host this is, for server-side checks only (never returned
+    to the visitor, ADR-163 §5)."""
+    async with platform_transaction("portal:sign_in") as conn:
+        found = (
+            await conn.execute(text("SELECT portal_host_tenant(:host)"), {"host": _host(host)})
+        ).scalar_one()
+    return cast(UUID | None, found)
+
+
+async def check_not_paused(host: str | None) -> None:
+    """Story 7.3 (SPEC-320 AC-20): `SignInPaused` while the host's firm has the `portal_sign_in`
+    control on (read through `control_active`, cached 10 s, so a pause lands within 10 s).
+    Existing sessions are unaffected: refresh and every signed-in route never ask."""
+    tenant = await host_tenant(host)
+    if tenant is not None and await control_active("portal_sign_in", tenant):
+        raise SignInPaused
+
+
 async def start_sign_in(
-    host: str | None, email: str, *, invitation_token: str | None = None
+    host: str | None,
+    email: str,
+    *,
+    invitation_token: str | None = None,
+    link_token: str | None = None,
 ) -> Challenge:
     """Always a challenge, for any email on any host (no oracle). With an invitation token
     (P-08-T18), a live invitation of the host's firm sent to this email makes its invitee
-    eligible before they hold a grant; any other token is the ordinary start."""
+    eligible before they hold a grant; any other token is the ordinary start. With a link token
+    (P-08-T21) from a portal email, a link that can't be used raises `LinkUnusable`, the same for
+    every reason; a usable one is used when the email is the one it was sent to, and the start
+    goes on as ordinary either way."""
     began = time.monotonic()
+    if link_token:
+        outcome = await claim_link(_host(host), sha256_hex(link_token), email[:320])
+        if outcome == "bad":
+            await _floor(began)
+            raise LinkUnusable
     params: dict[str, object] = {
         "host": _host(host),
         "email": email[:320],

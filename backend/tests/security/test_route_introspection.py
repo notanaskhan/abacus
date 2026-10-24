@@ -801,6 +801,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/portal/binders/{binder_id}/drops", "evidence.upload"),
     ("POST", "/v1/portal/binders/{binder_id}/mark-done", "binder.mark_done"),
     ("POST", "/v1/portal/binders/{binder_id}/mark-done/undo", "binder.mark_done"),
+    ("POST", "/v1/portal/links/renew", "pre_session"),
     ("POST", "/v1/portal/request-items/{item_id}/ignore", "request_item.ignore"),
     ("POST", "/v1/portal/request-items/{item_id}/ignore/undo", "request_item.ignore"),
     ("POST", "/v1/portal/request-items/{item_id}/upload-intents", "evidence.upload"),

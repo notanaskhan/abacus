@@ -57,11 +57,14 @@ from abacus.modules.identity.api import (
     invitations_of_contacts,
     invite_contact,
     locked_addresses,
+    remove_provider_factor,
     resend_contact_invitation,
+    reset_portal_mfa,
     revoke_contact,
     scope_facts,
     sign_in_addresses,
     unlock_contact_sign_in,
+    unlock_portal_mfa,
     visible_clients,
 )
 from abacus.modules.identity.api import GrantScopeOutsideClient as ScopeOutsideClient
@@ -711,4 +714,74 @@ async def unlock(ctx: AuthContext, contact_id: UUID) -> tuple[UUID, str, datetim
         await unlock_contact_sign_in(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
+        await unlock_portal_mfa(tx, ctx, contact.user_id)  # P-08-T21: the second step's too
     return contact.id, contact.portal_state, await clock.now(ctx.tenant)
+
+
+# --- P-08-T21: firm-side portal recovery on the client's own path (SPEC-320 AC-18, AC-19) ------
+
+
+@dataclass(frozen=True)
+class PortalUnlocked:
+    contact_id: UUID
+    portal_state: str
+
+
+@dataclass(frozen=True)
+class MfaResetView:
+    contact_id: UUID
+    mfa_enrolled: bool
+    trusted_devices_revoked: int
+    reset_at: datetime
+
+
+async def _client_contact(
+    ctx: AuthContext, action: str, client_id: UUID, contact_id: UUID
+) -> Contact:
+    """The client's contact once `action` is authorised on the client; a contact of another
+    client, an unknown one and a wall all answer the same 404 (INV-3)."""
+    async with tenant_session(ctx.tenant) as session:
+        contact = await get_contact(session, contact_id)
+    if contact is None or contact.client_id != client_id:
+        raise NotFound("contact")
+    try:
+        await _authorise_for_client(ctx, action, contact.client_id)
+    except Forbidden as refused:
+        if refused.layer == "wall":
+            raise NotFound("contact") from None
+        raise
+    return contact
+
+
+async def portal_unlock(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> PortalUnlocked:
+    """Story 7.1: the firm's sign-in lock on where the contact signs in (DEC-303) and the second-
+    step lock on their factor, cleared in one unit of work; `contact.unlocked` names the person
+    who unlocked (INV-5)."""
+    contact = await _client_contact(ctx, "contact.unlock", client_id, contact_id)
+    address = (await sign_in_addresses(ctx.tenant, [(contact.id, contact.user_id)])).get(
+        contact.id
+    )
+    async with uow(ctx.tenant) as tx:
+        await unlock_contact_sign_in(
+            tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
+        )
+        await unlock_portal_mfa(tx, ctx, contact.user_id)
+    return PortalUnlocked(contact.id, contact.portal_state)
+
+
+async def check_mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> None:
+    """Before the idempotency lookup (ED-023's shape): a replay is checked like the first call."""
+    await _client_contact(ctx, "contact.mfa_reset", client_id, contact_id)
+
+
+async def mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> MfaResetView:
+    """Story 7.2: the contact's person's factor, backup codes, trusted devices and portal
+    sessions here, removed in one unit of work with `portal_mfa.reset`; the notice email and the
+    provider's copy of the factor follow."""
+    contact = await _client_contact(ctx, "contact.mfa_reset", client_id, contact_id)
+    async with uow(ctx.tenant) as tx:
+        done = await reset_portal_mfa(
+            tx, ctx, client_id=contact.client_id, contact_id=contact.id, user_id=contact.user_id
+        )
+    await remove_provider_factor(done.factor_ref)
+    return MfaResetView(contact.id, False, done.devices_revoked, await clock.now(ctx.tenant))

@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
@@ -225,3 +225,24 @@ def contact_delegations_provider() -> Delegations:
     if not _DELEGATIONS:
         raise RuntimeError("no contact delegations provider is registered")
     return _DELEGATIONS[0]
+
+
+# --- P-08-T21: a portal email's secure link at sign-in (communications owns the links) ---------
+
+LinkOutcome = Literal["bad", "other", "claimed"]
+LinkClaim = Callable[[str, str, str], Awaitable[LinkOutcome]]
+_LINK_CLAIM: list[LinkClaim] = []
+
+
+def register_link_claim(claim: LinkClaim) -> None:
+    """communications: (host, link token, typed email) -> `bad` for every link that can't be
+    used (unknown, another firm's, used, revoked, expired), `claimed` when the address is the
+    link's (which uses it), `other` otherwise."""
+    if _LINK_CLAIM and not _same(_LINK_CLAIM[0], claim):
+        raise ValueError("the link claim is already registered")
+    _LINK_CLAIM[:] = [claim]
+
+
+async def claim_link(host: str, token: str, email: str) -> LinkOutcome:
+    """Fails closed: with no claim registered every link is `bad`."""
+    return "bad" if not _LINK_CLAIM else await _LINK_CLAIM[0](host, token, email)

@@ -252,6 +252,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
         "/v1/portal/binders/{binder_id}/drops",
         "/v1/portal/auth/resend",
+        # P-08-T21: a link renewal answers 202 for any token (the email goes out later).
+        "/v1/portal/links/renew",
         # Q-02-T38: a firm-export request waits for its approver, then builds, so 202.
         "/v1/firm/data-exports",
     }

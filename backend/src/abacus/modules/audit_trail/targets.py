@@ -51,6 +51,7 @@ FIRM_LEVEL: Final = frozenset(
         "legal_hold",  # Q-02-T29: a hold may cover a client or a tax year, not one engagement
         "engagement_draft",  # P-07-T16: a person's draft, before any engagement exists
         "security_incident",  # Q-02-T33: the firm's incident register (no client or engagement)
+        "secure_link",  # P-08-T21: a portal email's link, for one contact (no engagement)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

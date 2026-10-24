@@ -122,3 +122,12 @@ class PortalSignInCodeRequested(DomainEvent):
     event_type: ClassVar[str] = "portal.sign_in_code_requested"
 
     challenge_id: Annotated[UUID, classified("internal")]
+
+
+class PortalMfaResetNoticeRequested(DomainEvent):
+    """A firm reset a client's second step (P-08-T21, Story 7.2): communications emails the
+    person in the firm's name (C16 `portal.mfa_reset_notice`). Identifiers only."""
+
+    event_type: ClassVar[str] = "portal_mfa.reset_notice_requested"
+
+    user_id: Annotated[UUID, classified("internal")]

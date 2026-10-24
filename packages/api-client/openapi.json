@@ -27334,6 +27334,36 @@
         "title": "PortalHomeWorkCardOut",
         "type": "object"
       },
+      "PortalLinkRenewIn": {
+        "additionalProperties": false,
+        "properties": {
+          "link_token": {
+            "cls": "restricted",
+            "maxLength": 128,
+            "title": "Link Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "link_token"
+        ],
+        "title": "PortalLinkRenewIn",
+        "type": "object"
+      },
+      "PortalLinkRenewOut": {
+        "description": "Always 202 with this shape, for any token; a new link goes only to the address the old one\nwas sent to. The toast names that address from the SPA's own state, never from here.",
+        "properties": {
+          "accepted": {
+            "cls": "internal",
+            "const": true,
+            "default": true,
+            "title": "Accepted",
+            "type": "boolean"
+          }
+        },
+        "title": "PortalLinkRenewOut",
+        "type": "object"
+      },
       "PortalMarkDoneOut": {
         "properties": {
           "marked_by_name": {
@@ -47165,7 +47195,7 @@
     },
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset": {
       "post": {
-        "description": "Remove the factor, the backup codes and the trusted devices; email the client in the\nfirm's name. Needs fresh MFA. Audited as `portal.mfa.reset`.",
+        "description": "Remove the factor, the backup codes and the trusted devices and end the portal sessions;\nemail the client in the firm's name. Security admin with fresh MFA. Audited\n`portal_mfa.reset`; the next sign-in goes to two-step setup.",
         "operationId": "reset_contact_mfa",
         "parameters": [
           {
@@ -47282,28 +47312,18 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reset Contact Mfa Route",
         "tags": [
-          "identity"
+          "contacts"
         ],
         "x-abacus-action": "contact.mfa_reset"
       }
     },
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock": {
       "post": {
-        "description": "Clear a sign-in or two-step lock. Audited as `portal.sign_in.unlocked` naming the person\n(INV-5); a walled client answers 404 (INV-3).",
+        "description": "Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person\n(INV-5); a walled client, or a contact of another client, answers 404 (INV-3).",
         "operationId": "unlock_contact_portal",
         "parameters": [
           {
@@ -47409,21 +47429,11 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Unlock Contact Portal Route",
         "tags": [
-          "identity"
+          "contacts"
         ],
         "x-abacus-action": "contact.unlock"
       }
@@ -95963,6 +95973,16 @@
               }
             },
             "description": "Too soon or too many: retry after Retry-After"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
         "summary": "Portal Resend Route",
@@ -96087,7 +96107,7 @@
     },
     "/v1/portal/auth/start": {
       "post": {
-        "description": "Always 202 with the same shape, for any email on any host.",
+        "description": "Always 202 with the same shape, for any email on any host; 404 `link_expired` for a link\nthat can't be used; 503 `sign_in_paused`.",
         "operationId": "portal_start",
         "parameters": [
           {
@@ -96167,6 +96187,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
         "summary": "Portal Start Route",
@@ -96309,6 +96339,16 @@
               }
             },
             "description": "Locked: too many wrong codes"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
           }
         },
         "summary": "Portal Verify Route",
@@ -97408,6 +97448,96 @@
           "portal"
         ],
         "x-abacus-action": "portal_home.read"
+      }
+    },
+    "/v1/portal/links/renew": {
+      "post": {
+        "operationId": "portal_link_renew",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalLinkRenewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalLinkRenewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal Link Renew Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
       }
     },
     "/v1/portal/preferences": {

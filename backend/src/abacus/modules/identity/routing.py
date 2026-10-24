@@ -75,6 +75,8 @@ PRE_SESSION_PATHS: Final = frozenset(
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
     # P-08-T18 (DEC-139, P-08 §4.3): POR-01 d's invitation preview, one 404 for every failure.
     | {"/v1/invitations/preview"}
+    # P-08-T21 (DEC-139, P-08 §4.3): a recipient renews a portal email's link, always 202.
+    | {"/v1/portal/links/renew"}
 )
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may

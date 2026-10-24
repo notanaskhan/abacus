@@ -940,6 +940,21 @@ async def extend_invitation(session: AsyncSession, invitation_id: UUID, days: in
     )
 
 
+async def count_invitation_renewal(
+    session: AsyncSession, invitation_id: UUID, most: int
+) -> int | None:
+    """P-08-T21 (AC-14): one more recipient renewal of an expired pending invitation, below
+    `most`; the new count, or None when it may not be renewed."""
+    return await session.scalar(
+        text(
+            "UPDATE client_invitations SET renewal_count = renewal_count + 1 "
+            "WHERE id = :id AND status = 'pending' AND expires_at <= clock_timestamp() "
+            "AND renewal_count < :most RETURNING renewal_count"
+        ),
+        {"id": invitation_id, "most": most},
+    )
+
+
 async def set_token_hash(session: AsyncSession, invitation_id: UUID, digest: str | None) -> None:
     await session.execute(
         text("SELECT invitation_token_set(:id, :hash)"), {"id": invitation_id, "hash": digest}

@@ -109,6 +109,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "client_invitations": frozenset(
         {"status", "accepted_by", "accepted_at", "expires_at", "terms_accepted_at"}  # 0140
         | {"used_at", "grant_ids"}  # 0146 (P-07-T25)
+        | {"renewal_count"}  # 0156 (P-08-T21): a recipient's renewal, at most twice
     ),
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),  # F-03-T24

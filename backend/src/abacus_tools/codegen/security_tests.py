@@ -263,12 +263,13 @@ def fresh_mfa_listed() -> list[tuple[str, str]]:
 def fresh_mfa_role(rule: Rule) -> str:
     """A role the row allows once its conditions are cleared (the MFA case isolates the
     attribute); the derived `firm_partner` cell when only it allows; "" when none does."""
-    from abacus.modules.identity.authz import FIRM_PARTNER
-
     for role in HUMAN_ROLES:
         if rule.decisions.get(role) == "allow" and not (rule.scope_only and role in CLIENT_ROLES):
             return role
     return FIRM_PARTNER if rule.decisions.get(FIRM_PARTNER) == "allow" else ""
+
+
+FIRM_PARTNER = "firm_partner"  # the derived cell (DEC-132), as `identity.authz` spells it
 
 
 def render_fresh_mfa() -> str:

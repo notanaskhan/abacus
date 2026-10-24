@@ -31,3 +31,4 @@ SPEC-050 AC-17's settings validation outside local and test gains the database T
 |---|---|---|
 | A requested weaker TLS mode is upgraded to `verify-full`, never honoured | "Whenever TLS is in use, verify" (G-09) | No |
 | Local and test default to an explicit plain connection, not asyncpg's `prefer` | `prefer` is opportunistic TLS with no verification | No |
+| DEC-332 | Recorded in the decision log with the human to-do | No |

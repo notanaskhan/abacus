@@ -1,10 +1,10 @@
 """C5 v1.1, the portal half: client identity (P-08-T01 stub; ADR P-36, ADR P-54, ADR-163).
 Contract: `docs/contracts/portal-identity.md`; spec: SPEC-320.
 
-Served by this stub, behind `portal.sign_in_v2` (off: 404; on: 501 `not_implemented` until
-P-08-T21): the firm-side contact unlock and MFA reset. Both are human-only; the agent and system
-principals are denied at the matrix (INV-1). `/v1/me` gains the additive `portal` and `mfa`
-fields (`MePortalOut`, `MeMfaOut`), null until P-08-T07 and T17 fill them.
+The firm-side contact unlock and MFA reset (their models here) are served by organisations since
+P-08-T21 (`organisations/contacts_contract.py`, which owns the contact), behind
+`portal.sign_in_v2`; both are human-only, the agent and system principals denied at the matrix
+(INV-1). `/v1/me` gains the additive `portal` and `mfa` fields (`MePortalOut`, `MeMfaOut`).
 
 Not served by this stub (DEC-139): the pre-session family (`/v1/portal/auth/*`,
 `/v1/portal/links/renew`, `/v1/invitations/preview`) answers before any session exists, so it
@@ -12,29 +12,20 @@ cannot sit behind `AbacusRouter` and needs its own entry on ADR-152's public-rou
 protected and changes only with a decision. P-08-T10, T18 and T21 serve these routes once that
 decision lands (P-08 OQ-2). Their shapes are fixed here so they are reviewed and tested with the
 rest of the contract: start, renew and preview answer one shape for every input (no enumeration).
+P-08-T21 serves `/v1/portal/links/renew` (communications) under the `PRE_SESSION` marker.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import PORTAL_SIGN_IN_V2
 from abacus.kernel._statuses import InvitationStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.client_access import ScopeKind
-from abacus.modules.identity.context import AuthContext
-from abacus.modules.identity.routing import AbacusRouter, current_context
-
-Ctx = Annotated[AuthContext, Depends(current_context)]
-# ADR-139: the MFA reset emails the client, so it carries one.
-IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 
 PortalShell = Literal["full", "k1", "limited", "none"]
 # The portal nav (DEC-129, DEC-45): Approvals only for entity scopes; no bell (DEC-58(d)).
@@ -105,43 +96,6 @@ class ContactMfaResetOut(BaseModel):
     mfa_enrolled: Annotated[bool, classified("internal")]
     trusted_devices_revoked: Annotated[int, Field(ge=0), classified("internal")]
     reset_at: Annotated[datetime, classified("internal")]
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, PORTAL_SIGN_IN_V2):
-        raise NotFound("portal.sign_in_v2")
-    raise NotImplementedYet
-
-
-contacts_router = AbacusRouter(prefix="/v1/clients/{client_id}/contacts", tags=["identity"])
-
-
-@contacts_router.post(
-    "/{contact_id}/portal-unlock",
-    action="contact.unlock",
-    response_model=ContactPortalStatusOut,
-    errors=(501,),
-)
-async def unlock_contact_portal_route(
-    client_id: UUID, contact_id: UUID, ctx: Ctx
-) -> ContactPortalStatusOut:
-    """Clear a sign-in or two-step lock. Audited as `portal.sign_in.unlocked` naming the person
-    (INV-5); a walled client answers 404 (INV-3)."""
-    await _stub(ctx)
-
-
-@contacts_router.post(
-    "/{contact_id}/mfa-reset",
-    action="contact.mfa_reset",
-    response_model=ContactMfaResetOut,
-    errors=(501,),
-)
-async def reset_contact_mfa_route(
-    client_id: UUID, contact_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> ContactMfaResetOut:
-    """Remove the factor, the backup codes and the trusted devices; email the client in the
-    firm's name. Needs fresh MFA. Audited as `portal.mfa.reset`."""
-    await _stub(ctx)
 
 
 # --- Not served by this stub: the pre-session family (DEC-139; P-08-T10, T18, T21) ---------------
