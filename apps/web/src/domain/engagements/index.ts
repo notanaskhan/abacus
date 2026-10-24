@@ -6,6 +6,7 @@ export {
   conflictOf,
   gateOf,
   useEngagementRecord,
+  useEngagementTeam,
   useEngagementWorkItems,
   useRecordLetter,
   waitsOnLetter,

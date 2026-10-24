@@ -8,9 +8,11 @@ import {
   Button,
   DASH,
   DEFAULT_TZ,
+  DoneCount,
   EmptyState,
   Fieldset,
   Icon,
+  IconButton,
   KvRowView,
   RecordBand,
   RecordCockpit,
@@ -38,6 +40,7 @@ import {
   conflictOf,
   gateOf,
   useEngagementRecord,
+  useEngagementTeam,
   useEngagementWorkItems,
   useRecordLetter,
   waitsOnLetter,
@@ -57,9 +60,30 @@ import { COPY } from "./copy";
 //   e  the record never answers: skeletons
 //   prospect  the Thornbury estate, Prospect: "Acceptance pending — Daniel Reyes"
 //
-// a (Copperleaf with the RunCard and close groups), f and g are P-07-T28's.
+//   a  Copperleaf "2026 Close", Active, CAS: its 12 closes, "7 of 12", the SKE note (P-07-T28)
+//   f  Granite Peak at Oct 6 on the Dashboard tab (ENG-12's host; fixture only)
+//   g  Copperleaf on the Board tab (ENG-10's host; fixture only)
+//
+// P-07-T28 adds the R2 tabs: Overview · Dashboard · Board · Work items · Team · Letter & terms ·
+// Budget and the gear. Dashboard, Board, Budget and the gear are planned (K-04, I-04) and hidden
+// in production; Team hosts the roster until ENG-05. The Activity tab stays hidden until
+// P-07-T61 (a track holds at most seven options); "Activity ›" is its placeholder.
 
-export type Eng02Tab = "overview" | "work-items" | "letter";
+export type Eng02Tab =
+  "overview" | "dashboard" | "board" | "work-items" | "team" | "letter" | "budget";
+
+/** The tabs that render only in fixture builds (their targets are planned). */
+const PLANNED_TABS: ReadonlySet<Eng02Tab> = new Set(["dashboard", "board", "budget"]);
+
+const TAB_LABEL: Readonly<Record<Eng02Tab, string>> = {
+  overview: COPY.tabs.overview,
+  dashboard: COPY.tabs.dashboard,
+  board: COPY.tabs.board,
+  "work-items": COPY.tabs.workItems,
+  team: COPY.tabs.team,
+  letter: COPY.tabs.letter,
+  budget: COPY.tabs.budget,
+};
 
 export type Eng02Target = { screen: "CLI-02"; clientId: string } | { screen: "ENG-01" };
 
@@ -111,12 +135,22 @@ function EngagementPill({ record }: { record: EngagementRecordOut }): JSX.Elemen
   );
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }): JSX.Element {
+function Group({
+  title,
+  aside,
+  children,
+}: {
+  title: string;
+  /** Right of the header: a DoneCount ("7 of 12"). */
+  aside?: ReactNode;
+  children: ReactNode;
+}): JSX.Element {
   return (
     <section aria-label={title} className="overflow-hidden rounded-pane bg-card shadow-e1">
-      <h3 className="flex items-center bg-shell pt-[10px] pr-[10px] pb-[10px] pl-[13px] text-section font-medium">
-        {title}
-      </h3>
+      <div className="flex items-center gap-[8px] bg-shell pt-[10px] pr-[10px] pb-[10px] pl-[13px]">
+        <h3 className="min-w-0 flex-1 text-section font-medium">{title}</h3>
+        {aside}
+      </div>
       {children}
     </section>
   );
@@ -225,6 +259,17 @@ function Rail({
                 />
               );
             }
+            if (row.key === "approver_of_record" && record.service_line !== "audit") {
+              // a: a non-attest client has no SKE designee, and the rail says so.
+              return (
+                <div key={row.key} className="flex flex-col">
+                  <KvRowView row={{ id: row.key, label, value }} />
+                  <p className="px-[12px] pt-[2px] pb-[8px] text-meta text-ink-3 hairline-b">
+                    {COPY.skeNotRequired(shortName(record.client_name))}
+                  </p>
+                </div>
+              );
+            }
             return <KvRowView key={row.key} row={{ id: row.key, label, value }} />;
           })}
         </div>
@@ -247,6 +292,29 @@ function Banner({ children, action }: { children: ReactNode; action?: ReactNode 
       {action}
     </div>
   );
+}
+
+/** "Copperleaf" for "Copperleaf Coffee Roasters, Inc." (the SKE note's short name). */
+function shortName(client: string): string {
+  return client.split(/[\s,]+/u)[0] ?? client;
+}
+
+/** A close's disc: delivered or locked ✓, running spinner, otherwise an empty ring (spec.md a). */
+function discOf(w: WorkItemOut, archived: boolean): "done" | "run" | "todo" | "half" {
+  if (archived || w.status === "archived") return "done";
+  if (w.kind !== "close") return "half";
+  if (w.phase === "delivered" || w.phase === "locked") return "done";
+  if (w.phase === "in_progress" || w.phase === "in_review") return "run";
+  return "todo";
+}
+
+/** Closes delivered of all closes ("7 of 12"): delivered and locked count. */
+export function closesDelivered(items: readonly WorkItemOut[]): { done: number; total: number } {
+  const closes = items.filter((w) => w.kind === "close");
+  return {
+    done: closes.filter((w) => w.phase === "delivered" || w.phase === "locked").length,
+    total: closes.length,
+  };
 }
 
 function WorkItemRows({
@@ -276,7 +344,7 @@ function WorkItemRows({
             title={w.kind === "assurance" ? COPY.workItemHint : undefined}
             className="flex items-center gap-[10px] bg-card pt-[8px] pr-[12px] pb-[9px] pl-[13px] hairline-t"
           >
-            <StatusDisc state={archived || w.status === "archived" ? "done" : "half"} size={17} />
+            <StatusDisc state={discOf(w, archived)} size={17} />
             <span className="min-w-0 flex-1 truncate text-body">{w.name}</span>
             {phase !== null && (
               <StatusPill variant={phase.variant ?? "neutral"}>{phase.label}</StatusPill>
@@ -285,6 +353,46 @@ function WorkItemRows({
         );
       })}
     </ul>
+  );
+}
+
+function TeamHost({ engagementId }: { engagementId: string }): JSX.Element {
+  const team = useEngagementTeam(engagementId);
+  const members = team.data ?? [];
+  return (
+    <Group title={COPY.group.team}>
+      {members.length === 0 ? (
+        <div className="bg-card">
+          <EmptyState title={team.isPending ? COPY.tabs.team : DASH} />
+        </div>
+      ) : (
+        <ul aria-label={COPY.group.team} className="flex flex-col">
+          {members.map((m) => (
+            <li
+              key={m.user_id}
+              data-member={m.user_id}
+              className="flex min-h-[33px] items-center gap-[10px] bg-card px-[13px] text-body hairline-t"
+            >
+              <span className="min-w-0 flex-1 truncate">{m.display_name}</span>
+              <span className="text-ink-2">{COPY.roles[m.role] ?? m.role}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {PLANNED_VISIBLE && (
+        <p className="bg-card px-[13px] py-[8px] text-meta text-ink-3 hairline-t">
+          {COPY.planned.team}
+        </p>
+      )}
+    </Group>
+  );
+}
+
+function PlannedHost({ tab }: { tab: "dashboard" | "board" | "budget" }): JSX.Element {
+  return (
+    <div data-planned-tab={tab} className="rounded-pane bg-card shadow-e1">
+      <EmptyState icon="layers" title={COPY.planned[tab]} />
+    </div>
   );
 }
 
@@ -510,45 +618,44 @@ export function ENG02({
     </div>
   );
 
+  const shown: Eng02Tab[] = (
+    ["overview", "dashboard", "board", "work-items", "team", "letter", "budget"] as const
+  ).filter((t) => PLANNED_VISIBLE || !PLANNED_TABS.has(t));
+  // A tab this build does not draw (a planned one in production) shows the Overview.
+  const view: Eng02Tab = shown.includes(tab) ? tab : "overview";
+  const countOf = (t: Eng02Tab): number | undefined => {
+    if (record === undefined) return undefined;
+    if (t === "work-items" && record.tab_counts.work_items > 0)
+      return record.tab_counts.work_items;
+    if (t === "team" && record.tab_counts.team > 0) return record.tab_counts.team;
+    return undefined;
+  };
   const tabs = (
-    <Tabsbar
-      label={COPY.tabs.label}
-      options={[
-        { label: COPY.tabs.overview },
-        {
-          label: COPY.tabs.workItems,
-          ...(record === undefined || record.tab_counts.work_items === 0
-            ? {}
-            : { count: record.tab_counts.work_items }),
-        },
-        ...(PLANNED_VISIBLE
-          ? [
-              {
-                label: COPY.tabs.team,
-                disabled: true,
-                ...(record === undefined ? {} : { count: record.tab_counts.team }),
-              },
-            ]
-          : []),
-        { label: COPY.tabs.letter },
-      ]}
-      active={
-        tab === "work-items"
-          ? COPY.tabs.workItems
-          : tab === "letter"
-            ? COPY.tabs.letter
-            : COPY.tabs.overview
-      }
-      onChange={(label) => {
-        onTab(
-          label === COPY.tabs.workItems
-            ? "work-items"
-            : label === COPY.tabs.letter
-              ? "letter"
-              : "overview",
-        );
-      }}
-    />
+    <div className="relative">
+      <Tabsbar
+        label={COPY.tabs.label}
+        options={shown.map((t) => {
+          const n = countOf(t);
+          return { label: TAB_LABEL[t], ...(n === undefined ? {} : { count: n }) };
+        })}
+        active={TAB_LABEL[view]}
+        onChange={(label) => {
+          onTab(shown.find((t) => TAB_LABEL[t] === label) ?? "overview");
+        }}
+      />
+      {PLANNED_VISIBLE && (
+        // R2: the gear opens ENG-11 (planned): drawn disabled with its hint, ink-4 on d.
+        <span className="absolute top-1/2 right-(--edge-app) -translate-y-1/2">
+          <IconButton
+            icon="settings"
+            label={COPY.gear}
+            title={COPY.gear}
+            disabled
+            data-gear={archived ? "archived" : "planned"}
+          />
+        </span>
+      )}
+    </div>
   );
 
   const rail =
@@ -613,8 +720,14 @@ export function ENG02({
         )}
       </>
     );
+    const closes = closesDelivered(items);
     const workGroup = (
-      <Group title={COPY.group.workItems}>
+      <Group
+        title={closes.total > 0 ? COPY.group.monthly : COPY.group.workItems}
+        {...(closes.total > 0
+          ? { aside: <DoneCount done={closes.done} total={closes.total} /> }
+          : {})}
+      >
         <WorkItemRows items={waitsOnLetter(record) ? [] : items} archived={archived} />
       </Group>
     );
@@ -626,7 +739,11 @@ export function ENG02({
         className="flex flex-col gap-[10px] p-[10px] outline-offset-[-2px]"
       >
         {banners}
-        {tab === "letter" ? (
+        {view === "dashboard" || view === "board" || view === "budget" ? (
+          <PlannedHost tab={view} />
+        ) : view === "team" ? (
+          <TeamHost engagementId={record.id} />
+        ) : view === "letter" ? (
           <LetterCard
             record={record}
             now={now}
@@ -635,7 +752,7 @@ export function ENG02({
               setRecording(true);
             }}
           />
-        ) : tab === "work-items" ? (
+        ) : view === "work-items" ? (
           workGroup
         ) : (
           <>
@@ -671,12 +788,7 @@ export function ENG02({
         tabs={tabs}
         rail={rail}
         canvas={{
-          title:
-            tab === "letter"
-              ? COPY.tabs.letter
-              : tab === "work-items"
-                ? COPY.tabs.workItems
-                : COPY.canvas.title,
+          title: view === "overview" ? COPY.canvas.title : TAB_LABEL[view],
           well: true,
           state,
           ...(PLANNED_VISIBLE

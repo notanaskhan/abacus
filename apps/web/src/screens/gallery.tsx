@@ -51,6 +51,7 @@ import {
 import {
   OPENS as ENG02_OPENS,
   STATES as ENG02_STATES,
+  TABS as ENG02_TABS,
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
@@ -379,7 +380,12 @@ function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
   });
   return (
     <div data-artboard={state}>
-      <EngagementRecordPage engagementId={ENG02_OPENS[state]} toolbar={bar.toolbar} frame />
+      <EngagementRecordPage
+        engagementId={ENG02_OPENS[state]}
+        initialTab={ENG02_TABS[state]}
+        toolbar={bar.toolbar}
+        frame
+      />
     </div>
   );
 }

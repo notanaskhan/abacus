@@ -1,4 +1,4 @@
-// ENG-02 b, c, d, e and the prospect state in fixture mode (P-07-T20; build-screen-from-handoff
+// ENG-02 a–g and the prospect state in fixture mode (P-07-T20, P-07-T28; build-screen-from-handoff
 // §5): every scenario at 1440×900, DPR 2, from the /components gallery on fixtures, with axe at
 // zero serious or critical findings. Tier C parity is reported by the parity harness (P-07-T63).
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/screens/ENG-02.spec.ts`.
@@ -8,10 +8,13 @@ import { expect, test } from "@playwright/test";
 const SERIOUS = new Set(["serious", "critical"]);
 
 const STATES = [
+  { st: "a", ready: "SKE designation not required — Copperleaf is not an attest client." },
   { st: "b", ready: "Blocked on a partner decision" },
   { st: "c", ready: "No work items yet." },
   { st: "d", ready: "Archive locked Jun 12, 2026 · WORM" },
   { st: "e", ready: null },
+  { st: "f", ready: "Opens ENG-12 · the dashboard inside this record (see ENG-02f)." },
+  { st: "g", ready: "Opens ENG-10 · the board inside this record (see ENG-02g)." },
   { st: "prospect", ready: "Acceptance pending — Daniel Reyes" },
 ] as const;
 

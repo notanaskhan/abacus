@@ -8,7 +8,10 @@
 //   d         Meridian Tool & Die, Inc. "FY2025 FS Audit", Archived, locked Jun 12, 2026 (WORM)
 //   prospect  Estate of Walter Thornbury "Estate returns — final 1040 · 1041 · 706", Prospect
 //
-// a (Copperleaf), f and g are P-07-T28's. Rail rows carry the record's own words (`text`), dates
+//   a, g      Copperleaf Coffee Roasters, Inc. "2026 Close", Active, CAS (P-07-T28): its 12 closes
+//   f         Granite Peak "FY2026 Financial Statement Audit" at Oct 6 (P-07-T28; the Dashboard tab)
+//
+// Rail rows carry the record's own words (`text`), dates
 // (`on`), people (`user_id`) and pills; the gate facts are the gate payload (met, met_at, met_by,
 // blockers), never sentences (docs/screens/ENG-02.md, Deviations).
 
@@ -16,6 +19,7 @@ import type {
   EngagementGateOut,
   EngagementRailBandOut,
   EngagementRecordOut,
+  TeamMemberOut,
   WorkItemOut,
 } from "@abacus/api-client";
 import type { Seed } from ".";
@@ -27,12 +31,16 @@ export const ENG_NORTHWIND = "PY2025 EBP Audit";
 export const ENG_BLUESTEM = "2026 Close (from Oct)";
 export const ENG_MERIDIAN = "FY2025 FS Audit";
 export const ENG_THORNBURY = "Estate returns — final 1040 · 1041 · 706";
+export const ENG_COPPERLEAF = "2026 Close";
+export const ENG_GRANITE_PEAK_OCT6 = "FY2026 Financial Statement Audit";
 
 export interface EngagementRecordFixture {
   record: EngagementRecordOut;
   workItems: WorkItemOut[];
   /** When the acceptance decision was made (G1), for the recorded-letter date rule. */
   acceptanceDecidedAt: string | null;
+  /** `GET …/team` (the Team tab host); absent, the seed engagement's team. */
+  team?: TeamMemberOut[];
 }
 
 function user(name: string): string {
@@ -291,10 +299,168 @@ function thornbury(): EngagementRecordFixture {
   return { record, workItems: [], acceptanceDecidedAt: null };
 }
 
-export type EngagementRecordKey = "b" | "c" | "d" | "prospect";
+// ---- a, g: Copperleaf ---------------------------------------------------------------------------
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+/** The close's phase in month order: January–June Locked, July Delivered ("7 of 12" delivered),
+ * August In progress (4 days past due), September–December Not started (spec.md a). */
+function closePhase(month: number): string {
+  if (month < 6) return "locked";
+  if (month === 6) return "delivered";
+  if (month === 7) return "in_progress";
+  return "not_started";
+}
+
+function copperleaf(): EngagementRecordFixture {
+  const name = "Copperleaf Coffee Roasters, Inc.";
+  const id = stableId("engagement:copperleaf:2026-close");
+  const record: EngagementRecordOut = {
+    id,
+    name: ENG_COPPERLEAF,
+    client_id: client(name),
+    client_name: name,
+    client_entity_id: entityIdOf(slugOfClient(name), name),
+    client_entity_name: name,
+    type: "cas_monthly_close",
+    service_line: "cas",
+    status: "active",
+    period_label: "Jan–Dec 2026",
+    fiscal_period_start: "2026-01-01",
+    fiscal_period_end: "2026-12-31",
+    bands: [
+      band("details", [
+        { key: "client", text: name },
+        { key: "entity", text: "S corporation (1120-S)" },
+        { key: "service", text: "Client accounting services (non-attest)" },
+        { key: "period", text: "Jan–Dec 2026" },
+        { key: "office", text: "Denver" },
+        { key: "close_plan", text: "Café with Square/Shopify" },
+        { key: "letter", on: "2026-03-03", pill_object: "letter_record", pill_code: "signed" },
+        { key: "fee", text: "$3,200 per month, fixed" },
+      ]),
+      band("review_delivery", [
+        { key: "due_date", text: "10th of the following month" },
+        { key: "partner", user_id: user("Priya Raman") },
+        { key: "preparer", user_id: user("Raj Malhotra") },
+        { key: "client_service", user_id: user("Grace Holloway") },
+      ]),
+      band("client_portal", [
+        { key: "contact", text: "Tess Moreno · Owner" },
+        { key: "approver_of_record", text: "Ben Ashby · Controller" },
+        { key: "portal", text: "Active" },
+        { key: "connections", text: "QuickBooks Online ✓ · Front Range Bank ••4410 ✓" },
+        { key: "reminder", text: "Draft Email" },
+      ]),
+    ],
+    contacts: [
+      {
+        designation: "approver_of_record",
+        contact_id: stableId("contact:copperleaf:ben-ashby"),
+        name: "Ben Ashby",
+      },
+    ],
+    letter: { status: "signed", signed_on: "2026-03-03", signed_count: 2, signer_count: 2 },
+    // Non-attest: G1 and G3 (gate_policy.py). The handoff dates only the letter (Mar 3).
+    gates: [
+      { gate: "G1", met: true },
+      { gate: "G3", met: true, met_at: "2026-03-03T15:00:00Z" },
+    ],
+    tab_counts: { work_items: 12, team: 3 },
+    read_only_reason: null,
+    version: 9,
+    allowed_actions: ["engagement.read_metadata", "engagement.read"],
+  };
+  const workItems: WorkItemOut[] = MONTHS.map((month, i) => {
+    const mm = String(i + 1).padStart(2, "0");
+    const last = new Date(Date.UTC(2026, i + 1, 0)).getUTCDate();
+    const due = new Date(Date.UTC(2026, i + 1, 10)).toISOString().slice(0, 10);
+    return {
+      id: stableId(`work-item:copperleaf:2026-${mm}`),
+      kind: "close",
+      name: `${month} 2026 Close`,
+      phase: closePhase(i),
+      status: "active",
+      due_on: due,
+      period_start: `2026-${mm}-01`,
+      period_end: `2026-${mm}-${String(last)}`,
+    };
+  });
+  const team: TeamMemberOut[] = [
+    { user_id: user("Priya Raman"), display_name: "Priya Raman", role: "engagement_partner" },
+    { user_id: user("Raj Malhotra"), display_name: "Raj Malhotra", role: "senior" },
+    { user_id: user("Grace Holloway"), display_name: "Grace Holloway", role: "client_service" },
+  ];
+  return { record, workItems, acceptanceDecidedAt: null, team };
+}
+
+// ---- f: Granite Peak at Oct 6 -------------------------------------------------------------------
+
+/** f stands at Tue Oct 6, 2026 (revision R2): Granite Peak's FY2026 audit, Active by then. The
+ * Dashboard tab's content is ENG-12's (K-04), so the record carries only what the subbar and
+ * rail need. */
+export function granitePeakOct6(seed: Seed): EngagementRecordFixture {
+  const name = "Granite Peak Outdoor Supply, Inc.";
+  const id = seed.engagementIds.A2 ?? stableId("engagement:granite-peak:fy2026");
+  const record: EngagementRecordOut = {
+    id,
+    name: ENG_GRANITE_PEAK_OCT6,
+    client_id: client(name),
+    client_name: name,
+    client_entity_id: entityIdOf(slugOfClient(name), name),
+    client_entity_name: name,
+    type: "fs_audit",
+    service_line: "audit",
+    status: "active",
+    period_label: "FYE 6/30/2026",
+    fiscal_period_start: "2025-07-01",
+    fiscal_period_end: "2026-06-30",
+    bands: [
+      band("details", [
+        { key: "client", text: name },
+        { key: "office", text: "Denver" },
+        { key: "letter", pill_object: "letter_record", pill_code: "signed" },
+      ]),
+      band("review_delivery", [{ key: "partner", user_id: user("Margaret Okonkwo") }]),
+    ],
+    contacts: [],
+    letter: { status: "signed", signed_count: 2, signer_count: 2 },
+    gates: [
+      { gate: "G1", met: true },
+      { gate: "G2", met: true },
+      { gate: "G3", met: true },
+    ],
+    tab_counts: { work_items: 1, team: 0 },
+    read_only_reason: null,
+    version: 1,
+    allowed_actions: ["engagement.read_metadata", "engagement.read"],
+  };
+  return { record, workItems: seed.workItems[id] ?? [], acceptanceDecidedAt: null, team: [] };
+}
+
+export type EngagementRecordKey = "a" | "b" | "c" | "d" | "prospect";
 
 export function engagementRecords(
   seed: Seed,
 ): Record<EngagementRecordKey, EngagementRecordFixture> {
-  return { b: northwind(seed), c: bluestem(), d: meridian(seed), prospect: thornbury() };
+  return {
+    a: copperleaf(),
+    b: northwind(seed),
+    c: bluestem(),
+    d: meridian(seed),
+    prospect: thornbury(),
+  };
 }
