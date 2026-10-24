@@ -1,6 +1,7 @@
 import { FlagOffState } from "@abacus/ui";
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
+import { FeatureGate } from "../../app-core/flags";
 import { AREAS, type Area } from "../../app-core/nav-areas";
 import { appRoute, lazyScreen } from "../root";
 
@@ -10,12 +11,27 @@ import { appRoute, lazyScreen } from "../root";
 // page or a hidden item. When the landing screen is routed its route replaces this one.
 
 const Engagements = lazyScreen(async () => (await import("../../legacy/Engagements")).Engagements);
+// ENG-01 (P-07-T27) behind `engagements.v2`; the legacy index answers while it is off.
+const EngagementsIndex = lazyScreen(
+  async () => (await import("../../screens/ENG-01")).EngagementsIndex,
+);
 
 export const engagementsIndexRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/engagements",
   component: function EngagementsIndexPage(): JSX.Element {
-    return <Engagements />;
+    const navigate = useNavigate();
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="engagements.v2" fallback={<Engagements />}>
+          <EngagementsIndex
+            onOpen={(engagementId) => {
+              void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
   },
 });
 

@@ -6,6 +6,7 @@ import { count, progress } from "../format";
 import { Icon } from "../icons";
 import { useMotion } from "../motion";
 import { Reveal } from "./motion";
+import { Skeleton } from "./states";
 import {
   type BarTone,
   type KpiDelta,
@@ -425,17 +426,22 @@ export function KpiGrid({
 // StatusTile
 
 export type StatusTileVariant =
-  "neutral" | "state" | "amber" | "red-tint" | "green-tint" | "green";
+  "neutral" | "state" | "amber" | "red-tint" | "green-tint" | "green" | "muted" | "soon";
 
-const TILE_PILL: Record<StatusTileVariant, "tag" | "amber" | "red-tint" | "green-tint" | "green"> =
-  {
-    neutral: "tag",
-    state: "amber",
-    amber: "amber",
-    "red-tint": "red-tint",
-    "green-tint": "green-tint",
-    green: "green",
-  };
+const TILE_PILL: Record<
+  StatusTileVariant,
+  "tag" | "amber" | "red-tint" | "green-tint" | "green" | "muted" | "soon"
+> = {
+  neutral: "tag",
+  state: "amber",
+  amber: "amber",
+  "red-tint": "red-tint",
+  "green-tint": "green-tint",
+  green: "green",
+  // ENG-01's On hold and Archived tiles (P-07-T27): the muted pill, and the soon pill with Lock 11.
+  muted: "muted",
+  soon: "soon",
+};
 
 export interface StatusTileProps {
   count: number;
@@ -449,6 +455,8 @@ export interface StatusTileProps {
   /** A tile that filters: pressed while its filter is on. */
   selected?: boolean;
   onSelect?: () => void;
+  /** The count is still loading: a skeleton bar holds its place (T1e, ENG-01e). */
+  pending?: boolean;
 }
 
 /**
@@ -463,6 +471,7 @@ export function StatusTile({
   size = "practice",
   selected,
   onSelect,
+  pending = false,
 }: StatusTileProps): JSX.Element {
   const classes = cn(
     "flex w-[120px] flex-col items-center justify-center bg-card shadow-e1",
@@ -472,7 +481,11 @@ export function StatusTile({
   const long = isLongPillLabel(label);
   const inner = (
     <>
-      <span className="text-kpi leading-none">{count(n)}</span>
+      {pending ? (
+        <Skeleton data-tile-count="pending" className="h-[18px] w-[34px]" />
+      ) : (
+        <span className={cn("text-kpi leading-none", n === 0 && "text-ink-4")}>{count(n)}</span>
+      )}
       <Pill
         variant={TILE_PILL[variant]}
         size="state"
@@ -486,6 +499,7 @@ export function StatusTile({
           : {})}
         className={cn("max-w-[116px] overflow-hidden", long && "gap-[3px] px-[6px] text-micro")}
       >
+        {variant === "soon" && <Icon name="lock" size={12} className="flex-none" />}
         <span className="min-w-0 truncate">{label}</span>
       </Pill>
     </>
