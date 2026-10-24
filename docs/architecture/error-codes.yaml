@@ -689,6 +689,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.review.service.PreparerCannotReview
+  preview_outdated:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.viewer.PreviewOutdated
+    summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24).'
   prior_mismatch:
     status: 409
     raised_by:

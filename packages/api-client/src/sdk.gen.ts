@@ -366,6 +366,7 @@ export const checkpointRestore = <ThrowOnError extends boolean = false>(options:
  *
  * AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a
  * version's figures are cited by. Walled citations are omitted with no hidden count.
+ * `host_ref` is `<anchor_type>:<anchor_id>` (DEC-265).
  */
 export const listCitations = <ThrowOnError extends boolean = false>(options?: Options<ListCitationsData, ThrowOnError>): RequestResult<ListCitationsResponses, ListCitationsErrors, ThrowOnError> => (options?.client ?? client).get<ListCitationsResponses, ListCitationsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3688,7 +3689,7 @@ export const setupFile = <ThrowOnError extends boolean = false>(options: Options
  * Viewer Page Route
  *
  * AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made
- * before masking.
+ * before masking. The read leaves an access event first (Q-02-T20).
  */
 export const viewerPage = <ThrowOnError extends boolean = false>(options: Options<ViewerPageData, ThrowOnError>): RequestResult<ViewerPageResponses, ViewerPageErrors, ThrowOnError> => (options.client ?? client).get<ViewerPageResponses, ViewerPageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3752,7 +3753,9 @@ export const unlockVersion = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Viewer Manifest Route
  *
- * AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404.
+ * AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404. Until
+ * masked renditions exist (P-03-T15) a rendered version reads `processing`, reason
+ * `preview_outdated` (DEC-266).
  */
 export const viewerManifest = <ThrowOnError extends boolean = false>(options: Options<ViewerManifestData, ThrowOnError>): RequestResult<ViewerManifestResponses, ViewerManifestErrors, ThrowOnError> => (options.client ?? client).get<ViewerManifestResponses, ViewerManifestErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

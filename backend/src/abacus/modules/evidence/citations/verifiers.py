@@ -28,6 +28,7 @@ from typing import Annotated, Final
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import transaction_context
@@ -52,7 +53,13 @@ from abacus.modules.evidence.citations.registry import (
 )
 from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.processing import document_text
-from abacus.modules.evidence.repository import get_item, get_version, newest_extraction, pages_of
+from abacus.modules.evidence.repository import (
+    get_inbox_file,
+    get_item,
+    get_version,
+    newest_extraction,
+    pages_of,
+)
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import Actor, Forbidden, authorise
 from abacus.modules.requests.api import item_ref
@@ -273,28 +280,38 @@ async def verify_request_item(
 # --- Display: rendered by code from the locator (INV-2) ----------------------------------------
 
 
-async def _file_title(tx: UnitOfWork, version_id: object) -> str:
+async def _file_title(session: AsyncSession, version_id: object) -> str:
     try:
-        version = await get_version(tx.session, UUID(str(version_id)))
+        version = await get_version(session, UUID(str(version_id)))
     except ValueError:
         version = None
-    item = await get_item(tx.session, version.evidence_item_id) if version is not None else None
+    item = await get_item(session, version.evidence_item_id) if version is not None else None
     return item.title if item is not None else "Document"
 
 
-async def display_document_text(tx: UnitOfWork, locator: Mapping[str, object]) -> Display:
-    return Display(
-        await _file_title(tx, locator.get("evidence_version_id")), f"p. {locator.get('page')}"
-    )
+async def _source_title(session: AsyncSession, locator: Mapping[str, object]) -> str:
+    """The cited file's name: the version's item title, or the inbox file's name (P-03-T10)."""
+    inbox_id = locator.get("inbox_file_id")
+    if inbox_id is not None:
+        try:
+            found = await get_inbox_file(session, UUID(str(inbox_id)))
+        except ValueError:
+            found = None
+        return found.file_name if found is not None else "Document"
+    return await _file_title(session, locator.get("evidence_version_id"))
 
 
-async def display_sheet_cell(tx: UnitOfWork, locator: Mapping[str, object]) -> Display:
+async def display_document_text(session: AsyncSession, locator: Mapping[str, object]) -> Display:
+    return Display(await _source_title(session, locator), f"p. {locator.get('page')}")
+
+
+async def display_sheet_cell(session: AsyncSession, locator: Mapping[str, object]) -> Display:
     sheet, cell = locator.get("sheet"), locator.get("cell")
     loc = f"{sheet} · {cell}" if sheet else str(cell)
-    return Display(await _file_title(tx, locator.get("evidence_version_id")), loc)
+    return Display(await _file_title(session, locator.get("evidence_version_id")), loc)
 
 
-async def display_request_item(tx: UnitOfWork, locator: Mapping[str, object]) -> Display:
+async def display_request_item(session: AsyncSession, locator: Mapping[str, object]) -> Display:
     return Display("Request item", "")
 
 

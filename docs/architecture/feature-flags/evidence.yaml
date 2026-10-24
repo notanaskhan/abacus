@@ -11,7 +11,7 @@ flags:
     kind: boolean
     default: false
   - name: evidence.citations_v2
-    description: 'C4 v1 citations (P-03): GET /v1/citations and /{id}, relink, and the reserved create. Off: those routes answer 404 and hosts keep the legacy AiTag count link; agents still write v2 rows as dark data. On: 501 not_implemented until P-03-T05 lands.'
+    description: 'C4 v1 citations (P-03): GET /v1/citations and /{id}, relink, and the reserved create. Off: those routes answer 404 and hosts keep the legacy AiTag count link; agents still write v2 rows as dark data. On: the two reads are served (P-03-T08); relink answers 501 until P-03-T12 and create until its first anchor consumer.'
     owner: notanaskhan
     created: 2026-10-23
     expires: 2027-04-21
@@ -19,7 +19,7 @@ flags:
     kind: boolean
     default: false
   - name: evidence.viewer_v1
-    description: 'C4 v1 source viewer (P-03, SHL-08): the viewer manifest, masked pages, regions and search under /v1/evidence-versions. Off: 404, and hosts keep the legacy EvidencePreview. On: 501 not_implemented until P-03-T07 lands.'
+    description: 'C4 v1 source viewer (P-03, SHL-08): the viewer manifest, masked pages, regions and search under /v1/evidence-versions. Off: 404, and hosts keep the legacy EvidencePreview. On: served (P-03-T09); pages come only from masked renditions, so until P-03-T15 a rendered version reads processing and its pages answer 409 preview_outdated (DEC-266).'
     owner: notanaskhan
     created: 2026-10-23
     expires: 2027-04-21

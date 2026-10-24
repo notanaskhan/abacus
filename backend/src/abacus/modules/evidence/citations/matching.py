@@ -227,6 +227,79 @@ def quote_span(words: Sequence[WordLike], quote: str) -> list[WordLike] | None:
     return kept[first : last + 1]
 
 
+def quote_spans(words: Sequence[WordLike], query: str, *, limit: int) -> list[list[WordLike]]:
+    """P-03-T09 (in-document search): every run of consecutive words holding `query` whole and
+    on word boundaries, left to right without overlaps, at most `limit` runs."""
+    target = _target(query)
+    if not target or limit < 1:
+        return []
+    kept: list[WordLike] = []
+    starts: list[int] = []
+    tokens: list[str] = []
+    at = 0
+    for word in words:
+        token = normalised(word.text)
+        if not token:
+            continue
+        kept.append(word)
+        starts.append(at)
+        tokens.append(token)
+        at += len(token) + 1
+    runs: list[list[WordLike]] = []
+    for found in _bounded(target).finditer(" ".join(tokens)):
+        first = bisect_right(starts, found.start()) - 1
+        last = bisect_right(starts, found.end() - 1) - 1
+        runs.append(kept[first : last + 1])
+        if len(runs) >= limit:
+            break
+    return runs
+
+
+def line_rects(run: Sequence[WordLike]) -> list[Box]:
+    """A run's boxes, one per printed line: a word starts a new line when its top is below the
+    current line's middle."""
+    rects: list[Box] = []
+    line: list[WordLike] = []
+    for word in run:
+        if line and word.top > (line[0].top + line[0].bottom) / 2:
+            rects.append(union(line))
+            line = []
+        line.append(word)
+    if line:
+        rects.append(union(line))
+    return rects
+
+
+_EDGE: Final = 0.011  # stored boxes are rounded to 2 decimals (verifiers._round)
+
+
+def _near(a: float, b: float) -> bool:
+    return abs(a - b) <= _EDGE
+
+
+def reread_span(
+    words: Sequence[WordLike], box: Box, sha256: bytes, *, max_words: int = 2000
+) -> list[WordLike] | None:
+    """P-03-T08: the run of consecutive words inside `box` whose normalised text hashes to
+    `sha256` (the run a verifier resolved the quote to), or None when no run does (the layer no
+    longer holds the quote: `changed`). The run's union is the stored box, so it starts on the
+    box's top edge and ends on its bottom edge; only those pairs are hashed."""
+    inside = [w for w in words_in(words, box) if normalised(w.text)][:max_words]
+    starts = [i for i, w in enumerate(inside) if _near(round(w.top, 2), box[1])]
+    ends = [j for j, w in enumerate(inside) if _near(round(w.bottom, 2), box[3])]
+    for i in starts:
+        for j in ends:
+            if j < i:
+                continue
+            run = inside[i : j + 1]
+            found = union(run)
+            if not (_near(round(found[0], 2), box[0]) and _near(round(found[2], 2), box[2])):
+                continue
+            if layer_sha256(run) == sha256:
+                return run
+    return None
+
+
 @dataclass(frozen=True)
 class LayerVerdict:
     reason: Reason | None
@@ -309,11 +382,14 @@ __all__ = [
     "column_letters",
     "joined",
     "layer_sha256",
+    "line_rects",
     "normalised",
     "page_quote_reason",
     "quote_at",
     "quote_in",
     "quote_span",
+    "quote_spans",
+    "reread_span",
     "union",
     "verify_on_layer",
     "words_in",
