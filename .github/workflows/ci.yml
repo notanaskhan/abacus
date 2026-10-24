@@ -213,7 +213,9 @@ jobs:
     name: stage 2 gallery visual regression
     needs: [changes]
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    # The axe gate alone takes about 7 minutes (98 specs) and the screenshot regression about 3,
+    # plus setup: 8 cancelled every run that had gallery paths to check.
+    timeout-minutes: 20
     steps:
       - if: needs.changes.outputs.gallery != 'true'
         run: echo "no gallery paths changed (abacus_tools.ci.paths), so nothing to run"
