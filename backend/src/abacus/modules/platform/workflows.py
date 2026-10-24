@@ -33,6 +33,8 @@ from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.platform.workflow_types import (
+        IncidentPropagationInput,
+        IncidentPropagationStep,
         ProvisionTenantInput,
         ProvisionTenantResult,
         TenantKeyInput,
@@ -153,3 +155,42 @@ class TenantKeyWorkflow:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_KEY_RETRY,
         )
+
+
+def incident_propagation_workflow_id(accrued_ref: str) -> str:
+    return f"incident_propagate:{accrued_ref}"
+
+
+# The DPA's 72-hour notice: retry briskly and for a long time; a firm that doesn't exist is
+# never retried (staff follow RB-27's manual step for it).
+_INCIDENT_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=2),
+    maximum_attempts=50,
+    non_retryable_error_types=["FirmNotFound"],
+)
+
+
+@workflow.defn(name="IncidentPropagation")
+class IncidentPropagationWorkflow:
+    """Q-02-T33 (RB-27): `incident_propagate:<accrued_ref>` writes Accrued's facts into each named
+    firm's register as the system, one firm per activity, in the order given. Each step is
+    repeat-safe (one entry per firm and Accrued reference), so a rerun converges. Returns the
+    firms' entry references."""
+
+    @workflow.run
+    async def run(self, given: IncidentPropagationInput) -> list[str]:
+        refs: list[str] = []
+        for tenant_id in given.tenant_ids:
+            ref = await workflow.execute_activity(
+                "platform.propagate_incident",
+                IncidentPropagationStep(
+                    given.accrued_ref, tenant_id, given.facts, given.staff_id, given.reason_sha256
+                ),
+                result_type=str,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_INCIDENT_RETRY,
+            )
+            refs.append(ref)
+        return refs

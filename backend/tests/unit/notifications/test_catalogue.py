@@ -36,6 +36,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "risk.approval_requested",
         "finding.severity_proposed",
         "legal_hold.placed",  # Q-02-T29 (C16 `legal_hold_placed`)
+        "incident.recorded",  # Q-02-T33 (C16 `incident_recorded`)
+        "incident.propagated",  # Q-02-T33 (C16 `incident_from_accrued`)
     }
 
 
@@ -87,3 +89,33 @@ async def test_q02t29_a_hold_tells_its_list_and_the_partners_but_no_client_or_wa
     found = await catalogue.CATALOGUE["legal_hold.placed"].recipients(uuid.uuid4(), payload)
     assert found == sorted([listed, partner])
     assert catalogue.CATALOGUE["legal_hold.placed"].kind == "legal_hold_placed"
+
+
+async def test_q02t33_an_incident_tells_the_qi_and_partners_and_an_accrued_one_the_qi_and_admins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.modules.notifications import catalogue
+
+    qi, partner, admin = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+
+    async def qis(*_: object) -> list[uuid.UUID]:
+        return [qi]
+
+    async def partners(*_: object) -> list[uuid.UUID]:
+        return [partner]
+
+    async def admins(*_: object) -> list[uuid.UUID]:
+        return [admin]
+
+    monkeypatch.setattr(catalogue, "security_admins", qis)
+    monkeypatch.setattr(catalogue, "partner_members", partners)
+    monkeypatch.setattr(catalogue, "firm_admins", admins)
+    recorded = catalogue.CATALOGUE["incident.recorded"]
+    assert recorded.kind == "incident_recorded" and recorded.engagement_key is None
+    payload: dict[str, object] = {"incident_id": str(uuid.uuid4()), "by_user": str(qi)}
+    assert await recorded.recipients(uuid.uuid4(), payload) == [partner]
+    accrued = catalogue.CATALOGUE["incident.propagated"]
+    assert accrued.kind == "incident_from_accrued"
+    assert await accrued.recipients(uuid.uuid4(), {"incident_id": str(uuid.uuid4())}) == sorted(
+        [qi, admin]
+    )

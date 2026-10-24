@@ -453,6 +453,78 @@
         "title": "AccountsOut",
         "type": "object"
       },
+      "AccruedIncidentFactsIn": {
+        "additionalProperties": false,
+        "description": "Accrued's facts, the same for every firm it touched.",
+        "properties": {
+          "confirmed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "consumers_affected": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consumers Affected"
+          },
+          "discovered_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discovered At",
+            "type": "string"
+          },
+          "event_kind": {
+            "cls": "internal",
+            "enum": [
+              "unauthorized_access",
+              "credential_attack",
+              "data_exposure",
+              "lost_device",
+              "vendor_incident",
+              "other"
+            ],
+            "title": "Event Kind",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "unencrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Unencrypted"
+          }
+        },
+        "required": [
+          "title",
+          "event_kind",
+          "discovered_at",
+          "confirmed_at"
+        ],
+        "title": "AccruedIncidentFactsIn",
+        "type": "object"
+      },
       "ActivityEventOut": {
         "description": "One audit event, identifiers only, through `audit_trail.api` (\u00a74.7). The UI words it;\na withdrawn upload never carries its file name (ADR-162).",
         "properties": {
@@ -17567,6 +17639,282 @@
           "suggestions"
         ],
         "title": "InboxFileOut",
+        "type": "object"
+      },
+      "IncidentIn": {
+        "additionalProperties": false,
+        "description": "What the QI knows when recording; counts and encryption may be unknown yet.",
+        "properties": {
+          "consumers_affected": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consumers Affected"
+          },
+          "discovered_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discovered At",
+            "type": "string"
+          },
+          "event_kind": {
+            "cls": "internal",
+            "enum": [
+              "unauthorized_access",
+              "credential_attack",
+              "data_exposure",
+              "lost_device",
+              "vendor_incident",
+              "other"
+            ],
+            "title": "Event Kind",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "unencrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Unencrypted"
+          }
+        },
+        "required": [
+          "title",
+          "event_kind",
+          "discovered_at"
+        ],
+        "title": "IncidentIn",
+        "type": "object"
+      },
+      "IncidentOut": {
+        "description": "One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;\n`clock_day` of `clock_days` have passed in the firm's time zone.",
+        "properties": {
+          "accrued_confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Accrued Confirmed At"
+          },
+          "accrued_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Accrued Ref"
+          },
+          "clock_day": {
+            "cls": "internal",
+            "title": "Clock Day",
+            "type": "integer"
+          },
+          "clock_days": {
+            "cls": "internal",
+            "title": "Clock Days",
+            "type": "integer"
+          },
+          "consumers_affected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consumers Affected"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "discovered_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discovered At",
+            "type": "string"
+          },
+          "dpa_notice_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Dpa Notice At"
+          },
+          "event_kind": {
+            "cls": "internal",
+            "enum": [
+              "unauthorized_access",
+              "credential_attack",
+              "data_exposure",
+              "lost_device",
+              "vendor_incident",
+              "other"
+            ],
+            "title": "Event Kind",
+            "type": "string"
+          },
+          "ftc_notify_by": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Ftc Notify By",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notification_event": {
+            "cls": "internal",
+            "title": "Notification Event",
+            "type": "boolean"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "firm",
+              "accrued"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "unencrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Unencrypted"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "title",
+          "event_kind",
+          "discovered_at",
+          "notification_event",
+          "ftc_notify_by",
+          "clock_day",
+          "clock_days",
+          "source",
+          "created_at"
+        ],
+        "title": "IncidentOut",
+        "type": "object"
+      },
+      "IncidentPropagationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "facts": {
+            "$ref": "#/components/schemas/AccruedIncidentFactsIn",
+            "cls": "confidential"
+          },
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "tenant_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Tenant Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tenant_ids",
+          "facts",
+          "reason"
+        ],
+        "title": "IncidentPropagationIn",
+        "type": "object"
+      },
+      "IncidentPropagationOut": {
+        "properties": {
+          "accrued_ref": {
+            "cls": "internal",
+            "title": "Accrued Ref",
+            "type": "string"
+          },
+          "tenant_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Tenant Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "accrued_ref",
+          "tenant_ids"
+        ],
+        "title": "IncidentPropagationOut",
         "type": "object"
       },
       "IndependenceIn": {
@@ -80478,6 +80826,113 @@
         "x-abacus-action": "own"
       }
     },
+    "/v1/firm/security/incidents": {
+      "post": {
+        "description": "The QI records an incident (AC-38). 422 `discovered_in_future`.",
+        "operationId": "record_incident",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Record Incident Route",
+        "tags": [
+          "security incidents"
+        ],
+        "x-abacus-action": "incident.manage"
+      }
+    },
     "/v1/firm/service-lines": {
       "get": {
         "operationId": "service_lines",
@@ -89875,6 +90330,117 @@
         "summary": "Import Email Template Route",
         "tags": [
           "communications"
+        ],
+        "x-abacus-action": "staff"
+      }
+    },
+    "/v1/platform/incidents/{accrued_ref}/propagate": {
+      "post": {
+        "description": "Staff only (`platform.incident.propagate`, DEC-227): start writing Accrued's facts into\neach named firm's register (AC-39). 404 when a firm doesn't exist or has the register off;\n409 `incident_propagation_running`; 422 `confirmed_out_of_order`.",
+        "operationId": "propagate_incident",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accrued_ref",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Z0-9][A-Z0-9-]{2,39}$",
+              "title": "Accrued Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentPropagationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentPropagationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Propagate Incident Route",
+        "tags": [
+          "security incidents"
         ],
         "x-abacus-action": "staff"
       }

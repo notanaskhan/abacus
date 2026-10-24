@@ -156,6 +156,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion.CompletionInvalid
     - abacus.modules.fieldwork.completion.CompletionInvalid
+  confirmed_out_of_order:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.incidents.ConfirmedOutOfOrder
+    summary: Accrued confirms an incident after discovering it and before propagating it.
   conflict:
     status: 409
     raised_by:
@@ -194,6 +199,11 @@ codes:
     raised_by:
     - abacus.modules.identity.firm_settings.DemoClockRefused
     summary: A demo clock is only for a synthetic firm, and never in production (F-04.2, F-04.3).
+  discovered_in_future:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.incidents.DiscoveredInFuture
+    summary: An incident is discovered at or before the moment it is recorded.
   display_name_required:
     status: 422
     raised_by:
@@ -355,6 +365,12 @@ codes:
     raised_by:
     - abacus.modules.evidence.inbox.InboxFileGone
     summary: Already assigned or discarded (someone else got there first).
+  incident_propagation_running:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.incidents.PropagationRunning
+    summary: 'A propagation of this Accrued incident is still running: wait for it, then name any further
+      firms in a new one.'
   independence_conclusion_missing:
     status: 409
     raised_by:

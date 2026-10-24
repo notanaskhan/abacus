@@ -32,3 +32,38 @@ class TenantKeyInput:
 
     tenant_id: str
     operator: str
+
+
+@dataclass(frozen=True)
+class IncidentFactsInput:
+    """Q-02-T33 (RB-27): Accrued's facts about an Accrued-side incident, as staff entered them.
+    The title is Confidential: payloads are sealed by the codec and it is never logged."""
+
+    title: str
+    event_kind: str
+    discovered_at: str  # ISO 8601 with offset
+    consumers_affected: int | None
+    unencrypted: bool | None
+    confirmed_at: str  # ISO 8601 with offset: when Accrued confirmed it (the 72-hour clock)
+
+
+@dataclass(frozen=True)
+class IncidentPropagationInput:
+    """Q-02-T33: one Accrued incident into each named firm's register, as the system."""
+
+    accrued_ref: str
+    tenant_ids: tuple[str, ...]
+    facts: IncidentFactsInput
+    staff_id: str  # the platform staff member who asked (identifier only)
+    reason_sha256: str  # the staff reason's fingerprint; the text is never stored
+
+
+@dataclass(frozen=True)
+class IncidentPropagationStep:
+    """One firm's entry: which firm, and the propagation it belongs to."""
+
+    accrued_ref: str
+    tenant_id: str
+    facts: IncidentFactsInput
+    staff_id: str
+    reason_sha256: str

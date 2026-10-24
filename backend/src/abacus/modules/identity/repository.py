@@ -785,6 +785,30 @@ async def active_firm_admins(tenant: TenantContext) -> list[UUID]:
         return [cast(UUID, row.user_id) for row in rows.all()]
 
 
+async def active_security_admins(tenant: TenantContext) -> list[UUID]:
+    """Q-02-T33: the firm's active security admins (the Qualified Individual), under the tenant."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT user_id FROM memberships WHERE firm_role = 'security_admin' "
+                "AND status = 'active' ORDER BY user_id"
+            )
+        )
+        return [cast(UUID, row.user_id) for row in rows.all()]
+
+
+async def active_partner_members(tenant: TenantContext) -> list[UUID]:
+    """Q-02-T33: the firm's active partner-level staff (the derived `firm_partner`, DEC-132)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT user_id FROM memberships WHERE level = 'partner' AND kind = 'staff' "
+                "AND status = 'active' ORDER BY user_id"
+            )
+        )
+        return [cast(UUID, row.user_id) for row in rows.all()]
+
+
 # --- Client invitations (SPEC-015) -------------------------------------------------------------
 
 

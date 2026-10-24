@@ -1006,6 +1006,9 @@ LIST_EXEMPT = frozenset(
         # SPEC-013: notification recipients (the platform resolving who to tell, never returned
         # to a caller) and the idempotent insert's RETURNING.
         ("src/abacus/modules/identity/repository.py", "active_firm_admins"),
+        # Q-02-T33: the incident register's recipients (QI and partners), same footing.
+        ("src/abacus/modules/identity/repository.py", "active_security_admins"),
+        ("src/abacus/modules/identity/repository.py", "active_partner_members"),
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),

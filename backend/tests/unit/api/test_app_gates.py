@@ -239,6 +239,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # Q-02-T29: placing and releasing a legal hold start their workflows, so 202.
         "/v1/legal-holds",
         "/v1/legal-holds/{hold_id}/release",
+        # Q-02-T33: staff propagation of an Accrued incident starts IncidentPropagation, so 202.
+        "/v1/platform/incidents/{accrued_ref}/propagate",
         # P-08-T10 (SPEC-320): a sign-in start and a resend answer 202 for any email.
         "/v1/portal/auth/start",
         # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
@@ -401,6 +403,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/checkpoints/{checkpoint_id}/restore",
         "/v1/fields/{target_type}/{target_id}/{field_key}/references",
         "/v1/fields/{target_type}/{target_id}/{field_key}/ticks",
+        "/v1/firm/security/incidents",  # Q-02-T33: a register entry
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
