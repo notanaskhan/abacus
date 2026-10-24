@@ -13,6 +13,7 @@ import pytest
 from sqlalchemy import select, text
 
 from abacus.kernel.db import TenantContext, configure_engine, tenant_session
+from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, uow
 from abacus.modules.engagements.api import (
     assign_work_item,
@@ -244,4 +245,37 @@ async def test_ac13_assignment_is_the_partners_or_managers_never_the_staff_membe
     _, work_item = await firm.engagement("cas_monthly_close")
     with pytest.raises(Forbidden):
         await assign_work_item(firm.ctx(firm.ana), work_item, firm.ana, "preparer")
+    assert await firm.assignments(work_item) == 0
+
+
+# --- P-07-T30 (ED-042): the assignee is on the team and not walled --------------------------
+
+
+async def test_p07t30_an_assignee_off_the_team_is_404_and_nothing_is_written(
+    firm: _Firm,
+) -> None:
+    close, work_item = await firm.engagement("cas_monthly_close")  # never gated by G2
+    stranger = await firm.user()
+    with pytest.raises(NotFound):
+        await assign_work_item(firm.ctx(firm.partner), work_item, stranger, "preparer")
+    written = await firm.seed.value(
+        "SELECT count(*) FROM work_item_assignments WHERE work_item_id = $1", work_item
+    )
+    assert int(str(written)) == 0
+    assert close
+
+
+async def test_p07t30_a_walled_team_member_is_404_like_a_stranger(firm: _Firm) -> None:
+    close, work_item = await firm.engagement("cas_monthly_close")
+    client = await firm.seed.value("SELECT client_id FROM engagements WHERE id = $1", close)
+    await firm.seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, $3, $4)",
+        firm.tenant,
+        firm.ana,
+        client,
+        firm.partner,
+    )
+    with pytest.raises(NotFound):
+        await assign_work_item(firm.ctx(firm.partner), work_item, firm.ana, "preparer")
     assert await firm.assignments(work_item) == 0

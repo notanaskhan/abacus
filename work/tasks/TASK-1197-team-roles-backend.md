@@ -24,3 +24,4 @@ updated: 2026-10-25
 - **Rollback:** revert the commits; `alembic downgrade 0146`.
 
 ## Progress log
+- 2026-10-25: owed from S7: `assign_work_item` now refuses an assignee off the team or walled from the client (404, after `authorise`, before G2); ED-042. `test_g2_v2.py` (2 new), `test_work_items.py`, `backfill/test_p07t26_contacts_g2_independent.py`: 35 passed, 1 xfailed.
