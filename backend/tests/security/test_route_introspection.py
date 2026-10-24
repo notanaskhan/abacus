@@ -476,6 +476,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     ("POST", "/v1/engagements/{engagement_id}/guidance-drafts/approve", "guidance_draft.decide"),
     ("POST", "/v1/engagements/{engagement_id}/guidance-drafts/discard", "guidance_draft.decide"),
+    ("POST", "/v1/engagements/{engagement_id}/hold", "engagement.hold"),
     ("POST", "/v1/engagements/{engagement_id}/inbox", "evidence.upload"),
     ("POST", "/v1/engagements/{engagement_id}/inbox/{file_id}/assign", "evidence.upload"),
     ("POST", "/v1/engagements/{engagement_id}/inbox/{file_id}/discard", "evidence.upload"),
@@ -663,6 +664,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/request-items/{item_id}/waive",
         "request_item.waive",
     ),
+    ("POST", "/v1/engagements/{engagement_id}/resume", "engagement.hold"),
     ("POST", "/v1/engagements/{engagement_id}/retrievals", "evidence.upload"),
     (
         "POST",

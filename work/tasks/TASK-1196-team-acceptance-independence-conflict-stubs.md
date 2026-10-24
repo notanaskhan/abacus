@@ -4,7 +4,7 @@ title: Team, acceptance, independence and conflict contract stubs (engagements a
 spec: SPEC-332
 acceptance_criteria: [AC-1, AC-6, AC-10, AC-17, AC-18, AC-20, AC-24, AC-25]
 risk_zone: red
-status: in-progress
+status: done
 epic: P-07
 plan_key: P-07-T29
 branch: s8a-team-roles

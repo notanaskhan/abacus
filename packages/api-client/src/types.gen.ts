@@ -6430,6 +6430,18 @@ export type EngagementGraphOut = {
 };
 
 /**
+ * EngagementHoldIn
+ *
+ * "On hold…" names a reason code, never free text (§3.1.3).
+ */
+export type EngagementHoldIn = {
+    /**
+     * Reason
+     */
+    reason: 'client_unresponsive' | 'fees_outstanding' | 'scope_change' | 'independence_review' | 'other';
+};
+
+/**
  * EngagementIn
  */
 export type EngagementIn = {
@@ -6898,6 +6910,21 @@ export type EngagementRecordOut = {
  * EngagementStatus
  */
 export type EngagementStatus = 'prospect' | 'accepted' | 'declined' | 'contracted' | 'active' | 'on_hold' | 'delivered' | 'archived';
+
+/**
+ * EngagementStatusOut
+ */
+export type EngagementStatusOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Hold Reason
+     */
+    hold_reason?: 'client_unresponsive' | 'fees_outstanding' | 'scope_change' | 'independence_review' | 'other' | null;
+    status: EngagementStatus;
+};
 
 /**
  * EngagementSummaryOut
@@ -29828,6 +29855,62 @@ export type DiscardDraftsResponses = {
 
 export type DiscardDraftsResponse = DiscardDraftsResponses[keyof DiscardDraftsResponses];
 
+export type HoldEngagementData = {
+    body: EngagementHoldIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/hold';
+};
+
+export type HoldEngagementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type HoldEngagementError = HoldEngagementErrors[keyof HoldEngagementErrors];
+
+export type HoldEngagementResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementStatusOut;
+};
+
+export type HoldEngagementResponse = HoldEngagementResponses[keyof HoldEngagementResponses];
+
 export type InboxData = {
     body?: never;
     headers?: {
@@ -36229,6 +36312,62 @@ export type WaiveRequestItemResponses = {
 };
 
 export type WaiveRequestItemResponse = WaiveRequestItemResponses[keyof WaiveRequestItemResponses];
+
+export type ResumeEngagementData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/resume';
+};
+
+export type ResumeEngagementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ResumeEngagementError = ResumeEngagementErrors[keyof ResumeEngagementErrors];
+
+export type ResumeEngagementResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementStatusOut;
+};
+
+export type ResumeEngagementResponse = ResumeEngagementResponses[keyof ResumeEngagementResponses];
 
 export type StartRetrievalData = {
     body: RetrievalIn;

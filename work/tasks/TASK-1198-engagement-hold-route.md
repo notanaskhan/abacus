@@ -4,7 +4,7 @@ title: Engagement hold and resume routes with a reason, for ENG-02's On hold con
 spec: SPEC-321
 acceptance_criteria: [AC-11]
 risk_zone: amber
-status: in-progress
+status: done
 epic: P-07
 plan_key: P-07-T28
 branch: s8a-team-roles
@@ -22,3 +22,4 @@ ENG-02's status menu "Active ⇄ On hold…" (reason code required) has no route
 - **Rollback:** revert the commit; no migration.
 
 ## Progress log
+- 2026-10-25: built as planned behind `engagements.v2` (DEC-328); `engagements-v2.md` row and ENG-02's API row updated. `test_engagement_hold.py` 5 passed (hold and resume with audit and outbox, archived and non-hold 409, staff, stale MFA and an agent refused with nothing written, 404 flag off, the API reasons equal `HOLD_REASONS`).

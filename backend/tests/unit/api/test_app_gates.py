@@ -228,6 +228,9 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/independence/reminders",
     "/v1/engagements/{engagement_id}/eqr",
     "/v1/conflict-checks/{check_id}/results/{result_id}/clear",
+    # TASK-1198 (ENG-02 status menu): holding and resuming move an engagement, so 200.
+    "/v1/engagements/{engagement_id}/hold",
+    "/v1/engagements/{engagement_id}/resume",
 }
 
 

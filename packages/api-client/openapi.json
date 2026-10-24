@@ -13729,6 +13729,29 @@
         "title": "EngagementGraphOut",
         "type": "object"
       },
+      "EngagementHoldIn": {
+        "additionalProperties": false,
+        "description": "\"On hold\u2026\" names a reason code, never free text (\u00a73.1.3).",
+        "properties": {
+          "reason": {
+            "cls": "internal",
+            "enum": [
+              "client_unresponsive",
+              "fees_outstanding",
+              "scope_change",
+              "independence_review",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "EngagementHoldIn",
+        "type": "object"
+      },
       "EngagementIn": {
         "additionalProperties": false,
         "properties": {
@@ -14794,6 +14817,45 @@
         ],
         "title": "EngagementStatus",
         "type": "string"
+      },
+      "EngagementStatusOut": {
+        "properties": {
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "hold_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "client_unresponsive",
+                  "fees_outstanding",
+                  "scope_change",
+                  "independence_review",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Reason"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "status"
+        ],
+        "title": "EngagementStatusOut",
+        "type": "object"
       },
       "EngagementSummaryOut": {
         "properties": {
@@ -63803,6 +63865,133 @@
         "x-abacus-action": "guidance_draft.decide"
       }
     },
+    "/v1/engagements/{engagement_id}/hold": {
+      "post": {
+        "description": "A person, with fresh MFA: Active \u2192 On hold with a reason; `engagement.held` audited and\n`engagement.status_changed` emitted in one unit of work. 409 `illegal_transition` from any\nother state (archived included).",
+        "operationId": "hold_engagement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EngagementHoldIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Hold Engagement Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.hold"
+      }
+    },
     "/v1/engagements/{engagement_id}/inbox": {
       "get": {
         "description": "SPEC-023 AC-2, AC-3: waiting files with their suggestions.",
@@ -77766,6 +77955,123 @@
           "requests"
         ],
         "x-abacus-action": "request_item.waive"
+      }
+    },
+    "/v1/engagements/{engagement_id}/resume": {
+      "post": {
+        "description": "On hold \u2192 Active; `engagement.resumed`. 409 `illegal_transition` unless on hold.",
+        "operationId": "resume_engagement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Resume Engagement Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "engagement.hold"
       }
     },
     "/v1/engagements/{engagement_id}/retrievals": {
