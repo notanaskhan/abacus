@@ -68,6 +68,10 @@ ContactRole = Literal[
 PartyKind = Literal["person", "organisation", "group"]
 RoleScopeKind = Literal["client", "client_entity"]
 MfaPolicy = Literal["required_by_firm", "optional"]
+# One address, `local@domain.tld`, on one line: no spaces, line breaks or a second `@` (DEC-303).
+ContactEmail = Annotated[
+    str, Field(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+]
 ContactSort = Literal["name", "portal_status", "last_seen"]
 
 
@@ -207,9 +211,7 @@ class ContactIn(BaseModel):
         SingleLineText, Field(min_length=1, max_length=200), classified("confidential")
     ]
     party_kind: Annotated[PartyKind, classified("internal")] = "person"
-    email: Annotated[
-        str | None, Field(default=None, min_length=3, max_length=320), classified("confidential")
-    ]
+    email: Annotated[ContactEmail | None, Field(default=None), classified("confidential")]
     phone: Annotated[
         SingleLineText | None, Field(default=None, max_length=40), classified("confidential")
     ]
@@ -227,9 +229,7 @@ class ContactPatchIn(BaseModel):
         Field(default=None, min_length=1, max_length=200),
         classified("confidential"),
     ]
-    email: Annotated[
-        str | None, Field(default=None, min_length=3, max_length=320), classified("confidential")
-    ]
+    email: Annotated[ContactEmail | None, Field(default=None), classified("confidential")]
     phone: Annotated[
         SingleLineText | None, Field(default=None, max_length=40), classified("confidential")
     ]
@@ -433,7 +433,9 @@ async def get_contact_route(contact_id: UUID, ctx: Ctx) -> ContactDetailOut:
     "/{contact_id}", action="contact.manage", response_model=ContactOut, errors=(409,)
 )
 async def update_contact_route(contact_id: UUID, body: ContactPatchIn, ctx: Ctx) -> ContactOut:
-    """409 `stale_version`; one `contact.updated` event naming the fields, never values."""
+    """409 `stale_version`; one `contact.updated` event naming the fields, never values. A new
+    address revokes a pending invitation sent to the old one; 409 `contact_bound` for a contact
+    that already signs in (its address is the person's own)."""
     await _gate(ctx)
     values: dict[str, str | None] = {}
     if body.name is not None:

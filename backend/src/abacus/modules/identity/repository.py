@@ -1578,17 +1578,21 @@ async def activate_grant(session: AsyncSession, grant_id: UUID, user_id: UUID) -
     return row is not None
 
 
-async def holds_grant(
+async def held_grant(
     session: AsyncSession, user_id: UUID, role: str, scope_kind: str, scope_id: UUID
-) -> bool:
-    found = await session.scalar(
-        text(
-            "SELECT 1 FROM client_access_grants WHERE user_id = :user AND role = :role "
-            "AND scope_kind = :kind AND scope_id = :scope"
-        ),
-        {"user": user_id, "role": role, "kind": scope_kind, "scope": scope_id},
-    )
-    return found is not None
+) -> tuple[UUID, str] | None:
+    """The person's one row for this role on this scope (unique per firm), whatever its status:
+    its id and status, locked, or None."""
+    row = (
+        await session.execute(
+            text(
+                "SELECT id, status FROM client_access_grants WHERE user_id = :user "
+                "AND role = :role AND scope_kind = :kind AND scope_id = :scope FOR UPDATE"
+            ),
+            {"user": user_id, "role": role, "kind": scope_kind, "scope": scope_id},
+        )
+    ).first()
+    return None if row is None else (cast(UUID, row[0]), str(row[1]))
 
 
 async def contact_invitations(

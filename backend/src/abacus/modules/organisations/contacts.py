@@ -47,17 +47,20 @@ from abacus.modules.identity.api import (
     authorise,
     authorise_grants,
     change_contact_grants,
+    close_contact_invitations,
     contact_delegations_provider,
     engagement_resource,
     factor_enrolled,
     grants_of_contacts,
     invitation_contact,
+    invitation_grants,
     invitations_of_contacts,
     invite_contact,
     locked_addresses,
     resend_contact_invitation,
     revoke_contact,
     scope_facts,
+    sign_in_addresses,
     unlock_contact_sign_in,
     visible_clients,
 )
@@ -90,6 +93,13 @@ _PORTAL_ORDER: Final = {"active": 0, "invited": 1, "locked": 2, "not_invited": 3
 # error catalogue keeps the engagement's summary for the shared code.
 class GateUnmet(DomainConflict):
     code = "gate_unmet"
+
+
+class ContactBound(DomainConflict):
+    """The contact signs in as a person already: the address is that person's own sign-in
+    email, not the contact record's to change."""
+
+    code = "contact_bound"
 
 
 @dataclass(frozen=True)
@@ -333,7 +343,9 @@ async def _rows(ctx: AuthContext, client_id: UUID, contacts: Sequence[Contact]) 
         entities = await entities_of(session, client_id)
         client = await session.scalar(select(Client.name).where(Client.id == client_id))
     invitations = await invitations_of_contacts(ctx.tenant, ids)
-    locked = await locked_addresses(ctx.tenant, [c.email for c in contacts if c.email])
+    # Locked follows where the person signs in, never the editable field (DEC-303).
+    addresses = await sign_in_addresses(ctx.tenant, [(c.id, c.user_id) for c in contacts])
+    locked = await locked_addresses(ctx.tenant, list(addresses.values()))
     counts = await _live_delegations(ctx, ids)
     actions = sorted(
         await allowed_actions(ctx, Resource.client(ctx.tenant_id, client_id), ROW_ACTIONS_ALL)
@@ -341,11 +353,7 @@ async def _rows(ctx: AuthContext, client_id: UUID, contacts: Sequence[Contact]) 
     rows: list[RowView] = []
     for contact in contacts:
         state = contact.portal_state
-        if (
-            state in ("active", "invited")
-            and contact.email
-            and contact.email.strip().lower() in locked
-        ):
+        if state in ("active", "invited") and addresses.get(contact.id) in locked:
             state = "locked"
         invitation = invitations.get(contact.id)
         invited = state == "invited" and invitation is not None
@@ -506,6 +514,12 @@ async def update_contact(
     if roles is not None:
         await _check_roles(ctx, contact.client_id, roles)
     names: list[str] = sorted(values) + (["roles"] if roles is not None else [])
+    readdressed = (
+        "email" in values
+        and (values["email"] or "").strip().lower() != (contact.email or "").strip().lower()
+    )
+    if readdressed and contact.user_id is not None:
+        raise ContactBound  # the person's identity email is the address (DEC-303)
     async with uow(ctx.tenant) as tx:
         try:
             async with tx.session.begin_nested():
@@ -520,6 +534,13 @@ async def update_contact(
             raise StaleVersion(facts={"contact_id": str(contact_id)})
         if roles is not None:
             await replace_contact_roles(tx.session, ctx.tenant_id, contact_id, _roles(roles))
+        if readdressed:
+            # The link went to the old address: it dies, with its pending grants (DEC-303).
+            closed = await close_contact_invitations(tx, ctx, contact_id)
+            if closed:
+                await contact_delegations_provider().end(tx, closed)
+            if contact.portal_state == "invited":
+                await set_portal_state(tx.session, contact_id, "not_invited")
         tx.record(
             "contact.updated",
             target=Target("client", contact.client_id),
@@ -597,7 +618,14 @@ async def _invitation_contact(ctx: AuthContext, invitation_id: UUID) -> Contact:
 
 
 async def resend(ctx: AuthContext, invitation_id: UUID) -> InvitationView:
+    """A new link and 14 days, after the checks the invitation passed: G1 again for a
+    client-wide grant (DEC-303), and every grant still pending (identity)."""
     contact = await _invitation_contact(ctx, invitation_id)
+    grants = await invitation_grants(ctx.tenant, invitation_id)
+    if any(g.scope_kind in _CLIENT_WIDE for g in grants) and (
+        await _g1_engagement(ctx, contact.client_id) is None
+    ):
+        raise GateUnmet(facts={"gate": "G1", "client_id": str(contact.client_id)})
     async with uow(ctx.tenant) as tx:
         made = await resend_contact_invitation(tx, ctx, contact.client_id, invitation_id)
     return InvitationView(
@@ -676,8 +704,11 @@ async def unlock(ctx: AuthContext, contact_id: UUID) -> tuple[UUID, str, datetim
         if refused.layer == "wall":
             raise NotFound("contact") from None
         raise
+    address = (await sign_in_addresses(ctx.tenant, [(contact.id, contact.user_id)])).get(
+        contact.id
+    )
     async with uow(ctx.tenant) as tx:
         await unlock_contact_sign_in(
-            tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=contact.email
+            tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
     return contact.id, contact.portal_state, await clock.now(ctx.tenant)

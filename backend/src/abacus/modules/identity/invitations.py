@@ -19,9 +19,10 @@ Contact invitations (P-07-T25; DEC-300): an invitation may instead carry `grant_
 `client_access_grants` rows made for its contact when the firm invited them (`contact_access`).
 Acceptance activates exactly those grants for the person who accepted, after re-checking that
 each still lies within the engagement's client and that the inviter may still give it now
-(`contact.manage` on its engagement, or on the client for a client-wide one: the cells of
-`client_access.grant` without its fresh MFA, DEC-277's rule). Everything else (single use, the MFA
-floor in the transaction, ending the other sessions) is the same path.
+(`client_access.grant` itself on its engagement, or on the client for a client-wide one, with
+only the fresh-MFA recency waived because the inviter isn't present: DEC-277, DEC-303).
+Everything else (single use, the MFA floor in the transaction, ending the other sessions) is the
+same path; the hosted sign-in's accept refuses a contact invitation.
 """
 
 from __future__ import annotations
@@ -83,7 +84,7 @@ from abacus.modules.identity.repository import (
     get_invitation,
     grant_engagement_role,
     grants_by_id,
-    holds_grant,
+    held_grant,
     insert_grant_event,
     insert_grant_event_of,
     insert_invitation,
@@ -648,6 +649,7 @@ async def accept_invitation(identity: VerifiedIdentity, token: str) -> AcceptedI
                 row is None
                 or not row["live"]
                 or row["terms_version"] is not None
+                or row["grant_ids"] is not None  # contact invitations: the portal only (DEC-303)
                 or str(row["email"]).casefold() != identity.email.casefold()
             ):
                 raise InvitationNotFound("invitation")
@@ -884,20 +886,22 @@ async def _inviter_may_give(
     tenant: TenantContext, inviter: UUID, grants: Sequence[ContactGrantRow]
 ) -> bool:
     """INV-5 at acceptance for a contact invitation (DEC-277, DEC-300): for every grant, the
-    inviter as they are now passes `contact.manage` on its resource (the grant's engagement, or
-    the client for a client-wide grant): `client_access.grant`'s holders without its fresh MFA,
-    so the wall, membership, role and archived layers are judged again."""
+    inviter as they are now passes `client_access.grant` on its resource (the grant's engagement,
+    or the client for a client-wide grant) with only fresh-MFA recency waived (DEC-303): the wall,
+    membership, role cells, G2 on attest clients and the archived rule are judged again."""
     checked: set[tuple[str, UUID | None, UUID | None]] = set()
     for grant in grants:
         found = await grant_resource(tenant, grant.scope_kind, grant.scope_id)
         if found is None:
             return False
         resource, _ = found
-        action = "contact.manage"
+        action = "client_access.grant"
         key = (action, resource.engagement_id, resource.client_id)
         if key in checked:
             continue
-        if not await member_could(tenant.tenant_id, inviter, action, resource):
+        if not await member_could(
+            tenant.tenant_id, inviter, action, resource, waive_fresh_mfa=True
+        ):
             return False
         checked.add(key)
     return True
@@ -910,27 +914,34 @@ async def _activate(
     user_id: UUID,
     inviter: UUID,
 ) -> None:
-    """Each pending grant becomes the person's, attributed to the inviter (INV-5). A grant the
-    person already holds the same way is closed instead of duplicated."""
+    """Each pending grant becomes the person's, attributed to the inviter (INV-5). Where the
+    person already has a row for that role and scope (one per firm): an active one stands and
+    the pending grant closes; a revoked or expired one (an earlier access, revoked) is made
+    active again by this inviter, audited, and the pending grant closes (DEC-303)."""
     for grant in grants:
         target = (
             Target("firm", ctx.tenant_id)
             if grant.scope_kind in ("client", "client_entity")
             else Target("engagement", await _engagement_of(ctx, grant))
         )
-        if await holds_grant(tx.session, user_id, grant.role, grant.scope_kind, grant.scope_id):
+        held = await held_grant(tx.session, user_id, grant.role, grant.scope_kind, grant.scope_id)
+        granted = grant.id
+        if held is not None:
             await set_grant_status(tx.session, grant.id, "revoked")
             await insert_grant_event(
                 tx.session, tenant_id=ctx.tenant_id, grant_id=grant.id, event="revoked", by=inviter
             )
-            continue
-        if not await activate_grant(tx.session, grant.id, user_id):
+            if held[1] == "active":
+                continue
+            granted = held[0]
+            await set_grant_status(tx.session, granted, "active")
+        elif not await activate_grant(tx.session, grant.id, user_id):
             raise InvitationNotFound("invitation")
         await insert_grant_event(
-            tx.session, tenant_id=ctx.tenant_id, grant_id=grant.id, event="activated", by=inviter
+            tx.session, tenant_id=ctx.tenant_id, grant_id=granted, event="activated", by=inviter
         )
         tx.record("client_access.granted", target=target)
-        tx.emit(ClientAccessGranted(grant_id=grant.id, user_id=user_id))
+        tx.emit(ClientAccessGranted(grant_id=granted, user_id=user_id))
 
 
 async def _engagement_of(ctx: TenantContext, grant: ContactGrantRow) -> UUID:

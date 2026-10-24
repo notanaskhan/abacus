@@ -9252,6 +9252,7 @@
               {
                 "maxLength": 320,
                 "minLength": 3,
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
                 "type": "string"
               },
               {
@@ -9380,6 +9381,7 @@
               {
                 "maxLength": 320,
                 "minLength": 3,
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
                 "type": "string"
               },
               {
@@ -47622,7 +47624,7 @@
         "x-abacus-action": "contact.read"
       },
       "patch": {
-        "description": "409 `stale_version`; one `contact.updated` event naming the fields, never values.",
+        "description": "409 `stale_version`; one `contact.updated` event naming the fields, never values. A new\naddress revokes a pending invitation sent to the old one; 409 `contact_bound` for a contact\nthat already signs in (its address is the person's own).",
         "operationId": "update_contact",
         "parameters": [
           {

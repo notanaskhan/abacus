@@ -49,6 +49,7 @@ from abacus.modules.identity.client_access import (
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import (
     AccessChanged,
+    ClientAccessGranted,
     ClientAccessRevoked,
     ClientInvitationIssued,
     ContactInvited,
@@ -65,10 +66,12 @@ from abacus.modules.identity.repository import (
     ContactGrantRow,
     contact_grants,
     contact_invitations,
+    emails_of,
     end_portal_access,
     extend_invitation,
     get_invitation,
     grants_by_id,
+    held_grant,
     insert_grant_event,
     insert_pending_grant,
     locked_emails,
@@ -176,7 +179,9 @@ async def mfa_policy(tenant_id: UUID, roles: Sequence[str]) -> MfaPolicy:
     return "optional"
 
 
-async def _close_pending(tx: UnitOfWork, tenant_id: UUID, contact_id: UUID) -> list[UUID]:
+async def _close_pending(
+    tx: UnitOfWork, tenant_id: UUID, contact_id: UUID, by: UUID | None = None
+) -> list[UUID]:
     """The contact's pending invitations revoked with their links, and their pending grants
     closed: one live invitation per contact. Returns the grants closed."""
     closed: list[UUID] = []
@@ -197,7 +202,7 @@ async def _close_pending(tx: UnitOfWork, tenant_id: UUID, contact_id: UUID) -> l
                     tenant_id=tenant_id,
                     grant_id=grant.id,
                     event="revoked",
-                    by=None,
+                    by=by,
                 )
                 closed.append(grant.id)
     return closed
@@ -256,7 +261,7 @@ async def invite_contact(
     resources = await _resources(ctx.tenant, client_id, grants)
     await _authorise_each(ctx, "client_access.grant", resources)
     engagement_id = _anchor(resources, client_wide_engagement)
-    closed = await _close_pending(tx, ctx.tenant_id, contact_id)
+    closed = await _close_pending(tx, ctx.tenant_id, contact_id, ctx.user_id)
     grant_ids = await _insert_pending(tx, ctx, contact_id, grants)
     roles = {g.role for g in grants}
     invitation_id = await create_invitation(
@@ -314,6 +319,10 @@ async def resend_contact_invitation(
         raise NotFound("client_invitation")
     raw = cast(list[UUID], row["grant_ids"])
     grants = await grants_by_id(tx.session, [UUID(str(g)) for g in raw], lock=True)
+    # Only a link that still grants what it promised is renewed (DEC-303): a grant revoked
+    # since (by the firm, or its inviter's offboarding) means inviting again.
+    if not grants or any(g.status != "pending" for g in grants):
+        raise NotFound("client_invitation")
     await _authorise_each(
         ctx, "client_access.grant", await _resources(ctx.tenant, client_id, grants)
     )
@@ -377,12 +386,13 @@ async def revoke_contact(
     if not resources:
         resources = [Resource.client(ctx.tenant_id, client_id)]
     await _authorise_each(ctx, "client_access.revoke", resources)
-    if row["status"] == "pending":
-        await set_invitation_status(tx.session, invitation_id, "revoked")
-        await set_token_hash(tx.session, invitation_id, None)
+    # Every pending invitation of the contact dies with its link, not only this one: revoking
+    # through an older, accepted invitation must not leave a newer one live (DEC-303).
+    closed = await _close_pending(tx, ctx.tenant_id, contact_id, ctx.user_id)
     revoked, users = await _revoke_grants(
         tx, ctx, await grants_by_id(tx.session, [g.id for g in live], lock=True)
     )
+    revoked = [*await grants_by_id(tx.session, closed), *revoked]
     await _end_sessions(tx, ctx, users)
     tx.record("invitation.revoked", target=Target("client_invitation", invitation_id))
     if revoked:
@@ -436,6 +446,23 @@ async def change_contact_grants(
     new_ids: list[UUID] = []
     if user_id is not None:
         for grant, resource in zip(added, add_resources, strict=True):
+            held = await held_grant(
+                tx.session, user_id, grant.role, grant.scope_kind, grant.scope_id
+            )
+            if held is not None and held[1] != "active":
+                # An earlier access, revoked: made active again by this person (DEC-303).
+                await set_grant_status(tx.session, held[0], "active")
+                await insert_grant_event(
+                    tx.session,
+                    tenant_id=ctx.tenant_id,
+                    grant_id=held[0],
+                    event="activated",
+                    by=ctx.user_id,
+                )
+                tx.record("client_access.granted", target=Target("client", client_id))
+                tx.emit(ClientAccessGranted(grant_id=held[0], user_id=user_id))
+                new_ids.append(held[0])
+                continue
             made = await grant_in_unit_of_work(
                 tx,
                 tenant_id=ctx.tenant_id,
@@ -543,3 +570,44 @@ async def invitation_contact(tenant: TenantContext, invitation_id: UUID) -> UUID
     if row is None or row["grant_ids"] is None:
         return None
     return cast(UUID | None, row["contact_id"])
+
+
+async def invitation_grants(tenant: TenantContext, invitation_id: UUID) -> list[ContactGrantRow]:
+    """A contact invitation's grants (the caller found its contact visible)."""
+    async with tenant_session(tenant) as session:
+        row = await get_invitation(session, invitation_id)
+        raw = None if row is None else cast(list[UUID] | None, row["grant_ids"])
+        return await grants_by_id(session, [UUID(str(g)) for g in raw or []])
+
+
+async def close_contact_invitations(
+    tx: UnitOfWork, ctx: AuthContext, contact_id: UUID
+) -> list[UUID]:
+    """In the caller's unit of work (an edited address, DEC-303): the contact's pending
+    invitations revoked with their links and their pending grants closed, by this person. The
+    grants closed (the caller ends their delegations)."""
+    _human(ctx, "contact.manage")
+    return await _close_pending(tx, ctx.tenant_id, contact_id, ctx.user_id)
+
+
+async def sign_in_addresses(
+    tenant: TenantContext, contacts: Sequence[tuple[UUID, UUID | None]]
+) -> dict[UUID, str]:
+    """Where each contact signs in to the portal (DEC-303): a bound contact's own identity email,
+    else the address its live invitation was sent to; never the contact record's field, which
+    anyone with `contact.manage` may edit. A contact with neither has no address here."""
+    bound = {c: u for c, u in contacts if u is not None}
+    found: dict[UUID, str] = {}
+    identities = await emails_of(sorted(set(bound.values())))
+    for contact, user in bound.items():
+        if user in identities:
+            found[contact] = identities[user].strip().lower()
+    unbound = [c for c, u in contacts if u is None]
+    if unbound:
+        async with tenant_session(tenant) as session:
+            rows = await contact_invitations(session, unbound)
+        for row in rows:  # newest first
+            contact = cast(UUID, row["contact_id"])
+            if contact not in found and row["live"] and row["grant_ids"] is not None:
+                found[contact] = str(row["email"]).strip().lower()
+    return found

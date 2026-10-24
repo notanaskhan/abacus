@@ -30,7 +30,7 @@ Matrix: `docs/architecture/permission-matrix/organisations.yaml` (`contact.read`
 | Resend | `POST /v1/invitations/{invitation_id}/resend` | `client_access.grant` | as invite | **denied** |
 | Revoke (CLI-04 f) | `POST /v1/invitations/{invitation_id}/revoke` | `client_access.revoke` (F-03) | as invite; `mfa_recent` | **denied** |
 | Change scope (CLI-04 e) | `PUT /v1/contacts/{contact_id}/access` | `client_access.grant` | as invite | **denied** |
-| Unlock (CLI-04 d) | `POST /v1/contacts/{contact_id}/unlock` | `contact.unlock` (F-03) | firm admin, security admin, engagement partner, manager, client service | **denied** |
+| Unlock (CLI-04 d) | `POST /v1/contacts/{contact_id}/unlock` | `contact.unlock` (F-03) | firm admin, security admin, engagement partner, manager, client service; `mfa_recent` (DEC-303) | **denied** |
 
 No client role holds any of these actions. A walled client answers 404 on every route (INV-3, DEC-43); staff sign-in locks are unlocked only by IT/Security (`security_admin`, DF-24), never here.
 
@@ -62,6 +62,7 @@ Every write denies `agent` and `system` at the matrix (INV-1, P-07 §4.4); the l
 | 409 | `{"detail": "gate_unmet", "facts": {"gate": "G1", "client_id": "…"}}` | a full-client grant before any engagement of the client is Accepted (intake grants excepted, OQ-11) |
 | 409 | `{"detail": "invitation_expired"}` · `{"detail": "invitation_used"}` | catalogued for the firm side; opening a link older than 14 days or already used answers P-08's one 404 (DEC-275, DEC-300) |
 | 422 | `{"detail": "invitation_invalid", "facts": {…}}` | grants across more than one engagement, or a contact with no address (DEC-300) |
+| 409 | `{"detail": "contact_bound"}` | changing the address of a contact that already signs in (its address is the person's own; DEC-303) |
 | 409 | `{"detail": "illegal_transition"}` | inviting an active contact (use Change scope), or changing the scope of one never invited |
 | 422 | `{"detail": "scope_outside_client", "facts": {…}}` | a grant scope or delegated request that is not the contact's client's |
 

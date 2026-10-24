@@ -30,10 +30,11 @@ updated: 2026-10-24
 - **organisations:** `contacts.py` (the service), `contacts_contract.py` routes live (no 501), `slots.register_contact_delegations`, `ContactCreated`.
 - **requests (C5):** `record_contact_delegations`, `end_contact_delegations`, `contact_delegations` registered from `requests.api`.
 - **communications:** contact invitations from the `portal.invitation` template (DEC-301).
-- **Decisions:** DEC-300 (model and semantics), DEC-301 (email), DEC-302 (reads). DEC-303, ED-031 and ED-032 unused.
+- **Decisions:** DEC-300 (model and semantics), DEC-301 (email), DEC-302 (reads), DEC-303 (security review fixes). ED-031 and ED-032 unused (the defects never reached main).
 - **Tests:** `tests/integration/backfill/test_contacts_access.py` (8); P-07-T26's `test_p07t26_contacts_g2_independent.py` passes with only its T25 markers removed (intake stays a strict xfail, TASK-1174); the stub test's 501 cases became `STUBBED = set()` (the clients precedent).
 - **Rollback:** `alembic downgrade 0143` (pending grants with no person are dropped, synthetic only); revert; `contacts.v2` off hides every route.
 
 ## Progress log
 - 2026-10-24: plan written; not built. The row needs identity's invitation acceptance re-scoped (protected), a nullable pending-grant user, the P-08 lock state, C5 delegation counts and the C16 template: more than this session could finish safely after T02, T23 and T24. Next session starts at the migration.
 - 2026-10-24 (S7 close, s7c-p07-contacts-live): built as planned above on invitations v2 (#393). Harborline's invitation grants exactly its two delegated requests (P-07-T26 `test_inv4_*`). Deferred: `last_seen_at` and drawer sign-ins (P-08 read), the firm's portal host in the email link, intake/K-1/governance/component scope resolvers (their owners), allowed_actions for engagement-role holders (DEC-302). Human to-do: import `portal.invitation` per environment before `contacts.v2` goes on.
+- 2026-10-24: security review (7 items) fixed with a failing test first for each (`test_review1..7` in `test_contacts_access.py`): the acceptance re-check is `client_access.grant` with only fresh MFA waived; the hosted accept refuses contact invitations; an address change kills the pending invitation and a bound contact's address is fixed (409 `contact_bound`); locks follow the sign-in identity and `contact.unlock` needs fresh MFA; revoke closes every pending invitation; re-inviting reactivates the revoked row; resend re-checks G1 and pending grants. DEC-303; DEC-300 amended.

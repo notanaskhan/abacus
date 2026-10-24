@@ -176,6 +176,12 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  contact_bound:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contacts.ContactBound
+    summary: 'The contact signs in as a person already: the address is that person''s own sign-in email,
+      not the contact record''s to change.'
   contact_exists:
     status: 409
     raised_by:
