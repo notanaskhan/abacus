@@ -79,3 +79,41 @@ async def test_a_sign_off_reads_stale_exactly_when_the_target_hash_differs(
         assert {s.level for s in ladder if s.stale} == stale
         assert {s.level for s in await stale_of(me, "workpaper", {paper: current})} == stale
     assert await seed.value("SELECT count(*) FROM sign_offs WHERE tenant_id = $1", tenant) == 4
+
+
+async def test_the_ladder_and_the_staleness_query_pick_the_same_newest_row(
+    migrated_db: MigratedDatabase,
+) -> None:
+    """With a frozen clock several sign-offs share one instant: both reads break the tie by id
+    (created_at, then id, newest first), so they never disagree about the newest."""
+    seed = Seeder(migrated_db.superuser_dsn)
+    tenant = await seed.firm()
+    people = [await seed.person(tenant) for _ in range(6)]
+    engagement = await seed.engagement(tenant, await seed.entity(tenant), people[0].user_id)
+    paper = uuid.uuid4()
+    same = "2026-09-14T09:41:00Z"
+    for n, who in enumerate(people):
+        await seed.as_actor(
+            tenant,
+            ("human", str(who.user_id)),
+            SIGN,
+            tenant,
+            engagement,
+            paper,
+            2,
+            V1 if n % 2 else V2,
+            who.user_id,
+            same,
+        )
+    ids = await seed.rows(
+        "SELECT id, content_hash FROM sign_offs WHERE target_id = $1 ORDER BY id DESC", paper
+    )
+    newest = ids[0]
+    me = TenantContext(tenant, "human", str(people[0].user_id))
+    async with tenant_session(me) as session:
+        rows = await sign_offs_of(session, "workpaper", [paper])
+    assert [r.id for r in rows] == [r["id"] for r in ids]
+    other = V1 if newest["content_hash"] == V2 else V2
+    stale = await stale_of(me, "workpaper", {paper: other})
+    assert [s.signed_hash for s in stale] == [newest["content_hash"]]
+    assert await stale_of(me, "workpaper", {paper: newest["content_hash"]}) == []

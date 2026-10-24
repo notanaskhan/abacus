@@ -27,6 +27,7 @@ updated: 2026-10-24
 
 ## Progress log
 - 2026-10-24: built as planned. Generated: 84 I-AGENT-NEVER cases (28 actions × 3 principals) and 27 condition cases.
+- 2026-10-24: security review fixes (medium): `not_preparer_of_target` was not fail-closed for trial balances and mapping sets (no facts registered, so an empty preparer set passed), and an L1 signer on an earlier hash dropped out. Now a type with no registered facts denies L2 and L3; `assurance` registers trial-balance and mapping-set facts with preparers from the ledger's records (adopters, annotators; creator, editors); workpapers' preparers are cell setters and citation adders; every L1 signer counts. Also: `sign_offs_of` breaks created_at ties by id like the staleness query. DEC-216 updated. Tests written failing first in `test_sign_off_segregation.py` and `test_review_staleness.py`.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

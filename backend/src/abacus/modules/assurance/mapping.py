@@ -26,13 +26,14 @@ from abacus.modules.ledger.api import (
     engagement_trial_balances,
     grouping_set_versions,
     import_grouping_set,
+    mapping_set_authors,
     mapping_set_of,
     mapping_view,
     publish_version,
     published_versions,
     statements_for,
 )
-from abacus.modules.review.api import Reviewable, record_sign_off
+from abacus.modules.review.api import Reviewable, ReviewableFacts, record_sign_off
 
 TARGET = "mapping_set"
 
@@ -136,6 +137,25 @@ async def statements(
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "trial_balance.read", ref.resource())
     return await statements_for(ctx.tenant, engagement_id, tb_id, layer)
+
+
+async def mapping_facts(tenant: TenantContext, mapping_set_id: UUID) -> ReviewableFacts | None:
+    """P-04-T15: a mapping set's facts for the sign-off rules. Its preparers are its creator and
+    everyone who edited a mapping in it (the ledger's own records)."""
+    authors = await mapping_set_authors(tenant, mapping_set_id)
+    if authors is None:
+        return None
+    found = await mapping_view(tenant, authors.engagement_id, authors.trial_balance_id)
+    if found is None or found.mapping_set_id != mapping_set_id:
+        return None
+    return ReviewableFacts(
+        TARGET,
+        mapping_set_id,
+        authors.engagement_id,
+        found.content_hash,
+        found.version.version,
+        authors.authors,
+    )
 
 
 async def mapping_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Reviewable]:

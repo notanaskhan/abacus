@@ -26,7 +26,8 @@ async def sign_offs_of(
             await session.execute(
                 select(SignOff)
                 .where(SignOff.target_type == target_type, SignOff.target_id.in_(target_ids))
-                .order_by(SignOff.created_at.desc())
+                # The same tie-break as `stale_sign_offs`: a frozen clock stamps many rows alike.
+                .order_by(SignOff.created_at.desc(), SignOff.id.desc())
             )
         )
         .scalars()

@@ -79,6 +79,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"decision", "reason_code", "note", "screening_result_id", "corrects_proposal"}
         | {"actor_kind", "actor_id"}
         | {"decision_seq", "undoes_decision_id"}  # P-01-T13 (0117)
+        | {"prior_assignee_user_id", "prior_item_statuses"}
     ),
     "review_assignments": frozenset(
         {"tenant_id", "evidence_version_id", "engagement_id", "assignee_user_id"} | {"assigned_by"}

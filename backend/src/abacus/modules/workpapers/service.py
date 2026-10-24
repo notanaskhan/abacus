@@ -37,6 +37,7 @@ from abacus.modules.review.api import content_hash as review_content_hash
 from abacus.modules.workpapers.formulas import TbSource, evaluate, is_formula
 from abacus.modules.workpapers.models import Workpaper, WorkpaperCell, WorkpaperCellCitation
 from abacus.modules.workpapers.repository import (
+    cell_setters,
     citations_of,
     code_taken,
     engagement_papers,
@@ -541,14 +542,15 @@ async def sign_off(ctx: AuthContext, engagement_id: UUID, workpaper_id: UUID, le
 
 async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> ReviewableFacts | None:
     """P-04-T14: one paper's facts for the sign-off rules, for callers authorised on its
-    engagement. The paper records no preparer function yet (A-04's work-item functions), so the
-    review module adds the current L1 signers itself."""
+    engagement. Its preparers (P-04-T15; DEC-216) are everyone who ever set a cell or added a
+    citation, from the paper's own records; the review module adds its L1 signers."""
     async with tenant_session(tenant) as session:
         paper = await get_workpaper(session, workpaper_id)
         if paper is None:
             return None
         cells = await newest_cells(session, [paper.id])
         citations = await citations_of(session, [paper.id])
+        setters = await cell_setters(session, paper.id)
         version_no = await next_version_no(session, paper.id) - 1
     tb = await tb_link(tenant, paper.engagement_id)
     return ReviewableFacts(
@@ -557,7 +559,7 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         paper.engagement_id,
         content_hash(content_of(cells, citations, tb)),
         version_no,
-        frozenset(),
+        frozenset(setters | {c.added_by for c in citations}),
     )
 
 

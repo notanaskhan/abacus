@@ -252,6 +252,39 @@ async def test_ac315_a_send_back_is_undone_the_same_way(world: World) -> None:
     assert await world.item_status() == "uploaded"
 
 
+async def test_ac314_undo_restores_the_reviewers_assignment(world: World) -> None:
+    """Deciding clears the version's assignment; Undo puts it back as it was."""
+    with frozen(at(0)):
+        taken = await world.post(
+            world.marcus,
+            f"/v1/engagements/{world.engagement}/review-queue/{world.version}/take",
+        )
+    assert taken.status_code == 200, taken.text
+    accepted = _id(await world.accept(world.hannah, at(1)))
+    assignee = "SELECT assignee_user_id FROM review_assignments WHERE evidence_version_id = $1"
+    assert await world.seed.value(assignee, world.version) is None
+    assert (await world.undo(world.hannah, accepted, at(4))).status_code == 201
+    assert await world.seed.value(assignee, world.version) == world.marcus.user_id
+
+
+async def test_ac315_undoing_a_send_back_restores_the_items_own_prior_status(
+    world: World,
+) -> None:
+    """An item already Returned stays Returned when a send-back on it is undone (DEC-214)."""
+    await world.seed.run("UPDATE request_items SET status = 'returned' WHERE id = $1", world.item)
+    returned = _id(await world.send_back(world.hannah, at(0)))
+    assert await world.item_status() == "returned"
+    response = await world.undo(world.hannah, returned, at(3))
+    assert response.status_code == 201, response.text
+    assert cast(Json, response.json())["item_status"] == "returned"
+    assert await world.item_status() == "returned"
+    outbox = await world.seed.rows(
+        "SELECT 1 FROM outbox WHERE tenant_id = $1 AND event_type = 'request_item.status_changed'",
+        world.tenant,
+    )
+    assert outbox == []  # nothing moved
+
+
 # --- AC 3.1.4b: Undo, then decide again ----------------------------------------------------------
 
 

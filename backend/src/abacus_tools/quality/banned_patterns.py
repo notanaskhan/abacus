@@ -1057,6 +1057,8 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/workpapers/repository.py", "newest_cells"),
         ("src/abacus/modules/workpapers/repository.py", "citations_of"),
         ("src/abacus/modules/workpapers/repository.py", "versions_of"),
+        # P-04-T15: who set a paper's cells (its preparers), after the same check.
+        ("src/abacus/modules/workpapers/repository.py", "cell_setters"),
         ("src/abacus/modules/review/repository.py", "sign_offs_of"),
         # P-04-T14: the computed staleness query over the same targets, after the same check.
         ("src/abacus/modules/review/repository.py", "stale_sign_offs"),

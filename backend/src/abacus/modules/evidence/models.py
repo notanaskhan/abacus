@@ -75,6 +75,9 @@ class ReviewDecision(Base):
     # P-01-T13 (0117): decisions are odd, undo rows even; the highest odd row is effective.
     decision_seq: Mapped[int]
     undoes_decision_id: Mapped[UUID | None]
+    # What the decision changed, for its Undo: the version's assignee, each item's status.
+    prior_assignee_user_id: Mapped[UUID | None]
+    prior_item_statuses: Mapped[dict[str, str] | None] = mapped_column(JSONB)
 
 
 class ReviewAssignment(Base):

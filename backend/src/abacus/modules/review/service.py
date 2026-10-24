@@ -149,20 +149,23 @@ async def record_sign_off(
     content_hash: str,
 ) -> None:
     """Inside the owner's unit of work (the owner has locked the target and computed the hash).
-    The level's action is authorised with the target's facts (P-04-T15): its preparers are the
-    owner's (`ReviewableFacts`) and whoever signed L1 on this content, and the L2 and L3 rows
-    refuse them (`not_preparer_of_target`), answered as 409 `preparer_cannot_review`."""
+    The level's action is authorised with the target's facts (P-04-T15; DEC-216): its preparers
+    are the owner's, from its own records (`ReviewableFacts`), and everyone who has signed L1 on
+    it on any content. The L2 and L3 rows refuse them (`not_preparer_of_target`), answered as
+    409 `preparer_cannot_review`. A type whose owner registered no facts has no known preparers,
+    so those rows deny (fail closed)."""
     if level not in LEVELS:
         raise SignOffInvalid("level")
     rows = await sign_offs_of(tx.session, target_type, [target_id])
-    preparers = {r.signed_by for r in rows if r.level == 1 and r.content_hash == content_hash}
+    preparers: frozenset[UUID] | None = None
     if target_type in reviewable_fact_types():
-        preparers |= (await reviewable_facts(ctx.tenant, target_type, target_id)).preparer_user_ids
-    target = replace(resource, target=TargetFacts(preparer_user_ids=frozenset(preparers)))
+        owned = (await reviewable_facts(ctx.tenant, target_type, target_id)).preparer_user_ids
+        preparers = owned | {r.signed_by for r in rows if r.level == 1}
+    target = replace(resource, target=TargetFacts(preparer_user_ids=preparers))
     try:
         await authorise(ctx, _ACTIONS[level], target)
     except Forbidden as denied:
-        if denied.layer == "condition" and ctx.user_id in preparers:
+        if denied.layer == "condition" and preparers is not None and ctx.user_id in preparers:
             raise PreparerCannotReview(str(target_id)) from None
         raise
     current = states_of(rows, content_hash)

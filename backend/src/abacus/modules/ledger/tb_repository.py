@@ -131,6 +131,17 @@ async def newest_annotations(
     )
 
 
+async def annotation_setters(session: AsyncSession, tb_id: UUID) -> set[UUID]:
+    """Everyone who ever annotated the trial balance (P-04-T15: its preparers; LIST_EXEMPT: the
+    caller authorised on the engagement)."""
+    found = await session.execute(
+        select(TrialBalanceAnnotation.set_by)
+        .where(TrialBalanceAnnotation.trial_balance_id == tb_id)
+        .distinct()
+    )
+    return set(found.scalars().all())
+
+
 async def insert_annotations(session: AsyncSession, rows: list[dict[str, object]]) -> None:
     if rows:
         await session.execute(insert(TrialBalanceAnnotation), rows)

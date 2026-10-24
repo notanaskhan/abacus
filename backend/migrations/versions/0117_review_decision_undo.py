@@ -10,6 +10,9 @@ row and a re-decision could not be stored. Now:
   carries no reason, note, screening result or correction, and is refused by the insert trigger
   unless it undoes the row just before it on the same version and item, by the same actor, within
   10 seconds of business time (`abacus_now()`, the clock that stamped the decision).
+- A decision records what it changed, so its Undo puts it back: the version's assignee when it
+  was decided (`prior_assignee_user_id`) and each item's status then (`prior_item_statuses`, an
+  object of item id to `uploaded` or `returned`). An undone row carries neither.
 - The insert trigger (`review_decision_reason_check`, SECURITY DEFINER) also requires
   `decision_seq` to be one more than the version's current maximum, so a second decision while
   one is effective is refused (the parity CHECK), as is a stale sequence number.
@@ -187,7 +190,13 @@ def upgrade() -> None:
     op.execute(
         "ALTER TABLE review_decisions "
         "ADD COLUMN decision_seq smallint NOT NULL DEFAULT 1, "
-        "ADD COLUMN undoes_decision_id uuid NULL"
+        "ADD COLUMN undoes_decision_id uuid NULL, "
+        "ADD COLUMN prior_assignee_user_id uuid NULL, "
+        "ADD COLUMN prior_item_statuses jsonb NULL"
+    )
+    op.execute(
+        "ALTER TABLE review_decisions ADD CONSTRAINT review_decisions_prior_item_statuses "
+        "CHECK (prior_item_statuses IS NULL OR jsonb_typeof(prior_item_statuses) = 'object')"
     )
     op.execute("ALTER TABLE review_decisions DROP CONSTRAINT review_decisions_once")
     op.execute(
@@ -214,7 +223,8 @@ def upgrade() -> None:
     op.execute(
         "ALTER TABLE review_decisions ADD CONSTRAINT review_decisions_undo_is_bare "
         "CHECK (decision <> 'undone' OR (note IS NULL AND screening_result_id IS NULL "
-        "AND NOT corrects_proposal))"
+        "AND NOT corrects_proposal AND prior_assignee_user_id IS NULL "
+        "AND prior_item_statuses IS NULL))"
     )
     op.execute(
         "ALTER TABLE review_decisions ADD CONSTRAINT review_decisions_undoes_fkey "
@@ -225,7 +235,17 @@ def upgrade() -> None:
         "UNIQUE (tenant_id, undoes_decision_id)"
     )
     op.execute(_REASON_CHECK)
-    insert_columns(op, "review_decisions", (*_COLUMNS, "decision_seq", "undoes_decision_id"))
+    insert_columns(
+        op,
+        "review_decisions",
+        (
+            *_COLUMNS,
+            "decision_seq",
+            "undoes_decision_id",
+            "prior_assignee_user_id",
+            "prior_item_statuses",
+        ),
+    )
     _human_only(_HUMAN_ONLY)
 
 
@@ -242,6 +262,7 @@ def downgrade() -> None:
         "review_decisions_undone_once",
         "review_decisions_undoes_fkey",
         "review_decisions_undo_is_bare",
+        "review_decisions_prior_item_statuses",
         "review_decisions_undo_names_its_decision",
         "review_decisions_reason",
         "review_decisions_undo_parity",
@@ -258,7 +279,9 @@ def downgrade() -> None:
         "UNIQUE (tenant_id, evidence_version_id)"
     )
     op.execute(
-        "ALTER TABLE review_decisions DROP COLUMN undoes_decision_id, DROP COLUMN decision_seq"
+        "ALTER TABLE review_decisions DROP COLUMN prior_item_statuses, "
+        "DROP COLUMN prior_assignee_user_id, DROP COLUMN undoes_decision_id, "
+        "DROP COLUMN decision_seq"
     )
     op.execute("ALTER TABLE review_decisions DROP CONSTRAINT review_decisions_decision_check")
     op.execute(

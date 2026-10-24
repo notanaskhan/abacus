@@ -35,6 +35,7 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: plan written; building.
 - 2026-10-24: built as planned. `tests/integration/test_review_decision_undo.py` 8 pass (AC 3.1.4 undo restores `uploaded` with the original untouched and the audit naming the person; 409 after 10 s; 403 for another person; send-back undone; AC 3.1.4b re-decide by another reviewer and a second Undo 409; 409 `already_decided` for a second decision; agent and worker refused; the 0117 trigger and CHECKs). Related: human-only guard (with the two new actions), J02 journey, generated matrix and route introspection, agent principal, evidence unit tests: 3820 passed. P-01-T15 registers the route in P-04-T13's conformance suite (not built yet).
+- 2026-10-24: security review fixes: a decision records the version's assignee and each item's prior status (0117 columns `prior_assignee_user_id`, `prior_item_statuses`) and Undo restores both, so undoing a send-back of an already Returned item leaves it Returned (DEC-214 updated). Tests written failing first in `test_review_decision_undo.py`.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

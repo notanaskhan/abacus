@@ -678,6 +678,7 @@ async def decide(
             corrects = _corrects(decision, proposal)
             item_ids = [t.request_item_id for t in targets]
             latest = await latest_decision_row(tx.session, version_id)
+            assignment = await assignment_for(tx.session, engagement_id, version_id)
             await insert_decision(
                 tx.session,
                 values={
@@ -696,12 +697,17 @@ async def decide(
                     "actor_id": ctx.tenant.actor_id,
                     # P-01-T13: after an undone decision, the next odd number (0117).
                     "decision_seq": (latest.decision_seq if latest is not None else 0) + 1,
+                    # What this changes, so an Undo puts it back (P-01-T13).
+                    "prior_assignee_user_id": (
+                        assignment.assignee_user_id if assignment is not None else None
+                    ),
+                    "prior_item_statuses": {str(t.request_item_id): t.status for t in targets},
                 },
             )
             to = _ITEM_AFTER[decision]
             for item_id in item_ids:
                 await move_after_review(tx, item_id, to)
-            if await assignment_for(tx.session, engagement_id, version_id) is not None:
+            if assignment is not None:
                 await clear_assignment(tx.session, engagement_id, version_id, ctx.user_id)
             refs = (
                 Ref(
@@ -763,7 +769,8 @@ async def undo_review_decision(
     Only the person who decided, within 10 s on `kernel.clock`, and only while it is the
     version's effective decision; else 409 `undo_window_closed`. The person must still hold
     `review_decision.undo` and the decision's own action (`evidence.accept` or
-    `evidence.reject`). The version's items go back to `uploaded`, so it can be decided again.
+    `evidence.reject`). The version's items go back to the status each had when decided
+    (`uploaded` or `returned`) and its assignment to whoever held it, so it can be decided again.
     The database checks the same rules again (0117). Audited `review_decision.undone`."""
     _live_human(ctx, "review_decision.undo")
     ref = await lock_ref(tx, engagement_id)
@@ -809,8 +816,26 @@ async def undo_review_decision(
             raise UndoWindowClosed from None
         raise
     item_ids = [t.request_item_id for t in targets]
+    prior = original.prior_item_statuses or {}
+    restored: list[str] = []
     for item_id in item_ids:
-        await reopen_after_undo(tx, item_id, _ITEM_AFTER[original.decision])
+        back = prior.get(str(item_id), "uploaded")  # a pre-0117 decision recorded none
+        await reopen_after_undo(tx, item_id, _ITEM_AFTER[original.decision], back)
+        restored.append(back)
+    if original.prior_assignee_user_id is not None:  # the decision cleared the assignment
+        await put_assignment(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            engagement_id=engagement_id,
+            version_id=original.evidence_version_id,
+            assignee=original.prior_assignee_user_id,
+            assigned_by=ctx.user_id,
+        )
+        tx.record(
+            "review.assigned",
+            target=Target("evidence_version", original.evidence_version_id),
+            after=Ref(user_id=original.prior_assignee_user_id),
+        )
     tx.record(
         "review_decision.undone",
         target=Target("review_decision", undo_id),
@@ -818,7 +843,13 @@ async def undo_review_decision(
             undoes_decision_id=original.id, evidence_version_id=original.evidence_version_id
         ),
     )
-    return UndoneView(undo_id, original.id, original.evidence_version_id, item_ids, "uploaded")
+    return UndoneView(
+        undo_id,
+        original.id,
+        original.evidence_version_id,
+        item_ids,
+        restored[0] if restored else "uploaded",
+    )
 
 
 async def undo_decision(ctx: AuthContext, engagement_id: UUID, decision_id: UUID) -> UndoneView:
