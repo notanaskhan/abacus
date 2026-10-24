@@ -14,12 +14,25 @@ version alongside it; the bad ones stay locked but are never referenced. Reused 
 their retention extended to the full period from now.
 
 Call `put` before opening a unit of work: it is network I/O and must not hold a transaction.
+
+Detached-key mode (ADR-162 §5; P-06-T18), for client-channel uploads only:
+
+    stored, key = await put_detached(tenant_id, version_id, content)   # tenants/<t>/v/<version>
+    derived = await put(tenant_id, preview_png, under=version_id)      # tenants/<t>/vd/<v>/<fp>
+
+The object is never shared by deduplication; it is sealed with envelope v2 under a data key of
+its own whose wrapped form the caller keeps in `evidence_object_keys`, and the version's derived
+records (extractions, previews, word layers) are sealed under the same key, so destroying that one
+row erases them all. `get` finds the key through `object_keys.key_for`; a destroyed key reads as
+`KeyDestroyed`.
 """
 
 from __future__ import annotations
 
 import asyncio
 import hashlib
+import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
@@ -28,7 +41,15 @@ from uuid import UUID
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
-from abacus.kernel.crypto import DecryptionError, open_sealed, seal
+from abacus.kernel.crypto import (
+    DecryptionError,
+    DetachedKey,
+    open_detached,
+    open_sealed,
+    seal,
+    seal_detached,
+    seal_under,
+)
 from abacus.kernel.storage import StorageError, error_code, s3_client
 
 if TYPE_CHECKING:
@@ -46,6 +67,17 @@ class IntegrityError(Exception):
 
 class ContentTooLarge(ValueError):
     """Content over MAX_CONTENT_BYTES."""
+
+
+class KeyDestroyed(IntegrityError):
+    """A detached-key object whose key was destroyed (a crypto-erased withdrawal): it can no
+    longer be opened by anyone (ADR-162 §5)."""
+
+
+_DETACHED_PATH = re.compile(
+    r"tenants/(?P<tenant>[0-9a-f-]{36})/"
+    r"(?:v/(?P<version>[0-9a-f-]{36})|vd/(?P<owner>[0-9a-f-]{36})/(?P<derived>[0-9a-f]{64}))"
+)
 
 
 @dataclass(frozen=True)
@@ -98,6 +130,32 @@ def object_key(tenant_id: UUID, content_fingerprint: str) -> str:
     return f"tenants/{tenant_id}/sha256/{content_fingerprint}"
 
 
+def detached_path(tenant_id: UUID, version_id: UUID) -> str:
+    return f"tenants/{tenant_id}/v/{version_id}"
+
+
+def derived_path(tenant_id: UUID, version_id: UUID, content_fingerprint: str) -> str:
+    # A sibling tree, not under the object's own key: an object key is never also a "folder".
+    return f"tenants/{tenant_id}/vd/{version_id}/{content_fingerprint}"
+
+
+def is_detached(key: str) -> bool:
+    return _DETACHED_PATH.fullmatch(key) is not None
+
+
+def _binding(version_id: UUID, content_fingerprint: str, *, derived: bool) -> str:
+    return f"{'d' if derived else 'o'}:{version_id}:{content_fingerprint}"
+
+
+async def _key_of(tenant_id: UUID, version_id: UUID) -> DetachedKey:
+    from abacus.modules.evidence.object_keys import key_for  # the key rows (a session)
+
+    found = await key_for(tenant_id, version_id)
+    if found is None:
+        raise KeyDestroyed("the object's key was destroyed or never stored")
+    return found
+
+
 def _retain_until(at_least: datetime | None = None) -> datetime:
     """The default period from now (`evidence_retention_days`), or a record class's later date
     (Q-02-T24): an object is never locked for less than either."""
@@ -122,11 +180,21 @@ async def _read(target: _Target, key: str, version_id: str) -> bytes:
     return await asyncio.to_thread(response["Body"].read)
 
 
-async def _verified(target: _Target, tenant_id: UUID, key: str, digest: str) -> str | None:
+Opener = Callable[[bytes], Awaitable[bytes]]
+
+
+async def _verified(
+    target: _Target, tenant_id: UUID, key: str, digest: str, opener: Opener | None = None
+) -> str | None:
     """The newest version under `key` that opens for this tenant and matches `digest`."""
+
+    async def by_envelope(sealed: bytes) -> bytes:
+        return await open_sealed(tenant_id, sealed, digest)
+
+    open_one = opener or by_envelope
     for version_id in await _versions(target, key):
         try:
-            content = await open_sealed(tenant_id, await _read(target, key, version_id), digest)
+            content = await open_one(await _read(target, key, version_id))
         except DecryptionError:
             continue
         if fingerprint(content) == digest:
@@ -206,33 +274,77 @@ async def _write(
 
 
 async def put(
-    tenant_id: UUID, content: bytes, *, retain_until: datetime | None = None
+    tenant_id: UUID,
+    content: bytes,
+    *,
+    retain_until: datetime | None = None,
+    under: UUID | None = None,
 ) -> StoredObject:
     """Store `content`; `retain_until` is its record class's policy expiry, when known
-    (Q-02-T24, provisional at upload): the lock is never shorter than it or the default."""
+    (Q-02-T24, provisional at upload): the lock is never shorter than it or the default.
+    `under` names a detached-key version this content is derived from (ADR-162 §6): it is then
+    stored beside that version and sealed under its key."""
     if len(content) > MAX_CONTENT_BYTES:
         raise ContentTooLarge(f"content over {MAX_CONTENT_BYTES} bytes")
     target = _storage()
     digest = fingerprint(content)
-    key = object_key(tenant_id, digest)
+    opener: Opener | None = None
+    if under is not None:
+        detached = await _key_of(tenant_id, under)
+        key = derived_path(tenant_id, under, digest)
+        binding = _binding(under, digest, derived=True)
+
+        async def sealer() -> bytes:
+            return await seal_under(tenant_id, content, binding, detached)
+
+        async def open_derived(sealed: bytes) -> bytes:
+            return await open_detached(tenant_id, sealed, binding, detached)
+
+        opener = open_derived
+    else:
+        key = object_key(tenant_id, digest)
+
+        async def sealer() -> bytes:
+            return await seal(tenant_id, content, digest)
+
     for _ in range(3):
         if await _versions(target, key):
-            existing = await _verified(target, tenant_id, key, digest)
+            existing = await _verified(target, tenant_id, key, digest, opener)
             if existing is not None:
                 await _extend_retention(target, key, existing, retain_until)
                 return StoredObject(key, existing, digest, len(content))
             # Only invalid versions under this key: add a valid one beside them.
-            sealed = await seal(tenant_id, content, digest)
+            sealed = await sealer()
             fresh = await _write(target, key, sealed, conditional=False, at_least=retain_until)
             if fresh is None:  # unreachable: unconditional writes don't race
                 raise IntegrityError("unconditional write reported a conflict")
             return StoredObject(key, fresh, digest, len(content))
-        sealed = await seal(tenant_id, content, digest)
+        sealed = await sealer()
         written = await _write(target, key, sealed, conditional=True, at_least=retain_until)
         if written is not None:
             return StoredObject(key, written, digest, len(content))
         # Lost a race to another writer of the same key: loop and verify what it wrote.
     raise IntegrityError("could not store or verify content after repeated conflicts")
+
+
+async def put_detached(
+    tenant_id: UUID, version_id: UUID, content: bytes, *, retain_until: datetime | None = None
+) -> tuple[StoredObject, DetachedKey]:
+    """Store a client-channel upload in detached-key mode (ADR-162 §5) under its own version's
+    key, never shared: the caller records the returned key in `evidence_object_keys` in the unit
+    of work that inserts the version. Call it before that unit of work, like `put`."""
+    if len(content) > MAX_CONTENT_BYTES:
+        raise ContentTooLarge(f"content over {MAX_CONTENT_BYTES} bytes")
+    target = _storage()
+    digest = fingerprint(content)
+    key = detached_path(tenant_id, version_id)
+    sealed, detached = await seal_detached(
+        tenant_id, content, _binding(version_id, digest, derived=False)
+    )
+    written = await _write(target, key, sealed, conditional=True, at_least=retain_until)
+    if written is None:  # a fresh version id never collides; refuse rather than share
+        raise IntegrityError("a detached-key object already exists for this version")
+    return StoredObject(key, written, digest, len(content)), detached
 
 
 async def extend_retention(stored: StoredObject, until: datetime) -> None:
@@ -274,7 +386,13 @@ async def legal_hold_on(stored: StoredObject) -> bool:
 
 
 async def get(tenant_id: UUID, stored: StoredObject) -> bytes:
-    if stored.key != object_key(tenant_id, stored.fingerprint):
+    detached = _DETACHED_PATH.fullmatch(stored.key)
+    if detached is not None:
+        if detached["tenant"] != str(tenant_id) or (
+            detached["derived"] is not None and detached["derived"] != stored.fingerprint
+        ):
+            raise IntegrityError("storage key does not match tenant and fingerprint")
+    elif stored.key != object_key(tenant_id, stored.fingerprint):
         raise IntegrityError("storage key does not match tenant and fingerprint")
     target = _storage()
     try:
@@ -283,7 +401,13 @@ async def get(tenant_id: UUID, stored: StoredObject) -> bytes:
         if error_code(exc) in _MISSING:
             raise IntegrityError("recorded object version is missing") from None
         raise
-    content = await open_sealed(tenant_id, sealed, stored.fingerprint)
+    if detached is None:
+        content = await open_sealed(tenant_id, sealed, stored.fingerprint)
+    else:
+        version_id = UUID(detached["version"] or detached["owner"])
+        key = await _key_of(tenant_id, version_id)
+        binding = _binding(version_id, stored.fingerprint, derived=detached["derived"] is not None)
+        content = await open_detached(tenant_id, sealed, binding, key)
     if fingerprint(content) != stored.fingerprint or len(content) != stored.size:
         raise IntegrityError("stored content does not match its fingerprint")
     return content

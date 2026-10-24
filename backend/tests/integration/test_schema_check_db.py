@@ -1273,6 +1273,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "applied_at", "released_by", "released_at", "release_reason"}
         ),
         "hold_objects": frozenset({"applied_at", "released_at"}),  # Q-02-T29: stamped once
+        "evidence_object_keys": frozenset({"retained_at"}),  # P-06-T18 (0144): one-way
+        "evidence_withdrawals": frozenset(  # P-06-T19 (0144): the purge's stamps
+            {"erased_at", "erase_blocked_at", "block_reason"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1822,6 +1826,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112
         | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
+        | {"evidence_key_destroy"}  # 0144 (P-06-T18): the withdrawal purge's crypto-erase
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

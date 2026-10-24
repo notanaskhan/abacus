@@ -281,6 +281,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"retention_policy_history", "retention_defaults_backfill"}
     # 0143 (Q-02-T33): the staff record of incident propagations, from no-tenant sessions only.
     | {"record_incident_propagation", "incident_propagation_log"}
+    # 0144 (P-06-T18, ADR-162): the withdrawal purge's crypto-erase of one version's key.
+    | {"evidence_key_destroy"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

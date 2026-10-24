@@ -10,6 +10,19 @@ only package that imports `cryptography` (CRYPTO-001).
 
 Envelope format v1 (all lengths big-endian):
     b"ABE1" | key_id_len:u16 | key_id | wrapped_len:u16 | wrapped | nonce(12) | ciphertext+tag
+
+Envelope format v2, detached key (ADR-162 §5; P-06-T18):
+    b"ABE2" | nonce(12) | ciphertext+tag
+
+    sealed, key = await seal_detached(tenant_id, plaintext, binding)
+    plaintext = await open_detached(tenant_id, sealed, binding, key)
+    derived = await seal_under(tenant_id, other, other_binding, key)   # same data key
+
+The data key is wrapped by the tenant's key as in v1, but the wrapped key (`DetachedKey`) is kept
+outside the object (the evidence module's `evidence_object_keys`), so destroying that one row
+makes the object, and everything sealed under the same key, unreadable at once: a crypto-erase
+of one client upload without touching the tenant key or the object's retention. `binding` (the
+version and the content fingerprint) is bound as associated data with the tenant and key ID.
 """
 
 from __future__ import annotations
@@ -39,6 +52,7 @@ if TYPE_CHECKING:
 _log = get_logger(__name__)
 
 MAGIC = b"ABE1"
+MAGIC_DETACHED = b"ABE2"
 _NONCE = 12
 _TAG = 16
 _MAX_HEADER_FIELD = 4096
@@ -352,8 +366,82 @@ async def open_sealed(tenant_id: UUID, sealed: bytes, fingerprint: str) -> bytes
         raise DecryptionError("object can't be opened") from None
 
 
+# --- v2: the detached key (ADR-162 §5) -----------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DetachedKey:
+    """A data key wrapped by the tenant's key, stored apart from the objects it seals."""
+
+    key_id: str
+    wrapped: bytes
+
+
+def _aad_detached(tenant_id: UUID, binding: str, key_id: str) -> bytes:
+    return b"|".join([b"abacus-evidence-v2", tenant_id.bytes, binding.encode(), key_id.encode()])
+
+
+def _pack_detached(nonce: bytes, ciphertext: bytes) -> bytes:
+    return MAGIC_DETACHED + nonce + ciphertext
+
+
+def _unpack_detached(sealed: bytes) -> tuple[bytes, bytes]:
+    if sealed[:4] != MAGIC_DETACHED:
+        raise DecryptionError("not a detached-key envelope")
+    nonce, ciphertext = sealed[4 : 4 + _NONCE], sealed[4 + _NONCE :]
+    if len(nonce) != _NONCE or len(ciphertext) < _TAG:
+        raise DecryptionError("malformed envelope")
+    return nonce, ciphertext
+
+
+async def _data_key(tenant_id: UUID, key: DetachedKey) -> bytes:
+    service = key_service()
+    # The key row is the tenant's own, but check as for v1: only this tenant's key may unwrap.
+    if key.key_id != service.key_id(tenant_id):
+        raise DecryptionError("key does not belong to this tenant")
+    if len(key.wrapped) < _MIN_WRAPPED or len(key.wrapped) > _MAX_HEADER_FIELD:
+        raise DecryptionError("malformed wrapped key")
+    return await service.unwrap(tenant_id, key.key_id, key.wrapped)
+
+
+def _encrypt(data_key: bytes, plaintext: bytes, aad: bytes) -> bytes:
+    nonce = os.urandom(_NONCE)
+    return _pack_detached(nonce, AESGCM(data_key).encrypt(nonce, plaintext, aad))
+
+
+async def seal_detached(
+    tenant_id: UUID, plaintext: bytes, binding: str
+) -> tuple[bytes, DetachedKey]:
+    """A fresh data key and the object sealed under it; the wrapped key is returned, not packed."""
+    service = key_service()
+    key_id = service.key_id(tenant_id)
+    data_key = AESGCM.generate_key(bit_length=256)
+    sealed = _encrypt(data_key, plaintext, _aad_detached(tenant_id, binding, key_id))
+    wrapped = await service.wrap(tenant_id, data_key)
+    return sealed, DetachedKey(key_id, wrapped)
+
+
+async def seal_under(tenant_id: UUID, plaintext: bytes, binding: str, key: DetachedKey) -> bytes:
+    """Another object sealed under an existing detached key (a version's derived records,
+    ADR-162 §6), so destroying the key erases them too."""
+    data_key = await _data_key(tenant_id, key)
+    return _encrypt(data_key, plaintext, _aad_detached(tenant_id, binding, key.key_id))
+
+
+async def open_detached(tenant_id: UUID, sealed: bytes, binding: str, key: DetachedKey) -> bytes:
+    nonce, ciphertext = _unpack_detached(sealed)
+    data_key = await _data_key(tenant_id, key)
+    try:
+        return AESGCM(data_key).decrypt(
+            nonce, ciphertext, _aad_detached(tenant_id, binding, key.key_id)
+        )
+    except (InvalidTag, ValueError):
+        raise DecryptionError("object can't be opened") from None
+
+
 __all__ = [
     "DecryptionError",
+    "DetachedKey",
     "KeyService",
     "KeyServiceUnavailable",
     "KmsKeyService",
@@ -362,7 +450,10 @@ __all__ = [
     "check_platform_key",
     "configure_key_service",
     "key_service",
+    "open_detached",
     "open_sealed",
     "reset_key_service",
     "seal",
+    "seal_detached",
+    "seal_under",
 ]

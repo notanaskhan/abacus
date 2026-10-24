@@ -55,6 +55,7 @@ from abacus.modules.evidence.events import (
 )
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
 from abacus.modules.evidence.models import UploadExtraction
+from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.previews import RENDERER_VERSION, render_isolated
 from abacus.modules.evidence.repository import (
     checks_exist,
@@ -206,7 +207,7 @@ async def process_upload(given: UploadInput) -> str:
     derived: storage.StoredObject | None = None
     if found.status == "extracted":
         document = json.dumps(asdict(found), default=_json_default, sort_keys=True)
-        derived = await storage.put(tenant_id, document.encode())
+        derived = await storage.put(tenant_id, document.encode(), under=under_key(source))
     async with uow(tenant) as tx:
         row = await insert_extraction(
             tx.session,
@@ -420,7 +421,8 @@ async def preview_upload(given: UploadInput) -> str:
     rendered = await asyncio.to_thread(
         render_isolated, await storage.get(tenant_id, stored), source.media_type
     )
-    pages = [await storage.put(tenant_id, page.png) for page in rendered.pages]
+    under = under_key(source)
+    pages = [await storage.put(tenant_id, page.png, under=under) for page in rendered.pages]
     async with uow(tenant) as tx:
         row = await insert_preview(
             tx.session,

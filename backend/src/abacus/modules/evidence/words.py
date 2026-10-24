@@ -42,6 +42,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.models import EvidencePage
+from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_version,
@@ -283,11 +284,12 @@ async def words_upload(given: UploadInput) -> int:
     )
     content = await storage.get(tenant_id, stored)
     layer = await asyncio.to_thread(extract_words_isolated, content, source.media_type)
+    under = under_key(source)
     if layer.status != "extracted":
         _log.info("upload.words_skipped", kind=given.kind, reason=layer.reason)
         return 0
     objects = [
-        await storage.put(tenant_id, layer_document(page)) if page.words else None
+        await storage.put(tenant_id, layer_document(page), under=under) if page.words else None
         for page in layer.pages
     ]
     rows: list[dict[str, object]] = [

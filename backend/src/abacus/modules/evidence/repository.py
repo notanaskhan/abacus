@@ -17,6 +17,7 @@ from abacus.modules.evidence.models import (
     Citation,
     CitationEvent,
     EvidenceItem,
+    EvidenceObjectKey,
     EvidencePage,
     EvidenceVersion,
     InboxFile,
@@ -96,6 +97,7 @@ async def insert_version(
     snapshot_id: UUID | None,
     idempotency_key: str | None,
     upload_note: str | None = None,
+    storage_mode: str = "content_addressed",
 ) -> EvidenceVersion:
     return (
         await session.execute(
@@ -120,10 +122,22 @@ async def insert_version(
                 snapshot_id=snapshot_id,
                 idempotency_key=idempotency_key,
                 upload_note=upload_note,
+                storage_mode=storage_mode,
             )
             .returning(EvidenceVersion)
         )
     ).scalar_one()
+
+
+async def insert_object_key(
+    session: AsyncSession, *, tenant_id: UUID, version_id: UUID, key_id: str, wrapped: bytes
+) -> None:
+    """A detached-key version's wrapped data key, in the version's own unit of work."""
+    await session.execute(
+        insert(EvidenceObjectKey).values(
+            tenant_id=tenant_id, evidence_version_id=version_id, key_id=key_id, wrapped_key=wrapped
+        )
+    )
 
 
 async def get_version(session: AsyncSession, version_id: UUID) -> EvidenceVersion | None:

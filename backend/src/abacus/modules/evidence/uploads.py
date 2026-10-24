@@ -19,9 +19,10 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Final, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from abacus.kernel.clock import now, system_now
+from abacus.kernel.crypto import DetachedKey
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.scanning import scan
@@ -364,6 +365,7 @@ async def attach(
     source: str,
     note: str | None,
     active_content: str | None = None,
+    detached: tuple[UUID, DetachedKey] | None = None,
 ) -> UUID:
     """Inside the caller's unit of work: re-check the item (its facts may have changed), refuse
     a closed item or a duplicate, add the version, link it and announce it. Shared by uploads
@@ -386,6 +388,7 @@ async def attach(
         provenance=Provenance(source=source, method="uploaded"),
         requested_by=ctx.user_id,
         upload_note=note,
+        detached=detached,
     )
     try:
         await fulfil_by_upload(tx, request_item_id=item_id, evidence_version_id=version.id)
@@ -442,7 +445,15 @@ async def upload(
         await service_line_of(ctx.tenant, engagement_id) or "any",
         system_now(),
     )
-    stored = await storage.put(ctx.tenant_id, content, retain_until=keep)
+    # ADR-162 §5 (P-06-T18): a client's own upload is stored in detached-key mode, so it can be
+    # withdrawn and crypto-erased; the firm's uploads stay content-addressed.
+    detached: tuple[UUID, DetachedKey] | None = None
+    if ctx.client and not on_behalf:
+        new_id = uuid4()
+        stored, key = await storage.put_detached(ctx.tenant_id, new_id, content, retain_until=keep)
+        detached = (new_id, key)
+    else:
+        stored = await storage.put(ctx.tenant_id, content, retain_until=keep)
     name = clean_name(file_name)
     kept_note = clean_note(note) if on_behalf else None
     async with uow(ctx.tenant) as tx:
@@ -457,6 +468,7 @@ async def upload(
             source=ON_BEHALF_SOURCE if on_behalf else SOURCE,
             note=kept_note,
             active_content=found.active_content,
+            detached=detached,
         )
     names = await names_of([ctx.user_id])
     return UploadView(
