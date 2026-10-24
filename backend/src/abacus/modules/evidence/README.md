@@ -28,6 +28,7 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   - **Conflicts:** 409 `already_decided` or `superseded`.
   - **Reason codes:** a reason code is required for reject and send back, and refused for accept. An invalid code answers 422 `invalid_reason_code`.
   - **Correction flag:** `corrects_proposal` is set when the decision disagrees with the agent's latest proposal.
+- **Undo** (`POST …/review-decisions/{decision_id}/undo`, `review_decision.undo`; P-01-T13, DEC-24, ADR-161, DEC-214): within 10 s on `kernel.clock`, by the person who decided, who must still hold the decision's own action. It writes a compensating `undone` row (`undoes_decision_id`, the next `decision_seq`); the original is untouched. The version's items go back to `uploaded` (`request_item.status_changed` emitted), audited `review_decision.undone`. Later, a second Undo, or once decided again: 409 `undo_window_closed`. Decisions take odd `decision_seq` numbers and undo rows even ones; the **effective decision** is the highest row when odd, and every read (queue, item versions, run trace) uses it. Migration 0117's trigger checks the same rules. `undo_review_decision(tx, …)` in `api.py` is the in-unit-of-work entry for P-04-T29.
 - **Only a person decides (ADR-005):**
   - `decide` takes an `AuthContext` and refuses outside a live API request (`serving_request()`), so a worker or agent holding a person's context still can't decide;
   - the matrix denies agents;

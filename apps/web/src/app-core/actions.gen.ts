@@ -181,6 +181,7 @@ export const ACTIONS = [
   "review.assign",
   "review.read",
   "review.take",
+  "review_decision.undo",
   "review_note.clear",
   "review_note.raise",
   "review_note.read",

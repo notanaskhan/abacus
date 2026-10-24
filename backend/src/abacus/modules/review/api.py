@@ -15,6 +15,7 @@ from abacus.modules.review.contract import (
     review_notes_router,
     sign_offs_router,
 )
+from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.notes import notes_for, open_note_counts
 from abacus.modules.review.routes import router
@@ -26,8 +27,10 @@ from abacus.modules.review.service import (
     NotPrepared,
     PreparerCannotReview,
     SignOffInvalid,
+    StaleSignOff,
     record_sign_off,
     sign_off_states,
+    stale_of,
     states_of,
 )
 from abacus.modules.review.slots import (
@@ -35,6 +38,8 @@ from abacus.modules.review.slots import (
     DecisionKind,
     FieldOwner,
     Reviewable,
+    ReviewableFacts,
+    ReviewableFactsProvider,
     ReviewableProvider,
     UnregisteredKind,
     decision_kind,
@@ -45,6 +50,9 @@ from abacus.modules.review.slots import (
     register_fix_runner,
     register_gate_kind,
     register_reviewable,
+    register_reviewable_facts,
+    reviewable_fact_types,
+    reviewable_facts,
     reviewables_of,
     run_fix,
 )
@@ -72,14 +80,21 @@ __all__ = [
     "AlreadySigned",
     "DecisionKind",
     "FieldOwner",
+    "Json",
     "LevelState",
+    "NotCanonical",
     "NotPrepared",
     "NotesOpen",
     "PreparerCannotReview",
     "Reviewable",
+    "ReviewableFacts",
+    "ReviewableFactsProvider",
     "ReviewableProvider",
     "SignOffInvalid",
+    "StaleSignOff",
     "UnregisteredKind",
+    "canonical_json",
+    "content_hash",
     "decision_kind",
     "field_owner",
     "gate_met",
@@ -91,9 +106,13 @@ __all__ = [
     "register_fix_runner",
     "register_gate_kind",
     "register_reviewable",
+    "register_reviewable_facts",
+    "reviewable_fact_types",
+    "reviewable_facts",
     "reviewables_of",
     "router",
     "run_fix",
     "sign_off_states",
+    "stale_of",
     "states_of",
 ]

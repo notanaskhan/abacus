@@ -9,7 +9,7 @@ deleted). L2 and above need a current L1, and the L1 signer can't sign L2 (segre
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Final
 from uuid import UUID
@@ -17,14 +17,16 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.identity.api import AuthContext, Resource, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, Resource, TargetFacts, authorise
 from abacus.modules.review.models import SignOff
 from abacus.modules.review.repository import (
     insert_sign_off,
     note_events_of,
     notes_of_target,
     sign_offs_of,
+    stale_sign_offs,
 )
+from abacus.modules.review.slots import reviewable_fact_types, reviewable_facts
 
 LEVELS: Final = {1: "preparer", 2: "reviewer", 3: "manager", 4: "partner", 5: "eqr"}
 _ACTIONS: Final = {
@@ -99,6 +101,33 @@ async def sign_off_states(
     }
 
 
+@dataclass(frozen=True)
+class StaleSignOff:
+    """A sign-off whose target changed since (P-04-T14): shown struck, never updated."""
+
+    target_id: UUID
+    level: int
+    signed_by: UUID
+    signed_at: datetime
+    signed_hash: str
+    current_hash: str
+
+
+async def stale_of(
+    tenant: TenantContext, target_type: str, hashes: dict[UUID, str]
+) -> list[StaleSignOff]:
+    """The computed staleness query: each target's newest sign-off per level that no longer
+    matches the target's current hash. For callers authorised on the targets' engagement."""
+    async with tenant_session(tenant) as session:
+        rows = await stale_sign_offs(session, target_type, hashes)
+    return [
+        StaleSignOff(
+            r.target_id, r.level, r.signed_by, r.created_at, r.content_hash, hashes[r.target_id]
+        )
+        for r in rows
+    ]
+
+
 async def _open_notes(tx: UnitOfWork, target_id: UUID) -> bool:
     notes = await notes_of_target(tx.session, target_id)
     events = await note_events_of(tx.session, [n.id for n in notes])
@@ -119,11 +148,27 @@ async def record_sign_off(
     level: int,
     content_hash: str,
 ) -> None:
-    """Inside the owner's unit of work (the owner has locked the target and computed the hash)."""
+    """Inside the owner's unit of work (the owner has locked the target and computed the hash).
+    The level's action is authorised with the target's facts (P-04-T15; DEC-216): its preparers
+    are the owner's, from its own records (`ReviewableFacts`), and everyone who has signed L1 on
+    it on any content. The L2 and L3 rows refuse them (`not_preparer_of_target`), answered as
+    409 `preparer_cannot_review`. A type whose owner registered no facts has no known preparers,
+    so those rows deny (fail closed)."""
     if level not in LEVELS:
         raise SignOffInvalid("level")
-    await authorise(ctx, _ACTIONS[level], resource)
-    current = states_of(await sign_offs_of(tx.session, target_type, [target_id]), content_hash)
+    rows = await sign_offs_of(tx.session, target_type, [target_id])
+    preparers: frozenset[UUID] | None = None
+    if target_type in reviewable_fact_types():
+        owned = (await reviewable_facts(ctx.tenant, target_type, target_id)).preparer_user_ids
+        preparers = owned | {r.signed_by for r in rows if r.level == 1}
+    target = replace(resource, target=TargetFacts(preparer_user_ids=preparers))
+    try:
+        await authorise(ctx, _ACTIONS[level], target)
+    except Forbidden as denied:
+        if denied.layer == "condition" and preparers is not None and ctx.user_id in preparers:
+            raise PreparerCannotReview(str(target_id)) from None
+        raise
+    current = states_of(rows, content_hash)
     mine = current[level - 1]
     if mine.signed_by is not None and not mine.stale and mine.signed_by == ctx.user_id:
         raise AlreadySigned(str(level))
@@ -133,7 +178,7 @@ async def record_sign_off(
         preparer = current[0]
         if preparer.signed_by is None or preparer.stale:
             raise NotPrepared(str(target_id))
-        if level == 2 and preparer.signed_by == ctx.user_id:
+        if level in (2, 3) and preparer.signed_by == ctx.user_id:  # also the matrix (R-SO-3)
             raise PreparerCannotReview(str(target_id))
     await insert_sign_off(
         tx.session,

@@ -598,6 +598,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "request_item.waive",
     ),
     ("POST", "/v1/engagements/{engagement_id}/retrievals", "evidence.upload"),
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/review-decisions/{decision_id}/undo",
+        "review_decision.undo",
+    ),
     ("POST", "/v1/engagements/{engagement_id}/review-notes", "review_note.raise"),
     ("POST", "/v1/engagements/{engagement_id}/review-notes/{note_id}/clear", "review_note.clear"),
     ("POST", "/v1/engagements/{engagement_id}/review-notes/{note_id}/reopen", "review_note.clear"),

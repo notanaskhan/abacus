@@ -34853,6 +34853,51 @@
         "title": "UndoProposalIn",
         "type": "object"
       },
+      "UndoneDecisionOut": {
+        "description": "The compensating row an Undo wrote (P-01-T13; DEC-24): the version waits for a decision\nagain, and its items read `uploaded`.",
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "item_status": {
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
+          },
+          "request_item_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Request Item Ids",
+            "type": "array"
+          },
+          "undoes_decision_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Undoes Decision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "undoes_decision_id",
+          "evidence_version_id",
+          "request_item_ids",
+          "item_status"
+        ],
+        "title": "UndoneDecisionOut",
+        "type": "object"
+      },
       "UnlockBody": {
         "additionalProperties": false,
         "properties": {
@@ -66628,6 +66673,133 @@
           "retrievals"
         ],
         "x-abacus-action": "request_item.read"
+      }
+    },
+    "/v1/engagements/{engagement_id}/review-decisions/{decision_id}/undo": {
+      "post": {
+        "description": "SHL-04c (AC 3.1.4): Undo within 10 s by the person who decided; later, or once decided\nagain, 409 `undo_window_closed`.",
+        "operationId": "undo_decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Decision Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UndoneDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Undo Decision Route",
+        "tags": [
+          "evidence"
+        ],
+        "x-abacus-action": "review_decision.undo"
       }
     },
     "/v1/engagements/{engagement_id}/review-flags": {

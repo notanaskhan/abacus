@@ -8,6 +8,12 @@
   gates; `scope_only` for a client role), and every conditional decision (`in_scope`,
   `firm_setting(...)`, `assigned_only`, `client_visible_only`, `task_scope`) denies without its
   facts. Reviewing the generated file's diff is reviewing the matrix change.
+- `tests/security/test_resolution_actions_generated.py` (P-04-T15; I-AGENT-NEVER, ADR-005):
+  every resolution action (each sign-off, decision, proposal, suggestion, checkpoint, review
+  decision and evidence decision that is not a read or an agent's own proposing, and the issue
+  resolutions) denied to an agent, a system run and a support session; and the target
+  conditions `not_preparer_of_target` and `reserved_role`, allow and deny, for every role their
+  row allows.
 - `tests/security/test_route_introspection.py` (Q-02-T15): one case per (method, path) that
   `create_app()` serves through `AbacusRouter`, with the action it declares, and the routes that
   answer without a token. Each case checks one matrix action (or route marker), a response model
@@ -23,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -37,6 +44,24 @@ ROOT = Path(__file__).resolve().parents[3]
 ISOLATION = ROOT / "tests" / "security" / "test_tenant_isolation.py"
 MATRIX = ROOT / "tests" / "security" / "test_permission_matrix_generated.py"
 INTROSPECTION = ROOT / "tests" / "security" / "test_route_introspection.py"
+RESOLUTION = ROOT / "tests" / "security" / "test_resolution_actions_generated.py"
+# P-04-T15: the entities whose every non-read action is a person's resolution, the issue
+# resolutions, and the evidence decisions. An action the agent holds by task scope (it proposes:
+# `proposal.create`, `suggestion.create`, `checkpoint.propose`) is the agent's, not a resolution.
+RESOLUTION_ENTITIES = frozenset(
+    {"sign_off", "decision", "proposal", "suggestion", "checkpoint", "review_decision"}
+)
+RESOLUTION_ACTIONS = frozenset(
+    {"issue.resolve", "issue.verify", "issue.reopen", "evidence.accept", "evidence.reject"}
+)
+PRINCIPALS = ("agent", "system", "support")
+PREPARER_VARIANTS = (("preparer", "deny"), ("not_preparer", "allow"), ("no_facts", "deny"))
+RESERVED_VARIANTS = (
+    ("holder", "allow"),
+    ("other_person", "deny"),
+    ("other_role", "deny"),
+    ("no_facts", "deny"),
+)
 FIRM_ROLES = ("firm_admin", "practice_leader", "quality_partner", "security_admin")
 ENGAGEMENT_ROLES = (
     *("engagement_partner", "manager", "senior", "staff", "reviewer"),
@@ -73,7 +98,38 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"
     if rule.scope_only and role in CLIENT_ROLES:
         return "deny"
+    if rule.not_preparer_of_target or rule.reserved_role:
+        return "deny"  # P-04-T15: no target facts in the harness (fail closed)
     return "allow"
+
+
+def resolution_actions(rules: dict[str, Rule]) -> list[str]:
+    """P-04-T15: every action a person resolves and nothing else may (I-AGENT-NEVER)."""
+    return sorted(
+        action
+        for action, rule in rules.items()
+        if action in RESOLUTION_ACTIONS
+        or (
+            action.split(".", 1)[0] in RESOLUTION_ENTITIES
+            and not rule.reads
+            and rule.decisions.get("agent") != "task_scope"
+        )
+    )
+
+
+def condition_cases(rules: dict[str, Rule]) -> list[tuple[str, str, str, str]]:
+    """Allow and deny for each target condition, for every role its row would otherwise allow."""
+    cases: list[tuple[str, str, str, str]] = []
+    for action, rule in sorted(rules.items()):
+        if not (rule.not_preparer_of_target or rule.reserved_role):
+            continue
+        others = replace(rule, not_preparer_of_target=False, reserved_role=False)
+        variants = PREPARER_VARIANTS if rule.not_preparer_of_target else RESERVED_VARIANTS
+        for role in HUMAN_ROLES:
+            if expected(others, role) != "allow":
+                continue
+            cases += [(action, role, variant, want) for variant, want in variants]
+    return cases
 
 
 def render_isolation() -> str:
@@ -116,6 +172,44 @@ def render_matrix() -> str:
         + "    monkeypatch: pytest.MonkeyPatch, action: str, role: str, want: str\n"
         + ") -> None:\n"
         + "    assert await outcome(monkeypatch, action, role) == want\n"
+    )
+
+
+def render_resolution() -> str:
+    from abacus.modules.identity.api import RULES  # tooling may import product
+
+    denied = "".join(
+        _row(action, principal) for action in resolution_actions(RULES) for principal in PRINCIPALS
+    )
+    conditions = "".join(_row(*case) for case in condition_cases(RULES))
+    doc = (
+        '"""I-AGENT-NEVER for every resolution action (ADR-005; P-04-T15): an agent, a system\n'
+        "run and a support session are denied each one, whatever facts a person would need are\n"
+        "given. And the target conditions, allow and deny: a preparer never signs L2 or L3 on\n"
+        "their own target (`not_preparer_of_target`), and only the person holding a card's\n"
+        "reserved role decides it (`reserved_role`). Reviewing this diff is reviewing the\n"
+        'rule."""\n\n'
+    )
+    harness = "Principal, Variant, condition_outcome, principal_outcome"
+    signature = "action: str, role: str, variant: Variant, want: str"
+    return (
+        _HEADER.replace("(Q-02-T13)", "(P-04-T15)")
+        + doc
+        + "from __future__ import annotations\n\n"
+        + "import pytest\n\n"
+        + f"from .matrix_harness import {harness}\n\n"
+        + f"NEVER: tuple[tuple[str, str], ...] = (\n{denied})\n"
+        + f"CONDITIONS: tuple[tuple[str, str, str, str], ...] = (\n{conditions})\n\n\n"
+        + '@pytest.mark.parametrize(("action", "principal"), NEVER)\n'
+        + "async def test_i_agent_never_the_principal_is_denied(\n"
+        + "    monkeypatch: pytest.MonkeyPatch, action: str, principal: Principal\n"
+        + ") -> None:\n"
+        + '    assert await principal_outcome(monkeypatch, action, principal) == "deny"\n\n\n'
+        + '@pytest.mark.parametrize(("action", "role", "variant", "want"), CONDITIONS)\n'
+        + "async def test_p04t15_the_target_condition_decides(\n"
+        + f"    monkeypatch: pytest.MonkeyPatch, {signature}\n"
+        + ") -> None:\n"
+        + "    assert await condition_outcome(monkeypatch, action, role, variant) == want\n"
     )
 
 
@@ -195,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
         (ISOLATION, render_isolation()),
         (MATRIX, render_matrix()),
         (INTROSPECTION, render_introspection()),
+        (RESOLUTION, render_resolution()),
     )
     if args.check:
         stale = [p for p, body in targets if not p.exists() or p.read_text() != body]

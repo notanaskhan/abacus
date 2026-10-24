@@ -103,6 +103,31 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(client_actor=True, scope_covered=True),
         ConditionFacts(client_actor=True, scope_covered=None),
     ),
+    # P-04-T15 (DEC-216): the target conditions.
+    (
+        "not_preparer_of_target",
+        {**ALLOW, "not_preparer_of_target": "required"},
+        ConditionFacts(preparer=False),
+        ConditionFacts(preparer=True),
+    ),
+    (
+        "not_preparer_of_target",
+        {**ALLOW, "not_preparer_of_target": "required"},
+        ConditionFacts(preparer=False),
+        ConditionFacts(preparer=None),
+    ),
+    (
+        "reserved_role",
+        {**ALLOW, "reserved_role": "required"},
+        ConditionFacts(reserved_holder=True),
+        ConditionFacts(reserved_holder=False),
+    ),
+    (
+        "reserved_role",
+        {**ALLOW, "reserved_role": "required"},
+        ConditionFacts(reserved_holder=True),
+        ConditionFacts(reserved_holder=None),
+    ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]
 
@@ -138,9 +163,69 @@ def test_agents_and_runs_are_bound_by_resource_conditions_not_actor_ones() -> No
     assert not conditions_hold(resource, ConditionFacts(gates={"G3": False}), person=False)
 
 
+@pytest.mark.parametrize("key", ["not_preparer_of_target", "reserved_role"])
+def test_target_conditions_are_a_persons_never_an_agents_or_a_runs(key: str) -> None:
+    """P-04-T15: unlike the actor conditions, no initiator's facts stand in for a non-person."""
+    rule = _rule("probe.act", {**ALLOW, key: "required"})
+    met = ConditionFacts(preparer=False, reserved_holder=True)
+    assert conditions_hold(rule, met, person=True)
+    assert not conditions_hold(rule, met, person=False)
+
+
+def _person() -> AuthContext:
+    user = uuid.uuid4()
+    return AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)),
+        user,
+        uuid.uuid4(),
+        None,
+        datetime.now(UTC),
+    )
+
+
+async def _holds(
+    monkeypatch: pytest.MonkeyPatch,
+    ctx: AuthContext,
+    target: authz.TargetFacts,
+    roles: set[str],
+    functions: frozenset[str] = frozenset(),
+) -> bool:
+    async def held(*_: object) -> frozenset[str]:
+        return functions
+
+    monkeypatch.setattr(authz.LOOKUPS, "functions", held)
+    resource = Resource(ctx.tenant_id, uuid.uuid4(), False, work_item_id=uuid.uuid4())
+    return await authz._holds_reserved(ctx, resource, target, roles)  # pyright: ignore[reportPrivateUsage]  # the rule, tested directly
+
+
+async def test_reserved_role_is_the_role_and_the_named_person(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ctx = _person()
+    mine = authz.TargetFacts(reserved_role="engagement_partner", reserved_user_id=ctx.user_id)
+    anyone = authz.TargetFacts(reserved_role="engagement_partner")
+    other = authz.TargetFacts(reserved_role="engagement_partner", reserved_user_id=uuid.uuid4())
+    assert await _holds(monkeypatch, ctx, mine, {"engagement_partner"})
+    assert await _holds(monkeypatch, ctx, anyone, {"engagement_partner"})
+    assert not await _holds(monkeypatch, ctx, other, {"engagement_partner"})
+    assert not await _holds(monkeypatch, ctx, mine, {"manager"})
+    assert not await _holds(monkeypatch, ctx, mine, {"firm_admin"})  # a firm role never is one
+
+
+async def test_a_signer_reserved_card_needs_the_signer_function(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ctx = _person()
+    signer = authz.TargetFacts(reserved_role="signer")
+    assert await _holds(monkeypatch, ctx, signer, {"manager"}, frozenset({"signer"}))
+    assert not await _holds(monkeypatch, ctx, signer, {"manager"}, frozenset({"preparer"}))
+
+
 @pytest.mark.parametrize(
     ("key", "value"),
     [
+        ("not_preparer_of_target", "yes"),
+        ("reserved_role", "engagement_partner"),
         ("level_in", "intern"),
         ("function_in", "approver"),
         ("gates_met", "G10"),

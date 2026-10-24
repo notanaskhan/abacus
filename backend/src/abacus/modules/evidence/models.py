@@ -53,8 +53,9 @@ class EvidenceVersion(Base):
 
 
 class ReviewDecision(Base):
-    """A person's accept, reject or send back of one evidence version (SPEC-004; ADR-005).
-    Insert-only and immutable; the database refuses a non-human actor."""
+    """A person's accept, reject or send back of one evidence version (SPEC-004; ADR-005), or
+    their Undo of one (`undone`, P-01-T13). Insert-only and immutable; the database refuses a
+    non-human actor."""
 
     __tablename__ = "review_decisions"
 
@@ -71,6 +72,12 @@ class ReviewDecision(Base):
     actor_kind: Mapped[str]
     actor_id: Mapped[str]
     created_at: Mapped[datetime]
+    # P-01-T13 (0117): decisions are odd, undo rows even; the highest odd row is effective.
+    decision_seq: Mapped[int]
+    undoes_decision_id: Mapped[UUID | None]
+    # What the decision changed, for its Undo: the version's assignee, each item's status.
+    prior_assignee_user_id: Mapped[UUID | None]
+    prior_item_statuses: Mapped[dict[str, str] | None] = mapped_column(JSONB)
 
 
 class ReviewAssignment(Base):

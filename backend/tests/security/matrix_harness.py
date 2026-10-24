@@ -6,7 +6,7 @@ deny, fail closed). Used by the generated `test_permission_matrix_generated.py` 
 from __future__ import annotations
 
 import uuid
-from dataclasses import fields
+from dataclasses import fields, replace
 from datetime import UTC, datetime, timedelta
 from typing import Literal, cast
 
@@ -14,8 +14,21 @@ import pytest
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity import authz
-from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
+from abacus.modules.identity.api import (
+    AgentContext,
+    AuthContext,
+    Forbidden,
+    Resource,
+    TargetFacts,
+    authorise,
+)
 from abacus.modules.identity.authz.conditions import LOOKUPS
+from abacus.modules.identity.authz.matrix import FUNCTIONS
+from abacus.modules.identity.context import (
+    _ISSUER,  # pyright: ignore[reportPrivateUsage] -- a test-only agent principal
+    Actor,
+    system_context_for_run,
+)
 from abacus.modules.identity.repository import FirmPolicy, FirmRole
 
 FIRM_ROLES = frozenset({"firm_admin", "practice_leader", "quality_partner", "security_admin"})
@@ -60,6 +73,105 @@ async def outcome(monkeypatch: pytest.MonkeyPatch, action: str, role: str) -> Ou
     ctx, resource = arrange(monkeypatch, role)
     try:
         await authorise(ctx, action, resource, reason=REASON)
+    except Forbidden:
+        return "deny"
+    return "allow"
+
+
+# --- P-04-T15: the target conditions, and the principals that may never resolve ---------------
+
+Variant = Literal["preparer", "not_preparer", "holder", "other_person", "other_role", "no_facts"]
+Principal = Literal["agent", "system", "support"]
+
+
+def _target(variant: Variant, ctx: AuthContext, role: str) -> TargetFacts | None:
+    """The target's facts for one case: the actor among its preparers or not; the card reserved
+    to the actor's role and person, to someone else, or to another role; or no facts at all."""
+    other_role = "eqr_reviewer" if role != "eqr_reviewer" else "manager"
+    return {
+        "preparer": TargetFacts(preparer_user_ids=frozenset({ctx.user_id, uuid.uuid4()})),
+        "not_preparer": TargetFacts(preparer_user_ids=frozenset({uuid.uuid4()})),
+        "holder": TargetFacts(reserved_role=role, reserved_user_id=ctx.user_id),
+        "other_person": TargetFacts(reserved_role=role, reserved_user_id=uuid.uuid4()),
+        "other_role": TargetFacts(reserved_role=other_role, reserved_user_id=ctx.user_id),
+        "no_facts": None,
+    }[variant]
+
+
+async def condition_outcome(
+    monkeypatch: pytest.MonkeyPatch, action: str, role: str, variant: Variant
+) -> Outcome:
+    ctx, resource = arrange(monkeypatch, role)
+    target = replace(resource, target=_target(variant, ctx, role))
+    try:
+        await authorise(ctx, action, target, reason=REASON)
+    except Forbidden:
+        return "deny"
+    return "allow"
+
+
+async def principal_outcome(
+    monkeypatch: pytest.MonkeyPatch, action: str, principal: Principal
+) -> Outcome:
+    """`authorise` for an agent, a system run or a break-glass support session, with every fact a
+    person would need: the action in the agent's task scope, an initiator who is the firm's admin
+    and the engagement's partner, every function on the work item, and target facts that a person
+    holding the role would meet."""
+    initiator, resource = arrange(monkeypatch, "engagement_partner")
+    all_functions = frozenset(FUNCTIONS)
+
+    async def functions(*_: object) -> frozenset[str]:
+        return all_functions
+
+    monkeypatch.setattr(LOOKUPS, "functions", functions)
+    initiator = replace(initiator, firm_role="firm_admin")
+    full = replace(
+        resource,
+        work_item_id=uuid.uuid4(),
+        target=TargetFacts(
+            preparer_user_ids=frozenset(),
+            reserved_role="engagement_partner",
+            reserved_user_id=initiator.user_id,
+        ),
+    )
+    assert full.engagement_id is not None
+    actor: Actor
+    if principal == "agent":
+        run = uuid.uuid4()
+        actor = AgentContext(
+            tenant=TenantContext(
+                initiator.tenant_id, "agent", f"agent:probe:{run}", initiator.user_id
+            ),
+            agent_id="probe",
+            agent_run_id=run,
+            engagement_id=full.engagement_id,
+            task_scope=frozenset({action}),
+            initiator=initiator,
+            issued_by=_ISSUER,
+        )
+    elif principal == "system":
+        actor = system_context_for_run(
+            tenant_id=initiator.tenant_id,
+            run_id=uuid.uuid4(),
+            engagement_id=full.engagement_id,
+            on_behalf_of=initiator.user_id,
+        )
+    else:
+
+        async def no_membership(*_: object) -> str | None:
+            return None  # a support session holds no engagement role (SPEC-012)
+
+        monkeypatch.setattr(authz, "engagement_role", no_membership)
+        staff = uuid.uuid4()
+        actor = AuthContext(
+            TenantContext(initiator.tenant_id, "support", f"staff:{staff}"),
+            staff,
+            uuid.uuid4(),
+            "platform_support",
+            datetime.now(UTC) - timedelta(minutes=1),
+        )
+    try:
+        await authorise(actor, action, full, reason=REASON)
     except Forbidden:
         return "deny"
     return "allow"

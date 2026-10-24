@@ -90,6 +90,15 @@ async def insert_cells(session: AsyncSession, rows: list[dict[str, Any]]) -> Non
         await session.execute(insert(WorkpaperCell), rows)
 
 
+async def cell_setters(session: AsyncSession, workpaper_id: UUID) -> set[UUID]:
+    """Everyone who ever set a cell of the paper (P-04-T15: its preparers; LIST_EXEMPT: the
+    caller authorised on the engagement)."""
+    found = await session.execute(
+        select(WorkpaperCell.set_by).where(WorkpaperCell.workpaper_id == workpaper_id).distinct()
+    )
+    return set(found.scalars().all())
+
+
 async def citations_of(
     session: AsyncSession, workpaper_ids: Sequence[UUID]
 ) -> Sequence[WorkpaperCellCitation]:

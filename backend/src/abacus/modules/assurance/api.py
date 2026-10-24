@@ -6,14 +6,14 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 from abacus.modules.assurance.completion import g6, g7, g8, g9
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
-from abacus.modules.assurance.mapping import mapping_reviewables
+from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
 from abacus.modules.assurance.routes import router
-from abacus.modules.assurance.trial_balance import tb_reviewables
+from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
-from abacus.modules.review.api import register_reviewable
+from abacus.modules.review.api import register_reviewable, register_reviewable_facts
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -28,6 +28,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 register_reviewable("trial_balance", tb_reviewables)
 # SPEC-316 (TASK-345): the account mapping is signed like a working paper.
 register_reviewable("mapping_set", mapping_reviewables)
+# P-04-T15 (DEC-216): each one's facts, with its preparers from the ledger's own records.
+register_reviewable_facts("trial_balance", tb_facts)
+register_reviewable_facts("mapping_set", mapping_facts)
 
 # SPEC-314 (TASK-332): EQR concurrence, the representation letter, release and the archive.
 register_gate_provider("G6", g6)

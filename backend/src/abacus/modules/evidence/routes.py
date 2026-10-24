@@ -35,6 +35,7 @@ from abacus.modules.evidence.service import (
     EvidenceVersionSummary,
     Proposal,
     QueueEntry,
+    UndoneView,
     assign,
     decide,
     evidence_versions_for,
@@ -43,6 +44,7 @@ from abacus.modules.evidence.service import (
     review_queue,
     review_waiting,
     take,
+    undo_decision,
 )
 from abacus.modules.evidence.setup_files import download_setup_file, upload_setup_file
 from abacus.modules.evidence.statement_review import (
@@ -355,6 +357,35 @@ async def send_back_route(
         note=body.note,
         seen_proposal=body.seen_proposal,
     )
+
+
+class UndoneDecisionOut(BaseModel):
+    """The compensating row an Undo wrote (P-01-T13; DEC-24): the version waits for a decision
+    again, and its items read `uploaded`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    undoes_decision_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    request_item_ids: Annotated[list[UUID], classified("internal")]
+    item_status: Annotated[RequestStatus, classified("internal")]
+
+
+@router.post(
+    "/review-decisions/{decision_id}/undo",
+    action="review_decision.undo",
+    response_model=UndoneDecisionOut,
+    status_code=201,
+    errors=(409,),
+)
+async def undo_decision_route(
+    engagement_id: UUID, decision_id: UUID, ctx: Ctx
+) -> UndoneDecisionOut:
+    """SHL-04c (AC 3.1.4): Undo within 10 s by the person who decided; later, or once decided
+    again, 409 `undo_window_closed`."""
+    view: UndoneView = await undo_decision(ctx, engagement_id, decision_id)
+    return UndoneDecisionOut.model_validate(view, from_attributes=True)
 
 
 @router.get(

@@ -16506,6 +16506,32 @@ export type UndoProposalIn = {
 };
 
 /**
+ * UndoneDecisionOut
+ *
+ * The compensating row an Undo wrote (P-01-T13; DEC-24): the version waits for a decision
+ * again, and its items read `uploaded`.
+ */
+export type UndoneDecisionOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    item_status: RequestStatus;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids: Array<string>;
+    /**
+     * Undoes Decision Id
+     */
+    undoes_decision_id: string;
+};
+
+/**
  * UnlockBody
  */
 export type UnlockBody = {
@@ -31018,6 +31044,66 @@ export type GetRetrievalResponses = {
 };
 
 export type GetRetrievalResponse = GetRetrievalResponses[keyof GetRetrievalResponses];
+
+export type UndoDecisionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Decision Id
+         */
+        decision_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/review-decisions/{decision_id}/undo';
+};
+
+export type UndoDecisionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UndoDecisionError = UndoDecisionErrors[keyof UndoDecisionErrors];
+
+export type UndoDecisionResponses = {
+    /**
+     * Successful Response
+     */
+    201: UndoneDecisionOut;
+};
+
+export type UndoDecisionResponse = UndoDecisionResponses[keyof UndoDecisionResponses];
 
 export type ReviewFlagsData = {
     body?: never;

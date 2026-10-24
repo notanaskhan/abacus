@@ -16,6 +16,18 @@ class RequestItemCreated(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
 
 
+class RequestItemStatusChanged(DomainEvent):
+    """An item's status moved (P-01-T13: emitted after an evidence Undo puts it back to
+    `uploaded`; P-06 consumers read it at read time). Codes, never text."""
+
+    event_type: ClassVar[str] = "request_item.status_changed"
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    from_status: Annotated[str, classified("internal")]
+    to_status: Annotated[str, classified("internal")]
+
+
 class RequestItemClassified(DomainEvent):
     """An item became retrievable tier A with a dataset (SPEC-022): connections may retrieve it
     automatically when the live connection delivers that dataset."""

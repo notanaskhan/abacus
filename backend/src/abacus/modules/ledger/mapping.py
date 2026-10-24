@@ -30,6 +30,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.ledger.mapping_repository import (
     catalogue_rows,
+    get_mapping_set,
     get_version,
     grouping_sets,
     insert_edits,
@@ -39,6 +40,7 @@ from abacus.modules.ledger.mapping_repository import (
     insert_rules,
     insert_set,
     insert_version,
+    mapping_editors,
     mapping_set_for,
     newest_edits,
     next_version_no,
@@ -508,6 +510,34 @@ async def create_mapping_set(
 async def mapping_set_of(tenant: TenantContext, tb_id: UUID) -> MappingSet | None:
     async with tenant_session(tenant) as session:
         return await mapping_set_for(session, tb_id)
+
+
+@dataclass(frozen=True)
+class MappingAuthors:
+    """Who prepared a mapping set, from its own records (P-04-T15): its creator and everyone who
+    edited a mapping in it."""
+
+    mapping_set_id: UUID
+    engagement_id: UUID
+    trial_balance_id: UUID
+    authors: frozenset[UUID]
+
+
+async def mapping_set_authors(
+    tenant: TenantContext, mapping_set_id: UUID
+) -> MappingAuthors | None:
+    """For callers authorised on the mapping set's engagement; None when unknown."""
+    async with tenant_session(tenant) as session:
+        found = await get_mapping_set(session, mapping_set_id)
+        if found is None:
+            return None
+        editors = await mapping_editors(session, found.id)
+    return MappingAuthors(
+        found.id,
+        found.engagement_id,
+        found.trial_balance_id,
+        frozenset(editors | {found.created_by}),
+    )
 
 
 async def mapping_view(

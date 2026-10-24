@@ -5,13 +5,14 @@ Working papers (A-04; SPEC-308): the grid, formulas, citations and sign-offs.
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.identity.api import AbacusRouter
-from abacus.modules.review.api import register_reviewable
+from abacus.modules.review.api import register_reviewable, register_reviewable_facts
 from abacus.modules.workpapers.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.workpapers.routes import checks_router, router
 from abacus.modules.workpapers.service import (
     CodeTaken,
     NoAssuranceItem,
     WorkpaperInvalid,
+    workpaper_facts,
     workpaper_reviewables,
 )
 from abacus.modules.workpapers.tie_out import checks_for
@@ -24,6 +25,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (router, checks_router)
 
 # SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)
+# P-04-T14: one paper's facts (content hash, version, preparers) for the sign-off rules.
+register_reviewable_facts("workpaper", workpaper_facts)
 
 __all__ = [
     "ROUTERS",

@@ -4,14 +4,14 @@
 actions:
   # --- Sign-offs, the P-04 review grammar (SPEC-308; TASK-319) ---
   sign_off.prepare:         {manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # L1 preparer
-  sign_off.review:          {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # L2 reviewer; never the L1 signer (the service refuses)
-  sign_off.manager:         {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # L3 manager
+  sign_off.review:          {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required, not_preparer_of_target: required}   # L2 reviewer; never a preparer of the target (P-04-T15, R-SO-3)
+  sign_off.manager:         {engagement_partner: allow, manager: allow, agent: deny, independence: required, not_preparer_of_target: required}   # L3 manager; never a preparer of the target (P-04-T15, R-SO-3)
   sign_off.partner:         {engagement_partner: allow, agent: deny, independence: required}   # L4 partner
   sign_off.eqr:             {reviewer: allow, agent: deny, independence: required}   # L5 engagement quality reviewer
   # --- C3 stub 1 (P-04-T07; ADR-160): the ladder and eligibility reads, the umbrella write and
   # bulk. The level rows above are the plan's sign_off.l1 to l5 (DEC-135); POST /v1/sign-offs
-  # declares sign_off.create and the service also authorises the level's row. The conditions
-  # not_preparer_of_target and reserved_role arrive with P-04-T15.
+  # declares sign_off.create and the service also authorises the level's row, with the target's
+  # facts (P-04-T15: not_preparer_of_target on L2 and L3).
   sign_off.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-12 ladder and eligibility; firm roles only
   sign_off.create:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # R-SO-1: a live human; the level row decides who may sign what
   sign_off.bulk:            {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # R-SO-7: reviewers only (senior, manager, partner)
@@ -23,11 +23,10 @@ actions:
   review_note.withdraw:     {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, agent: deny, system: deny, independence: required}   # P-04-T07: the raiser withdraws their own note (the service checks)
   # --- Human gates (C13 read; ADR-160 clause 11) ---
   human_gate.read:          {firm_admin: allow, practice_leader: in_scope, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # P-04-T07: HOME-01/02 read what waits on the caller; walled clients never count
-  # --- Decision cards (C3 stub 2, P-04-T08; ADR-160 clause 8). decision.decide gains the
-  # reserved_role condition and MFA per kind in P-04-T15 and T23; until then the service checks
-  # the reserved role. Raising a card is service-only (review.api.raise_decision_card).
+  # --- Decision cards (C3 stub 2, P-04-T08; ADR-160 clause 8). decision.decide holds the
+  # reserved_role condition (P-04-T15); MFA per kind arrives with P-04-T23. Raising a card is service-only (review.api.raise_decision_card).
   decision.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-11: firm roles only; never client roles
-  decision.decide:          {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # SHL-11 a: only the card's reserved role (the service checks)
+  decision.decide:          {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required, reserved_role: required}   # SHL-11 a: only the card's reserved role and person (P-04-T15); MFA per kind with P-04-T23
   decision.request_analysis: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Request more analysis"
   decision.notify:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Notify Margaret"
   decision.reassess:        {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # SHL-11 d: the owner's provider recomputes in code
@@ -39,8 +38,8 @@ actions:
   issue.create:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-15 b, c: the composer and the field flag
   issue.update:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # title, class, priority, assignee
   issue.resolve:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # resolve and mark not applicable; team members (P-04 4.3)
-  issue.verify:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}   # reviewer functions (P-04 4.3), held by engagement roles; the QC reviewer role stays read-only here (DEC-21)
-  issue.reopen:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}   # as verify
+  issue.verify:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, function_in: 'first_level_reviewer, detail_reviewer, manager_reviewer, signer'}   # reviewer functions (P-04 4.3; P-04-T15, DEC-145); the QC reviewer role stays read-only here (DEC-21)
+  issue.reopen:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, function_in: 'first_level_reviewer, detail_reviewer, manager_reviewer, signer'}   # as verify
   issue.send_to_client:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-15 b: one request item with only the client wording (INV-4)
   issue.explain:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-15 d: a person asks the agent to explain
   fix_instruction.set:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-15 a, e: sealed instructions; runs always propose (DF-13)
@@ -49,14 +48,14 @@ actions:
   # P-04-T15). checkpoint.propose is service-only (review.api.propose_checkpoint).
   checkpoint.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # SHL-16: firm roles only
   checkpoint.create:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-16 f: "Save checkpoint…"
-  checkpoint.approve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}   # SHL-16 b: equals approving the SHL-10 proposal
-  checkpoint.reject:        {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}   # SHL-16 e
-  checkpoint.restore:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}   # SHL-16 c: a new checkpoint as a copy; nothing deleted
+  checkpoint.approve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, function_in: 'first_level_reviewer, detail_reviewer, manager_reviewer, signer'}   # SHL-16 b: equals approving the SHL-10 proposal; reviewer functions (P-04-T15, DEC-145)
+  checkpoint.reject:        {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, function_in: 'first_level_reviewer, detail_reviewer, manager_reviewer, signer'}   # SHL-16 e
+  checkpoint.restore:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, function_in: 'first_level_reviewer, detail_reviewer, manager_reviewer, signer'}   # SHL-16 c: a new checkpoint as a copy; nothing deleted
   checkpoint.rename:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-16 d: name and star only
   checkpoint.propose:       {agent: task_scope}   # P-04 4.3: the agent through its task (no route); the system cell for engine imports lands with P-04-T32 (DEC-145)
   # --- Field provenance (C3 stub 3, P-04-T11; ADR-160 clauses 5 and 10). Preparers edit and
   # reviewers propose (DEC-84); a field tick is a field_tick sign-off, human only.
   field.read:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # SHL-09: firm roles only
-  field.edit:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-09 c: preparer functions (DEC-84), narrowed by function_in(preparer) in P-04-T15; a citation note is required
+  field.edit:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, function_in: preparer}   # SHL-09 c: preparer functions (DEC-84; P-04-T15); a citation note is required
   field.add_reference:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # SHL-09: "Add reference", verified through C4
   field.sign_off:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-09: "Sign off field"; an unsupported value cannot be ticked
