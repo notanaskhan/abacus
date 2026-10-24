@@ -29,3 +29,4 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: matrix rows, flag, two registry objects and seven glossary rows added; status codegen and `make regenerate` run (matrix, flags, statuses, security tests, OpenAPI unchanged). Closed lists extended: independence-marked actions (`test_independence.py`), the registry counts in `apps/web/src/status/status.test.ts` (78 objects, 376 rows). New `tests/unit/ledger/test_a02_bundle.py` (12, AC-30, AC-31). Deferred items listed in DEC-315.
+- 2026-10-25: verification on the combined branch: `tests/unit tests/contracts tests/security` 28,895 passed, 5 xfailed; the ledger, retrieval, sign-off segregation, review staleness, TB-of-record and `test_schema_check_db` integration files 579 passed; `make check-fast` clean.

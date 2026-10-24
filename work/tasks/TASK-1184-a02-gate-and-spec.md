@@ -24,3 +24,4 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: gate checked (DEC-315): ADR-150 (P-17) is `proposed`, gating only T12, T15, T16; DEC-70 decided, `ledger-choice.md` not written yet (M3 read). SPEC-333 written as an outline with AC-1 to AC-51, each naming what SPEC-309 to SPEC-311 built and the row that finishes it. Epic §11.2 answered in DEC-316. `validate_docs` passes. **Human to-dos:** open the C9 v1 and C20 v1 contract issues; accept or amend ADR-150 before T12; write `docs/product/discovery/ledger-choice.md` at the M3 read.
+- 2026-10-25: verification on the combined branch: `tests/unit tests/contracts tests/security` 28,895 passed, 5 xfailed; the ledger, retrieval, sign-off segregation, review staleness, TB-of-record and `test_schema_check_db` integration files 579 passed; `make check-fast` clean.
