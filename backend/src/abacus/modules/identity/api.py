@@ -193,7 +193,9 @@ from abacus.modules.identity.service import (
     member_context,
     my_engagements,
     names_of,
+    partner_members,
     role_codes,
+    security_admins,
     team_of,
     walled_from,
 )
@@ -224,7 +226,7 @@ from abacus.modules.identity.slots import (
     resolve_scope,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
-from abacus.modules.identity.support import Staff
+from abacus.modules.identity.support import Staff, staff_from_token
 from abacus.modules.identity.team import (
     Candidate,
     LastPartner,
@@ -439,6 +441,7 @@ __all__ = [
     "my_engagements",
     "names_of",
     "note_budget_reviewed",
+    "partner_members",
     "policy_agent_may_hold",
     "portal_scopes",
     "provision_setting",
@@ -477,6 +480,7 @@ __all__ = [
     "role_codes",
     "router",
     "scope_facts",
+    "security_admins",
     "serving_request",
     "set_autonomy",
     "set_demo_clock",
@@ -484,6 +488,7 @@ __all__ = [
     "set_member_profile",
     "shell_of",
     "signup_router",
+    "staff_from_token",
     "staff_router",
     "system_context_for_run",
     "team_of",

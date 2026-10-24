@@ -29,6 +29,8 @@ from abacus.modules.identity.repository import (
     WallRecord,
     active_firm_admins,
     active_memberships,
+    active_partner_members,
+    active_security_admins,
     active_staff_ids,
     all_walls,
     client_admin_ids,
@@ -217,6 +219,16 @@ async def add_self_joined_admin(tx: UnitOfWork, ctx: AuthContext, engagement_id:
 async def firm_admins(tenant_id: UUID) -> list[UUID]:
     """Recipients for firm-level notifications (SPEC-013)."""
     return await active_firm_admins(TenantContext(tenant_id, "system", "notifications"))
+
+
+async def security_admins(tenant_id: UUID) -> list[UUID]:
+    """Q-02-T33: recipients for the incident register's notifications (the firm's QI)."""
+    return await active_security_admins(TenantContext(tenant_id, "system", "notifications"))
+
+
+async def partner_members(tenant_id: UUID) -> list[UUID]:
+    """Q-02-T33: the firm's partner-level staff, for `incident_recorded` (Q-02 §4.8)."""
+    return await active_partner_members(TenantContext(tenant_id, "system", "notifications"))
 
 
 async def team_of(tenant_id: UUID, engagement_id: UUID) -> list[tuple[UUID, EngagementRole]]:

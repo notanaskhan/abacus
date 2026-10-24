@@ -1821,6 +1821,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112
+        | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

@@ -73,6 +73,8 @@ NON_TENANT_TABLES = frozenset(
     | {"sign_in_challenges", "sign_in_locks"}
     # 0133 (P-08-T17): a person's second step and the firm's trusted devices; definers only.
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}
+    # 0143 (Q-02-T33): the staff record of incident propagations; definers only.
+    | {"incident_propagations"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -217,6 +219,7 @@ GLOBAL_TABLES = frozenset(
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
     | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}  # 0133 (P-08-T17)
+    | {"incident_propagations"}  # 0143 (Q-02-T33)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -276,6 +279,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}
     | {"retention_policy_history", "retention_defaults_backfill"}
+    # 0143 (Q-02-T33): the staff record of incident propagations, from no-tenant sessions only.
+    | {"record_incident_propagation", "incident_propagation_log"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

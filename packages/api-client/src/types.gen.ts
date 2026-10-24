@@ -235,6 +235,38 @@ export type AccountsOut = {
 };
 
 /**
+ * AccruedIncidentFactsIn
+ *
+ * Accrued's facts, the same for every firm it touched.
+ */
+export type AccruedIncidentFactsIn = {
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
  * ActivityEventOut
  *
  * One audit event, identifiers only, through `audit_trail.api` (§4.7). The UI words it;
@@ -8921,6 +8953,194 @@ export type InboxFileOut = {
      * Uploaded By Staff
      */
     uploaded_by_staff: boolean;
+};
+
+/**
+ * IncidentIn
+ *
+ * What the QI knows when recording; counts and encryption may be unknown yet.
+ */
+export type IncidentIn = {
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * IncidentOut
+ *
+ * One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;
+ * `clock_day` of `clock_days` have passed in the firm's time zone.
+ */
+export type IncidentOut = {
+    /**
+     * Accrued Confirmed At
+     */
+    accrued_confirmed_at?: string | null;
+    /**
+     * Accrued Ref
+     */
+    accrued_ref?: string | null;
+    /**
+     * Clock Day
+     */
+    clock_day: number;
+    /**
+     * Clock Days
+     */
+    clock_days: number;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Dpa Notice At
+     */
+    dpa_notice_at?: string | null;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Ftc Notify By
+     */
+    ftc_notify_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Notification Event
+     */
+    notification_event: boolean;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * IncidentPropagationEventOut
+ *
+ * One staff request (`requested`, `refused` with its reason code) or one run's end
+ * (`completed`, with the firms that failed every attempt).
+ */
+export type IncidentPropagationEventOut = {
+    /**
+     * Event
+     */
+    event: 'requested' | 'refused' | 'completed';
+    /**
+     * Failed Tenant Ids
+     */
+    failed_tenant_ids: Array<string>;
+    /**
+     * Firms
+     */
+    firms: number;
+    /**
+     * Identical
+     */
+    identical: number;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Refusal
+     */
+    refusal?: 'firm_not_found' | 'register_off' | 'facts_changed' | 'confirmed_out_of_order' | 'propagation_running' | 'firm_count' | null;
+    /**
+     * Staff Id
+     */
+    staff_id: string;
+    /**
+     * Written
+     */
+    written: number;
+};
+
+/**
+ * IncidentPropagationIn
+ */
+export type IncidentPropagationIn = {
+    facts: AccruedIncidentFactsIn;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Tenant Ids
+     */
+    tenant_ids: Array<string>;
+};
+
+/**
+ * IncidentPropagationLogOut
+ */
+export type IncidentPropagationLogOut = {
+    /**
+     * Items
+     */
+    items: Array<IncidentPropagationEventOut>;
+};
+
+/**
+ * IncidentPropagationOut
+ *
+ * `started`: the firms the run will write. `identical`: firms that already have this
+ * incident with these same facts, skipped rather than written again.
+ */
+export type IncidentPropagationOut = {
+    /**
+     * Accrued Ref
+     */
+    accrued_ref: string;
+    /**
+     * Identical
+     */
+    identical: Array<string>;
+    /**
+     * Started
+     */
+    started: Array<string>;
 };
 
 /**
@@ -38980,6 +39200,53 @@ export type SearchRequestItemsResponses = {
 
 export type SearchRequestItemsResponse = SearchRequestItemsResponses[keyof SearchRequestItemsResponses];
 
+export type RecordIncidentData = {
+    body: IncidentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security/incidents';
+};
+
+export type RecordIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RecordIncidentError = RecordIncidentErrors[keyof RecordIncidentErrors];
+
+export type RecordIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    201: IncidentOut;
+};
+
+export type RecordIncidentResponse = RecordIncidentResponses[keyof RecordIncidentResponses];
+
 export type ServiceLinesData = {
     body?: never;
     headers?: {
@@ -43315,6 +43582,106 @@ export type ImportEmailTemplateResponses = {
 };
 
 export type ImportEmailTemplateResponse = ImportEmailTemplateResponses[keyof ImportEmailTemplateResponses];
+
+export type PropagateIncidentData = {
+    body: IncidentPropagationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Accrued Ref
+         */
+        accrued_ref: string;
+    };
+    query?: never;
+    url: '/v1/platform/incidents/{accrued_ref}/propagate';
+};
+
+export type PropagateIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PropagateIncidentError = PropagateIncidentErrors[keyof PropagateIncidentErrors];
+
+export type PropagateIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    202: IncidentPropagationOut;
+};
+
+export type PropagateIncidentResponse = PropagateIncidentResponses[keyof PropagateIncidentResponses];
+
+export type IncidentPropagationLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Accrued Ref
+         */
+        accrued_ref: string;
+    };
+    query?: never;
+    url: '/v1/platform/incidents/{accrued_ref}/propagations';
+};
+
+export type IncidentPropagationLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type IncidentPropagationLogError = IncidentPropagationLogErrors[keyof IncidentPropagationLogErrors];
+
+export type IncidentPropagationLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: IncidentPropagationLogOut;
+};
+
+export type IncidentPropagationLogResponse = IncidentPropagationLogResponses[keyof IncidentPropagationLogResponses];
 
 export type ImportRetentionDefaultsData = {
     body: RetentionDefaultSetIn;

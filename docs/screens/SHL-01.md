@@ -62,6 +62,7 @@ None.
 - SHL-01a.png holds frame a only (the README calls it "b · 13 strips"). One Tier A crop exists, the Home-lit toolbar at 1400; the 13 strips of b are held by Tier D (width, step, firm name) and the state tests (lit item per strip), with no PNG to compare.
 - DF-39 order: the app uses `moreFirst` (Signatures, then Closes and Audits into More before the pill shortens), as SHL-01a and P-01 AC 1.1.4 draw it; the kit's default ladder (short name first) stays for its specimens. DEC-131.
 - Idle labels at their own 400 width (`holdLabelWidth={false}`): with the kit's 500-width hold the toolbar is 2.35 % off SHL-01a. DEC-131.
+- Support opens the interim O2 frame (`shell/firm/InterimSupport.tsx`): the support contact and the System status link, until G-04's SHL-05 drawer (P-01 §2.2, AC 1.1.8). It is undesigned, composed from the O2 kit.
 - Interim Go… replaces the legacy SPEC-302 search palette in the toolbar until P-02 (AC 1.1.8 says no search); `shell/Palette.tsx` and its test stay for P-02. `?` opens the interim Go… (it lists the shortcuts) until SHL-03's dialog (P-01-T08).
 - `firmTitle` is the membership's `firm_name` ("Brightwater Hale"); the legal name "Brightwater Hale LLP" arrives with `/v1/me` v2 (P-01-T04).
 - `nav aria-label` is the kit's "Modules"; §5.5 says "Primary". The More menu is the kit's 220 w; the spec says 240. Both are F-05-T18's.

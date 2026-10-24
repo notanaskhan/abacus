@@ -1,6 +1,6 @@
 # AI threat model (ADR-064)
 
-A living model of how the Accrued Agent and its data paths can be attacked or can go wrong, and what stops each case. ADR-064 requires it to be reviewed whenever an agent, a tool or a data source is added, and to treat every string that comes from a client or a client system as untrusted. First version: Tue Oct 20, 2026 (Q-02-T02). Companion decisions: ADR-052 (hostile client content), ADR-065 (output controls), ADR-113 to ADR-115 (the data boundary).
+A living model of how the Accrued Agent and its data paths can be attacked or can go wrong, and what stops each case. ADR-064 requires it to be reviewed whenever an agent, a tool or a data source is added, and to treat every string that comes from a client or a client system as untrusted. First version: Tue Oct 20, 2026 (Q-02-T02). Refreshed Sat Oct 24, 2026 for pen test #1 (Q-03-T018): the scope section, the sign-in, portal, evidence, compliance-record and outbound rows, and coverage updated to what `main` holds. Companion decisions: ADR-052 (hostile client content), ADR-065 (output controls), ADR-113 to ADR-115 (the data boundary).
 
 ## How to use this file
 
@@ -11,6 +11,26 @@ A living model of how the Accrued Agent and its data paths can be attacked or ca
   - **ADR**: the rule is decided in an accepted ADR; no test names it yet. Each such row is also listed under *Gaps*.
 - Evaluation suites (`evals/`) call real models and carry thresholds that are never lowered. A row that cites one relies on the suite's `adversarial_containment` or `injection_resistance` metric staying at 1.0.
 - This file holds no client data, no prompts' full text, no secrets and no names of firms or people.
+
+## Pen test #1 scope (refreshed 2026-10-24, Q-03-T018)
+
+Pen test #1 runs Feb 15 – Mar 5, 2027 on the pinned staging build (Q-02-T35), with highs retested closed by Apr 9. This table names every surface in scope and what is built on `main` today, so the tester and the triage (Q-02-T42) start from the same map. "Built" means live routes with tests; "stub" means a contract stub behind its flag; "not built" means out of the build. Synthetic tenants and synthetic data only; testers get synthetic accounts, never real firm or taxpayer data. This file carries no exploit detail, credentials or environment addresses; those stay in the engagement letter and the vault.
+
+| Surface | Built on main | Boundaries | Rows |
+|---|---|---|---|
+| Staff sign-in: hosted AuthKit, the session BFF (`/v1/auth/*`), refresh rotation and reuse detection, step-up for fresh-MFA actions | built (P-01-T09, ADR-165) | TB2 | AU-01 to AU-04 |
+| Portal sign-in by emailed code, portal sessions pinned to tenant and host, lockout, the MFA floor and backup codes | built (P-08-T10, P-08-T17; ADR-168, DEC-34) | TB2 | AU-05 to AU-08 |
+| Portal hosts and branding: host-to-firm resolution, Public-only branding, logo re-encoding | built for platform-provisioned hosts under the portal base domain (P-08-T05, ADR-163). A firm's own custom domain and its certificate are **not built** (P-11; RB-21) | TB2 | PO-01, PO-02 |
+| Portal reads and the role union: home, binders, request items, scoped grants (owner, taxpayer, third party) | built for home (P-08-T13) and the grant model (ADR-146); the PBC section (POR-03/04/14) is a **stub** in fixture mode (R-01-T01) | TB2 | CT-08, PO-03 |
+| Uploads: firm uploads, the portal drop, scanning, parsing, previews | firm uploads built (ADR-110, ADR-153); the portal drop route is a **stub** (413 and 415 declared, R-01-T01) | TB1 | HC-07, HC-08, EV-01 |
+| Evidence, citations and the viewer: citation v2 verifiers, page images, the C4 viewer manifest | verifiers and `record_citations` built (P-03-T06); the viewer manifest is a **stub** (C4) | TB5, TB7 | HC-11, EV-02, EV-03 |
+| Identifiers: TIN storage and reveal | built (P-07-T10): sealed values, masked by default, reveal with fresh MFA and a reason, one audit row | TB7 | TRI-05 |
+| Agent runs: list, trace, trace export | built (C6 v0, SPEC-318) | TB7, TB8 | CR-04 |
+| Legal holds | built behind `compliance.legal_holds` (Q-02-T29) | TB2 | CR-01 |
+| Incident register and staff propagation | built behind `compliance.incidents` (Q-02-T33, in the S7 batch) | TB2 | CR-02 |
+| Firm data export (dual approval, link) | **not built** (Q-02-T43, S10); rows are in the matrix only | TB8 | CR-03 |
+| Follow-ups and notification email | built (P-06-T14 follow-ups sent by a person after Undo; C16 email behind `notifications.email`) | TB7 | OB-01, OB-02 |
+| The gateway and the four specialists | built; real data stays off for every firm until clearance (ADR-113 to ADR-115) | TB3 to TB6 | HC-, TL-, DB- rows |
 
 ## What is being protected: assets
 
@@ -97,14 +117,14 @@ A living model of how the Accrued Agent and its data paths can be attacked or ca
 
 | ID | Boundary | Threat | Mitigation | Coverage |
 |---|---|---|---|---|
-| TL-01 | TB6 | An injected instruction persuades an agent to accept, reject, waive, mark not-applicable or send | Agent contexts never hold decision actions; the action is refused at the role layer; a database trigger will refuse agent and policy actors on the human-only list | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py`. Planned: Q-02-T17 (human-only guard), Q-02-T22 (tests) |
+| TL-01 | TB6 | An injected instruction persuades an agent to accept, reject, waive, mark not-applicable or send | Agent contexts never hold decision actions; the action is refused at the role layer; a database trigger will refuse agent and policy actors on the human-only list | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py`, `backend/tests/integration/test_human_only_guard.py` (the database refuses listed actions from agent and policy actors). Planned: Q-02-T22 (independent tests) |
 | TL-02 | TB6 | Confused deputy: an agent reaches data its initiator may not see | Effective permission is the intersection of agent role, initiator and task scope; unknown, revoked or other-firm initiators get no context | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py`, `backend/tests/unit/identity/test_firm_level_agent.py` |
 | TL-03 | TB6 | An agent keeps running for someone who has since been walled off from the client | The wall is checked before relationship, role and attribute, at every stage; a walled run fails non-retryably; walls answer 404 | Tested: `backend/tests/integration/agent_tests/test_walls_runs.py`, `backend/tests/unit/identity/test_ethical_walls.py` |
 | TL-04 | TB6 | Injected instructions drive a generic tool: arbitrary query, URL fetch or file read | No generic query, HTTP or file tools; tools are named for intent with typed inputs and outputs; no agent framework (ADR-049, ADR-057) | Tested: `backend/tests/unit/quality/test_banned_patterns_agents.py` (static rules for agent code). ADR: ADR-049 |
 | TL-05 | TB1, TB6 | A connector writes to a client's system | Connector clients have read methods only; worker outbound hosts restricted; a conformance test fails any non-read request (ADR-040) | Tested: `backend/tests/unit/connections/test_fake_conformance.py` |
 | TL-06 | TB7 | An agent sends or schedules client-facing messages beyond the firm's autonomy policy | Autonomy conditions bound by declared scope and initiator; client-visible pre-checks are deterministic templates; no model text to clients (ADR-111) | Tested: `backend/tests/unit/identity/test_autonomy_condition.py`, `backend/tests/unit/communications/test_invitation_wording.py`. Planned: Q-02-T08, Q-02-T09 (no model text to clients) |
 | TL-07 | TB7 | An outbound message names clients, entities, accounts or amounts outside the engagement | Scope checker in the send path blocks and flags (ADR-065); today only deterministic templates are sent (ADR-111) | ADR: ADR-065, ADR-111. No scope-checker test yet (see Gaps) |
-| TL-08 | TB6, TB7 | An agent action is attributed to "the agent" with no named person, so no one is accountable | Every action names a person, "person via Agent", or the system for scheduled work; delegation chain recorded (ADR-007, ADR-025) | Planned: Q-02-T16 (attribution columns), Q-02-T22 (tests for each actor kind) |
+| TL-08 | TB6, TB7 | An agent action is attributed to "the agent" with no named person, so no one is accountable | Every action names a person, "person via Agent", or the system for scheduled work; delegation chain recorded (ADR-007, ADR-025) | Tested: `backend/tests/integration/test_audit_attribution.py`, `backend/tests/integration/test_q02_attribution_access_acceptance.py`. Planned: Q-02-T22 (independent tests for each actor kind) |
 | TL-09 | TB6 | Learning-loop poisoning: hostile content becomes an example or a firm rule | Corrections become examples at once but firm rules only after manager approval and a passing evaluation; rules are versioned and reversible (ADR-068) | ADR: ADR-068, ADR-053. No test yet (see Gaps) |
 | TL-10 | TB3 | A prompt or model is changed without evaluation, or a cheaper tier is used where it is not eligible | Versioned, immutable prompt registry; tier eligibility is keyed to the agent's own suite and fails closed; evaluations run on prompt or model change (ADR-074, ADR-081) | Tested: `backend/tests/unit/ai_gateway/test_prompt_registry.py`, `backend/tests/unit/ai_gateway/test_tier_eligibility.py` |
 | TL-11 | TB3, TB4 | Denial of wallet: bulk hostile uploads run up cost or starve other firms | Per-firm and platform budgets; work classes with fair share; admission control degrades instead of failing silently (ADR-069, ADR-071, ADR-072) | Tested: `backend/tests/integration/agent_tests/test_gateway_call.py`, `backend/tests/integration/test_work_class_queues.py` |
@@ -113,14 +133,14 @@ A living model of how the Accrued Agent and its data paths can be attacked or ca
 
 | ID | Boundary | Threat | Mitigation | Coverage |
 |---|---|---|---|---|
-| CT-01 | TB2, TB3 | A query without tenant scope feeds another firm's rows into a response or a prompt | Shared schema with forced row-level security; every query in a tenant session; no tenant means no rows | Tested: `backend/tests/integration/test_tenancy.py`. Planned: Q-02-T13 (generated isolation test over every registered table) |
+| CT-01 | TB2, TB3 | A query without tenant scope feeds another firm's rows into a response or a prompt | Shared schema with forced row-level security; every query in a tenant session; no tenant means no rows | Tested: `backend/tests/integration/test_tenancy.py`, `backend/tests/security/test_tenant_isolation.py` (generated over every tenant table) |
 | CT-02 | TB6 | An agent context is issued for a user of another firm | Context issuance checks firm membership; other-firm initiators get nothing; denial at the tenancy layer comes first | Tested: `backend/tests/integration/agent_tests/test_agent_authz.py` |
 | CT-03 | TB3, TB4 | Prompt caches, result reuse or few-shot retrieval share state across firms | Caching keys, result reuse and example retrieval are scoped to one firm; identical inputs from two firms are separate runs (ADR-067) | ADR: ADR-067. No test yet (see Gaps) |
 | CT-04 | TB3 | Memory, knowledge retrieval or embeddings return another firm's content | Retrieval goes through `visible()`; memory scoped to firm, client or engagement; no learning across firms (ADR-053) | Planned: Q-02-T13 (covers every registered table, including embedding tables). ADR: ADR-053 |
 | CT-05 | TB8 | Client content reaches shared logs, traces, error reports or metrics | Only allowlisted span attributes are exported; exception events are never exported; classification tags drive scrubbing | Tested: `backend/tests/unit/kernel/test_telemetry_scrubbing.py`, `backend/tests/unit/kernel/test_classification.py`, `backend/tests/unit/quality/test_banned_patterns_logging.py` |
 | CT-06 | TB8 | Usage records or events keep the prompt or the model output | Usage records carry a hash of the inputs and counts; never the output or the context | Tested: `backend/tests/integration/agent_tests/test_gateway_call.py` |
 | CT-07 | TB4 | A provider keeps or trains on one firm's data, exposing it to others | Zero training and no retention beyond processing are conditions of a register entry; a counsel second approver is added before real data (ADR-114) | Tested: `backend/tests/unit/tools/test_client_data_clearance.py`. Planned: Q-02-T18, Q-02-T52 |
-| CT-08 | TB2 | A portal user reaches another client's items, another firm's data, or a firm route | Client-scoped grants; client roles only respond; one matrix action per route; portal host pinned to the session's tenant | Tested: `backend/tests/unit/requests/test_client_responses.py`. Planned: Q-02-T13, Q-02-T15 (route introspection), Q-02-T35, Q-02-T42 (pen test #1 covers the portal and its custom-domain host). ADR: ADR-108, ADR-146 |
+| CT-08 | TB2 | A portal user reaches another client's items, another firm's data, or a firm route | Client-scoped grants; client roles only respond; one matrix action per route; portal host pinned to the session's tenant | Tested: `backend/tests/unit/requests/test_client_responses.py`, `backend/tests/security/test_route_introspection.py` (one action per route), `backend/tests/security/test_permission_matrix_generated.py`, `backend/tests/integration/test_portal_sign_in.py` (a portal token works only on its own host). Planned: Q-02-T35, Q-02-T42 (pen test #1). ADR: ADR-108, ADR-146, ADR-168 |
 | CT-09 | TB8 | Event streams carry record content to a client that should not have it | Events carry identifiers only; the client fetches content through authorised routes | ADR: ADR-024. The real-time channel is not built; its pen test is scheduled for Nov 2027 (chapter 06 §5.6). Test to be added when it ships (see Gaps) |
 | CT-10 | TB1 | A firm's key or connector credential is compromised and opens its evidence | Per-firm keys; envelope encryption with the firm id bound as associated data; rotation runbook; destroying the key shreds the data | Tested: `backend/tests/unit/kernel/test_crypto.py`. ADR: ADR-035, ADR-104 |
 
@@ -144,7 +164,7 @@ A living model of how the Accrued Agent and its data paths can be attacked or ca
 | TRI-02 | TB4 | Tax return information is processed without the taxpayer's consent, or on a route whose terms do not cover it | Consent-gate shape agreed before the tax epic builds it; the route and register rules apply first; tax work is not in the real-data scope before the tax pilot gate | Planned: Q-02-T25 (consent-gate shape), RB-17 in `docs/runbooks/README.md`. ADR: ADR-113, ADR-114 |
 | TRI-03 | TB8 | Tax return information or health-plan data lands in logs, exports or error reports | Classification flags force Restricted; scrubbing by tag across logs, error tracking and metrics | Tested: `backend/tests/unit/kernel/test_classification.py`, `backend/tests/unit/kernel/test_telemetry_scrubbing.py`. Planned: Q-02-T32 |
 | TRI-04 | TB4 | Health-plan participant data reaches a vendor without a business-associate posture | A `phi` flag on fields; posture documented in the diligence pack before real data | Planned: Q-02-T25 (flag), Q-02-T49 (diligence pack). ADR: ADR-031 |
-| TRI-05 | TB7 | An identifier is revealed to a user with no record of who looked | Masked by default; reveal logged as an access event | Planned: Q-02-T32 (masking), Q-02-T20 (access events) |
+| TRI-05 | TB7 | An identifier is revealed to a user with no record of who looked | Masked by default; reveal logged as an access event | Tested: `backend/tests/integration/test_tin_reveal.py` (one audit row, no log line, offshore refused, `no-store`), `backend/tests/integration/test_access_events.py` |
 
 ### Supply chain and platform
 
@@ -154,6 +174,51 @@ A living model of how the Accrued Agent and its data paths can be attacked or ca
 | SC-02 | TB3, TB4 | Code calls a provider directly and skips the gateway's controls | Provider SDKs import only inside the gateway; every provider call is preceded by the boundary check (ADR-019) | Tested: `backend/tests/unit/ai_gateway/test_data_boundary.py` |
 | SC-03 | all | A secret or real client data is committed to the public repository (prompts, fixtures, test data) | Secrets scan on every change; synthetic data only until the real-data gate (ADR-085) | Tested: `backend/tests/unit/quality/test_secrets_scan.py` |
 | SC-04 | TB6 | The builder's own agent session is steered by hostile text in a repository file or tool output | Agent sessions are tools, not authorities: tool output is data; a person approves every merge; protected paths are not edited by agents (ADR-084, ADR-086) | ADR: ADR-084, ADR-086; `docs/architecture/protected-paths.md` |
+
+### Sign-in and sessions
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| AU-01 | TB2 | A staff session is established without a second factor | The BFF refuses any provider token without an MFA assertion, whatever the provider is set to; no password method exists (DEC-22, ADR-165) | Tested: `backend/tests/integration/test_staff_session.py` |
+| AU-02 | TB2 | A stolen refresh cookie is replayed | Refresh tokens are sealed server-side; the cookie is `__Host-`, HttpOnly, Secure, SameSite strict; a reused cookie ends the session | Tested: `backend/tests/integration/test_staff_session.py` |
+| AU-03 | TB2 | A fresh-MFA action (exports, holds, TIN reveal, retention) runs on a stale sign-in | The matrix marks them `mfa_recent: required`; the list in `docs/architecture/fresh-mfa-actions.yaml` is held to the matrix | Tested: `backend/tests/unit/quality/test_fresh_mfa_actions.py` |
+| AU-04 | TB2 | Tokens sit in browser storage where injected script can read them | The SPA holds the access token in memory only; no in-browser code exchange; `connect-src 'self'` | Tested: `apps/web/src/app-core/auth/session.test.ts`. ADR: ADR-165 |
+| AU-05 | TB2 | A portal email is enumerated, or a code brute-forced | Every email gets the same answer; three wrong codes lock the email on that host for 15 minutes; parallel challenges share the count; codes expire | Tested: `backend/tests/integration/test_portal_sign_in.py` |
+| AU-06 | TB2 | A portal token is used on another firm's portal or on the firm app | Portal sessions are opaque, checked on every request and pinned to the tenant and host they were minted on; elsewhere they are no session (ADR-168) | Tested: `backend/tests/integration/test_portal_sign_in.py` |
+| AU-07 | TB2 | An owner or signer finishes portal sign-in without a second factor | The MFA floor for owner, signing and approving designations fails closed (a slow or missing predicate means MFA is required); a firm may widen and never narrow it; backup codes verify once (DEC-34) | Tested: `backend/tests/integration/test_portal_mfa.py` |
+| AU-08 | TB2 | A client keeps access after a grant is revoked | Revocation ends the person's portal sessions and trusted devices; a revoked grant ends what the token reaches | Tested: `backend/tests/integration/test_portal_sign_in.py` |
+
+### Portal hosts and reads
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| PO-01 | TB2 | The request host is trusted for authorisation, so a crafted host reaches another firm | The host picks branding only; authorisation comes from the session's membership and grants (ADR-163 §5); unknown or malformed hosts get the same neutral shape | Tested: `backend/tests/integration/test_portal_branding.py`, `backend/tests/integration/test_portal_sign_in.py` |
+| PO-02 | TB2 | Branding leaks firm data or serves active content | Branding carries Public fields only and no tenant id; the logo is re-encoded server-side and served same-origin | Tested: `backend/tests/integration/test_portal_branding.py`. Not built: firm-owned custom domains and their certificates (P-11, RB-21); add rows when they ship |
+| PO-03 | TB2 | The role union over-grants: a taxpayer or third party sees what only an owner may | Grants are scoped to a client, an entity or an engagement; landing and reads follow the union of the person's grants; client roles only respond (ADR-146) | Tested: `backend/tests/integration/test_portal_sign_in.py` (landing follows the role union), `backend/tests/integration/test_portal_home.py`. The POR-03/04 section is a stub until R-01 makes it live |
+
+### Evidence, citations and the viewer
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| EV-01 | TB1 | An oversized or disallowed file in a portal drop reaches the parser | The drop contract refuses by size (413) and type (415) before storage; scanning comes before parsing (ADR-110) | Stub: `backend/tests/contracts/c5_portal_pbc/test_c5_portal_pbc_stub.py` declares the responses; the live route lands with R-01 and needs its own test |
+| EV-02 | TB5 | A citation names a page or region it does not quote, or a kind with no verifier is shown as verified | Each citation is verified by a registered verifier against the stored layer; an unregistered kind is written `locator_invalid` and never shown as verified (P-03-T06) | Tested: `backend/tests/integration/trust_kit/test_citation_verifiers.py`, `backend/tests/unit/evidence/test_citation_matching.py`, `backend/tests/unit/agents/test_agent_citations.py` |
+| EV-03 | TB7 | The viewer renders the raw client file in the browser | Previews are server-made page images; the raw file is never rendered (SPEC-029 AC-12, ADR-110); the viewer manifest carries locators, not content | Tested: `backend/tests/contracts/c04_citations_viewer/test_c4_contract.py` (stub shape). ADR: ADR-110 |
+
+### Compliance records
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| CR-01 | TB2 | A legal hold is placed, lifted or bypassed by someone without the right, or evidence under a hold is erased | Fresh MFA and a person to place or lift; the table binds the person; the hold check fails closed when unregistered; holds are reference-counted per object (ADR-033) | Tested: `backend/tests/integration/test_legal_holds.py`, `backend/tests/unit/kernel/test_holds.py` |
+| CR-02 | TB2 | An incident is recorded by an agent or the wrong role, or an Accrued incident entry is forged by a firm user | `incident.manage` is the security admin's only; the table binds a firm entry to the session's person and an Accrued entry to the system; staff propagation is on the staff issuer only, behind the register flag | Tested: `backend/tests/integration/test_security_incidents.py` |
+| CR-03 | TB8 | A whole-firm export is taken by one person or its link is shared | Not built. Planned: two distinct people, fresh MFA, a short-lived link inside a 7-day window, a SHA-256 manifest (Q-02-T43, Q-02-T46) | Planned: Q-02-T43 |
+| CR-04 | TB7, TB8 | A run trace export carries more than the trace, or is taken by the agent | Export is a person's action with fresh MFA (`run_trace.export`, agent denied); canonical JSON with a manifest; model text is Confidential and shown only through the sanitising component | Tested: `backend/tests/security/test_permission_matrix_generated.py` (agent denied). ADR: ADR-065. Gap: no integration test of the export body (see Gaps) |
+
+### Outbound messages
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| OB-01 | TB7 | The agent sends a follow-up to a client | A follow-up is drafted from a published template and sent only by a person, after the Undo window; `follow_up.sent` is in the human-only register | Tested: `backend/tests/integration/test_follow_ups_v2.py`, `backend/tests/integration/test_human_only_guard.py` |
+| OB-02 | TB7 | Notification email carries identifiers or client content, or cannot be stopped | Email text is a published template (content, not code); the transport runs the mechanical body check on every message (SSNs, TINs, account numbers and tax amounts refused, `communications/transport.py`); `notifications.email` is a per-firm kill switch re-checked before each send (RB-31) | Tested: `backend/tests/acceptance/test_q01_ses_transport.py` (the body check on the transport), `backend/tests/workflows/test_notification_email_replay.py`. Gap: no test sends a notification email through it end to end (see Gaps) |
 
 ## Cross-tenant and TRI exposure: the short version
 
@@ -171,11 +236,16 @@ Each gap is a row above whose evidence is an ADR only. None is a new decision; e
 | No test names the global-profile rejection | DB-02 | A settings-validation test, in Q-02-T11 |
 | Event-stream payloads (identifiers only) have no test because the channel is not built | CT-09 | A test when the real-time channel ships; pen test #2 |
 | Learning-loop safeguards have no test | TL-09 | A test that a correction is retrievable immediately and cannot become a firm rule without approval |
+| ADR-168 names `test_portal_host_pinning.py`; host pinning is tested inside `test_portal_sign_in.py` instead | AU-06, PO-01 | Keep the cases where they are, or split them into the named file; either way the ADR's checklist item is met |
+| The run trace export has no integration test of its body | CR-04 | A test that the export holds only the trace's rows and the manifest matches the bytes |
+| No test sends a notification email through the body check end to end | OB-02 | A test that a `notification.<kind>` template rendering a TIN-shaped value settles `failed` and nothing reaches the sink |
+| The portal drop and the C4 viewer are stubs; pen test #1 meets them only if they are live by the build pin | EV-01, EV-03 | Their live tasks (R-01, P-03) add tests before the pin, or the scope letter marks them out |
 
 ## Review
 
 | Date | Reviewer | Scope | Result |
 |---|---|---|---|
+| 2026-10-24 | Q-03-T018 refresh (self-review; N's review is the row's acceptance and is still open) | The pen test #1 scope table; new rows AU-01 to AU-08, PO-01 to PO-03, EV-01 to EV-03, CR-01 to CR-04, OB-01, OB-02; coverage of TL-01, TL-08, CT-01, CT-08 and TRI-05 moved to the tests on `main`; every cited test path checked to exist | Four gaps added. Not built and named as such: firm export, custom domains, the live portal drop and viewer |
 | 2026-10-20 | Authoring session (self-review). The security reviewer subagent (`.claude/agents/security-reviewer.md`) has not been run; it is optional under the solo amendment and blocks nothing | Walked the reviewer's checklist items 5 to 12, 17 and 19 against this file; checked that every cited test path exists and every cited task id is in `docs/plan/epics/Q-02.tasks.csv`; checked that no row names a firm, a person, an amount or a secret | No threat row lacks a coverage entry. Six gaps listed above. Rows TRI-01 to TRI-05 are plan-only until Q-02-T25 and Q-02-T32 land |
 
 ## Update checklist (copy into the pull request that adds an agent, tool or data source)

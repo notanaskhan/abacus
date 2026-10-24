@@ -20,6 +20,8 @@ from abacus.modules.identity.api import (
     engagement_partners,
     firm_admins,
     member_facts,
+    partner_members,
+    security_admins,
     team_of,
     walled_from,
 )
@@ -125,6 +127,20 @@ async def _hold_notify(tenant_id: UUID, payload: dict[str, object]) -> list[UUID
     return out
 
 
+async def _incident_recorded(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T33 (Q-02 §4.8): the firm's QI and partner-level members; never the recorder."""
+    people = set(await security_admins(tenant_id)) | set(await partner_members(tenant_id))
+    by = _uuid(payload, "by_user")
+    if by is not None:
+        people.discard(by)
+    return sorted(people)
+
+
+async def _incident_from_accrued(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """Q-02-T33 (RB-27): the firm's QI and firm admins, about an Accrued incident."""
+    return sorted(set(await security_admins(tenant_id)) | set(await firm_admins(tenant_id)))
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -178,6 +194,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # Q-02-T29: a legal hold was placed (the evidence module's `legal_hold.placed`).
     "legal_hold.placed": Kind("legal_hold_placed", _hold_notify, "legal_hold", "hold_id"),
+    # Q-02-T33: the incident register (the platform module's events; firm-level).
+    "incident.recorded": Kind(
+        "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
+    ),
+    "incident.propagated": Kind(
+        "incident_from_accrued", _incident_from_accrued, "security_incident", "incident_id", None
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -203,6 +226,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "risk.approval_requested": "A risk on {engagement} is waiting for your approval.",
     "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
     "legal_hold.placed": "A legal hold was placed on {subject}.",
+    "incident.recorded": "A security incident was recorded: {subject}.",
+    "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
 }
 
 
