@@ -1295,6 +1295,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["ledger_snapshots"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
+        | {"label"}  # A-02-T04 (0149); `source_kind` is generated
     )
     assert sc.APP_INSERT_COLUMNS["trial_balance_lines"] == frozenset(
         {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit", "credit"}
@@ -1425,6 +1426,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "gl_snapshots": LEDGER_FUNCTION,  # SPEC-034 (TASK-069)
         "gl_account_balances": LEDGER_FUNCTION,
         "gl_entries": LEDGER_FUNCTION,
+        "trial_balance_versions": LEDGER_FUNCTION,  # 0149 (A-02-T04; ED-037)
     }
     assert _evidence_problems(evidence) == []
 

@@ -4,7 +4,7 @@ title: "A-02-T04: migration 0149 - ledger_snapshots.label and generated source_k
 spec: SPEC-333
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-32, AC-33, AC-34]
 risk_zone: red
-status: in-progress
+status: done
 epic: A-02
 plan_key: A-02-T04
 branch: s8a-tb-of-record
@@ -27,3 +27,4 @@ updated: 2026-10-25
 - **Rollback**: `alembic downgrade 0146` (refused while non-standard labels exist).
 
 ## Progress log
+- 2026-10-25: migration `0149_tb_of_record_labels.py` (`down_revision` "0146"): `ledger_snapshots.label` (default `standard`, CHECK `ledger_snapshots_label`) and generated `source_kind`; `GRANT INSERT (label)`; `ledger_immutable()` UPDATE, DELETE and TRUNCATE triggers on `trial_balance_versions` (ED-037: 0073 only revoked); a downgrade guard for non-standard labels (0009's NO FORCE pattern). `LedgerSnapshot` maps both columns as server values; ledger `INSERT_COLUMNS`, `schema_check.IMMUTABLE_TABLES` and `test_schema_check_db.py` follow. `tests/integration/test_tb_of_record_schema.py` (23) on a private database: a pre-existing snapshot reads the same through up, down and up (the triggers would have refused any UPDATE), `sc.check` is clean after each, source kinds, labels, the app's grants, the triggers for the superuser, the downgrade guard. The test file joins DB-001 and TENANT-001's exclusions in `banned_patterns.py` (it seeds as the superuser and sets the tenant by hand, as `test_ledger_schema.py` does). At merge: re-chain 0149 after the wave's other migrations; the test reads its parent from the script, so it needs no edit.
