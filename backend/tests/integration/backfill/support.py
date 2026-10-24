@@ -15,7 +15,10 @@ from typing import Final, Literal, Protocol, cast
 
 import asyncpg
 import httpx
+from sqlalchemy import text
 
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Target, uow
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
 Json = dict[str, object]
@@ -86,17 +89,20 @@ class Seeder:
 
     async def attest(self, tenant_id: uuid.UUID, engagement_id: uuid.UUID) -> None:
         """The engagement becomes an active EBP audit, so its client is an attest client
-        (DEC-128); the derivation trigger reads under the tenant, as the app's write does."""
-        conn = await asyncpg.connect(self._dsn)
-        try:
-            async with conn.transaction():
-                await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(tenant_id))
-                await conn.execute(
-                    "UPDATE engagements SET type = 'ebp_audit', status = 'active' WHERE id = $1",
-                    engagement_id,
-                )
-        finally:
-            await conn.close()
+        (DEC-128). The type is the seed's (the app role may not set it); the status moves under
+        the tenant, as the app's write does, so the derivation trigger sees the client."""
+        await self.run(
+            "UPDATE engagements SET type = 'ebp_audit', status = 'prospect' "
+            "WHERE tenant_id = $1 AND id = $2",
+            tenant_id,
+            engagement_id,
+        )
+        async with uow(TenantContext(tenant_id, "system", "test-seed")) as tx:
+            await tx.session.execute(
+                text("UPDATE engagements SET status = 'active' WHERE id = :id"),
+                {"id": engagement_id},
+            )
+            tx.record("engagement.probed", target=Target("engagement", engagement_id))
 
     async def blocks_view(self, tenant_id: uuid.UUID, set_by: uuid.UUID) -> None:
         """ADR-164 item 3: the firm restores TASK-045's read gate on attest engagements."""
