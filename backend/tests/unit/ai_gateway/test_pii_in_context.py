@@ -194,7 +194,7 @@ def test_ac22_masked_forms_pass_the_scan(masked: str, part: ContextPart) -> None
 
 
 def test_ac22_numbers_that_fail_the_rules_pass_the_scan() -> None:
-    for value in ("900-45-6789", "000-12-3456", "07-1234567", "123456789.50"):
+    for value in ("900-45-6789", "000-12-3456", "07-1234567"):
         assert part_with_tin("", _in_part("task", value)) is None, value
 
 
@@ -262,3 +262,16 @@ def test_ac22_property_the_gateway_refuses_every_one_and_never_calls_the_provide
 
     assert asyncio.run(attempt()) == "pii_in_context"
     assert reached == []
+
+
+@given(digits=st.one_of(ssns, itins), part=st.sampled_from(CONTEXT_PARTS))
+@settings(max_examples=80)
+def test_ac22_property_values_the_json_encoding_escapes_around_are_still_found(
+    digits: str, part: ContextPart
+) -> None:
+    """The task layer is JSON: a newline, tab or `<` beside the value is an escape (`\\n`,
+    `\\t`, `\\u003c`) in the scanned text, and a tab between its groups is one too."""
+    dashed = f"{digits[:3]}-{digits[3:5]}-{digits[5:]}"
+    tabbed = f"{digits[:3]}\t{digits[3:5]}\t{digits[5:]}"
+    for value in (f"Employee\n{dashed}", f"\t{digits}", f"<{digits}", f"{digits}\n", tabbed):
+        assert part_with_tin("", _in_part(part, value)) == part, repr(value)

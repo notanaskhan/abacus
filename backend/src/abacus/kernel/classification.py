@@ -176,14 +176,20 @@ def _models_in(annotation: object) -> list[type[BaseModel]]:
     return found
 
 
+# A self-referential model (directly or through others) is unrolled this many levels on one path;
+# a non-recursive model is walked to its full depth.
+MAX_DEPTH = 5
+
+
 @cache
 def _flagged(model: type[BaseModel]) -> tuple[tuple[str, Flags], ...]:
     """Every flagged field's dotted path under `model`, in field order. Containers are
-    transparent (`rows.tin` for a list of rows); a model is entered at most once below itself, so
-    a self-referential model ends."""
+    transparent (`rows.tin` for a list of rows). A model may occur at most `MAX_DEPTH` times on
+    one path, so a self-referential model lists `children.tin` down to `MAX_DEPTH` levels and
+    the walk ends; a value nested deeper than that is still Restricted by its field's level."""
 
     def walk(
-        current: type[BaseModel], prefix: str, path: frozenset[type[BaseModel]]
+        current: type[BaseModel], prefix: str, seen: tuple[type[BaseModel], ...]
     ) -> list[tuple[str, Flags]]:
         out: list[tuple[str, Flags]] = []
         for name, field in current.model_fields.items():
@@ -192,11 +198,11 @@ def _flagged(model: type[BaseModel]) -> tuple[tuple[str, Flags], ...]:
             if flags:
                 out.append((here, flags))
             for nested in _models_in(field.annotation):
-                if nested not in path:
-                    out += walk(nested, here, path | {nested})
+                if seen.count(nested) < MAX_DEPTH:
+                    out += walk(nested, here, (*seen, nested))
         return out
 
-    return tuple(walk(model, "", frozenset()))
+    return tuple(walk(model, "", (model,)))
 
 
 def _model(model: type[BaseModel] | BaseModel) -> type[BaseModel]:

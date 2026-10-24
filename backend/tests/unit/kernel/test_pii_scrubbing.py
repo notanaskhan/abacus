@@ -163,3 +163,11 @@ def test_ac21_metric_attributes_without_a_tin_are_unchanged() -> None:
         }
     finally:
         provider.shutdown()
+
+
+def test_ac21_the_event_name_itself_is_masked(capsys: pytest.CaptureFixture[str]) -> None:
+    get_logger("test").info(f"taxpayer {_taxpayer().tin} loaded")
+    out = _lines(capsys)
+    assert not _leaks(out)
+    [event] = [json.loads(line) for line in out.splitlines() if line.strip()]
+    assert event["event"] == f"taxpayer {mask(TIN, 'tin')} loaded"

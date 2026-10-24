@@ -15,6 +15,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from abacus.kernel.classification import (
+    MAX_DEPTH,
     PII_KINDS,
     Classification,
     Flags,
@@ -129,10 +130,11 @@ def test_ac19_tri_and_phi_paths_find_their_fields() -> None:
     assert tri_paths(_Inner) == ()
 
 
-def test_ac19_the_helpers_accept_an_instance_and_terminate_on_a_cycle() -> None:
-    node = _Node(tin="x", children=[_Node(tin="y")])
-    assert pii_paths(node, "tin") == ("tin", "children.tin")
-    assert pii_paths(_Node, "tin") == ("tin", "children.tin")
+def test_ac19_the_helpers_accept_an_instance_and_unroll_a_cycle_to_a_bounded_depth() -> None:
+    expected = tuple(".".join(["children"] * depth + ["tin"]) for depth in range(MAX_DEPTH))
+    assert len(expected) == MAX_DEPTH >= 4
+    assert pii_paths(_Node, "tin") == expected
+    assert pii_paths(_Node(tin="x", children=[_Node(tin="y")]), "tin") == expected
 
 
 def test_ac19_the_check_refuses_flags_set_around_classified() -> None:

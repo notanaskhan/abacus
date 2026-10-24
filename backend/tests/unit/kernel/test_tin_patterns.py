@@ -149,13 +149,84 @@ def test_ac22_invalid_numbers_and_other_digit_runs_pass() -> None:
     for text in (
         "900-45-6789",  # 9xx area, ITIN middle 45: neither an SSN nor an ITIN
         "07-1234567",  # an unassigned EIN prefix
-        "1234567890",  # ten digits
-        "amount 123456789.25",  # a decimal amount, not an identifier
-        "x123456789",  # part of a longer token
-        "3f2a9c1e-1d2b-4e5f-8a9b-123456789abc",  # a UUID
-        "2026-10-24T10:11:12.123456789Z",  # nanoseconds
+        "1234567890",  # ten digits: part of a longer digit run
+        "x 12345678 y",  # eight digits
+        "3f2a9c1e-1d2b-4e5f-8a9b-123456789abc",  # a UUID is an identifier, never a TIN
+        "sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "555.123.4567",  # a phone number's 3-3-4 grouping
     ):
         assert find_tins(text) == [], text
+
+
+# --- review fixes (TASK-1170): digits bounded by non-digits, any separator, hidden characters ----
+
+
+def _all(text: str) -> list[str]:
+    return [m.digits for m in find_tins(text)]
+
+
+@given(ssns, ssns)
+def test_ac22_csv_without_spaces_finds_both(first: str, second: str) -> None:
+    assert _all(f"{_ssn_form(first, '-')},{_ssn_form(second, '-')}") == [first, second]
+
+
+@given(st.one_of(ssns, itins))
+def test_ac22_commas_dots_and_letters_are_boundaries(digits: str) -> None:
+    dashed = _ssn_form(digits, "-")
+    for text in (
+        f"42,{digits}",
+        f"{dashed}.00",
+        f"{digits}.25",
+        f"SSN{digits}",
+        f"ID{digits}",
+        f"{digits}abc",
+        f"x{dashed}y",
+        f"Employee\\n{dashed}",  # a JSON-escaped newline before it
+        f"\\t{digits}",  # a JSON-escaped tab (TSV)
+        f"<{digits}>",
+    ):
+        assert digits in _all(text), text
+
+
+@given(
+    st.one_of(ssns, itins),
+    st.sampled_from(["-", ".", "/", " ", " - ", " . ", "\u2013", "\u2212"]),
+    st.sampled_from(["-", ".", "/", " ", " -", "- "]),
+)
+def test_ac22_any_separator_mixed_or_spaced_is_read(digits: str, one: str, two: str) -> None:
+    text = f"on file: {digits[:3]}{one}{digits[3:5]}{two}{digits[5:]} ok"
+    assert _all(text) == [digits], text
+
+
+@given(st.one_of(ssns, itins, eins), st.sampled_from([" ", ".", "-", "/"]))
+def test_ac22_the_three_three_three_grouping_is_read(digits: str, sep: str) -> None:
+    text = f"no. {digits[:3]}{sep}{digits[3:6]}{sep}{digits[6:]} ."
+    assert _all(text) == [digits], text
+
+
+@given(eins, st.sampled_from(["-", " ", ".", " - "]))
+def test_ac22_an_ein_with_any_separator_is_read(digits: str, sep: str) -> None:
+    assert _all(f"EIN {digits[:2]}{sep}{digits[2:]}") == [digits]
+
+
+@given(
+    st.one_of(ssns, itins),
+    st.sampled_from(["\u200b", "\u200c", "\u200d", "\u2060", "\ufeff", "\u00ad"]),
+    st.integers(1, 8),
+)
+def test_ac22_zero_width_characters_are_ignored(digits: str, hidden: str, at: int) -> None:
+    assert _all(f"tin {digits[:at]}{hidden}{digits[at:]} end") == [digits]
+
+
+@given(st.one_of(ssns, itins), st.sampled_from([0x0660, 0x06F0, 0x0966, 0x09E6, 0xFF10]))
+def test_ac22_other_scripts_decimal_digits_are_read_as_digits(digits: str, zero: int) -> None:
+    written = "".join(chr(zero + int(d)) for d in digits)
+    assert _all(f"x {written} y") == [digits]
+    assert written not in scrub_tins(f"x {written} y")
+
+
+def test_ac22_a_dashed_form_that_fails_its_rules_still_passes() -> None:
+    assert _all("900-45-6789, 07-1234567, 900 45 6789") == []
 
 
 @given(st.lists(st.one_of(ssns, itins), min_size=1, max_size=3), st.text(max_size=30))

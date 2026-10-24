@@ -139,7 +139,7 @@ class Logger:
         configure_logging()  # lazily: importing a module that logs never reads settings
         cleaned = {key: _clean(key, value) for key, value in fields.items()}
         log: Any = structlog.get_logger(self._name)  # Any: structlog's BoundLogger is untyped
-        getattr(log, level)(event, **cleaned)
+        getattr(log, level)(scrub_tins(event), **cleaned)
 
     def debug(self, event: str, **fields: object) -> None:
         self._emit("debug", event, fields)
