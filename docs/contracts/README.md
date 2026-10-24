@@ -18,7 +18,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C6 | Agent runs: v1 read API; v2 run and step events over SSE | `agent-runs.md` | P-09, P-10 | dock, trace, Workbench, Today | v1 S12, v2 S30 | 2027-04-05, 2027-12-13 | v1 | planned (v0 run list, trace and JSON export live: SPEC-318, TASK-461, 2026-10-22) |
 | C7 | Envelope service: record mode, then DocuSign embedded with provider ID Verification; evidence package; gate events | `envelopes.md` | N-02 | ENG-04, SIG-*, POR-06, TAX-12, AUD-21, NOT-03 | record S14, DocuSign S17 | 2027-05-03, 2027-06-14 | v1 | planned |
 | C8 | Adjustments: proposed entries (8 states), threshold-policy versions, named-human batch approval | `adjustments.md` | A-06 | EBP-06, T-05, C-02, A-09 eliminations | S24 | 2027-09-20 | v1 | planned |
-| C9 | Ledger: TB layers, groupings and FS-line taxonomy, account mapping | `ledger.md` | A-02, A-03 | A-04, A-06, T-05, C-01, A-10 | layers S10, taxonomy S20 | 2027-03-08, 2027-07-26 | v1 | planned |
+| C9 | Ledger: TB layers, groupings and FS-line taxonomy, account mapping | `c09-ledger.md` | A-02, A-03 | A-04, A-06, T-05, C-01, A-10 | layers S10, taxonomy S20 | 2027-03-08, 2027-07-26 | v1 | stub (layers half: A-02-T03, 2026-10-25; the SPEC-309 to SPEC-311 operations live, DEC-314) |
 | C10 | Deliverables and release registry with download audit | `deliverables.md` | R-02 | A-07, T-02 (K-1), C-02, X-01 | S29 | 2027-11-29 | v1 | planned |
 | C11 | Deterministic PDF/DOCX renderer; templates in the database | `renderer.md` | P-11 | ENG-04, AUD-20 to AUD-23, TAX-12, NOT-03, CLS-08, FSP-06 | S18 | 2027-06-28 | v1 | planned |
 | C12 | TB hand-off into tax | `tb-handoff.md` | T-06 | AUD-38, CLS-12 | S50 | 2028-09-18 | v1 | planned |

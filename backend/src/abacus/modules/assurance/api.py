@@ -20,6 +20,7 @@ from abacus.modules.assurance.sections import (
     register_audit_segment,
     register_index_tag,
 )
+from abacus.modules.assurance.tb_contract import tb_router
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
@@ -28,6 +29,7 @@ from abacus.modules.review.api import register_reviewable, register_reviewable_f
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    tb_router,  # A-02-T03 C9 v1 stub (docs/contracts/c09-ledger.md)
     audits_router,  # A-01-T02 audits family stub (docs/contracts/audits-cockpit.md)
     completion_router,
     mapping_router,

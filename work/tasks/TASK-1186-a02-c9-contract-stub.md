@@ -4,7 +4,7 @@ title: "A-02-T03: C9 v1 contract stub (AUD-06 family) - view by layer, leadsheet
 spec: SPEC-333
 acceptance_criteria: [AC-26, AC-27, AC-28, AC-29]
 risk_zone: red
-status: in-progress
+status: done
 epic: A-02
 plan_key: A-02-T03
 branch: s8a-tb-of-record
@@ -29,3 +29,4 @@ updated: 2026-10-25
 - **Rollback**: revert; the live SPEC-309 routes are untouched.
 
 ## Progress log
+- 2026-10-25: `assurance/tb_contract.py` (13 classified models; four stub routes authorising before the flag) mounted as `tb_router`; `make regenerate` (OpenAPI, api-client, route introspection); the issue link joins the creating routes in `test_app_gates.py`. `tests/contracts/c09_ledger/test_c09_stub.py` (60 pass) pins the whole C9 v1 family (stubs and the live SPEC-309 to SPEC-313 operations) apart from A-03's mapping and statements. `apps/web/src/fixtures/seed/trial-balance.ts` builds Northwind's E0 view from the seed's TB and Harborline's BOY column; `c09-ledger.contract.test.ts` (8 pass) foots it to 16,812,400.00 / 14,228,500.00 and balances at 17,663,450.00, and validates it against OpenAPI. `docs/contracts/c09-ledger.md` written; register row C9 -> stub. The fixture's `source` code `import_accrued_template` names A-02-T22's format before it exists (DEC-316 item 6).
