@@ -98,8 +98,8 @@ Per-artboard rows (seed, verbatim from spec.md ROWS and revision.md g): the 27 r
 | PBC cell | AUD-03 `to.AUD03({ auditId })` | planned until A-01-T15 |
 | "+ New audit" | ENG-03 with the "Audit & assurance" family preselected | per manifest (P-07) |
 | Archive pill | AUD-25 (assembly and archive) | planned (A-07) |
-| SOC & IT rows (h) | ATT-01 (tooltip "A29" per DF-29, the handoff's "A30" loses) | planned (X-01) |
-| Internal audit rows (g, h) | IAU-01 (tooltip "A32" per DF-29, the handoff's "A33" loses) | planned (X-03) |
+| SOC & IT rows (h) | ATT-01 (tooltip "A29", the handoff's "A30" loses; Deviations) | planned (X-01) |
+| Internal audit rows (g, h) | IAU-01 (tooltip "A32", the handoff's "A33" loses; Deviations) | planned (X-03) |
 | Harlow & Pike row (g) | AUD-02 frame h (group cockpit) | planned (A-09) |
 | EP / Mgr initials | name card popover (O1; local) | in-screen |
 | Tiles, filters, segments, search | the same screen with search params | in-screen |
