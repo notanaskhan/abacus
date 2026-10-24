@@ -11,6 +11,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.AcceptanceMissing
+  acceptance_not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.AcceptanceNotReady
+    summary: 'A manual check is still open (`facts.sections`): complete it before sending to the partner.'
   access_ends_required:
     status: 422
     raised_by:
@@ -217,6 +222,11 @@ codes:
     raised_by:
     - abacus.modules.identity.people.DeactivationReasonInvalid
     summary: A person deactivates with `manual`; the other reasons are the system's.
+  decision_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.DecisionLocked
+    summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409
     raised_by:
@@ -297,6 +307,22 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  eqr_approver_is_ep:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.EqrApproverIsEp
+    summary: The EQR's eligibility is approved by the quality owner, never the engagement partner.
+  eqr_not_eligible:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.EqrNotEligible
+    summary: 'The candidate fails an eligibility check (`facts.checks`): pick an eligible reviewer.'
+  eqr_on_team:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.EqrOnTeam
+    summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
+      the EQR off the team roles.'
   evidence_accepted:
     status: 409
     raised_by:
@@ -421,6 +447,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.IndependenceConclusionMissing
+  independence_preconditions_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
+    summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
+      clear, an SKE designee or NAS evaluations on an attest client).
   integrity_failed:
     status: 409
     raised_by:
@@ -654,6 +686,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_self:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.NotSelf
+    summary: Only the person themself confirms or declines their own independence.
   not_staff:
     status: 409
     raised_by:
@@ -813,6 +850,11 @@ codes:
     - abacus.modules.engagements.roll_forward.ProposalChanged
     - abacus.modules.evidence.service.ProposalChanged
     summary: 'The template''s latest version changed since the proposal: ask for it again.'
+  rationale_required:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.RationaleRequired
+    summary: A decision needs a rationale; Accept with conditions needs a condition (`facts.field`).
   read_not_confirmed:
     status: 422
     raised_by:
@@ -870,6 +912,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotesOpen
     summary: A reviewer signs (L2 and above) only when the target's notes are cleared.
+  review_required:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.ReviewRequired
+    summary: A High-risk record needs a completed risk-partner review before the decision.
   reviewer_is_preparer:
     status: 409
     raised_by:

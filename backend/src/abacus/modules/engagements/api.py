@@ -1,6 +1,11 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.modules.engagements.acceptance_contract import (
+    acceptance_router,
+    independence_router,
+    team_roles_router,
+)
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
@@ -215,6 +220,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     engagements_v2_router,
     engagement_types_router,
     engagement_drafts_router,
+    # The team, acceptance and independence contract, v1 (P-07-T29).
+    acceptance_router,
+    independence_router,
+    team_roles_router,
     router,
     work_items_router,
     methodology_router,

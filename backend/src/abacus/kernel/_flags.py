@@ -46,6 +46,11 @@ ENGAGEMENT_AGENT_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_ACCEPTANCE_V2 = Flag(
+    name="engagements.acceptance_v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENTS_V2 = Flag(
     name="engagements.v2",
     kind="boolean",
@@ -194,6 +199,7 @@ FLAGS: dict[str, Flag] = {
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,
     "engagements.v2": ENGAGEMENTS_V2,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,

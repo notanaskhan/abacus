@@ -26,9 +26,39 @@ ROLES: tuple[str, ...] = (
 )
 
 ACTIONS: dict[str, dict[str, str]] = {
+    "acceptance.decide": {
+        "engagement_partner": "allow",
+        "mfa_recent": "required",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "acceptance.prepare": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "acceptance.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "eqr_reviewer": "allow",
+        "client_service": "allow",
+        "quality_partner": "in_scope",
+        "agent": "deny",
+        "system": "deny",
+    },
     "acceptance.record": {
         "engagement_partner": "allow",
         "mfa_recent": "required",
+    },
+    "acceptance.request_review": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "activity.read": {
         "firm_admin": "allow",
@@ -378,6 +408,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "conflict.clear": {
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "conflict.run": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "connection.check": {
         "client_admin": "allow",
         "engagement_partner": "allow",
@@ -587,6 +628,17 @@ ACTIONS: dict[str, dict[str, str]] = {
     "entry_assessment.run": {
         "system": "allow",
         "agent": "task_scope",
+    },
+    "eqr.approve_eligibility": {
+        "quality_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "eqr.assign": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "eqr.concur": {
         "reviewer": "allow",
@@ -908,12 +960,45 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
     },
+    "independence.breach_manage": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "quality_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "independence.conclude": {
+        "engagement_partner": "allow",
+        "mfa_recent": "required",
+        "agent": "deny",
+        "system": "deny",
+    },
     "independence.confirm": {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "independence.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "eqr_reviewer": "allow",
+        "specialist": "allow",
+        "quality_partner": "in_scope",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "independence.remind": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "issue.create": {
         "engagement_partner": "allow",
@@ -1093,6 +1178,12 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+    },
+    "nas.evaluate": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "org_structure.manage": {
         "firm_admin": "allow",
@@ -1459,6 +1550,12 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "screening.record": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "screening.request": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -1582,6 +1679,11 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "support_session.read": {
         "firm_admin": "allow",
+    },
+    "team.approve": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "template_guidance.decide": {
         "firm_admin": "allow",

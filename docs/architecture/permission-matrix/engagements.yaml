@@ -13,7 +13,7 @@ actions:
   engagement.ai_exclude:    {engagement_partner: allow}   # SPEC-036 (TASK-076): switch AI off for one engagement
   # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---
   acceptance.record:        {engagement_partner: allow, mfa_recent: required}   # decision, documentation, the independence conclusion
-  independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # for oneself only (the service refuses others)
+  independence.confirm:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # for oneself only (the service refuses others); P-07-T29: agent and system denied (INV-1)
   # P-07-T05 (DEC-143): agent and system denied; `gates_met(G1)` joins with the live recorded
   # letter (P-07-T15), once the G1 provider's facts are registered (a condition fails closed).
   letter.record:            {engagement_partner: allow, manager: allow, agent: deny, system: deny}
@@ -54,3 +54,19 @@ actions:
   engagement.member_add:    {engagement_partner: allow, manager: allow}
   engagement.member_remove: {engagement_partner: allow, manager: allow}
   engagement.archive:       {engagement_partner: allow}
+  # --- Team, acceptance and independence contract, v1 (P-07-T29 stub; P-07 §4.3, §4.4; DEC-326) ---
+  # ENG-05, CLI-07 and CLI-08. Every decision and confirmation denies agent and system (INV-1,
+  # I-AGENT-NEVER); no client role holds any. `acceptance.prepare` includes client service only
+  # so a manual check assigned to them can be completed (the service limits them to that).
+  acceptance.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_service: allow, quality_partner: in_scope, agent: deny, system: deny}
+  acceptance.prepare:       {engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}
+  acceptance.request_review: {engagement_partner: allow, agent: deny, system: deny}
+  acceptance.decide:        {engagement_partner: allow, mfa_recent: required, agent: deny, system: deny}   # human-only
+  independence.read:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, quality_partner: in_scope, agent: deny, system: deny}
+  independence.remind:      {engagement_partner: allow, manager: allow, agent: deny, system: deny}   # sent by the person clicking
+  independence.conclude:    {engagement_partner: allow, mfa_recent: required, agent: deny, system: deny}   # human-only
+  independence.breach_manage: {engagement_partner: allow, manager: allow, quality_partner: allow, agent: deny, system: deny}
+  nas.evaluate:             {engagement_partner: allow, manager: allow, agent: deny, system: deny}   # the evaluation decision is the EP's (service)
+  team.approve:             {engagement_partner: allow, agent: deny, system: deny}   # human-only
+  eqr.assign:               {engagement_partner: allow, manager: allow, agent: deny, system: deny}
+  eqr.approve_eligibility:  {quality_partner: allow, agent: deny, system: deny}   # human-only; never the EP (409 eqr_approver_is_ep)

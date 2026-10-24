@@ -217,6 +217,17 @@ NOT_CREATING = {
     "/v1/portal/room/suggest",
     # P-08-T18 (SPEC-320 AC-12): the invitation preview reads; nothing is created.
     "/v1/invitations/preview",
+    # P-07-T29 (team, acceptance, independence and conflict stubs): these move a record or
+    # answer an existing request (a completed check or condition, a send to the partner, a
+    # confirmation or decline, a reminder, a replaced EQR, a cleared result), so 200.
+    "/v1/engagements/{engagement_id}/acceptance/manual-checks/{section_code}/complete",
+    "/v1/engagements/{engagement_id}/acceptance/send-to-partner",
+    "/v1/engagements/{engagement_id}/acceptance/conditions/{condition_id}/complete",
+    "/v1/engagements/{engagement_id}/independence/confirm",
+    "/v1/engagements/{engagement_id}/independence/decline",
+    "/v1/engagements/{engagement_id}/independence/reminders",
+    "/v1/engagements/{engagement_id}/eqr",
+    "/v1/conflict-checks/{check_id}/results/{result_id}/clear",
 }
 
 
@@ -286,6 +297,20 @@ def test_ac20_creating_routes_answer_201() -> None:
         # P-07-T17 (contacts stub): a contact, and an invitation with its pending grants.
         "/v1/clients/{client_id}/contacts",
         "/v1/contacts/{contact_id}/invitations",
+        # P-07-T29: a flag, a manual check, a risk-partner review, the decision, a breach and
+        # its events, a conclusion, a team approval, an EQR eligibility approval, a conflict
+        # check and a screening record (each an insert-only row).
+        "/v1/engagements/{engagement_id}/acceptance/flags",
+        "/v1/engagements/{engagement_id}/acceptance/manual-checks/{section_code}/request",
+        "/v1/engagements/{engagement_id}/acceptance/risk-partner-review",
+        "/v1/engagements/{engagement_id}/acceptance/decision",
+        "/v1/engagements/{engagement_id}/independence/breaches",
+        "/v1/engagements/{engagement_id}/independence/breaches/{breach_id}/events",
+        "/v1/engagements/{engagement_id}/independence/conclude",
+        "/v1/engagements/{engagement_id}/team/approve",
+        "/v1/engagements/{engagement_id}/eqr/eligibility/approve",
+        "/v1/conflict-checks",
+        "/v1/screening-records",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded

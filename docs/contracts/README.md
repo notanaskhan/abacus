@@ -62,6 +62,7 @@ Contracts one screen family needs that are not among C1 to C21 (P-07 owns no C-n
 | Security incidents: record with the FTC clock; staff propagation of Accrued incidents (RB-27) | `security-incidents.md` | Q-02 (Q-02-T33) | ADM-06a/d and G-02-T18, Q-02-T38, Q-02-T46 | v0.1 | live behind `compliance.incidents` (Q-02-T33, 2026-10-24) |
 | Engagements: ENG-01 index, ENG-02 record and gates, the interim recorded letter, ENG-03 type catalogue, drafts and create (an additive C1 v1.1 note) | `engagements-v2.md` | P-07 (P-07-T05) | ENG-01, ENG-02, ENG-03, CLI-02, A-01, N-02, T-02, C-01 | v2 | live except start-acceptance (P-07-T15, T16, 2026-10-24) |
 | Contacts and portal access: CLI-04 contacts, roles per entity, invitations with grants, resend, revoke, change scope, unlock | `contacts-access.md` | P-07 (P-07-T17) | CLI-04, P-08, P-09 | v1 | stub (P-07-T17, 2026-10-24) |
+| Team, acceptance, independence and conflicts: ENG-05 team approval, portal visibility and EQR, CLI-07 acceptance record and decision, CLI-08 confirmations, NAS, breaches, rotation and conclusion, CLI-06 conflict checks and screening | `acceptance-independence.md` | P-07 (P-07-T29) | ENG-05, CLI-06, CLI-07, CLI-08, HOME-02, P-04 | v1 | stub (P-07-T29, 2026-10-25) |
 
 ## The handshake (chapter 01 §1.3.2, solo edition)
 
