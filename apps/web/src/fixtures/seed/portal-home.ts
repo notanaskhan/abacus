@@ -111,6 +111,60 @@ export const PORTAL_SHELLS: Readonly<Record<string, MePortalOut>> = {
     nav: [],
     landing: "requests",
   },
+  // R-01-T05: POR-03 i (Dana's own Northwind requests), POR-04 e and f (the Copperleaf
+  // contributor and Ridgeline's general partner) and POR-14 d (Harborline's room).
+  "dana-kowalski": {
+    shell: "full",
+    scopes: [
+      {
+        kind: "engagement",
+        id: id("scope:northwind-401k"),
+        label: "Northwind Robotics 401(k) Plan",
+        role_label: "Plan administrator",
+      },
+    ],
+    nav: FULL_NAV,
+    landing: "home",
+  },
+  "ben-ashby": {
+    shell: "full",
+    scopes: [
+      {
+        kind: "client_entity",
+        id: SCOPE_IDS.copperleaf,
+        label: "Copperleaf Coffee Roasters, Inc.",
+        role_label: "Contributor",
+      },
+    ],
+    nav: ["home", "documents", "questions", "approvals", "sign", "messages", "deliverables"],
+    landing: "home",
+  },
+  "owen-calder": {
+    shell: "full",
+    scopes: [
+      {
+        kind: "client_entity",
+        id: id("scope:ridgeline"),
+        label: "Ridgeline Property Partners, LP",
+        role_label: "Owner",
+      },
+    ],
+    nav: ["home", "documents", "questions", "approvals", "sign", "messages", "deliverables"],
+    landing: "home",
+  },
+  "harborline-certifications": {
+    shell: "limited",
+    scopes: [
+      {
+        kind: "engagement",
+        id: id("scope:northwind-401k-harborline"),
+        label: "Northwind Robotics 401(k) Plan",
+        role_label: "Custodian",
+      },
+    ],
+    nav: [],
+    landing: "requests",
+  },
 };
 
 /** Personas whose verified code meets the firm's MFA floor (an owner, signer or approver grant). */

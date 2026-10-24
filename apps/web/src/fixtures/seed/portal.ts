@@ -12,7 +12,14 @@ export const SINK_DOMAIN = "sink.brightwaterhale.test";
  * `copperleaf` and `tessellate` hold the P-08-T08 personas: Tess Moreno (POR-01c, POR-02d) and
  * Marisol Vega (POR-02h); their engagements arrive with C-01 and A-07. */
 export type PortalEngagement =
-  "northwind" | "granite-peak" | "feld" | "whitley" | "copperleaf" | "tessellate" | "meera";
+  | "northwind"
+  | "granite-peak"
+  | "feld"
+  | "whitley"
+  | "copperleaf"
+  | "tessellate"
+  | "meera"
+  | "ridgeline";
 
 export interface PortalUser {
   slug: string;
@@ -21,8 +28,9 @@ export interface PortalUser {
   org: string;
   title: string;
   engagement: PortalEngagement;
-  /** `tcwg` is the benefits committee (POR-15): it reads, and holds no contact role. */
-  role: "client_admin" | "client_contributor" | "tcwg";
+  /** `tcwg` is the benefits committee (POR-15): it reads, and holds no contact role. `delegate`
+   * holds `request_item` grants only (a third party's room, DEC-211): no contact role either. */
+  role: "client_admin" | "client_contributor" | "tcwg" | "delegate";
   thirdParty: boolean;
   email: string;
   id: string;
@@ -71,6 +79,31 @@ const ROWS: readonly Row[] = [
   ["Marisol Vega", "Tessellate Health Cloud", "Primary portal user", "tessellate", "client_admin"],
   // POR-02e: Meera Shah's role union (her own return and her Ridgeline K-1).
   ["Meera Shah", "Meera Shah", "Primary portal user", "meera", "client_admin"],
+  // R-01-T05: POR-04 e (Copperleaf's controller answers a question), POR-04 f (the general
+  // partner decides Ridgeline's §754 election) and POR-14 d (Harborline's certifications contact,
+  // a team mailbox that signs in under the name the custodian gave the firm).
+  [
+    "Ben Ashby",
+    "Copperleaf Coffee Roasters, Inc.",
+    "Controller",
+    "copperleaf",
+    "client_contributor",
+  ],
+  [
+    "Owen Calder",
+    "Ridgeline GP LLC",
+    "Managing Member, Ridgeline GP LLC",
+    "ridgeline",
+    "client_admin",
+  ],
+  [
+    "Harborline Certifications",
+    "Harborline Trust Company",
+    "Certifications contact",
+    "northwind",
+    "delegate",
+    true,
+  ],
 ];
 
 export const PORTAL_USERS: readonly PortalUser[] = ROWS.map(
@@ -90,7 +123,8 @@ export const PORTAL_USERS: readonly PortalUser[] = ROWS.map(
   },
 );
 
-/** Third parties who answer Northwind requests but hold no portal user at E0. */
+/** Third parties who answer Northwind requests but hold no portal user at E0 (Harborline's
+ * certifications contact signs in for POR-14 d on Fri Sep 11, before the epoch). */
 export const THIRD_PARTIES: readonly string[] = [
   "Harborline Trust Company",
   "PayGrid Payroll",
@@ -99,7 +133,9 @@ export const THIRD_PARTIES: readonly string[] = [
 
 /** `GET /v1/engagements/{id}/client-contacts`: the people who hold a contact role. */
 export function contactsOf(engagement: PortalEngagement): ClientContactOut[] {
-  return PORTAL_USERS.filter((u) => u.engagement === engagement && u.role !== "tcwg").map((u) => ({
+  return PORTAL_USERS.filter(
+    (u) => u.engagement === engagement && u.role !== "tcwg" && u.role !== "delegate",
+  ).map((u) => ({
     kind: "member",
     id: u.id,
     role: u.role,
