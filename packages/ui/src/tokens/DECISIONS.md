@@ -496,3 +496,16 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-24 | Sort control    | A secondary sm button that flips Missing first and Received first, as the canvas logic does, with the up-down glyph                                                                                                                                          |
 | 2026-10-24 | Add             | Opens SHL-14's drawer, not a dialog, so the label stays "Add" without the ellipsis                                                                                                                                                                           |
 | 2026-10-24 | Open decision   | A 28px secondary button where TPL-02c draws a text link: the link's 21px hit area meets a document row of TPL-02b scrolled out of view in the gallery, so SC 2.5.8 needs the 24px box                                                                        |
+
+### DataTable grammars 3: grid, leadsheet, field rows, virtualisation (F-05-T52)
+
+| Date       | Item               | Decision                                                                                                                                                                  |
+| ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-24 | Grid markup        | `GridTable` is its own component, as C-01 spec 04 says the grid has its own markup; it shares the tracing cells and the virtualiser with `DataGrid`                       |
+| 2026-10-24 | Grid match ids     | Cells with a `source` carry the sheet-cell locator's id, `<file>!<cell>` (as the server derives it); the kit's `matchSource` prop is `source` + `sheet`                   |
+| 2026-10-24 | Comment note       | The amber corner opens the C-00 Tooltip with the author first, and the cell carries the note in visually hidden words, so it is not hover-only                            |
+| 2026-10-24 | Resize by keyboard | The resize handle is a focusable separator: ← → resize in 16px steps (the ResizeGutter's step), as well as the kit's drag                                                 |
+| 2026-10-24 | Leadsheet header   | The column header stays in the DOM, visually hidden, so the grid keeps its column names for a screen reader                                                               |
+| 2026-10-24 | Virtual heights    | Fixed per grammar (ledger 30 / band 31, statement 26 / 24, evidence 29 / 29, leadsheet 37 / 37), not measured: the kit keeps heights exact for a fixed-height virtualiser |
+| 2026-10-24 | Virtual viewport   | A virtualised table scrolls in its own viewport (560 by default, `maxHeight`); only then are the header and bands sticky, so a short table never sticks to the page       |
+| 2026-10-24 | Field Info         | Drawn only when the field has a source; Info is the O1 Popover (outside press and Escape close it)                                                                        |

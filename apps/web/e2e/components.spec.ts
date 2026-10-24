@@ -440,3 +440,60 @@ test.describe("overlays", () => {
     ]);
   });
 });
+
+// F-05-T52 (plan 04 §11: "INP ≤ 200 ms … with 1,000 fixture rows"; "Virtualise at ≥ 200 rows"):
+// the c-01-virtual specimen draws 1,000 fixture rows. Only a window of them is in the DOM, the
+// header and the group bands stay stuck while the rows scroll, and every interaction (a click,
+// ↓, End, a scroll) answers within 200 ms, measured by the Event Timing API as INP is.
+test.describe("E4 virtualisation", () => {
+  test("1,000 fixture rows: a window in the DOM, sticky bands, interactions within 200 ms", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    const board = page.locator('[data-artboard="c-01-virtual"]');
+    await board.scrollIntoViewIfNeeded();
+    const scroller = board.locator("[data-virtual]");
+    const grid = board.getByRole("grid");
+    await expect(grid).toHaveAttribute("aria-rowcount", "1001");
+    expect(await grid.locator("tbody tr[data-index]").count()).toBeLessThan(80);
+
+    await page.evaluate(() => {
+      const w = window as unknown as { __inp: number[] };
+      w.__inp = [];
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) w.__inp.push(e.duration);
+      }).observe({
+        type: "event",
+        durationThreshold: 16,
+        buffered: true,
+      } as PerformanceObserverInit);
+    });
+
+    await grid.locator("tbody tr[data-index]").nth(3).click();
+    await grid.press("ArrowDown");
+    await grid.press("End");
+    await expect(grid.getByText("Batch 40")).toBeVisible();
+    await scroller.evaluate((el) => {
+      el.scrollTop = el.scrollHeight / 2;
+    });
+    await page.waitForTimeout(100);
+
+    // The header and the band over the rows in view sit at the top of the viewport.
+    const top = await scroller.evaluate((el) => el.getBoundingClientRect().top);
+    const head = await grid.locator("thead th").first().boundingBox();
+    expect(Math.round(head?.y ?? -1)).toBe(Math.round(top));
+    const stuck = await scroller.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return [...el.querySelectorAll<HTMLElement>("tbody th")].some(
+        (th) => Math.round(th.getBoundingClientRect().top) === Math.round(box.top + 30),
+      );
+    });
+    expect(stuck, "a group band sticks under the header").toBe(true);
+
+    const worst = await page.evaluate(() => {
+      const w = window as unknown as { __inp: number[] };
+      return w.__inp.length === 0 ? 0 : Math.max(...w.__inp);
+    });
+    expect(worst, "slowest interaction, ms").toBeLessThanOrEqual(200);
+  });
+});

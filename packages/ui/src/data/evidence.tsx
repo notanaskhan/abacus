@@ -6,7 +6,8 @@ import type { TableColumn, TableRow } from "./types";
 // The evidence grammar's frame (C-01 spec 03; F-05-T43): audit workpaper tables as block cards on
 // a well. Each block is a white e1 card, radius 12, margin 12 12 0, with a 32px header (13 / 500,
 // optional 11.5 meta on the right) over an `evidence` DataGrid. `card={false}` drops the cards and
-// the well, so the tables sit flush in the pane. Totals are the server's rows.
+// the well, so the tables sit flush in the pane. Totals are the server's rows. The leadsheet
+// grammar (F-05-T52) uses the same frame: its block title is its only header (32, padding 0 14).
 
 export interface EvidenceBlock {
   id: string;
@@ -18,8 +19,10 @@ export interface EvidenceBlock {
 
 export interface EvidenceTableProps extends Pick<
   DataGridProps,
-  "onSelect" | "onOpen" | "onExplain" | "onIssue"
+  "onSelect" | "onOpen" | "onExplain" | "onIssue" | "cellMatch" | "rowMatch"
 > {
+  /** Default `evidence`. */
+  grammar?: "evidence" | "leadsheet";
   /** The accessible name each block's grid starts with ("Trial Balance"). */
   label: string;
   blocks: readonly EvidenceBlock[];
@@ -32,12 +35,13 @@ export function EvidenceTable({
   label,
   blocks,
   card = true,
+  grammar = "evidence",
   className,
   ...handlers
 }: EvidenceTableProps): JSX.Element {
   return (
     <div
-      data-grammar="evidence"
+      data-grammar={grammar}
       data-card={card ? "" : undefined}
       className={cn("flex flex-col", card && "bg-shell pb-[12px]", className)}
     >
@@ -51,7 +55,12 @@ export function EvidenceTable({
           )}
         >
           {block.title !== undefined && (
-            <header className="flex h-[32px] items-center gap-[8px] px-[12px]">
+            <header
+              className={cn(
+                "flex h-[32px] items-center gap-[8px]",
+                grammar === "leadsheet" ? "px-[14px]" : "px-[12px]",
+              )}
+            >
               <h3 className="min-w-0 flex-1 truncate text-body font-medium">{block.title}</h3>
               {block.meta !== undefined && (
                 <span className="text-meta text-ink-3">{block.meta}</span>
@@ -60,7 +69,7 @@ export function EvidenceTable({
           )}
           <DataGrid
             label={block.title === undefined ? label : `${label}: ${block.title}`}
-            grammar="evidence"
+            grammar={grammar}
             columns={block.columns}
             rows={block.rows}
             {...handlers}

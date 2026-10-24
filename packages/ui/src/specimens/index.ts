@@ -102,6 +102,7 @@ import { T12Specimen, Tpl12Specimen } from "./settings";
 import { T11Specimen, Tpl11Specimen } from "./dashboard";
 import { SourceViewerSpecimen } from "./viewer";
 import { Tpl02Specimen } from "./tpl02";
+import { FieldRowsSpecimen, GridSpecimen, LeadsheetSpecimen, VirtualGridSpecimen } from "./data-3";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
@@ -358,6 +359,11 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-01-variance", kit: "C-01", title: "Variance cell", Component: VarianceSpecimen },
   { id: "c-01-tally-strip", kit: "C-01", title: "TallyStrip", Component: TallyStripSpecimen },
   { id: "c-01-account-tree", kit: "C-01", title: "AccountTree", Component: AccountTreeSpecimen },
+  // DataTable grammars 3 (F-05-T52): grid, leadsheet, field rows, virtualisation
+  { id: "c-01-grid", kit: "C-01", title: "Grid grammar", Component: GridSpecimen },
+  { id: "c-01-leadsheet", kit: "C-01", title: "Leadsheet grammar", Component: LeadsheetSpecimen },
+  { id: "c-01-fields", kit: "C-01", title: "Field rows", Component: FieldRowsSpecimen },
+  { id: "c-01-virtual", kit: "C-01", title: "Virtualisation", Component: VirtualGridSpecimen },
   // Toasts E3 (F-05-T21): C-21
   { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
   { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },

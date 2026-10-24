@@ -1,20 +1,11 @@
 import { tableFeatures, useTable } from "@tanstack/react-table";
-import {
-  type HTMLAttributes,
-  type JSX,
-  type KeyboardEvent,
-  type ReactNode,
-  type TdHTMLAttributes,
-  useId,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { type JSX, type KeyboardEvent, useId, useMemo, useRef, useState } from "react";
 import { cn } from "../cn";
-import { MATCH_CELL, MATCH_ROW, useMatch, useMatchStore } from "../tracing/match";
 import type { MatchId } from "../tracing/types";
 import { MoneyCell, PropChip, TickCell, ValueChip } from "./cells";
 import type { ColumnType, Grammar, TableColumn, TableRow } from "./types";
+import { MatchCell, MatchRow } from "./match-cells";
+import { VIRTUAL_HEIGHT, useRowWindow } from "./row-window";
 import { NoteCorner, VarianceAction, VarianceCell, varianceState } from "./variance";
 
 // E4 DataTable engine (F-05-T27; plan 04 E4; C-01 spec 01 to 03 and 06): one headless model on
@@ -22,7 +13,13 @@ import { NoteCorner, VarianceAction, VarianceCell, varianceState } from "./varia
 // rows, 12.5px, "$" with cents), `statement` (financial statements: th 30, td 26, whole dollars,
 // uppercase group bands) and `evidence` (audit workpapers: th 28, td 29, 12px, "$" with cents,
 // a fixed layout, extracted-value chips; its blocks sit on a well, evidence.tsx). A `variance`
-// column draws the VarianceCell and gains the 100px action column (F-05-T43).
+// column draws the VarianceCell and gains the 100px action column (F-05-T43). `leadsheet` (tax
+// worksheets and leadsheets: no column header, the block title heads it; rows padding 9 14 at
+// 13px, whole dollars, an optional 52px line-number column, totals 500 over the .22 rule) joins
+// in F-05-T52, with the grid grammar's own markup in grid.tsx.
+//
+// - Above 200 rows the table virtualises (row-window.ts) inside its own scroll viewport, and its
+//   header and group bands stay sticky. `aria-rowindex` keeps every row's place.
 //
 // - Grid semantics: `role="grid"`, one focusable container, ↑/↓ move the selection (clamped),
 //   Home/End jump, Enter (or a double click) opens. Keys are ignored while an input, button or
@@ -35,6 +32,10 @@ const FEATURES = tableFeatures({});
 interface GrammarMetrics {
   /** Body type role. */
   text: string;
+  /** False: no visible column header (the leadsheet's block title is its header). */
+  header: boolean;
+  /** Exact heights, for the virtualiser: a header cell, an item row and a group band. */
+  heights: { th: number; td: number; group: number };
   layout: "auto" | "fixed";
   th: string;
   td: string;
@@ -49,6 +50,8 @@ interface GrammarMetrics {
 const GRAMMARS: Record<Grammar, GrammarMetrics> = {
   ledger: {
     text: "text-dense",
+    header: true,
+    heights: { th: 30, td: 30, group: 31 },
     layout: "auto",
     th: "h-[30px] bg-band-hd text-dense font-normal text-ink-2",
     td: "h-[30px]",
@@ -61,6 +64,8 @@ const GRAMMARS: Record<Grammar, GrammarMetrics> = {
   },
   statement: {
     text: "text-cell",
+    header: true,
+    heights: { th: 30, td: 26, group: 24 },
     layout: "auto",
     th: "h-[30px] bg-band-hd text-th font-medium text-ink-3",
     td: "h-[26px]",
@@ -73,6 +78,8 @@ const GRAMMARS: Record<Grammar, GrammarMetrics> = {
   },
   evidence: {
     text: "text-cell",
+    header: true,
+    heights: { th: 28, td: 29, group: 29 },
     layout: "fixed",
     th: "h-[28px] bg-band-hd text-meta font-normal text-ink-2 border-y-[0.5px] border-hair",
     td: "h-[29px]",
@@ -80,6 +87,20 @@ const GRAMMARS: Record<Grammar, GrammarMetrics> = {
     indentStep: 16,
     format: "money",
     group: "h-[29px] text-cell font-medium text-ink",
+    total: "font-medium",
+    numTracking: "tracking-[-0.005em]",
+  },
+  leadsheet: {
+    text: "text-body",
+    header: false,
+    heights: { th: 0, td: 37, group: 37 },
+    layout: "auto",
+    th: "text-meta font-normal",
+    td: "py-[9px] leading-[1.45]",
+    pad: 14,
+    indentStep: 16,
+    format: "whole",
+    group: "bg-band-hd py-[9px] text-body leading-[1.45] font-normal text-ink-2",
     total: "font-medium",
     numTracking: "tracking-[-0.005em]",
   },
@@ -116,6 +137,12 @@ export interface DataGridProps {
   /** A cell's match id, from its typed locator (INV-2): the cell lights as the exact cell and its
    * row as the row whenever that match is the scope's active one (F-05-T50). */
   cellMatch?: (row: TableRow, columnKey: string) => MatchId | undefined;
+  /** A row's own match (a leadsheet line matched to the open document): the whole row lights. */
+  rowMatch?: (row: TableRow) => MatchId | undefined;
+  /** Default: virtualise at 200 rows and above. */
+  virtualize?: boolean;
+  /** The scroll viewport's height when virtualised, px. */
+  maxHeight?: number;
   className?: string;
 }
 
@@ -131,6 +158,9 @@ export function DataGrid({
   onIssue,
   pad: padOverride,
   cellMatch,
+  rowMatch,
+  virtualize,
+  maxHeight = VIRTUAL_HEIGHT,
   className,
 }: DataGridProps): JSX.Element {
   const g = { ...GRAMMARS[grammar], ...(padOverride === undefined ? {} : { pad: padOverride }) };
@@ -156,10 +186,22 @@ export function DataGrid({
   const current = selected === undefined ? own : selected;
   // Group bands are headings, not stops: selection moves over items and totals.
   const stops = model.filter((r) => (r.kind ?? "item") !== "group");
+  const scroller = useRef<HTMLDivElement>(null);
+  const win = useRowWindow({
+    count: model.length,
+    size: (i) => ((model[i]?.kind ?? "item") === "group" ? g.heights.group : g.heights.td),
+    scroller,
+    enabled: virtualize,
+    height: maxHeight,
+  });
 
   function select(row: TableRow): void {
     if (selected === undefined) setOwn(row.id);
     onSelect?.(row.id, row);
+    if (win.virtual) {
+      win.scrollTo(model.indexOf(row));
+      return;
+    }
     // Optional: jsdom has no scrollIntoView.
     const el = document.getElementById(`${gridId}-${row.id}`) as Partial<HTMLElement> | null;
     el?.scrollIntoView?.({ block: "nearest" });
@@ -203,7 +245,9 @@ export function DataGrid({
   }
 
   const pad = { paddingLeft: g.pad, paddingRight: g.pad };
-  return (
+  const span = columns.length + (varianceKey === undefined ? 0 : 1);
+  const sticky = win.virtual;
+  const grid = (
     <table
       role="grid"
       aria-label={label}
@@ -215,11 +259,13 @@ export function DataGrid({
       className={cn(
         "w-full border-collapse tracking-[-0.005em] focus-visible:outline-offset-[-2px]",
         g.layout === "fixed" && "table-fixed",
+        // No header: the first row draws no rule above it.
+        !g.header && "[&>tbody>tr:first-child>td]:border-t-0",
         g.text,
-        className,
+        !win.virtual && className,
       )}
     >
-      <thead>
+      <thead className={cn(!g.header && "sr-only")}>
         <tr role="row" aria-rowindex={1}>
           {columns.map((c, i) => {
             const type = typeOf(c, i);
@@ -231,6 +277,7 @@ export function DataGrid({
                 style={{ ...pad, width: c.width, paddingRight: c.tick === true ? 62 : g.pad }}
                 className={cn(
                   "truncate whitespace-nowrap",
+                  sticky && "sticky top-0 z-[2]",
                   g.th,
                   c.entity === true && "text-body font-medium text-ink",
                   rightAligned(c, type) ? "text-right" : "text-left",
@@ -245,7 +292,7 @@ export function DataGrid({
               role="columnheader"
               scope="col"
               style={{ width: ACTION_WIDTH, paddingLeft: g.pad, paddingRight: g.pad }}
-              className={cn("text-right", g.th)}
+              className={cn("text-right", sticky && "sticky top-0 z-[2]", g.th)}
             >
               <span className="sr-only">Action</span>
             </th>
@@ -253,32 +300,53 @@ export function DataGrid({
         </tr>
       </thead>
       <tbody>
-        {model.map((row, index) => {
+        {win.before > 0 && (
+          <tr aria-hidden="true" style={{ height: win.before }}>
+            <td colSpan={span} className="p-0" />
+          </tr>
+        )}
+        {win.indexes.map((index) => {
+          const row = model[index];
+          if (row === undefined) return null;
           const kind = row.kind ?? "item";
           const isSelected = row.id === current;
           const rowIndex = index + 2;
           if (kind === "group") {
             return (
-              <tr key={row.id} id={`${gridId}-${row.id}`} role="row" aria-rowindex={rowIndex}>
+              <tr
+                key={row.id}
+                id={`${gridId}-${row.id}`}
+                role="row"
+                aria-rowindex={rowIndex}
+                data-index={index}
+              >
                 <th
                   role="rowheader"
                   scope="rowgroup"
-                  colSpan={columns.length + (varianceKey === undefined ? 0 : 1)}
-                  style={pad}
-                  className={cn("border-t-[0.5px] border-hair text-left", g.group)}
+                  colSpan={span}
+                  style={{ ...pad, ...(sticky ? { top: g.heights.th } : {}) }}
+                  className={cn(
+                    "border-t-[0.5px] border-hair text-left",
+                    // A band stays under the sticky header while its rows scroll by.
+                    sticky && "sticky z-[1] bg-band-hd",
+                    g.group,
+                  )}
                 >
                   {row.label}
                 </th>
               </tr>
             );
           }
-          const ids =
-            cellMatch === undefined
+          const own = rowMatch?.(row);
+          const ids = [
+            ...(own === undefined ? [] : [own]),
+            ...(cellMatch === undefined
               ? []
               : columns.flatMap((c) => {
                   const id = cellMatch(row, c.key);
                   return id === undefined ? [] : [id];
-                });
+                })),
+          ];
           return (
             <MatchRow
               key={row.id}
@@ -288,6 +356,7 @@ export function DataGrid({
               aria-rowindex={rowIndex}
               aria-selected={isSelected}
               data-kind={kind}
+              data-index={index}
               onClick={() => {
                 select(row);
               }}
@@ -308,6 +377,8 @@ export function DataGrid({
                 const cell = row.cells[c.key];
                 const right = rightAligned(c, type);
                 const indent = type === "label" ? g.pad + (row.indent ?? 0) * g.indentStep : g.pad;
+                // A line-number column hugs the label after it (leadsheet "1a", "25b").
+                const line = c.line === true;
                 const variance = type === "variance" ? cell?.variance : undefined;
                 const vstate = variance === undefined ? null : varianceState(variance);
                 return (
@@ -317,7 +388,7 @@ export function DataGrid({
                     role="gridcell"
                     style={{
                       paddingLeft: indent,
-                      paddingRight: c.tick === true ? 62 : g.pad,
+                      paddingRight: line ? 0 : c.tick === true ? 62 : g.pad,
                       width: c.width,
                     }}
                     className={cn(
@@ -327,6 +398,7 @@ export function DataGrid({
                         ? "border-t-[0.5px] border-stroke"
                         : "border-t-[0.5px] border-hair",
                       right ? "text-right" : "text-left",
+                      line && "text-ink-3",
                       vstate === "unexplained" && "bg-amber-tint",
                       type === "num" || type === "variance"
                         ? cn("overflow-visible whitespace-nowrap", g.numTracking)
@@ -389,55 +461,23 @@ export function DataGrid({
             </MatchRow>
           );
         })}
+        {win.after > 0 && (
+          <tr aria-hidden="true" style={{ height: win.after }}>
+            <td colSpan={span} className="p-0" />
+          </tr>
+        )}
       </tbody>
     </table>
   );
-}
-
-// ---- Tracing ------------------------------------------------------------------------------------
-
-/** A row that lights (the match fill) while one of its cells' matches is the scope's active one.
- * Without ids it is a plain row and never subscribes. */
-function MatchRow({
-  ids,
-  className,
-  children,
-  ...props
-}: HTMLAttributes<HTMLTableRowElement> & {
-  ids: readonly MatchId[];
-  children: ReactNode;
-}): JSX.Element {
-  const store = useMatchStore();
-  const lit = useSyncExternalStore(
-    store.subscribe,
-    () => ids.length > 0 && ids.includes(store.get().id as MatchId),
-    () => false,
-  );
+  if (!win.virtual) return grid;
   return (
-    <tr
-      {...props}
-      {...(lit ? { "data-lit": "" } : {})}
-      className={cn(className, ids.length > 0 && MATCH_ROW)}
+    <div
+      ref={scroller}
+      data-virtual=""
+      style={{ maxHeight }}
+      className={cn("relative overflow-auto", className)}
     >
-      {children}
-    </tr>
+      {grid}
+    </div>
   );
-}
-
-/** A cell; with a match id it is the exact cell a citation lights (C-07: the deeper fill, the
- * 1.5px inset line, match ink at 500), and hovering it lights it after the row intent. */
-function MatchCell({
-  match,
-  ...props
-}: TdHTMLAttributes<HTMLTableCellElement> & { match: MatchId | undefined }): JSX.Element {
-  return match === undefined ? <td {...props} /> : <LitCell match={match} {...props} />;
-}
-
-function LitCell({
-  match,
-  className,
-  ...props
-}: TdHTMLAttributes<HTMLTableCellElement> & { match: MatchId }): JSX.Element {
-  const { bind } = useMatch(match, "cell");
-  return <td {...props} {...bind} data-match-kind="cell" className={cn(className, MATCH_CELL)} />;
 }

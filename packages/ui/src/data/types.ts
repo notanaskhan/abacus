@@ -5,9 +5,9 @@
 
 import type { AmountStyle } from "../format";
 
-/** The grammars of E4 built so far: `ledger` and `statement` (F-05-T27), `evidence` (F-05-T43).
- * `grid` and `leadsheet` follow (F-05-T52). */
-export type Grammar = "ledger" | "statement" | "evidence";
+/** The table grammars of E4: `ledger` and `statement` (F-05-T27), `evidence` (F-05-T43) and
+ * `leadsheet` (F-05-T52). The `grid` grammar has its own markup (`GridTable`, grid.tsx). */
+export type Grammar = "ledger" | "statement" | "evidence" | "leadsheet";
 
 /** `variance` cells carry a `VarianceValue`; a table with one gains the 100px action column. */
 export type ColumnType = "label" | "text" | "num" | "chip" | "variance";
@@ -26,6 +26,8 @@ export interface TableColumn {
   tick?: boolean | undefined;
   /** The first header names the entity: 13/500 ink instead of the th style (statement). */
   entity?: boolean | undefined;
+  /** A leadsheet's line-number column ("1a", "25b"): ink-3 text, no right padding (52 wide). */
+  line?: boolean | undefined;
 }
 
 export type RowKind = "item" | "group" | "total" | "grand";

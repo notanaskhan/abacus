@@ -3,6 +3,8 @@
 // app's seed test (apps/web/src/fixtures/specimen-figures.test.ts) checks every one against the seed
 // and that each sum foots. Kit sample data is never ported (DF-35).
 
+import { FELD_T3_FOOTINGS } from "./feld-t3";
+
 /** E0: the demo instant every specimen is drawn at. */
 export const E0 = "2026-09-14T09:24:00-05:00";
 
@@ -62,6 +64,29 @@ export const REQUEST_COUNTS = {
 /** TY2025 returns by office (TPL-12): Chicago, Denver, New York. */
 export const RETURNS_BY_OFFICE = { Chicago: 98, Denver: 64, "New York": 62 } as const;
 
+/**
+ * Northwind's trial balance workbook (trust basis; documents.py `_TB_LINES`, blueprint §9.4):
+ * account, name, debit, credit, as the grid specimen draws it. Debits and credits foot to the
+ * same 17,663,450.00 (FOOTINGS).
+ */
+export const NORTHWIND_TB: readonly (readonly [string, string, string, string])[] = [
+  ["1110", "KRS 500 Index Fund", "6120450.00", ""],
+  ["1120", "KRS Target 2035 Fund", "2384910.00", ""],
+  ["1130", "KRS Target 2045 Fund", "2915330.00", ""],
+  ["1140", "KRS Bond Index Fund", "1408220.00", ""],
+  ["1150", "KRS International Index Fund", "902610.00", ""],
+  ["1160", "Harborline Stable Value Fund", "1163480.00", ""],
+  ["1200", "Self-directed brokerage (BrokerWindow)", "1605000.00", ""],
+  ["1300", "Notes receivable from participants", "312400.00", ""],
+  ["3000", "Net assets available for benefits, January 1, 2025", "", "14228500.00"],
+  ["4100", "Contributions received", "", "1318300.00"],
+  ["4200", "Net appreciation in fair value of investments", "", "1755990.00"],
+  ["4300", "Interest and dividends", "", "342860.00"],
+  ["4400", "Interest income on notes receivable from participants", "", "17800.00"],
+  ["5100", "Benefits paid to participants", "812650.00", ""],
+  ["5200", "Administrative expenses", "38400.00", ""],
+];
+
 /** Every footing a specimen draws: `parts` add up to `total` (checked in the seed test). */
 export const FOOTINGS: readonly { name: string; parts: readonly string[]; total: string }[] = [
   {
@@ -79,6 +104,17 @@ export const FOOTINGS: readonly { name: string; parts: readonly string[]; total:
     parts: [NORTHWIND_FIGURES.investmentsAtFairValue, NORTHWIND_FIGURES.participantNotes],
     total: NORTHWIND_FIGURES.netAssetsUnadjusted,
   },
+  {
+    name: "Northwind trial balance debits",
+    parts: NORTHWIND_TB.map((l) => l[2]).filter((v) => v !== ""),
+    total: "17663450.00",
+  },
+  {
+    name: "Northwind trial balance credits",
+    parts: NORTHWIND_TB.map((l) => l[3]).filter((v) => v !== ""),
+    total: "17663450.00",
+  },
+  ...FELD_T3_FOOTINGS,
   {
     name: "TY2025 returns by office",
     parts: Object.values(RETURNS_BY_OFFICE).map(String),
