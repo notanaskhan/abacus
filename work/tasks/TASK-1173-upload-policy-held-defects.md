@@ -24,7 +24,10 @@ Fix the held upload defects ED-018, ED-019, ED-020 and ED-021 so their strict xf
 ## Progress log
 - 2026-10-24: built. Kept `sniff` recognising OLE (the SPEC-020 unit test pins it) and moved the refusal to `allowed_type`. EICAR in a file named `.pdf` is text, not CSV: the scan now runs before the type check so it still answers `file_refused` (the hostile suite's assertion). Changed test inputs only per DEC-296: the back-fill's oversize body (50 MB + 1) and its XLSX upload's name. The legacy type message in the web app still lists six types (`spec020.test.tsx` pins it); its size line now says 50 MB.
 
+- 2026-10-24: security review fixes (DEC-299), tests first (each new test failed on e31f80ad, checked in a throwaway worktree): active-content detection fails closed (object streams decoded or flagged, bounded, isolated at upload) and finds more forms; Office packages read `[Content_Types].xml` and `.rels`. A non-malware scan refusal now yields to the type refusal (the back-fill's broken zip named `.pdf`).
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-296 | The upload policy of 2026-10-24 (DEC-58 c) | No |
+| DEC-299 | Security review of the withdrawal and the upload policy | No |

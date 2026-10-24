@@ -508,6 +508,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.connections.ledger_import.ImportOff
+  legal_hold_active:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.withdrawals.LegalHoldActive
+    summary: 'A legal hold covers the version: it is not withdrawn while held (DEC-299).'
   letter_before_acceptance:
     status: 409
     raised_by:

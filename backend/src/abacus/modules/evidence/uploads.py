@@ -25,12 +25,13 @@ from abacus.kernel.clock import now, system_now
 from abacus.kernel.crypto import DetachedKey
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.isolation import IsolationFailed, Limits, run_isolated_with
 from abacus.kernel.scanning import scan
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref, service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
-from abacus.modules.evidence.active_content import REASON_CODES, reason_of
+from abacus.modules.evidence.active_content import REASON_CODES, UNSCANNABLE, reason_of
 from abacus.modules.evidence.events import EvidenceUploaded
 from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
 from abacus.modules.evidence.repository import (
@@ -104,7 +105,6 @@ _HEIC_BRANDS: Final = frozenset({b"heic", b"heix", b"hevc", b"hevx", b"heim", b"
 _HEIF_BRANDS: Final = frozenset({b"mif1", b"msf1", b"heif"})
 _CSV_SAMPLE: Final = 256 * 1024
 _CSV_DELIMITERS: Final = (",", ";", "\t", "|")
-_MACRO_PARTS: Final = ("vbaproject.bin", "vbadata.xml")
 
 
 class UploadTooLarge(DomainInvalid):
@@ -172,22 +172,60 @@ def _heif(content: bytes) -> str | None:
     return None
 
 
+_XML_PART_LIMIT: Final = 1024 * 1024  # [Content_Types].xml and each .rels part
+_MAX_RELS: Final = 200
+_CONTENT_TYPE: Final = re.compile(rb"ContentType\s*=\s*[\"']([^\"']{1,255})[\"']", re.IGNORECASE)
+_EXTERNAL: Final = re.compile(rb"TargetMode\s*=\s*[\"']\s*External\s*[\"']", re.IGNORECASE)
+# Content types that carry code or embedded objects (DEC-299): macro-enabled parts, VBA projects,
+# macro sheets, ActiveX controls and OLE objects.
+_ACTIVE_TYPES: Final = ("macroenabled", "vba", "macrosheet", "activex", "oleobject")
+_ACTIVE_PARTS: Final = ("vbaproject", "vbadata", "/activex/", "oleobject", "macrosheets/")
+
+
+def _bounded(package: zipfile.ZipFile, info: zipfile.ZipInfo) -> bytes | None:
+    """A small XML part's bytes, or None when it is (or inflates) past the bound."""
+    if info.file_size > _XML_PART_LIMIT:
+        return None
+    with package.open(info) as part:
+        data = part.read(_XML_PART_LIMIT + 1)
+    return data if len(data) <= _XML_PART_LIMIT else None
+
+
 def _ooxml(content: bytes) -> str | None:
     """An Office Open XML package: a zip with `[Content_Types].xml` and a workbook or document
-    part. Only the central directory is read; no member is extracted. A package carrying a VBA
-    project is the macro-enabled type, whatever it is named."""
+    part. Only the central directory, `[Content_Types].xml` and the relationship parts are read,
+    each bounded; no other member is extracted. A package carrying code or embedded objects (a
+    macro-enabled, VBA, macro-sheet, ActiveX or OLE content type or part, in any letter case) or
+    any external relationship (`TargetMode="External"`: how remote-template macros arrive) is the
+    macro-enabled type, whatever it is named (DEC-299)."""
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as package:
-            names = set(package.namelist())
-    except (zipfile.BadZipFile, ValueError):
+            infos = package.infolist()
+            names = {i.filename for i in infos}
+            if "[Content_Types].xml" not in names:
+                return None
+            folded = [n.casefold() for n in names]
+            active = any(marker in n for n in folded for marker in _ACTIVE_PARTS)
+            types = _bounded(package, package.getinfo("[Content_Types].xml"))
+            if types is None:
+                active = True
+            else:
+                declared = [t.decode("latin-1").casefold() for t in _CONTENT_TYPE.findall(types)]
+                active = active or any(m in t for t in declared for m in _ACTIVE_TYPES)
+            rels = [i for i in infos if i.filename.casefold().endswith(".rels")]
+            if len(rels) > _MAX_RELS:
+                active = True
+            for info in rels[:_MAX_RELS]:
+                if active:
+                    break
+                data = _bounded(package, info)
+                active = data is None or _EXTERNAL.search(data) is not None
+    except (zipfile.BadZipFile, ValueError, OSError, RuntimeError, EOFError):
         return None
-    if "[Content_Types].xml" not in names:
-        return None
-    macros = any(n.casefold().rsplit("/", 1)[-1] in _MACRO_PARTS for n in names)
-    if "xl/workbook.xml" in names:
-        return XLSM if macros or any(n.startswith("xl/macrosheets/") for n in names) else XLSX
-    if "word/document.xml" in names:
-        return DOCM if macros else DOCX
+    if "xl/workbook.xml" in folded:
+        return XLSM if active else XLSX
+    if "word/document.xml" in folded:
+        return DOCM if active else DOCX
     return None
 
 
@@ -314,11 +352,18 @@ def checked(content: bytes, file_name: str | None = None) -> tuple[str, str]:
         raise UploadEmpty
     if len(content) > MAX_UPLOAD_BYTES:
         raise UploadTooLarge
-    # SPEC-029 AC-1: scanned before anything stores or parses it, and first, so malware is
-    # answered as malware whatever it claims to be.
-    if not scan(content).clean:
+    # SPEC-029 AC-1: scanned before anything stores or parses it. Malware is answered as
+    # malware whatever it claims to be; any other scan refusal (an unreadable archive) of a file
+    # whose type is refused anyway is answered as the type refusal (DEC-296).
+    verdict = scan(content)
+    try:
+        media_type = allowed_type(content, file_name)
+    except UploadTypeNotAllowed:
+        if not verdict.clean and verdict.reason == "malware":
+            raise UploadRefused from None
+        raise
+    if not verdict.clean:
         raise UploadRefused
-    media_type = allowed_type(content, file_name)
     return media_type, storage.fingerprint(content)
 
 
@@ -330,9 +375,23 @@ class Screened:
     active_content: str | None
 
 
+# DEC-299: the active-content scan runs in a child of its own, bounded, never on the shared
+# thread pool's CPU; a scan that dies or overruns is a flagged file (fail closed).
+SCAN_LIMITS: Final = Limits(timeout_seconds=20, cpu_seconds=15)
+
+
+def active_content_of(content: bytes) -> str | None:
+    try:
+        return run_isolated_with(SCAN_LIMITS, reason_of, content)
+    except IsolationFailed:
+        return UNSCANNABLE
+    except Exception:  # anything the child didn't turn into a result
+        return UNSCANNABLE
+
+
 def _screen(content: bytes, file_name: str) -> Screened:
     media_type, digest = checked(content, file_name)
-    flag = reason_of(content) if media_type == PDF else None
+    flag = active_content_of(content) if media_type == PDF else None
     return Screened(media_type, digest, flag)
 
 

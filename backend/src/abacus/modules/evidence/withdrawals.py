@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -33,7 +34,7 @@ from typing import Final
 from uuid import UUID
 
 from sqlalchemy import insert, select, text, update
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from temporalio import activity
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
@@ -59,8 +60,18 @@ from abacus.modules.evidence.repository import is_withdrawn
 from abacus.modules.evidence.uploads import SOURCE, item_resource
 from abacus.modules.evidence.workflow_types import WithdrawalPurgeInput
 from abacus.modules.evidence.workflows import EvidenceWithdrawalPurge
-from abacus.modules.identity.api import AuthContext, authorise, engagement_role_of
-from abacus.modules.requests.api import items_of_version, read_item, withdraw_upload
+from abacus.modules.identity.api import (
+    AuthContext,
+    allowed_actions,
+    authorise,
+    engagement_role_of,
+)
+from abacus.modules.requests.api import (
+    items_of_version,
+    read_item,
+    upload_item_of,
+    withdraw_upload,
+)
 
 _log = get_logger(__name__)
 
@@ -85,6 +96,12 @@ class EvidenceNotWithdrawable(DomainConflict):
     mode): nothing can erase it, so it is not withdrawn (ADR-162 §8)."""
 
     code = "evidence_not_withdrawable"
+
+
+class LegalHoldActive(DomainConflict):
+    """A legal hold covers the version: it is not withdrawn while held (DEC-299)."""
+
+    code = "legal_hold_active"
 
 
 class NotYourUpload(DomainForbidden):
@@ -136,12 +153,30 @@ async def _target(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> _T
     if row is None:
         raise NotFound("evidence_version")
     version, uploader = row[0], str(row[1])
-    if withdrawal is not None:
-        item_id = withdrawal.request_item_id
-    else:
-        items = await items_of_version(ctx.tenant, version_id)
-        item_id = items[0].id if items else None
+    # The item the upload was made to, never a later link (security review, DEC-299).
+    item_id = (
+        withdrawal.request_item_id
+        if withdrawal is not None
+        else await upload_item_of(ctx.tenant, version_id, uploader)
+    )
     return _Target(version, uploader, item_id, withdrawal)
+
+
+async def _withdrawable_items(
+    ctx: AuthContext, engagement_id: UUID, version_id: UUID, own: UUID
+) -> list[UUID]:
+    """The version's live links the client may withdraw from: its own upload's item, and any
+    other item the same check allows (a link the client can't see is left alone)."""
+    engagement = await get_ref(ctx, engagement_id)
+    base = engagement.resource()
+    found = [own]
+    for linked in await items_of_version(ctx.tenant, version_id):
+        if linked.id == own:
+            continue
+        item = await read_item(ctx.tenant, engagement_id, linked.id)
+        if ACTION in await allowed_actions(ctx, item_resource(item, base), [ACTION]):
+            found.append(linked.id)
+    return found
 
 
 async def check_withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> None:
@@ -158,6 +193,25 @@ async def check_withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID
         raise NotYourUpload
 
 
+async def _refuse_when_held(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> None:
+    """DEC-299: a version a legal hold covers is not withdrawn; the refusal is audited and nothing
+    else is written. With no hold check registered the withdrawal still hides at once (ADR-162
+    §7), and the purge fails closed."""
+    try:
+        held = await held_versions(ctx.tenant, [version_id])
+    except HoldCheckMissing:
+        return
+    if version_id not in held:
+        return
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "evidence_version.withdrawal_refused",
+            target=Target("evidence_version", version_id),
+            after=Ref(engagement_id=engagement_id, held=1),
+        )
+    raise LegalHoldActive
+
+
 async def withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> WithdrawalView:
     """Void and hide the version at once (ADR-162 §4)."""
     await check_withdraw(ctx, engagement_id, version_id)
@@ -169,6 +223,8 @@ async def withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> W
         raise NotFound("evidence_version")
     if version.storage_mode != "detached_key" or version.source != SOURCE:
         raise EvidenceNotWithdrawable
+    await _refuse_when_held(ctx, engagement_id, version_id)
+    items = await _withdrawable_items(ctx, engagement_id, version_id, item_id)
     at = await now(ctx.tenant)
     erase_after = at + WINDOW
     try:
@@ -183,6 +239,8 @@ async def withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> W
             ).scalar_one_or_none()
             if key is None or key.destroyed_at is not None:
                 raise EvidenceNotWithdrawable
+            if await is_withdrawn(tx.session, version_id):  # a concurrent withdrawal won
+                raise NotFound("evidence_version")
             accepted = (
                 await tx.session.execute(
                     select(ReviewDecision.id)
@@ -206,7 +264,9 @@ async def withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> W
                     erase_after=erase_after,
                 )
             )
-            await withdraw_upload(tx, evidence_version_id=version_id, withdrawn_by=ctx.user_id)
+            await withdraw_upload(
+                tx, evidence_version_id=version_id, withdrawn_by=ctx.user_id, item_ids=items
+            )
             # Identifiers only: the Activity tab says the client withdrew an upload, never which.
             tx.record(
                 "evidence_version.withdrawn",
@@ -220,6 +280,8 @@ async def withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> W
                     request_item_id=item_id,
                 )
             )
+    except IntegrityError:  # a concurrent withdrawal committed first: as if it never existed
+        raise NotFound("evidence_version") from None
     except DBAPIError as exc:  # the database decided a race with an accept (0144's guard)
         if "evidence_accepted" in str(exc.orig):
             raise EvidenceAccepted from None
@@ -274,29 +336,48 @@ async def erase_withdrawn(tenant_id: UUID, version_id: UUID) -> int:
     if version_id in held:
         await _block(tenant, version_id, at, "legal_hold")
         return int(RETRY.total_seconds())
+    # The database decides again, in one transaction, under the version's lock (DEC-299): the
+    # window by `abacus_now()` and any hold, so a hold placed since the check above still wins.
+    blocked = False
     async with uow(tenant) as tx:
-        destroyed = (
+        status = (
             await tx.session.execute(
                 text("SELECT evidence_key_destroy(:version)"), {"version": version_id}
             )
         ).scalar_one()
-        await tx.session.execute(
-            update(EvidenceWithdrawal)
-            .where(EvidenceWithdrawal.evidence_version_id == version_id)
-            .values(erased_at=at)
-        )
-        # The ciphertext stays under its Object Lock retention, unreadable (RB-13's wording).
-        tx.record(
-            "evidence_withdrawal.erased",
-            target=Target("evidence_version", version_id),
-            after=Ref(key_destroyed=int(bool(destroyed))),
-        )
-        tx.emit(
-            EvidenceWithdrawalErased(
-                engagement_id=withdrawal.engagement_id, evidence_version_id=version_id
+        if status == "held":
+            blocked = True
+            await tx.session.execute(
+                update(EvidenceWithdrawal)
+                .where(EvidenceWithdrawal.evidence_version_id == version_id)
+                .values(erase_blocked_at=at, block_reason="legal_hold")
             )
-        )
-    return 0
+            tx.record(
+                "evidence_withdrawal.erase_blocked",
+                target=Target("evidence_version", version_id),
+                after=Ref(held=1),
+            )
+        elif status in ("destroyed", "gone"):
+            await tx.session.execute(
+                update(EvidenceWithdrawal)
+                .where(EvidenceWithdrawal.evidence_version_id == version_id)
+                .values(erased_at=at)
+            )
+            # The ciphertext stays under its Object Lock retention, unreadable (RB-13's
+            # wording); everything derived from the content went with the key (DEC-299).
+            tx.record(
+                "evidence_withdrawal.erased",
+                target=Target("evidence_version", version_id),
+                after=Ref(key_destroyed=int(status == "destroyed")),
+            )
+            tx.emit(
+                EvidenceWithdrawalErased(
+                    engagement_id=withdrawal.engagement_id, evidence_version_id=version_id
+                )
+            )
+    if status == "not_due":  # the business clocks disagree: ask again in a day
+        return int(RETRY.total_seconds())
+    return int(RETRY.total_seconds()) if blocked else 0
 
 
 @activity.defn(name="evidence_withdrawal.erase")
@@ -337,3 +418,18 @@ async def is_version_withdrawn(tenant: TenantContext, version_id: UUID) -> bool:
     in-flight run records nothing for it (ADR-162 §4)."""
     async with tenant_session(tenant) as session:
         return await is_withdrawn(session, version_id)
+
+
+async def withdrawn_among(tenant: TenantContext, version_ids: Sequence[UUID]) -> frozenset[UUID]:
+    """Which of these versions the client withdrew: other modules' reads of what they derived
+    from a version (screening results, upload reviews) leave those out (ADR-162 §4)."""
+    ids = list(dict.fromkeys(version_ids))
+    if not ids:
+        return frozenset()
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            select(EvidenceWithdrawal.evidence_version_id).where(
+                EvidenceWithdrawal.evidence_version_id.in_(ids)
+            )
+        )
+        return frozenset(found.scalars().all())

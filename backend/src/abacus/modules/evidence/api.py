@@ -123,7 +123,7 @@ from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATH
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
-from abacus.modules.evidence.withdrawals import is_version_withdrawn
+from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
 from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
@@ -281,6 +281,7 @@ __all__ = [
     "undo_review_decision",
     "upload",
     "version_view",
+    "withdrawn_among",
     "worth_matching",
 ]
 

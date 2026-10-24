@@ -70,6 +70,7 @@ from abacus.modules.evidence.api import (
     is_version_withdrawn,
     read_content,
     version_view,
+    withdrawn_among,
 )
 from abacus.modules.identity.api import (
     AgentContext,
@@ -454,6 +455,9 @@ async def screening_results_for(
     await authorise(ctx, "evidence.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         rows = await latest_results(session, ctx, engagement_id)
+    # P-06-T19 (ADR-162 §4): nothing derived from a withdrawn upload reaches the firm.
+    hidden = await withdrawn_among(ctx.tenant, [r.evidence_version_id for r in rows])
+    rows = [r for r in rows if r.evidence_version_id not in hidden]
     if rows:
         # Results quote evidence content (cells, values): their reads are audited like
         # `evidence_version.read` (ADR-104; security review, TASK-012).

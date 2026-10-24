@@ -115,6 +115,7 @@ Codes are reserved for the implementing tasks; they enter `docs/architecture/err
 | 409 | `{"detail": "evidence_accepted"}` | withdraw an ever-accepted version |
 | 403 | `{"detail": "not_your_upload"}` | a contributor withdraws someone else's upload |
 | 409 | `{"detail": "evidence_not_withdrawable"}` | withdraw a version that is not a client's detached-key upload (a firm upload, ADR-162 §8) |
+| 409 | `{"detail": "legal_hold_active"}` | withdraw a version a legal hold covers: refused and audited, nothing written (DEC-299) |
 | 422 | `{"detail": "idempotency_key_reused"}` | the same key with a different body (P-06-T06) |
 
 ## 7. Audit and outbox events

@@ -270,14 +270,33 @@ def upgrade() -> None:
         "FOR EACH ROW EXECUTE FUNCTION review_decisions_retain_key()"
     )
 
-    # The crypto-erase (ADR-162 §5, §7): from the purge's system session only, for a withdrawn
-    # version whose key was never retained. True when this call destroyed the key.
+    # Erasing seals the trust kit's content columns of the version (DEC-299): the update guard of
+    # `pii_regions` and `citations` stands aside only for the table owner (the erase definer)
+    # while `abacus.erasing` is on; deletes and every other table stay refused as in 0109.
+    for table in _SEALABLE:
+        op.execute(f"DROP TRIGGER {table}_immutable ON {table}")
+        op.execute(
+            f"CREATE TRIGGER {table}_immutable BEFORE DELETE ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION trust_kit_immutable()"
+        )
+        op.execute(
+            f"CREATE TRIGGER {table}_immutable_update BEFORE UPDATE ON {table} FOR EACH ROW "
+            f"WHEN ({_NOT_ERASING}) EXECUTE FUNCTION trust_kit_immutable()"
+        )
+    # The crypto-erase (ADR-162 §5, §7; DEC-299): from the purge's system session only, for a
+    # withdrawn version past its window that no hold covers, under the lock a hold placement
+    # takes (its `hold_objects` insert holds KEY SHARE on the version row: FOR UPDATE waits for
+    # it, and a later placement waits for the erase). Then everything derived from the content
+    # goes too; the audit trail keeps only that the erase happened. Answers `destroyed`, `gone`
+    # (already destroyed), `not_due` or `held`; nothing changes unless `destroyed`.
     op.execute(
         """
-        CREATE FUNCTION evidence_key_destroy(p_version_id uuid) RETURNS boolean
+        CREATE FUNCTION evidence_key_destroy(p_version_id uuid) RETURNS text
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
         DECLARE
             v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
+            v_withdrawal public.evidence_withdrawals%ROWTYPE;
+            v_client uuid;
         BEGIN
             IF v_tenant IS NULL
                OR current_setting('app.actor_kind', true) IS DISTINCT FROM 'system'
@@ -286,23 +305,83 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'only the withdrawal purge destroys a key (ADR-162)'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            IF NOT EXISTS (
-                SELECT 1 FROM public.evidence_withdrawals
-                 WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id
-            ) THEN
+            SELECT * INTO v_withdrawal FROM public.evidence_withdrawals
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id FOR UPDATE;
+            IF NOT FOUND THEN
                 RAISE EXCEPTION 'only a withdrawn version''s key is destroyed (ADR-162)'
                     USING ERRCODE = 'check_violation';
+            END IF;
+            IF v_withdrawal.erase_after > public.abacus_now() THEN
+                RETURN 'not_due';
+            END IF;
+            PERFORM 1 FROM public.evidence_versions
+             WHERE tenant_id = v_tenant AND id = p_version_id FOR UPDATE;
+            SELECT client_id INTO v_client FROM public.engagements
+             WHERE tenant_id = v_tenant AND id = v_withdrawal.engagement_id;
+            IF EXISTS (
+                SELECT 1 FROM public.hold_objects
+                 WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id
+                   AND released_at IS NULL
+            ) OR EXISTS (
+                -- An open hold over the engagement or its client (a tax-year scope counts:
+                -- fail closed rather than read the year here).
+                SELECT 1 FROM public.legal_holds h
+                 WHERE h.tenant_id = v_tenant AND h.status IN ('applying', 'active')
+                   AND (h.engagement_id = v_withdrawal.engagement_id
+                        OR (h.scope_kind NOT IN ('engagement', 'work_item')
+                            AND h.client_id = v_client))
+            ) THEN
+                RETURN 'held';
             END IF;
             UPDATE public.evidence_object_keys
                SET wrapped_key = NULL, destroyed_at = clock_timestamp()
              WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id
                AND retained_at IS NULL AND destroyed_at IS NULL;
-            RETURN FOUND;
+            IF NOT FOUND THEN
+                RETURN 'gone';
+            END IF;
+            -- Derived records (ADR-162 §6, DEC-299): rebuilt from nothing, so deleted or sealed.
+            DELETE FROM public.upload_preview_pages p USING public.upload_previews v
+             WHERE p.tenant_id = v_tenant AND v.tenant_id = v_tenant AND p.preview_id = v.id
+               AND v.evidence_version_id = p_version_id;
+            DELETE FROM public.upload_previews
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id;
+            DELETE FROM public.upload_checks
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id;
+            DELETE FROM public.upload_extractions
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id;
+            DELETE FROM public.statement_transactions t USING public.statement_datasets d
+             WHERE t.tenant_id = v_tenant AND d.tenant_id = v_tenant AND t.dataset_id = d.id
+               AND d.evidence_version_id = p_version_id;
+            DELETE FROM public.statement_datasets
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id;
+            UPDATE public.screening_results
+               SET rationale = 'erased', citations = '[]'::jsonb, unverified = '[]'::jsonb
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id;
+            UPDATE public.upload_review_flags f
+               SET rationale = 'erased', citations = '[]'::jsonb
+              FROM public.upload_reviews r
+             WHERE f.tenant_id = v_tenant AND r.tenant_id = v_tenant AND f.review_id = r.id
+               AND r.evidence_version_id = p_version_id;
+            PERFORM set_config('abacus.erasing', 'on', true);
+            UPDATE public.pii_regions SET last4 = NULL, value_sealed = ''::bytea
+             WHERE tenant_id = v_tenant AND evidence_version_id = p_version_id;
+            UPDATE public.citations SET value_text = NULL, quote_sha256 = NULL
+             WHERE tenant_id = v_tenant AND source_type = 'evidence_version'
+               AND source_id = p_version_id;
+            PERFORM set_config('abacus.erasing', '', true);
+            RETURN 'destroyed';
         END $$
         """
     )
     op.execute("REVOKE ALL ON FUNCTION evidence_key_destroy(uuid) FROM PUBLIC")
     op.execute("GRANT EXECUTE ON FUNCTION evidence_key_destroy(uuid) TO abacus_app")
+
+
+_SEALABLE = ("pii_regions", "citations")
+_NOT_ERASING = (
+    "NOT (current_setting('abacus.erasing', true) = 'on' AND current_user = 'abacus_owner')"
+)
 
 
 def downgrade() -> None:
@@ -321,6 +400,13 @@ def downgrade() -> None:
     )
     op.execute("ALTER TABLE evidence_versions FORCE ROW LEVEL SECURITY")
     op.execute("DROP FUNCTION evidence_key_destroy(uuid)")
+    for table in _SEALABLE:  # 0109's single guard
+        op.execute(f"DROP TRIGGER {table}_immutable_update ON {table}")
+        op.execute(f"DROP TRIGGER {table}_immutable ON {table}")
+        op.execute(
+            f"CREATE TRIGGER {table}_immutable BEFORE UPDATE OR DELETE ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION trust_kit_immutable()"
+        )
     op.execute("DROP TRIGGER review_decisions_retain_key ON review_decisions")
     op.execute("DROP FUNCTION review_decisions_retain_key()")
     op.execute("DROP TABLE evidence_withdrawals")

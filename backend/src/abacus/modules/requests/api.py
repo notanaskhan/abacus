@@ -57,6 +57,7 @@ from abacus.modules.requests.service import (
     reopen_after_undo,
     request_items_for,
     review_targets,
+    upload_item_of,
     withdraw_upload,
 )
 
@@ -139,5 +140,6 @@ __all__ = [
     "request_items_for",
     "review_targets",
     "router",
+    "upload_item_of",
     "withdraw_upload",
 ]

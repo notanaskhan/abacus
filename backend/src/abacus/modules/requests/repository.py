@@ -266,8 +266,32 @@ async def insert_fulfilment(
     ).scalar_one_or_none()
 
 
+async def upload_link(
+    session: AsyncSession, evidence_version_id: UUID, uploader: str
+) -> UUID | None:
+    """The item an upload was made to: the version's earliest live fulfilment its uploader made
+    by hand (`fulfil_by_upload`), for a caller that authorised on the version."""
+    return (
+        await session.execute(
+            select(Fulfilment.request_item_id)
+            .where(
+                Fulfilment.evidence_version_id == evidence_version_id,
+                Fulfilment.created_by_kind == "human",
+                Fulfilment.created_by_id == uploader,
+                live_fulfilment(),
+            )
+            .order_by(Fulfilment.created_at, Fulfilment.id)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
 async def void_fulfilments(
-    session: AsyncSession, *, evidence_version_id: UUID, withdrawn_by: UUID
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID,
+    withdrawn_by: UUID,
+    item_ids: Sequence[UUID],
 ) -> list[tuple[UUID, UUID]]:
     """P-06-T19: record every live fulfilment of the withdrawn version as voided; returns
     (fulfilment, item) pairs, for a caller that authorised `evidence.withdraw` on the version
@@ -275,7 +299,9 @@ async def void_fulfilments(
     rows = (
         await session.execute(
             select(Fulfilment).where(
-                Fulfilment.evidence_version_id == evidence_version_id, live_fulfilment()
+                Fulfilment.evidence_version_id == evidence_version_id,
+                Fulfilment.request_item_id.in_(list(item_ids)),
+                live_fulfilment(),
             )
         )
     ).scalars()

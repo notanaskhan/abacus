@@ -8,7 +8,7 @@ from datetime import date, datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, exists, func, insert, select, text, update
+from sqlalchemy import ColumnElement, and_, exists, func, insert, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -148,6 +148,19 @@ def not_withdrawn() -> ColumnElement[bool]:
         select(EvidenceWithdrawal.evidence_version_id)
         .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
         .exists()
+    )
+
+
+def live_citation_source() -> ColumnElement[bool]:
+    """P-06-T19: a citation whose source is not a withdrawn version: its quote, value and box
+    never reach anyone once the client withdrew the file (ADR-162 §4)."""
+    return or_(
+        Citation.source_type != "evidence_version",
+        ~(
+            select(EvidenceWithdrawal.evidence_version_id)
+            .where(EvidenceWithdrawal.evidence_version_id == Citation.source_id)
+            .exists()
+        ),
     )
 
 
@@ -878,7 +891,14 @@ async def pages_of(
     """A source's word-layer pages by this extractor version, by page (none derived), for the
     system or a caller that authorised on the source (LIST_EXEMPT: one source's pages)."""
     source = (
-        EvidencePage.evidence_version_id == evidence_version_id
+        and_(
+            EvidencePage.evidence_version_id == evidence_version_id,
+            ~(
+                select(EvidenceWithdrawal.evidence_version_id)
+                .where(EvidenceWithdrawal.evidence_version_id == evidence_version_id)
+                .exists()
+            ),  # P-06-T19: a withdrawn version's word layer is never read
+        )
         if evidence_version_id is not None
         else EvidencePage.inbox_file_id == inbox_file_id
     )
@@ -1135,6 +1155,7 @@ async def verified_citations_into(
         visible(
             ctx, "evidence.read", cast(ColumnElement[UUID], Citation.engagement_id.expression)
         ),
+        live_citation_source(),
     )
     if match_ids is not None:
         stmt = stmt.where(Citation.match_id.in_(list(match_ids)))

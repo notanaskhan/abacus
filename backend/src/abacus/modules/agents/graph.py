@@ -23,7 +23,7 @@ from abacus.modules.engagements.api import (
     get_ref,
     version_detail,
 )
-from abacus.modules.evidence.api import engagement_snapshots
+from abacus.modules.evidence.api import engagement_snapshots, withdrawn_among
 from abacus.modules.identity.api import AuthContext, authorise
 from abacus.modules.ledger.api import SnapshotView, snapshot_view
 from abacus.modules.requests.api import request_items_for
@@ -91,6 +91,8 @@ async def engagement_graph(ctx: AuthContext, engagement_id: UUID) -> EngagementG
             r.evidence_version_id: r.action
             for r in await latest_results(session, ctx, engagement_id)
         }
+    hidden = await withdrawn_among(ctx.tenant, list(actions))  # P-06-T19 (ADR-162 §4)
+    actions = {v: a for v, a in actions.items() if v not in hidden}
     methodology = (
         await version_detail(ctx.tenant, ref.methodology_version_id)
         if ref.methodology_version_id is not None

@@ -199,3 +199,137 @@ def test_heic_is_kept_not_extracted_with_a_reason_and_not_previewed() -> None:
 
 def test_xlsx_is_still_extracted_by_its_name() -> None:
     assert allowed_type(_zip("[Content_Types].xml", "xl/workbook.xml"), "a.xlsx") == XLSX
+
+
+# --- security review (DEC-299): fail closed, more forms, bounded, Office packages ---------------
+
+
+def _objstm(
+    body: bytes, header: bytes = b"/Filter /FlateDecode", length: bytes | None = None
+) -> bytes:
+    size = length if length is not None else str(len(body)).encode()
+    return (
+        b"%PDF-1.5\n4 0 obj\n<< /Type /ObjStm /N 1 /First 4 "
+        + header
+        + b" /Length "
+        + size
+        + b" >>\nstream\n"
+        + body
+        + b"\nendstream\nendobj\n%%EOF\n"
+    )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        _objstm(b"3c3c202f4a53203e3e", b"/Filter /ASCIIHexDecode"),  # a filter it doesn't decode
+        _objstm(b"<~...~>", b"/Filter /ASCII85Decode"),
+        _objstm(b"\x80\x0b", b"/Filter /LZWDecode"),
+        _objstm(zlib.compress(b"x"), b"/Filter [/FlateDecode /ASCIIHexDecode]"),  # a chain
+        _objstm(zlib.compress(b"x"), b"/Filter /FlateDecode /DecodeParms << /Predictor 12 >>"),
+        _objstm(b"not deflate data", b"/Filter /FlateDecode"),  # decompression error
+        _objstm(zlib.compress(b"x"), length=b"9 0 R"),  # an indirect length
+        _objstm(zlib.compress(b"x") + b"endstream junk", length=b"3"),  # a length that lies
+        b"%PDF-1.5\n4 0 obj << /Foo (obj) /Type /ObjStm /Filter /LZWDecode /Length 2 >>\n"
+        b"stream\nab\nendstream\n",  # `(obj)` before /ObjStm
+        b"%PDF-1.5\n4 0 obj << /Foo (an unterminated string /Type /ObjStm >>\nstream\n",
+    ],
+)
+def test_dec299_an_object_stream_it_cannot_fully_decode_is_flagged(content: bytes) -> None:
+    assert markers(content) == ("unscannable",)
+
+
+def test_dec299_too_many_object_streams_is_flagged_and_bounded_in_time() -> None:
+    import time
+
+    one = _objstm(zlib.compress(b"<< /Type /Font >>"))[len(b"%PDF-1.5\n") :]
+    content = b"%PDF-1.5\n" + one * 3000
+    started = time.monotonic()
+    assert markers(content) == ("unscannable",)
+    assert time.monotonic() - started < 5
+
+
+@pytest.mark.parametrize(
+    ("content", "found"),
+    [
+        (b"%PDF-1.7\n1 0 obj << /S /javascript >> endobj", "javascript"),  # case
+        (b"%PDF-1.7\n1 0 obj << /XFA 3 0 R >> endobj", "xfa_form"),
+        (b"%PDF-1.7\n1 0 obj << /Subtype /RichMedia >> endobj", "rich_media"),
+        (b"%PDF-1.7\n1 0 obj << /S /GoToE /T << /R /C >> >> endobj", "goto_embedded"),
+        (b"%PDF-1.7\n1 0 obj << /S /SubmitForm /F (x) >> endobj", "submit_form"),
+        (b"%PDF-1.7\n1 0 obj << /S /ImportData >> endobj", "import_data"),
+        (
+            b"%PDF-1.7\n1 0 obj << /Subtype /FileAttachment "
+            b"/FS << /EF << /F 4 0 R >> >> >> endobj",
+            "embedded_file",
+        ),
+        (b"%PDF-1.7\n1 0 obj << /S /L#61unch >> endobj", "launch_action"),
+    ],
+)
+def test_dec299_more_forms_of_active_content_are_found(content: bytes, found: str) -> None:
+    assert reason_of(content) == found
+
+
+def test_dec299_a_scan_that_dies_or_overruns_is_flagged(monkeypatch: pytest.MonkeyPatch) -> None:
+    from abacus.kernel.isolation import IsolationFailed
+    from abacus.modules.evidence import uploads
+
+    def dies(*_args: object, **_kwargs: object) -> object:
+        raise IsolationFailed
+
+    monkeypatch.setattr(uploads, "run_isolated_with", dies)
+    assert uploads.active_content_of(bank_statement_pdf()) == "unscannable"
+
+
+def _office(main: str, parts: list[tuple[str, bytes]], types: bytes = b"") -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as package:
+        package.writestr(
+            "[Content_Types].xml",
+            b'<?xml version="1.0"?><Types><Override PartName="/x" ContentType="'
+            + (types or b"application/xml")
+            + b'"/></Types>',
+        )
+        package.writestr(main, "<x/>")
+        for name, data in parts:
+            package.writestr(name, data)
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        (
+            _office(
+                "xl/workbook.xml", [], b"application/vnd.ms-excel.sheet.macroEnabled.main+xml"
+            ),
+            XLSM,
+        ),
+        (_office("xl/workbook.xml", [("XL/VBAPROJECT.BIN", b"\xd0\xcf")]), XLSM),  # any case
+        (_office("xl/workbook.xml", [("xl/macrosheets/sheet1.xml", b"<x/>")]), XLSM),
+        (_office("word/document.xml", [("word/activeX/activeX1.xml", b"<x/>")]), DOCM),
+        (_office("word/document.xml", [("word/embeddings/oleObject1.bin", b"\xd0")]), DOCM),
+        (
+            _office(
+                "word/document.xml",
+                [
+                    (
+                        "word/_rels/settings.xml.rels",
+                        b'<Relationships><Relationship Id="r1" Target="http://x.invalid/t.dotm" '
+                        b'TargetMode="External"/></Relationships>',
+                    )
+                ],
+            ),
+            DOCM,  # a remote template
+        ),
+        (_office("xl/workbook.xml", []), XLSX),  # the control
+        (
+            _office("word/document.xml", []),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ),
+    ],
+)
+def test_dec299_office_packages_with_code_or_external_links_are_macro_enabled(
+    content: bytes, expected: str
+) -> None:
+    assert sniff(content) == expected

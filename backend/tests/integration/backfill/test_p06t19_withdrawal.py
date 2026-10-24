@@ -161,6 +161,9 @@ class Firm:
 @pytest.fixture
 async def firm(net: Net, seed: Seeder) -> Firm:
     tenant_id = await seed.firm()
+    # A synthetic firm: the business clock (`frozen`) reaches the erase definer's
+    # `abacus_now()` (F-04.3; DEC-299).
+    await seed.run("UPDATE firms SET synthetic = true WHERE tenant_id = $1", tenant_id)
     for flag in ("uploads.processing", "evidence.withdrawal", "evidence.viewer_v1"):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
