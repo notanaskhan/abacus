@@ -442,6 +442,49 @@ export const STATUS_REGISTRY = {
       "disc": "triangle_amber"
     }
   },
+  "engagement_export": {
+    "queued": {
+      "label": "Queued",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "packaging": {
+      "label": "Packaging…",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "sheet": "Download · {n} files · {size} · expires {date}"
+      }
+    },
+    "failed": {
+      "label": "Export failed",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false,
+      "disc": "x_brick"
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "undone": {
+      "label": "Undone",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "program_board": {
     "not_started": {
       "label": "Not started",

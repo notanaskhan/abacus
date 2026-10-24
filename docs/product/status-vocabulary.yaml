@@ -121,6 +121,16 @@ objects:
       failed:             {label: "Failed — see run", variant: null, disc: x_brick, terminal: false, derived: false}
       changed_after_signoff: {label: "Changed after sign-off", variant: null, disc: triangle_amber, terminal: false, derived: false}   # sign-off chip struck
 
+  engagement_export:   # binder export package (ADR-036; A-01-T01, DF-31 "export"); the O3 export sheet, AUD-02 / AUD-03
+    source: "DF-31; A-01 §3.6, §4.2"
+    codes:
+      queued:    {label: "Queued", variant: neutral, terminal: false, derived: false}   # inside the 10-s Undo window (not_before)
+      packaging: {label: "Packaging…", variant: state, disc: spinner, terminal: false, derived: false}
+      ready:     {label: "Ready", variant: green-tint, terminal: false, derived: false, context_labels: {sheet: "Download · {n} files · {size} · expires {date}"}}
+      failed:    {label: "Export failed", variant: red-tint, disc: x_brick, terminal: true, derived: false}
+      expired:   {label: "Expired", variant: soon, terminal: true, derived: false}   # 7 days on kernel.clock, or voided on withdrawal
+      undone:    {label: "Undone", variant: muted, terminal: true, derived: false}   # Undo inside the 10-s window
+
   program_board:   # audit programs on the Board
     source: "addendum 3.2; gap 6.5"
     codes:
