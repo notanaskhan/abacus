@@ -150,6 +150,8 @@ def source_of(claim: CitationClaim) -> tuple[str, UUID]:
         named = claim.locator.get("record_type")
         if isinstance(named, str) and named.isidentifier() and named.islower():
             source_type = named[:40]
+    if claim.kind in ("document_text", "sheet_cell") and claim.locator.get("inbox_file_id"):
+        source_type, field_name = "inbox_file", "inbox_file_id"  # the matcher's (DEC-267)
     raw = claim.locator.get(field_name)
     try:
         return source_type, UUID(str(raw)) if raw is not None else NIL

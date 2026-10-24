@@ -4,7 +4,7 @@ title: Persist screener, upload-reviewer and matcher citations as v2 rows throug
 spec: SPEC-322
 acceptance_criteria: [AC-1, AC-38]
 risk_zone: red
-status: in-progress
+status: done
 epic: P-03
 plan_key: P-03-T10
 branch: s7-p03-viewer
@@ -28,6 +28,7 @@ updated: 2026-10-24
 
 ## Progress log
 - 2026-10-24: plan written.
+- 2026-10-24: built. `agents/v2_citations.py` maps the claims; the three handoffs call it inside their unit of work. `sheet_cell` also takes an inbox file (the matcher cites spreadsheet cells too). Tests written first: `tests/integration/trust_kit/test_agent_citations_v2.py` (5), `tests/unit/agents/test_v2_citations.py` (3), and a new screening test that each cited cell is a v2 row. `test_ac14_screen_records_model_called_and_screening_result_created_by_the_agent` pinned the exact audit sequence; it now expects one `citation.created` per cited cell (strengthened, not weakened: still exact, still every event the agent's). The reviewer and matcher have no end-to-end integration suite (their `create_*_run` need a real model route), so their wiring is covered at the `record_agent_citations` level and by the existing unit suites (475 pass). `make evals` not run.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

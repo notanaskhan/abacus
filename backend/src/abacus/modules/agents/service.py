@@ -62,6 +62,7 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.agents.spec import declared, spec
 from abacus.modules.agents.stages import starts_in_shadow
+from abacus.modules.agents.v2_citations import cell_claims, record_agent_citations
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import Proposal, read_content, version_view
 from abacus.modules.identity.api import (
@@ -396,6 +397,15 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
                 "citations": [_sanitised(c.model_dump()) for c in checked],
                 "unverified": [sanitise_text(u) for u in unverified],
             },
+        )
+        # P-03-T10: each cited cell as a v2 row, verified by evidence's code (DEC-267).
+        await record_agent_citations(
+            tx,
+            agent,
+            anchor_type="screening_result",
+            anchor_id=result_id,
+            ref=None,
+            claims=cell_claims(version.id, output.citations),
         )
         await finish_run(
             tx.session,
