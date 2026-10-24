@@ -73,6 +73,13 @@ class DomainForbidden(_Coded):
     code: ClassVar[str] = "forbidden"
 
 
+class DomainRateLimited(_Coded):
+    """Too many of these in a rolling window: 429 with the class's fixed `code`, identifier-only
+    facts (`limit`, `retry_after` in seconds) and a `Retry-After` header (DEC-227)."""
+
+    code: ClassVar[str] = "rate_limited"
+
+
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""
 

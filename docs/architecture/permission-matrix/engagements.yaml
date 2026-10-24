@@ -5,9 +5,10 @@ actions:
   methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
   methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, agent: task_scope}   # SPEC-008; agent: the guidance drafter on a template, firm-level (TASK-074 D1)
   # --- Engagements ---
-  # P-07-T05 (DEC-143): agent and system denied (I-AGENT-NEVER). DEC-38's partner, manager and
-  # senior-by-setting cells land with the live wizard (P-07-T16) the DEC-132 way.
-  engagement.create:        {firm_admin: allow, practice_leader: allow, agent: deny, system: deny}
+  # P-07-T05 (DEC-143): agent and system denied (I-AGENT-NEVER). P-07-T16 (DEC-225): DEC-38's
+  # partner cell lands with the live wizard as the derived `firm_partner` (DEC-132); the manager
+  # and senior-by-setting cells wait for a derived firm-level grant (DEC-141's pattern).
+  engagement.create:        {firm_admin: allow, practice_leader: allow, firm_partner: allow, agent: deny, system: deny}
   roll_forward.read:        {firm_admin: allow, practice_leader: allow}   # SPEC-025 (TASK-048 D3): last year's team, template and items, checked on that engagement
   engagement.ai_exclude:    {engagement_partner: allow}   # SPEC-036 (TASK-076): switch AI off for one engagement
   # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ---

@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md`; an additive C1 v1.1 note to `work-items.md` (P-07 §8.1) |
 | Version | v2 of the engagement surfaces (C1 stays v1; these are additive operations and models) |
-| Status | stub (P-07-T05, 2026-10-23) |
+| Status | live (P-07-T15, P-07-T16, 2026-10-24) except start-acceptance (stub until P-07-T35, DEC-225) |
 | Provider epic | P-07 (`engagements`) |
 | Consumers | ENG-01, ENG-02, ENG-03 (P-07-T20, T21, T27, T28); CLI-02's Engagements tab; fixtures P-07-T11; A-01 (AUD-02 hangs off ENG-02 and its gates); N-02 (`acceptance_decided_at`, the G3 swap); T-02 and C-01 (tax and CAS through ENG-03) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on an engagements index on the P-36 envelope whose status tiles (`counts`, minus the selected tile) and service-line segments (`facets.service_line`) come from one grouped query over the same `visible()` predicate and sum to `total`; a record projection with rail bands, contacts, letter summary, gates, tab counts and a read-only reason; the gates on their own; an interim recorded letter that enforces the G1 date rule; a selectable engagement-type catalogue that never contains single audit; and wizard drafts with per-step validation, "Start acceptance" and a one-unit-of-work create.
 
-**Stub behaviour.** With `engagements.v2` off every route below answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-07-T15 (index, record, gates, recorded letter), P-07-T16 (catalogue, drafts, start-acceptance, create). No fixtures yet (P-07-T11).
+**Stub behaviour.** With `engagements.v2` off every route below answers 404. With it on, the index, record, gates and recorded letter are live (P-07-T15, DEC-224); the catalogue, drafts, validation and create are live (P-07-T16, DEC-225); start-acceptance answers 501 `not_implemented` until the acceptance record lands (P-07-T35). No fixtures yet (P-07-T11).
 
 **Beside the live routes, not replacing them.** `GET /v1/engagements` (a plain `EngagementSummaryOut` list), `GET /v1/engagements/{id}` (C1's `EngagementOut`), `PUT /v1/engagements/{id}/letter` (SPEC-025's letter step), `POST /v1/engagements` and the team routes keep their paths and shapes. The v2 index is served at `/v1/engagements/index` and the record at `/v1/engagements/{id}/record`; P-07-T15 moves them to the plain paths when the v1 consumers are gone (a v1 to v2 change with one sprint of overlap, recorded in §10). `/index` is matched before the live `/{engagement_id}` because `engagements.api.ROUTERS` lists the v2 routers first; `test_ac14_the_v2_index_is_matched_before_the_live_record_route` holds that order. `PUT …/letter/record` becomes the interim recorded-letter route; the SPEC-025 `PUT …/letter` stays as an adapter until P-07-T59.
 
@@ -71,7 +71,10 @@ Code: `backend/src/abacus/modules/engagements/contract.py`. Tags: **C** confiden
 | 409 | `{"detail": "possible_duplicate", "facts": {"engagement_id": "…"}}` | create without `confirm_duplicate` when the same type and period exists |
 | 409 | `{"detail": "stale_version", "facts": {"draft_id": "…"}}` | autosave with an old `seen_version` |
 | 409 | `{"detail": "engagement_archived"}` | any write on an archived engagement (`archived_write: deny`) |
+| 409 | `{"detail": "letter_exceptions_off", "facts": {"engagement_id": "…"}}` | "Not required this year" while `allow_letter_exceptions` is unregistered (DEC-224) |
 | 422 | `{"detail": "unknown_engagement_type"}` | a draft or create naming a code outside the catalogue, `single_audit` included |
+| 422 | `{"detail": "draft_incomplete", "facts": {"step": "…", "draft_id": "…"}}` | create while a step still has a problem |
+| 422 | `{"detail": "entity_outside_client", "facts": {"client_entity_id": "…"}}` | a draft naming another client's entity |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |
@@ -82,7 +85,7 @@ Code: `backend/src/abacus/modules/engagements/contract.py`. Tags: **C** confiden
 | `gate.met` (outbox) | G1, G2 or the interim G3 becomes met | engagement id, gate |
 | `independence.requested` (exists) | create staffs a member | engagement id, user id |
 
-Draft autosaves are operational state, not audited.
+Drafts write `engagement_draft.started`, `engagement_draft.saved` (the version only) and `engagement_draft.discarded`: every unit of work audits (DEC-225).
 
 ## 8. Example payloads
 Brightwater Hale, synthetic; ids are placeholders.
@@ -108,4 +111,5 @@ Additive to C1 v1 (new operations and models; no C1 field changes). Moving the i
 
 ## 11. Open points
 - DEC-143: the paths beside the live routes; `client.intake` for start-acceptance (OQ-2); DEC-38's `engagement.create` cells and `gates_met(G1)` on `letter.record` land with the live routes; the catalogue as an 18-code enum; `type_code` checked by the server.
+- DEC-224 (P-07-T15): sort by the earliest open work-item due date; `period` current = not archived or declined; `letter=not_signed` excludes prospects; the interim letter's columns (0124); the plain-path move and the `engagements.work_items_api` retirement deferred.
 - The `next_due` windows (`past_due`, `within_7_days`, `within_30_days`) and `period` (`current`, `prior`, `all`) are the stub's reading of "Next due │ Any" and "Period │ Current"; P-07-T15 confirms them against the seed.

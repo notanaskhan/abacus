@@ -1,6 +1,11 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
 from abacus.modules.identity.api import AbacusRouter, register_office_list, register_settings_area
+from abacus.modules.organisations.contacts_contract import (
+    client_contacts_router,
+    contact_invitations_router,
+    contacts_router,
+)
 from abacus.modules.organisations.contract import client_entities_router, clients_router
 from abacus.modules.organisations.live import (
     NewRelationship,
@@ -53,11 +58,23 @@ from abacus.modules.organisations.slots import (
     register_open_requests,
     register_overview_section,
 )
+from abacus.modules.organisations.tin import (
+    MaskedTin,
+    TinConflict,
+    TinInvalid,
+    TinKindNotAllowed,
+    clear_tin,
+    mask_tin,
+    seal_tin,
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     clients_router,  # the clients family contract, v1 stub (P-07-T04)
     client_entities_router,
+    client_contacts_router,  # contacts and portal access, v1 stub (P-07-T17)
+    contacts_router,
+    contact_invitations_router,
     org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
 )
 
@@ -87,15 +104,20 @@ __all__ = [
     "EntityAttributes",
     "EntityChoice",
     "FirmName",
+    "MaskedTin",
     "NewClient",
     "NewContact",
     "NewRelationship",
     "OverviewItem",
     "OverviewSection",
     "SectionRows",
+    "TinConflict",
+    "TinInvalid",
+    "TinKindNotAllowed",
     "add_contact",
     "add_relationship",
     "attest_client_of",
+    "clear_tin",
     "client_exists",
     "client_name_column",
     "client_names",
@@ -107,11 +129,13 @@ __all__ = [
     "create_client",
     "find_clients",
     "firm_names",
+    "mask_tin",
     "normalise",
     "office_name_column",
     "register_client_engagements",
     "register_open_requests",
     "register_overview_section",
+    "seal_tin",
     "set_client_record",
     "set_entity_attributes",
 ]

@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` (P-07 owns no C-number; §8.1) |
 | Version | v1 |
-| Status | live except the TIN reveal (P-07-T08, T09, 2026-10-23); reveal stub until P-07-T10 |
+| Status | live (P-07-T08, T09, 2026-10-23; the TIN reveal P-07-T10, 2026-10-24) |
 | Provider epic | P-07 (`organisations`) |
 | Consumers | CLI-01, CLI-02 (P-07-T12, T19); fixtures P-07-T11; T-01 (CLI-05 TIN columns), T-06 (CLI-03 on `entity_relationships`), P-02 (the `client` search projection) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on a clients index on the P-36 envelope (`{items, next_cursor, total, total_capped, counts, facets}`), a client record with `allowed_actions` and `version`, a per-kind overview built from registered section providers, a relationship list, a PATCH for the four editable fields, and a TIN reveal that is a live person's act. Walls use 404 semantics: a walled client is absent from rows, counts, facets and totals and nothing anywhere says one is hidden (DEC-43). Taxpayer IDs are masked in every payload except the reveal response.
 
-**Flag and stub behaviour.** With `clients.v2` off every route below answers 404. With it on, the index (P-07-T08) and the record, overview, relationships and PATCH (P-07-T09) are live; the reveal answers 501 `not_implemented` until P-07-T10.
+**Flag and stub behaviour.** With `clients.v2` off every route below answers 404. With it on, the index (P-07-T08) and the record, overview, relationships and PATCH (P-07-T09) and the TIN reveal (P-07-T10) are live.
 
 **Where the facts come from (DEC-153).** Organisations owns the client record, entities, contacts and relationships. Each other fact is a query its owner registers (`organisations/slots.py`), and an unregistered one fails closed:
 - service lines, the active-engagements menu and the derived Manager and Preparer: engagements' open engagements (neither archived nor declined) and identity's engagement teams (Manager is `manager`; Preparer is `senior` or `staff`);
@@ -35,7 +35,7 @@ Matrix: `docs/architecture/permission-matrix/organisations.yaml` (`client.read` 
 | Overview (CLI-02 canvas) | `GET /v1/clients/{client_id}/overview` | `client.read` + each section's own read action | as the index; metadata-only roles get metadata sections (ADR-024) | **denied** |
 | Edit the record | `PATCH /v1/clients/{client_id}` | `client.update` | firm admin, partner (`firm_partner`); manager when live (DEC-141) | **denied** |
 | Relationships | `GET /v1/clients/{client_id}/relationships?cursor=` | `client.read` | as the index | **denied** |
-| Reveal a TIN | `POST /v1/client-entities/{entity_id}/tin/reveal` | `tin.reveal` | engagement partner, manager, EQR reviewer; `mfa_recent`, a reason; `not_offshore` and senior and staff preparers when live (P-07-T10, DEC-141) | **denied** |
+| Reveal a TIN | `POST /v1/client-entities/{entity_id}/tin/reveal` | `tin.reveal` | engagement partner, manager, EQR reviewer on one of the entity's client's open engagements; `mfa_recent`, a reason, `not_offshore`; senior and staff preparers deferred (DEC-141, DEC-223) | **denied** |
 
 Client roles (`client_admin`, `client_contributor`) hold none of these actions.
 
@@ -57,14 +57,18 @@ Code: `backend/src/abacus/modules/organisations/contract.py`. Tags: **R** restri
 `client` (P-07-T03): `prospect` Prospect · `active` Active · `inactive` Inactive · `former` Former. Portal rollup `invitation`: `not_invited` Not invited · `invited` Invited · `active` Active (the column carries no `locked` or `deactivated`). `engagement` for the active-engagements menu. Overview pills name their own object's codes.
 
 ## 5. Human-only actions
-`tin.reveal` and `client.update` deny `agent` and `system` at the matrix; the reveal route also requires a live human through `authorise` (agent and system principals have no role on a firm resource) and recent MFA. No database decision row exists for these; the reveal's record is its audit event.
+`tin.reveal` and `client.update` deny `agent` and `system` at the matrix; the reveal route also requires a live human through `authorise` (agent and system principals have no role on a firm resource) and recent MFA. The reveal also writes an insert-only `tin_reveals` row (`actor_kind = 'human'` CHECK, migration 0123) that the audit event points at: who, which entity, the engagement whose role allowed it, the reason code and the MFA time, never the value (DEC-223).
 
 ## 6. Errors
 | Status | Body | When |
 |---|---|---|
 | 404 | `{"detail": "not found"}` | `clients.v2` off; a walled or unknown client or entity |
-| 501 | `{"detail": "not_implemented"}` | the flag on, before the implementing task |
-| 403 | `{"detail": "forbidden"}` | no action; an offshore member or stale MFA on reveal |
+| 403 | `{"detail": "forbidden"}` | no action; an offshore member or no role on the client's open engagements on reveal |
+| 403 | `{"detail": "mfa_step_up_required", "facts": {"client_entity_id": "…"}}` | reveal: a role allows it but MFA is missing or older than 15 minutes; verify again and retry (DEC-227) |
+| 429 | `{"detail": "tin_reveal_rate_limited", "facts": {"limit": 20, "retry_after": 1234}}` + `Retry-After` | reveal: the person's 20 reveals in a rolling hour are used (DEC-227) |
+| 404 | `{"detail": "not found"}` | reveal: no TIN on file for the entity |
+| 409 | `{"detail": "tin_conflict"}` | `seal_tin` (no route yet): the TIN can't be stored for this entity; no facts, so nothing says where it is on file (DEC-227) |
+| 422 | `{"detail": "tin_kind_not_allowed", "facts": {"client_entity_id": "…"}}` | `seal_tin`: an SSN or ITIN on a firm that is not synthetic, until C19 |
 | 409 | `{"detail": "stale_version", "facts": {"client_id": "…"}}` | PATCH with an old `seen_version` |
 | 409 | `{"detail": "illegal_transition", "facts": {"client_id": "…"}}` | a person moves a prospect to active |
 | 422 | `{"detail": "cursor_invalid"}` | a cursor from another list, filter set or firm |
@@ -74,7 +78,7 @@ Code: `backend/src/abacus/modules/organisations/contract.py`. Tags: **R** restri
 | Event | Written when | Payload (no Restricted data) |
 |---|---|---|
 | `client.updated` (audit, outbox) | PATCH changes a field | client id, changed field names, actor |
-| `tin.revealed` (audit only) | a reveal succeeds | entity id, TIN kind, reason code, actor; never the value |
+| `tin.revealed` (audit only) | a reveal succeeds | target the entity, `after` the `tin_reveals` id (reason code there), scope the engagement, actor; never the value |
 
 Reads are not audited, except reveals.
 
@@ -108,5 +112,7 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | v1 | | | stub 2026-10-23 (P-07-T04); index, record, overview, relationships and PATCH live 2026-10-23 (P-07-T08, T09) |
 
 ## 11. Open points
+- DEC-227 (security review): a per-person cap of 20 reveals per rolling hour (429, audited `tin.reveal_throttled`, warning log, counter); `seal_tin` and `clear_tin` authorise `client.update` (or `client.intake`) on the entity's client first, walled 404; a generic `tin_conflict`; stale MFA answers `mfa_step_up_required`.
+- DEC-223 (P-07-T10): the reveal is authorised per open engagement of the client; the response is `Cache-Control: no-store`; 422 `tin_kind_not_allowed` and 409 `tin_conflict` come from `organisations.api.seal_tin` (intake, P-07-T42, is its first route); a counter counts reveals by reason; ADR-167's `pii_kind` flag waits for its acceptance.
 - DEC-141: `not_offshore` on the reveal and `firm_partner` on reads land with the live routes (a condition without its registered facts fails closed); the PATCH status change is nested (`status_change`) so that every status field in the document is a plain enum; the reveal reason codes; the manager and preparer paths added when live; the reveal response as the one plain-TIN payload.
 - The facet keys and the `last_activity_event_type` wording table are confirmed by P-07-T08 and P-07-T11.

@@ -25,6 +25,7 @@ TABLES: frozenset[str] = frozenset(
         "engagement_letters",
         "engagement_contacts",  # F-03-T25 (0082): designations (DEC-63)
         "advisory_projects",  # F-03-T22 (0089)
+        "engagement_drafts",  # P-07-T16 (0124): ENG-03's autosaved wizard, own scope
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -47,6 +48,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "advisory_projects": frozenset({"tenant_id", "work_item_id", "engagement_id", "name"}),
     "engagement_contacts": frozenset(  # F-03-T25 (0082)
         {"tenant_id", "engagement_id", "contact_id", "designation", "designated_by"}
+    ),
+    "engagement_drafts": frozenset(  # P-07-T16 (0124)
+        {"tenant_id", "created_by", "client_id", "client_entity_id", "type_code", "step"}
+        | {"payload"}
     ),
     "engagements": frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
@@ -96,6 +101,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "engagements": frozenset(
         {"status", "methodology_version_id"}  # SPEC-008: pinned once
         | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
+        | {"period_label"}  # P-07-T15 (0124); `version` is the trigger's, never the app's
     ),
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
     "independence_confirmations": frozenset(
@@ -107,5 +113,13 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
         | {"file_key", "file_version_id", "file_fingerprint", "file_size", "file_media_type"}
         | {"file_name"}
+        # P-07-T15 (0124): the interim recorded letter (G3 until C7)
+        | {"client_signed_on", "firm_signed_on", "client_signer_contact_id"}
+        | {"firm_signer_user_id", "signed_copy_version_id", "recorded_by_user_id"}
+    ),
+    "engagement_drafts": frozenset(  # P-07-T16 (0124): autosave, discard, create
+        {"client_id", "client_entity_id", "type_code", "step", "payload"}
+        | {"prospect_engagement_id", "created_engagement_id", "version", "saved_at"}
+        | {"discarded_at"}
     ),
 }

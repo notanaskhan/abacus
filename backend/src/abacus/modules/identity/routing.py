@@ -103,14 +103,15 @@ _RESPONSES: dict[int | str, dict[str, object]] = {
     422: {"model": ValidationErrorOut, "description": "Invalid request"},
 }
 # Further errors a route may declare (`errors=`): conflicts with the resource's state, and an
-# unavailable dependency (kernel.errors.DomainConflict, ServiceUnavailable), and a contract stub
-# not implemented yet (NotImplementedYet).
+# unavailable dependency (kernel.errors.DomainConflict, ServiceUnavailable), a rate limit
+# (DomainRateLimited, with `Retry-After`; DEC-227), and a contract stub not implemented yet
+# (NotImplementedYet).
 _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
     # P-08-T10 (SPEC-320 §6): the portal sign-in's answers.
     410: {"model": ErrorOut, "description": "Gone: the sign-in code expired or was used"},
     423: {"model": ErrorOut, "description": "Locked: too many wrong codes"},
-    429: {"model": ErrorOut, "description": "Too soon: wait before asking again"},
+    429: {"model": ErrorOut, "description": "Too soon or too many: retry after Retry-After"},
     501: {"model": ErrorOut, "description": "Contract stub: not implemented yet"},
     503: {"model": ErrorOut, "description": "Service unavailable"},
 }

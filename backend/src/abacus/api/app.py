@@ -33,6 +33,7 @@ from abacus.kernel.errors import (
     DomainConflict,
     DomainForbidden,
     DomainInvalid,
+    DomainRateLimited,
     NotFound,
     NotImplementedYet,
     ServiceUnavailable,
@@ -70,7 +71,9 @@ async def _not_found(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": "not found"}, status_code=404)
 
 
-def _coded(exc: DomainConflict | DomainInvalid | DomainForbidden) -> dict[str, object]:
+def _coded(
+    exc: DomainConflict | DomainInvalid | DomainForbidden | DomainRateLimited,
+) -> dict[str, object]:
     # The class's fixed code and its identifier-only facts (ADR-139): nothing from the request or
     # the database is echoed as text.
     body: dict[str, object] = {"detail": exc.code}
@@ -81,6 +84,13 @@ def _coded(exc: DomainConflict | DomainInvalid | DomainForbidden) -> dict[str, o
 
 async def _domain_forbidden(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(_coded(cast(DomainForbidden, exc)), status_code=403)
+
+
+async def _rate_limited(_request: Request, exc: Exception) -> JSONResponse:
+    limited = cast(DomainRateLimited, exc)
+    retry = limited.facts.get("retry_after")
+    headers = {"Retry-After": str(retry)} if isinstance(retry, int) else None
+    return JSONResponse(_coded(limited), status_code=429, headers=headers)
 
 
 async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
@@ -196,6 +206,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(NotFound, _not_found)
     app.add_exception_handler(DomainConflict, _conflict)
     app.add_exception_handler(DomainForbidden, _domain_forbidden)
+    app.add_exception_handler(DomainRateLimited, _rate_limited)
     app.add_exception_handler(DomainInvalid, _domain_invalid)
     app.add_exception_handler(ServiceUnavailable, _unavailable)
     app.add_exception_handler(NotImplementedYet, _not_implemented)

@@ -203,6 +203,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.draft_start.DraftAlreadyDecided
+  draft_incomplete:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.drafts.DraftIncomplete
+    summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
   drafted_guidance_not_allowed:
     status: 409
     raised_by:
@@ -242,8 +247,9 @@ codes:
   engagement_archived:
     status: 409
     raised_by:
+    - abacus.modules.engagements.record.EngagementArchived
     - abacus.modules.evidence.service.EngagementArchived
-    summary: 'Archived engagements are read-only (`archived_write: deny`).'
+    summary: 'The engagement is archived: it is read-only (`archived_write: deny`).'
   engagement_not_open:
     status: 409
     raised_by:
@@ -253,6 +259,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.service.EntityExists
     summary: 'The client already has an entity with this name: pick it instead.'
+  entity_outside_client:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.drafts.EntityOutsideClient
+    summary: The client entity is not one of the draft's client's entities.
   fieldwork_unavailable:
     status: 409
     raised_by:
@@ -290,7 +301,7 @@ codes:
   gate_unmet:
     status: 409
     raised_by:
-    - abacus.modules.engagements.contract.GateUnmet
+    - abacus.modules.engagements.record.GateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
@@ -367,6 +378,11 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.InvalidState
     summary: 'The state is unknown, someone else''s, already used or expired: nothing is created.'
+  invitation_expired:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contacts_contract.InvitationExpired
+    summary: 'The invitation link is older than 14 days: ask the firm to resend it.'
   invitation_invalid:
     status: 422
     raised_by:
@@ -376,6 +392,11 @@ codes:
     raised_by:
     - abacus.modules.identity.invitations.InvitationLimit
     summary: 50 invitations per engagement per day (SPEC-015 Q4).
+  invitation_used:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.contacts_contract.InvitationUsed
+    summary: 'The invitation link was already used: it works once.'
   item_closed:
     status: 409
     raised_by:
@@ -434,8 +455,14 @@ codes:
   letter_before_acceptance:
     status: 409
     raised_by:
-    - abacus.modules.engagements.contract.LetterBeforeAcceptance
+    - abacus.modules.engagements.record.LetterBeforeAcceptance
     summary: The letter's date is before the acceptance decision (G1 < letter, R-06).
+  letter_exceptions_off:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.record.LetterExceptionsOff
+    summary: '"Not required this year" needs the engagement partner and the firm setting `allow_letter_exceptions`
+      on.'
   letter_missing:
     status: 409
     raised_by:
@@ -767,6 +794,11 @@ codes:
     - abacus.modules.fieldwork.workpapers.SampleNotApproved
     summary: 'SPEC-040 AC-3: a manager or the partner approves the sample before anyone tests it, asks
       the client for support, or signs a row.'
+  scope_outside_client:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
+    summary: A grant's scope, or a delegated request, is not the contact's client's.
   setting_invalid:
     status: 422
     raised_by:
@@ -815,7 +847,7 @@ codes:
   stale_version:
     status: 409
     raised_by:
-    - abacus.modules.engagements.contract.DraftStaleVersion
+    - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
@@ -893,6 +925,23 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckStale
+  tin_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.tin.TinConflict
+    summary: 'This taxpayer ID can''t be stored for this entity. Generic on purpose: it never says which
+      entity, or whose client, holds it (DEC-232).'
+  tin_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.tin.TinInvalid
+    summary: A taxpayer ID is nine digits (dashes and spaces aside), and not all zeros.
+  tin_kind_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.tin.TinKindNotAllowed
+    summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
+      (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
   trial_balance_exists:
     status: 409
     raised_by:
@@ -910,7 +959,7 @@ codes:
   unknown_engagement_type:
     status: 422
     raised_by:
-    - abacus.modules.engagements.contract.UnknownEngagementType
+    - abacus.modules.engagements.drafts.UnknownEngagementType
     summary: The type is not in the engagement-type catalogue (single audit included, DEC-19).
   unknown_firm_setting:
     status: 422

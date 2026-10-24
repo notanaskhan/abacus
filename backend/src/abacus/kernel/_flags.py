@@ -31,6 +31,11 @@ COMPLIANCE_LEGAL_HOLDS = Flag(
     kind="boolean",
     default="false",
 )
+CONTACTS_V2 = Flag(
+    name="contacts.v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
     kind="boolean",
@@ -161,6 +166,7 @@ FLAGS: dict[str, Flag] = {
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
+    "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.v2": ENGAGEMENTS_V2,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,

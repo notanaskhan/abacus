@@ -16,7 +16,7 @@ import pytest
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import CLIENTS_V2
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.organisations import contract
@@ -58,9 +58,9 @@ def _granted(action: str) -> set[str]:
     return {r for r, d in RULES[action].decisions.items() if d != "deny"}
 
 
-# Live since P-07-T08 (the index) and P-07-T09 (record, overview, PATCH, relationships); the
-# reveal stays a stub until P-07-T10.
-STUBBED = {("post", "/v1/client-entities/{entity_id}/tin/reveal")}
+# Live since P-07-T08 (the index), P-07-T09 (record, overview, PATCH, relationships) and P-07-T10
+# (the reveal): no route here is a stub any more.
+STUBBED: set[tuple[str, str]] = set()
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
@@ -124,7 +124,9 @@ def test_ac3_tin_reveal_is_a_live_person_with_mfa_and_a_reason() -> None:
     assert not _granted("tin.reveal") & CLIENT_ROLES
 
 
-async def test_ac4_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ac4_flag_off_is_404_and_flag_on_passes_the_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -140,11 +142,10 @@ async def test_ac4_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the stub gate
+        await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
     assert seen == [CLIENTS_V2]
     monkeypatch.setattr(contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the stub gate
+    await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
 
 
 def test_ac5_organisations_never_imports_the_model_gateway_or_agents() -> None:
