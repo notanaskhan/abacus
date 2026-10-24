@@ -22,6 +22,8 @@ import yaml
 BACKEND = Path(__file__).resolve().parents[3]
 SOURCE = BACKEND.parent / "docs" / "architecture" / "role-templates.yaml"
 TARGET = BACKEND / "src" / "abacus" / "modules" / "identity" / "_role_templates.py"
+# The same grid for the web app's fixtures and labels (ADM-02b).
+TS_TARGET = BACKEND.parent / "apps" / "web" / "src" / "app-core" / "roleTemplates.gen.ts"
 CELLS: Final = frozenset({"allow", "conditional", "delegated", "deny"})
 TEMPLATES: Final = (
     "partner",
@@ -113,17 +115,81 @@ def render(source: str) -> str:
     return "".join(lines)
 
 
+def render_ts(source: str) -> str:
+    """`roleTemplates.gen.ts`: the templates, the grid rows with their labels, and the agent's
+    locked row, as typed constants (the fixtures and ADM-02b's labels read them)."""
+    document = cast(dict[str, object], yaml.safe_load(source))
+    templates = cast(dict[str, dict[str, object]], document["templates"])
+    grid = cast(list[dict[str, object]], document["grid"])
+    agent = cast(dict[str, object], document["agent"])
+    body: dict[str, object] = {
+        "templates": {
+            name: {"levels": list(_strings(spec["levels"])), "firmRole": spec.get("firm_role")}
+            for name, spec in templates.items()
+        },
+        "grid": [
+            {
+                "key": row["key"],
+                "label": row["label"],
+                "actions": list(_strings(row.get("actions"))),
+                "cells": row["cells"],
+                "conditions": cast(dict[str, str], row.get("conditions") or {}),
+            }
+            for row in grid
+        ],
+        "agentLabel": agent["label"],
+        "agentNever": list(_strings(agent["never"])),
+    }
+    return (
+        "// GENERATED from docs/architecture/role-templates.yaml. Do not edit.\n"
+        "// Regenerate: python -m abacus_tools.codegen.role_templates\n"
+        "\n"
+        f"export const ROLE_TEMPLATES = {_ts(body, 0, 30)} as const;\n"
+    )
+
+
+_WIDTH = 80  # prettier's default print width (apps/web has no override)
+
+
+def _ts(value: object, indent: int, column: int) -> str:
+    """A TypeScript literal as prettier prints it: objects expanded, arrays inline when they fit
+    the line (`column` is where the value starts), trailing commas, double quotes."""
+    pad = " " * indent
+    if isinstance(value, dict):
+        items = cast(dict[str, object], value)
+        if not items:
+            return "{}"
+        lines = [
+            f"{pad}  {key}: {_ts(item, indent + 2, indent + 4 + len(key))},\n"
+            for key, item in items.items()
+        ]
+        return "{\n" + "".join(lines) + pad + "}"
+    if isinstance(value, list):
+        parts = [_ts(item, indent + 2, indent + 2) for item in cast(list[object], value)]
+        inline = "[" + ", ".join(parts) + "]"
+        if column + len(inline) + 1 <= _WIDTH:
+            return inline
+        return "[\n" + "".join(f"{pad}  {part},\n" for part in parts) + pad + "]"
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return json.dumps(value, ensure_ascii=False)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="fail if the module is out of date")
     args = parser.parse_args(argv)
-    expected = render(SOURCE.read_text())
+    text = SOURCE.read_text()
+    outputs = ((TARGET, render(text)), (TS_TARGET, render_ts(text)))
     if args.check:
-        if not TARGET.exists() or TARGET.read_text() != expected:
-            print(f"{TARGET.name} is out of date with {SOURCE.name}")
-            return 1
-        return 0
-    TARGET.write_text(expected)
+        stale = [path for path, body in outputs if not path.exists() or path.read_text() != body]
+        for path in stale:
+            print(f"{path.name} is out of date with {SOURCE.name}")
+        return 1 if stale else 0
+    for path, body in outputs:
+        path.write_text(body)
     return 0
 
 

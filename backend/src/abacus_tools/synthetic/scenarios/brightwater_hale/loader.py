@@ -33,6 +33,11 @@ with it; `make seed-staging` passes it). Branding and the host go through `porta
 `brightwaterhale.<portal_base_domain>` from settings, left out on a laptop without that setting and
 refused on `--staging` without it. People, grants and the invitation are bootstrapped; see DEC-213.
 
+The `people` slice (G-01-T06: the seat total, the four teams and each seat holder's template,
+level, title, team, service line and seasonal end) is opt-in (`--slice people`). The seats and
+profiles go through identity's services in a unit of work; teams are bootstrapped like offices
+until G-01-T08 gives them a service.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -58,7 +63,7 @@ from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
-from typing import Final
+from typing import Final, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -70,7 +75,13 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
-from abacus.modules.identity.api import AuthContext, set_demo_clock
+from abacus.modules.identity.api import (
+    AuthContext,
+    MemberProfile,
+    provision_setting,
+    set_demo_clock,
+    set_member_profile,
+)
 from abacus.modules.organisations.api import client_with_entity, create_client
 from abacus.modules.portal.api import (
     BrandingSlots,
@@ -108,6 +119,13 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.binders import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
+    SERVICE_LINE_OF_TEAM,
+    Level,
+    TeamName,
+    Template,
+    access_ends_of,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -357,18 +375,72 @@ async def _staff_member_added(conn: asyncpg.Connection, _: Scenario, event: Even
             email_of(seat.name),
             seat.name,
         )
+        # G-01-T06: one microsecond per ADM-02 row, so "in the order the firm added them" is the
+        # screen's order (the business clock is frozen at the setup instant for all 46).
         await conn.execute(
             "INSERT INTO memberships (tenant_id, user_id, status, kind, firm_role, office_id, "
-            "initials) VALUES ($1, $2, 'active', 'staff', $3, $4, $5) ON CONFLICT DO NOTHING",
+            "initials, created_at) VALUES ($1, $2, 'active', 'staff', $3, $4, $5, $6) "
+            "ON CONFLICT DO NOTHING",
             TENANT,
             user,
             FIRM_ROLES.get(seat.initials),
             office_id_of(seat.office),
             seat.initials,
+            event.at + timedelta(microseconds=seat.n),
         )
         return "membership.created", "user", str(user)
 
     await _bootstrap(conn, event, write)
+
+
+# --- the people slice (G-01-T06) --------------------------------------------------------------
+# The seat total and each profile go through identity (`provision_setting`, `set_member_profile`)
+# in a unit of work under the event's actor. Teams have no service until G-01-T08, so their rows
+# are bootstrapped like offices.
+
+
+def team_id_of(name: str) -> UUID:
+    return UUID(stable_id(f"team:{name}"))
+
+
+async def _seats_provisioned(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await provision_setting(
+            tx, TENANT, "plan", "seats", int(str(event.data["seats"])), UUID(int=0)
+        )
+
+
+async def _team_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    name = str(event.data["name"])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO teams (id, tenant_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            team_id_of(name),
+            TENANT,
+            name,
+        )
+        return "team.created", "team", str(team_id_of(name))
+
+    await _bootstrap(conn, event, write)
+
+
+async def _member_profile_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    seat = _SEATS[str(event.data["initials"])]
+    team = cast(TeamName, event.data["team"])
+    line = SERVICE_LINE_OF_TEAM[team]
+    profile = MemberProfile(
+        role_template=cast(Template, event.data["template"]),
+        level=cast(Level, event.data["level"]),
+        title=str(event.data["title"]),
+        service_lines=[] if line is None else [line],
+        access_ends_on=access_ends_of(seat),
+        team_ids=[team_id_of(team)],
+    )
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await set_member_profile(tx, TENANT, user_id_of(seat), profile)
 
 
 # --- the shell slice (P-01-T07; bootstrap writes until identity and notifications own them) ----
@@ -1194,6 +1266,10 @@ HANDLERS: Final[dict[str, Handler]] = {
     "portal.host_added": _host_added,
     "identity.portal_person_added": _portal_person_added,
     "identity.client_invitation_created": _client_invitation_created,
+    # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.
+    "identity.seats_provisioned": _seats_provisioned,
+    "organisations.team_created": _team_created,
+    "identity.member_profile_set": _member_profile_set,
     # The shell slice, after audit_core: the sandbox firm before its offices and membership.
     "identity.sandbox_firm_created": _sandbox_firm_created,
     "organisations.sandbox_office_created": _sandbox_office_created,

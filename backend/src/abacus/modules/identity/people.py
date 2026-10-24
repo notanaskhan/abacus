@@ -38,7 +38,7 @@ from abacus.kernel.listing import (
     encode_cursor,
     query_hash,
 )
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity import _role_templates as generated
 from abacus.modules.identity import people_repository as repo
 from abacus.modules.identity.authz import Forbidden, Resource, allowed_actions, authorise
@@ -863,3 +863,65 @@ async def role_templates(ctx: AuthContext) -> RoleTemplates:
         )
     )
     return RoleTemplates(templates, grid)
+
+
+# --- provisioning and the scenario loader (G-01-T06) --------------------------------------------
+
+
+@dataclass(frozen=True)
+class MemberProfile:
+    """What directory sync, provisioning or the scenario loader sets on a staff membership."""
+
+    role_template: Template
+    level: Level
+    title: str | None = None
+    service_lines: list[str] = field(default_factory=list[str])
+    access_ends_on: date | None = None
+    offshore: bool = False
+    team_ids: list[UUID] = field(default_factory=list[UUID])
+
+
+async def set_member_profile(
+    tx: UnitOfWork, tenant_id: UUID, user_id: UUID, profile: MemberProfile
+) -> None:
+    """A staff member's template, level, firm role, title, service lines, access end, offshore
+    and teams, in the caller's unit of work (no caller rights: provisioning and the loader own
+    the unit of work and its actor), with its audit row. The definers still keep the last
+    administrators."""
+    if profile.level not in levels_of(profile.role_template):
+        raise PersonInvalid(facts={"field": "level"})
+    if profile.level == "seasonal" and profile.access_ends_on is None:
+        raise AccessEndsRequired
+    member = await repo.staff_row(tx.session, user_id)
+    if member is None or member["status"] != "active":
+        raise NotFound("staff_member")
+    firm_role = _firm_role_of(profile.role_template)
+    if firm_role is None:
+        oversight = member["firm_role"] in _OVERSIGHT and profile.role_template == "partner"
+        firm_role = member["firm_role"] if oversight else None
+    if member["firm_role"] != firm_role:
+        outcome = await repo.set_firm_role(tx.session, user_id, firm_role)
+        if outcome == "last_admin":
+            raise LastAdministrator(facts={"role": str(member["firm_role"])})
+    await repo.set_template(tx.session, user_id, profile.role_template, profile.level)
+    await tx.session.execute(
+        text(
+            "UPDATE memberships SET job_title = :title, service_lines = :lines, "
+            "access_ends_on = :ends, offshore = :offshore WHERE user_id = :u AND kind = 'staff'"
+        ),
+        {
+            "title": profile.title,
+            "lines": list(dict.fromkeys(profile.service_lines)),
+            "ends": profile.access_ends_on,
+            "offshore": profile.offshore,
+            "u": user_id,
+        },
+    )
+    if not await set_member_teams(tx, tenant_id, user_id, profile.team_ids):
+        raise PersonInvalid(facts={"field": "team_ids"})
+    tx.record(
+        "membership.profile_set",
+        target=Target("user", user_id),
+        after=Ref(template=TEMPLATES.index(profile.role_template) + 1),
+    )
+    tx.emit(AccessChanged(user_id=user_id))

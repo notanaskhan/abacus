@@ -35,6 +35,7 @@ def _cell(action: str, role: str) -> str | None:
 
 def test_the_generated_module_is_up_to_date() -> None:
     assert codegen.TARGET.read_text() == codegen.render(codegen.SOURCE.read_text())
+    assert codegen.TS_TARGET.read_text() == codegen.render_ts(codegen.SOURCE.read_text())
 
 
 def test_ac5_1_eight_templates_and_sixteen_rows_in_the_designs_order() -> None:
