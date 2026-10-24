@@ -241,6 +241,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0033 (TASK-041 D1, D2): staff invitations, staff memberships, firm roles and revocation.
     | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
     | {"membership_set_firm_role", "membership_revoke"}
+    # 0142 (G-01-T05): deactivation with its reason, and the firm's staff sign-ins.
+    | {"membership_deactivate", "staff_last_sign_ins", "staff_sign_in_history"}
     # 0027 (TASK-032 D1): staff role changes and removals, keeping a partner.
     | {"team_member_set_role", "team_member_remove"}
     # 0082 (F-03-T25, DEC-128): engagements keep the derived `clients.is_attest_client` current.

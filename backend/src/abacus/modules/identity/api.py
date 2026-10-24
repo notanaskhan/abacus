@@ -119,6 +119,7 @@ from abacus.modules.identity.mfa_floor import (
     owner_grant,
     register_mfa_requirement,
 )
+from abacus.modules.identity.people import MemberProfile, set_member_profile
 from abacus.modules.identity.portal_auth_routes import portal_auth_router
 from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.portal_idp import (
@@ -203,6 +204,7 @@ from abacus.modules.identity.settings_registry import (
     GlanceRow,
     SettingKey,
     active_wall_count,
+    provision_setting,
     register_firm_setting,
     register_identity_settings,
     register_settings_area,
@@ -216,6 +218,7 @@ from abacus.modules.identity.slots import (
     register_contact_activation,
     register_engagement_resource,
     register_invitation_parties,
+    register_member_teams,
     register_office_list,
     register_scope_resolver,
     resolve_scope,
@@ -344,6 +347,7 @@ __all__ = [
     "LastPartner",
     "LevelNotAvailable",
     "MemberFacts",
+    "MemberProfile",
     "MfaRequirement",
     "NoActiveTenant",
     "PortalIdp",
@@ -437,6 +441,7 @@ __all__ = [
     "note_budget_reviewed",
     "policy_agent_may_hold",
     "portal_scopes",
+    "provision_setting",
     "record_tenant_key",
     "register_active_engagements",
     "register_ai_assistants",
@@ -456,6 +461,7 @@ __all__ = [
     "register_invitation_parties",
     "register_member_added",
     "register_member_removed",
+    "register_member_teams",
     "register_mfa_requirement",
     "register_office_list",
     "register_scope_resolver",
@@ -475,6 +481,7 @@ __all__ = [
     "set_autonomy",
     "set_demo_clock",
     "set_letter_policy",
+    "set_member_profile",
     "shell_of",
     "signup_router",
     "staff_router",

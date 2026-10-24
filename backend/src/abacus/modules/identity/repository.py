@@ -1121,6 +1121,25 @@ async def user_contacts(user_ids: list[UUID]) -> dict[UUID, tuple[str, str]]:
     return {cast(UUID, r.id): (str(r.display_name), str(r.email)) for r in rows}
 
 
+_ELSEWHERE = text(
+    "SELECT user_id, bool_or(status = 'active') AS active FROM memberships "
+    "WHERE user_id IN :ids AND tenant_id <> :tenant GROUP BY user_id"
+).bindparams(bindparam("ids", expanding=True))
+
+
+async def memberships_elsewhere(tenant_id: UUID, user_ids: list[UUID]) -> dict[UUID, bool]:
+    """G-01-T05 (DEC-286): which of these people belong or belonged to another firm (True: one
+    still active there). Staff sessions carry no firm, so their sign-ins can't be told apart, and
+    deactivation here ends a person's sessions only when no other firm holds them."""
+    if not user_ids:
+        return {}
+    # A per-person fact for the caller's own firm members (LIST-001 does not apply: no rows of
+    # another firm are returned, only whether one exists).
+    async with identity_engine().connect() as conn:
+        result = await conn.execute(_ELSEWHERE, {"ids": user_ids, "tenant": tenant_id})
+        return {cast(UUID, r.user_id): bool(r.active) for r in result}
+
+
 async def staff_memberships(session: AsyncSession) -> Sequence[RowMapping]:
     """The session's firm's staff memberships, for a caller that authorised `firm.manage_users`
     (LIST_EXEMPT: firm-level, no engagement rows)."""

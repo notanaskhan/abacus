@@ -1168,7 +1168,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # P-01-T03 (migration 0090): preferences and deliveries.
         "notification_preferences": frozenset({"in_app", "email", "updated_at"}),
         "notification_deliveries": frozenset({"status", "message_ref"}),
-        "memberships": frozenset({"default_office_filter_id"}),  # P-01-T04 (migration 0091)
+        "memberships": frozenset(
+            {"default_office_filter_id"}  # P-01-T04 (migration 0091)
+            # G-01-T05 (0142): a person's template and attributes; firm roles stay in definers.
+            | {"role_template", "level", "job_title", "office_id", "service_lines"}
+            | {"access_ends_on", "offshore", "version"}
+        ),
         # P-04-T03 (migration 0093): a note's status and assignee; the gates projection.
         "reviewable_notes": frozenset({"status", "assignee_user_id"}),
         "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),
@@ -1788,6 +1793,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0033 (TASK-041): staff invitations, memberships, firm roles and revocation.
         | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
         | {"membership_set_firm_role", "membership_revoke"}
+        # 0142 (G-01-T05): deactivation with its reason, and this firm's staff sign-ins.
+        | {"membership_deactivate", "staff_last_sign_ins", "staff_sign_in_history"}
         | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
         | {"platform_control_state", "set_platform_control", "provision_firm"}  # 0086 (Q-01-T19)
         | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)

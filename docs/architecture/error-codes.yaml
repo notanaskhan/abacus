@@ -11,6 +11,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.AcceptanceMissing
+  access_ends_required:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.people.AccessEndsRequired
+    summary: A seasonal member needs the date their access ends (AC3.5).
   accounts_missing:
     status: 409
     raised_by:
@@ -69,6 +74,7 @@ codes:
   already_member:
     status: 409
     raised_by:
+    - abacus.modules.identity.people.AlreadyMember
     - abacus.modules.identity.service.AlreadyMember
     summary: The caller is already on the engagement's team.
   already_redacted:
@@ -189,6 +195,11 @@ codes:
     raised_by:
     - abacus.modules.connections.gl_import.CutoffInvalid
     summary: 'SPEC-038 Q2: the cut-off is 30 to 366 days after year end.'
+  deactivation_reason_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.people.DeactivationReasonInvalid
+    summary: A person deactivates with `manual`; the other reasons are the system's.
   demo_clock_refused:
     status: 409
     raised_by:
@@ -278,6 +289,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.findings.FindingInvalid
+  firm_role_held:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.people.FirmRoleHeld
+    summary: The person holds another firm role; only a firm admin changes it (AC4.3).
   follow_up_already_sent:
     status: 409
     raised_by:
@@ -437,6 +453,7 @@ codes:
   last_admin:
     status: 409
     raised_by:
+    - abacus.modules.identity.people.LastAdministrator
     - abacus.modules.identity.staff.LastAdmin
     summary: The firm must keep at least one active firm administrator (SPEC-024 AC-4).
   last_partner:
@@ -634,6 +651,12 @@ codes:
     raised_by:
     - abacus.modules.identity.me.OfficeNotInFirm
     summary: The default office must be one of the active firm's offices.
+  offshore_assignment_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.people.OffshoreAssignmentConflict
+    summary: Offshore can't be turned on while the person is assigned to clients without an offshore
+      consent (AC4.6); the facts carry the assignment count.
   out_of_scope:
     status: 409
     raised_by:
@@ -682,6 +705,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.PhaseSkip
     summary: 'The target phase is past the next one: a phase cannot be skipped.'
+  person_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.people.PersonInvalid
+    summary: An office or team that isn't the firm's, or a level the template doesn't allow.
   planning_invalid:
     status: 422
     raised_by:
@@ -820,6 +848,17 @@ codes:
     raised_by:
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
+  seats_full:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.people.SeatsFull
+    summary: Every seat is held or invited (AC3.3); the facts carry `used` and `total`.
+  seats_not_provisioned:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.people.SeatsNotProvisioned
+    summary: 'The firm''s seats aren''t provisioned yet, so nobody can be invited (DEC-285: fails closed
+      for a real firm; a synthetic one without seats has no limit).'
   setting_invalid:
     status: 422
     raised_by:
@@ -870,6 +909,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.identity.people.StalePerson
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     summary: 'The client changed since it was read (`seen_version` is behind): read it again.'

@@ -5,7 +5,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
 import { FirmPeople } from "./FirmPeople";
 
+// G-01-T05 grew the list (DEC-286); the legacy screen reads only `members` and `invitations`.
 const LIST: StaffListOut = {
+  items: [],
+  total: 0,
+  tallies: {
+    seats_used: 0,
+    seats_pending: 0,
+    partners: 0,
+    professionals: 0,
+    operations: 0,
+    sso_mfa: 0,
+    signed_in_of: 0,
+    seasonal: 0,
+  },
   members: [
     {
       user_id: "u-me",

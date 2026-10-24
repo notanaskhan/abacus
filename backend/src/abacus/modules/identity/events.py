@@ -95,6 +95,15 @@ class AccessChanged(DomainEvent):
     user_id: Annotated[UUID, classified("internal")]
 
 
+class MembershipDeactivated(DomainEvent):
+    """A staff member was deactivated (G-01-T05; AC4.4): their seat is free and their sessions
+    ended; W-01 and caches drop them. Their sign-offs and decisions stay attributed to them."""
+
+    event_type: ClassVar[str] = "membership.deactivated"
+
+    user_id: Annotated[UUID, classified("internal")]
+
+
 class PortalSignInCodeRequested(DomainEvent):
     """A portal sign-in needs its code emailed: communications issues the code at delivery, so it
     is never stored (P-08-T10; the invitation pattern). Never an email, code or IP."""

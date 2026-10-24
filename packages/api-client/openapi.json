@@ -15916,6 +15916,7 @@
       },
       "FirmRoleIn": {
         "additionalProperties": false,
+        "description": "SPEC-024's firm role; with `role_template` (G-01-T05, AC4.2) the template, its level and\nthe firm role it carries change together (`firm_role` is then a partner's oversight role).",
         "properties": {
           "firm_role": {
             "anyOf": [
@@ -15934,11 +15935,50 @@
             ],
             "cls": "internal",
             "title": "Firm Role"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "manager",
+                  "senior",
+                  "staff",
+                  "seasonal",
+                  "admin"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Level"
+          },
+          "role_template": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "manager",
+                  "tax_reviewer",
+                  "senior",
+                  "staff",
+                  "tax_preparer",
+                  "firm_admin",
+                  "it_security"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Role Template"
           }
         },
-        "required": [
-          "firm_role"
-        ],
         "title": "FirmRoleIn",
         "type": "object"
       },
@@ -35163,7 +35203,34 @@
       },
       "StaffInviteIn": {
         "additionalProperties": false,
+        "description": "SPEC-024's invitation, grown for ADM-02c (G-01-T05): the template and what the membership\ntakes on acceptance. A seasonal invite needs `access_ends_on` (422 `access_ends_required`).",
         "properties": {
+          "access_ends_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Access Ends On"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Display Name"
+          },
           "email": {
             "cls": "confidential",
             "maxLength": 320,
@@ -35188,6 +35255,107 @@
             ],
             "cls": "internal",
             "title": "Firm Role"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "manager",
+                  "senior",
+                  "staff",
+                  "seasonal",
+                  "admin"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Level"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "offshore": {
+            "cls": "internal",
+            "default": false,
+            "title": "Offshore",
+            "type": "boolean"
+          },
+          "role_template": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "manager",
+                  "tax_reviewer",
+                  "senior",
+                  "staff",
+                  "tax_preparer",
+                  "firm_admin",
+                  "it_security"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Role Template"
+          },
+          "service_lines": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "audit",
+                "tax",
+                "cas",
+                "advisory"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Service Lines",
+            "type": "array"
+          },
+          "team_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Team Ids",
+            "type": "array"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Title"
           }
         },
         "required": [
@@ -35212,13 +35380,41 @@
         "type": "object"
       },
       "StaffListOut": {
+        "description": "ADM-02a on the list envelope (G-01-T05): `items` in bands, `counts` per band over the\nfilters, firm-wide `tallies`. `members` and `invitations` are SPEC-024's shape, kept for the\nlegacy people screen until G-01-T17 retires it (unfiltered).",
         "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
           "invitations": {
             "cls": "confidential",
             "items": {
               "$ref": "#/components/schemas/StaffInvitationOut"
             },
             "title": "Invitations",
+            "type": "array"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StaffRowV2Out"
+            },
+            "title": "Items",
             "type": "array"
           },
           "members": {
@@ -35228,9 +35424,39 @@
             },
             "title": "Members",
             "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "tallies": {
+            "$ref": "#/components/schemas/StaffTalliesOut",
+            "cls": "internal"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
           }
         },
         "required": [
+          "items",
+          "total",
+          "tallies",
           "members",
           "invitations"
         ],
@@ -35294,7 +35520,7 @@
         "type": "object"
       },
       "StaffRowV2Out": {
-        "description": "ADM-02a's row: the v2 shape `GET /v1/firm/staff` grows into (G-01-T05).",
+        "description": "ADM-02a's row: the v2 shape `GET /v1/firm/staff` grew into (G-01-T05). A pending\ninvitation is a row too (ADM-02f): `invitation_id` set, `user_id` null.",
         "properties": {
           "access_ends_on": {
             "anyOf": [
@@ -35331,6 +35557,19 @@
             "title": "Band",
             "type": "string"
           },
+          "deactivated_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deactivated On"
+          },
           "display_name": {
             "cls": "confidential",
             "title": "Display Name",
@@ -35353,6 +35592,19 @@
             ],
             "cls": "internal",
             "title": "Invitation Expires On"
+          },
+          "invitation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Invitation Id"
           },
           "last_sign_in_at": {
             "anyOf": [
@@ -35456,10 +35708,17 @@
             "title": "Title"
           },
           "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
+            "title": "User Id"
           }
         },
         "required": [
@@ -35472,6 +35731,100 @@
           "status"
         ],
         "title": "StaffRowV2Out",
+        "type": "object"
+      },
+      "StaffTalliesOut": {
+        "description": "ADM-02a's tally strip, firm-wide (never filtered). `seats_used` counts pending invitations\n(AC3.4); `seats_total` is the provisioned seat count (DEC-285); `walls_active` is present only\nfor a reader who may list walls (AC2.4).",
+        "properties": {
+          "operations": {
+            "cls": "internal",
+            "title": "Operations",
+            "type": "integer"
+          },
+          "partners": {
+            "cls": "internal",
+            "title": "Partners",
+            "type": "integer"
+          },
+          "professionals": {
+            "cls": "internal",
+            "title": "Professionals",
+            "type": "integer"
+          },
+          "seasonal": {
+            "cls": "internal",
+            "title": "Seasonal",
+            "type": "integer"
+          },
+          "seasonal_access_ends_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seasonal Access Ends On"
+          },
+          "seats_pending": {
+            "cls": "internal",
+            "title": "Seats Pending",
+            "type": "integer"
+          },
+          "seats_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seats Total"
+          },
+          "seats_used": {
+            "cls": "internal",
+            "title": "Seats Used",
+            "type": "integer"
+          },
+          "signed_in_of": {
+            "cls": "internal",
+            "title": "Signed In Of",
+            "type": "integer"
+          },
+          "sso_mfa": {
+            "cls": "internal",
+            "title": "Sso Mfa",
+            "type": "integer"
+          },
+          "walls_active": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Walls Active"
+          }
+        },
+        "required": [
+          "seats_used",
+          "seats_pending",
+          "partners",
+          "professionals",
+          "operations",
+          "sso_mfa",
+          "signed_in_of",
+          "seasonal"
+        ],
+        "title": "StaffTalliesOut",
         "type": "object"
       },
       "StartMappingBody": {
@@ -83052,6 +83405,7 @@
     },
     "/v1/firm/role-templates": {
       "get": {
+        "description": "ADM-02b: eight templates with counts, the grid and the locked agent row.",
         "operationId": "role_templates",
         "parameters": [
           {
@@ -83137,16 +83491,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Role Templates Route",
@@ -83970,9 +84314,161 @@
     },
     "/v1/firm/staff": {
       "get": {
-        "description": "SPEC-024: the firm's staff and pending invitations (firm administrators).",
+        "description": "ADM-02a (G-01-T05; AC3.1, AC3.2): staff and pending invitations in bands, searched by name\nor email (the term travels in the query string, never a path). Still `firm.manage_users`\nwith fresh MFA (SPEC-024 AC-3's tests hold it there); G-01 section 4.3's move to\n`firm.read_people` waits on DEC-286.",
         "operationId": "staff",
         "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role_template",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "partner",
+                    "manager",
+                    "tax_reviewer",
+                    "senior",
+                    "staff",
+                    "tax_preparer",
+                    "firm_admin",
+                    "it_security"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role Template"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "team_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Team Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MembershipStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "band",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "partners",
+                    "managers",
+                    "seniors",
+                    "staff",
+                    "seasonal",
+                    "operations"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Band"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
           {
             "in": "header",
             "name": "authorization",
@@ -84067,7 +84563,7 @@
     },
     "/v1/firm/staff/invitations": {
       "post": {
-        "description": "SPEC-024 AC-3: a single-use, expiring link by email.",
+        "description": "SPEC-024 AC-3 and ADM-02c: a single-use, 14-day link by email; 409 `seats_full`,\n`already_member`; 422 `access_ends_required`.",
         "operationId": "invite_staff",
         "parameters": [
           {
@@ -84153,6 +84649,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -84386,6 +84892,7 @@
     },
     "/v1/firm/staff/{user_id}": {
       "get": {
+        "description": "ADM-02d: the person's template, attributes, walls, assignments and last sign-ins.",
         "operationId": "person",
         "parameters": [
           {
@@ -84481,16 +84988,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Person Route",
@@ -84500,7 +84997,7 @@
         "x-abacus-action": "firm.read_people"
       },
       "patch": {
-        "description": "Fresh MFA; 409 `stale_version`, `offshore_assignment_conflict`.",
+        "description": "Fresh MFA; a field sent as null clears it; 409 `stale_version`,\n`offshore_assignment_conflict`; 422 `access_ends_required`.",
         "operationId": "update_person",
         "parameters": [
           {
@@ -84616,16 +85113,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Person Route",
@@ -84753,16 +85240,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Deactivate Person Route",
@@ -84774,7 +85251,7 @@
     },
     "/v1/firm/staff/{user_id}/revoke": {
       "post": {
-        "description": "SPEC-024 AC-4: their next request is refused; never the last administrator.",
+        "description": "SPEC-024 AC-4: their next request is refused; never the last administrator. Deactivate's\nalias for one release (G-01-T05).",
         "operationId": "revoke_staff",
         "parameters": [
           {
@@ -84891,7 +85368,7 @@
     },
     "/v1/firm/staff/{user_id}/role": {
       "put": {
-        "description": "SPEC-024 AC-4: applies on their next request; never the last administrator.",
+        "description": "SPEC-024 AC-4: applies on their next request; never the last administrator. With a\ntemplate (AC4.2): fresh MFA, one unit of work, \"Role changed by <person>\".",
         "operationId": "change_firm_role",
         "parameters": [
           {
@@ -85018,7 +85495,7 @@
     },
     "/v1/firm/staff/{user_id}/security-role": {
       "put": {
-        "description": "`security_admin` only; 409 `last_admin`.",
+        "description": "`security_admin` only; 409 `last_admin`, `firm_role_held`.",
         "operationId": "set_security_role",
         "parameters": [
           {
@@ -85134,16 +85611,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Security Role Route",

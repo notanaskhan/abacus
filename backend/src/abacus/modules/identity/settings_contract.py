@@ -19,8 +19,9 @@ a live person's (INV-1): the matrix denies agent and system.
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -37,7 +38,7 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity import settings_registry
+from abacus.modules.identity import people, settings_registry
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import AbacusRouter, current_context
 
@@ -154,11 +155,13 @@ class SignInOut(BaseModel):
 
 
 class StaffRowV2Out(BaseModel):
-    """ADM-02a's row: the v2 shape `GET /v1/firm/staff` grows into (G-01-T05)."""
+    """ADM-02a's row: the v2 shape `GET /v1/firm/staff` grew into (G-01-T05). A pending
+    invitation is a row too (ADM-02f): `invitation_id` set, `user_id` null."""
 
     model_config = ConfigDict(frozen=True)
 
-    user_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID | None, classified("internal")]
+    invitation_id: Annotated[UUID | None, classified("internal")] = None
     display_name: Annotated[str, classified("confidential")]
     email: Annotated[str, classified("confidential")]
     title: Annotated[str | None, classified("confidential")] = None
@@ -169,11 +172,34 @@ class StaffRowV2Out(BaseModel):
     office_id: Annotated[UUID | None, classified("internal")] = None
     team_ids: Annotated[list[UUID], classified("internal")] = []
     service_lines: Annotated[list[ServiceLine], classified("internal")] = []
+    # The date access is set to end; G-01-T13's access-end job enforces it (DEC-285).
     access_ends_on: Annotated[date | None, classified("internal")] = None
     offshore: Annotated[bool, classified("internal")] = False
+    # This firm's sign-ins only; none for someone who belongs to another firm (DEC-286).
     last_sign_in_at: Annotated[datetime | None, classified("internal")] = None
     invitation_expires_on: Annotated[date | None, classified("internal")] = None
+    deactivated_on: Annotated[date | None, classified("internal")] = None  # ADM-02e
     allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+class StaffTalliesOut(BaseModel):
+    """ADM-02a's tally strip, firm-wide (never filtered). `seats_used` counts pending invitations
+    (AC3.4); `seats_total` is the provisioned seat count (DEC-285); `walls_active` is present only
+    for a reader who may list walls (AC2.4)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    seats_used: Annotated[int, classified("internal")]
+    seats_total: Annotated[int | None, classified("internal")] = None
+    seats_pending: Annotated[int, classified("internal")]
+    partners: Annotated[int, classified("internal")]
+    professionals: Annotated[int, classified("internal")]
+    operations: Annotated[int, classified("internal")]
+    sso_mfa: Annotated[int, classified("internal")]
+    signed_in_of: Annotated[int, classified("internal")]
+    walls_active: Annotated[int | None, classified("internal")] = None
+    seasonal: Annotated[int, classified("internal")]
+    seasonal_access_ends_on: Annotated[date | None, classified("internal")] = None
 
 
 class PersonOut(BaseModel):
@@ -440,48 +466,115 @@ async def update_settings_section_route(
     return _section(await settings_registry.read_section(ctx, section))
 
 
-@settings_router.get(
-    "/staff/{user_id}", action="firm.read_people", response_model=PersonOut, errors=(501,)
-)
+def row_out(row: people.StaffRow) -> StaffRowV2Out:
+    return StaffRowV2Out(
+        user_id=row.user_id,
+        invitation_id=row.invitation_id,
+        display_name=row.display_name,
+        email=row.email,
+        title=row.title,
+        role_template=row.role_template,
+        level=row.level,
+        band=row.band,
+        status=MembershipStatus(row.status),
+        office_id=row.office_id,
+        team_ids=row.team_ids,
+        service_lines=cast(list[ServiceLine], row.service_lines),
+        access_ends_on=row.access_ends_on,
+        offshore=row.offshore,
+        last_sign_in_at=row.last_sign_in_at,
+        invitation_expires_on=row.invitation_expires_on,
+        deactivated_on=row.deactivated_on,
+        allowed_actions=row.allowed_actions,
+    )
+
+
+def tallies_out(t: people.Tallies) -> StaffTalliesOut:
+    return StaffTalliesOut.model_validate(asdict(t))
+
+
+async def _person_out(ctx: AuthContext, user_id: UUID) -> PersonOut:
+    found = await people.staff_user(ctx, user_id)
+    return PersonOut(
+        row=row_out(found.row),
+        firm_role=found.firm_role,
+        security_admin=found.firm_role == "security_admin",
+        wall_ids=found.wall_ids,
+        assignment_count=found.assignment_count,
+        recent_sign_ins=[
+            SignInOut(at=s.at, method=s.method, mfa=s.mfa) for s in found.recent_sign_ins
+        ],
+        version=found.version,
+    )
+
+
+@settings_router.get("/staff/{user_id}", action="firm.read_people", response_model=PersonOut)
 async def person_route(user_id: UUID, ctx: Ctx) -> PersonOut:
-    await _stub(ctx)
+    """ADM-02d: the person's template, attributes, walls, assignments and last sign-ins."""
+    await _gate(ctx)
+    return await _person_out(ctx, user_id)
 
 
 @settings_router.patch(
-    "/staff/{user_id}", action="firm.manage_users", response_model=PersonOut, errors=(409, 501)
+    "/staff/{user_id}", action="firm.manage_users", response_model=PersonOut, errors=(409,)
 )
 async def update_person_route(user_id: UUID, body: PersonPatchIn, ctx: Ctx) -> PersonOut:
-    """Fresh MFA; 409 `stale_version`, `offshore_assignment_conflict`."""
-    await _stub(ctx)
+    """Fresh MFA; a field sent as null clears it; 409 `stale_version`,
+    `offshore_assignment_conflict`; 422 `access_ends_required`."""
+    await _gate(ctx)
+    changes = {name: getattr(body, name) for name in body.model_fields_set if name != "version"}
+    await people.update_person(ctx, user_id, body.version, changes)
+    return await _person_out(ctx, user_id)
 
 
 @settings_router.put(
     "/staff/{user_id}/security-role",
     action="security_role.assign",
     response_model=PersonOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def set_security_role_route(user_id: UUID, body: SecurityRoleIn, ctx: Ctx) -> PersonOut:
-    """`security_admin` only; 409 `last_admin`."""
-    await _stub(ctx)
+    """`security_admin` only; 409 `last_admin`, `firm_role_held`."""
+    await _gate(ctx)
+    await people.set_security_role(ctx, user_id, body.security_admin)
+    return await _person_out(ctx, user_id)
 
 
 @settings_router.post(
     "/staff/{user_id}/deactivate",
     action="firm.manage_users",
     response_model=PersonOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def deactivate_person_route(user_id: UUID, body: DeactivateIn, ctx: Ctx) -> PersonOut:
     """Ends sessions and frees the seat; 409 `last_admin`. `/revoke` stays an alias."""
-    await _stub(ctx)
+    await _gate(ctx)
+    await people.deactivate(ctx, user_id, body.reason)
+    return await _person_out(ctx, user_id)
 
 
-@settings_router.get(
-    "/role-templates", action="firm.read_people", response_model=RoleTemplatesOut, errors=(501,)
-)
+@settings_router.get("/role-templates", action="firm.read_people", response_model=RoleTemplatesOut)
 async def role_templates_route(ctx: Ctx) -> RoleTemplatesOut:
-    await _stub(ctx)
+    """ADM-02b: eight templates with counts, the grid and the locked agent row."""
+    await _gate(ctx)
+    found = await people.role_templates(ctx)
+    return RoleTemplatesOut(
+        templates=[
+            RoleTemplateOut(key=t.key, levels=t.levels, member_count=t.member_count)
+            for t in found.templates
+        ],
+        grid=[
+            GridRowOut(
+                key=g.key,
+                actions=g.actions,
+                cells=g.cells,
+                conditions=g.conditions,
+                source=g.source,
+                locked=g.locked,
+            )
+            for g in found.grid
+        ],
+    )
 
 
 @settings_router.get(

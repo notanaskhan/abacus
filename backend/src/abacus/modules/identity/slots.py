@@ -155,3 +155,31 @@ async def activate_contact(tx: UnitOfWork, contact_id: UUID, user_id: UUID) -> N
     if not _ACTIVATION:
         raise LookupError("no contact activation is registered")
     await _ACTIVATION[0](tx, contact_id, user_id)
+
+
+# G-01-T05: organisations owns `team_rosters`; identity reads a person's teams for ADM-02 and
+# writes them when an admin edits the person (or an invitation is accepted). Unregistered: no
+# teams, and a write naming teams is refused.
+MemberTeams = Callable[[TenantContext, list[UUID]], Awaitable[dict[UUID, list[UUID]]]]
+SetMemberTeams = Callable[["UnitOfWork", UUID, UUID, list[UUID]], Awaitable[bool]]
+_TEAMS: list[tuple[MemberTeams, SetMemberTeams]] = []
+
+
+def register_member_teams(read: MemberTeams, write: SetMemberTeams) -> None:
+    if _TEAMS and not (_same(_TEAMS[0][0], read) and _same(_TEAMS[0][1], write)):
+        raise ValueError("member teams are already registered")
+    _TEAMS[:] = [(read, write)]
+
+
+async def member_teams(tenant: TenantContext, user_ids: list[UUID]) -> dict[UUID, list[UUID]]:
+    """Each person's teams (empty when nothing is registered)."""
+    return await _TEAMS[0][0](tenant, user_ids) if _TEAMS and user_ids else {}
+
+
+async def set_member_teams(
+    tx: UnitOfWork, tenant_id: UUID, user_id: UUID, team_ids: list[UUID]
+) -> bool:
+    """Replace the person's teams; False when a team isn't the firm's (or none is registered)."""
+    if not _TEAMS:
+        return not team_ids
+    return await _TEAMS[0][1](tx, tenant_id, user_id, team_ids)

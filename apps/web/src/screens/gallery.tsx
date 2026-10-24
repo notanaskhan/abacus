@@ -4,6 +4,12 @@ import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
+import { ADM01 } from "./ADM-01";
+import {
+  type Adm01State,
+  STATES as ADM01_STATES,
+  scenarios as adm01Scenarios,
+} from "./ADM-01/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -238,6 +244,48 @@ function Bnd02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("BND-02", { title: "Binder builder & tracker", Component: Bnd02Artboard });
+
+// ADM-01 a–f (G-01-T07): the T12 frame inside the firm shell, the firm pill pressed.
+function Adm01Frame({ state }: { state: Adm01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/general" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM01 />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm01State = ADM01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-01", { title: "Settings home & firm profile", Component: Adm01Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

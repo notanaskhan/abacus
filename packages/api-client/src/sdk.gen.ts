@@ -4219,6 +4219,8 @@ export const acknowledgeStep = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Role Templates Route
+ *
+ * ADM-02b: eight templates with counts, the grid and the locked agent row.
  */
 export const roleTemplates = <ThrowOnError extends boolean = false>(options?: Options<RoleTemplatesData, ThrowOnError>): RequestResult<RoleTemplatesResponses, RoleTemplatesErrors, ThrowOnError> => (options?.client ?? client).get<RoleTemplatesResponses, RoleTemplatesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4310,7 +4312,10 @@ export const updateSettingsSection = <ThrowOnError extends boolean = false>(opti
 /**
  * Staff Route
  *
- * SPEC-024: the firm's staff and pending invitations (firm administrators).
+ * ADM-02a (G-01-T05; AC3.1, AC3.2): staff and pending invitations in bands, searched by name
+ * or email (the term travels in the query string, never a path). Still `firm.manage_users`
+ * with fresh MFA (SPEC-024 AC-3's tests hold it there); G-01 section 4.3's move to
+ * `firm.read_people` waits on DEC-286.
  */
 export const staff = <ThrowOnError extends boolean = false>(options?: Options<StaffData, ThrowOnError>): RequestResult<StaffResponses, StaffErrors, ThrowOnError> => (options?.client ?? client).get<StaffResponses, StaffErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4321,7 +4326,8 @@ export const staff = <ThrowOnError extends boolean = false>(options?: Options<St
 /**
  * Invite Staff Route
  *
- * SPEC-024 AC-3: a single-use, expiring link by email.
+ * SPEC-024 AC-3 and ADM-02c: a single-use, 14-day link by email; 409 `seats_full`,
+ * `already_member`; 422 `access_ends_required`.
  */
 export const inviteStaff = <ThrowOnError extends boolean = false>(options: Options<InviteStaffData, ThrowOnError>): RequestResult<InviteStaffResponses, InviteStaffErrors, ThrowOnError> => (options.client ?? client).post<InviteStaffResponses, InviteStaffErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4353,6 +4359,8 @@ export const revokeStaffInvitation = <ThrowOnError extends boolean = false>(opti
 
 /**
  * Person Route
+ *
+ * ADM-02d: the person's template, attributes, walls, assignments and last sign-ins.
  */
 export const person = <ThrowOnError extends boolean = false>(options: Options<PersonData, ThrowOnError>): RequestResult<PersonResponses, PersonErrors, ThrowOnError> => (options.client ?? client).get<PersonResponses, PersonErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4363,7 +4371,8 @@ export const person = <ThrowOnError extends boolean = false>(options: Options<Pe
 /**
  * Update Person Route
  *
- * Fresh MFA; 409 `stale_version`, `offshore_assignment_conflict`.
+ * Fresh MFA; a field sent as null clears it; 409 `stale_version`,
+ * `offshore_assignment_conflict`; 422 `access_ends_required`.
  */
 export const updatePerson = <ThrowOnError extends boolean = false>(options: Options<UpdatePersonData, ThrowOnError>): RequestResult<UpdatePersonResponses, UpdatePersonErrors, ThrowOnError> => (options.client ?? client).patch<UpdatePersonResponses, UpdatePersonErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4393,7 +4402,8 @@ export const deactivatePerson = <ThrowOnError extends boolean = false>(options: 
 /**
  * Revoke Staff Route
  *
- * SPEC-024 AC-4: their next request is refused; never the last administrator.
+ * SPEC-024 AC-4: their next request is refused; never the last administrator. Deactivate's
+ * alias for one release (G-01-T05).
  */
 export const revokeStaff = <ThrowOnError extends boolean = false>(options: Options<RevokeStaffData, ThrowOnError>): RequestResult<RevokeStaffResponses, RevokeStaffErrors, ThrowOnError> => (options.client ?? client).post<RevokeStaffResponses, RevokeStaffErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4404,7 +4414,8 @@ export const revokeStaff = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Change Firm Role Route
  *
- * SPEC-024 AC-4: applies on their next request; never the last administrator.
+ * SPEC-024 AC-4: applies on their next request; never the last administrator. With a
+ * template (AC4.2): fresh MFA, one unit of work, "Role changed by <person>".
  */
 export const changeFirmRole = <ThrowOnError extends boolean = false>(options: Options<ChangeFirmRoleData, ThrowOnError>): RequestResult<ChangeFirmRoleResponses, ChangeFirmRoleErrors, ThrowOnError> => (options.client ?? client).put<ChangeFirmRoleResponses, ChangeFirmRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4419,7 +4430,7 @@ export const changeFirmRole = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Set Security Role Route
  *
- * `security_admin` only; 409 `last_admin`.
+ * `security_admin` only; 409 `last_admin`, `firm_role_held`.
  */
 export const setSecurityRole = <ThrowOnError extends boolean = false>(options: Options<SetSecurityRoleData, ThrowOnError>): RequestResult<SetSecurityRoleResponses, SetSecurityRoleErrors, ThrowOnError> => (options.client ?? client).put<SetSecurityRoleResponses, SetSecurityRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
