@@ -24,7 +24,7 @@ from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.active_content import REASON_CODES
 from abacus.modules.evidence.client_view import covered_digits, statement_gap, year_end_cash
-from abacus.modules.evidence.events import InboxFileAdded
+from abacus.modules.evidence.events import InboxFileAdded, InboxFileSorted
 from abacus.modules.evidence.matching import (
     MAX_SUGGESTIONS,
     TAKES_EVIDENCE,
@@ -317,6 +317,7 @@ async def assign(
                 suggestion_rank=suggestion_rank or 0,
             ),
         )
+        tx.emit(InboxFileSorted(engagement_id=engagement_id, inbox_file_id=file_id))  # P-04-T16
     return version_id
 
 
@@ -333,6 +334,7 @@ async def discard(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> None:
             raise Forbidden("evidence.upload", "role")
         await decide_inbox_file(tx.session, file_id, status="discarded", decided_by=ctx.user_id)
         tx.record("inbox_file.discarded", target=Target("inbox_file", file_id))
+        tx.emit(InboxFileSorted(engagement_id=engagement_id, inbox_file_id=file_id))  # P-04-T16
 
 
 async def _seen_file(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> None:

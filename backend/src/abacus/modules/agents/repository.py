@@ -1186,3 +1186,125 @@ async def screening_results_of_run(
         .scalars()
         .all()
     )
+
+
+# --- P-04-T16: the proposals that may wait on a person (C13 gate sources) ----------------------
+# LIST_EXEMPT: the system projector's reads, per engagement or (rebuild) for the whole firm; the
+# list route filters the projection through `visible()`.
+
+
+async def latest_screenings_for_gates(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """(result, engagement, version): the newest shown result of each version."""
+    stmt = select(
+        ScreeningResult.id, ScreeningResult.engagement_id, ScreeningResult.evidence_version_id
+    ).where(_shown_run(ScreeningResult.agent_run_id))
+    if engagement_id is not None:
+        stmt = stmt.where(ScreeningResult.engagement_id == engagement_id)
+    rows = await session.execute(
+        stmt.ext(distinct_on(ScreeningResult.evidence_version_id)).order_by(
+            ScreeningResult.evidence_version_id,
+            ScreeningResult.created_at.desc(),
+            ScreeningResult.id.desc(),
+        )
+    )
+    return [(r[0], r[1], r[2]) for r in rows.all()]
+
+
+async def latest_upload_reviews_for_gates(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """(review, engagement, version): the newest shown review of each version, when it raised
+    a concern (a review with none asks nothing of anyone)."""
+    latest = select(
+        UploadReview.id,
+        UploadReview.engagement_id,
+        UploadReview.evidence_version_id,
+        UploadReview.no_concerns,
+    ).where(_shown_run(UploadReview.agent_run_id))
+    if engagement_id is not None:
+        latest = latest.where(UploadReview.engagement_id == engagement_id)
+    rows = await session.execute(
+        latest.ext(distinct_on(UploadReview.evidence_version_id)).order_by(
+            UploadReview.evidence_version_id,
+            UploadReview.created_at.desc(),
+            UploadReview.id.desc(),
+        )
+    )
+    return [(r[0], r[1], r[2]) for r in rows.all() if not r[3]]
+
+
+async def latest_matches_for_gates(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """(match run, engagement, inbox file): the newest shown run of each file, when it showed a
+    proposal."""
+    stmt = select(
+        InboxMatchRun.id, InboxMatchRun.engagement_id, InboxMatchRun.inbox_file_id
+    ).where(_shown_run(InboxMatchRun.agent_run_id))
+    if engagement_id is not None:
+        stmt = stmt.where(InboxMatchRun.engagement_id == engagement_id)
+    rows = (
+        await session.execute(
+            stmt.ext(distinct_on(InboxMatchRun.inbox_file_id)).order_by(
+                InboxMatchRun.inbox_file_id,
+                InboxMatchRun.created_at.desc(),
+                InboxMatchRun.id.desc(),
+            )
+        )
+    ).all()
+    if not rows:
+        return []
+    shown = set(
+        (
+            await session.execute(
+                select(InboxMatchProposal.match_id).where(
+                    InboxMatchProposal.match_id.in_([r[0] for r in rows]),
+                    InboxMatchProposal.shown.is_(True),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [(r[0], r[1], r[2]) for r in rows if r[0] in shown]
+
+
+async def undecided_drafts_for_gates(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """(draft, engagement, request item): the newest shown draft of each item that passed the
+    checks and that no person has decided."""
+    stmt = select(
+        GuidanceDraftRow.id,
+        GuidanceDraftRow.engagement_id,
+        GuidanceDraftRow.request_item_id,
+        GuidanceDraftRow.passed_checks,
+    ).where(_shown_run(GuidanceDraftRow.agent_run_id))
+    if engagement_id is not None:
+        stmt = stmt.where(GuidanceDraftRow.engagement_id == engagement_id)
+    rows = (
+        await session.execute(
+            stmt.ext(distinct_on(GuidanceDraftRow.request_item_id)).order_by(
+                GuidanceDraftRow.request_item_id,
+                GuidanceDraftRow.created_at.desc(),
+                GuidanceDraftRow.id.desc(),
+            )
+        )
+    ).all()
+    candidates = [r for r in rows if r[3]]
+    if not candidates:
+        return []
+    decided = set(
+        (
+            await session.execute(
+                select(GuidanceDraftDecision.draft_id).where(
+                    GuidanceDraftDecision.draft_id.in_([r[0] for r in candidates])
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [(r[0], r[1], r[2]) for r in candidates if r[0] not in decided]

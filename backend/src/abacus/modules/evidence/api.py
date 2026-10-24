@@ -32,6 +32,7 @@ from abacus.modules.evidence.events import (
     InboxFileExtracted,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.gate_facts import decided_among, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -249,6 +250,7 @@ __all__ = [
     "citation_cell_reason",
     "citation_cell_text",
     "column_letters",
+    "decided_among",
     "decisions_on_screenings",
     "engagement_snapshots",
     "evidence_versions_for",
@@ -281,6 +283,7 @@ __all__ = [
     "undo_review_decision",
     "upload",
     "version_view",
+    "waiting_among",
     "withdrawn_among",
     "worth_matching",
 ]

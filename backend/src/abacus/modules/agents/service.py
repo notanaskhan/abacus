@@ -45,6 +45,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.citations import SheetLayoutError, facts, verify
+from abacus.modules.agents.events import ProposalRecorded
 from abacus.modules.agents.handoff import ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.models import AgentRun, ScreeningResult
 from abacus.modules.agents.repository import (
@@ -430,6 +431,7 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             target=Target("screening_result", result_id),
             after=Ref(agent_run_id=run.id, evidence_version_id=version.id),
         )
+        tx.emit(ProposalRecorded(engagement_id=agent.engagement, source="screening_result"))
     return ScreeningOutcome(run.id, "completed", result_id, checked)
 
 

@@ -115,3 +115,23 @@ class EvidenceWithdrawalErased(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class ReviewDecisionRecorded(DomainEvent):
+    """A person accepted, rejected or sent back a version, or undid that (P-04-T16: the gates on
+    the version's proposals close or open again)."""
+
+    event_type: ClassVar[str] = "review_decision.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class InboxFileSorted(DomainEvent):
+    """A person assigned an inbox file to a request item or discarded it (P-04-T16: its match
+    proposals no longer wait on anyone)."""
+
+    event_type: ClassVar[str] = "inbox_file.sorted"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID, classified("internal")]

@@ -35,6 +35,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.document_citations import sheet_lines, verify
+from abacus.modules.agents.events import ProposalRecorded
 from abacus.modules.agents.handoff import UploadReviewOutput, VerifiedDocumentCitation
 from abacus.modules.agents.repository import (
     finish_run,
@@ -318,4 +319,5 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
             target=Target("evidence_version", run.evidence_version_id),
             after=Ref(agent_run_id=run.id, shown=shown_count, hidden=len(rows) - shown_count),
         )
+        tx.emit(ProposalRecorded(engagement_id=agent.engagement, source="upload_review"))
     return ReviewOutcome(run.id, "completed", shown_count, len(rows) - shown_count)

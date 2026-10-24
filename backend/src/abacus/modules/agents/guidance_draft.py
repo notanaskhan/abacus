@@ -31,6 +31,7 @@ from abacus.ai_gateway.routes import route_enabled
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
+from abacus.modules.agents.events import ProposalRecorded
 from abacus.modules.agents.guidance_checks import check_draft
 from abacus.modules.agents.handoff import GuidanceDraft
 from abacus.modules.agents.repository import (
@@ -464,4 +465,5 @@ async def _draft(agent: AgentContext, request_item_id: UUID) -> DraftOutcome:
             target=Target("request_item", request_item_id),
             after=Ref(agent_run_id=run.id, shown=int(not reasons)),
         )
+        tx.emit(ProposalRecorded(engagement_id=agent.engagement, source="guidance_draft"))
     return DraftOutcome(run.id, "completed", not reasons, tuple(reasons))
