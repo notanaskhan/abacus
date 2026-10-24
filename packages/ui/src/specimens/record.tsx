@@ -24,6 +24,7 @@ import {
   RecordCockpit,
 } from "../templates/record-cockpit";
 import guards from "../../scope-guards.gen.json";
+import { WorkpaperPane } from "../workpaper/workpaper";
 import { LEDGER_COLUMNS, LEDGER_ROWS } from "./data";
 import { Held, Row, Sheet } from "./frame";
 import { Artboard } from "./portal";
@@ -35,12 +36,13 @@ import {
   REQUEST_COUNTS,
   STAFF,
 } from "./seed-figures";
+import { SOC_TABS } from "./workpaper-data";
 
 // C-03 Rail kit, C-04 Record kit and the T2 RecordCockpit frame (F-05-T40). The names and counts
 // are the Brightwater Hale seed's (seed-figures.ts); the T2 artboards' words are the T2 handoff's
 // (Northwind Robotics 401(k) Plan, PY2025 EBP audit, Mon Sep 14, 2026). Kit sample data is never
-// ported. The canvas and dock hold slot notes where their kits (C-02 Workpaper, C-12 run rows,
-// SHL-11 decision card) are later tasks; the frame, the rail and the dock header are this task's.
+// ported. T2b's canvas is the C-02 Workpaper kit (F-05-T50); the dock holds slot notes where its
+// kits (C-12 run rows, SHL-11 decision card) are later tasks.
 
 // A named person: human-only verbs render only through HumanAction (INV-1).
 const PERSON = { kind: "human", name: STAFF.hannah } as const;
@@ -279,6 +281,8 @@ function Cockpit({
 }
 
 export function RecordCockpitSpecimen(): JSX.Element {
+  // T2b: the canvas's control row drives the workpaper's tab (chrome={false}, C-02 §1).
+  const [socTab, setSocTab] = useState(SOC_TABS[0]?.label ?? "");
   return (
     <div className="flex flex-col gap-6">
       <Cockpit
@@ -316,13 +320,16 @@ export function RecordCockpitSpecimen(): JSX.Element {
         title="Service Organizations & SOC 1"
         canvas={{
           actions: ACTIONS,
-          footer: (
-            <>
-              <PaneAction icon="file-text" label="Citations (3)" />
-              <PaneAction icon="file-text" label="Procedures (3)" />
-            </>
+          controls: (
+            <Segmented
+              size="small"
+              label="Workpaper"
+              options={SOC_TABS.map((t) => t.label)}
+              active={socTab}
+              onChange={setSocTab}
+            />
           ),
-          children: <SlotNote>The C-02 Workpaper kit fills the canvas (F-05-T50).</SlotNote>,
+          children: <WorkpaperPane tabs={SOC_TABS} chrome={false} active={socTab} />,
         }}
         dock={{
           live: true,

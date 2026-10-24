@@ -75,6 +75,28 @@ describe("request counts a specimen shows are the seed's", () => {
   });
 });
 
+describe("the TPL-02 source documents are the seed's Northwind PBC list (F-05-T50)", () => {
+  it("same categories, titles and order; received, uploaded as needs review, the rest requested", () => {
+    const seedRows = (seed.requestItems[seed.engagementIds.A1 ?? ""] ?? []).map((r) => ({
+      category: r.audit_area,
+      title: r.description,
+      status:
+        r.status === "received" ? "received" : r.status === "uploaded" ? "review" : "requested",
+    }));
+    expect(
+      SPECIMEN_SEED.NORTHWIND_PBC.map(({ category, title, status }) => ({
+        category,
+        title,
+        status,
+      })),
+    ).toEqual(seedRows);
+    const received = SPECIMEN_SEED.NORTHWIND_PBC.filter((r) => r.status === "received");
+    expect(received.length).toBe(SPECIMEN_SEED.REQUEST_COUNTS.northwind.received);
+    // Only a received document has a file path.
+    expect(SPECIMEN_SEED.NORTHWIND_PBC.filter((r) => r.path !== undefined)).toEqual(received);
+  });
+});
+
 describe("personas", () => {
   it("every persona a specimen is seen as exists, including jonah-feld and dana-whitley", () => {
     const slugs = new Set(seed.people.map((p) => p.slug));

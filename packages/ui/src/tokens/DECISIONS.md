@@ -472,3 +472,16 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-23 | Tier D added               | TPL-11a (tiles row 109, tile 120 × 99, KPI 22px, column 420, deadlines 360), T11a (deadlines 334, rows 52), TPL-12a (bar 42, list 240, nav 33, rows 34, fieldsets 760), TPL-18a (inset 14, top 60, radius 14, list 220, header 46, footer 56, steps 38) |
 | 2026-10-23 | Masks                      | None: no frame is locked with a mask                                                                                                                                                                                                                    |
 | 2026-10-23 | T11 and TPL-11 geometry    | Tiles 99 high at radius 14, KPI numbers 22/400 tabular (`KPI_NUMBER`, the ceiling), group counts 15/400; the deadlines pane fixed at 334 (T11) or 360 (TPL-11); TPL-11's columns 12 apart                                                               |
+
+### C-02 Workpaper kit, SourceDocGroup and SourceDocRow (F-05-T50)
+
+| Date       | Item              | Decision                                                                                                                                                       |
+| ---------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-24 | Collapse          | A section's body animates `grid-template-rows` 1fr ↔ 0fr over 340ms and is `inert` while collapsed, as the C-03 rail does, where the kit measures `max-height` |
+| 2026-10-24 | Schedule bar ink  | `text-on-dark` (#FEFEFE) where the kit draws #FCFBF8: no token holds #FCFBF8, and the two are indistinguishable on espresso                                    |
+| 2026-10-24 | Caption italic    | Geist's synthetic oblique, as the kit's open question allows; no Geist Italic is loaded                                                                        |
+| 2026-10-24 | Ghost buttons     | Download and Open in Excel are `Button` ghost sm (padding 0 12 0 10) where the kit pads 0 11 0 9                                                               |
+| 2026-10-24 | Cited cell        | Match ink is the AA token `match-ink` (#7E4590) where the kit draws #9253A2                                                                                    |
+| 2026-10-24 | Source-doc sizes  | `cockpit` is the TPL-02 canvas (band 31 on band-hd 13.5 / 500, rows 52, 13.5 title, 12 path); `compact` is the C-15 kit (band 32 on nested, rows 40, pad 34)   |
+| 2026-10-24 | Source-doc select | The open document is `aria-current` on the row's button, where C-15 uses `aria-selected` (which needs a listbox)                                               |
+| 2026-10-24 | Workpaper data    | The specimen and T2b draw the T2 handoff's SOC workpaper on the seed's organisations (DEC-251)                                                                 |
