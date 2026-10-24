@@ -29,7 +29,7 @@ from abacus.modules.evidence.words import read_page_layer, words_upload
 from abacus.modules.identity.api import AuthContext, Forbidden, agent_context_for_run
 from abacus_tools.synthetic.documents import positioned_pdf
 
-from .support import Firm, Seeder, as_version, engagement, make_firm
+from .support import Firm, Seeder, as_version, engagement, make_firm, scanned
 
 STATEMENT = positioned_pdf(
     [
@@ -111,6 +111,7 @@ async def test_ac1_the_display_is_rendered_by_code_and_the_quote_re_read(seed: S
         ],
         agent=True,
     )
+    await scanned(seed, firm, [1, 2, 3], version=version)
     view = await citation_display(firm.person(), cited.id)
     assert (view.kind, view.n, view.state, view.verified) == ("document_text", 1, "valid", True)
     assert view.title.startswith("Upload ") and view.loc == "p. 3"  # the item, by code
@@ -282,6 +283,7 @@ async def test_a_re_read_quote_is_masked_where_pii_was_detected(seed: Seeder) ->
         version,
         [ssn.x0, ssn.top, ssn.x1, ssn.bottom],
     )
+    await scanned(seed, firm, [1, 2, 3], version=version)
     view = await citation_display(firm.person(), cited.id)
     assert view.quote_state == "shown"
     assert view.quote == "Employee SSN •••-••-6081"
@@ -363,3 +365,78 @@ async def test_lists_filter_by_host_section_source_and_kind(seed: Seeder) -> Non
         me, CitationFilters(host_ref=f"workpaper_cell:{host}"), cursor=paged.next_cursor, limit=1
     )
     assert [v.n for v in rest.items] == [2] and rest.next_cursor is None
+
+
+async def test_a_quote_on_a_page_never_scanned_for_pii_is_withheld(seed: Seeder) -> None:
+    """Security review #1: a page no PII scan covers is never quoted raw (fail closed)."""
+    firm = await make_firm(seed)
+    version = await _layered(firm)
+    [cited] = await _cite(
+        firm,
+        [CitationClaim("document_text", _doc(version, 2), quote="Employee SSN 000-00-6081")],
+    )
+    view = await citation_display(firm.person(), cited.id)
+    assert (view.quote, view.quote_state, view.verified) == (None, "withheld", True)
+    await scanned(seed, firm, [1, 3], version=version)  # page 2 still not scanned
+    assert (await citation_display(firm.person(), cited.id)).quote_state == "withheld"
+    events = await seed.value(
+        "SELECT count(*) FROM access_events WHERE tenant_id = $1", firm.tenant_id
+    )
+    assert events == 0  # nothing shown, nothing logged as read
+
+
+async def test_a_shown_quote_leaves_an_access_event_first(seed: Seeder) -> None:
+    """Security review #2: a re-read quote is content (Restricted): its read is logged."""
+    firm = await make_firm(seed)
+    version = await _layered(firm)
+    [cited] = await _cite(
+        firm, [CitationClaim("document_text", _doc(version, 3), quote="Net assets")]
+    )
+    await scanned(seed, firm, [1, 2, 3], version=version)
+    view = await citation_display(firm.person(), cited.id)
+    assert view.quote == "Net assets"
+    [event] = await seed.rows(
+        "SELECT kind, subject_type, subject_id, engagement_id, actor_id FROM access_events "
+        "WHERE tenant_id = $1",
+        firm.tenant_id,
+    )
+    assert (event["kind"], event["subject_type"], event["subject_id"]) == (
+        "evidence_content.read",
+        "evidence_version",
+        version,
+    )
+    assert event["engagement_id"] == firm.engagement_id
+    listed = await citation_list(firm.person(), CitationFilters(), cursor=None, limit=None)
+    assert [v.quote for v in listed.items] == ["Net assets"]
+    count = await seed.value(
+        "SELECT count(*) FROM access_events WHERE tenant_id = $1", firm.tenant_id
+    )
+    assert count == 2  # the list's quote is logged too
+
+
+async def test_a_title_never_names_a_file_outside_the_citations_engagement(seed: Seeder) -> None:
+    """Security review #3: an unverified row, or one whose source isn't in its engagement, is
+    titled by its kind; the file is never looked up."""
+    firm = await make_firm(seed)
+    other, _ = await _second_engagement(firm)
+    theirs = await _layered(firm, other)
+    [refused] = await _cite(
+        firm, [CitationClaim("document_text", _doc(theirs, 1), quote="Harborline")]
+    )
+    view = await citation_display(firm.person(), refused.id)
+    assert (view.verified, view.verification_reason) == (False, "source_not_found")
+    assert (view.title, view.loc) == ("Document", "")
+    forged = await seed.id(
+        "INSERT INTO citations (tenant_id, engagement_id, cited_from_type, cited_from_id, n, "
+        "kind, source_type, source_id, locator, verified, verifier_version, created_by_kind, "
+        "created_by_user_id) VALUES ($1, $2, 'workpaper_cell', $3, 1, 'document_text', "
+        "'evidence_version', $4, $5::jsonb, true, 'v1', 'human', $6) RETURNING id",
+        firm.tenant_id,
+        firm.engagement_id,
+        uuid.uuid4(),
+        theirs,
+        f'{{"evidence_version_id": "{theirs}", "page": 1}}',
+        firm.user_id,
+    )
+    title = (await citation_display(firm.person(), forged)).title
+    assert title == "Document" and not title.startswith("Upload ")

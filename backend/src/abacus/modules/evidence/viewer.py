@@ -8,15 +8,19 @@ C4 §3.3, §3.4; SPEC-322 AC-16, AC-21, AC-22, AC-24; ADR-110, ADR-052; DEC-266)
 - **Geometry and mask tokens only, never text:** the manifest carries page sizes from the word
   layer and the rendition, which pages were scanned for PII, and each detected region as a box
   and its token. Search returns page rects, never words, and the query is never logged or kept.
+- **Fail closed on unscanned pages (`projection`):** a page no PII scan covers is never searched;
+  with no scanned text page at all, search answers 409 `preview_outdated`, as the pages do.
+  Search needs 3 characters, reads at most 50 pages and counts at most 1,000 hits a call.
 - **Masked renditions only (AC-24):** a page is served only from a preview with `mask_version`
   set. **Interim rule until P-03-T13 and T15:** no masked rendition exists yet, so a rendered
   version's manifest reads `processing` with reason `preview_outdated` and its pages answer 409
   `preview_outdated`; the C4 viewer never serves an unmasked page. Pages without a PII scan read
   `not_scannable` (fail closed), never clean. The legacy preview routes keep their pre-masking
   previews until T15 re-renders them (DEC-266).
-- **Access logging:** a page image is content: its read leaves an `evidence_content.read` access
-  event first (Q-02-T20), and is not served if that fails. The manifest, regions and search carry
-  no content and log nothing beyond the route's check.
+- **Access logging:** a page image is content, and search hits are positions of content (an
+  oracle for it): each read leaves an `evidence_content.read` access event (who, which version;
+  never the query) before it is answered, and nothing is answered if logging fails (Q-02-T20).
+  The manifest and regions carry geometry only and log nothing beyond the route's check.
 """
 
 from __future__ import annotations
@@ -32,10 +36,11 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
-from abacus.modules.evidence.citations.matching import Box, line_rects, quote_spans
-from abacus.modules.evidence.masking import MaskRegion, mask_token, masked_words
+from abacus.modules.evidence.citations.matching import Box, line_rects, normalised, quote_spans
+from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
 from abacus.modules.evidence.previews import PAGE_WIDTH, RENDERER_VERSION
+from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
     get_item,
     masked_preview_for,
@@ -44,7 +49,6 @@ from abacus.modules.evidence.repository import (
     preview_for,
     preview_page,
     preview_pages_of,
-    scanned_pages,
     verified_citations_into,
 )
 from abacus.modules.evidence.uploads import (
@@ -55,6 +59,10 @@ from abacus.modules.identity.api import AuthContext, Forbidden, visible
 
 READ: Final = "evidence.read"
 MAX_HITS: Final = 200
+# Search costs (security review #4): every searched page is a sealed object decrypted per call.
+MIN_QUERY: Final = 3  # characters, after normalising
+MAX_SEARCH_PAGES: Final = 50  # the rendition's page cap (previews.MAX_PAGES)
+MAX_COUNTED: Final = 1000  # hits counted for `total`; more is `truncated`
 MAX_REGIONS: Final = 200
 PDF: Final = "application/pdf"
 # A preview made without masks: every reason a kind-`none` preview can carry, by C4 status.
@@ -154,10 +162,6 @@ def _box(region: PiiRegion) -> Box:
     return (float(b[0]), float(b[1]), float(b[2]), float(b[3]))
 
 
-def _mask_regions(regions: Sequence[PiiRegion]) -> list[MaskRegion]:
-    return [MaskRegion(r.page_no, _box(r), r.kind, r.last4) for r in regions]
-
-
 def _status(
     kind: str, reason: str | None, *, layered: bool, masked: bool, media_type: str
 ) -> tuple[str, str | None]:
@@ -190,7 +194,7 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
             session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
         )
         regions = await pii_regions_of(session, evidence_version_id=version.id)
-        scanned = await scanned_pages(session, version.id)
+        projection = await projection_of(session, evidence_version_id=version.id)
         rendered = masked or preview
         images = (
             {p.page_no: p for p in await preview_pages_of(session, rendered.id)}
@@ -223,7 +227,7 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
                 image_w=image.width if image else PAGE_WIDTH,
                 image_h=image.height if image else round(height * PAGE_WIDTH / width),
                 text_layer=page.has_text_layer,
-                pii_scan="done" if page.page_no in scanned else "not_scannable",
+                pii_scan=projection.scan_state(page.page_no),
             )
         )
     if not layer and source.kind == "image":
@@ -238,7 +242,7 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
                     image.width,
                     image.height,
                     False,
-                    "done" if 1 in scanned else "not_scannable",
+                    projection.scan_state(1),
                 )
             )
     masks = [
@@ -336,26 +340,43 @@ async def viewer_regions(
 
 async def viewer_search(ctx: AuthContext, version_id: UUID, query: str) -> SearchResult:
     """Hits of `query` in the version's masked word layer, as page rects (AC-21): whole words,
-    contiguous, at most 200, with the true total. The query is never logged or stored, and a
-    masked value can't be found by its digits."""
+    contiguous, at most `MAX_HITS` returned and `MAX_COUNTED` counted, over at most
+    `MAX_SEARCH_PAGES` pages. Only pages a PII scan covers are searched (fail closed): when the
+    version has text pages and none is scanned, 409 `preview_outdated`, as its pages answer; a
+    skipped page marks the result `truncated`. A query under `MIN_QUERY` characters reads
+    nothing. The search is logged as a content read (who, which version), never the query."""
     version = await visible_version(ctx, version_id)
+    if len(normalised(query)) < MIN_QUERY:
+        return SearchResult([], 0, False)
     async with tenant_session(ctx.tenant) as session:
         layer = await pages_of(
             session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
         )
-        regions = _mask_regions(await pii_regions_of(session, evidence_version_id=version.id))
+        projection = await projection_of(session, evidence_version_id=version.id)
+    texts = [p for p in layer if p.has_text_layer]
+    readable = [p for p in texts if projection.readable(p.page_no)]
+    if texts and not readable:
+        raise PreviewOutdated  # nothing scanned for PII yet: never searched raw
+    searched = readable[:MAX_SEARCH_PAGES]
+    skipped = len(texts) > len(searched)
     hits: list[SearchHit] = []
     total = 0
-    for page in layer:
-        if not page.has_text_layer:
+    for page in searched:
+        words = projection.words((await read_page_layer(ctx.tenant_id, page)).words, page.page_no)
+        if words is None:  # unreachable: `searched` holds readable pages only
             continue
-        words = (await read_page_layer(ctx.tenant_id, page)).words
-        runs = quote_spans(masked_words(words, regions, page.page_no), query, limit=10_000)
+        runs = quote_spans(words, query, limit=MAX_COUNTED - total + 1)
         total += len(runs)
         for run in runs:
             if len(hits) < MAX_HITS:
                 hits.append(SearchHit(page.page_no, [list(r) for r in line_rects(run)]))
-    return SearchResult(hits, total, total > len(hits))
+        if total > MAX_COUNTED:
+            skipped, total = True, MAX_COUNTED
+            break
+    if searched:
+        # Hit positions are content: the read is logged first (who, which version; no query).
+        await record_content_read(ctx, version.engagement_id, "evidence_version", version.id)
+    return SearchResult(hits, total, skipped or total > len(hits))
 
 
 __all__ = [

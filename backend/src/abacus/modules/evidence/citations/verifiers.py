@@ -344,38 +344,56 @@ async def verify_request_item(
 # --- Display: rendered by code from the locator (INV-2) ----------------------------------------
 
 
-async def _file_title(session: AsyncSession, version_id: object) -> str:
+async def _file_title(
+    session: AsyncSession, version_id: object, engagement_id: UUID | None
+) -> str:
+    """The version's item title, only when the version is in the citation's engagement."""
     try:
         version = await get_version(session, UUID(str(version_id)))
     except ValueError:
         version = None
-    item = await get_item(session, version.evidence_item_id) if version is not None else None
+    if version is None or engagement_id is None or version.engagement_id != engagement_id:
+        return "Document"
+    item = await get_item(session, version.evidence_item_id)
     return item.title if item is not None else "Document"
 
 
-async def _source_title(session: AsyncSession, locator: Mapping[str, object]) -> str:
-    """The cited file's name: the version's item title, or the inbox file's name (P-03-T10)."""
+async def _source_title(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> str:
+    """The cited file's name: the version's item title, or the inbox file's name (P-03-T10),
+    only when the source is in the citation's engagement."""
     inbox_id = locator.get("inbox_file_id")
     if inbox_id is not None:
         try:
             found = await get_inbox_file(session, UUID(str(inbox_id)))
         except ValueError:
             found = None
-        return found.file_name if found is not None else "Document"
-    return await _file_title(session, locator.get("evidence_version_id"))
+        if found is None or engagement_id is None or found.engagement_id != engagement_id:
+            return "Document"
+        return found.file_name
+    return await _file_title(session, locator.get("evidence_version_id"), engagement_id)
 
 
-async def display_document_text(session: AsyncSession, locator: Mapping[str, object]) -> Display:
-    return Display(await _source_title(session, locator), f"p. {locator.get('page')}")
+async def display_document_text(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> Display:
+    return Display(
+        await _source_title(session, locator, engagement_id), f"p. {locator.get('page')}"
+    )
 
 
-async def display_sheet_cell(session: AsyncSession, locator: Mapping[str, object]) -> Display:
+async def display_sheet_cell(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> Display:
     sheet, cell = locator.get("sheet"), locator.get("cell")
     loc = f"{sheet} · {cell}" if sheet else str(cell)
-    return Display(await _source_title(session, locator), loc)
+    return Display(await _source_title(session, locator, engagement_id), loc)
 
 
-async def display_request_item(session: AsyncSession, locator: Mapping[str, object]) -> Display:
+async def display_request_item(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> Display:
     return Display("Request item", "")
 
 

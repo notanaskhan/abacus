@@ -1015,15 +1015,22 @@ async def pii_regions_of(
     )
 
 
-async def scanned_pages(session: AsyncSession, evidence_version_id: UUID) -> set[int]:
-    """The pages any PII scan of the version (none derived) recorded as scanned (LIST_EXEMPT:
+async def scanned_pages(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+) -> set[int]:
+    """The pages any PII scan of the source (none derived) recorded as scanned (LIST_EXEMPT:
     one source's scan runs, for a caller that authorised on it)."""
+    source = (
+        PiiScanRun.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else PiiScanRun.inbox_file_id == inbox_file_id
+    )
     rows = (
         await session.execute(
-            select(PiiScanRun.pages_scanned).where(
-                PiiScanRun.evidence_version_id == evidence_version_id,
-                PiiScanRun.derivation_id.is_(None),
-            )
+            select(PiiScanRun.pages_scanned).where(source, PiiScanRun.derivation_id.is_(None))
         )
     ).scalars()
     return {int(page) for pages in rows for page in pages}

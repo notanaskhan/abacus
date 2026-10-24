@@ -385,14 +385,15 @@ async def viewer_regions_route(
     "/evidence-versions/{version_id}/search",
     action="evidence.read",
     response_model=ViewerSearchOut,
-    errors=(501,),
+    errors=(409, 501),
 )
 async def viewer_search_route(
     version_id: VersionId,
     ctx: Ctx,
-    q: Annotated[str, Query(min_length=1, max_length=200)],
+    q: Annotated[str, Query(min_length=3, max_length=200)],
 ) -> ViewerSearchOut:
-    """AC3.9: page rects only, at most 200; the query is never logged."""
+    """AC3.9: page rects only, at most 200, over pages scanned for PII only (409
+    `preview_outdated` when none is); logged as a content read; the query is never logged."""
     await _gate(ctx, EVIDENCE_VIEWER_V1)
     return ViewerSearchOut.model_validate(asdict(await viewer_search(ctx, version_id, q)))
 

@@ -15,6 +15,7 @@ from structlog.testing import capture_logs
 
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import uow
+from abacus.modules.evidence import viewer
 from abacus.modules.evidence.api import (
     CitationAnchor,
     CitationClaim,
@@ -33,7 +34,7 @@ from abacus.modules.evidence.words import words_upload
 from abacus.modules.identity.api import Forbidden
 from abacus_tools.synthetic.documents import encrypted_pdf, positioned_pdf
 
-from .support import Firm, Seeder, as_version, make_firm
+from .support import Firm, Seeder, as_version, make_firm, scanned
 
 STATEMENT = positioned_pdf(
     [
@@ -221,6 +222,7 @@ async def test_ac21_search_answers_rects_only_never_logs_the_query_and_skips_mas
     firm = await make_firm(seed)
     version = await _rendered(firm)
     await _ssn_region(seed, firm, version)
+    await scanned(seed, firm, [1, 2, 3], version=version)
     with capture_logs() as logs:
         found = await viewer_search(firm.person(), version, "total investments")
     assert (found.total, found.truncated) == (2, False)
@@ -231,3 +233,51 @@ async def test_ac21_search_answers_rects_only_never_logs_the_query_and_skips_mas
     # A masked value isn't found by its digits.
     assert (await viewer_search(firm.person(), version, "000-00-6081")).total == 0
     assert (await viewer_search(firm.person(), version, "investment")).total == 0  # whole words
+
+
+async def test_search_fails_closed_on_pages_no_pii_scan_covers(seed: Seeder) -> None:
+    """Security review #1: an unscanned page is never searched (no SSN oracle)."""
+    firm = await make_firm(seed)
+    version = await _rendered(firm)
+    with pytest.raises(PreviewOutdated):
+        await viewer_search(firm.person(), version, "000-00-6081")
+    await scanned(seed, firm, [1, 3], version=version)  # page 2 holds the SSN, unscanned
+    assert (await viewer_search(firm.person(), version, "000-00-6081")).total == 0
+    assert (await viewer_search(firm.person(), version, "Harborline statement")).total == 1
+    manifest = await viewer_manifest(firm.person(), version)
+    assert [p.pii_scan for p in manifest.pages] == ["done", "not_scannable", "done"]
+
+
+async def test_search_leaves_an_access_event_and_never_the_query(seed: Seeder) -> None:
+    """Security review #2: a search is an oracle for content; that it ran is logged."""
+    firm = await make_firm(seed)
+    version = await _rendered(firm)
+    await scanned(seed, firm, [1, 2, 3], version=version)
+    await viewer_search(firm.person(), version, "Net assets nowhere")
+    rows = await seed.rows(
+        "SELECT kind, subject_type, subject_id, row_to_json(a)::text AS whole "
+        "FROM access_events a WHERE tenant_id = $1",
+        firm.tenant_id,
+    )
+    assert [(r["kind"], r["subject_type"], r["subject_id"]) for r in rows] == [
+        ("evidence_content.read", "evidence_version", version)
+    ]
+    assert "nowhere" not in rows[0]["whole"]
+
+
+async def test_search_needs_three_characters_and_caps_its_pages(
+    seed: Seeder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Security review #4: a minimum query and a page cap bound each search's cost."""
+    firm = await make_firm(seed)
+    version = await _rendered(firm)
+    await scanned(seed, firm, [1, 2, 3], version=version)
+    short = await viewer_search(firm.person(), version, "to")
+    assert (short.items, short.total, short.truncated) == ([], 0, False)
+    assert (
+        await seed.value("SELECT count(*) FROM access_events WHERE tenant_id = $1", firm.tenant_id)
+        == 0
+    )  # nothing was read
+    monkeypatch.setattr(viewer, "MAX_SEARCH_PAGES", 2)
+    capped = await viewer_search(firm.person(), version, "total investments")
+    assert (capped.total, capped.truncated) == (0, True)  # both hits are on page 3

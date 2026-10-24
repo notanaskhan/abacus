@@ -112,8 +112,9 @@ class Display:
 
 # (the writer's unit of work, the acting principal, the claim, where it is used)
 Verifier = Callable[[UnitOfWork, Actor, CitationClaim, Anchor], Awaitable[Verdict]]
-# (the reader's tenant session, the stored locator)
-Displayer = Callable[[AsyncSession, Mapping[str, object]], Awaitable[Display]]
+# (the reader's tenant session, the stored locator, the citation's engagement): a display names
+# a source only when it is in that engagement (security review #3).
+Displayer = Callable[[AsyncSession, Mapping[str, object], UUID | None], Awaitable[Display]]
 
 
 @dataclass(frozen=True)

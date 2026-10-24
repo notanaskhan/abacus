@@ -22,7 +22,7 @@ from abacus.modules.evidence.words import words_upload
 from abacus.modules.identity.api import AgentContext, agent_context_for_run
 from abacus_tools.synthetic.documents import positioned_pdf
 
-from .support import Firm, Seeder, as_inbox, as_version, make_firm
+from .support import Firm, Seeder, as_inbox, as_version, make_firm, scanned
 
 STATEMENT = positioned_pdf(
     [
@@ -84,6 +84,7 @@ async def test_ac1_a_reviewers_quotes_become_agent_rows_that_resolve_to_a_region
     assert rows[0]["engagement_id"] == firm.engagement_id
     assert '"bbox": [72.0' in rows[0]["locator"]  # a lit region
     assert str(found[0].match_id).startswith(f"ev:{version}#p2:72,")
+    await scanned(seed, firm, [1, 2], version=version)
     view = await citation_display(firm.person(), found[0].id)
     assert view.created_by.label == "Test person via Agent"
     assert view.quote == "Total investments 16,500,000.00"
@@ -108,6 +109,7 @@ async def test_ac1_the_matcher_cites_an_inbox_file(seed: Seeder) -> None:
     assert cited.verified and str(cited.match_id).startswith(f"inbox:{inbox}#p1:")
     [row] = await seed.rows("SELECT source_type, source_id FROM citations WHERE id = $1", cited.id)
     assert (row["source_type"], row["source_id"]) == ("inbox_file", inbox)
+    await scanned(seed, firm, [1, 2], inbox=inbox)
     view = await citation_display(firm.person(), cited.id)
     assert (view.title, view.quote) == ("dropped.pdf", "Harborline statement")
 

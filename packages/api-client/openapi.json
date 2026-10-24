@@ -76064,7 +76064,7 @@
     },
     "/v1/evidence-versions/{version_id}/search": {
       "get": {
-        "description": "AC3.9: page rects only, at most 200; the query is never logged.",
+        "description": "AC3.9: page rects only, at most 200, over pages scanned for PII only (409\n`preview_outdated` when none is); logged as a content read; the query is never logged.",
         "operationId": "viewer_search",
         "parameters": [
           {
@@ -76083,7 +76083,7 @@
             "required": true,
             "schema": {
               "maxLength": 200,
-              "minLength": 1,
+              "minLength": 3,
               "title": "Q",
               "type": "string"
             }
@@ -76161,6 +76161,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {

@@ -33,6 +33,7 @@ updated: 2026-10-24
 - 2026-10-24: plan written.
 - 2026-10-24: built. `viewer.py` serves the four routes; tests written first (`test_viewer.py`, 7). `UploadPreview` now maps 0109's `derivation_id` and `mask_version`; `PiiRegion` maps no `value_sealed`. Committed with T08.
 - 2026-10-24: final checks on the branch: backend unit, contracts and security 26,387 passed (4 xfailed); integration (trust_kit, screening, access events, schema check, binder lifecycle, model foundation) 322 passed (2 xfailed); ruff, pyright, banned_patterns, validate_docs and error_codes clean; make check-fast green; apps/web vitest 1,488 tests, one SHL-01 timing test flaked under load and passes alone.
+- 2026-10-24 (security review): (1) quotes and search failed open on pages no PII scan covers; one check (`evidence/projection.py`) now serves the manifest, search and the quote re-read: an unscanned page is never searched (409 `preview_outdated` with no scanned text page) and its quote is `withheld`. (2) a shown quote and a search now write an `evidence_content.read` access event first (never the query). (3) a title names a file only for a verified citation whose source is in its engagement (the display function takes the engagement). (4) search needs 3 characters and reads at most 50 pages and counts 1,000 hits a call. Six failing tests written first; existing tests that read quotes or search now seed a scan run. DEC-266 updated.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

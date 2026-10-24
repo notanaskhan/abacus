@@ -9,12 +9,15 @@ rows citing one evidence version, or a kind. Rules:
   A citation with no engagement (a firm-level anchor) takes its visibility from its anchor's
   provider; none is registered before P-04, so it is never served.
 - **Rendered by code:** `title` and `loc` come from the kind's registered display function, from
-  the stored locator, never from model text (INV-2); a kind with no display reads its kind.
+  the stored locator, never from model text (INV-2); a kind with no display, or an unverified
+  citation (whose source may not be in its engagement), reads its kind and names no file.
 - **The quote is never stored:** it is re-read from the word layer inside the stored box, kept
   only when its words hash to the stored `quote_sha256` (`shown`), and returned from the masked
   projection. No run hashing to it is `changed`, and the citation is then reported unverified
   (`quote_not_found`): what the layer holds no longer supports it. An unreadable layer
-  (crypto-shredded) or a quote with no box is `withheld`.
+  (crypto-shredded), a quote with no box, or a page no PII scan covers (fail closed: none is
+  scanned before P-03-T13) is `withheld`. A shown quote is a content read: an
+  `evidence_content.read` access event is written for its source before the answer leaves.
 - **State is computed** from `citation_events`: `relinked` once relinked, else the latest of
   `moved` and `broken`, else `valid`. A citation is never updated.
 - **`used_in`** counts the distinct anchors, visible to the reader, citing the same `match_id`.
@@ -44,11 +47,12 @@ from abacus.kernel.listing import (
     query_hash,
 )
 from abacus.modules.engagements.api import get_ref
+from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.citations.matching import reread_span
 from abacus.modules.evidence.citations.registry import citable
-from abacus.modules.evidence.masking import MaskRegion, masked_text
 from abacus.modules.evidence.models import Citation, CitationEvent, EvidencePage
-from abacus.modules.evidence.repository import events_of, get_citation, pages_of, pii_regions_of
+from abacus.modules.evidence.projection import Projection, projection_of
+from abacus.modules.evidence.repository import events_of, get_citation, pages_of
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import (
     AuthContext,
@@ -188,20 +192,22 @@ def _source_ids(row: Citation) -> tuple[UUID | None, UUID | None]:
 
 @dataclass
 class _Reads:
-    """What one request has read already: a layer page is read once however often it's cited."""
+    """What one request has read already: a source's pages and its masked projection are read
+    once however often it's cited."""
 
     pages: dict[tuple[UUID | None, UUID | None], Sequence[EvidencePage]] = field(
         default_factory=dict[tuple[UUID | None, UUID | None], Sequence[EvidencePage]]
     )
-    regions: dict[tuple[UUID | None, UUID | None], list[MaskRegion]] = field(
-        default_factory=dict[tuple[UUID | None, UUID | None], list[MaskRegion]]
+    projections: dict[tuple[UUID | None, UUID | None], Projection] = field(
+        default_factory=dict[tuple[UUID | None, UUID | None], Projection]
     )
 
 
 async def _quote(
     session: AsyncSession, tenant_id: UUID, row: Citation, reads: _Reads
 ) -> tuple[str | None, str]:
-    """The re-read quote and its state (shown, withheld, changed)."""
+    """The re-read quote and its state (shown, withheld, changed). A page no PII scan covers is
+    `withheld`, never quoted raw (fail closed, `projection`)."""
     if row.quote_sha256 is None:
         return None, "shown"  # nothing was quoted
     box, page_no = _box(row.locator.get("bbox")), _page_no(row.locator)
@@ -215,6 +221,9 @@ async def _quote(
             inbox_file_id=key[1],
             extractor_version=WORDS_VERSION,
         )
+        reads.projections[key] = await projection_of(
+            session, evidence_version_id=key[0], inbox_file_id=key[1]
+        )
     page = next((p for p in reads.pages[key] if p.page_no == page_no), None)
     if page is None or not page.has_text_layer:
         return None, "withheld"
@@ -225,18 +234,10 @@ async def _quote(
     run = reread_span(layer.words, box, row.quote_sha256)
     if run is None:
         return None, "changed"
-    if key not in reads.regions:
-        found = await pii_regions_of(session, evidence_version_id=key[0], inbox_file_id=key[1])
-        reads.regions[key] = [
-            MaskRegion(
-                r.page_no,
-                (float(r.bbox[0]), float(r.bbox[1]), float(r.bbox[2]), float(r.bbox[3])),
-                r.kind,
-                r.last4,
-            )
-            for r in found
-        ]
-    return masked_text(run, reads.regions[key], page_no), "shown"
+    words = reads.projections[key].words(run, page_no)
+    if words is None:
+        return None, "withheld"  # not scanned for PII: never quoted raw
+    return " ".join(w.text for w in words), "shown"
 
 
 async def _used_in(
@@ -284,12 +285,15 @@ async def _views(
     }
     names = await names_of(sorted(people)) if people else {}
     relink: dict[UUID, bool] = {}
+    read: set[tuple[UUID, str, UUID]] = set()  # sources whose text a quote shows
     out: list[CitationView] = []
     for row in rows:
         state, moved = state_of(by_citation.get(row.id, []))
         registered = citable(row.kind)
-        if registered is not None:
-            shown = await registered.display(session, row.locator)
+        if registered is not None and row.verified:
+            # Only a verified row's source is known to be in its engagement; the display
+            # function checks that again before naming the file (security review #3).
+            shown = await registered.display(session, row.locator, row.engagement_id)
             title, loc = shown.title, shown.loc
         else:
             title, loc = _KIND_TITLES.get(row.kind, "Source"), ""
@@ -304,7 +308,11 @@ async def _views(
                 relink[row.engagement_id] = RELINK in held
             if relink[row.engagement_id]:
                 actions.append(RELINK)
-        version_id, _ = _source_ids(row)
+        version_id, inbox_id = _source_ids(row)
+        if quote is not None and row.engagement_id is not None:
+            subject = ("evidence_version", version_id) if version_id else ("inbox_file", inbox_id)
+            if subject[1] is not None:
+                read.add((row.engagement_id, subject[0], subject[1]))
         out.append(
             CitationView(
                 id=row.id,
@@ -333,6 +341,10 @@ async def _views(
                 allowed_actions=actions,
             )
         )
+    # A re-read quote is client content (Restricted): its read is logged before it is answered,
+    # and nothing is answered if logging fails (Q-02-T20; security review #2).
+    for engagement_id, subject_type, subject_id in sorted(read, key=str):
+        await record_content_read(ctx, engagement_id, subject_type, subject_id)
     return out
 
 

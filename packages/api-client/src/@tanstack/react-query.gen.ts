@@ -6236,7 +6236,8 @@ export const viewerSearchQueryKey = (options: Options<ViewerSearchData>) => crea
 /**
  * Viewer Search Route
  *
- * AC3.9: page rects only, at most 200; the query is never logged.
+ * AC3.9: page rects only, at most 200, over pages scanned for PII only (409
+ * `preview_outdated` when none is); logged as a content read; the query is never logged.
  */
 export const viewerSearchOptions = (options: Options<ViewerSearchData>) => queryOptions<ViewerSearchResponse, ViewerSearchError, ViewerSearchResponse, ReturnType<typeof viewerSearchQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

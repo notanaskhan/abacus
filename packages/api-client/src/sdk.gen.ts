@@ -3726,7 +3726,8 @@ export const viewerRegions = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Viewer Search Route
  *
- * AC3.9: page rects only, at most 200; the query is never logged.
+ * AC3.9: page rects only, at most 200, over pages scanned for PII only (409
+ * `preview_outdated` when none is); logged as a content read; the query is never logged.
  */
 export const viewerSearch = <ThrowOnError extends boolean = false>(options: Options<ViewerSearchData, ThrowOnError>): RequestResult<ViewerSearchResponses, ViewerSearchErrors, ThrowOnError> => (options.client ?? client).get<ViewerSearchResponses, ViewerSearchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
