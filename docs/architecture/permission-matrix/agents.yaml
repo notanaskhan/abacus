@@ -53,5 +53,5 @@ actions:
   proposal.follow_up:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-10: "Ask follow-up"
   proposal.undo:            {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # ADR-161 clause 6: the decider, inside 10 s (the service checks)
   # --- Follow-ups ---
-  follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope, independence: required}   # P-06-T14: + client_service (Grace drafts BND-01 b reminders); client data, per person
+  follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # P-06-T14: + client_service (Grace drafts BND-01 b reminders); a draft is not client data (SPEC-027 AC-8), the send is
   follow_up.send:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, independence: required}   # P-06-T14 (DEC-74): a person sends, Undo and dismiss too; the agent only drafts; as request_item.send

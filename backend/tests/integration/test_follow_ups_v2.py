@@ -445,7 +445,9 @@ async def test_review5_a_dismissed_follow_up_offers_nothing(seed: Seeder) -> Non
         await follow_ups.send(chase.partner, draft.id)
 
 
-async def test_review5_an_unconfirmed_staff_member_may_not_read_or_send(seed: Seeder) -> None:
+async def test_review5_an_unconfirmed_staff_member_may_read_but_not_send(seed: Seeder) -> None:
+    """A draft is not client data (SPEC-027 AC-8), so reading it needs no independence
+    confirmation; sending it to the client does (DEC-220)."""
     chase = await _chase(seed)
     with clock.frozen(T0):
         [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
@@ -457,9 +459,10 @@ async def test_review5_an_unconfirmed_staff_member_may_not_read_or_send(seed: Se
         chase.world.engagement,
         staff.user_id,
     )
-    for attempt in (follow_ups.read, follow_ups.send):
-        with clock.frozen(T0), pytest.raises(Forbidden):
-            await attempt(staff.context(), draft.id)
+    with clock.frozen(T0):
+        assert (await follow_ups.read(staff.context(), draft.id)).id == draft.id
+    with clock.frozen(T0), pytest.raises(Forbidden):
+        await follow_ups.send(staff.context(), draft.id)
 
 
 async def test_review5_only_a_published_binder_offers_follow_ups(seed: Seeder) -> None:
