@@ -84,6 +84,29 @@ class Seeder:
         finally:
             await conn.close()
 
+    async def attest(self, tenant_id: uuid.UUID, engagement_id: uuid.UUID) -> None:
+        """The engagement becomes an active EBP audit, so its client is an attest client
+        (DEC-128); the derivation trigger reads under the tenant, as the app's write does."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            async with conn.transaction():
+                await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(tenant_id))
+                await conn.execute(
+                    "UPDATE engagements SET type = 'ebp_audit', status = 'active' WHERE id = $1",
+                    engagement_id,
+                )
+        finally:
+            await conn.close()
+
+    async def blocks_view(self, tenant_id: uuid.UUID, set_by: uuid.UUID) -> None:
+        """ADR-164 item 3: the firm restores TASK-045's read gate on attest engagements."""
+        await self.run(
+            "INSERT INTO firm_setting_values (tenant_id, key, value, set_by) "
+            "VALUES ($1, 'g2_blocks_view', true, $2)",
+            tenant_id,
+            set_by,
+        )
+
     async def firm(self) -> uuid.UUID:
         tenant_id = uuid.uuid4()
         await self.run(
