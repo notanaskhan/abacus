@@ -19,7 +19,7 @@
   (staff sessions carry no firm, 0116; DEC-286). `last_sign_ins` is for active members only.
 
 Revision ID: 0142
-Revises: 0133
+Revises: 0140
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0142"
-down_revision = "0133"
+down_revision = "0140"
 branch_labels = None
 depends_on = None
 

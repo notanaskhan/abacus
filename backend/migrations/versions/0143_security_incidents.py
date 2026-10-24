@@ -20,7 +20,7 @@
   `incident_propagation_log`.
 
 Revision ID: 0143
-Revises: 0133
+Revises: 0142
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0143"
-down_revision = "0133"
+down_revision = "0142"
 branch_labels = None
 depends_on = None
 

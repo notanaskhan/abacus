@@ -31,7 +31,7 @@ Definers (no tenant is known before the token is):
   offboarded, change firm role or leave the engagement (DEC-277).
 
 Revision ID: 0140
-Revises: 0133
+Revises: 0138
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns
 
 revision = "0140"
-down_revision = "0133"
+down_revision = "0138"
 branch_labels = None
 depends_on = None
 

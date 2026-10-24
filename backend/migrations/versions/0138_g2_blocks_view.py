@@ -9,7 +9,7 @@ Rows are set by the firm administrator (`firm_settings.set_firm_setting`) or the
 never here. Downgrade removes any `g2_blocks_view` row and restores 0081's list.
 
 Revision ID: 0138
-Revises: 0133
+Revises: 0135
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0138"
-down_revision = "0133"
+down_revision = "0135"
 branch_labels = None
 depends_on = None
 
