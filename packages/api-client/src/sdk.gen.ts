@@ -43,7 +43,7 @@ export const exportRunTrace = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Audits Index Route
  *
- * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).
+ * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311).
  */
 export const auditsIndex = <ThrowOnError extends boolean = false>(options?: Options<AuditsIndexData, ThrowOnError>): RequestResult<AuditsIndexResponses, AuditsIndexErrors, ThrowOnError> => (options?.client ?? client).get<AuditsIndexResponses, AuditsIndexErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -69,7 +69,8 @@ export const auditArchiveRecord = <ThrowOnError extends boolean = false>(options
 /**
  * Audit Cockpit Route
  *
- * AUD-02's host projection (A-01-T09).
+ * AUD-02's host projection (A-01-T09, DEC-312): the bar and overview are metadata; the
+ * bands, dock and actions also need `engagement.read`.
  */
 export const auditCockpit = <ThrowOnError extends boolean = false>(options: Options<AuditCockpitData, ThrowOnError>): RequestResult<AuditCockpitResponses, AuditCockpitErrors, ThrowOnError> => (options.client ?? client).get<AuditCockpitResponses, AuditCockpitErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -125,7 +126,8 @@ export const auditReleaseRecord = <ThrowOnError extends boolean = false>(options
 /**
  * Audit Source Documents Route
  *
- * AUD-02's canvas and AUD-03 (A-01-T10).
+ * AUD-02's canvas and AUD-03 (A-01-T10, DEC-313): the work item's asked PBC requests by
+ * category, with the C5 v1.1 row facts (firm only: client principals were refused).
  */
 export const auditSourceDocuments = <ThrowOnError extends boolean = false>(options: Options<AuditSourceDocumentsData, ThrowOnError>): RequestResult<AuditSourceDocumentsResponses, AuditSourceDocumentsErrors, ThrowOnError> => (options.client ?? client).get<AuditSourceDocumentsResponses, AuditSourceDocumentsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

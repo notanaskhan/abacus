@@ -85,6 +85,16 @@ def register_match_picks(lookup: MatchPicks) -> None:
     _picks = lookup
 
 
+async def match_picks(
+    tenant: TenantContext, inbox_file_ids: Sequence[UUID]
+) -> dict[UUID, list[tuple[UUID, int]]]:
+    """The matcher's shown picks for these inbox files (A-01-T10: a request row's "matched 94%");
+    none while the agents module has not registered its lookup."""
+    if _picks is None or not inbox_file_ids:
+        return {}
+    return await _picks(tenant, inbox_file_ids)
+
+
 def merged(
     picks: Sequence[tuple[UUID, int]], code: Sequence[Suggestion], takes: set[UUID]
 ) -> tuple[Suggestion, ...]:

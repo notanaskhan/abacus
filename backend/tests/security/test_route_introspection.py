@@ -26,7 +26,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("DELETE", "/v1/engagements/{engagement_id}/team/{user_id}", "engagement.member_remove"),
     ("GET", "/v1/agent-runs/{run_id}/trace", "agent_run.read"),
     ("GET", "/v1/audits", "engagement.read_metadata"),
-    ("GET", "/v1/audits/{work_item_id}/cockpit", "engagement.read"),
+    ("GET", "/v1/audits/{work_item_id}/cockpit", "engagement.read_metadata"),
     ("GET", "/v1/audits/{work_item_id}/source-documents", "request_item.read"),
     ("GET", "/v1/auth/callback", "pre_session"),
     ("GET", "/v1/auth/sign-in", "pre_session"),

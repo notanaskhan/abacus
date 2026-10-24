@@ -92,6 +92,12 @@ from abacus.modules.requests.repository import (
     upload_counts,
 )
 from abacus.modules.requests.roll_forward import copy_binder_items
+from abacus.modules.requests.source_documents import (
+    LatestUploadView,
+    OwedByView,
+    RowFacts,
+    row_facts,
+)
 
 # DEC-24: the Undo window of a publish, and how long its grant stays consumable after it.
 UNDO_WINDOW: Final = timedelta(seconds=10)
@@ -229,6 +235,11 @@ class RequestRowView:
     source_tag: str | None
     incorporation_state: str
     upload_count: int
+    # C5 v1.1 (A-01-T10, DEC-313): firm-only; `contract.for_viewer` drops them for a client.
+    owed_by: OwedByView | None = None
+    latest_upload: LatestUploadView | None = None
+    match_confidence: int | None = None
+    linked_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -503,7 +514,8 @@ async def binder_requests(
             session, ctx, binder.id, category, after, page_size
         )
         uploads = await upload_counts(session, [r.id for r in rows])
-    page = list(rows[:page_size])
+        page = list(rows[:page_size])
+        facts = await row_facts(session, ctx.tenant, page) if not ctx.client else {}
     following = None
     if len(rows) > page_size and page:
         last = page[-1]
@@ -516,7 +528,10 @@ async def binder_requests(
     today = await clock.today(ctx.tenant)
     del ref
     return RequestPage(
-        [_row(i, binder.default_due_on, today, uploads.get(i.id, 0)) for i in page],
+        [
+            _row(i, binder.default_due_on, today, uploads.get(i.id, 0), facts.get(i.id))
+            for i in page
+        ],
         following,
         total[0],
         total[1],
@@ -524,7 +539,13 @@ async def binder_requests(
     )
 
 
-def _row(item: RequestItem, default_due: date | None, today: date, uploads: int) -> RequestRowView:
+def _row(
+    item: RequestItem,
+    default_due: date | None,
+    today: date,
+    uploads: int,
+    facts: RowFacts | None = None,
+) -> RequestRowView:
     due = item.due_on or default_due
     return RequestRowView(
         id=item.id,
@@ -540,6 +561,10 @@ def _row(item: RequestItem, default_due: date | None, today: date, uploads: int)
         source_tag=item.source_tag,
         incorporation_state=item.incorporation_state,
         upload_count=uploads,
+        owed_by=facts.owed_by if facts else None,
+        latest_upload=facts.latest_upload if facts else None,
+        match_confidence=facts.match_confidence if facts else None,
+        linked_count=facts.linked_count if facts else None,
     )
 
 

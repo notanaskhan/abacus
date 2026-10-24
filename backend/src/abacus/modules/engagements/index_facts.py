@@ -9,13 +9,25 @@ would hide.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from datetime import date
 from typing import Final
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, Integer, Subquery, case, cast, column, func, select, table
 
-from abacus.modules.engagements.models import WorkItem
-from abacus.modules.organisations.api import client_name_column, office_name_column
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.engagements.models import (
+    AssuranceWorkItem,
+    Engagement,
+    EngagementLetter,
+    WorkItem,
+)
+from abacus.modules.organisations.api import (
+    client_name_column,
+    entity_name_column,
+    office_name_column,
+)
 
 _assignments = table(
     "work_item_assignments",
@@ -94,3 +106,73 @@ def work_item_index() -> Subquery:
         _season().label("season"),
         _preparer(WorkItem.id.expression).label("preparer_user_id"),
     ).subquery("work_item_index")
+
+
+# --- A-01-T08: the AUD-01 audits index (docs/contracts/audits-cockpit.md §3) --------------------
+
+# Engagements an audits row never shows: not yet engaged, or declined.
+_NOT_ENGAGED: Final = ("prospect", "declined")
+
+
+def assurance_index() -> Subquery:
+    """Per assurance work item: `work_item_id`, `engagement_id`, `title` (the work item's
+    name), `client_id`, `client_name`,
+    `name` (the engagement's entity: "Northwind Robotics 401(k) Plan"), `type`, `status` (the
+    engagement's), `period_label`, `period_end`, `methodology_version_id`, `phase`, `phase_source`,
+    `phase_changed_at`, `ebp_plan_kind`, `limited_scope_103a3c`, `is_group_audit`,
+    `standards_set_id`, `office_id`, `office_name`, `due_on`, `archived_at` and
+    `archive_locked_at`, for engaged work only. Reads under the caller's session (RLS); the
+    joining list applies `visible()` on `engagement_id` (LIST-001)."""
+    return (
+        select(
+            WorkItem.id.label("work_item_id"),
+            WorkItem.engagement_id.label("engagement_id"),
+            WorkItem.name.label("title"),
+            Engagement.client_id.label("client_id"),
+            client_name_column(Engagement.client_id).label("client_name"),
+            entity_name_column(Engagement.client_entity_id).label("name"),
+            Engagement.type.label("type"),
+            Engagement.status.label("status"),
+            Engagement.period_label.label("period_label"),
+            Engagement.fiscal_period_end.label("period_end"),
+            Engagement.methodology_version_id.label("methodology_version_id"),
+            AssuranceWorkItem.phase.label("phase"),
+            AssuranceWorkItem.phase_source.label("phase_source"),
+            AssuranceWorkItem.phase_changed_at.label("phase_changed_at"),
+            AssuranceWorkItem.ebp_plan_kind.label("ebp_plan_kind"),
+            AssuranceWorkItem.limited_scope_103a3c.label("limited_scope_103a3c"),
+            AssuranceWorkItem.is_group_audit.label("is_group_audit"),
+            AssuranceWorkItem.standards_set_id.label("standards_set_id"),
+            func.coalesce(WorkItem.office_id, Engagement.office_id).label("office_id"),
+            office_name_column(func.coalesce(WorkItem.office_id, Engagement.office_id)).label(
+                "office_name"
+            ),
+            WorkItem.due_on.label("due_on"),
+            WorkItem.archived_at.label("archived_at"),
+            WorkItem.archive_locked_at.label("archive_locked_at"),
+        )
+        .join(Engagement, Engagement.id == WorkItem.engagement_id)
+        .join(AssuranceWorkItem, AssuranceWorkItem.work_item_id == WorkItem.id)
+        .where(WorkItem.kind == "assurance", Engagement.status.not_in(_NOT_ENGAGED))
+        .subquery("assurance_index")
+    )
+
+
+async def letters_sent(tenant: TenantContext, engagement_ids: Sequence[UUID]) -> dict[UUID, date]:
+    """The engagements whose recorded letter is out and not yet signed (G3 unmet), with the date
+    it went out ("Letter sent Sep 8"): the letter's date, else the day it was recorded. For a
+    caller that read these engagements under `visible()`."""
+    if not engagement_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(
+                EngagementLetter.engagement_id,
+                EngagementLetter.letter_date,
+                EngagementLetter.recorded_at,
+            ).where(
+                EngagementLetter.engagement_id.in_(list(engagement_ids)),
+                EngagementLetter.status == "sent",
+            )
+        )
+    return {eid: on or at.date() for eid, on, at in rows.all()}

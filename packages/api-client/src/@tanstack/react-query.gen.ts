@@ -79,7 +79,7 @@ export const auditsIndexQueryKey = (options?: Options<AuditsIndexData>) => creat
 /**
  * Audits Index Route
  *
- * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).
+ * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311).
  */
 export const auditsIndexOptions = (options?: Options<AuditsIndexData>) => queryOptions<AuditsIndexResponse, AuditsIndexError, AuditsIndexResponse, ReturnType<typeof auditsIndexQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -128,7 +128,7 @@ export const auditsIndexInfiniteQueryKey = (options?: Options<AuditsIndexData>):
 /**
  * Audits Index Route
  *
- * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).
+ * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311).
  */
 export const auditsIndexInfiniteOptions = (options?: Options<AuditsIndexData>) => {
     const opts = infiniteQueryOptions<AuditsIndexResponse, AuditsIndexError, InfiniteData<AuditsIndexResponse>, QueryKey<Options<AuditsIndexData>>, string | null | Pick<QueryKey<Options<AuditsIndexData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -179,7 +179,8 @@ export const auditCockpitQueryKey = (options: Options<AuditCockpitData>) => crea
 /**
  * Audit Cockpit Route
  *
- * AUD-02's host projection (A-01-T09).
+ * AUD-02's host projection (A-01-T09, DEC-312): the bar and overview are metadata; the
+ * bands, dock and actions also need `engagement.read`.
  */
 export const auditCockpitOptions = (options: Options<AuditCockpitData>) => queryOptions<AuditCockpitResponse, AuditCockpitError, AuditCockpitResponse, ReturnType<typeof auditCockpitQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -256,7 +257,8 @@ export const auditSourceDocumentsQueryKey = (options: Options<AuditSourceDocumen
 /**
  * Audit Source Documents Route
  *
- * AUD-02's canvas and AUD-03 (A-01-T10).
+ * AUD-02's canvas and AUD-03 (A-01-T10, DEC-313): the work item's asked PBC requests by
+ * category, with the C5 v1.1 row facts (firm only: client principals were refused).
  */
 export const auditSourceDocumentsOptions = (options: Options<AuditSourceDocumentsData>) => queryOptions<AuditSourceDocumentsResponse, AuditSourceDocumentsError, AuditSourceDocumentsResponse, ReturnType<typeof auditSourceDocumentsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

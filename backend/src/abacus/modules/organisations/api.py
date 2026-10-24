@@ -21,7 +21,11 @@ from abacus.modules.organisations.live import (
 )
 
 # P-06-T11: correlated name columns for another module's list (BND-01's client and office).
-from abacus.modules.organisations.repository import client_name_column, office_name_column
+from abacus.modules.organisations.repository import (
+    client_name_column,
+    entity_name_column,
+    office_name_column,
+)
 from abacus.modules.organisations.rosters import member_teams, set_member_teams
 from abacus.modules.organisations.service import (
     ClientChoice,
@@ -143,6 +147,7 @@ __all__ = [
     "contact_facts",
     "contacts_of_user",
     "create_client",
+    "entity_name_column",
     "find_clients",
     "firm_names",
     "mask_tin",
