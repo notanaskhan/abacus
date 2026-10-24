@@ -11,7 +11,15 @@ export type {
   SignInOpening,
 } from "../../app-core/portal-contracts";
 export { useDismissWelcome, usePortalHome } from "./home";
-export { SIGN_IN_WORDS, failureWords } from "./messages";
+export {
+  type BinderView,
+  binderView,
+  ignoreCodeOf,
+  useBinder,
+  useBinderActions,
+  useBinders,
+} from "./documents";
+export { DOCUMENT_WORDS, SIGN_IN_WORDS, failureWords } from "./messages";
 export { type PortalToolbarData, portalToolbarData, usePortalToolbar } from "./shell";
 export {
   LANDING_PATH,

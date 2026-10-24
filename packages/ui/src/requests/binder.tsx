@@ -78,6 +78,10 @@ export interface RequestBinderProps {
   onBlocked?: (open: number) => void;
   /** "Upload something else": files for the firm's Inbox, not the list. */
   onUploadOther?: (files: readonly File[]) => void;
+  /** The client's own uploads are withdrawn (DF-15): the portal's screens set it. */
+  withdraw?: boolean;
+  /** A closed binder: no upload, Ignore, Withdraw or Mark as Done anywhere. */
+  readOnly?: boolean;
 }
 
 export interface RequestBinder {
@@ -336,7 +340,7 @@ export function RequestDocuments({
   };
 
   const dragOver = (event: DragEvent<HTMLDivElement>): void => {
-    if (!event.dataTransfer.types.includes("Files")) return;
+    if (props.readOnly === true || !event.dataTransfer.types.includes("Files")) return;
     event.preventDefault();
     setLive(true);
   };
@@ -352,7 +356,7 @@ export function RequestDocuments({
       title="Documents"
       left={<ShowPicker binder={binder} />}
       right={
-        items.length === 0 ? undefined : (
+        items.length === 0 || props.readOnly === true ? undefined : (
           <>
             <button
               type="button"
@@ -401,6 +405,8 @@ export function RequestDocuments({
                 today={props.today}
                 {...(props.viewer === undefined ? {} : { viewer: props.viewer })}
                 ignoreOpen={props.openIgnore === r.id}
+                withdraw={props.withdraw === true}
+                readOnly={props.readOnly === true}
                 onUpload={(id) => {
                   binder.choose(id);
                 }}

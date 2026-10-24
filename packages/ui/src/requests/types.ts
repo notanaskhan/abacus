@@ -71,6 +71,9 @@ export interface RequestItem {
   extra?: boolean;
   /** Set when an upload was routed here: "Matched to this request". */
   matched?: boolean;
+  /** A code-rule link no person has accepted yet: the line reads "Suggested — ‹firm› will
+   * confirm" instead (DEC-58 a; POR-03 c). */
+  suggested?: boolean;
   /** The date the client replied to a follow-up. */
   replied?: string;
   retLabel?: string;
@@ -190,6 +193,8 @@ export interface RowView {
   fileLines: readonly string[];
   uploaded: string | null;
   matched: boolean;
+  /** "Suggested — ‹firm› will confirm" under a code-rule link (DEC-58 a). */
+  suggested: string | null;
   accepted: string | null;
   uploadLink: boolean;
   followUp: { note: string; reply: boolean; replied: string | null } | null;
@@ -209,7 +214,8 @@ export function rowView(r: RequestItem, firm: string): RowView {
     docFilled: !(st === "req" || st === "ret" || st === "na" || st === "firm"),
     fileLines: r.file !== undefined && st !== "na" && st !== "req" ? (r.files ?? [r.file]) : [],
     uploaded: st === "up" ? upText : null,
-    matched: st === "up" && r.matched === true,
+    matched: st === "up" && r.matched === true && r.suggested !== true,
+    suggested: st === "up" && r.suggested === true ? `Suggested — ${firm} will confirm` : null,
     accepted: st === "acc" ? `Accepted by ${firm} · ${r.on ?? ""}` : null,
     uploadLink: st === "req",
     followUp:

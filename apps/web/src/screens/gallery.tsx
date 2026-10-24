@@ -49,6 +49,13 @@ import {
 } from "./ENG-02/scenarios";
 import { PortalSignIn } from "./POR-01";
 import { PortalHome } from "./POR-02";
+import { PortalDocuments } from "./POR-03";
+import {
+  ARTBOARD as POR03_ARTBOARD,
+  STATES as POR03_STATES,
+  type Por03State,
+  scenarios as por03Scenarios,
+} from "./POR-03/scenarios";
 import {
   STATES as POR02_STATES,
   type Por02State,
@@ -490,3 +497,38 @@ function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-02", { title: "Portal home · Feld household", Component: Por02Artboard });
+
+// POR-03 (R-01-T06): documents part 1, a, c, e, f, g and h; each artboard is its data plus what
+// the client is doing at that instant (uploads in flight, the Ignore popover).
+function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por03State = POR03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR03_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalDocuments
+        binderId={board.binderId}
+        frame
+        hold={{
+          ...(board.uploads === undefined ? {} : { uploads: board.uploads }),
+          ...(board.ignoreOpenOn === undefined ? {} : { ignoreOpenOn: board.ignoreOpenOn }),
+          ...(board.dragging === undefined ? {} : { dragging: board.dragging }),
+        }}
+      />
+    </div>
+  );
+}
+
+registerScreen("POR-03", { title: "Documents · Feld 2025 Binder", Component: Por03Artboard });

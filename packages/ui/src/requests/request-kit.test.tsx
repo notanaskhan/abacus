@@ -428,3 +428,43 @@ describe("the binder's behaviour", () => {
     expect(well.getAttribute("data-over")).toBe("false");
   });
 });
+
+// R-01-T06: the portal's own screens withdraw an unaccepted upload (DF-15, ADR P-31), mark a
+// code-rule link as suggested (DEC-58 a) and draw a closed binder read-only.
+describe("the portal's opt-ins (R-01-T06)", () => {
+  it("withdraw says Withdraw with the 30-day line", () => {
+    const onRemove = vi.fn();
+    render(<Binder withdraw onRemove={onRemove} />);
+    fireEvent.click(screen.getByRole("button", { name: "Withdraw W2.pdf" }));
+    expect(screen.getByRole("menu", { name: "Withdraw" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Withdraw this file? Brightwater Hale’s team won’t use it. It’s kept securely for 30 days, then erased.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Remove this file/)).toBeNull();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Withdraw file" }));
+    expect(onRemove).toHaveBeenCalledWith("w2");
+  });
+
+  it("a suggested link reads Suggested — the firm will confirm, never Matched", () => {
+    expect(
+      rowView(
+        REQ("e", "up", { file: "E.pdf", on: "Sep 14", matched: true, suggested: true }),
+        "Brightwater Hale",
+      ),
+    ).toMatchObject({ matched: false, suggested: "Suggested — Brightwater Hale will confirm" });
+    expect(
+      rowView(REQ("e", "up", { file: "E.pdf", matched: true }), "Brightwater Hale").suggested,
+    ).toBeNull();
+  });
+
+  it("a read-only binder offers no upload, Ignore, Withdraw or Mark as Done", () => {
+    render(<Binder readOnly />);
+    expect(screen.queryByRole("button", { name: "Upload…" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Ignore / })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^(Remove|Withdraw) / })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mark as Done" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Reply/ })).toBeNull();
+  });
+});

@@ -23,6 +23,7 @@ import {
   THREADS,
   danaBinder,
   feldBinder,
+  feldClosed2024,
   feldCaughtUp,
   sheet1095c,
 } from "../seed/portal-documents";
@@ -63,6 +64,7 @@ const at = (
       clock,
       binders: persona === "claire-feld" ? [FELD_2025, FELD_2024] : [binder.binder],
       binder,
+      ...(persona === "claire-feld" ? { others: [feldClosed2024()] } : {}),
       requests: persona === "claire-feld" ? [sheet1095c()] : [],
       threads: THREADS,
       ...(extra.drop === true ? { drop: FELD_DROP } : {}),
