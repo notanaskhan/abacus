@@ -64,6 +64,7 @@ from abacus.modules.requests.repository import (
     overdue_counts,
     overdue_items,
     request_list_for,
+    revert_to_requested,
     search_items,
     set_classification,
     set_client_fields,
@@ -72,6 +73,7 @@ from abacus.modules.requests.repository import (
     set_due_dates,
     set_guidance,
     set_status,
+    void_fulfilments,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
 
@@ -738,6 +740,34 @@ class ItemKind:
     id: UUID
     document_kind: str | None
     description: str = ""  # SPEC-030 (TASK-058): what the upload reviewer is told was asked for
+
+
+async def withdraw_upload(
+    tx: UnitOfWork, *, evidence_version_id: UUID, withdrawn_by: UUID
+) -> list[UUID]:
+    """P-06-T19 (ADR-162 §4): inside the withdrawal's unit of work, void every fulfilment of the
+    version and return to `requested` each item it was the only fulfilment of. Returns the items
+    the version fulfilled. The caller authorised `evidence.withdraw` on the version's item."""
+    voided = await void_fulfilments(
+        tx.session, evidence_version_id=evidence_version_id, withdrawn_by=withdrawn_by
+    )
+    items: list[UUID] = []
+    for fulfilment_id, item_id in voided:
+        await get_request_item(tx.session, item_id, lock=True)
+        tx.record(
+            "fulfilment.withdrawn",
+            target=Target("fulfilment", fulfilment_id),
+            after=Ref(request_item_id=item_id, evidence_version_id=evidence_version_id),
+        )
+        reverted = await revert_to_requested(tx.session, item_id)
+        # The item's Activity: the client withdrew an upload (identifiers only, no file name).
+        tx.record(
+            "request_item.upload_withdrawn",
+            target=Target("request_item", item_id),
+            after=Ref(evidence_version_id=evidence_version_id, reverted=int(reverted)),
+        )
+        items.append(item_id)
+    return items
 
 
 async def items_of_version(tenant: TenantContext, evidence_version_id: UUID) -> list[ItemKind]:

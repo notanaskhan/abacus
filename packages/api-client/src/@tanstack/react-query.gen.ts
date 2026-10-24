@@ -2826,7 +2826,8 @@ export const requestReviewMutation = (options?: Partial<Options<RequestReviewDat
 /**
  * Withdraw Evidence Version Route
  *
- * The client takes back an upload the firm never accepted (P-06-T19).
+ * The client takes back an upload the firm never accepted (P-06-T19): void and hidden at
+ * once, erased after `erase_after` unless a legal hold applies.
  */
 export const withdrawEvidenceVersionMutation = (options?: Partial<Options<WithdrawEvidenceVersionData>>): UseMutationOptions<WithdrawEvidenceVersionResponse, WithdrawEvidenceVersionError, Options<WithdrawEvidenceVersionData>> => {
     const mutationOptions: UseMutationOptions<WithdrawEvidenceVersionResponse, WithdrawEvidenceVersionError, Options<WithdrawEvidenceVersionData>> = {

@@ -57,6 +57,7 @@ from abacus.modules.requests.service import (
     reopen_after_undo,
     request_items_for,
     review_targets,
+    withdraw_upload,
 )
 
 # SPEC-025 (TASK-048 D1): last year's items for a roll-forward, and copying the confirmed ones.
@@ -138,4 +139,5 @@ __all__ = [
     "request_items_for",
     "review_targets",
     "router",
+    "withdraw_upload",
 ]

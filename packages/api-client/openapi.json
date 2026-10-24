@@ -56541,7 +56541,7 @@
     },
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw": {
       "post": {
-        "description": "The client takes back an upload the firm never accepted (P-06-T19).",
+        "description": "The client takes back an upload the firm never accepted (P-06-T19): void and hidden at\nonce, erased after `erase_after` unless a legal hold applies.",
         "operationId": "withdraw_evidence_version",
         "parameters": [
           {
@@ -56668,16 +56668,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Withdraw Evidence Version Route",

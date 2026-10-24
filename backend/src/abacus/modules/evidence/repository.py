@@ -20,6 +20,7 @@ from abacus.modules.evidence.models import (
     EvidenceObjectKey,
     EvidencePage,
     EvidenceVersion,
+    EvidenceWithdrawal,
     InboxFile,
     PiiRegion,
     PiiScanRun,
@@ -140,9 +141,31 @@ async def insert_object_key(
     )
 
 
+def not_withdrawn() -> ColumnElement[bool]:
+    """P-06-T19 (ADR-162 §4): the version was not withdrawn by the client. Every read of
+    versions applies it: a withdrawn version is as if it never arrived (the audit trail apart)."""
+    return ~(
+        select(EvidenceWithdrawal.evidence_version_id)
+        .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
+        .exists()
+    )
+
+
+async def is_withdrawn(session: AsyncSession, version_id: UUID) -> bool:
+    found = await session.execute(
+        select(EvidenceWithdrawal.evidence_version_id).where(
+            EvidenceWithdrawal.evidence_version_id == version_id
+        )
+    )
+    return found.scalar_one_or_none() is not None
+
+
 async def get_version(session: AsyncSession, version_id: UUID) -> EvidenceVersion | None:
+    """The version, unless the client withdrew it (P-06-T19)."""
     return (
-        await session.execute(select(EvidenceVersion).where(EvidenceVersion.id == version_id))
+        await session.execute(
+            select(EvidenceVersion).where(EvidenceVersion.id == version_id, not_withdrawn())
+        )
     ).scalar_one_or_none()
 
 
@@ -171,6 +194,7 @@ async def list_versions(
                 .where(
                     EvidenceVersion.engagement_id == engagement_id,
                     visible(ctx, "evidence.read", EvidenceVersion.engagement_id),
+                    not_withdrawn(),
                 )
                 .order_by(EvidenceVersion.created_at, EvidenceVersion.id)
             )
@@ -192,7 +216,9 @@ async def list_review_state(
     versions = (
         (
             await session.execute(
-                select(EvidenceVersion).where(EvidenceVersion.engagement_id == engagement_id, seen)
+                select(EvidenceVersion).where(
+                    EvidenceVersion.engagement_id == engagement_id, seen, not_withdrawn()
+                )
             )
         )
         .scalars()
@@ -398,7 +424,11 @@ async def uploaded_versions(
     rows = await session.execute(
         select(EvidenceVersion, EvidenceItem)
         .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
-        .where(EvidenceVersion.id.in_(version_ids), EvidenceVersion.method == "uploaded")
+        .where(
+            EvidenceVersion.id.in_(version_ids),
+            EvidenceVersion.method == "uploaded",
+            not_withdrawn(),
+        )
         .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
     )
     return [(version, item) for version, item in rows.tuples().all()]
@@ -412,7 +442,11 @@ async def fingerprint_among(
         return False
     found = await session.execute(
         select(EvidenceVersion.id)
-        .where(EvidenceVersion.id.in_(version_ids), EvidenceVersion.fingerprint == fingerprint)
+        .where(
+            EvidenceVersion.id.in_(version_ids),
+            EvidenceVersion.fingerprint == fingerprint,
+            not_withdrawn(),
+        )
         .limit(1)
     )
     return found.scalar_one_or_none() is not None
@@ -442,7 +476,7 @@ async def item_versions_with_decisions(
             & (ReviewDecision.decision_seq == newest_seq)
             & (ReviewDecision.decision != "undone"),
         )
-        .where(EvidenceVersion.id.in_(version_ids))
+        .where(EvidenceVersion.id.in_(version_ids), not_withdrawn())
         .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
     )
     return list(rows.tuples().all())
@@ -459,6 +493,7 @@ async def methods_of(
             EvidenceVersion.id.in_(version_ids),
             EvidenceVersion.engagement_id == engagement_id,
             visible(ctx, "evidence.read", EvidenceVersion.engagement_id),
+            not_withdrawn(),
         )
     )
     return {version_id: method for version_id, method in rows.tuples().all()}
@@ -602,6 +637,7 @@ async def other_version_with_fingerprint(
                 EvidenceVersion.engagement_id == engagement_id,
                 EvidenceVersion.fingerprint == fingerprint,
                 EvidenceVersion.id != version_id,
+                not_withdrawn(),
             )
             .order_by(EvidenceVersion.created_at, EvidenceVersion.id)
             .limit(1)
@@ -802,6 +838,7 @@ async def stale_pdf_uploads(
                     ~has_version.where(
                         UploadExtraction.evidence_version_id == EvidenceVersion.id
                     ).exists(),
+                    not_withdrawn(),
                 )
                 .order_by(EvidenceVersion.created_at)
                 .limit(limit)
@@ -902,6 +939,7 @@ async def sources_without_words(
         EvidenceVersion.media_type == "application/pdf",
         readable.where(UploadExtraction.evidence_version_id == EvidenceVersion.id).exists(),
         ~layered.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
+        not_withdrawn(),
     )
     if after_version is not None:
         version_query = version_query.where(EvidenceVersion.id > after_version)

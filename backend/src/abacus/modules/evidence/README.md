@@ -57,6 +57,11 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   - stores a new evidence item titled with the cleaned file name, whose first version has provenance `uploaded` / `client_upload`, links it, audits `evidence.uploaded` and emits `EvidenceUploaded` (which notifies the firm team).
 - **Never opened:** no file is opened, parsed or rendered; file names are plain text only.
 
+## Detached-key uploads and client withdrawal (P-06-T18, T19; ADR-162)
+- **Storage:** a client's own item upload is stored in detached-key mode (`storage.put_detached`: `tenants/<t>/v/<version>`, envelope ABE2, the wrapped data key in `evidence_object_keys`); its derived records are sealed under the same key in `tenants/<t>/vd/<version>/` (`storage.put(..., under=)`). `storage.get` finds the key through `object_keys.key_for`; a destroyed key is `KeyDestroyed`. Acceptance retains the key one-way (a trigger on `review_decisions`). DEC-297.
+- **Withdraw:** `withdrawals.py`, route `POST …/evidence-versions/{vid}/withdraw` (`contract.py`, `evidence.withdrawal` flag, `Idempotency-Key`): `evidence_withdrawals` row, requests voids the fulfilments (`fulfilment_withdrawals`) and returns an only-fulfilled item to `requested`, audit `evidence_version.withdrawn`, outbox `evidence_version.withdrawn`. Every version read applies `repository.not_withdrawn()`; processing, the word layer and the upload reviewer record nothing for a withdrawn version. DEC-298.
+- **Purge:** `EvidenceWithdrawalPurge` (`withdrawal:<tenant>:<version>`) sleeps the 30-day window, then `evidence_withdrawal.erase` checks the business clock and the hold check (held: `legal_hold`; none registered: `no_hold_check`, fail closed; retried daily) and calls `evidence_key_destroy`.
+
 ## Request item detail (SPEC-021; TASK-037)
 `item_detail.py`, firm-side only (client roles are refused here, Q4).
 - **`GET …/request-items/{item_id}/versions`** (`evidence.read`): the item's versions, newest first. Each has its provenance; for uploads, the file name and uploader; and its decision on this item.

@@ -65,7 +65,12 @@ from abacus.modules.agents.spec import declared, spec
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.agents.v2_citations import cell_claims, record_agent_citations
 from abacus.modules.engagements.api import get_ref, lock_ref
-from abacus.modules.evidence.api import Proposal, read_content, version_view
+from abacus.modules.evidence.api import (
+    Proposal,
+    is_version_withdrawn,
+    read_content,
+    version_view,
+)
 from abacus.modules.identity.api import (
     AgentContext,
     AuthContext,
@@ -119,6 +124,8 @@ async def create_screening_run(
     initiator = requested_by
     screener = spec(SCREENER)
     reader = _reader(tenant_id, f"agents:{screener.id}")
+    if await is_version_withdrawn(reader, evidence_version_id):
+        return None  # P-06-T19: agents never read a withdrawn upload
     version = await version_view(reader, evidence_version_id)
     if version.snapshot_id is None:
         return None

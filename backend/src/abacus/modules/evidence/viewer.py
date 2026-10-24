@@ -46,6 +46,7 @@ from abacus.modules.evidence.repository import (
     get_item,
     masked_preview_for,
     newest_extraction,
+    not_withdrawn,
     pages_of,
     pii_regions_of,
     preview_for,
@@ -156,7 +157,9 @@ async def visible_version(ctx: AuthContext, version_id: UUID) -> EvidenceVersion
         version = (
             await session.execute(
                 select(EvidenceVersion).where(
-                    EvidenceVersion.id == version_id, visible(ctx, READ, engagement)
+                    EvidenceVersion.id == version_id,
+                    visible(ctx, READ, engagement),
+                    not_withdrawn(),  # P-06-T19: a withdrawn upload is as if it never arrived
                 )
             )
         ).scalar_one_or_none()

@@ -291,6 +291,17 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  evidence_accepted:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.withdrawals.EvidenceAccepted
+    summary: 'The firm accepted this version (ever): it is never withdrawn (ADR-162 §2).'
+  evidence_not_withdrawable:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
+    summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
+      nothing can erase it, so it is not withdrawn (ADR-162 §8).'
   fieldwork_unavailable:
     status: 409
     raised_by:

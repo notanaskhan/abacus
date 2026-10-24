@@ -76,6 +76,11 @@ EVIDENCE_VIEWER_V1 = Flag(
     kind="boolean",
     default="false",
 )
+EVIDENCE_WITHDRAWAL = Flag(
+    name="evidence.withdrawal",
+    kind="boolean",
+    default="false",
+)
 FIELDWORK_ASSESSOR = Flag(
     name="fieldwork.assessor",
     kind="boolean",
@@ -195,6 +200,7 @@ FLAGS: dict[str, Flag] = {
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
     "evidence.viewer_v1": EVIDENCE_VIEWER_V1,
+    "evidence.withdrawal": EVIDENCE_WITHDRAWAL,
     "fieldwork.assessor": FIELDWORK_ASSESSOR,
     "fieldwork.procedures": FIELDWORK_PROCEDURES,
     "firm_settings.v2": FIRM_SETTINGS_V2,

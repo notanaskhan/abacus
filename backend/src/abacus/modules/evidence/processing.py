@@ -66,6 +66,7 @@ from abacus.modules.evidence.repository import (
     insert_extraction,
     insert_preview,
     insert_preview_pages,
+    is_withdrawn,
     latest_checks,
     newest_extraction,
     other_version_with_fingerprint,
@@ -90,6 +91,14 @@ WORKFLOWS: dict[type, WorkClass] = {
     TrustLayerBackfill: "background",
 }
 register_work_classes(WORKFLOWS)
+
+
+WITHDRAWN: Final = "withdrawn"
+
+
+async def _withdrawn(tenant: TenantContext, version_id: UUID) -> bool:
+    async with tenant_session(tenant) as session:
+        return await is_withdrawn(session, version_id)
 
 
 def workflow_id(tenant_id: UUID, kind: str, source_id: UUID) -> str:
@@ -198,6 +207,8 @@ async def process_upload(given: UploadInput) -> str:
             else await get_inbox_file(session, source_id)
         )
     if source is None:
+        if version_id is not None and await _withdrawn(tenant, version_id):
+            return WITHDRAWN  # P-06-T19: an in-flight run records nothing for it
         raise NotFound("upload")
     stored = storage.StoredObject(
         source.storage_key, source.storage_version_id, source.fingerprint, source.size_bytes
@@ -310,6 +321,8 @@ async def check_upload(given: UploadInput) -> int:
             return 0
         row = await newest_extraction(session, evidence_version_id=version_id)
         version = await get_version(session, version_id)
+        if version is None and await is_withdrawn(session, version_id):
+            return 0  # P-06-T19: nothing is recorded for a withdrawn version
         if row is None or version is None:
             raise NotFound("upload_extraction")
         other = await other_version_with_fingerprint(
@@ -414,6 +427,8 @@ async def preview_upload(given: UploadInput) -> str:
             else await get_inbox_file(session, source_id)
         )
     if source is None:
+        if version_id is not None and await _withdrawn(tenant, version_id):
+            return "none"  # P-06-T19: nothing is rendered for a withdrawn version
         raise NotFound("upload")
     stored = storage.StoredObject(
         source.storage_key, source.storage_version_id, source.fingerprint, source.size_bytes
@@ -519,8 +534,11 @@ def _excerpt(
 
 
 async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMaterial | None:
-    """For an agent run authorised on the version's engagement; None without an extraction."""
+    """For an agent run authorised on the version's engagement; None without an extraction, or
+    for a version the client withdrew (P-06-T19: agents never read it)."""
     async with tenant_session(tenant) as session:
+        if await is_withdrawn(session, version_id):
+            return None
         row = await newest_extraction(session, evidence_version_id=version_id)
         checks = await latest_checks(session, version_id)
     if row is None:

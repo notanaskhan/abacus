@@ -42,3 +42,14 @@ class BackfillInput:
     after_inbox: str | None = None
     done: int = 0
     failed: int = 0
+
+
+@dataclass(frozen=True)
+class WithdrawalPurgeInput:
+    """`EvidenceWithdrawalPurge` (P-06-T19; ADR-162 §7): the withdrawn version, and how long to
+    wait before the next erase attempt (the window first, then what the attempt answered)."""
+
+    tenant_id: str
+    evidence_version_id: str
+    wait_seconds: int
+    attempts: int = 0

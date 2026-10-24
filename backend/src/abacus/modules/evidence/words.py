@@ -47,6 +47,7 @@ from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_version,
     insert_pages,
+    is_withdrawn,
     pages_of,
     sources_without_words,
 )
@@ -276,6 +277,10 @@ async def words_upload(given: UploadInput) -> int:
             else await get_inbox_file(session, source_id)
         )
     if source is None:
+        if version_id is not None:
+            async with tenant_session(tenant) as session:
+                if await is_withdrawn(session, version_id):
+                    return 0  # P-06-T19: no word layer for a withdrawn version
         raise NotFound("upload")
     if source.media_type != PDF:
         return 0
