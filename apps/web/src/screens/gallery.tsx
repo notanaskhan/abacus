@@ -39,6 +39,13 @@ import {
   type Cli02State,
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
+import { EngagementsIndex } from "./ENG-01";
+import {
+  STATES as ENG01_STATES,
+  SEARCH as ENG01_SEARCH,
+  type Eng01State,
+  scenarios as eng01Scenarios,
+} from "./ENG-01/scenarios";
 import { EngagementRecordPage } from "./ENG-02";
 import { ENG03 } from "./ENG-03";
 import {
@@ -50,6 +57,7 @@ import {
 import {
   OPENS as ENG02_OPENS,
   STATES as ENG02_STATES,
+  TABS as ENG02_TABS,
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
@@ -335,6 +343,43 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
 
+function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/engagements" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        {/* Rows open ENG-02 in the product; the artboard keeps that control (and its keyboard path). */}
+        <EngagementsIndex initial={ENG01_SEARCH[state]} onOpen={() => undefined} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Eng01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng01State = ENG01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Eng01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ENG-01", { title: "Engagements index", Component: Eng01Artboard });
+
 function Cli02Frame({ state }: { state: Cli02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -395,7 +440,12 @@ function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
   });
   return (
     <div data-artboard={state}>
-      <EngagementRecordPage engagementId={ENG02_OPENS[state]} toolbar={bar.toolbar} frame />
+      <EngagementRecordPage
+        engagementId={ENG02_OPENS[state]}
+        initialTab={ENG02_TABS[state]}
+        toolbar={bar.toolbar}
+        frame
+      />
     </div>
   );
 }

@@ -37,6 +37,8 @@ export interface IndexChip {
   /** The chosen value; null is the chip's default (not filtering). */
   value: string | null;
   placeholder?: string;
+  /** "end" sits at the bar's right end ("Period │ Current", ENG-01). */
+  align?: "start" | "end";
 }
 
 export interface IndexTile {
@@ -71,6 +73,8 @@ export interface IndexListProps<Row> {
   onSelect?: (row: Row) => void;
   onOpen?: (row: Row) => void;
 
+  /** Before the chips: a small Segmented ("Service line", ENG-01). */
+  segments?: ReactNode;
   chips?: readonly IndexChip[];
   onChip?: (key: string, value: string | null) => void;
   tiles?: readonly IndexTile[];
@@ -98,6 +102,8 @@ export interface IndexListProps<Row> {
   footer?: ReactNode;
   /** What T1c says. */
   empty: EmptyContent;
+  /** A 36-high banner above the table, under the pane header (ENG-01b's G3 banner). */
+  banner?: ReactNode;
 }
 
 export function IndexList<Row>({
@@ -118,6 +124,8 @@ export function IndexList<Row>({
   onTile,
   summary,
   onClear,
+  segments,
+  banner,
   query = "",
   onQuery,
   searchPlaceholder,
@@ -134,6 +142,20 @@ export function IndexList<Row>({
   const items = envelope?.items ?? [];
   const showCount = !isEmpty && state.kind === "ready" && envelope !== undefined;
   const showTiles = tiles !== undefined && tiles.length > 0 && !isEmpty;
+  // T1e: while the list loads, the tiles hold their place with skeleton counts.
+  const pendingTiles = state.kind === "loading";
+  const chip = (c: IndexChip): JSX.Element => (
+    <FilterChip
+      key={c.key}
+      label={c.label}
+      options={c.options}
+      value={c.value}
+      onChange={(v) => onChip?.(c.key, v)}
+      {...(c.icon === undefined ? {} : { icon: c.icon })}
+      {...(c.placeholder === undefined ? {} : { placeholder: c.placeholder })}
+    />
+  );
+  const endChips = chips.filter((c) => c.align === "end");
   // One column plan for the head and the body tables, so a fixed layout sizes both alike (a
   // body row's cell widths alone are not read when the table has a caption).
   const colgroup = (
@@ -152,21 +174,15 @@ export function IndexList<Row>({
         aria-label="Filters"
         className="flex h-[50px] shrink-0 items-center gap-[8px] px-[12px]"
       >
-        {chips.map((c) => (
-          <FilterChip
-            key={c.key}
-            label={c.label}
-            options={c.options}
-            value={c.value}
-            onChange={(v) => onChip?.(c.key, v)}
-            {...(c.icon === undefined ? {} : { icon: c.icon })}
-            {...(c.placeholder === undefined ? {} : { placeholder: c.placeholder })}
-          />
-        ))}
+        {segments}
+        {chips.filter((c) => c.align !== "end").map(chip)}
         {filtering && onClear !== undefined && (
           <Button variant="ghost" size="sm" onClick={onClear}>
             Clear
           </Button>
+        )}
+        {endChips.length > 0 && (
+          <span className="ml-auto flex items-center gap-[8px]">{endChips.map(chip)}</span>
         )}
       </div>
 
@@ -182,11 +198,12 @@ export function IndexList<Row>({
               label={t.label}
               count={envelope?.counts[t.code] ?? 0}
               selected={tile === t.code}
+              pending={pendingTiles}
               onSelect={() => onTile?.(tile === t.code ? null : t.code)}
               {...(t.variant === undefined ? {} : { variant: t.variant })}
             />
           ))}
-          {summary !== undefined && (
+          {summary !== undefined && !pendingTiles && (
             <span className="ml-auto pb-[4px] text-dense text-ink-3">{summary}</span>
           )}
         </div>
@@ -232,6 +249,16 @@ export function IndexList<Row>({
               </Button>
             )}
           </header>
+          {banner !== undefined && (
+            <div
+              role="status"
+              data-list="banner"
+              className="flex min-h-[36px] shrink-0 items-center gap-[8px] bg-amber-tint px-[12px] text-dense text-amber-ink hairline-b"
+            >
+              <Icon name="info" size={14} className="flex-none" />
+              <span className="min-w-0 flex-1">{banner}</span>
+            </div>
+          )}
           <table className="w-full shrink-0 table-fixed border-collapse">
             {colgroup}
             <thead>

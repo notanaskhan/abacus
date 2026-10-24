@@ -6,8 +6,22 @@ export {
   conflictOf,
   gateOf,
   useEngagementRecord,
+  useEngagementTeam,
   useEngagementWorkItems,
   useRecordLetter,
   waitsOnLetter,
 } from "./record";
 export { useDraft, useDraftWrites, useEngagementTypes } from "./wizard";
+export {
+  DEFAULT_ENGAGEMENT_FILTERS,
+  ENGAGEMENT_LINES,
+  ENGAGEMENT_TILES,
+  type EngagementFilters,
+  type EngagementLine,
+  type EngagementPeriod,
+  type NextDueWindow,
+  isEngagementLine,
+  isEngagementTile,
+  isNarrowedIndex,
+  useEngagementIndex,
+} from "./list";

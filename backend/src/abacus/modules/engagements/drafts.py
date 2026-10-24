@@ -548,6 +548,14 @@ async def _work_items(
     return ids
 
 
+async def check_create(ctx: AuthContext, draft_id: UUID) -> None:
+    """The route's check before its `Idempotency-Key` lookup, so a replay is authorised too
+    (the stored answer runs no service call): the action, then the draft is the person's own."""
+    await authorise(ctx, CREATE, Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        await _own(session, ctx, draft_id)
+
+
 async def create_from_draft(
     ctx: AuthContext, draft_id: UUID, *, confirm_duplicate: bool
 ) -> Created:
@@ -602,7 +610,9 @@ async def create_from_draft(
     requested: list[UUID] = []
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, target.id)
-        await authorise(ctx, CREATE, ref.resource())
+        # On the client, as `_check_scope` did: the derived `firm_partner` (DEC-225) holds
+        # `engagement.create` on firm and client resources, never on an engagement (DEC-132).
+        await authorise(ctx, CREATE, Resource.client(ctx.tenant_id, ref.client_id))
         claimed = (
             await tx.session.execute(
                 update(drafts)

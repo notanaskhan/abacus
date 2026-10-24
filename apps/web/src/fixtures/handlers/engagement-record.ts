@@ -10,6 +10,7 @@ import type {
   EngagementGateOut,
   EngagementLetterRecordOut,
   LetterRecordIn,
+  TeamMemberOut,
   WorkItemOut,
 } from "@abacus/api-client";
 import { type FixtureHandler, type FixtureRequest, json } from "../../app-core/fixture-mode";
@@ -21,9 +22,15 @@ import { stableId } from "../seed/prng";
 
 const NOT_FOUND = { detail: "not_found" };
 
-export function engagementRecordHandlers(seed: Seed): Record<string, FixtureHandler> {
+export function engagementRecordHandlers(
+  seed: Seed,
+  extra: readonly EngagementRecordFixture[] = [],
+): Record<string, FixtureHandler> {
   const records = new Map<string, EngagementRecordFixture>(
-    Object.values(engagementRecords(seed)).map((f) => [f.record.id, structuredClone(f)]),
+    [...Object.values(engagementRecords(seed)), ...extra].map((f) => [
+      f.record.id,
+      structuredClone(f),
+    ]),
   );
   const find = (request: FixtureRequest): EngagementRecordFixture | undefined => {
     const found = records.get(request.params.engagement_id ?? "");
@@ -50,6 +57,26 @@ export function engagementRecordHandlers(seed: Seed): Record<string, FixtureHand
       const id = request.params.engagement_id ?? "";
       const body: WorkItemOut[] | undefined = seed.workItems[id];
       return body === undefined ? json(NOT_FOUND, 404) : json(body);
+    },
+    // The Team tab host (P-07-T28): the record's team, else the seed engagement's.
+    "GET /v1/engagements/{engagement_id}/team": (request) => {
+      const found = find(request);
+      if (found?.team !== undefined) return json(found.team);
+      const id = found?.record.id ?? request.params.engagement_id ?? "";
+      const who = request.persona ?? DEFAULT_PERSONA;
+      const engagement = seed.engagements.find((e) => e.id === id);
+      const walled = seed.walls.some(
+        (w) => w.personSlug === who && w.clientId === engagement?.client_id,
+      );
+      if (engagement === undefined || walled || (found === undefined && records.has(id))) {
+        return json(NOT_FOUND, 404);
+      }
+      const body: TeamMemberOut[] = engagement.team.map((m) => ({
+        user_id: m.user_id,
+        display_name: m.display_name,
+        role: m.role,
+      }));
+      return json(body);
     },
     "PUT /v1/engagements/{engagement_id}/letter/record": (request) => {
       const found = find(request);

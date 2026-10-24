@@ -16,7 +16,7 @@ import {
 } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
 import { ENG02, type Eng02Tab, type Eng02Target } from ".";
-import { type Eng02State, OPENS, STATES, scenarios } from "./scenarios";
+import { type Eng02State, OPENS, STATES, TABS, scenarios } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -52,11 +52,13 @@ function install(scenario: Scenario, over: Record<string, FixtureHandler> = {}):
 function Harness({
   engagementId,
   onNavigate,
+  initialTab = "overview",
 }: {
   engagementId: string;
   onNavigate?: (t: Eng02Target) => void;
+  initialTab?: Eng02Tab;
 }): JSX.Element {
-  const [tab, setTab] = useState<Eng02Tab>("overview");
+  const [tab, setTab] = useState<Eng02Tab>(initialTab);
   return (
     <ENG02
       engagementId={engagementId}
@@ -80,6 +82,7 @@ function show(
       component: () => (
         <Harness
           engagementId={id}
+          initialTab={TABS[state]}
           {...(options.onNavigate === undefined ? {} : { onNavigate: options.onNavigate })}
         />
       ),
@@ -99,12 +102,16 @@ function gate(id: string): HTMLElement {
 }
 
 describe("ENG-02 states", () => {
-  it("defines the states P-07-T20 builds, as Priya Raman at E0", () => {
-    expect(STATES).toEqual(["b", "c", "d", "e", "prospect"]);
-    for (const s of STATES) {
+  it("defines a–g and the prospect state; Priya Raman at E0 except f (Margaret, Oct 6)", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g", "prospect"]);
+    for (const s of STATES.filter((st) => st !== "f")) {
       expect(scenarios[s].persona).toBe("priya-raman");
       expect(scenarios[s].clock).toBe("2026-09-14T09:24:00-05:00");
     }
+    expect(scenarios.f.persona).toBe("margaret-okonkwo");
+    expect(scenarios.f.clock).toBe("2026-10-06T11:20:00-05:00");
+    expect(TABS.f).toBe("dashboard");
+    expect(TABS.g).toBe("board");
   });
 
   it("ENG-02b audit variant: Northwind PY2025 EBP Audit with gate rows", async () => {
@@ -266,5 +273,181 @@ describe("ENG-02 acceptance", () => {
     });
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ detail: "engagement_archived" });
+  });
+});
+
+describe("ENG-02 remaining (P-07-T28)", () => {
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  it("ENG-02a CAS variant: Copperleaf 2026 Close, Active, the 12 closes and 7 of 12", async () => {
+    show("a");
+    expect(await screen.findByRole("heading", { name: /2026 Close/ })).toBeTruthy();
+    expect(screen.getByText("Contracted Mar 3, 2026")).toBeTruthy();
+    const group = await screen.findByRole("region", { name: "Monthly closes" });
+    await waitFor(() => {
+      expect(within(group).getAllByRole("listitem")).toHaveLength(12);
+    });
+    expect(within(group).getByText("7 of 12")).toBeTruthy();
+    expect(
+      within(group)
+        .getAllByRole("listitem")
+        .map((li) => li.querySelector("span.truncate")?.textContent),
+    ).toEqual(MONTHS.map((m) => `${m} 2026 Close`));
+    expect(within(rail()).getByText("Ben Ashby · Controller")).toBeTruthy();
+    expect(within(rail()).getByText("Client accounting services (non-attest)")).toBeTruthy();
+  });
+
+  it('ENG-02 acceptance: "7 of 12" closes delivered equals the ✓ rows (January–July)', async () => {
+    show("a");
+    const group = await screen.findByRole("region", { name: "Monthly closes" });
+    await waitFor(() => {
+      expect(within(group).getAllByRole("listitem")).toHaveLength(12);
+    });
+    const rows = within(group).getAllByRole("listitem");
+    const done = rows.filter((li) => li.querySelector("[role='img'][aria-label='Done']") !== null);
+    expect(done.map((li) => li.querySelector("span.truncate")?.textContent)).toEqual(
+      MONTHS.slice(0, 7).map((m) => `${m} 2026 Close`),
+    );
+    expect(within(group).getByText("7 of 12")).toBeTruthy();
+  });
+
+  it("ENG-02 acceptance: close rows use Delivered, Locked, In progress and Not started", async () => {
+    show("a");
+    const group = await screen.findByRole("region", { name: "Monthly closes" });
+    await waitFor(() => {
+      expect(within(group).getAllByRole("listitem")).toHaveLength(12);
+    });
+    const words = new Set(
+      within(group)
+        .getAllByRole("listitem")
+        .map((li) => li.lastElementChild?.textContent ?? ""),
+    );
+    expect([...words].sort()).toEqual(["Delivered", "In progress", "Locked", "Not started"]);
+  });
+
+  it("ENG-02 acceptance: Approver of record is Ben Ashby with the SKE designation not required note", async () => {
+    show("a");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    expect(
+      within(rail()).getByText(
+        "SKE designation not required — Copperleaf is not an attest client.",
+      ),
+    ).toBeTruthy();
+    // The audit variant names an SKE designee instead: no such note.
+    cleanup();
+    restore?.();
+    show("b");
+    await screen.findByRole("heading", { name: /PY2025 EBP Audit/ });
+    expect(screen.queryByText(/SKE designation not required/)).toBeNull();
+  });
+
+  it("ENG-02 acceptance (R2): tabs read Overview · Dashboard · Board · Work items 12 · Team 3 · Letter & terms · Budget, plus the gear (fixture build)", async () => {
+    show("a");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    const list = screen.getByRole("tablist", { name: "Engagement sections" });
+    await waitFor(() => {
+      expect(within(list).getByRole("tab", { name: /Work items/ }).textContent).toBe(
+        "Work items12",
+      );
+    });
+    expect(
+      within(list)
+        .getAllByRole("tab")
+        .map((t) => t.textContent),
+    ).toEqual([
+      "Overview",
+      "Dashboard",
+      "Board",
+      "Work items12",
+      "Team3",
+      "Letter & terms",
+      "Budget",
+    ]);
+    const gear = screen.getByRole("button", { name: "Engagement settings" });
+    expect((gear as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("ENG-02 acceptance (R2): the gear is disabled on the archived record", async () => {
+    show("d");
+    await screen.findByRole("heading", { name: /FY2025 FS Audit/ });
+    const gear = screen.getByRole("button", { name: "Engagement settings" });
+    expect((gear as HTMLButtonElement).disabled).toBe(true);
+    expect(gear.getAttribute("data-gear")).toBe("archived");
+  });
+
+  it("ENG-02f Dashboard tab: Granite Peak FY2026 Financial Statement Audit, Active, hosting ENG-12", async () => {
+    show("f");
+    expect(
+      await screen.findByRole("heading", { name: /FY2026 Financial Statement Audit/ }),
+    ).toBeTruthy();
+    const list = screen.getByRole("tablist", { name: "Engagement sections" });
+    expect(
+      within(list).getByRole("tab", { name: "Dashboard" }).getAttribute("aria-selected"),
+    ).toBe("true");
+    expect(document.querySelector("[data-planned-tab='dashboard']")).not.toBeNull();
+    expect(screen.getByText(/Opens ENG-12/)).toBeTruthy();
+  });
+
+  it("ENG-02g Board tab: Copperleaf hosting ENG-10", async () => {
+    show("g");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    const list = screen.getByRole("tablist", { name: "Engagement sections" });
+    expect(within(list).getByRole("tab", { name: "Board" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+    expect(
+      screen.getByText("Opens ENG-10 · the board inside this record (see ENG-02g)."),
+    ).toBeTruthy();
+  });
+
+  it("Team tab hosts the roster from GET …/team: Priya Raman, Raj Malhotra, Grace Holloway", async () => {
+    const seen = show("a");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    fireEvent.click(screen.getByRole("tab", { name: /^Team/ }));
+    const group = await screen.findByRole("list", { name: "Team" });
+    await waitFor(() => {
+      expect(within(group).getAllByRole("listitem")).toHaveLength(3);
+    });
+    expect(
+      within(group)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual([
+      "Priya RamanEngagement partner",
+      "Raj MalhotraSenior",
+      "Grace HollowayClient service",
+    ]);
+    expect(seen.calls.some((c) => c.path.endsWith("/team"))).toBe(true);
+  });
+
+  it("Work items tab lists the work items from their kind providers", async () => {
+    show("a");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    fireEvent.click(screen.getByRole("tab", { name: /^Work items/ }));
+    const group = await screen.findByRole("region", { name: "Monthly closes" });
+    await waitFor(() => {
+      expect(within(group).getAllByRole("listitem")).toHaveLength(12);
+    });
+  });
+
+  it("no control on the record is an agent-owned approve, sign-off, release, send, post or decide", async () => {
+    show("a");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    for (const word of [/^Approve/, /^Sign off/, /^Release/, /^Send/, /^Post/, /^Decide/]) {
+      expect(screen.queryByRole("button", { name: word })).toBeNull();
+    }
   });
 });
