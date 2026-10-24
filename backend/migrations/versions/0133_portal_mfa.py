@@ -26,7 +26,7 @@ Definers: `portal_mfa_begin`, `portal_mfa_attempt` (each guess counted before it
 `portal_access_revoke`.
 
 Revision ID: 0133
-Revises: 0116
+Revises: 0132
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ from alembic import op
 from abacus.kernel.db.migration import tenant_table
 
 revision = "0133"
-down_revision = "0116"
+down_revision = "0132"
 branch_labels = None
 depends_on = None
 

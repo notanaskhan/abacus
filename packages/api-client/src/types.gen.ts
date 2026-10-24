@@ -11685,6 +11685,84 @@ export type PortalHomeWorkCardOut = {
 };
 
 /**
+ * PortalMfaIn
+ *
+ * `POST /v1/portal/auth/mfa`: exactly one of `totp` and `backup_code`. Errors: 401
+ * `mfa_mismatch {tries_left}`, 423 `mfa_locked {locked_until}`.
+ */
+export type PortalMfaIn = {
+    /**
+     * Backup Code
+     */
+    backup_code?: string | null;
+    /**
+     * Mfa Token
+     */
+    mfa_token: string;
+    /**
+     * Totp
+     */
+    totp?: string | null;
+    /**
+     * Trust Device
+     */
+    trust_device?: boolean;
+};
+
+/**
+ * PortalMfaSetupIn
+ */
+export type PortalMfaSetupIn = {
+    /**
+     * Mfa Token
+     */
+    mfa_token: string;
+};
+
+/**
+ * PortalMfaSetupOut
+ *
+ * The QR code's URI and the manual key (DF-17, POR-01 setup state).
+ */
+export type PortalMfaSetupOut = {
+    /**
+     * Manual Key
+     */
+    manual_key: string;
+    /**
+     * Otpauth Uri
+     */
+    otpauth_uri: string;
+};
+
+/**
+ * PortalMfaSetupVerifyIn
+ */
+export type PortalMfaSetupVerifyIn = {
+    /**
+     * Mfa Token
+     */
+    mfa_token: string;
+    /**
+     * Totp
+     */
+    totp: string;
+};
+
+/**
+ * PortalMfaSetupVerifyOut
+ *
+ * Eight backup codes, shown once; then the session as `PortalSignInVerifyOut` signed in.
+ */
+export type PortalMfaSetupVerifyOut = {
+    /**
+     * Backup Codes
+     */
+    backup_codes: Array<string>;
+    session: PortalSignInVerifyOut;
+};
+
+/**
  * PortalOut
  */
 export type PortalOut = {
@@ -41134,6 +41212,171 @@ export type PublishRetentionFloorsResponses = {
 };
 
 export type PublishRetentionFloorsResponse = PublishRetentionFloorsResponses[keyof PublishRetentionFloorsResponses];
+
+export type PortalMfaData = {
+    body: PortalMfaIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+        /**
+         * User-Agent
+         */
+        'user-agent'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/mfa';
+};
+
+export type PortalMfaErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Gone: the sign-in code expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Locked: too many wrong codes
+     */
+    423: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type PortalMfaError = PortalMfaErrors[keyof PortalMfaErrors];
+
+export type PortalMfaResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSignInVerifyOut;
+};
+
+export type PortalMfaResponse = PortalMfaResponses[keyof PortalMfaResponses];
+
+export type PortalMfaSetupData = {
+    body: PortalMfaSetupIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/mfa/setup';
+};
+
+export type PortalMfaSetupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Gone: the sign-in code expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type PortalMfaSetupError = PortalMfaSetupErrors[keyof PortalMfaSetupErrors];
+
+export type PortalMfaSetupResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalMfaSetupOut;
+};
+
+export type PortalMfaSetupResponse = PortalMfaSetupResponses[keyof PortalMfaSetupResponses];
+
+export type PortalMfaSetupVerifyData = {
+    body: PortalMfaSetupVerifyIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/auth/mfa/setup/verify';
+};
+
+export type PortalMfaSetupVerifyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Gone: the sign-in code expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Locked: too many wrong codes
+     */
+    423: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type PortalMfaSetupVerifyError = PortalMfaSetupVerifyErrors[keyof PortalMfaSetupVerifyErrors];
+
+export type PortalMfaSetupVerifyResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalMfaSetupVerifyOut;
+};
+
+export type PortalMfaSetupVerifyResponse = PortalMfaSetupVerifyResponses[keyof PortalMfaSetupVerifyResponses];
 
 export type PortalRefreshData = {
     body?: never;

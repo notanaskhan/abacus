@@ -24595,6 +24595,138 @@
         "title": "PortalHomeWorkCardOut",
         "type": "object"
       },
+      "PortalMfaIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/portal/auth/mfa`: exactly one of `totp` and `backup_code`. Errors: 401\n`mfa_mismatch {tries_left}`, 423 `mfa_locked {locked_until}`.",
+        "properties": {
+          "backup_code": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Backup Code"
+          },
+          "mfa_token": {
+            "cls": "restricted",
+            "maxLength": 512,
+            "title": "Mfa Token",
+            "type": "string"
+          },
+          "totp": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Totp"
+          },
+          "trust_device": {
+            "cls": "internal",
+            "default": false,
+            "title": "Trust Device",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mfa_token"
+        ],
+        "title": "PortalMfaIn",
+        "type": "object"
+      },
+      "PortalMfaSetupIn": {
+        "additionalProperties": false,
+        "properties": {
+          "mfa_token": {
+            "cls": "restricted",
+            "maxLength": 512,
+            "title": "Mfa Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mfa_token"
+        ],
+        "title": "PortalMfaSetupIn",
+        "type": "object"
+      },
+      "PortalMfaSetupOut": {
+        "description": "The QR code's URI and the manual key (DF-17, POR-01 setup state).",
+        "properties": {
+          "manual_key": {
+            "cls": "restricted",
+            "title": "Manual Key",
+            "type": "string"
+          },
+          "otpauth_uri": {
+            "cls": "restricted",
+            "title": "Otpauth Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "otpauth_uri",
+          "manual_key"
+        ],
+        "title": "PortalMfaSetupOut",
+        "type": "object"
+      },
+      "PortalMfaSetupVerifyIn": {
+        "additionalProperties": false,
+        "properties": {
+          "mfa_token": {
+            "cls": "restricted",
+            "maxLength": 512,
+            "title": "Mfa Token",
+            "type": "string"
+          },
+          "totp": {
+            "cls": "restricted",
+            "pattern": "^[0-9]{6}$",
+            "title": "Totp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mfa_token",
+          "totp"
+        ],
+        "title": "PortalMfaSetupVerifyIn",
+        "type": "object"
+      },
+      "PortalMfaSetupVerifyOut": {
+        "description": "Eight backup codes, shown once; then the session as `PortalSignInVerifyOut` signed in.",
+        "properties": {
+          "backup_codes": {
+            "cls": "restricted",
+            "items": {
+              "type": "string"
+            },
+            "title": "Backup Codes",
+            "type": "array"
+          },
+          "session": {
+            "$ref": "#/components/schemas/PortalSignInVerifyOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "backup_codes",
+          "session"
+        ],
+        "title": "PortalMfaSetupVerifyOut",
+        "type": "object"
+      },
       "PortalOut": {
         "properties": {
           "scopes": {
@@ -88626,6 +88758,407 @@
         "x-abacus-action": "staff"
       }
     },
+    "/v1/portal/auth/mfa": {
+      "post": {
+        "description": "The second step: a TOTP or a backup code; \"trust this device\" sets the device cookie.",
+        "operationId": "portal_mfa",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          },
+          {
+            "in": "header",
+            "name": "user-agent",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User-Agent"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-portal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Portal"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalMfaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSignInVerifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the sign-in code expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Locked: too many wrong codes"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Portal Mfa Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
+    "/v1/portal/auth/mfa/setup": {
+      "post": {
+        "description": "A new TOTP factor for a person with none: the QR code's URI and the key, once.",
+        "operationId": "portal_mfa_setup",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalMfaSetupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalMfaSetupOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the sign-in code expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Portal Mfa Setup Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
+    "/v1/portal/auth/mfa/setup/verify": {
+      "post": {
+        "description": "The new factor's first code: enrolled, 8 backup codes once, and the session.",
+        "operationId": "portal_mfa_setup_verify",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-portal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Portal"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalMfaSetupVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalMfaSetupVerifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the sign-in code expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Locked: too many wrong codes"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Portal Mfa Setup Verify Route",
+        "tags": [
+          "portal-auth"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
     "/v1/portal/auth/refresh": {
       "post": {
         "description": "Cookie-authenticated, with the CSRF header and the portal host's own Origin.",
@@ -89103,6 +89636,22 @@
                 }
               ],
               "title": "  Host-Abacus-Portal"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-portal-device",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Portal-Device"
             }
           }
         ],
