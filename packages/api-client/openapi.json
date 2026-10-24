@@ -23362,7 +23362,8 @@
               }
             ],
             "cls": "restricted",
-            "title": "Last4"
+            "title": "Last4",
+            "x-pii-kind": "tin"
           },
           "presence": {
             "cls": "internal",
@@ -38443,7 +38444,8 @@
           "value": {
             "cls": "restricted",
             "title": "Value",
-            "type": "string"
+            "type": "string",
+            "x-pii-kind": "tin"
           }
         },
         "required": [

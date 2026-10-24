@@ -244,6 +244,21 @@ def _check_unexplained_ignore(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "type-checker ignore without a reason after it")
 
 
+_FLAG_KEYS = frozenset({"x-tri", "x-phi", "x-pii-kind"})
+
+
+def _check_classification_flag_keys(src: SourceFile) -> Iterator[Finding]:
+    """CLS-001 (ADR-167): the flag keys are written by `classified()` and read by the path
+    helpers in `kernel/classification.py`; anywhere else they mean a hand-set or hand-read flag."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and node.value in _FLAG_KEYS:
+            yield Finding(
+                node.lineno,
+                f"{node.value!r}: set flags with classified(tri=, phi=, pii_kind=) and read them "
+                "with tri_paths, phi_paths or pii_paths",
+            )
+
+
 def _check_unexplained_any(src: SourceFile) -> Iterator[Finding]:
     import_lines: set[int] = set()
     any_lines: set[int] = set()
@@ -2224,6 +2239,14 @@ RULES: list[Rule | TreeRule] = [
         check=_check_unstructured_logging,
         include=("src/abacus/*",),
         exclude=("src/abacus/kernel/logging.py",),
+    ),
+    Rule(
+        id="CLS-001",
+        description="Classification flags only through classified() and the path helpers",
+        adr="ADR-167, ADR-031",
+        check=_check_classification_flag_keys,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/classification.py",),
     ),
     Rule(
         id="ANY-001",

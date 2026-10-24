@@ -32,6 +32,7 @@ from abacus.ai_gateway import (
     CallTooLarge,
     ContextBuilder,
     ContextTooLarge,
+    DataBoundaryRefused,
     DatasetTooLarge,
     GatewayCall,
     GatewayRefused,
@@ -248,6 +249,8 @@ async def _run(agent: AgentContext) -> AgentRun:
 
 # Errors that will happen again on retry end the run; provider outages don't (the caller retries).
 TERMINAL: dict[type[Exception], str] = {
+    # ADR-167 §2, SPEC-030 AC-5: a boundary refusal (pii_in_context too) ends the run, unretried
+    DataBoundaryRefused: "data_boundary",
     SheetLayoutError: "unreadable_evidence",
     DatasetTooLarge: "context_too_large",
     ContextTooLarge: "context_too_large",

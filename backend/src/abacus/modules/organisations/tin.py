@@ -28,6 +28,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.classification import mask
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import tenant_session
@@ -133,8 +134,9 @@ def normalise_tin(raw: str) -> str:
 
 
 def mask_tin(kind: str, last4: str) -> str:
-    """The display form every payload but the reveal may carry: `XX-XXX1234`, `•••-••-1234`."""
-    return f"XX-XXX{last4}" if kind == "ein" else f"•••-••-{last4}"
+    """The display form every payload but the reveal may carry: `XX-XXX1234`, `•••-••-1234`
+    (the SSN and ITIN form is the kernel's one `mask`, ADR-167)."""
+    return f"XX-XXX{last4}" if kind == "ein" else mask(last4, "tin")
 
 
 def _pepper() -> bytes:
