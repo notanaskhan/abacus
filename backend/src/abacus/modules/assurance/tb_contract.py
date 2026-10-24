@@ -41,8 +41,9 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-# `ledger_snapshots.source_kind` (migration 0149): where the snapshot came from.
-SourceKind = Literal["import", "connector", "fake"]
+# `ledger_snapshots.source_kind` (migration 0149): where the snapshot came from. `other` is any
+# source not in 0149's explicit list; `connector` arrives with the live ledger (A-02-T26).
+SourceKind = Literal["import", "connector", "fake", "other"]
 DisplayUnit = Literal["cents", "whole_dollars"]
 # A line tick: a preparer's agreement to source (L1, with a citation) or a reviewer's chip (L2+).
 TickKind = Literal["agreed", "reviewed"]

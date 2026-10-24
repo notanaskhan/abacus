@@ -422,6 +422,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "agent": "deny",
         "system": "deny",
+        "independence": "required",
+        "scope_only": "required",
     },
     "connection.revoke": {
         "client_admin": "allow",
@@ -1666,10 +1668,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
-        "staff": "allow",
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "trial_balance.read": {
         "engagement_partner": "allow",

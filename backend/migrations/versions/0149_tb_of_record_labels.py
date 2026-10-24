@@ -7,10 +7,17 @@
   `standard`). The app may supply it on insert. Adding a column with a constant default changes
   no row: Postgres records the default in the catalogue, and no DML runs, so the ADR-004
   triggers never fire and no snapshot is updated.
-- `ledger_snapshots.source_kind`, generated and stored from `source` (`import_%` is `import`,
-  `fake` is `fake`, anything else `connector`). P-58 widens the expression for
-  `document_extraction` (A-05). A stored generated column rewrites the table without DML; no
-  role can insert or update it.
+- `ledger_snapshots.source_kind`, generated and stored from `source` by an explicit list of
+  the values written today: the five SPEC-028 import formats (`connections.import_formats`) are
+  `import`, the fake connector's `fake` is `fake`, and anything else, whatever its prefix, is
+  `other`. `source` is free text (up to 100 characters), so the kind is never read from a prefix
+  (A-02 security review, DEC-316). A stored generated column rewrites the table without DML; no
+  role can insert or update it. `source` gets no CHECK list: see DEC-316.
+
+  **Changing the expression later** (A-02-T22 adds `import_accrued_template`, A-02-T26 the live
+  ledger's source as `connector`, P-58 `document_extraction`) means dropping and re-adding the
+  column. That migration must first prove that no stored row's `source_kind` changes: compare
+  the old and new expressions over every existing row and refuse to run if any differs.
 - The second immutability layer on `trial_balance_versions` (ADR-004): BEFORE UPDATE OR DELETE
   and BEFORE TRUNCATE triggers calling `ledger_immutable()`, as for `ledger_snapshots`. 0073 only
   revoked UPDATE and DELETE from the app (ED-037).
@@ -54,13 +61,19 @@ def upgrade() -> None:
         "CHECK (label IN ('standard', 'interim', 'prior', 'budget', 'preliminary'))"
     )
     op.execute(
-        r"""
+        """
         ALTER TABLE ledger_snapshots ADD COLUMN source_kind text
             GENERATED ALWAYS AS (
                 CASE
-                    WHEN source LIKE 'import\_%' THEN 'import'
+                    WHEN source IN (
+                        'import_qbo_tb_csv',
+                        'import_xero_tb_xlsx',
+                        'import_qbd_tb_xlsx',
+                        'import_netsuite_tb_csv',
+                        'import_intacct_tb_csv'
+                    ) THEN 'import'
                     WHEN source = 'fake' THEN 'fake'
-                    ELSE 'connector'
+                    ELSE 'other'
                 END
             ) STORED
         """

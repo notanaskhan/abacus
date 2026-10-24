@@ -18134,7 +18134,7 @@ export type TbProvenanceOut = {
     /**
      * Source Kind
      */
-    source_kind: 'import' | 'connector' | 'fake';
+    source_kind: 'import' | 'connector' | 'fake' | 'other';
 };
 
 /**

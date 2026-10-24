@@ -38107,7 +38107,8 @@
             "enum": [
               "import",
               "connector",
-              "fake"
+              "fake",
+              "other"
             ],
             "title": "Source Kind",
             "type": "string"

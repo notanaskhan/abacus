@@ -97,7 +97,7 @@ Built = already on the branch base; the row named finishes the criterion.
 
 ### Story 7 · Open in Excel (§3.8, §11.2 Q1)
 - **AC-24** Open in Excel downloads a deterministic XLSX (byte-identical on re-render) with layer columns, tick and citation text and a provenance footer; formula-like text is neutralised (ADR-052). *Stub T03; live T22.*
-- **AC-25** It needs `trial_balance.export` with independence and no fresh MFA, and is audited `trial_balance.exported`; the binder export stays the ADR-036 path (DEC-316). *Matrix T02; live T22.*
+- **AC-25** It needs `trial_balance.export` (engagement partner, manager, senior; no wider than `run_trace.export`) with independence and a fresh second factor (`mfa_recent`, in `fresh-mfa-actions.yaml`), and is audited `trial_balance.exported`; the binder export stays the ADR-036 path (DEC-316, amended). *Matrix T02; live T22.*
 
 ### Story 8 · C9 v1 contract stub (A-02-T03)
 - **AC-26** Every C9 v1 route declares exactly one matrix action. The stubs (view by layer, leadsheet by area, Open in Excel, issue link) authorise that action on the engagement first, then answer 404 with `ledger.tb_workpaper` off and 501 `not_implemented` with it on. The SPEC-309 to SPEC-311 routes stay live and ungated (DEC-314).
@@ -106,11 +106,11 @@ Built = already on the branch base; the row named finishes the criterion.
 - **AC-29** The typed fixtures (Northwind E0, derived from the seed's trial balance and the Harborline report) foot to 16,812,400.00 EOY and 14,228,500.00 BOY, balance at 17,663,450.00 and validate against the OpenAPI document.
 
 ### Story 9 · Protected bundle (A-02-T02)
-- **AC-30** The generated matrix tests refuse the agent principal every new action (`trial_balance.export`, `ledger.pull`, `connection.read`, `connection.retry`, `connection.reconnect_request`); the firm-side ones are independence-marked; `connection.read` is `scope_only` for a client Owner.
+- **AC-30** The generated matrix tests refuse the agent principal every new action (`trial_balance.export`, `ledger.pull`, `connection.read`, `connection.retry`, `connection.reconnect_request`); the firm-side ones are independence-marked; `connection.read` and `connection.retry` are `scope_only` for a client Owner, and `connection.read` on a client-level resource is refused to a person whose only roles are on other engagements.
 - **AC-31** The registry emits `trial_balance_label` (Standard, Interim, Prior, Budget, Preliminary) and `trial_balance_layer` (Unadjusted, AJE, RJE, Final); `ledger.tb_workpaper` is boolean, default off and expires outside Sep 1 – Oct 20.
 
 ### Story 10 · TB-of-record migration (A-02-T04)
-- **AC-32** `ledger_snapshots` gains `label` (default `standard`, one of the five labels) and a generated `source_kind` (`import`, `fake`, `connector`); a snapshot that existed before the migration reads the same after up, down and up again, and no row is updated (no row trigger fires).
+- **AC-32** `ledger_snapshots` gains `label` (default `standard`, one of the five labels) and a generated `source_kind` from an explicit list (the five import formats `import`, `fake`, anything else `other`, never `import` by prefix); a snapshot that existed before the migration reads the same after up, down and up again, and no row is updated (no row trigger fires).
 - **AC-33** For `abacus_app`, `trial_balance_versions` refuses UPDATE, DELETE and a non-human actor; for every role, its trigger refuses UPDATE, DELETE and TRUNCATE. The app may supply a snapshot's `label`, never its `source_kind`.
 - **AC-34** The downgrade refuses while any snapshot carries a label other than `standard`.
 

@@ -151,6 +151,7 @@ export function northwindTbView(engagementId: string): TbLayerViewOut {
     version_no: 1,
     current_version_no: 1,
     provenance: {
+      // A-02-T22's template format; 0149 maps it to `other` until T22 adds it to the list.
       source_kind: "import",
       source: "import_accrued_template",
       pulled_at: PULLED_AT,

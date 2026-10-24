@@ -40,3 +40,4 @@ def test_ac42_a_listed_action_needs_a_fresh_second_factor(action: str) -> None:
 
 def test_ac42_the_legal_hold_and_export_writes_are_listed() -> None:
     assert {"legal_hold.place", "legal_hold.lift", "firm_export.approve"} <= set(LISTED)
+    assert "trial_balance.export" in LISTED  # A-02 security review (DEC-316, amended)

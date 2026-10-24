@@ -45,7 +45,7 @@ authorises its one action (independence required for every action here).
 | TB sign-offs L1 to L5 | `POST P/{tb_id}/sign-offs/{prepare,review,manager,partner,eqr}` (201) | `sign_off.*` | per level (SPEC-313) | **denied** | live (SPEC-313) |
 | **View by layer** | `GET P/{tb_id}/layers/{layer}?version=` (409 `layer_unavailable`, `layer_unbalanced`) | `trial_balance.read` | as read | denied | **stub** → A-02-T10 |
 | **Leadsheet by area** | `GET P/{tb_id}/leadsheets/{area}?layer=&version=` | `trial_balance.read` | as read | denied | **stub** → A-02-T10 |
-| **Open in Excel** | `GET P/{tb_id}/export.xlsx?layer=&version=` (XLSX attachment) | `trial_balance.export` | partner, manager, senior, staff; no fresh MFA (DEC-316) | **denied** | **stub** → A-02-T22 |
+| **Open in Excel** | `GET P/{tb_id}/export.xlsx?layer=&version=` (XLSX attachment) | `trial_balance.export` | partner, manager, senior; fresh MFA (`mfa_recent`; DEC-316, amended) | **denied** | **stub** → A-02-T22 |
 | **Issue link** | `POST P/{tb_id}/checks/{check_id}/issue-link` `{issue_id, seen_version}` (`Idempotency-Key`; 201; 409) | `tie_out_check.define` | as define | **denied** | **stub** → A-02-T17 |
 
 A stub authorises first, then answers 404 with `ledger.tb_workpaper` off and 501
@@ -58,7 +58,7 @@ Classification (ADR-031): **C** confidential (every amount, account code and nam
 and total labels); everything else internal. Nothing Restricted.
 
 - **`TbLayerViewOut`**: `trial_balance_id`, `engagement_id`, `label` (C2 `trial_balance_label`), `layer` (C2 `trial_balance_layer`), `layers_available`, `display_unit` (`cents`\|`whole_dollars`), `period_start`, `period_end`, `prior_period_end`, `version_no`, `current_version_no`, `provenance`, `groups` C, `totals` C, `balance` C, `checks`, `newer_snapshots` (the "newer TB" banner's count of adoptable newer snapshots), `allowed_actions`.
-- **`TbProvenanceOut`**: `source_kind` (`import`\|`connector`\|`fake`, the snapshot's generated column, migration 0149), `source`, `pulled_at`, `adopted_by_user_id`, `adopted_by_name`, `adopted_at`. The caption's words are the screen's.
+- **`TbProvenanceOut`**: `source_kind` (`import`\|`connector`\|`fake`\|`other`, the snapshot's generated column from an explicit list, migration 0149; `connector` arrives with A-02-T26), `source`, `pulled_at`, `adopted_by_user_id`, `adopted_by_name`, `adopted_at`. The caption's words are the screen's.
 - **`TbGroupOut`**: `key`, `label` C, `lines` C, `boy` C, `eoy` C (server subtotals). Live grouping is one level (audit area) until A-03.
 - **`TbLayerLineOut`**: `account_code` C, `account_name` C, `area` C, `wp_ref`, `boy` C (the prior snapshot's net), `eoy` C (debit minus credit), `aje` C, `rje` C, `final` C (null on Unadjusted), `adjustment_refs`, `ticks`, `citation_ids`, `flags`.
 - **`TbTickOut`**: `level` (1 to 5), `kind` (`agreed`\|`reviewed`), `actor_kind` (`human`\|`agent`), `by_user_id`, `by_name`, `initials` (null on an agent's tick: outlined, "‹person› via Agent", INV-5), `at`, `citation_id`, `verified` (false renders "Uncited", INV-2).
@@ -111,4 +111,4 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | v1 | (S10, Mon Mar 8, 2027) | — | layers half; the taxonomy half joins at S20 |
 
 ## 11. Open points
-DEC-314 (the live routes stay ungated; the stubbed paths), DEC-316 (Open in Excel without fresh MFA; staff may adopt). Before the freeze, A-02-T10 decides whether the live view moves onto `TbLayerViewOut` (and the P-36 envelope on the list) on the same paths, with the SPEC-309 tab moved in the same change.
+DEC-314 (the live routes stay ungated; the stubbed paths), DEC-316 (Open in Excel needs a fresh second factor, amended by the security review; staff may adopt). Before the freeze, A-02-T10 decides whether the live view moves onto `TbLayerViewOut` (and the P-36 envelope on the list) on the same paths, with the SPEC-309 tab moved in the same change.

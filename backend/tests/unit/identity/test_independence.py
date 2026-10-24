@@ -164,6 +164,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "connection.read",  # A-02 §4.4 (TASK-1185)
         "connection.read_log",
         "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)
+        "connection.retry",  # A-02 security review (DEC-316): firm side, attest client data
         "dashboard.read",  # SPEC-317 (TASK-460)
         "decision.decide",  # P-04-T08 (TASK-414)
         "decision.notify",  # P-04-T08 (TASK-414)

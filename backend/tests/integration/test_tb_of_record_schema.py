@@ -232,7 +232,7 @@ async def _revision(db: sc.Database) -> str:
 def test_ac32_a_snapshot_from_before_0149_reads_the_same_after_up_down_up(db: sc.Database) -> None:
     migrate(db.owner_url, BEFORE, down=True)
     firm = asyncio.run(_firm(db))
-    snapshot = asyncio.run(_snapshot(db, firm, "import_qbo"))
+    snapshot = asyncio.run(_snapshot(db, firm, "import_qbo_tb_csv"))
     before = asyncio.run(_row(db, snapshot))
     # Up: the immutability trigger would refuse any UPDATE of the row, so success proves none ran.
     migrate(db.owner_url, "head")
@@ -247,14 +247,29 @@ def test_ac32_a_snapshot_from_before_0149_reads_the_same_after_up_down_up(db: sc
     assert sc.check(db.owner_url, db.app_url) == []
 
 
+# Every source the import formats and the fake connector write today (SPEC-028; `connections.
+# import_formats.FORMATS`, `fake.SOURCE`). Anything else is `other`, never `import`: the kind is
+# read from a known value, not from a prefix of free text (A-02 security review, DEC-316).
+KNOWN_IMPORTS = (
+    "import_qbo_tb_csv",
+    "import_xero_tb_xlsx",
+    "import_qbd_tb_xlsx",
+    "import_netsuite_tb_csv",
+    "import_intacct_tb_csv",
+)
+
+
 @pytest.mark.parametrize(
     ("source", "kind"),
     [
-        ("import_netsuite", "import"),
-        ("import_accrued_template", "import"),
+        *[(source, "import") for source in KNOWN_IMPORTS],
         ("fake", "fake"),
-        ("quickbooks_online", "connector"),
-        ("importer", "connector"),  # `import_` with its underscore, not any `import…`
+        ("import_unknown", "other"),  # an unknown format, whatever its prefix
+        ("import_accrued_template", "other"),  # until A-02-T22 registers the format
+        ("import_qbo_tb_csv ", "other"),
+        ("IMPORT_QBO_TB_CSV", "other"),
+        ("quickbooks_online", "other"),  # until A-02-T26's connector joins the mapping
+        ("importer", "other"),
     ],
 )
 def test_ac32_source_kind_is_generated_from_the_source(
