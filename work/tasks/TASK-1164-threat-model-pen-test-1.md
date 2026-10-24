@@ -22,3 +22,4 @@ updated: 2026-10-24
 
 ## Progress log
 - 2026-10-24: refreshed. Every cited test path checked to exist. Not built and marked so: firm export (Q-02-T43), firm-owned custom domains (P-11, RB-21), the live portal drop and the C4 viewer (stubs). Status `in-review`: N's approval (due Fri Feb 5, 2027) is the acceptance and is not this session's to give. Re-run before the build pin, since R-01, P-03 and Q-02-T43 may land first.
+- 2026-10-24: second pass after the S7 batch is TASK-1178 (same row, Q-03-T018).

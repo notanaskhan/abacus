@@ -191,6 +191,20 @@ No invalidation is needed, because entry files are never cached at the edge. Rol
 - `curl -s https://portal.<canary domain>/v1/portal/branding` answers from the API (same origin), and `/healthz` answers 403.
 - From one address, send 31 `POST /v1/portal/auth/start` requests within 5 minutes. The 31st (give or take WAF's few seconds of lag) answers 429 `{"detail": "rate_limited"}`, and the `auth-and-code-rate` metric shows the blocks.
 
+## Pen-test review role (Q-02-T35, DEC-306)
+
+`infra/envs/staging/pentest_review.tf` and `infra/envs/production/pentest_review.tf`, with `modules/pentest-review-role`, create one role per account for the tester's read-only AWS configuration review (chapter 06 section 5.6). The tester's own role assumes it with the agreed external ID and MFA, and only inside the test window. It attaches `SecurityAudit` and `ViewOnlyAccess` and denies every data read: object bodies, decrypt, secrets, parameters, log events, items, sessions and role chaining. The window is enforced by the trust policy itself, so the role refuses every assume after `pentest_review_ends_at` even if nobody removes it.
+
+Written in TASK-1176 and **not yet initialised, validated, planned or applied**. It plans to nothing until `pentest_review_principal_arn` is set in the untracked `terraform.tfvars`.
+
+By hand, once the rules of engagement are signed (vault), in each of `staging` and `production`:
+
+1. Put the tester's role ARN, the external ID (at least 32 characters, from the vault) and the window (RFC 3339, UTC) in the untracked `terraform.tfvars`. `terraform.tfvars.example` shows the shape.
+2. Run `terraform -chdir=infra/envs/<env> init`, then `validate`, then `plan -out=review.tfplan`. Expect four things and nothing else: the role, its two attachments and the inline deny.
+3. Apply it. Give the tester the role name and the account ID through the vault, never in git or a ticket.
+4. Check it from your own session, as the tester would: an assume without the external ID is refused. As the role, `s3:GetObject` on an evidence object and `secretsmanager:GetSecretValue` are both refused.
+5. After the window, set `pentest_review_principal_arn = null` and apply. That removes the role. Record both applies in the console log below.
+
 ## 4. Console log
 
 Every one-time console step, newest last. Operator is the person at the keyboard.

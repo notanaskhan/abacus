@@ -51,8 +51,8 @@ Criteria from chapter 01 §1.2.2 (M7) and Q-02 §10 items 1, 3, 5 and 6. The dos
 | # | Criterion | Owner | Date | Evidence | Status |
 |---|---|---|---|---|---|
 | M7-01 | SOC 2 Type I report in hand, as of Mon Mar 1, 2027 (report expected about Fri Apr 2; confirm the auditor's timing) | auditor, builder | Report by Fri Apr 2; gate Fri Apr 16, 2027 | Report in the vault; reference in the dossier | open |
-| M7-02 | Type I readiness gaps closed | builder | Fri Feb 26, 2027 | Readiness assessment in the tool | open |
-| M7-03 | Pen test #1 done; every critical and high retested closed; attestation letter received | pen tester, builder | Retest closed by Fri Apr 9, 2027 | Letter in the vault; finding tickets closed | open |
+| M7-02 | Type I readiness gaps closed | builder | Fri Feb 26, 2027 | Readiness assessment in the tool; gap register [`type-1-readiness.md`](type-1-readiness.md) (Q-02-T35) | in progress |
+| M7-03 | Pen test #1 done; every critical and high retested closed; attestation letter received | pen tester, builder | Retest closed by Fri Apr 9, 2027 | Letter in the vault; finding tickets closed; readiness [`../gates/pen-test-1-readiness.md`](../gates/pen-test-1-readiness.md), environment [`../pentests/2027-02-environment.md`](../pentests/2027-02-environment.md) | open |
 | M7-04 | Provider-terms register holds a current Bedrock entry with counsel as second approver; `review_by` at least 90 days after Tue Jun 1, 2027 (ADR-114, ADR-115) | counsel, builder | Fri Apr 9, 2027 | `docs/operations/provider-terms.yaml`; Q-02-T18 | open |
 | M7-05 | Per-agent Bedrock evaluations pass for every agent that will touch real data (screener, upload reviewer, matcher), including shadow-stage runs; no threshold lowered; route-parity report under 90 days old on Jun 1 | builder | Reports committed by Fri Apr 9, 2027 | `docs/operations/`; `evals/baselines.yaml`; Q-02-T44 | open |
 | M7-06 | Firm opt-in (SPEC-036) recorded per firm before its first agent run; exclusion and agent stages live | builder | Fri Apr 16, 2027 | Q-02-T07, Q-02-T08; tests from Q-02-T09 | open |
