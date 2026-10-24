@@ -110,6 +110,8 @@ IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
         ("get", "/v1/engagements/{engagement_id}/request-items/{item_id}/activity"),
         ("post", "/v1/portal/request-items/{item_id}/ignore"),
         ("post", "/v1/portal/request-items/{item_id}/upload-intents"),
+        # P-06-T19 (2026-10-24): the client withdrawal, behind `evidence.withdrawal` (ADR-162).
+        ("post", "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw"),
     }
 )
 
@@ -168,7 +170,7 @@ def test_ac3_the_ignore_needs_a_reason_and_publish_uses_registered_settings() ->
 Stub = Callable[[AuthContext], Awaitable[object]]
 
 
-@pytest.mark.parametrize("module", [contract, evidence_contract])
+@pytest.mark.parametrize("module", [contract])
 async def test_ac4_flag_off_is_404_and_flag_on_is_501(
     module: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -193,3 +195,21 @@ async def test_ac4_flag_off_is_404_and_flag_on_is_501(
     monkeypatch.setattr(module, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
         await stub(ctx)
+
+
+async def test_ac4_the_withdrawal_is_404_with_its_own_flag_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """P-06-T19 moved the withdraw route from `binders.engine` to `evidence.withdrawal` (ADR-162
+    §3): off, 404 before anything is read."""
+    user = uuid.uuid4()
+    ctx = AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
+    )
+
+    async def off(_ctx: AuthContext) -> bool:
+        return False
+
+    monkeypatch.setattr(evidence_contract, "withdrawal_enabled", off)
+    with pytest.raises(NotFound):
+        await evidence_contract._flag_on(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate

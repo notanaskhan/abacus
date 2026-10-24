@@ -4,7 +4,9 @@
 2. Resolve the user by issuer and subject (403 if unknown).
 3. Load the user's active memberships, fresh on every request.
 4. Choose the active tenant: the only membership, or the one named in `X-Abacus-Tenant`, which
-   counts only if it matches an active membership. Otherwise 403.
+   counts only if it matches an active membership. A member's header naming a tenant they do not
+   hold, real or not, is 404 (P-01 AC 2.1.4, DEC-304). No memberships at all (SPEC-000 AC-2), no
+   header with several, or a header that is not a tenant id, is 403.
 """
 
 from __future__ import annotations
@@ -15,11 +17,12 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Forbidden, Resource, authorise
-from abacus.modules.identity.context import AuthContext, NoActiveTenant
+from abacus.modules.identity.context import AuthContext, NoActiveTenant, TenantNotHeld
 from abacus.modules.identity.events import EngagementMemberAdded, EngagementMemberSelfJoined
 from abacus.modules.identity.member_hooks import member_added
 from abacus.modules.identity.repository import (
@@ -101,6 +104,8 @@ def choose_tenant(signed_in: SignedIn, requested: str | None) -> AuthContext:
         except ValueError:
             raise NoActiveTenant("malformed tenant") from None
         chosen = [m for m in memberships if m.tenant_id == tenant_id]
+        if not chosen and memberships:  # her own memberships only: the firm is never read
+            raise TenantNotHeld("tenant not held")
     else:
         chosen = memberships if len(memberships) == 1 else []
     if len(chosen) != 1:
@@ -292,9 +297,19 @@ async def could(ctx: AuthContext, user_id: UUID, action: str, resource: Resource
     return await member_could(ctx.tenant_id, user_id, action, resource)
 
 
-async def member_could(tenant_id: UUID, user_id: UUID, action: str, resource: Resource) -> bool:
+async def member_could(
+    tenant_id: UUID,
+    user_id: UUID,
+    action: str,
+    resource: Resource,
+    *,
+    waive_fresh_mfa: bool = False,
+) -> bool:
     """`could` for a firm and a person, with no caller: an invitation's acceptance asks whether
-    its inviter may still invite (P-08-T18, DEC-277). Fresh-MFA actions answer False."""
+    its inviter may still invite (P-08-T18, DEC-277). Fresh-MFA actions answer False, unless
+    `waive_fresh_mfa`: the person can't step up because they aren't here (a contact invitation's
+    acceptance re-checks `client_access.grant`, DEC-303), so only the recency of a second factor
+    is set aside; walls, roles, independence, conditions and the archived rule all still hold."""
     found = [m for m in await active_memberships(user_id) if m.tenant_id == tenant_id]
     if not found:
         return False
@@ -303,7 +318,7 @@ async def member_could(tenant_id: UUID, user_id: UUID, action: str, resource: Re
         user_id=user_id,
         membership_id=found[0].membership_id,
         firm_role=found[0].firm_role,
-        mfa_at=None,
+        mfa_at=system_now() if waive_fresh_mfa else None,
         client=found[0].kind == "client",
     )
     try:

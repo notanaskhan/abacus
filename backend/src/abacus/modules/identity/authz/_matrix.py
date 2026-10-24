@@ -439,6 +439,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_service": "allow",
         "agent": "deny",
         "system": "deny",
+        "mfa_recent": "required",
     },
     "dashboard.read": {
         "engagement_partner": "allow",

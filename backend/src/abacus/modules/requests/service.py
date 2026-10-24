@@ -64,6 +64,7 @@ from abacus.modules.requests.repository import (
     overdue_counts,
     overdue_items,
     request_list_for,
+    revert_to_requested,
     search_items,
     set_classification,
     set_client_fields,
@@ -72,6 +73,8 @@ from abacus.modules.requests.repository import (
     set_due_dates,
     set_guidance,
     set_status,
+    upload_link,
+    void_fulfilments,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
 
@@ -738,6 +741,45 @@ class ItemKind:
     id: UUID
     document_kind: str | None
     description: str = ""  # SPEC-030 (TASK-058): what the upload reviewer is told was asked for
+
+
+async def upload_item_of(
+    tenant: TenantContext, evidence_version_id: UUID, uploader: str
+) -> UUID | None:
+    """P-06-T19: the request item a person's upload was made to (not a later link)."""
+    async with tenant_session(tenant) as session:
+        return await upload_link(session, evidence_version_id, uploader)
+
+
+async def withdraw_upload(
+    tx: UnitOfWork, *, evidence_version_id: UUID, withdrawn_by: UUID, item_ids: Sequence[UUID]
+) -> list[UUID]:
+    """P-06-T19 (ADR-162 §4): inside the withdrawal's unit of work, void the version's
+    fulfilments of `item_ids` (the items the withdrawing client may withdraw from) and return to
+    `requested` each item it was the only fulfilment of. Returns the items voided."""
+    voided = await void_fulfilments(
+        tx.session,
+        evidence_version_id=evidence_version_id,
+        withdrawn_by=withdrawn_by,
+        item_ids=item_ids,
+    )
+    items: list[UUID] = []
+    for fulfilment_id, item_id in voided:
+        await get_request_item(tx.session, item_id, lock=True)
+        tx.record(
+            "fulfilment.withdrawn",
+            target=Target("fulfilment", fulfilment_id),
+            after=Ref(request_item_id=item_id, evidence_version_id=evidence_version_id),
+        )
+        reverted = await revert_to_requested(tx.session, item_id)
+        # The item's Activity: the client withdrew an upload (identifiers only, no file name).
+        tx.record(
+            "request_item.upload_withdrawn",
+            target=Target("request_item", item_id),
+            after=Ref(evidence_version_id=evidence_version_id, reverted=int(reverted)),
+        )
+        items.append(item_id)
+    return items
 
 
 async def items_of_version(tenant: TenantContext, evidence_version_id: UUID) -> list[ItemKind]:

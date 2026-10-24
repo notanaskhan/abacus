@@ -27,7 +27,7 @@ Which = Literal["acceptance", "letter"]
 async def upload_setup_file(
     ctx: AuthContext, engagement_id: UUID, which: Which, *, file_name: str, content: bytes
 ) -> None:
-    media_type, _ = await screened(ctx, engagement_id, content)  # SPEC-029 AC-1, TASK-054 D4
+    media_type = (await screened(ctx, engagement_id, content, file_name)).media_type  # AC-1, D4
     stored = await storage.put(ctx.tenant_id, content)
     file = StoredFile(
         stored.key,

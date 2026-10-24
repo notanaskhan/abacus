@@ -9,7 +9,9 @@ its engagement; contributor: its assigned ones), and nothing of another engageme
 upload lands as `uploaded` ("Uploaded - needs review"), never `received`: DEC-09 migrated the
 codes, so SPEC-020 AC-8's "the item shows received" is spec drift and the test follows the enum
 (P-44, C5). A scan failure fails closed and stores nothing, so no unscanned version is ever
-served. The size limit is SPEC-020 AC-9's 25 MB; DEC-58's 50 MB is held as ED-018.
+served. The size limit is DEC-58 (c)'s 50 MB (DEC-296, ED-018 fixed; SPEC-020 AC-9 said 25 MB),
+and the file name's extension must agree with the bytes (DEC-296), so each upload is named for
+what it is.
 
 Boundary: `create_app()` over HTTP as the firm's people and the client's (fake-identity tokens,
 client memberships with engagement-scope grants), the compose S3 image with Object Lock, and the
@@ -111,9 +113,10 @@ class Firm:
     async def upload(
         self, who: Person, item: uuid.UUID, content: bytes, media_type: str = PDF
     ) -> httpx.Response:
+        name = "aging.xlsx" if media_type == XLSX else "statement.pdf"  # DEC-296: names agree
         return await self.net.http.post(
             f"{self.base()}/request-items/{item}/uploads",
-            params={"filename": "statement.pdf"},
+            params={"filename": name},
             content=content,
             headers={**self.net.headers(who), "Content-Type": media_type},
         )
@@ -243,7 +246,8 @@ async def test_ac9_too_large_wrong_type_by_content_and_duplicate_are_refused(fir
     item = await firm.item("December bank statement")
     admin = await firm.seed.client_contact(firm.site, "client_admin")
     before = await firm.versions()
-    too_large = await firm.upload(admin, item, b"%PDF-1.4\n" + bytes(25 * 1024 * 1024 + 1))
+    # DEC-296 (ED-018): DEC-58 (c)'s 50 MB, not SPEC-020 AC-9's 25 MB.
+    too_large = await firm.upload(admin, item, b"%PDF-1.4\n" + bytes(50 * 1024 * 1024 + 1))
     assert too_large.status_code in (413, 422), too_large.text
     zipped = await firm.upload(admin, item, b"PK\x03\x04" + bytes(64), PDF)  # named a PDF
     assert zipped.status_code == 422 and zipped.json()["detail"] == "upload_type_not_allowed"

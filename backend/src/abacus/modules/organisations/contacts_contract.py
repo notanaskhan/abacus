@@ -1,10 +1,10 @@
 """The contacts and portal-access contract, v1: CLI-04 (P-07-T17 stub; ADR-139, P-36, ADR-146).
 Contract: `docs/contracts/contacts-access.md`; spec: SPEC-321 Story 5; DEC-226.
 
-Behind `contacts.v2`: off, every route here answers 404; on, 501 `not_implemented` until P-07-T25
-implements it (contacts migration, invitations re-scoped to contacts and grants, delegated
-requests through C5, 14-day single-use links, resend, revoke, change scope, unlock, the firm's
-Invitation template through `communications`).
+Behind `contacts.v2`: off, every route here answers 404. Live since P-07-T25 (`contacts.py`,
+DEC-300): the contacts migration (0146), invitations re-scoped to contacts and pending grants,
+delegated requests through C5, 14-day single-use links, resend, revoke, change scope, unlock, and
+the firm's Invitation template through `communications`.
 
 - A contact belongs to one client; its roles are per entity (`scope_kind` client or
   client_entity). Portal state is C2's `invitation` (Active · Invited · Not invited · Locked).
@@ -21,8 +21,9 @@ Invitation template through `communications`).
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -31,10 +32,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import CONTACTS_V2
 from abacus.kernel._statuses import InvitationStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -42,6 +44,7 @@ from abacus.modules.identity.api import (
     ScopeKind,
     current_context,
 )
+from abacus.modules.organisations import contacts as service
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -65,6 +68,10 @@ ContactRole = Literal[
 PartyKind = Literal["person", "organisation", "group"]
 RoleScopeKind = Literal["client", "client_entity"]
 MfaPolicy = Literal["required_by_firm", "optional"]
+# One address, `local@domain.tld`, on one line: no spaces, line breaks or a second `@` (DEC-303).
+ContactEmail = Annotated[
+    str, Field(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+]
 ContactSort = Literal["name", "portal_status", "last_seen"]
 
 
@@ -204,9 +211,7 @@ class ContactIn(BaseModel):
         SingleLineText, Field(min_length=1, max_length=200), classified("confidential")
     ]
     party_kind: Annotated[PartyKind, classified("internal")] = "person"
-    email: Annotated[
-        str | None, Field(default=None, min_length=3, max_length=320), classified("confidential")
-    ]
+    email: Annotated[ContactEmail | None, Field(default=None), classified("confidential")]
     phone: Annotated[
         SingleLineText | None, Field(default=None, max_length=40), classified("confidential")
     ]
@@ -224,9 +229,7 @@ class ContactPatchIn(BaseModel):
         Field(default=None, min_length=1, max_length=200),
         classified("confidential"),
     ]
-    email: Annotated[
-        str | None, Field(default=None, min_length=3, max_length=320), classified("confidential")
-    ]
+    email: Annotated[ContactEmail | None, Field(default=None), classified("confidential")]
     phone: Annotated[
         SingleLineText | None, Field(default=None, max_length=40), classified("confidential")
     ]
@@ -315,10 +318,50 @@ class ContactUnlockedOut(BaseModel):
     unlocked_at: Annotated[datetime, classified("internal")]
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _gate(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, CONTACTS_V2):
         raise NotFound("contacts.v2")
-    raise NotImplementedYet
+
+
+def _row(view: service.RowView) -> ContactRowOut:
+    return ContactRowOut.model_validate(asdict(view))
+
+
+def _grants(views: list[service.GrantView]) -> list[GrantOut]:
+    return [GrantOut.model_validate(asdict(v)) for v in views]
+
+
+def _detail(view: service.DetailView) -> ContactDetailOut:
+    return ContactDetailOut(
+        contact=_row(view.contact),
+        grants=_grants(view.grants),
+        sign_ins=[],
+        delegated_request_ids=view.delegated_request_ids,
+        version=view.version,
+    )
+
+
+def _asked(grants: list[GrantIn]) -> list[service.GrantAsked]:
+    return [
+        service.GrantAsked(g.role, g.scope_kind, g.scope_id, tuple(g.request_item_ids))
+        for g in grants
+    ]
+
+
+def _roles(roles: list[ContactRoleIn]) -> list[service.RoleAsked]:
+    return [service.RoleAsked(r.role, r.scope_kind, r.scope_id, r.title_text) for r in roles]
+
+
+def _invitation(view: service.InvitationView) -> InvitationOut:
+    return InvitationOut(
+        invitation_id=view.invitation_id,
+        contact_id=view.contact_id,
+        grants=_grants(view.grants),
+        mfa_policy=view.mfa_policy,  # pyright: ignore[reportArgumentType] -- an MfaPolicy code
+        sent_at=view.sent_at,
+        expires_at=view.expires_at,
+        portal_status=InvitationStatus(view.portal_status),
+    )
 
 
 client_contacts_router = AbacusRouter(prefix="/v1/clients", tags=["contacts"])
@@ -327,7 +370,7 @@ contact_invitations_router = AbacusRouter(prefix="/v1/invitations", tags=["conta
 
 
 @client_contacts_router.get(
-    "/{client_id}/contacts", action="contact.read", response_model=ContactsPage, errors=(501,)
+    "/{client_id}/contacts", action="contact.read", response_model=ContactsPage
 )
 async def list_contacts_route(
     client_id: UUID,
@@ -338,7 +381,23 @@ async def list_contacts_route(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> ContactsPage:
     """CLI-04 a: `counts` per portal status (the header) and the delegated footer."""
-    await _stub(ctx)
+    await _gate(ctx)
+    page = await service.list_contacts(
+        ctx,
+        client_id,
+        portal_status=portal_status.value if portal_status is not None else None,
+        sort=sort,
+        cursor=cursor,
+        limit=limit,
+    )
+    return ContactsPage(
+        items=[_row(r) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        counts=page.counts,
+        summary=ContactCountsOut.model_validate(page.summary),
+        delegated=DelegatedFooterOut.model_validate(page.delegated),
+    )
 
 
 @client_contacts_router.post(
@@ -346,27 +405,53 @@ async def list_contacts_route(
     action="contact.manage",
     response_model=ContactOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_contact_route(client_id: UUID, body: ContactIn, ctx: Ctx) -> ContactOut:
     """409 `contact_exists` for an email already on the client; one `contact.created` event."""
-    await _stub(ctx)
+    await _gate(ctx)
+    made = await service.create_contact(
+        ctx,
+        client_id,
+        name=body.name,
+        party_kind=body.party_kind,
+        email=body.email,
+        phone=body.phone,
+        roles=_roles(body.roles),
+    )
+    return ContactOut(contact=_row(made.contact), version=made.version)
 
 
-@contacts_router.get(
-    "/{contact_id}", action="contact.read", response_model=ContactDetailOut, errors=(501,)
-)
+@contacts_router.get("/{contact_id}", action="contact.read", response_model=ContactDetailOut)
 async def get_contact_route(contact_id: UUID, ctx: Ctx) -> ContactDetailOut:
     """The O2 drawer: roles, grants, sign-in history and delegated requests."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return _detail(await service.contact_detail(ctx, contact_id))
 
 
 @contacts_router.patch(
-    "/{contact_id}", action="contact.manage", response_model=ContactOut, errors=(409, 501)
+    "/{contact_id}", action="contact.manage", response_model=ContactOut, errors=(409,)
 )
 async def update_contact_route(contact_id: UUID, body: ContactPatchIn, ctx: Ctx) -> ContactOut:
-    """409 `stale_version`; one `contact.updated` event naming the fields, never values."""
-    await _stub(ctx)
+    """409 `stale_version`; one `contact.updated` event naming the fields, never values. A new
+    address revokes a pending invitation sent to the old one; 409 `contact_bound` for a contact
+    that already signs in (its address is the person's own)."""
+    await _gate(ctx)
+    values: dict[str, str | None] = {}
+    if body.name is not None:
+        values["display_name"] = body.name
+    if "email" in body.model_fields_set:
+        values["email"] = body.email
+    if "phone" in body.model_fields_set:
+        values["phone"] = body.phone
+    made = await service.update_contact(
+        ctx,
+        contact_id,
+        seen_version=body.seen_version,
+        values=values,
+        roles=_roles(body.roles) if body.roles is not None else None,
+    )
+    return ContactOut(contact=_row(made.contact), version=made.version)
 
 
 @contacts_router.post(
@@ -374,7 +459,7 @@ async def update_contact_route(contact_id: UUID, body: ContactPatchIn, ctx: Ctx)
     action="client_access.grant",
     response_model=InvitationOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def invite_contact_route(
     contact_id: UUID, body: InvitationIn, ctx: Ctx, idempotency_key: IdempotencyKey
@@ -382,50 +467,74 @@ async def invite_contact_route(
     """Human-only: pending grants and a single-use invitation in one unit of work and
     `contact.invited` emitted; 409 `gate_unmet` (G1) for a full-client grant before acceptance;
     422 `scope_outside_client`."""
-    await _stub(ctx)
+    await _gate(ctx)
+    asked = _asked(body.grants)
+    await service.check_invite(ctx, contact_id, asked)  # before the replay lookup (ED-023)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await service.invite(ctx, contact_id, asked)
+        return 201, _invitation(made).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="contacts.invite",
+        key=idempotency_key,
+        body={"contact_id": str(contact_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return InvitationOut.model_validate(stored.body)
 
 
 @contact_invitations_router.post(
     "/{invitation_id}/resend",
     action="client_access.grant",
     response_model=InvitationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def resend_invitation_route(invitation_id: UUID, ctx: Ctx) -> InvitationOut:
     """A new token; the old link stops working; `invitation.resent`."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return _invitation(await service.resend(ctx, invitation_id))
 
 
 @contact_invitations_router.post(
     "/{invitation_id}/revoke",
     action="client_access.revoke",
     response_model=InvitationRevokedOut,
-    errors=(501,),
 )
 async def revoke_invitation_route(invitation_id: UUID, ctx: Ctx) -> InvitationRevokedOut:
     """Human-only: grants revoked, sessions ended (`access.changed`), requests kept."""
-    await _stub(ctx)
+    await _gate(ctx)
+    done = await service.revoke(ctx, invitation_id)
+    return InvitationRevokedOut.model_validate(asdict(done))
 
 
 @contacts_router.put(
     "/{contact_id}/access",
     action="client_access.grant",
     response_model=ContactAccessOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def change_contact_access_route(
     contact_id: UUID, body: ContactAccessIn, ctx: Ctx
 ) -> ContactAccessOut:
     """CLI-04 e: the new grant set; 409 `stale_version`; `contact.access_changed`."""
-    await _stub(ctx)
+    await _gate(ctx)
+    changed = await service.change_access(ctx, contact_id, body.seen_version, _asked(body.grants))
+    return ContactAccessOut(
+        contact_id=changed.contact_id, grants=_grants(changed.grants), version=changed.version
+    )
 
 
 @contacts_router.post(
     "/{contact_id}/unlock",
     action="contact.unlock",
     response_model=ContactUnlockedOut,
-    errors=(501,),
 )
 async def unlock_contact_route(contact_id: UUID, ctx: Ctx) -> ContactUnlockedOut:
     """Human-only: clears a portal lock (P-08 state); `contact.unlocked` audited."""
-    await _stub(ctx)
+    await _gate(ctx)
+    found, status, at = await service.unlock(ctx, contact_id)
+    return ContactUnlockedOut(
+        contact_id=found, portal_status=InvitationStatus(status), unlocked_at=at
+    )

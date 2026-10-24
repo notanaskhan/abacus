@@ -23,7 +23,7 @@ Who someone is, which firm they act in, and what they may do. PROTECTED (red zon
 
 - A route that returns a success without calling `authorise`/`visible` for its declared action becomes a 500. Check before writing: the guard runs after the handler, so it can't undo a committed write.
 - Tokens prove identity only (ADR-029). Firm and engagement roles come from the database on every request; memberships aren't cached, so revocation applies to the next request.
-- With several memberships the client sends `X-Abacus-Tenant`; it counts only if it matches an active membership (ADR-002).
+- With several memberships the client sends `X-Abacus-Tenant`; it counts only if it matches an active membership (ADR-002). A member's header naming a tenant they do not hold answers 404 `not found`, the same for a real firm and one that never existed (P-01 AC 2.1.4, DEC-304); no membership at all (SPEC-000 AC-2), no header with several memberships, or a header that is not a tenant id, stays 403.
 - Matrix conditions not modelled yet (`in_scope`, `firm_setting(...)`, `assigned_only`, `client_visible_only`, `task_scope`) deny. Client grants come with their own task.
 - `authz/_matrix.py` is generated from `docs/architecture/permission-matrix/<module>.yaml`: `python -m abacus_tools.codegen.permission_matrix`. Tests fail when they drift.
 - Wiring a module's routes: its `api.py` exports an `AbacusRouter` named `router`, and `abacus/api/app.py` lists it in `ROUTERS`. Pattern: `docs/architecture/reference/tenancy-and-authz.md`.
@@ -149,6 +149,7 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 
 ## Client access grants (F-03-T26; ADR-146, DEC-129)
 - `client_access_grants`: 12 client roles on 9 scope kinds, `document_classes`, `expires_at`, `status`; every status change is also an insert-only `client_access_events` row. `grant_client_access` / `revoke_client_access` (`client_access.grant`, `.revoke`; fresh MFA) take the scope's engagement resource, built by the caller from its row, or the firm for client-wide scopes, and emit `client_access.granted`/`.revoked` and `access.changed`.
+- Contact access (P-07-T25, `contact_access.py`; DEC-300): pending grants with no person until the contact accepts (`grant_ids` on the invitation), resend, revoke (sessions ended in the same transaction), change scope and the portal unlock (`portal_sign_in_unlock`); `contact.invited` is emitted with the invitation.
 - `portal_scopes(ctx)`: the role union. Shell "full" with any full-client role, "k1" with only K-1 recipient grants, "limited" otherwise, "none" without grants.
 - `scope_only`: `client_access.scope_covers` answers for the target's own scope only. Scope kinds resolve through `slots.register_scope_resolver` (engagements: `work_item`, `client`); `engagement` is built in; an unregistered kind covers nothing.
 - Contract step (migration 0084, TASK-373): `engagement_members` holds staff roles only. A client role on an engagement is its engagement-scope grant: `owner` is the matrix's `client_admin`, `contributor` its `client_contributor`. `engagement_role`, `visible()`, `client_admins`, client contacts, invitation acceptance (`grant_engagement_role`) and `remove_client_member` (revokes) all read or write grants. A grant needs a client membership.

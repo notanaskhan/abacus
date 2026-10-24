@@ -33,7 +33,7 @@ from abacus.modules.agents.upload_review import REVIEWER, model_available
 from abacus.modules.agents.workflow_types import ScreeningInput
 from abacus.modules.agents.workflows import UploadReviewWorkflow
 from abacus.modules.engagements.api import get_ref
-from abacus.modules.evidence.api import version_view
+from abacus.modules.evidence.api import version_view, withdrawn_among
 from abacus.modules.identity.api import AuthContext, authorise, autonomy_level, earliest_partner
 
 _log = get_logger(__name__)
@@ -194,4 +194,6 @@ async def review_flag_counts(ctx: AuthContext, engagement_id: UUID) -> dict[UUID
     engagement = await get_ref(ctx, engagement_id)
     await authorise(ctx, "upload_review.read", engagement.resource())
     async with tenant_session(ctx.tenant) as session:
-        return await shown_flag_counts(session, ctx, engagement_id)
+        counts = await shown_flag_counts(session, ctx, engagement_id)
+    hidden = await withdrawn_among(ctx.tenant, list(counts))  # P-06-T19 (ADR-162 §4)
+    return {version: n for version, n in counts.items() if version not in hidden}

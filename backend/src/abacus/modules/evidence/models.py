@@ -50,6 +50,42 @@ class EvidenceVersion(Base):
     created_at: Mapped[datetime]
     # SPEC-023: where a file the firm added for the client came from (written once).
     upload_note: Mapped[str | None]
+    # ADR-162 §5 (P-06-T18, 0144): a client-channel upload's own object and detached key.
+    storage_mode: Mapped[str] = mapped_column(server_default=FetchedValue())
+
+
+class EvidenceObjectKey(Base):
+    """A detached-key version's wrapped data key (ADR-162 §5; P-06-T18). Acceptance stamps
+    `retained_at` (one-way); only the withdrawal purge's definer function clears `wrapped_key`
+    and stamps `destroyed_at`."""
+
+    __tablename__ = "evidence_object_keys"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    evidence_version_id: Mapped[UUID] = mapped_column(primary_key=True)
+    key_id: Mapped[str]
+    wrapped_key: Mapped[bytes | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    retained_at: Mapped[datetime | None]
+    destroyed_at: Mapped[datetime | None]
+
+
+class EvidenceWithdrawal(Base):
+    """A client's withdrawal of an unaccepted upload (ADR-162 §4; P-06-T19). Insert-only but for
+    the purge's stamps (`erased_at` once; `erase_blocked_at` and `block_reason` on each retry)."""
+
+    __tablename__ = "evidence_withdrawals"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    evidence_version_id: Mapped[UUID] = mapped_column(primary_key=True)
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID | None]
+    withdrawn_by_user_id: Mapped[UUID]
+    withdrawn_at: Mapped[datetime]
+    erase_after: Mapped[datetime]
+    erased_at: Mapped[datetime | None]
+    erase_blocked_at: Mapped[datetime | None]
+    block_reason: Mapped[str | None]
 
 
 class ReviewDecision(Base):

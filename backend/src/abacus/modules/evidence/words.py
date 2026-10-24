@@ -40,11 +40,14 @@ from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence import storage
+from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.models import EvidencePage
+from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_version,
     insert_pages,
+    is_withdrawn,
     pages_of,
     sources_without_words,
 )
@@ -158,6 +161,8 @@ def extract_words(content: bytes, media_type: str) -> WordLayer:
     """In-process (tests, and inside the isolated child): a PDF's words page by page."""
     if media_type != PDF:
         return WordLayer("not_applicable")
+    if is_active(content):  # DEC-296 (ED-021): kept, never read for words
+        return WordLayer("not_applicable", "active_content")
     import pdfplumber
 
     try:
@@ -272,6 +277,10 @@ async def words_upload(given: UploadInput) -> int:
             else await get_inbox_file(session, source_id)
         )
     if source is None:
+        if version_id is not None:
+            async with tenant_session(tenant) as session:
+                if await is_withdrawn(session, version_id):
+                    return 0  # P-06-T19: no word layer for a withdrawn version
         raise NotFound("upload")
     if source.media_type != PDF:
         return 0
@@ -280,11 +289,12 @@ async def words_upload(given: UploadInput) -> int:
     )
     content = await storage.get(tenant_id, stored)
     layer = await asyncio.to_thread(extract_words_isolated, content, source.media_type)
+    under = under_key(source)
     if layer.status != "extracted":
         _log.info("upload.words_skipped", kind=given.kind, reason=layer.reason)
         return 0
     objects = [
-        await storage.put(tenant_id, layer_document(page)) if page.words else None
+        await storage.put(tenant_id, layer_document(page), under=under) if page.words else None
         for page in layer.pages
     ]
     rows: list[dict[str, object]] = [

@@ -11,7 +11,9 @@ or a limit hit is `unreadable`, never a worker failure (AC-2).
   password-protected file is `unreadable/encrypted` (AC-3).
 - XLSX: cached values only (`data_only`), read-only, VBA dropped: formulas are never evaluated
   and macros never run (AC-4). CSV: UTF-8 or Windows-1252.
-- Images, Word documents and legacy Excel/Word files: `not_extracted`.
+- Images, Word documents and legacy Excel/Word files: `not_extracted` (HEIC with the reason
+  `format_not_supported`). A PDF with active content: `not_extracted/active_content`, never
+  opened (DEC-296).
 
 The result is a derived record: it never alters the evidence and can be rebuilt (ADR-110).
 """
@@ -28,6 +30,7 @@ from decimal import Decimal
 from typing import Final, Literal, Protocol, cast
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
+from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.document_fields import (
     Aging,
     Statement,
@@ -48,6 +51,9 @@ MAX_PAGE_TEXT: Final = 50_000
 PDF: Final = "application/pdf"
 XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 CSV: Final = "text/csv"
+HEIC: Final = "image/heic"
+HEIF: Final = "image/heif"
+ACTIVE_CONTENT: Final = "active_content"
 _REFUSED: Final = frozenset({"Cc", "Cf", "Cs", "Co"})
 
 Status = Literal["extracted", "unreadable", "not_extracted"]
@@ -281,11 +287,16 @@ def _sheets(content: bytes, media_type: str) -> Extraction:
 
 
 def extract(content: bytes, media_type: str) -> Extraction:
-    """In-process extraction (tests, and inside the isolated child)."""
+    """In-process extraction (tests, and inside the isolated child). A PDF with active content is
+    never read (DEC-296, ED-021); HEIC waits for a reader no allowlisted dependency provides."""
     if media_type == PDF:
+        if is_active(content):
+            return Extraction("not_extracted", ACTIVE_CONTENT)
         return _pdf(content)
     if media_type in (XLSX, CSV):
         return _sheets(content, media_type)
+    if media_type in (HEIC, HEIF):
+        return Extraction("not_extracted", "format_not_supported")
     reason = "legacy_format" if media_type == "application/x-ole-storage" else None
     return Extraction("not_extracted", reason)
 

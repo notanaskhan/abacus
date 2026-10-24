@@ -25,6 +25,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
+from abacus.kernel.crypto import DetachedKey
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, ServiceUnavailable
 from abacus.kernel.logging import get_logger
@@ -45,6 +46,7 @@ from abacus.modules.evidence.repository import (
     get_version,
     insert_decision,
     insert_item,
+    insert_object_key,
     insert_version,
     latest_decision_row,
     list_review_state,
@@ -152,6 +154,7 @@ async def add_version(
     idempotency_key: str | None = None,
     requested_by: UUID | None = None,
     upload_note: str | None = None,
+    detached: tuple[UUID, DetachedKey] | None = None,
 ) -> EvidenceVersionRef:
     """Add the next version inside the caller's unit of work. The tenant and actor are the
     transaction's own. The caller has authorised `evidence.upload` for its actor.
@@ -159,9 +162,15 @@ async def add_version(
     With an `idempotency_key` already used in this tenant, returns that version
     (`created=False`) and records nothing: the caller's unit of work must then record its own
     event, or skip the unit of work after checking `created`. `requested_by` is the person the
-    version is added for (published on `evidence_version.created`)."""
+    version is added for (published on `evidence_version.created`). `detached` is a client
+    upload's own version id and data key (`storage.put_detached`, ADR-162 §5)."""
     tenant = await transaction_context(tx.session)
-    if stored.key != storage.object_key(tenant.tenant_id, stored.fingerprint):
+    expected = (
+        storage.object_key(tenant.tenant_id, stored.fingerprint)
+        if detached is None
+        else storage.detached_path(tenant.tenant_id, detached[0])
+    )
+    if stored.key != expected:
         raise storage.IntegrityError("staged content belongs to another tenant")
     if idempotency_key is not None:
         existing = await version_for_key(tx.session, idempotency_key)
@@ -200,7 +209,7 @@ async def add_version(
         item_id = item
     version = await insert_version(
         tx.session,
-        version_id=uuid4(),
+        version_id=uuid4() if detached is None else detached[0],
         tenant_id=tenant.tenant_id,
         engagement_id=engagement_id,
         evidence_item_id=item_id,
@@ -219,7 +228,16 @@ async def add_version(
         snapshot_id=provenance.snapshot_id,
         idempotency_key=idempotency_key,
         upload_note=upload_note,
+        storage_mode="content_addressed" if detached is None else "detached_key",
     )
+    if detached is not None:
+        await insert_object_key(
+            tx.session,
+            tenant_id=tenant.tenant_id,
+            version_id=version.id,
+            key_id=detached[1].key_id,
+            wrapped=detached[1].wrapped,
+        )
     tx.record(
         "evidence_version.created",
         target=Target("evidence_version", version.id),

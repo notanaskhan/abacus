@@ -9,6 +9,7 @@ the portal host is a branding hint only, and a tenant comes from membership or g
 from __future__ import annotations
 
 import ipaddress
+import re
 from collections.abc import Iterable
 from typing import Final
 
@@ -39,21 +40,39 @@ def _is_json(content_type: bytes | None) -> bool:
 class BodyLimit:
     """JSON bodies are refused past 1 MB and any other body (a raw upload) past `upload_bytes`
     (MAX_CONTENT_BYTES, 50 MB): on `Content-Length` before a byte is read, and by counting bytes
-    for a body without one (chunked)."""
+    for a body without one (chunked).
+
+    The routes that take a file (`route_paths`) get `route_bytes` instead, a little over their own
+    limit, so the route answers an oversize file with its catalogue code (422 `upload_too_large`,
+    DEC-296) while it streams, and the edge still refuses anything far past it."""
 
     def __init__(
-        self, app: ASGIApp, *, upload_bytes: int, json_bytes: int = JSON_BODY_LIMIT
+        self,
+        app: ASGIApp,
+        *,
+        upload_bytes: int,
+        json_bytes: int = JSON_BODY_LIMIT,
+        route_bytes: int | None = None,
+        route_paths: re.Pattern[str] | None = None,
     ) -> None:
         self.app = app
         self._upload = upload_bytes
         self._json = json_bytes
+        self._route_bytes = route_bytes
+        self._route_paths = route_paths
+
+    def _raw_limit(self, scope: Scope) -> int:
+        paths, wider = self._route_paths, self._route_bytes
+        if paths is not None and wider is not None and paths.fullmatch(str(scope.get("path"))):
+            return max(wider, self._upload)
+        return self._upload
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http" or scope["method"] in _SAFE_METHODS:
             await self.app(scope, receive, send)
             return
         content_type = next(iter(_header(scope, b"content-type")), None)
-        limit = self._json if _is_json(content_type) else self._upload
+        limit = self._json if _is_json(content_type) else self._raw_limit(scope)
         declared = _header(scope, b"content-length")
         if declared:
             try:

@@ -7,7 +7,8 @@
 # matrix or lacks the condition; Q-02-T37 adds the generated overlay and the staff-route check.
 #
 # Groups follow AC-42: lifting a wall, publishing AI policy, exports, legal holds, the
-# independence conclusion, the data-boundary opt-in, TIN reveal and incident decisions.
+# independence conclusion, the data-boundary opt-in, TIN reveal and incident decisions; P-07-T25
+# adds a client's portal unlock (`portal_access`, DEC-303).
 actions:
   # Ethical walls (ADR-026)
   - action: wall.create
@@ -50,4 +51,7 @@ actions:
     group: reveal
   - action: pii.reveal
     group: reveal
+  # A client's portal access (P-07-T25 security review, DEC-303): clearing a sign-in lockout
+  - action: contact.unlock
+    group: portal_access
   # Incident decisions: G-02's `incident.decide` joins this list with its route.

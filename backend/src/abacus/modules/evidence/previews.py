@@ -5,10 +5,11 @@ The browser never renders the raw file. `render_isolated` runs `render` in the i
 
 - PDF: each page as a PNG, at most `MAX_PAGES`, `PAGE_WIDTH` pixels wide (scanned pages too: they
   have no text, but they have a picture).
-- PNG, JPEG: decoded and re-encoded as PNG, metadata dropped, at most `MAX_SIDE` on the longer
-  side; more than `MAX_PIXELS` is refused as a decompression bomb.
+- PNG, JPEG, TIFF, GIF (first frame): decoded and re-encoded as PNG, metadata dropped, at most
+  `MAX_SIDE` on the longer side; more than `MAX_PIXELS` is refused as a decompression bomb.
 - XLSX, CSV: nothing rendered; the viewer shows the extraction's tables (`table`).
-- Anything else: `none`, with why.
+- A PDF with active content: `none/active_content`, never opened (DEC-296).
+- Anything else (HEIC until P-11-T25): `none`, with why.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from typing import Final, Literal
 from PIL import Image
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
+from abacus.modules.evidence.active_content import is_active
 
 RENDERER_VERSION: Final = "v1"
 MAX_PAGES: Final = 50
@@ -30,6 +32,8 @@ TABLE_ROWS: Final = 1000
 PDF: Final = "application/pdf"
 PNG: Final = "image/png"
 JPEG: Final = "image/jpeg"
+TIFF: Final = "image/tiff"
+GIF: Final = "image/gif"
 XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 CSV: Final = "text/csv"
 
@@ -99,10 +103,13 @@ def _image(content: bytes) -> Rendered:
 
 
 def render(content: bytes, media_type: str) -> Rendered:
-    """In-process rendering (tests, and inside the isolated child)."""
+    """In-process rendering (tests, and inside the isolated child). A PDF with active content is
+    never rendered (DEC-296, ED-021)."""
     if media_type == PDF:
+        if is_active(content):
+            return Rendered("none", "active_content")
         return _pdf(content)
-    if media_type in (PNG, JPEG):
+    if media_type in (PNG, JPEG, TIFF, GIF):
         return _image(content)
     if media_type in (XLSX, CSV):
         return Rendered("table")
