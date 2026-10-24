@@ -6,8 +6,9 @@ The tables it owns (ADR-103) and what the app role may do with them.
 from __future__ import annotations
 
 # SPEC-314 (TASK-332): completion, release and archive, all insert-only and human-only.
+# A-01-T05 (0134): the record-mode phase events, insert-only and human-only when recorded.
 TABLES: frozenset[str] = frozenset(
-    {"eqr_concurrences", "completion_records", "releases", "archives"}
+    {"eqr_concurrences", "completion_records", "releases", "archives", "assurance_phase_events"}
 )
 INSERT_ONLY: frozenset[str] = TABLES
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -24,6 +25,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "archives": frozenset(
         {"tenant_id", "engagement_id", "seal", "leaf_count", "manifest", "locked_by", "actor_kind"}
+    ),
+    "assurance_phase_events": frozenset(
+        {"tenant_id", "engagement_id", "work_item_id", "from_phase", "to_phase", "mode"}
+        | {"reason_sealed", "gate_ref", "actor_kind", "actor_user_id", "mfa_at"}
     ),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {}

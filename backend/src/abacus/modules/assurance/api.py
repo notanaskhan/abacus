@@ -10,6 +10,7 @@ from abacus.modules.assurance.completion_routes import router as completion_rout
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
+from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.sections import (
     AuditSection,
@@ -48,6 +49,12 @@ register_gate_provider("G7", g7)
 register_gate_provider("G8", g8)
 register_gate_provider("G9", g9)
 
+# A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
+# collects these with every module's; assurance has no workflows of its own yet.
+SUBSCRIPTIONS = PHASE_SUBSCRIPTIONS
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
+
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
 # audit) register theirs with an entitlement.
 register_audit_segment("fs", None)
@@ -55,7 +62,10 @@ register_audit_segment("ebp", None)
 register_audit_segment("review", None)
 
 __all__ = [
+    "ACTIVITIES",
     "ROUTERS",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "AuditSection",
     "IndexTag",
     "SectionState",

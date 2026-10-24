@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contract in `docs/contracts/README.md` (A-01 §8.1; chapter 01 may promote it into C1–C21) |
 | Version | v1 |
-| Status | stub (A-01-T02, 2026-10-24); profile and phase live with A-01-T05 |
+| Status | stub (A-01-T02, 2026-10-24); PATCH profile and POST phase live behind the flag (A-01-T05, 2026-10-24) |
 | Provider epic | A-01 |
 | Consumers | AUD-01, AUD-02, AUD-03 (A-01-T11, T12, T15); A-02 (Trial Balance section), A-03…A-09, P-09 / P-10 (dock host, rail sync by `work_item_ref`), K-04 (Board, gear), X-01 / X-03 (segments), I-01 (index counts) |
 | Freeze sprint | S8 (freeze Fri Feb 19, 2027 per A-01 §8.1) |
@@ -61,6 +61,7 @@ From `docs/product/status-vocabulary.yaml`: `audit_engagement` (planning, fieldw
 | 409 | `phase_skip` | the target is beyond the next record-mode phase |
 | 409 | `phase_follows_gate` | the target phase's gate has a registered provider: it derives from `gate.met` |
 | 409 | `stale_version` | PATCH profile with an old `seen_version` |
+| 422 | `phase_invalid` | a phase reason over 300 characters |
 | 409 | `release_mode_in_app` | release record while the firm's `assurance_release_mode` is `in_app` (A-01-T23) |
 | 409 | `final_export_required`, `export_stale` | archive record without a ready, current final binder export (A-01-T23) |
 | 422 | `release_date_future` | release date after `clock.today()` (A-01-T23) |
@@ -95,7 +96,7 @@ Brightwater Hale (synthetic) only: the AUD-01 a index foots 7 + 9 + 6 + 2 + 3 = 
 ## 11. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | — | — | stub 2026-10-24 (A-01-T02); C5 v1.1 additive fields in place |
+| v1 | — | — | stub 2026-10-24 (A-01-T02); C5 v1.1 additive fields in place; profile and phase live (A-01-T05, DEC-262: phase-to-gate map, `phase_invalid` 422 for a reason over 300 characters) |
 
 ## 12. Open points
 - DEC-261: slot shapes, the `engagement.read_metadata` index refusing portal principals in the route, and the C5 v1.1 fields as optional.

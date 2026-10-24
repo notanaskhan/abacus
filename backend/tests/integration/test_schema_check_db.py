@@ -1119,7 +1119,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # F-03-T05 (migration 0068): work items and the assurance item's phase.
         "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
-        "assurance_work_items": frozenset({"phase", "auto_mode"}),
+        "assurance_work_items": frozenset(
+            {"phase", "auto_mode"}
+            # A-01-T05 (0134): the EBP profile facts and the record-mode phase stamps.
+            | {"ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "phase_source"}
+            | {"phase_changed_at", "version"}
+        ),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
         "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310 (TASK-321)
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once

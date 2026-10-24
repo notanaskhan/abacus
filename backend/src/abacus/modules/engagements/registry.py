@@ -108,7 +108,12 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "statement_version", "note", "answered_at"}
     ),
     "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
-    "assurance_work_items": frozenset({"phase", "auto_mode"}),  # F-03-T05 (0068)
+    "assurance_work_items": frozenset(
+        {"phase", "auto_mode"}  # F-03-T05 (0068)
+        # A-01-T05 (0134): the EBP profile facts and the record-mode phase stamps.
+        | {"ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "phase_source"}
+        | {"phase_changed_at", "version"}
+    ),
     "engagement_letters": frozenset(
         {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
         | {"file_key", "file_version_id", "file_fingerprint", "file_size", "file_media_type"}

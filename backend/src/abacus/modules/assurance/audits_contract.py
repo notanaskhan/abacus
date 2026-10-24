@@ -4,11 +4,12 @@ to `AUD-03.md`.
 
 `$auditId` is the assurance work item (P-04). Behind `audits.cockpit`: off, every route here
 answers 404; on, 501 `not_implemented` until the task that implements it (profile and phase
-A-01-T05; index A-01-T08; cockpit A-01-T09; source documents A-01-T10; release and archive records
-A-01-T23). Firm routes resolve the work item through `engagements.api`: outside the tenant or
-behind a wall it answers 404, and no response carries a count of hidden rows (INV-3, DEC-43). No
-`/v1/audits` route serves a client principal (INV-4): the index refuses portal sessions before it
-reads, although `engagement.read_metadata` holds client cells for SPEC-020.
+are live since A-01-T05; index A-01-T08; cockpit A-01-T09; source documents A-01-T10; release
+and archive records A-01-T23). Firm routes resolve the work item through `engagements.api`:
+outside the tenant or behind a wall it answers 404, and no response carries a count of hidden
+rows (INV-3, DEC-43). No `/v1/audits` route serves a client principal (INV-4): the index refuses
+portal sessions before it reads, although `engagement.read_metadata` holds client cells for
+SPEC-020.
 
 The three record writes are human only: their matrix rows deny agent and system, and the tables'
 CHECKs refuse a non-human row (INV-1).
@@ -17,7 +18,7 @@ CHECKs refuse a non-human row (INV-1).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -35,6 +36,8 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.assurance import phase
 from abacus.modules.assurance.sections import Band, Grammar, Segment, TagClassification
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.requests.api import RequestLatestUploadOut, RequestOwedByOut
@@ -401,9 +404,13 @@ class SourceDocumentsOut(BaseModel):
 # --- routes -------------------------------------------------------------------------------------
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _flag_on(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, AUDITS_COCKPIT):
         raise NotFound(AUDITS_COCKPIT.name)
+
+
+async def _stub(ctx: AuthContext) -> NoReturn:
+    await _flag_on(ctx)
     raise NotImplementedYet
 
 
@@ -451,7 +458,16 @@ async def audit_profile_route(
     work_item_id: UUID, body: AuditProfileIn, ctx: Ctx
 ) -> AuditProfileOut:
     """The EBP label facts (A-01-T05); 409 `stale_version`."""
-    await _stub(ctx)
+    await _flag_on(ctx)
+    changes = body.model_dump(exclude_unset=True, exclude={"seen_version"})
+    made = await phase.update_profile(ctx, work_item_id, body.seen_version, changes)
+    return AuditProfileOut(
+        work_item_id=made.work_item_id,
+        ebp_plan_kind=cast(EbpPlanKind | None, made.ebp_plan_kind),
+        limited_scope_103a3c=made.limited_scope_103a3c,
+        standards_set_id=made.standards_set_id,
+        version=made.version,
+    )
 
 
 @audits_router.post(
@@ -465,7 +481,29 @@ async def audit_phase_route(
     work_item_id: UUID, body: AuditPhaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AuditPhaseOut:
     """Record mode (A-01-T05): a named person moves the phase forward one step."""
-    await _stub(ctx)
+    await _flag_on(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await phase.record_phase(ctx, work_item_id, body.to.value, body.reason)
+        out = AuditPhaseOut(
+            work_item_id=made.work_item_id,
+            event_id=made.event_id,
+            from_phase=AuditEngagementStatus(made.from_phase),
+            to_phase=AuditEngagementStatus(made.to_phase),
+            mode=cast(PhaseMode, made.mode),
+            recorded_at=made.recorded_at,
+            version=made.version,
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="audits.record_phase",
+        key=idempotency_key,
+        body={"work_item_id": str(work_item_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return AuditPhaseOut.model_validate(stored.body)
 
 
 @audits_router.post(
