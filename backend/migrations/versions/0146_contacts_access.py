@@ -19,7 +19,7 @@
   addresses are locked now), both in the session's firm only (`app.tenant_id`).
 
 Revision ID: 0146
-Revises: 0143
+Revises: 0145
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0146"
-down_revision = "0143"
+down_revision = "0145"
 branch_labels = None
 depends_on = None
 
