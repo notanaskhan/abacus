@@ -3,13 +3,16 @@
 // blocks. The gallery calls no API: only the dev server is needed (`make dev-fixtures`).
 //
 // - axe on every specimen (scoped to its section, so a failure names the specimen) and on every
-//   overlay the specimens open;
+//   overlay the specimens open. The sweep is one test per chunk of specimens, generated from the
+//   registry the gallery renders, so it parallelises and no test outgrows its timeout as the
+//   gallery grows; a guard test proves the page shows exactly the registry's specimens;
 // - forced-colors emulation: axe again, and panes, pills and dialogs keep a CanvasText edge;
 // - reduced motion with an overlay open: nothing animates;
 // - keyboard: every focus stop shows a focus outline, and Tab is never stuck;
 // - target size (SC 2.5.8): every control is 24px, or its hit area or spacing gives it 24px.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const SERIOUS = new Set(["serious", "critical"]);
 
@@ -47,42 +50,112 @@ async function openGallery(page: Page): Promise<string[]> {
 const OVERLAY_SPECIMENS = /^(o[1-6]-|c-22-|c-23-drawer)/;
 const OPEN_LAYER = '[role="dialog"], [role="alertdialog"], [role="complementary"][data-overlay]';
 
+/** The specimen ids in the registry's order (packages/ui/src/specimens/index.ts, `SPECIMENS`):
+ * the list the gallery renders, read when the tests are collected so each chunk is its own test. */
+function registryIds(): readonly string[] {
+  const source = readFileSync("../../packages/ui/src/specimens/index.ts", "utf8");
+  const start = source.indexOf("export const SPECIMENS");
+  const body = source.slice(start, source.indexOf("\n];", start));
+  return [...body.matchAll(/\bid: "([a-z0-9-]+)"/g)].flatMap((m) =>
+    m[1] === undefined ? [] : [m[1]],
+  );
+}
+
+const SPECIMEN_IDS = registryIds();
+const OVERLAY_IDS = SPECIMEN_IDS.filter((id) => OVERLAY_SPECIMENS.test(id));
+/** Overlay tests per overlay specimen (its triggers dealt round-robin). */
+const OVERLAY_PARTS = 4;
+/** Specimens per axe test: about 3 s of axe each on the full gallery page, well under the timeout. */
+const CHUNK = 8;
+const CHUNKS = Array.from({ length: Math.ceil(SPECIMEN_IDS.length / CHUNK) }, (_, i) =>
+  SPECIMEN_IDS.slice(i * CHUNK, (i + 1) * CHUNK),
+);
+
 test.describe("axe", () => {
-  test("every specimen is clean, each on its own", async ({ page }) => {
-    const ids = await openGallery(page);
-    expect(ids.length).toBeGreaterThan(50);
-    const found: string[] = [];
-    for (const id of ids) {
-      for (const v of await seriousViolations(page, `#${id}`)) found.push(`${id}: ${v}`);
-    }
-    expect(found, "serious or critical findings by specimen").toEqual([]);
+  // The chunks are independent: with more than one worker they run side by side.
+  test.describe.configure({ mode: "parallel" });
+
+  test("the gallery renders exactly the registry's specimens", async ({ page }) => {
+    expect(SPECIMEN_IDS.length).toBeGreaterThan(50);
+    expect(OVERLAY_IDS.length).toBeGreaterThan(5);
+    expect(new Set(SPECIMEN_IDS).size, "registry ids are unique").toBe(SPECIMEN_IDS.length);
+    expect([...(await openGallery(page))].sort()).toEqual([...SPECIMEN_IDS].sort());
   });
 
-  test("every overlay a specimen opens is clean while open", async ({ page }) => {
-    const ids = (await openGallery(page)).filter((id) => OVERLAY_SPECIMENS.test(id));
-    expect(ids.length).toBeGreaterThan(5);
-    const found: string[] = [];
-    let opened = 0;
-    for (const id of ids) {
-      const triggers = page.locator(`#${id} button[aria-haspopup], #${id} button[data-opens]`);
-      const count = await triggers.count();
-      for (let i = 0; i < count; i += 1) {
-        const trigger = triggers.nth(i);
-        if (!(await trigger.isVisible()) || (await trigger.isDisabled())) continue;
-        await trigger.click();
-        const layer = page.locator(OPEN_LAYER).last();
-        if (!(await layer.isVisible().catch(() => false))) continue;
-        opened += 1;
-        for (const v of await seriousViolations(page)) found.push(`${id} #${String(i)}: ${v}`);
-        for (let n = 0; n < 4 && (await page.locator(OPEN_LAYER).count()) > 0; n += 1) {
-          await page.keyboard.press("Escape");
-        }
+  for (const [n, ids] of CHUNKS.entries()) {
+    test(`every specimen is clean, each on its own: ${String(n + 1)} of ${String(CHUNKS.length)} (${ids.join(", ")})`, async ({
+      page,
+    }) => {
+      const shown = new Set(await openGallery(page));
+      const found: string[] = [];
+      for (const id of ids) {
+        expect(shown.has(id), `${id} is on the gallery page`).toBe(true);
+        for (const v of await seriousViolations(page, `#${id}`)) found.push(`${id}: ${v}`);
       }
+      expect(found, "serious or critical findings by specimen").toEqual([]);
+    });
+  }
+
+  // Axe runs page-wide with an overlay open (a modal hides the rest of the page, which is where
+  // its findings land), about 30 s each, so each overlay specimen's triggers are split over
+  // OVERLAY_PARTS tests (trigger i goes to part i mod OVERLAY_PARTS): every trigger is checked.
+  for (const id of OVERLAY_IDS) {
+    for (let part = 0; part < OVERLAY_PARTS; part += 1) {
+      test(`every overlay a specimen opens is clean while open: ${id} (${String(part + 1)} of ${String(OVERLAY_PARTS)})`, async ({
+        page,
+      }) => {
+        await openGallery(page);
+        const found: string[] = [];
+        await eachOverlay(
+          page,
+          id,
+          async (i) => {
+            for (const v of await seriousViolations(page)) found.push(`${id} #${String(i)}: ${v}`);
+          },
+          (i) => i % OVERLAY_PARTS === part,
+        );
+        expect(found, "serious or critical findings with an overlay open").toEqual([]);
+      });
+    }
+  }
+
+  // What the single sweep also proved: the overlay specimens really open overlays (no axe here).
+  test("the overlay specimens open more than three overlays", async ({ page }) => {
+    await openGallery(page);
+    let opened = 0;
+    for (const id of OVERLAY_IDS) {
+      await eachOverlay(page, id, () => {
+        opened += 1;
+        return Promise.resolve();
+      });
     }
     expect(opened, "overlays opened").toBeGreaterThan(3);
-    expect(found, "serious or critical findings with an overlay open").toEqual([]);
   });
 });
+
+/** Open each of a specimen's overlay triggers in turn, run `check` while it is open (with the
+ * trigger's index), and close it again. */
+async function eachOverlay(
+  page: Page,
+  id: string,
+  check: (index: number) => Promise<void>,
+  take: (index: number) => boolean = () => true,
+): Promise<void> {
+  const triggers = page.locator(`#${id} button[aria-haspopup], #${id} button[data-opens]`);
+  const count = await triggers.count();
+  for (let i = 0; i < count; i += 1) {
+    if (!take(i)) continue;
+    const trigger = triggers.nth(i);
+    if (!(await trigger.isVisible()) || (await trigger.isDisabled())) continue;
+    await trigger.click();
+    const layer = page.locator(OPEN_LAYER).last();
+    if (!(await layer.isVisible().catch(() => false))) continue;
+    await check(i);
+    for (let n = 0; n < 4 && (await page.locator(OPEN_LAYER).count()) > 0; n += 1) {
+      await page.keyboard.press("Escape");
+    }
+  }
+}
 
 test.describe("forced colors", () => {
   test.use({ forcedColors: "active" });
