@@ -34,6 +34,10 @@ TABLES: frozenset[str] = frozenset(
         "auth_session_cookies",
         "sign_in_challenges",  # P-08-T10 (ADR-168): global, definers only
         "sign_in_locks",
+        "mfa_factors",  # P-08-T17 (0133): global, definers only
+        "mfa_backup_codes",
+        "trusted_devices",
+        "portal_security_policies",  # P-08-T17: the firm's stricter-only floor extension
         "approval_grants",  # P-04-T10 (ADR-161): settled once, by consume or void
     }
 )

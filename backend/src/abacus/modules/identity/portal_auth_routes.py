@@ -3,8 +3,15 @@ resend and refresh answer before any session, under the `PRE_SESSION` marker; si
 person's own (`OWN`). With `portal.sign_in_v2` off for a firm no code is sent for its host, and
 every start still answers the same 202.
 
+The second step (P-08-T17; SPEC-320 AC-10, AC-11): a verify for a person the MFA floor covers
+answers `mfa_required` or `mfa_setup_required` with a single-use `mfa_token` and no session;
+`/mfa`, `/mfa/setup` and `/mfa/setup/verify` finish it. A trusted device is the
+`__Host-abacus-portal-device` cookie.
+
 Errors carry identifier facts only: 401 `code_mismatch {tries_left}`, 423 `sign_in_locked
-{locked_until}`, 410 `code_expired`, 429 `resend_too_soon {resend_available_at}`."""
+{locked_until}`, 410 `code_expired`, 429 `resend_too_soon {resend_available_at}`; 401
+`mfa_mismatch {tries_left}`, 423 `mfa_locked {locked_until}`, 410 `mfa_expired`, 503
+`mfa_unavailable`."""
 
 from __future__ import annotations
 
@@ -16,11 +23,26 @@ from fastapi.responses import JSONResponse, Response
 
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.portal_contract import (
+    PortalMfaIn,
+    PortalMfaSetupIn,
+    PortalMfaSetupOut,
+    PortalMfaSetupVerifyIn,
+    PortalMfaSetupVerifyOut,
     PortalSignInResendIn,
     PortalSignInStartIn,
     PortalSignInStartOut,
     PortalSignInVerifyIn,
     PortalSignInVerifyOut,
+)
+from abacus.modules.identity.portal_idp import PortalIdpUnavailable
+from abacus.modules.identity.portal_mfa import (
+    DEVICE_COOKIE,
+    MfaExpired,
+    MfaLocked,
+    MfaMismatch,
+    second_step,
+    setup_second_step,
+    verify_setup,
 )
 from abacus.modules.identity.portal_session import (
     COOKIE_NAME,
@@ -29,6 +51,7 @@ from abacus.modules.identity.portal_session import (
     PortalSessionEnded,
     PortalTokens,
     ResendTooSoon,
+    SecondStepRequired,
     SignInLocked,
     refresh_portal_session,
     resend_code,
@@ -69,16 +92,29 @@ def _clear_cookie(response: Response) -> None:
     response.delete_cookie(COOKIE_NAME, path="/", secure=True, httponly=True, samesite="strict")
 
 
-def _signed_in(tokens: PortalTokens) -> Response:
-    body = PortalSignInVerifyOut(
+def _session_out(tokens: PortalTokens) -> PortalSignInVerifyOut:
+    return PortalSignInVerifyOut(
         state="signed_in",
         access_token=tokens.access_token,
         expires_in=tokens.expires_in,
         landing=tokens.landing,  # pyright: ignore[reportArgumentType] -- a PortalLanding code
     )
-    response = JSONResponse(body.model_dump(mode="json", exclude_none=True))
+
+
+def _signed_in(tokens: PortalTokens) -> Response:
+    response = JSONResponse(_session_out(tokens).model_dump(mode="json", exclude_none=True))
     _set_cookie(response, tokens.cookie)
     return _no_store(response)
+
+
+def _mfa_error(exc: Exception) -> Response:
+    if isinstance(exc, MfaMismatch):
+        return _error(401, "mfa_mismatch", {"tries_left": exc.tries_left})
+    if isinstance(exc, MfaLocked):
+        return _error(423, "mfa_locked", {"locked_until": _iso(exc.locked_until)})
+    if isinstance(exc, PortalIdpUnavailable):
+        return _error(503, "mfa_unavailable")
+    return _error(410, "mfa_expired")
 
 
 @portal_auth_router.post(
@@ -104,9 +140,15 @@ async def portal_verify_route(
     body: PortalSignInVerifyIn,
     host: Annotated[str | None, Header()] = None,
     previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+    device: Annotated[str | None, Cookie(alias=DEVICE_COOKIE)] = None,
 ) -> Response:
     try:
-        tokens = await verify_code(host, body.challenge_id, body.code, previous_cookie=previous)
+        tokens = await verify_code(
+            host, body.challenge_id, body.code, previous_cookie=previous, device_cookie=device
+        )
+    except SecondStepRequired as step:
+        out = PortalSignInVerifyOut(state=step.state, mfa_token=step.mfa_token)
+        return _no_store(JSONResponse(out.model_dump(mode="json", exclude_none=True)))
     except CodeMismatch as miss:
         return _error(401, "code_mismatch", {"tries_left": miss.tries_left})
     except SignInLocked as locked:
@@ -140,6 +182,81 @@ async def portal_resend_route(
         resend_available_at=found.resend_available_at,
     )
     return _no_store(JSONResponse(out.model_dump(mode="json"), status_code=202))
+
+
+@portal_auth_router.post(
+    "/mfa", action=PRE_SESSION, response_model=PortalSignInVerifyOut, errors=(410, 423, 503)
+)
+async def portal_mfa_route(
+    body: PortalMfaIn,
+    host: Annotated[str | None, Header()] = None,
+    user_agent: Annotated[str | None, Header()] = None,
+    previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+) -> Response:
+    """The second step: a TOTP or a backup code; "trust this device" sets the device cookie."""
+    try:
+        done = await second_step(
+            host,
+            body.mfa_token,
+            totp=body.totp,
+            backup_code=body.backup_code,
+            trust_device=body.trust_device,
+            previous_cookie=previous,
+            user_agent=user_agent,
+        )
+    except (MfaMismatch, MfaLocked, MfaExpired, PortalIdpUnavailable) as exc:
+        return _mfa_error(exc)
+    response = _signed_in(done.tokens)
+    if done.device_cookie is not None:
+        response.set_cookie(
+            DEVICE_COOKIE,
+            done.device_cookie,
+            max_age=done.device_days * 86400,
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="strict",
+        )
+    return response
+
+
+@portal_auth_router.post(
+    "/mfa/setup", action=PRE_SESSION, response_model=PortalMfaSetupOut, errors=(410, 503)
+)
+async def portal_mfa_setup_route(
+    body: PortalMfaSetupIn, host: Annotated[str | None, Header()] = None
+) -> Response:
+    """A new TOTP factor for a person with none: the QR code's URI and the key, once."""
+    try:
+        key = await setup_second_step(host, body.mfa_token)
+    except (MfaExpired, PortalIdpUnavailable) as exc:
+        return _mfa_error(exc)
+    out = PortalMfaSetupOut(otpauth_uri=key.otpauth_uri, manual_key=key.manual_key)
+    return _no_store(JSONResponse(out.model_dump(mode="json")))
+
+
+@portal_auth_router.post(
+    "/mfa/setup/verify",
+    action=PRE_SESSION,
+    response_model=PortalMfaSetupVerifyOut,
+    errors=(410, 423, 503),
+)
+async def portal_mfa_setup_verify_route(
+    body: PortalMfaSetupVerifyIn,
+    host: Annotated[str | None, Header()] = None,
+    previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+) -> Response:
+    """The new factor's first code: enrolled, 8 backup codes once, and the session."""
+    try:
+        done = await verify_setup(host, body.mfa_token, body.totp, previous_cookie=previous)
+    except (MfaMismatch, MfaLocked, MfaExpired, PortalIdpUnavailable) as exc:
+        return _mfa_error(exc)
+    out = PortalMfaSetupVerifyOut(
+        backup_codes=list(done.backup_codes), session=_session_out(done.tokens)
+    )
+    response = JSONResponse(out.model_dump(mode="json", exclude_none=True))
+    _set_cookie(response, done.tokens.cookie)
+    return _no_store(response)
 
 
 @portal_auth_router.post("/refresh", action=PRE_SESSION, response_model=PortalSignInVerifyOut)

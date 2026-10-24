@@ -65,6 +65,8 @@ PRE_SESSION_PATHS: Final = frozenset(
     # P-08-T10 (ADR-168): the portal's own sign-in by emailed code.
     | {"/v1/portal/auth/start", "/v1/portal/auth/verify", "/v1/portal/auth/resend"}
     | {"/v1/portal/auth/refresh"}
+    # P-08-T17 (ADR-168): the second step and its first-time setup.
+    | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
 )
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may

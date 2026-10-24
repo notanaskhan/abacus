@@ -247,6 +247,10 @@ def test_adr165_pre_session_is_used_only_on_the_three_sign_in_routes() -> None:
         "/v1/portal/auth/verify",
         "/v1/portal/auth/resend",
         "/v1/portal/auth/refresh",
+        # P-08-T17: the second step and its setup.
+        "/v1/portal/auth/mfa",
+        "/v1/portal/auth/mfa/setup",
+        "/v1/portal/auth/mfa/setup/verify",
     }
 
 

@@ -152,6 +152,12 @@ async def get_contact(session: AsyncSession, contact_id: UUID) -> Contact | None
     ).scalar_one_or_none()
 
 
+async def contact_ids_of_user(session: AsyncSession, user_id: UUID) -> list[UUID]:
+    """The firm's contacts linked to a portal user (P-08-T17: the MFA floor's designations)."""
+    rows = await session.execute(select(Contact.id).where(Contact.user_id == user_id))
+    return [r.id for r in rows]
+
+
 async def contacts_by_id(
     session: AsyncSession, contact_ids: list[UUID]
 ) -> dict[UUID, tuple[UUID, str, UUID | None]]:

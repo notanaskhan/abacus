@@ -18,6 +18,7 @@ from abacus.kernel.uow import Target, UnitOfWork
 from abacus.modules.organisations.models import Contact
 from abacus.modules.organisations.repository import (
     clients_matching,
+    contact_ids_of_user,
     contacts_by_id,
     contacts_of,
     get_client,
@@ -401,6 +402,12 @@ async def contact_facts(
     For a caller that authorised the record the contacts are named on."""
     found = await contacts_by_id(session, contact_ids)
     return {cid: ContactFacts(client, name, user) for cid, (client, name, user) in found.items()}
+
+
+async def contacts_of_user(session: AsyncSession, user_id: UUID) -> list[UUID]:
+    """The firm's contacts the portal user is linked to (P-08-T17: the MFA floor), read in the
+    caller's tenant session."""
+    return await contact_ids_of_user(session, user_id)
 
 
 async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | None:

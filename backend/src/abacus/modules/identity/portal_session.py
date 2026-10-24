@@ -12,6 +12,11 @@ the host itself. The browser gets an opaque access token (15 minutes, kept in me
 `__Host-` refresh cookie; both are stored only as SHA-256. A token is resolved only on the host it
 was minted on (ADR-168 §3); another host gets exactly what no token gets.
 
+A person the MFA floor covers (P-08-T17, `mfa_floor`) gets no session from the code alone: the
+code's challenge is used and `SecondStepRequired` hands back a 5-minute single-use `mfa_token`
+for the second step or its first-time setup (`portal_mfa`), unless a trusted device of theirs
+for this firm is presented.
+
 Audit events are written in the firm only for a known person; an unknown email writes none.
 """
 
@@ -24,10 +29,10 @@ import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, cast
+from typing import Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import TextClause, text
 
 from abacus.kernel._flags import PORTAL_SIGN_IN_V2
 from abacus.kernel.db import TenantContext, platform_transaction
@@ -37,6 +42,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.client_access import FULL_ROLES, active_grants
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import PortalSignInCodeRequested
+from abacus.modules.identity.mfa_floor import mfa_required, portal_security_policy
 from abacus.modules.identity.portal_idp import email_code_matches, issue_email_code
 from abacus.modules.identity.repository import active_memberships
 from abacus.modules.identity.service import portal_member_context
@@ -48,6 +54,7 @@ RESEND_SECONDS: Final = 60
 MAX_TRIES: Final = 3
 LOCK_SECONDS: Final = 15 * 60
 ACCESS_SECONDS: Final = 15 * 60
+MFA_TOKEN_SECONDS: Final = 5 * 60
 # Every pre-session answer that a known email changes (start, resend, a wrong code) takes at
 # least this long, so a known email can't be told by its timing.
 FLOOR_SECONDS: Final = 0.5
@@ -83,6 +90,18 @@ class PortalSessionEnded(Exception):
     """The refresh cookie names no live portal session on this host (or was reused)."""
 
 
+class SecondStepRequired(Exception):
+    """The code was right, and the MFA floor covers the person: no session yet. `mfa_token` is
+    Restricted (single use, 5 minutes) and goes only into the response."""
+
+    state: Literal["mfa_required", "mfa_setup_required"]
+
+    def __init__(self, state: Literal["mfa_required", "mfa_setup_required"], token: str) -> None:
+        super().__init__(state)
+        self.state = state
+        self.mfa_token = token
+
+
 @dataclass(frozen=True)
 class Challenge:
     challenge_id: UUID
@@ -109,7 +128,7 @@ class PortalTokens:
     session_id: UUID
 
 
-def _sha(value: str) -> str:
+def sha256_hex(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
@@ -233,11 +252,118 @@ def landing_of(roles: Iterable[str]) -> str:
     return "none"
 
 
+async def trusted_until(
+    tenant_id: UUID, user_id: UUID, device_cookie: str | None
+) -> datetime | None:
+    """Until when the presented device cookie skips the second step for this person in this
+    firm, under the firm's current days; None when it doesn't."""
+    if not device_cookie or len(device_cookie) > 256:
+        return None
+    days = (await portal_security_policy(tenant_id)).trusted_device_days
+    if days <= 0:
+        return None
+    async with platform_transaction("portal:mfa") as conn:
+        return cast(
+            datetime | None,
+            (
+                await conn.execute(
+                    text("SELECT portal_device_check(:tenant, :user, :device, :days)"),
+                    {
+                        "tenant": tenant_id,
+                        "user": user_id,
+                        "device": sha256_hex(device_cookie),
+                        "days": days,
+                    },
+                )
+            ).scalar_one(),
+        )
+
+
+async def factor_enrolled(user_id: UUID) -> bool:
+    """Whether the person has an enrolled second-step factor (`/v1/me.mfa.enrolled`)."""
+    async with platform_transaction("portal:mfa") as conn:
+        return bool(
+            (
+                await conn.execute(text("SELECT portal_mfa_enrolled(:user)"), {"user": user_id})
+            ).scalar_one()
+        )
+
+
+async def _second_step_needed(
+    tenant_id: UUID, user_id: UUID, device_cookie: str | None
+) -> Literal["mfa_required", "mfa_setup_required"] | None:
+    if not await mfa_required(tenant_id, user_id):
+        return None
+    if not await factor_enrolled(user_id):
+        return "mfa_setup_required"
+    if await trusted_until(tenant_id, user_id, device_cookie) is not None:
+        return None
+    return "mfa_required"
+
+
+async def open_session(
+    tenant_id: UUID,
+    user_id: UUID,
+    host: str,
+    claim: TextClause,
+    params: dict[str, object],
+    *,
+    previous_cookie: str | None = None,
+    mfa: bool = False,
+) -> PortalTokens | None:
+    """A portal session for the person, pinned to the firm and host, in the same transaction as
+    `claim` (which must answer true: the code's challenge or the second-step token, used once).
+    None when the claim was already spent by a concurrent request."""
+    access, cookie = _access_token(), secrets.token_urlsafe(32)
+    async with platform_transaction(f"user:{user_id}") as conn:
+        if not (await conn.execute(claim, params)).scalar_one():
+            return None
+        session_id = cast(
+            UUID,
+            (
+                await conn.execute(
+                    text(
+                        "SELECT portal_session_start(:user, :tenant, :host, :access, "
+                        ":access_seconds, :cookie, :idle, :absolute)"
+                    ),
+                    {
+                        "user": user_id,
+                        "tenant": tenant_id,
+                        "host": host,
+                        "access": sha256_hex(access),
+                        "access_seconds": ACCESS_SECONDS,
+                        "cookie": sha256_hex(cookie),
+                        "idle": IDLE_SECONDS,
+                        "absolute": ABSOLUTE_SECONDS,
+                    },
+                )
+            ).scalar_one(),
+        )
+        if mfa:
+            await conn.execute(
+                text("SELECT portal_session_mark_mfa(:id, :user)"),
+                {"id": session_id, "user": user_id},
+            )
+    await _audit(tenant_id, user_id, "portal_sign_in.succeeded", Target("user", user_id))
+    await _audit(tenant_id, user_id, "session.started", Target("auth_session", session_id))
+    if previous_cookie is not None:  # a second sign-in in the same browser replaces the old one
+        await end_session(user_id, previous_cookie, reason="revoked")
+    grants = await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id)
+    landing = landing_of(g.role for g in grants)
+    return PortalTokens(access, ACCESS_SECONDS, cookie, landing, session_id)
+
+
 async def verify_code(
-    host: str | None, challenge_id: UUID, code: str, *, previous_cookie: str | None = None
+    host: str | None,
+    challenge_id: UUID,
+    code: str,
+    *,
+    previous_cookie: str | None = None,
+    device_cookie: str | None = None,
 ) -> PortalTokens:
-    """The code against its challenge on this host; a session on success. Each guess is counted
-    before it is compared (`portal_sign_in_attempt`)."""
+    """The code against its challenge on this host; a session on success, or
+    `SecondStepRequired` for a person the MFA floor covers. Each guess is counted before it is
+    compared (`portal_sign_in_attempt`)."""
     began = time.monotonic()
     pinned = _host(host)
     async with platform_transaction("portal:sign_in") as conn:
@@ -279,40 +405,35 @@ async def verify_code(
         raise CodeMismatch(int(row.tries_left))
     if tenant_id is None or user_id is None:  # a digest only exists for a known person
         raise CodeExpired
-    access, cookie = _access_token(), secrets.token_urlsafe(32)
-    async with platform_transaction(f"user:{user_id}") as conn:
-        if not (
-            await conn.execute(text("SELECT portal_sign_in_consume(:id)"), {"id": challenge_id})
-        ).scalar_one():
-            raise CodeExpired  # used by a concurrent verify
-        session_id = cast(
-            UUID,
-            (
+    step = await _second_step_needed(tenant_id, user_id, device_cookie)
+    if step is not None:
+        token = secrets.token_urlsafe(32)
+        async with platform_transaction("portal:sign_in") as conn:
+            begun = (
                 await conn.execute(
-                    text(
-                        "SELECT portal_session_start(:user, :tenant, :host, :access, "
-                        ":access_seconds, :cookie, :idle, :absolute)"
-                    ),
+                    text("SELECT portal_mfa_begin(:id, :token, :kind, :seconds)"),
                     {
-                        "user": user_id,
-                        "tenant": tenant_id,
-                        "host": pinned,
-                        "access": _sha(access),
-                        "access_seconds": ACCESS_SECONDS,
-                        "cookie": _sha(cookie),
-                        "idle": IDLE_SECONDS,
-                        "absolute": ABSOLUTE_SECONDS,
+                        "id": challenge_id,
+                        "token": sha256_hex(token),
+                        "kind": "verify" if step == "mfa_required" else "setup",
+                        "seconds": MFA_TOKEN_SECONDS,
                     },
                 )
-            ).scalar_one(),
-        )
-    await _audit(tenant_id, user_id, "portal_sign_in.succeeded", Target("user", user_id))
-    await _audit(tenant_id, user_id, "session.started", Target("auth_session", session_id))
-    if previous_cookie is not None:  # a second sign-in in the same browser replaces the old one
-        await end_session(user_id, previous_cookie, reason="revoked")
-    grants = await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id)
-    landing = landing_of(g.role for g in grants)
-    return PortalTokens(access, ACCESS_SECONDS, cookie, landing, session_id)
+            ).scalar_one()
+        if not begun:
+            raise CodeExpired  # used by a concurrent verify
+        raise SecondStepRequired(step, token)
+    tokens = await open_session(
+        tenant_id,
+        user_id,
+        pinned,
+        text("SELECT portal_sign_in_consume(:id)"),
+        {"id": challenge_id},
+        previous_cookie=previous_cookie,
+    )
+    if tokens is None:
+        raise CodeExpired  # used by a concurrent verify
+    return tokens
 
 
 async def portal_context(token: str, host: str | None) -> AuthContext | None:
@@ -323,7 +444,7 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
         row = (
             await conn.execute(
                 text("SELECT * FROM portal_session_resolve(:access, :host)"),
-                {"access": _sha(token), "host": _host(host)},
+                {"access": sha256_hex(token), "host": _host(host)},
             )
         ).first()
     if row is None:
@@ -354,10 +475,10 @@ async def refresh_portal_session(cookie: str | None, host: str | None) -> Portal
                     ":access_seconds, :idle)"
                 ),
                 {
-                    "cookie": _sha(cookie),
-                    "next": _sha(next_cookie),
+                    "cookie": sha256_hex(cookie),
+                    "next": sha256_hex(next_cookie),
                     "host": _host(host),
-                    "access": _sha(access),
+                    "access": sha256_hex(access),
                     "access_seconds": ACCESS_SECONDS,
                     "idle": IDLE_SECONDS,
                 },

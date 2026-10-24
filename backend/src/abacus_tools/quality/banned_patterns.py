@@ -619,6 +619,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     # P-08-T10 (ADR-168): the portal's sign-in by emailed code, under `PRE_SESSION`.
     | {"/v1/portal/auth/start", "/v1/portal/auth/verify", "/v1/portal/auth/resend"}
     | {"/v1/portal/auth/refresh"}
+    # P-08-T17 (ADR-168): the second step and its first-time setup, under `PRE_SESSION`.
+    | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"
@@ -983,6 +985,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "emails_of"),
         ("src/abacus/modules/identity/repository.py", "client_admin_ids"),
         ("src/abacus/modules/requests/repository.py", "set_due_dates"),
+        # P-08-T17: identifiers for the MFA floor and for who a new designation affects, read by
+        # the system in the tenant's session; never listed to anyone.
+        ("src/abacus/modules/identity/repository.py", "grant_contact_ids"),
+        ("src/abacus/modules/identity/repository.py", "contact_user_ids"),
         # SPEC-019 Q4: the firm's staff for the wall picker, after `authorise(wall.create)`.
         ("src/abacus/modules/identity/repository.py", "active_staff_ids"),
         # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the

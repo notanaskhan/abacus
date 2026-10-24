@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on a client's portal identity and home: the portal shell and scopes on `/v1/me` (role union, DEC-129), a home read model for one scope that carries client stage codes and client-facing role codes and never a firm status code, an amount, materiality, an agent name or a confidence (INV-4, DEC-19), per-scope preferences, and two firm-side recovery operations (unlock, MFA reset) that only a named person may run (INV-1). Sign-in is passwordless and never reveals whether an email has an account: `start`, `renew` and `preview` answer one shape for every input. The portal is the firm's: no payload carries the word "Accrued" and branding carries Public fields only (ADR-163).
 
-**Stub behaviour.** With its flag off every served route answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-08-T13 (home, preferences), P-08-T21 (unlock, MFA reset). `/v1/me.portal` and `/v1/me.mfa` are `null` until P-08-T07 and T17. The Brightwater Hale portal slice (`stub_from_seed`) arrives with P-08-T08, so the stubs return no fixtures; the screens build on fixture scenarios typed with the generated client.
+**Stub behaviour.** With its flag off every served route answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-08-T13 (home, preferences), P-08-T21 (unlock, MFA reset). `/v1/me.portal` is `null` until P-08-T07; `/v1/me.mfa` is filled for a client membership in the active firm since P-08-T17 (`trusted_until` stays null: `/v1/me` reads no device cookie). The Brightwater Hale portal slice (`stub_from_seed`) arrives with P-08-T08, so the stubs return no fixtures; the screens build on fixture scenarios typed with the generated client.
 
 ## 2. Who may call it
 Matrix: `docs/architecture/permission-matrix/portal.yaml`, `identity.yaml`.
@@ -42,8 +42,8 @@ These answer before any session exists, so they cannot sit behind `AbacusRouter`
 | Start | `POST /v1/portal/auth/start` `PortalSignInStartIn` → always **202** `PortalSignInStartOut` | pre-session | P-08-T10 |
 | Verify | `POST /v1/portal/auth/verify` `PortalSignInVerifyIn` → `PortalSignInVerifyOut` | pre-session | P-08-T10 |
 | Resend | `POST /v1/portal/auth/resend` `PortalSignInResendIn` → `PortalSignInStartOut` | pre-session | P-08-T10 |
-| Second step | `POST /v1/portal/auth/mfa` `PortalMfaIn` → `PortalSignInVerifyOut` | pre-session | P-08-T17 |
-| Two-step setup | `POST /v1/portal/auth/mfa/setup` `PortalMfaSetupIn` → `PortalMfaSetupOut`; `POST …/mfa/setup/verify` `PortalMfaSetupVerifyIn` → `PortalMfaSetupVerifyOut` | pre-session | P-08-T17 |
+| Second step | `POST /v1/portal/auth/mfa` `PortalMfaIn` → `PortalSignInVerifyOut` | pre-session · served (`PRE_SESSION`) | P-08-T17 |
+| Two-step setup | `POST /v1/portal/auth/mfa/setup` `PortalMfaSetupIn` → `PortalMfaSetupOut`; `POST …/mfa/setup/verify` `PortalMfaSetupVerifyIn` → `PortalMfaSetupVerifyOut` | pre-session · served (`PRE_SESSION`) | P-08-T17 |
 | Refresh | `POST /v1/portal/auth/refresh` (cookie, `X-Abacus-CSRF`, Origin) | cookie exception (P-01 pattern) | P-08-T10 |
 | Sign out | `POST /v1/portal/auth/sign-out` | `OWN` | P-08-T10 |
 | Renew a link | `POST /v1/portal/links/renew` `PortalLinkRenewIn` → always **202** `PortalLinkRenewOut` | pre-session | P-08-T21 |
@@ -99,13 +99,15 @@ Codes are reserved for the implementing tasks; 409 and 422 codes enter `docs/arc
 | 423 | `{"detail": "sign_in_locked", "facts": {"locked_until": "2026-09-14T14:37:00Z"}}` | third wrong code in the window; also for an email that matches no one (no oracle) (T10) |
 | 410 | `{"detail": "code_expired"}` | code older than 10 minutes (T10) |
 | 429 | `{"detail": "resend_too_soon", "facts": {"resend_available_at": "…"}}` | resend before the countdown (T10) |
-| 401 / 423 | `mfa_mismatch {tries_left}` / `mfa_locked {locked_until}` | wrong or locked second step (T17) |
+| 401 / 423 | `mfa_mismatch {tries_left}` / `mfa_locked {locked_until}` | wrong or locked second step (T17); three wrong second-step codes lock sign-in for the email for 15 minutes |
+| 410 | `{"detail": "mfa_expired"}` | an `mfa_token` that is unknown, older than 5 minutes, used, of the other kind (`mfa_required` vs `mfa_setup_required`) or from another host; setup asked twice on one token (T17) |
+| 503 | `{"detail": "mfa_unavailable"}` | the identity provider didn't answer the second step; the guess still counts and no session starts (T17) |
 | 503 | `{"detail": "sign_in_paused"}` | the firm's `portal_sign_in_paused` control (Story 7.3) |
 
 `locked_until` and `resend_available_at` are ISO 8601 UTC timestamps (`2026-09-14T14:37:00Z`), which `check_facts` accepts as identifier facts.
 
 ## 7. Audit and outbox events
-Audit events (UoW `tx.record`, identifiers only; IP, device and session captured per DEC-60; P-08 §4.6): `portal_sign_in.code_requested`, `portal_sign_in.succeeded`, `portal_sign_in.failed`, `portal_sign_in.locked`, `portal_sign_in.unlocked` (names the person who unlocked), `portal_sign_in.paused`, `portal_sign_in.resumed` (spelt with one dot, `entity.verb_past`, as the unit of work requires; DEC-212), `portal.mfa.enrolled`, `portal.mfa.verified`, `portal.mfa.failed`, `portal.mfa.reset`, `portal.backup_code.used`, `portal.device.trusted`, `portal.device.revoked`, `portal.link.renewed`, `client_invitation.accepted` (exists; attributed to the inviter, INV-5), `client_invitation.renewed`, `client_access.granted` (F-03), `session.started`, `session.ended`, `session.refresh_reused`, `portal_preferences.updated`, `portal_branding.updated`. An email that matches no contact writes no audit event (there is no subject); a security metric with a hashed fingerprint is kept instead.
+Audit events (UoW `tx.record`, identifiers only; IP, device and session captured per DEC-60; P-08 §4.6): `portal_sign_in.code_requested`, `portal_sign_in.succeeded`, `portal_sign_in.failed`, `portal_sign_in.locked`, `portal_sign_in.unlocked` (names the person who unlocked), `portal_sign_in.paused`, `portal_sign_in.resumed` (spelt with one dot, `entity.verb_past`, as the unit of work requires; DEC-212), `portal_mfa.enrolled`, `portal_mfa.verified`, `portal_mfa.failed`, `portal_mfa.locked`, `portal_mfa.reset`, `portal_backup_code.used`, `portal_device.trusted`, `portal_device.revoked` (one dot likewise; P-08-T17, DEC-250), `portal.link.renewed`, `client_invitation.accepted` (exists; attributed to the inviter, INV-5), `client_invitation.renewed`, `client_access.granted` (F-03), `session.started`, `session.ended`, `session.refresh_reused`, `portal_preferences.updated`, `portal_branding.updated`. An email that matches no contact writes no audit event (there is no subject); a security metric with a hashed fingerprint is kept instead.
 
 Outbox events (P-08 §4.5; identifiers and enums only, never an email, code, token or IP): `portal.sign_in_code_requested` {challenge_id} (communications issues the code at delivery, so it is never stored; DEC-212), `portal.link_renew_requested` {secure_link_id}, `contact.portal_state_changed` {contact_id, state}; consumed: `access.changed`, `client_access.revoked` (end portal sessions, revoke trusted devices).
 
