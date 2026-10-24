@@ -161,4 +161,5 @@ Each becomes a test in `AUD-01.test.tsx` ("AUD-01 avoid: …"): gradients in pro
 ## Open gaps
 - No handoff frame exists for the load error; the T1 error grammar is used and its words are fixed in `domain/audits/messages.ts` by A-01-T11.
 - The handoff tooltips name rows "A30" and "A33"; DF-29 renumbers them A29 and A32 (decided: DF-29 wins).
+- The spec states "≤ 7 days" red-ink and draws Sep 21 (seven days from Sep 14) amber; the rows win: red-ink means fewer than 7 days left, amber 7 to 30 (DEC-263).
 - The spec's period chip reads "PY2025 / FY2026" with no other value designed; the period facet lists the periods present after `visible()`.

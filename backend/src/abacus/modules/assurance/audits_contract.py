@@ -199,9 +199,8 @@ class AuditOverviewOut(BaseModel):
     client_name: Annotated[str, classified("confidential")]
     name: Annotated[str, classified("confidential")]
     period_label: Annotated[str | None, classified("confidential")] = None
-    phase: Annotated[
-        AuditEngagementStatus, classified("internal")
-    ]  # "Processing" while a run executes
+    # "Processing" (derived, never stored) is drawn from `audit_bar.run_started_at` (DV-11).
+    phase: Annotated[AuditEngagementStatus, classified("internal")]
 
 
 class AuditSectionRowOut(BaseModel):
