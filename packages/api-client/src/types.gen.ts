@@ -44300,10 +44300,6 @@ export type ListPortalBindersErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListPortalBindersError = ListPortalBindersErrors[keyof ListPortalBindersErrors];
@@ -44365,10 +44361,6 @@ export type GetPortalBinderErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetPortalBinderError = GetPortalBinderErrors[keyof GetPortalBinderErrors];
@@ -44562,10 +44554,6 @@ export type UndoMarkDoneErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoMarkDoneError = UndoMarkDoneErrors[keyof UndoMarkDoneErrors];
@@ -44865,10 +44853,6 @@ export type GetPortalRequestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetPortalRequestError = GetPortalRequestErrors[keyof GetPortalRequestErrors];
@@ -44985,10 +44969,6 @@ export type UndoIgnoreErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoIgnoreError = UndoIgnoreErrors[keyof UndoIgnoreErrors];

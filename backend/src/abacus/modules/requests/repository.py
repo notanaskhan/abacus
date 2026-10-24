@@ -753,6 +753,16 @@ async def client_responses(
     return {r.request_item_id: r for r in rows}  # oldest first, so the newest wins
 
 
+async def newest_response(session: AsyncSession, item_id: UUID) -> ClientItemResponse | None:
+    """R-01-T08: one request's newest SPEC-042 response, for a caller that authorised on it."""
+    return await session.scalar(
+        select(ClientItemResponse)
+        .where(ClientItemResponse.request_item_id == item_id)
+        .order_by(ClientItemResponse.created_at.desc(), ClientItemResponse.id.desc())
+        .limit(1)
+    )
+
+
 async def insert_client_response(session: AsyncSession, **values: object) -> None:
     await session.execute(insert(ClientItemResponse).values(**values))
 
@@ -1377,3 +1387,177 @@ async def binder_statuses(
         )
     )
     return {i: str(st) for i, st in rows.all()}
+
+
+# --- The portal PBC read model (R-01-T07; C5 section portal-pbc) ---------------------------------
+
+# A binder a client reads: published or marked done, or closed after it was published (read-only).
+_PORTAL_BINDER = or_(
+    RequestList.status.in_(("published", "complete")),
+    and_(RequestList.status == "closed", RequestList.published_at.is_not(None)),
+)
+
+
+def not_delegated() -> ColumnElement[bool]:
+    """INV-4 (R-01 Story 1.2): a request with an open delegation goes to its third party
+    directly; the client's own reads leave it out (its organisation is named, never its title)."""
+    return ~(
+        select(text("1"))
+        .select_from(text("request_delegations d"))
+        .where(
+            text("d.tenant_id = request_items.tenant_id"),
+            text("d.request_item_id = request_items.id"),
+            text("d.revoked_at IS NULL"),
+        )
+        .exists()
+    )
+
+
+def _client_readable() -> ColumnElement[bool]:
+    """Beside `visible_items`: live, client-visible and not delegated."""
+    return and_(
+        RequestItem.deleted_at.is_(None), RequestItem.client_visible.is_(True), not_delegated()
+    )
+
+
+async def portal_binders(session: AsyncSession, ctx: AuthContext) -> Sequence[RequestList]:
+    """The binders the client reads at least one request of (their own, or a client admin's
+    client-visible ones), newest published first."""
+    seen = (
+        select(RequestItem.id)
+        .where(
+            RequestItem.request_list_id == RequestList.id,
+            _client_readable(),
+            visible_items(
+                ctx,
+                "request_item.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+        .exists()
+    )
+    return (
+        (
+            await session.execute(
+                select(RequestList)
+                .where(_PORTAL_BINDER, seen)
+                .order_by(RequestList.published_at.desc(), RequestList.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def portal_binder(session: AsyncSession, binder_id: UUID) -> RequestList | None:
+    """One binder if a client may read it at all (published, done, or closed after publishing);
+    the caller authorises it."""
+    return await session.scalar(
+        select(RequestList).where(RequestList.id == binder_id, _PORTAL_BINDER)
+    )
+
+
+async def portal_items(
+    session: AsyncSession, ctx: AuthContext, binder_id: UUID
+) -> Sequence[RequestItem]:
+    """The binder's requests the client reads, oldest first: client-visible, not deleted, through
+    `visible_items` (a contributor's assigned ones), and never one delegated to a third party."""
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(
+                    RequestItem.request_list_id == binder_id,
+                    _client_readable(),
+                    visible_items(
+                        ctx,
+                        "request_item.read",
+                        RequestItem.engagement_id,
+                        RequestItem.client_visible,
+                        RequestItem.client_assignee_user_id,
+                    ),
+                )
+                .order_by(RequestItem.created_at, RequestItem.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def portal_item(
+    session: AsyncSession, ctx: AuthContext, item_id: UUID
+) -> RequestItem | None:
+    """One request if the client reads it (as `portal_items`)."""
+    return await session.scalar(
+        select(RequestItem).where(
+            RequestItem.id == item_id,
+            _client_readable(),
+            visible_items(
+                ctx,
+                "request_item.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+    )
+
+
+async def live_links(session: AsyncSession, item_ids: Sequence[UUID]) -> Sequence[Fulfilment]:
+    """The live fulfilments of requests the caller already read, oldest first (withdrawn ones
+    left out, ADR-162 §4; LIST_EXEMPT)."""
+    if not item_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(Fulfilment)
+                .where(Fulfilment.request_item_id.in_(item_ids), live_fulfilment())
+                .order_by(Fulfilment.created_at, Fulfilment.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def binder_delegated_contacts(session: AsyncSession, binder_id: UUID) -> list[UUID]:
+    """The contacts the binder's requests are delegated to now, for a caller that authorised the
+    binder (LIST_EXEMPT): only their organisations are ever named to a client."""
+    rows = await session.execute(
+        text(
+            "SELECT DISTINCT d.contact_id FROM request_delegations d "
+            "JOIN request_items i ON i.tenant_id = d.tenant_id AND i.id = d.request_item_id "
+            "WHERE i.request_list_id = :binder AND d.revoked_at IS NULL "
+            "AND i.deleted_at IS NULL AND i.client_visible"
+        ),
+        {"binder": binder_id},
+    )
+    return sorted((cast(UUID, r[0]) for r in rows.all()), key=str)
+
+
+async def prior_year_item(
+    session: AsyncSession, ctx: AuthContext, prior_binder_id: UUID, title: str
+) -> RequestItem | None:
+    """Last year's request of the same title in the binder this one was rolled forward from, if
+    the client reads it too (roll-forward copies the wording as it was)."""
+    return await session.scalar(
+        select(RequestItem)
+        .where(
+            RequestItem.request_list_id == prior_binder_id,
+            func.coalesce(RequestItem.title, RequestItem.description) == title,
+            _client_readable(),
+            visible_items(
+                ctx,
+                "request_item.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+        .order_by(RequestItem.created_at, RequestItem.id)
+        .limit(1)
+    )

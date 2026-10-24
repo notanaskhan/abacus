@@ -139,6 +139,28 @@ async def client_contact_names(
     return {cid: f.display_name for cid, f in found.items() if f.client_id == client}
 
 
+async def client_contact_organisations(
+    tenant: TenantContext, engagement_id: UUID, contact_ids: list[UUID]
+) -> list[str]:
+    """R-01-T07 (POR-03 i, "Some requests go to Keystone, Harborline … directly"): the distinct
+    organisation names of those of `contact_ids` that are the engagement's client's contacts, in
+    name order; a contact with no organisation is left out (never a person's name). For a caller
+    that authorised a read of the engagement."""
+    client = await client_of(tenant, engagement_id)
+    if client is None or not contact_ids:
+        return []
+    async with tenant_session(tenant) as session:
+        found = await contact_facts(session, contact_ids)
+    return sorted(
+        {
+            f.organisation_name
+            for f in found.values()
+            if f.client_id == client and f.organisation_name
+        },
+        key=str.casefold,
+    )
+
+
 async def contact_portal_user(
     tenant: TenantContext, engagement_id: UUID, contact_id: UUID
 ) -> UUID | None:

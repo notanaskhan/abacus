@@ -35,6 +35,19 @@ from abacus.modules.requests.lifecycle import (
     request_item_scope,
 )
 from abacus.modules.requests.pbc_contract import pbc_firm_router, pbc_portal_router
+from abacus.modules.requests.portal_documents import (
+    PortalBinder,
+    PortalBinderRef,
+    PortalCategory,
+    PortalItem,
+    PortalLink,
+    portal_binder_ref,
+    portal_binder_refs,
+    portal_binder_view,
+    portal_item_binder,
+    portal_item_view,
+    prior_year_link,
+)
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
@@ -90,7 +103,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     binders_router,  # C5 v1 stub (P-06-T01)
     items_router,
     portal_router,
-    pbc_portal_router,  # C5 portal-pbc stub (R-01-T01): undo an Ignore, undo Mark as Done
+    pbc_portal_router,  # C5 portal-pbc (R-01-T08): undo an Ignore, undo Mark as Done
     pbc_firm_router,  # C5 portal-pbc stub (R-01-T01): void a rule fulfilment
 )
 
@@ -116,6 +129,11 @@ __all__ = [
     "ItemNotFulfillable",
     "NewRequestItem",
     "OverdueItem",
+    "PortalBinder",
+    "PortalBinderRef",
+    "PortalCategory",
+    "PortalItem",
+    "PortalLink",
     "RequestItemClassified",
     "RequestItemCreated",
     "RequestItemDocumentKindChanged",
@@ -143,6 +161,12 @@ __all__ = [
     "methodology_router",
     "move_after_review",
     "overdue_for",
+    "portal_binder_ref",
+    "portal_binder_refs",
+    "portal_binder_view",
+    "portal_item_binder",
+    "portal_item_view",
+    "prior_year_link",
     "read_item",
     "read_item_versions",
     "register_available_datasets",

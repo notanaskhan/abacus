@@ -69,7 +69,13 @@ from abacus.modules.requests.binders import (
     activity_view,
     check_action,
 )
-from abacus.modules.requests.events import RequestItemSent
+from abacus.modules.requests.client_undo import (
+    UNDO_REASON,
+    UNDOABLE_ITEM,
+    FirmAlreadyActed,
+    NothingToUndo,
+)
+from abacus.modules.requests.events import RequestItemIgnoreUndone, RequestItemSent
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
     binder_items,
@@ -80,6 +86,7 @@ from abacus.modules.requests.repository import (
     insert_delegation,
     insert_upload_intent,
     live_upload_intents,
+    newest_response,
     open_delegations,
     set_item_fields,
     stamp_sent,
@@ -402,7 +409,11 @@ async def waive_item(
 
 async def ignore_item(ctx: AuthContext, item_id: UUID, reason: str, note: str | None) -> datetime:
     """The client's Ignore (AC-12): the reason is a SPEC-042 response, the status stays
-    `requested`, and `client_ignored_at` is stamped until the firm returns or waives it."""
+    `requested`, and `client_ignored_at` is stamped until the firm returns or waives it. R-01-T08:
+    the optional note is a shared client comment on the request with origin `ignore_note`
+    (sealed, insert-only, ADR-109), never copied into the response row, so the firm reads it in
+    the thread and an Undo of the Ignore leaves it there."""
+    body = comments.clean_text(note, comments.MAX_BODY) if note is not None else None
     async with uow(ctx.tenant) as tx:
         item = await get_request_item(tx.session, item_id, lock=True)
         if item is None or item.deleted_at is not None:
@@ -429,7 +440,7 @@ async def ignore_item(ctx: AuthContext, item_id: UUID, reason: str, note: str | 
             request_item_id=item.id,
             kind="not_applicable",
             reason=reason,
-            note=note,
+            note=None,
             by_user=ctx.user_id,
         )
         await set_item_fields(tx.session, item.id, {"client_ignored_at": now})
@@ -439,6 +450,91 @@ async def ignore_item(ctx: AuthContext, item_id: UUID, reason: str, note: str | 
             after=Ref(reason=IGNORE_REASONS.index(reason)),
             scope=_scope(item),
         )
+        if body is not None:
+            comment_id = await comments.insert_ignore_note(
+                tx, ctx, item.engagement_id, item.id, body
+            )
+            tx.record(
+                "request_item.ignore_note_added",
+                target=Target("request_item", item.id),
+                after=Ref(comment=comment_id),
+                scope=_scope(item),
+            )
+    return now
+
+
+async def check_ignore(ctx: AuthContext, item_id: UUID) -> None:
+    """Authorise `request_item.ignore` on the request (read-only), so a replayed Undo is checked
+    like the first one (ED-023); not the caller's to see: 404 (INV-4)."""
+    async with tenant_session(ctx.tenant) as session:
+        item = await get_request_item(session, item_id)
+    if item is None or item.deleted_at is not None:
+        raise NotFound("request_item")
+    ref = await get_ref(ctx, item.engagement_id)
+    try:
+        await authorise(
+            ctx,
+            "request_item.ignore",
+            Resource.engagement(
+                ref.tenant_id,
+                ref.id,
+                archived=ref.archived,
+                client_id=ref.client_id,
+                item=_facts(item),
+            ),
+            reason=UNDO_REASON,
+        )
+    except Forbidden:
+        raise NotFound("request_item") from None
+
+
+async def undo_ignore(ctx: AuthContext, item_id: UUID) -> datetime:
+    """R-01-T08: the client's Undo of their Ignore, a compensating event (DEC-24, DEC-334): the
+    Ignore's own rows stay, a `withdrawn` SPEC-042 response is appended, `client_ignored_at` is
+    cleared and the request reads To do again. Open until the firm acts on the request (409
+    `firm_already_acted`); the ignorer's own (403 for another person); once (409
+    `nothing_to_undo`). Not theirs to see: 404 (INV-4)."""
+    async with uow(ctx.tenant) as tx:
+        item = await get_request_item(tx.session, item_id, lock=True)
+        if item is None or item.deleted_at is not None:
+            raise NotFound("request_item")
+        ref = await lock_ref(tx, item.engagement_id)
+        resource = Resource.engagement(
+            ref.tenant_id,
+            ref.id,
+            archived=ref.archived,
+            client_id=ref.client_id,
+            item=_facts(item),
+        )
+        try:
+            await authorise(ctx, "request_item.ignore", resource, reason=UNDO_REASON)
+        except Forbidden:
+            raise NotFound("request_item") from None  # INV-4: not theirs, so not there
+        response = await newest_response(tx.session, item.id)
+        if response is None or response.kind != "not_applicable":
+            raise NothingToUndo(facts={"request_item_id": str(item.id)})
+        if response.by_user != ctx.user_id:
+            raise Forbidden("request_item.ignore", "role")
+        if item.status not in UNDOABLE_ITEM or item.client_ignored_at is None:
+            raise FirmAlreadyActed(facts={"request_item_id": str(item.id)})
+        now = await clock.now(ctx.tenant)
+        await insert_client_response(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            engagement_id=item.engagement_id,
+            request_item_id=item.id,
+            kind="withdrawn",
+            reason=None,
+            note=None,
+            by_user=ctx.user_id,
+        )
+        await set_item_fields(tx.session, item.id, {"client_ignored_at": None})
+        tx.record(
+            "request_item.ignore_undone",
+            target=Target("request_item", item.id),
+            scope=_scope(item),
+        )
+        tx.emit(RequestItemIgnoreUndone(request_item_id=item.id, engagement_id=item.engagement_id))
     return now
 
 

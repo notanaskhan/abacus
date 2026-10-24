@@ -11,9 +11,16 @@ lets the effect out, and an Undo after the effect started answers `409 effect_st
 checks are pure functions over what was observed; `test_the_checks_fail_*` feed them a route that
 skips the window or the grant void and require them to say so.
 
-Registered: the evidence review-decision Undo (P-01-T15) and the request send and binder publish
-Undo (P-06-T17). The follow-up send Undo waits for a published binder with recipients and a
-template (P-06-T17 records it). Boundary: `create_app()` over HTTP; seeding as the superuser.
+Registered: the evidence review-decision Undo (P-01-T15), the request send and binder publish
+Undo (P-06-T17), and the client's Undo of an Ignore and of Mark as Done (R-01-T08). The follow-up
+send Undo waits for a published binder with recipients and a template (P-06-T17 records it).
+
+Window kinds (DEC-334): a firm decision that holds an effect leaving the firm is undone within
+10 seconds (`ten_seconds`). A client's Ignore or Mark as Done holds none, so its Undo stays open
+until the firm acts on the request or the binder (`until_firm_acts`; R-01 OQ-2, DEC-240), then
+answers `409 firm_already_acted`. Every other check holds for both kinds: one compensating row
+by the person who acted, the act's own rows kept, a second Undo refused, nobody else's Undo.
+Boundary: `create_app()` over HTTP; seeding as the superuser.
 Expectations: ADR-161, `docs/contracts/review-grammar.md` §errors, `docs/contracts/c5-requests-
 binders.md` §2, §6, §7, and the P-01 contract for review decisions.
 """
@@ -25,7 +32,7 @@ import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Final, cast
+from typing import Final, Literal, cast
 
 import httpx
 import pytest
@@ -49,6 +56,8 @@ class World:
     engagement: uuid.UUID
     decider: Person
     other: Person
+    # The firm's partner on the engagement; for a client case, `decider` and `other` are clients.
+    firm: Person | None = None
     state: dict[str, uuid.UUID] = field(default_factory=dict[str, uuid.UUID])
 
     async def call(
@@ -73,7 +82,9 @@ class World:
 class Case:
     """One Undo route. `compensations` lists the actor of each compensating row the Undo wrote;
     `decided` counts the decision's own rows (which an Undo must never remove); `grant` names the
-    grant holding the decision's effect, when it has one."""
+    grant holding the decision's effect, when it has one. A `client` case's people are two client
+    principals on the engagement (an engagement-scope owner grant each); `firm_acts` is the
+    firm's act that closes an `until_firm_acts` window."""
 
     name: str
     registered_by: str
@@ -84,6 +95,9 @@ class Case:
     compensations: Callable[[World], Awaitable[list[str]]]
     decided: Callable[[World], Awaitable[int]]
     grant: Callable[[World], Awaitable[uuid.UUID | None]] | None = None
+    window: Literal["ten_seconds", "until_firm_acts"] = "ten_seconds"
+    client: bool = False
+    firm_acts: Callable[[World, datetime], Awaitable[httpx.Response]] | None = None
 
 
 # --- the evidence review decision (P-01-T13, registered by P-01-T15) -----------------------------
@@ -338,8 +352,140 @@ PUBLISH: Final = Case(
     _publish_grant,
 )
 
-CASES: Final = (REVIEW_DECISION, SEND, PUBLISH)
+# --- the client's Undo of an Ignore and of Mark as Done (R-01-T08) -------------------------------
+
+
+async def _client_binder(world: World) -> None:
+    """A published binder with one client-visible request, as the firm left it."""
+    assert world.firm is not None
+    work_item = await world.seed.value(
+        "SELECT id FROM work_items WHERE engagement_id = $1", world.engagement
+    )
+    created = await world.call(
+        world.firm,
+        "POST",
+        "/v1/binders",
+        {"work_item_id": str(work_item), "kind": "organizer", "name": "2025 Binder"},
+        at=T0 - timedelta(minutes=5),
+    )
+    assert created.status_code == 201, created.text
+    binder = uuid.UUID(created.json()["id"])
+    item = cast(
+        uuid.UUID,
+        await world.seed.value(
+            "INSERT INTO request_items (tenant_id, engagement_id, request_list_id, description, "
+            "audit_area, created_by, client_visible, due_on) VALUES ($1, $2, $3, "
+            "'2025 Form 1099-B', 'Income', $4, true, '2026-10-01') RETURNING id",
+            world.tenant,
+            world.engagement,
+            binder,
+            world.firm.user_id,
+        ),
+    )
+    await world.seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = $2, published_by = $3 "
+        "WHERE id = $1",
+        binder,
+        T0 - timedelta(minutes=4),
+        world.firm.user_id,
+    )
+    await world.seed.run(
+        "UPDATE request_items SET status = 'requested', requested_at = $2 WHERE id = $1",
+        item,
+        T0 - timedelta(minutes=4),
+    )
+    world.state.update(binder=binder, item=item)
+
+
+async def _ignore_decide(world: World, who: Person, at: datetime) -> httpx.Response:
+    return await world.call(
+        who,
+        "POST",
+        f"/v1/portal/request-items/{world.state['item']}/ignore",
+        {"reason": "not_this_year"},
+        at=at,
+    )
+
+
+async def _ignore_undo(world: World, who: Person, at: datetime) -> httpx.Response:
+    return await world.call(
+        who, "POST", f"/v1/portal/request-items/{world.state['item']}/ignore/undo", at=at
+    )
+
+
+async def _ignore_compensations(world: World) -> list[str]:
+    return await _audited(world, "request_item.ignore_undone", world.state["item"])
+
+
+async def _ignore_decided(world: World) -> int:
+    return len(await _audited(world, "request_item.ignored", world.state["item"]))
+
+
+async def _waive(world: World, at: datetime) -> httpx.Response:
+    """The firm waives the request (Kevin's "not applicable")."""
+    assert world.firm is not None
+    return await world.call(
+        world.firm,
+        "POST",
+        f"/v1/engagements/{world.engagement}/request-items/{world.state['item']}/waive",
+        {"na_reason": "not_applicable_this_year", "note": "Not needed this year"},
+        at=at,
+    )
+
+
+IGNORE: Final = Case(
+    "client_ignore",
+    "R-01-T08",
+    ("binders.engine", "portal.documents_v2"),
+    _client_binder,
+    _ignore_decide,
+    _ignore_undo,
+    _ignore_compensations,
+    _ignore_decided,
+    window="until_firm_acts",
+    client=True,
+    firm_acts=_waive,
+)
+
+
+async def _done_decide(world: World, who: Person, at: datetime) -> httpx.Response:
+    return await world.call(
+        who, "POST", f"/v1/portal/binders/{world.state['binder']}/mark-done", at=at
+    )
+
+
+async def _done_undo(world: World, who: Person, at: datetime) -> httpx.Response:
+    return await world.call(
+        who, "POST", f"/v1/portal/binders/{world.state['binder']}/mark-done/undo", at=at
+    )
+
+
+async def _done_compensations(world: World) -> list[str]:
+    return await _audited(world, "binder.mark_done_undone", world.state["binder"])
+
+
+async def _done_decided(world: World) -> int:
+    return len(await _audited(world, "binder.marked_done", world.state["binder"]))
+
+
+MARK_DONE: Final = Case(
+    "client_mark_done",
+    "R-01-T08",
+    ("binders.engine", "portal.documents_v2"),
+    _client_binder,
+    _done_decide,
+    _done_undo,
+    _done_compensations,
+    _done_decided,
+    window="until_firm_acts",
+    client=True,
+    firm_acts=_waive,
+)
+
+CASES: Final = (REVIEW_DECISION, SEND, PUBLISH, IGNORE, MARK_DONE)
 GRANT_HELD: Final = tuple(c for c in CASES if c.grant is not None)
+TEN_SECONDS: Final = tuple(c for c in CASES if c.window == "ten_seconds")
+UNTIL_FIRM_ACTS: Final = tuple(c for c in CASES if c.window == "until_firm_acts")
 
 
 # --- the contract's checks, over what was observed -----------------------------------------------
@@ -403,6 +549,10 @@ async def _world(
     await seed.member(engagement, hannah, "engagement_partner")
     await seed.member(engagement, marcus, "engagement_partner")
     world = World(seed, http, idp, tenant, engagement, hannah, marcus)
+    if case.client:
+        claire = await seed.client(tenant, engagement, "Claire Feld")
+        jonah = await seed.client(tenant, engagement, "Jonah Feld")
+        world = World(seed, http, idp, tenant, engagement, claire, jonah, hannah)
     await case.prepare(world)
     return world
 
@@ -438,7 +588,7 @@ async def test_c3_undo_inside_ten_seconds_appends_a_compensating_row_by_the_same
     assert undo_problems(seen) == [], undone.text
 
 
-@pytest.mark.parametrize("case", CASES, ids=_ids(CASES))
+@pytest.mark.parametrize("case", TEN_SECONDS, ids=_ids(TEN_SECONDS))
 async def test_c3_undo_after_ten_seconds_is_409_undo_window_closed(
     seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider, case: Case
 ) -> None:
@@ -477,6 +627,41 @@ async def test_c3_a_second_undo_is_refused(
     again = await case.undo(world, world.decider, T0 + timedelta(seconds=6))
     assert again.status_code == 409, again.text
     assert len(await case.compensations(world)) == 1
+
+
+@pytest.mark.parametrize("case", UNTIL_FIRM_ACTS, ids=_ids(UNTIL_FIRM_ACTS))
+async def test_c3_a_client_undo_outlives_ten_seconds(
+    seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider, case: Case
+) -> None:
+    """DEC-334: nothing leaves the firm, so the client's Undo is open an hour later."""
+    world = await _world(seed, http, idp, case)
+    decided, before = await _decided(world, case)
+    undone = await case.undo(world, world.decider, T0 + timedelta(hours=1))
+    seen = Observed(
+        decided.status_code,
+        undone.status_code,
+        str(world.decider.user_id),
+        await case.compensations(world),
+        before,
+        await case.decided(world),
+    )
+    assert undo_problems(seen) == [], undone.text
+
+
+@pytest.mark.parametrize("case", UNTIL_FIRM_ACTS, ids=_ids(UNTIL_FIRM_ACTS))
+async def test_c3_a_client_undo_after_the_firm_acted_is_409_firm_already_acted(
+    seed: Seeder, http: httpx.AsyncClient, idp: FakeIdentityProvider, case: Case
+) -> None:
+    """DEC-24, R-01 Stories 3.1 and 4.1: once the firm has acted, the Undo is closed and nothing
+    is written."""
+    assert case.firm_acts is not None
+    world = await _world(seed, http, idp, case)
+    await _decided(world, case)
+    acted = await case.firm_acts(world, T0 + timedelta(minutes=1))
+    assert acted.status_code in (200, 201), acted.text
+    late = await case.undo(world, world.decider, T0 + timedelta(minutes=2))
+    assert (late.status_code, late.json()["detail"]) == (409, "firm_already_acted"), late.text
+    assert await case.compensations(world) == []
 
 
 @pytest.mark.parametrize("case", GRANT_HELD, ids=_ids(GRANT_HELD))

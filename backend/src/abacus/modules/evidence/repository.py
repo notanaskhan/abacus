@@ -1164,3 +1164,57 @@ async def verified_citations_into(
         .scalars()
         .all()
     )
+
+
+# --- The portal PBC read model (R-01-T07) --------------------------------------------------------
+
+
+async def ever_accepted(session: AsyncSession, version_ids: Sequence[UUID]) -> frozenset[UUID]:
+    """Which of these versions a person ever accepted (an `accept` row, undone or not, or a
+    retained key): never withdrawable again (ADR-162 §8; DEC-298). LIST_EXEMPT: by id, for a
+    caller that read them."""
+    if not version_ids:
+        return frozenset()
+    accepted = await session.execute(
+        select(ReviewDecision.evidence_version_id).where(
+            ReviewDecision.evidence_version_id.in_(version_ids),
+            ReviewDecision.decision == "accept",
+        )
+    )
+    retained = await session.execute(
+        select(EvidenceObjectKey.evidence_version_id).where(
+            EvidenceObjectKey.evidence_version_id.in_(version_ids),
+            EvidenceObjectKey.retained_at.is_not(None),
+        )
+    )
+    return frozenset(accepted.scalars().all()) | frozenset(retained.scalars().all())
+
+
+async def client_problem_codes(session: AsyncSession, version_id: UUID) -> list[str]:
+    """The client-audience problem checks of the version's latest run (SPEC-029; DEC-58 e), by
+    code, for a caller that read the version (LIST_EXEMPT)."""
+    rows = (
+        await session.execute(
+            select(
+                UploadCheck.check_code,
+                UploadCheck.checker_version,
+                UploadCheck.document_kind,
+                UploadCheck.outcome,
+                UploadCheck.audience,
+                UploadCheck.created_at,
+            ).where(UploadCheck.evidence_version_id == version_id)
+        )
+    ).all()
+    if not rows:
+        return []
+    newest = max(rows, key=lambda r: r.created_at)
+    return sorted(
+        {
+            r.check_code
+            for r in rows
+            if (r.checker_version, r.document_kind)
+            == (newest.checker_version, newest.document_kind)
+            and r.outcome == "problem"
+            and r.audience == "client"
+        }
+    )

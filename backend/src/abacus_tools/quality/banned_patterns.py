@@ -920,6 +920,14 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # R-01-T07 (DEC-333): the portal read model's lookups by id for rows the caller already
+        # read through `visible_items` and authorised `portal_documents.read` on: a binder's
+        # requests' live fulfilments, the contacts its requests are delegated to (only their
+        # organisations are named), and those versions' accept history and latest checks.
+        ("src/abacus/modules/requests/repository.py", "live_links"),
+        ("src/abacus/modules/requests/repository.py", "binder_delegated_contacts"),
+        ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
+        ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),
         # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's
         # client passed `visible_clients(contact.read)`, and ended in the revoking unit of work
         # after `authorise(client_access.revoke)`; keyed by contact or grant, not listed.

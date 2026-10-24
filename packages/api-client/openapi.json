@@ -95531,16 +95531,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Portal Binders Route",
@@ -95681,16 +95671,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Portal Binder Route",
@@ -95988,7 +95968,7 @@
     },
     "/v1/portal/binders/{binder_id}/mark-done/undo": {
       "post": {
-        "description": "The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a\nnew one (409 `firm_already_acted`).",
+        "description": "The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a\nnew one (409 `firm_already_acted`, DEC-334).",
         "operationId": "undo_mark_done",
         "parameters": [
           {
@@ -96105,16 +96085,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Mark Done Route",
@@ -96733,16 +96703,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Portal Request Route",
@@ -96881,7 +96841,7 @@
     },
     "/v1/portal/request-items/{item_id}/ignore/undo": {
       "post": {
-        "description": "The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until\nthe firm acts on the request (409 `firm_already_acted`, DEC-24).",
+        "description": "The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until\nthe firm acts on the request (409 `firm_already_acted`, DEC-24, DEC-334). A retry with the\nsame key is authorised again, then answers what the first answered.",
         "operationId": "undo_ignore",
         "parameters": [
           {
@@ -96998,16 +96958,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo Ignore Route",

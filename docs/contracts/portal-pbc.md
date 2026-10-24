@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` (a named section with its own change log, R-01 §8.2 and R11; the other C5 files are `c5-requests-binders.md` and `portal-identity.md`) |
 | Version | section `portal-pbc` v1 (additive to C5 v1 and the v1.1 portal half; no C5 version bump) |
-| Status | stub (R-01-T01, 2026-10-24). Every route answers 404 with its flag off and 501 `not_implemented` with it on until its task lands: R-01-T07 (binders, request), R-01-T08 (undos), R-01-T09 (drop, drop poll, void), R-01-T13 (room, suggest) |
+| Status | stub (R-01-T01, 2026-10-24); partly live. Every route answers 404 with its flag off. Live with it on: the binder picker, binder and request (R-01-T07, 2026-10-25; DEC-333) and the two undos (R-01-T08, 2026-10-25; DEC-334). Still 501 `not_implemented` with the flag on until their task lands: R-01-T09 (drop, drop poll, void), R-01-T13 (room, suggest) |
 | Provider epic | R-01 (portal read models: AY; requests and evidence writes: N), on P-06's binder and request routes and P-08's portal identity |
 | Consumers | R-01 (POR-03, POR-04, POR-14), T-02 (POR-05 "upload if yes" falls back to POR-04's upload), C-01 (POR-11 reuses the Request kit rows and the POR-04 `question` slot), A-09 (POR-23 reuses `ScopedRequestRoom` and the room projection), R-03 (mobile capture feeds POR-03 and POR-04), N-03 (INB-04 threads on POR-04 comments), A-01 and P-06 (the firm-side void row-menu) |
 | Freeze sprint | with the rest of C5 (S3, freeze Fri 2026-12-11) for the shapes here; R-01-T36 freezes the section |
@@ -71,6 +71,7 @@ Identifier-only facts (ADR P-36).
 |---|---|---|
 | 404 | `{"detail": "not_found"}` | the flag is off; a binder, request, batch or room outside the caller's grant, a draft, an internal-only or delegated item, or a forged id (INV-4); one answer for every case |
 | 409 | `{"detail": "firm_already_acted", "facts": {"request_item_id" \| "binder_id"}}` | an undo after the firm waived, returned or accepted the request, or returned or sent a request in the binder (DEC-24) |
+| 409 | `{"detail": "nothing_to_undo", "facts": {"request_item_id" \| "binder_id"}}` | a second Undo, or an Undo of something never ignored or marked done (DEC-334) |
 | 409 | `{"detail": "not_voidable", "facts": {"fulfilment_id"}}` | a void of a human or agent fulfilment, an accepted one, or one already void |
 | 409 | `{"detail": "evidence_accepted", "facts": {"version_id"}}` | P-06's withdraw of an accepted or emailed version (unchanged) |
 | 413 | `{"detail": "file_too_large", "facts": {"limit_mb": 50}}` | a drop over 50 MB (DEC-58 c) |
@@ -129,7 +130,7 @@ Additive changes in place with a line here. Breaking changes ship beside the old
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| portal-pbc v1 | — | — | 2026-10-24: stub (R-01-T01) |
+| portal-pbc v1 | — | — | 2026-10-24: stub (R-01-T01). 2026-10-25: documents reads live (R-01-T07, DEC-333); undos live, Undo open until the firm acts, a second Undo 409 `nothing_to_undo`, another person's 403 (R-01-T08, DEC-334); no shape change |
 
 ## 11. Open points
 - DEC-240: the `portal_documents.read` spelling, the third-party role and `delegated_only` deferred to R-01-T13, the return reason codes, the drop poll as a read action, and the stub's placement by module owner.

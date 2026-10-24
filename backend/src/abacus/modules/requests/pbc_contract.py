@@ -6,8 +6,9 @@ the firm's void of a wrong rule fulfilment. The Ignore itself and Mark as Done a
 (`contract.py`); R-01's additive note on the Ignore is P-06's `IgnoreIn.note`, stored as a shared
 comment with origin `ignore_note` (R-01-T08).
 
-Behind `portal.documents_v2` (the two undos) and `portal.drop_sort` (the void): off, each route
-answers 404; on, 501 `not_implemented` until R-01-T08 (undos) and R-01-T09 (void) land. An undo
+Behind `portal.documents_v2` (the two undos, live since R-01-T08) and `portal.drop_sort` (the
+void): off, each route answers 404; the void answers 501 `not_implemented` with its flag on until
+R-01-T09 lands. An undo
 after the firm has acted on the request or the binder answers 409 `firm_already_acted`; a void of
 anything but an unaccepted rule fulfilment answers 409 `not_voidable`. The void is human only: the
 agent is denied `fulfilment.confirm` (INV-1).
@@ -27,7 +28,9 @@ from abacus.kernel._statuses import RequestStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.requests import binders, lifecycle
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -80,6 +83,12 @@ class FulfilmentVoidedOut(BaseModel):
     voided_at: Annotated[datetime, classified("internal")]
 
 
+async def _documents_on(ctx: AuthContext) -> None:
+    """`portal.documents_v2` off: the undos answer 404."""
+    if not await flag_enabled(ctx.tenant, PORTAL_DOCUMENTS_V2):
+        raise NotFound(PORTAL_DOCUMENTS_V2.name)
+
+
 async def _stub(ctx: AuthContext, flag: Flag) -> NoReturn:
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
@@ -94,28 +103,63 @@ pbc_firm_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["
     "/request-items/{item_id}/ignore/undo",
     action="request_item.ignore",
     response_model=IgnoreUndoneOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_ignore_route(
     item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IgnoreUndoneOut:
     """The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until
-    the firm acts on the request (409 `firm_already_acted`, DEC-24)."""
-    await _stub(ctx, PORTAL_DOCUMENTS_V2)
+    the firm acts on the request (409 `firm_already_acted`, DEC-24, DEC-334). A retry with the
+    same key is authorised again, then answers what the first answered."""
+    await _documents_on(ctx)
+    await lifecycle.check_ignore(ctx, item_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        at = await lifecycle.undo_ignore(ctx, item_id)
+        out = IgnoreUndoneOut(request_item_id=item_id, client_status="to_do", undone_at=at)
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="request_item.ignore_undo",
+        key=idempotency_key,
+        body={"request_item_id": str(item_id)},
+        run=run,
+    )
+    return IgnoreUndoneOut.model_validate(stored.body)
 
 
 @pbc_portal_router.post(
     "/binders/{binder_id}/mark-done/undo",
     action="binder.mark_done",
     response_model=MarkDoneUndoneOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_mark_done_route(
     binder_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> MarkDoneUndoneOut:
     """The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a
-    new one (409 `firm_already_acted`)."""
-    await _stub(ctx, PORTAL_DOCUMENTS_V2)
+    new one (409 `firm_already_acted`, DEC-334)."""
+    await _documents_on(ctx)
+    await binders.check_action(ctx, binder_id, "binder.mark_done")
+
+    async def run() -> tuple[int, dict[str, object]]:
+        view = await binders.undo_mark_done(ctx, binder_id)
+        out = MarkDoneUndoneOut(
+            binder_id=view.binder_id,
+            mark_done="tonal" if view.mark_done == "tonal" else "ready",
+            undone_at=view.undone_at,
+        )
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="binder.mark_done_undo",
+        key=idempotency_key,
+        body={"binder_id": str(binder_id)},
+        run=run,
+    )
+    return MarkDoneUndoneOut.model_validate(stored.body)
 
 
 @pbc_firm_router.post(

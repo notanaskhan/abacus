@@ -130,3 +130,21 @@ class Seeder:
             engagement,
             who.user_id,
         )
+
+    async def client(self, tenant: uuid.UUID, engagement: uuid.UUID, name: str) -> Person:
+        """A client principal on the engagement: a client membership and an engagement-scope
+        owner grant (the matrix's client admin; R-01-T08)."""
+        who = await self.person(tenant, name)
+        await self.run(
+            "UPDATE memberships SET kind = 'client' WHERE tenant_id = $1 AND user_id = $2",
+            tenant,
+            who.user_id,
+        )
+        await self.run(
+            "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+            "VALUES ($1, $2, 'owner', 'engagement', $3)",
+            tenant,
+            who.user_id,
+            engagement,
+        )
+        return who

@@ -322,6 +322,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.findings.FindingInvalid
+  firm_already_acted:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_undo.FirmAlreadyActed
+    summary: 'The firm has acted on the request or the binder since: the client''s Undo is closed.'
   firm_role_held:
     status: 409
     raised_by:
@@ -692,6 +697,11 @@ codes:
     raised_by:
     - abacus.modules.agents.draft_start.NothingToPublish
     summary: No approved drafted guidance on this version yet.
+  nothing_to_undo:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_undo.NothingToUndo
+    summary: The act was already undone (a second Undo), or never happened.
   notify_not_member:
     status: 422
     raised_by:

@@ -66,8 +66,10 @@ from abacus.modules.identity.api import (
     resolve_scope,
     void_grant,
 )
+from abacus.modules.requests.client_undo import FIRM_ITEM_ACTS, FirmAlreadyActed, NothingToUndo
 from abacus.modules.requests.events import (
     BinderClosed,
+    BinderMarkDoneUndone,
     BinderMarkedDone,
     BinderPublished,
     BinderUnpublished,
@@ -277,6 +279,13 @@ class ActivityPage:
     next_cursor: str | None
     total: int
     total_capped: bool
+
+
+@dataclass(frozen=True)
+class MarkDoneUndoneView:
+    binder_id: UUID
+    mark_done: str  # tonal (requests open) or ready
+    undone_at: datetime
 
 
 @dataclass(frozen=True)
@@ -1052,6 +1061,62 @@ async def mark_done(ctx: AuthContext, binder_id: UUID) -> MarkedDoneView:
             )
         )
     return MarkedDoneView(binder_id, "complete", now, open_count)
+
+
+async def firm_acted_since(
+    session: AsyncSession, items: Sequence[RequestItem], since: datetime
+) -> bool:
+    """Whether the firm sent, waived or returned a request of the binder after `since` (DEC-24:
+    a client's Undo of Mark as Done closes then)."""
+    if any(i.sent_at is not None and i.sent_at > since for i in items):
+        return True
+    if any(i.na_at is not None and i.na_at > since for i in items):
+        return True
+    events = await audit_of_targets(session, [("request_item", i.id) for i in items], None, 500)
+    return any(e.at > since and e.action in FIRM_ITEM_ACTS for e in events)
+
+
+async def undo_mark_done(ctx: AuthContext, binder_id: UUID) -> MarkDoneUndoneView:
+    """R-01-T08: the client's Undo of Mark as Done, a compensating event (DEC-24, DEC-334): the
+    `binder.marked_done` event stays, `binder.mark_done_undone` is appended and the binder is
+    Published again with its mark-done stamps cleared (BND-02's "Marked done by …" goes). Open
+    until the firm sends, waives or returns a request of the binder (409 `firm_already_acted`);
+    the marker's own (403 for another person); once (409 `nothing_to_undo`)."""
+    _human(ctx, "binder.mark_done")
+    async with uow(ctx.tenant) as tx:
+        binder, _ref, _resource = await _locked(tx, ctx, binder_id, "binder.mark_done")
+        if binder.status == "published" and binder.marked_done_at is None:
+            raise NothingToUndo(facts={"binder_id": str(binder.id)})
+        if binder.status != "complete" or binder.marked_done_at is None:
+            raise FirmAlreadyActed(facts={"binder_id": str(binder.id)})
+        if binder.marked_done_by != ctx.user_id:
+            raise Forbidden("binder.mark_done", "role")
+        items = await binder_items(tx.session, binder.id)
+        if await firm_acted_since(tx.session, items, binder.marked_done_at):
+            raise FirmAlreadyActed(facts={"binder_id": str(binder.id)})
+        now = await clock.now(ctx.tenant)
+        await set_binder(
+            tx.session,
+            binder.id,
+            allowed_from=("complete",),
+            status="published",
+            marked_done_at=None,
+            marked_done_by=None,
+        )
+        await touch_client_activity(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            binder_id=binder.id,
+            work_item_id=binder.work_item_id,
+            status="published",
+            at=now,
+        )
+        tx.record(
+            "binder.mark_done_undone", target=Target("binder", binder.id), scope=_scope(binder)
+        )
+        tx.emit(BinderMarkDoneUndone(binder_id=binder.id, engagement_id=binder.engagement_id))
+        open_count = sum(1 for i in items if i.client_visible and i.status not in DONE)
+    return MarkDoneUndoneView(binder.id, "tonal" if open_count else "ready", now)
 
 
 # --- Close on C1 --------------------------------------------------------------------------------
