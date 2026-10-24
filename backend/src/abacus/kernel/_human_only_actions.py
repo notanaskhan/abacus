@@ -12,6 +12,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "engagement.acceptance_recorded",
         "engagement.accepted",
         "engagement.letter_recorded",
+        "eqr.eligibility_approved",
         "evidence.accepted",
         "firm.ai_client_data_opted_in",
         "firm_export.approved",
@@ -36,5 +37,6 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "sample.approved",
         "sign_off.recorded",
         "statement.approved",
+        "team.approved",
     }
 )

@@ -3845,7 +3845,9 @@ export const putNasMutation = (options?: Partial<Options<PutNasData>>): UseMutat
 /**
  * Send Reminders Route
  *
- * Sent by the person clicking (no schedule); `independence.reminded` per member.
+ * Sent by the person clicking (no schedule); `independence.reminded` per member and the
+ * `independence.requested` notification again. Live with ENG-05 (P-07-T30) behind
+ * `engagements.v2`; 422 for a member whose confirmation is not requested or declined.
  */
 export const sendRemindersMutation = (options?: Partial<Options<SendRemindersData>>): UseMutationOptions<SendRemindersResponse, SendRemindersError, Options<SendRemindersData>> => {
     const mutationOptions: UseMutationOptions<SendRemindersResponse, SendRemindersError, Options<SendRemindersData>> = {
@@ -6087,6 +6089,8 @@ export const teamQueryKey = (options: Options<TeamData>) => createQueryKey('team
 
 /**
  * Team Route
+ *
+ * SPEC-017; P-07-T30 adds ENG-05's hours, portal flag, joined date and independence.
  */
 export const teamOptions = (options: Options<TeamData>) => queryOptions<TeamResponse, TeamError, TeamResponse, ReturnType<typeof teamQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

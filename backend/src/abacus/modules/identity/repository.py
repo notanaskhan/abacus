@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Final, Literal, cast, get_args
 from uuid import UUID
 
@@ -20,6 +21,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     MetaData,
+    Numeric,
     Select,
     String,
     Table,
@@ -66,6 +68,10 @@ engagement_members = Table(
     Column("engagement_id", PgUUID(as_uuid=True), nullable=False),
     Column("user_id", PgUUID(as_uuid=True), nullable=False),
     Column("role", String, nullable=False),
+    # P-07-T30 (0155): ENG-05's hours, POR-02's team card and when the person joined the team.
+    Column("budget_hours", Numeric(7, 1)),
+    Column("shown_on_portal", Boolean, nullable=False),
+    Column("proposed_at", DateTime(timezone=True)),
 )
 
 
@@ -602,6 +608,65 @@ async def engagement_members_of(
             )
         ).all()
     return [(cast(UUID, row.user_id), cast(EngagementRole, row.role)) for row in rows]
+
+
+@dataclass(frozen=True)
+class MemberDetail:
+    """A firm team row with ENG-05's extras (P-07-T30)."""
+
+    user_id: UUID
+    role: EngagementRole
+    budget_hours: Decimal | None
+    shown_on_portal: bool
+    proposed_at: datetime | None
+
+
+async def member_details_of(tenant: TenantContext, engagement_id: UUID) -> list[MemberDetail]:
+    """An engagement's firm team with hours, the portal flag and when each joined, for a caller
+    that authorised a read of the engagement (P-07-T30; LIST_EXEMPT)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(
+                    engagement_members.c.user_id,
+                    engagement_members.c.role,
+                    engagement_members.c.budget_hours,
+                    engagement_members.c.shown_on_portal,
+                    engagement_members.c.proposed_at,
+                )
+                .where(engagement_members.c.engagement_id == engagement_id)
+                .where(engagement_members.c.role.in_(sorted(ENGAGEMENT_ROLES)))
+                .order_by(engagement_members.c.role, engagement_members.c.user_id)
+            )
+        ).all()
+    return [
+        MemberDetail(
+            cast(UUID, r.user_id),
+            cast(EngagementRole, r.role),
+            cast(Decimal | None, r.budget_hours),
+            bool(r.shown_on_portal),
+            cast(datetime | None, r.proposed_at),
+        )
+        for r in rows
+    ]
+
+
+async def set_member_columns(
+    session: AsyncSession, engagement_id: UUID, user_id: UUID, values: dict[str, object]
+) -> bool:
+    """Set `budget_hours` or `shown_on_portal` on a firm team row; False if there is no such
+    row. Only those two columns are the app's to update (0155)."""
+    if not values or set(values) - {"budget_hours", "shown_on_portal"}:
+        raise ValueError("only budget_hours and shown_on_portal are updatable")
+    found = await session.execute(
+        update(engagement_members)
+        .where(engagement_members.c.engagement_id == engagement_id)
+        .where(engagement_members.c.user_id == user_id)
+        .where(engagement_members.c.role.in_(sorted(ENGAGEMENT_ROLES)))
+        .values(**values)
+        .returning(engagement_members.c.user_id)
+    )
+    return found.scalar_one_or_none() is not None
 
 
 async def display_names(user_ids: list[UUID]) -> dict[UUID, str]:

@@ -5,8 +5,8 @@ DEC-326. The conflict and screening half is `organisations.conflicts_contract`.
 - **Acceptance (CLI-07)** and **independence (CLI-08)** routes sit behind
   `engagements.acceptance_v2`: off, 404; on, 501 `not_implemented` until P-07-T35 (acceptance)
   and P-07-T41 (independence v2) implement them.
-- **Team and roles (ENG-05)** routes sit behind `engagements.v2` (the ENG-05 screen's flag): off,
-  404; on, 501 until P-07-T30.
+- **Team and roles (ENG-05)** routes, and the confirmation requests, sit behind `engagements.v2`
+  (the ENG-05 screen's flag): off, 404; on, live since P-07-T30 (`engagements.team`).
 
 Every decision and confirmation here is a person's: `acceptance.decide`, `independence.confirm`,
 `independence.conclude`, `team.approve` and `eqr.approve_eligibility` deny the agent and the
@@ -35,6 +35,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.engagements import team as team_model
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -61,7 +62,7 @@ LongText = Annotated[MultiLineText, Field(min_length=1, max_length=8000)]
 AnswerValue = str | int | bool | None
 
 
-# --- Errors (`docs/architecture/error-codes.yaml`) ----------------------------------------------
+# --- Errors (`error-codes.yaml`; ENG-05's are in `team_errors.py`) -------------------------------
 
 
 class DecisionLocked(DomainConflict):
@@ -100,25 +101,6 @@ class NotSelf(DomainConflict):
     """Only the person themself confirms or declines their own independence."""
 
     code = "not_self"
-
-
-class EqrOnTeam(DomainConflict):
-    """The engagement quality reviewer is never on the team: pick someone who isn't, or keep the
-    EQR off the team roles."""
-
-    code = "eqr_on_team"
-
-
-class EqrApproverIsEp(DomainConflict):
-    """The EQR's eligibility is approved by the quality owner, never the engagement partner."""
-
-    code = "eqr_approver_is_ep"
-
-
-class EqrNotEligible(DomainConflict):
-    """The candidate fails an eligibility check (`facts.checks`): pick an eligible reviewer."""
-
-    code = "eqr_not_eligible"
 
 
 # --- Shared parts -------------------------------------------------------------------------------
@@ -630,8 +612,10 @@ async def _acceptance_stub(ctx: AuthContext) -> NoReturn:
     await _stub_on(ctx, ENGAGEMENTS_ACCEPTANCE_V2)
 
 
-async def _team_stub(ctx: AuthContext) -> NoReturn:
-    await _stub_on(ctx, ENGAGEMENTS_V2)
+async def _team_gate(ctx: AuthContext) -> None:
+    """ENG-05's rows are live (P-07-T30) behind the screen's flag."""
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
+        raise NotFound(ENGAGEMENTS_V2.name)
 
 
 acceptance_router = AbacusRouter(prefix="/v1/engagements", tags=["acceptance"])
@@ -810,11 +794,14 @@ async def decline_independence_route(
     f"{INDEPENDENCE}/reminders",
     action="independence.remind",
     response_model=RemindersOut,
-    errors=(501,),
 )
 async def send_reminders_route(engagement_id: UUID, body: RemindersIn, ctx: Ctx) -> RemindersOut:
-    """Sent by the person clicking (no schedule); `independence.reminded` per member."""
-    await _acceptance_stub(ctx)
+    """Sent by the person clicking (no schedule); `independence.reminded` per member and the
+    `independence.requested` notification again. Live with ENG-05 (P-07-T30) behind
+    `engagements.v2`; 422 for a member whose confirmation is not requested or declined."""
+    await _team_gate(ctx)
+    reminded = await team_model.remind_independence(ctx, engagement_id, body.user_ids)
+    return RemindersOut(reminded_user_ids=reminded)
 
 
 @independence_router.get(
@@ -879,58 +866,83 @@ async def conclude_independence_route(
     await _acceptance_stub(ctx)
 
 
+def _approval_out(a: team_model.TeamApproval) -> TeamApprovalOut:
+    return TeamApprovalOut(
+        engagement_id=a.engagement_id,
+        approved_by=a.approved_by,
+        approved_by_name=a.approved_by_name,
+        approved_at=a.approved_at,
+        changed=a.changed,
+        added_since=a.added_since,
+    )
+
+
+def _checks_out(checks: list[team_model.Check]) -> list[EqrCheckOut]:
+    return [EqrCheckOut(code=c.code, result=c.result, count=c.count, year=c.year) for c in checks]
+
+
 @team_roles_router.get(
-    f"{TEAM}/approval",
-    action="engagement.read_metadata",
-    response_model=TeamApprovalOut,
-    errors=(501,),
+    f"{TEAM}/approval", action="engagement.read_metadata", response_model=TeamApprovalOut
 )
 async def get_team_approval_route(engagement_id: UUID, ctx: Ctx) -> TeamApprovalOut:
     """ENG-05's footer facts."""
-    await _team_stub(ctx)
+    await _team_gate(ctx)
+    return _approval_out(await team_model.team_approval(ctx, engagement_id))
 
 
 @team_roles_router.post(
-    f"{TEAM}/approve",
-    action="team.approve",
-    response_model=TeamApprovalOut,
-    status_code=201,
-    errors=(501,),
+    f"{TEAM}/approve", action="team.approve", response_model=TeamApprovalOut, status_code=201
 )
 async def approve_team_route(engagement_id: UUID, ctx: Ctx) -> TeamApprovalOut:
     """Human-only: the EP approves the current team (an insert-only row); `team.approved`."""
-    await _team_stub(ctx)
+    await _team_gate(ctx)
+    return _approval_out(await team_model.approve_team(ctx, engagement_id))
 
 
 @team_roles_router.put(
     f"{TEAM}/{{user_id}}/portal-visibility",
     action="engagement.update",
     response_model=PortalVisibilityOut,
-    errors=(501,),
 )
 async def put_portal_visibility_route(
     engagement_id: UUID, user_id: UUID, body: PortalVisibilityIn, ctx: Ctx
 ) -> PortalVisibilityOut:
     """POR-02's team card; `team.portal_visibility_changed`."""
-    await _team_stub(ctx)
+    await _team_gate(ctx)
+    await team_model.set_portal_visibility(ctx, engagement_id, user_id, body.shown_on_portal)
+    return PortalVisibilityOut(user_id=user_id, shown_on_portal=body.shown_on_portal)
 
 
 @team_roles_router.get(
-    f"{EQR}/candidates",
-    action="eqr.assign",
-    response_model=list[EqrCandidateOut],
-    errors=(501,),
+    f"{EQR}/candidates", action="eqr.assign", response_model=list[EqrCandidateOut]
 )
 async def eqr_candidates_route(engagement_id: UUID, ctx: Ctx) -> list[EqrCandidateOut]:
     """ENG-05 c: eligibility per candidate (not on the team, cooling-off, competence,
     independence, capacity)."""
-    await _team_stub(ctx)
+    await _team_gate(ctx)
+    return [
+        EqrCandidateOut(
+            user_id=c.user_id,
+            display_name=c.display_name,
+            eligibility=c.eligibility,
+            checks=_checks_out(c.checks),
+            current=c.current,
+        )
+        for c in await team_model.eqr_candidates(ctx, engagement_id)
+    ]
 
 
-@team_roles_router.post(EQR, action="eqr.assign", response_model=EqrOut, errors=(409, 501))
+@team_roles_router.post(EQR, action="eqr.assign", response_model=EqrOut, errors=(409,))
 async def assign_eqr_route(engagement_id: UUID, body: EqrIn, ctx: Ctx) -> EqrOut:
     """Replaces the EQR; 409 `eqr_on_team`, 409 `eqr_not_eligible`; `eqr.assigned`."""
-    await _team_stub(ctx)
+    await _team_gate(ctx)
+    checks = await team_model.assign_eqr(ctx, engagement_id, body.user_id)
+    return EqrOut(
+        engagement_id=engagement_id,
+        user_id=body.user_id,
+        eligibility="eligible",
+        checks=_checks_out(checks),
+    )
 
 
 @team_roles_router.post(
@@ -938,10 +950,20 @@ async def assign_eqr_route(engagement_id: UUID, body: EqrIn, ctx: Ctx) -> EqrOut
     action="eqr.approve_eligibility",
     response_model=EqrEligibilityApprovalOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_eqr_eligibility_route(
     engagement_id: UUID, body: EqrEligibilityApprovalIn, ctx: Ctx
 ) -> EqrEligibilityApprovalOut:
     """Human-only, the quality owner: 409 `eqr_approver_is_ep`; `eqr.eligibility_approved`."""
-    await _team_stub(ctx)
+    await _team_gate(ctx)
+    a = await team_model.approve_eqr_eligibility(ctx, engagement_id, body.candidate_user_id)
+    return EqrEligibilityApprovalOut(
+        id=a.id,
+        engagement_id=a.engagement_id,
+        candidate_user_id=a.candidate_user_id,
+        result=a.result,
+        checks=_checks_out(a.checks),
+        approved_by=a.approved_by,
+        approved_at=a.approved_at,
+    )

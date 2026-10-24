@@ -19000,9 +19000,13 @@ export type TeamApprovalOut = {
  */
 export type TeamMemberIn = {
     /**
+     * Budget Hours
+     */
+    budget_hours?: number | string | null;
+    /**
      * Role
      */
-    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer' | 'specialist';
     /**
      * User Id
      */
@@ -19029,12 +19033,56 @@ export type TeamMemberOut = {
 
 /**
  * TeamRoleIn
+ *
+ * "Change role…" and "Edit hours…": either or both; an absent field is unchanged
+ * (`budget_hours: null` clears the hours).
  */
 export type TeamRoleIn = {
     /**
+     * Budget Hours
+     */
+    budget_hours?: number | string | null;
+    /**
      * Role
      */
-    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer';
+    role?: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer' | 'specialist' | null;
+};
+
+/**
+ * TeamRosterMemberOut
+ *
+ * The team routes' rows (P-07-T30, ENG-05): hours, the portal flag, when the person joined
+ * and their independence confirmation here. C1's engagement projection keeps `TeamMemberOut`.
+ */
+export type TeamRosterMemberOut = {
+    /**
+     * Budget Hours
+     */
+    budget_hours?: string | null;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Independence
+     */
+    independence?: 'requested' | 'confirmed' | 'declined' | null;
+    /**
+     * Proposed At
+     */
+    proposed_at?: string | null;
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'manager' | 'senior' | 'staff' | 'reviewer' | 'eqr_reviewer' | 'specialist' | 'client_service';
+    /**
+     * Shown On Portal
+     */
+    shown_on_portal?: boolean;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -27929,10 +27977,6 @@ export type AssignEqrErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssignEqrError = AssignEqrErrors[keyof AssignEqrErrors];
@@ -27985,10 +28029,6 @@ export type EqrCandidatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EqrCandidatesError = EqrCandidatesErrors[keyof EqrCandidatesErrors];
@@ -28047,10 +28087,6 @@ export type ApproveEqrEligibilityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveEqrEligibilityError = ApproveEqrEligibilityErrors[keyof ApproveEqrEligibilityErrors];
@@ -30830,10 +30866,6 @@ export type SendRemindersErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendRemindersError = SendRemindersErrors[keyof SendRemindersErrors];
@@ -37550,7 +37582,7 @@ export type TeamResponses = {
      *
      * Successful Response
      */
-    200: Array<TeamMemberOut>;
+    200: Array<TeamRosterMemberOut>;
 };
 
 export type TeamResponse = TeamResponses[keyof TeamResponses];
@@ -37604,7 +37636,7 @@ export type AddTeamMemberResponses = {
      *
      * Successful Response
      */
-    201: Array<TeamMemberOut>;
+    201: Array<TeamRosterMemberOut>;
 };
 
 export type AddTeamMemberResponse = AddTeamMemberResponses[keyof AddTeamMemberResponses];
@@ -37648,10 +37680,6 @@ export type GetTeamApprovalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetTeamApprovalError = GetTeamApprovalErrors[keyof GetTeamApprovalErrors];
@@ -37704,10 +37732,6 @@ export type ApproveTeamErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveTeamError = ApproveTeamErrors[keyof ApproveTeamErrors];
@@ -37832,7 +37856,7 @@ export type RemoveTeamMemberResponses = {
      *
      * Successful Response
      */
-    200: Array<TeamMemberOut>;
+    200: Array<TeamRosterMemberOut>;
 };
 
 export type RemoveTeamMemberResponse = RemoveTeamMemberResponses[keyof RemoveTeamMemberResponses];
@@ -37894,7 +37918,7 @@ export type ChangeTeamRoleResponses = {
      *
      * Successful Response
      */
-    200: Array<TeamMemberOut>;
+    200: Array<TeamRosterMemberOut>;
 };
 
 export type ChangeTeamRoleResponse = ChangeTeamRoleResponses[keyof ChangeTeamRoleResponses];
@@ -37942,10 +37966,6 @@ export type PutPortalVisibilityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutPortalVisibilityError = PutPortalVisibilityErrors[keyof PutPortalVisibilityErrors];

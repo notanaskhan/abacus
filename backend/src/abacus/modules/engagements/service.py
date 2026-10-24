@@ -9,7 +9,8 @@ import hashlib
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Literal, cast
+from decimal import Decimal
+from typing import TYPE_CHECKING, Final, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import ColumnElement, Select, select
@@ -41,6 +42,7 @@ from abacus.modules.engagements.repository import (
     set_methodology_version,
     version_rows,
 )
+from abacus.modules.engagements.team_errors import EqrOnTeam
 
 if TYPE_CHECKING:
     from abacus.modules.engagements.roll_forward import RollForward
@@ -75,6 +77,8 @@ from abacus.modules.identity.api import (
     remove_member,
     resend_invitation,
     revoke_invitation,
+    set_member_hours,
+    team_standing,
     walled_from,
 )
 from abacus.modules.organisations.api import (
@@ -688,22 +692,46 @@ async def team_candidates(ctx: AuthContext, engagement_id: UUID) -> list[Candida
     return await candidates(ctx.tenant, engagement_id, ref.client_id)
 
 
+class _Keep:
+    """`change_team_role`'s "leave the hours as they are"."""
+
+
+KEEP_HOURS: Final = _Keep()
+
+
 async def add_to_team(
-    ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: StaffRole
+    ctx: AuthContext,
+    engagement_id: UUID,
+    user_id: UUID,
+    role: StaffRole,
+    budget_hours: Decimal | None = None,
 ) -> None:
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.member_add", ref.resource())
         await add_member(tx, ctx, engagement_id, ref.client_id, user_id, role)
+        if budget_hours is not None:  # P-07-T30: ENG-05's hours
+            await set_member_hours(tx, engagement_id, user_id, budget_hours)
 
 
 async def change_team_role(
-    ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: StaffRole
+    ctx: AuthContext,
+    engagement_id: UUID,
+    user_id: UUID,
+    role: StaffRole | None,
+    budget_hours: Decimal | _Keep | None = KEEP_HOURS,
 ) -> None:
+    """A role change, an hours change, or both. The EQR is never given a team role (409
+    `eqr_on_team`, P-07-T30): replace them through `POST …/eqr` instead."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.member_add", ref.resource())
-        await change_role(tx, ctx, engagement_id, user_id, role)
+        if await team_standing(ctx.tenant, engagement_id, user_id) == "eqr":
+            raise EqrOnTeam(facts={"user_id": str(user_id)})
+        if role is not None:
+            await change_role(tx, ctx, engagement_id, user_id, role)
+        if not isinstance(budget_hours, _Keep):
+            await set_member_hours(tx, engagement_id, user_id, budget_hours)
 
 
 async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID) -> None:

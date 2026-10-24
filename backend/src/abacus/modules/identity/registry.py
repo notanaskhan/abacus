@@ -96,6 +96,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"kms_key_arn", "kms_key_status", "kms_replica_verified_at"}  # Q-01-T19: key workflow
     ),
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
+    # P-07-T30 (0155): ENG-05's hours and POR-02's team card; roles stay behind the definers.
+    "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
     "memberships": frozenset(
         {"default_office_filter_id"}  # P-01-T04: the person's own, via /v1/me
         # G-01-T05 (0142): a person's template and attributes; firm roles stay behind definers.

@@ -39873,6 +39873,23 @@
       "TeamMemberIn": {
         "additionalProperties": false,
         "properties": {
+          "budget_hours": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,8}0*$)\\d{0,6}\\.\\d{0,1}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Budget Hours"
+          },
           "role": {
             "cls": "internal",
             "enum": [
@@ -39880,7 +39897,8 @@
               "manager",
               "senior",
               "staff",
-              "reviewer"
+              "reviewer",
+              "specialist"
             ],
             "title": "Role",
             "type": "string"
@@ -39938,7 +39956,100 @@
       },
       "TeamRoleIn": {
         "additionalProperties": false,
+        "description": "\"Change role\u2026\" and \"Edit hours\u2026\": either or both; an absent field is unchanged\n(`budget_hours: null` clears the hours).",
         "properties": {
+          "budget_hours": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,6}|(?=[\\d.]{1,8}0*$)\\d{0,6}\\.\\d{0,1}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Budget Hours"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "engagement_partner",
+                  "manager",
+                  "senior",
+                  "staff",
+                  "reviewer",
+                  "specialist"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Role"
+          }
+        },
+        "title": "TeamRoleIn",
+        "type": "object"
+      },
+      "TeamRosterMemberOut": {
+        "description": "The team routes' rows (P-07-T30, ENG-05): hours, the portal flag, when the person joined\nand their independence confirmation here. C1's engagement projection keeps `TeamMemberOut`.",
+        "properties": {
+          "budget_hours": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Budget Hours"
+          },
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "independence": {
+            "anyOf": [
+              {
+                "enum": [
+                  "requested",
+                  "confirmed",
+                  "declined"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Independence"
+          },
+          "proposed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposed At"
+          },
           "role": {
             "cls": "internal",
             "enum": [
@@ -39946,16 +40057,33 @@
               "manager",
               "senior",
               "staff",
-              "reviewer"
+              "reviewer",
+              "eqr_reviewer",
+              "specialist",
+              "client_service"
             ],
             "title": "Role",
+            "type": "string"
+          },
+          "shown_on_portal": {
+            "cls": "internal",
+            "default": false,
+            "title": "Shown On Portal",
+            "type": "boolean"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
             "type": "string"
           }
         },
         "required": [
+          "user_id",
+          "display_name",
           "role"
         ],
-        "title": "TeamRoleIn",
+        "title": "TeamRosterMemberOut",
         "type": "object"
       },
       "TelemetryReceivedOut": {
@@ -59688,16 +59816,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assign Eqr Route",
@@ -59809,16 +59927,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Eqr Candidates Route",
@@ -59946,16 +60054,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Eqr Eligibility Route",
@@ -65890,7 +65988,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/reminders": {
       "post": {
-        "description": "Sent by the person clicking (no schedule); `independence.reminded` per member.",
+        "description": "Sent by the person clicking (no schedule); `independence.reminded` per member and the\n`independence.requested` notification again. Live with ENG-05 (P-07-T30) behind\n`engagements.v2`; 422 for a member whose confirmation is not requested or declined.",
         "operationId": "send_reminders",
         "parameters": [
           {
@@ -65996,16 +66094,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Reminders Route",
@@ -80500,6 +80588,7 @@
     },
     "/v1/engagements/{engagement_id}/team": {
       "get": {
+        "description": "SPEC-017; P-07-T30 adds ENG-05's hours, portal flag, joined date and independence.",
         "operationId": "team",
         "parameters": [
           {
@@ -80551,7 +80640,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/TeamMemberOut"
+                    "$ref": "#/components/schemas/TeamRosterMemberOut"
                   },
                   "title": "Response Team",
                   "type": "array"
@@ -80669,7 +80758,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/TeamMemberOut"
+                    "$ref": "#/components/schemas/TeamRosterMemberOut"
                   },
                   "title": "Response Add Team Member",
                   "type": "array"
@@ -80824,16 +80913,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Team Approval Route",
@@ -80941,16 +81020,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Team Route",
@@ -81133,7 +81202,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/TeamMemberOut"
+                    "$ref": "#/components/schemas/TeamRosterMemberOut"
                   },
                   "title": "Response Remove Team Member",
                   "type": "array"
@@ -81271,7 +81340,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/TeamMemberOut"
+                    "$ref": "#/components/schemas/TeamRosterMemberOut"
                   },
                   "title": "Response Change Team Role",
                   "type": "array"
@@ -81456,16 +81525,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Portal Visibility Route",

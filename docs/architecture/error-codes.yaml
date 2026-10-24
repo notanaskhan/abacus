@@ -310,17 +310,18 @@ codes:
   eqr_approver_is_ep:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.EqrApproverIsEp
+    - abacus.modules.engagements.team_errors.EqrApproverIsEp
     summary: The EQR's eligibility is approved by the quality owner, never the engagement partner.
   eqr_not_eligible:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.EqrNotEligible
-    summary: 'The candidate fails an eligibility check (`facts.checks`): pick an eligible reviewer.'
+    - abacus.modules.engagements.team_errors.EqrNotEligible
+    summary: 'The candidate fails an eligibility check (each failing check is a fact): pick an eligible
+      reviewer.'
   eqr_on_team:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.EqrOnTeam
+    - abacus.modules.engagements.team_errors.EqrOnTeam
     summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
       the EQR off the team roles.'
   evidence_accepted:

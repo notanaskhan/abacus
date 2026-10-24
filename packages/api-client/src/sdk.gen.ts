@@ -2244,7 +2244,9 @@ export const putNas = <ThrowOnError extends boolean = false>(options: Options<Pu
 /**
  * Send Reminders Route
  *
- * Sent by the person clicking (no schedule); `independence.reminded` per member.
+ * Sent by the person clicking (no schedule); `independence.reminded` per member and the
+ * `independence.requested` notification again. Live with ENG-05 (P-07-T30) behind
+ * `engagements.v2`; 422 for a member whose confirmation is not requested or declined.
  */
 export const sendReminders = <ThrowOnError extends boolean = false>(options: Options<SendRemindersData, ThrowOnError>): RequestResult<SendRemindersResponses, SendRemindersErrors, ThrowOnError> => (options.client ?? client).post<SendRemindersResponses, SendRemindersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3672,6 +3674,8 @@ export const setup = <ThrowOnError extends boolean = false>(options: Options<Set
 
 /**
  * Team Route
+ *
+ * SPEC-017; P-07-T30 adds ENG-05's hours, portal flag, joined date and independence.
  */
 export const team = <ThrowOnError extends boolean = false>(options: Options<TeamData, ThrowOnError>): RequestResult<TeamResponses, TeamErrors, ThrowOnError> => (options.client ?? client).get<TeamResponses, TeamErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

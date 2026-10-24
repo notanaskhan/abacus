@@ -66,8 +66,17 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{CHECK}/{{check_id}}/results/{{result_id}}/clear"): "conflict.clear",
     ("post", "/v1/screening-records"): "screening.record",
 }
-# ENG-05's team rows (P-07-T30) are live; the rest wait for T35, T36 and T41.
-LIVE: set[tuple[str, str]] = set()
+# ENG-05's team rows and the confirmation requests are live since P-07-T30 (TASK-1197); the rest
+# wait for P-07-T35, T36 and T41.
+LIVE: set[tuple[str, str]] = {
+    ("get", f"{E}/team/approval"),
+    ("post", f"{E}/team/approve"),
+    ("put", f"{E}/team/{{user_id}}/portal-visibility"),
+    ("get", f"{E}/eqr/candidates"),
+    ("post", f"{E}/eqr"),
+    ("post", f"{E}/eqr/eligibility/approve"),
+    ("post", f"{IND}/reminders"),
+}
 STUBBED = set(ROUTES) - LIVE
 HUMAN_ONLY = {
     "acceptance.decide",
@@ -254,7 +263,7 @@ async def test_the_flags_gate_each_half(monkeypatch: pytest.MonkeyPatch) -> None
     with pytest.raises(NotFound):
         await acceptance_contract._acceptance_stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
     with pytest.raises(NotFound):
-        await acceptance_contract._team_stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
+        await acceptance_contract._team_gate(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
     with pytest.raises(NotFound):
         await conflicts_contract._stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
     assert seen == [ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2, ENGAGEMENTS_ACCEPTANCE_V2]
@@ -262,6 +271,7 @@ async def test_the_flags_gate_each_half(monkeypatch: pytest.MonkeyPatch) -> None
         monkeypatch.setattr(module, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
         await acceptance_contract._acceptance_stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
+    await acceptance_contract._team_gate(_ctx())  # pyright: ignore[reportPrivateUsage] -- live
     with pytest.raises(NotImplementedYet):
         await conflicts_contract._stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
 
