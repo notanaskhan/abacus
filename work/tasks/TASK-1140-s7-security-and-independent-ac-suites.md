@@ -42,6 +42,10 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - **ED-021 (open):** a PDF with JavaScript is extracted and previewed. Held: needs a scanner rule or a PDF policy decision.
 - **Spec drift:** SPEC-029 §7 says 25 MB; DEC-58 (c) (later) says 50 MB. The test follows DEC-58.
 
+## Q-02-T36: retention and holds
+`backend/tests/integration/backfill/test_q02t36_retention_and_holds.py`, 16 tests, all pass: AC-31 below floor (422, nothing changes; the floor itself saves; a manager is refused), AC-32 lock at or after the policy expiry (floor, and the firm's longer policy), an anchor extends and never shortens, `retention.extended` as the system, AC-33 seal manifests, consent and signature evidence in COMPLIANCE (delete refused even with the bypass), no records bucket answers 503 for a record and for an anchor, AC-34 staff and stale MFA refused, audited as the person, AC-35 two overlapping holds through `LegalHoldApply` and `LegalHoldRelease` on a Temporal dev server (lifting one leaves both objects held and S3-held; at zero the S3 hold comes off), `hold_not_active`, AC-36 inheritance in the uploader's transaction (and a hold on another client covers nothing here), AC-37 fail closed with no check and for an unknown version. Seeded violations: an object's lock shortened in S3 behind the product fails the retention probe; hold counts dropped and the S3 hold switched off fail the hold probe. Floors are seeded through `retention.import_set` and `publish_set` (two staff), as the platform staff routes do. No defect found.
+
 ## Progress log
 - 2026-10-24: T012 written and green (61 passed); ED-017 fixed with it.
 - 2026-10-24: T013 written: 18 pass, 10 held as ED-018 to ED-021.
+- 2026-10-24: Q-02-T36 written: 16 pass.
