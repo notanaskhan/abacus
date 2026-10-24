@@ -58,9 +58,16 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - **Contract note:** `binder_not_draft`, `binder_not_published` and `request_already_sent` carry a `facts.status` the contract's table does not show; additive, tests compare `detail`.
 - **ED-010 (already open)** explains why G3 is met with no letter while the firm's letter policy is off; the G3 test turns `require_letter` on.
 
+## P-01-T15: shell, session, Undo and the C16 email half
+`backend/tests/integration/test_p01t15_shell_session_email.py`, 9 tests: 8 pass, 1 held. AC 2.1.2 capabilities (a plain member sees no admin row; the firm admin writes firm settings and sees users and the audit log; IT/Security does not manage the firm; Developer & API is `none` for all), AC 2.1.4 switching (held: ED-024), AC 5.1.2 `__Host-` cookie flags and `session.started`, a session without a second factor refused (`auth.sign_in_refused`, no session row), AC 5.1.4 refresh rotation and reuse revoking the whole session, AC 2.1.6 sign-out, AC 3.1.4b Undo then another reviewer decides the same version (`already_decided` while effective, a second Undo refused, nothing removed), C16 whitelist on import and on render. The evidence Undo route is registered in the shared C3 suite (P-04-T13).
+
+- **ED-024 (open):** a tenant header naming a firm not held answers 403, not 404.
+- **Spec gaps:** SHL-03c/d name Daniel Reyes (a partner, no firm role) with Firm settings (read) and Audit log, and Felix Andersen with the Security center and Audit log; `security.manage` waits for G-02-T02 and the scenario maps Felix to `firm_admin`, so the suite asserts only the unambiguous rows and records these for the screen's epic.
+
 ## Progress log
 - 2026-10-24: T012 written and green (61 passed); ED-017 fixed with it.
 - 2026-10-24: T013 written: 18 pass, 10 held as ED-018 to ED-021.
 - 2026-10-24: Q-02-T36 written: 16 pass.
 - 2026-10-24: P-04-T13 written: 16 + 19 pass; ED-022 fixed.
 - 2026-10-24: P-06-T17 written: 13 pass; ED-023 fixed.
+- 2026-10-24: P-01-T15 written: 8 pass, 1 held as ED-024.
