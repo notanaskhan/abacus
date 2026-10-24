@@ -1,10 +1,10 @@
 """The contacts and portal-access contract stub, v1 (P-07-T17; `docs/contracts/contacts-access.md`;
-DEC-226): every route exists with its one matrix action and answers 404 with `contacts.v2` off and
-501 with it on; the list is the P-36 envelope with the CLI-04 header counts and the
-delegated-requests footer; grants carry ADR-146's role and scope codes and delegated request ids;
-the invitation never returns its token; every write is a person's (the agent and the system are
-denied, no client role holds any action); no model has a wall count. The consumer suite is
-P-07-T18's."""
+DEC-226): every route exists with its one matrix action and answers 404 with `contacts.v2` off
+(501 with it on until P-07-T25 made every route live); the list is the P-36 envelope with the
+CLI-04 header counts and the delegated-requests footer; grants carry ADR-146's role and scope
+codes and delegated request ids; the invitation never returns its token; every write is a
+person's (the agent and the system are denied, no client role holds any action); no model has a
+wall count. The consumer suite is P-07-T18's."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import pytest
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import CONTACTS_V2
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.organisations import contacts_contract
@@ -57,11 +57,17 @@ def _enum(schema: str, field: str) -> set[str]:
     return set(cast(list[str], prop["enum"]))
 
 
+# Live since P-07-T25 (TASK-1123): no route here is a stub any more.
+STUBBED: set[tuple[str, str]] = set()
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == ((method, path) in STUBBED)
 
 
 def test_the_invitation_takes_an_idempotency_key_and_never_returns_its_token() -> None:
@@ -119,7 +125,9 @@ def test_contact_manage_is_the_firm_admin_partners_and_the_team_leads() -> None:
     }
 
 
-async def test_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_flag_off_is_404_and_flag_on_passes_the_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -135,11 +143,10 @@ async def test_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(contacts_contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await contacts_contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the stub gate
+        await contacts_contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
     assert seen == [CONTACTS_V2]
     monkeypatch.setattr(contacts_contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await contacts_contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the stub gate
+    await contacts_contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
 
 
 def test_the_new_codes_are_in_the_catalogue() -> None:

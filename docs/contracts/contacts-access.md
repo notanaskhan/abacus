@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (P-07-T17, 2026-10-24); live with P-07-T25 |
+| Status | live (P-07-T25, 2026-10-24; DEC-300 to DEC-302); stub P-07-T17 |
 | Provider epic | P-07 (`organisations` for contacts, `identity` for grants and unlocks) |
 | Consumers | CLI-04 (P-07-T24); the consumer suite P-07-T18; P-08 (portal sign-in reads the grants); P-09 (delegated requests) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on a client's contacts list on the P-36 envelope with CLI-04's header counts ("3 active · 1 invited · 2 not invited") and the delegated-requests footer ("10 + 9 + 2 + 2 + 1 = 24", "PBC received 11 of 24"); a contact drawer with roles per entity, grants, sign-in history and delegated requests; contact create and edit; invitations that carry grants (a grant role, a scope and, for a delegate or third party, the request items it is limited to), with MFA from firm policy and a 14-day single-use link; resend, revoke (requests stay with the client), change scope and unlock.
 
-**Stub behaviour.** With `contacts.v2` off every route below answers 404. With it on, each answers 501 `not_implemented` until P-07-T25 implements it. No fixtures yet.
+**Behaviour.** With `contacts.v2` off every route below answers 404. With it on, every route is live (P-07-T25): pending grants and a contact invitation in one unit of work (DEC-300), the email from the firm's `portal.invitation` template (DEC-301), the list's states and footer as DEC-302 reads them. Before P-07-T25 each answered 501 `not_implemented`.
 
 ## 2. Who may call it
 Matrix: `docs/architecture/permission-matrix/organisations.yaml` (`contact.read`, `contact.manage`) and `identity.yaml` (`client_access.grant`, `client_access.revoke`, `contact.unlock`).
@@ -60,7 +60,9 @@ Every write denies `agent` and `system` at the matrix (INV-1, P-07 §4.4); the l
 | 409 | `{"detail": "contact_exists"}` | create with an email already on the client |
 | 409 | `{"detail": "stale_version", "facts": {"contact_id": "…"}}` | edit or change scope with an old `seen_version` |
 | 409 | `{"detail": "gate_unmet", "facts": {"gate": "G1", "client_id": "…"}}` | a full-client grant before any engagement of the client is Accepted (intake grants excepted, OQ-11) |
-| 409 | `{"detail": "invitation_expired"}` · `{"detail": "invitation_used"}` | opening a link older than 14 days or already used (P-08) |
+| 409 | `{"detail": "invitation_expired"}` · `{"detail": "invitation_used"}` | catalogued for the firm side; opening a link older than 14 days or already used answers P-08's one 404 (DEC-275, DEC-300) |
+| 422 | `{"detail": "invitation_invalid", "facts": {…}}` | grants across more than one engagement, or a contact with no address (DEC-300) |
+| 409 | `{"detail": "illegal_transition"}` | inviting an active contact (use Change scope), or changing the scope of one never invited |
 | 422 | `{"detail": "scope_outside_client", "facts": {…}}` | a grant scope or delegated request that is not the contact's client's |
 
 ## 7. Audit and outbox events

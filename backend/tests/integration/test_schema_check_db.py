@@ -1156,12 +1156,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46 (0104)
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
+            | {"email", "party_kind", "version"}  # P-07-T25 (0146)
         ),
         # F-03-T24 (migration 0081): a firm setting's value; overrides are never edited.
         "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),
         "firm_settings": frozenset({"value", "updated_by", "updated_at"}),  # G-01-T04 (0114)
         "firm_settings_sections": frozenset({"version", "updated_at"}),  # G-01-T04 (0114)
-        "client_access_grants": frozenset({"status"}),  # F-03-T26 (migration 0083)
+        # F-03-T26 (migration 0083); P-07-T25 (0146): a pending grant's person, set once.
+        "client_access_grants": frozenset({"status", "user_id"}),
         "firm_demo_clocks": frozenset(  # F-04-T06 (migration 0085)
             {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}
         ),
@@ -1233,6 +1235,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "client_invitations": frozenset(  # SPEC-015
             {"status", "accepted_by", "accepted_at", "expires_at"}
             | {"terms_accepted_at"}  # P-08-T18 (0140)
+            | {"used_at", "grant_ids"}  # P-07-T25 (0146)
         ),
         "support_sessions": frozenset(  # SPEC-012
             {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -1818,6 +1821,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_invitee_resolve", "portal_access_revoke_except"}  # 0140
         | {"portal_mfa_begin_session"}  # 0140
         | {"portal_session_mark_device", "client_invitations_revoke_by"}  # 0140 (DEC-277)
+        | {"portal_sign_in_unlock", "portal_sign_in_locked"}  # 0146 (P-07-T25)
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

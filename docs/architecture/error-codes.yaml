@@ -328,6 +328,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.record.GateUnmet
+    - abacus.modules.organisations.contacts.GateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   grant_exists:
     status: 409
@@ -873,6 +874,7 @@ codes:
   scope_outside_client:
     status: 422
     raised_by:
+    - abacus.modules.identity.contact_access.ScopeOutsideClient
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
   seats_full:

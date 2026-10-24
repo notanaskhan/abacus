@@ -265,6 +265,7 @@ class NewContact:
     phone: str | None = None
     title: str | None = None
     organisation_name: str | None = None
+    party_kind: str = "person"  # P-07-T25 (0146)
 
 
 @dataclass(frozen=True)

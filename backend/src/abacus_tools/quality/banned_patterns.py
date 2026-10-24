@@ -920,6 +920,22 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's
+        # client passed `visible_clients(contact.read)`, and ended in the revoking unit of work
+        # after `authorise(client_access.revoke)`; keyed by contact or grant, not listed.
+        ("src/abacus/modules/requests/repository.py", "open_delegations"),
+        ("src/abacus/modules/requests/repository.py", "end_delegations"),
+        # P-07-T25: the roles of contacts already read through `visible_clients(contact.read)`.
+        ("src/abacus/modules/organisations/repository.py", "contact_roles_of"),
+        # P-07-T25 (DEC-300): one contact's grants and invitations, or an invitation's own
+        # grants, read after the contact's client passed `visible_clients(contact.read)` or in
+        # the acceptance that holds the invitation's row; the addresses a CLI-04 page shows that
+        # are locked; one person's sessions ended in the revoking unit of work.
+        ("src/abacus/modules/identity/repository.py", "contact_grants"),
+        ("src/abacus/modules/identity/repository.py", "grants_by_id"),
+        ("src/abacus/modules/identity/repository.py", "contact_invitations"),
+        ("src/abacus/modules/identity/repository.py", "locked_emails"),
+        ("src/abacus/modules/identity/repository.py", "end_portal_access"),
         # SPEC-318 (TASK-461): one run's results and their decisions, read after
         # `authorise(agent_run.read)` on the run's engagement.
         ("src/abacus/modules/agents/repository.py", "screening_results_of_run"),

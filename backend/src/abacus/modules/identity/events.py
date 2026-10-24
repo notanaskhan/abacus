@@ -68,6 +68,17 @@ class StaffInvitationIssued(DomainEvent):
     invitation_id: Annotated[UUID, classified("internal")]
 
 
+class ContactInvited(DomainEvent):
+    """A client contact was invited with pending grants (P-07-T25; P-07 §4.6; DEC-300):
+    identifiers only. The email goes out on `client_invitation.issued`."""
+
+    event_type: ClassVar[str] = "contact.invited"
+
+    contact_id: Annotated[UUID, classified("internal")]
+    invitation_id: Annotated[UUID, classified("internal")]
+    grant_ids: Annotated[list[UUID], classified("internal")]
+
+
 class ClientAccessGranted(DomainEvent):
     """A client access grant became active (F-03-T26; ADR-146)."""
 

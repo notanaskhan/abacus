@@ -4,10 +4,10 @@ title: Contacts and portal access live - contacts_access migration, invitations 
 spec: SPEC-321
 acceptance_criteria: [AC-26, AC-27, AC-28, AC-29]
 risk_zone: red
-status: planning
+status: done
 epic: P-07
 plan_key: P-07-T25
-branch: s7-p07-contacts
+branch: s7c-p07-contacts-live
 created: 2026-10-24
 updated: 2026-10-24
 ---
@@ -24,5 +24,16 @@ updated: 2026-10-24
 - **Tests:** `tests/integration/test_contacts_access.py` (Harborline's invite grants exactly its two requests; resend kills the old link; revoke keeps the requests and ends sessions; unlock; G1 refusal; walled client 404; agent and system denied); the stub test's 501 cases become live-route cases; P-07-T26 is the independent suite.
 - **Rollback:** `alembic downgrade 0138`; revert; `contacts.v2` off hides every route.
 
+## Plan as built (2026-10-24, S7 close; supersedes the migration number and the grant-template reading above)
+- **Migration `0146_contacts_access.py`** (down_revision 0143; the main session re-chains): `contact_roles`, `contact_group_members`, `contacts.party_kind` and `version`; `client_invitations.grant_ids` and `used_at`; `client_access_grants.user_id` NULL while pending (CHECK), trigger `client_access_grants_bind` (the person set once), 0084's membership trigger skips a pending grant and runs on `UPDATE OF user_id`; definers `portal_sign_in_unlock`, `portal_sign_in_locked`. Registries: organisations and identity `registry.py`; `schema_check.DEFINER_FUNCTIONS`; `test_schema_check_db.py`; the generated tenant-isolation table list. 0147 unused.
+- **identity (red):** `contact_access.py` (invite, resend, revoke, change scope, unlock, reads); `invitations.py` builds on P-08-T18: `create_invitation(grant_ids=…)`, acceptance activates the pending grants after the DEC-300 re-check, eager revocation closes them, preview counts them, `issue_invitation_token` marks contact invitations; `ContactInvited` event; repository reads and writes.
+- **organisations:** `contacts.py` (the service), `contacts_contract.py` routes live (no 501), `slots.register_contact_delegations`, `ContactCreated`.
+- **requests (C5):** `record_contact_delegations`, `end_contact_delegations`, `contact_delegations` registered from `requests.api`.
+- **communications:** contact invitations from the `portal.invitation` template (DEC-301).
+- **Decisions:** DEC-300 (model and semantics), DEC-301 (email), DEC-302 (reads). DEC-303, ED-031 and ED-032 unused.
+- **Tests:** `tests/integration/backfill/test_contacts_access.py` (8); P-07-T26's `test_p07t26_contacts_g2_independent.py` passes with only its T25 markers removed (intake stays a strict xfail, TASK-1174); the stub test's 501 cases became `STUBBED = set()` (the clients precedent).
+- **Rollback:** `alembic downgrade 0143` (pending grants with no person are dropped, synthetic only); revert; `contacts.v2` off hides every route.
+
 ## Progress log
 - 2026-10-24: plan written; not built. The row needs identity's invitation acceptance re-scoped (protected), a nullable pending-grant user, the P-08 lock state, C5 delegation counts and the C16 template: more than this session could finish safely after T02, T23 and T24. Next session starts at the migration.
+- 2026-10-24 (S7 close, s7c-p07-contacts-live): built as planned above on invitations v2 (#393). Harborline's invitation grants exactly its two delegated requests (P-07-T26 `test_inv4_*`). Deferred: `last_seen_at` and drawer sign-ins (P-08 read), the firm's portal host in the email link, intake/K-1/governance/component scope resolvers (their owners), allowed_actions for engagement-role holders (DEC-302). Human to-do: import `portal.invitation` per environment before `contacts.v2` goes on.

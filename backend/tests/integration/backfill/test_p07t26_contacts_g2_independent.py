@@ -21,8 +21,9 @@ as every other acceptance failure (DEC-275, later than the contract's 409 `invit
 Invitation template; the email case imports a platform default `portal.invitation` (C16
 variables `firm_name`, `recipient_first_name`, `app_link`) as test content.
 
-G2 v2 (P-07-T24) is on main and its cases pass. The P-07-T25 cases are strict xfails citing
-TASK-1174 until that row lands; its commit removes only the markers.
+G2 v2 (P-07-T24) was on main and its cases passed when the suite was committed; the P-07-T25
+cases were strict xfails citing TASK-1174, and P-07-T25's commit removed only those markers. The
+intake case stays a strict xfail until CLI-06 registers an intake scope.
 """
 
 from __future__ import annotations
@@ -67,11 +68,6 @@ from .support import Net, Person, Seeder, Site
 pytestmark = pytest.mark.asyncio
 
 Json = dict[str, object]
-T25 = pytest.mark.xfail(
-    strict=True,
-    reason="P-07-T25 (TASK-1123) builds the contacts and portal-access routes; this suite is "
-    "committed first, per ADR-078 (TASK-1174; builds on #393's invitations v2)",
-)
 INVITATION_DAYS = 14
 TEMPLATE_KEY = "portal.invitation"
 
@@ -309,7 +305,6 @@ async def world(net: Net) -> World:
 # ================================================================================================
 
 
-@T25
 async def test_inv4_harborlines_invitation_grants_exactly_its_two_delegated_requests(
     world: World,
 ) -> None:
@@ -336,7 +331,6 @@ async def test_inv4_harborlines_invitation_grants_exactly_its_two_delegated_requ
     assert await _audited(world, "contact.invited") == ["human"]
 
 
-@T25
 async def test_inv4_after_accepting_harborline_reaches_those_two_requests_and_nothing_else(
     world: World,
 ) -> None:
@@ -363,7 +357,6 @@ async def test_inv4_after_accepting_harborline_reaches_those_two_requests_and_no
     assert other == []
 
 
-@T25
 async def test_ac28_a_grant_outside_the_contacts_client_is_422_scope_outside_client(
     world: World,
 ) -> None:
@@ -387,7 +380,6 @@ async def test_ac28_a_grant_outside_the_contacts_client_is_422_scope_outside_cli
 # ================================================================================================
 
 
-@T25
 async def test_ac28_an_expired_link_is_refused_and_grants_nothing(world: World) -> None:
     body = _json(await _invite(world, world.harborline, _harborline_grants(world)), 201)
     token = await _token(world, cast(str, body["invitation_id"]))
@@ -401,7 +393,6 @@ async def test_ac28_an_expired_link_is_refused_and_grants_nothing(world: World) 
     assert {s[3] for s in await _grants_of(world, world.harborline)} == {"pending"}
 
 
-@T25
 async def test_ac28_a_used_link_is_refused_the_second_time(world: World) -> None:
     body = _json(await _invite(world, world.harborline, _harborline_grants(world)), 201)
     token = await _token(world, cast(str, body["invitation_id"]))
@@ -412,7 +403,6 @@ async def test_ac28_a_used_link_is_refused_the_second_time(world: World) -> None
     assert (await _preview(world, token)).status_code == 404
 
 
-@T25
 async def test_resend_issues_a_new_link_and_the_old_one_stops_working(world: World) -> None:
     body = _json(await _invite(world, world.harborline, _harborline_grants(world)), 201)
     invitation = cast(str, body["invitation_id"])
@@ -437,7 +427,6 @@ async def test_resend_issues_a_new_link_and_the_old_one_stops_working(world: Wor
     assert await _audited(world, "invitation.resent") == ["human"]
 
 
-@T25
 async def test_resend_is_a_persons_with_the_grant_right_and_not_staffs(world: World) -> None:
     body = _json(await _invite(world, world.harborline, _harborline_grants(world)), 201)
     senior = await world.seed.person(world.tenant)
@@ -454,7 +443,6 @@ async def test_resend_is_a_persons_with_the_grant_right_and_not_staffs(world: Wo
 # ================================================================================================
 
 
-@T25
 async def test_revoke_ends_the_session_revokes_the_grants_and_keeps_the_requests(
     world: World,
 ) -> None:
@@ -484,7 +472,6 @@ async def test_revoke_ends_the_session_revokes_the_grants_and_keeps_the_requests
     assert await _audited(world, "invitation.revoked") == ["human"]
 
 
-@T25
 async def test_revoke_before_acceptance_kills_the_link_and_the_pending_grants(
     world: World,
 ) -> None:
@@ -500,7 +487,6 @@ async def test_revoke_before_acceptance_kills_the_link_and_the_pending_grants(
     assert (await _preview(world, token)).status_code == 404
 
 
-@T25
 async def test_revoke_needs_fresh_mfa(world: World) -> None:
     body = _json(await _invite(world, world.harborline, _harborline_grants(world)), 201)
     refused = await world.net.call(
@@ -515,7 +501,6 @@ async def test_revoke_needs_fresh_mfa(world: World) -> None:
 # ================================================================================================
 
 
-@T25
 async def test_change_scope_replaces_the_grant_set_and_refuses_a_stale_version(
     world: World,
 ) -> None:
@@ -584,7 +569,6 @@ async def _lock(world: World, email: str) -> None:
     assert last.status_code == 423, last.text
 
 
-@T25
 async def test_unlock_clears_the_portal_lock_and_is_audited(world: World) -> None:
     await _accepted(world)
     await _lock(world, world.email)
@@ -613,7 +597,6 @@ async def test_unlock_clears_the_portal_lock_and_is_audited(world: World) -> Non
     assert verified.status_code == 200, verified.text
 
 
-@T25
 async def test_unlock_is_refused_to_a_senior_and_allowed_to_it_security(world: World) -> None:
     await _accepted(world)
     await _lock(world, world.email)
@@ -659,7 +642,6 @@ class _Outbox:
         self.sent.append(dict(message))
 
 
-@T25
 async def test_the_invitation_email_is_in_the_firms_name_with_one_link_and_no_amounts(
     world: World,
 ) -> None:
@@ -699,7 +681,6 @@ async def test_the_invitation_email_is_in_the_firms_name_with_one_link_and_no_am
 # ================================================================================================
 
 
-@T25
 async def test_a_full_client_grant_before_any_accepted_engagement_is_409_gate_unmet_g1(
     net: Net,
 ) -> None:
@@ -762,7 +743,6 @@ async def test_an_intake_grant_is_the_exception_to_g1(world: World) -> None:
     assert response.status_code == 201, response.text
 
 
-@T25
 async def test_a_walled_client_answers_404_on_the_contacts_routes(world: World) -> None:
     await world.net.wall(world.grace, world.hannah, world.site)
     listed = await world.net.call(
@@ -776,7 +756,6 @@ async def test_a_walled_client_answers_404_on_the_contacts_routes(world: World) 
     assert await _grants_of(world, world.harborline) == []
 
 
-@T25
 async def test_ac27_the_list_counts_portal_states_and_foots_the_delegated_requests(
     world: World,
 ) -> None:
@@ -964,7 +943,6 @@ async def test_dec39_a_client_facing_grant_needs_the_acting_member_cleared_on_an
     )
 
 
-@T25
 async def test_dec39_an_uncleared_manager_cannot_invite_a_contact_on_an_attest_engagement(
     world: World,
 ) -> None:

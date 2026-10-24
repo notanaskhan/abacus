@@ -8,7 +8,7 @@ given.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -183,3 +183,45 @@ async def set_member_teams(
     if not _TEAMS:
         return not team_ids
     return await _TEAMS[0][1](tx, tenant_id, user_id, team_ids)
+
+
+# --- a contact's delegated requests (P-07-T25; C5): requests records, ends and counts them; the
+# grants are identity's, the contact organisations'. Unregistered, a delegated invitation fails. --
+
+# (tx, contact, [(grant, request item)], by) in the caller's unit of work.
+DelegationRecord = Callable[
+    ["UnitOfWork", UUID, Sequence[tuple[UUID, UUID]], UUID], Awaitable[None]
+]
+# (tx, grant ids) -> the request items whose delegation ended.
+DelegationEnd = Callable[["UnitOfWork", Sequence[UUID]], Awaitable[list[UUID]]]
+# (tenant, contacts) -> per contact, the requests delegated now and those of them received.
+DelegationCounts = Callable[
+    [TenantContext, Sequence[UUID]],
+    Awaitable[dict[UUID, tuple[tuple[UUID, ...], tuple[UUID, ...]]]],
+]
+
+
+@dataclass(frozen=True)
+class Delegations:
+    record: DelegationRecord
+    end: DelegationEnd
+    counts: DelegationCounts
+
+
+_DELEGATIONS: list[Delegations] = []
+
+
+def register_contact_delegations(
+    record: DelegationRecord, end: DelegationEnd, counts: DelegationCounts
+) -> None:
+    found = Delegations(record, end, counts)
+    if _DELEGATIONS and not _same(_DELEGATIONS[0].record, record):
+        raise ValueError("the contact delegations are already registered")
+    _DELEGATIONS[:] = [found]
+
+
+def contact_delegations_provider() -> Delegations:
+    """The registered provider; unregistered fails (a delegation would go unrecorded)."""
+    if not _DELEGATIONS:
+        raise RuntimeError("no contact delegations provider is registered")
+    return _DELEGATIONS[0]

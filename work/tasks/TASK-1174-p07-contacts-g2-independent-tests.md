@@ -4,7 +4,7 @@ title: Independent AC tests (ADR-078) for G2 v2 and contacts and portal access l
 spec: SPEC-321
 acceptance_criteria: [AC-26, AC-27, AC-28, AC-29]
 risk_zone: red
-status: in-progress
+status: done
 epic: P-07
 plan_key: P-07-T26
 branch: s7c-p07-contacts-live
@@ -48,3 +48,4 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: suite written from the sources above before any T25 code; T24 cases pass, T25 cases
   are strict xfails citing TASK-1174.
+- 2026-10-24: P-07-T25 (TASK-1123) landed; every T25 case passes unchanged with its marker removed (and the module docstring updated to say so). The intake case stays a strict xfail (CLI-06). The "Invitation template" key gap is closed by DEC-301 (`portal.invitation`), and the 404-for-expired drift is DEC-300's.

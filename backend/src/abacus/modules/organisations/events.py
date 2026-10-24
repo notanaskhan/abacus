@@ -16,3 +16,12 @@ class ClientUpdated(DomainEvent):
 
     client_id: Annotated[UUID, classified("internal")]
     fields: Annotated[list[str], classified("internal")]
+
+
+class ContactCreated(DomainEvent):
+    """A person added a client contact (P-07-T25; CLI-04): identifiers only."""
+
+    event_type: ClassVar[str] = "contact.created"
+
+    client_id: Annotated[UUID, classified("internal")]
+    contact_id: Annotated[UUID, classified("internal")]

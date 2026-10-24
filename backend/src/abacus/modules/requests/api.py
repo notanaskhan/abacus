@@ -2,7 +2,11 @@
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.engagements.api import register_open_requests, register_roll_forward_items
-from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    register_contact_delegations,
+    register_scope_resolver,
+)
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_tag
@@ -23,7 +27,13 @@ from abacus.modules.requests.events import (
     RequestItemDocumentKindChanged,
 )
 from abacus.modules.requests.follow_up_reads import FollowUpCandidate, follow_up_candidates
-from abacus.modules.requests.lifecycle import register_live_facts, request_item_scope
+from abacus.modules.requests.lifecycle import (
+    contact_delegations,
+    end_contact_delegations,
+    record_contact_delegations,
+    register_live_facts,
+    request_item_scope,
+)
 from abacus.modules.requests.pbc_contract import pbc_firm_router, pbc_portal_router
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
 from abacus.modules.requests.repository import open_requests_by_engagement
@@ -59,6 +69,10 @@ from abacus.modules.requests.service import (
     review_targets,
 )
 
+# P-07-T25 (C5): CLI-04 records, ends and counts a contact's delegated requests through this.
+register_contact_delegations(
+    record_contact_delegations, end_contact_delegations, contact_delegations
+)
 # SPEC-025 (TASK-048 D1): last year's items for a roll-forward, and copying the confirmed ones.
 register_roll_forward_items(proposed_items, copy_items)
 
