@@ -1,6 +1,7 @@
 """Q-02 AC-42 (first half; Q-02-T30): every action in `docs/architecture/fresh-mfa-actions.yaml`
 exists in the permission matrix and carries `mfa_recent: required`. Removing the condition from a
-listed action fails here. Q-02-T37 adds the generated overlay and the staff-route check."""
+listed action fails here. Q-02-T37 adds the lint (`abacus_tools.quality.fresh_mfa`, tested in
+`test_fresh_mfa_lint.py`) and the generated overlay (`test_fresh_mfa_generated.py`)."""
 
 from __future__ import annotations
 
@@ -15,7 +16,7 @@ from abacus.modules.identity.authz.matrix import RULES
 REGISTER = Path(__file__).resolve().parents[4] / "docs" / "architecture" / "fresh-mfa-actions.yaml"
 GROUPS = frozenset(
     {"wall", "ai_policy", "export", "legal_hold", "independence", "data_boundary", "reveal"}
-    | {"portal_access"}  # P-07-T25 (DEC-303): clearing a client's portal sign-in lock
+    | {"portal_access"}  # P-07-T25 (DEC-303), P-08-T21: a client's portal unlock and MFA reset
 )
 
 
@@ -40,3 +41,7 @@ def test_ac42_a_listed_action_needs_a_fresh_second_factor(action: str) -> None:
 
 def test_ac42_the_legal_hold_and_export_writes_are_listed() -> None:
     assert {"legal_hold.place", "legal_hold.lift", "firm_export.approve"} <= set(LISTED)
+
+
+def test_p08t21_the_portal_unlock_and_mfa_reset_are_listed() -> None:
+    assert {"contact.unlock", "contact.mfa_reset"} <= set(LISTED)

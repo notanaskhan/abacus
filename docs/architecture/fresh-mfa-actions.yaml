@@ -3,8 +3,10 @@
 #
 # Every action listed here must carry `mfa_recent: required` in the permission matrix
 # (`docs/architecture/permission-matrix/*.yaml`): a second factor verified in the last 15 minutes.
-# `tests/unit/quality/test_fresh_mfa_actions.py` fails when a listed action is missing from the
-# matrix or lacks the condition; Q-02-T37 adds the generated overlay and the staff-route check.
+# `tests/unit/quality/test_fresh_mfa_actions.py` and the lint `abacus_tools.quality.fresh_mfa`
+# (`make check-fast`) fail when a listed action is missing from the matrix or lacks the
+# condition; Q-02-T37's generated `tests/security/test_fresh_mfa_generated.py` also shows that
+# `authorise` refuses each one without a fresh second factor and lists the routes declaring it.
 #
 # Groups follow AC-42: lifting a wall, publishing AI policy, exports, legal holds, the
 # independence conclusion, the data-boundary opt-in, TIN reveal and incident decisions; P-07-T25
@@ -53,5 +55,8 @@ actions:
     group: reveal
   # A client's portal access (P-07-T25 security review, DEC-303): clearing a sign-in lockout
   - action: contact.unlock
+    group: portal_access
+  # P-08-T21 (Story 7.2, SPEC-320 AC-19): resetting a client's lost second factor
+  - action: contact.mfa_reset
     group: portal_access
   # Incident decisions: G-02's `incident.decide` joins this list with its route.
