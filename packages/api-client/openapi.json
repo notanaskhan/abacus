@@ -10226,6 +10226,136 @@
         "title": "DraftedOut",
         "type": "object"
       },
+      "DropAcceptedOut": {
+        "description": "202: the file is stored and waits for the sort; its outcome comes from the batch poll.",
+        "properties": {
+          "batch_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "file_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "File Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "batch_id",
+          "file_id"
+        ],
+        "title": "DropAcceptedOut",
+        "type": "object"
+      },
+      "DropBatchOut": {
+        "description": "`GET /v1/portal/drops/{batch_id}`: polled until `settled` (every file has an outcome).",
+        "properties": {
+          "batch_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "binder_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Binder Id",
+            "type": "string"
+          },
+          "files": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/DropFileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "settled": {
+            "cls": "internal",
+            "title": "Settled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "batch_id",
+          "binder_id",
+          "files",
+          "settled"
+        ],
+        "title": "DropBatchOut",
+        "type": "object"
+      },
+      "DropFileOut": {
+        "description": "One dropped file's outcome. `rule_linked` names the request it landed on, pending a\nperson's accept; `waiting` is \"Brightwater Hale will sort this\".",
+        "properties": {
+          "file_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "File Id",
+            "type": "string"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "rule_linked",
+                  "waiting",
+                  "duplicate_flagged",
+                  "refused"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
+          },
+          "refusal": {
+            "anyOf": [
+              {
+                "enum": [
+                  "file_too_large",
+                  "type_not_allowed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Refusal"
+          },
+          "request_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request Item Id"
+          }
+        },
+        "required": [
+          "file_id",
+          "file_name"
+        ],
+        "title": "DropFileOut",
+        "type": "object"
+      },
       "DueDatesIn": {
         "additionalProperties": false,
         "description": "SPEC-027 AC-9 (TASK-051): set or clear (`null`) several items' due date.",
@@ -15591,6 +15721,57 @@
         "title": "FsStatementsOut",
         "type": "object"
       },
+      "FulfilmentVoidIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "cls": "internal",
+            "const": "wrong_request",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "FulfilmentVoidIn",
+        "type": "object"
+      },
+      "FulfilmentVoidedOut": {
+        "description": "The link is stamped void, never deleted. The request returns to `requested` when nothing\nelse fulfils it, and the version waits in the engagement drop zone for a person again.",
+        "properties": {
+          "fulfilment_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Fulfilment Id",
+            "type": "string"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "request_status": {
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
+          },
+          "voided_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Voided At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fulfilment_id",
+          "request_item_id",
+          "request_status",
+          "voided_at"
+        ],
+        "title": "FulfilmentVoidedOut",
+        "type": "object"
+      },
       "GapOut": {
         "properties": {
           "covered": {
@@ -17041,6 +17222,41 @@
           "reason"
         ],
         "title": "IgnoreIn",
+        "type": "object"
+      },
+      "IgnoreUndoneOut": {
+        "description": "`request_item.ignore_undone`: `client_ignored_at` cleared; the client reads \"To do\" again.\nThe ignore note stays in the thread (comments are never deleted).",
+        "properties": {
+          "client_status": {
+            "cls": "internal",
+            "enum": [
+              "to_do",
+              "done",
+              "ignored",
+              "returned"
+            ],
+            "title": "Client Status",
+            "type": "string"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "undone_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Undone At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "client_status",
+          "undone_at"
+        ],
+        "title": "IgnoreUndoneOut",
         "type": "object"
       },
       "IgnoredOut": {
@@ -21231,6 +21447,40 @@
         "title": "MappingOut",
         "type": "object"
       },
+      "MarkDoneUndoneOut": {
+        "description": "`binder.mark_done_undone`: the binder is `published` again and BND-02's \"Marked done by\nClaire Feld\" goes; the client reads Mark as Done tonal (requests open) or ready.",
+        "properties": {
+          "binder_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Binder Id",
+            "type": "string"
+          },
+          "mark_done": {
+            "cls": "internal",
+            "enum": [
+              "tonal",
+              "ready",
+              "marked"
+            ],
+            "title": "Mark Done",
+            "type": "string"
+          },
+          "undone_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Undone At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "binder_id",
+          "mark_done",
+          "undone_at"
+        ],
+        "title": "MarkDoneUndoneOut",
+        "type": "object"
+      },
       "MaskedTinOut": {
         "description": "A taxpayer ID as every payload but the reveal carries it: kind and last four digits\n(`XX-XXX0287`, `\u2022\u2022\u2022-\u2022\u2022-2208`). Restricted; never in a list (ADR-031, P-12).",
         "properties": {
@@ -23729,6 +23979,237 @@
         "title": "PopulationOut",
         "type": "object"
       },
+      "PortalBandOut": {
+        "description": "A folder band (\"Census & Payroll\") on the audit layout (POR-03 i).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "rows"
+        ],
+        "title": "PortalBandOut",
+        "type": "object"
+      },
+      "PortalBinderListOut": {
+        "description": "The P-36 list envelope; every binder the caller's grants can see.",
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalBinderRefOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "PortalBinderListOut",
+        "type": "object"
+      },
+      "PortalBinderOut": {
+        "description": "POR-03: one binder through the caller's grant. `open_count` is the same figure POR-02's\n\"Upload 2 documents\" and TAX-03's \"Intake 2\" read (one read model). `other_parties` names\nthe organisations requests were delegated to, for admin grants only, never their titles.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "upload",
+                "ignore",
+                "undo_ignore",
+                "withdraw",
+                "mark_done",
+                "undo_mark_done",
+                "comment"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "bands": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PortalBandOut"
+            },
+            "title": "Bands",
+            "type": "array"
+          },
+          "binder": {
+            "$ref": "#/components/schemas/PortalBinderRefOut",
+            "cls": "internal"
+          },
+          "categories": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalCategoryOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "done_count": {
+            "cls": "internal",
+            "title": "Done Count",
+            "type": "integer"
+          },
+          "filter": {
+            "cls": "internal",
+            "enum": [
+              "requested",
+              "all",
+              "uploaded_by_me",
+              "needs_follow_up"
+            ],
+            "title": "Filter",
+            "type": "string"
+          },
+          "groups": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PortalGroupOut"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "layout": {
+            "cls": "internal",
+            "enum": [
+              "groups",
+              "bands"
+            ],
+            "title": "Layout",
+            "type": "string"
+          },
+          "mark_done": {
+            "$ref": "#/components/schemas/PortalMarkDoneOut",
+            "cls": "internal"
+          },
+          "open_count": {
+            "cls": "internal",
+            "title": "Open Count",
+            "type": "integer"
+          },
+          "other_parties": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Other Parties",
+            "type": "array"
+          },
+          "sorted_count": {
+            "cls": "internal",
+            "title": "Sorted Count",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "binder",
+          "layout",
+          "filter",
+          "categories",
+          "total",
+          "done_count",
+          "open_count",
+          "sorted_count",
+          "mark_done"
+        ],
+        "title": "PortalBinderOut",
+        "type": "object"
+      },
+      "PortalBinderRefOut": {
+        "description": "One binder in the picker (\"2025 Binder\", \"2024 Binder (closed)\").",
+        "properties": {
+          "closed": {
+            "cls": "internal",
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "read_only": {
+            "cls": "internal",
+            "title": "Read Only",
+            "type": "boolean"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Year"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "closed",
+          "read_only"
+        ],
+        "title": "PortalBinderRefOut",
+        "type": "object"
+      },
       "PortalBrandingOut": {
         "description": "Public fields only, the same shape for an unknown host (neutral values), and no tenant\nidentifier on any host (ADR-163 \u00a75, \u00a76).",
         "properties": {
@@ -23850,6 +24331,146 @@
           "sign_in"
         ],
         "title": "PortalBrandingOut",
+        "type": "object"
+      },
+      "PortalCategoryOut": {
+        "description": "A rail category. `complete` is computed by code: every request in it done or ignored.",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "complete": {
+            "cls": "internal",
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "requested": {
+            "cls": "internal",
+            "title": "Requested",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "complete",
+          "requested"
+        ],
+        "title": "PortalCategoryOut",
+        "type": "object"
+      },
+      "PortalCategoryRefOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ],
+        "title": "PortalCategoryRefOut",
+        "type": "object"
+      },
+      "PortalFileOut": {
+        "description": "A file on a request. A withdrawn file is never listed; `withdrawable` only for the\ncaller's own unaccepted upload (never emailed, never accepted; ADR P-31).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/PortalReceiptOut",
+            "cls": "internal"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Size Bytes"
+          },
+          "struck": {
+            "cls": "internal",
+            "default": false,
+            "title": "Struck",
+            "type": "boolean"
+          },
+          "withdrawable": {
+            "cls": "internal",
+            "title": "Withdrawable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "receipt",
+          "withdrawable"
+        ],
+        "title": "PortalFileOut",
+        "type": "object"
+      },
+      "PortalGroupOut": {
+        "description": "A section card (\"Health insurance\") on the household layout.",
+        "properties": {
+          "category_code": {
+            "cls": "internal",
+            "title": "Category Code",
+            "type": "string"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "category_code",
+          "rows"
+        ],
+        "title": "PortalGroupOut",
         "type": "object"
       },
       "PortalHomeBinderOut": {
@@ -24595,6 +25216,50 @@
         "title": "PortalHomeWorkCardOut",
         "type": "object"
       },
+      "PortalMarkDoneOut": {
+        "properties": {
+          "marked_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Marked By Name"
+          },
+          "marked_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Marked On"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "tonal",
+              "ready",
+              "marked"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "PortalMarkDoneOut",
+        "type": "object"
+      },
       "PortalMfaIn": {
         "additionalProperties": false,
         "description": "`POST /v1/portal/auth/mfa`: exactly one of `totp` and `backup_code`. Errors: 401\n`mfa_mismatch {tries_left}`, 423 `mfa_locked {locked_until}`.",
@@ -24824,6 +25489,636 @@
           "version"
         ],
         "title": "PortalPreferencesOut",
+        "type": "object"
+      },
+      "PortalPriorYearOut": {
+        "description": "\"Last year you sent \u2026 on Mar 3, 2025.\" (the prior year's fulfilment, roll-forward).",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "sent_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Sent On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_name",
+          "sent_on"
+        ],
+        "title": "PortalPriorYearOut",
+        "type": "object"
+      },
+      "PortalReceiptOut": {
+        "description": "\"You uploaded Aug 7\", \"Jonah uploaded Aug 5\", \"Received by email Aug 3\".",
+        "properties": {
+          "by_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "By First Name"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "uploaded",
+              "uploaded_by_other_contact",
+              "emailed",
+              "rule_linked_pending",
+              "received"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "on"
+        ],
+        "title": "PortalReceiptOut",
+        "type": "object"
+      },
+      "PortalRequestOut": {
+        "description": "POR-04: one request in the sheet. `guidance` is firm-written only (SPEC-031 fields or an\napproved draft; never unapproved model text, ADR-111).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "upload",
+                "ignore",
+                "undo_ignore",
+                "withdraw",
+                "mark_done",
+                "undo_mark_done",
+                "comment"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "binder_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Binder Id",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PortalCategoryRefOut",
+            "cls": "internal"
+          },
+          "client_status": {
+            "cls": "internal",
+            "enum": [
+              "to_do",
+              "done",
+              "ignored",
+              "returned"
+            ],
+            "title": "Client Status",
+            "type": "string"
+          },
+          "comment_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "files": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PortalFileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Guidance"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "pre_checks": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "wrong_period",
+                "wrong_entity",
+                "stale_as_of",
+                "totals_dont_add_up"
+              ],
+              "type": "string"
+            },
+            "title": "Pre Checks",
+            "type": "array"
+          },
+          "prior_year": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalPriorYearOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "requested_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Requested On",
+            "type": "string"
+          },
+          "returned": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalReturnedOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "uploading_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Uploading Count",
+            "type": "integer"
+          },
+          "variant": {
+            "cls": "internal",
+            "default": "request",
+            "enum": [
+              "request",
+              "question",
+              "decision"
+            ],
+            "title": "Variant",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "engagement_id",
+          "binder_id",
+          "category",
+          "title",
+          "client_status",
+          "requested_on"
+        ],
+        "title": "PortalRequestOut",
+        "type": "object"
+      },
+      "PortalReturnedOut": {
+        "description": "The firm's client-visible send-back note, with its author's name and date.",
+        "properties": {
+          "by_name": {
+            "cls": "confidential",
+            "title": "By Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          },
+          "reason": {
+            "cls": "internal",
+            "enum": [
+              "wrong_year",
+              "wrong_period",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "by_name",
+          "on"
+        ],
+        "title": "PortalReturnedOut",
+        "type": "object"
+      },
+      "PortalRoomBandOut": {
+        "description": "\"Recordkeeper reports \u00b7 3 of 5\".",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalRoomRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "uploaded": {
+            "cls": "internal",
+            "title": "Uploaded",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "uploaded",
+          "total",
+          "rows"
+        ],
+        "title": "PortalRoomBandOut",
+        "type": "object"
+      },
+      "PortalRoomOut": {
+        "description": "POR-14: exactly the caller's delegated items, \"n of N\". `intro` is firm-written request\nguidance (the custodian's ERISA \u00a7103(a)(3)(C) line is database content, not a constant).",
+        "properties": {
+          "bands": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalRoomBandOut"
+            },
+            "title": "Bands",
+            "type": "array"
+          },
+          "complete": {
+            "cls": "internal",
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "engagement_label": {
+            "cls": "confidential",
+            "title": "Engagement Label",
+            "type": "string"
+          },
+          "firm_name": {
+            "cls": "public",
+            "title": "Firm Name",
+            "type": "string"
+          },
+          "intro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Intro"
+          },
+          "organisation_name": {
+            "cls": "confidential",
+            "title": "Organisation Name",
+            "type": "string"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "uploaded_count": {
+            "cls": "internal",
+            "title": "Uploaded Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "engagement_label",
+          "firm_name",
+          "organisation_name",
+          "uploaded_count",
+          "total",
+          "complete",
+          "bands"
+        ],
+        "title": "PortalRoomOut",
+        "type": "object"
+      },
+      "PortalRoomRowOut": {
+        "description": "One delegated request in the third-party room (POR-14).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "upload",
+                "ignore",
+                "undo_ignore",
+                "withdraw",
+                "mark_done",
+                "undo_mark_done",
+                "comment"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "comment_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "disc": {
+            "cls": "internal",
+            "enum": [
+              "done",
+              "ring"
+            ],
+            "title": "Disc",
+            "type": "string"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "files": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PortalFileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Guidance"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "returned": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalReturnedOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "uploaded",
+              "due",
+              "in_review",
+              "returned"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "state_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State On"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "engagement_id",
+          "title",
+          "state",
+          "disc"
+        ],
+        "title": "PortalRoomRowOut",
+        "type": "object"
+      },
+      "PortalRowOut": {
+        "description": "One request as the client sees it on POR-03.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "upload",
+                "ignore",
+                "undo_ignore",
+                "withdraw",
+                "mark_done",
+                "undo_mark_done",
+                "comment"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "client_status": {
+            "cls": "internal",
+            "enum": [
+              "to_do",
+              "done",
+              "ignored",
+              "returned"
+            ],
+            "title": "Client Status",
+            "type": "string"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "files": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PortalFileOut"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ignored_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ignored On"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "request",
+              "firm_provided",
+              "provided_by_connection"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "returned": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalReturnedOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "uploading_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Uploading Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "engagement_id",
+          "title",
+          "kind",
+          "client_status"
+        ],
+        "title": "PortalRowOut",
         "type": "object"
       },
       "PortalSignInPolicyOut": {
@@ -29602,6 +30897,74 @@
           "value"
         ],
         "title": "RollforwardComponentOut",
+        "type": "object"
+      },
+      "RoomSuggestIn": {
+        "additionalProperties": false,
+        "description": "File names only: the suggest never sees content (code-only scoring, ADR-050).",
+        "properties": {
+          "file_names": {
+            "cls": "confidential",
+            "items": {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "File Names",
+            "type": "array"
+          }
+        },
+        "required": [
+          "file_names"
+        ],
+        "title": "RoomSuggestIn",
+        "type": "object"
+      },
+      "RoomSuggestOut": {
+        "properties": {
+          "suggestions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RoomSuggestionOut"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "suggestions"
+        ],
+        "title": "RoomSuggestOut",
+        "type": "object"
+      },
+      "RoomSuggestionOut": {
+        "description": "`request_item_id` is null when no delegated item wins; the person chooses.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "request_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request Item Id"
+          }
+        },
+        "required": [
+          "file_name"
+        ],
+        "title": "RoomSuggestionOut",
         "type": "object"
       },
       "RouteProposalIn": {
@@ -53305,6 +54668,164 @@
           "agents"
         ],
         "x-abacus-action": "follow_up.send"
+      }
+    },
+    "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void": {
+      "post": {
+        "description": "Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment;\na human or accepted link answers 409 `not_voidable`.",
+        "operationId": "void_fulfilment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "fulfilment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fulfilment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfilmentVoidIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FulfilmentVoidedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Void Fulfilment Route",
+        "tags": [
+          "requests"
+        ],
+        "x-abacus-action": "fulfilment.confirm"
       }
     },
     "/v1/engagements/{engagement_id}/gates": {
@@ -89744,6 +91265,449 @@
         "x-abacus-action": "pre_session"
       }
     },
+    "/v1/portal/binders": {
+      "get": {
+        "description": "The binder picker: every binder the caller can see; closed ones read-only.",
+        "operationId": "list_portal_binders",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBinderListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Portal Binders Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_documents.read"
+      }
+    },
+    "/v1/portal/binders/{binder_id}": {
+      "get": {
+        "description": "POR-03. A binder outside the caller's grant, a draft or a forged id answers 404.",
+        "operationId": "get_portal_binder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "binder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Binder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "default": "requested",
+              "enum": [
+                "requested",
+                "all",
+                "uploaded_by_me",
+                "needs_follow_up"
+              ],
+              "title": "Filter",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBinderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Portal Binder Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_documents.read"
+      }
+    },
+    "/v1/portal/binders/{binder_id}/drops": {
+      "post": {
+        "description": "One dropped file (POR-03 b \u2192 c, d). Sorted by code against the dropper's visible items.",
+        "operationId": "drop_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "binder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Binder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Drop-Batch",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Drop-Batch",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DropAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file type is not accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Drop File Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "evidence.upload"
+      }
+    },
     "/v1/portal/binders/{binder_id}/mark-done": {
       "post": {
         "description": "The client: Published to Complete, with the open count at that moment (OQ-8).",
@@ -89855,6 +91819,144 @@
           }
         },
         "summary": "Mark Binder Done Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "binder.mark_done"
+      }
+    },
+    "/v1/portal/binders/{binder_id}/mark-done/undo": {
+      "post": {
+        "description": "The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a\nnew one (409 `firm_already_acted`).",
+        "operationId": "undo_mark_done",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "binder_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Binder Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkDoneUndoneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Undo Mark Done Route",
         "tags": [
           "portal"
         ],
@@ -90022,6 +92124,123 @@
           "portal"
         ],
         "x-abacus-action": "portal_public"
+      }
+    },
+    "/v1/portal/drops/{batch_id}": {
+      "get": {
+        "description": "The dropper's poll of one drop batch; anyone else's batch answers 404.",
+        "operationId": "get_drop_batch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DropBatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Drop Batch Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_documents.read"
       }
     },
     "/v1/portal/home": {
@@ -90255,6 +92474,123 @@
         "x-abacus-action": "portal_preferences.update"
       }
     },
+    "/v1/portal/request-items/{item_id}": {
+      "get": {
+        "description": "POR-04. Out of scope, internal-only, delegated to a third party or forged: 404.",
+        "operationId": "get_portal_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Portal Request Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_documents.read"
+      }
+    },
     "/v1/portal/request-items/{item_id}/ignore": {
       "post": {
         "description": "The client's Ignore, with a reason; the firm returns or waives (OQ-3).",
@@ -90382,6 +92718,144 @@
         "x-abacus-action": "request_item.ignore"
       }
     },
+    "/v1/portal/request-items/{item_id}/ignore/undo": {
+      "post": {
+        "description": "The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until\nthe firm acts on the request (409 `firm_already_acted`, DEC-24).",
+        "operationId": "undo_ignore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IgnoreUndoneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Undo Ignore Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "request_item.ignore"
+      }
+    },
     "/v1/portal/request-items/{item_id}/upload-intents": {
       "post": {
         "description": "R-01 announces an upload in progress, for BND-02's \"Uploading n files\u2026\".",
@@ -90497,6 +92971,230 @@
           "portal"
         ],
         "x-abacus-action": "evidence.upload"
+      }
+    },
+    "/v1/portal/room": {
+      "get": {
+        "description": "POR-14: the caller's delegated request items, by band.",
+        "operationId": "get_portal_room",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalRoomOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Portal Room Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_documents.read"
+      }
+    },
+    "/v1/portal/room/suggest": {
+      "post": {
+        "description": "\"Which request is this for?\": code-only file-name scoring among the caller's delegated\nitems. Writes nothing.",
+        "operationId": "suggest_room_request",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomSuggestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSuggestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Suggest Room Request Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_documents.read"
       }
     },
     "/v1/proposals/{proposal_id}/approve": {

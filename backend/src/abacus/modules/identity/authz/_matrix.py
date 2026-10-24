@@ -1100,6 +1100,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "not_offshore": "required",
         "mfa_recent": "required",
     },
+    "portal_documents.read": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
     "portal_home.read": {
         "client_admin": "allow",
         "client_contributor": "allow",

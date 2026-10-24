@@ -4825,6 +4825,75 @@ export type DraftedOut = {
 };
 
 /**
+ * DropAcceptedOut
+ *
+ * 202: the file is stored and waits for the sort; its outcome comes from the batch poll.
+ */
+export type DropAcceptedOut = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * File Id
+     */
+    file_id: string;
+};
+
+/**
+ * DropBatchOut
+ *
+ * `GET /v1/portal/drops/{batch_id}`: polled until `settled` (every file has an outcome).
+ */
+export type DropBatchOut = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Files
+     */
+    files: Array<DropFileOut>;
+    /**
+     * Settled
+     */
+    settled: boolean;
+};
+
+/**
+ * DropFileOut
+ *
+ * One dropped file's outcome. `rule_linked` names the request it landed on, pending a
+ * person's accept; `waiting` is "Brightwater Hale will sort this".
+ */
+export type DropFileOut = {
+    /**
+     * File Id
+     */
+    file_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Outcome
+     */
+    outcome?: 'rule_linked' | 'waiting' | 'duplicate_flagged' | 'refused' | null;
+    /**
+     * Refusal
+     */
+    refusal?: 'file_too_large' | 'type_not_allowed' | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id?: string | null;
+};
+
+/**
  * DueDatesIn
  *
  * SPEC-027 AC-9 (TASK-051): set or clear (`null`) several items' due date.
@@ -7328,6 +7397,38 @@ export type FsStatementsOut = {
 };
 
 /**
+ * FulfilmentVoidIn
+ */
+export type FulfilmentVoidIn = {
+    /**
+     * Reason
+     */
+    reason: 'wrong_request';
+};
+
+/**
+ * FulfilmentVoidedOut
+ *
+ * The link is stamped void, never deleted. The request returns to `requested` when nothing
+ * else fulfils it, and the version waits in the engagement drop zone for a person again.
+ */
+export type FulfilmentVoidedOut = {
+    /**
+     * Fulfilment Id
+     */
+    fulfilment_id: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    request_status: RequestStatus;
+    /**
+     * Voided At
+     */
+    voided_at: string;
+};
+
+/**
  * GapOut
  */
 export type GapOut = {
@@ -8044,6 +8145,27 @@ export type IgnoreIn = {
      * Reason
      */
     reason: 'not_this_year' | 'sent_another_way' | 'dont_have';
+};
+
+/**
+ * IgnoreUndoneOut
+ *
+ * `request_item.ignore_undone`: `client_ignored_at` cleared; the client reads "To do" again.
+ * The ignore note stays in the thread (comments are never deleted).
+ */
+export type IgnoreUndoneOut = {
+    /**
+     * Client Status
+     */
+    client_status: 'to_do' | 'done' | 'ignored' | 'returned';
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Undone At
+     */
+    undone_at: string;
 };
 
 /**
@@ -10054,6 +10176,27 @@ export type MappingOut = {
 };
 
 /**
+ * MarkDoneUndoneOut
+ *
+ * `binder.mark_done_undone`: the binder is `published` again and BND-02's "Marked done by
+ * Claire Feld" goes; the client reads Mark as Done tonal (requests open) or ready.
+ */
+export type MarkDoneUndoneOut = {
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Mark Done
+     */
+    mark_done: 'tonal' | 'ready' | 'marked';
+    /**
+     * Undone At
+     */
+    undone_at: string;
+};
+
+/**
  * MaskedTinOut
  *
  * A taxpayer ID as every payload but the reveal carries it: kind and last four digits
@@ -11294,6 +11437,130 @@ export type PopulationOut = {
 };
 
 /**
+ * PortalBandOut
+ *
+ * A folder band ("Census & Payroll") on the audit layout (POR-03 i).
+ */
+export type PortalBandOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rows
+     */
+    rows: Array<PortalRowOut>;
+};
+
+/**
+ * PortalBinderListOut
+ *
+ * The P-36 list envelope; every binder the caller's grants can see.
+ */
+export type PortalBinderListOut = {
+    /**
+     * Items
+     */
+    items: Array<PortalBinderRefOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * PortalBinderOut
+ *
+ * POR-03: one binder through the caller's grant. `open_count` is the same figure POR-02's
+ * "Upload 2 documents" and TAX-03's "Intake 2" read (one read model). `other_parties` names
+ * the organisations requests were delegated to, for admin grants only, never their titles.
+ */
+export type PortalBinderOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'upload' | 'ignore' | 'undo_ignore' | 'withdraw' | 'mark_done' | 'undo_mark_done' | 'comment'>;
+    /**
+     * Bands
+     */
+    bands?: Array<PortalBandOut>;
+    binder: PortalBinderRefOut;
+    /**
+     * Categories
+     */
+    categories: Array<PortalCategoryOut>;
+    /**
+     * Done Count
+     */
+    done_count: number;
+    /**
+     * Filter
+     */
+    filter: 'requested' | 'all' | 'uploaded_by_me' | 'needs_follow_up';
+    /**
+     * Groups
+     */
+    groups?: Array<PortalGroupOut>;
+    /**
+     * Layout
+     */
+    layout: 'groups' | 'bands';
+    mark_done: PortalMarkDoneOut;
+    /**
+     * Open Count
+     */
+    open_count: number;
+    /**
+     * Other Parties
+     */
+    other_parties?: Array<string>;
+    /**
+     * Sorted Count
+     */
+    sorted_count: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * PortalBinderRefOut
+ *
+ * One binder in the picker ("2025 Binder", "2024 Binder (closed)").
+ */
+export type PortalBinderRefOut = {
+    /**
+     * Closed
+     */
+    closed: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Read Only
+     */
+    read_only: boolean;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Year
+     */
+    year?: number | null;
+};
+
+/**
  * PortalBrandingOut
  *
  * Public fields only, the same shape for an unknown host (neutral values), and no tenant
@@ -11337,6 +11604,98 @@ export type PortalBrandingOut = {
      * Support Contact Name
      */
     support_contact_name: string | null;
+};
+
+/**
+ * PortalCategoryOut
+ *
+ * A rail category. `complete` is computed by code: every request in it done or ignored.
+ */
+export type PortalCategoryOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Complete
+     */
+    complete: boolean;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Requested
+     */
+    requested: number;
+};
+
+/**
+ * PortalCategoryRefOut
+ */
+export type PortalCategoryRefOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * PortalFileOut
+ *
+ * A file on a request. A withdrawn file is never listed; `withdrawable` only for the
+ * caller's own unaccepted upload (never emailed, never accepted; ADR P-31).
+ */
+export type PortalFileOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    receipt: PortalReceiptOut;
+    /**
+     * Size Bytes
+     */
+    size_bytes?: number | null;
+    /**
+     * Struck
+     */
+    struck?: boolean;
+    /**
+     * Withdrawable
+     */
+    withdrawable: boolean;
+};
+
+/**
+ * PortalGroupOut
+ *
+ * A section card ("Health insurance") on the household layout.
+ */
+export type PortalGroupOut = {
+    /**
+     * Category Code
+     */
+    category_code: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rows
+     */
+    rows: Array<PortalRowOut>;
 };
 
 /**
@@ -11685,6 +12044,24 @@ export type PortalHomeWorkCardOut = {
 };
 
 /**
+ * PortalMarkDoneOut
+ */
+export type PortalMarkDoneOut = {
+    /**
+     * Marked By Name
+     */
+    marked_by_name?: string | null;
+    /**
+     * Marked On
+     */
+    marked_on?: string | null;
+    /**
+     * State
+     */
+    state: 'tonal' | 'ready' | 'marked';
+};
+
+/**
  * PortalMfaIn
  *
  * `POST /v1/portal/auth/mfa`: exactly one of `totp` and `backup_code`. Errors: 401
@@ -11816,6 +12193,301 @@ export type PortalPreferencesOut = {
      * Welcome Dismissed At
      */
     welcome_dismissed_at?: string | null;
+};
+
+/**
+ * PortalPriorYearOut
+ *
+ * "Last year you sent … on Mar 3, 2025." (the prior year's fulfilment, roll-forward).
+ */
+export type PortalPriorYearOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Sent On
+     */
+    sent_on: string;
+};
+
+/**
+ * PortalReceiptOut
+ *
+ * "You uploaded Aug 7", "Jonah uploaded Aug 5", "Received by email Aug 3".
+ */
+export type PortalReceiptOut = {
+    /**
+     * By First Name
+     */
+    by_first_name?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'uploaded' | 'uploaded_by_other_contact' | 'emailed' | 'rule_linked_pending' | 'received';
+    /**
+     * On
+     */
+    on: string;
+};
+
+/**
+ * PortalRequestOut
+ *
+ * POR-04: one request in the sheet. `guidance` is firm-written only (SPEC-031 fields or an
+ * approved draft; never unapproved model text, ADR-111).
+ */
+export type PortalRequestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'upload' | 'ignore' | 'undo_ignore' | 'withdraw' | 'mark_done' | 'undo_mark_done' | 'comment'>;
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    category: PortalCategoryRefOut;
+    /**
+     * Client Status
+     */
+    client_status: 'to_do' | 'done' | 'ignored' | 'returned';
+    /**
+     * Comment Count
+     */
+    comment_count?: number;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Files
+     */
+    files?: Array<PortalFileOut>;
+    /**
+     * Guidance
+     */
+    guidance?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Pre Checks
+     */
+    pre_checks?: Array<'wrong_period' | 'wrong_entity' | 'stale_as_of' | 'totals_dont_add_up'>;
+    prior_year?: PortalPriorYearOut | null;
+    /**
+     * Requested On
+     */
+    requested_on: string;
+    returned?: PortalReturnedOut | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Uploading Count
+     */
+    uploading_count?: number;
+    /**
+     * Variant
+     */
+    variant?: 'request' | 'question' | 'decision';
+};
+
+/**
+ * PortalReturnedOut
+ *
+ * The firm's client-visible send-back note, with its author's name and date.
+ */
+export type PortalReturnedOut = {
+    /**
+     * By Name
+     */
+    by_name: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * On
+     */
+    on: string;
+    /**
+     * Reason
+     */
+    reason: 'wrong_year' | 'wrong_period' | 'other';
+};
+
+/**
+ * PortalRoomBandOut
+ *
+ * "Recordkeeper reports · 3 of 5".
+ */
+export type PortalRoomBandOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rows
+     */
+    rows: Array<PortalRoomRowOut>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Uploaded
+     */
+    uploaded: number;
+};
+
+/**
+ * PortalRoomOut
+ *
+ * POR-14: exactly the caller's delegated items, "n of N". `intro` is firm-written request
+ * guidance (the custodian's ERISA §103(a)(3)(C) line is database content, not a constant).
+ */
+export type PortalRoomOut = {
+    /**
+     * Bands
+     */
+    bands: Array<PortalRoomBandOut>;
+    /**
+     * Complete
+     */
+    complete: boolean;
+    /**
+     * Engagement Label
+     */
+    engagement_label: string;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Intro
+     */
+    intro?: string | null;
+    /**
+     * Organisation Name
+     */
+    organisation_name: string;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Uploaded Count
+     */
+    uploaded_count: number;
+};
+
+/**
+ * PortalRoomRowOut
+ *
+ * One delegated request in the third-party room (POR-14).
+ */
+export type PortalRoomRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'upload' | 'ignore' | 'undo_ignore' | 'withdraw' | 'mark_done' | 'undo_mark_done' | 'comment'>;
+    /**
+     * Comment Count
+     */
+    comment_count?: number;
+    /**
+     * Disc
+     */
+    disc: 'done' | 'ring';
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Files
+     */
+    files?: Array<PortalFileOut>;
+    /**
+     * Guidance
+     */
+    guidance?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    returned?: PortalReturnedOut | null;
+    /**
+     * State
+     */
+    state: 'uploaded' | 'due' | 'in_review' | 'returned';
+    /**
+     * State On
+     */
+    state_on?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * PortalRowOut
+ *
+ * One request as the client sees it on POR-03.
+ */
+export type PortalRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'upload' | 'ignore' | 'undo_ignore' | 'withdraw' | 'mark_done' | 'undo_mark_done' | 'comment'>;
+    /**
+     * Client Status
+     */
+    client_status: 'to_do' | 'done' | 'ignored' | 'returned';
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Files
+     */
+    files?: Array<PortalFileOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Ignored On
+     */
+    ignored_on?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'request' | 'firm_provided' | 'provided_by_connection';
+    returned?: PortalReturnedOut | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Uploading Count
+     */
+    uploading_count?: number;
 };
 
 /**
@@ -14005,6 +14677,44 @@ export type RollforwardComponentOut = {
      * Value
      */
     value: string;
+};
+
+/**
+ * RoomSuggestIn
+ *
+ * File names only: the suggest never sees content (code-only scoring, ADR-050).
+ */
+export type RoomSuggestIn = {
+    /**
+     * File Names
+     */
+    file_names: Array<string>;
+};
+
+/**
+ * RoomSuggestOut
+ */
+export type RoomSuggestOut = {
+    /**
+     * Suggestions
+     */
+    suggestions: Array<RoomSuggestionOut>;
+};
+
+/**
+ * RoomSuggestionOut
+ *
+ * `request_item_id` is null when no delegated item wins; the person chooses.
+ */
+export type RoomSuggestionOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id?: string | null;
 };
 
 /**
@@ -24916,6 +25626,74 @@ export type SendDraftResponses = {
 };
 
 export type SendDraftResponse = SendDraftResponses[keyof SendDraftResponses];
+
+export type VoidFulfilmentData = {
+    body: FulfilmentVoidIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Fulfilment Id
+         */
+        fulfilment_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void';
+};
+
+export type VoidFulfilmentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VoidFulfilmentError = VoidFulfilmentErrors[keyof VoidFulfilmentErrors];
+
+export type VoidFulfilmentResponses = {
+    /**
+     * Successful Response
+     */
+    200: FulfilmentVoidedOut;
+};
+
+export type VoidFulfilmentResponse = VoidFulfilmentResponses[keyof VoidFulfilmentResponses];
 
 export type EngagementGatesData = {
     body?: never;
@@ -41621,6 +42399,204 @@ export type PortalVerifyResponses = {
 
 export type PortalVerifyResponse = PortalVerifyResponses[keyof PortalVerifyResponses];
 
+export type ListPortalBindersData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Scope Id
+         */
+        scope_id?: string | null;
+    };
+    url: '/v1/portal/binders';
+};
+
+export type ListPortalBindersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListPortalBindersError = ListPortalBindersErrors[keyof ListPortalBindersErrors];
+
+export type ListPortalBindersResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalBinderListOut;
+};
+
+export type ListPortalBindersResponse = ListPortalBindersResponses[keyof ListPortalBindersResponses];
+
+export type GetPortalBinderData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Binder Id
+         */
+        binder_id: string;
+    };
+    query?: {
+        /**
+         * Filter
+         */
+        filter?: 'requested' | 'all' | 'uploaded_by_me' | 'needs_follow_up';
+        /**
+         * Category
+         */
+        category?: string | null;
+    };
+    url: '/v1/portal/binders/{binder_id}';
+};
+
+export type GetPortalBinderErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetPortalBinderError = GetPortalBinderErrors[keyof GetPortalBinderErrors];
+
+export type GetPortalBinderResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalBinderOut;
+};
+
+export type GetPortalBinderResponse = GetPortalBinderResponses[keyof GetPortalBinderResponses];
+
+export type DropFileData = {
+    body?: never;
+    headers: {
+        /**
+         * X-Drop-Batch
+         */
+        'X-Drop-Batch': string;
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Binder Id
+         */
+        binder_id: string;
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/portal/binders/{binder_id}/drops';
+};
+
+export type DropFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DropFileError = DropFileErrors[keyof DropFileErrors];
+
+export type DropFileResponses = {
+    /**
+     * Successful Response
+     */
+    202: DropAcceptedOut;
+};
+
+export type DropFileResponse = DropFileResponses[keyof DropFileResponses];
+
 export type MarkBinderDoneData = {
     body?: never;
     headers?: {
@@ -41676,6 +42652,70 @@ export type MarkBinderDoneResponses = {
 };
 
 export type MarkBinderDoneResponse = MarkBinderDoneResponses[keyof MarkBinderDoneResponses];
+
+export type UndoMarkDoneData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Binder Id
+         */
+        binder_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/binders/{binder_id}/mark-done/undo';
+};
+
+export type UndoMarkDoneErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UndoMarkDoneError = UndoMarkDoneErrors[keyof UndoMarkDoneErrors];
+
+export type UndoMarkDoneResponses = {
+    /**
+     * Successful Response
+     */
+    200: MarkDoneUndoneOut;
+};
+
+export type UndoMarkDoneResponse = UndoMarkDoneResponses[keyof UndoMarkDoneResponses];
 
 export type GetPortalBrandingData = {
     body?: never;
@@ -41764,6 +42804,62 @@ export type GetPortalLogoResponses = {
 };
 
 export type GetPortalLogoResponse = GetPortalLogoResponses[keyof GetPortalLogoResponses];
+
+export type GetDropBatchData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/drops/{batch_id}';
+};
+
+export type GetDropBatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetDropBatchError = GetDropBatchErrors[keyof GetDropBatchErrors];
+
+export type GetDropBatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: DropBatchOut;
+};
+
+export type GetDropBatchResponse = GetDropBatchResponses[keyof GetDropBatchResponses];
 
 export type GetPortalHomeData = {
     body?: never;
@@ -41868,6 +42964,62 @@ export type UpdatePortalPreferencesResponses = {
 
 export type UpdatePortalPreferencesResponse = UpdatePortalPreferencesResponses[keyof UpdatePortalPreferencesResponses];
 
+export type GetPortalRequestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/request-items/{item_id}';
+};
+
+export type GetPortalRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetPortalRequestError = GetPortalRequestErrors[keyof GetPortalRequestErrors];
+
+export type GetPortalRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalRequestOut;
+};
+
+export type GetPortalRequestResponse = GetPortalRequestResponses[keyof GetPortalRequestResponses];
+
 export type IgnoreRequestItemData = {
     body: IgnoreIn;
     headers?: {
@@ -41924,6 +43076,70 @@ export type IgnoreRequestItemResponses = {
 
 export type IgnoreRequestItemResponse = IgnoreRequestItemResponses[keyof IgnoreRequestItemResponses];
 
+export type UndoIgnoreData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/request-items/{item_id}/ignore/undo';
+};
+
+export type UndoIgnoreErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UndoIgnoreError = UndoIgnoreErrors[keyof UndoIgnoreErrors];
+
+export type UndoIgnoreResponses = {
+    /**
+     * Successful Response
+     */
+    200: IgnoreUndoneOut;
+};
+
+export type UndoIgnoreResponse = UndoIgnoreResponses[keyof UndoIgnoreResponses];
+
 export type AnnounceUploadIntentData = {
     body: UploadIntentIn;
     headers?: {
@@ -41975,6 +43191,108 @@ export type AnnounceUploadIntentResponses = {
 };
 
 export type AnnounceUploadIntentResponse = AnnounceUploadIntentResponses[keyof AnnounceUploadIntentResponses];
+
+export type GetPortalRoomData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/room';
+};
+
+export type GetPortalRoomErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetPortalRoomError = GetPortalRoomErrors[keyof GetPortalRoomErrors];
+
+export type GetPortalRoomResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalRoomOut;
+};
+
+export type GetPortalRoomResponse = GetPortalRoomResponses[keyof GetPortalRoomResponses];
+
+export type SuggestRoomRequestData = {
+    body: RoomSuggestIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/room/suggest';
+};
+
+export type SuggestRoomRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SuggestRoomRequestError = SuggestRoomRequestErrors[keyof SuggestRoomRequestErrors];
+
+export type SuggestRoomRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoomSuggestOut;
+};
+
+export type SuggestRoomRequestResponse = SuggestRoomRequestResponses[keyof SuggestRoomRequestResponses];
 
 export type ProposalApproveData = {
     body: ApproveProposalIn;
