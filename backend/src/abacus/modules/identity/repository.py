@@ -526,6 +526,32 @@ async def client_admin_ids(session: AsyncSession, engagement_id: UUID) -> list[U
     return [cast(UUID, r[0]) for r in rows.all()]
 
 
+async def grant_contact_ids(session: AsyncSession, user_id: UUID) -> list[UUID]:
+    """The contacts the person's grants name (P-08-T17: the MFA floor's designations), in the
+    caller's tenant session. Revoked or expired grants count too: a designation stays a reason
+    for the second step whatever became of the grant."""
+    rows = await session.execute(
+        text(
+            "SELECT DISTINCT contact_id FROM client_access_grants "
+            "WHERE user_id = :u AND contact_id IS NOT NULL"
+        ),
+        {"u": user_id},
+    )
+    return [cast(UUID, r[0]) for r in rows.all()]
+
+
+async def contact_user_ids(session: AsyncSession, contact_id: UUID) -> list[UUID]:
+    """The people whose grants name the contact (P-08-T17: who a new designation affects)."""
+    rows = await session.execute(
+        text(
+            "SELECT DISTINCT user_id FROM client_access_grants WHERE contact_id = :c "
+            "ORDER BY user_id"
+        ),
+        {"c": contact_id},
+    )
+    return [cast(UUID, r[0]) for r in rows.all()]
+
+
 async def time_zone_of(session: AsyncSession) -> str:
     return str(await session.scalar(text("SELECT time_zone FROM firms")))
 

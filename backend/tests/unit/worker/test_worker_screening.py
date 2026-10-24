@@ -47,6 +47,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "connections",
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
+        "identity",  # P-08-T17: access changes end portal sessions and trusted devices
         "notifications",
         "platform",  # Q-01-T45: tenant provisioning
         "requests",  # P-06-T07: binders close on C1's terminal transitions
@@ -84,6 +85,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "work_item.status_changed",  # P-06-T07: binders close
         "engagement.status_changed",
         "legal_hold.lifted",  # Q-02-T29: LegalHoldRelease starts (placed also notifies)
+        "access.changed",  # P-08-T17: portal sessions and trusted devices end
+        "client_access.revoked",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

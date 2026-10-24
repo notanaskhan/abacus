@@ -5,7 +5,8 @@ DEFINER functions (as 0116's sign-in tables are), and one tenant table:
 
 - `mfa_factors`: a person's TOTP factor at the portal's identity provider (WorkOS), by its ids
   only; the secret is never stored. `enrolled_at` is null while setup waits for its first code. A
-  factor belongs to the person, not the firm (ADR-002), like `auth_sessions`.
+  factor belongs to the person, not the firm (ADR-002), like `auth_sessions`, so its second-step
+  guesses are counted here, across every firm: three wrong ones in 15 minutes lock it for 15.
 - `mfa_backup_codes`: SHA-256 of each of the person's 8 backup codes (80 random bits each), and
   when each was used. A new enrolment replaces them.
 - `trusted_devices`: per firm and person, the SHA-256 of a `__Host-` device cookie, its expiry
@@ -15,8 +16,8 @@ DEFINER functions (as 0116's sign-in tables are), and one tenant table:
   widen it; `trusted_device_days` can only shorten the 30-day ceiling.
 
 `sign_in_challenges` gains the second-step token (SHA-256, 5 minutes, single use, `verify` or
-`setup`); `sign_in_locks` gains the second-step guesses, counted apart from code guesses and not
-reset by a right email code; the third wrong one sets the same 15-minute `locked_until`.
+`setup`). A right email code does not reset the factor's guesses; the third wrong one also sets the
+firm's 15-minute `sign_in_locks.locked_until` for the email.
 
 Definers: `portal_mfa_begin`, `portal_mfa_attempt` (each guess counted before it is compared),
 `portal_mfa_missed`, `portal_mfa_backup_use`, `portal_mfa_setup_claim`,
@@ -66,7 +67,10 @@ def upgrade() -> None:
             provider_user_ref text NOT NULL CHECK (length(provider_user_ref) BETWEEN 1 AND 200),
             factor_ref text NOT NULL CHECK (length(factor_ref) BETWEEN 1 AND 200),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-            enrolled_at timestamptz NULL
+            enrolled_at timestamptz NULL,
+            mfa_attempts integer NOT NULL DEFAULT 0 CHECK (mfa_attempts >= 0),
+            mfa_window_until timestamptz NULL,
+            mfa_locked_until timestamptz NULL
         )
         """
     )
@@ -137,17 +141,11 @@ def upgrade() -> None:
                 AND (mfa_token_sha256 IS NULL OR user_id IS NOT NULL))
         """
     )
-    op.execute(
-        """
-        ALTER TABLE sign_in_locks
-            ADD COLUMN mfa_attempts integer NOT NULL DEFAULT 0 CHECK (mfa_attempts >= 0),
-            ADD COLUMN mfa_window_until timestamptz NULL
-        """
-    )
 
     # The right email code, for a person the floor covers: the challenge is used (as
     # `portal_sign_in_consume`, which also clears the code guesses) and a second-step token starts.
-    # The second-step guesses are not reset here. False when a concurrent verify used it first.
+    # The factor's second-step guesses are not reset here. False when a concurrent verify used it
+    # first.
     op.execute(
         """
         CREATE FUNCTION portal_mfa_begin(
@@ -173,10 +171,11 @@ def upgrade() -> None:
         END $$
         """
     )
-    # Every second-step guess is counted before it is compared, under row locks on the token's
-    # challenge and on the firm's (email) row (0116's pattern). 'ok' hands back the factor to
-    # check: the enrolled one for `verify`, the pending one for `setup`. The guess over the limit
-    # locks for `p_lock_seconds` and voids the token.
+    # Every second-step guess is counted before it is compared, under row locks taken in one
+    # order (the token's challenge, the firm's email row, the person's factor) so concurrent
+    # guesses queue. The count is the factor's, across firms. 'ok' hands back the factor to check:
+    # the enrolled one for `verify`, the pending one for `setup`. The guess over the limit locks
+    # the factor and the firm's email for `p_lock_seconds`, and voids the token.
     op.execute(
         """
         CREATE FUNCTION portal_mfa_attempt(
@@ -189,7 +188,7 @@ def upgrade() -> None:
             v_now timestamptz := clock_timestamp();
             v_challenge record;
             v_lock record;
-            v_factor text;
+            v_factor record;
             v_until timestamptz;
         BEGIN
             SELECT * INTO v_challenge FROM public.sign_in_challenges c
@@ -200,19 +199,20 @@ def upgrade() -> None:
                     NULL::timestamptz;
                 RETURN;
             END IF;
+            INSERT INTO public.sign_in_locks (host_tenant_id, email_sha256)
+            VALUES (v_challenge.host_tenant_id, v_challenge.email_sha256)
+            ON CONFLICT DO NOTHING;
             SELECT * INTO v_lock FROM public.sign_in_locks l
              WHERE l.host_tenant_id = v_challenge.host_tenant_id
                AND l.email_sha256 = v_challenge.email_sha256 FOR UPDATE;
-            IF NOT FOUND THEN
-                INSERT INTO public.sign_in_locks (host_tenant_id, email_sha256)
-                VALUES (v_challenge.host_tenant_id, v_challenge.email_sha256);
-                SELECT * INTO v_lock FROM public.sign_in_locks l
-                 WHERE l.host_tenant_id = v_challenge.host_tenant_id
-                   AND l.email_sha256 = v_challenge.email_sha256 FOR UPDATE;
-            END IF;
-            IF v_lock.locked_until > v_now THEN
+            SELECT * INTO v_factor FROM public.mfa_factors f
+             WHERE f.user_id = v_challenge.user_id FOR UPDATE;
+            v_until := greatest(
+                CASE WHEN v_lock.locked_until > v_now THEN v_lock.locked_until END,
+                CASE WHEN v_factor.mfa_locked_until > v_now THEN v_factor.mfa_locked_until END);
+            IF v_until IS NOT NULL THEN
                 RETURN QUERY SELECT 'locked'::text, NULL::uuid, NULL::uuid, NULL::text, 0,
-                    v_lock.locked_until;
+                    v_until;
                 RETURN;
             END IF;
             IF v_challenge.mfa_used_at IS NOT NULL OR v_challenge.mfa_expires_at <= v_now THEN
@@ -220,30 +220,29 @@ def upgrade() -> None:
                     NULL::timestamptz;
                 RETURN;
             END IF;
-            SELECT f.factor_ref INTO v_factor FROM public.mfa_factors f
-             WHERE f.user_id = v_challenge.user_id
-               AND (CASE WHEN p_kind = 'verify' THEN f.enrolled_at IS NOT NULL
-                         ELSE f.enrolled_at IS NULL END);
-            IF v_factor IS NULL OR (p_kind = 'setup' AND v_challenge.mfa_setup_at IS NULL) THEN
+            IF v_factor.user_id IS NULL
+               OR (p_kind = 'verify' AND v_factor.enrolled_at IS NULL)
+               OR (p_kind = 'setup' AND (v_factor.enrolled_at IS NOT NULL
+                                         OR v_challenge.mfa_setup_at IS NULL)) THEN
                 RETURN QUERY SELECT 'unknown'::text, NULL::uuid, NULL::uuid, NULL::text, 0,
                     NULL::timestamptz;
                 RETURN;
             END IF;
-            IF v_lock.mfa_window_until IS NULL OR v_lock.mfa_window_until <= v_now THEN
-                UPDATE public.sign_in_locks SET mfa_attempts = 0,
+            IF v_factor.mfa_window_until IS NULL OR v_factor.mfa_window_until <= v_now THEN
+                v_factor.mfa_attempts := 0;
+                UPDATE public.mfa_factors SET mfa_attempts = 0,
                     mfa_window_until = v_now + make_interval(secs => p_lock_seconds)
+                 WHERE mfa_factors.user_id = v_challenge.user_id;
+            END IF;
+            UPDATE public.mfa_factors SET mfa_attempts = mfa_attempts + 1
+             WHERE mfa_factors.user_id = v_challenge.user_id;
+            IF v_factor.mfa_attempts + 1 > p_max THEN
+                v_until := v_now + make_interval(secs => p_lock_seconds);
+                UPDATE public.mfa_factors SET mfa_locked_until = v_until
+                 WHERE mfa_factors.user_id = v_challenge.user_id;
+                UPDATE public.sign_in_locks SET locked_until = v_until
                  WHERE host_tenant_id = v_lock.host_tenant_id
                    AND email_sha256 = v_lock.email_sha256;
-                v_lock.mfa_attempts := 0;
-            END IF;
-            UPDATE public.sign_in_locks SET mfa_attempts = mfa_attempts + 1
-             WHERE host_tenant_id = v_lock.host_tenant_id AND email_sha256 = v_lock.email_sha256;
-            IF v_lock.mfa_attempts + 1 > p_max THEN
-                UPDATE public.sign_in_locks
-                   SET locked_until = v_now + make_interval(secs => p_lock_seconds)
-                 WHERE host_tenant_id = v_lock.host_tenant_id
-                   AND email_sha256 = v_lock.email_sha256
-                RETURNING sign_in_locks.locked_until INTO v_until;
                 UPDATE public.sign_in_challenges SET mfa_used_at = v_now
                  WHERE id = v_challenge.id;
                 RETURN QUERY SELECT 'locked'::text, v_challenge.tenant_id, v_challenge.user_id,
@@ -251,16 +250,18 @@ def upgrade() -> None:
                 RETURN;
             END IF;
             RETURN QUERY SELECT 'ok'::text, v_challenge.tenant_id, v_challenge.user_id,
-                v_factor, p_max - (v_lock.mfa_attempts + 1), NULL::timestamptz;
+                v_factor.factor_ref, p_max - (v_factor.mfa_attempts + 1), NULL::timestamptz;
         END $$
         """
     )
-    # A second-step guess missed: when it was the last allowed one, lock (or report the lock a
-    # concurrent guess set) and void the token.
+    # A second-step guess missed: when it was the last one allowed (`p_tries_left` 0, from its
+    # attempt), lock the factor and the firm's email (or keep the lock a later guess set) and void
+    # the token. An earlier guess reports its own tries left. Rows are locked in
+    # `portal_mfa_attempt`'s order.
     op.execute(
         """
         CREATE FUNCTION portal_mfa_missed(
-            p_token_sha256 text, p_max integer, p_lock_seconds integer
+            p_token_sha256 text, p_tries_left integer, p_lock_seconds integer
         ) RETURNS timestamptz
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
         DECLARE
@@ -268,17 +269,23 @@ def upgrade() -> None:
             v_until timestamptz;
         BEGIN
             SELECT * INTO v_challenge FROM public.sign_in_challenges
-             WHERE mfa_token_sha256 = p_token_sha256;
-            IF NOT FOUND THEN
+             WHERE mfa_token_sha256 = p_token_sha256 FOR UPDATE;
+            IF NOT FOUND OR p_tries_left > 0 THEN
                 RETURN NULL;
             END IF;
-            UPDATE public.sign_in_locks
-               SET locked_until = CASE WHEN locked_until > clock_timestamp() THEN locked_until
-                   ELSE clock_timestamp() + make_interval(secs => p_lock_seconds) END
+            PERFORM 1 FROM public.sign_in_locks
              WHERE host_tenant_id = v_challenge.host_tenant_id
-               AND email_sha256 = v_challenge.email_sha256 AND mfa_attempts >= p_max
-            RETURNING locked_until INTO v_until;
+               AND email_sha256 = v_challenge.email_sha256 FOR UPDATE;
+            UPDATE public.mfa_factors
+               SET mfa_locked_until = CASE WHEN mfa_locked_until > clock_timestamp()
+                   THEN mfa_locked_until
+                   ELSE clock_timestamp() + make_interval(secs => p_lock_seconds) END
+             WHERE user_id = v_challenge.user_id
+            RETURNING mfa_locked_until INTO v_until;
             IF v_until IS NOT NULL THEN
+                UPDATE public.sign_in_locks SET locked_until = greatest(locked_until, v_until)
+                 WHERE host_tenant_id = v_challenge.host_tenant_id
+                   AND email_sha256 = v_challenge.email_sha256;
                 UPDATE public.sign_in_challenges SET mfa_used_at = clock_timestamp()
                  WHERE id = v_challenge.id AND mfa_used_at IS NULL;
             END IF;
@@ -312,7 +319,9 @@ def upgrade() -> None:
                AND c.mfa_kind = 'setup' AND c.mfa_setup_at IS NULL AND c.mfa_used_at IS NULL
                AND c.mfa_expires_at > clock_timestamp()
                AND NOT EXISTS (SELECT 1 FROM public.mfa_factors f
-                                WHERE f.user_id = c.user_id AND f.enrolled_at IS NOT NULL)
+                                WHERE f.user_id = c.user_id
+                                  AND (f.enrolled_at IS NOT NULL
+                                       OR f.mfa_locked_until > clock_timestamp()))
                AND NOT EXISTS (SELECT 1 FROM public.sign_in_locks l
                                 WHERE l.host_tenant_id = c.host_tenant_id
                                   AND l.email_sha256 = c.email_sha256
@@ -368,11 +377,12 @@ def upgrade() -> None:
             UPDATE public.sign_in_challenges c SET mfa_used_at = clock_timestamp()
              WHERE c.mfa_token_sha256 = p_token_sha256 AND c.mfa_kind = 'setup'
                AND c.mfa_used_at IS NULL AND c.mfa_expires_at > clock_timestamp()
-            RETURNING c.tenant_id, c.user_id, c.host_tenant_id, c.email_sha256 INTO v_challenge;
+            RETURNING c.tenant_id, c.user_id INTO v_challenge;
             IF NOT FOUND THEN
                 RETURN;
             END IF;
-            UPDATE public.mfa_factors f SET enrolled_at = clock_timestamp()
+            UPDATE public.mfa_factors f SET enrolled_at = clock_timestamp(), mfa_attempts = 0,
+                mfa_window_until = NULL
              WHERE f.user_id = v_challenge.user_id AND f.factor_ref = p_factor_ref
                AND f.enrolled_at IS NULL;
             IF NOT FOUND THEN
@@ -381,9 +391,6 @@ def upgrade() -> None:
             DELETE FROM public.mfa_backup_codes b WHERE b.user_id = v_challenge.user_id;
             INSERT INTO public.mfa_backup_codes (user_id, code_sha256)
             SELECT v_challenge.user_id, unnest(p_codes);
-            UPDATE public.sign_in_locks SET mfa_attempts = 0, mfa_window_until = NULL
-             WHERE host_tenant_id = v_challenge.host_tenant_id
-               AND email_sha256 = v_challenge.email_sha256;
             RETURN QUERY SELECT v_challenge.tenant_id, v_challenge.user_id;
         END $$
         """
@@ -401,13 +408,12 @@ def upgrade() -> None:
             UPDATE public.sign_in_challenges c SET mfa_used_at = clock_timestamp()
              WHERE c.mfa_token_sha256 = p_token_sha256 AND c.mfa_kind = 'verify'
                AND c.mfa_used_at IS NULL AND c.mfa_expires_at > clock_timestamp()
-            RETURNING c.tenant_id, c.user_id, c.host_tenant_id, c.email_sha256 INTO v_challenge;
+            RETURNING c.tenant_id, c.user_id INTO v_challenge;
             IF NOT FOUND THEN
                 RETURN;
             END IF;
-            UPDATE public.sign_in_locks SET mfa_attempts = 0, mfa_window_until = NULL
-             WHERE host_tenant_id = v_challenge.host_tenant_id
-               AND email_sha256 = v_challenge.email_sha256;
+            UPDATE public.mfa_factors SET mfa_attempts = 0, mfa_window_until = NULL
+             WHERE mfa_factors.user_id = v_challenge.user_id;
             RETURN QUERY SELECT v_challenge.tenant_id, v_challenge.user_id;
         END $$
         """
@@ -510,7 +516,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     for function in reversed(_FUNCTIONS):
         op.execute(f"DROP FUNCTION {function}")
-    op.execute("ALTER TABLE sign_in_locks DROP COLUMN mfa_window_until, DROP COLUMN mfa_attempts")
     op.execute("ALTER TABLE sign_in_challenges DROP CONSTRAINT sign_in_challenges_mfa")
     op.execute(
         "ALTER TABLE sign_in_challenges DROP COLUMN mfa_used_at, DROP COLUMN mfa_setup_at, "

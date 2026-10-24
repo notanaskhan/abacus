@@ -4,7 +4,7 @@ title: Portal MFA — migration 0133, the MFA floor slot failing closed, TOTP en
 spec: SPEC-320
 acceptance_criteria: [AC-10, AC-11]
 risk_zone: red
-status: in-progress
+status: in-review
 epic: P-08
 plan_key: P-08-T17
 branch: s7-p08-t17-portal-mfa
@@ -20,7 +20,7 @@ updated: 2026-10-24
 - **Migration `0133_portal_mfa.py`** (down_revision = head on origin/main at start, 0116; the main session re-chains):
   - **New, global, definers only** (no app privileges, as 0116): `mfa_factors` (the WorkOS factor per user: provider user and factor ids, `enrolled_at` null while setup is pending; a factor belongs to the person, ADR-002), `mfa_backup_codes` (SHA-256 of 80-bit codes, `used_at`), `trusted_devices` (tenant, user, SHA-256 of the device cookie, `expires_at`, `revoked_at`, `revoked_reason`, `ua_family`).
   - **New, tenant** (forced RLS, app `SELECT` only; G-02 adds the writer): `portal_security_policies` (`mfa_for_all_client_users` default false, `trusted_device_days` default 30, `CHECK BETWEEN 0 AND 30`, `version`, `updated_by`, `updated_at`). Stricter-only by shape: the only switch widens the floor, and the day count can only shorten the 30-day ceiling.
-  - **Alter** `sign_in_challenges`: the second-step token (`mfa_token_sha256` unique, `mfa_kind` `verify|setup`, `mfa_expires_at` 5 minutes, `mfa_setup_at`, `mfa_used_at`); `sign_in_locks`: `mfa_attempts`, `mfa_window_until` (second-step guesses counted apart from code guesses and not reset by a right email code; the third wrong one sets the same `locked_until`).
+  - **Alter** `sign_in_challenges`: the second-step token (`mfa_token_sha256` unique, `mfa_kind` `verify|setup`, `mfa_expires_at` 5 minutes, `mfa_setup_at`, `mfa_used_at`); second-step guesses counted on `mfa_factors` (`mfa_attempts`, `mfa_window_until`, `mfa_locked_until`; one count per person across firms, not reset by a right email code); the third wrong one also sets the firm's `sign_in_locks.locked_until` (changed by the self-review).
   - **Definers:** `portal_mfa_begin`, `portal_mfa_attempt` (counts before compare, under row locks, like `portal_sign_in_attempt`), `portal_mfa_missed`, `portal_mfa_backup_use`, `portal_mfa_setup_claim`, `portal_mfa_factor_pending`, `portal_mfa_enrol`, `portal_mfa_complete`, `portal_mfa_enrolled`, `portal_session_mark_mfa`, `portal_device_trust`, `portal_device_check`, `portal_access_revoke`.
   - Rollback: `alembic downgrade 0116` (drops the four tables, the columns and the definers).
 - **Registries:** `identity/registry.py` TABLES; `schema_check.py` GLOBAL_TABLES, NON_TENANT_TABLES and DEFINER_FUNCTIONS, with expectations in `tests/integration/test_schema_check_db.py`; `PRE_SESSION_PATHS` and `banned_patterns.PUBLIC_ROUTE_EXCEPTIONS` gain `/v1/portal/auth/{mfa,mfa/setup,mfa/setup/verify}` (ADR-168 already names the second step as part of the pre-session family); route introspection and 200-POST lists; identity `SUBSCRIPTIONS` consume `access.changed` and `client_access.revoked`.
@@ -36,6 +36,8 @@ updated: 2026-10-24
 
 ## Progress log
 - 2026-10-24: plan written.
+- 2026-10-24: built. `tests/integration/test_portal_mfa.py` (17, 19 after the review) and `tests/unit/identity/test_mfa_floor.py` pass; T10's suite, schema check, staff session green; `make check-fast` green; `make generate` (three routes) and `pnpm -C apps/web vitest run` green. The worker now hosts identity's subscriptions (`test_worker_screening.py` lists them).
+- 2026-10-24: security self-review (reviewer subagent). Verified and fixed: (1) the designation predicate matched only `contacts.user_id`, which nothing in the app writes, so signers and approvers linked through grants were never covered; it now also takes the contacts the person's grants name. (2) A new MFA designation didn't end sessions that began without the second step; `designate_contact` now emits `access.changed` for the contact's people. (3) The second-step count was per firm on a factor shared across firms (3 guesses per firm); it now lives on `mfa_factors`, one count per person, and its lock also locks the firm's email. (4) Revocation committed apart from its audit rows; now one unit of work. Also: `portal_mfa_missed` locks rows in the attempt's order (deadlock) and locks only when its own guess was the last allowed one. Two tests added (grant-linked designation ends a session; three guesses across two firms). Open, recorded in DEC-250: `mfa_at` not carried into the portal `AuthContext`; TOTP step replay relies on WorkOS; first enrolment is trust on first use.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

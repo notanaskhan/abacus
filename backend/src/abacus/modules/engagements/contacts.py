@@ -17,7 +17,14 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, uow
 from abacus.modules.engagements.service import client_of, get_ref, lock_ref
-from abacus.modules.identity.api import AuthContext, ScopeFacts, authorise
+from abacus.modules.identity.api import (
+    AccessChanged,
+    AuthContext,
+    ScopeFacts,
+    authorise,
+    contact_user_ids,
+    grant_contact_ids,
+)
 from abacus.modules.organisations.api import (
     attest_client_of,
     client_exists,
@@ -86,7 +93,17 @@ async def designate_contact(
             },
         )
         tx.record("engagement_contact.designated", target=Target("engagement", engagement_id))
-        return written.first() is not None
+        added = written.first() is not None
+        if added and designation in MFA_DESIGNATIONS:
+            # P-08-T17: the person now needs the second step, so their portal sessions and
+            # trusted devices end (identity consumes `access.changed`).
+            facts = (await contact_facts(tx.session, [contact_id])).get(contact_id)
+            users = set(await contact_user_ids(tx.session, contact_id))
+            if facts is not None and facts.user_id is not None:
+                users.add(facts.user_id)
+            for user_id in sorted(users):
+                tx.emit(AccessChanged(user_id=user_id))
+        return added
 
 
 async def designations_of(session: AsyncSession, engagement_id: UUID) -> list[EngagementContact]:
@@ -166,9 +183,13 @@ async def client_entity_scope(tenant: TenantContext, entity_id: UUID) -> ScopeFa
 
 async def mfa_designated(tenant: TenantContext, user_id: UUID) -> bool:
     """The MFA floor's `engagement_designation` predicate (P-08-T17): whether any of the person's
-    contacts in the firm is designated to sign or approve on any engagement."""
+    contacts in the firm (linked by `contacts.user_id` or named by one of their grants) is
+    designated to sign or approve on any engagement."""
     async with tenant_session(tenant) as session:
-        contact_ids = await contacts_of_user(session, user_id)
+        contact_ids = sorted(
+            set(await contacts_of_user(session, user_id))
+            | set(await grant_contact_ids(session, user_id))
+        )
         if not contact_ids:
             return False
         found = await session.execute(

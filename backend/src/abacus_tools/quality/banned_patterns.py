@@ -985,6 +985,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/identity/repository.py", "emails_of"),
         ("src/abacus/modules/identity/repository.py", "client_admin_ids"),
         ("src/abacus/modules/requests/repository.py", "set_due_dates"),
+        # P-08-T17: identifiers for the MFA floor and for who a new designation affects, read by
+        # the system in the tenant's session; never listed to anyone.
+        ("src/abacus/modules/identity/repository.py", "grant_contact_ids"),
+        ("src/abacus/modules/identity/repository.py", "contact_user_ids"),
         # SPEC-019 Q4: the firm's staff for the wall picker, after `authorise(wall.create)`.
         ("src/abacus/modules/identity/repository.py", "active_staff_ids"),
         # SPEC-017: team candidates (after `authorise(engagement.member_add)`; walls applied in the

@@ -24,16 +24,17 @@ import asyncio
 import re
 import secrets
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, cast
+from typing import Any, Final, cast
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import Row, text
 
 from abacus.kernel.db import TenantContext, platform_transaction
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.identity.mfa_floor import portal_security_policy
 from abacus.modules.identity.portal_idp import PortalIdpUnavailable, portal_idp
@@ -184,8 +185,8 @@ async def _missed(token: str, attempt: _Attempt, began: float) -> None:
             datetime | None,
             (
                 await conn.execute(
-                    text("SELECT portal_mfa_missed(:token, :max, :lock)"),
-                    {"token": sha256_hex(token), "max": MAX_TRIES, "lock": LOCK_SECONDS},
+                    text("SELECT portal_mfa_missed(:token, :left, :lock)"),
+                    {"token": sha256_hex(token), "left": attempt.tries_left, "lock": LOCK_SECONDS},
                 )
             ).scalar_one(),
         )
@@ -366,22 +367,38 @@ async def revoke_portal_access(event: OutboxEvent) -> None:
     if not isinstance(user, str):
         return
     user_id = UUID(user)
-    async with platform_transaction("portal:revoke") as conn:
-        rows = (
-            await conn.execute(
-                text("SELECT * FROM portal_access_revoke(:tenant, :user)"),
-                {"tenant": event.tenant_id, "user": user_id},
-            )
-        ).all()
-    if not rows:
-        return
-    async with uow(TenantContext(event.tenant_id, "system", "identity:access_changed")) as tx:
-        for row in rows:
-            if row.kind == "session":
-                tx.record(
-                    "session.ended",
-                    target=Target("auth_session", cast(UUID, row.id)),
-                    after=Ref(reason=END_REASONS["revoked"]),
+    # One transaction: the revocation and its audit rows commit together, so a failed write is
+    # retried whole by the relay instead of revoking silently. Nothing to revoke rolls back.
+    try:
+        async with uow(TenantContext(event.tenant_id, "system", "identity:access_changed")) as tx:
+            rows = (
+                await tx.session.execute(
+                    text("SELECT * FROM portal_access_revoke(:tenant, :user)"),
+                    {"tenant": event.tenant_id, "user": user_id},
                 )
-            else:
-                tx.record("portal_device.revoked", target=Target("user", user_id))
+            ).all()
+            if not rows:
+                raise _NothingRevoked
+            _record_revoked(tx, user_id, rows)
+    except _NothingRevoked:
+        return
+
+
+class _NothingRevoked(Exception):
+    pass
+
+
+def _record_revoked(
+    tx: UnitOfWork,
+    user_id: UUID,
+    rows: Sequence[Row[Any]],  # Any: a text() row's columns are untyped
+) -> None:
+    for row in rows:
+        if row.kind == "session":
+            tx.record(
+                "session.ended",
+                target=Target("auth_session", cast(UUID, row.id)),
+                after=Ref(reason=END_REASONS["revoked"]),
+            )
+        else:
+            tx.record("portal_device.revoked", target=Target("user", user_id))

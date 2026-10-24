@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -26,6 +27,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.uow import uow
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.engagements.api import designate_contact
 from abacus.modules.identity import mfa_floor, portal_mfa, portal_session
 from abacus.modules.identity.mfa_floor import mfa_required
 from abacus.modules.identity.portal_idp import InMemoryPortalIdp, configure_portal_idp, totp_at
@@ -586,3 +588,88 @@ async def test_ac11_access_changed_ends_sessions_and_revokes_trusted_devices(
     actions = await _actions(seed, tess.tenant)
     assert actions.count("portal_device.revoked") == 1
     assert actions.count("session.ended") == 2  # setup's session and the second step's
+
+
+async def test_ac10_a_designation_on_a_contact_named_by_a_grant_requires_mfa_at_once(
+    seed: Seeder,
+) -> None:
+    """The contact is linked only through the person's grant (`contact_id`), as invitations
+    link it; designating it ends the sessions that started without the second step."""
+    ben = await _portal(seed, "contributor")
+    contact = await seed.value(
+        "INSERT INTO contacts (tenant_id, client_id, display_name, contact_kind) "
+        "VALUES ($1, $2, 'Ben Ashby', 'client_person') RETURNING id",
+        ben.tenant,
+        ben.client_id,
+    )
+    await seed.run(
+        "UPDATE client_access_grants SET contact_id = $1 WHERE user_id = $2",
+        contact,
+        ben.person.user_id,
+    )
+    challenge, code = await _code(ben)
+    tokens = await verify_code(ben.host, challenge, code)  # not covered yet: no second step
+    assert await portal_context(tokens.access_token, ben.host) is not None
+
+    partner = await seed.person(ben.tenant)
+    await seed.member(ben.engagement, partner, "engagement_partner")
+    assert await designate_contact(
+        partner.context(), ben.engagement, cast(uuid.UUID, contact), "signing_officer"
+    )
+    assert await mfa_required(ben.tenant, ben.person.user_id)
+    payloads = await seed.rows(
+        "SELECT id, payload FROM outbox WHERE tenant_id = $1 AND event_type = 'access.changed'",
+        ben.tenant,
+    )
+    assert [json.loads(r["payload"])["user_id"] for r in payloads] == [str(ben.person.user_id)]
+    await revoke_portal_access(
+        OutboxEvent(
+            event_id=cast(uuid.UUID, payloads[0]["id"]),
+            tenant_id=ben.tenant,
+            event_type="access.changed",
+            payload=json.loads(payloads[0]["payload"]),
+        )
+    )
+    assert await portal_context(tokens.access_token, ben.host) is None
+    assert (await _second_step(ben)).state == "mfa_setup_required"
+
+
+async def test_ac11_second_step_guesses_are_the_persons_across_firms(seed: Seeder) -> None:
+    """One factor, one count: a client of two firms gets three wrong codes in all, not three per
+    firm."""
+    tess = await _portal(seed, "owner")
+    secret, _ = await _enrol(tess)
+    other = await seed.firm()
+    host = f"ashgrove-{uuid.uuid4().hex[:8]}.portal-example.test"
+    async with uow(TenantContext(other, "human", str(uuid.uuid4()))) as tx:
+        await add_portal_host(tx, other, host, "default")
+        await activate_portal_host(tx, other, host)
+    partner = await seed.person(other)
+    entity = await seed.entity(other)
+    engagement = await seed.engagement(other, entity, partner.user_id)
+    await seed.run(
+        "INSERT INTO memberships (tenant_id, user_id, firm_role, status, kind) "
+        "VALUES ($1, $2, NULL, 'active', 'client')",
+        other,
+        tess.person.user_id,
+    )
+    await seed.run(
+        "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+        "VALUES ($1, $2, 'owner', 'engagement', $3)",
+        other,
+        tess.person.user_id,
+        engagement,
+    )
+    elsewhere = Portal(other, host, tess.person, tess.email, tess.client_id, engagement)
+    for portal in (tess, tess):
+        step = await _second_step(portal)
+        with pytest.raises(MfaMismatch):
+            await second_step(portal.host, step.mfa_token, totp=_wrong(_now_code(secret)))
+    step = await _second_step(elsewhere)
+    assert step.state == "mfa_required"  # the factor is the person's, not the firm's
+    with pytest.raises(MfaLocked):
+        await second_step(host, step.mfa_token, totp=_wrong(_now_code(secret)))
+    # Locked in the first firm too, even with the right code.
+    step = await _second_step(tess)
+    with pytest.raises(MfaLocked):
+        await second_step(tess.host, step.mfa_token, totp=_now_code(secret))
