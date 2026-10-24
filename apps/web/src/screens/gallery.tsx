@@ -8,6 +8,7 @@ import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
   SEARCH as BND01_SEARCH,
+  SELECTED as BND01_SELECTED,
   type Bnd01State,
   scenarios as bnd01Scenarios,
 } from "./BND-01/scenarios";
@@ -164,7 +165,10 @@ function Bnd01Frame({ state }: { state: Bnd01State }): JSX.Element {
   return (
     <div data-artboard={state}>
       <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
-        <BindersIndex initial={BND01_SEARCH[state]} />
+        <BindersIndex
+          initial={BND01_SEARCH[state]}
+          initialSelected={BND01_SELECTED[state] ?? null}
+        />
       </AppShell>
     </div>
   );

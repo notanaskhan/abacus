@@ -171,7 +171,13 @@ def test_ac20_prompt_001_reports_the_offending_line(tmp_path: Path) -> None:
 # --- AGENT-001 -------------------------------------------------------------------------------
 
 # Actions the matrix never gives agents: an explicit `deny`, and no `agent` entry at all.
-DENIED = ["evidence.accept", "evidence.reject", "fulfilment.confirm", "suggestion.resolve"]
+DENIED = [
+    "evidence.accept",
+    "evidence.reject",
+    "fulfilment.confirm",
+    "suggestion.resolve",
+    "follow_up.send",  # P-06-T14 (DEC-74): the agent only drafts
+]
 NOT_GRANTED = [
     "evidence.upload",
     "request_item.mark_ready",
@@ -272,7 +278,6 @@ AGENT_GRANTED = [
     "suggestion.create",
     "follow_up.draft",
     "support_match.run",
-    "follow_up.send",
 ]
 
 

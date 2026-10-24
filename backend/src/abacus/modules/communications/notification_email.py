@@ -44,7 +44,7 @@ def template_key(kind: str) -> str:
     return f"notification.{kind}"
 
 
-async def _display_name(tenant_id: UUID, engagement_id: UUID | None) -> str:
+async def display_name(tenant_id: UUID, engagement_id: UUID | None) -> str:
     if engagement_id is None:
         return await firm_name(tenant_id)
     label = await engagement_label(
@@ -55,7 +55,7 @@ async def _display_name(tenant_id: UUID, engagement_id: UUID | None) -> str:
     return f"{label.client_name} · {label.name}"
 
 
-def _single_line(value: str) -> str:
+def single_line(value: str) -> str:
     return " ".join(value.split())
 
 
@@ -75,13 +75,13 @@ async def send_notification_email(mail: NotificationMail) -> Outcome:
     if address is None:
         return "failed"
     name = (await names_of([mail.recipient_user_id])).get(mail.recipient_user_id, "")
-    display = _single_line(await _display_name(mail.tenant_id, mail.engagement_id))
+    display = single_line(await display_name(mail.tenant_id, mail.engagement_id))
     sentence = mail.sentence
     for place in _PLACES:
         sentence = sentence.replace(place, display)
     values = {
-        "recipient_first_name": _single_line(name).partition(" ")[0],
-        "kind_sentence": _single_line(sentence),
+        "recipient_first_name": single_line(name).partition(" ")[0],
+        "kind_sentence": single_line(sentence),
         "engagement_display_name": display,
         "app_link": f"{settings().app_base_url}/?ov=notifications",
     }

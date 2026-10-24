@@ -20,7 +20,7 @@ The ENG-03 "Coming soon" tile is static frontend copy.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -29,10 +29,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import ENGAGEMENTS_V2
 from abacus.kernel._statuses import EngagementStatus, LetterRecordStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.engagements import drafts as draft_model
+from abacus.modules.engagements import index as index_model
+from abacus.modules.engagements import record as record_model
 from abacus.modules.engagements.service import EngagementType
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -94,28 +98,6 @@ LetterMode = Literal["signed", "not_required_this_year"]
 # A draft's type: a catalogue code the server checks (422 `unknown_engagement_type`), so a stale
 # or excluded code is a domain answer, not a schema error.
 TypeCodeIn = Annotated[str, Field(pattern=r"^[a-z0-9_]{1,40}$")]
-
-
-class UnknownEngagementType(DomainInvalid):
-    """The type is not in the engagement-type catalogue (single audit included, DEC-19)."""
-
-    code = "unknown_engagement_type"
-
-
-class LetterBeforeAcceptance(DomainConflict):
-    """The letter's date is before the acceptance decision (G1 < letter, R-06)."""
-
-    code = "letter_before_acceptance"
-
-
-class GateUnmet(DomainConflict):
-    """A gate the step or the create requires is not met (C1 gate providers; `facts.gate`)."""
-
-    code = "gate_unmet"
-
-
-class DraftStaleVersion(DomainConflict):
-    code = "stale_version"
 
 
 # --- Shared parts -------------------------------------------------------------------------------
@@ -520,6 +502,146 @@ class EngagementFromDraftOut(BaseModel):
     methodology_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
+async def _gate(ctx: AuthContext) -> None:
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
+        raise NotFound("engagements.v2")
+
+
+def _letter_out(s: index_model.LetterSummary) -> EngagementLetterSummaryOut:
+    return EngagementLetterSummaryOut(
+        status=LetterRecordStatus(s.status),
+        signed_on=s.signed_on,
+        signed_count=s.signed_count,
+        signer_count=s.signer_count,
+        not_required_this_year=s.not_required_this_year,
+    )
+
+
+def _gates_out(views: list[record_model.GateView]) -> list[EngagementGateOut]:
+    return [
+        EngagementGateOut(
+            gate=cast(Gate, v.gate),
+            met=v.met,
+            blockers=[
+                GateBlockerRefOut(type=b.type, id=b.id, reason_code=b.reason_code)
+                for b in v.blockers
+            ],
+            met_at=v.met_at,
+            met_by_user_id=v.met_by_user_id,
+        )
+        for v in views
+    ]
+
+
+def _index_row(r: index_model.IndexRow) -> EngagementIndexRowOut:
+    e = r.engagement
+    return EngagementIndexRowOut(
+        id=e.id,
+        name=e.name,
+        client_id=e.client_id,
+        client_name=r.client_name,
+        client_entity_id=e.client_entity_id,
+        type=cast(EngagementType, e.type),
+        service_line=cast(ServiceLine, e.service_line),
+        status=EngagementStatus(e.status),
+        period_label=e.period_label,
+        fiscal_period_start=e.fiscal_period_start,
+        fiscal_period_end=e.fiscal_period_end,
+        office_id=e.office_id,
+        office_name=r.office_name,
+        partner_user_id=r.partner_user_id,
+        partner_initials=r.partner_initials,
+        work_items=[
+            EngagementWorkItemLineOut(
+                id=w.id,
+                kind=cast(WorkItemKind, w.kind),
+                label=w.label,
+                pill_object=w.pill_object,
+                pill_code=w.pill_code,
+            )
+            for w in r.work_items
+        ],
+        letter=_letter_out(r.letter),
+        next_due=(
+            None
+            if r.next_due is None
+            else EngagementNextDueOut(on=r.next_due.on, tone=r.next_due.tone)
+        ),
+    )
+
+
+def _record_out(v: record_model.RecordView) -> EngagementRecordOut:
+    e = v.engagement
+    return EngagementRecordOut(
+        id=e.id,
+        name=e.name,
+        client_id=e.client_id,
+        client_name=v.client_name,
+        client_entity_id=e.client_entity_id,
+        client_entity_name=v.client_entity_name,
+        type=cast(EngagementType, e.type),
+        service_line=cast(ServiceLine, e.service_line),
+        status=EngagementStatus(e.status),
+        period_label=e.period_label,
+        fiscal_period_start=e.fiscal_period_start,
+        fiscal_period_end=e.fiscal_period_end,
+        bands=[
+            EngagementRailBandOut(
+                band=b.band,
+                rows=[
+                    EngagementRailRowOut(
+                        key=r.key,
+                        text=r.text,
+                        user_id=r.user_id,
+                        on=r.on,
+                        pill_object=r.pill_object,
+                        pill_code=r.pill_code,
+                    )
+                    for r in b.rows
+                ],
+            )
+            for b in v.bands
+        ],
+        contacts=[
+            EngagementDesignationOut(
+                designation=cast(Designation, d.designation), contact_id=d.contact_id, name=d.name
+            )
+            for d in v.contacts
+        ],
+        letter=_letter_out(v.letter),
+        gates=_gates_out(v.gates),
+        tab_counts=EngagementTabCountsOut(work_items=v.work_item_count, team=v.team_count),
+        read_only_reason=v.read_only_reason,
+        version=e.version,
+        allowed_actions=v.allowed_actions,
+    )
+
+
+def _payload_out(raw: dict[str, object]) -> EngagementDraftPayload:
+    return EngagementDraftPayload.model_validate(raw)
+
+
+def _draft_out(d: draft_model.DraftView) -> EngagementDraftOut:
+    return EngagementDraftOut(
+        id=d.id,
+        created_by=d.created_by,
+        client_id=d.client_id,
+        client_entity_id=d.client_entity_id,
+        type_code=cast(CatalogueTypeCode | None, d.type_code),
+        step=cast(WizardStep, d.step),
+        payload=_payload_out(d.payload),
+        prospect_engagement_id=d.prospect_engagement_id,
+        gates=_gates_out(d.gates),
+        version=d.version,
+        saved_at=d.saved_at,
+        allowed_actions=["engagement.create"],
+    )
+
+
+def _payload_in(p: EngagementDraftPayload | None) -> dict[str, object]:
+    return {} if p is None else p.model_dump(mode="json", exclude_none=True)
+
+
 async def _stub(ctx: AuthContext) -> NoReturn:
     if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
         raise NotFound("engagements.v2")
@@ -533,7 +655,7 @@ engagement_drafts_router = AbacusRouter(prefix="/v1/engagement-drafts", tags=["e
 
 
 @engagements_v2_router.get(
-    "/index", action="engagement.read_metadata", response_model=EngagementIndexPage, errors=(501,)
+    "/index", action="engagement.read_metadata", response_model=EngagementIndexPage
 )
 async def engagement_index_route(
     ctx: Ctx,
@@ -552,51 +674,131 @@ async def engagement_index_route(
 ) -> EngagementIndexPage:
     """ENG-01 and CLI-02's Engagements tab: past due first, then by next deadline. "Letter │ Not
     signed" lists Accepted engagements without a recorded letter (never a Prospect)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    page, summary = await index_model.engagement_index(
+        ctx,
+        index_model.IndexFilters(
+            service_line=service_line,
+            status=None if status is None else status.value,
+            tile=None if tile is None else tile.value,
+            office_id=office_id,
+            partner_id=partner_id,
+            letter=None if letter is None else letter.value,
+            next_due=next_due,
+            period=period,
+            client_id=client_id,
+            q=q,
+        ),
+        cursor=cursor,
+        limit=limit,
+    )
+    return EngagementIndexPage(
+        items=[_index_row(r) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+        counts=page.counts,
+        facets=page.facets,
+        summary=EngagementIndexSummaryOut(
+            prospect=summary.prospect,
+            awaiting_letter=summary.awaiting_letter,
+            past_due=summary.past_due,
+        ),
+    )
 
 
 @engagements_v2_router.get(
     "/{engagement_id}/record",
     action="engagement.read_metadata",
     response_model=EngagementRecordOut,
-    errors=(501,),
 )
 async def engagement_record_route(engagement_id: UUID, ctx: Ctx) -> EngagementRecordOut:
-    await _stub(ctx)
+    """ENG-02: 404 for a walled or unknown engagement or a client principal."""
+    await _gate(ctx)
+    return _record_out(await record_model.engagement_record(ctx, engagement_id))
 
 
 @engagements_v2_router.get(
     "/{engagement_id}/gates",
     action="engagement.read_metadata",
     response_model=list[EngagementGateOut],
-    errors=(501,),
 )
 async def engagement_gates_route(engagement_id: UUID, ctx: Ctx) -> list[EngagementGateOut]:
     """`[{gate, met, blockers}]` for the registered providers (C1 v1.1)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return _gates_out(await record_model.engagement_gates_v2(ctx, engagement_id))
 
 
 @engagements_v2_router.put(
     "/{engagement_id}/letter/record",
     action="letter.record",
     response_model=EngagementLetterRecordOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_engagement_letter_route(
     engagement_id: UUID, body: LetterRecordIn, ctx: Ctx
 ) -> EngagementLetterRecordOut:
     """Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
-    `letter_before_acceptance`, 409 `engagement_archived`; one `letter.recorded` audit event."""
-    await _stub(ctx)
+    `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
+    exception while its firm setting is unregistered; one `letter.recorded` audit event."""
+    await _gate(ctx)
+    done = await record_model.record_letter_v2(
+        ctx,
+        engagement_id,
+        record_model.RecordedLetterIn(
+            mode=body.mode,
+            client_signed_on=body.client_signed_on,
+            firm_signed_on=body.firm_signed_on,
+            client_signer_contact_id=body.client_signer_contact_id,
+            firm_signer_user_id=body.firm_signer_user_id,
+            signed_copy_version_id=body.signed_copy_version_id,
+            not_required_reason=body.not_required_reason,
+        ),
+    )
+    letter = done.letter
+    return EngagementLetterRecordOut(
+        engagement_id=engagement_id,
+        status=LetterRecordStatus.SIGNED,
+        mode=body.mode,
+        client_signed_on=letter.client_signed_on,
+        firm_signed_on=letter.firm_signed_on,
+        client_signer_contact_id=letter.client_signer_contact_id,
+        firm_signer_user_id=letter.firm_signer_user_id,
+        signed_copy_version_id=letter.signed_copy_version_id,
+        acceptance_decided_at=done.acceptance_decided_at,
+        recorded_by=ctx.user_id,
+        recorded_at=letter.recorded_at,
+        engagement_status=EngagementStatus(done.engagement_status),
+    )
 
 
 @engagement_types_router.get(
-    "", action="engagement.create", response_model=EngagementTypeCatalogueOut, errors=(501,)
+    "", action="engagement.create", response_model=EngagementTypeCatalogueOut
 )
 async def engagement_types_route(ctx: Ctx) -> EngagementTypeCatalogueOut:
     """The selectable catalogue; an entitlement-gated card (SOC 1, SOC 2) is `needs_entitlement`
     without `attest`. Never `single_audit`."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return EngagementTypeCatalogueOut(
+        items=[
+            EngagementTypeEntryOut(
+                code=cast(CatalogueTypeCode, i.entry.code),
+                engagement_type=cast(EngagementType, i.entry.engagement_type),
+                family=i.entry.family,
+                work_item_kind=cast(WorkItemKind, i.entry.work_item_kind),
+                label=i.entry.label,
+                standard_line=i.entry.standard_line,
+                availability="available" if i.available else "needs_entitlement",
+                entitlement=i.entry.entitlement,
+                group_audit_allowed=i.entry.group_audit_allowed,
+                steps=[
+                    EngagementTypeStepOut(step=step, field_codes=list(fields))
+                    for step, fields in i.steps
+                ],
+            )
+            for i in await draft_model.catalogue(ctx)
+        ]
+    )
 
 
 @engagement_drafts_router.post(
@@ -604,54 +806,86 @@ async def engagement_types_route(ctx: Ctx) -> EngagementTypeCatalogueOut:
     action="engagement.create",
     response_model=EngagementDraftOut,
     status_code=201,
-    errors=(501,),
 )
 async def create_engagement_draft_route(body: EngagementDraftIn, ctx: Ctx) -> EngagementDraftOut:
     """422 `unknown_engagement_type` for a code outside the catalogue."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return _draft_out(
+        await draft_model.create_draft(
+            ctx,
+            client_id=body.client_id,
+            client_entity_id=body.client_entity_id,
+            type_code=body.type_code,
+            step=body.step,
+            payload=_payload_in(body.payload),
+        )
+    )
 
 
 @engagement_drafts_router.get(
-    "/{draft_id}", action="engagement.create", response_model=EngagementDraftOut, errors=(501,)
+    "/{draft_id}", action="engagement.create", response_model=EngagementDraftOut
 )
 async def get_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraftOut:
     """The owner's own draft; anyone else's answers 404."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return _draft_out(await draft_model.get_draft(ctx, draft_id))
 
 
 @engagement_drafts_router.patch(
     "/{draft_id}",
     action="engagement.create",
     response_model=EngagementDraftOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def update_engagement_draft_route(
     draft_id: UUID, body: EngagementDraftPatchIn, ctx: Ctx
 ) -> EngagementDraftOut:
-    await _stub(ctx)
+    await _gate(ctx)
+    return _draft_out(
+        await draft_model.update_draft(
+            ctx,
+            draft_id,
+            body.seen_version,
+            draft_model.DraftChange(
+                client_id=body.client_id,
+                client_entity_id=body.client_entity_id,
+                type_code=body.type_code,
+                step=body.step,
+                payload=None if body.payload is None else _payload_in(body.payload),
+            ),
+        )
+    )
 
 
 @engagement_drafts_router.delete(
     "/{draft_id}",
     action="engagement.create",
     response_model=EngagementDraftDiscardedOut,
-    errors=(501,),
 )
 async def discard_engagement_draft_route(draft_id: UUID, ctx: Ctx) -> EngagementDraftDiscardedOut:
     """ "Discard this draft?" (purged 30 days later, OQ-17)."""
-    await _stub(ctx)
+    await _gate(ctx)
+    at = await draft_model.discard_draft(ctx, draft_id)
+    return EngagementDraftDiscardedOut(draft_id=draft_id, discarded_at=at)
 
 
 @engagement_drafts_router.post(
     "/{draft_id}/validate",
     action="engagement.create",
     response_model=EngagementDraftValidationOut,
-    errors=(501,),
 )
 async def validate_engagement_draft_route(
     draft_id: UUID, body: DraftValidateIn, ctx: Ctx
 ) -> EngagementDraftValidationOut:
-    await _stub(ctx)
+    await _gate(ctx)
+    v = await draft_model.validate_draft(ctx, draft_id, body.step)
+    return EngagementDraftValidationOut(
+        draft_id=draft_id,
+        step=body.step,
+        valid=v.valid,
+        problems=[DraftProblemOut(field=p.field, code=p.code) for p in v.problems],
+        gates=_gates_out(v.gates),
+    )
 
 
 @engagement_drafts_router.post(
@@ -671,11 +905,33 @@ async def start_acceptance_from_draft_route(draft_id: UUID, ctx: Ctx) -> Accepta
     action="engagement.create",
     response_model=EngagementFromDraftOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_engagement_from_draft_route(
     draft_id: UUID, body: DraftCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EngagementFromDraftOut:
     """Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409
-    `gate_unmet` (G1), 422 `unknown_engagement_type`."""
-    await _stub(ctx)
+    `gate_unmet` (G1), 422 `unknown_engagement_type`, 422 `draft_incomplete`."""
+    await _gate(ctx)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await draft_model.create_from_draft(
+            ctx, draft_id, confirm_duplicate=body.confirm_duplicate
+        )
+        out = EngagementFromDraftOut(
+            engagement_id=made.engagement_id,
+            engagement_status=EngagementStatus(made.engagement_status),
+            work_item_ids=made.work_item_ids,
+            independence_requested_user_ids=made.independence_requested_user_ids,
+            methodology_version_id=made.methodology_version_id,
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="engagement_drafts.create",
+        key=idempotency_key,
+        body={"draft_id": str(draft_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return EngagementFromDraftOut.model_validate(stored.body)

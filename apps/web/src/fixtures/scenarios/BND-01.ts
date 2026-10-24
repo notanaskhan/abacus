@@ -1,5 +1,5 @@
-// BND-01 binders index: one fixture scenario per artboard P-06-T09 builds (a, c, d, e; b and the
-// follow-up sheet are P-06-T16's). All four stand at E0, Mon Sep 14, 2026, 9:24 AM CT. Data:
+// BND-01 binders index: one fixture scenario per artboard (a, c, d, e from P-06-T09; b and the
+// follow-up sheet from P-06-T16). All four stand at E0, Mon Sep 14, 2026, 9:24 AM CT. Data:
 // fixtures/seed/binders.ts. `GET /v1/binders` is still the C5 stub (501) until P-06-T11, so these
 // handlers answer it in the contract's shape (`ListPage[BinderRowOut]`) and apply the filters the
 // read model will: status (the tile), q, season, service, office, preparer and client activity.
@@ -25,6 +25,7 @@ import {
   json,
   never,
 } from "../../app-core/fixture-mode";
+import { type FollowUpSpec, followUpHandlers } from "../handlers/follow-ups";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import {
@@ -160,6 +161,54 @@ function binderOut(row: BinderRowOut, status: BinderStatus = row.status): Binder
   };
 }
 
+// BND-01 b's follow-up (P-06-T16; DEC-221): BND-04 c's Fenwick card verbatim, the one designed
+// draft for a silent binder. It names five of the foundation's nine open requests; the other four
+// wait for the Fenwick request slice, so the card counts the five it lists.
+const FENWICK = "Fenwick Family Foundation";
+const FENWICK_DRAFT =
+  "We haven’t heard from you since Aug 11, and the foundation’s 990-PF is waiting on 9 items, 6 " +
+  "of them past the Aug 31 due date. Could you upload what you have this week? Bianca Novak is " +
+  "your contact at Brightwater Hale if anything is unclear.";
+const FENWICK_ITEMS: readonly [string, string][] = [
+  ["FEN-04", "Grants paid in 2025 — grantee, purpose, amount and date"],
+  ["FEN-05", "Custodial statements — all accounts, Jan–Dec 2025"],
+  ["FEN-06", "Form 990-W estimated excise tax payments — 2025"],
+  ["FEN-07", "Board minutes approving 2025 grants"],
+  ["FEN-08", "Officer and trustee compensation — 2025"],
+];
+
+function followUps(rows: () => BinderRowOut[]): Record<string, FixtureHandler> {
+  const grace = seed.people.find((p) => p.slug === "grace-holloway")?.userId ?? "";
+  return followUpHandlers(
+    (asked): FollowUpSpec[] => {
+      const ids = new Set(asked.binder_ids ?? []);
+      const fenwick = rows().find((r) => r.client_name === FENWICK && ids.has(r.id));
+      if (fenwick === undefined) return [];
+      return [
+        {
+          engagementId: fenwick.engagement_id,
+          binderId: fenwick.id,
+          recipientUserId: stableId("contact:Fenwick Family Foundation portal"),
+          recipientName: "Fenwick Family Foundation (portal contacts)",
+          body: FENWICK_DRAFT,
+          items: FENWICK_ITEMS.map(([key, title]) => ({
+            id: stableId(`request:fenwick:${key}`),
+            title,
+            due_on: "2026-08-31",
+            overdue: true,
+          })),
+        },
+      ];
+    },
+    () => grace,
+  );
+}
+
+/** BND-01 b's selected row: the Fenwick Family Foundation's 2025 Binder. */
+export function fenwickBinderId(): string {
+  return named().find((r) => r.client_name === FENWICK)?.id ?? "";
+}
+
 function handlers(data: Data): Record<string, FixtureHandler> {
   // Publish, unpublish and duplicate change the persona's own copy of the rows.
   let rows = [...data.rows];
@@ -176,6 +225,7 @@ function handlers(data: Data): Record<string, FixtureHandler> {
   };
   return {
     ...E0.handlers,
+    ...followUps(() => rows),
     "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona)),
     "GET /v1/binders": (request) =>
       data.loading === true ? never() : json(listPage({ ...data, rows, counts }, request)),
@@ -265,6 +315,9 @@ function withOsterberg(): BinderRowOut[] {
 export const scenarios = defineScenarios({
   /** Default: Service │ Tax returns, Season │ TY2025; 1 · 48 · 0 · 40 · 152 = 241; 15 rows. */
   a: at("a", { rows: named(), counts: { ...BINDER_COUNTS } }),
+  /** Client activity │ None in 30 days: Fenwick only (Aug 11, 34 days), selected for a Request
+   * Chaser reminder; "Send reminder…" drafts BND-04 c's Fenwick follow-up (P-06-T16). */
+  b: at("b", { rows: named(), counts: { ...BINDER_COUNTS } }),
   /** Remy Vidal unpublished Benjamin Osterberg's binder Sep 2: 1 · 47 · 1 · 40 · 152; 16 rows. */
   c: at(
     "c",

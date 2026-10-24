@@ -31,6 +31,11 @@ COMPLIANCE_LEGAL_HOLDS = Flag(
     kind="boolean",
     default="false",
 )
+CONTACTS_V2 = Flag(
+    name="contacts.v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
     kind="boolean",
@@ -139,6 +144,11 @@ REVIEW_GRAMMAR_API = Flag(
     kind="boolean",
     default="false",
 )
+SCREENING_CARD = Flag(
+    name="screening.card",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -156,6 +166,7 @@ FLAGS: dict[str, Flag] = {
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
+    "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.v2": ENGAGEMENTS_V2,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
@@ -177,6 +188,7 @@ FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
+    "screening.card": SCREENING_CARD,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }

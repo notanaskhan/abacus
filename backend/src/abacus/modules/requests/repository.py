@@ -1185,3 +1185,72 @@ async def client_home_items(
         .order_by(RequestItem.created_at, RequestItem.id)
     )
     return [(item, binder, int(count)) for item, binder, count in rows.all()]
+
+
+async def follow_up_items(
+    session: AsyncSession,
+    ctx: AuthContext,
+    binder_ids: Sequence[UUID],
+    item_ids: Sequence[UUID],
+) -> Sequence[tuple[RequestItem, date | None]]:
+    """P-06-T14: the open (Requested or Returned), client-visible, never-deleted requests of
+    Published binders, among these binders or these ids, that the caller may read (walls and
+    independence apply), with their due date (their own, else the binder's). A Draft,
+    Unpublished, Complete or Closed binder's requests are never chased."""
+    if not binder_ids and not item_ids:
+        return []
+    due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
+    picked: list[ColumnElement[bool]] = []
+    if binder_ids:
+        picked.append(RequestItem.request_list_id.in_(list(binder_ids)))
+    if item_ids:
+        picked.append(RequestItem.id.in_(list(item_ids)))
+    rows = await session.execute(
+        select(RequestItem, due)
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
+        .where(
+            or_(*picked),
+            RequestItem.status.in_(("requested", "returned")),
+            RequestItem.client_visible,
+            RequestItem.deleted_at.is_(None),
+            RequestList.status == "published",
+            visible(ctx, "request_item.read", RequestItem.engagement_id),
+        )
+        .order_by(RequestItem.engagement_id, due, RequestItem.created_at, RequestItem.id)
+    )
+    return [(item, d) for item, d in rows.all()]
+
+
+async def binders_recipient_rows(
+    session: AsyncSession, binder_ids: Sequence[UUID]
+) -> Sequence[BinderRecipient]:
+    """P-06-T14: the recipient histories of binders whose requests the caller just read through
+    `visible()` (`follow_up_items`) (LIST_EXEMPT)."""
+    if not binder_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(BinderRecipient)
+                .where(BinderRecipient.binder_id.in_(list(binder_ids)))
+                .order_by(BinderRecipient.added_at, BinderRecipient.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def binder_statuses(
+    session: AsyncSession, ctx: AuthContext, binder_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """P-06-T14: the status of each of these binders the caller may read (walls apply)."""
+    if not binder_ids:
+        return {}
+    rows = await session.execute(
+        select(RequestList.id, RequestList.status).where(
+            RequestList.id.in_(list(binder_ids)),
+            visible(ctx, "binder.read", RequestList.engagement_id),
+        )
+    )
+    return {i: str(st) for i, st in rows.all()}

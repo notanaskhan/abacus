@@ -148,6 +148,21 @@ async def mapping_set_for(session: AsyncSession, tb_id: UUID) -> MappingSet | No
     return await session.scalar(select(MappingSet).where(MappingSet.trial_balance_id == tb_id))
 
 
+async def get_mapping_set(session: AsyncSession, mapping_set_id: UUID) -> MappingSet | None:
+    return await session.get(MappingSet, mapping_set_id)
+
+
+async def mapping_editors(session: AsyncSession, mapping_set_id: UUID) -> set[UUID]:
+    """Everyone who ever edited the mapping set (P-04-T15: its preparers; LIST_EXEMPT: the
+    caller authorised on the engagement)."""
+    found = await session.execute(
+        select(MappingSetEdit.edited_by)
+        .where(MappingSetEdit.mapping_set_id == mapping_set_id)
+        .distinct()
+    )
+    return set(found.scalars().all())
+
+
 async def newest_edits(session: AsyncSession, mapping_set_id: UUID) -> Sequence[MappingSetEdit]:
     """Each account's newest edit (LIST_EXEMPT: the caller authorised on the engagement)."""
     return (

@@ -973,6 +973,11 @@ LIST_EXEMPT = frozenset(
         # already authorised (request IDs only); client roles can't read matches themselves.
         ("src/abacus/modules/agents/repository.py", "shown_picks"),
         ("src/abacus/modules/agents/repository.py", "drafted_follow_ups"),
+        # P-06-T14: follow-ups v2's own records, read for requests the caller just read through
+        # `visible()` (identifiers only), and those binders' recipient histories.
+        ("src/abacus/modules/agents/repository.py", "waiting_pairs"),
+        ("src/abacus/modules/agents/repository.py", "follow_up_item_rows"),
+        ("src/abacus/modules/requests/repository.py", "binders_recipient_rows"),
         # Recipients' addresses and the engagement's client admins (one engagement, read for a
         # reminder after `follow_up.send` or by the agent); the items whose due date was set.
         ("src/abacus/modules/identity/repository.py", "emails_of"),
@@ -1057,7 +1062,11 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/workpapers/repository.py", "newest_cells"),
         ("src/abacus/modules/workpapers/repository.py", "citations_of"),
         ("src/abacus/modules/workpapers/repository.py", "versions_of"),
+        # P-04-T15: who set a paper's cells (its preparers), after the same check.
+        ("src/abacus/modules/workpapers/repository.py", "cell_setters"),
         ("src/abacus/modules/review/repository.py", "sign_offs_of"),
+        # P-04-T14: the computed staleness query over the same targets, after the same check.
+        ("src/abacus/modules/review/repository.py", "stale_sign_offs"),
         # SPEC-309 (TASK-320): ledger stays dependency-free (no visible()); the assurance read
         # model authorises `trial_balance.read` on the engagement before any of these run.
         ("src/abacus/modules/ledger/tb_repository.py", "snapshots_of_entity"),

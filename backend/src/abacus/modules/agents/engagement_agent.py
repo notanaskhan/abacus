@@ -35,11 +35,12 @@ from abacus.kernel import _flags
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import signal_with_start
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
 from abacus.modules.agents.engagement_agent_workflow import HANDLE, NEXT_TICK, EngagementAgent
+from abacus.modules.agents.follow_up_drafts import overdue_email, send_overdue
 from abacus.modules.agents.follow_ups import chase_overdue, draft_now, seconds_to_next_tick
 from abacus.modules.agents.models import AgentActivity
 from abacus.modules.agents.repository import (
@@ -47,12 +48,10 @@ from abacus.modules.agents.repository import (
     agent_state,
     drafted_follow_ups,
     last_resume_check,
-    lock_follow_up,
     record_activity,
     screenings_skipped_while_paused,
     set_agent_paused,
     set_self_paused,
-    settle_follow_up,
 )
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
@@ -62,7 +61,6 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     ScreeningInput,
 )
-from abacus.modules.communications.api import render_follow_up, send_follow_up
 from abacus.modules.engagements.api import (
     get_ref,
     is_archived,
@@ -574,10 +572,6 @@ async def drafts(ctx: AuthContext, engagement_id: UUID) -> list[DraftView]:
     ]
 
 
-class DraftGone(DomainConflict):
-    code = "draft_not_waiting"
-
-
 async def settle_draft(
     ctx: AuthContext,
     engagement_id: UUID,
@@ -586,26 +580,14 @@ async def settle_draft(
     send: bool,
     note: str | None = None,
 ) -> None:
-    """A person sends (optionally with a note) or dismisses a drafted reminder. Items no longer
-    overdue are left out; with none left it's dismissed."""
+    """A person sends (optionally with a note) or dismisses a drafted follow-up. Items no longer
+    overdue are left out; with none left it's dismissed. The send goes through follow-ups v2's
+    controls (P-06-T14 review): the P-4 drafts only, the titles and the note scope-checked, the
+    email held for the 10-s Undo window and delivered by the outbox (`send_overdue`)."""
     kept = (note or "").strip()[:500] or None
-    async with uow(ctx.tenant) as tx:
-        ref = await lock_ref(tx, engagement_id)
-        await authorise(ctx, "follow_up.send", ref.resource())
-        draft = await lock_follow_up(tx.session, engagement_id, follow_up_id)
-        if draft is None:
-            raise NotFound("reminder")
-        if draft.status != "drafted":
-            raise DraftGone(str(follow_up_id))
-        found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
-        items = found[0].items if found else []
-        outcome = "sent" if send and items else "dismissed"
-        await settle_follow_up(tx.session, follow_up_id, status=outcome, by=ctx.user_id, note=kept)
-        tx.record(f"reminder.{outcome}", target=Target("reminder", follow_up_id))
-    if outcome == "sent":
-        await send_follow_up(
-            ctx, engagement_id, draft.recipient_user_id, [d for _, d in items], kept
-        )
+    found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
+    items = [t for _, t in found[0].items] if found else []
+    await send_overdue(ctx, engagement_id, follow_up_id, items, kept, send)
 
 
 # --- Follow-ups v2 (TASK-104; the plan's DEC-74) ----------------------------------------------
@@ -621,12 +603,17 @@ async def draft_follow_ups(ctx: AuthContext, engagement_id: UUID) -> int:
 async def preview_follow_up(
     ctx: AuthContext, engagement_id: UUID, follow_up_id: UUID, note: str | None
 ) -> tuple[str, str]:
-    """The email a person is about to send: subject and body, from the fixed template."""
+    """The email a person is about to send: subject and body, from the published template."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "follow_up.draft", ref.resource())
     found = [d for d in await drafts(ctx, engagement_id) if d.id == follow_up_id]
     if not found:
-        raise NotFound("reminder")
-    return await render_follow_up(
-        ctx.tenant_id, engagement_id, [t for _, t in found[0].items], note
+        raise NotFound("follow_up")
+    kept = (note or "").strip()[:500] or None
+    return await overdue_email(
+        ctx.tenant_id,
+        engagement_id,
+        found[0].recipient_user_id,
+        [t for _, t in found[0].items],
+        kept,
     )

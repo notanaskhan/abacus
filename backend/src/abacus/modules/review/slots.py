@@ -12,7 +12,7 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import DomainInvalid, ServiceUnavailable
+from abacus.kernel.errors import DomainInvalid, NotFound, ServiceUnavailable
 
 # The levels every reviewable needs before completion (L1 preparer, L2 reviewer). K-02's
 # methodology policies will set more per area and risk.
@@ -54,6 +54,55 @@ async def reviewables_of(tenant: TenantContext, engagement_id: UUID) -> list[Rev
         found = await _PROVIDERS[target_type](tenant, engagement_id)
         out.extend(sorted(found, key=lambda r: r.code))
     return out
+
+
+# --- P-04-T14 (ADR-160; DEC-215): one target's facts, for the sign-off rules and conditions.
+
+
+@dataclass(frozen=True)
+class ReviewableFacts:
+    """What the owner knows about one reviewable now: its content hash (`review.hashing`), its
+    version number, who prepared it (the matrix condition `not_preparer_of_target` reads these,
+    with the target's current L1 signers), the levels it needs, and whether it is locked (an
+    archive lock: no sign-off then)."""
+
+    target_type: str
+    target_id: UUID
+    engagement_id: UUID
+    content_hash: str
+    version_no: int
+    preparer_user_ids: frozenset[UUID]
+    required_levels: tuple[int, ...] = REQUIRED_LEVELS
+    locked: bool = False
+
+
+ReviewableFactsProvider = Callable[[TenantContext, UUID], Awaitable[ReviewableFacts | None]]
+_FACTS: dict[str, ReviewableFactsProvider] = {}
+
+
+def register_reviewable_facts(target_type: str, provider: ReviewableFactsProvider) -> None:
+    known = _FACTS.get(target_type)
+    if known is not None and _name(known) != _name(provider):
+        raise ValueError(f"reviewable facts for {target_type!r} are already registered")
+    _FACTS[target_type] = provider
+
+
+def reviewable_fact_types() -> tuple[str, ...]:
+    return tuple(sorted(_FACTS))
+
+
+async def reviewable_facts(
+    tenant: TenantContext, target_type: str, target_id: UUID
+) -> ReviewableFacts:
+    """Fail closed: an unregistered type is refused (422 `unregistered_kind`), an unknown
+    target is `NotFound`. For callers authorised on the target's engagement."""
+    provider = _FACTS.get(target_type)
+    if provider is None:
+        raise UnregisteredKind
+    found = await provider(tenant, target_id)
+    if found is None or (found.target_type, found.target_id) != (target_type, target_id):
+        raise NotFound(target_type)
+    return found
 
 
 # --- P-04-T06 (ADR-160): the other review slots. Each fails closed: an unregistered kind is

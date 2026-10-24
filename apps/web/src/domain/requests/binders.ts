@@ -59,6 +59,62 @@ export function defaultBinderFilters(today: string): BinderFilters {
   };
 }
 
+/** BND-01's filters in the URL (P-06-T16; DV-15): only what differs from the defaults, so
+ * `/binders` is the default view and a shared link reopens the same list. */
+export interface BinderSearch {
+  service?: string;
+  season?: string;
+  office?: string;
+  preparer?: string;
+  client_activity?: "none_30_days";
+  status?: BinderStatus;
+  q?: string;
+}
+
+const SEARCH_KEYS = ["service", "season", "office", "preparer", "q"] as const;
+
+export function validateBinderSearch(search: Record<string, unknown>): BinderSearch {
+  const found: BinderSearch = {};
+  for (const key of SEARCH_KEYS) {
+    const value = search[key];
+    if (typeof value === "string" && value !== "") found[key] = value;
+  }
+  if (search.client_activity === "none_30_days") found.client_activity = "none_30_days";
+  const status = search.status;
+  if (typeof status === "string" && isBinderStatus(status)) found.status = status;
+  return found;
+}
+
+export function binderFiltersOf(search: BinderSearch, today: string): BinderFilters {
+  const base = defaultBinderFilters(today);
+  return {
+    service: search.service ?? base.service,
+    season: search.season ?? base.season,
+    office: search.office ?? null,
+    preparer: search.preparer ?? null,
+    activity: search.client_activity ?? "any",
+    status: search.status ?? null,
+    q: search.q ?? "",
+  };
+}
+
+export function binderSearchOf(filters: BinderFilters, today: string): BinderSearch {
+  const base = defaultBinderFilters(today);
+  return {
+    ...(filters.service !== base.service && filters.service !== null
+      ? { service: filters.service }
+      : {}),
+    ...(filters.season !== base.season && filters.season !== null
+      ? { season: filters.season }
+      : {}),
+    ...(filters.office === null ? {} : { office: filters.office }),
+    ...(filters.preparer === null ? {} : { preparer: filters.preparer }),
+    ...(filters.activity === "none_30_days" ? { client_activity: "none_30_days" as const } : {}),
+    ...(filters.status === null ? {} : { status: filters.status }),
+    ...(filters.q.trim() === "" ? {} : { q: filters.q }),
+  };
+}
+
 function queryOf(f: BinderFilters) {
   return {
     ...(f.service === null ? {} : { service: f.service }),

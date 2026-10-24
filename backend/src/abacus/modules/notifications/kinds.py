@@ -53,6 +53,7 @@ AGENT_KINDS: Final = frozenset(
         "trigger_run_finished",
         "template_update_available",
         "reminders.drafted",
+        "follow_up_drafted",  # P-06-T14: the P-4 drafts under their C16 code
         "agent.digest",
     }
 )

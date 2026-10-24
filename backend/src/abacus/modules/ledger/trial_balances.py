@@ -31,6 +31,7 @@ from abacus.modules.ledger.models import (
 )
 from abacus.modules.ledger.repository import get_snapshot, lines_of_snapshots
 from abacus.modules.ledger.tb_repository import (
+    annotation_setters,
     find_trial_balance,
     get_trial_balance,
     insert_annotations,
@@ -722,6 +723,30 @@ class TbDigest:
 
     summary: TrialBalanceSummary
     digest: str
+
+
+@dataclass(frozen=True)
+class TbAuthors:
+    """Who prepared a trial balance, from its own records (P-04-T15): everyone who adopted a
+    version of it and everyone who annotated it."""
+
+    trial_balance_id: UUID
+    engagement_id: UUID
+    version_no: int
+    authors: frozenset[UUID]
+
+
+async def trial_balance_authors(tenant: TenantContext, tb_id: UUID) -> TbAuthors | None:
+    """For callers authorised on the trial balance's engagement; None when unknown."""
+    async with tenant_session(tenant) as session:
+        tb = await get_trial_balance(session, tb_id)
+        if tb is None:
+            return None
+        adopters = {v.adopted_by for v in await versions_of(session, tb.id)}
+        annotators = await annotation_setters(session, tb.id)
+    return TbAuthors(
+        tb.id, tb.engagement_id, tb.current_version_no, frozenset(adopters | annotators)
+    )
 
 
 async def review_digests(tenant: TenantContext, engagement_id: UUID) -> list[TbDigest]:

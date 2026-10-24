@@ -8,6 +8,7 @@ fakes; `authz._independence` is set directly, as `register_independence` would.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import cast
 
@@ -30,6 +31,9 @@ from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.repository import GRANT_ROLES_OF
 from abacus_tools.codegen import permission_matrix as pm
+
+# The `conditions_met` fixture (conftest.py): a resource whose condition facts are met.
+MeetConditions = Callable[[Resource, AuthContext, str], Resource]
 
 DOCUMENT = cast(dict[str, object], yaml.safe_load(pm.source()))
 ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
@@ -144,6 +148,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.conclude_severity",
         "finding.propose_severity",
         "finding.raise",  # SPEC-043 (TASK-107)
+        "follow_up.draft",  # P-06-T14 review: client data, per person (staff now send)
+        "follow_up.send",
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
@@ -173,6 +179,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review.assign",
         "review.read",
         "review.take",
+        "review_decision.undo",  # P-01-T13 (TASK-1001)
         "review_note.clear",  # SPEC-041 (TASK-103)
         "review_note.raise",
         "review_note.read",  # P-04-T07 (TASK-413)
@@ -182,6 +189,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "risk.assess",
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
+        "screening.feedback",  # P-06-T15 (SHL-20 f)
         "screening.request",
         "sign_off.bulk",  # P-04-T07 (TASK-413)
         "sign_off.create",  # P-04-T07 (TASK-413)
@@ -210,11 +218,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
 
 @pytest.mark.parametrize(("action", "role"), MARKED_STAFF, ids=MARKED_STAFF_IDS)
 async def test_ac7_a_confirmed_staff_member_is_allowed(
-    fakes: Fakes, action: str, role: str
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
 ) -> None:
     fakes.role, fakes.confirmed = role, True
     ctx = _person()
-    await authorise(ctx, action, _on(ctx))
+    await authorise(ctx, action, conditions_met(_on(ctx), ctx, role))
 
 
 @pytest.mark.parametrize(("action", "role"), MARKED_STAFF, ids=MARKED_STAFF_IDS)

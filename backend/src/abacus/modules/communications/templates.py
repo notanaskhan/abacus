@@ -4,14 +4,18 @@ Template text lives in the database, imported by platform staff (`POST
 /v1/platform/email-templates/import`), never in code or `packages/domain` (AGENTS 16). The
 renderer is deterministic and whitelisted:
 - a template may use only the C16 variables `{{recipient_first_name}}`, `{{kind_sentence}}`,
-  `{{engagement_display_name}}` and `{{app_link}}`, and must declare each one it uses;
+  `{{engagement_display_name}}` and `{{app_link}}`, plus the follow-up ones (P-06-T14,
+  DEC-220) `{{firm_name}}` and the body-only block `{{request_list}}`, and must declare each one
+  it uses;
 - rendering needs exactly the declared values. An unknown variable, in the text or among the
   values, is refused, and so is a missing one;
-- values are single-line: line breaks are refused, so a value can't add headers or lines;
+- values are single-line: line breaks are refused, so a value can't add headers or lines. The
+  one exception is a block variable (`request_list`): one request per line, never in a subject,
+  each line non-blank and free of carriage returns;
 - the same version and values always give byte-identical output.
 
-No Restricted fact ever reaches an email: the values are names and a link the recipient can
-already see (C16).
+No Restricted fact ever reaches an email: the values are names, request titles and a link the
+recipient can already see (C16).
 """
 
 from __future__ import annotations
@@ -28,8 +32,12 @@ from sqlalchemy import text
 from abacus.kernel.db import platform_transaction
 from abacus.kernel.errors import DomainInvalid
 
-VARIABLES: Final = frozenset(
-    {"recipient_first_name", "kind_sentence", "engagement_display_name", "app_link"}
+# The block variables take several lines, one per entry, and appear only in a body.
+BLOCK_VARIABLES: Final = frozenset({"request_list"})
+VARIABLES: Final = (
+    frozenset({"recipient_first_name", "kind_sentence", "engagement_display_name", "app_link"})
+    | frozenset({"firm_name"})  # P-06-T14: a follow-up names the firm that is waiting
+    | BLOCK_VARIABLES
 )
 _PLACEHOLDER: Final = re.compile(r"\{\{\s*([A-Za-z0-9_.]+)\s*\}\}")
 _BRACES: Final = re.compile(r"\{\{|\}\}")
@@ -94,6 +102,8 @@ def check_source(
         raise UnknownTemplateVariable
     if not _used(subject, body_text) <= declared:
         raise UnknownTemplateVariable
+    if _used(subject) & BLOCK_VARIABLES:
+        raise TemplateInvalid
 
 
 def content_sha256(
@@ -112,8 +122,16 @@ def render(version: TemplateVersion, values: Mapping[str, str]) -> Rendered:
         raise UnknownTemplateVariable
     if not _used(version.subject, version.body_text) <= declared:
         raise UnknownTemplateVariable
-    if any("\n" in v or "\r" in v for v in values.values()):
+    if _used(version.subject) & BLOCK_VARIABLES:
         raise TemplateInvalid
+    for name, value in values.items():
+        if "\r" in value:
+            raise TemplateInvalid
+        if name in BLOCK_VARIABLES:
+            if not value or any(not line.strip() for line in value.split("\n")):
+                raise TemplateInvalid
+        elif "\n" in value:
+            raise TemplateInvalid
 
     def fill(source: str) -> str:
         return _PLACEHOLDER.sub(lambda m: values[m.group(1)], source)

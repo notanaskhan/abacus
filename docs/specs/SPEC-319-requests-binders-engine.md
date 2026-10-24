@@ -59,6 +59,13 @@ The repo has one request list per engagement and a PBC board. BND-01, BND-02 and
 ### Story 4: client withdrawal (P-06-T18, T19; ADR-162)
 - **AC-15** A never-accepted client upload is void and hidden from firm reads and agents at once; an ever-accepted version answers 409 `evidence_accepted`; another contributor's upload 403 `not_your_upload`; erase happens after 30 days unless held, and never when no hold check is registered.
 
+### Story 5: follow-ups, drafted by the platform, sent by a person (P-06-T14; DEC-74, DEC-220)
+- **AC-16** Drafting over binders or requests writes one follow-up per client contact per engagement from the published Reminder template (C16, in the database), listing each open client-visible request once and never one already waiting in a draft to that contact; nothing is sent.
+- **AC-17** A person edits the body before sending; the edit is sealed and fingerprinted; a sent follow-up can't be edited (409 `follow_up_already_sent`).
+- **AC-18** Send is scope-checked (409 `out_of_scope`, nothing written), held by an approval grant until the 10-s Undo window ends, and the email leaves once; Undo within the window sends nothing (later, 409 `undo_window_closed` / `effect_started`); the audit trail and the message name the person as sender (INV-5).
+- **AC-19** No code path lets the agent principal send: `follow_up.send` denies the agent at every autonomy level, the P-4 tick only drafts, `follow_up.sent` is human-only in the database, and the recorded engagement-agent histories replay unchanged.
+- **AC-20** Partners, managers, seniors, staff and `client_service` may draft and send; reviewers may not send.
+
 ## 6. Behaviour and flows
 **State transitions**
 | From | Event | To | Who can trigger |
@@ -122,6 +129,7 @@ BND-01, BND-02, SHL-14 screen contracts (`docs/screens/`); flag off shows F-05's
 | AC-10 | integration | `backend/tests/integration/test_binders_index.py`, `test_binders_index_e0.py` (P-06-T11; the E0 tiles foot to 241) |
 | AC-5 to AC-14 | integration | P-06-T17 (independent suite) |
 | AC-15 | integration, workflow replay | P-06-T23 |
+| AC-16 to AC-20 | unit, integration, workflow replay | `tests/unit/agents/test_follow_up_drafts.py`, `tests/unit/communications/test_follow_up_templates.py`, `tests/integration/test_follow_ups_v2.py`, `tests/workflows/test_engagement_agent_replay.py` (P-06-T14) |
 
 ## 19. Rollout
 - **Feature flag:** `binders.engine` (default off, expires 2027-01-20; renewal in P-06-T27).

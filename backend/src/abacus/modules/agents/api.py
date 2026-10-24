@@ -14,8 +14,11 @@ from abacus.modules.agents.engagement_agent_workflow import (
 )
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
+from abacus.modules.agents.events import FollowUpSent
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
+from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
+from abacus.modules.agents.follow_up_routes import follow_ups_router
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
@@ -35,8 +38,11 @@ from abacus.modules.agents.routes import (
     template_drafts_router,
 )
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
+from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
 from abacus.modules.agents.screenings import (
-    SUBSCRIPTIONS,
+    SUBSCRIPTIONS as SCREENING_SUBSCRIPTIONS,
+)
+from abacus.modules.agents.screenings import (
     WORKFLOWS,
     start_screening,
     workflow_id,
@@ -109,7 +115,13 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     # C3 stubs behind `review.grammar_api` (P-04-T08; ADR-161).
     proposals_router,
     suggestions_router,
+    follow_ups_router,  # P-06-T14: follow-ups v2 behind `binders.engine`
+    # C5 v1.2 SHL-20 family stub behind `screening.card` (P-06-T15).
+    screening_items_router,
+    screenings_router,
 )
+# P-06-T14: a sent follow-up's email leaves when the relay delivers its grant-held event.
+SUBSCRIPTIONS = {**SCREENING_SUBSCRIPTIONS, FollowUpSent.event_type: on_follow_up_sent}
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)

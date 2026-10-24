@@ -31,9 +31,16 @@ from abacus.modules.ledger.api import (
     engagement_trial_balances,
     leadsheets,
     review_digests,
+    trial_balance_authors,
     trial_balance_view,
 )
-from abacus.modules.review.api import LevelState, Reviewable, record_sign_off, sign_off_states
+from abacus.modules.review.api import (
+    LevelState,
+    Reviewable,
+    ReviewableFacts,
+    record_sign_off,
+    sign_off_states,
+)
 
 _WP_REF: Final = re.compile(r"^[A-Z0-9][A-Z0-9.-]{0,19}$")
 
@@ -207,6 +214,27 @@ async def tb_reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Rev
         )
         for d in await review_digests(tenant, engagement_id)
     ]
+
+
+async def tb_facts(tenant: TenantContext, tb_id: UUID) -> ReviewableFacts | None:
+    """P-04-T15: a trial balance's facts for the sign-off rules. Its preparers are everyone who
+    adopted a version of it or annotated it (the ledger's own records)."""
+    authors = await trial_balance_authors(tenant, tb_id)
+    if authors is None:
+        return None
+    digest = next(
+        (
+            d.digest
+            for d in await review_digests(tenant, authors.engagement_id)
+            if d.summary.id == tb_id
+        ),
+        None,
+    )
+    if digest is None:
+        return None
+    return ReviewableFacts(
+        TARGET, tb_id, authors.engagement_id, digest, authors.version_no, authors.authors
+    )
 
 
 async def tb_levels(ctx: AuthContext, engagement_id: UUID, tb_id: UUID) -> list[LevelState]:

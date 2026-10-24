@@ -19,6 +19,10 @@ actions:
     verb: release
   - action: review.decided
     verb: decide  # evidence accept, reject and send back (SPEC-019)
+  - action: review_decision.created
+    verb: decide  # the audit action of an evidence accept, reject or send back (P-01-T13, 0117)
+  - action: review_decision.undone
+    verb: decide  # undoing one is a decision too (DEC-24, ADR-161; P-01-T13, 0117)
   - action: evidence.accepted
     verb: accept
   - action: materiality.decided
@@ -57,3 +61,5 @@ actions:
     verb: confirm  # SPEC-025 §14 gate fact G3 (ED-011)
   - action: independence.declined
     verb: decide  # SPEC-025 §14, the counterpart of independence.confirmed (ED-011)
+  - action: follow_up.sent
+    verb: send  # P-06-T14 (DEC-74): a follow-up to a client is sent by a person

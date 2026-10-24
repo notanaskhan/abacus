@@ -15,6 +15,14 @@ are not registered, or not known for this resource, denies (fail closed).
 - `in_scope` (a role's decision): a practice leader's or quality partner's service lines include
   the engagement's, and nothing else (Q-21).
 - `firm_setting(<name>)` (a role's decision): the firm has the setting on.
+- `not_preparer_of_target` (P-04-T15): the actor is not one of the target's preparers (the
+  owner's preparers and the current L1 signers, carried on the resource as `TargetFacts`).
+- `reserved_role` (P-04-T15): the actor holds the role a decision card is reserved to (an
+  engagement role, or the `signer` function on the work item) and, when the card names a person,
+  is that person.
+
+The two target conditions are a person's: an agent or a system run never meets them, whatever its
+initiator could do, and a support session never does either (its facts are not resolved).
 
 `conditions_hold` is pure, so the generated allow and deny tests drive it directly.
 """
@@ -40,13 +48,24 @@ class ConditionFacts:
     gates: dict[str, bool] | None = None
     scope_covered: bool | None = None
     client_actor: bool = False
+    # P-04-T15: whether the actor prepared the target; whether they hold its reserved role.
+    preparer: bool | None = None
+    reserved_holder: bool | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
     """Whether every condition on `rule` holds. `person` is False for agents and system runs:
     the actor conditions (level, function, offshore) are their initiator's, checked when the
-    initiator is authorised; the resource conditions apply to every actor."""
+    initiator is authorised; the resource conditions apply to every actor. The target
+    conditions (`not_preparer_of_target`, `reserved_role`) are a named person's: a non-person
+    never meets them."""
+    if (rule.not_preparer_of_target or rule.reserved_role) and not person:
+        return False
     if person:
+        if rule.not_preparer_of_target and facts.preparer is not False:
+            return False
+        if rule.reserved_role and facts.reserved_holder is not True:
+            return False
         if rule.level_in and (facts.level is None or facts.level not in rule.level_in):
             return False
         if rule.function_in and (

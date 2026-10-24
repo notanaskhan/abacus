@@ -34,7 +34,6 @@ export const COPY = {
     preview: "Preview as client",
     previewHint: "Opens POR-03 as the client sees it, in a 1400 preview sheet",
     sendReminder: "Send reminder…",
-    sendReminderHint: "The follow-up sheet comes with P-06-T16",
     newRequest: "Request",
     newRequestHint: "Opens SHL-14 · request composer",
     sectionCount: (done: string, total: string) => `${done} of ${total}`,

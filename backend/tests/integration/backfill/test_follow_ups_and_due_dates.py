@@ -9,6 +9,7 @@ way here, and is listed as a question. Expectations come from the spec.
 
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -19,11 +20,14 @@ import pytest
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.agents.engagement_agent import TICK, handle
+from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_ups import MAX_PER_ITEM, Outcome, chase_overdue, today_in
 from abacus.modules.agents.workflow_types import HandleInput
 from abacus.modules.communications.transport import configure_transport
 
+from .follow_up_template import import_reminder_template
 from .support import Net, Person, Role, Seeder, Site
 
 ZONE = "America/Chicago"
@@ -47,6 +51,12 @@ class Mailbox:
     ) -> None:
         # Q-01-T09: the transport protocol also carries the Reply-To and the IDs SES tags use.
         self.sent.append({"to": to, "subject": subject, "body": body, "sender_name": sender_name})
+
+
+@pytest.fixture(autouse=True)
+async def reminder_template(engines: None) -> None:
+    """P-06-T14: the email is the published Reminder template (in the database, never code)."""
+    await import_reminder_template()
 
 
 @pytest.fixture(autouse=True)
@@ -241,7 +251,8 @@ async def test_ac4_the_team_sees_the_drafts_waiting_for_them(
     assert len(response.json()) == 2
 
 
-@pytest.mark.parametrize("role", ["engagement_partner", "manager", "senior"])
+# P-06-T14 (P-06 §4.4): staff may send follow-ups too.
+@pytest.mark.parametrize("role", ["engagement_partner", "manager", "senior", "staff"])
 async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox, role: str
 ) -> None:
@@ -254,6 +265,15 @@ async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
         body={"note": "Could you send these by Friday?"},
     )
     assert sent.status_code == 200, sent.text
+    # P-06-T14 review: the email is held for the 10-s Undo window, then delivered once.
+    assert mailbox.sent == []
+    held = await seed.rows(
+        "SELECT not_before, grant_id FROM outbox WHERE tenant_id = $1 "
+        "AND event_type = 'follow_up.sent'",
+        chase.tenant_id,
+    )
+    assert len(held) == 1 and held[0]["grant_id"] is not None and held[0]["not_before"]
+    await _deliver(seed, chase.tenant_id)
     [message] = mailbox.sent
     assert message["to"] == f"{await _subject(seed, chase.client_admins[0])}@example.test"
     assert "Bank statement" in str(message["body"])
@@ -268,12 +288,25 @@ async def test_ac4_a_person_sends_a_draft_with_their_note_and_it_goes_out_once(
         chase.team[role].user_id,
         "Could you send these by Friday?",
     )
-    assert {"reminder.sent", "message.sent"} <= set(await seed.actions(chase.tenant_id))
+    assert {"follow_up.sent", "message.sent"} <= set(await seed.actions(chase.tenant_id))
     again = await net.call(
         "POST", f"{chase.base}/follow-ups/{follow_up_id}/send", chase.team[role], body={}
     )
     assert again.status_code == 409  # it is settled: it cannot go out twice
     assert len(mailbox.sent) == 1
+
+
+async def _deliver(seed: Seeder, tenant_id: uuid.UUID) -> None:
+    """What the relay does once each held send's grant is consumed after the Undo window: the
+    subscriber sends the frozen email (the grant gate is `test_follow_ups_v2.py`'s)."""
+    for row in await seed.rows(
+        "SELECT id, payload FROM outbox WHERE tenant_id = $1 AND event_type = 'follow_up.sent' "
+        "ORDER BY seq",
+        tenant_id,
+    ):
+        payload = row["payload"]
+        loaded = json.loads(payload) if isinstance(payload, str) else payload
+        await on_follow_up_sent(OutboxEvent(row["id"], tenant_id, "follow_up.sent", loaded))
 
 
 async def _subject(seed: Seeder, who: Person) -> str:
@@ -297,6 +330,7 @@ async def test_ac4_the_preview_is_the_email_that_goes_out(
         chase.team["manager"],
         body={"note": "Thanks."},
     )
+    await _deliver(seed, chase.tenant_id)
     [message] = mailbox.sent
     assert (message["subject"], message["body"]) == (
         preview.json()["subject"],
@@ -317,7 +351,7 @@ async def test_ac4_a_person_dismisses_a_draft_and_nothing_is_sent(
         await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
         == "dismissed"
     )
-    assert "reminder.dismissed" in await seed.actions(chase.tenant_id)
+    assert "follow_up.dismissed" in await seed.actions(chase.tenant_id)
     # While the other contact's draft waits, the item has been reminded once; dismiss it too and
     # a dismissed draft leaves the sequence where it was: the next tick drafts both again.
     other = await seed.value(
@@ -348,8 +382,9 @@ async def test_ac4_when_nothing_in_a_draft_is_overdue_any_more_sending_dismisses
     )
 
 
-@pytest.mark.parametrize("role", ["staff", "reviewer"])
-async def test_ac4_only_a_partner_manager_or_senior_may_send_or_dismiss(
+# P-06-T14 (P-06 §4.4) added staff to the senders; the reviewer still may not.
+@pytest.mark.parametrize("role", ["reviewer"])
+async def test_ac4_a_reviewer_may_not_send_or_dismiss(
     chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox, role: str
 ) -> None:
     follow_up_id = await _drafted(chase, seed)
@@ -481,3 +516,50 @@ async def test_ac8_with_no_active_partner_the_agent_pauses_itself_and_resumes_wi
     assert ("agent.self_resumed", "done", None) in after
     assert len(await chase.follow_ups()) == 2  # and it works again
     assert "engagement_agent.self_resumed" in await seed.actions(chase.tenant_id)
+
+
+# --- P-06-T14 security review: the engagement route has follow-ups v2's controls ---
+
+
+async def test_review3_a_note_naming_another_client_is_refused_and_nothing_is_held(
+    chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
+) -> None:
+    follow_up_id = await _drafted(chase, seed)
+    other = await seed.value(
+        "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Granite Peak Holdings') RETURNING id",
+        chase.tenant_id,
+    )
+    assert other is not None
+    refused = await net.call(
+        "POST",
+        f"{chase.base}/follow-ups/{follow_up_id}/send",
+        chase.team["manager"],
+        body={"note": "Granite Peak Holdings sent theirs already."},
+    )
+    assert refused.status_code == 409 and refused.json()["detail"] == "out_of_scope"
+    assert (
+        await seed.value("SELECT status FROM follow_up_schedules WHERE id = $1", follow_up_id)
+        == "drafted"
+    )
+    held = await seed.value(
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = 'follow_up.sent'",
+        chase.tenant_id,
+    )
+    assert held == 0 and mailbox.sent == []
+
+
+async def test_review3_a_binder_draft_is_refused_on_the_engagement_route(
+    chase: Engagement, seed: Seeder, net: Net, mailbox: Mailbox
+) -> None:
+    follow_up_id = await _drafted(chase, seed)
+    await seed.run("UPDATE follow_up_schedules SET kind = 'chase' WHERE id = $1", follow_up_id)
+    for action in ("send", "dismiss"):
+        refused = await net.call(
+            "POST",
+            f"{chase.base}/follow-ups/{follow_up_id}/{action}",
+            chase.team["manager"],
+            body={},
+        )
+        assert refused.status_code == 409, refused.text
+        assert refused.json()["detail"] == "follow_up_v2_only"
+    assert mailbox.sent == []

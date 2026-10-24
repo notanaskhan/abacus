@@ -32,6 +32,12 @@ import { useCan } from "../../app-core/can";
 import { useSession } from "../../app-core/session";
 import {
   type BinderFilters,
+  type BinderSearch,
+  type FollowUpSelection,
+  binderFiltersOf,
+  binderSearchOf,
+  validateBinderSearch,
+  FollowUpSheet,
   defaultBinderFilters,
   initialsOf,
   isBinderStatus,
@@ -54,8 +60,10 @@ import { COPY } from "./copy";
 //   d  Season │ TY2026: no binders; "Open season setup" (ENG-07, planned)
 //   e  the list never answers: 8 skeleton rows
 //
-// b (Client activity │ None in 30 days with the bulk bar) and "Send reminders…" come with the
-// follow-up sheet in P-06-T16.
+//   b  Client activity │ None in 30 days: Fenwick (Aug 11), selected for a Request Chaser reminder
+//
+// "Send reminders…" (P-06-T16) drafts one follow-up per client contact over the selected binder,
+// else over the published binders in view, in the follow-up sheet; a person sends.
 
 const TILES: readonly IndexTile[] = [
   { code: "draft", label: "Draft", variant: "neutral" },
@@ -73,6 +81,8 @@ export interface BND01Props {
   onFilters: (next: BinderFilters) => void;
   /** A row's › opens its binder (BND-02, P-06-T12). */
   onOpen?: (row: BinderRowOut) => void;
+  /** The row an artboard opens selected (b: Fenwick). */
+  initialSelected?: string | null;
 }
 
 /** "9:12 AM" today, "Yesterday", else "Sep 9" (the Inbox and HOME-01 feed agree). */
@@ -99,9 +109,12 @@ function priorSeason(season: string): string {
  * params; `initial` is what an artboard opens on (d: Season │ TY2026). */
 export function BindersIndex({
   initial = {},
+  initialSelected = null,
   onOpen,
 }: {
   initial?: Partial<BinderFilters>;
+  /** The row the artboard opens selected (b). */
+  initialSelected?: string | null;
   /** A row's › opens its binder (BND-02); the route navigates. */
   onOpen?: (row: BinderRowOut) => void;
 }): JSX.Element {
@@ -114,12 +127,40 @@ export function BindersIndex({
     <BND01
       filters={filters}
       onFilters={setFilters}
+      initialSelected={initialSelected}
       {...(onOpen === undefined ? {} : { onOpen })}
     />
   );
 }
 
-export function BND01({ filters, onFilters, onOpen }: BND01Props): JSX.Element {
+/** The route's page (P-06-T16; DV-15): the filters come from and go to the URL's search params. */
+export function BindersSearchPage({
+  search,
+  onSearch,
+  onOpen,
+}: {
+  search: Record<string, unknown>;
+  onSearch: (next: BinderSearch) => void;
+  onOpen?: (row: BinderRowOut) => void;
+}): JSX.Element {
+  const today = useToday();
+  return (
+    <BND01
+      filters={binderFiltersOf(validateBinderSearch(search), today)}
+      onFilters={(next) => {
+        onSearch(binderSearchOf(next, today));
+      }}
+      {...(onOpen === undefined ? {} : { onOpen })}
+    />
+  );
+}
+
+export function BND01({
+  filters,
+  onFilters,
+  onOpen,
+  initialSelected = null,
+}: BND01Props): JSX.Element {
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const names = useStaffNames();
@@ -128,6 +169,9 @@ export function BND01({ filters, onFilters, onOpen }: BND01Props): JSX.Element {
   const canCreate = useCan("binder.create");
   const [unpublishing, setUnpublishing] = useState<BinderRowOut | null>(null);
   const [creating, setCreating] = useState(false);
+  const [selected, setSelected] = useState<string | null>(initialSelected);
+  const [followUp, setFollowUp] = useState<FollowUpSelection | null>(null);
+  const person = useSession().user?.displayName ?? "";
 
   const page = list.data;
   const facets = page?.facets ?? {};
@@ -298,6 +342,17 @@ export function BND01({ filters, onFilters, onOpen }: BND01Props): JSX.Element {
     return lifecycle.length === 0 ? [other] : [lifecycle, other];
   };
 
+  // The selected binder, else every published binder in view (a published binder is the only
+  // one a client can be chased on).
+  const chaseable = (page?.items ?? []).filter(
+    (r) => r.status === "published" && rowAllows(r, "follow_up.draft"),
+  );
+  const reminderIds =
+    selected !== null
+      ? chaseable.filter((r) => r.id === selected).map((r) => r.id)
+      : chaseable.map((r) => r.id);
+  const canFollowUp = (page?.items ?? []).some((r) => rowAllows(r, "follow_up.draft"));
+
   const columns: IndexColumn<BinderRowOut>[] = [
     { key: "binder", header: COPY.columns.binder, width: 170, cell: (r) => r.name },
     { key: "client", header: COPY.columns.client, cell: (r) => r.client_name },
@@ -402,6 +457,27 @@ export function BND01({ filters, onFilters, onOpen }: BND01Props): JSX.Element {
         {...(onOpen === undefined ? {} : { onOpen })}
         rowKey={(r) => r.id}
         twoLine={() => true}
+        selected={selected}
+        onSelect={(row) => {
+          setSelected((was) => (was === row.id ? null : row.id));
+        }}
+        {...(canFollowUp && page !== undefined
+          ? {
+              actions: (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  disabled={reminderIds.length === 0}
+                  onClick={() => {
+                    setFollowUp({ kind: "binders", binderIds: reminderIds });
+                  }}
+                >
+                  <Icon name="send" size={14} />
+                  {selected === null ? COPY.sendReminders : COPY.sendReminder}
+                </Button>
+              ),
+            }
+          : {})}
         chips={chips}
         onChip={onChip}
         // The tiles wait for the counts: a loading tile never reads 0 (docs/screens/BND-01.md, DV-13).
@@ -431,6 +507,13 @@ export function BND01({ filters, onFilters, onOpen }: BND01Props): JSX.Element {
           title: COPY.empty.title(season),
           body: COPY.empty.body(priorSeason(season)),
           action: emptyAction,
+        }}
+      />
+      <FollowUpSheet
+        selection={followUp}
+        person={person}
+        onClose={() => {
+          setFollowUp(null);
         }}
       />
       <UnpublishDialog

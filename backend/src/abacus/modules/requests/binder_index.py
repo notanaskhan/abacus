@@ -79,7 +79,15 @@ SERVICES: Final[dict[str, tuple[str, str]]] = {
 }
 _SERVICE_OF_KIND: Final = {kind: code for code, (kind, _) in SERVICES.items()}
 STATUS_ORDER: Final = ("draft", "published", "unpublished", "complete", "closed")
-_ROW_ACTIONS: Final = ("binder.read", "binder.update", "binder.publish", "binder.create")
+_ROW_ACTIONS: Final = (
+    "binder.read",
+    "binder.update",
+    "binder.publish",
+    "binder.create",
+    # P-06-T16: BND-01's "Send reminder(s)…" (follow-ups v2; the agent never sends, DEC-74).
+    "follow_up.draft",
+    "follow_up.send",
+)
 _NEVER: Final = 9_999_999_999  # past any epoch second this list will see
 
 # The tag slot (P-06 §3.2): a provider names, of the binders given, those carrying its tag.
@@ -303,6 +311,8 @@ async def _row_actions(
     allowed = set(await allowed_actions(ctx, resource, _ROW_ACTIONS))
     if binder.status == "closed":
         allowed -= {"binder.publish", "binder.update"}
+    if binder.status != "published":  # only a Published binder's requests are chased
+        allowed -= {"follow_up.draft", "follow_up.send"}
     return sorted(allowed)
 
 

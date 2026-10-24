@@ -201,6 +201,18 @@ class ItemFacts:
 
 
 @dataclass(frozen=True)
+class TargetFacts:
+    """The reviewable or decision card acted on, for the target conditions (P-04-T15; DEC-216).
+    The owning service reads them (review's `ReviewableFacts` and the target's current L1
+    signers; the card's reserved role and person) and puts them on the resource. Without them a
+    target condition denies (fail closed)."""
+
+    preparer_user_ids: frozenset[UUID] | None = None
+    reserved_role: str | None = None
+    reserved_user_id: UUID | None = None
+
+
+@dataclass(frozen=True)
 class Resource:
     """What an action is done to. Build it with `firm` or `engagement`: an engagement resource
     must state whether the engagement is archived (TASK-008 loads that from the database)."""
@@ -214,6 +226,8 @@ class Resource:
     item: ItemFacts | None = None
     # The work item acted on, for `function_in` and `scope_only` (F-03-T24).
     work_item_id: UUID | None = None
+    # The reviewable or card acted on, for `not_preparer_of_target` and `reserved_role`.
+    target: TargetFacts | None = None
 
     @classmethod
     def firm(cls, tenant_id: UUID) -> Resource:
@@ -560,6 +574,8 @@ def has_conditions(rule: Rule) -> bool:
         or rule.attest_client is not None
         or rule.gates_met
         or rule.scope_only
+        or rule.not_preparer_of_target
+        or rule.reserved_role
     )
 
 
@@ -587,6 +603,8 @@ async def _condition_facts(
     offshore: bool | None = None
     functions: frozenset[str] | None = None
     scope_covered: bool | None = None
+    preparer: bool | None = None
+    reserved_holder: bool | None = None
     client_actor = bool(roles & CLIENT_ROLES)
     if isinstance(ctx, AuthContext):
         if rule.level_in or rule.not_offshore:
@@ -599,6 +617,12 @@ async def _condition_facts(
             scope_covered = await LOOKUPS.scope(
                 ctx.tenant, ctx.user_id, resource.engagement_id, resource.work_item_id
             )
+        target = resource.target
+        if target is not None and not ctx.is_support:  # P-04-T15: support never meets them
+            if rule.not_preparer_of_target and target.preparer_user_ids is not None:
+                preparer = ctx.user_id in target.preparer_user_ids
+            if rule.reserved_role and target.reserved_role is not None:
+                reserved_holder = await _holds_reserved(ctx, resource, target, roles)
     attest: bool | None = None
     if rule.attest_client is not None and resource.engagement_id and LOOKUPS.attest:
         attest = await LOOKUPS.attest(ctx.tenant, resource.engagement_id)
@@ -613,7 +637,29 @@ async def _condition_facts(
         gates=gates,
         scope_covered=scope_covered,
         client_actor=client_actor,
+        preparer=preparer,
+        reserved_holder=reserved_holder,
     )
+
+
+# The function a `signer`-reserved card needs on its work item; the other reserved roles are
+# engagement roles (review.slots `_RESERVED_ROLES`).
+_SIGNER = "signer"
+
+
+async def _holds_reserved(
+    ctx: AuthContext, resource: Resource, target: TargetFacts, roles: set[str]
+) -> bool:
+    """P-04-T15: the person a card is reserved to, holding its role here now."""
+    if target.reserved_user_id is not None and target.reserved_user_id != ctx.user_id:
+        return False
+    role = target.reserved_role
+    if role == _SIGNER:
+        if resource.work_item_id is None or LOOKUPS.functions is None:
+            return False
+        held = await LOOKUPS.functions(ctx.tenant, resource.work_item_id, ctx.user_id)
+        return _SIGNER in held
+    return role in roles and role in ENGAGEMENT_ROLES
 
 
 def _on_item(decision: str | None, ctx: Actor, resource: Resource) -> str | None:
@@ -638,8 +684,10 @@ def _person(ctx: Actor) -> UUID:
 
 
 async def _walled(ctx: Actor, resource: Resource) -> bool:
-    if resource.engagement_id is None:
-        return False  # walls are on clients' engagements; firm-level actions aren't walled
+    if resource.engagement_id is None and resource.client_id is None:
+        return False  # a firm-level action names no client, so no wall applies
+    # A client-level resource (`Resource.client`, P-07-T09) names its client: walled the same as
+    # that client's engagements (ADR-026; S6 review, DEC-233).
     person = _person(ctx)
     cache = _walls.get()
     walls = cache.get(person) if cache is not None else None
@@ -650,7 +698,7 @@ async def _walled(ctx: Actor, resource: Resource) -> bool:
     if not walls:
         return False
     client = resource.client_id
-    if client is None:
+    if client is None and resource.engagement_id is not None:
         if _engagement_client is None:
             return True  # can't tell which client: a walled person is denied (fail closed)
         client = await _engagement_client[1](ctx.tenant, resource.engagement_id)

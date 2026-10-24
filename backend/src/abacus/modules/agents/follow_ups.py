@@ -6,9 +6,12 @@ for that due date. A changed due date starts the sequence again. One email per c
 listing their items; the item's client assignee, else the engagement's client admins.
 
 The agent only drafts (TASK-104; the plan's DEC-74, P-06-T14): a person reads the follow-up and
-sends it, with ten seconds to undo, at every autonomy level. A person can also draft follow-ups for
-everything overdue now (`draft_now`). Nothing client-facing happens before the engagement is open
-(SPEC-025).
+sends it, with ten seconds to undo, at every autonomy level. Its matrix row is `deny` and
+`follow_up.sent` is human-only in the database, so no path lets the agent send. The P-4 tick
+runs as an activity of the `EngagementAgent` workflow, which holds no business state, so this
+change needs no `workflow.patched` marker (DEC-220): the recorded histories replay unchanged.
+A person can also draft follow-ups for everything overdue now (`draft_now`). Nothing
+client-facing happens before the engagement is open (SPEC-025).
 """
 
 from __future__ import annotations
@@ -36,6 +39,7 @@ from abacus.modules.requests.api import OverdueItem, overdue_for
 
 CADENCE: Final = 3  # business days between reminders of an item
 MAX_PER_ITEM: Final = 3
+MAX_SEQUENCE: Final = 4  # P-06-T14: a person's chase may add one more (POR-20: at most four)
 TICK_AT: Final = time(9, 0)
 
 
@@ -151,7 +155,7 @@ async def _draft(
                 agent_run_id=None,
                 items=[(i.id, i.due_on, n) for i, n in items],
             )
-            tx.record("reminder.drafted", target=Target("reminder", follow_up_id))
+            tx.record("follow_up.drafted", target=Target("follow_up", follow_up_id))
         tx.emit(FollowUpsDrafted(engagement_id=engagement_id, count=len(batches)))
     return len(batches)
 

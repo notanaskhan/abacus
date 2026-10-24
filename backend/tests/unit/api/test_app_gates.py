@@ -178,6 +178,11 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/withdraw",
     "/v1/portal/binders/{binder_id}/mark-done",
     "/v1/portal/request-items/{item_id}/ignore",
+    # P-06-T14 (follow-ups v2): sending, its Undo and dismissing return the follow-up.
+    "/v1/follow-ups/{follow_up_id}/send",
+    "/v1/follow-ups/send",
+    "/v1/follow-ups/{follow_up_id}/undo",
+    "/v1/follow-ups/{follow_up_id}/dismiss",
     # P-08-T01 (C5 v1.1 portal half): firm-side recovery returns the contact's portal access.
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock",
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset",
@@ -193,6 +198,10 @@ NOT_CREATING = {
     "/v1/portal/auth/sign-out",
     # P-07-T04 (clients stub): a reveal returns the value once and stores nothing but its audit.
     "/v1/client-entities/{entity_id}/tin/reveal",
+    # P-07-T17 (contacts stub): a resend replaces the token and an unlock clears a lock, so 200.
+    "/v1/invitations/{invitation_id}/resend",
+    "/v1/invitations/{invitation_id}/revoke",
+    "/v1/contacts/{contact_id}/unlock",
     # P-07-T05 (engagements v2 stub): per-step validation returns findings, nothing stored.
     "/v1/engagement-drafts/{draft_id}/validate",
 }
@@ -210,6 +219,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         TEMPLATE_DRAFTS,
         SELECT,
         ASSESS,
+        # P-06-T15 (C5 v1.2 SHL-20 stub): a rerun starts screening, so 202.
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun",
         # P-04-T11 (C3 stub 3): fix instructions and Explain start an agent run, so 202.
         "/v1/issues/{issue_id}/fix-instructions",
         "/v1/issues/fix-instructions:bulk",
@@ -241,12 +252,19 @@ def test_ac20_creating_routes_answer_201() -> None:
         # P-06-T01 (C5 stub): a binder, its copy, a delegation and an upload intent.
         "/v1/binders",
         "/v1/binders/{binder_id}/duplicate",
+        "/v1/follow-ups/drafts",  # P-06-T14: one draft per client contact
+        # P-06-T15 (SHL-20 stub): a feedback row and a screening-return draft.
+        "/v1/screenings/{screening_result_id}/feedback",
+        "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "/v1/portal/request-items/{item_id}/upload-intents",
         # P-07-T05 (engagements v2 stub): a draft, a Prospect engagement, an engagement.
         "/v1/engagement-drafts",
         "/v1/engagement-drafts/{draft_id}/start-acceptance",
         "/v1/engagement-drafts/{draft_id}/create",
+        # P-07-T17 (contacts stub): a contact, and an invitation with its pending grants.
+        "/v1/clients/{client_id}/contacts",
+        "/v1/contacts/{contact_id}/invitations",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded
@@ -267,6 +285,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         decisions + "accept",  # TASK-019: a review decision is created
         decisions + "reject",
         decisions + "send-back",
+        # P-01-T13 (TASK-1001): Undo writes a compensating review decision.
+        "/v1/engagements/{engagement_id}/review-decisions/{decision_id}/undo",
         # SPEC-032 (TASK-062): a comment, or a redaction, is created.
         "/v1/engagements/{engagement_id}/request-items/{item_id}/comments",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/versions/{version_id}/comments",

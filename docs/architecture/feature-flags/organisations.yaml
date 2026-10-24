@@ -10,3 +10,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: contacts.v2
+    description: 'The contacts and portal-access family (P-07-T17 stub, P-07-T25 live): GET and POST /v1/clients/{id}/contacts, GET and PATCH /v1/contacts/{id}, invitations with grants, resend, revoke, change scope and unlock, and the CLI-04 screen. When off, those routes answer 404 and the screen shows the flag-off ViewState. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Renewal is due in the S9 protected bundle; retired with the legacy screens (P-07 §0).'
+    owner: notanaskhan
+    created: 2026-10-24
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

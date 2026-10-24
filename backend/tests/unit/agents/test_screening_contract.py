@@ -75,6 +75,7 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         "due_dates.changed",  # SPEC-027 (TASK-051)
         "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer
         "inbox_file.extracted",  # SPEC-033 (TASK-066): the matcher
+        "follow_up.sent",  # P-06-T14: a sent follow-up's email, after the Undo window
     }
     # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085)
     assert len(WORKFLOWS) == 7

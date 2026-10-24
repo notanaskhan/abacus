@@ -150,6 +150,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "checkpoint.create": {
         "engagement_partner": "allow",
@@ -176,6 +177,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "checkpoint.rename": {
         "engagement_partner": "allow",
@@ -191,6 +193,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "citation.create": {
         "engagement_partner": "allow",
@@ -377,11 +380,33 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
     },
+    "contact.manage": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "contact.mfa_reset": {
         "security_admin": "allow",
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",
+    },
+    "contact.read": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "practice_leader": "allow",
+        "quality_partner": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "contact.unlock": {
         "firm_admin": "allow",
@@ -407,6 +432,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "reserved_role": "required",
     },
     "decision.notify": {
         "engagement_partner": "allow",
@@ -462,6 +488,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "engagement.create": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "firm_partner": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -624,6 +651,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "preparer",
     },
     "field.read": {
         "engagement_partner": "allow",
@@ -737,13 +765,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "senior": "allow",
         "staff": "allow",
+        "client_service": "allow",
         "agent": "task_scope",
     },
     "follow_up.send": {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
-        "agent": "firm_setting(autonomy_policy)",
+        "staff": "allow",
+        "client_service": "allow",
+        "agent": "deny",
+        "independence": "required",
     },
     "fulfilment.confirm": {
         "engagement_partner": "allow",
@@ -891,6 +923,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "issue.resolve": {
         "engagement_partner": "allow",
@@ -922,6 +955,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "function_in": "first_level_reviewer, detail_reviewer, manager_reviewer, signer",
     },
     "item.sign_prepared": {
         "manager": "allow",
@@ -1298,6 +1332,15 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "firm_setting(seniors_can_accept)",
         "agent": "deny",
     },
+    "review_decision.undo": {
+        "independence": "required",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "firm_setting(seniors_can_accept)",
+        "staff": "firm_setting(staff_can_accept_evidence)",
+        "agent": "deny",
+        "system": "deny",
+    },
     "review_note.clear": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -1376,6 +1419,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "senior": "allow",
     },
+    "screening.feedback": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "agent": "deny",
+        "independence": "required",
+    },
     "screening.request": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -1439,6 +1490,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "agent": "deny",
         "independence": "required",
+        "not_preparer_of_target": "required",
     },
     "sign_off.partner": {
         "engagement_partner": "allow",
@@ -1467,6 +1519,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "independence": "required",
+        "not_preparer_of_target": "required",
     },
     "statement.approve": {
         "engagement_partner": "allow",

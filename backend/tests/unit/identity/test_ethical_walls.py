@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib
 import json
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Literal, cast, get_args
 
@@ -34,6 +35,9 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.context import SystemContext, system_context_for_run
 from abacus_tools.codegen import permission_matrix as pm
+
+# The `conditions_met` fixture (conftest.py): a resource whose condition facts are met.
+MeetConditions = Callable[[Resource, AuthContext, str], Resource]
 
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
 FIRM_ROLES: tuple[FirmRole, ...] = get_args(FirmRole)
@@ -143,11 +147,12 @@ async def test_ac4_a_walled_person_is_denied_at_layer_wall_whatever_their_role(
 
 @pytest.mark.parametrize(("action", "role"), ALLOWED, ids=ALLOWED_IDS)
 async def test_ac8_the_same_person_is_allowed_on_another_client_where_the_matrix_allows(
-    fakes: Fakes, action: str, role: str
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
 ) -> None:
     ctx = _arranged(role, fakes)
     fakes.walls[ctx.user_id] = frozenset({uuid.uuid4()})
-    await authorise(ctx, action, _on(ctx, uuid.uuid4()), reason=REASON)
+    resource = conditions_met(_on(ctx, uuid.uuid4()), ctx, role)
+    await authorise(ctx, action, resource, reason=REASON)
 
 
 async def test_ac4_the_wall_is_checked_before_relationship(fakes: Fakes) -> None:
@@ -178,6 +183,16 @@ async def test_ac4_firm_level_resources_are_never_walled(fakes: Fakes) -> None:
     fakes.walls[ctx.user_id] = frozenset({uuid.uuid4()})
     await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
     await authorise(ctx, "engagement.create", Resource.firm(ctx.tenant_id))
+
+
+async def test_ac4_a_client_level_resource_is_walled_like_its_engagements(fakes: Fakes) -> None:
+    """DEC-233: `Resource.client` names its client, so a walled person is denied there too,
+    whatever their firm role; someone walled from another client is not."""
+    ctx = _ctx("firm_admin")
+    walled, free = uuid.uuid4(), uuid.uuid4()
+    fakes.walls[ctx.user_id] = frozenset({walled})
+    assert await _layer(ctx, "client.update", Resource.client(ctx.tenant_id, walled)) == "wall"
+    await authorise(ctx, "client.update", Resource.client(ctx.tenant_id, free))
 
 
 async def test_ac4_several_walls_apply_as_a_union(fakes: Fakes) -> None:

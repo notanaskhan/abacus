@@ -37,6 +37,9 @@ class Engagement(Base):
     ai_excluded_at: Mapped[datetime | None]
     ai_excluded_by: Mapped[UUID | None]
     ai_excluded_reason: Mapped[str | None]
+    # P-07-T15 (0124): bumped by a trigger on any change; the wizard's label (P-07-T16).
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    period_label: Mapped[str | None] = mapped_column(server_default=FetchedValue())
 
 
 class MethodologyTemplate(Base):
@@ -164,6 +167,13 @@ class EngagementLetter(Base):
     file_name: Mapped[str | None]
     recorded_by: Mapped[str]
     recorded_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # P-07-T15 (0124): the interim recorded letter (G3 until C7).
+    client_signed_on: Mapped[date | None] = mapped_column(server_default=FetchedValue())
+    firm_signed_on: Mapped[date | None] = mapped_column(server_default=FetchedValue())
+    client_signer_contact_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    firm_signer_user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    signed_copy_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    recorded_by_user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
 
 
 class WorkItem(Base):

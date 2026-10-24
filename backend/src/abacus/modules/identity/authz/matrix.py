@@ -67,7 +67,11 @@ FUNCTIONS: frozenset[str] = frozenset(
 GATES: tuple[str, ...] = tuple(f"G{n}" for n in range(1, 10))
 CONDITION_KEYS: frozenset[str] = frozenset(
     {"level_in", "function_in", "not_offshore", "attest_client", "gates_met", "scope_only"}
+    # P-04-T15 (DEC-216): target conditions, read from the facts the resource carries.
+    | {"not_preparer_of_target", "reserved_role"}
 )
+# P-04-T15: `required` flags a condition takes (no list of values).
+_FLAG_CONDITIONS = ("not_offshore", "scope_only", "not_preparer_of_target", "reserved_role")
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 # Verbs that only read: archived engagements still allow them (`archived_write: deny`).
 READ_VERBS = frozenset({"read", "read_metadata", "read_log"})
@@ -91,6 +95,10 @@ class Rule:
     attest_client: Literal["deny", "only"] | None = None
     gates_met: tuple[str, ...] = ()
     scope_only: bool = False
+    # P-04-T15 (DEC-216): the actor is not one of the target's preparers (segregation, R-SO-3);
+    # the actor holds the role (and is the person) a decision card is reserved to.
+    not_preparer_of_target: bool = False
+    reserved_role: bool = False
     # The firm setting each `firm_setting(<name>)` role decision names.
     firm_settings: tuple[tuple[str, str], ...] = ()
 
@@ -138,7 +146,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
             if value not in ("deny", "only"):
                 raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
             attest_client = value
-        elif key in ("not_offshore", "scope_only"):
+        elif key in _FLAG_CONDITIONS:
             if value != "required":
                 raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
             flags.add(key)
@@ -172,6 +180,8 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         attest_client=attest_client,
         gates_met=gates_met,
         scope_only="scope_only" in flags,
+        not_preparer_of_target="not_preparer_of_target" in flags,
+        reserved_role="reserved_role" in flags,
         firm_settings=tuple(settings),
     )
 

@@ -34,6 +34,7 @@ actions:
   inbox_match.run:          {system: allow, agent: task_scope}   # SPEC-033 (TASK-065): the matcher records its proposals
   inbox_match.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-033 (TASK-066): firm roles only; clients get request IDs through the inbox
   inbox_match.request:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-033: "Suggest with AI"
+  screening.feedback:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # P-06-T15 (SHL-20 f): a person's thumbs up or down; a down needs a reason
   upload_review.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-030 (TASK-059 D1): firm roles only; clients are refused by role
   upload_review.request:    {engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-030: "Review now" at Advise
   suggestion.create:        {agent: task_scope}
@@ -52,9 +53,5 @@ actions:
   proposal.follow_up:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-10: "Ask follow-up"
   proposal.undo:            {engagement_partner: allow, manager: allow, senior: allow, staff: firm_setting(staff_can_accept_evidence), agent: deny, system: deny, independence: required}   # ADR-161 clause 6: the decider, inside 10 s (the service checks)
   # --- Follow-ups ---
-  follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope}
-  follow_up.send:
-    engagement_partner: allow
-    manager: allow
-    senior: allow
-    agent: firm_setting(autonomy_policy)   # routine reminders only, per autonomy policy. TASK-104: the agent no longer sends (it only drafts); the deny follows with the agent-spec change (DEC-74)
+  follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # P-06-T14: + client_service (Grace drafts BND-01 b reminders); a draft is not client data (SPEC-027 AC-8), the send is
+  follow_up.send:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, independence: required}   # P-06-T14 (DEC-74): a person sends, Undo and dismiss too; the agent only drafts; as request_item.send

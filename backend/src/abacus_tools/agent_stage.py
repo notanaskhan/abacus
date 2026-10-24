@@ -91,7 +91,9 @@ async def report(firm: UUID, agent_id: str) -> ShadowReport:
                 "JOIN agent_runs r ON r.id = s.agent_run_id AND r.shadow "
                 "JOIN LATERAL (SELECT decision FROM review_decisions x "
                 "WHERE x.evidence_version_id = s.evidence_version_id AND x.actor_kind = 'human' "
-                "ORDER BY x.created_at DESC LIMIT 1) d ON true WHERE r.agent_id = $1",
+                # P-01-T13: the effective decision; an undone one is none.
+                "ORDER BY x.decision_seq DESC LIMIT 1) d ON d.decision <> 'undone' "
+                "WHERE r.agent_id = $1",
                 agent_id,
             )
             if agent_id == SCREENER
