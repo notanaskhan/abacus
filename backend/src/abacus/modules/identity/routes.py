@@ -827,6 +827,14 @@ class LetterPolicyOut(BaseModel):
     required: Annotated[bool, classified("internal")]
 
 
+class LetterPolicyIn(BaseModel):
+    """ED-034 (ASVS 5.1.2): the body refuses undeclared fields, as every input model does."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    required: Annotated[bool, classified("internal")]
+
+
 class DraftedGuidanceIO(BaseModel):
     """SPEC-035 (TASK-073): whether approved drafted guidance is shown to clients."""
 
@@ -992,7 +1000,7 @@ async def resume_firm_agents_route(ctx: Ctx) -> AgentsStateOut:
 
 
 @router.put("/firm/letter-policy", action="firm.manage_settings", response_model=LetterPolicyOut)
-async def set_letter_policy_route(body: LetterPolicyOut, ctx: Ctx) -> LetterPolicyOut:
+async def set_letter_policy_route(body: LetterPolicyIn, ctx: Ctx) -> LetterPolicyOut:
     return LetterPolicyOut(required=await set_letter_policy(ctx, body.required))
 
 

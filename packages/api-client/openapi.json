@@ -21903,6 +21903,22 @@
         "title": "LetterOut",
         "type": "object"
       },
+      "LetterPolicyIn": {
+        "additionalProperties": false,
+        "description": "ED-034 (ASVS 5.1.2): the body refuses undeclared fields, as every input model does.",
+        "properties": {
+          "required": {
+            "cls": "internal",
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "required"
+        ],
+        "title": "LetterPolicyIn",
+        "type": "object"
+      },
       "LetterPolicyOut": {
         "properties": {
           "required": {
@@ -82868,7 +82884,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LetterPolicyOut"
+                "$ref": "#/components/schemas/LetterPolicyIn"
               }
             }
           },

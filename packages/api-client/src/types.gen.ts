@@ -10324,6 +10324,18 @@ export type LetterOut = {
 };
 
 /**
+ * LetterPolicyIn
+ *
+ * ED-034 (ASVS 5.1.2): the body refuses undeclared fields, as every input model does.
+ */
+export type LetterPolicyIn = {
+    /**
+     * Required
+     */
+    required: boolean;
+};
+
+/**
  * LetterPolicyOut
  */
 export type LetterPolicyOut = {
@@ -38565,7 +38577,7 @@ export type LetterPolicyResponses = {
 export type LetterPolicyResponse = LetterPolicyResponses[keyof LetterPolicyResponses];
 
 export type SetLetterPolicyData = {
-    body: LetterPolicyOut;
+    body: LetterPolicyIn;
     headers?: {
         /**
          * Authorization
