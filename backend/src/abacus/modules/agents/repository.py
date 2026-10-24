@@ -1352,9 +1352,7 @@ async def aggregate_for(
 async def insert_aggregate(session: AsyncSession, *, values: dict[str, object]) -> UUID:
     result_id = uuid4()
     await session.execute(
-        insert(ScreeningResult).values(
-            id=result_id, subject_kind="request_batch", created_by_kind="system", **values
-        )
+        insert(ScreeningResult).values(id=result_id, subject_kind="request_batch", **values)
     )
     return result_id
 

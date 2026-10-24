@@ -274,9 +274,9 @@ async def test_ac21_an_agent_or_a_person_never_writes_an_aggregate(firm: Firm) -
                 await session.execute(
                     text(
                         "INSERT INTO screening_results (tenant_id, engagement_id, subject_kind, "
-                        "created_by_kind, request_item_id, batch_no, source_result_ids, "
+                        "request_item_id, batch_no, source_result_ids, "
                         "source_review_ids, evidence_version_ids, checks, file_flags, verdict, "
-                        "citations, unverified) VALUES (:t, :e, 'request_batch', 'system', :i, "
+                        "citations, unverified) VALUES (:t, :e, 'request_batch', :i, "
                         "1, '{}', '{}', '{}', '[]', '[]', 'passed', '[]', '[]')"
                     ),
                     {"t": firm.tenant_id, "e": firm.site.engagement_id, "i": firm.site.item_id},

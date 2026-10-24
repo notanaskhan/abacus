@@ -4,7 +4,7 @@ title: Screening aggregate (DEC-48) — migration 0154 screening_named_checks, c
 spec: SPEC-319
 acceptance_criteria: [AC-21, AC-22, AC-23, AC-24, AC-25, AC-26, AC-27, AC-28]
 risk_zone: red
-status: in-progress
+status: done
 epic: P-06
 plan_key: P-06-T20
 branch: s8a-screening-aggregate
@@ -58,3 +58,6 @@ updated: 2026-10-25
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-324 | The aggregate as built: inputs, the period rule, what counts as screened, the review-decision guard, TRI fail-closed | No |
+- 2026-10-25: the agents schema suite (`test_ac14_the_app_cannot_set_who_created_a_screening_result`) caught the app's insert grant gaining `created_by_kind`. The grant is reverted: the insert guard now sets `system` on aggregates, and `created_by_kind` stays the database's (SPEC-011 AC-14). Runs:
+  - the full `tests/unit tests/contracts tests/security`: 28,488 passed, 5 xfailed;
+  - the screening, agents, upload-review, withdrawal, citations, schema-check and worker files: 595 tests; the one failure is fixed, and its 80 re-run tests pass.

@@ -19,7 +19,8 @@ have no run at all (`not_screened`) and is recomposed on every change, so this m
    - `checks`, `file_flags` and `verdict`;
    - `supersedes_id` (the item's previous aggregate; unique).
 6. The table stays insert-only. A guard on `request_batch` inserts requires the `system` actor,
-   `batch_no` one past the item's highest, and `supersedes_id` naming that row.
+   `batch_no` one past the item's highest, and `supersedes_id` naming that row, and it sets
+   `created_by_kind` to `system`. The app still never supplies `created_by_kind` (SPEC-011 AC-14).
 7. `review_decisions.screening_result_id` may name only `version` rows. This is a separate insert
    trigger, so 0132's `review_decision_reason_check` body is not copied a fourth time.
 8. `insert_columns` lists the new columns.
@@ -169,6 +170,9 @@ def upgrade() -> None:
                     USING ERRCODE = 'check_violation',
                           CONSTRAINT = 'screening_results_batch_chain';
             END IF;
+            -- Who created it is the database's to say, never the app's (SPEC-011 AC-14): the
+            -- column stays out of the app's insert grant, and an aggregate is code's.
+            NEW.created_by_kind := 'system';
             RETURN NEW;
         END $$
         """
@@ -180,7 +184,7 @@ def upgrade() -> None:
     insert_columns(
         op,
         "screening_results",
-        (*_COLUMNS_0010, "subject_kind", "created_by_kind", *_AGGREGATE, "supersedes_id"),
+        (*_COLUMNS_0010, "subject_kind", *_AGGREGATE, "supersedes_id"),
     )
     # (7) A person's decision corrects an agent's proposal on a version, never an aggregate.
     op.execute(
