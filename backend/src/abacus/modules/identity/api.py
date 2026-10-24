@@ -92,6 +92,7 @@ from abacus.modules.identity.events import (
     FirmAgentsResumed,
     PortalSignInCodeRequested,
     StaffInvitationIssued,
+    WallCreated,
 )
 from abacus.modules.identity.firm_settings import (
     Assistant,
@@ -141,7 +142,24 @@ from abacus.modules.identity.mfa_floor import (
     owner_grant,
     register_mfa_requirement,
 )
-from abacus.modules.identity.people import MemberProfile, set_member_profile
+from abacus.modules.identity.offshore import (
+    OffshoreConsentRequired,
+    assert_assignable,
+    hidden_clients,
+    is_offshore,
+    mask_tins_for,
+)
+from abacus.modules.identity.people import (
+    MemberProfile,
+    PersonInvalid,
+    SeasonalAccessEnds,
+    active_staff_among,
+    reconcile_service_lines,
+    set_member_profile,
+    set_seasonal_access_ends,
+    staff_holding_line,
+    staff_seats_by_office,
+)
 from abacus.modules.identity.portal_auth_routes import portal_auth_router
 from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.portal_idp import (
@@ -240,6 +258,7 @@ from abacus.modules.identity.slots import (
     consent_given,
     contact_delegations_provider,
     engagement_resource,
+    register_client_partner,
     register_consent_check,
     register_contact_activation,
     register_contact_delegations,
@@ -248,6 +267,8 @@ from abacus.modules.identity.slots import (
     register_member_teams,
     register_office_list,
     register_scope_resolver,
+    register_target_events,
+    register_wall_assignments,
     resolve_scope,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
@@ -271,6 +292,15 @@ from abacus.modules.identity.tokens import (
     configure_verifier,
     reset_verifier,
     token_verifier,
+)
+from abacus.modules.identity.walls import (
+    AlreadyApproved,
+    ApproverNotPartner,
+    NotNamedApprover,
+    OwnWall,
+    RelationshipPartner,
+    WallExists,
+    end_assignments_for_wall,
 )
 
 # SPEC-026 (TASK-049): the AI gateway's per-call data boundary asks identity which firms are
@@ -309,9 +339,11 @@ register_identity_settings()
 # P-08-T17 (DEC-34): identity's floor predicate; engagements registers the designations.
 register_mfa_requirement("owner_grant", owner_grant)
 # P-08 Story 3.4: a person's access changed, so their portal sessions and trusted devices go.
+# G-01-T09 (AC8.5): a new wall ends the walled person's assignments on the client.
 SUBSCRIPTIONS = {
     AccessChanged.event_type: revoke_portal_access,
     ClientAccessRevoked.event_type: revoke_portal_access,
+    WallCreated.event_type: end_assignments_for_wall,
 }
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
@@ -343,7 +375,9 @@ __all__ = [
     "AccessChanged",
     "Actor",
     "AgentContext",
+    "AlreadyApproved",
     "AlreadyMember",
+    "ApproverNotPartner",
     "Assistant",
     "AuthContext",
     "AutonomyView",
@@ -382,15 +416,21 @@ __all__ = [
     "MemberProfile",
     "MfaRequirement",
     "NoActiveTenant",
+    "NotNamedApprover",
+    "OffshoreConsentRequired",
+    "OwnWall",
+    "PersonInvalid",
     "PortalIdp",
     "PortalIdpUnavailable",
     "PortalScopes",
     "PortalSignInCodeRequested",
+    "RelationshipPartner",
     "Resource",
     "RevokedContact",
     "Rule",
     "ScopeFacts",
     "ScopeKind",
+    "SeasonalAccessEnds",
     "SettingKey",
     "Staff",
     "StaffInvitationIssued",
@@ -403,7 +443,10 @@ __all__ = [
     "UnknownAction",
     "VerifiedIdentity",
     "VisibleScopeKind",
+    "WallCreated",
+    "WallExists",
     "acknowledge",
+    "active_staff_among",
     "active_wall_count",
     "add_creator_as_partner",
     "add_member",
@@ -413,6 +456,7 @@ __all__ = [
     "agent_may_hold",
     "agents_paused",
     "allowed_actions",
+    "assert_assignable",
     "audit_hidden_walls",
     "authorise",
     "authorise_grants",
@@ -445,6 +489,7 @@ __all__ = [
     "declared_action",
     "drafted_guidance_to_clients",
     "earliest_partner",
+    "end_assignments_for_wall",
     "engagement_eqrs",
     "engagement_leads",
     "engagement_partners",
@@ -462,6 +507,7 @@ __all__ = [
     "grant_client_access",
     "grant_contact_ids",
     "grants_of_contacts",
+    "hidden_clients",
     "invitation_contact",
     "invitation_grants",
     "invitation_router",
@@ -469,6 +515,7 @@ __all__ = [
     "invite_contact",
     "invite_first_admins",
     "is_active_member",
+    "is_offshore",
     "is_synthetic_firm",
     "issue_grant",
     "issue_invitation_token",
@@ -476,6 +523,7 @@ __all__ = [
     "issue_staff_invitation_token",
     "letter_policy",
     "locked_addresses",
+    "mask_tins_for",
     "member_context",
     "member_facts",
     "mfa_required",
@@ -487,11 +535,13 @@ __all__ = [
     "policy_agent_may_hold",
     "portal_scopes",
     "provision_setting",
+    "reconcile_service_lines",
     "record_tenant_key",
     "register_active_engagements",
     "register_ai_assistants",
     "register_attest_client",
     "register_attest_client_column",
+    "register_client_partner",
     "register_client_scope",
     "register_clients_of_engagements",
     "register_consent_check",
@@ -512,6 +562,8 @@ __all__ = [
     "register_office_list",
     "register_scope_resolver",
     "register_settings_area",
+    "register_target_events",
+    "register_wall_assignments",
     "register_work_item_functions",
     "remove_client",
     "remove_member",
@@ -531,11 +583,14 @@ __all__ = [
     "set_demo_clock",
     "set_letter_policy",
     "set_member_profile",
+    "set_seasonal_access_ends",
     "shell_of",
     "sign_in_addresses",
     "signup_router",
     "staff_from_token",
+    "staff_holding_line",
     "staff_router",
+    "staff_seats_by_office",
     "system_context_for_run",
     "team_of",
     "token_verifier",

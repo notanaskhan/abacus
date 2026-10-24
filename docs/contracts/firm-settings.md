@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` (G-01) |
 | Version | v1 |
-| Status | overview and sections live (G-01-T04, 2026-10-23); people, role templates live (G-01-T05, 2026-10-24); the rest stub |
+| Status | overview and sections live (G-01-T04, 2026-10-23); people, role templates live (G-01-T05, 2026-10-24); offices, teams, groups, walls v2 and offshore live (G-01-T08, T09, 2026-10-25); service lines and annual independence stub |
 | Provider epic | G-01 (`identity`, `organisations`) |
 | Consumers | ADM-01, ADM-02, ADM-03; SHL-03 (the profile drawer's annual confirmation); P-07 (G2 reads annual confirmations) |
 | Freeze sprint | the sprint review after the stub |
@@ -15,14 +15,14 @@
 ## 1. Purpose
 One family for the firm's own configuration: the settings frame and its typed sections (ADM-01), people, role templates and annual independence (ADM-02), offices, teams, groups, service-line separation, offshore and walls v2 (ADM-03). Walls keep 404 semantics: nothing here carries a hidden count or a field derived from walled rows (DEC-43). The firm's region is never writable through this family.
 
-**Stub behaviour.** With `firm_settings.v2` off every route below answers 404. With it on, the overview, the sections (G-01-T04, DEC-170), the person, its writes and the role templates (G-01-T05, DEC-286) are live; the rest answer 501 `not_implemented` until their task lands: T08 (offices, teams, groups), T09 (walls v2), T12 (service lines, offshore), T13 (annual independence).
+**Stub behaviour.** With `firm_settings.v2` off every route below answers 404. With it on, the overview, the sections (G-01-T04, DEC-170), the person, its writes and the role templates (G-01-T05, DEC-286) are live; offices, teams and the Seasonal group's date (G-01-T08, DEC-317), the wall preview, approval and log and the offshore group (G-01-T09, DEC-318, DEC-319) are live; the rest answer 501 `not_implemented` until their task lands: T12 (service lines), T13 (annual independence).
 
 **Existing routes kept, growing additively in their tasks:**
 - `GET /v1/firm/staff` (G-01-T05): the list envelope of `StaffRowV2Out` (`items`, `next_cursor`, `total`, `counts` per band over the filters less the band filter) with `tallies` (`StaffTalliesOut`) and SPEC-024's `members` and `invitations` kept for the legacy screen; filters `q` (name or email), `role_template`, `office_id`, `team_id`, `status`, `band`, `cursor`, `limit`. Still `firm.manage_users` with fresh MFA (DEC-286). A pending invitation is a row with `invitation_id` and no `user_id`.
 - `POST /v1/firm/staff/invitations` takes the template, level, office, teams, service lines, access end, offshore, name and title (409 `seats_full` with `{used, total}`, `seats_not_provisioned` for a real firm whose seats aren't provisioned, `already_member`; 422 `access_ends_required`; the seat check holds the firm's row and runs again at acceptance); the link lasts 14 days at the firm's business time. Resend and revoke unchanged.
 - `PUT /v1/firm/staff/{user_id}/role` takes `role_template` (and optionally `level`; `firm_role` is then a partner's oversight role): template, level and firm role change in one unit of work, audited `membership.role_changed` as the person who made it.
 - `POST /v1/firm/staff/{user_id}/revoke`: deactivate's alias for one release (same definer; audit `membership.revoked`).
-- `GET` and `POST /v1/walls`, `POST /v1/walls/{wall_id}/remove`: their v2 shape is `WallV2Out`.
+- `GET` and `POST /v1/walls`, `POST /v1/walls/{wall_id}/remove` (G-01-T09): `WallIn` takes `reason_code`, `reason_text`, `approver_user_id`; each `WallOut` carries `WallV2Out`'s fields beside SPEC-002's (the list keeps its shape for the legacy screen); remove takes an optional `{reason}`. `wall.create` firm admins and partners, `wall.remove` partners only, `wall.list` firm admins, security admins and partners (a partner doesn't see walls on themself or on a client they are walled from).
 
 ## 2. Who may call it
 | Operation | Method and path | Matrix action |
@@ -77,11 +77,12 @@ Every write here is a live person's; the matrix denies the agent and the system,
 | 404 | `{"detail": "not found"}` | flag off; a section, person, office, team or wall the caller can't see |
 | 501 | `{"detail": "not_implemented"}` | flag on, before the implementing task |
 | 403 | `{"detail": "forbidden"}` | no action; stale MFA |
-| 409 | `stale_version` · `last_admin` · `seats_full` · `seats_not_provisioned` · `already_member` · `firm_role_held` · `offshore_assignment_conflict` · `office_code_taken` · `one_hq` · `already_approved` · `relationship_partner` · `wall_exists` · `own_wall` | as named |
-| 422 | `unknown_setting` · `display_name_required` · `audit_locked` · `access_ends_required` · `person_invalid` · `deactivation_reason_invalid` | as named |
+| 403 | `not_named_approver` | a partner approving a wall that names another |
+| 409 | `stale_version` · `last_admin` · `seats_full` · `seats_not_provisioned` · `already_member` · `firm_role_held` · `offshore_assignment_conflict` · `office_code_taken` · `office_name_taken` · `team_name_taken` · `one_hq` · `already_approved` · `relationship_partner` · `wall_exists` · `own_wall` · `offshore_consent_required` | as named |
+| 422 | `unknown_setting` · `display_name_required` · `audit_locked` · `access_ends_required` · `person_invalid` · `deactivation_reason_invalid` · `org_structure_invalid` · `approver_not_partner` | as named |
 
 ## 7. Audit and outbox events
-`firm_setting.updated` (key, never a Confidential value), `firm_setting.provisioned`, `membership.role_changed`, `membership.security_role_changed`, `membership.attributes_changed`, `membership.deactivated` (audit and outbox), `access.changed` (outbox, on every role, attribute and membership change), `wall.approved`, `independence.annual_confirmed`; per task, when live.
+`firm_setting.updated` (key, never a Confidential value), `firm_setting.provisioned`, `membership.role_changed`, `membership.security_role_changed`, `membership.attributes_changed`, `membership.deactivated` (audit and outbox), `access.changed` (outbox, on every role, attribute and membership change), `office.created`, `office.updated`, `team.created`, `team.updated`, `team.member_added`, `team.member_removed` (G-01-T08; the roster events also outbox), `wall.created`, `wall.approved`, `wall.removed` (audit and outbox), `engagement_member.removed` and `work_item.unassigned` by the `wall.created` consumer (system, on behalf of the wall's creator), `independence.annual_confirmed`; per task, when live.
 
 ## 8. Example payloads
 Brightwater Hale, synthetic, at E0: the overview's People row facts `{used: 46, total: 46, pending: 0}`; offices Chicago (HQ) 22, Denver 14, New York 10 seats.
@@ -92,4 +93,4 @@ Brightwater Hale, synthetic, at E0: the overview's People row facts `{used: 46, 
 ## 10. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | | | stub 2026-10-23 (G-01-T02); people live 2026-10-24 (G-01-T05: `StaffRowV2Out.user_id` nullable, `invitation_id`, `deactivated_on`, `StaffTalliesOut`) |
+| v1 | | | stub 2026-10-23 (G-01-T02); people live 2026-10-24 (G-01-T05: `StaffRowV2Out.user_id` nullable, `invitation_id`, `deactivated_on`, `StaffTalliesOut`); offices, teams, walls v2 and offshore live 2026-10-25 (G-01-T08, T09: `version` on `FirmOfficeOut`/`FirmTeamOut` and their inputs, `service_line` on teams; `WallOut` grew the v2 fields) |

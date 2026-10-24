@@ -12,11 +12,11 @@ from fastapi import Cookie, Depends, Header, Query, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._statuses import MembershipStatus
+from abacus.kernel._statuses import MembershipStatus, WallApprovalStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.listing import ListPage
-from abacus.kernel.text import SingleLineText
+from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     AiClientDataView,
@@ -75,14 +75,7 @@ from abacus.modules.identity.routing import (
     current_staff,
     requested_tenant,
 )
-from abacus.modules.identity.service import (
-    SignedIn,
-    WallView,
-    create_wall,
-    firm_members,
-    list_walls,
-    remove_wall_by_id,
-)
+from abacus.modules.identity.service import SignedIn, firm_members
 from abacus.modules.identity.settings_contract import (
     Band,
     Level,
@@ -90,6 +83,7 @@ from abacus.modules.identity.settings_contract import (
     ServiceLine,
     StaffRowV2Out,
     StaffTalliesOut,
+    WallReason,
     row_out,
     tallies_out,
 )
@@ -128,6 +122,7 @@ from abacus.modules.identity.support import (
     revoke_session,
 )
 from abacus.modules.identity.tokens import VerifiedIdentity
+from abacus.modules.identity.walls import WallView, create_wall, list_walls, remove_wall
 
 router = AbacusRouter(prefix="/v1", tags=["identity"])
 
@@ -258,20 +253,43 @@ async def set_preferences_route(
     return PreferencesOut(default_office_id=details.default_office_id)
 
 
-# --- Ethical walls (SPEC-002): firm admins, fresh MFA; the matrix decides ---------------------
+# --- Ethical walls (SPEC-002, amended for walls v2 by G-01-T09): fresh MFA; the matrix decides --
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
 
 class WallIn(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    """Walls v2 (AC8.1): why, and the partner named to approve. The reason defaults to `other`
+    and the approver may be left out (the legacy SPEC-019 screen sends neither; DEC-318)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
     user_id: Annotated[UUID, classified("internal")]
     client_id: Annotated[UUID, classified("internal")]
+    reason_code: Annotated[WallReason, classified("internal")] = "other"
+    reason_text: Annotated[
+        MultiLineText | None,
+        Field(default=None, min_length=1, max_length=500),
+        classified("confidential"),
+    ]
+    approver_user_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class WallRemoveIn(BaseModel):
+    """Why the wall is lifted (AC8.4); optional for the legacy screen's one release."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    reason: Annotated[
+        MultiLineText | None,
+        Field(default=None, min_length=1, max_length=500),
+        classified("confidential"),
+    ]
 
 
 class WallOut(BaseModel):
-    """Who is walled off from which client is itself sensitive (conflicts of interest)."""
+    """Who is walled off from which client is itself sensitive (conflicts of interest). The v1
+    shape plus `WallV2Out`'s fields (G-01-T09)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -283,26 +301,59 @@ class WallOut(BaseModel):
     created_at: Annotated[datetime, classified("internal")]
     removed_by: Annotated[UUID | None, classified("internal")]
     removed_at: Annotated[datetime | None, classified("internal")]
+    reason_code: Annotated[WallReason, classified("internal")]
+    reason_text: Annotated[str | None, classified("confidential")]
+    approver_user_id: Annotated[UUID | None, classified("internal")]
+    approval_status: Annotated[WallApprovalStatus, classified("internal")]
+    approved_at: Annotated[datetime | None, classified("internal")]
+    removed_reason: Annotated[str | None, classified("confidential")]
 
 
-def _wall_out(wall: WallView) -> WallOut:
-    return WallOut.model_validate(wall, from_attributes=True)
+def wall_out(wall: WallView) -> WallOut:
+    return WallOut(
+        id=wall.id,
+        user_id=wall.user_id,
+        client_id=wall.client_id,
+        status=cast(Literal["active", "removed"], wall.status),
+        created_by=wall.created_by,
+        created_at=wall.created_at,
+        removed_by=wall.removed_by,
+        removed_at=wall.removed_at,
+        reason_code=wall.reason_code,
+        reason_text=wall.reason_text,
+        approver_user_id=wall.approver_user_id,
+        approval_status=WallApprovalStatus(wall.approval_status),
+        approved_at=wall.approved_at,
+        removed_reason=wall.removed_reason,
+    )
 
 
-@router.post("/walls", action="wall.create", response_model=WallOut, status_code=201)
+@router.post("/walls", action="wall.create", response_model=WallOut, status_code=201, errors=[409])
 async def create_wall_route(body: WallIn, ctx: Ctx) -> WallOut:
-    return _wall_out(await create_wall(ctx, user_id=body.user_id, client_id=body.client_id))
+    """Firm admin or partner, fresh MFA; active at once (DEC-73). 409 `relationship_partner`,
+    `wall_exists`; 422 `approver_not_partner`."""
+    return wall_out(
+        await create_wall(
+            ctx,
+            user_id=body.user_id,
+            client_id=body.client_id,
+            reason_code=body.reason_code,
+            reason_text=body.reason_text,
+            approver_user_id=body.approver_user_id,
+        )
+    )
 
 
 @router.post("/walls/{wall_id}/remove", action="wall.remove", response_model=WallOut, errors=[409])
-async def remove_wall_route(wall_id: UUID, ctx: Ctx) -> WallOut:
-    """Walls are never deleted: removing one returns it, marked removed."""
-    return _wall_out(await remove_wall_by_id(ctx, wall_id))
+async def remove_wall_route(wall_id: UUID, ctx: Ctx, body: WallRemoveIn | None = None) -> WallOut:
+    """A partner, fresh MFA, never on their own wall (409 `own_wall`). Walls are never deleted:
+    lifting one returns it, marked removed."""
+    return wall_out(await remove_wall(ctx, wall_id, body.reason if body else None))
 
 
 @router.get("/walls", action="wall.list", response_model=list[WallOut])
 async def list_walls_route(ctx: Ctx) -> list[WallOut]:
-    return [_wall_out(wall) for wall in await list_walls(ctx)]
+    return [wall_out(wall) for wall in await list_walls(ctx)]
 
 
 class FirmMemberOut(BaseModel):

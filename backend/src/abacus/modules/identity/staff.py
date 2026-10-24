@@ -33,6 +33,7 @@ from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.people import (
     apply_invitation_terms,
     check_seats_at_acceptance,
+    reconcile_service_lines,
     revoke_invitations_of,
 )
 from abacus.modules.identity.people_repository import deactivate as deactivate_membership
@@ -329,6 +330,7 @@ async def accept_staff_invitation(identity: VerifiedIdentity, token: str) -> UUI
         teams = await apply_invitation_terms(tx.session, invitation_id, user_id)
         if teams:
             await set_member_teams(tx, tenant_id, user_id, teams)
+        await reconcile_service_lines(tx, user_id)  # G-01-T08 (AC7.4)
         await set_staff_invitation_status(tx.session, invitation_id, "accepted", user_id)
         await set_staff_token_hash(tx.session, invitation_id, None)
         tx.record(

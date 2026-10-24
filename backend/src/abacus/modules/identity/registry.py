@@ -46,7 +46,10 @@ INSERT_ONLY: frozenset[str] = frozenset({"firm_policy_overrides", "client_access
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
-    "ethical_walls": frozenset({"id", "tenant_id", "user_id", "client_id", "created_by"}),
+    "ethical_walls": frozenset(
+        {"id", "tenant_id", "user_id", "client_id", "created_by"}
+        | {"reason_code", "reason_text", "approver_user_id"}  # G-01-T09 (0151): walls v2
+    ),
     # Break-glass (SPEC-012): requested by staff; lifecycle columns updated as it is approved.
     "support_sessions": frozenset(
         {"id", "tenant_id", "staff_id", "staff_subject", "reason", "scope", "duration_minutes"}
@@ -95,7 +98,10 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
         | {"kms_key_arn", "kms_key_status", "kms_replica_verified_at"}  # Q-01-T19: key workflow
     ),
-    "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
+    "ethical_walls": frozenset(
+        {"status", "removed_by", "removed_at"}
+        | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): set once each
+    ),
     "memberships": frozenset(
         {"default_office_filter_id"}  # P-01-T04: the person's own, via /v1/me
         # G-01-T05 (0142): a person's template and attributes; firm roles stay behind definers.

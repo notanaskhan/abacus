@@ -12,15 +12,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from uuid import UUID, uuid4
-
-from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext, NoActiveTenant, TenantNotHeld
 from abacus.modules.identity.events import EngagementMemberAdded, EngagementMemberSelfJoined
@@ -29,13 +26,11 @@ from abacus.modules.identity.repository import (
     EngagementRole,
     MembershipRecord,
     UserRecord,
-    WallRecord,
     active_firm_admins,
     active_memberships,
     active_partner_members,
     active_security_admins,
     active_staff_ids,
-    all_walls,
     client_admin_ids,
     display_names,
     earliest_partner_of,
@@ -44,11 +39,8 @@ from abacus.modules.identity.repository import (
     engagement_role,
     find_user,
     firm_name_of,
-    get_wall,
     insert_engagement_member,
-    insert_wall,
     my_engagement_roles,
-    remove_wall,
     team_candidate_ids,
     walled_clients,
 )
@@ -333,111 +325,7 @@ async def is_active_member(tenant_id: UUID, user_id: UUID) -> bool:
     return any(m.tenant_id == tenant_id for m in await active_memberships(user_id))
 
 
-# --- Ethical walls (SPEC-002; ADR-026) -----------------------------------------------------------
-
-_UNIQUE_VIOLATION = "23505"
-_FOREIGN_KEY_VIOLATION = "23503"
-
-
-class WallExists(DomainConflict):
-    """The person is already walled off from this client."""
-
-    code = "wall_exists"
-
-
-class OwnWall(DomainConflict):
-    """A firm admin can't lift a wall on themself: another firm admin must (ADR-026: walls are
-    absolute; TASK-016 security review)."""
-
-    code = "own_wall"
-
-
-@dataclass(frozen=True)
-class WallView:
-    id: UUID
-    user_id: UUID
-    client_id: UUID
-    status: str
-    created_by: UUID
-    created_at: datetime
-    removed_by: UUID | None
-    removed_at: datetime | None
-
-
-def _wall_view(wall: WallRecord) -> WallView:
-    return WallView(
-        wall.id,
-        wall.user_id,
-        wall.client_id,
-        wall.status,
-        wall.created_by,
-        wall.created_at,
-        wall.removed_by,
-        wall.removed_at,
-    )
-
-
-def _sqlstate(exc: IntegrityError) -> str | None:
-    state = getattr(exc.orig, "sqlstate", None)
-    return state if isinstance(state, str) else None
-
-
-async def create_wall(ctx: AuthContext, *, user_id: UUID, client_id: UUID) -> WallView:
-    """Wall `user_id` off from `client_id` (firm admin, fresh MFA). It applies from the person's
-    next request, everywhere on that client (ADR-026)."""
-    await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
-    wall_id = uuid4()
-    try:
-        async with uow(ctx.tenant) as tx:
-            await insert_wall(
-                tx.session,
-                wall_id=wall_id,
-                tenant_id=ctx.tenant_id,
-                user_id=user_id,
-                client_id=client_id,
-                created_by=ctx.user_id,
-            )
-            tx.record(
-                "wall.created",
-                target=Target("ethical_wall", wall_id),
-                after=Ref(user_id=user_id, client_id=client_id),
-            )
-            wall = await get_wall(tx.session, wall_id)
-    except IntegrityError as exc:
-        state = _sqlstate(exc)
-        if state == _UNIQUE_VIOLATION:
-            raise WallExists from None
-        if state == _FOREIGN_KEY_VIOLATION:
-            raise NotFound("member or client") from None  # not in this firm
-        raise
-    if wall is None:  # just written in this tenant
-        raise RuntimeError("ethical wall vanished after insert")
-    return _wall_view(wall)
-
-
-async def remove_wall_by_id(ctx: AuthContext, wall_id: UUID) -> WallView:
-    """Lift an active wall (firm admin, fresh MFA); its record stays, marked removed."""
-    await authorise(ctx, "wall.remove", Resource.firm(ctx.tenant_id))
-    async with uow(ctx.tenant) as tx:
-        wall = await get_wall(tx.session, wall_id)
-        if wall is not None and wall.status == "active" and wall.user_id == ctx.user_id:
-            raise OwnWall
-        removed = await remove_wall(tx.session, wall_id, ctx.user_id)
-        if removed is None:
-            raise NotFound("ethical wall")
-        tx.record(
-            "wall.removed",
-            target=Target("ethical_wall", wall_id),
-            before=Ref(user_id=removed.user_id, client_id=removed.client_id),
-        )
-    return _wall_view(removed)
-
-
-async def list_walls(ctx: AuthContext) -> list[WallView]:
-    """Every wall of the firm, active and removed (firm admin, fresh MFA): who is walled off
-    from which client is itself sensitive."""
-    await authorise(ctx, "wall.list", Resource.firm(ctx.tenant_id))
-    return [_wall_view(wall) for wall in await all_walls(ctx.tenant)]
+# --- Ethical walls (SPEC-002; ADR-026): `walls.py` (G-01-T09) -------------------------------
 
 
 @dataclass(frozen=True)

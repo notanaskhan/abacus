@@ -36,9 +36,9 @@ from abacus.kernel._statuses import (
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
-from abacus.kernel.listing import ListPage
+from abacus.kernel.listing import CursorInvalid, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity import people, settings_registry
+from abacus.modules.identity import offshore, people, settings_registry, walls
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import AbacusRouter, current_context
 
@@ -612,40 +612,85 @@ async def set_service_line_route(
     await _stub(ctx)
 
 
-@settings_router.get(
-    "/offshore", action="firm.read_settings", response_model=OffshoreOut, errors=(501,)
-)
+@settings_router.get("/offshore", action="firm.read_settings", response_model=OffshoreOut)
 async def offshore_route(ctx: Ctx) -> OffshoreOut:
-    await _stub(ctx)
+    """ADM-03d: the offshore members and the clients a valid offshore-disclosure consent covers
+    (0 until T-01 registers the provider; DEC-52). The two policy toggles are always on."""
+    await _gate(ctx)
+    found = await offshore.offshore_group(ctx)
+    return OffshoreOut(
+        member_ids=found.member_ids, consented_client_count=found.consented_client_count
+    )
 
 
-@walls_v2_router.get(
-    "/preview", action="wall.create", response_model=WallPreviewOut, errors=(501,)
-)
+async def _wall_v2(ctx: AuthContext, wall: walls.WallView) -> WallV2Out:
+    return WallV2Out(
+        id=wall.id,
+        user_id=wall.user_id,
+        client_id=wall.client_id,
+        reason_code=wall.reason_code,
+        reason_text=wall.reason_text,
+        created_by=wall.created_by,
+        created_at=wall.created_at,
+        approver_user_id=wall.approver_user_id,
+        approval_status=WallApprovalStatus(wall.approval_status),
+        approved_at=wall.approved_at,
+        allowed_actions=await walls.wall_actions(ctx, wall),
+    )
+
+
+@walls_v2_router.get("/preview", action="wall.create", response_model=WallPreviewOut)
 async def wall_preview_route(
     ctx: Ctx, user_id: Annotated[UUID, Query()], client_id: Annotated[UUID, Query()]
 ) -> WallPreviewOut:
-    await _stub(ctx)
+    """AC8.1, AC8.3: what saving would refuse and the assignments it would end; a client the
+    caller can't see answers 404 (DEC-43)."""
+    await _gate(ctx)
+    found = await walls.preview(ctx, user_id=user_id, client_id=client_id)
+    return WallPreviewOut(
+        blockers=cast(list[WallBlocker], found.blockers),
+        assignments_ended=found.assignments_ended,
+    )
 
 
 @walls_v2_router.post(
-    "/{wall_id}/approve", action="wall.approve", response_model=WallV2Out, errors=(409, 501)
+    "/{wall_id}/approve", action="wall.approve", response_model=WallV2Out, errors=(409,)
 )
 async def approve_wall_route(wall_id: UUID, ctx: Ctx) -> WallV2Out:
     """The named partner only, fresh MFA; 409 `already_approved`; 403 `not_named_approver`."""
-    await _stub(ctx)
+    await _gate(ctx)
+    return await _wall_v2(ctx, await walls.approve_wall(ctx, wall_id))
 
 
 @walls_v2_router.get(
-    "/{wall_id}/events",
-    action="wall.list",
-    response_model=ListPage[WallEventOut],
-    errors=(501,),
+    "/{wall_id}/events", action="wall.list", response_model=ListPage[WallEventOut]
 )
 async def wall_events_route(
     wall_id: UUID, ctx: Ctx, cursor: Annotated[str | None, Query(max_length=512)] = None
 ) -> ListPage[WallEventOut]:
-    await _stub(ctx)
+    """ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA)."""
+    await _gate(ctx)
+    before = _cursor(cursor)
+    events, next_seq, total = await walls.wall_events(ctx, wall_id, before, _EVENTS_PAGE)
+    return ListPage[WallEventOut](
+        items=[
+            WallEventOut(event_type=e.event_type, at=e.at, actor_user_id=e.actor_user_id)
+            for e in events
+        ],
+        next_cursor=None if next_seq is None else str(next_seq),
+        total=total,
+    )
+
+
+_EVENTS_PAGE = 50
+
+
+def _cursor(cursor: str | None) -> int | None:
+    if cursor is None:
+        return None
+    if not cursor.isdigit():
+        raise CursorInvalid
+    return int(cursor)
 
 
 @me_router.post(

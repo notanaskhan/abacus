@@ -15695,7 +15695,7 @@
       },
       "FirmOfficeIn": {
         "additionalProperties": false,
-        "description": "409 `office_code_taken`, `one_hq`; the time zone is an IANA name.",
+        "description": "409 `office_code_taken`, `one_hq`, `office_name_taken`; the time zone is an IANA name.\nPATCH sends the `version` it read (409 `stale_version`; 422 without one).",
         "properties": {
           "address_line1": {
             "anyOf": [
@@ -15812,6 +15812,19 @@
             "maxLength": 64,
             "title": "Time Zone",
             "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
           }
         },
         "required": [
@@ -15959,6 +15972,12 @@
             "cls": "internal",
             "title": "Time Zone",
             "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -16058,6 +16077,7 @@
       },
       "FirmTeamIn": {
         "additionalProperties": false,
+        "description": "A `service_line` team names its line, and only it does (422 `org_structure_invalid`);\n409 `team_name_taken`. PATCH sends the `version` it read.",
         "properties": {
           "kind": {
             "cls": "internal",
@@ -16104,6 +16124,37 @@
             ],
             "cls": "internal",
             "title": "Office Id"
+          },
+          "service_line": {
+            "anyOf": [
+              {
+                "enum": [
+                  "audit",
+                  "tax",
+                  "cas",
+                  "advisory"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Service Line"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
           }
         },
         "required": [
@@ -16203,6 +16254,30 @@
             ],
             "cls": "internal",
             "title": "Office Id"
+          },
+          "service_line": {
+            "anyOf": [
+              {
+                "enum": [
+                  "audit",
+                  "tax",
+                  "cas",
+                  "advisory"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Service Line"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -39689,12 +39764,53 @@
       },
       "WallIn": {
         "additionalProperties": false,
+        "description": "Walls v2 (AC8.1): why, and the partner named to approve. The reason defaults to `other`\nand the approver may be left out (the legacy SPEC-019 screen sends neither; DEC-318).",
         "properties": {
+          "approver_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approver User Id"
+          },
           "client_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Client Id",
             "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "default": "other",
+            "enum": [
+              "personal_relationship",
+              "financial_interest",
+              "relative",
+              "prior_employment",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "reason_text": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason Text"
           },
           "user_id": {
             "cls": "internal",
@@ -39711,8 +39827,38 @@
         "type": "object"
       },
       "WallOut": {
-        "description": "Who is walled off from which client is itself sensitive (conflicts of interest).",
+        "description": "Who is walled off from which client is itself sensitive (conflicts of interest). The v1\nshape plus `WallV2Out`'s fields (G-01-T09).",
         "properties": {
+          "approval_status": {
+            "$ref": "#/components/schemas/WallApprovalStatus",
+            "cls": "internal"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved At"
+          },
+          "approver_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approver User Id"
+          },
           "client_id": {
             "cls": "confidential",
             "format": "uuid",
@@ -39736,6 +39882,30 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "enum": [
+              "personal_relationship",
+              "financial_interest",
+              "relative",
+              "prior_employment",
+              "other"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "reason_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason Text"
           },
           "removed_at": {
             "anyOf": [
@@ -39763,6 +39933,18 @@
             "cls": "internal",
             "title": "Removed By"
           },
+          "removed_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Removed Reason"
+          },
           "status": {
             "cls": "internal",
             "enum": [
@@ -39787,7 +39969,13 @@
           "created_by",
           "created_at",
           "removed_by",
-          "removed_at"
+          "removed_at",
+          "reason_code",
+          "reason_text",
+          "approver_user_id",
+          "approval_status",
+          "approved_at",
+          "removed_reason"
         ],
         "title": "WallOut",
         "type": "object"
@@ -39819,6 +40007,28 @@
           "assignments_ended"
         ],
         "title": "WallPreviewOut",
+        "type": "object"
+      },
+      "WallRemoveIn": {
+        "additionalProperties": false,
+        "description": "Why the wall is lifted (AC8.4); optional for the legacy screen's one release.",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "title": "WallRemoveIn",
         "type": "object"
       },
       "WallV2Out": {
@@ -82502,6 +82712,7 @@
     },
     "/v1/firm/groups/seasonal/access-ends": {
       "put": {
+        "description": "Fresh MFA; one audit row per seasonal member.",
         "operationId": "set_seasonal_access_ends",
         "parameters": [
           {
@@ -82597,16 +82808,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Seasonal Access Ends Route",
@@ -83036,6 +83237,7 @@
     },
     "/v1/firm/offices": {
       "get": {
+        "description": "ADM-03a: the HQ first, then by name, with derived seats and registered facts.",
         "operationId": "offices",
         "parameters": [
           {
@@ -83125,16 +83327,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Offices Route",
@@ -83250,16 +83442,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Office Route",
@@ -83386,16 +83568,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Office Route",
@@ -83407,6 +83579,7 @@
     },
     "/v1/firm/offshore": {
       "get": {
+        "description": "ADM-03d: the offshore members and the clients a valid offshore-disclosure consent covers\n(0 until T-01 registers the provider; DEC-52). The two policy toggles are always on.",
         "operationId": "offshore",
         "parameters": [
           {
@@ -83492,16 +83665,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Offshore Route",
@@ -86230,16 +86393,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Teams Route",
@@ -86335,6 +86488,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -86344,16 +86507,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Team Route",
@@ -86461,6 +86614,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -86470,16 +86633,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Team Route",
@@ -86596,16 +86749,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Team Members Route",
@@ -101211,6 +101354,7 @@
         "x-abacus-action": "wall.list"
       },
       "post": {
+        "description": "Firm admin or partner, fresh MFA; active at once (DEC-73). 409 `relationship_partner`,\n`wall_exists`; 422 `approver_not_partner`.",
         "operationId": "create_wall",
         "parameters": [
           {
@@ -101297,6 +101441,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -101317,6 +101471,7 @@
     },
     "/v1/walls/preview": {
       "get": {
+        "description": "AC8.1, AC8.3: what saving would refuse and the assignments it would end; a client the\ncaller can't see answers 404 (DEC-43).",
         "operationId": "wall_preview",
         "parameters": [
           {
@@ -101422,16 +101577,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Wall Preview Route",
@@ -101549,16 +101694,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Wall Route",
@@ -101570,6 +101705,7 @@
     },
     "/v1/walls/{wall_id}/events": {
       "get": {
+        "description": "ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA).",
         "operationId": "wall_events",
         "parameters": [
           {
@@ -101682,16 +101818,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Wall Events Route",
@@ -101703,7 +101829,7 @@
     },
     "/v1/walls/{wall_id}/remove": {
       "post": {
-        "description": "Walls are never deleted: removing one returns it, marked removed.",
+        "description": "A partner, fresh MFA, never on their own wall (409 `own_wall`). Walls are never deleted:\nlifting one returns it, marked removed.",
         "operationId": "remove_wall",
         "parameters": [
           {
@@ -101749,6 +101875,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/WallRemoveIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {

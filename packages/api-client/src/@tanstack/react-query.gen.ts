@@ -6874,6 +6874,8 @@ export const setFieldworkSettingsMutation = (options?: Partial<Options<SetFieldw
 
 /**
  * Set Seasonal Access Ends Route
+ *
+ * Fresh MFA; one audit row per seasonal member.
  */
 export const setSeasonalAccessEndsMutation = (options?: Partial<Options<SetSeasonalAccessEndsData>>): UseMutationOptions<SetSeasonalAccessEndsResponse, SetSeasonalAccessEndsError, Options<SetSeasonalAccessEndsData>> => {
     const mutationOptions: UseMutationOptions<SetSeasonalAccessEndsResponse, SetSeasonalAccessEndsError, Options<SetSeasonalAccessEndsData>> = {
@@ -6966,6 +6968,8 @@ export const officesQueryKey = (options?: Options<OfficesData>) => createQueryKe
 
 /**
  * Offices Route
+ *
+ * ADM-03a: the HQ first, then by name, with derived seats and registered facts.
  */
 export const officesOptions = (options?: Options<OfficesData>) => queryOptions<OfficesResponse, OfficesError, OfficesResponse, ReturnType<typeof officesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7020,6 +7024,9 @@ export const offshoreQueryKey = (options?: Options<OffshoreData>) => createQuery
 
 /**
  * Offshore Route
+ *
+ * ADM-03d: the offshore members and the clients a valid offshore-disclosure consent covers
+ * (0 until T-01 registers the provider; DEC-52). The two policy toggles are always on.
  */
 export const offshoreOptions = (options?: Options<OffshoreData>) => queryOptions<OffshoreResponse, OffshoreError, OffshoreResponse, ReturnType<typeof offshoreQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10046,6 +10053,9 @@ export const listWallsOptions = (options?: Options<ListWallsData>) => queryOptio
 
 /**
  * Create Wall Route
+ *
+ * Firm admin or partner, fresh MFA; active at once (DEC-73). 409 `relationship_partner`,
+ * `wall_exists`; 422 `approver_not_partner`.
  */
 export const createWallMutation = (options?: Partial<Options<CreateWallData>>): UseMutationOptions<CreateWallResponse, CreateWallError, Options<CreateWallData>> => {
     const mutationOptions: UseMutationOptions<CreateWallResponse, CreateWallError, Options<CreateWallData>> = {
@@ -10065,6 +10075,9 @@ export const wallPreviewQueryKey = (options: Options<WallPreviewData>) => create
 
 /**
  * Wall Preview Route
+ *
+ * AC8.1, AC8.3: what saving would refuse and the assignments it would end; a client the
+ * caller can't see answers 404 (DEC-43).
  */
 export const wallPreviewOptions = (options: Options<WallPreviewData>) => queryOptions<WallPreviewResponse, WallPreviewError, WallPreviewResponse, ReturnType<typeof wallPreviewQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10102,6 +10115,8 @@ export const wallEventsQueryKey = (options: Options<WallEventsData>) => createQu
 
 /**
  * Wall Events Route
+ *
+ * ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA).
  */
 export const wallEventsOptions = (options: Options<WallEventsData>) => queryOptions<WallEventsResponse, WallEventsError, WallEventsResponse, ReturnType<typeof wallEventsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10120,6 +10135,8 @@ export const wallEventsInfiniteQueryKey = (options: Options<WallEventsData>): Qu
 
 /**
  * Wall Events Route
+ *
+ * ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA).
  */
 export const wallEventsInfiniteOptions = (options: Options<WallEventsData>) => {
     const opts = infiniteQueryOptions<WallEventsResponse, WallEventsError, InfiniteData<WallEventsResponse>, QueryKey<Options<WallEventsData>>, string | null | Pick<QueryKey<Options<WallEventsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -10149,7 +10166,8 @@ export const wallEventsInfiniteOptions = (options: Options<WallEventsData>) => {
 /**
  * Remove Wall Route
  *
- * Walls are never deleted: removing one returns it, marked removed.
+ * A partner, fresh MFA, never on their own wall (409 `own_wall`). Walls are never deleted:
+ * lifting one returns it, marked removed.
  */
 export const removeWallMutation = (options?: Partial<Options<RemoveWallData>>): UseMutationOptions<RemoveWallResponse, RemoveWallError, Options<RemoveWallData>> => {
     const mutationOptions: UseMutationOptions<RemoveWallResponse, RemoveWallError, Options<RemoveWallData>> = {

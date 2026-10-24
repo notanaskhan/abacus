@@ -110,3 +110,23 @@ def overview_sections(profile: Profile) -> list[OverviewSection]:
     return sorted(
         (s for s in _SECTIONS.values() if profile in s.profiles), key=lambda s: (s.order, s.code)
     )
+
+
+# --- G-01-T08: office facts (ADM-03a's per-office counts other modules own) ----------------------
+# `register_office_facts(name, provider)`: the provider answers a count per office (T-02's
+# "TY2025 returns"). Unregistered, the fact is absent; a provider that fails is left out (the
+# offices list still renders).
+
+OfficeFacts = Callable[[Any], Awaitable[dict[UUID, int]]]  # Any: the caller's TenantContext
+_OFFICE_FACTS: dict[str, OfficeFacts] = {}
+
+
+def register_office_facts(name: str, provider: OfficeFacts) -> None:
+    known = _OFFICE_FACTS.get(name)
+    if known is not None and not _same(known, provider):
+        raise ValueError(f"office fact {name!r} is already registered")
+    _OFFICE_FACTS[name] = provider
+
+
+def office_fact_providers() -> dict[str, OfficeFacts]:
+    return dict(_OFFICE_FACTS)

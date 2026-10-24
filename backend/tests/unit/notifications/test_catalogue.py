@@ -38,6 +38,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "legal_hold.placed",  # Q-02-T29 (C16 `legal_hold_placed`)
         "incident.recorded",  # Q-02-T33 (C16 `incident_recorded`)
         "incident.propagated",  # Q-02-T33 (C16 `incident_from_accrued`)
+        "wall.created",  # G-01-T09 (C16 `wall_approval_requested`, to the named partner)
+        "wall.approved",  # G-01-T09 (C16 `wall_approved`, to the wall's creator)
     }
 
 
@@ -73,12 +75,15 @@ async def test_q02t29_a_hold_tells_its_list_and_the_partners_but_no_client_or_wa
     async def facts(_tenant: object, user: uuid.UUID) -> MemberFacts | None:
         return MemberFacts(None, False, frozenset(), client=user == portal)
 
-    async def walls(_tenant: object, user: uuid.UUID) -> frozenset[uuid.UUID]:
-        return frozenset({client}) if user == walled else frozenset()
+    async def walls(
+        _tenant: object, user: uuid.UUID, clients: list[uuid.UUID]
+    ) -> frozenset[uuid.UUID]:
+        # G-01-T09: walls and offshore through `hidden_clients` (walled_from missed offshore).
+        return frozenset(clients) & {client} if user == walled else frozenset()
 
     monkeypatch.setattr(catalogue, "engagement_partners", partners)
     monkeypatch.setattr(catalogue, "member_facts", facts)
-    monkeypatch.setattr(catalogue, "walled_from", walls)
+    monkeypatch.setattr(catalogue, "hidden_clients", walls)
     payload: dict[str, object] = {
         "hold_id": str(uuid.uuid4()),
         "client_id": str(client),

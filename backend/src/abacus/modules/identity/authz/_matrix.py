@@ -1663,14 +1663,23 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "wall.create": {
         "firm_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
         "mfa_recent": "required",
     },
     "wall.list": {
         "firm_admin": "allow",
+        "security_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
         "mfa_recent": "required",
     },
     "wall.remove": {
-        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
         "mfa_recent": "required",
     },
     "work_item.assign": {

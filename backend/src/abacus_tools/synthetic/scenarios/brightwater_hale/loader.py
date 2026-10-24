@@ -181,6 +181,9 @@ OFFICE_ZONES: Final = {
     "Denver": "America/Denver",
     "New York": "America/New_York",
 }
+# G-01-T08 (AC7.1): ADM-03a's office codes; Chicago is the HQ.
+OFFICE_CODES: Final = {"Chicago": "CHI", "Denver": "DEN", "New York": "NYC"}
+HQ_OFFICE: Final = "Chicago"
 
 
 class LoadRefused(RuntimeError):
@@ -354,12 +357,14 @@ async def _office_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
 
     async def write() -> tuple[str, str, str]:
         await conn.execute(
-            "INSERT INTO offices (id, tenant_id, name, time_zone) VALUES ($1, $2, $3, $4) "
-            "ON CONFLICT DO NOTHING",
+            "INSERT INTO offices (id, tenant_id, name, time_zone, code, is_hq) "
+            "VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
             office_id_of(name),
             TENANT,
             name,
             OFFICE_ZONES[name],
+            OFFICE_CODES[name],
+            name == HQ_OFFICE,
         )
         return "office.created", "office", str(office_id_of(name))
 
@@ -420,11 +425,16 @@ async def _team_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> 
     name = str(event.data["name"])
 
     async def write() -> tuple[str, str, str]:
+        line = SERVICE_LINE_OF_TEAM.get(cast(TeamName, name))
+        # G-01-T08: a service line's team carries its line; Firm operations is a practice group.
         await conn.execute(
-            "INSERT INTO teams (id, tenant_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            "INSERT INTO teams (id, tenant_id, name, kind, service_line) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
             team_id_of(name),
             TENANT,
             name,
+            "practice_group" if line is None else "service_line",
+            line,
         )
         return "team.created", "team", str(team_id_of(name))
 
