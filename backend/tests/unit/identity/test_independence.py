@@ -148,7 +148,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.conclude_severity",
         "finding.propose_severity",
         "finding.raise",  # SPEC-043 (TASK-107)
-        "follow_up.draft",  # P-06-T14 review: client data, per person (staff now send)
+        # P-06-T14: the send is client data, per person; a draft is not (SPEC-027 AC-8, DEC-220).
         "follow_up.send",
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
