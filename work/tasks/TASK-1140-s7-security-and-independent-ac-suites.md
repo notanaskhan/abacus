@@ -4,7 +4,7 @@ title: S7 pen-scope security files and independent AC suites (Q-03-T012, T013, T
 spec: SPEC-002
 acceptance_criteria: [AC-4, AC-5, AC-7]
 risk_zone: red
-status: in-progress
+status: done
 epic: Q-03
 plan_key: Q-03-T012; Q-03-T013; Q-02-T36; P-04-T13; P-06-T17; P-01-T15; F-04-T36; Q-03-T014; Q-03-T015
 branch: s7-security-tests
@@ -83,3 +83,4 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - 2026-10-24: P-01-T15 written: 8 pass, 1 held as ED-024.
 - 2026-10-24: F-04-T36 written: 36 + 10 pass.
 - 2026-10-24: Q-03-T014 and T015 written: 15 pass.
+- 2026-10-24: gates: ruff, pyright, banned_patterns, validate_docs, error_codes, `make check-fast` green; `pytest tests/unit tests/contracts tests/security` 26510 passed, 14 xfailed; the touched integration files 103 passed, 1 xfailed; web vitest `src/status src/fixtures/contracts src/lint` 421 passed. Status done.
