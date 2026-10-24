@@ -120,6 +120,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.record_response",
         "agent_run.read",  # SPEC-318 (TASK-461)
         "archive.lock",  # SPEC-314 (TASK-332)
+        "assurance.record_archive",  # A-01-T02 (TASK-1101)
+        "assurance.record_phase",
+        "assurance.record_release",
         "citation.create",  # P-03-T02 (C4 v1)
         "citation.read",
         "citation.relink",

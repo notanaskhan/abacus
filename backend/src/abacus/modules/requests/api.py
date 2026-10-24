@@ -9,7 +9,13 @@ from abacus.modules.requests.binder_index import register_binder_tag
 from abacus.modules.requests.binders import SUBSCRIPTIONS, register_binder_close_rule
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
-from abacus.modules.requests.contract import binders_router, items_router, portal_router
+from abacus.modules.requests.contract import (
+    RequestLatestUploadOut,
+    RequestOwedByOut,
+    binders_router,
+    items_router,
+    portal_router,
+)
 from abacus.modules.requests.events import (
     DueDatesChanged,
     RequestItemClassified,
@@ -100,6 +106,8 @@ __all__ = [
     "RequestItemRef",
     "RequestItemSummary",
     "RequestItemView",
+    "RequestLatestUploadOut",
+    "RequestOwedByOut",
     "ReviewTarget",
     "add_request_item",
     "apply_drafted_guidance",

@@ -3,6 +3,7 @@
 The audit line's read models and actions: the AUD-06 trial balance first (SPEC-309).
 """
 
+from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7, g8, g9
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
@@ -10,6 +11,14 @@ from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
 from abacus.modules.assurance.routes import router
+from abacus.modules.assurance.sections import (
+    AuditSection,
+    IndexTag,
+    SectionState,
+    register_audit_section,
+    register_audit_segment,
+    register_index_tag,
+)
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
@@ -18,6 +27,7 @@ from abacus.modules.review.api import register_reviewable, register_reviewable_f
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    audits_router,  # A-01-T02 audits family stub (docs/contracts/audits-cockpit.md)
     completion_router,
     mapping_router,
     grouping_router,
@@ -38,4 +48,20 @@ register_gate_provider("G7", g7)
 register_gate_provider("G8", g8)
 register_gate_provider("G9", g9)
 
-__all__ = ["ROUTERS", "completion_router", "router"]
+# A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
+# audit) register theirs with an entitlement.
+register_audit_segment("fs", None)
+register_audit_segment("ebp", None)
+register_audit_segment("review", None)
+
+__all__ = [
+    "ROUTERS",
+    "AuditSection",
+    "IndexTag",
+    "SectionState",
+    "completion_router",
+    "register_audit_section",
+    "register_audit_segment",
+    "register_index_tag",
+    "router",
+]

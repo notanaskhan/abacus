@@ -2061,6 +2061,71 @@
         "title": "ArchiveOut",
         "type": "object"
       },
+      "ArchiveRecordIn": {
+        "additionalProperties": false,
+        "description": "The external archive against a ready final binder export (interim G9): 409\n`final_export_required` or `export_stale` otherwise.",
+        "properties": {
+          "export_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Export Id",
+            "type": "string"
+          },
+          "firm_tool_ref": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Firm Tool Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "export_id",
+          "firm_tool_ref"
+        ],
+        "title": "ArchiveRecordIn",
+        "type": "object"
+      },
+      "ArchiveRecordOut": {
+        "properties": {
+          "export_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Export Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "cls": "internal",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "export_id",
+          "manifest_sha256",
+          "phase",
+          "recorded_at"
+        ],
+        "title": "ArchiveRecordOut",
+        "type": "object"
+      },
       "AreaOut": {
         "properties": {
           "code": {
@@ -2246,6 +2311,1101 @@
           "attest"
         ],
         "title": "AttestBody",
+        "type": "object"
+      },
+      "AuditArchiveOut": {
+        "description": "The Archive cell: \"Archive in 13 days\" (clock from the release date + 60, on `kernel.clock`)\nor \"Archived\" with the firm-tool reference of an external archive (DV-4).",
+        "properties": {
+          "days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Days Left"
+          },
+          "firm_tool_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Firm Tool Ref"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "archiving",
+              "archived"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "AuditArchiveOut",
+        "type": "object"
+      },
+      "AuditBandOut": {
+        "properties": {
+          "collapsed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Collapsed",
+            "type": "boolean"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "overview",
+              "planning",
+              "group",
+              "fieldwork",
+              "completion",
+              "reporting"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AuditSectionRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "AuditBandOut",
+        "type": "object"
+      },
+      "AuditBarOut": {
+        "properties": {
+          "auto_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Auto Mode"
+          },
+          "methodology_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Methodology Label"
+          },
+          "run_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Started At"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "AuditBarOut",
+        "type": "object"
+      },
+      "AuditCockpitOut": {
+        "description": "AUD-02's host: audit bar, overview card, bands of registered rows and the dock tabs.\n`allowed_actions` from `assurance.record_phase`, `engagement.update`, `export.create`,\n`agent.pause`; empty for metadata-only roles and archived work items.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "audit_bar": {
+            "$ref": "#/components/schemas/AuditBarOut",
+            "cls": "confidential"
+          },
+          "bands": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AuditBandOut"
+            },
+            "title": "Bands",
+            "type": "array"
+          },
+          "dock_tabs": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "agent",
+                "viewer"
+              ],
+              "type": "string"
+            },
+            "title": "Dock Tabs",
+            "type": "array"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "overview": {
+            "$ref": "#/components/schemas/AuditOverviewOut",
+            "cls": "confidential"
+          },
+          "phase_mode": {
+            "cls": "internal",
+            "default": "recorded",
+            "enum": [
+              "recorded",
+              "derived"
+            ],
+            "title": "Phase Mode",
+            "type": "string"
+          },
+          "read_only_reason": {
+            "anyOf": [
+              {
+                "const": "archived",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Read Only Reason"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "engagement_id",
+          "audit_bar",
+          "overview",
+          "version"
+        ],
+        "title": "AuditCockpitOut",
+        "type": "object"
+      },
+      "AuditEngagementStatus": {
+        "enum": [
+          "planning",
+          "fieldwork",
+          "in_review",
+          "completion",
+          "ready_to_release",
+          "released",
+          "archiving",
+          "archived"
+        ],
+        "title": "AuditEngagementStatus",
+        "type": "string"
+      },
+      "AuditIndexPage": {
+        "description": "The P-36 envelope: `counts` per `audit_engagement` phase code **minus the active tile**\n(the tiles keep their own counts when one is pressed); `facets.segment` the segments with\ntheir counts (only registered segments the firm is entitled to); `facets.type`, `partner`,\n`office`, `period`. The tiles sum to `total`. No hidden-by-wall field.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AuditIndexRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AuditIndexSummaryOut",
+            "cls": "internal"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "summary"
+        ],
+        "title": "AuditIndexPage",
+        "type": "object"
+      },
+      "AuditIndexRowOut": {
+        "description": "An AUD-01 row: metadata only, after `visible()` (INV-3). No amount, materiality or\nseverity (AUD-01 AVOID).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "archive": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditArchiveOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "ebp_plan_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dc",
+                  "403b",
+                  "db"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ebp Plan Kind"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "engagement_type": {
+            "cls": "internal",
+            "enum": [
+              "fs_audit",
+              "ebp_audit",
+              "review",
+              "compilation",
+              "preparation",
+              "agreed_upon_procedures",
+              "soc1",
+              "soc2",
+              "readiness",
+              "internal_audit"
+            ],
+            "title": "Engagement Type",
+            "type": "string"
+          },
+          "is_group_audit": {
+            "cls": "internal",
+            "default": false,
+            "title": "Is Group Audit",
+            "type": "boolean"
+          },
+          "limited_scope_103a3c": {
+            "cls": "internal",
+            "default": false,
+            "title": "Limited Scope 103A3C",
+            "type": "boolean"
+          },
+          "manager_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Manager Initials"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "office_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Name"
+          },
+          "partner_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Partner Initials"
+          },
+          "pbc": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditPbcOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "period_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period Label"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released On"
+          },
+          "report_due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report Due On"
+          },
+          "report_due_tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "past_due",
+                  "within_7_days",
+                  "within_30_days",
+                  "later"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report Due Tone"
+          },
+          "run_badge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditRunBadgeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "segment": {
+            "cls": "internal",
+            "enum": [
+              "fs",
+              "ebp",
+              "review",
+              "soc",
+              "ia"
+            ],
+            "title": "Segment",
+            "type": "string"
+          },
+          "tags": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AuditIndexTagOut"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "engagement_id",
+          "client_id",
+          "client_name",
+          "name",
+          "engagement_type",
+          "segment",
+          "phase"
+        ],
+        "title": "AuditIndexRowOut",
+        "type": "object"
+      },
+      "AuditIndexSummaryOut": {
+        "description": "The caption (\"27 engagements \u00b7 EBP 14 \u00b7 FS audit 6 \u00b7 Review 4 \u00b7 Compilation/preparation\n3\"), over the same `visible()` predicate as the rows.",
+        "properties": {
+          "compilation_preparation": {
+            "cls": "internal",
+            "title": "Compilation Preparation",
+            "type": "integer"
+          },
+          "ebp": {
+            "cls": "internal",
+            "title": "Ebp",
+            "type": "integer"
+          },
+          "fs_audit": {
+            "cls": "internal",
+            "title": "Fs Audit",
+            "type": "integer"
+          },
+          "internal_audit": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Internal Audit",
+            "type": "integer"
+          },
+          "review": {
+            "cls": "internal",
+            "title": "Review",
+            "type": "integer"
+          },
+          "soc": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Soc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ebp",
+          "fs_audit",
+          "review",
+          "compilation_preparation"
+        ],
+        "title": "AuditIndexSummaryOut",
+        "type": "object"
+      },
+      "AuditIndexTagOut": {
+        "description": "A tag from a registered index-tag provider (DV-10): code-built text, never model text.",
+        "properties": {
+          "classification": {
+            "cls": "internal",
+            "enum": [
+              "metadata",
+              "content"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "code",
+          "text",
+          "classification"
+        ],
+        "title": "AuditIndexTagOut",
+        "type": "object"
+      },
+      "AuditOverviewOut": {
+        "description": "The rail's OverviewCard.",
+        "properties": {
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "period_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Period Label"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "client_id",
+          "client_name",
+          "name",
+          "phase"
+        ],
+        "title": "AuditOverviewOut",
+        "type": "object"
+      },
+      "AuditPbcOut": {
+        "description": "\"11 of 24\": received over the client-visible requests of the work item's published PBC\nbinders. The row's `pbc` is null before G3 (no published PBC binder, DEC-39).",
+        "properties": {
+          "received": {
+            "cls": "internal",
+            "title": "Received",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "received",
+          "total"
+        ],
+        "title": "AuditPbcOut",
+        "type": "object"
+      },
+      "AuditPhaseIn": {
+        "additionalProperties": false,
+        "description": "A record-mode forward move by a named person (409 `phase_backward`, `phase_skip`,\n`phase_follows_gate`).",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          },
+          "to": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "to"
+        ],
+        "title": "AuditPhaseIn",
+        "type": "object"
+      },
+      "AuditPhaseOut": {
+        "properties": {
+          "event_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "from_phase": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          },
+          "mode": {
+            "cls": "internal",
+            "enum": [
+              "recorded",
+              "derived"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "to_phase": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "event_id",
+          "from_phase",
+          "to_phase",
+          "mode",
+          "recorded_at",
+          "version"
+        ],
+        "title": "AuditPhaseOut",
+        "type": "object"
+      },
+      "AuditProfileIn": {
+        "additionalProperties": false,
+        "description": "The EBP label facts (\"EBP DC \u00b7 \u00a7103(a)(3)(C)\"); a field left out is unchanged.",
+        "properties": {
+          "ebp_plan_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dc",
+                  "403b",
+                  "db"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ebp Plan Kind"
+          },
+          "limited_scope_103a3c": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Limited Scope 103A3C"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "standards_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Id"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "AuditProfileIn",
+        "type": "object"
+      },
+      "AuditProfileOut": {
+        "properties": {
+          "ebp_plan_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dc",
+                  "403b",
+                  "db"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ebp Plan Kind"
+          },
+          "limited_scope_103a3c": {
+            "cls": "internal",
+            "title": "Limited Scope 103A3C",
+            "type": "boolean"
+          },
+          "standards_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Id"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "limited_scope_103a3c",
+          "version"
+        ],
+        "title": "AuditProfileOut",
+        "type": "object"
+      },
+      "AuditRunBadgeOut": {
+        "description": "The \"Processing\" pill and its popover (AUD-01 d), from a C6 v1 engagement run only; the v1\npolicy ticks never produce one (DV-11). `blocked_on_role` is the decider's role code.",
+        "properties": {
+          "blocked_on_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "manager"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Blocked On Role"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_number": {
+            "cls": "internal",
+            "title": "Run Number",
+            "type": "integer"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "started_by_name": {
+            "cls": "internal",
+            "title": "Started By Name",
+            "type": "string"
+          },
+          "started_by_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Started By User Id",
+            "type": "string"
+          },
+          "workpapers_complete": {
+            "cls": "internal",
+            "title": "Workpapers Complete",
+            "type": "integer"
+          },
+          "workpapers_total": {
+            "cls": "internal",
+            "title": "Workpapers Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "run_number",
+          "started_at",
+          "started_by_user_id",
+          "started_by_name",
+          "workpapers_complete",
+          "workpapers_total"
+        ],
+        "title": "AuditRunBadgeOut",
+        "type": "object"
+      },
+      "AuditSectionRowOut": {
+        "description": "A rail row from a registered section provider (DV-1): a missing provider hides the row.\n`sub_line` is code-built (\"11 of 24 received\", \"Complete \u00b7 9:26 AM\"), never model text.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "blocked_on_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Blocked On Name"
+          },
+          "blocked_on_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Blocked On User Id"
+          },
+          "grammar": {
+            "cls": "internal",
+            "enum": [
+              "sub_line",
+              "idle_pill",
+              "link"
+            ],
+            "title": "Grammar",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "link": {
+            "cls": "internal",
+            "enum": [
+              "live",
+              "planned"
+            ],
+            "title": "Link",
+            "type": "string"
+          },
+          "route": {
+            "cls": "internal",
+            "title": "Route",
+            "type": "string"
+          },
+          "section_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditSectionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "sub_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sub Line"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          },
+          "work_item_ref": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "work_item_ref",
+          "grammar",
+          "route",
+          "link"
+        ],
+        "title": "AuditSectionRowOut",
         "type": "object"
       },
       "AuditSectionStatus": {
@@ -3085,6 +4245,17 @@
             "title": "Kind",
             "type": "string"
           },
+          "latest_upload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestLatestUploadOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "linked_count": {
             "anyOf": [
               {
@@ -3097,10 +4268,35 @@
             "cls": "internal",
             "title": "Linked Count"
           },
+          "match_confidence": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Confidence"
+          },
           "overdue": {
             "cls": "internal",
             "title": "Overdue",
             "type": "boolean"
+          },
+          "owed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestOwedByOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "requested_at": {
             "anyOf": [
@@ -27808,6 +29004,84 @@
         "title": "ReleaseOut",
         "type": "object"
       },
+      "ReleaseRecordIn": {
+        "additionalProperties": false,
+        "description": "\"Report released outside Accrued on Jul 29, 2026\" (interim G8); a future date answers 422\n`release_date_future`.",
+        "properties": {
+          "report_kind": {
+            "cls": "internal",
+            "enum": [
+              "opinion",
+              "no_report"
+            ],
+            "title": "Report Kind",
+            "type": "string"
+          },
+          "report_released_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Report Released On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_released_on",
+          "report_kind"
+        ],
+        "title": "ReleaseRecordIn",
+        "type": "object"
+      },
+      "ReleaseRecordOut": {
+        "properties": {
+          "archive_due_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Archive Due On",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/AuditEngagementStatus",
+            "cls": "internal"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "report_kind": {
+            "cls": "internal",
+            "enum": [
+              "opinion",
+              "no_report"
+            ],
+            "title": "Report Kind",
+            "type": "string"
+          },
+          "report_released_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Report Released On",
+            "type": "string"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "report_released_on",
+          "report_kind",
+          "phase",
+          "archive_due_on",
+          "recorded_at"
+        ],
+        "title": "ReleaseRecordOut",
+        "type": "object"
+      },
       "RemovedOut": {
         "properties": {
           "user_id": {
@@ -28995,6 +30269,71 @@
           "client_visible"
         ],
         "title": "RequestItemV2Out",
+        "type": "object"
+      },
+      "RequestLatestUploadOut": {
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "path_label": {
+            "cls": "confidential",
+            "title": "Path Label",
+            "type": "string"
+          },
+          "uploaded_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Uploaded On",
+            "type": "string"
+          },
+          "uploader_kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "third_party",
+              "firm",
+              "connection"
+            ],
+            "title": "Uploader Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "path_label",
+          "uploaded_on",
+          "uploader_kind"
+        ],
+        "title": "RequestLatestUploadOut",
+        "type": "object"
+      },
+      "RequestOwedByOut": {
+        "properties": {
+          "display": {
+            "cls": "confidential",
+            "title": "Display",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client_contact",
+              "third_party",
+              "organisation"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "display"
+        ],
+        "title": "RequestOwedByOut",
         "type": "object"
       },
       "RequestStatus": {
@@ -33275,6 +34614,256 @@
           "net_change"
         ],
         "title": "SnapshotOut",
+        "type": "object"
+      },
+      "SourceDocumentGroupOut": {
+        "description": "A category band (\"Plan documents \u00b7 3 of 5\"). `counted` is false for a band outside the\ntotals (\"Sample-driven \u00b7 0\", populated by A-03).",
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Category Id"
+          },
+          "counted": {
+            "cls": "internal",
+            "default": true,
+            "title": "Counted",
+            "type": "boolean"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "received": {
+            "cls": "internal",
+            "title": "Received",
+            "type": "integer"
+          },
+          "rows": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SourceDocumentRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "received",
+          "total"
+        ],
+        "title": "SourceDocumentGroupOut",
+        "type": "object"
+      },
+      "SourceDocumentRowOut": {
+        "description": "A request row across the work item's PBC binders, with the C5 v1.1 additive fields\n(A-01-T10). Requested rows carry no upload, glyph or Linked count.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "binder_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Binder Id",
+            "type": "string"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "latest_upload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestLatestUploadOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "linked_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Linked Count"
+          },
+          "match_confidence": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Confidence"
+          },
+          "overdue": {
+            "cls": "internal",
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "owed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestOwedByOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Requested At"
+          },
+          "returned_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Returned Reason"
+          },
+          "screening": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceScreeningStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus",
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id",
+          "binder_id",
+          "title",
+          "status",
+          "overdue"
+        ],
+        "title": "SourceDocumentRowOut",
+        "type": "object"
+      },
+      "SourceDocumentsOut": {
+        "description": "24 requests = 11 received + 1 needs review + 12 requested at E0; the groups foot to the\ntotals and the rail's \"11 of 24 received\" reads the same numbers.",
+        "properties": {
+          "groups": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SourceDocumentGroupOut"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "needs_review": {
+            "cls": "internal",
+            "title": "Needs Review",
+            "type": "integer"
+          },
+          "received": {
+            "cls": "internal",
+            "title": "Received",
+            "type": "integer"
+          },
+          "requested": {
+            "cls": "internal",
+            "title": "Requested",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "received",
+          "total",
+          "needs_review",
+          "requested"
+        ],
+        "title": "SourceDocumentsOut",
         "type": "object"
       },
       "SourceOut": {
@@ -38381,6 +39970,1156 @@
           "agents"
         ],
         "x-abacus-action": "run_trace.export"
+      }
+    },
+    "/v1/audits": {
+      "get": {
+        "description": "AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).",
+        "operationId": "audits_index",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "segment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "fs",
+                    "ebp",
+                    "review",
+                    "soc",
+                    "ia"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Segment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "fs_audit",
+                    "ebp_audit",
+                    "review",
+                    "compilation",
+                    "preparation",
+                    "agreed_upon_procedures",
+                    "soc1",
+                    "soc2",
+                    "readiness",
+                    "internal_audit"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "phase",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AuditEngagementStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Phase"
+            }
+          },
+          {
+            "in": "query",
+            "name": "partner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Partner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office"
+            }
+          },
+          {
+            "in": "query",
+            "name": "due",
+            "required": false,
+            "schema": {
+              "default": "any",
+              "enum": [
+                "any",
+                "7d",
+                "14d",
+                "30d"
+              ],
+              "title": "Due",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditIndexPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audits Index Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "engagement.read_metadata"
+      }
+    },
+    "/v1/audits/{work_item_id}/archive-record": {
+      "post": {
+        "description": "Interim G9 against a ready final binder export, with fresh MFA (A-01-T23).",
+        "operationId": "audit_archive_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveRecordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Archive Record Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "assurance.record_archive"
+      }
+    },
+    "/v1/audits/{work_item_id}/cockpit": {
+      "get": {
+        "description": "AUD-02's host projection (A-01-T09).",
+        "operationId": "audit_cockpit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditCockpitOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Cockpit Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "engagement.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/phase": {
+      "post": {
+        "description": "Record mode (A-01-T05): a named person moves the phase forward one step.",
+        "operationId": "audit_phase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditPhaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPhaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Phase Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "assurance.record_phase"
+      }
+    },
+    "/v1/audits/{work_item_id}/profile": {
+      "patch": {
+        "description": "The EBP label facts (A-01-T05); 409 `stale_version`.",
+        "operationId": "audit_profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditProfileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Profile Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "engagement.update"
+      }
+    },
+    "/v1/audits/{work_item_id}/release-record": {
+      "post": {
+        "description": "Interim G8, the engagement partner with fresh MFA (A-01-T23).",
+        "operationId": "audit_release_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseRecordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Release Record Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "assurance.record_release"
+      }
+    },
+    "/v1/audits/{work_item_id}/source-documents": {
+      "get": {
+        "description": "AUD-02's canvas and AUD-03 (A-01-T10).",
+        "operationId": "audit_source_documents",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "binder",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Binder"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "missing_first",
+              "enum": [
+                "missing_first",
+                "received_first"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceDocumentsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Source Documents Route",
+        "tags": [
+          "audits"
+        ],
+        "x-abacus-action": "request_item.read"
       }
     },
     "/v1/auth/callback": {
