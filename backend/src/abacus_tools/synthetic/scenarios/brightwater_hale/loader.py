@@ -71,7 +71,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.identity.api import AuthContext, set_demo_clock
-from abacus.modules.organisations.api import client_with_entity, create_client
+from abacus.modules.organisations.api import NewClient, client_with_entity, create_client
 from abacus.modules.portal.api import (
     BrandingSlots,
     activate_portal_host,
@@ -106,7 +106,11 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.binders import (
     person_email,
     person_id,
 )
-from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
+from abacus_tools.synthetic.scenarios.brightwater_hale.clients import (
+    Client,
+    build_clients,
+    entity_id_of,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
@@ -545,9 +549,12 @@ def engagement_id_of(audit: Audit) -> UUID:
 async def _client_entity_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Through `organisations.api` under the engagement partner: a plan entity of its sponsor."""
     client = await _client_id(conn, str(event.client))
+    entity = str(event.data["entity"])
+    # F-04-T31: the entity id the fixtures use (`entityIdOf` in the TS seed).
+    entity_id = UUID(entity_id_of(_CLIENTS[str(event.client)].slug, entity))
     kind, actor = _actor(event)
     async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
-        await client_with_entity(tx, TENANT, client, None, str(event.data["entity"]))
+        await client_with_entity(tx, TENANT, client, None, entity, new_entity_id=entity_id)
 
 
 async def _engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -1168,8 +1175,14 @@ async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> 
     """Through `organisations.api` under the relationship partner, as a person would."""
     client: Client = _CLIENTS[str(event.client)]
     kind, actor = _actor(event)
+    # F-04-T31: the ids the fixtures use (`client:<slug>` and `entityIdOf` in the TS seed), so the
+    # exported fixtures and the TS seed name the same client.
+    ids = NewClient(
+        UUID(stable_id(f"client:{client.slug}")),
+        UUID(entity_id_of(client.slug, client.entities[0])),
+    )
     async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
-        await create_client(tx, TENANT, client.name, client.entities[0])
+        await create_client(tx, TENANT, client.name, client.entities[0], ids=ids)
 
 
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]

@@ -49,10 +49,16 @@ class ClientNames:
 
 
 async def create_client(
-    tx: UnitOfWork, tenant_id: UUID, client_name: str, client_entity_name: str
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    client_name: str,
+    client_entity_name: str,
+    *,
+    ids: NewClient | None = None,
 ) -> NewClient:
-    """Inside the caller's unit of work; the caller has authorised the action that needs it."""
-    new = NewClient(uuid4(), uuid4())
+    """Inside the caller's unit of work; the caller has authorised the action that needs it.
+    `ids` only for the synthetic scenario (F-04-T31): its clients keep the ids the fixtures use."""
+    new = ids or NewClient(uuid4(), uuid4())
     await insert_client(tx.session, tenant_id, new.client_id, client_name)
     await insert_client_entity(
         tx.session, tenant_id, new.client_id, new.client_entity_id, client_entity_name
@@ -145,7 +151,13 @@ async def find_clients(
 
 
 async def client_with_entity(
-    tx: UnitOfWork, tenant_id: UUID, client_id: UUID, entity_id: UUID | None, entity_name: str
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    client_id: UUID,
+    entity_id: UUID | None,
+    entity_name: str,
+    *,
+    new_entity_id: UUID | None = None,
 ) -> NewClient:
     """An existing client, with one of its entities or a new one (inside the caller's unit of
     work; the caller has authorised and checked walls). `NotFound` if either isn't the firm's."""
@@ -164,7 +176,7 @@ async def client_with_entity(
         if e.client_id == client_id
     ):
         raise EntityExists(entity_name)
-    new_entity = uuid4()
+    new_entity = new_entity_id or uuid4()  # a given id: the synthetic scenario's (F-04-T31)
     await insert_client_entity(tx.session, tenant_id, client_id, new_entity, entity_name)
     tx.record("client_entity.created", target=Target("client_entity", new_entity))
     return NewClient(client_id, new_entity)

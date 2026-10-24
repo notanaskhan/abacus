@@ -232,9 +232,11 @@ RESET_CLOCK ?= E0
 seed-staging:
 	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK) --slice portal
 
-# Fixture JSON from the Python scenario arrives with F-04-T31 (S10); the TS seed is interim.
+# F-04-T31 (F-04.21): fixture JSON exported from the Python scenario at a snapshot, through the
+# API, into apps/web/src/fixtures/seed/exported/<SNAPSHOT>/. Throwaway Postgres (Docker), never
+# a hosted or the developer's database. The TS seed stays for the paths not exported yet.
 fixtures:
-	@echo "not implemented: F-04-T31 (fixture export from the scenario)" >&2; exit 1
+	cd backend && uv run python -m abacus_tools.synthetic.fixture_export --snapshot $(SNAPSHOT)
 
 # Journeys (F-04 §3.8): fixture mode, gated on pull requests; full stack nightly, against
 # `make dev` + `make seed-demo` with fakes and the injected clock, never a hosted database. The

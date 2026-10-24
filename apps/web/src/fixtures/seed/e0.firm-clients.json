@@ -1,0 +1,750 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.2",
+    "hash": "f25ed109665dc4167f1b5f460ee3f760cf05fe71ece99f7904ad2d904ff40016",
+    "snapshot": "E0",
+    "slices": [
+      "portal"
+    ]
+  },
+  "persona": "grace-holloway",
+  "request": "GET /v1/firm/clients",
+  "body": [
+    {
+      "client_id": "e45508c2-4b73-4aa2-84e3-75fe78b78f5f",
+      "name": "Abel & Honora Tolliver"
+    },
+    {
+      "client_id": "43016130-294a-4436-86c4-d8f971ac1a39",
+      "name": "Abel & Jules Fontaine"
+    },
+    {
+      "client_id": "e22aee0c-32ad-4f2f-9c39-da49f3027d9e",
+      "name": "Abel Jernigan"
+    },
+    {
+      "client_id": "9faa8c01-4173-47cb-95b9-b335f644ccda",
+      "name": "Adrian & Vesna Underhill"
+    },
+    {
+      "client_id": "74a1e9c1-a446-4bc2-bc4f-edd165c3c387",
+      "name": "Alcove & Beacon Provisions, LP"
+    },
+    {
+      "client_id": "9e83e045-d875-402a-97e8-583a88a82420",
+      "name": "Alder & Ash Furniture Co."
+    },
+    {
+      "client_id": "b5951d86-500f-41f7-8615-e7b5c0ca42a4",
+      "name": "Amber & Birchwood Ceramics, LP"
+    },
+    {
+      "client_id": "e65e43a0-eb7d-4e39-adde-90ea869c6970",
+      "name": "Arbor Senior Living 401(k) Plan"
+    },
+    {
+      "client_id": "be43ae65-7b12-4539-a1d8-9b5e99af2e14",
+      "name": "Ashford Manufacturing Co."
+    },
+    {
+      "client_id": "af7768c8-6b3f-41ab-8e43-2aa9436fca9d",
+      "name": "Aurelio Santos"
+    },
+    {
+      "client_id": "fe8d5e15-6074-488c-a1c3-8a87eab0dd47",
+      "name": "Bayside Electric Cooperative 401(k) Plan"
+    },
+    {
+      "client_id": "28440521-8154-4c46-984e-3352a0d7300f",
+      "name": "Beatrice & Freya Dempsey"
+    },
+    {
+      "client_id": "277ebb10-cea5-4972-9972-1fffd4dd3b85",
+      "name": "Benjamin Osterberg"
+    },
+    {
+      "client_id": "9e60b588-25b6-45a9-af89-4e3476a495d4",
+      "name": "Birchwood & Marigold Outfitters Co."
+    },
+    {
+      "client_id": "33870127-24fa-4d25-b57b-5ddadaf9f28a",
+      "name": "Bluebird Bakery Co."
+    },
+    {
+      "client_id": "4856ca84-8e93-4f1a-b79a-ffafee1ff8b2",
+      "name": "Bluestem Analytics, LLC"
+    },
+    {
+      "client_id": "010571db-fa54-4ba4-98d5-92f93ebcadbb",
+      "name": "Bramble & Finch Design, LLC"
+    },
+    {
+      "client_id": "84c694b4-83e0-4d80-97f3-a8e8988dc7ed",
+      "name": "Brightline Optics, Inc."
+    },
+    {
+      "client_id": "da1d1c16-47f8-4b32-998d-2bc7974d975c",
+      "name": "Bryn & Philippa Vasquez"
+    },
+    {
+      "client_id": "798bd82a-a08a-4d51-9c19-4c3dcfef3aee",
+      "name": "Bryn & Ulrich Sutherland"
+    },
+    {
+      "client_id": "88bc65e4-7d4a-442b-93e8-6617eab88ca9",
+      "name": "Bryn & Vesna Sutherland"
+    },
+    {
+      "client_id": "d4a52920-2a1d-449d-b452-893764d22969",
+      "name": "Bryn Kessler"
+    },
+    {
+      "client_id": "c6d08866-2ec3-4c5d-ac66-7f1764fb2916",
+      "name": "Calloway Family Trust"
+    },
+    {
+      "client_id": "567c60e5-1c3a-4369-ad88-bab3c9a3f5ba",
+      "name": "Canyon Pass Climbing Gym, LLC"
+    },
+    {
+      "client_id": "2f1d791f-c68b-43c1-af15-54bb0732c3bd",
+      "name": "Cedar Hollow Farms, LLC"
+    },
+    {
+      "client_id": "c35deea1-469d-4381-a81e-fb559b374031",
+      "name": "Cinder & Amber Tailoring, LLC"
+    },
+    {
+      "client_id": "30eae378-5284-4623-b94a-f2fd1d67a49e",
+      "name": "Clearwater Credit Union 401(k) Plan"
+    },
+    {
+      "client_id": "35833515-19b7-4821-b152-147912302d42",
+      "name": "Cobalt Ridge Manufacturing 401(k) Plan"
+    },
+    {
+      "client_id": "fb3d197b-7e20-4804-8236-5ec9f983c192",
+      "name": "Copperleaf Coffee Roasters, Inc."
+    },
+    {
+      "client_id": "0f470a3b-bc15-4484-8fda-72bca09fdcea",
+      "name": "Corinne Abbott"
+    },
+    {
+      "client_id": "65e0d326-9d45-4566-bfd0-b2dd93cddcbf",
+      "name": "Cyrus Elmsworth"
+    },
+    {
+      "client_id": "fbf0afae-b013-4936-99f2-64766d294ec3",
+      "name": "Dalia Ulloa"
+    },
+    {
+      "client_id": "275f1783-e717-4f8b-9de4-b54518facd33",
+      "name": "Dalia Underhill"
+    },
+    {
+      "client_id": "b62b2a56-3ca8-4b43-9c52-79a67077a65c",
+      "name": "Dalia Winslow"
+    },
+    {
+      "client_id": "57c8bab7-16b9-41e7-b880-c6a6ea1fffcc",
+      "name": "Daniel & Ruth Okafor"
+    },
+    {
+      "client_id": "a9af7157-faf9-4663-a3b0-3cf7765955c8",
+      "name": "Delia Fortune"
+    },
+    {
+      "client_id": "7cf3b058-efba-4828-b141-066898260852",
+      "name": "Delphine & Nadira Pritchard"
+    },
+    {
+      "client_id": "df879628-e981-4f6b-841f-b0db87d23e6d",
+      "name": "Dev & Mira Kapoor"
+    },
+    {
+      "client_id": "1d45fa6e-8d28-4389-beae-f7865dfaab11",
+      "name": "Dovetail Creamery, LP"
+    },
+    {
+      "client_id": "4140bf1f-6754-4927-9060-372819276b98",
+      "name": "Driftwood & Ripple Ceramics, Inc."
+    },
+    {
+      "client_id": "80877f84-4ac2-4c3c-9d4b-283cc4ad6bbf",
+      "name": "Driftwood & Yarrow Rentals, LLC"
+    },
+    {
+      "client_id": "5f48e596-4648-4c58-9418-2a9e09c1413b",
+      "name": "Eddy Cycles, LP"
+    },
+    {
+      "client_id": "867bee5a-d044-40b7-96db-2c32d97ff19f",
+      "name": "Eddy Masonry, PC"
+    },
+    {
+      "client_id": "214cce59-b1b5-40e9-8e92-9a5a0e60cc23",
+      "name": "Edmund & Orson Montrose"
+    },
+    {
+      "client_id": "363099ea-2a1f-4a65-8185-c4592699b5af",
+      "name": "Edmund & Rowena Grayson"
+    },
+    {
+      "client_id": "669e8773-9012-4dce-9b87-e90860eb5d09",
+      "name": "Elena Varga"
+    },
+    {
+      "client_id": "0b5d20e8-6919-4602-b5b4-cc27fa559872",
+      "name": "Ember Fabrication, LLC"
+    },
+    {
+      "client_id": "bff52b30-561c-4b2e-b2bb-5fa33923db61",
+      "name": "Ember Textiles, Inc."
+    },
+    {
+      "client_id": "c6a1c906-008d-4896-807b-fee11b7039fb",
+      "name": "Emeric & Ignatius Fairbanks"
+    },
+    {
+      "client_id": "d2d431b0-9244-406b-b2ab-f23e9820371d",
+      "name": "Emeric & Tamsin Hollander"
+    },
+    {
+      "client_id": "8b7becd2-fd8a-4324-b13b-d957c07da8af",
+      "name": "Emeric Ivanov"
+    },
+    {
+      "client_id": "fe47de33-f6d7-400b-997b-de82cc9d31fe",
+      "name": "Estate of Eugene Barlow"
+    },
+    {
+      "client_id": "70fa08c6-21c1-4c69-a1e0-704ab38b71ab",
+      "name": "Estate of Walter Thornbury"
+    },
+    {
+      "client_id": "4d2aad54-75bf-415f-9fc3-5ba718899a52",
+      "name": "Fairhaven Foods 401(k) Plan"
+    },
+    {
+      "client_id": "076059c7-9091-46ea-bdd5-73a8e7937dc5",
+      "name": "Farah & Matteo Pemberton"
+    },
+    {
+      "client_id": "96f3ade7-80f9-444a-9af3-675b68361690",
+      "name": "Fenwick Family Foundation"
+    },
+    {
+      "client_id": "1d1eae83-5b97-4527-9225-f2100e8c1dcb",
+      "name": "Foxglove Studio, LLC"
+    },
+    {
+      "client_id": "fd536f6d-f2cb-4ca1-a34a-fb101f64bca3",
+      "name": "Freya & Cyrus Hartwell"
+    },
+    {
+      "client_id": "3abad51a-9373-455c-89f0-d625c8d2e8e8",
+      "name": "Gideon & Gus Haverford"
+    },
+    {
+      "client_id": "ad66ad46-99fa-4278-b75c-1cb84a39fe7f",
+      "name": "Gilded & Dovetail Rentals, Inc."
+    },
+    {
+      "client_id": "a6d97c32-05c7-49f1-b644-82eb6c0971be",
+      "name": "Gloria Mendez"
+    },
+    {
+      "client_id": "39d4f8d2-aec3-417e-af2a-a6347819a81e",
+      "name": "Granary Row Market, Inc."
+    },
+    {
+      "client_id": "be3384d4-5d23-4031-9ae8-f67d27e4b5b2",
+      "name": "Granite Peak Outdoor Supply, Inc."
+    },
+    {
+      "client_id": "54e6d1ff-69a2-4037-9ff6-06d8ec91b4ef",
+      "name": "Gus Brantley"
+    },
+    {
+      "client_id": "b3f30751-ebe4-4050-bcf6-144f5d97f30f",
+      "name": "Halcyon Foods Distribution, Inc."
+    },
+    {
+      "client_id": "92b8b7a8-6c0c-488c-9ff8-9b3514fbdeb6",
+      "name": "Halden Health 403(b) Plan"
+    },
+    {
+      "client_id": "d5b36962-c28b-45e2-801f-1e579b939e34",
+      "name": "Harborview Dental Properties, LP"
+    },
+    {
+      "client_id": "5afd780e-f00c-4493-bb26-afbaf23d568a",
+      "name": "Harold Stein"
+    },
+    {
+      "client_id": "dfde3664-97e4-4155-878b-26d72232e8ca",
+      "name": "Hazel Fabrication, Inc."
+    },
+    {
+      "client_id": "351f41a2-bee9-4d59-b3b0-46d11e5ee5e7",
+      "name": "Hearthstone Hospitality 401(k) Plan"
+    },
+    {
+      "client_id": "322d490f-d8e5-4489-a7eb-eac340440aa0",
+      "name": "Hillcrest Montessori School"
+    },
+    {
+      "client_id": "e460b120-714f-4efa-bde0-2c37fba34f24",
+      "name": "Hollis Creek Veterinary, PC"
+    },
+    {
+      "client_id": "6a283e72-6bac-4520-b297-562124b59a94",
+      "name": "Honora & Beatrice Marchetti"
+    },
+    {
+      "client_id": "a85ac8ce-43b7-425e-ad33-6dcac86b420b",
+      "name": "Honora & Josephine Mortimer"
+    },
+    {
+      "client_id": "d34bcd84-5da1-4dc5-9426-20e1d79209d5",
+      "name": "Hugo Brandvold"
+    },
+    {
+      "client_id": "0e7a7841-83db-478d-a295-ea939f98740a",
+      "name": "Ignatius & Josephine Sutherland"
+    },
+    {
+      "client_id": "62fb925f-94d5-4502-b094-7fc2eb32e9b0",
+      "name": "Ignatius & Xiomara Pemberton"
+    },
+    {
+      "client_id": "e39e0e12-b264-40f6-9291-b149490ea46d",
+      "name": "Ignatius Eastwood"
+    },
+    {
+      "client_id": "3cef0ab7-3f0a-4c9f-aa92-d3c94af3ad06",
+      "name": "Ilona & Colin Farnsworth"
+    },
+    {
+      "client_id": "ce4bfb69-4c7d-4323-8ecb-dfd22bf0904b",
+      "name": "Ilona & Gideon Thackeray"
+    },
+    {
+      "client_id": "c7cb08e9-93cb-4d42-b074-672ea20b7cf3",
+      "name": "Ilona & Orson Farnsworth"
+    },
+    {
+      "client_id": "7eb94106-99b6-498d-89e9-75f725cecdde",
+      "name": "Ilona Blackwood"
+    },
+    {
+      "client_id": "7be1c2fe-f0a6-43e1-8787-bd91163e393d",
+      "name": "Ilona Ulloa"
+    },
+    {
+      "client_id": "118cbfee-f0ab-4268-abfc-ab5bc73c446f",
+      "name": "Inlet Surveying Co."
+    },
+    {
+      "client_id": "e5b1514b-b3be-405b-a8ae-f9b730242be7",
+      "name": "Ironwood Landscape Co."
+    },
+    {
+      "client_id": "a8515410-7743-41d5-9543-d4d534d67d6c",
+      "name": "Jonah & Claire Feld"
+    },
+    {
+      "client_id": "27eb0249-ec45-411f-b2ad-a0f10f8bd5ad",
+      "name": "Josephine Bellamy"
+    },
+    {
+      "client_id": "d7d45f66-4f88-40aa-80e0-9f6862893a18",
+      "name": "Josephine Yarborough"
+    },
+    {
+      "client_id": "877cb267-a514-4795-bc1b-50208350639f",
+      "name": "Jules Gladstone"
+    },
+    {
+      "client_id": "87e1ff1b-a2ca-4e92-a23e-d271184c4991",
+      "name": "Jules Sandoval"
+    },
+    {
+      "client_id": "6181cd41-a031-49a8-b0c1-6f184e2d2dae",
+      "name": "Juliet Okonjo"
+    },
+    {
+      "client_id": "1ff40e9e-8793-4f5e-acb4-a08cdd6bd923",
+      "name": "Juniper & Oak Interiors, LLC"
+    },
+    {
+      "client_id": "4173a001-3c9d-4966-9b9d-d2d63238884b",
+      "name": "Kaito & Freya Blackwood"
+    },
+    {
+      "client_id": "082bb78c-7e92-4048-a42f-3e6f13dc6293",
+      "name": "Kaito Dempsey"
+    },
+    {
+      "client_id": "f82c432b-3721-4bf9-81fb-76d2b94a9320",
+      "name": "Keel & Compass Marine 401(k) Plan"
+    },
+    {
+      "client_id": "bcd8f18f-f65e-4d34-b698-9eafe57eff7a",
+      "name": "Kestrel Ventures Fund I, LP"
+    },
+    {
+      "client_id": "203e06e6-8650-49e1-91ab-d62b609ac501",
+      "name": "Kettle & Kiln Pottery, LLC"
+    },
+    {
+      "client_id": "11381302-d7ff-4788-9159-b95cd275ce5b",
+      "name": "Kindle Cabinetry Co."
+    },
+    {
+      "client_id": "5603bb7d-a1bd-46de-a752-17a633c1d52a",
+      "name": "Kit & Dalia Zimmerman"
+    },
+    {
+      "client_id": "936af2a1-f7b2-466f-a7dd-8dc1838989c2",
+      "name": "Lakeshore Literacy Alliance"
+    },
+    {
+      "client_id": "18f1d693-1503-4e19-bd2d-a287a638214b",
+      "name": "Lantern & Plover Storage, LP"
+    },
+    {
+      "client_id": "3843da93-4af4-482f-989c-c42d6b9a7166",
+      "name": "Larimer Cooperative Grocery"
+    },
+    {
+      "client_id": "d9d92f8e-d30d-4998-94db-51a8040fda14",
+      "name": "Larkspur Floral, Inc."
+    },
+    {
+      "client_id": "fc1de138-1a3c-4490-a569-e38289e3c340",
+      "name": "Linden & Thistle Distillers, Inc."
+    },
+    {
+      "client_id": "cafe9041-d452-461a-9f08-4e99706c1caf",
+      "name": "Lorna & Orson Delacroix"
+    },
+    {
+      "client_id": "29896e33-9a94-4b0b-bdbd-c851f369f24d",
+      "name": "Lumen Dental Lab, Inc."
+    },
+    {
+      "client_id": "17e6e120-d4ea-4e07-9329-3426e682028c",
+      "name": "Maple & Main Hardware, Inc."
+    },
+    {
+      "client_id": "447cc998-ef5c-4d95-a7aa-d5dd9c47de1d",
+      "name": "Marcus & Dana Whitley"
+    },
+    {
+      "client_id": "83a8a132-6dee-4fab-b58a-51b251a71a2d",
+      "name": "Marlowe Street Holdings, LP"
+    },
+    {
+      "client_id": "f1c56959-a044-4253-9f9e-98d6d87598a9",
+      "name": "Mateo & Lucia Alvarez"
+    },
+    {
+      "client_id": "34cf6f52-44de-4008-9299-803c9f8389ad",
+      "name": "Matteo & Beatrice Haverford"
+    },
+    {
+      "client_id": "6b12bd07-0bbc-4a17-99d0-e32ce92f2b20",
+      "name": "Matteo & Gus Yarborough"
+    },
+    {
+      "client_id": "800c14a2-ad22-4e67-9402-b87b83dcef9b",
+      "name": "Meera Shah"
+    },
+    {
+      "client_id": "4e93a00f-d686-4ed4-95ae-e7fa528e06a2",
+      "name": "Meridian Tool & Die, Inc."
+    },
+    {
+      "client_id": "9a4d68ba-480c-451a-ba02-2dadde8a78f6",
+      "name": "Milo & Matteo Jessup"
+    },
+    {
+      "client_id": "9846653d-5e8f-4a72-8acd-3fef8d222300",
+      "name": "Morgan & Kai Ferris"
+    },
+    {
+      "client_id": "58eab9aa-a7fc-4e75-8408-2a0451bca677",
+      "name": "Nadira Pritchard"
+    },
+    {
+      "client_id": "e3f47775-45f4-4d15-912e-7c6265be591f",
+      "name": "Neve & Leontine Marchetti"
+    },
+    {
+      "client_id": "c78c7a26-d74d-4d04-a457-6d9b91f1dccb",
+      "name": "Neve Oyelaran"
+    },
+    {
+      "client_id": "dfd3ed01-b21b-4c26-84dc-1151f05aa1d3",
+      "name": "Nimbus Distillers, LLC"
+    },
+    {
+      "client_id": "db1b5d38-dd36-4a6a-95d3-fa548d7526ad",
+      "name": "Nina & Paul Haddox"
+    },
+    {
+      "client_id": "263b7cfb-a459-40b6-a609-4f59f41d051c",
+      "name": "Noor & Adam Farouk"
+    },
+    {
+      "client_id": "18e42aca-a08d-4dad-9bff-413ffc538fd2",
+      "name": "Northfield Pet Clinic, PC"
+    },
+    {
+      "client_id": "06f59957-c5e8-428a-a44f-34405d6cda75",
+      "name": "Northgate Medical Partners, LLP"
+    },
+    {
+      "client_id": "5af31ac1-d6c1-48dd-bb3d-8eed47d3230b",
+      "name": "Northwind Robotics, Inc."
+    },
+    {
+      "client_id": "00be60ab-4e92-4500-beb9-7ab9c5f9d590",
+      "name": "Oakline Software, Inc."
+    },
+    {
+      "client_id": "c7968af7-47db-4e3f-a9c9-12cdc409123d",
+      "name": "Orchard Lane Wellness, LLC"
+    },
+    {
+      "client_id": "22c9b3d3-9f4d-4746-94b0-668c002d9bb1",
+      "name": "Otis & Gideon Kessler"
+    },
+    {
+      "client_id": "bd1b49e7-f713-46da-acc8-730ce93afec5",
+      "name": "Otis Everhart"
+    },
+    {
+      "client_id": "6cf055fa-7578-4e17-9c9e-e7137b8da75f",
+      "name": "Pebble & Ember Ceramics, LP"
+    },
+    {
+      "client_id": "761b7f20-0665-4cc7-83a9-d6e8a565613b",
+      "name": "Philippa & Gus Hollander"
+    },
+    {
+      "client_id": "e6976f68-7491-4b5b-a266-b012092d9a50",
+      "name": "Philippa & Neve Jarrett"
+    },
+    {
+      "client_id": "490d57f2-070a-4cfe-bcc8-db09b163c4e1",
+      "name": "Pia Tennant"
+    },
+    {
+      "client_id": "e7568ac1-c035-49ef-9d93-a671fe108716",
+      "name": "Pinecrest Pediatrics, PC"
+    },
+    {
+      "client_id": "ea7e1deb-c383-4650-8b92-ed5cb20bcac5",
+      "name": "Prairie Wind Solar Installers, Inc."
+    },
+    {
+      "client_id": "979b9121-2faa-49e8-ae07-7e3222121b8d",
+      "name": "Priyanka & Sam Iyer"
+    },
+    {
+      "client_id": "f6ec92e0-7e98-4bae-9bd3-68d56ae7d259",
+      "name": "Pryor Irrevocable Trust"
+    },
+    {
+      "client_id": "360e3e55-ab50-4fa7-af4a-ddbba7f4c450",
+      "name": "Quentin & Cyrus Ackerman"
+    },
+    {
+      "client_id": "a0e96908-bf75-40c1-b966-7d723ae06bd7",
+      "name": "Quentin & Cyrus Whitaker"
+    },
+    {
+      "client_id": "3206afe1-d87b-4948-ba40-0f84936af2a9",
+      "name": "Quentin & Matteo Xavier"
+    },
+    {
+      "client_id": "628bb6f0-d5e7-4e44-b6bd-302202d565df",
+      "name": "Quill & Press Printing Co."
+    },
+    {
+      "client_id": "74148efc-4423-4b90-b766-f6c0118204b7",
+      "name": "Rafael Quintero"
+    },
+    {
+      "client_id": "77c044b2-51e9-4b48-a0f5-11c7b00ee584",
+      "name": "Redtail Construction 401(k) Plan"
+    },
+    {
+      "client_id": "c405f7b1-492b-4786-b9ee-242cc0afccb9",
+      "name": "Ridgeline Property Partners, LP"
+    },
+    {
+      "client_id": "da77dabb-16f6-4338-92da-a8a207578274",
+      "name": "Ripple & Saltmarsh Kitchens, PC"
+    },
+    {
+      "client_id": "16ba013e-b8ba-4185-86b2-1800e0fe640c",
+      "name": "Riverbend Community Theater"
+    },
+    {
+      "client_id": "3e07c47a-d655-4c3c-9ab3-be9d4a55d5ce",
+      "name": "Rowena Mortimer"
+    },
+    {
+      "client_id": "ce3c2e6b-e1f5-4d0b-9525-e5cd6cc5a93f",
+      "name": "Russet Provisions, LP"
+    },
+    {
+      "client_id": "cb88593a-64b1-43a9-ab72-41ae4644ac18",
+      "name": "Sable Creek Homeowners Association"
+    },
+    {
+      "client_id": "1e4e2ad8-bbd3-4aa3-a692-67e28223899c",
+      "name": "Saltmarsh & Ember Salvage, LLC"
+    },
+    {
+      "client_id": "b654b3d7-eb3c-4de8-a270-1f85b17a5784",
+      "name": "Saltmarsh & Zephyr Milling, Inc."
+    },
+    {
+      "client_id": "c536eee3-4e91-42ed-af04-888dff8a57c8",
+      "name": "Saltmarsh Joinery, LP"
+    },
+    {
+      "client_id": "dc397ea2-53e8-4e5f-8ba5-5be43850c04d",
+      "name": "Soren & Pia Pemberton"
+    },
+    {
+      "client_id": "2a355e0d-54c8-4a26-8d6b-ae291e6cb562",
+      "name": "Soren Hartwell"
+    },
+    {
+      "client_id": "855df781-5d47-4a57-ab4a-94dd8d4b2047",
+      "name": "Soren Pritchard"
+    },
+    {
+      "client_id": "1dc2233f-60bf-4e77-ab46-3ddaccc278a6",
+      "name": "Sorrel & Meadow Outfitters, LP"
+    },
+    {
+      "client_id": "884f5c49-f6c0-43a0-b6dd-dd8457e08043",
+      "name": "Sterling Freight 401(k) Plan"
+    },
+    {
+      "client_id": "53405a43-5979-4091-91f5-fe77d1538af2",
+      "name": "Summit Line Logistics, Inc."
+    },
+    {
+      "client_id": "b6bce7dc-c9f8-44ee-9c59-0552ae87affd",
+      "name": "Sunil & Asha Rao"
+    },
+    {
+      "client_id": "d05b3ebb-4115-46c9-aaa6-22a346a487ff",
+      "name": "Tamarack Health System 403(b) Plan"
+    },
+    {
+      "client_id": "74b767a7-a5ef-4853-8c9e-72eceabbe30b",
+      "name": "Tamsin & Leontine Jessup"
+    },
+    {
+      "client_id": "02319943-fde9-4fd4-b43c-940b45759906",
+      "name": "Tamsin & Lorna Kingsley"
+    },
+    {
+      "client_id": "19b7f0b4-c725-40ce-8daa-b91fe92e604d",
+      "name": "Thomas & Irene Kowal"
+    },
+    {
+      "client_id": "0dde5634-6ec4-415a-88b2-2657e4b64c17",
+      "name": "Tideway & Pebble Creamery, LLC"
+    },
+    {
+      "client_id": "b33fbb4a-0d68-4c25-8042-6af54607f0c6",
+      "name": "Tideway Distillers, LLC"
+    },
+    {
+      "client_id": "b6cb0007-e445-4a2b-b500-854791d17e69",
+      "name": "Two Rivers Brewing Co."
+    },
+    {
+      "client_id": "e3f1b718-5688-4635-8349-c19ef5003485",
+      "name": "Ulrich & Gus Oswald"
+    },
+    {
+      "client_id": "41f0c326-abab-405d-b742-b48bd875ae89",
+      "name": "Ulrich & Soren Sutherland"
+    },
+    {
+      "client_id": "7a299b0d-295e-4d8e-849c-9a342d36328f",
+      "name": "Umber Plumbing, LP"
+    },
+    {
+      "client_id": "99b831f9-cbfb-4a20-88b3-c1003278d3cf",
+      "name": "Upland & Gable Masonry, Inc."
+    },
+    {
+      "client_id": "5d730bd4-14c3-4ae9-aaf1-54da0f4ff2f3",
+      "name": "Upland & Saltmarsh Cabinetry, LP"
+    },
+    {
+      "client_id": "1417e1c8-25ea-4c8a-9d5d-6627cc502da6",
+      "name": "Vantage Point Realty, LLC"
+    },
+    {
+      "client_id": "3d898531-64e7-46d8-9edb-f32f207e577d",
+      "name": "Vesna Sandoval"
+    },
+    {
+      "client_id": "0201c61a-b2cf-44e0-a420-447290f12db6",
+      "name": "Violet & Larch Creamery Co."
+    },
+    {
+      "client_id": "4065a763-f8fd-49dd-a22b-6ef7b613d5f8",
+      "name": "Violet & Tideway Outfitters, LP"
+    },
+    {
+      "client_id": "3202bcc4-78ef-43ee-ae9b-0c55718013fc",
+      "name": "Wendell & Edmund Fontaine"
+    },
+    {
+      "client_id": "d483f1ab-0f0b-4d83-bd32-95df34049333",
+      "name": "Westbrook Engineering 401(k) Plan"
+    },
+    {
+      "client_id": "3adec9db-f131-491e-a423-16fc16dee08e",
+      "name": "Wildflower Land Trust"
+    },
+    {
+      "client_id": "c297f412-b68c-47fe-bf21-8c10b8531c24",
+      "name": "Wren & Avery Collins"
+    },
+    {
+      "client_id": "42ce1329-8d9b-4e6e-8dfb-3576d05c3b24",
+      "name": "Yarrow & Quarry Provisions, Inc."
+    },
+    {
+      "client_id": "61006921-10b0-4318-a2d9-301da65338a6",
+      "name": "Yuri & Beatrice Grayson"
+    },
+    {
+      "client_id": "f28ea7a7-bfb2-42f6-a4d6-3bb5ea2d8223",
+      "name": "Yuri & Nadira Marchetti"
+    },
+    {
+      "client_id": "40606dec-1c6a-4e72-9007-ccb6e53e32b6",
+      "name": "Zephyr & Russet Rentals, PC"
+    },
+    {
+      "client_id": "d7993cec-71de-43a4-b9a4-af7204dd1058",
+      "name": "Zephyr & Yarrow Fabrication, PC"
+    }
+  ]
+}
