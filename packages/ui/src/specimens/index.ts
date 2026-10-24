@@ -101,6 +101,7 @@ import { Tpl18Specimen } from "./wizard";
 import { T12Specimen, Tpl12Specimen } from "./settings";
 import { T11Specimen, Tpl11Specimen } from "./dashboard";
 import { SourceViewerSpecimen } from "./viewer";
+import { Tpl02Specimen } from "./tpl02";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
@@ -262,6 +263,8 @@ export const SPECIMENS: readonly Specimen[] = [
     title: "Source documents",
     Component: SourceDocsSpecimen,
   },
+  // TPL-02 Northwind 401(k) cockpit specimen (F-05-T51): TPL-02a to TPL-02e
+  { id: "tpl-02", kit: "TPL-02", title: "Record cockpit specimen", Component: Tpl02Specimen },
   // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar
   {
     id: "t7-portal-layout",

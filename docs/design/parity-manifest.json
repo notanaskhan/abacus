@@ -687,6 +687,46 @@
       "crop": "window",
       "tier": "B",
       "locked": true
+    },
+    "tpl-02.a": {
+      "selector": "[data-artboard=\"tpl-02a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-02 Record cockpit specimen - Northwind 401-k- audit/screenshots/TPL-02a.png",
+      "sha256": "53c7e6119ae8feea3f98540515a9c817b94bbd6dc3dcea7f1e72ef73c1f08dcf",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T51: the dock's run content ([data-parity-mask]: projection, thread) is masked until the C-12 run kit (P-04) and the SHL-11 decision card (P-09) land; the rail draws its links under the card without the handoff's Overview band (RecordRail has no link band)"
+    },
+    "tpl-02.b": {
+      "selector": "[data-artboard=\"tpl-02b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-02 Record cockpit specimen - Northwind 401-k- audit/screenshots/TPL-02b.png",
+      "sha256": "e6bc234ee19edc95d25a773c38d388fa1c13a70aafce4c281ff3d12ba2840f0e",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T51: the rail draws its links under the card without the handoff's Overview band (RecordRail has no link band)"
+    },
+    "tpl-02.c": {
+      "selector": "[data-artboard=\"tpl-02c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-02 Record cockpit specimen - Northwind 401-k- audit/screenshots/TPL-02c.png",
+      "sha256": "20c16f39d549f5736afd622c13b4a484ec68daf6f59954c08ca1486c671183ff",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T51: the dock's run content ([data-parity-mask]: projection, thread) is masked until the C-12 run kit (P-04) and the SHL-11 decision card (P-09) land; the rail draws its links under the card without the handoff's Overview band (RecordRail has no link band)"
+    },
+    "tpl-02.d": {
+      "selector": "[data-artboard=\"tpl-02d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-02 Record cockpit specimen - Northwind 401-k- audit/screenshots/TPL-02d.png",
+      "sha256": "8848790874e2ff3c5dabfe7877c9a9a9a2dc27dbacd1a5ef1d9f3104c007fc70",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T51: the dock's run content ([data-parity-mask]: projection, thread) is masked until the C-12 run kit (P-04) and the SHL-11 decision card (P-09) land; the rail draws its links under the card without the handoff's Overview band (RecordRail has no link band)"
+    },
+    "tpl-02.e": {
+      "selector": "[data-artboard=\"tpl-02e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-02 Record cockpit specimen - Northwind 401-k- audit/screenshots/TPL-02e.png",
+      "sha256": "992bd8538879420df0e673601a714e1153837832d5c3ad6a9125f8fd09d84a2b",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T51: the rail draws its links under the card without the handoff's Overview band (RecordRail has no link band)"
     }
   }
 }
