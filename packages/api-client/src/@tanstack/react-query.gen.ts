@@ -4689,7 +4689,8 @@ export const rerunScreeningMutation = (options?: Partial<Options<RerunScreeningD
  * Send Request Item Route
  *
  * Human-only. Draft to Requested: 422 `due_date_required`, 409 `out_of_scope`, 409
- * `model_text_not_permitted` (DV-11); email after the 10-s Undo window.
+ * `model_text_not_permitted` (DV-11); email after the 10-s Undo window. A retry with the same
+ * key is authorised again, then answers what the first answered and sends nothing again.
  */
 export const sendRequestItemMutation = (options?: Partial<Options<SendRequestItemData>>): UseMutationOptions<SendRequestItemResponse, SendRequestItemError, Options<SendRequestItemData>> => {
     const mutationOptions: UseMutationOptions<SendRequestItemResponse, SendRequestItemError, Options<SendRequestItemData>> = {
