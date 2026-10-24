@@ -129,12 +129,90 @@ async def set_firm_role(session: AsyncSession, user_id: UUID, role: str | None) 
 
 
 async def deactivate(
-    session: AsyncSession, user_id: UUID, reason: str, on_behalf_of: UUID | None
+    session: AsyncSession,
+    user_id: UUID,
+    reason: str,
+    on_behalf_of: UUID | None,
+    *,
+    end_sessions: bool,
 ) -> str:
     return str(
         await session.scalar(
-            text("SELECT membership_deactivate(:u, :r, :b)"),
-            {"u": user_id, "r": reason, "b": on_behalf_of},
+            text("SELECT membership_deactivate(:u, :r, :b, :end)"),
+            {"u": user_id, "r": reason, "b": on_behalf_of, "end": end_sessions},
+        )
+    )
+
+
+async def reconcile_template(session: AsyncSession, user_id: UUID) -> None:
+    """After a firm-role change: a stored template that implies another firm role is cleared, so
+    the person reads the template their new firm role and level imply (`firm_admin` and
+    `it_security` imply a firm role; the others imply none)."""
+    await session.execute(
+        text(
+            "UPDATE memberships SET role_template = NULL WHERE user_id = :u AND kind = 'staff' "
+            "AND role_template IS NOT NULL AND (CASE role_template "
+            "WHEN 'firm_admin' THEN 'firm_admin' WHEN 'it_security' THEN 'security_admin' END) "
+            "IS DISTINCT FROM (CASE WHEN firm_role IN ('firm_admin', 'security_admin') "
+            "THEN firm_role END)"
+        ),
+        {"u": user_id},
+    )
+
+
+async def pending_invitations_of(
+    session: AsyncSession, user_id: UUID, email: str | None
+) -> list[UUID]:
+    """Pending invitations the person sent, or (with their email) sent to them; locked."""
+    result = await session.execute(
+        text(
+            "SELECT id FROM staff_invitations WHERE status = 'pending' AND (invited_by = :u "
+            "OR (CAST(:e AS text) IS NOT NULL AND lower(email) = lower(CAST(:e AS text)))) "
+            "ORDER BY created_at, id FOR UPDATE"
+        ),
+        {"u": user_id, "e": email},
+    )
+    return [r.id for r in result]
+
+
+async def lock_firm(session: AsyncSession) -> bool:
+    """Serialise seat checks on the firm's row; whether the firm is synthetic."""
+    return bool(await session.scalar(text("SELECT synthetic FROM firms FOR UPDATE")))
+
+
+async def seats_held(session: AsyncSession, now: datetime, but_email: str | None = None) -> int:
+    """Active staff plus live invitations (a pending invitation holds a seat, AC3.4), less a
+    live one for `but_email` (an invitation about to be replaced)."""
+    return int(
+        await session.scalar(
+            text(
+                "SELECT (SELECT count(*) FROM memberships WHERE kind = 'staff' "
+                "AND status = 'active') + (SELECT count(*) FROM staff_invitations "
+                "WHERE status = 'pending' AND expires_at > :now "
+                "AND (CAST(:e AS text) IS NULL OR lower(email) <> lower(CAST(:e AS text))))"
+            ),
+            {"now": now, "e": but_email},
+        )
+        or 0
+    )
+
+
+async def stored_seats(session: AsyncSession) -> int | None:
+    value = await session.scalar(
+        text("SELECT value FROM firm_settings WHERE section = 'plan' AND key = 'seats'")
+    )
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+async def inviter_may_invite(session: AsyncSession, user_id: UUID) -> bool:
+    """The inviter is still an active firm administrator here."""
+    return bool(
+        await session.scalar(
+            text(
+                "SELECT EXISTS (SELECT 1 FROM memberships WHERE user_id = :u AND kind = 'staff' "
+                "AND status = 'active' AND firm_role = 'firm_admin')"
+            ),
+            {"u": user_id},
         )
     )
 

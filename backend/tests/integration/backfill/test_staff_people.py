@@ -73,7 +73,16 @@ class Firm:
 @pytest.fixture
 async def firm(net: Net, seed: Seeder) -> Firm:
     tenant_id = await seed.firm()
-    return Firm(net, tenant_id, await seed.person(tenant_id, "firm_admin"))
+    admin = await seed.person(tenant_id, "firm_admin")
+    # G-01-T05 (DEC-285): a real firm invites only once provisioning has set its seats; these
+    # tests are about invitations, so the firm has room for every invitation they send.
+    await seed.run(
+        "INSERT INTO firm_settings (tenant_id, section, key, value, updated_by) "
+        "VALUES ($1, 'plan', 'seats', '100'::jsonb, $2)",
+        tenant_id,
+        admin.user_id,
+    )
+    return Firm(net, tenant_id, admin)
 
 
 async def _person_of(seed: Seeder, tenant_id: uuid.UUID, subject: str) -> Person:

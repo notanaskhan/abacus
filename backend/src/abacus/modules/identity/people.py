@@ -49,6 +49,7 @@ from abacus.modules.identity.events import (
     StaffInvitationIssued,
 )
 from abacus.modules.identity.repository import (
+    memberships_elsewhere,
     pending_staff_invitation_for,
     set_staff_invitation_status,
     set_staff_token_hash,
@@ -116,6 +117,13 @@ class SeatsFull(DomainConflict):
 # catalogue keeps the shared `already_member` summary.
 class AlreadyMember(DomainConflict):
     code = "already_member"
+
+
+class SeatsNotProvisioned(DomainConflict):
+    """The firm's seats aren't provisioned yet, so nobody can be invited (DEC-285: fails closed
+    for a real firm; a synthetic one without seats has no limit)."""
+
+    code = "seats_not_provisioned"
 
 
 class AccessEndsRequired(DomainInvalid):
@@ -416,6 +424,10 @@ async def _all_rows(ctx: AuthContext) -> list[StaffRow]:
         pending = await repo.pending_invitations(session, now)
         sign_ins = await repo.last_sign_ins(session)
     users = [cast(UUID, m["user_id"]) for m in members]
+    # DEC-286: a staff session names no firm; someone who belongs or belonged to another firm
+    # shows no sign-ins here, so nothing of theirs elsewhere leaks.
+    elsewhere = await memberships_elsewhere(ctx.tenant_id, users)
+    sign_ins = {u: at for u, at in sign_ins.items() if u not in elsewhere}
     contacts = await user_contacts(users)
     teams = await member_teams(ctx.tenant, users)
     rows = [_member_row(m, contacts, teams, sign_ins, actions) for m in members]
@@ -540,9 +552,9 @@ async def staff_user(ctx: AuthContext, user_id: UUID) -> UserDetail:
         firm_role=member["firm_role"],
         wall_ids=await _visible_walls(ctx, user_id),
         assignment_count=assignments,
-        recent_sign_ins=[
-            SignIn(h["signed_in_at"], str(h["provider"]), bool(h["mfa"])) for h in history
-        ],
+        recent_sign_ins=[]
+        if await memberships_elsewhere(ctx.tenant_id, [user_id])
+        else [SignIn(h["signed_in_at"], str(h["provider"]), bool(h["mfa"])) for h in history],
         version=int(member["version"]),
     )
 
@@ -644,6 +656,8 @@ async def change_template(
                 raise LastAdministrator(facts={"role": str(member["firm_role"])})
             if outcome != "ok":
                 raise NotFound("staff_member")
+            if member["firm_role"] == "firm_admin":  # no longer invites: their invitations end
+                await revoke_invitations_of(tx, user_id, include_to=False)
         await repo.set_template(tx.session, user_id, template, new_level)
         tx.record(
             "membership.role_changed",
@@ -675,6 +689,8 @@ async def set_security_role(ctx: AuthContext, user_id: UUID, security_admin: boo
                 raise LastAdministrator(facts={"role": "security_admin"})
             if outcome != "ok":
                 raise NotFound("staff_member")
+            # The template follows the firm role (an IT / Security template implies it).
+            await repo.reconcile_template(tx.session, user_id)
             await repo.bump_version(tx.session, user_id)
         tx.record(
             "membership.security_role_changed",
@@ -690,8 +706,11 @@ async def deactivate(ctx: AuthContext, user_id: UUID, reason: str = "manual") ->
     await _manage(ctx)
     if reason != "manual":
         raise DeactivationReasonInvalid
+    elsewhere = await memberships_elsewhere(ctx.tenant_id, [user_id])
     async with uow(ctx.tenant) as tx:
-        outcome = await repo.deactivate(tx.session, user_id, reason, None)
+        outcome = await repo.deactivate(
+            tx.session, user_id, reason, None, end_sessions=not elsewhere.get(user_id, False)
+        )
         if outcome == "not_found":
             raise NotFound("staff_member")
         if outcome == "last_admin":
@@ -701,8 +720,32 @@ async def deactivate(ctx: AuthContext, user_id: UUID, reason: str = "manual") ->
             target=Target("user", user_id),
             after=Ref(reason=_REASON_INDEX[reason]),
         )
+        await revoke_invitations_of(tx, user_id, include_to=True)
         tx.emit(MembershipDeactivated(user_id=user_id))
         tx.emit(AccessChanged(user_id=user_id))
+
+
+async def revoke_invitations_of(tx: UnitOfWork, user_id: UUID, *, include_to: bool) -> None:
+    """In the caller's unit of work: the pending invitations the person sent (they can no
+    longer invite) and, with `include_to`, those sent to their own email (which would bring a
+    deactivated member back), revoked with their tokens cleared and an audit row each."""
+    email = None
+    if include_to:
+        email = (await user_contacts([user_id])).get(user_id, ("", ""))[1] or None
+    for invitation in await repo.pending_invitations_of(tx.session, user_id, email):
+        await set_staff_invitation_status(tx.session, invitation, "revoked")
+        await set_staff_token_hash(tx.session, invitation, None)
+        tx.record("staff_invitation.revoked", target=Target("staff_invitation", invitation))
+
+
+async def check_seats_at_acceptance(session: AsyncSession, now: datetime) -> None:
+    """Acceptance turns a held seat into a member's; if provisioning lowered the seats while the
+    invitation waited, there may be none for it (DEC-285). Holds the firm's row."""
+    await repo.lock_firm(session)
+    total = await repo.stored_seats(session)
+    used = await repo.seats_held(session, now)
+    if total is not None and used > total:
+        raise SeatsFull(facts={"used": used, "total": total})
 
 
 def _digest(value: str) -> str:
@@ -731,15 +774,19 @@ async def invite(ctx: AuthContext, terms: InviteTerms) -> UUID:
     rows = await _all_rows(ctx)
     if any(r.status == "active" and r.email.casefold() == email.casefold() for r in rows):
         raise AlreadyMember
-    total = await seat_total(ctx.tenant)
-    replacing = any(r.status == "invited" and r.email.casefold() == email.casefold() for r in rows)
-    used = sum(r.status in ("active", "invited") for r in rows) - int(replacing)
-    if total is not None and used >= total:
-        raise SeatsFull(facts={"used": used, "total": total})
     invitation_id = uuid4()
     now = await clock.now(ctx.tenant)
     async with uow(ctx.tenant) as tx:
+        # The seat check holds the firm's row (DEC-285): two invitations can't both take the
+        # last seat.
+        synthetic = await repo.lock_firm(tx.session)
         replaced = await pending_staff_invitation_for(tx.session, email)
+        total = await repo.stored_seats(tx.session)
+        if total is None and not synthetic:
+            raise SeatsNotProvisioned
+        used = await repo.seats_held(tx.session, now, but_email=email)
+        if total is not None and used >= total:
+            raise SeatsFull(facts={"used": used, "total": total})
         if replaced is not None:
             await set_staff_invitation_status(tx.session, replaced, "revoked")
             await set_staff_token_hash(tx.session, replaced, None)
@@ -903,6 +950,8 @@ async def set_member_profile(
         outcome = await repo.set_firm_role(tx.session, user_id, firm_role)
         if outcome == "last_admin":
             raise LastAdministrator(facts={"role": str(member["firm_role"])})
+        if member["firm_role"] == "firm_admin":
+            await revoke_invitations_of(tx, user_id, include_to=False)
     await repo.set_template(tx.session, user_id, profile.role_template, profile.level)
     await tx.session.execute(
         text(

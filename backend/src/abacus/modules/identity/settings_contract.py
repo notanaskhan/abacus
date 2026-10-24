@@ -172,8 +172,10 @@ class StaffRowV2Out(BaseModel):
     office_id: Annotated[UUID | None, classified("internal")] = None
     team_ids: Annotated[list[UUID], classified("internal")] = []
     service_lines: Annotated[list[ServiceLine], classified("internal")] = []
+    # The date access is set to end; G-01-T13's access-end job enforces it (DEC-285).
     access_ends_on: Annotated[date | None, classified("internal")] = None
     offshore: Annotated[bool, classified("internal")] = False
+    # This firm's sign-ins only; none for someone who belongs to another firm (DEC-286).
     last_sign_in_at: Annotated[datetime | None, classified("internal")] = None
     invitation_expires_on: Annotated[date | None, classified("internal")] = None
     deactivated_on: Annotated[date | None, classified("internal")] = None  # ADM-02e

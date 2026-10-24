@@ -37,7 +37,7 @@ updated: 2026-10-24
   - Not done here (their rows): assignments list in the drawer (count only; `register_active_engagements` providers), the annual status (T13), `membership.attributes_changed` as an outbox event (audit only), the access-end job (T13), `roleTemplates.gen.ts` (T10 reads the API).
 - Tests: `tests/integration/test_people_v2.py` (14), `tests/unit/identity/test_role_templates.py` (12), contract suite (76), `backfill/test_staff_people.py` (34), `test_firm_settings_live.py` (4).
 - 2026-10-24 (close): `pytest tests/unit tests/contracts tests/security` 26,399 passed, 4 xfailed; `make check-fast` green; web `vitest run` 1,466 passed.
-
+- 2026-10-24 (security review): fixed with failing tests first (`test_people_v2.py`, 8 new): deactivation, SPEC-024's revoke and losing `firm_admin` revoke pending invitations (sent by the person, and to their email on deactivation); acceptance refuses an invitation whose sender no longer administers the firm; sign-ins only while the membership here was active, none for people in another firm (the definer can't see other firms under forced RLS, so identity's sign-in role answers); the template follows firm-role changes and reactivation; the seat check holds the firm's row, runs again at acceptance, and fails closed for a real firm without `plan.seats` (409 `seats_not_provisioned`). `membership_deactivate` gained `end_sessions` (the caller says whether another firm still holds the person). `access_ends_on` is not enforced until T13 (recorded in DEC-285; no copy added). SPEC-024's back-fill fixture now provisions 100 seats. Human to-do: provisioning must set `plan.seats` for real firms.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

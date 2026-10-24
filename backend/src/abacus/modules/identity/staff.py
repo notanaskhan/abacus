@@ -17,6 +17,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
+from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
@@ -28,14 +29,24 @@ from abacus.modules.identity.events import (
     MembershipDeactivated,
     StaffInvitationIssued,
 )
-from abacus.modules.identity.people import apply_invitation_terms
+from abacus.modules.identity.people import (
+    apply_invitation_terms,
+    check_seats_at_acceptance,
+    revoke_invitations_of,
+)
 from abacus.modules.identity.people_repository import deactivate as deactivate_membership
+from abacus.modules.identity.people_repository import (
+    inviter_may_invite,
+    reconcile_template,
+    staff_row,
+)
 from abacus.modules.identity.repository import (
     add_staff_membership,
     extend_staff_invitation,
     find_staff_token,
     get_staff_invitation,
     insert_staff_invitation,
+    memberships_elsewhere,
     pending_staff_invitation_for,
     pending_staff_invitations,
     provision_client_user,
@@ -59,6 +70,8 @@ _ROLE_INDEX: Final = {
     "security_admin": 4,
 }
 _PLATFORM: Final = UUID(int=0)
+# The firm role whose holders invite staff (identity.yaml: `firm.manage_users`).
+_INVITES: Final[dict[str | None, bool]] = {"firm_admin": True}
 _log = get_logger(__name__)
 
 
@@ -208,11 +221,21 @@ async def change_role(ctx: AuthContext, user_id: UUID, firm_role: FirmRole | Non
     """AC-4: applies on their next request; never the last administrator."""
     await _manage(ctx)
     async with uow(ctx.tenant) as tx:
+        before = await staff_row(tx.session, user_id)
         outcome = await set_firm_role(tx.session, user_id, firm_role)
         if outcome == "not_found":
             raise NotFound("staff_member")
         if outcome == "last_admin":
             raise LastAdmin("firm_admin")
+        # G-01-T05: the template follows the firm role, and someone who no longer administers
+        # the firm no longer has invitations out.
+        await reconcile_template(tx.session, user_id)
+        if (
+            before is not None
+            and _INVITES.get(before["firm_role"])
+            and not _INVITES.get(firm_role)
+        ):
+            await revoke_invitations_of(tx, user_id, include_to=False)
         tx.record(
             "membership.role_changed",
             target=Target("user", user_id),
@@ -225,13 +248,17 @@ async def revoke(ctx: AuthContext, user_id: UUID) -> None:
     deactivation definer does it (reason `manual`, sessions ended, `membership.deactivated`
     announced); the audit row keeps SPEC-024's name for this route."""
     await _manage(ctx)
+    elsewhere = await memberships_elsewhere(ctx.tenant_id, [user_id])
     async with uow(ctx.tenant) as tx:
-        outcome = await deactivate_membership(tx.session, user_id, "manual", None)
+        outcome = await deactivate_membership(
+            tx.session, user_id, "manual", None, end_sessions=not elsewhere.get(user_id, False)
+        )
         if outcome == "not_found":
             raise NotFound("staff_member")
         if outcome == "last_admin":
             raise LastAdmin("firm_admin")
         tx.record("membership.revoked", target=Target("user", user_id))
+        await revoke_invitations_of(tx, user_id, include_to=True)
         tx.emit(MembershipDeactivated(user_id=user_id))
         tx.emit(AccessChanged(user_id=user_id))
 
@@ -282,6 +309,12 @@ async def accept_staff_invitation(identity: VerifiedIdentity, token: str) -> UUI
             or str(row["email"]).casefold() != identity.email.casefold()
         ):
             raise StaffInvitationNotFound("staff_invitation")
+        # An invitation outlives nobody's authority: if whoever sent it no longer administers the
+        # firm, it answers like any dead link (an operator's first-admin invitation has no sender).
+        inviter = row["invited_by"]
+        if inviter is not None and not await inviter_may_invite(tx.session, inviter):
+            raise StaffInvitationNotFound("staff_invitation")
+        await check_seats_at_acceptance(tx.session, await clock.now(ctx))
         name = identity.email.split("@", 1)[0][:200] or "Staff"
         user_id = await provision_client_user(
             tx.session, identity.issuer, identity.subject, identity.email, name

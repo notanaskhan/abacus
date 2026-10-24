@@ -10,11 +10,13 @@
 - `add_staff_membership` (same signature) gives a new membership its template from the firm role
   and clears a deactivation when it reactivates one; `membership_set_firm_role` (same signature)
   also keeps the last `security_admin` (AC4.3).
-- `membership_deactivate(user, reason, on_behalf_of)`: AC4.4. The membership is revoked with its
-  reason; the person's live staff sessions end (`membership_removed`) when no other firm holds
-  them, since a session spans memberships.
-- `staff_last_sign_ins()`, `staff_sign_in_history(user, limit)`: the session firm's staff only;
-  sessions are global (0101) and have no app privileges.
+- `membership_deactivate(user, reason, on_behalf_of, end_sessions)`: AC4.4. The membership is
+  revoked with its reason; the person's live staff sessions end (`membership_removed`) when the
+  caller says no other firm holds them (a session spans memberships, and this definer sees only
+  this firm's under row-level security).
+- `staff_last_sign_ins()`, `staff_sign_in_history(user, limit)`: the session firm's staff only,
+  and only sessions that began while the membership here was active and no other firm held them
+  (staff sessions carry no firm, 0116; DEC-286). `last_sign_ins` is for active members only.
 
 Revision ID: 0142
 Revises: 0133
@@ -36,7 +38,7 @@ _TEMPLATES = (
 _LEVELS = "('partner', 'manager', 'senior', 'staff', 'seasonal', 'admin')"
 _FIRM_ROLES = "('firm_admin', 'practice_leader', 'quality_partner', 'security_admin')"
 _NEW_FUNCTIONS = (
-    "membership_deactivate(uuid, text, uuid)",
+    "membership_deactivate(uuid, text, uuid, boolean)",
     "staff_last_sign_ins()",
     "staff_sign_in_history(uuid, integer)",
 )
@@ -133,8 +135,9 @@ _SET_FIRM_ROLE = """
 """
 
 _DEACTIVATE = """
-        CREATE FUNCTION membership_deactivate(p_user uuid, p_reason text, p_on_behalf_of uuid)
-        RETURNS text
+        CREATE FUNCTION membership_deactivate(
+            p_user uuid, p_reason text, p_on_behalf_of uuid, p_end_sessions boolean
+        ) RETURNS text
         LANGUAGE plpgsql SECURITY DEFINER
         SET search_path = pg_catalog, public, pg_temp
         SET statement_timeout = '5s'
@@ -164,10 +167,9 @@ _DEACTIVATE = """
                    revoked_reason = p_reason, revoked_on_behalf_of = p_on_behalf_of,
                    version = version + 1
              WHERE tenant_id = v_tenant AND user_id = p_user;
-            IF NOT EXISTS (
-                SELECT 1 FROM public.memberships
-                 WHERE user_id = p_user AND status = 'active' AND tenant_id <> v_tenant
-            ) THEN
+            -- The caller says whether another firm still holds the person (this definer sees only
+            -- this firm's memberships under row-level security); a session spans firms.
+            IF p_end_sessions THEN
                 UPDATE public.auth_sessions
                    SET ended_at = clock_timestamp(), end_reason = 'membership_removed'
                  WHERE user_id = p_user AND surface = 'staff' AND ended_at IS NULL;
@@ -176,6 +178,12 @@ _DEACTIVATE = """
         END $$
 """
 
+# A staff session (0116: `tenant_id` NULL) spans firms, so a sign-in counts for this firm only
+# when it began while the person's membership here was active (DEC-286): nothing before they
+# joined or after they left. Memberships are under forced row-level security even here, so the
+# definer can't see the person's other firms; the service drops the history of anyone who belongs
+# or belonged to another firm (identity's sign-in role can see that), so a consultant's sign-ins
+# elsewhere never show.
 _LAST_SIGN_INS = """
         CREATE FUNCTION staff_last_sign_ins()
         RETURNS TABLE (user_id uuid, signed_in_at timestamptz)
@@ -190,7 +198,10 @@ _LAST_SIGN_INS = """
             SELECT s.user_id, max(s.created_at)
               FROM public.auth_sessions s
               JOIN public.memberships m ON m.user_id = s.user_id
-             WHERE m.tenant_id = v_tenant AND m.kind = 'staff' AND s.surface = 'staff'
+             WHERE m.tenant_id = v_tenant AND m.kind = 'staff' AND m.status = 'active'
+               AND s.surface = 'staff' AND
+                   m.created_at <= s.created_at
+               AND (m.revoked_at IS NULL OR s.created_at < m.revoked_at)
              GROUP BY s.user_id;
         END $$
 """
@@ -205,16 +216,14 @@ _SIGN_IN_HISTORY = """
         DECLARE v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
         BEGIN
             IF v_tenant IS NULL THEN RAISE EXCEPTION 'no tenant'; END IF;
-            IF NOT EXISTS (
-                SELECT 1 FROM public.memberships
-                 WHERE tenant_id = v_tenant AND user_id = p_user AND kind = 'staff'
-            ) THEN
-                RETURN;
-            END IF;
             RETURN QUERY
             SELECT s.created_at, s.provider, s.mfa_at IS NOT NULL
               FROM public.auth_sessions s
-             WHERE s.user_id = p_user AND s.surface = 'staff'
+              JOIN public.memberships m ON m.user_id = s.user_id
+             WHERE m.tenant_id = v_tenant AND m.kind = 'staff' AND s.user_id = p_user
+               AND s.surface = 'staff' AND
+                   m.created_at <= s.created_at
+               AND (m.revoked_at IS NULL OR s.created_at < m.revoked_at)
              ORDER BY s.created_at DESC
              LIMIT least(greatest(p_limit, 1), 20);
         END $$
@@ -229,8 +238,11 @@ def _staff_functions(*, v2: bool) -> None:
                 roles=_FIRM_ROLES,
                 template_col=", role_template",
                 template_val=f", {template}",
+                # A reactivated member's template follows the firm role it gets back (the
+                # invitation's terms, if any, are applied after).
                 reactivate=", revoked_reason = NULL, revoked_on_behalf_of = NULL, "
-                "version = version + 1",
+                "version = version + 1, role_template = "
+                + _DERIVED.format(role="p_role", level="level"),
             )
         )
         op.execute(

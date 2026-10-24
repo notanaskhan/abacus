@@ -8,6 +8,7 @@ Expectations come from G-01 section 3, not from the implementation."""
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime, timedelta
@@ -31,10 +32,12 @@ from abacus.modules.identity.people import (
     LastAdministrator,
     OffshoreAssignmentConflict,
     SeatsFull,
+    SeatsNotProvisioned,
     StaffFilters,
     StalePerson,
 )
-from abacus.modules.identity.staff import accept_staff_invitation
+from abacus.modules.identity.staff import StaffInvitationNotFound, accept_staff_invitation
+from abacus.modules.identity.staff import revoke as staff_revoke
 from abacus.modules.identity.tokens import VerifiedIdentity
 
 from .agent_tests.support import Seeder
@@ -316,6 +319,10 @@ async def test_ac4_1_the_person_drawer(seed: Seeder) -> None:
             grace.user_id,
         ),
     )
+    await seed.run(
+        "UPDATE memberships SET created_at = now() - interval '100 hours' WHERE user_id = $1",
+        lena.user_id,
+    )
     for hours in (1, 30, 60, 90):
         await seed.run(
             "INSERT INTO auth_sessions (user_id, provider, mfa_at, created_at, "
@@ -504,3 +511,217 @@ async def test_ac5_1_role_templates_count_the_members_and_lock_the_agent(seed: S
     narrowed = await people.role_templates(grace)
     tin = next(g for g in narrowed.grid if g.key == "reveal_tin")
     assert tin.cells["manager"] == "deny" and tin.cells["partner"] == "allow"
+
+
+# --- security review fixes (TASK-1150 follow-up) -----------------------------------------------
+
+
+async def _issued_email(seed: Seeder, user: uuid.UUID) -> str:
+    return cast(str, await seed.value("SELECT email FROM users WHERE id = $1", user))
+
+
+async def _pending(seed: Seeder, invitation: uuid.UUID) -> tuple[str, int]:
+    status = cast(
+        str, await seed.value("SELECT status FROM staff_invitations WHERE id = $1", invitation)
+    )
+    tokens = cast(
+        int,
+        await seed.value(
+            "SELECT count(*) FROM staff_invitation_tokens WHERE invitation_id = $1", invitation
+        ),
+    )
+    return status, tokens
+
+
+async def test_deactivating_someone_revokes_invitations_from_and_for_them(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    await firm.seats(20)
+    grace = firm.people["Grace Holloway"]
+    second = await firm.add("Second Admin", firm_role="firm_admin", level="admin")
+    sent = await people.invite(
+        second, InviteTerms(email="personal@example.test", firm_role="firm_admin")
+    )
+    assert await issue_staff_invitation_token(firm.tenant, sent) is not None
+    for_them = uuid.uuid4()  # sent before they joined: a pending invitation to their own email
+    await seed.run(
+        "INSERT INTO staff_invitations (id, tenant_id, email, invited_by, expires_at) "
+        "VALUES ($1, $2, $3, $4, now() + interval '14 days')",
+        for_them,
+        firm.tenant,
+        await _issued_email(seed, second.user_id),
+        grace.user_id,
+    )
+    await people.deactivate(grace, second.user_id)
+    assert await _pending(seed, sent) == ("revoked", 0)
+    assert (await _pending(seed, for_them))[0] == "revoked"
+    revoked = await seed.value(
+        "SELECT count(*) FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'staff_invitation.revoked' AND target_id = ANY($2::text[])",
+        firm.tenant,
+        [str(sent), str(for_them)],
+    )
+    assert revoked == 2
+
+
+async def test_the_legacy_revoke_and_a_demotion_revoke_the_persons_invitations(
+    seed: Seeder,
+) -> None:
+    firm = await _firm(seed)
+    await firm.seats(20)
+    grace = firm.people["Grace Holloway"]
+    second = await firm.add("Second Admin", firm_role="firm_admin", level="admin")
+    third = await firm.add("Third Admin", firm_role="firm_admin", level="admin")
+    by_second = await people.invite(
+        second, InviteTerms(email="a@example.test", role_template="staff")
+    )
+    by_third = await people.invite(
+        third, InviteTerms(email="b@example.test", role_template="staff")
+    )
+    await staff_revoke(grace, second.user_id)  # SPEC-024's route
+    await people.change_template(grace, third.user_id, "partner")  # no longer a firm admin
+    assert (await _pending(seed, by_second))[0] == "revoked"
+    assert (await _pending(seed, by_third))[0] == "revoked"
+
+
+async def test_an_invitation_from_someone_who_has_left_cannot_be_accepted(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    await firm.seats(20)
+    second = await firm.add("Second Admin", firm_role="firm_admin", level="admin")
+    email = f"leaver.{uuid.uuid4().hex[:6]}@example.test"
+    sent = await people.invite(second, InviteTerms(email=email, role_template="staff"))
+    issued = await issue_staff_invitation_token(firm.tenant, sent)
+    assert issued is not None
+    # The inviter leaves by a path that touches no invitation (directory sync, a fixture).
+    await seed.run(
+        "UPDATE memberships SET status = 'revoked', revoked_at = now() WHERE user_id = $1",
+        second.user_id,
+    )
+    with pytest.raises(StaffInvitationNotFound):
+        await accept_staff_invitation(
+            VerifiedIdentity("https://probe.test", uuid.uuid4().hex, datetime.now(UTC), email),
+            issued.token,
+        )
+
+
+async def test_sign_ins_show_only_this_firms_active_membership(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    grace = firm.people["Grace Holloway"]
+    kevin = firm.people["Kevin Osei"]
+    joined = cast(
+        datetime,
+        await seed.value("SELECT created_at FROM memberships WHERE user_id = $1", kevin.user_id),
+    )
+
+    async def session_at(at: datetime) -> None:
+        await seed.run(
+            "INSERT INTO auth_sessions (user_id, provider, mfa_at, created_at, idle_expires_at, "
+            "absolute_expires_at) VALUES ($1, 'workos', $2, $2, $2, $2)",
+            kevin.user_id,
+            at,
+        )
+
+    await session_at(joined - timedelta(days=30))  # before he joined: not this firm's
+    await session_at(joined + timedelta(minutes=5))  # this firm's
+    found = await people.staff_user(grace, kevin.user_id)
+    assert [s.at for s in found.recent_sign_ins] == [joined + timedelta(minutes=5)]
+    assert found.row.last_sign_in_at == joined + timedelta(minutes=5)
+    # A consultant who belongs to another firm too: no session names a firm, so none shows.
+    other = await seed.firm()
+    await seed.run(
+        "INSERT INTO memberships (tenant_id, user_id, status) VALUES ($1, $2, 'active')",
+        other,
+        kevin.user_id,
+    )
+    await session_at(joined + timedelta(minutes=20))
+    consultant = await people.staff_user(grace, kevin.user_id)
+    assert consultant.recent_sign_ins == [] and consultant.row.last_sign_in_at is None
+    # An ex-member shows nothing after leaving, and no last sign-in.
+    await people.deactivate(grace, firm.people["Hannah Leclerc"].user_id)
+    hannah = firm.people["Hannah Leclerc"]
+    await session_at_user(seed, hannah.user_id, datetime.now(UTC) + timedelta(minutes=1))
+    gone = await people.staff_user(grace, hannah.user_id)
+    assert gone.recent_sign_ins == [] and gone.row.last_sign_in_at is None
+
+
+async def session_at_user(seed: Seeder, user: uuid.UUID, at: datetime) -> None:
+    await seed.run(
+        "INSERT INTO auth_sessions (user_id, provider, mfa_at, created_at, idle_expires_at, "
+        "absolute_expires_at) VALUES ($1, 'workos', $2, $2, $2, $2)",
+        user,
+        at,
+    )
+
+
+async def test_the_template_follows_the_firm_role(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    felix = firm.people["Felix Andersen"]
+    olivia = firm.people["Olivia Brandt"]
+    await people.set_security_role(felix, olivia.user_id, security_admin=True)
+    granted = await people.staff_user(felix, olivia.user_id)
+    assert granted.row.role_template == "it_security"
+    await people.set_security_role(felix, olivia.user_id, security_admin=False)
+    removed = await people.staff_user(felix, olivia.user_id)
+    assert removed.row.role_template != "it_security"
+
+
+async def test_a_reactivated_member_does_not_keep_an_old_admin_template(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    await firm.seats(20)
+    grace = firm.people["Grace Holloway"]
+    second = await firm.add(
+        "Second Admin", firm_role="firm_admin", level="admin", template="firm_admin"
+    )
+    await people.deactivate(grace, second.user_id)
+    email = await _issued_email(seed, second.user_id)
+    sent = await people.invite(grace, InviteTerms(email=email))  # SPEC-024: no firm role
+    issued = await issue_staff_invitation_token(firm.tenant, sent)
+    assert issued is not None
+    subject = cast(
+        str, await seed.value("SELECT idp_subject FROM users WHERE id = $1", second.user_id)
+    )
+    await accept_staff_invitation(
+        VerifiedIdentity("https://probe.test", subject, datetime.now(UTC), email), issued.token
+    )
+    row = (
+        await seed.rows(
+            "SELECT status, firm_role, role_template FROM memberships WHERE user_id = $1",
+            second.user_id,
+        )
+    )[0]
+    assert (row["status"], row["firm_role"]) == ("active", None)
+    assert row["role_template"] != "firm_admin"
+
+
+async def test_seats_unset_fail_closed_for_a_real_firm(seed: Seeder) -> None:
+    firm = await _firm(seed)  # no plan.seats
+    with pytest.raises(SeatsNotProvisioned):
+        await people.invite(
+            firm.people["Grace Holloway"],
+            InviteTerms(email="x@example.test", role_template="staff"),
+        )
+    await seed.run("UPDATE firms SET synthetic = true WHERE tenant_id = $1", firm.tenant)
+    await people.invite(
+        firm.people["Grace Holloway"], InviteTerms(email="x@example.test", role_template="staff")
+    )
+
+
+async def test_seats_are_rechecked_at_acceptance_and_held_under_a_lock(seed: Seeder) -> None:
+    firm = await _firm(seed)
+    await firm.seats(9)
+    grace = firm.people["Grace Holloway"]
+    results = await asyncio.gather(
+        people.invite(grace, InviteTerms(email="one@example.test", role_template="staff")),
+        people.invite(grace, InviteTerms(email="two@example.test", role_template="staff")),
+        return_exceptions=True,
+    )
+    assert sum(isinstance(r, SeatsFull) for r in results) == 1
+    sent = next(r for r in results if isinstance(r, uuid.UUID))
+    issued = await issue_staff_invitation_token(firm.tenant, sent)
+    assert issued is not None
+    await firm.seats(8)  # provisioning lowered the seats while the invitation was pending
+    email = cast(str, await seed.value("SELECT email FROM staff_invitations WHERE id = $1", sent))
+    with pytest.raises(SeatsFull):
+        await accept_staff_invitation(
+            VerifiedIdentity("https://probe.test", uuid.uuid4().hex, datetime.now(UTC), email),
+            issued.token,
+        )
