@@ -14,6 +14,9 @@ export const porScreens = {
   },
   // P-08-T15: a, b, c, f on fixtures at the portal root; d, e, g, h and M are P-08-T23's.
   "POR-02": { name: "Portal home · Feld household", status: "fixture", path: null },
+  // R-01-T06: a, c, e, f, g and h render in the gallery on fixtures. The entry stays planned until
+  // R-01-T10 mounts it at the portal's /documents and POR-02's "Go to Documents →" is wired to it
+  // (link-contract rule 1: a fixture-to-fixture link must be wired).
   "POR-03": { name: "Documents · Feld 2025 Binder", status: "planned", path: null },
   "POR-04": { name: "Request detail · ignore reason sheet", status: "planned", path: null },
   "POR-05": { name: "Questions · Feld 2025 Tax Organizer", status: "planned", path: null },

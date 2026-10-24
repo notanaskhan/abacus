@@ -503,6 +503,11 @@ export interface RequestRowProps {
   /** The signed-in client. Send is a human verb (INV-1): the reply composer is offered only to a
    * named person, and its Send is a HumanAction. */
   viewer?: Actor;
+  /** The client's own unaccepted upload is withdrawn, not removed (DF-15, ADR P-31): the portal's
+   * screens say "Withdraw" with the 30-day line. */
+  withdraw?: boolean;
+  /** A closed binder: no Upload…, Ignore, Undo or Withdraw. */
+  readOnly?: boolean;
 }
 
 /** One request, client side (C-16 spec 6): the document glyph, the title and its lines, and at the
@@ -518,8 +523,14 @@ export function RequestRow({
   onRemove,
   onReply,
   viewer,
+  withdraw = false,
+  readOnly = false,
 }: RequestRowProps): JSX.Element {
-  const view = rowView(item, firm);
+  const shown = rowView(item, firm);
+  const view = readOnly
+    ? { ...shown, uploadLink: false, trash: false, ignore: false, followUp: null }
+    : shown;
+  const removeVerb = withdraw ? "Withdraw" : "Remove";
   const [menu, setMenu] = useState<"ignore" | "remove" | null>(ignoreOpen ? "ignore" : null);
   const [note, setNote] = useState("");
   const [replying, setReplying] = useState(false);
@@ -567,6 +578,7 @@ export function RequestRow({
         ))}
         {view.uploaded !== null && <ReceiptLine>{view.uploaded}</ReceiptLine>}
         {view.matched && <span className="text-meta text-ink-3">Matched to this request</span>}
+        {view.suggested !== null && <span className="text-meta text-ink-3">{view.suggested}</span>}
         {view.accepted !== null && <ReceiptLine>{view.accepted}</ReceiptLine>}
         {view.firmProvided !== null && (
           <span className="flex items-start gap-[6px] text-dense leading-[1.45] text-ink-2">
@@ -645,16 +657,18 @@ export function RequestRow({
         {view.notApplicable !== null && (
           <span className="flex items-center gap-[8px] text-dense text-ink-3">
             {view.notApplicable}
-            <button
-              type="button"
-              className={cn("font-medium text-espresso hover:underline", LINK_HIT)}
-              onClick={() => onUndoIgnore?.(item.id)}
-            >
-              Undo
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                className={cn("font-medium text-espresso hover:underline", LINK_HIT)}
+                onClick={() => onUndoIgnore?.(item.id)}
+              >
+                Undo
+              </button>
+            )}
           </span>
         )}
-        {(view.uploadLink || item.st === "ret") && (
+        {(view.uploadLink || (item.st === "ret" && !readOnly)) && (
           <button
             type="button"
             className={cn(
@@ -676,7 +690,7 @@ export function RequestRow({
             <button
               ref={trashRef}
               type="button"
-              aria-label={`Remove ${view.fileLines[0] ?? item.title}`}
+              aria-label={`${removeVerb} ${view.fileLines[0] ?? item.title}`}
               aria-haspopup="menu"
               aria-expanded={menu === "remove"}
               className={cn(
@@ -730,11 +744,15 @@ export function RequestRow({
               setMenu(null);
             }}
             trigger={trashRef}
-            label="Remove"
-            head={`Remove this file? ${firm} will no longer see it.`}
+            label={removeVerb}
+            head={
+              withdraw
+                ? `Withdraw this file? ${firm}’s team won’t use it. It’s kept securely for 30 days, then erased.`
+                : `Remove this file? ${firm} will no longer see it.`
+            }
             width={266}
             items={[
-              { label: "Remove file", onSelect: () => onRemove?.(item.id) },
+              { label: `${removeVerb} file`, onSelect: () => onRemove?.(item.id) },
               { label: "Keep it", onSelect: () => undefined },
             ]}
           />

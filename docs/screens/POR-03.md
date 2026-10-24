@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-03 Documents - Feld 2025 Binder/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | R-01 · contract R-01-T03; contract stub R-01-T01 (C5 section `portal-pbc`); consumer tests R-01-T02; fixtures R-01-T05; part 1 (a, c, e, f, g, h, rail, filter, ignore, Mark as Done, Withdraw) R-01-T06; read model R-01-T07; ignore note and undo R-01-T08; drop sort R-01-T09 (N); part 2 (b, motion, c from polling, c2, d, i, M, live swap) R-01-T10; scenario slice R-01-T11; live swap and legacy retirement R-01-T18; parity and accessibility R-01-T31; "Upload something else" and c2 live R-01-T33 |
-| Manifest status | planned (`routes/manifest/por.ts`); fixture once R-01-T06 builds part 1 |
+| Manifest status | planned (`routes/manifest/por.ts`): a, c, e, f, g and h render in the gallery on fixtures (R-01-T06, TASK-1045); the entry turns fixture when R-01-T10 mounts the screen at the portal's `/documents` and wires POR-02's "Go to Documents →" (link-contract rule 1) |
 
 Code to come (R-01 §5.2): `src/screens/POR-03/{index.tsx, scenarios.ts, copy.ts, POR-03.test.tsx}`, `src/domain/portal/{documents.ts, drops.ts, messages.ts}`, `src/routes/portal/documents.tsx`, `src/fixtures/handlers/portal-documents.ts`, `src/fixtures/seed/portal-documents.ts`.
 
@@ -193,6 +193,14 @@ Each becomes a test in `POR-03.test.tsx` ("POR-03 avoid: …"): gradients in pro
 | — | i has no spec letter in the README auto-check; the spec lists it and the built artboard is canonical | Handoff README rule | R-01 §2.1 |
 | — | c2's clock is 9:12 AM (the time of the email), kept by the fixture | README clock | R-01 §2.1 |
 | — | c2 and "Upload something else" are fixture-only until N-01 files email and ships the intake route (S15–S16) | Upstream order | R-01 §2.2 |
+
+### Part 1 notes (R-01-T06)
+- Built on the C-16 Request kit (`useRequestBinder`, `RequestDocuments`, `CategoryRail`, `DropZone`, `UploadList`) with three portal opt-ins added to the kit: `withdraw` (the DF-15 "Withdraw" menu and line), `suggested` on a row (DEC-58 a's "Suggested — Brightwater Hale will confirm" in place of "Matched to this request") and `readOnly` (a closed binder). The kit's defaults, and so the TPL-07 specimen, are unchanged.
+- The rail is the screen's own composition of the kit's parts, so the binder picker lists every binder the person can see ("2024 Binder (closed)" opens read-only).
+- Category ticks come from the server (`categories[].complete`, the kit's `doneCats`), because the Requested view does not list every request a category holds.
+- An ignored row reads "Marked not applicable · Sep 14" (the day the projection carries), with Undo.
+- The load error has no handoff frame: "Couldn’t load your documents." / "We could not reach the server. Nothing was lost; try again in a moment." / "Retry", on POR-02's error grammar.
+- Firm-provided group glyphs come from their category (the Partnership K-1s group draws the Income Sources glyph, where the handoff draws a briefcase): the projection carries no group icon. Parity masks it until the read model does.
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

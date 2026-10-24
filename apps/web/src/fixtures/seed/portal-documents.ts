@@ -337,6 +337,25 @@ export const FELD_ROWS_G: FeldRows = {
   },
 };
 
+/** The closed 2024 binder in the picker: read-only. Its rows are not drawn in the handoff and
+ * arrive with R-01-T11, so it opens empty. */
+export function feldClosed2024(): PortalBinderOut {
+  return {
+    binder: FELD_2024,
+    layout: "groups",
+    filter: "requested",
+    categories: [],
+    groups: [],
+    total: 0,
+    done_count: 0,
+    open_count: 0,
+    sorted_count: 0,
+    mark_done: { state: "tonal" },
+    other_parties: [],
+    allowed_actions: [],
+  };
+}
+
 /** POR-03 h: nothing requested of Claire under "Requested". */
 export function feldCaughtUp(): PortalBinderOut {
   return { ...feldBinder(FELD_ROWS_C2, { hideDone: true }), groups: [] };
