@@ -6,12 +6,15 @@
 - `encrypted_pdf`: a text PDF whose trailer asks for a password nobody has.
 - `aging_schedule_xlsx`: an accounts receivable aging, optionally with formulas (no cached values)
   and a total row that doesn't add up.
+- `pii_corpus`: a W-2, a K-1, a 1099-INT and a direct-deposit form with synthetic TINs, accounts
+  and a date of birth where real forms print them (P-03-T13).
 """
 
 from __future__ import annotations
 
 import io
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -541,3 +544,106 @@ def card_statement_pdf(
         return _pdf([_text_page([*head, *rows])])
     half = len(rows) // 2
     return _pdf([_text_page([*head, *rows[:half]]), _text_page(["PURCHASES", *rows[half:]])])
+
+
+# --- PII corpus (P-03-T13; P-03 §4.4) ------------------------------------------------------------
+# Synthetic only: SSNs in the 000 and 9xx areas, EINs with the never-assigned 00 prefix, routing
+# numbers that fail the ABA checksum, `SYN-` accounts. Each value sits under or beside the label
+# a real form prints, as the detector must find it (recall 1.0 on this set).
+
+
+@dataclass(frozen=True)
+class PiiDocument:
+    """A synthetic form and what the detector must find on it: (page, kind, last four)."""
+
+    name: str
+    content: bytes
+    expected: tuple[tuple[int, str, str | None], ...]
+
+
+def w2_pdf() -> bytes:
+    """A W-2: box a holds the employee's SSN 000-00-6081, box b the employer's EIN."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "a Employee's social security number"),
+                (36.0, 726.0, "000-00-6081"),
+                (300.0, 740.0, "b Employer identification number (EIN)"),
+                (300.0, 726.0, "00-1230287"),
+                (36.0, 690.0, "c Employer's name, address, and ZIP code"),
+                (36.0, 676.0, "Brightwater Hale (Synthetic)"),
+                (300.0, 690.0, "1 Wages, tips, other compensation"),
+                (300.0, 676.0, "84,250.00"),
+            ]
+        ]
+    )
+
+
+def k1_pdf() -> bytes:
+    """A Schedule K-1 (Form 1065): the partnership's EIN in item A, the partner's SSN in E."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "A Partnership's employer identification number"),
+                (36.0, 726.0, "00-4567890"),
+                (36.0, 690.0, "E Partner's identifying number"),
+                (36.0, 676.0, "000-00-4412"),
+                (300.0, 690.0, "1 Ordinary business income (loss)"),
+                (300.0, 676.0, "12,480"),
+            ]
+        ]
+    )
+
+
+def form_1099_pdf() -> bytes:
+    """A 1099-INT: the payer's TIN, the recipient's TIN (900-12-3456) and the account number."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "PAYER'S TIN"),
+                (200.0, 740.0, "RECIPIENT'S TIN"),
+                (36.0, 726.0, "00-7654321"),
+                (200.0, 726.0, "900-12-3456"),
+                (36.0, 690.0, "Account number (see instructions)"),
+                (36.0, 676.0, "SYN-4410-2291"),
+                (300.0, 690.0, "1 Interest income"),
+                (300.0, 676.0, "2,310.00"),
+            ]
+        ]
+    )
+
+
+def direct_deposit_pdf() -> bytes:
+    """A direct-deposit form: routing and account numbers and a date of birth, with an
+    unlabelled number that fails every rule (never masked) and an invoice number."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "Routing number"),
+                (36.0, 726.0, "000000001"),
+                (220.0, 740.0, "Account number"),
+                (220.0, 726.0, "SYN-0001-7731"),
+                (36.0, 690.0, "Date of birth"),
+                (36.0, 676.0, "01/01/1980"),
+                (36.0, 640.0, "Reference 000-00-1111 Invoice 12345 Total 4,210.55"),
+            ]
+        ]
+    )
+
+
+def pii_corpus() -> tuple[PiiDocument, ...]:
+    """The seeded PII corpus (P-03-T13 acceptance: recall 1.0)."""
+    return (
+        PiiDocument("W-2", w2_pdf(), ((1, "ssn", "6081"), (1, "ein", "0287"))),
+        PiiDocument("K-1", k1_pdf(), ((1, "ein", "7890"), (1, "ssn", "4412"))),
+        PiiDocument(
+            "1099-INT",
+            form_1099_pdf(),
+            ((1, "ein", "4321"), (1, "ssn", "3456"), (1, "bank_account", "2291")),
+        ),
+        PiiDocument(
+            "Direct deposit",
+            direct_deposit_pdf(),
+            ((1, "routing_number", "0001"), (1, "bank_account", "7731"), (1, "dob", None)),
+        ),
+    )

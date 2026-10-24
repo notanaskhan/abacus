@@ -3,7 +3,8 @@
 Orchestration only: activities by name, identifiers in, identifiers out. One run per upload
 (`upload:<tenant>:<kind>:<id>`). TASK-055 (checks) and TASK-056 (previews) add steps behind
 `workflow.patched(...)`; every history in `tests/workflows/histories/` must still replay.
-P-03-T05 adds v4 `words` (the word layer) and the `trust_layer_backfill` workflow. The legal-hold
+P-03-T05 adds v4 `words` (the word layer) and the `trust_layer_backfill` workflow; P-03-T13
+adds v5 `pii_scan`. The legal-hold
 workflows (Q-02-T29) follow the upload workflow, with their own v1 histories.
 Extraction never fails the run on a bad file: the activity records `unreadable` instead.
 """
@@ -79,6 +80,19 @@ class UploadProcessing:
                 )
             except ActivityError:
                 workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
+        # v5 (P-03-T13): PII detection over the word layer. A scan that can't run never undoes
+        # the steps before it; until a scan lists a page, nothing reads it (fail closed).
+        if workflow.patched("pii_scan"):
+            try:
+                await workflow.execute_activity(
+                    "upload.pii_scan",
+                    given,
+                    result_type=int,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.pii_scan_failed", extra={"kind": given.kind})
         return status
 
 

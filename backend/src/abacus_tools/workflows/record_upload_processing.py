@@ -2,14 +2,15 @@
 `histories.py` for the fixture rules.
 
 Run: python -m abacus_tools.workflows.record_upload_processing <output-directory> [version]
-[words-failed]
+[words-failed|pii-scan-failed]
 
 Records one run of the real `UploadProcessing` workflow against throwaway containers, with its
 activities replaced by stubs (replay never runs activities):
 `upload-processing-<version>-extracted.json`. v2 (TASK-055) adds the `checks` step, v3
 (TASK-056) `previews`, v4 (P-03-T05) `words`, recorded as `upload-processing-v4-words.json`.
 `v4 words-failed` records the words step failing for good and the run still ending with the
-extraction's status. Refuses to overwrite an existing file.
+extraction's status. v5 (P-03-T13) adds `pii_scan` (`upload-processing-v5-pii-scan.json`), and
+`v5 pii-scan-failed` the scan failing for good. Refuses to overwrite an existing file.
 """
 
 from __future__ import annotations
@@ -57,8 +58,18 @@ async def _words_failing_stub(given: UploadInput) -> int:
     raise ApplicationError("IntegrityError", non_retryable=True)
 
 
+@activity.defn(name="upload.pii_scan")
+async def _pii_scan_stub(given: UploadInput) -> int:
+    return 2
+
+
+@activity.defn(name="upload.pii_scan")
+async def _pii_scan_failing_stub(given: UploadInput) -> int:
+    raise ApplicationError("IntegrityError", non_retryable=True)
+
+
 # The outcome a history is named after: from v4 on, the step the version added.
-_OUTCOMES = {"v4": "words"}
+_OUTCOMES = {"v4": "words", "v5": "pii-scan"}
 
 
 def _file_name(version: str, outcome: str | None = None) -> str:
@@ -77,6 +88,7 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str | None = N
             _check_stub,
             _preview_stub,
             _words_failing_stub if outcome == "words-failed" else _words_stub,
+            _pii_scan_failing_stub if outcome == "pii-scan-failed" else _pii_scan_stub,
         ],
     ):
         handle = await client.start_workflow(
@@ -96,8 +108,8 @@ def main(argv: list[str]) -> int:
     out = Path(argv[0]) if argv else Path("tests/workflows/histories")
     version = argv[1] if len(argv) > 1 else "v1"
     outcome = argv[2] if len(argv) > 2 else None
-    if outcome not in (None, "words-failed"):
-        print("outcome is words-failed or nothing")
+    if outcome not in (None, "words-failed", "pii-scan-failed"):
+        print("outcome is words-failed, pii-scan-failed or nothing")
         return 2
     if refuse_overwrite(out, [_file_name(version, outcome)]):
         return 1

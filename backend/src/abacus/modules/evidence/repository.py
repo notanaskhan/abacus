@@ -8,7 +8,26 @@ from datetime import date, datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, exists, func, insert, or_, select, text, update
+from sqlalchemy import (
+    ARRAY,
+    Boolean,
+    ColumnElement,
+    Integer,
+    LargeBinary,
+    Numeric,
+    Text,
+    and_,
+    column,
+    exists,
+    func,
+    insert,
+    or_,
+    select,
+    table,
+    text,
+    update,
+)
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -1248,3 +1267,58 @@ async def lock_citation(session: AsyncSession, citation_id: UUID) -> None:
 
 
 _CITATION_LOCK_SPACE = 9_005
+
+
+# --- PII scan (P-03-T13) -------------------------------------------------------------------------
+
+# `pii_regions` with its sealed value: the mapped model leaves `value_sealed` out on purpose (only
+# the reveal service reads it), so the detector's insert names the table's columns here.
+_PII_REGION_ROWS = table(
+    "pii_regions",
+    column("id", PgUUID(as_uuid=True)),
+    column("tenant_id", PgUUID(as_uuid=True)),
+    column("evidence_version_id", PgUUID(as_uuid=True)),
+    column("inbox_file_id", PgUUID(as_uuid=True)),
+    column("derivation_id", PgUUID(as_uuid=True)),
+    column("page_no", Integer()),
+    column("bbox", ARRAY(Numeric(10, 2))),
+    column("kind", Text()),
+    column("value_sealed", LargeBinary()),
+    column("last4", Text()),
+    column("label_anchored", Boolean()),
+    column("detector_version", Text()),
+)
+
+
+async def insert_pii_regions(session: AsyncSession, rows: Sequence[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(_PII_REGION_ROWS).values(list(rows)))
+
+
+async def scan_run_for(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None,
+    inbox_file_id: UUID | None,
+    detector_version: str,
+) -> PiiScanRun | None:
+    """The source's scan run by this detector version (none derived), if any."""
+    return (
+        await session.execute(
+            select(PiiScanRun).where(
+                PiiScanRun.evidence_version_id == evidence_version_id
+                if evidence_version_id is not None
+                else PiiScanRun.inbox_file_id == inbox_file_id,
+                PiiScanRun.derivation_id.is_(None),
+                PiiScanRun.detector_version == detector_version,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_scan_run(session: AsyncSession, **values: object) -> bool:
+    """Whether this run was the first (a concurrent one that got there first wins)."""
+    found = await session.execute(
+        pg_insert(PiiScanRun).values(**values).on_conflict_do_nothing().returning(PiiScanRun.id)
+    )
+    return found.scalar_one_or_none() is not None
