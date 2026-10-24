@@ -4,7 +4,7 @@ title: Human-gate projector, gate sources, GET /v1/human-gates (P-04-T16)
 spec: SPEC-313
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-progress
+status: done
 epic: P-04
 plan_key: P-04-T16
 branch: s8a-evidence-pipeline
@@ -29,6 +29,7 @@ No SPEC covers the C13 projection; the acceptance source is P-04 §3 F9 (the epi
 
 ## Progress log
 - 2026-10-25: built as planned. The C13 events didn't exist: added `proposal.recorded` (four agent writers), `guidance_draft.decided`, `review_decision.recorded` (decide and undo) and `inbox_file.sorted` (assign and discard). Agents read no evidence table, so `evidence.api.decided_among` and `waiting_among` answer for the sources. A reconcile reads the owner after taking a transaction advisory lock, so two events about one engagement never interleave. 10 unit and 5 integration tests pass. **Deferred:** decision, sign-off-request, send and export sources (their owners' rows; I-01); the `review.rebuild_human_gates` operator command wrapper (the function is `review.api.rebuild_human_gates`); P-04-T17's independent suite.
+- 2026-10-25 (close): full `tests/unit tests/contracts tests/security` 28,473 passed (2 C3/C5 stub tests updated to mark the served routes live, the repo's `LIVE` pattern); integration, workflow and hostile-file run 996 passed + `test_schema_check_db` 192 passed after pinning `inbox_files.sort_outcome`; `make check-fast` green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

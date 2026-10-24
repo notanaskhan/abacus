@@ -1226,6 +1226,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "inbox_files": frozenset(  # SPEC-023
             {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
+            | {"sort_outcome"}  # R-01-T09 (0153): a portal drop's sort, once
         ),
         "budgets": frozenset(  # SPEC-007
             {"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}
