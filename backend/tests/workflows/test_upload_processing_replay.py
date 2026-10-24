@@ -4,7 +4,8 @@ history, and a change to what it schedules is detected as non-determinism.
 Offline: `Replayer` needs no Temporal server and no codec. The history was recorded by
 `abacus_tools.workflows.record_upload_processing` with a stub activity; it is never re-recorded.
 TASK-055 and TASK-056 add steps behind `workflow.patched(...)` and must keep it replaying; so do
-P-03-T05's `words` step (v4) and P-03-T13's `pii_scan` step (v5).
+P-03-T05's `words` step (v4), P-03-T13's `pii_scan` step (v5) and R-01-T09's
+`portal_drop_sort` step (v6).
 """
 
 from __future__ import annotations
@@ -43,6 +44,8 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v5-pii-scan-failed",
         # v5 (P-03-T13): `patched("pii_scan")`, PII detection over the word layer.
         "upload-processing-v5-pii-scan",
+        # v6 (R-01-T09): `patched("portal_drop_sort")`, an inbox file's code-rule sort.
+        "upload-processing-v6-portal-drop-sort",
     ]
 
 
@@ -65,6 +68,14 @@ def test_p03t13_v5_scans_for_pii_after_the_word_layer() -> None:
     failed = (HISTORIES / "upload-processing-v5-pii-scan-failed.json").read_text(encoding="utf-8")
     assert "EVENT_TYPE_ACTIVITY_TASK_FAILED" in failed
     assert "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED" in failed
+
+
+def test_r01t09_v6_sorts_a_drop_last_and_earlier_histories_never_do() -> None:
+    text = (HISTORIES / "upload-processing-v6-portal-drop-sort.json").read_text(encoding="utf-8")
+    assert text.index("upload.pii_scan") < text.index("upload.portal_drop_sort")
+    assert text.count("EVENT_TYPE_MARKER_RECORDED") == 5
+    for path in ALL[:-1]:
+        assert "upload.portal_drop_sort" not in path.read_text(encoding="utf-8")
 
 
 def test_p03t13_v1_to_v4_never_scan_for_pii() -> None:

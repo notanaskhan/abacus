@@ -32,6 +32,7 @@ from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.contract import withdrawal_router
+from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
@@ -282,6 +283,7 @@ __all__ = [
     "column_letters",
     "decided_among",
     "decisions_on_screenings",
+    "drop_batch",
     "engagement_snapshots",
     "evidence_versions_for",
     "extend_retention_for",

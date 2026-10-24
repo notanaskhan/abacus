@@ -4,7 +4,7 @@ Orchestration only: activities by name, identifiers in, identifiers out. One run
 (`upload:<tenant>:<kind>:<id>`). TASK-055 (checks) and TASK-056 (previews) add steps behind
 `workflow.patched(...)`; every history in `tests/workflows/histories/` must still replay.
 P-03-T05 adds v4 `words` (the word layer) and the `trust_layer_backfill` workflow; P-03-T13
-adds v5 `pii_scan`. The legal-hold
+adds v5 `pii_scan`; R-01-T09 v6 `portal_drop_sort`. The legal-hold
 workflows (Q-02-T29) follow the upload workflow, with their own v1 histories.
 Extraction never fails the run on a bad file: the activity records `unreadable` instead.
 """
@@ -20,6 +20,7 @@ from temporalio.exceptions import ActivityError
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.evidence.workflow_types import (
         HOLD_NOT_FOUND,
+        INBOX,
         VERSION,
         BackfillInput,
         LegalHoldInput,
@@ -93,6 +94,20 @@ class UploadProcessing:
                 )
             except ActivityError:
                 workflow.logger.warning("upload.pii_scan_failed", extra={"kind": given.kind})
+        # v6 (R-01-T09): a portal drop is sorted by the code rule, after its extraction. Any other
+        # inbox file answers `not_a_drop`; a sort that fails for good leaves the file waiting for
+        # a person in the inbox, as it would be unsorted.
+        if workflow.patched("portal_drop_sort") and given.kind == INBOX:
+            try:
+                await workflow.execute_activity(
+                    "upload.portal_drop_sort",
+                    given,
+                    result_type=str,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.portal_drop_sort_failed")
         return status
 
 

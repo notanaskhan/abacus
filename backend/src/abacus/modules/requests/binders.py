@@ -1118,3 +1118,30 @@ SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {
     "work_item.status_changed": close_on_status_changed,
     "engagement.status_changed": close_on_status_changed,
 }
+
+
+# --- R-01-T09: the binder a portal drop lands in -----------------------------------------------
+
+
+@dataclass(frozen=True)
+class DropBinder:
+    binder_id: UUID
+    engagement_id: UUID
+    resource: Resource  # the engagement, with the binder's client facts
+
+
+async def drop_binder(ctx: AuthContext, binder_id: UUID, action: str) -> DropBinder:
+    """The published binder a client drops into, authorised for `action` with its client facts
+    (a client admin in scope; a contributor with a request of it assigned). A binder out of the
+    caller's scope, a draft, a forged id or a binder no longer open answers 404 (INV-4)."""
+    binder, _ref, resource = await _readable(ctx, binder_id, action)
+    if binder.status != "published":
+        raise NotFound("binder")
+    return DropBinder(binder.id, binder.engagement_id, resource)
+
+
+async def drop_binder_open(tenant: TenantContext, binder_id: UUID) -> UUID | None:
+    """For the system sort: the binder's engagement while it is published, else None."""
+    async with tenant_session(tenant) as session:
+        binder = await get_binder(session, binder_id)
+    return binder.engagement_id if binder is not None and binder.status == "published" else None

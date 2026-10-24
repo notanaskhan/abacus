@@ -155,3 +155,13 @@ class CitationBroken(DomainEvent):
     citation_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID | None, classified("internal")]
     cause_ref: Annotated[str, classified("internal")]  # `withdrawn:<version>`
+
+
+class PortalDropUnsorted(DomainEvent):
+    """A client's drop matched no request decisively: it waits in the inbox for a person, and
+    the engagement's leads are told in the app (`portal.drop_unsorted`, R-01-T09)."""
+
+    event_type: ClassVar[str] = "portal.drop_unsorted"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID, classified("internal")]

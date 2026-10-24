@@ -10,7 +10,8 @@ activities replaced by stubs (replay never runs activities):
 (TASK-056) `previews`, v4 (P-03-T05) `words`, recorded as `upload-processing-v4-words.json`.
 `v4 words-failed` records the words step failing for good and the run still ending with the
 extraction's status. v5 (P-03-T13) adds `pii_scan` (`upload-processing-v5-pii-scan.json`), and
-`v5 pii-scan-failed` the scan failing for good. Refuses to overwrite an existing file.
+`v5 pii-scan-failed` the scan failing for good; v6 (R-01-T09) adds `portal_drop_sort` for an inbox
+file (`upload-processing-v6-portal-drop-sort.json`). Refuses to overwrite an existing file.
 """
 
 from __future__ import annotations
@@ -23,7 +24,12 @@ from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.evidence.api import UPLOAD_VERSION, UploadInput, UploadProcessing
+from abacus.modules.evidence.api import (
+    UPLOAD_INBOX,
+    UPLOAD_VERSION,
+    UploadInput,
+    UploadProcessing,
+)
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
@@ -68,8 +74,13 @@ async def _pii_scan_failing_stub(given: UploadInput) -> int:
     raise ApplicationError("IntegrityError", non_retryable=True)
 
 
+@activity.defn(name="upload.portal_drop_sort")
+async def _drop_sort_stub(given: UploadInput) -> str:
+    return "rule_linked"
+
+
 # The outcome a history is named after: from v4 on, the step the version added.
-_OUTCOMES = {"v4": "words", "v5": "pii-scan"}
+_OUTCOMES = {"v4": "words", "v5": "pii-scan", "v6": "portal-drop-sort"}
 
 
 def _file_name(version: str, outcome: str | None = None) -> str:
@@ -89,11 +100,13 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str | None = N
             _preview_stub,
             _words_failing_stub if outcome == "words-failed" else _words_stub,
             _pii_scan_failing_stub if outcome == "pii-scan-failed" else _pii_scan_stub,
+            _drop_sort_stub,
         ],
     ):
         handle = await client.start_workflow(
             UploadProcessing.run,
-            UploadInput(_TENANT, UPLOAD_VERSION, _VERSION_ID),
+            # v6 (R-01-T09): the drop sort runs for an inbox file (a portal drop) only.
+            UploadInput(_TENANT, UPLOAD_INBOX if version == "v6" else UPLOAD_VERSION, _VERSION_ID),
             id=f"recorder-upload-processing-{version}-{outcome or 'ok'}",
             task_queue=_TASK_QUEUE,
         )

@@ -786,6 +786,9 @@ def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
 _ISSUERS: dict[str, frozenset[str]] = {
     "src/abacus/modules/connections/service.py": frozenset({"system_context_for_run", "_ISSUER"}),
     "src/abacus/modules/agents/service.py": frozenset({"agent_context_for_run"}),
+    # R-01-T09 (DEC-323): the portal drop sort acts for the dropper on one drop, proven by the
+    # drop's own inbox row read under the tenant's row-level security.
+    "src/abacus/modules/evidence/drops.py": frozenset({"system_context_for_run"}),
 }
 
 
@@ -1165,6 +1168,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "earlier_versions"),
         ("src/abacus/modules/evidence/repository.py", "citations_on"),
         ("src/abacus/modules/evidence/repository.py", "insert_citation_events"),
+        # R-01-T09: the drop sort's candidates in one binder (each re-checked for the dropper
+        # with `member_could`) and the dropper's own files in one batch.
+        ("src/abacus/modules/requests/repository.py", "drop_item_rows"),
+        ("src/abacus/modules/evidence/repository.py", "drops_of_batch"),
         # P-04-T16: the human-gate projector's reads (the system, per engagement or for the
         # rebuild); `GET /v1/human-gates` filters the projection through `visible()`.
         ("src/abacus/modules/agents/repository.py", "latest_screenings_for_gates"),

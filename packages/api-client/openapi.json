@@ -45868,7 +45868,7 @@
     },
     "/v1/citations/{citation_id}/relink": {
       "post": {
-        "description": "AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422\n`relink_unverified`.",
+        "description": "AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422\n`relink_unverified` (P-03-T12).",
         "operationId": "relink_citation",
         "parameters": [
           {
@@ -88280,7 +88280,7 @@
     },
     "/v1/human-gates": {
       "get": {
-        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").",
+        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates\nare never listed or counted.",
         "operationId": "human_gate_list",
         "parameters": [
           {
@@ -95702,7 +95702,7 @@
     },
     "/v1/portal/binders/{binder_id}/drops": {
       "post": {
-        "description": "One dropped file (POR-03 b \u2192 c, d). Sorted by code against the dropper's visible items.",
+        "description": "One dropped file (POR-03 b \u2192 c, d). Sorted by code against the dropper's visible items\n(R-01-T09). Over the limit or outside the allowlist: 413 `file_too_large` or 415\n`type_not_allowed`, the one upload policy's refusals in this contract's words (DEC-323).",
         "operationId": "drop_file",
         "parameters": [
           {
@@ -96289,7 +96289,7 @@
     },
     "/v1/portal/drops/{batch_id}": {
       "get": {
-        "description": "The dropper's poll of one drop batch; anyone else's batch answers 404.",
+        "description": "The dropper's poll of one drop batch; anyone else's batch answers 404 (R-01-T09).",
         "operationId": "get_drop_batch",
         "parameters": [
           {

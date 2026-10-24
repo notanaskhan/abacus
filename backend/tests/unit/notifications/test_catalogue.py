@@ -38,6 +38,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "legal_hold.placed",  # Q-02-T29 (C16 `legal_hold_placed`)
         "incident.recorded",  # Q-02-T33 (C16 `incident_recorded`)
         "incident.propagated",  # Q-02-T33 (C16 `incident_from_accrued`)
+        "portal.drop_unsorted",  # R-01-T09 (C16 `portal_drop_unsorted`)
     }
 
 

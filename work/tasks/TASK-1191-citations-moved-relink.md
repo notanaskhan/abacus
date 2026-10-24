@@ -2,7 +2,7 @@
 id: TASK-1191
 title: Moved and broken citation detection and the human relink (P-03-T12)
 spec: SPEC-322
-acceptance_criteria: [AC6.1, AC6.2, AC6.3]
+acceptance_criteria: [AC-10, AC-36, AC-37]
 risk_zone: red
 status: in-progress
 epic: P-03

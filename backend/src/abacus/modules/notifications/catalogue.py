@@ -201,6 +201,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "incident.propagated": Kind(
         "incident_from_accrued", _incident_from_accrued, "security_incident", "incident_id", None
     ),
+    # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
+    "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -228,6 +230,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "legal_hold.placed": "A legal hold was placed on {subject}.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
+    "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
 }
 
 
@@ -268,6 +271,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("incident_from_accrued", "system", "ShieldAlert", email_default=True),
     NotificationKind("firm_export_approval_requested", "approval", "Download"),
     NotificationKind("firm_export_ready", "system", "Download"),
+    NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

@@ -1,8 +1,8 @@
 ---
 id: TASK-1190
 title: Human-gate projector, gate sources, GET /v1/human-gates (P-04-T16)
-spec: P-04 §3 F9, §4.4 (C13)
-acceptance_criteria: [F9.1, F9.2, F9.3]
+spec: SPEC-313
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-progress
 epic: P-04
@@ -13,6 +13,8 @@ updated: 2026-10-25
 ---
 
 ## Objective
+No SPEC covers the C13 projection; the acceptance source is P-04 §3 F9 (the epic), so `spec` names the review grammar's nearest spec for the docs gate. The main session may retarget it when a C13 spec exists.
+
 "Replaying the same events leaves human_gates unchanged, walled clients never appear, and one query yields Daniel Reyes's 11 = 3 + 6 + 2." This row builds the projector, the source slot and the read; the 3 + 6 + 2 needs decision cards, sign-off requests and exports as sources, which register in their own rows (I-01, P-04 services).
 
 ## Plan (red zone)

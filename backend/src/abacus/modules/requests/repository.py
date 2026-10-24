@@ -7,7 +7,19 @@ from datetime import date, datetime
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, Subquery, and_, bindparam, func, insert, or_, select, text, update
+from sqlalchemy import (
+    Select,
+    Subquery,
+    and_,
+    bindparam,
+    func,
+    insert,
+    literal_column,
+    or_,
+    select,
+    text,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1377,3 +1389,31 @@ async def binder_statuses(
         )
     )
     return {i: str(st) for i, st in rows.all()}
+
+
+async def drop_item_rows(session: AsyncSession, binder_id: UUID) -> Sequence[RequestItem]:
+    """R-01-T09: the requests of one binder a portal drop may land on: client-visible, open to
+    evidence (never a draft) and not delegated to a third party (LIST_EXEMPT: the system sort,
+    which then checks each against the dropper with `member_could`)."""
+    delegated = (
+        select(cast(ColumnElement[UUID], literal_column("d.request_item_id")))
+        .select_from(text("request_delegations d"))
+        .where(text("d.revoked_at IS NULL"))
+    )
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(
+                    RequestItem.request_list_id == binder_id,
+                    RequestItem.client_visible.is_(True),
+                    RequestItem.deleted_at.is_(None),
+                    RequestItem.status.in_(("requested", "uploaded", "returned")),
+                    RequestItem.id.not_in(delegated),
+                )
+                .order_by(RequestItem.created_at, RequestItem.id)
+            )
+        )
+        .scalars()
+        .all()
+    )

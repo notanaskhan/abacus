@@ -497,7 +497,7 @@ export const getCitation = <ThrowOnError extends boolean = false>(options: Optio
  * Relink Citation Route
  *
  * AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422
- * `relink_unverified`.
+ * `relink_unverified` (P-03-T12).
  */
 export const relinkCitation = <ThrowOnError extends boolean = false>(options: Options<RelinkCitationData, ThrowOnError>): RequestResult<RelinkCitationResponses, RelinkCitationErrors, ThrowOnError> => (options.client ?? client).post<RelinkCitationResponses, RelinkCitationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4699,6 +4699,8 @@ export const publishGroupingSet = <ThrowOnError extends boolean = false>(options
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+ * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * are never listed or counted.
  */
 export const humanGateList = <ThrowOnError extends boolean = false>(options?: Options<HumanGateListData, ThrowOnError>): RequestResult<HumanGateListResponses, HumanGateListErrors, ThrowOnError> => (options?.client ?? client).get<HumanGateListResponses, HumanGateListErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5489,7 +5491,9 @@ export const getPortalBinder = <ThrowOnError extends boolean = false>(options: O
 /**
  * Drop File Route
  *
- * One dropped file (POR-03 b → c, d). Sorted by code against the dropper's visible items.
+ * One dropped file (POR-03 b → c, d). Sorted by code against the dropper's visible items
+ * (R-01-T09). Over the limit or outside the allowlist: 413 `file_too_large` or 415
+ * `type_not_allowed`, the one upload policy's refusals in this contract's words (DEC-323).
  */
 export const dropFile = <ThrowOnError extends boolean = false>(options: Options<DropFileData, ThrowOnError>): RequestResult<DropFileResponses, DropFileErrors, ThrowOnError> => (options.client ?? client).post<DropFileResponses, DropFileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5547,7 +5551,7 @@ export const getPortalLogo = <ThrowOnError extends boolean = false>(options?: Op
 /**
  * Get Drop Batch Route
  *
- * The dropper's poll of one drop batch; anyone else's batch answers 404.
+ * The dropper's poll of one drop batch; anyone else's batch answers 404 (R-01-T09).
  */
 export const getDropBatch = <ThrowOnError extends boolean = false>(options: Options<GetDropBatchData, ThrowOnError>): RequestResult<GetDropBatchResponses, GetDropBatchErrors, ThrowOnError> => (options.client ?? client).get<GetDropBatchResponses, GetDropBatchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

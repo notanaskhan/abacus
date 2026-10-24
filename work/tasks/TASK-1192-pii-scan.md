@@ -2,7 +2,7 @@
 id: TASK-1192
 title: PII detection by code, upload_processing v5 pii_scan, synthetic PII corpus (P-03-T13)
 spec: SPEC-322
-acceptance_criteria: [AC4.1, AC4.8]
+acceptance_criteria: [AC-23, AC-30]
 risk_zone: red
 status: in-progress
 epic: P-03

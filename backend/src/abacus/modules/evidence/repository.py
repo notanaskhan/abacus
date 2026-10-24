@@ -1322,3 +1322,50 @@ async def insert_scan_run(session: AsyncSession, **values: object) -> bool:
         pg_insert(PiiScanRun).values(**values).on_conflict_do_nothing().returning(PiiScanRun.id)
     )
     return found.scalar_one_or_none() is not None
+
+
+# --- portal drops (R-01-T09) ---------------------------------------------------------------------
+
+
+async def drop_by_key(session: AsyncSession, batch_id: UUID, key: str) -> InboxFile | None:
+    """The drop a (batch, idempotency key) already made, if any."""
+    return (
+        await session.execute(
+            select(InboxFile).where(
+                InboxFile.channel == "portal_drop",
+                InboxFile.drop_batch_id == batch_id,
+                InboxFile.drop_key == key,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def drops_of_batch(
+    session: AsyncSession, batch_id: UUID, dropped_by: UUID
+) -> Sequence[InboxFile]:
+    """One person's own files in one drop batch, in order (LIST_EXEMPT: the dropper's own rows,
+    re-authorised on the binder after reading)."""
+    return (
+        (
+            await session.execute(
+                select(InboxFile)
+                .where(
+                    InboxFile.channel == "portal_drop",
+                    InboxFile.drop_batch_id == batch_id,
+                    InboxFile.uploaded_by == dropped_by,
+                )
+                .order_by(InboxFile.created_at, InboxFile.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def set_sort_outcome(session: AsyncSession, file_id: UUID, outcome: str) -> None:
+    """A drop's sort outcome, once (from NULL; the 0153 trigger refuses any other change)."""
+    await session.execute(
+        update(InboxFile)
+        .where(InboxFile.id == file_id, InboxFile.sort_outcome.is_(None))
+        .values(sort_outcome=outcome)
+    )
