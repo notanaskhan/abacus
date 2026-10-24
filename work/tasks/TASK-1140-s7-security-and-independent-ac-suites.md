@@ -67,6 +67,13 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 ## F-04-T36: N's red F-04 tasks
 `backend/tests/unit/quality/test_f04t36_independent.py` (36 tests) and `apps/web/src/lint/f04t36-clock.test.ts` (10 tests), all pass: verdict injection and `FakeModel` refused on staging and production settings and honoured in local, test and evaluation; no injection clears EICAR or a bomb; injections bounded; recorded responses keyed by prompt and SHA-256 and loaded one per data file; CLOCK-001 fails on `datetime.now`, `utcnow`, `date.today` and `time.time` in five red modules, allows `kernel/clock.py` and the two doors, and finds nothing on main; business time follows a frozen `kernel.clock` while `system_now` stays real; no workflow reads a database secret or names a non-local Postgres host (and the check catches a job that would); the ESLint ban fails on `Date.now()` and bare `new Date()` in legacy, feature, portal and plain modules and allows them in `app-core/clock.tsx`. No defect found. Not covered: MFA freshness and OAuth TTL reading `system_now` inside identity (they need the authz internals; the CLOCK-001 sweep is the guard).
 
+## Q-03-T014 and Q-03-T015: client uploads and upload processing (TASK-035, 056, 054, 055)
+`backend/tests/integration/backfill/test_client_uploads_and_processing.py`, 15 tests, all pass. SPEC-020 AC-1 (a client admin reads only its engagement's client-visible items, a contributor only its assigned ones, another engagement and another firm answer 404), AC-8 (a client upload is stored with upload provenance, audited `evidence.uploaded` by the client, and the item reads `uploaded`, never `received`), a contributor refused on an unassigned item, AC-9 (over 25 MB, a ZIP named a PDF, and a duplicate refused, nothing stored); SPEC-029 AC-12 (client admin and firm both get server-made PNG pages, never PDF bytes; another client 404), AC-1 (an `error`, `timeout` or `infected` scan stores nothing for the item or the inbox and leaves the request `requested`), AC-3, AC-4 (a formula with no cached value is never computed; cached totals are read), AC-5 (the rule sets `bank_statement` from the description, the team's override is audited, a client cannot change it), AC-6 (`wrong_period` by code, December 2026 a problem, December 2025 passed), AC-8 (`duplicate` names the first item).
+
+- **Spec drift:** SPEC-020 AC-8 "the item shows received" is `uploaded` under DEC-09 (ADR P-44). SPEC-029 AC-3's scanned PDF is `not_extracted` / `needs_ocr` under SPEC-312, with no client re-upload ask. SPEC-020 AC-9's 25 MB stands until ED-018 (DEC-58's 50 MB).
+- **Observed, not claimed:** the upload's audit rows carry no `engagement_id` (the scope column is null for `evidence.uploaded`, `request_item.uploaded` and the rest); no AC here names it, so it is left for the audit-attribution suite.
+- `docs/quality/backfill.md`: TASK-035, 056, 054 and 055 move to back-filled (25 scheduled, 10 back-filled).
+
 ## Progress log
 - 2026-10-24: T012 written and green (61 passed); ED-017 fixed with it.
 - 2026-10-24: T013 written: 18 pass, 10 held as ED-018 to ED-021.
@@ -75,3 +82,4 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - 2026-10-24: P-06-T17 written: 13 pass; ED-023 fixed.
 - 2026-10-24: P-01-T15 written: 8 pass, 1 held as ED-024.
 - 2026-10-24: F-04-T36 written: 36 + 10 pass.
+- 2026-10-24: Q-03-T014 and T015 written: 15 pass.
