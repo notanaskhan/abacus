@@ -9,6 +9,8 @@ The load gets its own database: the session's `migrated_db` holds the loader tes
 
 from __future__ import annotations
 
+import json
+import os
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -16,8 +18,9 @@ from uuid import UUID, uuid4
 import pytest
 
 from abacus.kernel.config import settings
-from abacus.kernel.db import TenantContext, configure_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.modules.identity.api import AuthContext, portal_scopes
+from abacus.modules.identity.invitations import preview_invitation
 from abacus.modules.portal.branding import branding_for_host
 from abacus.modules.portal.home import read_home
 from abacus_tools.quality.schema_check import Database, provisioned_database
@@ -164,6 +167,82 @@ async def test_e0_with_the_portal_slice_seeds_branding_host_and_personas(
     assert sam["created_at"].astimezone(UTC).date().isoformat() == "2026-09-02"
     assert (sam["expires_at"] - sam["created_at"]).days == 14
     assert await seed.value("SELECT count(*) FROM users WHERE display_name = 'Sam Ortiz'") == 0
+    # P-08-T18: the v2 fields. 9 Northwind requests delegated to Keystone, as a third party's
+    # request-scoped grants, through Sam's third-party contact, with terms version 1.
+    [v2] = await seed.rows(
+        "SELECT i.kind, i.terms_version, i.grant_template::text AS template, c.display_name, "
+        "c.organisation_name, c.contact_kind, c.portal_state FROM client_invitations i "
+        "JOIN contacts c ON c.id = i.contact_id WHERE i.tenant_id = $1",
+        TENANT,
+    )
+    assert (v2["kind"], v2["terms_version"]) == ("delegate", 1)
+    assert (v2["display_name"], v2["organisation_name"], v2["contact_kind"]) == (
+        "Sam Ortiz",
+        "Keystone Retirement Services",
+        "third_party",
+    )
+    assert v2["portal_state"] == "invited"
+    template = json.loads(v2["template"])
+    assert (template["role"], template["scope_kind"]) == ("third_party", "request_item")
+    assert len(template["scope_ids"]) == 9
+    assert (
+        await seed.value(
+            "SELECT count(DISTINCT engagement_id) FROM request_items WHERE id = ANY($1::uuid[])",
+            template["scope_ids"],
+        )
+        == 1
+    )
+    assert (
+        await seed.value(
+            "SELECT engagement_id FROM request_items WHERE id = $1::uuid", template["scope_ids"][0]
+        )
+        == northwind_audit
+    )
+    # The preview (POR-01d) once a link is issued: 9 items for the Northwind plan only. Expiry is
+    # judged on the database's clock, and Sep 16, 2026 has passed in wall time (DEC-275), so the
+    # link is reissued for the check and put back after.
+    token = "por01d-" + uuid4().hex + uuid4().hex
+    await seed.run(
+        "UPDATE client_invitations SET expires_at = now() + interval '14 days' "
+        "WHERE tenant_id = $1",
+        TENANT,
+    )
+    await seed.run(
+        "INSERT INTO invitation_tokens (token_hash, tenant_id, invitation_id) "
+        "SELECT encode(sha256(convert_to($1, 'UTF8')), 'hex'), tenant_id, id "
+        "FROM client_invitations WHERE tenant_id = $2",
+        token,
+        TENANT,
+    )
+    # The firm's name is read through the identity role: point it at this load's database.
+    original = os.environ.get("ABACUS_IDENTITY_DATABASE_URL")
+    os.environ["ABACUS_IDENTITY_DATABASE_URL"] = own_db.identity_url
+    settings.cache_clear()
+    await dispose_engine()
+    configure_engine(own_db.app_url)
+    try:
+        preview = await preview_invitation(HOST, token, "198.51.100.7")
+    finally:
+        if original is None:
+            del os.environ["ABACUS_IDENTITY_DATABASE_URL"]
+        else:
+            os.environ["ABACUS_IDENTITY_DATABASE_URL"] = original
+        settings.cache_clear()
+        await dispose_engine()  # later tests configure their own engines
+        configure_engine(own_db.app_url)
+    assert (preview.access.kind, preview.access.item_count) == ("delegate", 9)
+    assert preview.access.scope_label == "Northwind Robotics 401(k) Plan"
+    assert (preview.invitee_name, preview.organisation_name) == (
+        "Sam Ortiz",
+        "Keystone Retirement Services",
+    )
+    assert preview.firm_name == "Brightwater Hale LLP"
+    await seed.run("DELETE FROM invitation_tokens WHERE tenant_id = $1", TENANT)
+    await seed.run(
+        "UPDATE client_invitations SET expires_at = created_at + interval '14 days' "
+        "WHERE tenant_id = $1",
+        TENANT,
+    )
 
     # POR-02a: Claire's home resolves her household; she has never dismissed the welcome.
     home = await read_home(_client_context(_user("Claire Feld")), None)

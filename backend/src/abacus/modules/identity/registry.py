@@ -55,6 +55,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
+        # P-08-T18 (0140): invitations v2.
+        | {"kind", "contact_id", "grant_template", "terms_version", "terms_url"}
     ),
     "staff_invitations": frozenset(  # SPEC-024 (TASK-041)
         {"id", "tenant_id", "email", "firm_role", "invited_by", "expires_at"}
@@ -97,7 +99,9 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
         | {"acknowledged_at"}
     ),
-    "client_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
+    "client_invitations": frozenset(
+        {"status", "accepted_by", "accepted_at", "expires_at", "terms_accepted_at"}  # 0140
+    ),
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),  # F-03-T24
     "firm_settings": frozenset({"value", "updated_by", "updated_at"}),  # G-01-T04

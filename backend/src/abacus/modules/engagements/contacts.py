@@ -16,10 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Target, uow
+from abacus.modules.engagements.repository import get_engagement
 from abacus.modules.engagements.service import client_of, get_ref, lock_ref
 from abacus.modules.identity.api import (
     AccessChanged,
     AuthContext,
+    InvitationParties,
     ScopeFacts,
     authorise,
     contact_user_ids,
@@ -28,6 +30,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.organisations.api import (
     attest_client_of,
     client_exists,
+    client_names,
     client_of_entity,
     contact_client,
     contact_facts,
@@ -196,3 +199,29 @@ async def mfa_designated(tenant: TenantContext, user_id: UUID) -> bool:
             _DESIGNATED, {"ids": contact_ids, "designations": sorted(MFA_DESIGNATIONS)}
         )
         return bool(found.scalar_one())
+
+
+async def invitation_parties(
+    tenant: TenantContext, engagement_id: UUID, contact_id: UUID | None
+) -> InvitationParties | None:
+    """POR-01 d's names for an invitation to the engagement (P-08-T18): the engagement's client
+    entity as the scope, and the invited contact's name and organisation when it is the
+    engagement client's. None for an engagement outside the firm."""
+    async with tenant_session(tenant) as session:
+        engagement = await get_engagement(session, engagement_id)
+        if engagement is None:
+            return None
+        names = await client_names(session, [engagement.client_entity_id])
+        found = (
+            (await contact_facts(session, [contact_id])).get(contact_id)
+            if contact_id is not None
+            else None
+        )
+    entity = names.get(engagement.client_entity_id)
+    if entity is None:
+        return None
+    if found is None or found.client_id != engagement.client_id:
+        return InvitationParties(entity.client_entity_name)
+    return InvitationParties(
+        entity.client_entity_name, found.display_name, found.organisation_name
+    )

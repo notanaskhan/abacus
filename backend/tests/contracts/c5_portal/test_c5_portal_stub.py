@@ -60,11 +60,10 @@ SERVED_PRE_SESSION = (
     "/v1/portal/auth/mfa",
     "/v1/portal/auth/mfa/setup",
     "/v1/portal/auth/mfa/setup/verify",
-)
-PRE_SESSION = (
-    "/v1/portal/links/renew",
+    # P-08-T18 (tests/integration/test_portal_invitations.py): one 404 for every failure.
     "/v1/invitations/preview",
 )
+PRE_SESSION = ("/v1/portal/links/renew",)
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:

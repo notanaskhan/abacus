@@ -19,6 +19,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.identity.authz import Forbidden
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import EngagementMemberAdded
+from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.member_hooks import member_added
 from abacus.modules.identity.repository import (
     display_names,
@@ -112,6 +113,7 @@ async def change_role(
         target=Target("engagement", engagement_id),
         after=Ref(user_id=user_id),
     )
+    await revoke_invitations_by(tx, user_id, engagement_id)  # DEC-277
 
 
 async def remove_member(
@@ -135,3 +137,4 @@ async def remove_member(
         target=Target("engagement", engagement_id),
         after=Ref(user_id=user_id),
     )
+    await revoke_invitations_by(tx, user_id, engagement_id)  # DEC-277

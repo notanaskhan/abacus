@@ -160,17 +160,41 @@ async def contact_ids_of_user(session: AsyncSession, user_id: UUID) -> list[UUID
 
 async def contacts_by_id(
     session: AsyncSession, contact_ids: list[UUID]
-) -> dict[UUID, tuple[UUID, str, UUID | None]]:
-    """Contacts by ID: their client, display name and portal user (P-06-T07: a binder's
-    recipients; P-06-T10: a request's delegate), for a caller that authorised the record."""
+) -> dict[UUID, tuple[UUID, str, UUID | None, str | None]]:
+    """Contacts by ID: their client, display name, portal user and organisation (P-06-T07: a
+    binder's recipients; P-06-T10: a request's delegate; P-08-T18: an invitation's card), for a
+    caller that authorised the record."""
     if not contact_ids:
         return {}
     rows = await session.execute(
-        select(Contact.id, Contact.client_id, Contact.display_name, Contact.user_id).where(
-            Contact.id.in_(contact_ids)
-        )
+        select(
+            Contact.id,
+            Contact.client_id,
+            Contact.display_name,
+            Contact.user_id,
+            Contact.organisation_name,
+        ).where(Contact.id.in_(contact_ids))
     )
-    return {r.id: (r.client_id, r.display_name, r.user_id) for r in rows}
+    return {r.id: (r.client_id, r.display_name, r.user_id, r.organisation_name) for r in rows}
+
+
+async def set_contact_active(
+    session: AsyncSession, contact_id: UUID, user_id: UUID
+) -> UUID | None:
+    """The contact's portal user and state after an accepted invitation (P-08-T18); its client,
+    or None when it is unknown or linked to someone else."""
+    row = (
+        await session.execute(
+            update(Contact)
+            .where(
+                Contact.id == contact_id,
+                (Contact.user_id.is_(None)) | (Contact.user_id == user_id),
+            )
+            .values(user_id=user_id, portal_state="active")
+            .returning(Contact.client_id)
+        )
+    ).first()
+    return None if row is None else row.client_id
 
 
 async def offices_in_firm(session: AsyncSession) -> list[tuple[UUID, str]]:

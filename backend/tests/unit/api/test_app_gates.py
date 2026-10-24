@@ -215,6 +215,8 @@ NOT_CREATING = {
     "/v1/portal/binders/{binder_id}/mark-done/undo",
     "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void",
     "/v1/portal/room/suggest",
+    # P-08-T18 (SPEC-320 AC-12): the invitation preview reads; nothing is created.
+    "/v1/invitations/preview",
 }
 
 

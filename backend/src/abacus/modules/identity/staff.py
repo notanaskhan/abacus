@@ -24,6 +24,7 @@ from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import StaffInvitationIssued
+from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.repository import (
     add_staff_membership,
     extend_staff_invitation,
@@ -212,6 +213,8 @@ async def change_role(ctx: AuthContext, user_id: UUID, firm_role: FirmRole | Non
             target=Target("user", user_id),
             after=Ref(role=_ROLE_INDEX.get(firm_role or "", 0)),
         )
+        # DEC-277: what they invited under the old role is withdrawn; the firm re-sends.
+        await revoke_invitations_by(tx, user_id)
 
 
 async def revoke(ctx: AuthContext, user_id: UUID) -> None:
@@ -224,6 +227,7 @@ async def revoke(ctx: AuthContext, user_id: UUID) -> None:
         if outcome == "last_admin":
             raise LastAdmin("firm_admin")
         tx.record("membership.revoked", target=Target("user", user_id))
+        await revoke_invitations_by(tx, user_id)  # DEC-277: no invitation outlives its inviter
 
 
 async def issue_staff_invitation_token(

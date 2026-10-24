@@ -6,7 +6,12 @@
 //   docs/screens/POR-01.md);
 // - `verify` takes the fixture code 481027; a wrong code costs one of three tries (401
 //   `code_mismatch {tries_left}`), the third locks sign-in for 15 minutes (423 `sign_in_locked`);
-//   an owner (the MFA floor) answers `mfa_required`;
+//   an owner (the MFA floor) answers `mfa_required` (or `mfa_setup_required` without a factor);
+// - `mfa` (c) takes the fixture authenticator code or the first backup code, once; three wrong
+//   ones lock (423 `mfa_locked`); `mfa/setup` answers the key once per token and
+//   `mfa/setup/verify` the 8 backup codes once (c′, DF-17);
+// - `invitations/preview` answers POR-01 d's invitation, `invitations/accept` accepts it once
+//   with the shown terms version and lands a third party on `requests` (404 for anything else);
 // - `resend` answers 429 `resend_too_soon` before the countdown ends; `links/renew` 202;
 // - `refresh` (P-08-T11) stands for the persona's host cookie: a persona with a portal shell gets
 //   a fresh token (a reload of a signed-in area), anyone else 401 `session_expired`; `sign-out`
@@ -26,8 +31,11 @@ import {
   never,
 } from "../../app-core/fixture-mode";
 import type {
+  AcceptInvitationIn,
+  AcceptedInvitationOut,
   InvitationPreviewOut,
   PortalBrandingOut,
+  PortalMfaIn,
   PortalSignInStartIn,
   PortalSignInStartOut,
   PortalSignInVerifyIn,
@@ -36,7 +44,9 @@ import type {
 import { getSeed, meFor } from "../seed";
 import {
   BRIGHTWATER_BRANDING,
+  FIXTURE_BACKUP_CODES,
   FIXTURE_CODE,
+  FIXTURE_TOTP,
   MFA_FLOOR_PERSONAS,
   PORTAL_SHELLS,
 } from "../seed/portal-home";
@@ -126,14 +136,96 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
     const out: PortalSignInVerifyOut = MFA_FLOOR_PERSONAS.has(who)
       ? {
           state: options.mfaEnrolled === false ? "mfa_setup_required" : "mfa_required",
-          mfa_token: stableId(`portal:mfa:${who}`),
+          // One token per challenge: the scenario's handlers outlive a single sign-in.
+          mfa_token: stableId(`portal:mfa:${who}:${id}`),
         }
       : signedIn(who);
     return json(out);
   };
 
+  // c, c′: second-step tokens are single use, and each has three guesses. (The scenario's
+  // handlers serve many sign-ins, so the counts are per token; the BFF counts per person.)
+  const spent = new Set<string>();
+  const mfaTries = new Map<string, number>();
+  const mfa = ({ body, persona }: FixtureRequest) => {
+    const given = (body ?? {}) as Partial<PortalMfaIn>;
+    const token = given.mfa_token ?? "";
+    if (token === "" || spent.has(token)) return json(errorBody("mfa_expired"), 410);
+    const right =
+      given.totp === FIXTURE_TOTP ||
+      given.backup_code?.trim().toUpperCase() === FIXTURE_BACKUP_CODES[0];
+    if (!right) {
+      const left = (mfaTries.get(token) ?? 3) - 1;
+      mfaTries.set(token, left);
+      if (left <= 0) {
+        spent.add(token);
+        return json(errorBody("mfa_locked", { locked_until: at(clock, 15 * MINUTE) }), 423);
+      }
+      return json(errorBody("mfa_mismatch", { tries_left: left }), 401);
+    }
+    spent.add(token);
+    return json(signedIn(persona ?? "tess-moreno"));
+  };
+  const setupShown = new Set<string>();
+  const accepted = new Set<string>();
+
   return {
     "GET /v1/portal/branding": () => json(options.branding ?? BRIGHTWATER_BRANDING),
+    "POST /v1/portal/auth/mfa": mfa,
+    "POST /v1/portal/auth/mfa/setup": ({ body }) => {
+      const token = (body as { mfa_token?: string } | undefined)?.mfa_token ?? "";
+      if (token === "" || spent.has(token) || setupShown.has(token)) {
+        return json(errorBody("mfa_expired"), 410);
+      }
+      setupShown.add(token);
+      // RFC 4648's example base32 text, a fixture value only (never a real factor).
+      const shown = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+      return json({
+        otpauth_uri: `otpauth://totp/Brightwater%20Hale:client?secret=${shown}&issuer=Brightwater%20Hale`,
+        manual_key: shown,
+      });
+    },
+    "POST /v1/portal/auth/mfa/setup/verify": ({ body, persona }) => {
+      const given = (body ?? {}) as { mfa_token?: string; totp?: string };
+      const token = given.mfa_token ?? "";
+      if (token === "" || spent.has(token) || !setupShown.has(token)) {
+        return json(errorBody("mfa_expired"), 410);
+      }
+      if (given.totp !== FIXTURE_TOTP)
+        return json(errorBody("mfa_mismatch", { tries_left: 2 }), 401);
+      spent.add(token); // the codes come back once
+      return json({
+        backup_codes: [...FIXTURE_BACKUP_CODES],
+        session: signedIn(persona ?? "tess-moreno"),
+      });
+    },
+    "POST /v1/invitations/accept": ({ body, persona }) => {
+      const given = (body ?? {}) as Partial<AcceptInvitationIn>;
+      const found = options.invitation;
+      const token = given.token ?? "";
+      if (
+        found === undefined ||
+        token === "" ||
+        accepted.has(token) ||
+        (found.terms_version != null && given.terms_version !== found.terms_version)
+      ) {
+        return json({ detail: "not found" }, 404);
+      }
+      accepted.add(token);
+      const who = persona ?? "sam-ortiz";
+      const out: AcceptedInvitationOut = {
+        tenant_id: stableId("firm:brightwater-hale"),
+        engagement_id: stableId(`portal:invitation:${who}:engagement`),
+        session: {
+          state: "signed_in",
+          landing:
+            found.access.kind === "delegate"
+              ? "requests"
+              : (PORTAL_SHELLS[who]?.landing ?? "home"),
+        },
+      };
+      return json(out);
+    },
     "POST /v1/portal/auth/start": start,
     "POST /v1/portal/auth/verify": verify,
     "POST /v1/portal/auth/resend": ({ body }) => {

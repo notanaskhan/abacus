@@ -31,11 +31,24 @@ from abacus.modules.identity.firm_settings import (
     set_firm_time_zone,
     set_letter_policy,
 )
-from abacus.modules.identity.invitations import accept_invitation
+from abacus.modules.identity.invitations import (
+    VIEWER_ADDRESS_HEADER,
+    accept_invitation,
+    accept_portal_invitation,
+    preview_bucket,
+    preview_invitation,
+)
 from abacus.modules.identity.me import FirmFacts, firm_facts, me_details, set_default_office
 from abacus.modules.identity.mfa_floor import mfa_required
-from abacus.modules.identity.portal_contract import MeMfaOut, MePortalOut
-from abacus.modules.identity.portal_session import factor_enrolled
+from abacus.modules.identity.portal_contract import (
+    InvitationAccessOut,
+    InvitationPreviewIn,
+    InvitationPreviewOut,
+    MeMfaOut,
+    MePortalOut,
+    PortalSignInVerifyOut,
+)
+from abacus.modules.identity.portal_session import PortalInvitee, factor_enrolled
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
     IDENTITY,
@@ -46,6 +59,7 @@ from abacus.modules.identity.routing import (
     AbacusRouter,
     current_context,
     current_identity,
+    current_invitee,
     current_member,
     current_signed_in,
     current_staff,
@@ -416,27 +430,84 @@ invitation_router = AbacusRouter(prefix="/v1/invitations", tags=["invitations"])
 
 
 class AcceptInvitationIn(BaseModel):
+    """v2 (P-08-T18) adds the terms the invitee accepted (`InvitationAcceptV2In`'s field)."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     token: Annotated[str, Field(min_length=20, max_length=200), classified("restricted")]
+    terms_version: Annotated[int | None, Field(ge=1), classified("internal")] = None
 
 
 class AcceptedInvitationOut(BaseModel):
+    """`session` (v2, portal only): `signed_in` with the landing (the session accepted with
+    continues), or the second step the new grants need, with its `mfa_token`."""
+
     model_config = ConfigDict(frozen=True)
 
     tenant_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+    session: Annotated[PortalSignInVerifyOut | None, classified("internal")] = None
 
 
 @invitation_router.post("/accept", action=IDENTITY, response_model=AcceptedInvitationOut)
 async def accept_invitation_route(
-    body: AcceptInvitationIn, identity: Annotated[VerifiedIdentity, Depends(current_identity)]
-) -> AcceptedInvitationOut:
-    """A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet."""
-    accepted = await accept_invitation(identity, body.token)
-    return AcceptedInvitationOut(
-        tenant_id=accepted.tenant_id, engagement_id=accepted.engagement_id
+    body: AcceptInvitationIn,
+    who: Annotated[PortalInvitee | VerifiedIdentity, Depends(current_invitee)],
+) -> Response:
+    """A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet. On the
+    portal (v2) the invitee's code session accepts, with the invitation's terms version."""
+    if isinstance(who, PortalInvitee):
+        accepted = await accept_portal_invitation(who, body.token, body.terms_version)
+    else:
+        accepted = await accept_invitation(who, body.token)
+    step = accepted.step
+    out = AcceptedInvitationOut(
+        tenant_id=accepted.tenant_id,
+        engagement_id=accepted.engagement_id,
+        session=None
+        if step is None
+        else PortalSignInVerifyOut(
+            state=step.state,
+            landing=step.landing,  # pyright: ignore[reportArgumentType] -- a PortalLanding code
+            mfa_token=step.mfa_token,
+        ),
     )
+    # The hosted path's answer is unchanged (no `session`); a second-step token is no-store.
+    response = JSONResponse(out.model_dump(mode="json", exclude_none=True))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@invitation_router.post("/preview", action=PRE_SESSION, response_model=InvitationPreviewOut)
+async def preview_invitation_route(
+    body: InvitationPreviewIn, request: Request, host: Annotated[str | None, Header()] = None
+) -> Response:
+    """POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the
+    token out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the
+    edge forwards when trusted), kept only as a digest."""
+    bucket = preview_bucket(
+        request.headers.get(VIEWER_ADDRESS_HEADER),
+        request.client.host if request.client is not None else None,
+        body.token,
+    )
+    found = await preview_invitation(host, body.token, bucket)
+    out = InvitationPreviewOut(
+        firm_name=found.firm_name,
+        organisation_name=found.organisation_name,
+        invitee_name=found.invitee_name,
+        invitee_email=found.invitee_email,
+        access=InvitationAccessOut(
+            kind=found.access.kind,  # pyright: ignore[reportArgumentType] -- an invitation kind
+            item_count=found.access.item_count,
+            scope_label=found.access.scope_label,
+        ),
+        terms_url=found.terms_url,
+        terms_version=found.terms_version,
+        expires_at=found.expires_at,
+    )
+    response = JSONResponse(out.model_dump(mode="json"))
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 # --- Self-serve sign-up (SPEC-024 AC-1; TASK-040) ----------------------------------------------

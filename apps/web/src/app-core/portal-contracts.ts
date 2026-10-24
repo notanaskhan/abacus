@@ -3,8 +3,7 @@
 // rest are still drafts copied field for field from the backend's contract models, which the
 // P-08-T02 contract tests hold (backend/src/abacus/modules/identity/portal_contract.py,
 // backend/src/abacus/modules/portal/contract.py `PortalBrandingOut`): branding moves to the
-// generated type with P-08-T05's follow-up, links/renew and invitation preview when P-08-T21 and
-// T18 serve them (docs/screens/POR-01.md, Open gaps). In app-core so the portal domain, the portal
+// generated type with P-08-T05's follow-up, links/renew when P-08-T21 serves it (docs/screens/POR-01.md, Open gaps). In app-core so the portal domain, the portal
 // entry and the fixtures share them.
 
 import type { MePortalOut } from "@abacus/api-client";
@@ -55,23 +54,20 @@ export interface SignInOpening {
   code?: string;
   /** Submit the typed code on open. */
   verify?: boolean;
+  /** An invitation's token, moved from the `/accept` fragment to the page's memory (d). */
+  invitationToken?: string;
 }
 
-/** `POST /v1/invitations/preview` (POR-01 d): one 404 for every failure. */
-export interface InvitationPreviewOut {
-  firm_name: string;
-  organisation_name?: string | null;
-  invitee_name?: string | null;
-  invitee_email: string;
-  access: {
-    kind: "firm_invite" | "colleague" | "outside_org" | "delegate";
-    item_count?: number | null;
-    scope_label: string;
-  };
-  terms_url?: string | null;
-  terms_version?: number | null;
-  expires_at: string;
-}
+// POR-01 c, c′ and d (P-08-T19): the second step, its setup and the invitation, generated since
+// P-08-T17 and T18 serve them.
+export type {
+  AcceptInvitationIn,
+  AcceptedInvitationOut,
+  InvitationPreviewOut,
+  PortalMfaIn,
+  PortalMfaSetupOut,
+  PortalMfaSetupVerifyOut,
+} from "@abacus/api-client";
 
 /** The pre-session family's error body (docs/contracts/portal-identity.md §6). */
 export interface PortalErrorOut {

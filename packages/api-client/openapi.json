@@ -37,7 +37,21 @@
       },
       "AcceptInvitationIn": {
         "additionalProperties": false,
+        "description": "v2 (P-08-T18) adds the terms the invitee accepted (`InvitationAcceptV2In`'s field).",
         "properties": {
+          "terms_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Terms Version"
+          },
           "token": {
             "cls": "restricted",
             "maxLength": 200,
@@ -296,12 +310,24 @@
         "type": "object"
       },
       "AcceptedInvitationOut": {
+        "description": "`session` (v2, portal only): `signed_in` with the landing (the session accepted with\ncontinues), or the second step the new grants need, with its `mfa_token`.",
         "properties": {
           "engagement_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Engagement Id",
             "type": "string"
+          },
+          "session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalSignInVerifyOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "tenant_id": {
             "cls": "internal",
@@ -18793,6 +18819,45 @@
         "title": "IndependenceIn",
         "type": "object"
       },
+      "InvitationAccessOut": {
+        "properties": {
+          "item_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Item Count"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "firm_invite",
+              "colleague",
+              "outside_org",
+              "delegate"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "scope_label": {
+            "cls": "confidential",
+            "title": "Scope Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "scope_label"
+        ],
+        "title": "InvitationAccessOut",
+        "type": "object"
+      },
       "InvitationIn": {
         "additionalProperties": false,
         "description": "O3 \"Invite\u2026\": MFA from firm policy, 14 days; the email is the firm's Invitation template.",
@@ -18880,6 +18945,104 @@
           "portal_status"
         ],
         "title": "InvitationOut",
+        "type": "object"
+      },
+      "InvitationPreviewIn": {
+        "additionalProperties": false,
+        "description": "POST keeps the token out of URLs and logs.",
+        "properties": {
+          "token": {
+            "cls": "restricted",
+            "maxLength": 128,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "InvitationPreviewIn",
+        "type": "object"
+      },
+      "InvitationPreviewOut": {
+        "description": "POR-01 d. Every failure (expired, used, revoked, malformed, a staff member's) answers the\nsame 404.",
+        "properties": {
+          "access": {
+            "$ref": "#/components/schemas/InvitationAccessOut",
+            "cls": "internal"
+          },
+          "expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "firm_name": {
+            "cls": "public",
+            "title": "Firm Name",
+            "type": "string"
+          },
+          "invitee_email": {
+            "cls": "confidential",
+            "title": "Invitee Email",
+            "type": "string"
+          },
+          "invitee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Invitee Name"
+          },
+          "organisation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Organisation Name"
+          },
+          "terms_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Terms Url"
+          },
+          "terms_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Terms Version"
+          }
+        },
+        "required": [
+          "firm_name",
+          "invitee_email",
+          "access",
+          "expires_at"
+        ],
+        "title": "InvitationPreviewOut",
         "type": "object"
       },
       "InvitationRevokedOut": {
@@ -87326,7 +87489,7 @@
     },
     "/v1/invitations/accept": {
       "post": {
-        "description": "A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet.",
+        "description": "A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet. On the\nportal (v2) the invitee's code session accepts, with the invitation's terms version.",
         "operationId": "accept_invitation",
         "parameters": [
           {
@@ -87413,6 +87576,97 @@
           "invitations"
         ],
         "x-abacus-action": "identity"
+      }
+    },
+    "/v1/invitations/preview": {
+      "post": {
+        "description": "POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the\ntoken out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the\nedge forwards when trusted), kept only as a digest.",
+        "operationId": "preview_invitation",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "host",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Host"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Preview Invitation Route",
+        "tags": [
+          "invitations"
+        ],
+        "x-abacus-action": "pre_session"
       }
     },
     "/v1/invitations/staff/accept": {

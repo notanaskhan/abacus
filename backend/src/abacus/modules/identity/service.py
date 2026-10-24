@@ -277,15 +277,22 @@ async def could(ctx: AuthContext, user_id: UUID, action: str, resource: Resource
     same `authorise` (roles, walls, attributes). For giving work to someone who can do it
     (TASK-019 security review M2): never a grant for the caller. Fresh-MFA actions answer False,
     since only the person themself can have signed in recently."""
-    found = [m for m in await active_memberships(user_id) if m.tenant_id == ctx.tenant_id]
+    return await member_could(ctx.tenant_id, user_id, action, resource)
+
+
+async def member_could(tenant_id: UUID, user_id: UUID, action: str, resource: Resource) -> bool:
+    """`could` for a firm and a person, with no caller: an invitation's acceptance asks whether
+    its inviter may still invite (P-08-T18, DEC-277). Fresh-MFA actions answer False."""
+    found = [m for m in await active_memberships(user_id) if m.tenant_id == tenant_id]
     if not found:
         return False
     other = AuthContext(
-        tenant=TenantContext(ctx.tenant_id, "human", str(user_id)),
+        tenant=TenantContext(tenant_id, "human", str(user_id)),
         user_id=user_id,
         membership_id=found[0].membership_id,
         firm_role=found[0].firm_role,
         mfa_at=None,
+        client=found[0].kind == "client",
     )
     try:
         await authorise(other, action, resource)

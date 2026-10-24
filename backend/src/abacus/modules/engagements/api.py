@@ -14,6 +14,7 @@ from abacus.modules.engagements.contacts import (
     contact_portal_user,
     designate_contact,
     engagement_contacts,
+    invitation_parties,
     mfa_designated,
     work_item_scope,
 )
@@ -136,11 +137,13 @@ from abacus.modules.identity.api import (
     register_attest_client,
     register_attest_client_column,
     register_clients_of_engagements,
+    register_contact_activation,
     register_engagement_client,
     register_engagement_resource,
     register_engagement_service_line,
     register_engagements_of_scope,
     register_independence,
+    register_invitation_parties,
     register_member_added,
     register_mfa_requirement,
     register_scope_resolver,
@@ -149,6 +152,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.identity.api import register_gates as register_condition_gates
 from abacus.modules.organisations.api import (
     OverviewSection,
+    activate_contact,
     register_client_engagements,
     register_open_requests,
     register_overview_section,
@@ -193,6 +197,9 @@ register_work_item_kind("assurance", AssuranceKind())
 register_work_item_kind("advisory_project", AdvisoryProjectKind())
 register_scope_resolver("client", client_scope)
 register_scope_resolver("client_entity", client_entity_scope)
+# P-08-T18: POR-01 d's names, and the contact an accepted invitation activates (organisations').
+register_invitation_parties(invitation_parties)
+register_contact_activation(activate_contact)
 # P-08-T17 (DEC-34, DEC-63): approvers, signing officers and SKE designees need the second step.
 register_mfa_requirement("engagement_designation", mfa_designated)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.

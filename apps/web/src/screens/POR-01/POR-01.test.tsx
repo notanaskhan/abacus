@@ -95,13 +95,15 @@ function everything(): string {
 }
 
 describe("POR-01 artboards", () => {
-  it("has scenarios for a–g, c′ and the 390 layout; builds a, b, e, f, g and M here", () => {
+  it("has scenarios for a–g, c′ and the 390 layout, and builds every one (P-08-T09, T19)", () => {
     expect(Object.keys(all)).toEqual(["a", "b", "c", "c2", "d", "e", "f", "g", "M"]);
-    expect(STATES).toEqual(["a", "b", "e", "f", "g", "M"]);
+    expect(STATES).toEqual(["a", "b", "c", "c2", "d", "e", "f", "g", "M"]);
     expect(all.c.persona).toBe("tess-moreno");
     expect(all.d.persona).toBe("sam-ortiz");
     expect(all.d.clock).toBe("2026-09-02T09:22:00-05:00");
-    for (const s of STATES) expect(scenarios[s].clock).toBe("2026-09-14T09:22:00-05:00");
+    for (const s of STATES.filter((x) => x !== "d")) {
+      expect(scenarios[s].clock).toBe("2026-09-14T09:22:00-05:00");
+    }
   });
 
   it("POR-01a email entry: the firm's card, the email on file, Continue and the footnote", async () => {
@@ -305,7 +307,7 @@ describe("POR-01 acceptance", () => {
     );
   });
 
-  it("an owner's code goes on to two-step verification (the card itself is P-08-T19's)", async () => {
+  it("an owner's code goes on to two-step verification", async () => {
     const { landed } = show("a", { scenario: all.c, opening: START.c });
     expect(await screen.findByRole("heading", { name: "Two-step verification" })).toBeTruthy();
     expect(landed).not.toHaveBeenCalled();
@@ -360,7 +362,7 @@ describe("POR-01 non-artboard states", () => {
 
 describe("POR-01 avoid", () => {
   it("POR-01 avoid: password fields, social sign-in, CAPTCHA, the product's name", async () => {
-    for (const state of ["a", "b", "e", "f", "g"] as const) {
+    for (const state of ["a", "b", "c", "c2", "d", "e", "f", "g"] as const) {
       show(state);
       await screen.findByRole("heading");
       await waitFor(() => {
@@ -374,5 +376,204 @@ describe("POR-01 avoid", () => {
       restore?.();
       restore = undefined;
     }
+  });
+});
+
+// --- Part 2 (P-08-T19): c, c′ and d -----------------------------------------------------------
+
+const TESS = START.c.email;
+const SAM = START.d.email;
+
+describe("POR-01 part 2: two-step verification (c)", () => {
+  it("POR-01c: the authenticator's code, the 30-day trust toggle, Verify and a backup code", async () => {
+    show("c");
+    expect(await screen.findByRole("heading", { name: "Two-step verification" })).toBeTruthy();
+    expect(screen.getByText("Enter the 6-digit code from your authenticator app.")).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Authenticator code" })).toBeTruthy();
+    const trust = screen.getByRole("switch", { name: "Trust this device for 30 days" });
+    expect(trust.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Verify" }).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Use a backup code" })).toBeTruthy();
+  });
+
+  it("POR-01c: the right code with trust on signs in and lands home", async () => {
+    const { seen, landed } = show("c");
+    await screen.findByRole("heading", { name: "Two-step verification" });
+    fireEvent.click(screen.getByRole("switch", { name: "Trust this device for 30 days" }));
+    typeCode("481027");
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    await waitFor(() => {
+      expect(landed).toHaveBeenCalledWith("home");
+    });
+    const [call] = calls(seen, "/v1/portal/auth/mfa");
+    expect(call?.body).toMatchObject({ totp: "481027", trust_device: true });
+    expect(TESS).toContain("tess.moreno");
+  });
+
+  it("POR-01c: a wrong code shows the tries left; the third locks like g", async () => {
+    show("c");
+    await screen.findByRole("heading", { name: "Two-step verification" });
+    typeCode("000000");
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    expect(await screen.findByText("That code didn't match. 2 tries left.")).toBeTruthy();
+    for (let i = 0; i < 2; i += 1) {
+      typeCode("000000");
+      fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+      await waitFor(() => {
+        expect(
+          screen.queryByText("That code didn't match. 2 tries left.") === null ||
+            screen.queryByRole("heading", { name: "Too many attempts" }) !== null,
+        ).toBe(true);
+      });
+    }
+    expect(await screen.findByRole("heading", { name: "Too many attempts" })).toBeTruthy();
+  });
+
+  it("POR-01c: the backup-code path verifies a code once", async () => {
+    const { seen, landed } = show("c");
+    await screen.findByRole("heading", { name: "Two-step verification" });
+    fireEvent.click(screen.getByRole("button", { name: "Use a backup code" }));
+    const field = screen.getByRole<HTMLInputElement>("textbox", { name: "Backup code" });
+    expect(field.type).toBe("text");
+    fireEvent.change(field, { target: { value: "7kq2-m9xd-4htp-wb3r" } });
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    await waitFor(() => {
+      expect(landed).toHaveBeenCalledWith("home");
+    });
+    expect(calls(seen, "/v1/portal/auth/mfa")[0]?.body).toMatchObject({
+      backup_code: "7kq2-m9xd-4htp-wb3r",
+    });
+    expect(screen.getByRole("button", { name: "Use your authenticator app" })).toBeTruthy();
+  });
+});
+
+describe("POR-01 part 2: two-step setup (c′, DF-17)", () => {
+  async function toCodes(): Promise<{ seen: Seen; landed: ReturnType<typeof vi.fn> }> {
+    const shown = show("c2");
+    expect(
+      await screen.findByRole("heading", { name: "Set up two-step verification" }),
+    ).toBeTruthy();
+    expect(await screen.findByTestId("manual-key")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Open in your authenticator app" }).getAttribute("href"),
+    ).toMatch(/^otpauth:\/\/totp\//);
+    typeCode("481027");
+    expect(await screen.findByRole("heading", { name: "Save your backup codes" })).toBeTruthy();
+    return shown;
+  }
+
+  it("POR-01c′: the key, the first code, then 8 backup codes behind a confirm step", async () => {
+    const { seen, landed } = await toCodes();
+    expect(calls(seen, "/v1/portal/auth/mfa/setup")).toHaveLength(1);
+    const list = screen.getByRole("list", { name: "Backup codes" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(8);
+    const done = screen.getByRole<HTMLButtonElement>("button", { name: "Continue" });
+    expect(done.disabled).toBe(true); // no way past without the confirm
+    expect(landed).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("switch", { name: "I've saved these codes" }));
+    fireEvent.click(done);
+    await waitFor(() => {
+      expect(landed).toHaveBeenCalledWith("home");
+    });
+  });
+
+  it("POR-01c′: backup codes cannot be shown twice", async () => {
+    const { seen } = await toCodes();
+    const first = within(screen.getByRole("list", { name: "Backup codes" }))
+      .getAllByRole("listitem")
+      .map((li) => li.textContent);
+    fireEvent.click(screen.getByRole("switch", { name: "I've saved these codes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("list", { name: "Backup codes" })).toBeNull();
+    });
+    for (const code of first) expect(document.body.textContent).not.toContain(code);
+    // Asked for once, answered once: nothing on the page can bring them back.
+    expect(calls(seen, "/v1/portal/auth/mfa/setup/verify")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
+  });
+});
+
+describe("POR-01 part 2: invitation acceptance (d)", () => {
+  it("POR-01d: Sam Ortiz's invitation: 9 items, read-only email, Name, Organization, Access", async () => {
+    show("d");
+    expect(
+      await screen.findByRole("heading", { name: "Brightwater Hale invited you" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Brightwater Hale LLP is auditing the Northwind Robotics 401(k) Plan and has asked Keystone Retirement Services for 9 items. You'll only see those requests.",
+      ),
+    ).toBeTruthy();
+    const email = screen.getByRole<HTMLInputElement>("textbox", { name: "Email" });
+    expect(email.value).toBe(SAM);
+    expect(email.readOnly).toBe(true);
+    expect(screen.getByText("Sam Ortiz")).toBeTruthy();
+    expect(screen.getByText("Keystone Retirement Services")).toBeTruthy();
+    expect(screen.getByText("Requests delegated to you")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: /Brightwater Hale client portal terms/ })
+        .getAttribute("href"),
+    ).toBe("https://www.brightwaterhale.example/portal-terms");
+  });
+
+  it("POR-01d: Accept and continue waits for the terms toggle", async () => {
+    const { seen } = show("d");
+    await screen.findByRole("heading", { name: "Brightwater Hale invited you" });
+    const accept = screen.getByRole<HTMLButtonElement>("button", { name: "Accept and continue" });
+    expect(accept.disabled).toBe(true);
+    const terms = screen.getByRole("switch", {
+      name: "I agree to the Brightwater Hale client portal terms",
+    });
+    expect(terms.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(terms);
+    expect(accept.disabled).toBe(false);
+    fireEvent.click(accept);
+    expect(await screen.findByRole("heading", { name: "Check your email" })).toBeTruthy();
+    expect(calls(seen, "/v1/portal/auth/start")[0]?.body).toMatchObject({
+      email: SAM,
+      invitation_token: START.d.invitationToken,
+    });
+  });
+
+  it("POR-01d: after the code the invitation is accepted with the terms version and Sam lands on his requests", async () => {
+    const { seen, landed } = show("d");
+    await screen.findByRole("heading", { name: "Brightwater Hale invited you" });
+    fireEvent.click(
+      screen.getByRole("switch", { name: "I agree to the Brightwater Hale client portal terms" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Accept and continue" }));
+    await screen.findByRole("heading", { name: "Check your email" });
+    typeCode("481027");
+    await waitFor(() => {
+      expect(landed).toHaveBeenCalledWith("requests");
+    });
+    expect(calls(seen, "/v1/invitations/accept")).toHaveLength(1);
+    expect(calls(seen, "/v1/invitations/accept")[0]?.body).toEqual({
+      token: START.d.invitationToken,
+      terms_version: 1,
+    });
+  });
+
+  it("POR-01d: any failed preview gets the one answer, naming the firm", async () => {
+    show("d", {
+      scenario: {
+        ...scenarios.d,
+        handlers: {
+          ...scenarios.d.handlers,
+          "POST /v1/invitations/preview": () => json({ detail: "not found" }, 404),
+        },
+      },
+    });
+    expect(
+      await screen.findByRole("heading", { name: "This invitation can't be used" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "This invitation link can't be used. Ask Brightwater Hale to send you a new one.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Accept and continue" })).toBeNull();
   });
 });

@@ -7,21 +7,26 @@ import {
   Icon,
   PortalBrandProvider,
   Spinner,
+  Toggle,
   cn,
   toast,
   usePortalBrand,
 } from "@abacus/ui";
 import { type JSX, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { PLANNED_VISIBLE } from "../../app-core/planned";
 import {
+  type InvitationPreviewOut,
   type PortalLanding,
+  type PortalMfaSetupOut,
   type PortalSignInStartOut,
+  type PortalSignInVerifyOut,
   type SignInFailure,
   type SignInOpening,
   brandOf,
   failureOf,
   failureWords,
+  invitation,
+  portalAccessToken,
   setPortalSession,
   signIn,
   useBranding,
@@ -39,13 +44,34 @@ import { COPY } from "./copy";
 //   f  a wrong code: the inset red-ink ring and "2 tries left" in a polite live region
 //   g  locked for 15 minutes, naming the firm's support contact; focus moves to the title
 //
-// A signed-in answer routes by the person's landing (POR-02, POR-14, …; `onSignedIn`). The
-// two-step card (c, c′) and invitation acceptance (d) are P-08-T19's. At 390 the card fills the
-// width with 42 × 50 boxes and the primary button pinned 16 px above the bottom (DF-03).
+// Part 2 (P-08-T19):
+//
+//   c  the second step for a person the firm's MFA floor covers: the authenticator's six digits,
+//      "Trust this device for 30 days", Verify, and "Use a backup code" (a one-time code instead)
+//   c′ its first-time setup (DF-17): the authenticator link and the manual key, the first code,
+//      then the 8 backup codes shown once behind "I've saved these codes"; nothing keeps them
+//   d  an invitation (`/accept#token=…`): the preview (one 404 for every failure), the read-only
+//      email, Name, Organization and Access, the terms toggle; "Accept and continue" asks for a
+//      code with the invitation's token, and after the code (and any second step) the invitation
+//      is accepted with the invitee's own session and the person goes to their landing
+//
+// A signed-in answer routes by the person's landing (POR-02, POR-14, …; `onSignedIn`). At 390 the
+// card fills the width with 42 × 50 boxes and the primary button pinned 16 px above the bottom
+// (DF-03).
 
 const MIN_SPINNER_MS = 600;
 
-type Step = "email" | "code" | "expired" | "locked" | "second";
+type Step =
+  | "email"
+  | "code"
+  | "expired"
+  | "locked"
+  | "second"
+  | "setup"
+  | "codes"
+  | "invite"
+  | "invalid"
+  | "done";
 
 export interface POR01Props {
   /** What the page has done when it opens (an artboard opens part-way). */
@@ -95,11 +121,37 @@ export function POR01({ opening, mobile = false, onSignedIn }: POR01Props): JSX.
   const [failure, setFailure] = useState<SignInFailure | null>(null);
   const [busy, setBusy] = useState(false);
   const opened = useRef(false);
+  // c and c′: the single-use second-step token (memory only), and what the person types.
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [useBackup, setUseBackup] = useState(false);
+  const [totp, setTotp] = useState("");
+  const [backupCode, setBackupCode] = useState("");
+  const [trust, setTrust] = useState(false);
+  const [setupKey, setSetupKey] = useState<PortalMfaSetupOut | null>(null);
+  const setupAsked = useRef<string | null>(null);
+  // The 8 backup codes, shown once: dropped from memory when the person continues.
+  const [backupCodes, setBackupCodes] = useState<readonly string[] | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [afterCodes, setAfterCodes] = useState<PortalSignInVerifyOut | null>(null);
+  // d: the invitation's token (memory only), its preview, the terms toggle, and once accepted.
+  const [invitationToken] = useState(opening?.invitationToken);
+  const [invite, setInvite] = useState<InvitationPreviewOut | null>(null);
+  const [terms, setTerms] = useState(false);
+  const accepted = useRef(false);
 
   const fail = (f: SignInFailure): void => {
-    if (f.code === "sign_in_locked") {
+    if (f.code === "sign_in_locked" || f.code === "mfa_locked") {
+      setMfaToken(null);
       setStep("locked");
       return;
+    }
+    if (f.code === "mfa_expired") {
+      // The step's token is spent: start again from the email (no session without it).
+      setMfaToken(null);
+      setStep(invite === null ? "email" : "invite");
+      setCode("");
+      setTotp("");
+      setChallenge(null);
     }
     if (f.code === "link_expired") {
       setStep("expired");
@@ -119,6 +171,7 @@ export function POR01({ opening, mobile = false, onSignedIn }: POR01Props): JSX.
         signIn.start({
           email: address.trim(),
           ...(linkToken === undefined ? {} : { link_token: linkToken }),
+          ...(invitationToken === undefined ? {} : { invitation_token: invitationToken }),
         }),
         wait(MIN_SPINNER_MS),
       ]);
@@ -142,19 +195,132 @@ export function POR01({ opening, mobile = false, onSignedIn }: POR01Props): JSX.
     setFailure(null);
     try {
       const answer = await signIn.verify({ challenge_id: against.challenge_id, code: digits });
-      if (answer.state === "signed_in") {
-        // The token and its lifetime into the auth client's memory (P-08-T11).
-        setPortalSession(answer);
-        onSignedIn?.(answer.landing ?? "none");
-      } else {
-        setStep("second");
-      }
+      await finish(answer);
     } catch (error) {
       fail(failureOf(error));
     } finally {
       setBusy(false);
     }
   };
+
+  /** A sign-in answer: a session (then, on an invitation, its acceptance), or a second step. */
+  const finish = async (answer: PortalSignInVerifyOut): Promise<void> => {
+    if (answer.state !== "signed_in") {
+      setMfaToken(answer.mfa_token ?? null);
+      setTotp("");
+      setUseBackup(false);
+      setStep(answer.state === "mfa_setup_required" ? "setup" : "second");
+      return;
+    }
+    // The token and its lifetime into the auth client's memory (P-08-T11).
+    setPortalSession(answer);
+    if (invitationToken !== undefined && invite !== null && !accepted.current) {
+      await accept();
+      return;
+    }
+    onSignedIn?.(answer.landing ?? "none");
+  };
+
+  /** d, after the code: the invitee's own session accepts, with the terms version shown. */
+  const accept = async (): Promise<void> => {
+    const bearer = portalAccessToken();
+    if (invitationToken === undefined || invite === null || bearer === null) return;
+    try {
+      const done = await invitation.accept(
+        {
+          token: invitationToken,
+          ...(invite.terms_version == null ? {} : { terms_version: invite.terms_version }),
+        },
+        bearer,
+      );
+      accepted.current = true;
+      const next = done.session;
+      if (next != null && next.state !== "signed_in") {
+        await finish(next); // the new access asks for the second step (P-08-T17)
+        return;
+      }
+      onSignedIn?.(next?.landing ?? "none");
+    } catch {
+      setStep("invalid");
+    }
+  };
+
+  /** c: the authenticator's code, or a backup code, with "trust this device". */
+  const secondStep = async (): Promise<void> => {
+    if (mfaToken === null) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      const answer = await signIn.mfa({
+        mfa_token: mfaToken,
+        ...(useBackup ? { backup_code: backupCode.trim() } : { totp }),
+        trust_device: trust,
+      });
+      await finish(answer);
+    } catch (error) {
+      fail(failureOf(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** c′: the first code enrols the factor; the backup codes come back once. */
+  const verifySetup = async (digits: string): Promise<void> => {
+    if (mfaToken === null || digits.length !== 6) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      const done = await signIn.mfaSetupVerify(mfaToken, digits);
+      setMfaToken(null);
+      setBackupCodes(done.backup_codes);
+      setAfterCodes(done.session);
+      setStep("codes");
+    } catch (error) {
+      fail(failureOf(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Leave the backup codes: they are dropped from memory and never drawn again. */
+  const leaveCodes = async (): Promise<void> => {
+    const next = afterCodes;
+    setBackupCodes(null);
+    setAfterCodes(null);
+    setStep("done"); // the codes are gone from the page and from memory
+    if (next !== null) await finish(next);
+  };
+
+  // c′ opens: ask once per token for the authenticator's key.
+  useEffect(() => {
+    if (step !== "setup" || mfaToken === null || setupAsked.current === mfaToken) return;
+    setupAsked.current = mfaToken;
+    void signIn
+      .mfaSetup(mfaToken)
+      .then(setSetupKey)
+      .catch((error: unknown) => {
+        fail(failureOf(error));
+      });
+  }, [step, mfaToken]);
+
+  // d opens: the invitation's preview, or the one answer every failure gets.
+  useEffect(() => {
+    if (invitationToken === undefined) return;
+    if (invitationToken === "") {
+      setStep("invalid"); // /accept without a token: the same answer as any bad one
+      return;
+    }
+    setStep("invite");
+    void invitation
+      .preview(invitationToken)
+      .then((found) => {
+        setInvite(found);
+        setEmail(found.invitee_email);
+      })
+      .catch(() => {
+        setStep("invalid");
+      });
+  }, [invitationToken]);
 
   // An artboard (or a reminder link with a remembered address) opens part-way: replay it once.
   useEffect(() => {
@@ -182,9 +348,14 @@ export function POR01({ opening, mobile = false, onSignedIn }: POR01Props): JSX.
   const words =
     failure === null
       ? null
-      : failure.code === "code_mismatch" && failure.triesLeft !== undefined
+      : (failure.code === "code_mismatch" || failure.code === "mfa_mismatch") &&
+          failure.triesLeft !== undefined
         ? COPY.f.helper(failure.triesLeft)
-        : failureWords(failure.code, { person: brand.supportContactName, firm });
+        : failure.code === "mfa_expired"
+          ? COPY.c.expired
+          : failure.code === "mfa_unavailable"
+            ? COPY.c.unavailable
+            : failureWords(failure.code, { person: brand.supportContactName, firm });
 
   const footer = <SignInFooter />;
   const footnote = (
@@ -385,12 +556,296 @@ export function POR01({ opening, mobile = false, onSignedIn }: POR01Props): JSX.
         </AuthCard>
       </div>
     );
-  } else {
-    // c and c′ (two-step) are P-08-T19's: a planned state, drawn only in fixture builds.
+  } else if (step === "second") {
+    const invalid = failure?.code === "mfa_mismatch";
+    card = (
+      <AuthCard
+        brand="header"
+        fluid={mobile}
+        title={COPY.c.title}
+        lead={useBackup ? COPY.c.backupBody : COPY.c.body}
+        footer={footer}
+      >
+        {useBackup ? (
+          <label className="flex flex-col gap-[6px]">
+            <span className="text-dense text-ink-2">{COPY.c.backupField}</span>
+            <input
+              type="text"
+              name="backup-code"
+              autoComplete="one-time-code"
+              autoCapitalize="characters"
+              spellCheck={false}
+              value={backupCode}
+              aria-invalid={invalid}
+              aria-describedby={helperId}
+              onChange={(e) => {
+                setBackupCode(e.target.value);
+                if (failure !== null) setFailure(null);
+              }}
+              className={cn(
+                AUTH_FIELD,
+                "h-[40px] rounded-pill px-[16px] font-mono tabular-nums inset-shadow-hair",
+                invalid && "inset-ring-1 inset-ring-red-ink",
+              )}
+            />
+          </label>
+        ) : (
+          <CodeInput
+            value={totp}
+            onChange={(v) => {
+              setTotp(v);
+              if (failure !== null) setFailure(null);
+            }}
+            onComplete={() => undefined}
+            label={COPY.c.code}
+            autoFocus
+            gap={mobile ? 6 : 8}
+            compact={mobile}
+            invalid={invalid}
+            describedBy={helperId}
+          />
+        )}
+        <Helper id={helperId} text={words} />
+        <div className="flex min-h-[34px] items-center justify-between gap-[12px]">
+          <span id={`${helperId}-trust`} className="text-dense text-ink">
+            {COPY.c.trust}
+          </span>
+          <Toggle
+            checked={trust}
+            onChange={setTrust}
+            label={COPY.c.trust}
+            aria-labelledby={`${helperId}-trust`}
+          />
+        </div>
+        {primary(
+          <AuthButton
+            disabled={busy || (useBackup ? backupCode.trim().length < 16 : totp.length !== 6)}
+            onClick={() => void secondStep()}
+          >
+            {COPY.c.verify}
+          </AuthButton>,
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setUseBackup(!useBackup);
+            setFailure(null);
+          }}
+          className="inline-flex min-h-[24px] items-center self-center text-dense font-medium text-ink"
+        >
+          {useBackup ? COPY.c.useApp : COPY.c.backup}
+        </button>
+      </AuthCard>
+    );
+  } else if (step === "setup") {
+    const invalid = failure?.code === "mfa_mismatch";
+    card = (
+      <AuthCard
+        brand="header"
+        fluid={mobile}
+        title={COPY.setup.title}
+        lead={named ? COPY.setup.body(firm) : COPY.setup.bodyNeutral}
+        footer={footer}
+      >
+        {setupKey === null ? (
+          <Spinner label={COPY.setup.title} size={12} showLabel={false} />
+        ) : (
+          <div className="flex flex-col gap-[8px] rounded-[10px] bg-nested p-[14px]">
+            <a
+              href={setupKey.otpauth_uri}
+              className="inline-flex min-h-[24px] items-center text-dense font-medium text-ink"
+            >
+              {COPY.setup.open}
+            </a>
+            <span className="text-meta text-ink-3">{COPY.setup.key}</span>
+            <code
+              data-testid="manual-key"
+              className="select-all break-all text-dense tabular-nums text-ink"
+            >
+              {setupKey.manual_key}
+            </code>
+          </div>
+        )}
+        <CodeInput
+          value={totp}
+          onChange={(v) => {
+            setTotp(v);
+            if (failure !== null) setFailure(null);
+          }}
+          onComplete={(v) => void verifySetup(v)}
+          label={COPY.c.code}
+          autoFocus={false}
+          gap={mobile ? 6 : 8}
+          compact={mobile}
+          invalid={invalid}
+          describedBy={helperId}
+        />
+        <Helper id={helperId} text={words} />
+        {primary(
+          <AuthButton
+            disabled={busy || setupKey === null || totp.length !== 6}
+            onClick={() => void verifySetup(totp)}
+          >
+            {COPY.setup.verify}
+          </AuthButton>,
+        )}
+      </AuthCard>
+    );
+  } else if (step === "codes") {
+    card = (
+      <AuthCard
+        brand="header"
+        fluid={mobile}
+        title={COPY.setup.codesTitle}
+        lead={COPY.setup.codesBody}
+        footer={footer}
+      >
+        <ul
+          aria-label={COPY.setup.codesList}
+          className="grid grid-cols-2 gap-[8px] rounded-[10px] bg-nested p-[14px]"
+        >
+          {(backupCodes ?? []).map((c) => (
+            <li key={c} className="text-dense tabular-nums text-ink">
+              {c}
+            </li>
+          ))}
+        </ul>
+        <div className="flex min-h-[34px] items-center justify-between gap-[12px]">
+          <span id={`${helperId}-saved`} className="text-dense text-ink">
+            {COPY.setup.saved}
+          </span>
+          <Toggle
+            checked={saved}
+            onChange={setSaved}
+            label={COPY.setup.saved}
+            aria-labelledby={`${helperId}-saved`}
+          />
+        </div>
+        {primary(
+          <AuthButton disabled={!saved || busy} onClick={() => void leaveCodes()}>
+            {COPY.setup.done}
+          </AuthButton>,
+        )}
+      </AuthCard>
+    );
+  } else if (step === "invite") {
+    const delegated =
+      invite?.access.kind === "delegate" &&
+      invite.access.item_count != null &&
+      invite.organisation_name != null;
+    const inviter = invite?.firm_name ?? firm;
+    card = (
+      <AuthCard
+        brand="header"
+        fluid={mobile}
+        title={COPY.d.title(firm === "" ? inviter : firm)}
+        lead={
+          invite === null
+            ? undefined
+            : delegated
+              ? COPY.d.body(
+                  invite.firm_name,
+                  invite.access.scope_label,
+                  invite.organisation_name ?? "",
+                  invite.access.item_count ?? 0,
+                )
+              : COPY.d.bodyScope(invite.firm_name, invite.access.scope_label)
+        }
+        footer={footer}
+      >
+        {invite === null ? (
+          <Spinner label={COPY.d.accept} size={12} showLabel={false} />
+        ) : (
+          <>
+            <label className="relative flex items-center">
+              <span className="sr-only">{COPY.d.email}</span>
+              <Icon
+                name="mail"
+                size={14}
+                className="pointer-events-none absolute left-[14px] text-ink-3"
+              />
+              <input
+                type="email"
+                name="email"
+                value={invite.invitee_email}
+                readOnly
+                aria-readonly="true"
+                className={cn(
+                  AUTH_FIELD,
+                  "h-[40px] rounded-pill pl-[36px] text-ink-2 inset-shadow-hair",
+                )}
+              />
+            </label>
+            <dl className="flex flex-col">
+              {invite.invitee_name != null && (
+                <Kv term={COPY.d.name} value={invite.invitee_name} />
+              )}
+              {invite.organisation_name != null && (
+                <Kv term={COPY.d.organization} value={invite.organisation_name} />
+              )}
+              <Kv
+                term={COPY.d.access}
+                value={
+                  invite.access.kind === "delegate" ? COPY.d.delegated : invite.access.scope_label
+                }
+              />
+            </dl>
+            <div className="flex min-h-[34px] items-center justify-between gap-[12px]">
+              <span id={`${helperId}-terms`} className="text-dense text-ink-2">
+                {COPY.d.agree}{" "}
+                {invite.terms_url == null ? (
+                  <span className="font-medium text-ink">{COPY.d.terms(firm || inviter)}</span>
+                ) : (
+                  <a
+                    href={invite.terms_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex min-h-[24px] items-center font-medium text-ink"
+                  >
+                    {COPY.d.terms(firm || inviter)}
+                    <span aria-hidden="true" className="ml-[4px] text-ink-3">
+                      →
+                    </span>
+                  </a>
+                )}
+              </span>
+              <Toggle
+                checked={terms}
+                onChange={setTerms}
+                label={`${COPY.d.agree} ${COPY.d.terms(firm || inviter)}`}
+                aria-labelledby={`${helperId}-terms`}
+              />
+            </div>
+            {words !== null && <Helper id={helperId} text={words} />}
+            {primary(
+              <AuthButton
+                disabled={!terms || busy}
+                onClick={() => void start(invite.invitee_email)}
+              >
+                {COPY.d.accept}
+              </AuthButton>,
+            )}
+          </>
+        )}
+      </AuthCard>
+    );
+  } else if (step === "done") {
     card = (
       <AuthCard brand="header" fluid={mobile} title={COPY.c.title} footer={footer}>
-        {PLANNED_VISIBLE && <p className="text-dense text-ink-3">{COPY.notBuilt}</p>}
+        <Spinner label={COPY.c.title} size={12} showLabel={false} />
       </AuthCard>
+    );
+  } else {
+    // An invitation that can't be used: one answer for every failure (no oracle).
+    card = (
+      <AuthCard
+        brand="header"
+        fluid={mobile}
+        tile={{ icon: "clock", tone: "neutral" }}
+        title={COPY.d.invalidTitle}
+        lead={named ? COPY.d.invalid(firm) : COPY.d.invalidNeutral}
+        footer={footer}
+      />
     );
   }
 
@@ -420,6 +875,16 @@ function Helper({ id, text }: { id: string; text: string | null }): JSX.Element 
     >
       {text ?? ""}
     </p>
+  );
+}
+
+/** d's 34 px key-value rows: Name, Organization, Access. */
+function Kv({ term, value }: { term: string; value: string }): JSX.Element {
+  return (
+    <div className="flex min-h-[34px] items-center justify-between gap-[12px] border-b-[0.5px] border-hair last:border-b-0">
+      <dt className="text-dense text-ink-3">{term}</dt>
+      <dd className="text-right text-dense font-medium text-ink">{value}</dd>
+    </div>
   );
 }
 

@@ -805,10 +805,19 @@ async def insert_invitation(session: AsyncSession, values: dict[str, object]) ->
     await session.execute(
         text(
             "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
-            "invited_by, expires_at) VALUES (:id, :tenant_id, :engagement_id, :email, :role, "
-            ":invited_by, clock_timestamp() + make_interval(days => :days))"
+            "invited_by, expires_at, kind, contact_id, grant_template, terms_version, terms_url) "
+            "VALUES (:id, :tenant_id, :engagement_id, :email, :role, :invited_by, "
+            "clock_timestamp() + make_interval(days => :days), :kind, :contact_id, "
+            "CAST(:grant_template AS jsonb), :terms_version, :terms_url)"
         ),
-        values,
+        {
+            "kind": "firm_invite",
+            "contact_id": None,
+            "grant_template": None,
+            "terms_version": None,
+            "terms_url": None,
+        }
+        | values,
     )
 
 
@@ -839,11 +848,13 @@ async def get_invitation(
 ) -> RowMapping | None:
     plain = text(
         "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
+        "kind, contact_id, grant_template, terms_version, terms_url, "
         "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
         "FROM client_invitations WHERE id = :id"
     )
     locked = text(
         "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
+        "kind, contact_id, grant_template, terms_version, terms_url, "
         "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
         "FROM client_invitations WHERE id = :id FOR UPDATE"
     )
@@ -873,6 +884,22 @@ async def set_invitation_status(
             "WHERE id = :id"
         ),
         {"id": invitation_id, "status": status, "by": accepted_by},
+    )
+
+
+async def accept_invitation_row(
+    session: AsyncSession, invitation_id: UUID, user_id: UUID, terms: bool
+) -> None:
+    """Accepted by `user_id`, with the terms' acceptance time when the invitation carries terms
+    (P-08-T18), in one statement (the table CHECKs that terms are accepted only on acceptance)."""
+    await session.execute(
+        text(
+            "UPDATE client_invitations SET status = 'accepted', accepted_by = :by, "
+            "accepted_at = clock_timestamp(), "
+            "terms_accepted_at = CASE WHEN :terms THEN clock_timestamp() END "
+            "WHERE id = :id AND status = 'pending'"
+        ),
+        {"id": invitation_id, "by": user_id, "terms": terms},
     )
 
 
