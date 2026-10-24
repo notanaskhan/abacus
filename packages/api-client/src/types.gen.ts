@@ -6881,12 +6881,23 @@ export type FirmRefIn = {
 
 /**
  * FirmRoleIn
+ *
+ * SPEC-024's firm role; with `role_template` (G-01-T05, AC4.2) the template, its level and
+ * the firm role it carries change together (`firm_role` is then a partner's oversight role).
  */
 export type FirmRoleIn = {
     /**
      * Firm Role
      */
-    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
+    firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
+    /**
+     * Level
+     */
+    level?: 'partner' | 'manager' | 'senior' | 'staff' | 'seasonal' | 'admin' | null;
+    /**
+     * Role Template
+     */
+    role_template?: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security' | null;
 };
 
 /**
@@ -15965,8 +15976,19 @@ export type StaffInvitationOut = {
 
 /**
  * StaffInviteIn
+ *
+ * SPEC-024's invitation, grown for ADM-02c (G-01-T05): the template and what the membership
+ * takes on acceptance. A seasonal invite needs `access_ends_on` (422 `access_ends_required`).
  */
 export type StaffInviteIn = {
+    /**
+     * Access Ends On
+     */
+    access_ends_on?: string | null;
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
     /**
      * Email
      */
@@ -15975,6 +15997,34 @@ export type StaffInviteIn = {
      * Firm Role
      */
     firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
+    /**
+     * Level
+     */
+    level?: 'partner' | 'manager' | 'senior' | 'staff' | 'seasonal' | 'admin' | null;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Offshore
+     */
+    offshore?: boolean;
+    /**
+     * Role Template
+     */
+    role_template?: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security' | null;
+    /**
+     * Service Lines
+     */
+    service_lines?: Array<'audit' | 'tax' | 'cas' | 'advisory'>;
+    /**
+     * Team Ids
+     */
+    team_ids?: Array<string>;
+    /**
+     * Title
+     */
+    title?: string | null;
 };
 
 /**
@@ -15989,16 +16039,49 @@ export type StaffInvitedOut = {
 
 /**
  * StaffListOut
+ *
+ * ADM-02a on the list envelope (G-01-T05): `items` in bands, `counts` per band over the
+ * filters, firm-wide `tallies`. `members` and `invitations` are SPEC-024's shape, kept for the
+ * legacy people screen until G-01-T17 retires it (unfiltered).
  */
 export type StaffListOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
     /**
      * Invitations
      */
     invitations: Array<StaffInvitationOut>;
     /**
+     * Items
+     */
+    items: Array<StaffRowV2Out>;
+    /**
      * Members
      */
     members: Array<StaffMemberOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    tallies: StaffTalliesOut;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -16030,7 +16113,8 @@ export type StaffMemberOut = {
 /**
  * StaffRowV2Out
  *
- * ADM-02a's row: the v2 shape `GET /v1/firm/staff` grows into (G-01-T05).
+ * ADM-02a's row: the v2 shape `GET /v1/firm/staff` grew into (G-01-T05). A pending
+ * invitation is a row too (ADM-02f): `invitation_id` set, `user_id` null.
  */
 export type StaffRowV2Out = {
     /**
@@ -16046,6 +16130,10 @@ export type StaffRowV2Out = {
      */
     band: 'partners' | 'managers' | 'seniors' | 'staff' | 'seasonal' | 'operations';
     /**
+     * Deactivated On
+     */
+    deactivated_on?: string | null;
+    /**
      * Display Name
      */
     display_name: string;
@@ -16057,6 +16145,10 @@ export type StaffRowV2Out = {
      * Invitation Expires On
      */
     invitation_expires_on?: string | null;
+    /**
+     * Invitation Id
+     */
+    invitation_id?: string | null;
     /**
      * Last Sign In At
      */
@@ -16093,7 +16185,61 @@ export type StaffRowV2Out = {
     /**
      * User Id
      */
-    user_id: string;
+    user_id: string | null;
+};
+
+/**
+ * StaffTalliesOut
+ *
+ * ADM-02a's tally strip, firm-wide (never filtered). `seats_used` counts pending invitations
+ * (AC3.4); `seats_total` is the provisioned seat count (DEC-285); `walls_active` is present only
+ * for a reader who may list walls (AC2.4).
+ */
+export type StaffTalliesOut = {
+    /**
+     * Operations
+     */
+    operations: number;
+    /**
+     * Partners
+     */
+    partners: number;
+    /**
+     * Professionals
+     */
+    professionals: number;
+    /**
+     * Seasonal
+     */
+    seasonal: number;
+    /**
+     * Seasonal Access Ends On
+     */
+    seasonal_access_ends_on?: string | null;
+    /**
+     * Seats Pending
+     */
+    seats_pending: number;
+    /**
+     * Seats Total
+     */
+    seats_total?: number | null;
+    /**
+     * Seats Used
+     */
+    seats_used: number;
+    /**
+     * Signed In Of
+     */
+    signed_in_of: number;
+    /**
+     * Sso Mfa
+     */
+    sso_mfa: number;
+    /**
+     * Walls Active
+     */
+    walls_active?: number | null;
 };
 
 /**
@@ -37396,10 +37542,6 @@ export type RoleTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RoleTemplatesError = RoleTemplatesErrors[keyof RoleTemplatesErrors];
@@ -37802,7 +37944,40 @@ export type StaffData = {
         'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Role Template
+         */
+        role_template?: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security' | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Team Id
+         */
+        team_id?: string | null;
+        /**
+         * Status
+         */
+        status?: MembershipStatus | null;
+        /**
+         * Band
+         */
+        band?: 'partners' | 'managers' | 'seniors' | 'staff' | 'seasonal' | 'operations' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
     url: '/v1/firm/staff';
 };
 
@@ -37866,6 +38041,10 @@ export type InviteStaffErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -38026,10 +38205,6 @@ export type PersonErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PersonError = PersonErrors[keyof PersonErrors];
@@ -38086,10 +38261,6 @@ export type UpdatePersonErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdatePersonError = UpdatePersonErrors[keyof UpdatePersonErrors];
@@ -38146,10 +38317,6 @@ export type DeactivatePersonErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeactivatePersonError = DeactivatePersonErrors[keyof DeactivatePersonErrors];
@@ -38318,10 +38485,6 @@ export type SetSecurityRoleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetSecurityRoleError = SetSecurityRoleErrors[keyof SetSecurityRoleErrors];

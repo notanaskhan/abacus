@@ -1,6 +1,11 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
-from abacus.modules.identity.api import AbacusRouter, register_office_list, register_settings_area
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    register_member_teams,
+    register_office_list,
+    register_settings_area,
+)
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
     contact_invitations_router,
@@ -17,6 +22,7 @@ from abacus.modules.organisations.live import (
 
 # P-06-T11: correlated name columns for another module's list (BND-01's client and office).
 from abacus.modules.organisations.repository import client_name_column, office_name_column
+from abacus.modules.organisations.rosters import member_teams, set_member_teams
 from abacus.modules.organisations.service import (
     ClientChoice,
     ClientNames,
@@ -81,6 +87,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.
 register_office_list(firm_offices)
+# G-01-T05: ADM-02 reads and replaces a person's teams through this.
+register_member_teams(member_teams, set_member_teams)
 # G-01-T04: the Offices & teams row of the settings overview's At a glance.
 register_settings_area("offices_teams", 20, offices_glance)
 # P-07-T09: CLI-02's overview sections organisations owns (metadata; `client.read`).

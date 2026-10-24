@@ -6917,6 +6917,8 @@ export const roleTemplatesQueryKey = (options?: Options<RoleTemplatesData>) => c
 
 /**
  * Role Templates Route
+ *
+ * ADM-02b: eight templates with counts, the grid and the locked agent row.
  */
 export const roleTemplatesOptions = (options?: Options<RoleTemplatesData>) => queryOptions<RoleTemplatesResponse, RoleTemplatesError, RoleTemplatesResponse, ReturnType<typeof roleTemplatesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7070,7 +7072,10 @@ export const staffQueryKey = (options?: Options<StaffData>) => createQueryKey('s
 /**
  * Staff Route
  *
- * SPEC-024: the firm's staff and pending invitations (firm administrators).
+ * ADM-02a (G-01-T05; AC3.1, AC3.2): staff and pending invitations in bands, searched by name
+ * or email (the term travels in the query string, never a path). Still `firm.manage_users`
+ * with fresh MFA (SPEC-024 AC-3's tests hold it there); G-01 section 4.3's move to
+ * `firm.read_people` waits on DEC-286.
  */
 export const staffOptions = (options?: Options<StaffData>) => queryOptions<StaffResponse, StaffError, StaffResponse, ReturnType<typeof staffQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7085,10 +7090,46 @@ export const staffOptions = (options?: Options<StaffData>) => queryOptions<Staff
     queryKey: staffQueryKey(options)
 });
 
+export const staffInfiniteQueryKey = (options?: Options<StaffData>): QueryKey<Options<StaffData>> => createQueryKey('staff', options, true);
+
+/**
+ * Staff Route
+ *
+ * ADM-02a (G-01-T05; AC3.1, AC3.2): staff and pending invitations in bands, searched by name
+ * or email (the term travels in the query string, never a path). Still `firm.manage_users`
+ * with fresh MFA (SPEC-024 AC-3's tests hold it there); G-01 section 4.3's move to
+ * `firm.read_people` waits on DEC-286.
+ */
+export const staffInfiniteOptions = (options?: Options<StaffData>) => {
+    const opts = infiniteQueryOptions<StaffResponse, StaffError, InfiniteData<StaffResponse>, QueryKey<Options<StaffData>>, string | null | Pick<QueryKey<Options<StaffData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<StaffData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await staff({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: staffInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 /**
  * Invite Staff Route
  *
- * SPEC-024 AC-3: a single-use, expiring link by email.
+ * SPEC-024 AC-3 and ADM-02c: a single-use, 14-day link by email; 409 `seats_full`,
+ * `already_member`; 422 `access_ends_required`.
  */
 export const inviteStaffMutation = (options?: Partial<Options<InviteStaffData>>): UseMutationOptions<InviteStaffResponse, InviteStaffError, Options<InviteStaffData>> => {
     const mutationOptions: UseMutationOptions<InviteStaffResponse, InviteStaffError, Options<InviteStaffData>> = {
@@ -7142,6 +7183,8 @@ export const personQueryKey = (options: Options<PersonData>) => createQueryKey('
 
 /**
  * Person Route
+ *
+ * ADM-02d: the person's template, attributes, walls, assignments and last sign-ins.
  */
 export const personOptions = (options: Options<PersonData>) => queryOptions<PersonResponse, PersonError, PersonResponse, ReturnType<typeof personQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7159,7 +7202,8 @@ export const personOptions = (options: Options<PersonData>) => queryOptions<Pers
 /**
  * Update Person Route
  *
- * Fresh MFA; 409 `stale_version`, `offshore_assignment_conflict`.
+ * Fresh MFA; a field sent as null clears it; 409 `stale_version`,
+ * `offshore_assignment_conflict`; 422 `access_ends_required`.
  */
 export const updatePersonMutation = (options?: Partial<Options<UpdatePersonData>>): UseMutationOptions<UpdatePersonResponse, UpdatePersonError, Options<UpdatePersonData>> => {
     const mutationOptions: UseMutationOptions<UpdatePersonResponse, UpdatePersonError, Options<UpdatePersonData>> = {
@@ -7197,7 +7241,8 @@ export const deactivatePersonMutation = (options?: Partial<Options<DeactivatePer
 /**
  * Revoke Staff Route
  *
- * SPEC-024 AC-4: their next request is refused; never the last administrator.
+ * SPEC-024 AC-4: their next request is refused; never the last administrator. Deactivate's
+ * alias for one release (G-01-T05).
  */
 export const revokeStaffMutation = (options?: Partial<Options<RevokeStaffData>>): UseMutationOptions<RevokeStaffResponse, RevokeStaffError, Options<RevokeStaffData>> => {
     const mutationOptions: UseMutationOptions<RevokeStaffResponse, RevokeStaffError, Options<RevokeStaffData>> = {
@@ -7216,7 +7261,8 @@ export const revokeStaffMutation = (options?: Partial<Options<RevokeStaffData>>)
 /**
  * Change Firm Role Route
  *
- * SPEC-024 AC-4: applies on their next request; never the last administrator.
+ * SPEC-024 AC-4: applies on their next request; never the last administrator. With a
+ * template (AC4.2): fresh MFA, one unit of work, "Role changed by <person>".
  */
 export const changeFirmRoleMutation = (options?: Partial<Options<ChangeFirmRoleData>>): UseMutationOptions<ChangeFirmRoleResponse, ChangeFirmRoleError, Options<ChangeFirmRoleData>> => {
     const mutationOptions: UseMutationOptions<ChangeFirmRoleResponse, ChangeFirmRoleError, Options<ChangeFirmRoleData>> = {
@@ -7235,7 +7281,7 @@ export const changeFirmRoleMutation = (options?: Partial<Options<ChangeFirmRoleD
 /**
  * Set Security Role Route
  *
- * `security_admin` only; 409 `last_admin`.
+ * `security_admin` only; 409 `last_admin`, `firm_role_held`.
  */
 export const setSecurityRoleMutation = (options?: Partial<Options<SetSecurityRoleData>>): UseMutationOptions<SetSecurityRoleResponse, SetSecurityRoleError, Options<SetSecurityRoleData>> => {
     const mutationOptions: UseMutationOptions<SetSecurityRoleResponse, SetSecurityRoleError, Options<SetSecurityRoleData>> = {

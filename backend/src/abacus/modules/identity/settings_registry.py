@@ -293,6 +293,50 @@ async def save_section(
         )
 
 
+async def stored_value(tenant: TenantContext, section: Section, key: str) -> Value:
+    """A typed-store key's value for the firm's own reads (no caller rights: the caller already
+    authorised what it shows), or None when unset."""
+    async with tenant_session(tenant) as session:
+        value = await session.scalar(
+            text("SELECT value FROM firm_settings WHERE section = :section AND key = :key"),
+            {"section": section, "key": key},
+        )
+    return value if isinstance(value, str | int | bool) else None
+
+
+async def provision_setting(
+    tx: UnitOfWork, tenant_id: UUID, section: Section, key: str, value: Value, by: UUID
+) -> None:
+    """Set a registered key that no route may write (`editable=False`: the seat total), for
+    provisioning and the scenario loader, in their unit of work, with its audit row."""
+    setting = _KEYS.get((section, key))
+    if setting is None or setting.editable or setting.read is not None:
+        raise UnknownSetting(facts={"key": key[:64]})
+    checked = _checked(setting, value)
+    await tx.session.execute(
+        text(
+            "INSERT INTO firm_settings (tenant_id, section, key, value, updated_by) "
+            "VALUES (:tenant, :section, :key, CAST(:value AS jsonb), :by) "
+            "ON CONFLICT (tenant_id, section, key) DO UPDATE SET "
+            "value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = abacus_now()"
+        ),
+        {
+            "tenant": tenant_id,
+            "section": section,
+            "key": key,
+            "value": json.dumps(checked),
+            "by": by,
+        },
+    )
+    tx.record("firm_setting.provisioned", target=Target("firm", tenant_id), after=Ref(**{key: 1}))
+
+
+async def seat_total(tenant: TenantContext) -> int | None:
+    """The firm's seats (`plan.seats`, provisioning's; DEC-285), or None when not set."""
+    value = await stored_value(tenant, "plan", "seats")
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
 # --- identity's own keys and At a glance row ---------------------------------------------------
 
 
@@ -323,9 +367,11 @@ async def _people(ctx: AuthContext) -> GlanceRow | None:
     """People: seat holders and pending invitations (AC2.1)."""
     async with tenant_session(ctx.tenant) as session:
         used, pending = (await session.execute(_PEOPLE)).one()
-    return GlanceRow(
-        "people", "ok", {"used": int(used), "pending": int(pending)}, "/settings/people"
-    )
+    facts = {"used": int(used) + int(pending), "pending": int(pending)}
+    total = await seat_total(ctx.tenant)
+    if total is not None:
+        facts["total"] = total
+    return GlanceRow("people", "ok", facts, "/settings/people")
 
 
 def register_identity_settings() -> None:
@@ -339,6 +385,8 @@ def register_identity_settings() -> None:
         ),
         SettingKey("defaults", "week_starts_on", "text", max_length=16),
         SettingKey("plan", "billing_contact_user_id", "text", max_length=36),
+        # G-01-T05 (DEC-285): the seat total; provisioning's, never a route's.
+        SettingKey("plan", "seats", "int", editable=False),
     ):
         register_firm_setting(setting)
     register_settings_area("people", 10, _people)

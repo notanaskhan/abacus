@@ -1,22 +1,108 @@
-# Role templates (G-01-T02 skeleton; G-01 section 3.5, 4.3). PROTECTED.
+# Role templates (G-01-T02 skeleton, G-01-T05 grid; G-01 sections 3.5, 4.3; ADR P-10). PROTECTED.
 #
-# Each template names its allowed levels, its firm role (if any) and, once G-01-T05 compiles this
-# file (`abacus_tools/codegen/permission_matrix.py` into `_role_templates.py` and
-# `roleTemplates.gen.ts`), its eligible engagement roles, work-item functions and the 16 grid
-# rows. Grid cells are computed from the compiled permission matrix for actions that exist, and
-# taken from `declared_policy` (marked `source: policy`) for actions that don't yet; a drift test
-# fails when the two disagree (AC5.2). The Accrued Agent row is locked (AC5.3).
+# Compiled by `abacus_tools/codegen/role_templates.py` into
+# `backend/src/abacus/modules/identity/_role_templates.py` (make regenerate). Each template names
+# its allowed levels, its firm role (if any) and the permission-matrix roles a person on it may
+# hold (`roles`: firm-level roles and the engagement roles they're eligible for). The drift test
+# (`tests/unit/identity/test_role_templates.py`, AC5.2) reads those against the compiled matrix.
 #
-# Skeleton only: no grid rows yet (G-01-T05 adds them with the compiler).
+# The grid is ADM-02b's sixteen rows, symbol for symbol from the design (01 section 2.4). Cells:
+# allow (filled disc), conditional (half disc; `conditions` holds the design's words), delegated
+# (D: may draft or propose only), deny (dash). A row whose every action is in the matrix is
+# `source: matrix` and the drift test holds it to the matrix: an `allow` cell must be held by one
+# of the template's roles on every action, and a `deny` or `delegated` cell by none of them as
+# plain `allow`. A row with no actions (or one the matrix does not grant the way the design
+# says, noted on the row) is `source: policy` until its epic adds or aligns the action.
+#
+# The Accrued Agent row is locked (AC5.3): no API or override sets it, and the agent principal is
+# denied every action named in the rows listed under `agent.never` (I-AGENT-NEVER).
 
 templates:
-  partner:      {levels: [partner], firm_role: null}
-  manager:      {levels: [manager], firm_role: null}
-  tax_reviewer: {levels: [manager, senior], firm_role: null}
-  senior:       {levels: [senior], firm_role: null}
-  staff:        {levels: [staff, seasonal], firm_role: null}
-  tax_preparer: {levels: [staff, seasonal], firm_role: null}
-  firm_admin:   {levels: [admin], firm_role: firm_admin}
-  it_security:  {levels: [admin], firm_role: security_admin}
+  partner:      {levels: [partner], firm_role: null, roles: [firm_partner, engagement_partner, practice_leader, quality_partner]}
+  manager:      {levels: [manager], firm_role: null, roles: [manager]}
+  tax_reviewer: {levels: [manager, senior], firm_role: null, roles: [manager, senior]}
+  senior:       {levels: [senior], firm_role: null, roles: [senior]}
+  staff:        {levels: [staff, seasonal], firm_role: null, roles: [staff]}
+  tax_preparer: {levels: [staff, seasonal], firm_role: null, roles: [staff]}
+  firm_admin:   {levels: [admin], firm_role: firm_admin, roles: [firm_admin, client_service]}
+  it_security:  {levels: [admin], firm_role: security_admin, roles: [security_admin]}
 
-grid: []
+grid:
+  - key: users_roles_offices
+    label: "Users, roles, offices"
+    actions: [firm.manage_users, security_role.assign]
+    cells: {partner: deny, manager: deny, tax_reviewer: deny, senior: deny, staff: deny, tax_preparer: deny, firm_admin: allow, it_security: conditional}
+    conditions: {it_security: "security roles"}
+  - key: security_and_audit_log
+    label: "SSO/MFA, API keys, MCP, audit log"
+    actions: []   # G-02 adds the security and audit-log actions
+    cells: {partner: conditional, manager: deny, tax_reviewer: deny, senior: deny, staff: deny, tax_preparer: deny, firm_admin: conditional, it_security: allow}
+    conditions: {partner: "read log", firm_admin: "read log"}
+  - key: methodology_publish
+    label: "Methodology / standards / threshold policy publish"
+    actions: []   # methodology.manage also allows firm_admin today; the design says no (K-01 aligns)
+    cells: {partner: allow, manager: delegated, tax_reviewer: deny, senior: deny, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {partner: "QM owner"}
+  - key: create_client_engagement
+    label: "Create client / engagement"
+    actions: []   # engagement.create is firm-level today (no manager or senior cell); P-07 aligns
+    cells: {partner: allow, manager: allow, tax_reviewer: deny, senior: conditional, staff: deny, tax_preparer: deny, firm_admin: allow, it_security: deny}
+  - key: run_agents
+    label: "Run / schedule agents"
+    actions: []   # the agent epics name the run and schedule actions
+    cells: {partner: allow, manager: allow, tax_reviewer: allow, senior: allow, staff: conditional, tax_preparer: allow, firm_admin: conditional, it_security: deny}
+    conditions: {firm_admin: "firm-ops agents + Client Service request agents"}
+  - key: approve_source_document
+    label: "Approve source document"
+    actions: [evidence.accept]
+    cells: {partner: allow, manager: allow, tax_reviewer: allow, senior: allow, staff: allow, tax_preparer: allow, firm_admin: deny, it_security: deny}
+  - key: adopt_agent_work
+    label: "Adopt agent work (L1 preparer)"
+    actions: [trial_balance.adopt, entry_assessment.adopt]
+    cells: {partner: allow, manager: allow, tax_reviewer: allow, senior: allow, staff: allow, tax_preparer: allow, firm_admin: deny, it_security: deny}
+  - key: reviewer_sign_off
+    label: "Reviewer sign-off L2/L3"
+    actions: [sign_off.review]
+    cells: {partner: allow, manager: allow, tax_reviewer: allow, senior: conditional, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {senior: "staff work only"}
+  - key: partner_sign_off
+    label: "Partner sign-off L4"
+    actions: [sign_off.partner]
+    cells: {partner: allow, manager: deny, tax_reviewer: deny, senior: deny, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+  - key: materiality_risk_opinion
+    label: "Materiality, significant risks, deficiency severity, opinion"
+    actions: [materiality.decide, risk.approve]
+    cells: {partner: allow, manager: delegated, tax_reviewer: deny, senior: delegated, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+  - key: final_return_approval
+    label: "Final return approval"
+    actions: []   # T-02 adds the return approval action
+    cells: {partner: allow, manager: conditional, tax_reviewer: conditional, senior: deny, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {partner: "signer", manager: "if delegated (BH-TAX-02)", tax_reviewer: "if delegated"}
+  - key: export_to_tax_engine
+    label: "Export to tax engine"
+    actions: []   # T-01 adds the tax-engine export action
+    cells: {partner: allow, manager: allow, tax_reviewer: allow, senior: deny, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {tax_reviewer: "after approval"}
+  - key: approve_aje
+    label: "Approve AJE within / above threshold"
+    actions: []   # A-02 adds the AJE approval actions
+    cells: {partner: allow, manager: conditional, tax_reviewer: deny, senior: conditional, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {manager: "within threshold; above with a condition", senior: "within (batch)"}
+  - key: post_to_gl
+    label: "Post to GL"
+    actions: []   # C-01 adds the posting action
+    cells: {partner: allow, manager: allow, tax_reviewer: deny, senior: conditional, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {senior: "approved batch"}
+  - key: release_audit_report
+    label: "Release audit report"
+    actions: [report.release]
+    cells: {partner: allow, manager: deny, tax_reviewer: deny, senior: deny, staff: deny, tax_preparer: deny, firm_admin: deny, it_security: deny}
+    conditions: {partner: "EP only"}
+  - key: reveal_tin
+    label: "Reveal masked TIN/SSN (logged)"
+    actions: [tin.reveal]
+    cells: {partner: allow, manager: allow, tax_reviewer: allow, senior: conditional, staff: conditional, tax_preparer: conditional, firm_admin: deny, it_security: conditional}
+
+agent:
+  label: "Accrued Agent · non-human"
+  never: [approve_source_document, adopt_agent_work, reviewer_sign_off, partner_sign_off, materiality_risk_opinion, final_return_approval, export_to_tax_engine, approve_aje, post_to_gl, release_audit_report, reveal_tin]

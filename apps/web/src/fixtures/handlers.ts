@@ -63,7 +63,23 @@ export function seedHandlers(seed: Seed = getSeed()): Record<string, FixtureHand
       return me === undefined ? json({ detail: "unknown_persona" }, 404) : json(me);
     },
     "GET /v1/firm/staff": () => {
-      const body: StaffListOut = { members: seed.staff, invitations: [] };
+      const active = seed.staff.filter((m) => m.status === "active").length;
+      const body: StaffListOut = {
+        items: [],
+        total: 0,
+        tallies: {
+          seats_used: active,
+          seats_pending: 0,
+          partners: 0,
+          professionals: 0,
+          operations: 0,
+          sso_mfa: active,
+          signed_in_of: active,
+          seasonal: 0,
+        },
+        members: seed.staff,
+        invitations: [],
+      };
       return json(body);
     },
     "GET /v1/firm/members": () => {

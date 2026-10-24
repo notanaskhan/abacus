@@ -58,6 +58,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "staff_invitations": frozenset(  # SPEC-024 (TASK-041)
         {"id", "tenant_id", "email", "firm_role", "invited_by", "expires_at"}
+        # G-01-T05 (0142): what the membership takes on acceptance.
+        | {"role_template", "level", "office_id", "team_ids", "service_lines", "access_ends_on"}
+        | {"offshore", "display_name", "job_title"}
     ),
     "firm_setting_values": frozenset({"tenant_id", "key", "value", "set_by"}),  # F-03-T24
     "firm_settings": frozenset({"tenant_id", "section", "key", "value", "updated_by"}),  # G-01-T04
@@ -91,8 +94,11 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),
     "memberships": frozenset(
-        {"default_office_filter_id"}
-    ),  # P-01-T04: the person's own, via /v1/me
+        {"default_office_filter_id"}  # P-01-T04: the person's own, via /v1/me
+        # G-01-T05 (0142): a person's template and attributes; firm roles stay behind definers.
+        | {"role_template", "level", "job_title", "office_id", "service_lines", "access_ends_on"}
+        | {"offshore", "version"}
+    ),
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
         | {"acknowledged_at"}

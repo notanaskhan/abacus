@@ -23,7 +23,13 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.context import AuthContext
-from abacus.modules.identity.events import StaffInvitationIssued
+from abacus.modules.identity.events import (
+    AccessChanged,
+    MembershipDeactivated,
+    StaffInvitationIssued,
+)
+from abacus.modules.identity.people import apply_invitation_terms
+from abacus.modules.identity.people_repository import deactivate as deactivate_membership
 from abacus.modules.identity.repository import (
     add_staff_membership,
     extend_staff_invitation,
@@ -33,13 +39,13 @@ from abacus.modules.identity.repository import (
     pending_staff_invitation_for,
     pending_staff_invitations,
     provision_client_user,
-    revoke_membership,
     set_firm_role,
     set_staff_invitation_status,
     set_staff_token_hash,
     staff_memberships,
     user_contacts,
 )
+from abacus.modules.identity.slots import set_member_teams
 from abacus.modules.identity.tokens import VerifiedIdentity
 
 # F-03-T23: security_admin (IT and security; no client content, chapter 03 §4.2).
@@ -215,15 +221,19 @@ async def change_role(ctx: AuthContext, user_id: UUID, firm_role: FirmRole | Non
 
 
 async def revoke(ctx: AuthContext, user_id: UUID) -> None:
-    """AC-4: their next request is refused; never the last administrator."""
+    """AC-4: their next request is refused; never the last administrator. Since G-01-T05 the
+    deactivation definer does it (reason `manual`, sessions ended, `membership.deactivated`
+    announced); the audit row keeps SPEC-024's name for this route."""
     await _manage(ctx)
     async with uow(ctx.tenant) as tx:
-        outcome = await revoke_membership(tx.session, user_id)
+        outcome = await deactivate_membership(tx.session, user_id, "manual", None)
         if outcome == "not_found":
             raise NotFound("staff_member")
         if outcome == "last_admin":
             raise LastAdmin("firm_admin")
         tx.record("membership.revoked", target=Target("user", user_id))
+        tx.emit(MembershipDeactivated(user_id=user_id))
+        tx.emit(AccessChanged(user_id=user_id))
 
 
 async def issue_staff_invitation_token(
@@ -278,6 +288,10 @@ async def accept_staff_invitation(identity: VerifiedIdentity, token: str) -> UUI
         )
         if await add_staff_membership(tx.session, user_id, row["firm_role"]) == "client_contact":
             raise ClientContact("staff_invitation")
+        # G-01-T05 (AC3.4): the membership takes the invitation's template and attributes.
+        teams = await apply_invitation_terms(tx.session, invitation_id, user_id)
+        if teams:
+            await set_member_teams(tx, tenant_id, user_id, teams)
         await set_staff_invitation_status(tx.session, invitation_id, "accepted", user_id)
         await set_staff_token_hash(tx.session, invitation_id, None)
         tx.record(

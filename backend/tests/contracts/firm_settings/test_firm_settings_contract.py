@@ -80,11 +80,17 @@ def _props(schema: str) -> dict[str, Json]:
     return cast(dict[str, Json], SCHEMAS[schema].get("properties", {}))
 
 
-# Live since G-01-T04 (DEC-170): the overview and the sections.
+# Live since G-01-T04 (DEC-170): the overview and the sections; since G-01-T05 (DEC-286): the
+# person, its writes and the role templates.
 LIVE = {
     ("get", "/v1/firm/settings/overview"),
     ("get", "/v1/firm/settings/{section}"),
     ("patch", "/v1/firm/settings/{section}"),
+    ("get", "/v1/firm/staff/{user_id}"),
+    ("patch", "/v1/firm/staff/{user_id}"),
+    ("put", "/v1/firm/staff/{user_id}/security-role"),
+    ("post", "/v1/firm/staff/{user_id}/deactivate"),
+    ("get", "/v1/firm/role-templates"),
 }
 
 
