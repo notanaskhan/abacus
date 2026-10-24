@@ -727,6 +727,46 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T51: the rail draws its links under the card without the handoff's Overview band (RecordRail has no link band)"
+    },
+    "t3-evidence-triad.t3a": {
+      "selector": "[data-artboard=\"t3a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T3 Evidence triad/screenshots/T3a.png",
+      "sha256": "97e9e58a7d3277d175f8f8431871821f8d505386e78a71a2772f5fe48c1cb51d",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
+    },
+    "t3-evidence-triad.t3b": {
+      "selector": "[data-artboard=\"t3b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T3 Evidence triad/screenshots/T3b.png",
+      "sha256": "cd0ea4281f1ca2b108e4108569c1b5e595d814f852c6b6121abd441505277c28",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
+    },
+    "t3-evidence-triad.t3c": {
+      "selector": "[data-artboard=\"t3c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T3 Evidence triad/screenshots/T3c.png",
+      "sha256": "ae9434cf790a416545c664f6721c26f78130c7a4c24b7396a45eef877a0af2d4",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
+    },
+    "t3-evidence-triad.t3d": {
+      "selector": "[data-artboard=\"t3d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T3 Evidence triad/screenshots/T3d.png",
+      "sha256": "783aec1b7e43caad78e75baa941240175cdb64efa4ec5302c282232b1c0cc842",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
+    },
+    "t3-evidence-triad.t3e": {
+      "selector": "[data-artboard=\"t3e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T3 Evidence triad/screenshots/T3e.png",
+      "sha256": "3240e96583ec957fa5845807363c7bb91ecc665569f42879c65d408a8231de31",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
     }
   }
 }

@@ -85,3 +85,17 @@ export {
   RecordCockpit,
   type RecordCockpitProps,
 } from "./record-cockpit";
+// T3 EvidenceTriad (F-05-T53): tree, viewer and sheet in one MatchScope under three presets.
+export {
+  EvidenceTriad,
+  type EvidenceTriadProps,
+  TRIAD_VIEWS,
+  type TriadDoc,
+  TriadFooter,
+  type TriadGroup,
+  type TriadPreset,
+  type TriadSheet,
+  TriadSheetBar,
+  TriadTree,
+  type TriadTreeProps,
+} from "./evidence-triad";

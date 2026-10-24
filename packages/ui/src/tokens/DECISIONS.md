@@ -509,3 +509,14 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-24 | Virtual heights    | Fixed per grammar (ledger 30 / band 31, statement 26 / 24, evidence 29 / 29, leadsheet 37 / 37), not measured: the kit keeps heights exact for a fixed-height virtualiser |
 | 2026-10-24 | Virtual viewport   | A virtualised table scrolls in its own viewport (560 by default, `maxHeight`); only then are the header and bands sticky, so a short table never sticks to the page       |
 | 2026-10-24 | Field Info         | Drawn only when the field has a source; Info is the O1 Popover (outside press and Escape close it)                                                                        |
+
+### T3 EvidenceTriad (F-05-T53)
+
+| Date       | Item        | Decision                                                                                                                                                                       |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-24 | Two-pane    | The sheet flexes beside a 490 viewer in the template's own row, gutter 10: chapter 04 §3.11 lists twelve SplitLayout presets and its test pins them, so no thirteenth is added |
+| 2026-10-24 | Tree footer | Approve Document is a `HumanAction` (verb Approve, object Document) for the signed-in person; once approved the button reads "Approved", disabled, with no verb on it          |
+| 2026-10-24 | Flag pill   | The amber `check`-size pill with the flag glyph and the count, the issue count's words visually hidden                                                                         |
+| 2026-10-24 | Tree search | 120 wide in the 452 tree; in the 214 tree the field shrinks to its 28px icon, as T3a draws a search button                                                                     |
+| 2026-10-24 | T3 figures  | The frame draws the T3 handoff's Feld 1040 lines (they foot: lines 9 and 33); TPL-03 (F-05-T54) draws the seed's                                                               |
+| 2026-10-24 | Page images | The viewer uses the gallery's synthetic page images (F-05-T47), so T3a to T3e carry a parity deviation                                                                         |

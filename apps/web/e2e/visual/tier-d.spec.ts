@@ -481,6 +481,48 @@ test.describe("tier D: T2 record cockpit", () => {
   });
 });
 
+// T3 EvidenceTriad (F-05-T53): toolbar 46, record subbar 42, tabsbar 44, and the three presets'
+// panes, 706 tall: Review 452 · 452 · 452, Prepare 214 · 571 · 571, two-pane sheet flex · 490.
+test.describe("tier D: T3 evidence triad", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  const facts = (el: Element) => {
+    const w = (sel: string): number | null => {
+      const node = el.querySelector(sel);
+      return node === null ? null : Math.round(node.getBoundingClientRect().width);
+    };
+    const h = (sel: string): number | null => {
+      const node = el.querySelector(sel);
+      return node === null ? null : Math.round(node.getBoundingClientRect().height);
+    };
+    return {
+      tree: w('[data-triad-pane="tree"]'),
+      viewer: w('[data-triad-pane="viewer"]'),
+      sheet: w('[data-triad-pane="sheet"]'),
+      height: h('[data-shell="pane"]'),
+      subbar: h('[data-shell="record-header"]'),
+      tabsbar: h('[data-shell="tabsbar"]'),
+    };
+  };
+
+  for (const [id, expected] of [
+    ["t3a", { tree: 214, viewer: 571, sheet: 571 }],
+    ["t3b", { tree: 452, viewer: 452, sheet: 452 }],
+    ["t3d", { tree: null, viewer: 490, sheet: 876 }],
+  ] as const) {
+    test(`${id}: panes ${JSON.stringify(expected)}, 706 tall, subbar 42, tabsbar 44`, async ({
+      page,
+    }) => {
+      const got = await specimen(page, "t3-evidence-triad", `[data-artboard="${id}"]`).evaluate(
+        facts,
+      );
+      expect(got).toEqual({ ...expected, height: 706, subbar: 42, tabsbar: 44 });
+    });
+  }
+});
+
 // The M5 lock (F-05-T49): T11 DashboardLayout, T12 SettingsLayout and the O6 wizard, at the numbers
 // their canvases state (Wave 0 - Foundations `#t11`, `#t12`; Wave 0 - Templates TPL-11, TPL-12,
 // TPL-18). Box sizes are measured inside the 1400 window, so they hold at any page offset.

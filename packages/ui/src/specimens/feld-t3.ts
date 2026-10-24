@@ -36,11 +36,12 @@ type Doc = keyof typeof FELD_DOCS;
 const BOXES: Record<string, { doc: Doc; bbox: readonly [number, number, number, number] }> = {
   "w2:1": { doc: "w2", bbox: [306, 96, 450, 120] },
   "w2:2": { doc: "w2", bbox: [450, 96, 594, 120] },
-  "1099:int-1": { doc: "c1099", bbox: [306, 470, 450, 494] },
-  "1099:div-1a": { doc: "c1099", bbox: [306, 72, 450, 96] },
-  "1099:div-1b": { doc: "c1099", bbox: [306, 96, 450, 120] },
-  "1099:div-2a": { doc: "c1099", bbox: [306, 120, 400, 144] },
-  "1099:div-7": { doc: "c1099", bbox: [306, 270, 400, 294] },
+  // The 1099-DIV boxes sit where the E5 viewer specimen draws them (specimens/viewer.tsx).
+  "1099:div-1a": { doc: "c1099", bbox: [294, 79, 441, 120] },
+  "1099:div-1b": { doc: "c1099", bbox: [294, 120, 441, 161] },
+  "1099:div-2a": { doc: "c1099", bbox: [294, 161, 441, 202] },
+  "1099:div-7": { doc: "c1099", bbox: [294, 326, 441, 367] },
+  "1099:int-1": { doc: "c1099", bbox: [294, 420, 441, 461] },
   "1098:1": { doc: "m1098", bbox: [306, 96, 450, 120] },
 };
 
