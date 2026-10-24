@@ -1,0 +1,396 @@
+"""The source viewer's reads: manifest, masked pages, regions and in-document search (P-03-T09;
+C4 §3.3, §3.4; SPEC-322 AC-16, AC-21, AC-22, AC-24; ADR-110, ADR-052; DEC-266). PROTECTED.
+
+- **Who:** a client principal is refused before anything is read (INV-4: 403). The version is
+  read through `visible(evidence.read)` on its engagement, so an invisible, walled or other-firm
+  version answers 404 with no count (AC-22, DEC-43); then `evidence.read` is authorised on its
+  request item with the item's client facts, as every evidence content read is.
+- **Geometry and mask tokens only, never text:** the manifest carries page sizes from the word
+  layer and the rendition, which pages were scanned for PII, and each detected region as a box
+  and its token. Search returns page rects, never words, and the query is never logged or kept.
+- **Fail closed on unscanned pages (`projection`):** a page no PII scan covers is never searched;
+  with no scanned text page at all, search answers 409 `preview_outdated`, as the pages do.
+  Search needs 3 characters, reads at most 50 pages and counts at most 1,000 hits a call.
+- **Masked renditions only (AC-24):** a page is served only from a preview with `mask_version`
+  set. **Interim rule until P-03-T13 and T15:** no masked rendition exists yet, so a rendered
+  version's manifest reads `processing` with reason `preview_outdated` and its pages answer 409
+  `preview_outdated`; the C4 viewer never serves an unmasked page. Pages without a PII scan read
+  `not_scannable` (fail closed), never clean. The legacy preview routes keep their pre-masking
+  previews until T15 re-renders them (DEC-266).
+- **Access logging:** a page image is content, and search hits are positions of content (an
+  oracle for it): each read leaves an `evidence_content.read` access event (who, which version;
+  never the query) before it is answered, and nothing is answered if logging fails (Q-02-T20).
+  The manifest and regions carry geometry only and log nothing beyond the route's check.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from typing import Final, cast
+from uuid import UUID
+
+from sqlalchemy import select
+
+from abacus.kernel.db import tenant_session
+from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.modules.evidence import storage
+from abacus.modules.evidence.access import record_content_read
+from abacus.modules.evidence.citations.matching import Box, line_rects, normalised, quote_spans
+from abacus.modules.evidence.masking import mask_token
+from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
+from abacus.modules.evidence.previews import PAGE_WIDTH, RENDERER_VERSION
+from abacus.modules.evidence.projection import projection_of
+from abacus.modules.evidence.repository import (
+    get_item,
+    masked_preview_for,
+    pages_of,
+    pii_regions_of,
+    preview_for,
+    preview_page,
+    preview_pages_of,
+    verified_citations_into,
+)
+from abacus.modules.evidence.uploads import (
+    _authorised_any_version,  # pyright: ignore[reportPrivateUsage] -- the module's own check
+)
+from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
+from abacus.modules.identity.api import AuthContext, Forbidden, visible
+
+READ: Final = "evidence.read"
+MAX_HITS: Final = 200
+# Search costs (security review #4): every searched page is a sealed object decrypted per call.
+MIN_QUERY: Final = 3  # characters, after normalising
+MAX_SEARCH_PAGES: Final = 50  # the rendition's page cap (previews.MAX_PAGES)
+MAX_COUNTED: Final = 1000  # hits counted for `total`; more is `truncated`
+MAX_REGIONS: Final = 200
+PDF: Final = "application/pdf"
+# A preview made without masks: every reason a kind-`none` preview can carry, by C4 status.
+_PASSWORD: Final = frozenset({"encrypted"})
+_NOT_PREVIEWABLE: Final = frozenset({"not_previewable"})
+
+
+class PreviewOutdated(DomainConflict):
+    """The page was rendered before masking existed: it is never served (SPEC-322 AC-24)."""
+
+    code = "preview_outdated"
+
+
+@dataclass(frozen=True)
+class ViewerPage:
+    n: int
+    width_pt: float
+    height_pt: float
+    rotation: int
+    image_w: int
+    image_h: int
+    text_layer: bool
+    pii_scan: str  # done | not_scannable
+
+
+@dataclass(frozen=True)
+class ViewerMask:
+    id: UUID
+    page: int
+    rect: list[float]
+    kind: str
+    display: str
+
+
+@dataclass(frozen=True)
+class ViewerManifest:
+    evidence_version_id: UUID
+    file_name: str
+    media_type: str
+    status: str
+    reason: str | None
+    kind: str
+    page_count: int
+    truncated: bool
+    pages: list[ViewerPage] = field(default_factory=list[ViewerPage])
+    pii_masks: list[ViewerMask] = field(default_factory=list[ViewerMask])
+    derivation_id: UUID | None = None
+    allowed_actions: list[str] = field(default_factory=list[str])
+
+
+@dataclass(frozen=True)
+class ViewerRegion:
+    match_id: str
+    page: int | None
+    rects: list[list[float]]
+    sheet: str | None
+    cell: str | None
+    citation_id: UUID | None
+    label: str | None
+
+
+@dataclass(frozen=True)
+class SearchHit:
+    page: int
+    rects: list[list[float]]
+
+
+@dataclass(frozen=True)
+class SearchResult:
+    items: list[SearchHit]
+    total: int
+    truncated: bool
+
+
+async def visible_version(ctx: AuthContext, version_id: UUID) -> EvidenceVersion:
+    """The version, for a person who may read its content (404 when invisible or walled, 403
+    for a client principal or a role without `evidence.read`)."""
+    if ctx.client:
+        raise Forbidden(READ, "role")  # INV-4: clients hold no C4 action
+    engagement = EvidenceVersion.engagement_id.expression
+    async with tenant_session(ctx.tenant) as session:
+        version = (
+            await session.execute(
+                select(EvidenceVersion).where(
+                    EvidenceVersion.id == version_id, visible(ctx, READ, engagement)
+                )
+            )
+        ).scalar_one_or_none()
+    if version is None:
+        raise NotFound("evidence_version")
+    await _authorised_any_version(ctx, version.engagement_id, version.id)
+    return version
+
+
+def _box(region: PiiRegion) -> Box:
+    b = region.bbox
+    return (float(b[0]), float(b[1]), float(b[2]), float(b[3]))
+
+
+def _status(
+    kind: str, reason: str | None, *, layered: bool, masked: bool, media_type: str
+) -> tuple[str, str | None]:
+    """The manifest's status from the preview, the word layer and the masked rendition."""
+    if kind == "none":
+        if reason in _PASSWORD:
+            return "password_protected", reason
+        if reason in _NOT_PREVIEWABLE:
+            return "not_previewable", reason
+        return "unreadable", reason
+    if kind == "table":
+        return "ready", None
+    if media_type == PDF and not layered:
+        return "processing", "words_pending"
+    if not masked:
+        return "processing", "preview_outdated"  # the interim rule (DEC-266)
+    return "ready", None
+
+
+async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
+    """SHL-08's manifest: geometry and mask tokens only (AC-16)."""
+    version = await visible_version(ctx, version_id)
+    async with tenant_session(ctx.tenant) as session:
+        item = await get_item(session, version.evidence_item_id)
+        preview = await preview_for(
+            session, evidence_version_id=version.id, renderer_version=RENDERER_VERSION
+        )
+        masked = await masked_preview_for(session, version.id)
+        layer: Sequence[EvidencePage] = await pages_of(
+            session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
+        )
+        regions = await pii_regions_of(session, evidence_version_id=version.id)
+        projection = await projection_of(session, evidence_version_id=version.id)
+        rendered = masked or preview
+        images = (
+            {p.page_no: p for p in await preview_pages_of(session, rendered.id)}
+            if rendered is not None
+            else {}
+        )
+    file_name = item.title if item is not None else "Document"
+    source = masked or preview
+    if source is None:
+        return ViewerManifest(
+            version.id, file_name, version.media_type, "processing", None, "none", 0, False
+        )
+    status, reason = _status(
+        source.kind,
+        source.reason,
+        layered=bool(layer),
+        masked=masked is not None,
+        media_type=version.media_type,
+    )
+    pages: list[ViewerPage] = []
+    for page in layer:
+        width, height = float(page.width_pt), float(page.height_pt)
+        image = images.get(page.page_no)
+        pages.append(
+            ViewerPage(
+                n=page.page_no,
+                width_pt=width,
+                height_pt=height,
+                rotation=page.rotation,
+                image_w=image.width if image else PAGE_WIDTH,
+                image_h=image.height if image else round(height * PAGE_WIDTH / width),
+                text_layer=page.has_text_layer,
+                pii_scan=projection.scan_state(page.page_no),
+            )
+        )
+    if not layer and source.kind == "image":
+        image = images.get(1)
+        if image is not None:  # an image has no points: its pixels are its geometry
+            pages.append(
+                ViewerPage(
+                    1,
+                    float(image.width),
+                    float(image.height),
+                    0,
+                    image.width,
+                    image.height,
+                    False,
+                    projection.scan_state(1),
+                )
+            )
+    masks = [
+        ViewerMask(r.id, r.page_no, list(_box(r)), r.kind, mask_token(r.kind, r.last4))
+        for r in regions
+    ]
+    return ViewerManifest(
+        evidence_version_id=version.id,
+        file_name=file_name,
+        media_type=version.media_type,
+        status=status,
+        reason=reason,
+        kind=source.kind,
+        page_count=source.page_count,
+        truncated=source.truncated,
+        pages=pages,
+        pii_masks=masks,
+        # The reveal (P-03-T16) and unlock (P-03-T19) offer their actions when they land.
+        allowed_actions=[],
+    )
+
+
+async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes:
+    """One masked page image (AC-24): 409 `preview_outdated` while only a pre-masking preview
+    exists, 404 when nothing is rendered; the read is logged before the bytes leave."""
+    version = await visible_version(ctx, version_id)
+    async with tenant_session(ctx.tenant) as session:
+        masked = await masked_preview_for(session, version.id)
+        if masked is None:
+            legacy = await preview_for(
+                session, evidence_version_id=version.id, renderer_version=RENDERER_VERSION
+            )
+            if legacy is not None and legacy.kind in ("pages", "image"):
+                raise PreviewOutdated
+            raise NotFound("preview_page")
+        page = await preview_page(session, masked.id, page_no)
+    if page is None:
+        raise NotFound("preview_page")
+    await record_content_read(ctx, version.engagement_id, "evidence_version", version.id)
+    stored = storage.StoredObject(
+        page.storage_key, page.storage_version_id, page.fingerprint, page.size_bytes
+    )
+    return await storage.get(ctx.tenant_id, stored)
+
+
+def _rect(raw: object) -> list[float] | None:
+    if not isinstance(raw, list) or len(cast(list[object], raw)) != 4:
+        return None
+    try:
+        return [float(cast(float, v)) for v in cast(list[object], raw)]
+    except (TypeError, ValueError):
+        return None
+
+
+async def viewer_regions(
+    ctx: AuthContext, version_id: UUID, match_ids: Sequence[str] | None
+) -> list[ViewerRegion]:
+    """Where the version's verified citations sit, in page points (AC3.1, AC3.6): one region a
+    match, from its first citation; a sheet cell as `{sheet, cell}`. Every verified region the
+    reader may see when no matches are named (auto-highlight)."""
+    version = await visible_version(ctx, version_id)
+    async with tenant_session(ctx.tenant) as session:
+        rows = await verified_citations_into(session, ctx, version.id, match_ids)
+    regions: dict[str, ViewerRegion] = {}
+    for row in rows:
+        match = row.match_id
+        if match is None or match in regions or len(regions) >= MAX_REGIONS:
+            continue
+        locator = row.locator
+        if row.kind == "sheet_cell":
+            sheet, cell = locator.get("sheet"), locator.get("cell")
+            regions[match] = ViewerRegion(
+                match,
+                None,
+                [],
+                sheet if isinstance(sheet, str) else None,
+                cell if isinstance(cell, str) else None,
+                row.id,
+                row.value_text,
+            )
+            continue
+        page = locator.get("page")
+        rect = _rect(locator.get("bbox"))
+        regions[match] = ViewerRegion(
+            match,
+            page if isinstance(page, int) and not isinstance(page, bool) else None,
+            [rect] if rect is not None else [],  # no box: highlighted by quote search (AC-3)
+            None,
+            None,
+            row.id,
+            row.value_text,
+        )
+    return list(regions.values())
+
+
+async def viewer_search(ctx: AuthContext, version_id: UUID, query: str) -> SearchResult:
+    """Hits of `query` in the version's masked word layer, as page rects (AC-21): whole words,
+    contiguous, at most `MAX_HITS` returned and `MAX_COUNTED` counted, over at most
+    `MAX_SEARCH_PAGES` pages. Only pages a PII scan covers are searched (fail closed): when the
+    version has text pages and none is scanned, 409 `preview_outdated`, as its pages answer; a
+    skipped page marks the result `truncated`. A query under `MIN_QUERY` characters reads
+    nothing. The search is logged as a content read (who, which version), never the query."""
+    version = await visible_version(ctx, version_id)
+    if len(normalised(query)) < MIN_QUERY:
+        return SearchResult([], 0, False)
+    async with tenant_session(ctx.tenant) as session:
+        layer = await pages_of(
+            session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
+        )
+        projection = await projection_of(session, evidence_version_id=version.id)
+    texts = [p for p in layer if p.has_text_layer]
+    readable = [p for p in texts if projection.readable(p.page_no)]
+    if texts and not readable:
+        raise PreviewOutdated  # nothing scanned for PII yet: never searched raw
+    searched = readable[:MAX_SEARCH_PAGES]
+    skipped = len(texts) > len(searched)
+    hits: list[SearchHit] = []
+    total = 0
+    for page in searched:
+        words = projection.words((await read_page_layer(ctx.tenant_id, page)).words, page.page_no)
+        if words is None:  # unreachable: `searched` holds readable pages only
+            continue
+        runs = quote_spans(words, query, limit=MAX_COUNTED - total + 1)
+        total += len(runs)
+        for run in runs:
+            if len(hits) < MAX_HITS:
+                hits.append(SearchHit(page.page_no, [list(r) for r in line_rects(run)]))
+        if total > MAX_COUNTED:
+            skipped, total = True, MAX_COUNTED
+            break
+    if searched:
+        # Hit positions are content: the read is logged first (who, which version; no query).
+        await record_content_read(ctx, version.engagement_id, "evidence_version", version.id)
+    return SearchResult(hits, total, skipped or total > len(hits))
+
+
+__all__ = [
+    "MAX_HITS",
+    "PreviewOutdated",
+    "SearchHit",
+    "SearchResult",
+    "ViewerManifest",
+    "ViewerMask",
+    "ViewerPage",
+    "ViewerRegion",
+    "viewer_manifest",
+    "viewer_page",
+    "viewer_regions",
+    "viewer_search",
+    "visible_version",
+]

@@ -393,10 +393,36 @@ async def test_ac14_screen_records_model_called_and_screening_result_created_by_
     before = len(await seed.actions(world.tenant_id))
     outcome = await _screened(world, run_id)
     events = (await seed.events(world.tenant_id))[before:]
-    assert [e.action for e in events] == ["model.called", "screening_result.created"]
+    # P-03-T10: each cited cell is also a v2 citation row, audited in the same unit of work.
+    cited = ["citation.created"] * len(outcome.citations)
+    assert outcome.citations  # the scripted reply cites cells
+    assert [e.action for e in events] == ["model.called", *cited, "screening_result.created"]
     for event in events:
         assert (event.actor_kind, event.actor_id) == ("agent", f"agent:{SCREENER}:{run_id}")
-    assert events[1].target_id == str(outcome.screening_result_id)
+    assert events[-1].target_id == str(outcome.screening_result_id)
+
+
+async def test_p03_t10_each_cited_cell_is_a_v2_citation_row_by_the_agent(
+    seed: Seeder, world: World, fake_model: FakeModel, ready: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    version_id, run_id = ready
+    outcome = await _screened(world, run_id)
+    rows = await seed.rows(
+        "SELECT kind, source_id, cited_from_type, cited_from_id, created_by_kind, "
+        "created_by_run_id, on_behalf_of_user_id, quote_sha256 FROM citations "
+        "WHERE tenant_id = $1 ORDER BY n",
+        world.tenant_id,
+    )
+    assert len(rows) == len(outcome.citations) > 0
+    for row in rows:
+        assert (row["kind"], row["source_id"]) == ("sheet_cell", version_id)
+        assert (row["cited_from_type"], row["cited_from_id"]) == (
+            "screening_result",
+            outcome.screening_result_id,
+        )
+        assert (row["created_by_kind"], row["created_by_run_id"]) == ("agent", run_id)
+        assert row["on_behalf_of_user_id"] == world.requester.user_id
+        assert row["quote_sha256"] is None  # a cell's quote is never stored, nor hashed
 
 
 async def test_ac16_screen_writes_one_usage_record_with_attribution_and_cost(

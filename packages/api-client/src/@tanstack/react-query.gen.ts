@@ -879,6 +879,7 @@ export const listCitationsQueryKey = (options?: Options<ListCitationsData>) => c
  *
  * AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a
  * version's figures are cited by. Walled citations are omitted with no hidden count.
+ * `host_ref` is `<anchor_type>:<anchor_id>` (DEC-265).
  */
 export const listCitationsOptions = (options?: Options<ListCitationsData>) => queryOptions<ListCitationsResponse, ListCitationsError, ListCitationsResponse, ReturnType<typeof listCitationsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -900,6 +901,7 @@ export const listCitationsInfiniteQueryKey = (options?: Options<ListCitationsDat
  *
  * AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a
  * version's figures are cited by. Walled citations are omitted with no hidden count.
+ * `host_ref` is `<anchor_type>:<anchor_id>` (DEC-265).
  */
 export const listCitationsInfiniteOptions = (options?: Options<ListCitationsData>) => {
     const opts = infiniteQueryOptions<ListCitationsResponse, ListCitationsError, InfiniteData<ListCitationsResponse>, QueryKey<Options<ListCitationsData>>, string | null | Pick<QueryKey<Options<ListCitationsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -6347,7 +6349,7 @@ export const viewerPageQueryKey = (options: Options<ViewerPageData>) => createQu
  * Viewer Page Route
  *
  * AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made
- * before masking.
+ * before masking. The read leaves an access event first (Q-02-T20).
  */
 export const viewerPageOptions = (options: Options<ViewerPageData>) => queryOptions<ViewerPageResponse, ViewerPageError, ViewerPageResponse, ReturnType<typeof viewerPageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -6406,7 +6408,8 @@ export const viewerSearchQueryKey = (options: Options<ViewerSearchData>) => crea
 /**
  * Viewer Search Route
  *
- * AC3.9: page rects only, at most 200; the query is never logged.
+ * AC3.9: page rects only, at most 200, over pages scanned for PII only (409
+ * `preview_outdated` when none is); logged as a content read; the query is never logged.
  */
 export const viewerSearchOptions = (options: Options<ViewerSearchData>) => queryOptions<ViewerSearchResponse, ViewerSearchError, ViewerSearchResponse, ReturnType<typeof viewerSearchQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -6446,7 +6449,9 @@ export const viewerManifestQueryKey = (options: Options<ViewerManifestData>) => 
 /**
  * Viewer Manifest Route
  *
- * AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404.
+ * AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404. Until
+ * masked renditions exist (P-03-T15) a rendered version reads `processing`, reason
+ * `preview_outdated` (DEC-266).
  */
 export const viewerManifestOptions = (options: Options<ViewerManifestData>) => queryOptions<ViewerManifestResponse, ViewerManifestError, ViewerManifestResponse, ReturnType<typeof viewerManifestQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

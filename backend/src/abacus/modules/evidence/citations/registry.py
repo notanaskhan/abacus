@@ -14,7 +14,8 @@ returns a `Verdict`: the
 outcome, the normalised locator (with any resolved box), the server-derived `match_id`, the hash
 of the words the quote resolved to, and the source's printed value. It never stores, logs or
 returns the quote itself. A display function renders `title` and `loc` from the locator by code,
-never from model text (INV-2).
+never from model text (INV-2), reading with the reader's session (P-03-T08: a read opens no unit of
+work).
 """
 
 from __future__ import annotations
@@ -23,6 +24,8 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Final, Literal, get_args
 from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.evidence.citations.matching import Reason
@@ -109,7 +112,9 @@ class Display:
 
 # (the writer's unit of work, the acting principal, the claim, where it is used)
 Verifier = Callable[[UnitOfWork, Actor, CitationClaim, Anchor], Awaitable[Verdict]]
-Displayer = Callable[[UnitOfWork, Mapping[str, object]], Awaitable[Display]]
+# (the reader's tenant session, the stored locator, the citation's engagement): a display names
+# a source only when it is in that engagement (security review #3).
+Displayer = Callable[[AsyncSession, Mapping[str, object], UUID | None], Awaitable[Display]]
 
 
 @dataclass(frozen=True)
@@ -146,6 +151,8 @@ def source_of(claim: CitationClaim) -> tuple[str, UUID]:
         named = claim.locator.get("record_type")
         if isinstance(named, str) and named.isidentifier() and named.islower():
             source_type = named[:40]
+    if claim.kind in ("document_text", "sheet_cell") and claim.locator.get("inbox_file_id"):
+        source_type, field_name = "inbox_file", "inbox_file_id"  # the matcher's (DEC-267)
     raw = claim.locator.get(field_name)
     try:
         return source_type, UUID(str(raw)) if raw is not None else NIL

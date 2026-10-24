@@ -78,6 +78,18 @@ import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
 import { SHL04 } from "./SHL-04";
 import { SHL06 } from "./SHL-06";
+import { SHL07 } from "./SHL-07/artboard";
+import {
+  STATES as SHL07_STATES,
+  type Shl07State,
+  scenarios as shl07Scenarios,
+} from "./SHL-07/scenarios";
+import { SHL08 } from "./SHL-08/artboard";
+import {
+  STATES as SHL08_STATES,
+  type Shl08State,
+  scenarios as shl08Scenarios,
+} from "./SHL-08/scenarios";
 import { RequestComposer } from "./SHL-14";
 import {
   OPENS as SHL14_OPENS,
@@ -580,3 +592,43 @@ function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-03", { title: "Documents · Feld 2025 Binder", Component: Por03Artboard });
+
+// SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.
+function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl07State = SHL07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL07 key={state} state={state} /> : null;
+}
+
+registerScreen("SHL-07", { title: "Citation popover", Component: Shl07Artboard });
+
+// SHL-08 (P-03-T07): the source viewer's fixtures, a–f and h, on the E5 shell until P-03-T14.
+function Shl08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl08State = SHL08_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl08Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL08 key={state} state={state} /> : null;
+}
+
+registerScreen("SHL-08", { title: "Source viewer · drawer and pane", Component: Shl08Artboard });

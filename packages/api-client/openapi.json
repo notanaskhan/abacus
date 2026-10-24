@@ -45368,7 +45368,7 @@
     },
     "/v1/citations": {
       "get": {
-        "description": "AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a\nversion's figures are cited by. Walled citations are omitted with no hidden count.",
+        "description": "AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a\nversion's figures are cited by. Walled citations are omitted with no hidden count.\n`host_ref` is `<anchor_type>:<anchor_id>` (DEC-265).",
         "operationId": "list_citations",
         "parameters": [
           {
@@ -79375,7 +79375,7 @@
     },
     "/v1/evidence-versions/{version_id}/pages/{page_no}": {
       "get": {
-        "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking.",
+        "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking. The read leaves an access event first (Q-02-T20).",
         "operationId": "viewer_page",
         "parameters": [
           {
@@ -79779,7 +79779,7 @@
     },
     "/v1/evidence-versions/{version_id}/search": {
       "get": {
-        "description": "AC3.9: page rects only, at most 200; the query is never logged.",
+        "description": "AC3.9: page rects only, at most 200, over pages scanned for PII only (409\n`preview_outdated` when none is); logged as a content read; the query is never logged.",
         "operationId": "viewer_search",
         "parameters": [
           {
@@ -79798,7 +79798,7 @@
             "required": true,
             "schema": {
               "maxLength": 200,
-              "minLength": 1,
+              "minLength": 3,
               "title": "Q",
               "type": "string"
             }
@@ -79876,6 +79876,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -80044,7 +80054,7 @@
     },
     "/v1/evidence-versions/{version_id}/viewer": {
       "get": {
-        "description": "AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404.",
+        "description": "AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404. Until\nmasked renditions exist (P-03-T15) a rendered version reads `processing`, reason\n`preview_outdated` (DEC-266).",
         "operationId": "viewer_manifest",
         "parameters": [
           {
