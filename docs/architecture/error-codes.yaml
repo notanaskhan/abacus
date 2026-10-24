@@ -706,6 +706,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.FileTooLarge
+  person_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.people.PersonInvalid
+    summary: An office or team that isn't the firm's, or a level the template doesn't allow.
   phase_backward:
     status: 409
     raised_by:
@@ -727,11 +732,6 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.PhaseSkip
     summary: 'The target phase is past the next one: a phase cannot be skipped.'
-  person_invalid:
-    status: 422
-    raised_by:
-    - abacus.modules.identity.people.PersonInvalid
-    summary: An office or team that isn't the firm's, or a level the template doesn't allow.
   planning_invalid:
     status: 422
     raised_by:
