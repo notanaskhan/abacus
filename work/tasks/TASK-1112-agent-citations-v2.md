@@ -29,6 +29,7 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: plan written.
 - 2026-10-24: built. `agents/v2_citations.py` maps the claims; the three handoffs call it inside their unit of work. `sheet_cell` also takes an inbox file (the matcher cites spreadsheet cells too). Tests written first: `tests/integration/trust_kit/test_agent_citations_v2.py` (5), `tests/unit/agents/test_v2_citations.py` (3), and a new screening test that each cited cell is a v2 row. `test_ac14_screen_records_model_called_and_screening_result_created_by_the_agent` pinned the exact audit sequence; it now expects one `citation.created` per cited cell (strengthened, not weakened: still exact, still every event the agent's). The reviewer and matcher have no end-to-end integration suite (their `create_*_run` need a real model route), so their wiring is covered at the `record_agent_citations` level and by the existing unit suites (475 pass). `make evals` not run.
+- 2026-10-24: final checks on the branch: backend unit, contracts and security 26,387 passed (4 xfailed); integration (trust_kit, screening, access events, schema check, binder lifecycle, model foundation) 322 passed (2 xfailed); ruff, pyright, banned_patterns, validate_docs and error_codes clean; make check-fast green; apps/web vitest 1,488 tests, one SHL-01 timing test flaked under load and passes alone.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

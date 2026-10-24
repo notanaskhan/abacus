@@ -24,6 +24,7 @@ updated: 2026-10-24
 
 ## Progress log
 - 2026-10-24: built. Seven scenario documents (K-1 draft, K-1 statement, Ridgeline TB, Harborline, Claire's W-2, Halvard 1099, and the processing K-1), page images are the synthetic grey-rule PNGs the E5 specimens use (exported from `@abacus/ui/specimens`). The DF-31 status words already landed with the C4 stub (`citation`, `viewer`, `evidence_unlock` in the status vocabulary); "Unverified" (a boolean, not a status) is SHL-07 copy. No reveal handler: the reveal and its value are T16/T20. Tests: 21 fixture tests, 9 SHL-08 artboard tests. `docs/screens/SHL-07.md` and `SHL-08.md` (screen contracts) don't exist yet; the scenarios follow the handoff README artboard tables and P-03 §5.4.
+- 2026-10-24: final checks on the branch: backend unit, contracts and security 26,387 passed (4 xfailed); integration (trust_kit, screening, access events, schema check, binder lifecycle, model foundation) 322 passed (2 xfailed); ruff, pyright, banned_patterns, validate_docs and error_codes clean; make check-fast green; apps/web vitest 1,488 tests, one SHL-01 timing test flaked under load and passes alone.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

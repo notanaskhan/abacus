@@ -22,6 +22,7 @@ updated: 2026-10-24
 
 ## Progress log
 - 2026-10-24: built on F-05-T41's E1 store and E2 host without changing L2 (the L2 `CitationPopover` card has a different footer and stepper grammar from SHL-07's, so the container renders its own card in the host's `render`). 10 tests pass.
+- 2026-10-24: final checks on the branch: backend unit, contracts and security 26,387 passed (4 xfailed); integration (trust_kit, screening, access events, schema check, binder lifecycle, model foundation) 322 passed (2 xfailed); ruff, pyright, banned_patterns, validate_docs and error_codes clean; make check-fast green; apps/web vitest 1,488 tests, one SHL-01 timing test flaked under load and passes alone.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

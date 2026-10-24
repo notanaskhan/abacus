@@ -32,6 +32,7 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: plan written.
 - 2026-10-24: built. `viewer.py` serves the four routes; tests written first (`test_viewer.py`, 7). `UploadPreview` now maps 0109's `derivation_id` and `mask_version`; `PiiRegion` maps no `value_sealed`. Committed with T08.
+- 2026-10-24: final checks on the branch: backend unit, contracts and security 26,387 passed (4 xfailed); integration (trust_kit, screening, access events, schema check, binder lifecycle, model foundation) 322 passed (2 xfailed); ruff, pyright, banned_patterns, validate_docs and error_codes clean; make check-fast green; apps/web vitest 1,488 tests, one SHL-01 timing test flaked under load and passes alone.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
