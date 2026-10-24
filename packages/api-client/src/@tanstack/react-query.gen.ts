@@ -7678,7 +7678,8 @@ export const draftSelectionFollowUpsMutation = (options?: Partial<Options<DraftS
 /**
  * Send Follow Ups Route
  *
- * BND-01 b "Send n follow-ups": all or none, in one unit of work.
+ * BND-01 b "Send n follow-ups": all or none, in one unit of work. A retry with the same key
+ * is authorised again.
  */
 export const sendFollowUpsMutation = (options?: Partial<Options<SendFollowUpsData>>): UseMutationOptions<SendFollowUpsResponse, SendFollowUpsError, Options<SendFollowUpsData>> => {
     const mutationOptions: UseMutationOptions<SendFollowUpsResponse, SendFollowUpsError, Options<SendFollowUpsData>> = {
@@ -7753,7 +7754,8 @@ export const dismissFollowUpMutation = (options?: Partial<Options<DismissFollowU
  * Send Follow Up Route
  *
  * Human only. 409 `out_of_scope` (nothing sent), `follow_up_already_sent`; the email leaves
- * after the 10-s Undo window. A retry with the same key answers what the first answered.
+ * after the 10-s Undo window. A retry with the same key is authorised again, then answers what
+ * the first answered and sends nothing again.
  */
 export const sendFollowUpMutation = (options?: Partial<Options<SendFollowUpData>>): UseMutationOptions<SendFollowUpResponse, SendFollowUpError, Options<SendFollowUpData>> => {
     const mutationOptions: UseMutationOptions<SendFollowUpResponse, SendFollowUpError, Options<SendFollowUpData>> = {

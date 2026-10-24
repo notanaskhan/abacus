@@ -87295,7 +87295,7 @@
     },
     "/v1/follow-ups/send": {
       "post": {
-        "description": "BND-01 b \"Send n follow-ups\": all or none, in one unit of work.",
+        "description": "BND-01 b \"Send n follow-ups\": all or none, in one unit of work. A retry with the same key\nis authorised again.",
         "operationId": "send_follow_ups",
         "parameters": [
           {
@@ -87770,7 +87770,7 @@
     },
     "/v1/follow-ups/{follow_up_id}/send": {
       "post": {
-        "description": "Human only. 409 `out_of_scope` (nothing sent), `follow_up_already_sent`; the email leaves\nafter the 10-s Undo window. A retry with the same key answers what the first answered.",
+        "description": "Human only. 409 `out_of_scope` (nothing sent), `follow_up_already_sent`; the email leaves\nafter the 10-s Undo window. A retry with the same key is authorised again, then answers what\nthe first answered and sends nothing again.",
         "operationId": "send_follow_up",
         "parameters": [
           {

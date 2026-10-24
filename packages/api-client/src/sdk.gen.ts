@@ -4584,7 +4584,8 @@ export const draftSelectionFollowUps = <ThrowOnError extends boolean = false>(op
 /**
  * Send Follow Ups Route
  *
- * BND-01 b "Send n follow-ups": all or none, in one unit of work.
+ * BND-01 b "Send n follow-ups": all or none, in one unit of work. A retry with the same key
+ * is authorised again.
  */
 export const sendFollowUps = <ThrowOnError extends boolean = false>(options: Options<SendFollowUpsData, ThrowOnError>): RequestResult<SendFollowUpsResponses, SendFollowUpsErrors, ThrowOnError> => (options.client ?? client).post<SendFollowUpsResponses, SendFollowUpsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4634,7 +4635,8 @@ export const dismissFollowUp = <ThrowOnError extends boolean = false>(options: O
  * Send Follow Up Route
  *
  * Human only. 409 `out_of_scope` (nothing sent), `follow_up_already_sent`; the email leaves
- * after the 10-s Undo window. A retry with the same key answers what the first answered.
+ * after the 10-s Undo window. A retry with the same key is authorised again, then answers what
+ * the first answered and sends nothing again.
  */
 export const sendFollowUp = <ThrowOnError extends boolean = false>(options: Options<SendFollowUpData, ThrowOnError>): RequestResult<SendFollowUpResponses, SendFollowUpErrors, ThrowOnError> => (options.client ?? client).post<SendFollowUpResponses, SendFollowUpErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

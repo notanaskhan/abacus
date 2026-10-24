@@ -81,6 +81,13 @@ async def two(net: Net, seed: Seeder) -> Two:
     wall_id = cast(
         uuid.UUID, await seed.value("SELECT id FROM ethical_walls WHERE tenant_id = $1", b)
     )
+    # G-01-T05 (DEC-285): a real firm invites only once provisioning has set its seats.
+    await seed.run(
+        "INSERT INTO firm_settings (tenant_id, section, key, value, updated_by) "
+        "VALUES ($1, 'plan', 'seats', '100'::jsonb, $2)",
+        b,
+        admin_b.user_id,
+    )
     invited = await net.call(
         "POST",
         "/v1/firm/staff/invitations",
