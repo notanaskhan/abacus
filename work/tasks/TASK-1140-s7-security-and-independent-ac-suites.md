@@ -33,5 +33,15 @@ Seven surface probes (records, lists, search, counts, notifications, exports, ag
 - **Defect ED-017 (fixed):** every trace export answered 500. C6 §7 records `Ref(sha256, rows)` and the unit of work's `Ref` refused a key containing a digit; nothing on `main` had ever exported a trace. `Ref` keys may now carry digits after the first letter (`kernel/uow/__init__.py`).
 - **Noted, not a defect:** the C4 viewer family (`/v1/evidence-versions/{id}/viewer`, `/search`) is a contract stub answering 501 before any authorisation when `evidence.viewer_v1` is on; it reads the same for a walled id and an unknown one, so the sweep passes. The live viewer (P-03) must authorise first; the sweep will hold it to that.
 
+## Q-03-T013: hostile files
+Through the item upload and the inbox over HTTP (compose S3 image with Object Lock), then the `upload_processing` stages (extract, check, preview) run as activities on the stored version. EICAR (plain, inside an XLSX, in a PNG+ZIP polyglot), ratio, size, entries and nested bombs, a scan of the inbox, over 50 MB, seven types outside DEC-58 (c), empty, four polyglots, a password-protected PDF (unreadable, no pages: SHL-08 D), a PDF with JavaScript, HEIC, a malformed PDF (unreadable, never a worker failure), and the control (an ordinary statement is extracted and paged). 28 tests: 18 pass, 10 held.
+
+- **ED-018 (open):** uploads stop at 25 MB, not DEC-58 (c)'s 50 MB. A body past the edge's request limit answers 413 `payload too large` from the middleware (ADR-152, Q-01-T16) before the route's 422 `upload_too_large`; the >50 MB test accepts either, both refuse before storage. Held: the route limit, the protected edge limit and the extraction memory limits move together.
+- **ED-019 (open):** `sniff` keeps any text as `text/csv` and passes OLE and macro workbooks, so HTML, SVG, JavaScript, `.doc` and `.xlsm` are stored. Held: a type-policy change (declared type and name against the bytes) that reaches every test uploading text.
+- **ED-020 (open):** HEIC is refused, contrary to DEC-58 (c).
+- **ED-021 (open):** a PDF with JavaScript is extracted and previewed. Held: needs a scanner rule or a PDF policy decision.
+- **Spec drift:** SPEC-029 §7 says 25 MB; DEC-58 (c) (later) says 50 MB. The test follows DEC-58.
+
 ## Progress log
 - 2026-10-24: T012 written and green (61 passed); ED-017 fixed with it.
+- 2026-10-24: T013 written: 18 pass, 10 held as ED-018 to ED-021.
