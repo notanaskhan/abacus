@@ -11,9 +11,17 @@ The `phase` CHECK already holds the C2 `audit_engagement` codes (0068) and is ke
 release and archive write `released` and `archived`, and the backfill wrote `archived`.
 
 New `assurance_phase_events` (insert-only: UPDATE and DELETE revoked and refused by a trigger):
-one row per phase move. A `recorded` row is a human's (CHECK); a `derived` row is the system's
-and names its gate. The optional reason is sealed under the tenant key (≤ 300 characters before
+one row per phase move. A `recorded` row is a person's (CHECK); a `derived` row names its gate
+and is the system's or the person whose act met the gate (SPEC-314's release and archive). The
+optional reason is sealed under the tenant key, bound to the event's id (≤ 300 characters before
 sealing, checked in the service). Indexed for the AUD-01 tiles and a work item's history.
+
+The phase moves only through an event (security review, DEC-262): the app role loses UPDATE on
+`phase`, and the SECURITY DEFINER insert trigger `assurance_phase_event_apply` checks the row and
+moves the projection itself. It refuses an actor other than the session's own (`app.actor_kind`,
+`app.actor_id`, as 0132 does for review decisions), a `from_phase` that is not the work item's
+phase, a move that is not forward, and a recorded move of more than one step (In review to Ready
+to release counts as one while Completion is not offered, DV-12).
 
 Revision ID: 0134
 Revises: 0133
@@ -35,6 +43,56 @@ _PHASES = (
     "'archiving', 'archived')"
 )
 
+# The order of C2 `audit_engagement` codes; `archiving` is the index's clock, never moved to.
+_APPLY = """
+CREATE FUNCTION assurance_phase_event_apply() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog, public, pg_temp
+AS $$
+DECLARE
+    v_order text[] := ARRAY['planning', 'fieldwork', 'in_review', 'completion',
+                            'ready_to_release', 'released', 'archiving', 'archived'];
+    v_phase text;
+    v_from integer;
+    v_to integer;
+BEGIN
+    IF NEW.actor_kind IS DISTINCT FROM current_setting('app.actor_kind', true)
+       OR (NEW.actor_kind = 'human'
+           AND NEW.actor_user_id::text IS DISTINCT FROM current_setting('app.actor_id', true))
+    THEN
+        RAISE EXCEPTION 'a phase move is made by the session''s own actor'
+            USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    SELECT w.phase INTO v_phase FROM public.assurance_work_items w
+     WHERE w.tenant_id = NEW.tenant_id AND w.work_item_id = NEW.work_item_id
+       AND w.engagement_id = NEW.engagement_id
+       FOR UPDATE;
+    IF NOT FOUND OR v_phase IS DISTINCT FROM NEW.from_phase THEN
+        RAISE EXCEPTION 'phase_stale'
+            USING ERRCODE = 'check_violation', CONSTRAINT = 'assurance_phase_events_from_current';
+    END IF;
+    v_from := array_position(v_order, NEW.from_phase);
+    v_to := array_position(v_order, NEW.to_phase);
+    IF v_to <= v_from THEN
+        RAISE EXCEPTION 'phase_backward'
+            USING ERRCODE = 'check_violation', CONSTRAINT = 'assurance_phase_events_forward';
+    END IF;
+    IF NEW.mode = 'recorded' AND NOT (
+        v_to = v_from + 1
+        OR (NEW.from_phase = 'in_review' AND NEW.to_phase = 'ready_to_release')
+    ) THEN
+        RAISE EXCEPTION 'phase_skip'
+            USING ERRCODE = 'check_violation', CONSTRAINT = 'assurance_phase_events_one_step';
+    END IF;
+    UPDATE public.assurance_work_items
+       SET phase = NEW.to_phase, phase_source = NEW.mode,
+           phase_changed_at = public.abacus_now(), version = version + 1
+     WHERE tenant_id = NEW.tenant_id AND work_item_id = NEW.work_item_id;
+    RETURN NEW;
+END
+$$
+"""
+
 
 def upgrade() -> None:
     op.execute(
@@ -49,9 +107,11 @@ def upgrade() -> None:
         """
     )
     op.execute(
-        "GRANT UPDATE (ebp_plan_kind, limited_scope_103a3c, standards_set_id, phase_source, "
-        "phase_changed_at, version) ON assurance_work_items TO abacus_app"
+        "GRANT UPDATE (ebp_plan_kind, limited_scope_103a3c, standards_set_id, version) "
+        "ON assurance_work_items TO abacus_app"
     )
+    # The phase moves only through an event row (assurance_phase_event_apply below).
+    op.execute("REVOKE UPDATE (phase) ON assurance_work_items FROM abacus_app")
     op.execute(
         "CREATE INDEX assurance_work_items_by_phase "
         "ON assurance_work_items (tenant_id, phase, work_item_id)"
@@ -73,8 +133,9 @@ def upgrade() -> None:
             mfa_at timestamptz NULL,
             recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             CHECK (from_phase <> to_phase),
-            CHECK (mode <> 'recorded' OR (actor_kind = 'human' AND actor_user_id IS NOT NULL)),
-            CHECK (mode <> 'derived' OR (actor_kind = 'system' AND gate_ref IS NOT NULL)),
+            CHECK (mode <> 'recorded' OR (actor_kind = 'human' AND gate_ref IS NULL)),
+            CHECK (mode <> 'derived' OR gate_ref IS NOT NULL),
+            CHECK ((actor_kind = 'human') = (actor_user_id IS NOT NULL)),
             FOREIGN KEY (tenant_id, engagement_id, work_item_id)
                 REFERENCES work_items (tenant_id, engagement_id, id)
         )
@@ -100,12 +161,21 @@ def upgrade() -> None:
         "BEFORE UPDATE OR DELETE ON assurance_phase_events "
         "FOR EACH ROW EXECUTE FUNCTION assurance_phase_events_immutable()"
     )
+    op.execute(_APPLY)
+    op.execute("REVOKE ALL ON FUNCTION assurance_phase_event_apply() FROM PUBLIC")
+    op.execute("GRANT EXECUTE ON FUNCTION assurance_phase_event_apply() TO abacus_app")
+    op.execute(
+        "CREATE TRIGGER assurance_phase_event_apply "
+        "BEFORE INSERT ON assurance_phase_events "
+        "FOR EACH ROW EXECUTE FUNCTION assurance_phase_event_apply()"
+    )
     tenant_table(op, "assurance_phase_events")
     op.execute("REVOKE UPDATE, DELETE ON assurance_phase_events FROM abacus_app")
     insert_columns(
         op,
         "assurance_phase_events",
         (
+            "id",
             "tenant_id",
             "engagement_id",
             "work_item_id",
@@ -123,12 +193,14 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("DROP TABLE assurance_phase_events")
+    op.execute("DROP FUNCTION assurance_phase_event_apply()")
     op.execute("DROP FUNCTION assurance_phase_events_immutable()")
     op.execute("DROP INDEX assurance_work_items_by_phase")
     op.execute(
-        "REVOKE UPDATE (ebp_plan_kind, limited_scope_103a3c, standards_set_id, phase_source, "
-        "phase_changed_at, version) ON assurance_work_items FROM abacus_app"
+        "REVOKE UPDATE (ebp_plan_kind, limited_scope_103a3c, standards_set_id, version) "
+        "ON assurance_work_items FROM abacus_app"
     )
+    op.execute("GRANT UPDATE (phase) ON assurance_work_items TO abacus_app")
     op.execute(
         """
         ALTER TABLE assurance_work_items

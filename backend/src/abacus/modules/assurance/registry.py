@@ -27,7 +27,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "engagement_id", "seal", "leaf_count", "manifest", "locked_by", "actor_kind"}
     ),
     "assurance_phase_events": frozenset(
-        {"tenant_id", "engagement_id", "work_item_id", "from_phase", "to_phase", "mode"}
+        {"id", "tenant_id", "engagement_id", "work_item_id", "from_phase", "to_phase", "mode"}
         | {"reason_sealed", "gate_ref", "actor_kind", "actor_user_id", "mfa_at"}
     ),
 }

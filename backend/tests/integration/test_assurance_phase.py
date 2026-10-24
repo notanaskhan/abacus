@@ -14,10 +14,14 @@ from typing import cast
 
 import asyncpg
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
+from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
 from abacus.kernel.config import settings
-from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance import api as assurance_api
 from abacus.modules.assurance import phase
 from abacus.modules.engagements import slots
@@ -186,8 +190,11 @@ async def test_ac11_staff_agents_and_the_system_are_refused(world: World) -> Non
 async def test_ac11_the_table_refuses_a_non_human_recorded_row_and_any_change(
     world: World,
 ) -> None:
+    # As the system's own session, so the actor check passes and the CHECK is what refuses it.
     with pytest.raises(asyncpg.CheckViolationError):
-        await world.seed.run(
+        await world.seed.as_actor(
+            world.tenant,
+            ("system", "test.system"),
             "INSERT INTO assurance_phase_events (tenant_id, engagement_id, work_item_id, "
             "from_phase, to_phase, mode, actor_kind, actor_user_id) "
             "VALUES ($1, $2, $3, 'planning', 'fieldwork', 'recorded', 'system', $4)",
@@ -283,3 +290,113 @@ async def _fresh_item(world: World) -> uuid.UUID:
             engagement,
         ),
     )
+
+
+# --- Security review fixes (A-01-T05 follow-up; DEC-262) ----------------------------------------
+
+
+async def test_review_recording_a_phase_is_a_human_only_audit_action(world: World) -> None:
+    listed = cast(list[str], await world.seed.value("SELECT abacus_human_only_actions()"))
+    assert "assurance.phase_recorded" in listed
+    assert "assurance.phase_recorded" in HUMAN_ONLY_ACTIONS
+    # Derived moves are the system's (gate.met), never an agent's: not on the human-only list.
+    assert "assurance.phase_derived" not in listed
+    # test_human_only_guard.py proves the trigger refuses an agent every listed action.
+
+
+async def test_review_the_event_actor_is_the_sessions_own(world: World) -> None:
+    someone = str(uuid.uuid4())
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await world.seed.as_actor(
+            world.tenant,
+            ("human", someone),
+            "INSERT INTO assurance_phase_events (tenant_id, engagement_id, work_item_id, "
+            "from_phase, to_phase, mode, actor_kind, actor_user_id) "
+            "VALUES ($1, $2, $3, 'planning', 'fieldwork', 'recorded', 'human', $4)",
+            world.tenant,
+            world.engagement,
+            world.work_item,
+            world.partner.user_id,
+        )
+    assert await world.events() == []
+
+
+@pytest.mark.parametrize(
+    ("from_phase", "to_phase"), [("planning", "in_review"), ("planning", "planning")]
+)
+async def test_review_the_database_refuses_a_skipped_or_backward_recorded_move(
+    world: World, from_phase: str, to_phase: str
+) -> None:
+    me = ("human", str(world.partner.user_id))
+    with pytest.raises((asyncpg.CheckViolationError, asyncpg.RaiseError)):
+        await world.seed.as_actor(
+            world.tenant,
+            me,
+            "INSERT INTO assurance_phase_events (tenant_id, engagement_id, work_item_id, "
+            "from_phase, to_phase, mode, actor_kind, actor_user_id) "
+            "VALUES ($1, $2, $3, $4, $5, 'recorded', 'human', $6)",
+            world.tenant,
+            world.engagement,
+            world.work_item,
+            from_phase,
+            to_phase,
+            world.partner.user_id,
+        )
+    assert (await world.phase_row())["phase"] == "planning"
+
+
+async def test_review_the_phase_moves_only_with_an_event(world: World) -> None:
+    async with tenant_session(world.partner.tenant) as session:
+        with pytest.raises(DBAPIError):
+            await session.execute(
+                text(
+                    "UPDATE assurance_work_items SET phase = 'fieldwork' WHERE work_item_id = :w"
+                ),
+                {"w": world.work_item},
+            )
+    await phase.record_phase(world.partner, world.work_item, "fieldwork")
+    row = await world.phase_row()
+    assert (row["phase"], row["version"]) == ("fieldwork", 2)
+    assert [(e["from_phase"], e["to_phase"]) for e in await world.events()] == [
+        ("planning", "fieldwork")
+    ]
+
+
+async def test_review_a_gate_met_derives_one_step_at_a_time(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def met(_tenant: TenantContext, _engagement: uuid.UUID) -> GateFact:
+        return GateFact(met=True)
+
+    monkeypatch.setitem(slots._GATES, "G4", met)  # pyright: ignore[reportPrivateUsage] -- A-04's provider, registered for the test
+    monkeypatch.setitem(slots._GATES, "G9", met)  # pyright: ignore[reportPrivateUsage] -- the archive gate, met for the test
+    tenant = TenantContext(world.tenant, "system", "assurance.phase_derive")
+    await phase.derive_phase(tenant, world.engagement, "G9")
+    # Fieldwork follows G4 (met); In review has no gate, so the walk stops there.
+    assert (await world.phase_row())["phase"] == "fieldwork"
+    assert [(e["from_phase"], e["to_phase"]) for e in await world.events()] == [
+        ("planning", "fieldwork")
+    ]
+
+
+async def test_review_a_partner_release_writes_its_phase_event(world: World) -> None:
+    async with uow(world.partner.tenant) as tx:
+        await phase.advance_by_gate(
+            tx, world.partner.tenant, world.engagement, "released", "G8", world.partner.user_id
+        )
+        tx.record("report.released", target=Target("engagement", world.engagement))
+    row = await world.phase_row()
+    assert (row["phase"], row["phase_source"], row["version"]) == ("released", "derived", 2)
+    [event] = await world.events()
+    assert (event["from_phase"], event["to_phase"], event["mode"], event["gate_ref"]) == (
+        "planning",
+        "released",
+        "derived",
+        "G8",
+    )
+    assert event["actor_user_id"] == world.partner.user_id
+
+
+async def test_review_the_sealed_reason_reopens_from_the_event(world: World) -> None:
+    move = await phase.record_phase(world.partner, world.work_item, "fieldwork", "Planning done")
+    assert await phase.reason_of(world.partner.tenant, move.event_id) == "Planning done"

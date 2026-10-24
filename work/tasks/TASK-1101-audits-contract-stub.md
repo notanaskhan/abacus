@@ -28,6 +28,8 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: built. `tests/contracts/audits` + slot unit tests 50 passed; matrix, route introspection, app gates, independence, status vocabulary and C5 suites green (8258 passed). P-06's A-01 consumer test pinned `BinderRequestRowOut`'s confidential fields, so the new wrappers are internal with confidential `display` and `path_label`.
 
+- 2026-10-24: security review: each stub now authorises its action (client, agent and system 403; work item through `authorise`) before the flag or 501 (`tests/unit/assurance/test_audits_review.py`); C5 v1.1 row fields firm-only (`requests.contract.for_viewer`). DEC-261 amended.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

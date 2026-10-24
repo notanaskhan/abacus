@@ -18,7 +18,7 @@ deny the agent (INV-1, ADR-005).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Final, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -271,6 +271,18 @@ class BinderRequestRowOut(BaseModel):
     )
     match_confidence: Annotated[int | None, Field(ge=0, le=100), classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+# C5 v1.1 (security review, DEC-261): who owes a request, its newest upload's path and the match
+# confidence are the firm's; a client principal's rows never carry them, whatever fills them.
+_FIRM_ONLY_ROW_FIELDS: Final = ("owed_by", "latest_upload", "match_confidence")
+
+
+def for_viewer(row: BinderRequestRowOut, ctx: AuthContext) -> BinderRequestRowOut:
+    """The row as this viewer may see it: the C5 v1.1 fields are left out for a client."""
+    if not ctx.client:
+        return row
+    return row.model_copy(update=dict.fromkeys(_FIRM_ONLY_ROW_FIELDS))
 
 
 class LiveItemOut(BaseModel):
@@ -644,7 +656,10 @@ async def binder_requests_route(
     await engine_on(ctx)
     page = await binders.binder_requests(ctx, binder_id, category, cursor)
     return ListPage[BinderRequestRowOut](
-        items=[BinderRequestRowOut.model_validate(r, from_attributes=True) for r in page.items],
+        items=[
+            for_viewer(BinderRequestRowOut.model_validate(r, from_attributes=True), ctx)
+            for r in page.items
+        ],
         next_cursor=page.next_cursor,
         total=page.total,
         total_capped=page.total_capped,

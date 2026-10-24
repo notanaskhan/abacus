@@ -115,9 +115,7 @@ from abacus.modules.engagements.work_items import (
     create_work_item,
     lock_assurance_item,
     lock_engagement,
-    move_assurance_phase,
     portal_work_items,
-    set_assurance_phase,
     set_assurance_profile,
 )
 from abacus.modules.engagements.workbook import (
@@ -272,7 +270,6 @@ __all__ = [
     "lock_ref",
     "methodology_router",
     "methodology_version",
-    "move_assurance_phase",
     "open_engagements",
     "pin_methodology",
     "portal_work_items",
@@ -289,7 +286,6 @@ __all__ = [
     "router",
     "run_auto_retrieval",
     "service_line_of",
-    "set_assurance_phase",
     "set_assurance_profile",
     "stored_file",
     "version_detail",

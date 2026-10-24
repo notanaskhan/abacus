@@ -108,11 +108,11 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "statement_version", "note", "answered_at"}
     ),
     "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
+    # F-03-T05 (0068) granted phase and auto_mode; A-01-T05 (0134) adds the EBP profile facts and
+    # the version, and takes `phase` away: it moves only through an assurance phase event, whose
+    # SECURITY DEFINER trigger writes phase, phase_source and phase_changed_at (DEC-262).
     "assurance_work_items": frozenset(
-        {"phase", "auto_mode"}  # F-03-T05 (0068)
-        # A-01-T05 (0134): the EBP profile facts and the record-mode phase stamps.
-        | {"ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "phase_source"}
-        | {"phase_changed_at", "version"}
+        {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
     ),
     "engagement_letters": frozenset(
         {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}

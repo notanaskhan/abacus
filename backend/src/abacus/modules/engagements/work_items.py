@@ -149,22 +149,10 @@ async def assurance_item_id(tenant: TenantContext, engagement_id: UUID) -> UUID 
         )
 
 
-async def set_assurance_phase(tx: UnitOfWork, engagement_id: UUID, phase: str) -> None:
-    """SPEC-314: the assurance work item's phase (released, archived), in the caller's unit."""
-    item = await tx.session.scalar(
-        select(WorkItem.id).where(
-            WorkItem.engagement_id == engagement_id, WorkItem.kind == "assurance"
-        )
-    )
-    if item is not None:
-        await tx.session.execute(
-            update(AssuranceWorkItem)
-            .where(AssuranceWorkItem.work_item_id == item)
-            .values(phase=phase)
-        )
-
-
 # --- A-01-T05 (0134): the assurance subtype's profile facts and phase projection ----------------
+# The phase moves only through an `assurance_phase_events` row: the app role holds no UPDATE on
+# `phase`, and the event's insert trigger moves the projection (DEC-262). The assurance module's
+# phase service writes the events; nothing here sets a phase.
 
 
 @dataclass(frozen=True)
@@ -217,26 +205,6 @@ async def lock_assurance_item(tx: UnitOfWork, work_item_id: UUID) -> AssuranceIt
     if row is None:
         raise NotFound("work_item")
     return _assurance_item(row)
-
-
-async def move_assurance_phase(
-    tx: UnitOfWork, work_item_id: UUID, phase: str, source: str, at: datetime
-) -> int:
-    """The phase projection moves, in the caller's unit; the new version is returned."""
-    version = await tx.session.scalar(
-        update(AssuranceWorkItem)
-        .where(AssuranceWorkItem.work_item_id == work_item_id)
-        .values(
-            phase=phase,
-            phase_source=source,
-            phase_changed_at=at,
-            version=AssuranceWorkItem.version + 1,
-        )
-        .returning(AssuranceWorkItem.version)
-    )
-    if version is None:
-        raise NotFound("work_item")
-    return version
 
 
 async def set_assurance_profile(

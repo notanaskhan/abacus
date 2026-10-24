@@ -92,7 +92,7 @@ def test_ac5_every_field_is_classified(model: type[BaseModel]) -> None:
 
 
 async def test_ac4_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
-    stub = cast(Callable[[AuthContext], Awaitable[object]], vars(audits_contract)["_stub"])
+    stub = cast(Callable[[AuthContext, str], Awaitable[object]], vars(audits_contract)["_stub"])
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -108,11 +108,11 @@ async def test_ac4_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(audits_contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await stub(ctx)
+        await stub(ctx, "engagement.read_metadata")
     assert seen == [AUDITS_COCKPIT]
     monkeypatch.setattr(audits_contract, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
-        await stub(ctx)
+        await stub(ctx, "engagement.read_metadata")
 
 
 def test_ac4_the_flag_is_boolean_and_default_off() -> None:

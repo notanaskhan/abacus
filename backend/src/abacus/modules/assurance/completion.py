@@ -41,6 +41,7 @@ from abacus.modules.assurance.completion_repository import (
     records_of,
     release_of,
 )
+from abacus.modules.assurance.phase import advance_by_gate
 from abacus.modules.engagements.api import (
     GateFact,
     Judgment,
@@ -49,7 +50,6 @@ from abacus.modules.engagements.api import (
     judgments_of,
     lock_engagement,
     lock_ref,
-    set_assurance_phase,
 )
 from abacus.modules.evidence.api import version_view
 from abacus.modules.identity.api import AuthContext, authorise, engagement_eqrs, engagement_team
@@ -586,7 +586,8 @@ async def release(ctx: AuthContext, engagement_id: UUID, attest: bool) -> None:
             released_by=ctx.user_id,
             actor_kind=ctx.tenant.actor_kind,
         )
-        await set_assurance_phase(tx, engagement_id, "released")
+        # A-01-T05 (DEC-262): the phase moves with its event, the partner named, G8 the gate.
+        await advance_by_gate(tx, ctx.tenant, engagement_id, "released", "G8", ctx.user_id)
         tx.record(
             "report.released",
             target=Target("engagement", engagement_id),
@@ -639,7 +640,7 @@ async def lock_archive(ctx: AuthContext, engagement_id: UUID, attest: bool) -> N
             locked_by=ctx.user_id,
             actor_kind=ctx.tenant.actor_kind,
         )
-        await set_assurance_phase(tx, engagement_id, "archived")
+        await advance_by_gate(tx, ctx.tenant, engagement_id, "archived", "G9", ctx.user_id)
         await lock_engagement(tx, engagement_id, await now(ctx.tenant))
         tx.record(
             "archive.locked", target=Target("engagement", engagement_id), after=Ref(seal=seal)

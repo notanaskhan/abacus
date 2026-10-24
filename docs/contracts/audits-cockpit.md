@@ -28,7 +28,7 @@ Consumers can rely on an audits index on the P-36 envelope whose phase tiles (`c
 | Record an external archive | `POST /v1/audits/{work_item_id}/archive-record` (`Idempotency-Key`; 201) | `assurance.record_archive` | engagement partner, manager; `mfa_recent`; independence | **denied** | A-01-T23 |
 | Source Documents | `GET /v1/audits/{work_item_id}/source-documents?binder=&q=&sort=missing_first\|received_first` | `request_item.read` | as P-06 (`client_service` sees status and file names, never content) | `task_scope` | A-01-T10 |
 
-Every route answers 404 with the flag off and 501 `not_implemented` with it on until its task lands. A work item outside the tenant, behind a wall or not of kind `assurance` answers 404 (INV-3). Client roles hold no cell on the three record actions.
+Every route first authorises its action (a client principal, an agent or the system is refused with 403; on a work item, its engagement through `authorise`), then answers 404 with the flag off and 501 `not_implemented` with it on until its task lands, so no principal learns the flag state it may not use (DEC-261). A work item outside the tenant, behind a wall or not of kind `assurance` answers 404 (INV-3). Client roles hold no cell on the three record actions.
 
 ## 3. Models
 Classification per field (ADR-031): **C** confidential, everything else internal; nothing Restricted, no TIN, no amount, no materiality.
@@ -43,13 +43,13 @@ Classification per field (ADR-031): **C** confidential, everything else internal
 - **`ArchiveRecordIn`** `{export_id, firm_tool_ref C ≤ 120}` → **`ArchiveRecordOut`** `{work_item_id, export_id, manifest_sha256, phase, recorded_at}`.
 - **`SourceDocumentsOut`**: `work_item_id`, `received`, `total`, `needs_review`, `requested`, `groups` C (`SourceDocumentGroupOut`: `category_id`, `label` C, `received`, `total`, `counted` (false for "Sample-driven"), `rows`). **`SourceDocumentRowOut`**: `request_item_id`, `binder_id`, `title` C, `status` (C2 `request`), `overdue` (derived), `requested_at`, `due_on`, `owed_by` (`RequestOwedByOut`: `kind` `client_contact`\|`third_party`\|`organisation`, `display` C), `latest_upload` (`RequestLatestUploadOut`: `evidence_version_id`, `path_label` C, `uploaded_on`, `uploader_kind` `client`\|`third_party`\|`firm`\|`connection`), `match_confidence` (0–100), `linked_count`, `screening` (C2 `evidence_screening`), `returned_reason`, `allowed_actions`.
 
-**C5 v1.1 (additive, in place):** P-06's `BinderRequestRowOut` (`GET /v1/binders/{id}/requests`) gains `owed_by`, `latest_upload` and `match_confidence`, all optional and null until A-01-T10 populates them; `requested_at`, `overdue`, `screening` and `linked_count` already exist and serve AUD-03 as they are. P-06's consumer tests stay green.
+**C5 v1.1 (additive, in place):** P-06's `BinderRequestRowOut` (`GET /v1/binders/{id}/requests`) gains `owed_by`, `latest_upload` and `match_confidence`, all optional and null until A-01-T10 populates them, and **firm-only**: a client principal's rows never carry them (`requests.contract.for_viewer`); `requested_at`, `overdue`, `screening` and `linked_count` already exist and serve AUD-03 as they are. P-06's consumer tests stay green.
 
 ## 4. Status words
 From `docs/product/status-vocabulary.yaml`: `audit_engagement` (planning, fieldwork, in_review, completion, ready_to_release, released, archiving, archived; `processing` derived), `audit_section` (the rail's sub-line and idle-pill words), `request` (DEC-09, `overdue` derived), `evidence_screening` (passed, flagged, not_screened), and `engagement_export` (queued, packaging, ready, failed, expired, undone) for the export sheet (A-01-T17).
 
 ## 5. Human-only actions
-`assurance.record_phase`, `assurance.record_release` and `assurance.record_archive`: the matrix denies `agent` and `system` and grants no client role; the services require a live human (`require_live_human`); `assurance_phase_events` (A-01-T05) has `CHECK (mode <> 'recorded' OR actor_kind = 'human')`, and the release and archive tables (A-01-T23) `actor_kind = 'human'`. These join chapter 06's I-AGENT-NEVER list in A-01-T25. The cockpit never renders Run, Begin…, Sign off run or Auto mode without the capability in `allowed_actions` / `/v1/me`.
+`assurance.record_phase`, `assurance.record_release` and `assurance.record_archive`: the matrix denies `agent` and `system` and grants no client role; the services require a live human (`require_live_human`); `assurance_phase_events` (A-01-T05) has `CHECK (mode <> 'recorded' OR actor_kind = 'human')`, binds each row's actor to the session's (`app.actor_kind`, `app.actor_id`), refuses backward and multi-step recorded moves in its SECURITY DEFINER insert trigger, and is the only way the phase moves (the app role cannot update `phase`); `assurance.phase_recorded` is on the human-only register (0135); and the release and archive tables (A-01-T23) `actor_kind = 'human'`. These join chapter 06's I-AGENT-NEVER list in A-01-T25. The cockpit never renders Run, Begin…, Sign off run or Auto mode without the capability in `allowed_actions` / `/v1/me`.
 
 ## 6. Errors
 | Status | Code | When |
@@ -62,6 +62,7 @@ From `docs/product/status-vocabulary.yaml`: `audit_engagement` (planning, fieldw
 | 409 | `phase_follows_gate` | the target phase's gate has a registered provider: it derives from `gate.met` |
 | 409 | `stale_version` | PATCH profile with an old `seen_version` |
 | 422 | `phase_invalid` | a phase reason over 300 characters |
+| 422 | validation | PATCH profile with `limited_scope_103a3c: null`, or a body that changes nothing |
 | 409 | `release_mode_in_app` | release record while the firm's `assurance_release_mode` is `in_app` (A-01-T23) |
 | 409 | `final_export_required`, `export_stale` | archive record without a ready, current final binder export (A-01-T23) |
 | 422 | `release_date_future` | release date after `clock.today()` (A-01-T23) |

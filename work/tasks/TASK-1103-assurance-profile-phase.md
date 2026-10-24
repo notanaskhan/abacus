@@ -25,6 +25,8 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: built; 9 integration tests pass. Two corrections while testing: identifier-only error facts refuse a comma (gates joined with ":"), and a replayed `gate.met` must not open an empty unit of work (MissingAuditEvent), so the derive reads first and suppresses the race. SPEC-314's G6 to G9 providers mean Ready to release, Released and Archived already follow gates (DEC-262).
 
+- 2026-10-24: security review fixes (failing tests first, then code). 0134: actor binding and the forward/one-step check in the SECURITY DEFINER insert trigger `assurance_phase_event_apply`, which also moves the projection; the app role loses UPDATE on `phase`; event `id` insertable so the reason is sealed to it (`reason_of`). New 0135 (down_revision 0134): `assurance.phase_recorded` on the human-only register (0132's 27 + 1; downgrade restores the 27). `derive_phase` walks one step per event; `advance_by_gate` routes SPEC-314's release (G8) and archive lock (G9) through an event; `engagements.api` loses `set_assurance_phase` and `move_assurance_phase`. Stubs authorise before 501; PATCH profile 422s; C5 v1.1 row fields firm-only. Closed lists: schema-check definers and update columns, assurance insert columns. Note: the Brightwater Hale loader still sets `phase` directly as the superuser; A-01-T07 replaces that with service calls.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

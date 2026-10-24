@@ -22,7 +22,7 @@ from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel._flags import AUDITS_COCKPIT
 from abacus.kernel._statuses import (
@@ -39,7 +39,14 @@ from abacus.kernel.text import SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.assurance import phase
 from abacus.modules.assurance.sections import Band, Grammar, Segment, TagClassification
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.engagements.api import assurance_item, get_ref
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Forbidden,
+    authorise,
+    current_context,
+)
 from abacus.modules.requests.api import RequestLatestUploadOut, RequestOwedByOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -266,6 +273,15 @@ class AuditProfileIn(BaseModel):
     standards_set_id: Annotated[UUID | None, classified("internal")] = None
     seen_version: Annotated[int, classified("internal")]
 
+    @model_validator(mode="after")
+    def _a_change(self) -> AuditProfileIn:
+        """422: the label is a yes or no (never null), and a PATCH changes at least one fact."""
+        if "limited_scope_103a3c" in self.model_fields_set and self.limited_scope_103a3c is None:
+            raise ValueError("limited_scope_103a3c is true or false")
+        if not self.model_fields_set - {"seen_version"}:
+            raise ValueError("nothing to change")
+        return self
+
 
 class AuditProfileOut(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -409,7 +425,26 @@ async def _flag_on(ctx: AuthContext) -> None:
         raise NotFound(AUDITS_COCKPIT.name)
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _authorise_on_item(ctx: AuthContext, action: str, work_item_id: UUID) -> None:
+    """The route's one action on the work item's engagement: 404 outside the tenant, for another
+    kind of work item or behind a wall; 403 by role."""
+    item = await assurance_item(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, item.engagement_id)
+    await authorise(ctx, action, ref.resource())
+
+
+async def _allowed(ctx: AuthContext, action: str, work_item_id: UUID | None) -> None:
+    """Security review (DEC-261): every route authorises before the flag or the stub answers, so
+    no principal learns the flag state it may not use. No `/v1/audits` route serves a client
+    principal (INV-4), an agent or the system (the stubs and record mode are a person's)."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    if work_item_id is not None:
+        await _authorise_on_item(ctx, action, work_item_id)
+
+
+async def _stub(ctx: AuthContext, action: str, work_item_id: UUID | None = None) -> NoReturn:
+    await _allowed(ctx, action, work_item_id)
     await _flag_on(ctx)
     raise NotImplementedYet
 
@@ -434,7 +469,7 @@ async def audits_index_route(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> AuditIndexPage:
     """AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08)."""
-    await _stub(ctx)
+    await _stub(ctx, "engagement.read_metadata")
 
 
 @audits_router.get(
@@ -445,7 +480,7 @@ async def audits_index_route(
 )
 async def audit_cockpit_route(work_item_id: UUID, ctx: Ctx) -> AuditCockpitOut:
     """AUD-02's host projection (A-01-T09)."""
-    await _stub(ctx)
+    await _stub(ctx, "engagement.read", work_item_id)
 
 
 @audits_router.patch(
@@ -458,6 +493,7 @@ async def audit_profile_route(
     work_item_id: UUID, body: AuditProfileIn, ctx: Ctx
 ) -> AuditProfileOut:
     """The EBP label facts (A-01-T05); 409 `stale_version`."""
+    await _allowed(ctx, "engagement.update", work_item_id)
     await _flag_on(ctx)
     changes = body.model_dump(exclude_unset=True, exclude={"seen_version"})
     made = await phase.update_profile(ctx, work_item_id, body.seen_version, changes)
@@ -481,6 +517,7 @@ async def audit_phase_route(
     work_item_id: UUID, body: AuditPhaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AuditPhaseOut:
     """Record mode (A-01-T05): a named person moves the phase forward one step."""
+    await _allowed(ctx, "assurance.record_phase", work_item_id)
     await _flag_on(ctx)
 
     async def run() -> tuple[int, dict[str, object]]:
@@ -517,7 +554,7 @@ async def audit_release_record_route(
     work_item_id: UUID, body: ReleaseRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRecordOut:
     """Interim G8, the engagement partner with fresh MFA (A-01-T23)."""
-    await _stub(ctx)
+    await _stub(ctx, "assurance.record_release", work_item_id)
 
 
 @audits_router.post(
@@ -531,7 +568,7 @@ async def audit_archive_record_route(
     work_item_id: UUID, body: ArchiveRecordIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ArchiveRecordOut:
     """Interim G9 against a ready final binder export, with fresh MFA (A-01-T23)."""
-    await _stub(ctx)
+    await _stub(ctx, "assurance.record_archive", work_item_id)
 
 
 @audits_router.get(
@@ -548,4 +585,4 @@ async def audit_source_documents_route(
     sort: Annotated[SourceSort, Query()] = "missing_first",
 ) -> SourceDocumentsOut:
     """AUD-02's canvas and AUD-03 (A-01-T10)."""
-    await _stub(ctx)
+    await _stub(ctx, "request_item.read", work_item_id)

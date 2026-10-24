@@ -2,9 +2,11 @@
 
 An assurance work item's phase follows its gates (blueprint §3.3.2). While Accrued computes no
 gate for a phase (its provider is unregistered), a named person records the move instead:
-record mode. Each move writes one insert-only `assurance_phase_events` row, moves the projection
-on `assurance_work_items` (through `engagements.api`, which owns the table), audits and emits
-`assurance.phase_changed`, in one unit of work.
+record mode. Each move writes one insert-only `assurance_phase_events` row, whose SECURITY
+DEFINER insert trigger checks the actor and the move and moves the projection on
+`assurance_work_items` (the app role cannot update `phase` itself), audits and emits
+`assurance.phase_changed`, in one unit of work. SPEC-314's release and archive lock move the phase
+through `advance_by_gate` the same way.
 
 - **Forward one step only.** The phases in order are planning, fieldwork, in review, completion,
   ready to release, released and archived; completion is not offered until DF-05 designs its tile
@@ -29,14 +31,13 @@ from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, ClassVar, Final
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 
 from abacus.kernel.classification import classified
-from abacus.kernel.clock import now
-from abacus.kernel.crypto import seal
-from abacus.kernel.db import TenantContext
+from abacus.kernel.crypto import open_sealed, seal
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import (
     DomainEvent,
@@ -57,7 +58,6 @@ from abacus.modules.engagements.api import (
     gate_registered,
     lock_assurance_item,
     lock_ref,
-    move_assurance_phase,
     set_assurance_profile,
 )
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
@@ -189,11 +189,20 @@ def _human(ctx: AuthContext, action: str) -> None:
         raise Forbidden(action, "role")
 
 
-def _reason_context(work_item_id: UUID, event_marker: str) -> str:
-    """What a sealed reason is bound to (its work item and move), so it opens only there."""
-    return hashlib.sha256(
-        f"assurance_phase_event.reason:{work_item_id}:{event_marker}".encode()
-    ).hexdigest()
+def _reason_context(event_id: UUID) -> str:
+    """What a sealed reason is bound to: its own event, so it opens only as that event's."""
+    return hashlib.sha256(f"assurance_phase_event.reason:{event_id}".encode()).hexdigest()
+
+
+async def reason_of(tenant: TenantContext, event_id: UUID) -> str | None:
+    """A phase event's reason, opened for a caller that may read the engagement."""
+    async with tenant_session(tenant) as session:
+        sealed = await session.scalar(
+            select(AssurancePhaseEvent.reason_sealed).where(AssurancePhaseEvent.id == event_id)
+        )
+    if sealed is None:
+        return None
+    return (await open_sealed(tenant.tenant_id, sealed, _reason_context(event_id))).decode()
 
 
 async def _write_move(
@@ -206,36 +215,42 @@ async def _write_move(
     actor_user_id: UUID | None,
     mfa_at: datetime | None,
     gate_ref: str | None,
-    reason_sealed: bytes | None,
+    reason: str | None,
 ) -> PhaseMove:
-    at = await now(tenant)
+    """One event row; its insert trigger checks the actor and the move and moves the projection
+    (DEC-262), so the phase never changes without its history."""
+    event_id = uuid4()
+    sealed = (
+        None
+        if not reason
+        else await seal(tenant.tenant_id, reason.encode(), _reason_context(event_id))
+    )
     row = (
         await tx.session.execute(
             insert(AssurancePhaseEvent)
             .values(
+                id=event_id,
                 tenant_id=tenant.tenant_id,
                 engagement_id=item.engagement_id,
                 work_item_id=item.work_item_id,
                 from_phase=item.phase,
                 to_phase=to,
                 mode=mode,
-                reason_sealed=reason_sealed,
+                reason_sealed=sealed,
                 gate_ref=gate_ref,
-                actor_kind="human" if mode == "recorded" else "system",
+                actor_kind=tenant.actor_kind,
                 actor_user_id=actor_user_id,
                 mfa_at=mfa_at,
             )
-            .returning(AssurancePhaseEvent.id, AssurancePhaseEvent.recorded_at)
+            .returning(AssurancePhaseEvent.recorded_at)
         )
     ).one()
-    version = await move_assurance_phase(
-        tx, item.work_item_id, to, "recorded" if mode == "recorded" else "derived", at
-    )
+    moved = await lock_assurance_item(tx, item.work_item_id)
     tx.record(
         "assurance.phase_recorded" if mode == "recorded" else "assurance.phase_derived",
         target=Target("engagement", item.engagement_id),
         before=Ref(work_item=item.work_item_id, version=item.version),
-        after=Ref(work_item=item.work_item_id, event=row.id, version=version),
+        after=Ref(work_item=item.work_item_id, event=event_id, version=moved.version),
         scope=Scope(engagement_id=item.engagement_id),
     )
     tx.emit(
@@ -247,7 +262,9 @@ async def _write_move(
             mode=mode,
         )
     )
-    return PhaseMove(item.work_item_id, row.id, item.phase, to, mode, row.recorded_at, version)
+    return PhaseMove(
+        item.work_item_id, event_id, item.phase, to, mode, row.recorded_at, moved.version
+    )
 
 
 async def record_phase(
@@ -263,12 +280,6 @@ async def record_phase(
         _human(ctx, "assurance.record_phase")
         item = await lock_assurance_item(tx, work_item_id)
         check_move(item.phase, to)
-        sealed = None
-        if reason:
-            marker = f"{item.version}:{to}"
-            sealed = await seal(
-                ctx.tenant_id, reason.encode(), _reason_context(work_item_id, marker)
-            )
         return await _write_move(
             tx,
             ctx.tenant,
@@ -278,7 +289,7 @@ async def record_phase(
             actor_user_id=ctx.user_id,
             mfa_at=ctx.mfa_at,
             gate_ref=None,
-            reason_sealed=sealed,
+            reason=reason,
         )
 
 
@@ -287,43 +298,84 @@ def phase_for_gate(gate: str) -> str | None:
     return next((p for p, gates in PHASE_GATES.items() if gate in gates), None)
 
 
-async def derive_phase(tenant: TenantContext, engagement_id: UUID, gate: str) -> PhaseMove | None:
-    """AC-13: a registered gate became met; when every gate of its phase is met and the work item
-    is before that phase, the phase moves (mode `derived`, actor `system`). A replay moves
-    nothing."""
-    phase = phase_for_gate(gate)
-    if phase is None or not gate_registered(gate):
-        return None
-    for g in PHASE_GATES[phase]:
+async def _gates_met(tenant: TenantContext, engagement_id: UUID, phase: str) -> bool:
+    """Every gate of `phase` is computed (registered) and met; a phase without a gate never is."""
+    gates = PHASE_GATES.get(phase, ())
+    if not gates or not all(gate_registered(g) for g in gates):
+        return False
+    for g in gates:
         if not (await gate_fact(tenant, engagement_id, g)).met:
-            return None
+            return False
+    return True
+
+
+async def derive_phase(tenant: TenantContext, engagement_id: UUID, gate: str) -> PhaseMove | None:
+    """AC-13: a registered gate became met. The phase walks forward **one step at a time** while
+    the next phase's gates are all computed and met, one event per step (a met G9 never moves
+    Planning to Archived); a phase with no gate (In review) or an uncomputed one stops the walk.
+    A replay moves nothing. The last move is returned."""
+    if phase_for_gate(gate) is None or not gate_registered(gate):
+        return None
     work_item = await assurance_item_id(tenant, engagement_id)
     if work_item is None:
         return None
-    if _rank((await assurance_item(tenant, work_item)).phase) >= _rank(phase):
-        return None  # a replay, or the phase was reached another way
     moved: PhaseMove | None = None
     # Another delivery of the same event may move it first: then nothing is written.
     with suppress(MissingAuditEvent):
         async with uow(tenant) as tx:
             item = await lock_assurance_item(tx, work_item)
-            if _rank(item.phase) < _rank(phase):
+            while (step := next_phase(item.phase)) is not None and await _gates_met(
+                tenant, engagement_id, step
+            ):
                 moved = await _write_move(
                     tx,
                     tenant,
                     item,
-                    phase,
+                    step,
                     mode="derived",
                     actor_user_id=None,
                     mfa_at=None,
-                    gate_ref=gate,
-                    reason_sealed=None,
+                    gate_ref=PHASE_GATES[step][-1],
+                    reason=None,
                 )
+                item = await lock_assurance_item(tx, work_item)
     return moved
 
 
+async def advance_by_gate(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    engagement_id: UUID,
+    to: str,
+    gate: str,
+    actor_user_id: UUID | None,
+) -> PhaseMove | None:
+    """SPEC-314's release (G8) and archive lock (G9), in the caller's unit: the person whose act
+    met the gate moves the phase forward to `to` with one derived event (mode `derived`, the
+    gate named), so the history has no gap. Nothing moves when the phase is already there."""
+    work_item = await assurance_item_id(tenant, engagement_id)
+    if work_item is None:
+        return None
+    item = await lock_assurance_item(tx, work_item)
+    if _rank(item.phase) >= _rank(to):
+        return None
+    return await _write_move(
+        tx,
+        tenant,
+        item,
+        to,
+        mode="derived",
+        actor_user_id=actor_user_id,
+        mfa_at=None,
+        gate_ref=gate,
+        reason=None,
+    )
+
+
 async def on_gate_met(event: OutboxEvent) -> None:
-    """C1's `gate.met` for an assurance engagement: derive the phase it opens (AC-13)."""
+    """C1's `gate.met` for an assurance engagement: derive the phase it opens (AC-13). Today only
+    G1 to G3 emit `gate.met`, and they open no phase, so this is dormant until A-04 (G4) and the
+    later gates emit (DEC-262)."""
     gate = str(event.payload.get("gate", ""))
     raw = event.payload.get("engagement_id")
     if not isinstance(raw, str) or phase_for_gate(gate) is None:
