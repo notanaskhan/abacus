@@ -165,7 +165,10 @@ The firm's methodology documents, recalled by vector search. Knowledge is firm-w
 - **Triggers:** `upload_checks.recorded`, `upload_review.recorded` (emitted with each review) and `evidence_version.withdrawn`.
 - **Routes** (`screening_contract.py` over `screening_card.py`, behind `screening.card`):
   - `GET …/request-items/{id}/screening` (`upload_review.read`);
-  - `POST …/screening/rerun` (`screening.request`; 409 `screening_running`);
+  - `POST …/screening/rerun` (`screening.request`). Reviews start only with `upload_review.request` and `upload_review.enabled`. Source events are deterministic. It is rate-limited to one rerun per item per 60 s under an advisory lock, and answers 409 `screening_running`;
   - `POST /v1/screenings/{id}/feedback` (`screening.feedback`; insert-only `screening_feedback`, sealed note).
   - None of these writes a request status or a review decision.
-- **TRI fail-closed** (`tri_gate.py`): on a `tax_return` work item at a firm that is not synthetic, there is no reviewer run and no model output in the aggregate, until C19 registers §7216 consent.
+- **TRI fail-closed:** on a `tax_return` work item at a firm that is not synthetic:
+  - `tri_gate.py` stops the reviewer's run and keeps model output out of the aggregate;
+  - the gateway refuses every agent's call (`tax_return_information`).
+  - Both hold until C19 registers §7216 consent.

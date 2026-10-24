@@ -61,3 +61,9 @@ updated: 2026-10-25
 - 2026-10-25: the agents schema suite (`test_ac14_the_app_cannot_set_who_created_a_screening_result`) caught the app's insert grant gaining `created_by_kind`. The grant is reverted: the insert guard now sets `system` on aggregates, and `created_by_kind` stays the database's (SPEC-011 AC-14). Runs:
   - the full `tests/unit tests/contracts tests/security`: 28,488 passed, 5 xfailed;
   - the screening, agents, upload-review, withdrawal, citations, schema-check and worker files: 595 tests; the one failure is fixed, and its 80 re-run tests pass.
+- 2026-10-25: security review fixes (DEC-324), each with a test that failed first:
+  - rerun starts reviews only with `upload_review.request` and `upload_review.enabled`;
+  - deterministic `uuid5` source events, an advisory lock per item, and a 60-s per-item rate limit (`screening_rerun_requests`, 0154); parallel reruns start exactly one run;
+  - the gateway boundary refuses `tax_return_information` for every agent (`test_gateway_tax_return.py`: screener, matcher, reviewer);
+  - the 0154 trigger functions pin `search_path`;
+  - the app writes `version` rows only as the agent.

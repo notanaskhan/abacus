@@ -32,6 +32,7 @@ from abacus.modules.agents.models import (
     KnowledgeChunk,
     KnowledgeDocument,
     ScreeningFeedback,
+    ScreeningRerunRequest,
     ScreeningResult,
     TemplateGuidanceDecision,
     TemplateGuidanceDraft,
@@ -1390,3 +1391,28 @@ async def items_screened_with(session: AsyncSession, version_id: UUID) -> list[U
         .distinct()
     )
     return [cast(UUID, r) for r in rows.scalars().all()]
+
+
+async def lock_item_rerun(session: AsyncSession, item_id: UUID) -> None:
+    """Serialise reruns of one item until this transaction ends (the running check, the rate
+    limit and the dispatch happen under it)."""
+    key = func.hashtextextended(f"screening_rerun:{item_id}", 0)
+    await session.execute(select(func.pg_advisory_xact_lock(key)))
+
+
+async def rerun_since(session: AsyncSession, item_id: UUID, seconds: int) -> bool:
+    """Whether a person asked for a rerun of the item in the last `seconds` (system time)."""
+    found = await session.execute(
+        select(ScreeningRerunRequest.id)
+        .where(
+            ScreeningRerunRequest.request_item_id == item_id,
+            ScreeningRerunRequest.created_at
+            > func.clock_timestamp() - func.make_interval(0, 0, 0, 0, 0, 0, seconds),
+        )
+        .limit(1)
+    )
+    return found.scalar_one_or_none() is not None
+
+
+async def insert_rerun(session: AsyncSession, *, values: dict[str, object]) -> None:
+    await session.execute(insert(ScreeningRerunRequest).values(**values))

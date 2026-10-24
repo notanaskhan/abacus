@@ -27,6 +27,7 @@ TABLES: frozenset[str] = frozenset(
         "agent_runs",
         "screening_results",
         "screening_feedback",  # P-06-T20 (migration 0154): SHL-20 f
+        "screening_rerun_requests",  # P-06-T20 security review: reruns, rate-limited per item
         "knowledge_documents",  # SPEC-009 Q5
         "knowledge_chunks",
         # P-04-T05 (migration 0095, ADR-161): suggestions and proposals with their decisions.
@@ -54,6 +55,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "follow_up_returns",  # P-06-T14: the files a screening return named, as sent
         "screening_results",  # P-06-T20: aggregates supersede, never update (0154)
         "screening_feedback",  # P-06-T20: a person's feedback, as given
+        "screening_rerun_requests",  # P-06-T20: a person's rerun, as asked
         "suggestion_decisions",  # P-04-T05
         "proposal_rows",
         "proposal_decisions",
@@ -143,6 +145,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "screening_feedback": frozenset(
         {"id", "tenant_id", "engagement_id", "screening_result_id", "user_id", "thumb"}
         | {"reason_code", "note_sealed"}
+    ),
+    "screening_rerun_requests": frozenset(
+        {"tenant_id", "engagement_id", "request_item_id", "requested_by", "files"}
     ),
     # Knowledge (SPEC-009): vectors and status are set later by the embedding workflow.
     "knowledge_documents": frozenset(

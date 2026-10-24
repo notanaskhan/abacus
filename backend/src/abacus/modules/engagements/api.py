@@ -119,6 +119,7 @@ from abacus.modules.engagements.work_items import (
     assurance_item,
     assurance_item_id,
     create_work_item,
+    holds_tax_return,
     lock_assurance_item,
     lock_engagement,
     portal_work_items,
@@ -161,7 +162,8 @@ from abacus.modules.organisations.api import (
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
 # SPEC-036 (TASK-076): the AI gateway asks whether AI is off for an engagement.
-register_client_data_facts(excluded=ai_excluded)
+# P-06-T20 security review (DEC-324): tax-return work reaches no model without consent.
+register_client_data_facts(excluded=ai_excluded, tax_return=holds_tax_return)
 # SPEC-014: which engagements count for firm-level reads by engagement role (not archived).
 register_active_engagements(active_engagements)
 # P-07-T08: `register_open_requests` is re-exported for requests, keeping the plan's graph

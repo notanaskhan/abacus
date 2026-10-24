@@ -32,6 +32,7 @@ class _World:
     stage: str | None = "live"
     boundary: str = "client_data"
     terms: bool = True
+    tax_return: bool = False  # P-06-T20 security review (DEC-324)
     audited: list[tuple[str, object]] = field(default_factory=list[tuple[str, object]])
 
 
@@ -63,6 +64,9 @@ def world(monkeypatch: pytest.MonkeyPatch) -> _World:
     async def stage(tenant: TenantContext, agent: str) -> str | None:
         return made.stage
 
+    async def tax_return(tenant: TenantContext, engagement: uuid.UUID) -> bool:
+        return made.tax_return
+
     class _Settings:
         @property
         def model_data_boundary(self) -> str:
@@ -76,6 +80,7 @@ def world(monkeypatch: pytest.MonkeyPatch) -> _World:
     monkeypatch.setattr(boundary, "_opted_in", opted_in)
     monkeypatch.setattr(boundary, "_excluded", excluded)
     monkeypatch.setattr(boundary, "_stage", stage)
+    monkeypatch.setattr(boundary, "_tax_return", tax_return)
 
     def cleared(agent: str) -> bool:
         return made.cleared
@@ -124,6 +129,7 @@ async def test_ac2_a_synthetic_firm_needs_none_of_them(world: _World) -> None:
         ({"excluded": True}, "engagement"),
         ({"stage": None}, "stage"),
         ({"stage": "off"}, "stage"),
+        ({"tax_return": True}, "tax_return_information"),
     ],
 )
 async def test_ac2_each_condition_refuses_on_its_own(
@@ -199,3 +205,23 @@ async def test_ac6_an_excluded_engagement_refuses_every_route_and_firm(world: _W
         with pytest.raises(DataBoundaryRefused) as raised:
             await _call(route)
         assert raised.value.reason == "engagement"
+
+
+async def test_dec324_tax_return_information_refuses_a_real_firm_and_unregistered_refuses(
+    world: _World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    world.tax_return = True
+    with pytest.raises(DataBoundaryRefused) as raised:
+        await _call()
+    assert raised.value.reason == "tax_return_information"
+    world.tax_return = False
+    monkeypatch.setattr(boundary, "_tax_return", None)
+    with pytest.raises(DataBoundaryRefused) as unregistered:
+        await _call()
+    assert unregistered.value.reason == "tax_return_information"
+    assert await enforce_boundary(_tenant(), "bedrock", PROMPT, agent_id=AGENT) is not None
+
+
+async def test_dec324_a_synthetic_firms_tax_return_work_passes(world: _World) -> None:
+    world.synthetic, world.tax_return = True, True
+    assert await _call() == Basis("synthetic")

@@ -12,12 +12,13 @@ a model. The composer runs as the subscriber would, in its system context.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import uuid
 from dataclasses import dataclass
 from datetime import date
 from types import SimpleNamespace
-from typing import cast
+from typing import Literal, cast
 
 import asyncpg
 import pytest
@@ -483,26 +484,20 @@ async def test_ac25_rerun_answers_409_while_a_review_runs_and_recomposes_otherwi
 
 
 async def test_ac25_rerun_starts_only_files_without_a_current_review(
-    firm: Firm, monkeypatch: pytest.MonkeyPatch
+    firm: Firm, reviews: list[ScreeningInput], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     reviewed = await firm.version("Reviewed.pdf")
     fresh = await firm.version("New.pdf")
     await firm.review(reviewed)
-    started: list[str] = []
-
-    async def dispatch(given: ScreeningInput, *, again: bool = False) -> None:
-        started.append(given.evidence_version_id)
 
     def current_spec(_agent: str) -> SimpleNamespace:
         return SimpleNamespace(prompt="evidence.upload_review@v3")  # the seeded reviews' prompt
 
-    monkeypatch.setattr(screening_card, "model_available", lambda: True)
-    monkeypatch.setattr(screening_card, "dispatch_review", dispatch)
     monkeypatch.setattr(screening_card, "spec", current_spec)
     response = await firm.net.call("POST", f"{firm.card_path}/rerun", firm.manager)
     assert response.status_code == 202, response.text
     assert response.json()["running"] is True
-    assert started == [str(fresh)]
+    assert [r.evidence_version_id for r in reviews] == [str(fresh)]
 
 
 # --- AC-26: feedback -----------------------------------------------------------------------------
@@ -638,5 +633,123 @@ async def test_ac28_a_review_decision_cannot_name_an_aggregate(firm: Firm) -> No
                     "i": firm.site.item_id,
                     "r": result,
                     "a": str(firm.manager.user_id),
+                },
+            )
+
+
+# --- Security review (DEC-324): rerun authority, repeats, guards ---------------------------------
+
+
+@pytest.fixture
+def reviews(monkeypatch: pytest.MonkeyPatch) -> list[ScreeningInput]:
+    """A real reviewer route is enabled and the firm's reviewer is on; dispatches are recorded."""
+    started: list[ScreeningInput] = []
+
+    async def dispatch(given: ScreeningInput, *, again: bool = False) -> None:
+        started.append(given)
+
+    async def enabled(_tenant_id: uuid.UUID) -> bool:
+        return True
+
+    monkeypatch.setattr(screening_card, "model_available", lambda: True)
+    monkeypatch.setattr(screening_card, "review_enabled", enabled)
+    monkeypatch.setattr(screening_card, "dispatch_review", dispatch)
+    return started
+
+
+async def test_sec1_staff_may_rerun_the_code_checks_but_start_no_review(
+    firm: Firm, reviews: list[ScreeningInput], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(screening_card, "RERUN_WINDOW_SECONDS", 0)  # two people, back to back
+    staff = await firm.seed.person(firm.tenant_id)
+    await firm.seed.member(
+        firm.site, staff, "staff"
+    )  # screening.request, not upload_review.request
+    version = await firm.version("July statement.pdf")
+    response = await firm.net.call("POST", f"{firm.card_path}/rerun", staff)
+    assert response.status_code == 202, response.text
+    assert response.json()["running"] is False
+    assert reviews == []
+    assert (await firm.card())["files_total"] == 1  # the code part still recomposed
+    manager = await firm.net.call("POST", f"{firm.card_path}/rerun", firm.manager)
+    assert manager.status_code == 202, manager.text
+    assert [r.evidence_version_id for r in reviews] == [str(version)]
+
+
+async def test_sec1_a_firm_with_the_reviewer_off_starts_no_review(
+    firm: Firm, reviews: list[ScreeningInput], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def disabled(_tenant_id: uuid.UUID) -> bool:
+        return False
+
+    monkeypatch.setattr(screening_card, "review_enabled", disabled)
+    await firm.version("July statement.pdf")
+    response = await firm.net.call("POST", f"{firm.card_path}/rerun", firm.manager)
+    assert response.status_code == 202, response.text
+    assert response.json()["running"] is False
+    assert reviews == []
+
+
+async def test_sec2_parallel_reruns_start_exactly_one_run(
+    firm: Firm, reviews: list[ScreeningInput]
+) -> None:
+    version = await firm.version("July statement.pdf")
+    answers = await asyncio.gather(
+        *(firm.net.call("POST", f"{firm.card_path}/rerun", firm.manager) for _ in range(5))
+    )
+    assert sorted(a.status_code for a in answers) == [202, 409, 409, 409, 409]
+    assert [a.json()["detail"] for a in answers if a.status_code == 409] == [
+        "screening_running"
+    ] * 4
+    assert [r.evidence_version_id for r in reviews] == [str(version)]
+
+
+async def test_sec2_a_repeated_rerun_names_the_same_source_event(
+    firm: Firm, reviews: list[ScreeningInput], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(screening_card, "RERUN_WINDOW_SECONDS", 0)
+    await firm.version("July statement.pdf")
+    for _ in range(2):
+        response = await firm.net.call("POST", f"{firm.card_path}/rerun", firm.manager)
+        assert response.status_code == 202, response.text
+    assert len(reviews) == 2
+    assert reviews[0].event_id == reviews[1].event_id  # one workflow, one run per event
+
+
+async def test_sec4_the_0154_trigger_functions_pin_their_search_path(firm: Firm) -> None:
+    rows = await firm.seed.rows(
+        "SELECT proname, proconfig FROM pg_proc WHERE proname = ANY($1::text[])",
+        [
+            "screening_results_batch_guard",
+            "review_decisions_screening_kind",
+            "screening_feedback_guard",
+            "screening_rerun_requests_guard",
+        ],
+    )
+    assert len(rows) == 4
+    for row in rows:
+        assert list(row["proconfig"] or []) == ["search_path=pg_catalog, public, pg_temp"], row
+
+
+@pytest.mark.parametrize("kind", ["human", "system"])
+async def test_sec5_only_an_agent_context_writes_a_per_version_proposal(
+    firm: Firm, kind: Literal["human", "system"]
+) -> None:
+    run = await firm.run(firm.site.version_id)
+    actor = TenantContext(firm.tenant_id, kind, str(firm.manager.user_id))
+    with pytest.raises(DBAPIError, match="proposed by an agent"):
+        async with tenant_session(actor) as session:
+            await session.execute(
+                text(
+                    "INSERT INTO screening_results (tenant_id, engagement_id, "
+                    "evidence_version_id, agent_run_id, action, confidence, rationale, "
+                    "citations, unverified) VALUES (:t, :e, :v, :r, 'ready_for_review', 0.9, "
+                    "'Fine', '[]', '[]')"
+                ),
+                {
+                    "t": firm.tenant_id,
+                    "e": firm.site.engagement_id,
+                    "v": firm.site.version_id,
+                    "r": run,
                 },
             )

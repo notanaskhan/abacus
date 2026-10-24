@@ -387,3 +387,18 @@ class EntryAssessmentRow(Base):
     rationale: Mapped[str]
     citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ScreeningRerunRequest(Base):
+    """A person's rerun of a request's screening (P-06-T20 security review, 0154): insert-only,
+    in system time, one per item per window."""
+
+    __tablename__ = "screening_rerun_requests"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    requested_by: Mapped[UUID]
+    files: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

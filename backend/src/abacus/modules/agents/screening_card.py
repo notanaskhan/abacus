@@ -12,8 +12,8 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import cast
-from uuid import UUID, uuid4
+from typing import Final, cast
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from abacus.kernel._flags import SCREENING_CARD
 from abacus.kernel.clock import system_now
@@ -27,10 +27,13 @@ from abacus.modules.agents.repository import (
     aggregate_for,
     aggregate_head_for,
     insert_feedback,
+    insert_rerun,
     latest_feedback,
+    lock_item_rerun,
+    rerun_since,
     review_runs_of_versions,
 )
-from abacus.modules.agents.review_start import dispatch_review
+from abacus.modules.agents.review_start import dispatch_review, review_enabled
 from abacus.modules.agents.screening_aggregate import (
     RIGHT_DOCUMENT,
     RIGHT_PERIOD,
@@ -44,10 +47,12 @@ from abacus.modules.agents.upload_review import REVIEWER, model_available
 from abacus.modules.agents.workflow_types import ScreeningInput
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import screening_facts, withdrawn_among
-from abacus.modules.identity.api import AuthContext, allowed_actions, authorise
+from abacus.modules.identity.api import AuthContext, Resource, allowed_actions, authorise
 from abacus.modules.requests.api import ScreeningSubject, read_item_versions, screening_subject
 
 _CARD_ACTIONS = ("screening.request", "screening.feedback")
+# One rerun per request item per minute of system time (security review, DEC-324).
+RERUN_WINDOW_SECONDS: Final = 60
 
 
 class ScreeningRunning(DomainConflict):
@@ -230,39 +235,75 @@ async def screening_card(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -
     )
 
 
+def rerun_source(tenant_id: UUID, item_id: UUID, version: UUID, user: UUID, prompt: str) -> UUID:
+    """One source event per item, version, person and prompt version (as "Review now"'s): a
+    repeated rerun attaches to the same workflow and run instead of starting another."""
+    return uuid5(
+        NAMESPACE_URL, f"abacus:screening-rerun:{tenant_id}:{item_id}:{version}:{user}:{prompt}"
+    )
+
+
+async def _may_review(ctx: AuthContext, resource: Resource, item_id: UUID) -> bool:
+    """Reviews start only as "Review now" would allow them (DEC-324): a real reviewer route, the
+    caller's `upload_review.request` (not staff's), the firm's `upload_review.enabled`, and no
+    tax-return information without consent."""
+    if not model_available():
+        return False
+    if "upload_review.request" not in await allowed_actions(
+        ctx, resource, ("upload_review.request",)
+    ):
+        return False
+    if not await review_enabled(ctx.tenant_id):
+        return False
+    return not await model_blocked(ctx.tenant, [item_id])
+
+
 async def rerun_screening(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> RerunView:
-    """SHL-20 c: reviews start for the current versions that have no completed review under the
-    reviewer's current prompt, then code recomposes the aggregate. 409 `screening_running` while
-    a review of these files runs. The person is who the reviewer acts for."""
+    """SHL-20 c: code recomposes the aggregate; reviews start, for a caller who may start them,
+    on the current versions with no completed review under the reviewer's current prompt.
+
+    One rerun per item at a time: under the item's advisory lock, 409 `screening_running` while
+    a review of these files runs or within `RERUN_WINDOW_SECONDS` of the last rerun, and the
+    dispatch happens under the same lock. The person is who the reviewer acts for."""
     await _gate(ctx)
     engagement = await get_ref(ctx, engagement_id)
     await authorise(ctx, "screening.request", engagement.resource())
     await _subject(ctx, engagement_id, item_id)
     current = await _current(ctx, item_id)
-    async with tenant_session(ctx.tenant) as session:
-        runs = await review_runs_of_versions(session, REVIEWER, current)
-    if _running(runs):
-        raise ScreeningRunning(str(item_id))
+    may_review = await _may_review(ctx, engagement.resource(), item_id)
+    if may_review:
+        await authorise(ctx, "upload_review.request", engagement.resource())
     prompt = spec(REVIEWER).prompt
-    reviewed = {
-        r.evidence_version_id for r in latest_reviews(runs).values() if r.prompt_ref == prompt
-    }
-    starting = (
-        [v for v in current if v not in reviewed]
-        if model_available() and not await model_blocked(ctx.tenant, [item_id])
-        else []
-    )
     async with uow(ctx.tenant) as tx:
+        await lock_item_rerun(tx.session, item_id)
+        runs = await review_runs_of_versions(tx.session, REVIEWER, current)
+        if _running(runs) or await rerun_since(tx.session, item_id, RERUN_WINDOW_SECONDS):
+            raise ScreeningRunning(str(item_id))
+        reviewed = {
+            r.evidence_version_id for r in latest_reviews(runs).values() if r.prompt_ref == prompt
+        }
+        starting = [v for v in current if v not in reviewed] if may_review else []
+        await insert_rerun(
+            tx.session,
+            values={
+                "tenant_id": ctx.tenant_id,
+                "engagement_id": engagement_id,
+                "request_item_id": item_id,
+                "requested_by": ctx.user_id,
+                "files": len(starting),
+            },
+        )
         tx.record(
             "screening.rerun_requested",
             target=Target("request_item", item_id),
             after=Ref(user_id=ctx.user_id, files=len(starting)),
         )
-    for version in starting:
-        await dispatch_review(
-            ScreeningInput(str(ctx.tenant_id), str(version), str(uuid4()), str(ctx.user_id)),
-            again=True,
-        )
+        for version in starting:
+            source = rerun_source(ctx.tenant_id, item_id, version, ctx.user_id, prompt)
+            await dispatch_review(
+                ScreeningInput(str(ctx.tenant_id), str(version), str(source), str(ctx.user_id)),
+                again=True,
+            )
     await compose_for_item(ctx.tenant_id, item_id)
     return RerunView(item_id, bool(starting), system_now())
 

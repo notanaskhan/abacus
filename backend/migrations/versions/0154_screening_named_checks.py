@@ -29,6 +29,12 @@ have no run at all (`not_screened`) and is recomposed on every change, so this m
 It is insert-only, and a thumbs-down needs a reason. The writer is the session's own human actor,
 and the note is sealed.
 
+Security review (DEC-324):
+- A `version` row written by the app needs the `agent` actor.
+- **New** `screening_rerun_requests` is a person's rerun of a request's screening. It is
+  insert-only, human-only and kept in system time, so reruns are rate-limited per item.
+- Every trigger function here pins `search_path`.
+
 The downgrade refuses while any `request_batch` row exists.
 
 Revision ID: 0154
@@ -149,11 +155,22 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE FUNCTION screening_results_batch_guard() RETURNS trigger
-        LANGUAGE plpgsql AS $$
+        LANGUAGE plpgsql
+        SET search_path = pg_catalog, public, pg_temp
+        AS $$
         DECLARE
             v_head record;
         BEGIN
             IF NEW.subject_kind IS DISTINCT FROM 'request_batch' THEN
+                -- A per-version proposal is the agent's (ADR-005): no person or system context
+                -- of the app may write one attributed to the agent. The owner's definer paths
+                -- (the erase) and superuser seeding are not the app.
+                IF current_user <> 'abacus_owner'
+                   AND NOT (SELECT r.rolsuper FROM pg_roles r WHERE r.rolname = current_user)
+                   AND current_setting('app.actor_kind', true) IS DISTINCT FROM 'agent' THEN
+                    RAISE EXCEPTION 'a screening result on a version is proposed by an agent'
+                        USING ERRCODE = 'insufficient_privilege';
+                END IF;
                 RETURN NEW;
             END IF;
             IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'system' THEN
@@ -190,7 +207,9 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE FUNCTION review_decisions_screening_kind() RETURNS trigger
-        LANGUAGE plpgsql AS $$
+        LANGUAGE plpgsql
+        SET search_path = pg_catalog, public, pg_temp
+        AS $$
         BEGIN
             IF NEW.screening_result_id IS NOT NULL AND NOT EXISTS (
                 SELECT 1 FROM screening_results s
@@ -257,7 +276,9 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE FUNCTION screening_feedback_guard() RETURNS trigger
-        LANGUAGE plpgsql AS $$
+        LANGUAGE plpgsql
+        SET search_path = pg_catalog, public, pg_temp
+        AS $$
         BEGIN
             IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
                OR NEW.user_id::text IS DISTINCT FROM current_setting('app.actor_id', true) THEN
@@ -281,6 +302,59 @@ def upgrade() -> None:
         "FOR EACH ROW EXECUTE FUNCTION screening_feedback_guard()"
     )
 
+    # Security review (DEC-324): a person's rerun, one per item per window, so repeated reruns
+    # start nothing twice. System time (a throttle, like 0085's security columns).
+    op.execute(
+        """
+        CREATE TABLE screening_rerun_requests (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id uuid NOT NULL,
+            engagement_id uuid NOT NULL,
+            request_item_id uuid NOT NULL,
+            requested_by uuid NOT NULL,
+            files integer NOT NULL CHECK (files >= 0),
+            created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+            UNIQUE (tenant_id, id),
+            FOREIGN KEY (tenant_id, engagement_id, request_item_id)
+                REFERENCES request_items (tenant_id, engagement_id, id),
+            FOREIGN KEY (tenant_id, requested_by) REFERENCES memberships (tenant_id, user_id)
+        )
+        """
+    )
+    op.execute(
+        "CREATE INDEX screening_rerun_requests_by_item "
+        "ON screening_rerun_requests (tenant_id, request_item_id, created_at)"
+    )
+    tenant_table(op, "screening_rerun_requests")
+    insert_only(op, "screening_rerun_requests")
+    op.execute("REVOKE TRUNCATE ON screening_rerun_requests FROM abacus_app")
+    insert_columns(
+        op,
+        "screening_rerun_requests",
+        ("tenant_id", "engagement_id", "request_item_id", "requested_by", "files"),
+    )
+    op.execute(
+        """
+        CREATE FUNCTION screening_rerun_requests_guard() RETURNS trigger
+        LANGUAGE plpgsql
+        SET search_path = pg_catalog, public, pg_temp
+        AS $$
+        BEGIN
+            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+               OR NEW.requested_by::text IS DISTINCT FROM current_setting('app.actor_id', true)
+            THEN
+                RAISE EXCEPTION 'a rerun is asked for by the session''s own person (ADR-005)'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER screening_rerun_requests_guard BEFORE INSERT ON screening_rerun_requests "
+        "FOR EACH ROW EXECUTE FUNCTION screening_rerun_requests_guard()"
+    )
+
 
 def downgrade() -> None:
     op.execute(
@@ -289,6 +363,8 @@ def downgrade() -> None:
         "RAISE EXCEPTION 'refusing to downgrade: screening aggregates exist'; "
         "END IF; END $$"
     )
+    op.execute("DROP TABLE screening_rerun_requests")
+    op.execute("DROP FUNCTION screening_rerun_requests_guard()")
     op.execute("ALTER TABLE screening_feedback NO FORCE ROW LEVEL SECURITY")
     op.execute("DROP TABLE screening_feedback")
     op.execute("DROP FUNCTION screening_feedback_guard()")
