@@ -782,8 +782,10 @@ async def send_request_item_route(
     engagement_id: UUID, item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RequestItemV2Out:
     """Human-only. Draft to Requested: 422 `due_date_required`, 409 `out_of_scope`, 409
-    `model_text_not_permitted` (DV-11); email after the 10-s Undo window."""
+    `model_text_not_permitted` (DV-11); email after the 10-s Undo window. A retry with the same
+    key is authorised again, then answers what the first answered and sends nothing again."""
     await engine_on(ctx)
+    await lifecycle.check_item_action(ctx, engagement_id, item_id, "request_item.send")
 
     async def run() -> tuple[int, dict[str, object]]:
         await lifecycle.send_item(ctx, engagement_id, item_id)
@@ -843,6 +845,7 @@ async def return_request_item_to_client_route(
 ) -> RequestItemV2Out:
     """Human-only. Clears a client Ignore; the client is told after the Undo window."""
     await engine_on(ctx)
+    await lifecycle.check_item_action(ctx, engagement_id, item_id, "request_item.return")
 
     async def run() -> tuple[int, dict[str, object]]:
         await lifecycle.return_to_client(ctx, engagement_id, item_id)

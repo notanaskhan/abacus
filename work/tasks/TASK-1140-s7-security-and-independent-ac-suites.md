@@ -51,8 +51,16 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - **Defect ED-022 (fixed):** another partner could undo a binder publish inside the window; `undo_publish` now refuses anyone but the publisher (`requests/binders.py`), as the send Undo already did.
 - **Spec gap:** the review-decision Undo by another person answers 403 `forbidden`; P-01 AC 3.1.4 says only the decider may undo but names no code, and C3's 409 `undo_window_closed` for "another person" is the proposal route's. The suite accepts either refusal with nothing written; one code across Undo routes is a decision for the main session.
 
+## P-06-T17: binders and requests
+`backend/tests/integration/backfill/test_p06t17_binders_requests.py`, 13 tests, all pass: G3 (pbc refused with `binder_gate_unmet` when the firm requires a letter and none is recorded, nothing held; intake publishes), every binder transition and its refusals (publish twice, unpublish without or with a blank reason, unpublish twice, republish), idempotent publish and send (same response, one audit row, one held outbox event), send needs a due date, `model_text_not_permitted` with nothing sent and then sent once edited (DV-11), only a never-sent draft is deleted (and the database refuses soft-deleting a sent one), DEC-38 (senior and staff cannot publish, staff cannot create, partner publishes; staff and above send; a firm member off the team cannot), INV-3 (a walled member gets 404 on binder, rows, publish and send), T11 (walled binders absent from rows, total and counts, no hidden word), INV-4 (the client preview never shows a draft). The publish and send Undo (voided grant sends nothing, effect started, same person) are registered in the shared C3 suite (P-04-T13 above).
+
+- **Defect ED-023 (fixed):** a retried send or return-to-client answered 500: the idempotent replay skipped `authorise`, so the guard refused it. Both routes authorise first now (`lifecycle.check_item_action`). The follow-up send routes have the same shape and are not yet tested (follow-up Undo is not registered either: it needs a published binder with recipients and a template).
+- **Contract note:** `binder_not_draft`, `binder_not_published` and `request_already_sent` carry a `facts.status` the contract's table does not show; additive, tests compare `detail`.
+- **ED-010 (already open)** explains why G3 is met with no letter while the firm's letter policy is off; the G3 test turns `require_letter` on.
+
 ## Progress log
 - 2026-10-24: T012 written and green (61 passed); ED-017 fixed with it.
 - 2026-10-24: T013 written: 18 pass, 10 held as ED-018 to ED-021.
 - 2026-10-24: Q-02-T36 written: 16 pass.
 - 2026-10-24: P-04-T13 written: 16 + 19 pass; ED-022 fixed.
+- 2026-10-24: P-06-T17 written: 13 pass; ED-023 fixed.
