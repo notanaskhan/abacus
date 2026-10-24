@@ -133,6 +133,13 @@ class NoActiveTenant(Exception):
     """Authenticated, but no tenant this user may act in was chosen."""
 
 
+class TenantNotHeld(NoActiveTenant):
+    """A member's tenant header names a tenant they hold no active membership in, whether that
+    firm exists or not: the API's 404 (P-01 AC 2.1.4, DEC-304). Raised from the person's own
+    memberships alone, never a read of the named firm, so a real firm and one that never existed
+    take the same path and give the same answer."""
+
+
 async def agent_context_for_run(
     *,
     tenant_id: UUID,

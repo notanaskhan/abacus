@@ -27,10 +27,11 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from abacus.kernel.classification import classified
+from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.identity.context import AuthContext
+from abacus.modules.identity.context import AuthContext, TenantNotHeld
 from abacus.modules.identity.portal_session import (
     PortalInvitee,
     is_portal_token,
@@ -184,6 +185,10 @@ async def current_context(
     signed_in = await current_signed_in(authorization)
     try:
         return choose_tenant(signed_in, x_abacus_tenant)
+    except TenantNotHeld:
+        # P-01 AC 2.1.4 (DEC-304): the app's own 404, the answer for any record that isn't
+        # there, so a firm she is not in reads as one that never existed.
+        raise NotFound("tenant") from None
     except NoActiveTenant:
         raise HTTPException(403, "forbidden") from None
 

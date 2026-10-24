@@ -341,8 +341,8 @@ async def test_adr014_a_header_naming_another_firm_gives_nothing_to_a_non_member
     asker = await two.asker("firm_admin")
     for path in ("/v1/engagements", f"/v1/engagements/{two.site_b.engagement_id}"):
         response = await two.net.call("GET", path, asker, tenant=two.b)
-        assert response.status_code == 403, response.text
-        assert response.json() == FORBIDDEN
+        assert response.status_code == 404, response.text  # P-01 AC 2.1.4 (DEC-304)
+        assert response.json() == NOT_FOUND
         assert two.leaks(response) == []
 
 
