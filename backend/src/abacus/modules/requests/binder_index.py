@@ -310,7 +310,9 @@ async def _row_actions(
     resource = replace(ref.resource(), item=None, work_item_id=binder.work_item_id)
     allowed = set(await allowed_actions(ctx, resource, _ROW_ACTIONS))
     if binder.status == "closed":
-        allowed -= {"binder.publish", "binder.update", "follow_up.draft", "follow_up.send"}
+        allowed -= {"binder.publish", "binder.update"}
+    if binder.status != "published":  # only a Published binder's requests are chased
+        allowed -= {"follow_up.draft", "follow_up.send"}
     return sorted(allowed)
 
 

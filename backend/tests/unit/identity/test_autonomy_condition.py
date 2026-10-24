@@ -13,6 +13,7 @@ from typing import cast
 
 import pytest
 import yaml
+from sqlalchemy import ColumnElement, true
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity import authz, context, firm_settings
@@ -44,6 +45,12 @@ class _Fakes:
     async def autonomy(self, tenant_id: uuid.UUID) -> int:
         return self.level
 
+    async def confirmed(self, tenant: object, engagement: uuid.UUID, user: uuid.UUID) -> bool:
+        return True
+
+    def confirmed_column(self, column: object, user: uuid.UUID) -> ColumnElement[bool]:
+        return true()
+
 
 @pytest.fixture
 def fakes(monkeypatch: pytest.MonkeyPatch) -> _Fakes:
@@ -51,6 +58,8 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> _Fakes:
     monkeypatch.setattr(authz, "engagement_role", made.engagement_role)
     monkeypatch.setattr(authz, "walled_clients", made.walled)
     monkeypatch.setattr(firm_settings, "autonomy_level", made.autonomy)
+    # P-06-T14 review: follow-ups require independence; the initiator has confirmed it.
+    monkeypatch.setattr(authz, "_independence", (made.confirmed_column, made.confirmed))
     return made
 
 

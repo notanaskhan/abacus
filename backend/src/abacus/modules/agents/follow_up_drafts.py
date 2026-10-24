@@ -6,9 +6,14 @@ database), listing each open client-visible request once and never one already w
 draft to that contact. The composition is the Request Chaser's (`drafted_by_kind = 'agent'`,
 the C-31 marker); the person who asked is the audit actor.
 
-A person edits the body (sealed; `edit_fingerprint`), then sends: human only (agent: deny,
-DEC-74; `follow_up.sent` is in the human-only register), scope-checked (409 `out_of_scope`,
-nothing written), and held by an approval grant until the 10-s Undo window ends (ADR-161). The
+Only a Published binder's open requests are chased (409 `binder_not_published` for another).
+Every value a client or a person wrote is scope-checked on its own, at draft and again at send:
+each request title and whatever the person added (an edit, the SPEC-027 note); the fixed
+template text and the portal link are platform text and are not (DEC-220). A person edits the
+body (sealed; `edit_fingerprint`), then sends: human only (agent: deny, DEC-74; `follow_up.sent`
+is in the human-only register), scope-checked (409 `out_of_scope`, nothing written), and held by
+an approval grant until the 10-s Undo window ends (ADR-161). The SPEC-027 engagement routes send
+through the same hold (`send_overdue`). The
 body sent is frozen in `body_sealed`; the relay's delivery of `follow_up.sent` sends the email
 through communications (COMM-001). Undo within the window voids the grant and puts the draft
 back; dismiss closes it. No model text reaches a client (DEC-79, ADR-111).
@@ -30,6 +35,7 @@ from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import (
+    MissingAuditEvent,
     OutboxEvent,
     Ref,
     Scope,
@@ -46,7 +52,7 @@ from abacus.modules.agents.repository import (
     follow_up_history,
     follow_up_item_rows,
     get_follow_up,
-    insert_follow_up,
+    insert_chase_draft,
     set_follow_up,
     waiting_pairs,
 )
@@ -100,6 +106,12 @@ class FollowUpUndoClosed(DomainConflict):
     """Undo is possible for 10 seconds after a send, by the person who sent it."""
 
     code = "undo_window_closed"
+
+
+class FollowUpV2Only(DomainConflict):
+    """This follow-up was drafted from a binder: send it from the binder's follow-up sheet."""
+
+    code = "follow_up_v2_only"
 
 
 class FollowUpEffectStarted(DomainConflict):
@@ -281,8 +293,22 @@ async def _view(ctx: AuthContext, row: FollowUpSchedule) -> FollowUpView:
         sent_by=row.sent_by,
         sent_at=row.sent_at,
         undo_until=undo_until,
-        allowed_actions=sorted(await allowed_actions(ctx, resource, _ACTIONS)),
+        allowed_actions=_state_actions(
+            row, set(await allowed_actions(ctx, resource, _ACTIONS)), ctx.user_id, undo_until
+        ),
     )
+
+
+def _state_actions(
+    row: FollowUpSchedule, allowed: set[str], user_id: UUID, undo_until: datetime | None
+) -> list[str]:
+    """What the caller may do now: edit, send and dismiss a waiting draft; only its sender may
+    Undo a sent one, inside the window; nothing on a dismissed or delivered one."""
+    if row.status == "drafted":
+        return sorted(allowed)
+    if row.status == "sent" and undo_until is not None and row.sent_by == user_id:
+        return sorted(allowed & {"follow_up.send"})
+    return []
 
 
 # --- draft ---------------------------------------------------------------------------------------
@@ -292,72 +318,70 @@ async def draft_for(
     ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
 ) -> list[FollowUpView]:
     """BND-01 b / BND-02 d: one draft per client contact per engagement over the selection.
-    Nothing to chase (or everything already waiting) drafts nothing. 409
-    `follow_up_template_missing` before anything is written when no template is published."""
+    Nothing to chase (or everything already waiting) drafts nothing. Before anything is written:
+    409 `binder_not_published` for a binder that isn't Published, 409 `out_of_scope` when a
+    request title names something outside its engagement, 409 `follow_up_template_missing` when
+    no Reminder template is published. Concurrent requests never duplicate a draft: the waiting
+    drafts are read inside the unit of work and one open draft per contact is a unique index
+    (a second request's requests join the first's draft unless it was edited)."""
     _human(ctx, "follow_up.draft")
     candidates = await follow_up_candidates(ctx, binder_ids, item_ids)
+    refs: dict[UUID, EngagementRef] = {}
     for engagement_id in sorted({c.engagement_id for c in candidates}, key=str):
-        ref = await get_ref(ctx, engagement_id)
-        await authorise(ctx, "follow_up.draft", ref.resource())
+        refs[engagement_id] = await get_ref(ctx, engagement_id)
+        await authorise(ctx, "follow_up.draft", refs[engagement_id].resource())
+    for item in candidates:
+        if await _out_of_scope(ctx, refs[item.engagement_id], item.title):
+            raise FollowUpOutOfScope(facts={"request_item_id": str(item.id)})
     recipients = await _recipients(ctx, candidates)
     every = sorted({u for pairs in recipients.values() for u, _ in pairs}, key=str)
-    async with tenant_session(ctx.tenant) as session:
-        waiting = await waiting_pairs(session, every)
-        history = await follow_up_history(session, [c.id for c in candidates])
-    groups = group_by_contact(candidates, recipients, waiting)
     today = today_in(await firm_time_zone(ctx.tenant), await clock.now(ctx.tenant))
-    planned: list[tuple[UUID, UUID, list[tuple[FollowUpCandidate, int]], UUID | None, str]] = []
-    for (engagement_id, user), entries in groups.items():
-        rows: list[tuple[FollowUpCandidate, int]] = []
-        for item, _contact in entries:
-            due = item.due_on or today
-            sent = sum(1 for i, d, _n, _at in history if i == item.id and d == due)
-            if sent < MAX_SEQUENCE:
-                rows.append((item, sent + 1))
-        if not rows:
-            continue
-        contacts = {c for _, c in entries if c is not None}
-        composed = await compose_follow_up(
-            ctx.tenant_id, engagement_id, user, [i.title for i, _ in rows], REMINDER_TEMPLATE
-        )
-        planned.append(
-            (
-                engagement_id,
-                user,
-                rows,
-                next(iter(contacts)) if len(contacts) == 1 else None,
-                fingerprint(composed.body),
-            )
-        )
     made: list[UUID] = []
-    if not planned:
+    try:
+        async with uow(ctx.tenant) as tx:
+            waiting = await waiting_pairs(tx.session, every)
+            history = await follow_up_history(tx.session, [c.id for c in candidates])
+            for (engagement_id, user), entries in group_by_contact(
+                candidates, recipients, waiting
+            ).items():
+                rows: list[tuple[FollowUpCandidate, int]] = []
+                for item, _contact in entries:
+                    due = item.due_on or today
+                    sent = sum(1 for i, d, _n, _at in history if i == item.id and d == due)
+                    if sent < MAX_SEQUENCE:
+                        rows.append((item, sent + 1))
+                if not rows:
+                    continue
+                contacts = {c for _, c in entries if c is not None}
+                binders = {i.binder_id for i, _ in rows}
+                composed = await compose_follow_up(
+                    ctx.tenant_id, engagement_id, user, [i.title for i, _ in rows]
+                )
+                body_fp = fingerprint(composed.body)
+                drafted = await insert_chase_draft(
+                    tx.session,
+                    tenant_id=ctx.tenant_id,
+                    engagement_id=engagement_id,
+                    recipient_user_id=user,
+                    items=[(i.id, i.due_on or today, n) for i, n in rows],
+                    binder_id=next(iter(binders)) if len(binders) == 1 else None,
+                    recipient_contact_id=next(iter(contacts)) if len(contacts) == 1 else None,
+                    template_key=REMINDER_TEMPLATE,
+                    body_fingerprint=body_fp,
+                )
+                if drafted is None or drafted[1] == 0:
+                    continue  # an edited draft waits for this contact, or nothing was new
+                follow_up_id, added = drafted
+                tx.record(
+                    "follow_up.drafted",
+                    target=_target(follow_up_id),
+                    after=Ref(items=added, body=body_fp),
+                    scope=Scope(engagement_id=engagement_id),
+                )
+                made.append(follow_up_id)
+    except MissingAuditEvent:  # nothing was drafted, so nothing is recorded
         return []
-    async with uow(ctx.tenant) as tx:
-        for engagement_id, user, rows, contact, body_fp in planned:
-            binders = {i.binder_id for i, _ in rows}
-            follow_up_id = await insert_follow_up(
-                tx.session,
-                tenant_id=ctx.tenant_id,
-                engagement_id=engagement_id,
-                recipient_user_id=user,
-                status="drafted",
-                agent_run_id=None,
-                items=[(i.id, i.due_on or today, n) for i, n in rows],
-                kind="chase",
-                drafted_by_kind="agent",
-                binder_id=next(iter(binders)) if len(binders) == 1 else None,
-                recipient_contact_id=contact,
-                template_key=REMINDER_TEMPLATE,
-                body_fingerprint=body_fp,
-            )
-            tx.record(
-                "follow_up.drafted",
-                target=_target(follow_up_id),
-                after=Ref(items=len(rows), body=body_fp),
-                scope=Scope(engagement_id=engagement_id),
-            )
-            made.append(follow_up_id)
-    return [await read(ctx, f) for f in made]
+    return [await read(ctx, f) for f in dict.fromkeys(made)]
 
 
 async def read(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
@@ -430,10 +454,22 @@ async def _send_one(tx: UnitOfWork, ctx: AuthContext, follow_up_id: UUID) -> Non
         tx.record("follow_up.dismissed", target=_target(row.id), scope=_scope(row))
         return
     _subject, body = await _content(ctx.tenant_id, row, items)
-    if row.edit_fingerprint is not None and await _out_of_scope(
-        ctx, ref, await _added_text(ctx.tenant_id, row, items, body)
-    ):
+    added = await _added_text(ctx.tenant_id, row, items, body) if row.edit_fingerprint else ""
+    if await _any_out_of_scope(ctx, ref, [*(t for _, t in items), added]):
         raise FollowUpOutOfScope
+    await _hold(tx, ctx, row, resource, body, now)
+
+
+async def _hold(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    row: FollowUpSchedule,
+    resource: Resource,
+    body: str,
+    now: datetime,
+) -> None:
+    """The send: the body frozen as sent, the `follow_up.sent` event held by an approval grant
+    until the 10-s Undo window ends (ADR-161), the person recorded as sender (INV-5)."""
     undo_until = now + UNDO_WINDOW
     event = FollowUpSent(follow_up_id=row.id, engagement_id=row.engagement_id, sent_by=ctx.user_id)
     grant = await issue_grant(
@@ -446,7 +482,7 @@ async def _send_one(tx: UnitOfWork, ctx: AuthContext, follow_up_id: UUID) -> Non
         not_before=undo_until,
         expires_at=undo_until + GRANT_LIFETIME,
     )
-    sealed = row.body_sealed or await seal(ctx.tenant_id, body.encode(), _seal_context(row.id))
+    sealed = await seal(ctx.tenant_id, body.encode(), _seal_context(row.id))
     await set_follow_up(
         tx.session,
         row.id,
@@ -473,8 +509,8 @@ async def _added_text(
     tenant_id: UUID, row: FollowUpSchedule, items: Sequence[tuple[UUID, str]], body: str
 ) -> str:
     """What the person wrote: the edited body's lines that the composed one doesn't have, links
-    left out. The template is platform text and each request's wording passed the scope check
-    when it was sent, so an unedited follow-up has nothing new to check (DEC-220)."""
+    left out. The template text and the portal link are platform text; the request titles are
+    checked on their own (DEC-220)."""
     composed = await compose_follow_up(
         tenant_id,
         row.engagement_id,
@@ -495,6 +531,14 @@ async def _out_of_scope(ctx: AuthContext, ref: EngagementRef, body: str) -> bool
         return bool(await check_scope(ctx, ref, body))
     except Exception:  # fail closed on any checker failure
         return True
+
+
+async def _any_out_of_scope(ctx: AuthContext, ref: EngagementRef, texts: Sequence[str]) -> bool:
+    """Each value on its own, so a title or a note can't hide behind the platform's text."""
+    for text_ in texts:
+        if await _out_of_scope(ctx, ref, text_):
+            return True
+    return False
 
 
 async def send(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
@@ -576,6 +620,69 @@ async def dismiss(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
         )
         tx.record("follow_up.dismissed", target=_target(row.id), scope=_scope(row))
     return await read(ctx, follow_up_id)
+
+
+# --- the SPEC-027 engagement routes ----------------------------------------------------------
+
+
+async def send_overdue(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    follow_up_id: UUID,
+    items: Sequence[str],
+    note: str | None,
+    send: bool,
+) -> str:
+    """The legacy engagement route (TASK-104's `FollowUps.tsx`), through the same controls as v2:
+    human only; the P-4 tick's `overdue` drafts only (409 `follow_up_v2_only` for a binder's
+    draft); each request title and the person's note scope-checked on their own (409
+    `out_of_scope`, nothing written); the email held by an approval grant for the 10-s Undo
+    window and delivered by the outbox. `items` are the draft's requests still overdue; with
+    none, the draft is dismissed. Returns `sent` or `dismissed`."""
+    _human(ctx, "follow_up.send")
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        resource = ref.resource()
+        await authorise(ctx, "follow_up.send", resource)
+        row = await get_follow_up(tx.session, follow_up_id, lock=True)
+        if row is None or row.engagement_id != engagement_id:
+            raise NotFound("follow_up")
+        if row.kind != "overdue":
+            raise FollowUpV2Only
+        if row.status != "drafted":
+            raise FollowUpNotWaiting
+        now = await clock.now(ctx.tenant)
+        if not send or not items:
+            await set_follow_up(
+                tx.session,
+                row.id,
+                {"status": "dismissed", "decided_by": ctx.user_id, "decided_at": now},
+            )
+            tx.record("follow_up.dismissed", target=_target(row.id), scope=_scope(row))
+            return "dismissed"
+        if await _any_out_of_scope(ctx, ref, [*items, note or ""]):
+            raise FollowUpOutOfScope
+        _subject, body = await overdue_email(
+            ctx.tenant_id, engagement_id, row.recipient_user_id, items, note
+        )
+        if note:
+            await set_follow_up(tx.session, row.id, {"note": note})
+        await _hold(tx, ctx, row, resource, body, now)
+    return "sent"
+
+
+async def overdue_email(
+    tenant_id: UUID,
+    engagement_id: UUID,
+    recipient_user_id: UUID,
+    items: Sequence[str],
+    note: str | None,
+) -> tuple[str, str]:
+    """The SPEC-027 draft's email: the published Reminder template, with the person's optional
+    note after it (the preview is the email)."""
+    composed = await compose_follow_up(tenant_id, engagement_id, recipient_user_id, items)
+    body = f"{composed.body.rstrip()}\n\n{note}\n" if note else composed.body
+    return composed.subject, body
 
 
 # --- delivery ------------------------------------------------------------------------------------

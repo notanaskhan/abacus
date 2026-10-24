@@ -120,7 +120,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.requests.binders.BinderNotPublished
-    summary: Unpublish and mark-done act on a Published binder only.
+    summary: Unpublish, mark-done and follow-ups act on a Published binder only.
   branding_not_set_up:
     status: 422
     raised_by:
@@ -203,10 +203,6 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.draft_start.DraftAlreadyDecided
-  draft_not_waiting:
-    status: 409
-    raised_by:
-    - abacus.modules.agents.engagement_agent.DraftGone
   drafted_guidance_not_allowed:
     status: 409
     raised_by:
@@ -286,6 +282,11 @@ codes:
     raised_by:
     - abacus.modules.communications.follow_ups.FollowUpTemplateMissing
     summary: No follow-up template is published yet; platform staff import it (C16).
+  follow_up_v2_only:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
+    summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
   gate_unmet:
     status: 409
     raised_by:

@@ -10,6 +10,7 @@ driven by hand: each relay pass's published `follow_up.sent` events go to the su
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
@@ -28,11 +29,14 @@ from abacus.modules.agents import follow_up_drafts as follow_ups
 from abacus.modules.agents.follow_up_drafts import (
     FollowUpAlreadySent,
     FollowUpEffectStarted,
+    FollowUpNotWaiting,
     FollowUpOutOfScope,
     FollowUpUndoClosed,
 )
 from abacus.modules.communications.transport import configure_transport
 from abacus.modules.identity.api import AuthContext, Forbidden
+from abacus.modules.requests import binders
+from abacus.modules.requests.binders import BinderNotPublished
 
 from .agent_tests.support import Seeder
 from .backfill.follow_up_template import import_reminder_template
@@ -103,12 +107,23 @@ class Chase:
         return self.world.partner
 
 
+async def _publish(seed: Seeder, world: World, binder: uuid.UUID) -> None:
+    await seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = $2, published_by = $3 "
+        "WHERE id = $1",
+        binder,
+        T0 - timedelta(days=7),
+        world.partner.user_id,
+    )
+
+
 async def _chase(seed: Seeder) -> Chase:
     world = await make_world(seed)
     binder = await world.binder()
+    await _publish(seed, world, binder)  # only a Published binder is chased
     first = await world.item(binder, description="Brokerage statements", status="requested")
     second = await world.item(
-        binder, description="Form 1098 mortgage interest", status="requested"
+        binder, description="Mortgage interest statement", status="requested"
     )
     await world.item(binder, description="Never sent", visible=False)  # a Draft: never chased
     await world.item(binder, description="Already in", status="received")
@@ -145,7 +160,7 @@ async def test_ac16_one_draft_per_contact_listing_each_open_request_once(seed: S
     assert draft.status == "drafted" and draft.kind == "chase"
     assert draft.drafted_by_kind == "agent"  # the C-31 marker: composed by the Request Chaser
     assert draft.binder_id == chase.binder
-    assert "- Brokerage statements\n- Form 1098 mortgage interest\n" in draft.body
+    assert "- Brokerage statements\n- Mortgage interest statement\n" in draft.body
     assert "Never sent" not in draft.body and "Already in" not in draft.body
     assert (
         draft.subject.startswith("Firm ")
@@ -326,3 +341,134 @@ async def test_ac19_the_database_refuses_follow_up_sent_from_an_agent(seed: Seed
         await seed.as_actor(
             tenant, agent, AUDIT, tenant, *agent, "follow_up.sent", str(uuid.uuid4()), None, None
         )
+
+
+# --- Security review (P-06-T14 review, 2026-10-24) ---
+
+
+@pytest.mark.parametrize("status", ["draft", "unpublished", "complete", "closed"])
+async def test_review1_a_binder_that_is_not_published_is_never_chased(
+    seed: Seeder, status: str
+) -> None:
+    chase = await _chase(seed)
+    await seed.run("UPDATE request_lists SET status = $2 WHERE id = $1", chase.binder, status)
+    with clock.frozen(T0), pytest.raises(BinderNotPublished):
+        await follow_ups.draft_for(chase.partner, [chase.binder], [])
+    # Asked for by request id, its requests are left out: nothing is drafted.
+    with clock.frozen(T0):
+        assert await follow_ups.draft_for(chase.partner, [], list(chase.items)) == []
+    count = await seed.value(
+        "SELECT count(*) FROM follow_up_schedules WHERE engagement_id = $1",
+        chase.world.engagement,
+    )
+    assert count == 0
+
+
+async def test_review2_a_request_title_naming_another_client_is_refused_at_draft(
+    seed: Seeder,
+) -> None:
+    chase = await _chase(seed)
+    await seed.entity(chase.world.tenant, "Granite Peak Holdings")
+    await seed.run(
+        "UPDATE request_items SET title = 'Granite Peak Holdings statements' WHERE id = $1",
+        chase.items[0],
+    )
+    with clock.frozen(T0), pytest.raises(FollowUpOutOfScope):
+        await follow_ups.draft_for(chase.partner, [chase.binder], [])
+    count = await seed.value(
+        "SELECT count(*) FROM follow_up_schedules WHERE engagement_id = $1",
+        chase.world.engagement,
+    )
+    assert count == 0
+
+
+async def test_review2_an_unedited_follow_up_is_checked_again_at_send(seed: Seeder) -> None:
+    chase = await _chase(seed)
+    with clock.frozen(T0):
+        [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
+    # The title changes after drafting (request_item.update) to name another client.
+    await seed.entity(chase.world.tenant, "Granite Peak Holdings")
+    await seed.run(
+        "UPDATE request_items SET title = 'Granite Peak Holdings statements' WHERE id = $1",
+        chase.items[0],
+    )
+    with clock.frozen(T0 + timedelta(seconds=1)), pytest.raises(FollowUpOutOfScope):
+        await follow_ups.send(chase.partner, draft.id)
+    assert (await follow_ups.read(chase.partner, draft.id)).status == "drafted"
+
+
+async def test_review4_concurrent_drafts_for_a_contact_make_one_draft(seed: Seeder) -> None:
+    chase = await _chase(seed)
+    with clock.frozen(T0):
+        results = await asyncio.gather(
+            follow_ups.draft_for(chase.partner, [chase.binder], []),
+            follow_ups.draft_for(chase.partner, [chase.binder], []),
+            follow_ups.draft_for(chase.partner, [], list(chase.items)),
+        )
+    assert sum(len(r) for r in results) >= 1
+    drafts = await seed.rows(
+        "SELECT id FROM follow_up_schedules WHERE engagement_id = $1 AND status = 'drafted'",
+        chase.world.engagement,
+    )
+    assert len(drafts) == 1
+    items = await seed.rows(
+        "SELECT request_item_id FROM follow_up_items WHERE follow_up_id = $1", drafts[0]["id"]
+    )
+    assert sorted(r["request_item_id"] for r in items) == sorted(chase.items)
+
+
+async def test_review5_allowed_actions_follow_the_state_and_the_sender(seed: Seeder) -> None:
+    chase = await _chase(seed)
+    manager = await seed.person(chase.world.tenant)
+    await seed.member(chase.world.engagement, manager, "manager")
+    with clock.frozen(T0):
+        [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
+    assert draft.allowed_actions == ["follow_up.draft", "follow_up.send"]
+    with clock.frozen(T0 + timedelta(seconds=1)):
+        sent = await follow_ups.send(chase.partner, draft.id)
+        assert sent.allowed_actions == ["follow_up.send"]  # its sender may Undo
+        other = await follow_ups.read(manager.context(), draft.id)
+        assert other.allowed_actions == []  # no one else may
+    with clock.frozen(T0 + timedelta(seconds=11)):
+        assert (await follow_ups.read(chase.partner, draft.id)).allowed_actions == []
+    with clock.frozen(T0 + timedelta(seconds=12)), pytest.raises(FollowUpAlreadySent):
+        await follow_ups.dismiss(chase.partner, draft.id)
+
+
+async def test_review5_a_dismissed_follow_up_offers_nothing(seed: Seeder) -> None:
+    chase = await _chase(seed)
+    with clock.frozen(T0):
+        [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
+        closed = await follow_ups.dismiss(chase.partner, draft.id)
+    assert closed.allowed_actions == []
+    with clock.frozen(T0), pytest.raises(FollowUpNotWaiting):
+        await follow_ups.send(chase.partner, draft.id)
+
+
+async def test_review5_an_unconfirmed_staff_member_may_not_read_or_send(seed: Seeder) -> None:
+    chase = await _chase(seed)
+    with clock.frozen(T0):
+        [draft] = await follow_ups.draft_for(chase.partner, [chase.binder], [])
+    staff = await seed.person(chase.world.tenant)
+    await seed.run(  # a member who has not confirmed independence
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'staff')",
+        chase.world.tenant,
+        chase.world.engagement,
+        staff.user_id,
+    )
+    for attempt in (follow_ups.read, follow_ups.send):
+        with clock.frozen(T0), pytest.raises(Forbidden):
+            await attempt(staff.context(), draft.id)
+
+
+async def test_review5_only_a_published_binder_offers_follow_ups(seed: Seeder) -> None:
+    chase = await _chase(seed)
+    with clock.frozen(T0):
+        published = await binders.read_binder(chase.partner, chase.binder)
+    assert {"follow_up.draft", "follow_up.send"} <= set(published.allowed_actions)
+    for status in ("draft", "unpublished", "complete", "closed"):
+        await seed.run("UPDATE request_lists SET status = $2 WHERE id = $1", chase.binder, status)
+        with clock.frozen(T0):
+            record = await binders.read_binder(chase.partner, chase.binder)
+        assert not {"follow_up.draft", "follow_up.send"} & set(record.allowed_actions), status

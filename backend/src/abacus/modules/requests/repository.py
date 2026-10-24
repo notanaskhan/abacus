@@ -1194,8 +1194,9 @@ async def follow_up_items(
     item_ids: Sequence[UUID],
 ) -> Sequence[tuple[RequestItem, date | None]]:
     """P-06-T14: the open (Requested or Returned), client-visible, never-deleted requests of
-    these binders or these ids that the caller may read (walls and independence apply), with
-    their due date (their own, else the binder's)."""
+    Published binders, among these binders or these ids, that the caller may read (walls and
+    independence apply), with their due date (their own, else the binder's). A Draft,
+    Unpublished, Complete or Closed binder's requests are never chased."""
     if not binder_ids and not item_ids:
         return []
     due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
@@ -1212,6 +1213,7 @@ async def follow_up_items(
             RequestItem.status.in_(("requested", "returned")),
             RequestItem.client_visible,
             RequestItem.deleted_at.is_(None),
+            RequestList.status == "published",
             visible(ctx, "request_item.read", RequestItem.engagement_id),
         )
         .order_by(RequestItem.engagement_id, due, RequestItem.created_at, RequestItem.id)
@@ -1237,3 +1239,18 @@ async def binders_recipient_rows(
         .scalars()
         .all()
     )
+
+
+async def binder_statuses(
+    session: AsyncSession, ctx: AuthContext, binder_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """P-06-T14: the status of each of these binders the caller may read (walls apply)."""
+    if not binder_ids:
+        return {}
+    rows = await session.execute(
+        select(RequestList.id, RequestList.status).where(
+            RequestList.id.in_(list(binder_ids)),
+            visible(ctx, "binder.read", RequestList.engagement_id),
+        )
+    )
+    return {i: str(st) for i, st in rows.all()}

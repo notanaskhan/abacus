@@ -635,31 +635,6 @@ async def drafted_follow_ups(
     return found
 
 
-async def lock_follow_up(
-    session: AsyncSession, engagement_id: UUID, follow_up_id: UUID
-) -> FollowUpSchedule | None:
-    return (
-        await session.execute(
-            select(FollowUpSchedule)
-            .where(
-                FollowUpSchedule.id == follow_up_id,
-                FollowUpSchedule.engagement_id == engagement_id,
-            )
-            .with_for_update()
-        )
-    ).scalar_one_or_none()
-
-
-async def settle_follow_up(
-    session: AsyncSession, follow_up_id: UUID, *, status: str, by: UUID | None, note: str | None
-) -> None:
-    await session.execute(
-        update(FollowUpSchedule)
-        .where(FollowUpSchedule.id == follow_up_id)
-        .values(status=status, decided_by=by, decided_at=func.abacus_now(), note=note)
-    )
-
-
 async def waiting_pairs(
     session: AsyncSession, recipient_user_ids: Sequence[UUID]
 ) -> set[tuple[UUID, UUID]]:
@@ -677,6 +652,83 @@ async def waiting_pairs(
         )
     )
     return {(r, i) for r, i in rows.all()}
+
+
+async def insert_chase_draft(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    recipient_user_id: UUID,
+    items: Sequence[tuple[UUID, date, int]],
+    binder_id: UUID | None,
+    recipient_contact_id: UUID | None,
+    template_key: str,
+    body_fingerprint: str,
+) -> tuple[UUID, int] | None:
+    """P-06-T14: a person's chase draft for one client contact, or the requests added to the one
+    already waiting for that contact (the partial unique index decides, so concurrent drafts
+    never duplicate). Returns (follow-up, requests added), or None when the waiting draft was
+    edited: its wording is the person's, so nothing joins it."""
+    created = (
+        await session.execute(
+            pg_insert(FollowUpSchedule)
+            .values(
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                recipient_user_id=recipient_user_id,
+                status="drafted",
+                agent_run_id=None,
+                kind="chase",
+                drafted_by_kind="agent",
+                binder_id=binder_id,
+                recipient_contact_id=recipient_contact_id,
+                template_key=template_key,
+                body_fingerprint=body_fingerprint,
+            )
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", "engagement_id", "recipient_user_id"],
+                index_where=(FollowUpSchedule.status == "drafted")
+                & (FollowUpSchedule.kind == "chase"),
+            )
+            .returning(FollowUpSchedule.id)
+        )
+    ).scalar_one_or_none()
+    follow_up_id = created
+    if follow_up_id is None:
+        waiting = (
+            await session.execute(
+                select(FollowUpSchedule)
+                .where(
+                    FollowUpSchedule.engagement_id == engagement_id,
+                    FollowUpSchedule.recipient_user_id == recipient_user_id,
+                    FollowUpSchedule.status == "drafted",
+                    FollowUpSchedule.kind == "chase",
+                )
+                .with_for_update()
+            )
+        ).scalar_one()
+        if waiting.edit_fingerprint is not None:
+            return None
+        follow_up_id = waiting.id
+    added = 0
+    for item_id, due_on, sequence in items:
+        inserted = (
+            await session.execute(
+                pg_insert(FollowUpItem)
+                .values(
+                    tenant_id=tenant_id,
+                    follow_up_id=follow_up_id,
+                    request_item_id=item_id,
+                    due_on=due_on,
+                    sequence=sequence,
+                )
+                .on_conflict_do_nothing()
+                .returning(FollowUpItem.request_item_id)
+            )
+        ).scalar_one_or_none()
+        added += inserted is not None
+    return follow_up_id, added
 
 
 async def get_follow_up(

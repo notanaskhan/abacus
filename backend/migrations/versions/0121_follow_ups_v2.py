@@ -11,7 +11,8 @@
   - `drafted_by_kind` (`person` or `agent`; rows before this migration are `agent`);
   - the send: `sent_by`, `sent_at`, `not_before` (the end of the 10-s Undo window) and
     `undone_at`.
-  The app may update the edit and send columns and the existing decision columns only.
+  The app may update the edit and send columns and the existing decision columns only. At most
+  one `chase` draft waits per client contact per engagement (a partial unique index).
 - `follow_up_items.sequence` takes 1..4 (POR-20: at most four).
 - New `follow_up_returns`: the files a screening-return follow-up returns, with the reason.
   Insert-only.
@@ -115,6 +116,13 @@ def upgrade() -> None:
         "CREATE INDEX follow_up_schedules_waiting ON follow_up_schedules "
         "(tenant_id, recipient_user_id, status)"
     )
+    # One open person-asked draft per client contact per engagement: two concurrent "Send
+    # reminder…" requests can't both draft (the second joins the first, ON CONFLICT).
+    op.execute(
+        "CREATE UNIQUE INDEX follow_up_schedules_one_open_chase ON follow_up_schedules "
+        "(tenant_id, engagement_id, recipient_user_id) "
+        "WHERE status = 'drafted' AND kind = 'chase'"
+    )
     insert_columns(op, "follow_up_schedules", _INSERT_BEFORE + _INSERT_NEW)
     op.execute(
         f"GRANT UPDATE ({', '.join(_UPDATE_BEFORE + _UPDATE_NEW)}) "
@@ -160,6 +168,7 @@ def downgrade() -> None:
     _sequence_check(3, "reminder_items_sequence_check")
     op.execute(f"REVOKE UPDATE ({', '.join(_UPDATE_NEW)}) ON follow_up_schedules FROM abacus_app")
     insert_columns(op, "follow_up_schedules", _INSERT_BEFORE)
+    op.execute("DROP INDEX follow_up_schedules_one_open_chase")
     op.execute("DROP INDEX follow_up_schedules_waiting")
     op.execute(
         """

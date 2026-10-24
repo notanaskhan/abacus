@@ -90,7 +90,18 @@ def test_ac19_every_send_path_refuses_a_non_person_before_anything_else() -> Non
     functions = {
         n.name: n for n in tree.body if isinstance(n, ast.AsyncFunctionDef | ast.FunctionDef)
     }
-    for name in ("send", "send_many", "undo", "dismiss", "edit", "draft_for"):
+    for name in ("send", "send_many", "undo", "dismiss", "edit", "draft_for", "send_overdue"):
         first = functions[name].body[1 if ast.get_docstring(functions[name]) else 0]
         assert isinstance(first, ast.Expr) and isinstance(first.value, ast.Call)
         assert isinstance(first.value.func, ast.Name) and first.value.func.id == "_human", name
+
+
+def test_review3_the_engagement_route_never_delivers_directly() -> None:
+    """P-06-T14 review: the SPEC-027 route sends through the same held, scope-checked path
+    (`send_overdue`); only the outbox's delivery calls communications."""
+    legacy = Path(follow_up_drafts.__file__).with_name("engagement_agent.py")
+    calls = _calls(legacy)
+    assert "send_overdue" in calls
+    assert not {c for c in calls if "deliver" in c or c == "send_email"}
+    v2 = _calls(Path(follow_up_drafts.__file__))
+    assert "deliver_follow_up" in v2  # once, in the outbox subscriber

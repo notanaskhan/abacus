@@ -712,6 +712,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "client_service": "allow",
         "agent": "task_scope",
+        "independence": "required",
     },
     "follow_up.send": {
         "engagement_partner": "allow",
@@ -720,6 +721,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "client_service": "allow",
         "agent": "deny",
+        "independence": "required",
     },
     "fulfilment.confirm": {
         "engagement_partner": "allow",
