@@ -9,16 +9,23 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 import asyncpg
 import pytest
+from temporalio import activity
+from temporalio.client import Client
+from temporalio.exceptions import ApplicationError
+from temporalio.worker import Worker
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.dispatch import queue_for
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.temporal import data_converter
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.platform import incidents
 from abacus.modules.platform.incidents import (
@@ -27,7 +34,14 @@ from abacus.modules.platform.incidents import (
     FirmNotFound,
     IncidentFacts,
 )
-from abacus.modules.platform.workflow_types import IncidentFactsInput, IncidentPropagationStep
+from abacus.modules.platform.workflow_types import (
+    IncidentFactsInput,
+    IncidentPropagationInput,
+    IncidentPropagationOutcome,
+    IncidentPropagationResult,
+    IncidentPropagationStep,
+    IncidentStepResult,
+)
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
@@ -207,11 +221,13 @@ async def test_ac39_an_accrued_incident_reaches_three_firms_with_accrueds_facts_
     confirmed = datetime.now(UTC) - timedelta(hours=5)
     staff = uuid.uuid4()
     refs = [
-        await incidents.propagate_into(
-            IncidentPropagationStep(
-                "ACC-2026-007", str(t), _accrued(confirmed), str(staff), "a" * 64
+        (
+            await incidents.propagate_into(
+                IncidentPropagationStep(
+                    "ACC-2026-007", str(t), _accrued(confirmed), str(staff), "a" * 64
+                )
             )
-        )
+        ).ref
         for t in firms
     ]
     assert refs == ["INC-2026-003", "INC-2026-001", "INC-2026-001"]
@@ -252,7 +268,7 @@ async def test_ac39_an_accrued_incident_reaches_three_firms_with_accrueds_facts_
             "ACC-2026-007", str(firms[1]), _accrued(confirmed), str(staff), "a" * 64
         )
     )
-    assert again == "INC-2026-001"
+    assert (again.ref, again.status) == ("INC-2026-001", "identical")
     count = await seed.value(
         "SELECT count(*) FROM security_incidents WHERE accrued_ref = 'ACC-2026-007'"
     )
@@ -311,11 +327,184 @@ async def test_ac39_staff_start_only_for_firms_with_the_register_on(
         )
     assert started == []
 
-    firms = await incidents.start_propagation(
+    outcome = await incidents.start_propagation(
         uuid.uuid4(), "ACC-2026-008", [on[0], on[1], on[0]], _accrued(confirmed), "Accrued SEV1"
     )
-    assert firms == on
+    assert (outcome.started, outcome.identical) == (on, [])
     (workflow, arg, workflow_id), = started  # fmt: skip
     assert workflow is incidents.IncidentPropagationWorkflow
     assert workflow_id == "incident_propagate:ACC-2026-008"
     assert "Accrued SEV1" not in repr(arg)  # only the reason's fingerprint travels
+
+
+# --- security review (S7): isolation, changed facts, the system guard, the staff record --------
+
+
+async def _log(seed: Seeder, ref: str) -> list[asyncpg.Record]:
+    return await seed.rows(
+        "SELECT event, staff_id, firms, written, identical, failed_tenant_ids, refusal, "
+        "reason_sha256 FROM incident_propagations WHERE accrued_ref = $1 ORDER BY id",
+        ref,
+    )
+
+
+async def test_review_a_firm_that_keeps_failing_does_not_stop_the_firms_after_it(
+    temporal_target: str,
+) -> None:
+    """Firm 2 of 4 fails every attempt: firms 3 and 4 still get their entries, and the run ends
+    with the failed firm named in its result and in the finishing record."""
+    firms = [str(uuid.uuid4()) for _ in range(4)]
+    finished: list[IncidentPropagationOutcome] = []
+
+    @activity.defn(name="platform.propagate_incident_v2")
+    async def step(given: IncidentPropagationStep) -> IncidentStepResult:
+        if given.tenant_id == firms[1]:
+            raise ApplicationError("OperationalError", type="OperationalError", non_retryable=True)
+        return IncidentStepResult(given.tenant_id, "INC-2026-001", "written")
+
+    @activity.defn(name="platform.finish_incident_propagation")
+    async def finish(outcome: IncidentPropagationOutcome) -> None:
+        finished.append(outcome)
+
+    client = await Client.connect(temporal_target, data_converter=data_converter())
+    queue = queue_for("time_sensitive")
+    async with Worker(
+        client,
+        task_queue=queue,
+        workflows=[incidents.IncidentPropagationWorkflow],
+        activities=[step, finish],
+    ):
+        result = await client.execute_workflow(
+            "IncidentPropagation",
+            IncidentPropagationInput(
+                "ACC-2026-020",
+                tuple(firms),
+                _accrued(datetime.now(UTC) - timedelta(hours=1)),
+                str(uuid.uuid4()),
+                "b" * 64,
+            ),
+            id=f"test-incident-isolation-{uuid.uuid4().hex}",
+            task_queue=queue,
+            result_type=IncidentPropagationResult,
+        )
+    assert result.failed_tenant_ids == (firms[1],)
+    assert [r.tenant_id for r in result.written] == [firms[0], firms[2], firms[3]]
+    assert len(finished) == 1 and finished[0].failed_tenant_ids == (firms[1],)
+    assert finished[0].written == 3
+
+
+async def test_review_a_repeat_with_changed_facts_is_refused_and_writes_nothing(
+    seed: Seeder,
+) -> None:
+    tenant = await _firm(seed)
+    confirmed = datetime.now(UTC) - timedelta(hours=2)
+    staff = str(uuid.uuid4())
+    first = await incidents.propagate_into(
+        IncidentPropagationStep("ACC-2026-021", str(tenant), _accrued(confirmed), staff, "c" * 64)
+    )
+    assert first.status == "written"
+    changed = replace(_accrued(confirmed), consumers_affected=900)
+    with pytest.raises(incidents.IncidentFactsChanged):
+        await incidents.propagate_into(
+            IncidentPropagationStep("ACC-2026-021", str(tenant), changed, staff, "c" * 64)
+        )
+    rows = await seed.rows(
+        "SELECT consumers_affected, facts_sha256 FROM security_incidents WHERE tenant_id = $1",
+        tenant,
+    )
+    assert [r["consumers_affected"] for r in rows] == [0]
+    assert rows[0]["facts_sha256"] == incidents.facts_sha256(_accrued(confirmed))
+
+
+async def test_review_staff_learn_which_firms_were_identical_and_a_changed_repeat_is_409(
+    seed: Seeder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    started: list[object] = []
+
+    async def fake_dispatch(workflow: type, arg: object, **kwargs: object) -> None:
+        started.append(arg)
+
+    monkeypatch.setattr(incidents, "dispatch", fake_dispatch)
+    done, fresh = await _firm(seed), await _firm(seed)
+    confirmed = datetime.now(UTC) - timedelta(hours=2)
+    staff = uuid.uuid4()
+    await incidents.propagate_into(
+        IncidentPropagationStep(
+            "ACC-2026-022", str(done), _accrued(confirmed), str(staff), "d" * 64
+        )
+    )
+    outcome = await incidents.start_propagation(
+        staff, "ACC-2026-022", [done, fresh], _accrued(confirmed), "Accrued SEV1"
+    )
+    assert (outcome.started, outcome.identical) == ([fresh], [done])
+    assert len(started) == 1
+
+    changed = replace(_accrued(confirmed), unencrypted=True)
+    with pytest.raises(incidents.IncidentFactsChanged) as refused:
+        await incidents.start_propagation(
+            staff, "ACC-2026-022", [done, fresh], changed, "Accrued SEV1"
+        )
+    assert refused.value.code == "incident_facts_changed"
+    assert len(started) == 1  # nothing started
+    log = await _log(seed, "ACC-2026-022")
+    assert [(r["event"], r["refusal"]) for r in log] == [
+        ("requested", None),
+        ("refused", "facts_changed"),
+    ]
+    assert {r["staff_id"] for r in log} == {staff}
+    assert log[0]["firms"] == 2 and log[0]["identical"] == 1
+    assert log[0]["reason_sha256"] == incidents.reason_sha256("Accrued SEV1")
+
+
+async def test_review_a_refused_request_is_recorded_too(seed: Seeder) -> None:
+    off = await _firm(seed, flag=False)
+    staff = uuid.uuid4()
+    with pytest.raises(NotFound):
+        await incidents.start_propagation(
+            staff, "ACC-2026-023", [off], _accrued(datetime.now(UTC)), "Accrued SEV1"
+        )
+    log = await _log(seed, "ACC-2026-023")
+    assert [(r["event"], r["refusal"], r["firms"]) for r in log] == [
+        ("refused", "register_off", 1)
+    ]
+
+
+async def test_review_the_finishing_record_names_the_failed_firms(seed: Seeder) -> None:
+    failed = uuid.uuid4()
+    await incidents.finish_propagation(
+        IncidentPropagationOutcome(
+            "ACC-2026-024", str(uuid.uuid4()), "e" * 64, 3, 2, 0, (str(failed),)
+        )
+    )
+    log = await _log(seed, "ACC-2026-024")
+    assert [(r["event"], r["written"], r["failed_tenant_ids"]) for r in log] == [
+        ("completed", 2, [failed])
+    ]
+    events = await incidents.propagation_log("ACC-2026-024")
+    assert [e.failed_tenant_ids for e in events] == [(failed,)]
+
+
+async def test_review_only_the_propagation_actor_writes_an_accrued_entry(seed: Seeder) -> None:
+    tenant = await _firm(seed)
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await seed.as_actor(
+            tenant,
+            ("system", "legal_holds"),
+            "INSERT INTO security_incidents (tenant_id, ref, title, event_kind, discovered_at, "
+            "ftc_notify_by, source, accrued_ref, accrued_confirmed_at, dpa_notice_at, "
+            "facts_sha256) VALUES ($1, 'INC-2026-060', 'x', 'other', now(), current_date, "
+            "'accrued', 'ACC-1', now(), now(), repeat('0', 64))",
+            tenant,
+        )
+
+
+async def test_review_a_firm_session_cannot_forge_the_staff_record(seed: Seeder) -> None:
+    tenant = await _firm(seed)
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await seed.as_actor(
+            tenant,
+            ("system", "incident_propagation"),
+            "SELECT record_incident_propagation('ACC-2026-025', 'completed', $1, repeat('0', 64), "
+            "NULL, 1, 1, 0, '{}'::uuid[], NULL)",
+            uuid.uuid4(),
+        )

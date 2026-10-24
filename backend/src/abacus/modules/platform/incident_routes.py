@@ -8,7 +8,7 @@ answered 202 while `IncidentPropagation` writes each entry. G-02 builds the read
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends
@@ -29,7 +29,9 @@ from abacus.modules.platform.incidents import (
     EventKind,
     IncidentFacts,
     IncidentView,
+    Refusal,
     Source,
+    propagation_log,
     record_incident,
     start_propagation,
 )
@@ -147,10 +149,36 @@ class IncidentPropagationIn(BaseModel):
 
 
 class IncidentPropagationOut(BaseModel):
+    """`started`: the firms the run will write. `identical`: firms that already have this
+    incident with these same facts, skipped rather than written again."""
+
     model_config = ConfigDict(frozen=True)
 
     accrued_ref: Annotated[str, classified("internal")]
-    tenant_ids: Annotated[list[UUID], classified("internal")]
+    started: Annotated[list[UUID], classified("internal")]
+    identical: Annotated[list[UUID], classified("internal")]
+
+
+class IncidentPropagationEventOut(BaseModel):
+    """One staff request (`requested`, `refused` with its reason code) or one run's end
+    (`completed`, with the firms that failed every attempt)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    recorded_at: Annotated[datetime, classified("internal")]
+    event: Annotated[Literal["requested", "refused", "completed"], classified("internal")]
+    staff_id: Annotated[UUID, classified("internal")]
+    firms: Annotated[int, classified("internal")]
+    written: Annotated[int, classified("internal")]
+    identical: Annotated[int, classified("internal")]
+    failed_tenant_ids: Annotated[list[UUID], classified("internal")]
+    refusal: Annotated[Refusal | None, classified("internal")] = None
+
+
+class IncidentPropagationLogOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[IncidentPropagationEventOut], classified("internal")]
 
 
 @platform_router.post(
@@ -167,9 +195,11 @@ async def propagate_incident_route(
 ) -> IncidentPropagationOut:
     """Staff only (`platform.incident.propagate`, DEC-227): start writing Accrued's facts into
     each named firm's register (AC-39). 404 when a firm doesn't exist or has the register off;
-    409 `incident_propagation_running`; 422 `confirmed_out_of_order`."""
+    409 `incident_facts_changed` when a firm already has it with other facts, or
+    `incident_propagation_running`; 422 `confirmed_out_of_order`. Every request is recorded,
+    refused ones included (`GET …/propagations`)."""
     facts = body.facts
-    firms = await start_propagation(
+    outcome = await start_propagation(
         staff.id,
         accrued_ref,
         body.tenant_ids,
@@ -183,4 +213,31 @@ async def propagate_incident_route(
         ),
         body.reason,
     )
-    return IncidentPropagationOut(accrued_ref=accrued_ref, tenant_ids=firms)
+    return IncidentPropagationOut(
+        accrued_ref=accrued_ref, started=outcome.started, identical=outcome.identical
+    )
+
+
+@platform_router.get(
+    "/{accrued_ref}/propagations", action=STAFF, response_model=IncidentPropagationLogOut
+)
+async def incident_propagation_log_route(
+    accrued_ref: AccruedRef, staff: Annotated[Staff, Depends(current_staff)]
+) -> IncidentPropagationLogOut:
+    """Staff: every request and run end for this Accrued incident, oldest first, with the
+    firms a run could not write (RB-27 follows up each by its manual step)."""
+    return IncidentPropagationLogOut(
+        items=[
+            IncidentPropagationEventOut(
+                recorded_at=e.recorded_at,
+                event=e.event,
+                staff_id=e.staff_id,
+                firms=e.firms,
+                written=e.written,
+                identical=e.identical,
+                failed_tenant_ids=list(e.failed_tenant_ids),
+                refusal=e.refusal,
+            )
+            for e in await propagation_log(accrued_ref)
+        ]
+    )

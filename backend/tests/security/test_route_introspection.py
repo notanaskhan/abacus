@@ -271,6 +271,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/methodology/versions/{version_id}/guidance-drafts", "template_guidance.read"),
     ("GET", "/v1/notifications", "own"),
     ("GET", "/v1/notifications/feed", "own"),
+    ("GET", "/v1/platform/incidents/{accrued_ref}/propagations", "staff"),
     ("GET", "/v1/portal/binders", "portal_documents.read"),
     ("GET", "/v1/portal/binders/{binder_id}", "portal_documents.read"),
     ("GET", "/v1/portal/branding", "portal_public"),

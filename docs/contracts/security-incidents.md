@@ -20,12 +20,14 @@ A firm's Qualified Individual records a security incident and the register compu
 |---|---|---|---|---|
 | Record an incident | `POST /v1/firm/security/incidents` → 201 | `incident.manage` | security admin (the QI) | denied |
 | Propagate an Accrued incident | `POST /v1/platform/incidents/{accrued_ref}/propagate` → 202 | `STAFF` (the plan's `platform.incident.propagate`, DEC-227) | platform staff on the staff issuer, with a reason | not a firm route |
+| Read the staff record | `GET /v1/platform/incidents/{accrued_ref}/propagations` | `STAFF` | platform staff | not a firm route |
 
 ## 3. Models
 Code: `backend/src/abacus/modules/platform/incident_routes.py`.
 - **`IncidentIn`**: `title` (one line, 1 to 200, Confidential), `event_kind` (`unauthorized_access` · `credential_attack` · `data_exposure` · `lost_device` · `vendor_incident` · `other`), `discovered_at` (with an offset; not in the future), `consumers_affected` (optional, at least 0), `unencrypted` (optional).
 - **`IncidentOut`**: `id`, `ref` (`INC-<year>-NNN`, per firm, the year of discovery in the firm's zone), `title`, `event_kind`, `discovered_at`, `consumers_affected`, `unencrypted`, `notification_event`, `ftc_notify_by` (date), `clock_day` and `clock_days` (30: "Day 4 of 30" on Mon Sep 14 for a Sep 10 discovery), `source` (`firm` · `accrued`), `accrued_ref`, `accrued_confirmed_at`, `dpa_notice_at`, `created_at`. No status field yet: the incident words are G-02's (DF-31).
-- **`IncidentPropagationIn`**: `tenant_ids` (1 to 500), `facts` (`title`, `event_kind`, `discovered_at`, `confirmed_at`, `consumers_affected`, `unencrypted`), `reason` (one line, at most 500; only its SHA-256 is kept). **`IncidentPropagationOut`**: `accrued_ref`, `tenant_ids` (deduplicated, in write order).
+- **`IncidentPropagationIn`**: `tenant_ids` (1 to 500), `facts` (`title`, `event_kind`, `discovered_at`, `confirmed_at`, `consumers_affected`, `unencrypted`), `reason` (one line, at most 500; only its SHA-256 is kept). **`IncidentPropagationOut`**: `accrued_ref`, `started` (the firms the run will write, deduplicated, in order) and `identical` (firms that already have this incident with these same facts: skipped, not written again).
+- **`IncidentPropagationLogOut`**: `items`, oldest first, each `recorded_at`, `event` (`requested` · `refused` · `completed`), `staff_id`, `firms`, `written`, `identical`, `failed_tenant_ids` (firms a run could not write after every attempt) and `refusal` (`firm_not_found` · `register_off` · `facts_changed` · `confirmed_out_of_order` · `propagation_running` · `firm_count`).
 
 ## 4. Clock rules
 - `ftc_notify_by` = the discovery date in the firm's time zone + 30 calendar days (Sep 10, 2026 → Sat Oct 10, 2026). Written by the service, not a generated column: time-zone conversion is not immutable.
@@ -38,6 +40,7 @@ Code: `backend/src/abacus/modules/platform/incident_routes.py`.
 | 404 | `{"detail": "not found"}` | flag off; a named firm that doesn't exist or has the flag off |
 | 403 | `{"detail": "forbidden"}` | not the firm's security admin |
 | 409 | `{"detail": "incident_propagation_running"}` | a propagation of the same Accrued reference is still running |
+| 409 | `{"detail": "incident_facts_changed"}` | a named firm already has this Accrued reference with other facts; nothing starts for any firm. A correction goes out under a new Accrued reference (DEC-290) |
 | 422 | `discovered_in_future`, `confirmed_out_of_order` | a discovery after now; a confirmation before discovery or in the future |
 
 ## 6. Audit, outbox and notifications
@@ -50,13 +53,15 @@ Outbox: `incident.recorded` → `incident_recorded` (the firm's security admins 
 
 ## 7. Internal APIs (no HTTP)
 - `platform.api.incident_clock(discovered_at, zone)`; `platform.api.start_propagation(staff_id, accrued_ref, tenant_ids, facts, reason)`; `platform.api.propagate_into(step)`.
-- Workflow `IncidentPropagation` (`incident_propagate:<accrued_ref>`, time_sensitive): one `platform.propagate_incident` step per firm, repeat-safe (one entry per firm and Accrued reference); a missing firm is not retried.
-- `make incident-propagate REF=… FIRMS=… FACTS=… STAFF=… REASON=… [DRY_RUN=1]` (`abacus_tools.incidents`).
+- Workflow `IncidentPropagation` (`incident_propagate:<accrued_ref>`, time_sensitive). v2 (`incident_isolated_v2`): one `platform.propagate_incident_v2` step per firm, isolated (a firm that fails every attempt is named and the others are written), in batches of 25, then `platform.finish_incident_propagation` records the outcome for staff (failed firms logged and counted). Repeat-safe: the same facts return the entry as identical; other facts are `IncidentFactsChanged`, not retried. v1 runs (one firm at a time) replay from their history.
+- Only the propagation actor (`system`, `incident_propagation`) writes an Accrued entry; the database refuses any other system context.
+- `incident_propagations` (global, insert-only): every staff request, refused ones included, and every run's end; the reason is kept as its SHA-256 only.
+- `make incident-propagate REF=… FIRMS=… FACTS=… STAFF=… REASON=… [DRY_RUN=1]` and `make incident-status REF=…` (`abacus_tools.incidents`), with a staff-issuer token in `ABACUS_STAFF_TOKEN`; `STAFF` must be the id the token proves.
 
 ## 8. Consumer contract tests
-`backend/tests/integration/test_security_incidents.py` (AC-38, AC-39), `backend/tests/unit/platform/test_incident_clock.py`, `backend/tests/unit/tools/test_incidents_cli.py`, `backend/tests/workflows/test_incident_propagation_replay.py`.
+`backend/tests/integration/test_security_incidents.py` (AC-38, AC-39), `backend/tests/unit/platform/test_incident_clock.py`, `backend/tests/unit/tools/test_incidents_cli.py`, `backend/tests/workflows/test_incident_propagation_replay.py` (v1 and v2 histories).
 
 ## 9. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v0.1 | | | live 2026-10-24 (Q-02-T33) |
+| v0.1 | | | live 2026-10-24 (Q-02-T33); security review S7: `started`/`identical` replace `tenant_ids`, the 409 `incident_facts_changed`, the staff record route |

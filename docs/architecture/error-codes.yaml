@@ -365,6 +365,12 @@ codes:
     raised_by:
     - abacus.modules.evidence.inbox.InboxFileGone
     summary: Already assigned or discarded (someone else got there first).
+  incident_facts_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.incidents.IncidentFactsChanged
+    summary: 'A firm already has this Accrued incident with other facts. Nothing is written: a correction
+      is a new Accrued reference (DEC-290).'
   incident_propagation_running:
     status: 409
     raised_by:

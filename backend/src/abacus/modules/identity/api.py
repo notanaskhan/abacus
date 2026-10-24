@@ -219,7 +219,7 @@ from abacus.modules.identity.slots import (
     resolve_scope,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
-from abacus.modules.identity.support import Staff
+from abacus.modules.identity.support import Staff, staff_from_token
 from abacus.modules.identity.team import (
     Candidate,
     LastPartner,
@@ -473,6 +473,7 @@ __all__ = [
     "set_letter_policy",
     "shell_of",
     "signup_router",
+    "staff_from_token",
     "staff_router",
     "system_context_for_run",
     "team_of",

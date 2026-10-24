@@ -8465,6 +8465,47 @@ export type IncidentOut = {
 };
 
 /**
+ * IncidentPropagationEventOut
+ *
+ * One staff request (`requested`, `refused` with its reason code) or one run's end
+ * (`completed`, with the firms that failed every attempt).
+ */
+export type IncidentPropagationEventOut = {
+    /**
+     * Event
+     */
+    event: 'requested' | 'refused' | 'completed';
+    /**
+     * Failed Tenant Ids
+     */
+    failed_tenant_ids: Array<string>;
+    /**
+     * Firms
+     */
+    firms: number;
+    /**
+     * Identical
+     */
+    identical: number;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Refusal
+     */
+    refusal?: 'firm_not_found' | 'register_off' | 'facts_changed' | 'confirmed_out_of_order' | 'propagation_running' | 'firm_count' | null;
+    /**
+     * Staff Id
+     */
+    staff_id: string;
+    /**
+     * Written
+     */
+    written: number;
+};
+
+/**
  * IncidentPropagationIn
  */
 export type IncidentPropagationIn = {
@@ -8480,7 +8521,20 @@ export type IncidentPropagationIn = {
 };
 
 /**
+ * IncidentPropagationLogOut
+ */
+export type IncidentPropagationLogOut = {
+    /**
+     * Items
+     */
+    items: Array<IncidentPropagationEventOut>;
+};
+
+/**
  * IncidentPropagationOut
+ *
+ * `started`: the firms the run will write. `identical`: firms that already have this
+ * incident with these same facts, skipped rather than written again.
  */
 export type IncidentPropagationOut = {
     /**
@@ -8488,9 +8542,13 @@ export type IncidentPropagationOut = {
      */
     accrued_ref: string;
     /**
-     * Tenant Ids
+     * Identical
      */
-    tenant_ids: Array<string>;
+    identical: Array<string>;
+    /**
+     * Started
+     */
+    started: Array<string>;
 };
 
 /**
@@ -42053,6 +42111,54 @@ export type PropagateIncidentResponses = {
 };
 
 export type PropagateIncidentResponse = PropagateIncidentResponses[keyof PropagateIncidentResponses];
+
+export type IncidentPropagationLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Accrued Ref
+         */
+        accrued_ref: string;
+    };
+    query?: never;
+    url: '/v1/platform/incidents/{accrued_ref}/propagations';
+};
+
+export type IncidentPropagationLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type IncidentPropagationLogError = IncidentPropagationLogErrors[keyof IncidentPropagationLogErrors];
+
+export type IncidentPropagationLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: IncidentPropagationLogOut;
+};
+
+export type IncidentPropagationLogResponse = IncidentPropagationLogResponses[keyof IncidentPropagationLogResponses];
 
 export type ImportRetentionDefaultsData = {
     body: RetentionDefaultSetIn;

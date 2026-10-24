@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 import pytest
 
+from abacus.modules.identity.api import configure_staff_verifier
 from abacus_tools import incidents
+from abacus_tools.fakes.identity import FakeIdentityProvider
 
 GOOD = {
     "title": "Synthetic sub-processor incident",
@@ -48,42 +52,73 @@ def test_ac39_bad_facts_are_refused(
         incidents.load_facts(_file(tmp_path, {**GOOD, **change}))
 
 
+STAFF_ISSUER = "https://staff.probe.test"
+
+
+@pytest.fixture
+def staff_idp(monkeypatch: pytest.MonkeyPatch) -> Iterator[FakeIdentityProvider]:
+    idp = FakeIdentityProvider(issuer=STAFF_ISSUER)
+    configure_staff_verifier(idp.verifier())
+    yield idp
+    configure_staff_verifier(None)
+
+
+def _argv(tmp_path: Path, staff: str, *extra: str) -> list[str]:
+    return [
+        "propagate",
+        "--ref",
+        "ACC-2026-001",
+        "--firms",
+        "00000000-0000-4000-8000-000000000001",
+        "--facts",
+        str(_file(tmp_path, GOOD)),
+        "--staff",
+        staff,
+        "--reason",
+        "Accrued SEV1 confirmed",
+        *extra,
+    ]
+
+
+def _staff_id(subject: str) -> str:
+    return str(uuid5(NAMESPACE_URL, f"{STAFF_ISSUER}#{subject}"))
+
+
 def test_ac39_a_dry_run_starts_nothing_and_never_prints_the_title(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    staff_idp: FakeIdentityProvider,
 ) -> None:
-    code = incidents.main(
-        [
-            "propagate",
-            "--ref",
-            "ACC-2026-001",
-            "--firms",
-            "00000000-0000-4000-8000-000000000001",
-            "--facts",
-            str(_file(tmp_path, GOOD)),
-            "--staff",
-            "00000000-0000-4000-8000-0000000000f1",
-            "--reason",
-            "Accrued SEV1 confirmed",
-            "--dry-run",
-        ]
-    )
+    monkeypatch.setenv("ABACUS_STAFF_TOKEN", staff_idp.token("rb27-staff", mfa=True))
+    code = incidents.main(_argv(tmp_path, _staff_id("rb27-staff"), "--dry-run"))
     out = capsys.readouterr().out
     assert code == 0 and "ACC-2026-001" in out and "Synthetic" not in out
-    assert (
-        incidents.main(
-            [
-                "propagate",
-                "--ref",
-                "acc",
-                "--firms",
-                "x",
-                "--facts",
-                "f",
-                "--staff",
-                "00000000-0000-4000-8000-0000000000f1",
-                "--reason",
-                "r",
-            ]
-        )
-        == 2
-    )
+    bad = _argv(tmp_path, _staff_id("rb27-staff"))
+    bad[2] = "acc"
+    assert incidents.main(bad) == 2
+
+
+def test_review_the_cli_refuses_an_unknown_or_mismatched_staff_member(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    staff_idp: FakeIdentityProvider,
+) -> None:
+    monkeypatch.delenv("ABACUS_STAFF_TOKEN", raising=False)
+    assert incidents.main(_argv(tmp_path, _staff_id("rb27-staff"), "--dry-run")) == 2
+    assert "ABACUS_STAFF_TOKEN" in capsys.readouterr().err
+
+    # A token the staff issuer did not sign (a firm user's, here another issuer's).
+    other = FakeIdentityProvider(issuer="https://firm.probe.test")
+    monkeypatch.setenv("ABACUS_STAFF_TOKEN", other.token("rb27-staff", mfa=True))
+    assert incidents.main(_argv(tmp_path, _staff_id("rb27-staff"), "--dry-run")) == 2
+
+    # No MFA.
+    monkeypatch.setenv("ABACUS_STAFF_TOKEN", staff_idp.token("rb27-staff", mfa=False))
+    assert incidents.main(_argv(tmp_path, _staff_id("rb27-staff"), "--dry-run")) == 2
+
+    # A real staff token, but --staff names someone else (an unknown UUID).
+    monkeypatch.setenv("ABACUS_STAFF_TOKEN", staff_idp.token("rb27-staff", mfa=True))
+    assert incidents.main(_argv(tmp_path, str(uuid4()), "--dry-run")) == 2
+    assert "--staff is not" in capsys.readouterr().err

@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status
 
 setup:
 	cd backend && uv sync --locked
@@ -189,10 +189,15 @@ audit-chain-verify:
 flag:
 	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) --flag $(FLAG) --value $(VALUE) --operator $(OPERATOR) --reason "$(REASON)"
 
-# Q-02-T33 (RB-27): propagate an Accrued incident into the firms it touched, as staff. DRY_RUN=1
-# checks and starts nothing. FACTS is a JSON file of Accrued's facts (never committed).
+# Q-02-T33 (RB-27): propagate an Accrued incident into the firms it touched, as staff. Needs
+# ABACUS_STAFF_TOKEN (a staff-issuer token with MFA) in the environment; STAFF must be the id it
+# proves. DRY_RUN=1 checks and starts nothing. FACTS is a JSON file of Accrued's facts (never
+# committed). `make incident-status REF=…` prints the staff record: requests, refusals, failed firms.
 incident-propagate:
 	cd backend && uv run python -m abacus_tools.incidents propagate --ref $(REF) --firms $(FIRMS) --facts $(FACTS) --staff $(STAFF) --reason "$(REASON)" $(if $(DRY_RUN),--dry-run)
+
+incident-status:
+	cd backend && uv run python -m abacus_tools.incidents status --ref $(REF)
 
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:

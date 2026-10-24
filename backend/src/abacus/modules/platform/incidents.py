@@ -19,8 +19,9 @@ Behind `compliance.incidents` (off: 404). The read side, timeline and decisions 
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
@@ -33,11 +34,12 @@ from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel import clock
 from abacus.kernel._flags import COMPLIANCE_INCIDENTS
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
+from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import (
     AuthContext,
@@ -50,7 +52,9 @@ from abacus.modules.platform.events import IncidentPropagated, IncidentRecorded
 from abacus.modules.platform.workflow_types import (
     IncidentFactsInput,
     IncidentPropagationInput,
+    IncidentPropagationOutcome,
     IncidentPropagationStep,
+    IncidentStepResult,
 )
 from abacus.modules.platform.workflows import (
     IncidentPropagationWorkflow,
@@ -72,6 +76,13 @@ DPA_NOTICE: Final = timedelta(hours=72)  # Accrued -> firm notice (DPA SLA; RB-2
 MAX_FIRMS: Final = 500  # firms one propagation may name
 _SKEW: Final = timedelta(minutes=5)  # clocks disagree a little; a discovery is never later
 _log = get_logger(__name__)
+_failed_firms = meter(__name__).create_counter(
+    "abacus.incident.propagation_failed_firms",
+    description="Firms an incident propagation could not write after every attempt (RB-27)",
+)
+PROPAGATION_ACTOR: Final = (
+    "incident_propagation"  # the only system id that writes an Accrued entry
+)
 WORKFLOWS: dict[type, WorkClass] = {IncidentPropagationWorkflow: "time_sensitive"}
 register_work_classes(WORKFLOWS)
 
@@ -93,6 +104,13 @@ class PropagationRunning(DomainConflict):
     further firms in a new one."""
 
     code = "incident_propagation_running"
+
+
+class IncidentFactsChanged(DomainConflict):
+    """A firm already has this Accrued incident with other facts. Nothing is written: a
+    correction is a new Accrued reference (DEC-290)."""
+
+    code = "incident_facts_changed"
 
 
 class FirmNotFound(Exception):
@@ -217,9 +235,9 @@ async def _next_ref(session: AsyncSession, tenant_id: UUID, year: int) -> str:
 _INSERT = text(
     "INSERT INTO security_incidents (id, tenant_id, ref, title, event_kind, discovered_at, "
     "consumers_affected, unencrypted, ftc_notify_by, source, accrued_ref, accrued_confirmed_at, "
-    "dpa_notice_at, created_by) VALUES (:id, :tenant, :ref, :title, :kind, :discovered, "
-    ":consumers, :unencrypted, :notify_by, :source, :accrued_ref, :confirmed, "
-    "CASE WHEN :source = 'accrued' THEN clock_timestamp() END, :by) "
+    "dpa_notice_at, facts_sha256, created_by) VALUES (:id, :tenant, :ref, :title, :kind, "
+    ":discovered, :consumers, :unencrypted, :notify_by, :source, :accrued_ref, :confirmed, "
+    "CASE WHEN :source = 'accrued' THEN clock_timestamp() END, :facts, :by) "
     "RETURNING notification_event"
 )
 
@@ -258,6 +276,7 @@ async def record_incident(ctx: AuthContext, facts: IncidentFacts) -> IncidentVie
                     "source": "firm",
                     "accrued_ref": None,
                     "confirmed": None,
+                    "facts": None,
                     "by": ctx.user_id,
                 },
             )
@@ -276,7 +295,13 @@ async def record_incident(ctx: AuthContext, facts: IncidentFacts) -> IncidentVie
 
 
 def _system(tenant_id: UUID) -> TenantContext:
-    return TenantContext(tenant_id, "system", "incident_propagation")
+    return TenantContext(tenant_id, "system", PROPAGATION_ACTOR)
+
+
+def facts_sha256(facts: IncidentFactsInput) -> str:
+    """The fingerprint of Accrued's facts (canonical JSON): the same facts are the same entry."""
+    canonical = json.dumps(asdict(facts), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 def _facts_of(given: IncidentFactsInput) -> tuple[IncidentFacts, datetime]:
@@ -290,21 +315,30 @@ def _facts_of(given: IncidentFactsInput) -> tuple[IncidentFacts, datetime]:
     return facts, datetime.fromisoformat(given.confirmed_at)
 
 
-async def propagate_into(step: IncidentPropagationStep) -> str:
+_EXISTING = text("SELECT ref, facts_sha256 FROM security_incidents WHERE accrued_ref = :ref")
+
+
+async def _existing(ctx: TenantContext, accrued_ref: str) -> tuple[str, str | None] | None:
+    async with tenant_session(ctx) as session:
+        row = (await session.execute(_EXISTING, {"ref": accrued_ref})).one_or_none()
+    return None if row is None else (str(row.ref), cast(str | None, row.facts_sha256))
+
+
+async def propagate_into(step: IncidentPropagationStep) -> IncidentStepResult:
     """One firm's entry for an Accrued incident, as the system (AC-39): Accrued's facts, the
     firm's own `INC-` reference and clock, and `dpa_notice_at` stamped as the entry is written
-    and its notice queued. Repeat-safe: a firm that already has the entry gets it back."""
+    and its notice queued. Repeat-safe: the same facts again return the entry (`identical`);
+    different facts raise `IncidentFactsChanged` and write nothing."""
     tenant_id = UUID(step.tenant_id)
     ctx = _system(tenant_id)
     if await firm_tenancy(ctx) is None:
         raise FirmNotFound
-    async with tenant_session(ctx) as session:
-        existing = await session.scalar(
-            text("SELECT ref FROM security_incidents WHERE accrued_ref = :ref"),
-            {"ref": step.accrued_ref},
-        )
-    if existing is not None:
-        return str(existing)
+    fingerprint = facts_sha256(step.facts)
+    found = await _existing(ctx, step.accrued_ref)
+    if found is not None:
+        if found[1] != fingerprint:
+            raise IncidentFactsChanged
+        return IncidentStepResult(step.tenant_id, found[0], "identical")
     facts, confirmed = _facts_of(step.facts)
     zone = await firm_time_zone(ctx)
     incident_id = uuid4()
@@ -326,6 +360,7 @@ async def propagate_into(step: IncidentPropagationStep) -> str:
                     "source": "accrued",
                     "accrued_ref": step.accrued_ref,
                     "confirmed": confirmed,
+                    "facts": fingerprint,
                     "by": None,
                 },
             )
@@ -336,6 +371,7 @@ async def propagate_into(step: IncidentPropagationStep) -> str:
             after=Ref(
                 staff_id=UUID(step.staff_id),
                 reason_hash=step.reason_sha256,
+                facts_hash=fingerprint,
                 notification_event=int(event),
             ),
         )
@@ -343,7 +379,122 @@ async def propagate_into(step: IncidentPropagationStep) -> str:
     if clock.system_now() - confirmed > DPA_NOTICE:
         # Recorded anyway (a late notice is still the notice); the alarm is RB-27's.
         _log.warning("incident.dpa_notice_late", tenant_id=str(tenant_id), ref=ref)
-    return ref
+    return IncidentStepResult(step.tenant_id, ref, "written")
+
+
+# --- the staff record (incident_propagations; global, definer functions only) -----------------
+
+Event = Literal["requested", "refused", "completed"]
+Refusal = Literal[
+    "firm_not_found",
+    "register_off",
+    "facts_changed",
+    "confirmed_out_of_order",
+    "propagation_running",
+    "firm_count",
+]
+_RECORD = text(
+    "SELECT record_incident_propagation(:ref, :event, :staff, :reason, :facts, :firms, "
+    ":written, :identical, CAST(:failed AS uuid[]), :refusal)"
+)
+_LOG_ROWS = text("SELECT * FROM incident_propagation_log(:ref)")
+
+
+@dataclass(frozen=True)
+class PropagationEvent:
+    recorded_at: datetime
+    event: Event
+    staff_id: UUID
+    firms: int
+    written: int
+    identical: int
+    failed_tenant_ids: tuple[UUID, ...]
+    refusal: Refusal | None
+
+
+@dataclass(frozen=True)
+class PropagationStarted:
+    """What a staff request did: the firms the run will write, and the firms that already have
+    this incident with these same facts (skipped, not written again)."""
+
+    started: list[UUID]
+    identical: list[UUID]
+
+
+async def _record(
+    actor: str,
+    *,
+    ref: str,
+    event: Event,
+    staff_id: UUID,
+    reason_hash: str,
+    facts_hash: str | None,
+    firms: int,
+    written: int = 0,
+    identical: int = 0,
+    failed: Sequence[str] = (),
+    refusal: Refusal | None = None,
+) -> None:
+    async with platform_transaction(actor) as conn:
+        await conn.execute(
+            _RECORD,
+            {
+                "ref": ref,
+                "event": event,
+                "staff": staff_id,
+                "reason": reason_hash,
+                "facts": facts_hash,
+                "firms": firms,
+                "written": written,
+                "identical": identical,
+                "failed": list(failed),
+                "refusal": refusal,
+            },
+        )
+
+
+async def finish_propagation(outcome: IncidentPropagationOutcome) -> None:
+    """The run's end, recorded once for staff (v2): how many firms were written or identical,
+    and which failed every attempt. A failed firm is logged and counted, never silent."""
+    await _record(
+        PROPAGATION_ACTOR,
+        ref=outcome.accrued_ref,
+        event="completed",
+        staff_id=UUID(outcome.staff_id),
+        reason_hash=outcome.reason_sha256,
+        facts_hash=None,
+        firms=outcome.firms,
+        written=outcome.written,
+        identical=outcome.identical,
+        failed=outcome.failed_tenant_ids,
+    )
+    if outcome.failed_tenant_ids:
+        _failed_firms.add(len(outcome.failed_tenant_ids))
+        _log.error(
+            "incident.propagation_failed_firms",
+            accrued_ref=outcome.accrued_ref,
+            failed=len(outcome.failed_tenant_ids),
+            tenant_ids=list(outcome.failed_tenant_ids),
+        )
+
+
+async def propagation_log(accrued_ref: str) -> list[PropagationEvent]:
+    """Staff: every request and run end for an Accrued reference, oldest first."""
+    async with platform_transaction(PROPAGATION_ACTOR) as conn:
+        rows = (await conn.execute(_LOG_ROWS, {"ref": accrued_ref})).mappings().all()
+    return [
+        PropagationEvent(
+            recorded_at=cast(datetime, r["recorded_at"]),
+            event=cast(Event, r["event"]),
+            staff_id=cast(UUID, r["staff_id"]),
+            firms=int(r["firms"]),
+            written=int(r["written"]),
+            identical=int(r["identical"]),
+            failed_tenant_ids=tuple(cast(list[UUID], r["failed_tenant_ids"])),
+            refusal=cast(Refusal | None, r["refusal"]),
+        )
+        for r in rows
+    ]
 
 
 async def start_propagation(
@@ -352,36 +503,77 @@ async def start_propagation(
     tenant_ids: Sequence[UUID],
     facts: IncidentFactsInput,
     reason: str,
-) -> list[UUID]:
+) -> PropagationStarted:
     """Staff (RB-27): start `IncidentPropagation` for the named firms. Every firm must exist and
-    have `compliance.incidents` on (else 404, nothing starts: RB-27's manual step covers it).
-    Returns the firms in the order they will be written."""
+    have `compliance.incidents` on (else 404); a firm that already has this incident with other
+    facts refuses the whole request (409 `incident_facts_changed`); in every refusal nothing
+    starts and RB-27's manual step covers it. Firms that already have it with these facts are
+    reported as identical and not written again. Every request is recorded for staff, refused
+    ones included (`incident_propagations`)."""
     firms = list(dict.fromkeys(tenant_ids))
+    actor = f"staff:{staff_id}"
+    reason_hash = reason_sha256(reason)
+    fingerprint = facts_sha256(facts)
+
+    async def refuse(refusal: Refusal, error: Exception) -> Exception:
+        await _record(
+            actor,
+            ref=accrued_ref,
+            event="refused",
+            staff_id=staff_id,
+            reason_hash=reason_hash,
+            facts_hash=fingerprint,
+            firms=len(firms),
+            refusal=refusal,
+        )
+        return error
+
     if not firms or len(firms) > MAX_FIRMS:
-        raise NotFound("security_incident_firms")
+        raise await refuse("firm_count", NotFound("security_incident_firms"))
     parsed, confirmed = _facts_of(facts)
     now = clock.system_now()
     if not (parsed.discovered_at <= confirmed <= now + _SKEW):
-        raise ConfirmedOutOfOrder
+        raise await refuse("confirmed_out_of_order", ConfirmedOutOfOrder())
+    started: list[UUID] = []
+    identical: list[UUID] = []
     for tenant_id in firms:
         ctx = _system(tenant_id)
         if await firm_tenancy(ctx) is None:
-            raise NotFound("firm")
-        await _require_flag(ctx)
-    try:
-        await dispatch(
-            IncidentPropagationWorkflow,
-            IncidentPropagationInput(
-                accrued_ref=accrued_ref,
-                tenant_ids=tuple(str(t) for t in firms),
-                facts=facts,
-                staff_id=str(staff_id),
-                reason_sha256=reason_sha256(reason),
-            ),
-            id=incident_propagation_workflow_id(accrued_ref),
-            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
-            id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
-        )
-    except WorkflowAlreadyStartedError:
-        raise PropagationRunning from None
-    return firms
+            raise await refuse("firm_not_found", NotFound("firm"))
+        if not await flag_enabled(ctx, COMPLIANCE_INCIDENTS):
+            raise await refuse("register_off", NotFound(COMPLIANCE_INCIDENTS.name))
+        found = await _existing(ctx, accrued_ref)
+        if found is None:
+            started.append(tenant_id)
+        elif found[1] == fingerprint:
+            identical.append(tenant_id)
+        else:
+            raise await refuse("facts_changed", IncidentFactsChanged())
+    if started:
+        try:
+            await dispatch(
+                IncidentPropagationWorkflow,
+                IncidentPropagationInput(
+                    accrued_ref=accrued_ref,
+                    tenant_ids=tuple(str(t) for t in started),
+                    facts=facts,
+                    staff_id=str(staff_id),
+                    reason_sha256=reason_hash,
+                ),
+                id=incident_propagation_workflow_id(accrued_ref),
+                id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
+                id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
+            )
+        except WorkflowAlreadyStartedError:
+            raise await refuse("propagation_running", PropagationRunning()) from None
+    await _record(
+        actor,
+        ref=accrued_ref,
+        event="requested",
+        staff_id=staff_id,
+        reason_hash=reason_hash,
+        facts_hash=fingerprint,
+        firms=len(firms),
+        identical=len(identical),
+    )
+    return PropagationStarted(started, identical)
