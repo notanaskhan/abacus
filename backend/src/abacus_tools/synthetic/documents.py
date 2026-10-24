@@ -296,6 +296,101 @@ def invoice_pdf(
     )
 
 
+def vendor_statement_pdf(
+    *,
+    vendor: str = "Granite Rock Logistics",
+    customer: str = "Example Company Inc",
+    dated: date = date(2026, 8, 31),
+    footer_lines: tuple[str, ...] = (),
+) -> bytes:
+    """A vendor's monthly statement of account (P-06-T21; J22): it lists invoices and a balance
+    due, so it is the wrong document for a request for one invoice. `footer_lines` adds text (an
+    instruction carried in the file)."""
+    month = dated.replace(day=1)
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "STATEMENT OF ACCOUNT",
+                    vendor,
+                    f"Customer: {customer}",
+                    f"Statement date: {dated:%B} {dated.day}, {dated.year}",
+                    f"Activity from {month:%B} {month.day} to "
+                    f"{dated:%B} {dated.day}, {dated.year}",
+                    "Date Reference Charges Payments Balance",
+                    f"{month:%m}/04 Invoice GRL-5512 $1,840.00 $1,840.00",
+                    f"{month:%m}/11 Payment received $1,840.00 $0.00",
+                    f"{month:%m}/18 Invoice GRL-5547 $2,215.00 $2,215.00",
+                    f"{month:%m}/25 Invoice GRL-5590 $960.00 $3,175.00",
+                    "Balance due $3,175.00",
+                    "This statement lists invoices issued; it is not an invoice.",
+                    *footer_lines,
+                ]
+            )
+        ]
+    )
+
+
+def tax_form_pdf(
+    *,
+    form: Literal["W-2", "1099-NEC"] = "W-2",
+    tax_year: int = 2025,
+    payer: str = "Example Company Inc",
+    recipient: str = "Sam Example",
+    amount: Decimal = Decimal("48250.00"),
+) -> bytes:
+    """A wage or nonemployee-compensation statement (P-06-T21; J06). Identification numbers are
+    masked letters, never digits shaped like a taxpayer ID."""
+    if form == "W-2":
+        lines = [
+            f"Form W-2 Wage and Tax Statement {tax_year}",
+            f"Employer: {payer}",
+            "Employer identification number: XX-XXXXXXX",
+            f"Employee: {recipient}",
+            "Employee's social security number: XXX-XX-XXXX",
+            f"Box 1 Wages, tips, other compensation {_money(amount)}",
+            f"Box 2 Federal income tax withheld {_money(amount * Decimal('0.12'))}",
+        ]
+    else:
+        lines = [
+            f"Form 1099-NEC Nonemployee Compensation {tax_year}",
+            f"Payer: {payer}",
+            "Payer's TIN: XX-XXXXXXX",
+            f"Recipient: {recipient}",
+            "Recipient's TIN: XXX-XX-XXXX",
+            f"Box 1 Nonemployee compensation {_money(amount)}",
+            "Box 4 Federal income tax withheld $0.00",
+        ]
+    return _pdf([_text_page(lines)])
+
+
+def estimated_payment_pdf(
+    *,
+    taxpayer: str = "Sam Example",
+    tax_year: int = 2026,
+    quarter: int = 3,
+    paid_on: date = date(2026, 9, 15),
+    amount: Decimal = Decimal("3200.00"),
+) -> bytes:
+    """A confirmation of an estimated tax payment (P-06-T21): the right document for its
+    request, with nothing to flag."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "Payment confirmation",
+                    f"Taxpayer: {taxpayer}",
+                    f"Payment type: Form 1040-ES estimated tax, {tax_year} quarter {quarter}",
+                    f"Payment date: {paid_on:%B} {paid_on.day}, {paid_on.year}",
+                    f"Amount paid {_money(amount)}",
+                    "Confirmation number: EXAMPLE-CONF-0001",
+                    "Status: Accepted for processing",
+                ]
+            )
+        ]
+    )
+
+
 def letter_pdf(dated: date = date(2027, 1, 10)) -> bytes:
     """A cover letter: the wrong kind of document for a statement or an aging."""
     return _pdf(

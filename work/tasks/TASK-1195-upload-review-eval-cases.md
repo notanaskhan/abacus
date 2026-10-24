@@ -39,6 +39,15 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: plan written.
+- 2026-10-25: built:
+  - suite v3 with 23 cases (18 kept, 5 new);
+  - `_eval_suites.py` regenerated (`python -m abacus_tools.codegen.eval_suites`);
+  - `tests/unit/tools/evals/test_upload_review_cases.py` (20 tests) pass, with `tests/unit/tools/evals/` and `tests/unit/agents/test_upload_reviewer.py`: 178 in all.
+- Only offline validation ran: no `make evals`, no model call.
+- **Open:**
+  - The row's "fake-model fast run in make check" needs a reviewer fake responder (TASK-058 D5 declined one). It waits for Q-02.
+  - The direct-route run at the protected thresholds is Q-02's and goes in `docs/operations/upload-review/`.
+  - The v3 bump means real firms need a passing v3 run before the reviewer is eligible (gateway `EVAL_SUITES`).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
