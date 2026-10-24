@@ -385,3 +385,6 @@ export * from "./tracing";
 
 // E5 SourceViewer shell, ReviewTree and FileChip: the C-08 Doc Kit on server page images (F-05-T47).
 export * from "./viewer";
+
+// C-02 Workpaper kit, SourceDocGroup and SourceDocRow (F-05-T50).
+export * from "./workpaper";

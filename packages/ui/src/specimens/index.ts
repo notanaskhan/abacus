@@ -101,6 +101,7 @@ import { Tpl18Specimen } from "./wizard";
 import { T12Specimen, Tpl12Specimen } from "./settings";
 import { T11Specimen, Tpl11Specimen } from "./dashboard";
 import { SourceViewerSpecimen } from "./viewer";
+import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
 // "@abacus/ui/specimens": only the gallery subtree, which a production build does not compile,
@@ -251,6 +252,15 @@ export const SPECIMENS: readonly Specimen[] = [
     kit: "T2",
     title: "Record cockpit",
     Component: RecordCockpitSpecimen,
+  },
+  // C-02 Workpaper kit and the C-15 source-document rows (F-05-T50)
+  { id: "c-02-section-band", kit: "C-02", title: "SectionBand", Component: SectionBandSpecimen },
+  { id: "c-02-workpaper", kit: "C-02", title: "WorkpaperPane", Component: WorkpaperPaneSpecimen },
+  {
+    id: "c-15-source-docs",
+    kit: "C-15",
+    title: "Source documents",
+    Component: SourceDocsSpecimen,
   },
   // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar
   {

@@ -1,6 +1,18 @@
 import { tableFeatures, useTable } from "@tanstack/react-table";
-import { type JSX, type KeyboardEvent, useId, useMemo, useState } from "react";
+import {
+  type HTMLAttributes,
+  type JSX,
+  type KeyboardEvent,
+  type ReactNode,
+  type TdHTMLAttributes,
+  useId,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { cn } from "../cn";
+import { MATCH_CELL, MATCH_ROW, useMatch, useMatchStore } from "../tracing/match";
+import type { MatchId } from "../tracing/types";
 import { MoneyCell, PropChip, TickCell, ValueChip } from "./cells";
 import type { ColumnType, Grammar, TableColumn, TableRow } from "./types";
 import { NoteCorner, VarianceAction, VarianceCell, varianceState } from "./variance";
@@ -99,6 +111,11 @@ export interface DataGridProps {
   onExplain?: (row: TableRow, columnKey: string) => void;
   /** The issue link on a variance exception. */
   onIssue?: (row: TableRow) => void;
+  /** Overrides the grammar's side padding (a workpaper's evidence table is pad 14, C-02). */
+  pad?: number;
+  /** A cell's match id, from its typed locator (INV-2): the cell lights as the exact cell and its
+   * row as the row whenever that match is the scope's active one (F-05-T50). */
+  cellMatch?: (row: TableRow, columnKey: string) => MatchId | undefined;
   className?: string;
 }
 
@@ -112,9 +129,11 @@ export function DataGrid({
   onOpen,
   onExplain,
   onIssue,
+  pad: padOverride,
+  cellMatch,
   className,
 }: DataGridProps): JSX.Element {
-  const g = GRAMMARS[grammar];
+  const g = { ...GRAMMARS[grammar], ...(padOverride === undefined ? {} : { pad: padOverride }) };
   const varianceKey = columns.find((c) => c.type === "variance")?.key;
   const gridId = useId();
   const columnDefs = useMemo(
@@ -253,9 +272,17 @@ export function DataGrid({
               </tr>
             );
           }
+          const ids =
+            cellMatch === undefined
+              ? []
+              : columns.flatMap((c) => {
+                  const id = cellMatch(row, c.key);
+                  return id === undefined ? [] : [id];
+                });
           return (
-            <tr
+            <MatchRow
               key={row.id}
+              ids={ids}
               id={`${gridId}-${row.id}`}
               role="row"
               aria-rowindex={rowIndex}
@@ -269,7 +296,9 @@ export function DataGrid({
               }}
               className={cn(
                 "cursor-default transition-colors duration-200",
-                isSelected ? "bg-sel-bg font-medium" : "hover:bg-nested",
+                isSelected
+                  ? "bg-sel-bg font-medium"
+                  : "hover:bg-nested data-[lit]:hover:bg-match-bg",
                 kind !== "item" && g.total,
                 kind === "grand" && "border-b-[1.5px] border-double border-stroke",
               )}
@@ -282,8 +311,9 @@ export function DataGrid({
                 const variance = type === "variance" ? cell?.variance : undefined;
                 const vstate = variance === undefined ? null : varianceState(variance);
                 return (
-                  <td
+                  <MatchCell
                     key={c.key}
+                    match={cellMatch?.(row, c.key)}
                     role="gridcell"
                     style={{
                       paddingLeft: indent,
@@ -326,7 +356,7 @@ export function DataGrid({
                     )}
                     {cell?.tick !== undefined && <TickCell tick={cell.tick} />}
                     {vstate === "explained" && <NoteCorner />}
-                  </td>
+                  </MatchCell>
                 );
               })}
               {varianceKey !== undefined && (
@@ -356,10 +386,58 @@ export function DataGrid({
                   )}
                 </td>
               )}
-            </tr>
+            </MatchRow>
           );
         })}
       </tbody>
     </table>
   );
+}
+
+// ---- Tracing ------------------------------------------------------------------------------------
+
+/** A row that lights (the match fill) while one of its cells' matches is the scope's active one.
+ * Without ids it is a plain row and never subscribes. */
+function MatchRow({
+  ids,
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLTableRowElement> & {
+  ids: readonly MatchId[];
+  children: ReactNode;
+}): JSX.Element {
+  const store = useMatchStore();
+  const lit = useSyncExternalStore(
+    store.subscribe,
+    () => ids.length > 0 && ids.includes(store.get().id as MatchId),
+    () => false,
+  );
+  return (
+    <tr
+      {...props}
+      {...(lit ? { "data-lit": "" } : {})}
+      className={cn(className, ids.length > 0 && MATCH_ROW)}
+    >
+      {children}
+    </tr>
+  );
+}
+
+/** A cell; with a match id it is the exact cell a citation lights (C-07: the deeper fill, the
+ * 1.5px inset line, match ink at 500), and hovering it lights it after the row intent. */
+function MatchCell({
+  match,
+  ...props
+}: TdHTMLAttributes<HTMLTableCellElement> & { match: MatchId | undefined }): JSX.Element {
+  return match === undefined ? <td {...props} /> : <LitCell match={match} {...props} />;
+}
+
+function LitCell({
+  match,
+  className,
+  ...props
+}: TdHTMLAttributes<HTMLTableCellElement> & { match: MatchId }): JSX.Element {
+  const { bind } = useMatch(match, "cell");
+  return <td {...props} {...bind} data-match-kind="cell" className={cn(className, MATCH_CELL)} />;
 }

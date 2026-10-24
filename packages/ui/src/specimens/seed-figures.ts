@@ -77,3 +77,128 @@ export const FOOTINGS: readonly { name: string; parts: readonly string[]; total:
     total: "224",
   },
 ];
+
+/**
+ * Northwind's PBC list as the TPL-02 canvas draws it (blueprint 01 §9.3; AUD-03 "Totals: 24
+ * requests; 11 received; 1 needs review; 12 requested"): the seed's categories, titles and
+ * statuses in the seed's order, which is already Missing first inside each category. The paths
+ * are the received files' names, verbatim from the TPL-02 handoff.
+ */
+export const NORTHWIND_PBC: readonly {
+  category: string;
+  title: string;
+  status: "received" | "review" | "requested";
+  path?: string;
+}[] = [
+  {
+    category: "Plan documents",
+    title: "Trust agreement — Harborline Trust Company",
+    status: "requested",
+  },
+  {
+    category: "Plan documents",
+    title: "IRS opinion letter on the pre-approved plan document",
+    status: "requested",
+  },
+  {
+    category: "Plan documents",
+    title: "Plan document & amendments",
+    status: "received",
+    path: "initial-input/Northwind 401k Plan Document 2021 restatement.pdf",
+  },
+  {
+    category: "Plan documents",
+    title: "Adoption agreement",
+    status: "received",
+    path: "initial-input/Northwind Adoption Agreement 2024 amendment.pdf",
+  },
+  {
+    category: "Plan documents",
+    title: "Summary plan description",
+    status: "received",
+    path: "initial-input/Northwind SPD 2025.pdf",
+  },
+  {
+    category: "Trust / Recordkeeper Reports",
+    title: "Certified trust report (full year, signed)",
+    status: "review",
+  },
+  {
+    category: "Trust / Recordkeeper Reports",
+    title: "Withdrawals / distributions report",
+    status: "requested",
+  },
+  {
+    category: "Trust / Recordkeeper Reports",
+    title: "Summary of net trust assets",
+    status: "received",
+    path: "initial-input/Harborline Net Trust Assets 12-31-2025.pdf",
+  },
+  {
+    category: "Trust / Recordkeeper Reports",
+    title: "Schedule of Account Balances",
+    status: "received",
+    path: "initial-input/Keystone Account Balances PY2025.xlsx",
+  },
+  {
+    category: "Trust / Recordkeeper Reports",
+    title: "Annual loan balance roll-forward",
+    status: "received",
+    path: "initial-input/Keystone Loan Rollforward 2025.xlsx",
+  },
+  {
+    category: "Trust / Recordkeeper Reports",
+    title: "Brokerage / SDBA asset detail — BrokerWindow",
+    status: "received",
+    path: "initial-input/BrokerWindow Asset Detail 2025.pdf",
+  },
+  { category: "Census & Payroll", title: "W-3 Form", status: "requested" },
+  { category: "Census & Payroll", title: "Opt-Out Elections", status: "requested" },
+  { category: "Census & Payroll", title: "Pay Rate Authorizations", status: "requested" },
+  { category: "Census & Payroll", title: "YTD payroll register", status: "requested" },
+  {
+    category: "Census & Payroll",
+    title: "Employee Census File",
+    status: "received",
+    path: "initial-input/Northwind Census PY2025.xlsx",
+  },
+  {
+    category: "Census & Payroll",
+    title: "Contribution Reports — PayGrid",
+    status: "received",
+    path: "initial-input/PayGrid Contribution Detail 2025.xlsx",
+  },
+  {
+    category: "Census & Payroll",
+    title: "Quarterly 941 Forms",
+    status: "received",
+    path: "initial-input/941 Filings 2025 Q1-Q4.pdf",
+  },
+  {
+    category: "Form 5500 & SOC 1",
+    title: "Bridge letter — Keystone, Oct–Dec 2025",
+    status: "requested",
+  },
+  {
+    category: "Form 5500 & SOC 1",
+    title: "Draft Form 5500 & Schedule H — Summit Plan Administrators",
+    status: "requested",
+  },
+  { category: "Form 5500 & SOC 1", title: "ERISA 408(b)(2) fee disclosure", status: "requested" },
+  {
+    category: "Form 5500 & SOC 1",
+    title: "SOC 1 Type 2 — Keystone Retirement Services",
+    status: "received",
+    path: "initial-input/Keystone SOC1 Type2 Oct24-Sep25.pdf",
+  },
+  {
+    category: "Cash",
+    title: "Schedule of cash accounts, confirmations, and statements",
+    status: "requested",
+  },
+  {
+    category: "Compliance & other",
+    title: "Participant Complaints Log and Support",
+    status: "requested",
+  },
+];
