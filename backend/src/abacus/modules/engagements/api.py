@@ -79,8 +79,11 @@ from abacus.modules.engagements.setup import (
     StoredFile,
     attach_acceptance_file,
     attach_letter_file,
+    attest_column,
     confirmed_for,
     confirmed_subquery,
+    g2_blocks,
+    independence_cleared,
     request_independence,
     require_open,
     stored_file,
@@ -104,10 +107,12 @@ from abacus.modules.engagements.slots import (
     work_item_provider,
 )
 from abacus.modules.engagements.work_items import (
+    WORK_ITEM_FUNCTIONS,
     AdvisoryProjectKind,
     AssuranceKind,
     PortalWorkItem,
     WorkItemExists,
+    assign_work_item,
     assurance_item_id,
     create_work_item,
     lock_engagement,
@@ -125,6 +130,7 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
     register_attest_client,
+    register_attest_client_column,
     register_clients_of_engagements,
     register_engagement_client,
     register_engagement_resource,
@@ -174,6 +180,8 @@ register_work_item_functions(functions_on)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
+# P-07-T24 (ADR-164 item 3): the same flag as SQL, for `visible()` under `g2_blocks_view`.
+register_attest_client_column(attest_column)
 # F-03-T26 (ADR-146): the client-access scope kinds engagements owns.
 register_scope_resolver("work_item", work_item_scope)
 # F-03-T22: the two kinds engagements owns; tax, closes and notices register theirs.
@@ -205,6 +213,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 __all__ = [
     "AUDIT_KINDS",
     "ROUTERS",
+    "WORK_ITEM_FUNCTIONS",
     "AccountRule",
     "ApprovedGuidance",
     "Area",
@@ -237,6 +246,7 @@ __all__ = [
     "WorkItemExists",
     "WorkItemProvider",
     "area_for",
+    "assign_work_item",
     "assurance_item_id",
     "attach_acceptance_file",
     "attach_letter_file",
@@ -253,9 +263,11 @@ __all__ = [
     "engagements_in_hold_scope",
     "entity_of",
     "firm_router",
+    "g2_blocks",
     "gate_client_data",
     "gate_fact",
     "get_ref",
+    "independence_cleared",
     "is_archived",
     "judgments_of",
     "lock_engagement",

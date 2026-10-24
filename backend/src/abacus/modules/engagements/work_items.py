@@ -20,7 +20,7 @@ from sqlalchemy.orm import QueryableAttribute
 from abacus.kernel._flags import ENGAGEMENTS_WORK_ITEMS_API
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import (
     ListPage,
@@ -35,7 +35,9 @@ from abacus.kernel.listing import (
 )
 from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.engagements.models import AssuranceWorkItem, Engagement, WorkItem
+from abacus.modules.engagements.record import GateUnmet
 from abacus.modules.engagements.service import get_ref, lock_ref
+from abacus.modules.engagements.setup import g2_blocks
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import (
     AuthContext,
@@ -236,6 +238,66 @@ async def create_work_item(
             raise
         tx.record("work_item.created", target=Target("engagement", engagement_id))
     return work_item_id
+
+
+# --- P-07-T24: assigning a function on a work item, behind G2 v2 (ADR-164 item 2) -------------
+
+
+# Migration 0068's CHECK on `work_item_assignments.function` (the matrix's `function_in` codes).
+WORK_ITEM_FUNCTIONS: Final = frozenset(
+    {
+        "preparer",
+        "first_level_reviewer",
+        "detail_reviewer",
+        "manager_reviewer",
+        "signer",
+        "eqr",
+        "close_preparer",
+        "close_reviewer",
+        "project_lead",
+        "specialist",
+    }
+)
+_ASSIGN = text(
+    "INSERT INTO work_item_assignments "
+    "(tenant_id, work_item_id, engagement_id, user_id, function, assigned_by) "
+    "VALUES (:tenant_id, :work_item_id, :engagement_id, :user_id, :function, :assigned_by)"
+)
+
+
+async def assign_work_item(
+    ctx: AuthContext, work_item_id: UUID, user_id: UUID, function: str
+) -> None:
+    """Assign `user_id` the `function` on the work item, in one unit of work with its audit event.
+    Refused 409 `gate_unmet` (`gate` G2, `user_id`) when the engagement's client is an attest
+    client and that person is not cleared on the engagement (`setup.g2_blocks`); a non-attest
+    client's engagement is never gated. An unknown function is 422; an unknown or walled work
+    item is 404. ENG-05's routes (P-07-T30) call it."""
+    if function not in WORK_ITEM_FUNCTIONS:
+        raise DomainInvalid(facts={"field": "function"})
+    async with tenant_session(ctx.tenant) as session:
+        engagement_id = await session.scalar(
+            select(WorkItem.engagement_id).where(WorkItem.id == work_item_id)
+        )
+    if engagement_id is None:
+        raise NotFound
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, "work_item.assign", ref.resource())
+        if await g2_blocks(ctx.tenant, engagement_id, user_id):
+            raise GateUnmet(facts={"gate": "G2", "user_id": str(user_id)})
+        await tx.session.execute(
+            _ASSIGN,
+            {
+                "tenant_id": ctx.tenant_id,
+                "work_item_id": work_item_id,
+                "engagement_id": engagement_id,
+                "user_id": user_id,
+                "function": function,
+                "assigned_by": ctx.user_id,
+            },
+        )
+        tx.record("work_item.assigned", target=Target("engagement", engagement_id))
 
 
 class AssuranceKind:

@@ -16,7 +16,7 @@ actions:
   demo_clock.set:           {firm_admin: allow, agent: deny, mfa_recent: required}   # F-04-T07 (ADR-143): synthetic firms outside production only, in the service; support stays read-only (SPEC-012)
   # F-03-T26 (ADR-146): client access grants. On an engagement for its scopes; on the firm (firm
   # admin) for client-wide ones.
-  client_access.grant:      {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required}
+  client_access.grant:      {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required, independence: required}   # ADR-164 item 2 (P-07-T24): client-facing, G2 for the acting member on attest clients
   client_access.revoke:     {firm_admin: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, mfa_recent: required}
   firm.ai_client_data:      {firm_admin: allow, mfa_recent: required}   # SPEC-036 (TASK-076): opt in to AI on clients' data, against the disclosure
   # --- C5 v1.1 portal half (P-08-T01 stub; P-08 §4.3, §4.9): firm-side recovery of a client's

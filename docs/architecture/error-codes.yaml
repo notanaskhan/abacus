@@ -966,7 +966,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.identity.firm_settings.UnknownFirmSetting
-    summary: Only the registered keys a matrix cell can name (`authz.matrix.FIRM_SETTING_KEYS`).
+    summary: 'Only the registered keys: those a matrix cell can name and the stricter-only ones (`authz.matrix.STORED_SETTING_KEYS`).'
   unknown_format:
     status: 422
     raised_by:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, insert, select, update
+from sqlalchemy import ColumnElement, Select, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
@@ -202,3 +202,10 @@ def office_name_column(office_id: Column) -> ColumnElement[str]:
         .correlate_except(Office)
         .scalar_subquery()
     )
+
+
+def attest_client_ids() -> Select[UUID]:
+    """The firm's attest clients (derived `is_attest_client`, DEC-128) as a subquery for identity's
+    `visible()` under `g2_blocks_view` (P-07-T24, ADR-164 item 3). Row-level security scopes it to
+    the session's tenant; it is only ever embedded in a query that `visible()` already filters."""
+    return select(Client.id).where(Client.is_attest_client.is_(True))

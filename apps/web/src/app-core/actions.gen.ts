@@ -229,6 +229,7 @@ export const ACTIONS = [
   "wall.create",
   "wall.list",
   "wall.remove",
+  "work_item.assign",
   "work_item.create",
   "work_item.read_metadata",
   "workpaper.edit",

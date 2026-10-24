@@ -1,8 +1,15 @@
-"""SPEC-025 AC-7 (per person; TASK-045): a staff engagement role grants a client-data action only
-once that person has confirmed their independence for the engagement.
+"""SPEC-025 AC-7 (per person; TASK-045) as G2 v2 keeps it, and G2 v2 itself (SPEC-332 AC-13 to
+AC-16; ADR-164 items 2 to 4; P-07-T24).
 
-The engagement role, walls and the engagements module's confirmation lookup are replaced by
-fakes; `authz._independence` is set directly, as `register_independence` would.
+TASK-045's rule (a staff engagement role grants a marked action only once that person has
+confirmed for the engagement) is G2 v2's strictest configuration: an attest client's engagement in
+a firm with `g2_blocks_view` on. The `fakes` fixture defaults to it, so the `test_ac7_*` cases
+prove that configuration unchanged; the `test_ac13_*` to `test_ac16_*` cases flip the attest flag
+and the setting.
+
+The engagement role, walls, the firm's settings, the attest flag and the engagements module's
+confirmation lookup are replaced by fakes; `authz._independence` is set directly, as
+`register_independence` would.
 """
 
 from __future__ import annotations
@@ -27,9 +34,15 @@ from abacus.modules.identity.api import (
     system_context_for_run,
     visible,
 )
-from abacus.modules.identity.authz import recording_checks
-from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.identity.repository import GRANT_ROLES_OF
+from abacus.modules.identity.authz import matrix, recording_checks
+from abacus.modules.identity.authz.matrix import (
+    FIRM_SETTING_KEYS,
+    G2_BLOCKS_VIEW,
+    RULES,
+    STORED_SETTING_KEYS,
+    STRICTER_SETTING_KEYS,
+)
+from abacus.modules.identity.repository import GRANT_ROLES_OF, FirmPolicy
 from abacus_tools.codegen import permission_matrix as pm
 
 # The `conditions_met` fixture (conftest.py): a resource whose condition facts are met.
@@ -48,6 +61,17 @@ class Fakes:
         self.role: str | None = "staff"
         self.confirmed = False
         self.lookups: list[tuple[uuid.UUID, uuid.UUID]] = []
+        # G2 v2's strictest configuration by default (TASK-045's rule): see the module docstring.
+        self.attest: bool | None = True
+        self.blocks_view = True
+        self.attest_lookups: list[uuid.UUID] = []
+
+    async def attest_of(self, tenant: TenantContext, engagement_id: uuid.UUID) -> bool | None:
+        self.attest_lookups.append(engagement_id)
+        return self.attest
+
+    async def policy(self, tenant: TenantContext) -> FirmPolicy:
+        return FirmPolicy({}, frozenset({G2_BLOCKS_VIEW}) if self.blocks_view else frozenset())
 
     async def engagement_role(self, *args: object) -> str | None:
         return self.role
@@ -72,6 +96,9 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
     monkeypatch.setattr(authz, "engagement_role", made.engagement_role)
     monkeypatch.setattr(authz, "walled_clients", made.walled)
     monkeypatch.setattr(authz, "_independence", (_confirmed_column, made.confirmed_for))
+    monkeypatch.setattr(authz.LOOKUPS, "attest", made.attest_of)
+    monkeypatch.setattr(authz.LOOKUPS, "attest_column", None)
+    monkeypatch.setattr(authz, "firm_policy", made.policy)
     return made
 
 
@@ -123,6 +150,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "citation.create",  # P-03-T02 (C4 v1)
         "citation.read",
         "citation.relink",
+        # ADR-164 item 2 (P-07-T24): client-facing, G2 for the acting member on attest clients.
+        "client_access.grant",
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
         "comment.share",
@@ -161,6 +190,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "mapping_set.edit",  # SPEC-316 (TASK-345)
         "materiality.decide",  # SPEC-300 (TASK-301)
         "materiality.set",  # SPEC-037 (TASK-083)
+        "message.send",  # ADR-164 item 2 (P-07-T24): client-facing
         "misstatement.set",  # SPEC-043 (TASK-107)
         "pii.reveal",  # P-03-T02 (C4 v1)
         "procedure.configure",
@@ -354,3 +384,188 @@ def test_ac7_visible_with_only_staff_roles_unregistered_is_false(
 def test_ac7_visible_for_an_unmarked_read_is_unchanged(fakes: Fakes) -> None:
     sql = _sql(visible(_person(), "request_item.read", column("engagement_id", Uuid())))
     assert "independence_confirmed" not in sql
+
+
+# --- G2 v2 (SPEC-332 AC-13 to AC-16; ADR-164 items 2 to 4; P-07-T24) -------------------------
+
+MARKED_READS = [(a, r) for a, r in MARKED_STAFF if RULES[a].reads]
+MARKED_WRITES = [(a, r) for a, r in MARKED_STAFF if not RULES[a].reads]
+READ_IDS = [f"{a}-{r}" for a, r in MARKED_READS]
+WRITE_IDS = [f"{a}-{r}" for a, r in MARKED_WRITES]
+
+
+def test_ac13_both_kinds_are_exercised() -> None:
+    assert MARKED_READS and MARKED_WRITES
+    assert ("sign_off.prepare", "staff") in MARKED_WRITES
+    assert ("client_access.grant", "manager") in MARKED_WRITES
+    assert ("message.send", "senior") in MARKED_WRITES
+    assert ("request_item.send", "staff") in MARKED_WRITES
+
+
+@pytest.mark.parametrize(("action", "role"), MARKED_READS, ids=READ_IDS)
+async def test_ac13_a_pending_member_of_an_attest_engagement_reads(
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
+) -> None:
+    fakes.role, fakes.blocks_view = role, False
+    ctx = _person()
+    await authorise(ctx, action, conditions_met(_on(ctx), ctx, role))
+    assert fakes.attest_lookups == []  # a read without the setting never asks
+
+
+@pytest.mark.parametrize(("action", "role"), MARKED_WRITES, ids=WRITE_IDS)
+async def test_ac13_a_pending_member_of_an_attest_engagement_is_refused_every_marked_act(
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
+) -> None:
+    fakes.role, fakes.blocks_view = role, False
+    ctx = _person()
+    engagement_id = uuid.uuid4()
+    resource = conditions_met(_on(ctx, engagement_id), ctx, role)
+    assert await _layer(ctx, action, resource) == "independence"
+    assert fakes.attest_lookups == [engagement_id]
+
+
+@pytest.mark.parametrize(("action", "role"), MARKED_WRITES, ids=WRITE_IDS)
+async def test_ac13_a_cleared_member_acts(
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
+) -> None:
+    fakes.role, fakes.blocks_view, fakes.confirmed = role, False, True
+    ctx = _person()
+    await authorise(ctx, action, conditions_met(_on(ctx), ctx, role))
+    assert fakes.attest_lookups == []  # cleared: the attest flag is never read
+
+
+@pytest.mark.parametrize(("action", "role"), MARKED_STAFF, ids=MARKED_STAFF_IDS)
+async def test_ac14_nothing_is_gated_on_a_non_attest_engagement(
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
+) -> None:
+    fakes.role, fakes.attest = role, False  # even with the stricter setting on
+    ctx = _person()
+    await authorise(ctx, action, conditions_met(_on(ctx), ctx, role))
+
+
+@pytest.mark.parametrize(("action", "role"), MARKED_READS, ids=READ_IDS)
+async def test_ac15_g2_blocks_view_refuses_reads_on_attest_engagements_only(
+    fakes: Fakes, conditions_met: MeetConditions, action: str, role: str
+) -> None:
+    fakes.role = role
+    ctx = _person()
+    resource = conditions_met(_on(ctx), ctx, role)
+    assert await _layer(ctx, action, resource) == "independence"
+    fakes.attest = False
+    await authorise(ctx, action, resource)
+
+
+def test_ac15_the_stricter_setting_can_never_grant() -> None:
+    assert G2_BLOCKS_VIEW in STRICTER_SETTING_KEYS
+    assert not STRICTER_SETTING_KEYS & FIRM_SETTING_KEYS
+    assert STORED_SETTING_KEYS == FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS
+    with pytest.raises(ValueError, match=r"permission matrix: evidence\.read\.staff"):
+        matrix._rule(  # pyright: ignore[reportPrivateUsage] -- the matrix parser under test
+            "evidence.read", {"staff": f"firm_setting({G2_BLOCKS_VIEW})"}
+        )
+
+
+def test_ac15_the_migration_check_lists_every_stored_key() -> None:
+    from pathlib import Path
+
+    migration = Path(__file__).parents[3] / "migrations/versions/0138_g2_blocks_view.py"
+    after = migration.read_text().split("_AFTER = (", 1)[1].split(")\n", 1)[0]
+    assert all(f"'{key}'" in after for key in STORED_SETTING_KEYS)
+
+
+@pytest.mark.parametrize("unknown", ["none", "unregistered"])
+async def test_ac16_an_unknown_attest_flag_counts_as_attest(
+    fakes: Fakes, monkeypatch: pytest.MonkeyPatch, unknown: str
+) -> None:
+    fakes.blocks_view = False
+    if unknown == "none":
+        fakes.attest = None
+    else:
+        monkeypatch.setattr(authz.LOOKUPS, "attest", None)
+    ctx = _person()
+    assert await _layer(ctx, "evidence.upload", _on(ctx)) == "independence"
+
+
+async def test_ac16_firm_roles_are_not_bound(fakes: Fakes) -> None:
+    fakes.role = None
+    for firm_role in ("firm_admin", "practice_leader"):
+        ctx = _person(support=firm_role)
+        await authorise(ctx, "agent_run.read", _on(ctx))
+    assert fakes.lookups == []
+
+
+async def test_ac16_client_roles_are_not_bound_on_attest_engagements(fakes: Fakes) -> None:
+    fakes.role = "client_admin"
+    ctx = _person()
+    await authorise(ctx, "evidence.upload", _on(ctx))
+    assert fakes.lookups == [] and fakes.attest_lookups == []
+
+
+async def test_ac16_break_glass_support_is_not_bound_on_attest_engagements(fakes: Fakes) -> None:
+    fakes.role = None
+    ctx = _person(support="platform_support_content")
+    await authorise(ctx, "connection.read_log", _on(ctx))
+    assert fakes.lookups == [] and fakes.attest_lookups == []
+
+
+async def test_ac16_a_system_run_is_not_bound_on_attest_engagements(fakes: Fakes) -> None:
+    engagement_id = uuid.uuid4()
+    ctx = system_context_for_run(
+        tenant_id=uuid.uuid4(),
+        run_id=uuid.uuid4(),
+        engagement_id=engagement_id,
+        on_behalf_of=uuid.uuid4(),
+    )
+    await authorise(
+        ctx, "evidence.upload", Resource.engagement(ctx.tenant_id, engagement_id, archived=False)
+    )
+    assert fakes.lookups == [] and fakes.attest_lookups == []
+
+
+async def test_ac16_an_agent_is_bound_through_its_initiator(fakes: Fakes) -> None:
+    engagement_id = uuid.uuid4()
+    agent = _agent(_person(), engagement_id)
+    fakes.blocks_view = False
+    await authorise(agent, "evidence.read", _on(agent, engagement_id))  # the initiator reads
+    fakes.blocks_view = True
+    assert await _layer(agent, "evidence.read", _on(agent, engagement_id)) == "delegation"
+    fakes.attest = False
+    await authorise(agent, "evidence.read", _on(agent, engagement_id))
+
+
+async def test_ac16_walls_come_before_independence(
+    fakes: Fakes, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client_id = uuid.uuid4()
+
+    async def walled(*_: object) -> frozenset[uuid.UUID]:
+        return frozenset({client_id})
+
+    monkeypatch.setattr(authz, "walled_clients", walled)
+    fakes.confirmed = True
+    ctx = _person()
+    resource = Resource.engagement(
+        ctx.tenant_id, uuid.uuid4(), archived=False, client_id=client_id
+    )
+    assert await _layer(ctx, "evidence.read", resource) == "wall"
+    assert fakes.lookups == []
+
+
+def test_ac15_visible_admits_pending_staff_unless_the_setting_applies(fakes: Fakes) -> None:
+    expression = visible(_person(), "connection.read_log", column("engagement_id", Uuid()))
+    sql = _sql(expression)
+    # staff: member AND (confirmed OR NOT (the firm's g2_blocks_view AND attest)).
+    assert "independence_confirmed OR NOT (EXISTS (SELECT firm_setting_values.key" in sql
+    assert "firm_setting_values.value IS true" in sql
+    assert G2_BLOCKS_VIEW in expression.compile().params.values()
+
+
+def test_ac15_visible_reads_the_attest_flag_when_registered(
+    fakes: Fakes, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def attest(engagement_id: object) -> ColumnElement[bool]:
+        return literal_column("engagement_is_attest")
+
+    monkeypatch.setattr(authz.LOOKUPS, "attest_column", attest)
+    sql = _sql(visible(_person(), "review.read", column("engagement_id", Uuid())))
+    assert "AND engagement_is_attest" in sql

@@ -3,4 +3,4 @@
 
 actions:
   # --- Communications (SPEC-006 Q4; TASK-021) ---
-  message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}
+  message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # ADR-164 item 2 (P-07-T24): client-facing, G2 for the acting member on attest clients
