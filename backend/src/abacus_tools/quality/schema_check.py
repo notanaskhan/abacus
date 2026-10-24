@@ -223,6 +223,9 @@ DEFINER_FUNCTIONS = frozenset(
     {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
     | {"capacity_admit", "capacity_block"}
     | {"review_decision_reason_check", "review_reason_codes_list"}
+    # 0134 (A-01-T05; DEC-262): an assurance phase event's insert checks its actor and its move and
+    # moves the phase projection, which the app role may not update itself.
+    | {"assurance_phase_event_apply"}
     | {"eval_eligible"}  # 0016 (TASK-020): the gateway's evaluation eligibility
     # 0018 (TASK-022): one platform-wide number, and anomalous engagements' identifiers.
     | {"platform_spend_today", "engagement_spend_anomalies"}

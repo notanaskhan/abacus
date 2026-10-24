@@ -661,6 +661,27 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.FileTooLarge
+  phase_backward:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.phase.PhaseBackward
+    summary: 'The target phase is the current one or before it: phases only move forward.'
+  phase_follows_gate:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.phase.PhaseFollowsGate
+    summary: 'The target phase''s gate is computed by a registered provider: it derives from `gate.met`
+      and cannot be recorded.'
+  phase_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.phase.PhaseInvalid
+    summary: The reason is over 300 characters, or the target is not a phase.
+  phase_skip:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.phase.PhaseSkip
+    summary: 'The target phase is past the next one: a phase cannot be skipped.'
   planning_invalid:
     status: 422
     raised_by:
@@ -847,6 +868,7 @@ codes:
   stale_version:
     status: 409
     raised_by:
+    - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion

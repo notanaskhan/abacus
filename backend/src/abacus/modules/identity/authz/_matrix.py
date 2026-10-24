@@ -78,6 +78,28 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "assurance.record_archive": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+        "independence": "required",
+    },
+    "assurance.record_phase": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+    },
+    "assurance.record_release": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+        "independence": "required",
+    },
     "audit.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",

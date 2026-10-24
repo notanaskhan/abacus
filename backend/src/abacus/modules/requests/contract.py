@@ -18,7 +18,7 @@ deny the agent (INV-1, ADR-005).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Final, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -215,6 +215,31 @@ class LinkedRefOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
 
 
+# C5 v1.1 additive (A-01-T02 shape; A-01-T10 populates): who owes a request and its newest upload,
+# for AUD-03's sub-lines ("Requested Sep 1 · due Sep 18 · Sam Ortiz, Keystone", "harborline-upload/
+# Harborline Certification PY2025 signed.pdf · uploaded Sep 11 · matched 94%").
+OwedByKind = Literal["client_contact", "third_party", "organisation"]
+UploaderKind = Literal["client", "third_party", "firm", "connection"]
+
+
+class RequestOwedByOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[OwedByKind, classified("internal")]
+    # "Dana Kowalski", "Sam Ortiz, Keystone", "Harborline Trust Company": names only.
+    display: Annotated[str, classified("confidential")]
+
+
+class RequestLatestUploadOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    # The stored path label ("initial-input/Northwind SPD 2025.pdf"): client content, untrusted.
+    path_label: Annotated[str, classified("confidential")]
+    uploaded_on: Annotated[date, classified("internal")]
+    uploader_kind: Annotated[UploaderKind, classified("internal")]
+
+
 class BinderRequestRowOut(BaseModel):
     """A BND-02 row. Client principals never receive a Draft or an internal-only row (INV-4)."""
 
@@ -237,7 +262,27 @@ class BinderRequestRowOut(BaseModel):
     screening: Annotated[EvidenceScreeningStatus | None, classified("internal")] = None
     linked_count: Annotated[int | None, classified("internal")] = None  # "Linked (n)"; K-04
     upload_count: Annotated[int, classified("internal")] = 0
+    # C5 v1.1 additive (A-01-T02; null until A-01-T10 populates them; P-06's consumers unchanged).
+    owed_by: Annotated[RequestOwedByOut | None, classified("internal")] = (
+        None  # its `display` is C
+    )
+    latest_upload: Annotated[RequestLatestUploadOut | None, classified("internal")] = (
+        None  # `path_label` C
+    )
+    match_confidence: Annotated[int | None, Field(ge=0, le=100), classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+# C5 v1.1 (security review, DEC-261): who owes a request, its newest upload's path and the match
+# confidence are the firm's; a client principal's rows never carry them, whatever fills them.
+_FIRM_ONLY_ROW_FIELDS: Final = ("owed_by", "latest_upload", "match_confidence")
+
+
+def for_viewer(row: BinderRequestRowOut, ctx: AuthContext) -> BinderRequestRowOut:
+    """The row as this viewer may see it: the C5 v1.1 fields are left out for a client."""
+    if not ctx.client:
+        return row
+    return row.model_copy(update=dict.fromkeys(_FIRM_ONLY_ROW_FIELDS))
 
 
 class LiveItemOut(BaseModel):
@@ -611,7 +656,10 @@ async def binder_requests_route(
     await engine_on(ctx)
     page = await binders.binder_requests(ctx, binder_id, category, cursor)
     return ListPage[BinderRequestRowOut](
-        items=[BinderRequestRowOut.model_validate(r, from_attributes=True) for r in page.items],
+        items=[
+            for_viewer(BinderRequestRowOut.model_validate(r, from_attributes=True), ctx)
+            for r in page.items
+        ],
         next_cursor=page.next_cursor,
         total=page.total,
         total_capped=page.total_capped,

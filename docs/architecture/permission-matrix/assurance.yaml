@@ -20,3 +20,9 @@ actions:
   mapping_set.edit:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # start the mapping and map accounts; the agent's suggestions arrive with A-09
   # --- The engagement dashboard (SPEC-317; TASK-346; K-04 ENG-12) ---
   dashboard.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # team members only; client and agent principals deny
+  # --- Audits cockpit, record mode (A-01 §4.4; A-01-T02 stub, DEC-261) ---
+  # Human only: a named person records a phase, an external release or an external archive while
+  # Accrued computes no gate for it (INV-1; the database CHECKs agree). Client roles hold no cell.
+  assurance.record_phase:   {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # POST /v1/audits/{id}/phase; forward one step only (409 phase_backward, phase_skip, phase_follows_gate)
+  assurance.record_release: {engagement_partner: allow, agent: deny, system: deny, mfa_recent: required, independence: required}   # POST /v1/audits/{id}/release-record; interim G8; 409 release_mode_in_app when the firm releases in Accrued
+  assurance.record_archive: {engagement_partner: allow, manager: allow, agent: deny, system: deny, mfa_recent: required, independence: required}   # POST /v1/audits/{id}/archive-record; interim G9 against a ready final binder export (DEC-83)

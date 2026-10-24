@@ -1,0 +1,12 @@
+# The assurance module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: audits.cockpit
+    description: 'Audits cockpit (A-01; docs/contracts/audits-cockpit.md): AUD-01, AUD-02 and AUD-03 over GET /v1/audits, /{id}/cockpit and /{id}/source-documents, PATCH /{id}/profile and the record-mode phase, release and archive writes. Off: those routes answer 404 and the Audits nav target shows the flag-off state; the legacy board stays reachable until A-01-T21. On: a stubbed route answers 501 not_implemented until its task lands (profile and phase with A-01-T05; index A-01-T08; cockpit A-01-T09; source documents A-01-T10; release and archive A-01-T23). Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale.'
+    owner: notanaskhan
+    created: 2026-10-24
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

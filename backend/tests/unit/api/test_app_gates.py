@@ -272,6 +272,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "/v1/portal/request-items/{item_id}/upload-intents",
         # P-07-T05 (engagements v2 stub): a draft, a Prospect engagement, an engagement.
+        # A-01-T02 (audits stub): a phase event, an external release and an external archive.
+        "/v1/audits/{work_item_id}/phase",
+        "/v1/audits/{work_item_id}/release-record",
+        "/v1/audits/{work_item_id}/archive-record",
         "/v1/engagement-drafts",
         "/v1/engagement-drafts/{draft_id}/start-acceptance",
         "/v1/engagement-drafts/{draft_id}/create",

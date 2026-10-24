@@ -990,6 +990,46 @@ export type ArchiveOut = {
 };
 
 /**
+ * ArchiveRecordIn
+ *
+ * The external archive against a ready final binder export (interim G9): 409
+ * `final_export_required` or `export_stale` otherwise.
+ */
+export type ArchiveRecordIn = {
+    /**
+     * Export Id
+     */
+    export_id: string;
+    /**
+     * Firm Tool Ref
+     */
+    firm_tool_ref: string;
+};
+
+/**
+ * ArchiveRecordOut
+ */
+export type ArchiveRecordOut = {
+    /**
+     * Export Id
+     */
+    export_id: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string;
+    phase: AuditEngagementStatus;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * AreaOut
  */
 export type AreaOut = {
@@ -1095,6 +1135,531 @@ export type AttestBody = {
      * Attest
      */
     attest: boolean;
+};
+
+/**
+ * AuditArchiveOut
+ *
+ * The Archive cell: "Archive in 13 days" (clock from the release date + 60, on `kernel.clock`)
+ * or "Archived" with the firm-tool reference of an external archive (DV-4).
+ */
+export type AuditArchiveOut = {
+    /**
+     * Days Left
+     */
+    days_left?: number | null;
+    /**
+     * Firm Tool Ref
+     */
+    firm_tool_ref?: string | null;
+    /**
+     * State
+     */
+    state: 'archiving' | 'archived';
+};
+
+/**
+ * AuditBandOut
+ */
+export type AuditBandOut = {
+    /**
+     * Collapsed
+     */
+    collapsed?: boolean;
+    /**
+     * Key
+     */
+    key: 'overview' | 'planning' | 'group' | 'fieldwork' | 'completion' | 'reporting';
+    /**
+     * Rows
+     */
+    rows?: Array<AuditSectionRowOut>;
+};
+
+/**
+ * AuditBarOut
+ */
+export type AuditBarOut = {
+    /**
+     * Auto Mode
+     */
+    auto_mode?: boolean | null;
+    /**
+     * Methodology Label
+     */
+    methodology_label?: string | null;
+    /**
+     * Run Started At
+     */
+    run_started_at?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * AuditCockpitOut
+ *
+ * AUD-02's host: audit bar, overview card, bands of registered rows and the dock tabs.
+ * `allowed_actions` from `assurance.record_phase`, `engagement.update`, `export.create`,
+ * `agent.pause`; empty for metadata-only roles and archived work items.
+ */
+export type AuditCockpitOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    audit_bar: AuditBarOut;
+    /**
+     * Bands
+     */
+    bands?: Array<AuditBandOut>;
+    /**
+     * Dock Tabs
+     */
+    dock_tabs?: Array<'agent' | 'viewer'>;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    overview: AuditOverviewOut;
+    /**
+     * Phase Mode
+     */
+    phase_mode?: 'recorded' | 'derived';
+    /**
+     * Read Only Reason
+     */
+    read_only_reason?: 'archived' | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditEngagementStatus
+ */
+export type AuditEngagementStatus = 'planning' | 'fieldwork' | 'in_review' | 'completion' | 'ready_to_release' | 'released' | 'archiving' | 'archived';
+
+/**
+ * AuditIndexPage
+ *
+ * The P-36 envelope: `counts` per `audit_engagement` phase code **minus the active tile**
+ * (the tiles keep their own counts when one is pressed); `facets.segment` the segments with
+ * their counts (only registered segments the firm is entitled to); `facets.type`, `partner`,
+ * `office`, `period`. The tiles sum to `total`. No hidden-by-wall field.
+ */
+export type AuditIndexPage = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<AuditIndexRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    summary: AuditIndexSummaryOut;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * AuditIndexRowOut
+ *
+ * An AUD-01 row: metadata only, after `visible()` (INV-3). No amount, materiality or
+ * severity (AUD-01 AVOID).
+ */
+export type AuditIndexRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    archive?: AuditArchiveOut | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Ebp Plan Kind
+     */
+    ebp_plan_kind?: 'dc' | '403b' | 'db' | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Engagement Type
+     */
+    engagement_type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit';
+    /**
+     * Is Group Audit
+     */
+    is_group_audit?: boolean;
+    /**
+     * Limited Scope 103A3C
+     */
+    limited_scope_103a3c?: boolean;
+    /**
+     * Manager Initials
+     */
+    manager_initials?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Office Name
+     */
+    office_name?: string | null;
+    /**
+     * Partner Initials
+     */
+    partner_initials?: string | null;
+    pbc?: AuditPbcOut | null;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    phase: AuditEngagementStatus;
+    /**
+     * Released On
+     */
+    released_on?: string | null;
+    /**
+     * Report Due On
+     */
+    report_due_on?: string | null;
+    /**
+     * Report Due Tone
+     */
+    report_due_tone?: 'past_due' | 'within_7_days' | 'within_30_days' | 'later' | null;
+    run_badge?: AuditRunBadgeOut | null;
+    /**
+     * Segment
+     */
+    segment: 'fs' | 'ebp' | 'review' | 'soc' | 'ia';
+    /**
+     * Tags
+     */
+    tags?: Array<AuditIndexTagOut>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditIndexSummaryOut
+ *
+ * The caption ("27 engagements · EBP 14 · FS audit 6 · Review 4 · Compilation/preparation
+ * 3"), over the same `visible()` predicate as the rows.
+ */
+export type AuditIndexSummaryOut = {
+    /**
+     * Compilation Preparation
+     */
+    compilation_preparation: number;
+    /**
+     * Ebp
+     */
+    ebp: number;
+    /**
+     * Fs Audit
+     */
+    fs_audit: number;
+    /**
+     * Internal Audit
+     */
+    internal_audit?: number;
+    /**
+     * Review
+     */
+    review: number;
+    /**
+     * Soc
+     */
+    soc?: number;
+};
+
+/**
+ * AuditIndexTagOut
+ *
+ * A tag from a registered index-tag provider (DV-10): code-built text, never model text.
+ */
+export type AuditIndexTagOut = {
+    /**
+     * Classification
+     */
+    classification: 'metadata' | 'content';
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * AuditOverviewOut
+ *
+ * The rail's OverviewCard.
+ */
+export type AuditOverviewOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    phase: AuditEngagementStatus;
+};
+
+/**
+ * AuditPbcOut
+ *
+ * "11 of 24": received over the client-visible requests of the work item's published PBC
+ * binders. The row's `pbc` is null before G3 (no published PBC binder, DEC-39).
+ */
+export type AuditPbcOut = {
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * AuditPhaseIn
+ *
+ * A record-mode forward move by a named person (409 `phase_backward`, `phase_skip`,
+ * `phase_follows_gate`).
+ */
+export type AuditPhaseIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    to: AuditEngagementStatus;
+};
+
+/**
+ * AuditPhaseOut
+ */
+export type AuditPhaseOut = {
+    /**
+     * Event Id
+     */
+    event_id: string;
+    from_phase: AuditEngagementStatus;
+    /**
+     * Mode
+     */
+    mode: 'recorded' | 'derived';
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    to_phase: AuditEngagementStatus;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditProfileIn
+ *
+ * The EBP label facts ("EBP DC · §103(a)(3)(C)"); a field left out is unchanged.
+ */
+export type AuditProfileIn = {
+    /**
+     * Ebp Plan Kind
+     */
+    ebp_plan_kind?: 'dc' | '403b' | 'db' | null;
+    /**
+     * Limited Scope 103A3C
+     */
+    limited_scope_103a3c?: boolean | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Standards Set Id
+     */
+    standards_set_id?: string | null;
+};
+
+/**
+ * AuditProfileOut
+ */
+export type AuditProfileOut = {
+    /**
+     * Ebp Plan Kind
+     */
+    ebp_plan_kind?: 'dc' | '403b' | 'db' | null;
+    /**
+     * Limited Scope 103A3C
+     */
+    limited_scope_103a3c: boolean;
+    /**
+     * Standards Set Id
+     */
+    standards_set_id?: string | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditRunBadgeOut
+ *
+ * The "Processing" pill and its popover (AUD-01 d), from a C6 v1 engagement run only; the v1
+ * policy ticks never produce one (DV-11). `blocked_on_role` is the decider's role code.
+ */
+export type AuditRunBadgeOut = {
+    /**
+     * Blocked On Role
+     */
+    blocked_on_role?: 'partner' | 'manager' | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Run Number
+     */
+    run_number: number;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Started By Name
+     */
+    started_by_name: string;
+    /**
+     * Started By User Id
+     */
+    started_by_user_id: string;
+    /**
+     * Workpapers Complete
+     */
+    workpapers_complete: number;
+    /**
+     * Workpapers Total
+     */
+    workpapers_total: number;
+};
+
+/**
+ * AuditSectionRowOut
+ *
+ * A rail row from a registered section provider (DV-1): a missing provider hides the row.
+ * `sub_line` is code-built ("11 of 24 received", "Complete · 9:26 AM"), never model text.
+ */
+export type AuditSectionRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Blocked On Name
+     */
+    blocked_on_name?: string | null;
+    /**
+     * Blocked On User Id
+     */
+    blocked_on_user_id?: string | null;
+    /**
+     * Grammar
+     */
+    grammar: 'sub_line' | 'idle_pill' | 'link';
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Link
+     */
+    link: 'live' | 'planned';
+    /**
+     * Route
+     */
+    route: string;
+    section_state?: AuditSectionStatus | null;
+    /**
+     * Sub Line
+     */
+    sub_line?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Ref
+     */
+    work_item_ref: string;
 };
 
 /**
@@ -1464,14 +2029,20 @@ export type BinderRequestRowOut = {
      * Kind
      */
     kind: 'client_upload' | 'firm_provided';
+    latest_upload?: RequestLatestUploadOut | null;
     /**
      * Linked Count
      */
     linked_count?: number | null;
     /**
+     * Match Confidence
+     */
+    match_confidence?: number | null;
+    /**
      * Overdue
      */
     overdue: boolean;
+    owed_by?: RequestOwedByOut | null;
     /**
      * Requested At
      */
@@ -13343,6 +13914,50 @@ export type ReleaseOut = {
 };
 
 /**
+ * ReleaseRecordIn
+ *
+ * "Report released outside Accrued on Jul 29, 2026" (interim G8); a future date answers 422
+ * `release_date_future`.
+ */
+export type ReleaseRecordIn = {
+    /**
+     * Report Kind
+     */
+    report_kind: 'opinion' | 'no_report';
+    /**
+     * Report Released On
+     */
+    report_released_on: string;
+};
+
+/**
+ * ReleaseRecordOut
+ */
+export type ReleaseRecordOut = {
+    /**
+     * Archive Due On
+     */
+    archive_due_on: string;
+    phase: AuditEngagementStatus;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Report Kind
+     */
+    report_kind: 'opinion' | 'no_report';
+    /**
+     * Report Released On
+     */
+    report_released_on: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * RemovedOut
  */
 export type RemovedOut = {
@@ -13809,6 +14424,42 @@ export type RequestItemV2Out = {
      * Wave
      */
     wave?: 'planning' | 'year_end' | 'sample' | null;
+};
+
+/**
+ * RequestLatestUploadOut
+ */
+export type RequestLatestUploadOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Path Label
+     */
+    path_label: string;
+    /**
+     * Uploaded On
+     */
+    uploaded_on: string;
+    /**
+     * Uploader Kind
+     */
+    uploader_kind: 'client' | 'third_party' | 'firm' | 'connection';
+};
+
+/**
+ * RequestOwedByOut
+ */
+export type RequestOwedByOut = {
+    /**
+     * Display
+     */
+    display: string;
+    /**
+     * Kind
+     */
+    kind: 'client_contact' | 'third_party' | 'organisation';
 };
 
 /**
@@ -15898,6 +16549,125 @@ export type SnapshotOut = {
      * Total Debit
      */
     total_debit: string;
+};
+
+/**
+ * SourceDocumentGroupOut
+ *
+ * A category band ("Plan documents · 3 of 5"). `counted` is false for a band outside the
+ * totals ("Sample-driven · 0", populated by A-03).
+ */
+export type SourceDocumentGroupOut = {
+    /**
+     * Category Id
+     */
+    category_id?: string | null;
+    /**
+     * Counted
+     */
+    counted?: boolean;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Rows
+     */
+    rows?: Array<SourceDocumentRowOut>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * SourceDocumentRowOut
+ *
+ * A request row across the work item's PBC binders, with the C5 v1.1 additive fields
+ * (A-01-T10). Requested rows carry no upload, glyph or Linked count.
+ */
+export type SourceDocumentRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    latest_upload?: RequestLatestUploadOut | null;
+    /**
+     * Linked Count
+     */
+    linked_count?: number | null;
+    /**
+     * Match Confidence
+     */
+    match_confidence?: number | null;
+    /**
+     * Overdue
+     */
+    overdue: boolean;
+    owed_by?: RequestOwedByOut | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Requested At
+     */
+    requested_at?: string | null;
+    /**
+     * Returned Reason
+     */
+    returned_reason?: string | null;
+    screening?: EvidenceScreeningStatus | null;
+    status: RequestStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SourceDocumentsOut
+ *
+ * 24 requests = 11 received + 1 needs review + 12 requested at E0; the groups foot to the
+ * totals and the rail's "11 of 24 received" reads the same numbers.
+ */
+export type SourceDocumentsOut = {
+    /**
+     * Groups
+     */
+    groups?: Array<SourceDocumentGroupOut>;
+    /**
+     * Needs Review
+     */
+    needs_review: number;
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Requested
+     */
+    requested: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
 };
 
 /**
@@ -18291,6 +19061,475 @@ export type ExportRunTraceResponses = {
 };
 
 export type ExportRunTraceResponse = ExportRunTraceResponses[keyof ExportRunTraceResponses];
+
+export type AuditsIndexData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Segment
+         */
+        segment?: 'fs' | 'ebp' | 'review' | 'soc' | 'ia' | null;
+        /**
+         * Type
+         */
+        type?: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | null;
+        /**
+         * Phase
+         */
+        phase?: AuditEngagementStatus | null;
+        /**
+         * Partner
+         */
+        partner?: string | null;
+        /**
+         * Office
+         */
+        office?: string | null;
+        /**
+         * Due
+         */
+        due?: 'any' | '7d' | '14d' | '30d';
+        /**
+         * Period
+         */
+        period?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/audits';
+};
+
+export type AuditsIndexErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditsIndexError = AuditsIndexErrors[keyof AuditsIndexErrors];
+
+export type AuditsIndexResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditIndexPage;
+};
+
+export type AuditsIndexResponse = AuditsIndexResponses[keyof AuditsIndexResponses];
+
+export type AuditArchiveRecordData = {
+    body: ArchiveRecordIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/archive-record';
+};
+
+export type AuditArchiveRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditArchiveRecordError = AuditArchiveRecordErrors[keyof AuditArchiveRecordErrors];
+
+export type AuditArchiveRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: ArchiveRecordOut;
+};
+
+export type AuditArchiveRecordResponse = AuditArchiveRecordResponses[keyof AuditArchiveRecordResponses];
+
+export type AuditCockpitData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/cockpit';
+};
+
+export type AuditCockpitErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditCockpitError = AuditCockpitErrors[keyof AuditCockpitErrors];
+
+export type AuditCockpitResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditCockpitOut;
+};
+
+export type AuditCockpitResponse = AuditCockpitResponses[keyof AuditCockpitResponses];
+
+export type AuditPhaseData = {
+    body: AuditPhaseIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/phase';
+};
+
+export type AuditPhaseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditPhaseError = AuditPhaseErrors[keyof AuditPhaseErrors];
+
+export type AuditPhaseResponses = {
+    /**
+     * Successful Response
+     */
+    201: AuditPhaseOut;
+};
+
+export type AuditPhaseResponse = AuditPhaseResponses[keyof AuditPhaseResponses];
+
+export type AuditProfileData = {
+    body: AuditProfileIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/profile';
+};
+
+export type AuditProfileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditProfileError = AuditProfileErrors[keyof AuditProfileErrors];
+
+export type AuditProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditProfileOut;
+};
+
+export type AuditProfileResponse = AuditProfileResponses[keyof AuditProfileResponses];
+
+export type AuditReleaseRecordData = {
+    body: ReleaseRecordIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/release-record';
+};
+
+export type AuditReleaseRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditReleaseRecordError = AuditReleaseRecordErrors[keyof AuditReleaseRecordErrors];
+
+export type AuditReleaseRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: ReleaseRecordOut;
+};
+
+export type AuditReleaseRecordResponse = AuditReleaseRecordResponses[keyof AuditReleaseRecordResponses];
+
+export type AuditSourceDocumentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: {
+        /**
+         * Binder
+         */
+        binder?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Sort
+         */
+        sort?: 'missing_first' | 'received_first';
+    };
+    url: '/v1/audits/{work_item_id}/source-documents';
+};
+
+export type AuditSourceDocumentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditSourceDocumentsError = AuditSourceDocumentsErrors[keyof AuditSourceDocumentsErrors];
+
+export type AuditSourceDocumentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SourceDocumentsOut;
+};
+
+export type AuditSourceDocumentsResponse = AuditSourceDocumentsResponses[keyof AuditSourceDocumentsResponses];
 
 export type CallbackData = {
     body?: never;

@@ -84,6 +84,12 @@ def register_gate_provider(gate: str, provider: GateProvider) -> None:
     _GATES[gate] = provider
 
 
+def gate_registered(gate: str) -> bool:
+    """Whether a provider computes the gate (A-01-T05: a phase whose gate is computed leaves
+    record mode and derives from `gate.met`)."""
+    return gate in _GATES
+
+
 async def gate_fact(tenant: TenantContext, engagement_id: UUID, gate: str) -> GateFact:
     """Whether the engagement meets the gate; an unregistered gate is unmet."""
     provider = _GATES.get(gate)

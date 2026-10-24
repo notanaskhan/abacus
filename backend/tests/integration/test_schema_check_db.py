@@ -1119,7 +1119,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # F-03-T05 (migration 0068): work items and the assurance item's phase.
         "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
-        "assurance_work_items": frozenset({"phase", "auto_mode"}),
+        # A-01-T05 (0134): the EBP profile facts and the version; `phase` moves only through an
+        # assurance phase event's SECURITY DEFINER trigger (DEC-262).
+        "assurance_work_items": frozenset(
+            {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
+        ),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
         "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310 (TASK-321)
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
@@ -1770,6 +1774,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
         | {"capacity_admit", "capacity_block"}
         | {"review_decision_reason_check", "review_reason_codes_list"}  # 0015 (TASK-019)
+        | {"assurance_phase_event_apply"}  # 0134 (A-01-T05): the phase moves only by an event
         | {"eval_eligible"}  # 0016 (TASK-020)
         | {"platform_spend_today", "engagement_spend_anomalies"}  # 0018 (TASK-022)
         | {"support_sessions_review"}  # 0023 (TASK-027)

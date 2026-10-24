@@ -90,6 +90,15 @@ class AuditSectionStatus(StrEnum):
     CHANGED_AFTER_SIGNOFF = "changed_after_signoff"
 
 
+class EngagementExportStatus(StrEnum):
+    QUEUED = "queued"
+    PACKAGING = "packaging"
+    READY = "ready"
+    FAILED = "failed"
+    EXPIRED = "expired"
+    UNDONE = "undone"
+
+
 class ProgramBoardStatus(StrEnum):
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
@@ -663,6 +672,14 @@ STORED: dict[str, tuple[str, ...]] = {
         "locked",
         "failed",
         "changed_after_signoff",
+    ),
+    "engagement_export": (
+        "queued",
+        "packaging",
+        "ready",
+        "failed",
+        "expired",
+        "undone",
     ),
     "program_board": (
         "not_started",

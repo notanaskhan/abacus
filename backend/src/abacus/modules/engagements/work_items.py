@@ -149,19 +149,81 @@ async def assurance_item_id(tenant: TenantContext, engagement_id: UUID) -> UUID 
         )
 
 
-async def set_assurance_phase(tx: UnitOfWork, engagement_id: UUID, phase: str) -> None:
-    """SPEC-314: the assurance work item's phase (released, archived), in the caller's unit."""
-    item = await tx.session.scalar(
-        select(WorkItem.id).where(
-            WorkItem.engagement_id == engagement_id, WorkItem.kind == "assurance"
-        )
+# --- A-01-T05 (0134): the assurance subtype's profile facts and phase projection ----------------
+# The phase moves only through an `assurance_phase_events` row: the app role holds no UPDATE on
+# `phase`, and the event's insert trigger moves the projection (DEC-262). The assurance module's
+# phase service writes the events; nothing here sets a phase.
+
+
+@dataclass(frozen=True)
+class AssuranceItem:
+    """An assurance work item's subtype row, for the assurance module's phase service."""
+
+    work_item_id: UUID
+    engagement_id: UUID
+    assurance_type: str
+    phase: str
+    phase_source: str
+    ebp_plan_kind: str | None
+    limited_scope_103a3c: bool
+    standards_set_id: UUID | None
+    version: int
+
+
+def _assurance_item(row: AssuranceWorkItem) -> AssuranceItem:
+    return AssuranceItem(
+        row.work_item_id,
+        row.engagement_id,
+        row.assurance_type,
+        row.phase,
+        row.phase_source,
+        row.ebp_plan_kind,
+        row.limited_scope_103a3c,
+        row.standards_set_id,
+        row.version,
     )
-    if item is not None:
-        await tx.session.execute(
-            update(AssuranceWorkItem)
-            .where(AssuranceWorkItem.work_item_id == item)
-            .values(phase=phase)
-        )
+
+
+async def assurance_item(tenant: TenantContext, work_item_id: UUID) -> AssuranceItem:
+    """The work item's assurance row; 404 when the tenant holds none (another tenant's id, or a
+    work item of another kind). The caller authorises on the engagement before using it."""
+    async with tenant_session(tenant) as session:
+        row = await session.get(AssuranceWorkItem, work_item_id)
+    if row is None:
+        raise NotFound("work_item")
+    return _assurance_item(row)
+
+
+async def lock_assurance_item(tx: UnitOfWork, work_item_id: UUID) -> AssuranceItem:
+    """The same row, locked for the caller's unit (one phase move or profile edit at a time)."""
+    row = await tx.session.scalar(
+        select(AssuranceWorkItem)
+        .where(AssuranceWorkItem.work_item_id == work_item_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if row is None:
+        raise NotFound("work_item")
+    return _assurance_item(row)
+
+
+async def set_assurance_profile(
+    tx: UnitOfWork, work_item_id: UUID, values: Mapping[str, str | bool | UUID | None]
+) -> int:
+    """The EBP profile facts (`ebp_plan_kind`, `limited_scope_103a3c`, `standards_set_id`), in
+    the caller's unit; the new version is returned."""
+    allowed = {"ebp_plan_kind", "limited_scope_103a3c", "standards_set_id"}
+    if not set(values) <= allowed:
+        raise ValueError(f"not a profile fact: {sorted(set(values) - allowed)}")
+    version = await tx.session.scalar(
+        update(AssuranceWorkItem)
+        .where(AssuranceWorkItem.work_item_id == work_item_id)
+        .values(**values, version=AssuranceWorkItem.version + 1)
+        .returning(AssuranceWorkItem.version)
+    )
+    if version is None:
+        raise NotFound("work_item")
+    return version
 
 
 async def lock_engagement(tx: UnitOfWork, engagement_id: UUID, at: datetime) -> None:
