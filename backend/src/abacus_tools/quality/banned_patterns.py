@@ -1670,6 +1670,31 @@ def glossary_bans(text: str | None = None) -> dict[str, str]:
     return bans
 
 
+def glossary_compounds(text: str | None = None) -> frozenset[str]:
+    """Identifiers a term table's "Code name" column names: compounds the glossary allows.
+
+    A banned word may still open a compound the glossary itself names, as the Prompt row allows
+    `email_template` (R-01-T04: `email_template_drafts`, `email_suppressions`). Only the term
+    tables count, never the legacy-identifier table, so a rename never re-allows the old name.
+    """
+    source = text if text is not None else GLOSSARY.read_text(encoding="utf-8")
+    names: set[str] = set()
+    in_terms = False
+    for line in source.splitlines():
+        if line.startswith("| Term "):
+            in_terms = True
+            continue
+        if not line.startswith("|"):
+            in_terms = False
+            continue
+        if not in_terms or line.startswith("|---"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 4:
+            names.update(_BAN_CELL.findall(cells[2]))
+    return frozenset(names)
+
+
 # Names in use before the glossary bound identifiers (2026-10-21), each with the task that renames
 # it. A new use of a banned name fails; these may stay until their rename lands.
 L12_LEGACY: dict[tuple[str, str], str] = {
@@ -1725,9 +1750,10 @@ def _l12_candidates(tree: ast.Module) -> Iterator[tuple[int, str, list[str]]]:
 
 def _check_glossary_identifiers(src: SourceFile) -> Iterator[Finding]:
     bans = glossary_bans()
+    compounds = glossary_compounds()
     for line, name, forms in _l12_candidates(src.tree):
         hit = next((f for f in forms if f in bans), None)
-        if hit is None or (src.rel, name) in L12_LEGACY:
+        if hit is None or (src.rel, name) in L12_LEGACY or (hit != name and name in compounds):
             continue
         yield Finding(
             line, f"{name!r} uses the glossary's banned {hit!r}: the code name is {bans[hit]!r}"
