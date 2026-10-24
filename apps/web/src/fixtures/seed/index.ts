@@ -93,6 +93,9 @@ const NORTHWIND_FIGURES: Record<string, string> = {
   netAssetsUnadjusted: "16812400.00",
   contributionsReceivable: "48600.00",
   materialityDecided: "252200.00",
+  // The Harborline summary of net trust assets (documents.py): the trial balance ties to it.
+  investmentsAtFairValue: "16500000.00",
+  participantNotes: "312400.00",
 };
 
 export function buildSeed(options: { holdouts?: readonly Holdout[] } = {}): Seed {

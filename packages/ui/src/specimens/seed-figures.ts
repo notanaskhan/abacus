@@ -38,6 +38,9 @@ export const NORTHWIND_FIGURES = {
   contributionsReceivable: "48600.00",
   netAssetsAvailable20251231: "16861000.00",
   netAssetsAvailable20250101: "14228500.00",
+  /** The Harborline Trust Company summary of net trust assets the trial balance ties to (TPL-02). */
+  investmentsAtFairValue: "16500000.00",
+  participantNotes: "312400.00",
 } as const;
 
 /**
@@ -70,6 +73,11 @@ export const FOOTINGS: readonly { name: string; parts: readonly string[]; total:
     name: "Northwind net assets over PY2025",
     parts: [NORTHWIND_FIGURES.netAssetsAvailable20250101, NORTHWIND_CHANGE.netAssetsChange],
     total: NORTHWIND_FIGURES.netAssetsAvailable20251231,
+  },
+  {
+    name: "Northwind trial balance tie to the net trust assets at Dec 31, 2025 (TPL-02)",
+    parts: [NORTHWIND_FIGURES.investmentsAtFairValue, NORTHWIND_FIGURES.participantNotes],
+    total: NORTHWIND_FIGURES.netAssetsUnadjusted,
   },
   {
     name: "TY2025 returns by office",
