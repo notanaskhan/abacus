@@ -58,8 +58,9 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-28 | Real-time delivery degraded (event stream down; clients fall back to polling) | P-15 | When P-15 ships | never | SLO-06 | to write |
 | RB-29 | Integrity alert: evidence fingerprint mismatch, seal mismatch, or broken audit hash chain (SEV1) | ADR-096 | R1 | never | chain mismatch alarm | to write |
 | RB-30 | Write-capability incident (wrong posting or export; reversal as a new write) | P-16 | Before the first write capability goes live | never | write anomaly | to write |
+| RB-31 | Pause notification email for a firm or every firm (`notifications.email`, the C16 channel's kill switch) | P-01-T17 | R1 | never | none yet (RB-20 points here) | drafted |
 
-Also owed by Q-02-T51, not yet numbered: agent stage promotion and demotion; Bedrock route-parity refresh. Give each the next free RB number when written (RB-31 onward).
+Also owed by Q-02-T51, not yet numbered: agent stage promotion and demotion; Bedrock route-parity refresh. Give each the next free RB number when written (RB-32 onward; RB-31 is P-01-T17's).
 
 ## Template
 
