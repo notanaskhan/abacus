@@ -37,6 +37,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.citations.matching import Box, line_rects, normalised, quote_spans
+from abacus.modules.evidence.extraction import ACTIVE_CONTENT
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
 from abacus.modules.evidence.previews import PAGE_WIDTH, RENDERER_VERSION
@@ -44,6 +45,8 @@ from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
     get_item,
     masked_preview_for,
+    newest_extraction,
+    not_withdrawn,
     pages_of,
     pii_regions_of,
     preview_for,
@@ -68,6 +71,13 @@ PDF: Final = "application/pdf"
 # A preview made without masks: every reason a kind-`none` preview can carry, by C4 status.
 _PASSWORD: Final = frozenset({"encrypted"})
 _NOT_PREVIEWABLE: Final = frozenset({"not_previewable"})
+
+
+class ActiveContent(DomainConflict):
+    """A PDF with active content is kept but never shown (DEC-296, ED-021): every viewer read
+    refuses it, whatever was derived before the rule existed."""
+
+    code = "active_content"
 
 
 class PreviewOutdated(DomainConflict):
@@ -147,13 +157,20 @@ async def visible_version(ctx: AuthContext, version_id: UUID) -> EvidenceVersion
         version = (
             await session.execute(
                 select(EvidenceVersion).where(
-                    EvidenceVersion.id == version_id, visible(ctx, READ, engagement)
+                    EvidenceVersion.id == version_id,
+                    visible(ctx, READ, engagement),
+                    not_withdrawn(),  # P-06-T19: a withdrawn upload is as if it never arrived
                 )
             )
         ).scalar_one_or_none()
     if version is None:
         raise NotFound("evidence_version")
     await _authorised_any_version(ctx, version.engagement_id, version.id)
+    if version.media_type == PDF:
+        async with tenant_session(ctx.tenant) as session:
+            extracted = await newest_extraction(session, evidence_version_id=version.id)
+        if extracted is not None and extracted.reason == ACTIVE_CONTENT:
+            raise ActiveContent
     return version
 
 

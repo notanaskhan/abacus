@@ -119,12 +119,22 @@ from abacus.modules.evidence.storage import (
     check_ready,
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
-from abacus.modules.evidence.uploads import upload
+from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATHS, upload
+from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
+from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
+from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
+from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
 from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
-from abacus.modules.evidence.workflow_types import BackfillInput, LegalHoldInput, UploadInput
+from abacus.modules.evidence.workflow_types import (
+    BackfillInput,
+    LegalHoldInput,
+    UploadInput,
+    WithdrawalPurgeInput,
+)
 from abacus.modules.evidence.workflows import (
+    EvidenceWithdrawalPurge,
     LegalHoldApply,
     LegalHoldRelease,
     TrustLayerBackfill,
@@ -146,8 +156,13 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # Q-02-T29: the legal-hold workflows and their activities beside upload processing; a new version
 # gets its S3 holds before its processing starts. Importing `holds` registered `holds_covering`
 # as the kernel's hold check (fail closed without it).
-WORKFLOWS: dict[type, str] = {**UPLOAD_WORKFLOWS, **HOLD_WORKFLOWS}
-ACTIVITIES: tuple[object, ...] = (*UPLOAD_ACTIVITIES, *HOLD_ACTIVITIES)
+# P-06-T19 (ADR-162 §7): the withdrawal purge, started by `evidence_version.withdrawn`.
+WORKFLOWS: dict[type, str] = {**UPLOAD_WORKFLOWS, **HOLD_WORKFLOWS, **WITHDRAWAL_WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = (
+    *UPLOAD_ACTIVITIES,
+    *HOLD_ACTIVITIES,
+    *WITHDRAWAL_ACTIVITIES,
+)
 SUBSCRIPTIONS = {
     **{
         event: (
@@ -158,6 +173,7 @@ SUBSCRIPTIONS = {
         for event, handler in UPLOAD_SUBSCRIPTIONS.items()
     },
     **HOLD_SUBSCRIPTIONS,
+    **WITHDRAWAL_SUBSCRIPTIONS,
 }
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -176,7 +192,9 @@ __all__ = [
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
+    "UPLOAD_EDGE_BYTES",
     "UPLOAD_INBOX",
+    "UPLOAD_ROUTE_PATHS",
     "UPLOAD_VERSION",
     "WORDS_VERSION",
     "WORKFLOWS",
@@ -194,6 +212,7 @@ __all__ = [
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
     "EvidenceVersionView",
+    "EvidenceWithdrawalPurge",
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
@@ -221,6 +240,7 @@ __all__ = [
     "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
+    "WithdrawalPurgeInput",
     "add_to_inbox",
     "add_version",
     "anchor_chain",
@@ -235,6 +255,7 @@ __all__ = [
     "extend_retention_for",
     "firm_router",
     "holds_covering",
+    "is_version_withdrawn",
     "match_material",
     "normalised_text",
     "page_quote_reason",
@@ -260,6 +281,7 @@ __all__ = [
     "undo_review_decision",
     "upload",
     "version_view",
+    "withdrawn_among",
     "worth_matching",
 ]
 

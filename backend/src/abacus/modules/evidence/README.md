@@ -52,9 +52,15 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - **Upload:**
   - takes the raw body and the query `filename`;
   - authorises `evidence.upload` with the item's facts before reading the body;
-  - limits: 25 MB; types judged by the leading bytes (PDF, PNG, JPEG, OOXML xlsx/docx, OLE xls/doc, UTF-8 CSV); the same SHA-256 on the item twice is refused;
+  - limits (DEC-296, DEC-58 c): 50 MB, answered by the route (the edge allows the file routes 1 MB more); the type is judged by the leading bytes and must be PDF, JPEG, PNG, HEIC/HEIF, TIFF, GIF, CSV (UTF-8 text that parses as CSV), XLSX or DOCX, and the file name's extension must agree (else 422 `upload_type_not_allowed`; legacy OLE and macro-enabled Office are refused); malware is scanned first; the same SHA-256 on the item twice is refused;
+  - a PDF with active content (`active_content.py`: JavaScript, launch actions, embedded files, open or page actions that run them) is kept but never extracted, previewed, read for words or served by the viewer (409 `active_content`); the upload audits `evidence_version.flagged` and the checks add a firm `active_content` problem;
   - stores a new evidence item titled with the cleaned file name, whose first version has provenance `uploaded` / `client_upload`, links it, audits `evidence.uploaded` and emits `EvidenceUploaded` (which notifies the firm team).
 - **Never opened:** no file is opened, parsed or rendered; file names are plain text only.
+
+## Detached-key uploads and client withdrawal (P-06-T18, T19; ADR-162)
+- **Storage:** a client's own item upload is stored in detached-key mode (`storage.put_detached`: `tenants/<t>/v/<version>`, envelope ABE2, the wrapped data key in `evidence_object_keys`); its derived records are sealed under the same key in `tenants/<t>/vd/<version>/` (`storage.put(..., under=)`). `storage.get` finds the key through `object_keys.key_for`; a destroyed key is `KeyDestroyed`. Acceptance retains the key one-way (a trigger on `review_decisions`). DEC-297.
+- **Withdraw:** `withdrawals.py`, route `POST …/evidence-versions/{vid}/withdraw` (`contract.py`, `evidence.withdrawal` flag, `Idempotency-Key`): `evidence_withdrawals` row, requests voids the fulfilments (`fulfilment_withdrawals`) and returns an only-fulfilled item to `requested`, audit `evidence_version.withdrawn`, outbox `evidence_version.withdrawn`. Every version read applies `repository.not_withdrawn()`; processing, the word layer and the upload reviewer record nothing for a withdrawn version. DEC-298.
+- **Purge:** `EvidenceWithdrawalPurge` (`withdrawal:<tenant>:<version>`) sleeps the 30-day window, then `evidence_withdrawal.erase` checks the business clock and the hold check (held: `legal_hold`; none registered: `no_hold_check`, fail closed; retried daily) and calls `evidence_key_destroy`.
 
 ## Request item detail (SPEC-021; TASK-037)
 `item_detail.py`, firm-side only (client roles are refused here, Q4).

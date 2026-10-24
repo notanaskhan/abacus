@@ -23,6 +23,7 @@ with workflow.unsafe.imports_passed_through():
         BackfillInput,
         LegalHoldInput,
         UploadInput,
+        WithdrawalPurgeInput,
     )
 
 _TIMEOUT = timedelta(minutes=3)
@@ -79,6 +80,49 @@ class UploadProcessing:
             except ActivityError:
                 workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
         return status
+
+
+# --- Withdrawal purge (P-06-T19; ADR-162 §7). v1, recorded in its history. --------------------
+
+# An erase attempt must end up done or retried whatever the outage: retry without limit.
+_PURGE_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=5),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=10),
+    maximum_attempts=0,
+)
+PURGE_ATTEMPTS_PER_RUN = 30  # then continue as new, so a long hold never grows the history
+
+
+@workflow.defn(name="evidence_withdrawal_purge")
+class EvidenceWithdrawalPurge:
+    """`withdrawal:<tenant>:<version>`: sleep through the window on a durable timer, then ask the
+    erase activity, which checks the business clock and the legal holds and answers 0 when the
+    key is destroyed (or nothing is left to do), else how many seconds to wait: the rest of the
+    window, or a day while held or while no hold check is registered (fail closed)."""
+
+    @workflow.run
+    async def run(self, given: WithdrawalPurgeInput) -> int:
+        wait, attempts = given.wait_seconds, given.attempts
+        while True:
+            if wait > 0:
+                await workflow.sleep(timedelta(seconds=wait))
+            wait = await workflow.execute_activity(
+                "evidence_withdrawal.erase",
+                given,
+                result_type=int,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_PURGE_RETRY,
+            )
+            attempts += 1
+            if wait <= 0:
+                return attempts
+            if attempts - given.attempts >= PURGE_ATTEMPTS_PER_RUN:
+                workflow.continue_as_new(
+                    WithdrawalPurgeInput(
+                        given.tenant_id, given.evidence_version_id, wait, attempts
+                    )
+                )
 
 
 # --- Legal holds (Q-02-T29; Q-02 §4.5; ADR-033). v1 of both, recorded in histories. -----------

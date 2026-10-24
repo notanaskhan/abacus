@@ -26483,10 +26483,6 @@ export type WithdrawEvidenceVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WithdrawEvidenceVersionError = WithdrawEvidenceVersionErrors[keyof WithdrawEvidenceVersionErrors];
@@ -37125,6 +37121,10 @@ export type ViewerRegionsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -37305,6 +37305,10 @@ export type ViewerManifestErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */

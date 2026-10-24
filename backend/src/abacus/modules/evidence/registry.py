@@ -37,6 +37,9 @@ TABLES: frozenset[str] = frozenset(
         # Q-02-T29 (0126): legal holds and their reference-counted objects.
         "legal_holds",
         "hold_objects",
+        # P-06-T18 (0144; ADR-162): detached keys and client withdrawals.
+        "evidence_object_keys",
+        "evidence_withdrawals",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -71,6 +74,16 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"pulled_at", "period_start", "period_end", "client_entity_id", "snapshot_id"}
         | {"idempotency_key"}
         | {"upload_note"}  # SPEC-023: written once, at insert
+        | {"storage_mode"}  # P-06-T18 (0144): detached-key client uploads, at insert
+    ),
+    # P-06-T18 (0144): a detached-key version's wrapped data key, with its version.
+    "evidence_object_keys": frozenset(
+        {"tenant_id", "evidence_version_id", "key_id", "wrapped_key"}
+    ),
+    # P-06-T19 (0144): the client's withdrawal; the trigger binds the person.
+    "evidence_withdrawals": frozenset(
+        {"tenant_id", "evidence_version_id", "engagement_id", "request_item_id"}
+        | {"withdrawn_by_user_id", "withdrawn_at", "erase_after"}
     ),
     # SPEC-023 (TASK-039): files dropped at the engagement level, waiting to be matched.
     "inbox_files": frozenset(
@@ -115,4 +128,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "applied_at", "released_by", "released_at", "release_reason"}
     ),
     "hold_objects": frozenset({"applied_at", "released_at"}),  # each stamped once
+    # P-06-T18 (0144): acceptance retains the key, one-way (the guard); erase is the definer's.
+    "evidence_object_keys": frozenset({"retained_at"}),
+    # P-06-T19 (0144): the purge's stamps only (the guard binds the purge's system actor).
+    "evidence_withdrawals": frozenset({"erased_at", "erase_blocked_at", "block_reason"}),
 }

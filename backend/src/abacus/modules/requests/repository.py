@@ -27,6 +27,7 @@ from abacus.modules.requests.models import (
     CommentRead,
     CommentRedaction,
     Fulfilment,
+    FulfilmentWithdrawal,
     RequestCategory,
     RequestItem,
     RequestList,
@@ -136,7 +137,7 @@ async def list_request_items(
     """Each visible item of the engagement with the evidence version that last fulfilled it."""
     latest = (
         select(Fulfilment.evidence_version_id)
-        .where(Fulfilment.request_item_id == RequestItem.id)
+        .where(Fulfilment.request_item_id == RequestItem.id, live_fulfilment())
         .order_by(Fulfilment.created_at.desc(), Fulfilment.id.desc())
         .limit(1)
         .correlate(RequestItem)
@@ -199,6 +200,16 @@ async def set_client_fields(
         )
 
 
+def live_fulfilment() -> ColumnElement[bool]:
+    """A fulfilment whose version the client has not withdrawn (P-06-T19; ADR-162 §4): every
+    read of fulfilments applies it, so a withdrawn upload is as if it never arrived."""
+    return ~(
+        select(FulfilmentWithdrawal.fulfilment_id)
+        .where(FulfilmentWithdrawal.fulfilment_id == Fulfilment.id)
+        .exists()
+    )
+
+
 async def fulfilling_versions(session: AsyncSession, item_id: UUID) -> Sequence[UUID]:
     """Every version that fulfils the item, oldest first, for a caller that authorised on the
     item (LIST_EXEMPT)."""
@@ -206,7 +217,7 @@ async def fulfilling_versions(session: AsyncSession, item_id: UUID) -> Sequence[
         (
             await session.execute(
                 select(Fulfilment.evidence_version_id)
-                .where(Fulfilment.request_item_id == item_id)
+                .where(Fulfilment.request_item_id == item_id, live_fulfilment())
                 .order_by(Fulfilment.created_at, Fulfilment.id)
             )
         )
@@ -255,6 +266,78 @@ async def insert_fulfilment(
     ).scalar_one_or_none()
 
 
+async def upload_link(
+    session: AsyncSession, evidence_version_id: UUID, uploader: str
+) -> UUID | None:
+    """The item an upload was made to: the version's earliest live fulfilment its uploader made
+    by hand (`fulfil_by_upload`), for a caller that authorised on the version."""
+    return (
+        await session.execute(
+            select(Fulfilment.request_item_id)
+            .where(
+                Fulfilment.evidence_version_id == evidence_version_id,
+                Fulfilment.created_by_kind == "human",
+                Fulfilment.created_by_id == uploader,
+                live_fulfilment(),
+            )
+            .order_by(Fulfilment.created_at, Fulfilment.id)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def void_fulfilments(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID,
+    withdrawn_by: UUID,
+    item_ids: Sequence[UUID],
+) -> list[tuple[UUID, UUID]]:
+    """P-06-T19: record every live fulfilment of the withdrawn version as voided; returns
+    (fulfilment, item) pairs, for a caller that authorised `evidence.withdraw` on the version
+    (LIST_EXEMPT: one version's own links)."""
+    rows = (
+        await session.execute(
+            select(Fulfilment).where(
+                Fulfilment.evidence_version_id == evidence_version_id,
+                Fulfilment.request_item_id.in_(list(item_ids)),
+                live_fulfilment(),
+            )
+        )
+    ).scalars()
+    voided: list[tuple[UUID, UUID]] = []
+    for row in rows.all():
+        await session.execute(
+            insert(FulfilmentWithdrawal).values(
+                tenant_id=row.tenant_id,
+                fulfilment_id=row.id,
+                engagement_id=row.engagement_id,
+                request_item_id=row.request_item_id,
+                evidence_version_id=row.evidence_version_id,
+                withdrawn_by_user_id=withdrawn_by,
+            )
+        )
+        voided.append((row.id, row.request_item_id))
+    return voided
+
+
+async def revert_to_requested(session: AsyncSession, item_id: UUID) -> bool:
+    """P-06-T19 (SPEC-319 §6): an `uploaded` item left with no live fulfilment goes back to
+    `requested`; False when it still holds one, or was not `uploaded`."""
+    still = (
+        select(Fulfilment.id)
+        .where(Fulfilment.request_item_id == item_id, live_fulfilment())
+        .exists()
+    )
+    result = await session.execute(
+        update(RequestItem)
+        .where(RequestItem.id == item_id, RequestItem.status == "uploaded", ~still)
+        .values(status="requested")
+        .returning(RequestItem.id)
+    )
+    return result.scalar_one_or_none() is not None
+
+
 async def mark_received(session: AsyncSession, item_id: UUID) -> bool:
     """`open` or `needs_revision` → `received`; False if the item was neither (already received or
     further on). A sent-back item takes new evidence (SPEC-004, TASK-019)."""
@@ -274,7 +357,7 @@ async def newest_fulfilment(session: AsyncSession, item_id: UUID) -> UUID | None
     return (
         await session.execute(
             select(Fulfilment.evidence_version_id)
-            .where(Fulfilment.request_item_id == item_id)
+            .where(Fulfilment.request_item_id == item_id, live_fulfilment())
             .order_by(Fulfilment.created_at.desc(), Fulfilment.id.desc())
             .limit(1)
         )
@@ -291,6 +374,7 @@ async def list_fulfilled_versions(
         .where(
             RequestItem.engagement_id == engagement_id,
             visible(ctx, "review.read", RequestItem.engagement_id),
+            live_fulfilment(),
         )
         .order_by(RequestItem.created_at, RequestItem.id, Fulfilment.created_at, Fulfilment.id)
     )
@@ -320,7 +404,7 @@ async def items_fulfilled_by(
             await session.execute(
                 select(RequestItem)
                 .join(Fulfilment, Fulfilment.request_item_id == RequestItem.id)
-                .where(Fulfilment.evidence_version_id == evidence_version_id)
+                .where(Fulfilment.evidence_version_id == evidence_version_id, live_fulfilment())
                 .order_by(RequestItem.created_at, RequestItem.id)
             )
         )
@@ -890,7 +974,7 @@ async def upload_counts(session: AsyncSession, item_ids: Sequence[UUID]) -> dict
         return {}
     rows = await session.execute(
         select(Fulfilment.request_item_id, func.count())
-        .where(Fulfilment.request_item_id.in_(item_ids))
+        .where(Fulfilment.request_item_id.in_(item_ids), live_fulfilment())
         .group_by(Fulfilment.request_item_id)
     )
     return {item: int(n) for item, n in rows}
@@ -1200,6 +1284,7 @@ async def client_home_items(
         .where(
             Fulfilment.request_item_id == RequestItem.id,
             Fulfilment.created_by_kind.in_(("rule", "agent")),
+            live_fulfilment(),
         )
         .correlate(RequestItem)
         .scalar_subquery()

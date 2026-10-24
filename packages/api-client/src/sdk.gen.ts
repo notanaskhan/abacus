@@ -1543,7 +1543,8 @@ export const requestReview = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Withdraw Evidence Version Route
  *
- * The client takes back an upload the firm never accepted (P-06-T19).
+ * The client takes back an upload the firm never accepted (P-06-T19): void and hidden at
+ * once, erased after `erase_after` unless a legal hold applies.
  */
 export const withdrawEvidenceVersion = <ThrowOnError extends boolean = false>(options: Options<WithdrawEvidenceVersionData, ThrowOnError>): RequestResult<WithdrawEvidenceVersionResponses, WithdrawEvidenceVersionErrors, ThrowOnError> => (options.client ?? client).post<WithdrawEvidenceVersionResponses, WithdrawEvidenceVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

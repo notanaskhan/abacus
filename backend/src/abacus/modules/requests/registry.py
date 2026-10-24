@@ -24,6 +24,7 @@ TABLES: frozenset[str] = frozenset(
         "request_delegations",
         "request_upload_intents",
         "binder_activity",
+        "fulfilment_withdrawals",  # P-06-T19 (0145; ADR-162)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -37,6 +38,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "comment_mentions",  # SPEC-032 (TASK-062): ADR-109
         "comment_redactions",  # SPEC-032 (TASK-062): ADR-109
         "binder_recipients",  # P-06-T05 (0100): a removal is a new row
+        "fulfilment_withdrawals",  # P-06-T19 (0145): a withdrawn version's voided links
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -81,6 +83,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "fulfilments": frozenset(
         {"id", "tenant_id", "request_item_id", "evidence_version_id", "created_by_kind"}
         | {"created_by_id", "engagement_id"}
+    ),
+    # P-06-T19 (0145): the guard binds the withdrawing person.
+    "fulfilment_withdrawals": frozenset(
+        {"tenant_id", "fulfilment_id", "engagement_id", "request_item_id"}
+        | {"evidence_version_id", "withdrawn_by_user_id"}
     ),
     # Comments (SPEC-032; TASK-062): the text sealed; mentions, redactions, last reads.
     "comments": frozenset(

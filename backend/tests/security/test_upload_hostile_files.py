@@ -386,25 +386,11 @@ async def test_dec58_a_file_over_50_mb_is_refused_before_it_is_stored(firm: Firm
     assert await firm.stored() == before
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-018: uploads stop at 25 MB (SPEC-029 §7), not DEC-58 (c)'s 50 MB; raising the "
-    "limit is held for the main session with the extraction memory limits; "
-    "TASK-1140 (#393: the S7 batch PR)",
-)
 async def test_dec58_a_30_mb_pdf_is_within_the_limit(firm: Firm) -> None:
     content = bank_statement_pdf() + b"\n%" + bytes(30 * MB)
     response = await firm.upload("statement.pdf", content, PDF)
     assert response.status_code == 201, response.text
 
-
-ED019: Final = pytest.mark.xfail(
-    strict=True,
-    reason="ED-019: the type is judged by bytes alone and any text is kept as text/csv, and "
-    "legacy OLE files and macro workbooks pass, so types outside DEC-58 (c) are stored; held "
-    "for a type-policy change; "
-    "TASK-1140 (#393: the S7 batch PR)",
-)
 
 OUTSIDE: Final = {
     "html": ("statement.html", b"<html><script>alert(1)</script></html>", "text/html"),
@@ -429,12 +415,7 @@ OUTSIDE: Final = {
 }
 
 
-HELD_OUTSIDE: Final = frozenset({"html", "svg", "javascript", "macro_workbook", "legacy_word"})
-
-
-@pytest.mark.parametrize(
-    "sample", [pytest.param(s, marks=ED019) if s in HELD_OUTSIDE else s for s in OUTSIDE]
-)
+@pytest.mark.parametrize("sample", list(OUTSIDE))
 async def test_dec58_a_type_outside_the_seven_is_refused(firm: Firm, sample: str) -> None:
     name, content, media_type = OUTSIDE[sample]
     before = await firm.stored()
@@ -469,12 +450,7 @@ POLYGLOTS: Final = {
 }
 
 
-HELD_POLYGLOTS: Final = frozenset({"html_named_pdf", "html_named_png"})
-
-
-@pytest.mark.parametrize(
-    "sample", [pytest.param(s, marks=ED019) if s in HELD_POLYGLOTS else s for s in POLYGLOTS]
-)
+@pytest.mark.parametrize("sample", list(POLYGLOTS))
 async def test_polyglots_are_refused_or_stored_only_as_an_allowed_type_and_never_rendered_raw(
     firm: Firm, sample: str
 ) -> None:
@@ -520,12 +496,6 @@ async def test_ac3_a_password_protected_pdf_is_stored_locked_and_never_extracted
     assert "pages" not in previews
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-021: a PDF carrying JavaScript is stored, extracted and previewed like any other; "
-    "refusing or quarantining it needs a scanner rule or a PDF policy; "
-    "TASK-1140 (#393: the S7 batch PR)",
-)
 async def test_q03_a_pdf_with_javascript_is_quarantined_not_previewed(firm: Firm) -> None:
     """Q-03 §D1: a PDF carrying JavaScript (OpenAction, page open, names tree) is refused, or
     kept and never extracted into content or previewed."""
@@ -540,12 +510,41 @@ async def test_q03_a_pdf_with_javascript_is_quarantined_not_previewed(firm: Firm
     assert "pages" not in previews
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-020: HEIC answers 422 upload_type_not_allowed, though DEC-58 (c) accepts it and "
-    "POR-03 keeps it as-is until P-11-T25 renders it; "
-    "TASK-1140 (#393: the S7 batch PR)",
-)
+async def test_dec296_an_active_pdf_is_flagged_for_the_team_audited_and_refused_by_the_viewer(
+    firm: Firm,
+) -> None:
+    """DEC-296: the active PDF is kept; the upload is audited as flagged, the team sees a firm
+    `active_content` problem, and every viewer read answers 409 `active_content`."""
+    response = await firm.upload("statement.pdf", javascript_pdf(), PDF)
+    assert response.status_code == 201, response.text
+    version = uuid.UUID(response.json()["evidence_version_id"])
+    flagged = await firm.seed.value(
+        "SELECT count(*) FROM audit_events WHERE tenant_id = $1 AND target_id = $2 "
+        "AND action = 'evidence_version.flagged'",
+        firm.tenant_id,
+        str(version),
+    )
+    assert flagged == 1
+    await firm.processed(version)
+    checks = await firm.net.call(
+        "GET",
+        f"{firm.base}/request-items/{firm.site.item_id}/uploads/{version}/checks",
+        firm.manager,
+    )
+    assert checks.status_code == 200, checks.text
+    found = {c["code"]: c for c in checks.json()}
+    assert (found["active_content"]["outcome"], found["active_content"]["audience"]) == (
+        "problem",
+        "firm",
+    )
+    for path in ("viewer", "pages/1", "regions", "search?q=statement"):
+        refused = await firm.net.call(
+            "GET", f"/v1/evidence-versions/{version}/{path}", firm.manager
+        )
+        assert refused.status_code == 409, (path, refused.text)
+        assert refused.json()["detail"] == "active_content"
+
+
 async def test_dec58_heic_is_kept_as_is_with_no_preview_yet(firm: Firm) -> None:
     """DEC-58 (c) accepts HEIC; POR-03 and POR-04: stored as-is, "Preview not available yet"
     until P-11-T25 renders it. A hostile HEIC never fails the worker."""
