@@ -7683,7 +7683,8 @@ export const acceptInvitationMutation = (options?: Partial<Options<AcceptInvitat
  * Preview Invitation Route
  *
  * POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the
- * token out of URLs and logs; the caller's address is kept only as a digest of its misses.
+ * token out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the
+ * edge forwards when trusted), kept only as a digest.
  */
 export const previewInvitationMutation = (options?: Partial<Options<PreviewInvitationData>>): UseMutationOptions<PreviewInvitationResponse, PreviewInvitationError, Options<PreviewInvitationData>> => {
     const mutationOptions: UseMutationOptions<PreviewInvitationResponse, PreviewInvitationError, Options<PreviewInvitationData>> = {

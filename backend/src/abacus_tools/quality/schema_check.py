@@ -266,6 +266,7 @@ DEFINER_FUNCTIONS = frozenset(
     # 0140 (P-08-T18): the invitation preview, the invitee's start and acceptance's session.
     | {"portal_invitation_preview", "portal_invitation_start", "portal_invitee_resolve"}
     | {"portal_access_revoke_except", "portal_mfa_begin_session"}
+    | {"portal_session_mark_device", "client_invitations_revoke_by"}  # DEC-277
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}

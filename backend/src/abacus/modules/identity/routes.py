@@ -32,8 +32,10 @@ from abacus.modules.identity.firm_settings import (
     set_letter_policy,
 )
 from abacus.modules.identity.invitations import (
+    VIEWER_ADDRESS_HEADER,
     accept_invitation,
     accept_portal_invitation,
+    preview_bucket,
     preview_invitation,
 )
 from abacus.modules.identity.me import FirmFacts, firm_facts, me_details, set_default_office
@@ -481,9 +483,14 @@ async def preview_invitation_route(
     body: InvitationPreviewIn, request: Request, host: Annotated[str | None, Header()] = None
 ) -> Response:
     """POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the
-    token out of URLs and logs; the caller's address is kept only as a digest of its misses."""
-    address = request.client.host if request.client is not None else "unknown"
-    found = await preview_invitation(host, body.token, address)
+    token out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the
+    edge forwards when trusted), kept only as a digest."""
+    bucket = preview_bucket(
+        request.headers.get(VIEWER_ADDRESS_HEADER),
+        request.client.host if request.client is not None else None,
+        body.token,
+    )
+    found = await preview_invitation(host, body.token, bucket)
     out = InvitationPreviewOut(
         firm_name=found.firm_name,
         organisation_name=found.organisation_name,

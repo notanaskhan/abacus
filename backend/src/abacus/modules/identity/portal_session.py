@@ -298,13 +298,15 @@ async def factor_enrolled(user_id: UUID) -> bool:
 
 async def _second_step_needed(
     tenant_id: UUID, user_id: UUID, device_cookie: str | None
-) -> Literal["mfa_required", "mfa_setup_required"] | None:
+) -> Literal["mfa_required", "mfa_setup_required", "device"] | None:
+    """None when the floor doesn't cover the person; "device" when a trusted device of theirs
+    meets it (the session records that, so the floor holds per request, DEC-277)."""
     if not await mfa_required(tenant_id, user_id):
         return None
     if not await factor_enrolled(user_id):
         return "mfa_setup_required"
     if await trusted_until(tenant_id, user_id, device_cookie) is not None:
-        return None
+        return "device"
     return "mfa_required"
 
 
@@ -317,6 +319,7 @@ async def open_session(
     *,
     previous_cookie: str | None = None,
     mfa: bool = False,
+    device: bool = False,
 ) -> PortalTokens | None:
     """A portal session for the person, pinned to the firm and host, in the same transaction as
     `claim` (which must answer true: the code's challenge or the second-step token, used once).
@@ -349,6 +352,11 @@ async def open_session(
         if mfa:
             await conn.execute(
                 text("SELECT portal_session_mark_mfa(:id, :user)"),
+                {"id": session_id, "user": user_id},
+            )
+        elif device:
+            await conn.execute(
+                text("SELECT portal_session_mark_device(:id, :user)"),
                 {"id": session_id, "user": user_id},
             )
     await _audit(tenant_id, user_id, "portal_sign_in.succeeded", Target("user", user_id))
@@ -413,7 +421,7 @@ async def verify_code(
     if tenant_id is None or user_id is None:  # a digest only exists for a known person
         raise CodeExpired
     step = await _second_step_needed(tenant_id, user_id, device_cookie)
-    if step is not None:
+    if step is not None and step != "device":
         token = secrets.token_urlsafe(32)
         async with platform_transaction("portal:sign_in") as conn:
             begun = (
@@ -437,6 +445,7 @@ async def verify_code(
         text("SELECT portal_sign_in_consume(:id)"),
         {"id": challenge_id},
         previous_cookie=previous_cookie,
+        device=step == "device",
     )
     if tokens is None:
         raise CodeExpired  # used by a concurrent verify
@@ -444,13 +453,16 @@ async def verify_code(
 
 
 async def portal_context(token: str, host: str | None) -> AuthContext | None:
-    """The person behind a portal access token on this host, or None (no session: 401)."""
+    """The person behind a portal access token on this host, or None (no session: 401). The MFA
+    floor holds on every request, not only at sign-in (DEC-277): a session with neither a second
+    step nor a trusted device reaches nothing once the person's access needs one (a grant added
+    since, a raised firm policy, or an acceptance that stopped half-way)."""
     if not is_portal_token(token):
         return None
     async with platform_transaction("portal:session") as conn:
         row = (
             await conn.execute(
-                text("SELECT * FROM portal_session_resolve(:access, :host)"),
+                text("SELECT * FROM portal_invitee_resolve(:access, :host)"),
                 {"access": sha256_hex(token), "host": _host(host)},
             )
         ).first()
@@ -466,6 +478,12 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
         return None  # the membership ended after sign-in
     if not await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id):
         return None  # every grant was revoked or expired after sign-in
+    if (
+        row.mfa_at is None
+        and row.device_trusted_at is None
+        and await mfa_required(tenant_id, user_id)
+    ):
+        return None  # the floor now covers the person and this session never met it
     return portal_member_context(user_id, found[0], cast(UUID, row.session_id))
 
 
@@ -480,6 +498,12 @@ class PortalInvitee:
     email: str
     host: str
     mfa_at: datetime | None
+    device_trusted_at: datetime | None = None
+
+    @property
+    def floor_met(self) -> bool:
+        """The session passed the second step or started on a trusted device."""
+        return self.mfa_at is not None or self.device_trusted_at is not None
 
 
 async def portal_invitee(token: str, host: str | None) -> PortalInvitee | None:
@@ -504,6 +528,7 @@ async def portal_invitee(token: str, host: str | None) -> PortalInvitee | None:
         str(row.email),
         pinned,
         cast(datetime | None, row.mfa_at),
+        cast(datetime | None, row.device_trusted_at),
     )
 
 

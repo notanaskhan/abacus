@@ -21,7 +21,14 @@ Definers (no tenant is known before the token is):
   test `portal_context` adds, with the person's email and `mfa_at` (acceptance only).
 - `portal_access_revoke_except`: `portal_access_revoke` (0133) less the session accepting.
 - `portal_mfa_begin_session`: the accepting session ends and a used challenge carries a
-  second-step token, so the new grants' MFA floor is met through T17's `/mfa` routes.
+  second-step token, so the new grants' MFA floor is met through T17's `/mfa` routes; it runs
+  in the acceptance's own transaction (DEC-277).
+- `portal_session_mark_device`: `auth_sessions.device_trusted_at`, set when a trusted device
+  skipped the second step, so the floor can be re-applied on every request (a session with
+  neither `mfa_at` nor a trusted device reaches nothing a floor covers; DEC-277).
+- `client_invitations_revoke_by`: a person's pending client invitations (on one engagement, or
+  all) are revoked and their tokens dropped, in the caller's transaction, when they are
+  offboarded, change firm role or leave the engagement (DEC-277).
 
 Revision ID: 0140
 Revises: 0133
@@ -44,6 +51,8 @@ _FUNCTIONS = (
     "portal_invitee_resolve(text, text)",
     "portal_access_revoke_except(uuid, uuid, uuid)",
     "portal_mfa_begin_session(uuid, uuid, text, text, integer)",
+    "portal_session_mark_device(uuid, uuid)",
+    "client_invitations_revoke_by(uuid, uuid)",
 )
 _INSERT_V1 = ("id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at")
 _INSERT_V2 = ("kind", "contact_id", "grant_template", "terms_version", "terms_url")
@@ -85,6 +94,7 @@ def upgrade() -> None:
         """
     )
     insert_columns(op, "client_invitations", _INSERT_V1 + _INSERT_V2)
+    op.execute("ALTER TABLE auth_sessions ADD COLUMN device_trusted_at timestamptz NULL")
     op.execute("GRANT UPDATE (terms_accepted_at) ON client_invitations TO abacus_app")
 
     # Misses are counted as `invitation_token_find` (0025) counts them: ten in an hour, then
@@ -231,12 +241,12 @@ def upgrade() -> None:
         """
         CREATE FUNCTION portal_invitee_resolve(p_access_sha256 text, p_host text)
         RETURNS TABLE (session_id uuid, user_id uuid, tenant_id uuid, email text,
-                       mfa_at timestamptz)
+                       mfa_at timestamptz, device_trusted_at timestamptz)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
         #variable_conflict use_column
         BEGIN
             RETURN QUERY
-            SELECT s.id, s.user_id, s.tenant_id, u.email, s.mfa_at
+            SELECT s.id, s.user_id, s.tenant_id, u.email, s.mfa_at, s.device_trusted_at
               FROM public.auth_sessions s JOIN public.users u ON u.id = s.user_id
              WHERE s.access_sha256 = p_access_sha256 AND s.surface = 'portal'
                AND s.host = lower(p_host) AND s.ended_at IS NULL
@@ -303,6 +313,48 @@ def upgrade() -> None:
         END $$
         """
     )
+    op.execute(
+        """
+        CREATE FUNCTION portal_session_mark_device(p_session_id uuid, p_user_id uuid)
+        RETURNS boolean
+        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            UPDATE public.auth_sessions SET device_trusted_at = clock_timestamp()
+             WHERE id = p_session_id AND user_id = p_user_id AND surface = 'portal'
+               AND ended_at IS NULL;
+            RETURN FOUND;
+        END $$
+        """
+    )
+    # In the session's firm (the caller's tenant setting): one person's pending invitations, on
+    # one engagement or (NULL) all, revoked with their tokens. Returns the invitations revoked.
+    op.execute(
+        """
+        CREATE FUNCTION client_invitations_revoke_by(p_user_id uuid, p_engagement_id uuid)
+        RETURNS SETOF uuid
+        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp
+        SET statement_timeout = '5s' AS $$
+        DECLARE
+            v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
+        BEGIN
+            IF v_tenant IS NULL THEN
+                RAISE EXCEPTION 'no tenant';
+            END IF;
+            RETURN QUERY
+            WITH revoked AS (
+                UPDATE public.client_invitations i SET status = 'revoked'
+                 WHERE i.tenant_id = v_tenant AND i.invited_by = p_user_id
+                   AND i.status = 'pending'
+                   AND (p_engagement_id IS NULL OR i.engagement_id = p_engagement_id)
+                RETURNING i.id
+            ), dropped AS (
+                DELETE FROM public.invitation_tokens t
+                 USING revoked r WHERE t.invitation_id = r.id AND t.tenant_id = v_tenant
+            )
+            SELECT revoked.id FROM revoked;
+        END $$
+        """
+    )
     for function in _FUNCTIONS:
         op.execute(f"REVOKE ALL ON FUNCTION {function} FROM PUBLIC")
         op.execute(f"GRANT EXECUTE ON FUNCTION {function} TO abacus_app")
@@ -311,6 +363,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     for function in reversed(_FUNCTIONS):
         op.execute(f"DROP FUNCTION {function}")
+    op.execute("ALTER TABLE auth_sessions DROP COLUMN device_trusted_at")
     op.execute("REVOKE UPDATE (terms_accepted_at) ON client_invitations FROM abacus_app")
     insert_columns(op, "client_invitations", _INSERT_V1)
     op.execute(

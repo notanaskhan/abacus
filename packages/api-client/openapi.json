@@ -84841,7 +84841,7 @@
     },
     "/v1/invitations/preview": {
       "post": {
-        "description": "POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the\ntoken out of URLs and logs; the caller's address is kept only as a digest of its misses.",
+        "description": "POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the\ntoken out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the\nedge forwards when trusted), kept only as a digest.",
         "operationId": "preview_invitation",
         "parameters": [
           {

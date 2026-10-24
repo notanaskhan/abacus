@@ -10,6 +10,7 @@ import secrets
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import cast
 
 import httpx
@@ -37,6 +38,9 @@ from abacus.modules.identity.portal_session import (
     start_sign_in,
     verify_code,
 )
+from abacus.modules.identity.staff import change_role as change_firm_role
+from abacus.modules.identity.staff import revoke as revoke_staff
+from abacus.modules.identity.team import remove_member as remove_team_member
 from abacus.modules.portal.branding import activate_portal_host, add_portal_host
 
 from .agent_tests.support import Person, Seeder
@@ -123,6 +127,9 @@ async def _world(
     inviter = await seed.person(tenant)
     entity = await seed.entity(tenant, PLAN)
     engagement = await seed.engagement(tenant, entity, inviter.user_id)
+    # The inviter is the engagement's partner: `client_contact.invite` is theirs (and is
+    # re-checked when the invitation is accepted).
+    await seed.member(engagement, inviter, "engagement_partner")
     items = tuple([await seed.item(tenant, engagement, inviter.user_id) for _ in range(3)])
     client_id = cast(
         uuid.UUID, await seed.value("SELECT client_id FROM engagements WHERE id = $1", engagement)
@@ -560,3 +567,280 @@ async def test_create_invitation_v2_stores_a_template_within_the_engagement_only
                 "client_contributor",
                 template=foreign,
             )
+
+
+# --- Security review fixes (DEC-277) ------------------------------------------------------------
+
+
+async def _refusals(seed: Seeder, world: World) -> int:
+    return cast(
+        int,
+        await seed.value(
+            "SELECT count(*) FROM audit_events WHERE tenant_id = $1 "
+            "AND action = 'client_invitation.accept_refused' AND target_id = $2",
+            world.tenant,
+            str(world.invitation),
+        ),
+    )
+
+
+async def _granted(seed: Seeder, world: World) -> int:
+    return cast(
+        int,
+        await seed.value(
+            "SELECT count(*) FROM client_access_grants WHERE tenant_id = $1", world.tenant
+        ),
+    )
+
+
+@pytest.mark.parametrize("change", ["offboarded", "walled", "removed", "archived"])
+async def test_inv5_acceptance_rechecks_the_inviters_authority(
+    seed: Seeder, client: httpx.AsyncClient, change: str
+) -> None:
+    """An inviter who no longer may invite (offboarded, walled from the client, off the
+    engagement, or the engagement archived) grants nothing: the same 404, and a refusal on the
+    record. The state is changed directly, past the services that also revoke eagerly."""
+    world = await _world(seed)
+    access = await _invitee_session(world)
+    if change == "offboarded":
+        await seed.revoke(world.inviter)
+    elif change == "walled":
+        await seed.run(
+            "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+            "SELECT tenant_id, $2, client_id, $2 FROM engagements WHERE id = $1",
+            world.engagement,
+            world.inviter.user_id,
+        )
+    elif change == "removed":
+        await seed.unmember(world.engagement, world.inviter)
+    else:
+        await seed.run(
+            "UPDATE engagements SET status = 'archived' WHERE id = $1", world.engagement
+        )
+    response = await _accept(client, world, access)
+    assert response.status_code == 404 and response.json() == {"detail": "not found"}
+    assert await _granted(seed, world) == 0
+    assert (
+        await seed.value("SELECT status FROM client_invitations WHERE id = $1", world.invitation)
+        == "pending"
+    )
+    assert await _refusals(seed, world) == 1
+
+
+async def _admin(seed: Seeder, tenant: uuid.UUID) -> AuthContext:
+    admin = await seed.person(tenant)
+    await seed.run(
+        "UPDATE memberships SET firm_role = 'firm_admin' WHERE tenant_id = $1 AND user_id = $2",
+        tenant,
+        admin.user_id,
+    )
+    membership = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2",
+            tenant,
+            admin.user_id,
+        ),
+    )
+    return AuthContext(
+        tenant=TenantContext(tenant, "human", str(admin.user_id)),
+        user_id=admin.user_id,
+        membership_id=membership,
+        firm_role="firm_admin",
+        mfa_at=datetime.now(UTC),
+    )
+
+
+@pytest.mark.parametrize("change", ["revoked", "role_changed"])
+async def test_inv5_offboarding_or_a_role_change_revokes_the_persons_pending_invitations(
+    seed: Seeder, client: httpx.AsyncClient, change: str
+) -> None:
+    world = await _world(seed)
+    admin = await _admin(seed, world.tenant)
+    if change == "revoked":
+        await revoke_staff(admin, world.inviter.user_id)
+    else:
+        await change_firm_role(admin, world.inviter.user_id, "security_admin")
+    [row] = await seed.rows(
+        "SELECT status FROM client_invitations WHERE id = $1", world.invitation
+    )
+    assert row["status"] == "revoked"
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM invitation_tokens WHERE invitation_id = $1", world.invitation
+        )
+        == 0
+    )
+    preview = await client.post(
+        "/v1/invitations/preview", json={"token": world.token}, headers={"host": world.host}
+    )
+    assert preview.status_code == 404
+
+
+async def test_inv5_leaving_the_engagement_revokes_the_persons_invitations_there(
+    seed: Seeder,
+) -> None:
+    world = await _world(seed)
+    # A second partner removes the inviter (and keeps the engagement's last-partner rule).
+    other = await seed.person(world.tenant)
+    await seed.member(world.engagement, other, "engagement_partner")
+    partner = AuthContext(
+        tenant=TenantContext(world.tenant, "human", str(other.user_id)),
+        user_id=other.user_id,
+        membership_id=cast(
+            uuid.UUID,
+            await seed.value(
+                "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2",
+                world.tenant,
+                other.user_id,
+            ),
+        ),
+        firm_role=None,
+        mfa_at=datetime.now(UTC),
+    )
+    async with uow(partner.tenant) as tx:
+        await remove_team_member(tx, partner, world.engagement, world.inviter.user_id)
+    assert (
+        await seed.value("SELECT status FROM client_invitations WHERE id = $1", world.invitation)
+        == "revoked"
+    )
+
+
+async def test_the_floor_is_met_inside_the_acceptance_and_enforced_on_every_request(
+    seed: Seeder, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An owner template: the session that accepted ends in the acceptance's own transaction,
+    even if nothing after the commit runs; and a session without the second step reaches
+    nothing once the person's access needs it."""
+    world = await _world(seed, role="owner", scope_kind="client_entity", terms_version=None)
+    access = await _invitee_session(world)
+
+    async def crash(*_: object) -> None:
+        raise RuntimeError("the process stops after the commit")
+
+    monkeypatch.setattr(invitations, "_after_commit", crash)
+    with pytest.raises(RuntimeError):
+        await invitations.accept_portal_invitation(
+            (await portal_invitee(access, world.host)) or pytest.fail("no invitee"),
+            world.token,
+            None,
+        )
+    assert await _granted(seed, world) == 1  # committed
+    assert await portal_invitee(access, world.host) is None  # and the session ended with it
+    assert await portal_context(access, world.host) is None
+
+
+async def test_a_session_without_the_second_step_reaches_nothing_once_the_floor_applies(
+    seed: Seeder, client: httpx.AsyncClient
+) -> None:
+    """Defence in depth: the floor is applied per request, not only when a session starts."""
+    world = await _world(seed, role="contributor", scope_kind="client_entity", terms_version=None)
+    access = await _invitee_session(world)
+    assert (await _accept(client, world, access, terms=None)).status_code == 200
+    ctx = await portal_context(access, world.host)
+    assert ctx is not None
+    entity = await seed.value(
+        "SELECT client_entity_id FROM engagements WHERE id = $1", world.engagement
+    )
+    await seed.run(  # an owner grant arrives with no access.changed relay yet
+        "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+        "VALUES ($1, $2, 'owner', 'client_entity', $3)",
+        world.tenant,
+        ctx.user_id,
+        entity,
+    )
+    assert await portal_context(access, world.host) is None
+
+
+def _address_headers(world: World, viewer: str) -> dict[str, str]:
+    return {"host": world.host, "cloudfront-viewer-address": f"{viewer}:443"}
+
+
+async def test_preview_misses_lock_only_the_viewer_that_made_them(
+    seed: Seeder, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Behind CloudFront every viewer shares an edge address: the throttle is keyed on the
+    viewer address CloudFront forwards, so ten misses by one viewer never block another's
+    valid token."""
+    monkeypatch.setattr(invitations, "trust_viewer_address", lambda: True)
+    world = await _world(seed)
+    for _ in range(10):
+        miss = await client.post(
+            "/v1/invitations/preview",
+            json={"token": secrets.token_urlsafe(32)},
+            headers=_address_headers(world, "192.0.2.10"),
+        )
+        assert miss.status_code == 404
+    held = await client.post(
+        "/v1/invitations/preview",
+        json={"token": world.token},
+        headers=_address_headers(world, "192.0.2.10"),
+    )
+    assert held.status_code == 404
+    other = await client.post(
+        "/v1/invitations/preview",
+        json={"token": world.token},
+        headers=_address_headers(world, "192.0.2.11"),
+    )
+    assert other.status_code == 200
+
+
+async def test_without_a_trusted_viewer_address_misses_never_block_a_valid_token(
+    seed: Seeder, client: httpx.AsyncClient
+) -> None:
+    """The fallback bucket is the peer and the token's digest prefix: another token's misses
+    from the same edge don't hold this one; a forged viewer header is not believed."""
+    world = await _world(seed)
+    prefix = hashlib.sha256(world.token.encode()).hexdigest()[:4]
+    misses = 0
+    while misses < 12:
+        guess = secrets.token_urlsafe(32)
+        if hashlib.sha256(guess.encode()).hexdigest()[:4] == prefix:
+            continue
+        await client.post(
+            "/v1/invitations/preview",
+            json={"token": guess},
+            headers=_address_headers(world, f"192.0.2.{misses}"),  # forged: not believed
+        )
+        misses += 1
+    found = await client.post(
+        "/v1/invitations/preview", json={"token": world.token}, headers={"host": world.host}
+    )
+    assert found.status_code == 200
+
+
+async def test_create_invitation_refuses_a_contact_of_another_client(seed: Seeder) -> None:
+    world = await _world(seed)
+    stray = await _world(seed)  # another firm's contact
+    elsewhere = await seed.entity(world.tenant, "Another client's plan")
+    other_client = await seed.value(
+        "SELECT client_id FROM client_entities WHERE id = $1", elsewhere
+    )
+    local = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO contacts (tenant_id, client_id, display_name, contact_kind) "
+            "VALUES ($1, $2, 'Someone else', 'third_party') RETURNING id",
+            world.tenant,
+            other_client,
+        ),
+    )
+    ctx = AuthContext(
+        tenant=TenantContext(world.tenant, "human", str(world.inviter.user_id)),
+        user_id=world.inviter.user_id,
+        membership_id=uuid.uuid4(),
+        firm_role=None,
+        mfa_at=None,
+    )
+    for contact in (local, stray.contact):
+        with pytest.raises(InvitationInvalid):
+            async with uow(ctx.tenant) as tx:
+                await create_invitation(
+                    tx,
+                    ctx,
+                    world.engagement,
+                    "x.y@example.test",
+                    "client_contributor",
+                    kind="delegate",
+                    contact_id=contact,
+                )

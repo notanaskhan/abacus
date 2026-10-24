@@ -1805,6 +1805,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_invitation_preview", "portal_invitation_start"}  # 0140
         | {"portal_invitee_resolve", "portal_access_revoke_except"}  # 0140
         | {"portal_mfa_begin_session"}  # 0140
+        | {"portal_session_mark_device", "client_invitations_revoke_by"}  # 0140 (DEC-277)
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

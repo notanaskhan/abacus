@@ -25,11 +25,12 @@ import secrets
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal, cast, get_args
+from typing import Final, Literal, NoReturn, cast, get_args
 from uuid import UUID, uuid4
 
 from sqlalchemy import RowMapping, text
 
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
@@ -79,7 +80,12 @@ from abacus.modules.identity.repository import (
     set_invitation_status,
     set_token_hash,
 )
-from abacus.modules.identity.slots import activate_contact, invitation_parties
+from abacus.modules.identity.service import member_could
+from abacus.modules.identity.slots import (
+    activate_contact,
+    engagement_resource,
+    invitation_parties,
+)
 from abacus.modules.identity.tokens import VerifiedIdentity
 
 ClientRole = Literal["client_admin", "client_contributor"]
@@ -261,6 +267,11 @@ async def create_invitation(
         _template_valid(template) and await _scopes_within(ctx.tenant, engagement_id, template)
     ):
         raise InvitationInvalid("grant_template")
+    if contact_id is not None:
+        # The contact must be one of the engagement's client's (DEC-277).
+        parties = await invitation_parties(ctx.tenant, engagement_id, contact_id)
+        if parties is None or parties.invitee_name is None:
+            raise InvitationInvalid("contact_id")
     await _client_admin_limited(ctx, engagement_id, role)
     if template is not None and await engagement_role(ctx.tenant, ctx.user_id, engagement_id) in (
         "client_admin",
@@ -299,6 +310,24 @@ async def create_invitation(
     )
     tx.emit(ClientInvitationIssued(invitation_id=invitation_id))
     return invitation_id
+
+
+async def revoke_invitations_by(
+    tx: UnitOfWork, user_id: UUID, engagement_id: UUID | None = None
+) -> list[UUID]:
+    """In the caller's unit of work (offboarding, a firm role change, leaving an engagement):
+    the person's pending client invitations, on `engagement_id` or all, revoked with their
+    tokens, each audited (DEC-277). Acceptance re-checks the inviter as well."""
+    revoked = [
+        cast(UUID, r[0])
+        for r in await tx.session.execute(
+            text("SELECT client_invitations_revoke_by(:user, :engagement)"),
+            {"user": user_id, "engagement": engagement_id},
+        )
+    ]
+    for invitation_id in revoked:
+        tx.record("client_invitation.revoked", target=Target("client_invitation", invitation_id))
+    return revoked
 
 
 async def revoke_invitation(
@@ -405,10 +434,32 @@ async def _pad(began: float) -> None:
         await asyncio.sleep(left)
 
 
+VIEWER_ADDRESS_HEADER: Final = "cloudfront-viewer-address"
+
+
+def trust_viewer_address() -> bool:
+    """Whether this deployment's edge sets `CloudFront-Viewer-Address` (and overwrites any a
+    viewer sends): only then is it believed (`trust_cloudfront_viewer_address`)."""
+    return settings().trust_cloudfront_viewer_address
+
+
+def preview_bucket(viewer_address: str | None, peer: str | None, token: str) -> str:
+    """Whose misses a preview counts against (DEC-277). Behind CloudFront every viewer reaches
+    the API from an edge address, so the bucket is the viewer address CloudFront forwards, when
+    the deployment trusts it; otherwise the peer and the first four hex of the token's digest, so
+    other tokens' misses from a shared edge never hold a valid token. Kept only as a digest."""
+    if viewer_address and trust_viewer_address():
+        address = viewer_address.strip()
+        address = address.rsplit(":", 1)[0] if address.count(":") == 1 else address
+        return f"viewer#{address.strip('[]')[:64]}"
+    return f"peer#{(peer or 'unknown')[:64]}#{_digest(token)[:4]}"
+
+
 async def preview_invitation(host: str | None, token: str, address: str) -> InvitationPreview:
     """POR-01 d, before any session (SPEC-320 AC-12). `InvitationNotFound` for every failure,
-    after the same minimum time; each miss counts against the caller's address digest, and ten in
-    an hour answer every token not found for 15 minutes."""
+    after the same minimum time; each miss counts against the digest of `address` (a
+    `preview_bucket`), and ten in an hour answer that bucket's tokens not found for 15
+    minutes."""
     began = time.monotonic()
     try:
         return await _preview(host, token, address)
@@ -494,6 +545,34 @@ async def _within_template(tenant: TenantContext, row: RowMapping) -> GrantTempl
     return template
 
 
+class _InviterRefused(Exception):
+    """The inviter may no longer invite to the engagement (offboarded, off the engagement,
+    walled from the client, or the engagement archived): the acceptance writes nothing."""
+
+
+async def _inviter_may_invite(tenant_id: UUID, inviter: UUID, engagement_id: UUID) -> bool:
+    """INV-5 at acceptance (DEC-277): the inviter, as they are now, still passes `authorise` for
+    `client_contact.invite` on the engagement (`service.member_could`): an active membership,
+    the role and relationship layers, the ethical wall on the client, and the engagement not
+    archived. The action asks no fresh MFA, so the inviter needn't be signed in."""
+    tenant = TenantContext(tenant_id, "system", "invitations:accept")
+    try:
+        resource = await engagement_resource(tenant, engagement_id)
+    except NotFound:
+        return False
+    return await member_could(tenant_id, inviter, "client_contact.invite", resource)
+
+
+async def _refused(tenant_id: UUID, invitation_id: UUID) -> NoReturn:
+    """The refusal on the record (its own unit of work: the acceptance's rolled back), then the
+    one answer every failure gets."""
+    async with uow(TenantContext(tenant_id, "system", f"invitation:{invitation_id}")) as tx:
+        tx.record(
+            "client_invitation.accept_refused", target=Target("client_invitation", invitation_id)
+        )
+    raise InvitationNotFound("invitation")
+
+
 async def accept_invitation(identity: VerifiedIdentity, token: str) -> AcceptedInvitation:
     """AC-4 to AC-6 (the hosted sign-in, `ClientAccept.tsx`). `InvitationNotFound` for every
     failure: an unknown, used, revoked or expired token, another email, a staff member of the
@@ -509,22 +588,25 @@ async def accept_invitation(identity: VerifiedIdentity, token: str) -> AcceptedI
     ctx = TenantContext(
         tenant_id, "system", f"invitation:{invitation_id}", on_behalf_of_user_id=inviter
     )
-    async with uow(ctx) as tx:
-        row = await get_invitation(tx.session, invitation_id, lock=True)
-        if (
-            row is None
-            or not row["live"]
-            or row["terms_version"] is not None
-            or str(row["email"]).casefold() != identity.email.casefold()
-        ):
-            raise InvitationNotFound("invitation")
-        template = await _within_template(ctx, row)
-        name = identity.email.split("@", 1)[0][:200] or "Client"
-        user_id = await provision_client_user(
-            tx.session, identity.issuer, identity.subject, identity.email, name
-        )
-        engagement_id = await _accept_in(tx, ctx, row, user_id, template, terms=False)
-        tx.emit(AccessChanged(user_id=user_id))
+    try:
+        async with uow(ctx) as tx:
+            row = await get_invitation(tx.session, invitation_id, lock=True)
+            if (
+                row is None
+                or not row["live"]
+                or row["terms_version"] is not None
+                or str(row["email"]).casefold() != identity.email.casefold()
+            ):
+                raise InvitationNotFound("invitation")
+            template = await _within_template(ctx, row)
+            name = identity.email.split("@", 1)[0][:200] or "Client"
+            user_id = await provision_client_user(
+                tx.session, identity.issuer, identity.subject, identity.email, name
+            )
+            engagement_id = await _accept_in(tx, ctx, row, user_id, template, terms=False)
+            tx.emit(AccessChanged(user_id=user_id))
+    except _InviterRefused:
+        await _refused(tenant_id, invitation_id)
     _log.info("client_invitation.accepted", tenant_id=tenant_id, invitation_id=invitation_id)
     return AcceptedInvitation(tenant_id, engagement_id)
 
@@ -546,6 +628,9 @@ async def _accept_in(
     invitation_id = cast(UUID, row["id"])
     engagement_id = cast(UUID, row["engagement_id"])
     inviter = cast(UUID, row["invited_by"])
+    # The row is locked: the inviter's authority is judged now, not when they invited (DEC-277).
+    if not await _inviter_may_invite(ctx.tenant_id, inviter, engagement_id):
+        raise _InviterRefused
     contact_id = cast(UUID | None, row["contact_id"])
     await add_client_membership(tx.session, user_id)
     target = Target("engagement", engagement_id)
@@ -607,50 +692,80 @@ async def accept_portal_invitation(
     ctx = TenantContext(
         tenant_id, "system", f"invitation:{invitation_id}", on_behalf_of_user_id=inviter
     )
-    async with uow(ctx) as tx:
-        row = await get_invitation(tx.session, invitation_id, lock=True)
-        if (
-            row is None
-            or not row["live"]
-            or str(row["email"]).casefold() != invitee.email.casefold()
-            or (row["terms_version"] is not None and row["terms_version"] != terms_version)
-        ):
-            raise InvitationNotFound("invitation")
-        template = await _within_template(ctx, row)
-        engagement_id = await _accept_in(
-            tx, ctx, row, invitee.user_id, template, terms=row["terms_version"] is not None
-        )
-        revoked = (
-            await tx.session.execute(
-                text("SELECT * FROM portal_access_revoke_except(:tenant, :user, :keep)"),
-                {"tenant": tenant_id, "user": invitee.user_id, "keep": invitee.session_id},
+    try:
+        async with uow(ctx) as tx:
+            row = await get_invitation(tx.session, invitation_id, lock=True)
+            if (
+                row is None
+                or not row["live"]
+                or str(row["email"]).casefold() != invitee.email.casefold()
+                or (row["terms_version"] is not None and row["terms_version"] != terms_version)
+            ):
+                raise InvitationNotFound("invitation")
+            template = await _within_template(ctx, row)
+            engagement_id = await _accept_in(
+                tx, ctx, row, invitee.user_id, template, terms=row["terms_version"] is not None
             )
-        ).all()
-        record_revoked(tx, invitee.user_id, revoked)
+            revoked = (
+                await tx.session.execute(
+                    text("SELECT * FROM portal_access_revoke_except(:tenant, :user, :keep)"),
+                    {"tenant": tenant_id, "user": invitee.user_id, "keep": invitee.session_id},
+                )
+            ).all()
+            record_revoked(tx, invitee.user_id, revoked)
+            # The floor the new grants bring is met in this same transaction (DEC-277): a
+            # session with no second step ends here, with the grants, never after them.
+            step = None
+            if not invitee.floor_met and await _floor_after(invitee, template):
+                step = await _begin_second_step(tx, invitee)
+    except _InviterRefused:
+        await _refused(tenant_id, invitation_id)
     _log.info("client_invitation.accepted", tenant_id=tenant_id, invitation_id=invitation_id)
-    return AcceptedInvitation(tenant_id, engagement_id, await _next_step(invitee))
+    return AcceptedInvitation(tenant_id, engagement_id, await _after_commit(invitee, step))
 
 
-async def _next_step(invitee: PortalInvitee) -> PortalStep:
-    """The session continues unless the new grants bring the person under the MFA floor without
-    a second step on it; then it ends and the second step (or its setup) begins (P-08-T17)."""
+async def _floor_after(invitee: PortalInvitee, template: GrantTemplate | None) -> bool:
+    """Whether the floor covers the person once the acceptance commits, as far as can be told
+    inside it: an `owner` template, or the floor as it already stands (the firm's policy, their
+    other grants and designations; fails closed). A designation the new contact link brings is
+    seen only after the commit (`_after_commit`), and the per-request floor holds either way."""
+    if template is not None and template.role == "owner":
+        return True
+    return await mfa_required(invitee.tenant_id, invitee.user_id)
+
+
+async def _begin_second_step(tx: UnitOfWork, invitee: PortalInvitee) -> PortalStep:
+    """The accepting session ends and a single-use second-step token begins, in `tx`."""
+    user_id = invitee.user_id
+    state: Literal["mfa_required", "mfa_setup_required"] = (
+        "mfa_required" if await factor_enrolled(user_id) else "mfa_setup_required"
+    )
+    mfa_token = secrets.token_urlsafe(32)
+    await tx.session.execute(
+        text("SELECT portal_mfa_begin_session(:id, :user, :token, :kind, :seconds)"),
+        {
+            "id": invitee.session_id,
+            "user": user_id,
+            "token": sha256_hex(mfa_token),
+            "kind": "verify" if state == "mfa_required" else "setup",
+            "seconds": MFA_TOKEN_SECONDS,
+        },
+    )
+    return PortalStep(state, mfa_token=mfa_token)
+
+
+async def _after_commit(invitee: PortalInvitee, begun: PortalStep | None) -> PortalStep:
+    """After the commit: the step the acceptance began, or the session continues unless the
+    committed access needs a second step it never had (a designation the new contact link
+    brought); then it ends and the step begins. If this never runs, `portal_context` refuses the
+    session on its next request anyway."""
+    if begun is not None:
+        return begun
     tenant_id, user_id = invitee.tenant_id, invitee.user_id
-    if invitee.mfa_at is None and await mfa_required(tenant_id, user_id):
-        state: Literal["mfa_required", "mfa_setup_required"] = (
-            "mfa_required" if await factor_enrolled(user_id) else "mfa_setup_required"
-        )
-        mfa_token = secrets.token_urlsafe(32)
-        async with platform_transaction(f"user:{user_id}") as conn:
-            await conn.execute(
-                text("SELECT portal_mfa_begin_session(:id, :user, :token, :kind, :seconds)"),
-                {
-                    "id": invitee.session_id,
-                    "user": user_id,
-                    "token": sha256_hex(mfa_token),
-                    "kind": "verify" if state == "mfa_required" else "setup",
-                    "seconds": MFA_TOKEN_SECONDS,
-                },
-            )
-        return PortalStep(state, mfa_token=mfa_token)
+    if not invitee.floor_met and await mfa_required(tenant_id, user_id):
+        async with uow(TenantContext(tenant_id, "system", f"user:{user_id}")) as tx:
+            step = await _begin_second_step(tx, invitee)
+            tx.record("session.ended", target=Target("auth_session", invitee.session_id))
+        return step
     grants = await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id)
     return PortalStep("signed_in", landing=landing_of(g.role for g in grants))

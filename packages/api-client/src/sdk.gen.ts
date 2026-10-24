@@ -4597,7 +4597,8 @@ export const acceptInvitation = <ThrowOnError extends boolean = false>(options: 
  * Preview Invitation Route
  *
  * POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the
- * token out of URLs and logs; the caller's address is kept only as a digest of its misses.
+ * token out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the
+ * edge forwards when trusted), kept only as a digest.
  */
 export const previewInvitation = <ThrowOnError extends boolean = false>(options: Options<PreviewInvitationData, ThrowOnError>): RequestResult<PreviewInvitationResponses, PreviewInvitationErrors, ThrowOnError> => (options.client ?? client).post<PreviewInvitationResponses, PreviewInvitationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
