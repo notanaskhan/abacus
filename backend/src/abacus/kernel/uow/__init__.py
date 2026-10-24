@@ -36,7 +36,7 @@ from abacus.kernel.uow.relay import Handler, OutboxEvent, payload_sha256
 
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
 _TYPE = re.compile(r"[a-z][a-z_]*")
-_REF_KEY = re.compile(r"[a-z][a-z_]{0,39}")
+_REF_KEY = re.compile(r"[a-z][a-z0-9_]{0,39}")
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}")
 _DIGITS = re.compile(r"[0-9]+")
 _active: ContextVar[bool] = ContextVar("abacus_uow_active", default=False)
