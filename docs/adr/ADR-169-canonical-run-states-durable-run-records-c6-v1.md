@@ -1,7 +1,7 @@
 ---
 id: ADR-169
 title: Canonical agent run states with the legacy status map; decision-relevant run records persisted at completion under engagement retention; the C6 v1 stub shape
-status: proposed
+status: accepted
 date: 2026-10-24
 deciders: notanaskhan, ayushkbhatia
 risk_zone: red
@@ -11,13 +11,14 @@ risk_zone: red
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
-> - **This ADR is proposed, not accepted.** Q-02-T41 (run records), Q-02-T45 (the C6 v1 stub) and P-10-T14 (the state migration) stop until it reads `accepted` on `origin/main`. It is red and never defaults on silence (chapter 09 §9.0).
+> - **Accepted 2026-10-24.** Q-02-T41 (run records), Q-02-T45 (the C6 v1 stub) and P-10-T14 (the state migration) may proceed once this reads `accepted` on `origin/main`.
 
 ## Status and acceptance
 
 Drafted by Q-02-T34 as plan proposal **P-47** (AG-03; conflict C-12). The plan's due date for acceptance is Fri Feb 19, 2027 (Q-02 table 0.1; P-10's "Must be accepted first" row; the plan's alias "ADR-147" is void, because ADR-147 is the role catalogue: numbers come only from `docs/adr/backlog.md`).
 
-**Acceptance record:** none yet. Acceptance is recorded here, with the date and who accepted, when it happens.
+**Acceptance record:**
+- 2026-10-24: ayushkbhatia accepted, in the build session. Under `docs/plan/AMENDMENT-solo.md` (one builder; no approvals to wait for), that is the deciders' acceptance; notanaskhan's separate sign-off is not required. No counsel input is needed: retention follows ADR-033 and the published floors.
 
 ## Context
 
