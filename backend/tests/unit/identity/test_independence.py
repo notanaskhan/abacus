@@ -161,7 +161,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "completion.decide",  # SPEC-314 (TASK-332)
         "completion.read",  # SPEC-314 (TASK-332)
         "completion.record",  # SPEC-314 (TASK-332)
+        "connection.read",  # A-02 §4.4 (TASK-1185)
         "connection.read_log",
+        "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)
         "dashboard.read",  # SPEC-317 (TASK-460)
         "decision.decide",  # P-04-T08 (TASK-414)
         "decision.notify",  # P-04-T08 (TASK-414)
@@ -189,6 +191,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "inbox_match.request",
         "item.sign_prepared",  # SPEC-040 (TASK-100)
         "item.sign_reviewed",
+        "ledger.pull",  # A-02 §4.4 (TASK-1185)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "mapping_set.edit",  # SPEC-316 (TASK-345)
         "materiality.decide",  # SPEC-300 (TASK-301)
@@ -237,6 +240,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "tie_out_check.define",  # SPEC-310 (TASK-321)
         "trial_balance.adopt",  # SPEC-309 (TASK-320)
         "trial_balance.annotate",
+        "trial_balance.export",  # A-02 §4.4 (TASK-1185)
         "trial_balance.read",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)

@@ -974,6 +974,67 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "trial_balance_label": {
+    "standard": {
+      "label": "Standard",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "interim": {
+      "label": "Interim",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "chip": "TB: Interim · {date}"
+      }
+    },
+    "prior": {
+      "label": "Prior",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "budget": {
+      "label": "Budget",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "preliminary": {
+      "label": "Preliminary",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "trial_balance_layer": {
+    "unadjusted": {
+      "label": "Unadjusted",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "aje": {
+      "label": "AJE",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "rje": {
+      "label": "RJE",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "final": {
+      "label": "Final",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
   "request": {
     "draft": {
       "label": "Draft",

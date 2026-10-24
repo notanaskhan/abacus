@@ -111,6 +111,11 @@ LEDGER_IMPORT = Flag(
     kind="boolean",
     default="false",
 )
+LEDGER_TB_WORKPAPER = Flag(
+    name="ledger.tb_workpaper",
+    kind="boolean",
+    default="false",
+)
 MATCHING_ENABLED = Flag(
     name="matching.enabled",
     kind="boolean",
@@ -207,6 +212,7 @@ FLAGS: dict[str, Flag] = {
     "guidance.drafting": GUIDANCE_DRAFTING,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
+    "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
     "matching.enabled": MATCHING_ENABLED,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
