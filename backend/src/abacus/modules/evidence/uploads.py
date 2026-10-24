@@ -176,6 +176,14 @@ _XML_PART_LIMIT: Final = 1024 * 1024  # [Content_Types].xml and each .rels part
 _MAX_RELS: Final = 200
 _CONTENT_TYPE: Final = re.compile(rb"ContentType\s*=\s*[\"']([^\"']{1,255})[\"']", re.IGNORECASE)
 _EXTERNAL: Final = re.compile(rb"TargetMode\s*=\s*[\"']\s*External\s*[\"']", re.IGNORECASE)
+_RELATIONSHIP: Final = re.compile(
+    rb"<\s*(?:[A-Za-z_][\w.-]*:)?Relationship\b[^>]*>", re.IGNORECASE
+)
+_REL_TYPE: Final = re.compile(rb"\bType\s*=\s*[\"']([^\"']{1,512})[\"']", re.IGNORECASE)
+# The one external relationship a client's workbook or document ordinarily carries: a hyperlink
+# (DEC-299). Remote templates, OLE links, frames, sub-documents and external workbook links stay
+# refused, and so does any external relationship that names no type.
+_HYPERLINK: Final = b"/relationships/hyperlink"
 # Content types that carry code or embedded objects (DEC-299): macro-enabled parts, VBA projects,
 # macro sheets, ActiveX controls and OLE objects.
 _ACTIVE_TYPES: Final = ("macroenabled", "vba", "macrosheet", "activex", "oleobject")
@@ -191,13 +199,24 @@ def _bounded(package: zipfile.ZipFile, info: zipfile.ZipInfo) -> bytes | None:
     return data if len(data) <= _XML_PART_LIMIT else None
 
 
+def _external_code(rels: bytes) -> bool:
+    """Whether a relationship part has an external target other than a plain hyperlink."""
+    for element in _RELATIONSHIP.findall(rels):
+        if _EXTERNAL.search(element) is None:
+            continue
+        kind = _REL_TYPE.search(element)
+        if kind is None or not kind.group(1).lower().endswith(_HYPERLINK):
+            return True
+    return False
+
+
 def _ooxml(content: bytes) -> str | None:
     """An Office Open XML package: a zip with `[Content_Types].xml` and a workbook or document
     part. Only the central directory, `[Content_Types].xml` and the relationship parts are read,
     each bounded; no other member is extracted. A package carrying code or embedded objects (a
     macro-enabled, VBA, macro-sheet, ActiveX or OLE content type or part, in any letter case) or
-    any external relationship (`TargetMode="External"`: how remote-template macros arrive) is the
-    macro-enabled type, whatever it is named (DEC-299)."""
+    any external relationship other than a hyperlink (`TargetMode="External"`: how remote-template
+    macros arrive) is the macro-enabled type, whatever it is named (DEC-299)."""
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as package:
             infos = package.infolist()
@@ -219,7 +238,7 @@ def _ooxml(content: bytes) -> str | None:
                 if active:
                     break
                 data = _bounded(package, info)
-                active = data is None or _EXTERNAL.search(data) is not None
+                active = data is None or _external_code(data)
     except (zipfile.BadZipFile, ValueError, OSError, RuntimeError, EOFError):
         return None
     if "xl/workbook.xml" in folded:

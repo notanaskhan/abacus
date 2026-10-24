@@ -322,6 +322,54 @@ def _office(main: str, parts: list[tuple[str, bytes]], types: bytes = b"") -> by
             ),
             DOCM,  # a remote template
         ),
+        (
+            _office(
+                "word/document.xml",
+                [
+                    (
+                        "word/_rels/settings.xml.rels",
+                        b'<Relationships><Relationship Id="r1" Type="http://schemas.openxmlformats'
+                        b'.org/officeDocument/2006/relationships/attachedTemplate" '
+                        b'Target="http://x.invalid/t.dotm" TargetMode="External"/>'
+                        b"</Relationships>",
+                    )
+                ],
+            ),
+            DOCM,  # a remote template, typed
+        ),
+        (
+            _office(
+                "xl/workbook.xml",
+                [
+                    (
+                        "xl/worksheets/_rels/sheet1.xml.rels",
+                        b'<Relationships><Relationship Id="r1" Type="http://schemas.openxmlformats'
+                        b'.org/officeDocument/2006/relationships/hyperlink" '
+                        b'Target="https://x.invalid/statement" TargetMode="External"/>'
+                        b"</Relationships>",
+                    )
+                ],
+            ),
+            XLSX,  # an ordinary hyperlink is not code
+        ),
+        (
+            _office(
+                "xl/workbook.xml",
+                [
+                    (
+                        "xl/worksheets/_rels/sheet1.xml.rels",
+                        b'<Relationships><Relationship Id="r1" Type="http://schemas.openxmlformats'
+                        b'.org/officeDocument/2006/relationships/hyperlink" '
+                        b'Target="https://x.invalid/a" TargetMode="External"/>'
+                        b'<Relationship Id="r2" Type="http://schemas.openxmlformats.org/'
+                        b'officeDocument/2006/relationships/oleObject" '
+                        b'Target="file:///x.invalid/o.bin" TargetMode="External"/>'
+                        b"</Relationships>",
+                    )
+                ],
+            ),
+            XLSM,  # a hyperlink beside an external OLE link
+        ),
         (_office("xl/workbook.xml", []), XLSX),  # the control
         (
             _office("word/document.xml", []),
