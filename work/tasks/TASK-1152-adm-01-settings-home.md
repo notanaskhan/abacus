@@ -23,6 +23,7 @@ updated: 2026-10-24
 ## Progress log
 - 2026-10-24: built; 9 screen tests (a–f, leave guard, not-allowed) and the whole web suite (1,466) pass. The People line of Plan & seats reads the People glance row, which now carries `partners` and `operations` (identity's `_people` provider).
 - Deferred: the Playwright spec with axe (`e2e/screens/ADM-01.spec.ts`) is G-01-T16's; the gallery entry is ready for it. The `/admin/people` and `/admin/walls` redirects wait for ADM-02 and ADM-03 (T10, T14) so they never land on a planned page. Offices (fieldset B) render once `GET /v1/firm/offices` is live (T08; 501 until then, so the fieldset is absent live). "Replace…" logo and "+ Office" are planned controls (hidden in production). `firm_settings.v2` is not yet switched on for the Dev and synthetic firms (a founder switch, as `clients.v2`).
+- 2026-10-24 (close): `pytest tests/unit tests/contracts tests/security` 26,399 passed, 4 xfailed; `make check-fast` green; web `vitest run` 1,466 passed.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

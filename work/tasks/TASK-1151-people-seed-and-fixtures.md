@@ -26,6 +26,7 @@ updated: 2026-10-24
 - 2026-10-24: built. Live E0 with `--slice people` reads 46 rows in bands 7/7/11/14/5/2, "46 of 46", templates 7/4/6/8/8/11/1/1, teams 16/21/7/2 (DB test). Fixture-only until their rows land: groups (T08), office codes, addresses, leads and returns (T08, T-02), wall reasons and approvers (T09), service-line policies (T12), the Nov 2 deactivations (T13), Lena Park's Jan 5, 2026 invitation (predates the firm's setup on the timeline), last-active times and Lena's sign-ins (no sessions are seeded; no IP is stored), the eleven At a glance rows and later epics' defaults (AC2.2).
 - Deferred: ADM-03 a-h scenarios. Their handlers need T08's and T09's shapes live (offices, teams, walls v2); `firmOffices()` and `firmTeams()` are ready for them. The `remy-vidal` persona is in the seed already (row 44); the offshore state is T09's.
 - Daniel Reyes's title is SHL-03's "Tax Partner" (one title per person), where ADM-02 shows "Tax (signer)" (TASK-397's open gap).
+- 2026-10-24 (close): `pytest tests/unit tests/contracts tests/security` 26,399 passed, 4 xfailed; `make check-fast` green; web `vitest run` 1,466 passed.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

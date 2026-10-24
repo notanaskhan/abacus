@@ -36,6 +36,7 @@ updated: 2026-10-24
   - Grid: two rows the matrix grants differently today stay `source: policy` (methodology publish, create client/engagement); the drift test holds the seven `source: matrix` rows.
   - Not done here (their rows): assignments list in the drawer (count only; `register_active_engagements` providers), the annual status (T13), `membership.attributes_changed` as an outbox event (audit only), the access-end job (T13), `roleTemplates.gen.ts` (T10 reads the API).
 - Tests: `tests/integration/test_people_v2.py` (14), `tests/unit/identity/test_role_templates.py` (12), contract suite (76), `backfill/test_staff_people.py` (34), `test_firm_settings_live.py` (4).
+- 2026-10-24 (close): `pytest tests/unit tests/contracts tests/security` 26,399 passed, 4 xfailed; `make check-fast` green; web `vitest run` 1,466 passed.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
