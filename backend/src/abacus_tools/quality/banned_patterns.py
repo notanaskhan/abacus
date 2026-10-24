@@ -1160,6 +1160,11 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/mapping_repository.py", "newest_edits"),
         # SPEC-317 (TASK-460): fieldwork's progress for the dashboard, after authorising on it.
         ("src/abacus/modules/fieldwork/repository.py", "engagement_progress_rows"),
+        # P-03-T12: the moved and broken detector's reads (the system) and an owner's
+        # `mark_sources_superseded` in its own unit of work; the events a run writes.
+        ("src/abacus/modules/evidence/repository.py", "earlier_versions"),
+        ("src/abacus/modules/evidence/repository.py", "citations_on"),
+        ("src/abacus/modules/evidence/repository.py", "insert_citation_events"),
         # P-04-T16: the human-gate projector's reads (the system, per engagement or for the
         # rebuild); `GET /v1/human-gates` filters the projection through `visible()`.
         ("src/abacus/modules/agents/repository.py", "latest_screenings_for_gates"),
