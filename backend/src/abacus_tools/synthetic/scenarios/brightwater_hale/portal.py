@@ -22,11 +22,17 @@ labelled portal needs from the live seed, as events the loader replays.
   Services' recordkeeper, invited to the Northwind Robotics 401(k) Plan audit by Grace Holloway
   (CLI-04's viewer), with the 14-day link CLI-04 shows.
 
+  Since P-08-T18 (DEC-275) the invitation carries its v2 fields: `kind` `delegate`, Sam's
+  third-party contact on Northwind (Keystone Retirement Services, "Recordkeeper"), terms version
+  1, and a grant template of `third_party` on the **9** Northwind requests delegated to Keystone
+  (POR-01d, POR-14, CLI-04's 10 + 9 + 2 + 2 + 1): the audit's "Trust / Recordkeeper Reports"
+  category (six, two of which the interim owner column names Harborline) and Keystone's three
+  "Form 5500 & SOC 1" requests. No terms URL: no source gives one.
+
 Waiting on later tasks (DEC-213), so not here: Meera's `k1_recipient` grant (no K-1 package
-exists until T-02), Tess's TOTP factor (P-08-T17's tables), the invitation's kind, grant template
-and 9-item delegation (P-08-T18's columns), and POR-02b's Feb 2, 2026 history (no epoch predates
-the firm's setup). Claire's welcome has never been dismissed, so her home reads `first_visit`
-at any snapshot (DEC-210).
+exists until T-02), Tess's TOTP factor (P-08-T17: WorkOS makes the secret, DEC-250), and
+POR-02b's Feb 2, 2026 history (no epoch predates the firm's setup). Claire's welcome has never
+been dismissed, so her home reads `first_visit` at any snapshot (DEC-210).
 
 The slice needs `binders` (Meera's return work item); the loader adds it. Opt-in like `shell`
 (`--slice portal`); `build()` keeps its default, so SCENARIO_HASH is unchanged. Mirrors
@@ -39,7 +45,11 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Final, Literal
 
-from abacus_tools.synthetic.scenarios.brightwater_hale.audits import SINK_DOMAIN, on_date
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
+    PBC_LISTS,
+    SINK_DOMAIN,
+    on_date,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.binders import COPPERLEAF, RETURN_BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import slug_of_client
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import slug_of
@@ -118,6 +128,10 @@ class Invitation:
     sent: date
     days: int  # CLI-04b: "the link expires in 14 days"
     items: int  # POR-01d: "has asked Keystone Retirement Services for 9 items" (P-08-T18)
+    title: str  # the contact's title (apps/web/src/fixtures/seed/portal.ts)
+    kind: Literal["delegate"] = "delegate"  # POR-01d: "Requests delegated to you"
+    grant_role: Literal["third_party"] = "third_party"
+    terms_version: int = 1
 
     @property
     def slug(self) -> str:
@@ -131,6 +145,10 @@ class Invitation:
     def id(self) -> str:
         return stable_id(f"invitation:{self.slug}:{self.engagement}")
 
+    @property
+    def contact_id(self) -> str:
+        return stable_id(f"contact:{self.slug}:{self.org}")
+
 
 SAM_ORTIZ: Final = Invitation(
     "Sam Ortiz",
@@ -140,9 +158,26 @@ SAM_ORTIZ: Final = Invitation(
     date(2026, 9, 2),
     14,
     9,
+    "Recordkeeper",
 )
 INVITATIONS: Final = (SAM_ORTIZ,)
 INVITATION_BY_NAME: Final = {i.name: i for i in INVITATIONS}
+
+
+# POR-01d's 9: the recordkeeper reports category, and the recordkeeper's SOC 1 and fee requests.
+_DELEGATED_CATEGORY: Final = "Trust / Recordkeeper Reports"
+_SOC_CATEGORY: Final = "Form 5500 & SOC 1"
+
+
+def delegated_requests(invitation: Invitation) -> tuple[str, ...]:
+    """The request ids the invitation's template grants, in the PBC list's order."""
+    pbc = next(p for p in PBC_LISTS if p.engagement == invitation.engagement)
+    return tuple(
+        pbc.request_id(position)
+        for position, request in enumerate(pbc.requests, 1)
+        if request.category == _DELEGATED_CATEGORY
+        or (request.category == _SOC_CATEGORY and request.owner == invitation.org)
+    )
 
 
 def work_item_of(person: PortalPerson) -> str:

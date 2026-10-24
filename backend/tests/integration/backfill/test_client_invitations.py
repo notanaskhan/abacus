@@ -217,7 +217,8 @@ async def test_ac1_a_partner_or_manager_invites_and_a_pending_invitation_is_stor
     )[0]
     assert (row["email"], row["role"], row["status"]) == ("CFO@Ashford.example", role, "pending")
     assert (row["invited_by"], row["engagement_id"]) == (who.user_id, desk.a.engagement_id)
-    assert timedelta(days=6, hours=23) < row["span"] <= timedelta(days=7, minutes=1)  # Q3
+    # SPEC-320 supersedes SPEC-015 Q3's 7 days (DEC-35, P-08-T18): 14 days, single use.
+    assert timedelta(days=13, hours=23) < row["span"] <= timedelta(days=14, minutes=1)
     assert "client_invitation.created" in await desk.actions()
     assert len(await desk.events(invitation_id)) == 1  # delivery is asked for by event
 

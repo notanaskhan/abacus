@@ -120,6 +120,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
     INVITATION_BY_NAME,
     PERSON_BY_NAME,
     PortalPerson,
+    delegated_requests,
     work_item_of,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import NEEDS as PORTAL_NEEDS
@@ -1136,17 +1137,43 @@ async def _portal_person_added(conn: asyncpg.Connection, _: Scenario, event: Eve
 
 
 async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """A pending invitation as the existing table holds it (no token: nothing is emailed)."""
+    """A pending invitation as the table holds it (no token: nothing is emailed), with its v2
+    fields (P-08-T18): the invitee's third-party contact, the kind, terms and grant template."""
     invitation = INVITATION_BY_NAME[str(event.data["invitee"])]
     engagement = engagement_id_of(BY_LABEL[invitation.engagement])
     by = user_id_of(_SEATS[event.actor])
     invitation_id = UUID(invitation.id)
+    contact_id = UUID(invitation.contact_id)
+    template = {
+        "role": invitation.grant_role,
+        "scope_kind": "request_item",
+        "scope_ids": list(delegated_requests(invitation)),
+    }
 
     async def write() -> tuple[str, str, str]:
+        client = await conn.fetchval(
+            "SELECT client_id FROM engagements WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            engagement,
+        )
+        await conn.execute(
+            "INSERT INTO contacts (id, tenant_id, client_id, display_name, email, title, "
+            "organisation_name, contact_kind, portal_state, created_at) VALUES ($1, $2, $3, $4, "
+            "$5, $6, $7, 'third_party', 'invited', $8) ON CONFLICT DO NOTHING",
+            contact_id,
+            TENANT,
+            client,
+            invitation.name,
+            invitation.email,
+            invitation.title,
+            invitation.org,
+            event.at,
+        )
         await conn.execute(
             "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
-            "invited_by, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, "
-            "$8) ON CONFLICT DO NOTHING",
+            "invited_by, created_at, expires_at, kind, contact_id, grant_template, "
+            "terms_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12) "
+            "ON CONFLICT DO NOTHING",
             invitation_id,
             TENANT,
             engagement,
@@ -1155,6 +1182,10 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
             by,
             event.at,
             event.at + timedelta(days=invitation.days),
+            invitation.kind,
+            contact_id,
+            json.dumps(template),
+            invitation.terms_version,
         )
         return "client_invitation.created", "client_invitation", str(invitation_id)
 

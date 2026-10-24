@@ -31,7 +31,12 @@ from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.context import AuthContext
-from abacus.modules.identity.portal_session import is_portal_token, portal_context
+from abacus.modules.identity.portal_session import (
+    PortalInvitee,
+    is_portal_token,
+    portal_context,
+    portal_invitee,
+)
 from abacus.modules.identity.service import (
     TENANT_HEADER,
     NoActiveTenant,
@@ -67,6 +72,8 @@ PRE_SESSION_PATHS: Final = frozenset(
     | {"/v1/portal/auth/refresh"}
     # P-08-T17 (ADR-168): the second step and its first-time setup.
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
+    # P-08-T18 (DEC-139, P-08 §4.3): POR-01 d's invitation preview, one 404 for every failure.
+    | {"/v1/invitations/preview"}
 )
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may
@@ -214,6 +221,22 @@ async def current_identity(
         ) from None
 
 
+async def current_invitee(
+    request: Request, authorization: Annotated[str | None, Header()] = None
+) -> PortalInvitee | VerifiedIdentity:
+    """`IDENTITY` routes: a verified firm-issuer identity, or (P-08-T18, ADR-168 §1) a portal
+    session's person, who may hold no grant yet because their code verified their email. The
+    session authorises nothing else (`current_context` still needs a membership and a grant);
+    routes that take only the hosted identity (sign-up) depend on `current_identity` too."""
+    scheme, _, token = (authorization or "").partition(" ")
+    if scheme.lower() == "bearer" and is_portal_token(token):
+        found = await portal_invitee(token, request.headers.get("host"))
+        if found is None:
+            raise HTTPException(401, "not authenticated", headers={"WWW-Authenticate": "Bearer"})
+        return found
+    return await current_identity(authorization)
+
+
 async def current_member(
     ctx: Annotated[AuthContext, Depends(current_context)],
 ) -> AuthContext:
@@ -292,7 +315,7 @@ class AbacusRouter(APIRouter):
             SELF: current_signed_in,
             STAFF: current_staff,
             OWN: current_member,
-            IDENTITY: current_identity,
+            IDENTITY: current_invitee,
             PRE_SESSION: pre_session,
             PORTAL_PUBLIC: portal_public,
         }.get(action, current_context)

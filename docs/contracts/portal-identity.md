@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` (this file is the portal half; the binders and requests half is `c5-requests-binders.md`) |
 | Version | v1.1 (additive to C5 v1) |
-| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the pre-session family is specified here and **not served** until its decision lands (DEC-139, §2.2) |
+| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the sign-in family (T10, T17) and the invitation preview and accept v2 (T18, 2026-10-24) are served; `links/renew` waits for T21 (DEC-139, §2.2) |
 | Provider epic | P-08 (schema half: F-03-T26, F-03-T27, F-03-T30) |
 | Consumers | R-01 (POR-03, POR-04, POR-14, POR-20 emails), P-07 (CLI-04 unlock and invitations v2), G-02 (ADM-06 MFA policy), N-02, N-01, T-01, T-02, R-02, N-03, A-08, A-09, R-03. Screens: POR-01, POR-02 |
 | Freeze sprint | S3 (starts 2026-11-30) with the rest of C5; freeze Fri 2026-12-11 |
@@ -47,8 +47,10 @@ These answer before any session exists, so they cannot sit behind `AbacusRouter`
 | Refresh | `POST /v1/portal/auth/refresh` (cookie, `X-Abacus-CSRF`, Origin) | cookie exception (P-01 pattern) | P-08-T10 |
 | Sign out | `POST /v1/portal/auth/sign-out` | `OWN` | P-08-T10 |
 | Renew a link | `POST /v1/portal/links/renew` `PortalLinkRenewIn` → always **202** `PortalLinkRenewOut` | pre-session | P-08-T21 |
-| Invitation preview | `POST /v1/invitations/preview` `InvitationPreviewIn` → `InvitationPreviewOut`; one `404` for every failure | pre-session | P-08-T18 |
-| Accept v2 | `POST /v1/invitations/accept` `InvitationAcceptV2In` (`token`, `terms_version`) | `IDENTITY` (existing) | P-08-T18 (additive; the live route is unchanged by this stub) |
+| Invitation preview | `POST /v1/invitations/preview` `InvitationPreviewIn` → `InvitationPreviewOut`; one `404` for every failure | pre-session · served (`PRE_SESSION`) | P-08-T18 |
+| Accept v2 | `POST /v1/invitations/accept` `AcceptInvitationIn` (`token`, `terms_version?`) → `AcceptedInvitationOut` (`session?`) | `IDENTITY` (existing; since P-08-T18 also the invitee's portal session, `current_invitee`) | P-08-T18 (served, additive) |
+
+**Invitations v2 (P-08-T18, DEC-275).** POR-01 d previews the token (`POST /v1/invitations/preview`, on the invitation's own firm's host; padded to one duration; misses counted per caller address digest, ten in an hour answer every token 404 for 15 minutes). "Accept and continue" calls `start` with `invitation_token`: a live invitation of the host's firm sent to the typed address makes its invitee eligible before any grant (their user row is found or made, with no membership); any other token is the ordinary start. `verify` is unchanged and mints a portal session that authorises nothing while the person holds no grant. `accept` with that bearer and the invitation's `terms_version` writes, in one unit of work, the client membership, the template's grants (`granted_by` the inviter), `terms_accepted_at`, the invitation accepted (token gone: single use), the contact active and linked, `client_invitation.accepted` and one `client_access.granted` per grant (system actor on behalf of the inviter, INV-5), and ends the person's other portal sessions and trusted devices in the firm; it emits no `access.changed`. Its `session` is `{state: "signed_in", landing}` (the bearer continues) or, when the new grants bring the person under the MFA floor without a second step on the session, `{state: "mfa_required" | "mfa_setup_required", mfa_token}` and the session ends. The hosted-identity path (`ClientAccept.tsx`) answers without `session` and refuses an invitation that carries terms. Every failure (unknown, malformed, used, revoked, expired, another firm's, a staff member's address, the wrong terms version, a contact linked to someone else, a template scope no longer the engagement's) is the same 404.
 
 ## 3. Models
 Code: `backend/src/abacus/modules/portal/contract.py`, `backend/src/abacus/modules/identity/portal_contract.py`; `MeOut` in `identity/routes.py`. Every field is tagged (ADR-031). Confidential: names, labels, titles, client-safe lines, email addresses. Restricted: codes, tokens, TOTP secrets, backup codes (pre-session shapes only; never in a list and never logged). Public: branding. Everything else internal. No TIN, amount or firm status code appears in any portal-half payload. Words come from the frontend copy registry keyed by codes (ADR P-36 code → words).
@@ -155,7 +157,7 @@ Additive to C5 v1 in place (v1.1). Breaking changes ship as v2 with one sprint o
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1.1 | (planned 2026-12-11, with C5) | | stub 2026-10-23 (P-08-T01): home, preferences, unlock, MFA reset, `/v1/me` portal and mfa; the pre-session family and branding specified, served by T05, T10, T17, T18, T21 after DEC-139's decision |
+| v1.1 | (planned 2026-12-11, with C5) | | stub 2026-10-23 (P-08-T01): home, preferences, unlock, MFA reset, `/v1/me` portal and mfa; the pre-session family and branding specified, served by T05, T10, T17, T18, T21 after DEC-139's decision. 2026-10-24 (P-08-T18): preview served; accept gains `terms_version` and `session` (additive) |
 
 ## 11. Open points
 - **DEC-139:** the pre-session family and `/branding/logo` need an ADR extending ADR-152's public-route list before P-08-T05 and T10 merge (P-08 OQ-2); the action spelling; the DTO fields added beyond the plan.

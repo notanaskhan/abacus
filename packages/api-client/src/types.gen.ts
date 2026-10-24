@@ -20,8 +20,14 @@ export type AcceptIn = {
 
 /**
  * AcceptInvitationIn
+ *
+ * v2 (P-08-T18) adds the terms the invitee accepted (`InvitationAcceptV2In`'s field).
  */
 export type AcceptInvitationIn = {
+    /**
+     * Terms Version
+     */
+    terms_version?: number | null;
     /**
      * Token
      */
@@ -136,12 +142,16 @@ export type AcceptanceStartedOut = {
 
 /**
  * AcceptedInvitationOut
+ *
+ * `session` (v2, portal only): `signed_in` with the landing (the session accepted with
+ * continues), or the second step the new grants need, with its `mfa_token`.
  */
 export type AcceptedInvitationOut = {
     /**
      * Engagement Id
      */
     engagement_id: string;
+    session?: PortalSignInVerifyOut | null;
     /**
      * Tenant Id
      */
@@ -8346,6 +8356,24 @@ export type IndependenceIn = {
 };
 
 /**
+ * InvitationAccessOut
+ */
+export type InvitationAccessOut = {
+    /**
+     * Item Count
+     */
+    item_count?: number | null;
+    /**
+     * Kind
+     */
+    kind: 'firm_invite' | 'colleague' | 'outside_org' | 'delegate';
+    /**
+     * Scope Label
+     */
+    scope_label: string;
+};
+
+/**
  * InvitationIn
  *
  * O3 "Invite…": MFA from firm policy, 14 days; the email is the firm's Invitation template.
@@ -8392,6 +8420,56 @@ export type InvitationOut = {
      * Sent At
      */
     sent_at: string;
+};
+
+/**
+ * InvitationPreviewIn
+ *
+ * POST keeps the token out of URLs and logs.
+ */
+export type InvitationPreviewIn = {
+    /**
+     * Token
+     */
+    token: string;
+};
+
+/**
+ * InvitationPreviewOut
+ *
+ * POR-01 d. Every failure (expired, used, revoked, malformed, a staff member's) answers the
+ * same 404.
+ */
+export type InvitationPreviewOut = {
+    access: InvitationAccessOut;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Invitee Email
+     */
+    invitee_email: string;
+    /**
+     * Invitee Name
+     */
+    invitee_name?: string | null;
+    /**
+     * Organisation Name
+     */
+    organisation_name?: string | null;
+    /**
+     * Terms Url
+     */
+    terms_url?: string | null;
+    /**
+     * Terms Version
+     */
+    terms_version?: number | null;
 };
 
 /**
@@ -39444,6 +39522,49 @@ export type AcceptInvitationResponses = {
 };
 
 export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
+
+export type PreviewInvitationData = {
+    body: InvitationPreviewIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/invitations/preview';
+};
+
+export type PreviewInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PreviewInvitationError = PreviewInvitationErrors[keyof PreviewInvitationErrors];
+
+export type PreviewInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvitationPreviewOut;
+};
+
+export type PreviewInvitationResponse = PreviewInvitationResponses[keyof PreviewInvitationResponses];
 
 export type AcceptStaffInvitationData = {
     body: AcceptInvitationIn;

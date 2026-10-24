@@ -170,21 +170,28 @@ async def _requested(tenant_id: UUID, user_id: UUID, challenge_id: UUID) -> None
         tx.emit(PortalSignInCodeRequested(challenge_id=challenge_id))
 
 
-async def start_sign_in(host: str | None, email: str) -> Challenge:
-    """Always a challenge, for any email on any host (no oracle)."""
+async def start_sign_in(
+    host: str | None, email: str, *, invitation_token: str | None = None
+) -> Challenge:
+    """Always a challenge, for any email on any host (no oracle). With an invitation token
+    (P-08-T18), a live invitation of the host's firm sent to this email makes its invitee
+    eligible before they hold a grant; any other token is the ordinary start."""
     began = time.monotonic()
+    params: dict[str, object] = {
+        "host": _host(host),
+        "email": email[:320],
+        "code": CODE_SECONDS,
+        "resend": RESEND_SECONDS,
+    }
+    if invitation_token:
+        params["token"] = sha256_hex(invitation_token)
+        statement = text(
+            "SELECT * FROM portal_invitation_start(:host, :email, :token, :code, :resend)"
+        )
+    else:
+        statement = text("SELECT * FROM portal_sign_in_start(:host, :email, :code, :resend)")
     async with platform_transaction("portal:sign_in") as conn:
-        row = (
-            await conn.execute(
-                text("SELECT * FROM portal_sign_in_start(:host, :email, :code, :resend)"),
-                {
-                    "host": _host(host),
-                    "email": email[:320],
-                    "code": CODE_SECONDS,
-                    "resend": RESEND_SECONDS,
-                },
-            )
-        ).one()
+        row = (await conn.execute(statement, params)).one()
     if row.send:
         await _requested(cast(UUID, row.tenant_id), cast(UUID, row.user_id), row.challenge_id)
     await _floor(began)
@@ -460,6 +467,44 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
     if not await active_grants(TenantContext(tenant_id, "human", str(user_id)), user_id):
         return None  # every grant was revoked or expired after sign-in
     return portal_member_context(user_id, found[0], cast(UUID, row.session_id))
+
+
+@dataclass(frozen=True)
+class PortalInvitee:
+    """The person behind a portal session who may hold no grant yet (P-08-T18: accepting an
+    invitation after the code verified). Authorises nothing else."""
+
+    session_id: UUID
+    user_id: UUID
+    tenant_id: UUID
+    email: str
+    host: str
+    mfa_at: datetime | None
+
+
+async def portal_invitee(token: str, host: str | None) -> PortalInvitee | None:
+    """A portal access token's person on this host, without the membership and grant test of
+    `portal_context`; None for no session."""
+    if not is_portal_token(token):
+        return None
+    pinned = _host(host)
+    async with platform_transaction("portal:session") as conn:
+        row = (
+            await conn.execute(
+                text("SELECT * FROM portal_invitee_resolve(:access, :host)"),
+                {"access": sha256_hex(token), "host": pinned},
+            )
+        ).first()
+    if row is None:
+        return None
+    return PortalInvitee(
+        cast(UUID, row.session_id),
+        cast(UUID, row.user_id),
+        cast(UUID, row.tenant_id),
+        str(row.email),
+        pinned,
+        cast(datetime | None, row.mfa_at),
+    )
 
 
 async def refresh_portal_session(cookie: str | None, host: str | None) -> PortalTokens:

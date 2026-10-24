@@ -51,7 +51,7 @@ from abacus.modules.identity.api import (
     reset_verifier,
     visible,
 )
-from abacus.modules.identity.routing import portal_public, pre_session
+from abacus.modules.identity.routing import current_invitee, portal_public, pre_session
 from abacus_tools.codegen import permission_matrix as pm
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
@@ -251,6 +251,8 @@ def test_adr165_pre_session_is_used_only_on_the_three_sign_in_routes() -> None:
         "/v1/portal/auth/mfa",
         "/v1/portal/auth/mfa/setup",
         "/v1/portal/auth/mfa/setup/verify",
+        # P-08-T18: the invitation preview, one 404 for every failure.
+        "/v1/invitations/preview",
     }
 
 
@@ -296,6 +298,7 @@ def test_ac20_every_route_has_the_authentication_dependency() -> None:
             current_staff,
             current_member,
             current_identity,
+            current_invitee,  # IDENTITY since P-08-T18: also a portal invitee's session
             pre_session,  # ADR-165: the three sign-in routes authenticate themselves
             portal_public,  # ADR-163: portal branding, Public fields to anyone
         )

@@ -1223,6 +1223,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "notifications": frozenset({"read_at"}),  # SPEC-013
         "client_invitations": frozenset(  # SPEC-015
             {"status", "accepted_by", "accepted_at", "expires_at"}
+            | {"terms_accepted_at"}  # P-08-T18 (0140)
         ),
         "support_sessions": frozenset(  # SPEC-012
             {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -1801,6 +1802,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_mfa_enrol", "portal_mfa_complete", "portal_mfa_enrolled"}  # 0133
         | {"portal_session_mark_mfa", "portal_device_trust", "portal_device_check"}  # 0133
         | {"portal_access_revoke"}  # 0133
+        | {"portal_invitation_preview", "portal_invitation_start"}  # 0140
+        | {"portal_invitee_resolve", "portal_access_revoke_except"}  # 0140
+        | {"portal_mfa_begin_session"}  # 0140
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

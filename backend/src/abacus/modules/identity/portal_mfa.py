@@ -379,7 +379,7 @@ async def revoke_portal_access(event: OutboxEvent) -> None:
             ).all()
             if not rows:
                 raise _NothingRevoked
-            _record_revoked(tx, user_id, rows)
+            record_revoked(tx, user_id, rows)
     except _NothingRevoked:
         return
 
@@ -388,7 +388,7 @@ class _NothingRevoked(Exception):
     pass
 
 
-def _record_revoked(
+def record_revoked(
     tx: UnitOfWork,
     user_id: UUID,
     rows: Sequence[Row[Any]],  # Any: a text() row's columns are untyped

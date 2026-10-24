@@ -30,6 +30,7 @@ from abacus.modules.organisations.repository import (
     names_in_firm,
     names_of,
     offices_in_firm,
+    set_contact_active,
     update_client,
     update_entity,
 )
@@ -195,6 +196,11 @@ PortalState = Literal["not_invited", "invited", "active", "locked"]
 _FOREIGN_KEY_VIOLATION: Final = "23503"
 _UNIQUE_VIOLATION: Final = "23505"
 _CHECK_VIOLATION: Final = "23514"
+
+
+class ContactLinked(NotFound):
+    """The invitation's contact is already linked to another person: the acceptance answers the
+    same 404 as every other failure (P-08-T18)."""
 
 
 class ContactExists(DomainConflict):
@@ -393,6 +399,7 @@ class ContactFacts:
     client_id: UUID
     display_name: str
     user_id: UUID | None = None  # the portal user, once the contact has signed in (P-06-T10)
+    organisation_name: str | None = None  # a third party's organisation (P-08-T18: POR-01 d)
 
 
 async def contact_facts(
@@ -401,7 +408,20 @@ async def contact_facts(
     """The firm's contacts among `contact_ids`; others (another firm's, unknown) are left out.
     For a caller that authorised the record the contacts are named on."""
     found = await contacts_by_id(session, contact_ids)
-    return {cid: ContactFacts(client, name, user) for cid, (client, name, user) in found.items()}
+    return {
+        cid: ContactFacts(client, name, user, organisation)
+        for cid, (client, name, user, organisation) in found.items()
+    }
+
+
+async def activate_contact(tx: UnitOfWork, contact_id: UUID, user_id: UUID) -> None:
+    """An accepted invitation's contact (P-08-T18): linked to the person who accepted and
+    active, in the acceptance's unit of work. A contact already linked to someone else is left
+    alone and the acceptance fails (`ContactLinked`), never silently relinked."""
+    client_id = await set_contact_active(tx.session, contact_id, user_id)
+    if client_id is None:
+        raise ContactLinked("contact")
+    tx.record("contact.portal_activated", target=Target("client", client_id))
 
 
 async def contacts_of_user(session: AsyncSession, user_id: UUID) -> list[UUID]:

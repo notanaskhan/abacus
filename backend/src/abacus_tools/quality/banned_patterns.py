@@ -621,6 +621,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/portal/auth/refresh"}
     # P-08-T17 (ADR-168): the second step and its first-time setup, under `PRE_SESSION`.
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
+    # P-08-T18 (DEC-139): the invitation preview, under `PRE_SESSION`.
+    | {"/v1/invitations/preview"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

@@ -736,6 +736,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/grouping-sets/imports", "grouping_set.import"),
     ("POST", "/v1/grouping-sets/versions/{version_id}/publish", "grouping_set.publish"),
     ("POST", "/v1/invitations/accept", "identity"),
+    ("POST", "/v1/invitations/preview", "pre_session"),
     ("POST", "/v1/invitations/staff/accept", "identity"),
     ("POST", "/v1/invitations/{invitation_id}/resend", "client_access.grant"),
     ("POST", "/v1/invitations/{invitation_id}/revoke", "client_access.revoke"),

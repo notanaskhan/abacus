@@ -17,6 +17,7 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext
 
 if TYPE_CHECKING:
+    from abacus.kernel.uow import UnitOfWork
     from abacus.modules.identity.authz import Resource
 
 
@@ -105,3 +106,52 @@ def register_office_list(lookup: OfficeList) -> None:
 async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
     """The firm's offices, (id, name) by name; empty when nothing is registered."""
     return await _OFFICES[0](tenant) if _OFFICES else []
+
+
+# --- invitations v2 (P-08-T18): who an invitation is for, and the contact it activates ---------
+
+
+@dataclass(frozen=True)
+class InvitationParties:
+    """POR-01 d's names: the invitee contact's name and organisation, and what the access covers
+    (the engagement's client entity, e.g. "Northwind Robotics 401(k) Plan")."""
+
+    scope_label: str
+    invitee_name: str | None = None
+    organisation_name: str | None = None
+
+
+InvitationPartiesLookup = Callable[
+    [TenantContext, UUID, UUID | None], Awaitable[InvitationParties | None]
+]
+# The caller's unit of work, the contact and the person who accepted for it.
+ContactActivation = Callable[["UnitOfWork", UUID, UUID], Awaitable[None]]
+_PARTIES: list[InvitationPartiesLookup] = []
+_ACTIVATION: list[ContactActivation] = []
+
+
+def register_invitation_parties(lookup: InvitationPartiesLookup) -> None:
+    if _PARTIES and not _same(_PARTIES[0], lookup):
+        raise ValueError("the invitation parties are already registered")
+    _PARTIES[:] = [lookup]
+
+
+async def invitation_parties(
+    tenant: TenantContext, engagement_id: UUID, contact_id: UUID | None
+) -> InvitationParties | None:
+    """None when nothing is registered or the engagement is unknown (the preview answers 404)."""
+    return await _PARTIES[0](tenant, engagement_id, contact_id) if _PARTIES else None
+
+
+def register_contact_activation(activate: ContactActivation) -> None:
+    if _ACTIVATION and not _same(_ACTIVATION[0], activate):
+        raise ValueError("the contact activation is already registered")
+    _ACTIVATION[:] = [activate]
+
+
+async def activate_contact(tx: UnitOfWork, contact_id: UUID, user_id: UUID) -> None:
+    """The invitation's contact becomes active for the person, in the acceptance's unit of work.
+    Unregistered, the acceptance fails (the contact would stay "invited" forever)."""
+    if not _ACTIVATION:
+        raise LookupError("no contact activation is registered")
+    await _ACTIVATION[0](tx, contact_id, user_id)
