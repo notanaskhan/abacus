@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from typing import cast
 
@@ -58,6 +59,12 @@ LIVE: dict[tuple[str, str], str] = {
     ("post", f"{TB}/sign-offs/eqr"): "sign_off.eqr",
 }
 CLIENT_ROLES = {"client_admin", "client_contributor", "client_service"}
+
+
+# The routes' shared gate, read from the module as the audits stub test reads its own.
+_STUB = cast(
+    Callable[[AuthContext, str, uuid.UUID], Awaitable[object]], vars(tb_contract)["_stub"]
+)
 
 
 def _models() -> list[type[BaseModel]]:
@@ -128,11 +135,11 @@ async def test_ac26_a_stub_authorises_then_answers_404_off_and_501_on(
     monkeypatch.setattr(tb_contract, "authorise", authorise)
     monkeypatch.setattr(tb_contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await tb_contract._stub(_ctx(), "trial_balance.export", engagement_id)  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx(), "trial_balance.export", engagement_id)
     assert calls == ["ref", "authorise:trial_balance.export", f"flag:{LEDGER_TB_WORKPAPER.name}"]
     monkeypatch.setattr(tb_contract, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
-        await tb_contract._stub(_ctx(), "trial_balance.read", engagement_id)  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx(), "trial_balance.read", engagement_id)
 
 
 async def test_ac26_a_refused_principal_never_learns_the_flag(
@@ -151,7 +158,7 @@ async def test_ac26_a_refused_principal_never_learns_the_flag(
     monkeypatch.setattr(tb_contract, "authorise", authorise)
     monkeypatch.setattr(tb_contract, "flag_enabled", flag)
     with pytest.raises(Forbidden):
-        await tb_contract._stub(_ctx(), "tie_out_check.define", uuid.uuid4())  # pyright: ignore[reportPrivateUsage]
+        await _STUB(_ctx(), "tie_out_check.define", uuid.uuid4())
 
 
 def test_ac26_the_flag_is_boolean_and_default_off() -> None:
