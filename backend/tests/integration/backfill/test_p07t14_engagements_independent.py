@@ -339,7 +339,7 @@ async def test_ac16_the_seven_tiles_and_the_segments_foot_to_the_total(net: Net)
     reason=(
         "ED-019: ENG-01 a counts 2 Archived inside the 275 under 'Period │ Current' "
         "(docs/screens/ENG-01.md Figures); DEC-224 reads current as excluding archived, so the "
-        "Archived tile is 0 by default. TASK-1125"
+        "Archived tile is 0 by default; introduced in #390, recorded in TASK-1125"
     ),
 )
 async def test_ac16_the_default_view_counts_archived_engagements_in_the_archived_tile(
