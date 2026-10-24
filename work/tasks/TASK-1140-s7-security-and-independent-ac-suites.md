@@ -64,6 +64,9 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - **ED-024 (open):** a tenant header naming a firm not held answers 403, not 404.
 - **Spec gaps:** SHL-03c/d name Daniel Reyes (a partner, no firm role) with Firm settings (read) and Audit log, and Felix Andersen with the Security center and Audit log; `security.manage` waits for G-02-T02 and the scenario maps Felix to `firm_admin`, so the suite asserts only the unambiguous rows and records these for the screen's epic.
 
+## F-04-T36: N's red F-04 tasks
+`backend/tests/unit/quality/test_f04t36_independent.py` (36 tests) and `apps/web/src/lint/f04t36-clock.test.ts` (10 tests), all pass: verdict injection and `FakeModel` refused on staging and production settings and honoured in local, test and evaluation; no injection clears EICAR or a bomb; injections bounded; recorded responses keyed by prompt and SHA-256 and loaded one per data file; CLOCK-001 fails on `datetime.now`, `utcnow`, `date.today` and `time.time` in five red modules, allows `kernel/clock.py` and the two doors, and finds nothing on main; business time follows a frozen `kernel.clock` while `system_now` stays real; no workflow reads a database secret or names a non-local Postgres host (and the check catches a job that would); the ESLint ban fails on `Date.now()` and bare `new Date()` in legacy, feature, portal and plain modules and allows them in `app-core/clock.tsx`. No defect found. Not covered: MFA freshness and OAuth TTL reading `system_now` inside identity (they need the authz internals; the CLOCK-001 sweep is the guard).
+
 ## Progress log
 - 2026-10-24: T012 written and green (61 passed); ED-017 fixed with it.
 - 2026-10-24: T013 written: 18 pass, 10 held as ED-018 to ED-021.
@@ -71,3 +74,4 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - 2026-10-24: P-04-T13 written: 16 + 19 pass; ED-022 fixed.
 - 2026-10-24: P-06-T17 written: 13 pass; ED-023 fixed.
 - 2026-10-24: P-01-T15 written: 8 pass, 1 held as ED-024.
+- 2026-10-24: F-04-T36 written: 36 + 10 pass.
