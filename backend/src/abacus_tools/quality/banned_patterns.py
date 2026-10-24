@@ -1846,6 +1846,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
             "tests/security/support.py",  # the security suite seeds as the superuser
+            "tests/contracts/undo/support.py",  # P-04-T13: the Undo suite seeds as the superuser
+            # P-04-T13: the human-only CHECKs and insert-only rules, as the app role and the owner
+            "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
@@ -1948,6 +1951,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "tests/integration/*",
             "tests/security/conftest.py",  # the suite's database (as integration's conftest)
+            "tests/contracts/undo/conftest.py",  # P-04-T13: the Undo suite's own database
         ),
     ),
     Rule(
@@ -1982,6 +1986,8 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",
             "tests/integration/test_schema_check_db.py",
+            # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
+            "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",

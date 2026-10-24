@@ -176,6 +176,29 @@ async def _locked(
     return item, ref, resource
 
 
+async def check_item_action(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, action: str
+) -> None:
+    """Authorise `action` on the request (read-only), so a replayed send or return is checked
+    like the first one (ED-023): the stored answer reaches only someone who may act now."""
+    async with tenant_session(ctx.tenant) as session:
+        item = await get_request_item(session, item_id)
+    if item is None or item.engagement_id != engagement_id or item.deleted_at is not None:
+        raise NotFound("request_item")
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(
+        ctx,
+        action,
+        Resource.engagement(
+            ref.tenant_id,
+            ref.id,
+            archived=ref.archived,
+            client_id=ref.client_id,
+            item=_facts(item),
+        ),
+    )
+
+
 def _fingerprint(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 

@@ -118,7 +118,7 @@ Gradients in product UI, emoji, saturated blue SaaS accents, heavy shadows, inve
 | DEC-271 | The Type cell reads "{line} · {type}"; a return's forms come from the engagement's name ("Tax · 1065", "Tax · 1040 · 1041 · 706"); Northwind reads "Audit · EBP DC" without "§103(a)(3)(C)" | The row carries the C1 type, not the form or the scope | DEC-271 |
 | DEC-271 | The Next due sub-line is "{label} · {n} days past due" when past due, else the label, else "{n} days"; the estate reads "Form 706" without "· 49 days" | One rule over the row's `next_due` (on, tone, label) | DEC-271 |
 | DEC-271 | Not drawn: row 14's name sub-line, Feld's "§7216 ✓", Shah's "Waiting on K-1" tag, "3 returns planned ·" on the estate | Not in the row model; follow-ups for P-07-T15's projection | DEC-271 |
-| ED-019 | The fixture counts Archived under Period │ Current (as a draws it); the live index excludes archived from `current` (DEC-224) | Spec and decision disagree; held as a strict xfail | `docs/quality/escaped-defects.md` ED-019 |
+| ED-027 | The fixture counts Archived under Period │ Current (as a draws it); the live index excludes archived from `current` (DEC-224) | Spec and decision disagree; held as a strict xfail | `docs/quality/escaped-defects.md` ED-027 |
 | OQ-5 | Segment and tile counts are data-derived; where the seed's tax count differs from "Tax 224" the parity mask covers the count text | DEC-47 backs 214 tax engagements and 224 returns | P-07 OQ-5 decided in DEC-138 |
 
 ## Parity

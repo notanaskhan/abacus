@@ -69620,7 +69620,7 @@
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/send": {
       "post": {
-        "description": "Human-only. Draft to Requested: 422 `due_date_required`, 409 `out_of_scope`, 409\n`model_text_not_permitted` (DV-11); email after the 10-s Undo window.",
+        "description": "Human-only. Draft to Requested: 422 `due_date_required`, 409 `out_of_scope`, 409\n`model_text_not_permitted` (DV-11); email after the 10-s Undo window. A retry with the same\nkey is authorised again, then answers what the first answered and sends nothing again.",
         "operationId": "send_request_item",
         "parameters": [
           {

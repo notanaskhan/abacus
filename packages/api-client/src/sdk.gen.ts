@@ -2842,7 +2842,8 @@ export const rerunScreening = <ThrowOnError extends boolean = false>(options: Op
  * Send Request Item Route
  *
  * Human-only. Draft to Requested: 422 `due_date_required`, 409 `out_of_scope`, 409
- * `model_text_not_permitted` (DV-11); email after the 10-s Undo window.
+ * `model_text_not_permitted` (DV-11); email after the 10-s Undo window. A retry with the same
+ * key is authorised again, then answers what the first answered and sends nothing again.
  */
 export const sendRequestItem = <ThrowOnError extends boolean = false>(options: Options<SendRequestItemData, ThrowOnError>): RequestResult<SendRequestItemResponses, SendRequestItemErrors, ThrowOnError> => (options.client ?? client).post<SendRequestItemResponses, SendRequestItemErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
