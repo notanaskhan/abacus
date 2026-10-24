@@ -593,6 +593,8 @@ NOT_A_STATUS = {
     "IgnoreUndoneOut.client_status": "a request's client words after an undo (to_do)",
     "PortalMarkDoneOut.state": "the Mark as Done button (tonal, ready, marked)",
     "PortalRoomRowOut.state": "a room row's sub-line (uploaded, due, in_review, returned)",
+    # P-08-T10 (ADR-168): what a verified sign-in code leads to, not a stored object's status.
+    "PortalSignInVerifyOut.state": "the sign-in step's outcome (signed_in, mfa_required, …)",
 }
 # The 3.3.1 object a field's literals must all belong to (named from the sources: Deficiency,
 # Review note, Tie-out tally, Integration / connection, Proposed entry (AJE), Audit section /
@@ -617,6 +619,9 @@ OBJECT_OF_FIELD = {
 
 # Findings: fields whose literals have no YAML entry anywhere. The reason names the literals.
 NO_YAML_ENTRY = {
+    # S6 batch B (#390, follow-ups v2): `drafted` has no status-vocabulary entry yet; recorded as
+    # a finding for its owner, as the other rows here are.
+    "FollowUpOut.status": "drafted",
     "AdjustmentOut.status": "client_accepted, client_declined",
     "GlImportOut.status": "waiting_for_tb",
     "LetterIn.status": "not_required_this_year",
