@@ -27,6 +27,8 @@ updated: 2026-10-25
 - 2026-10-25: built. `tests/contracts/compliance_kernel` 24 passed; vitest `compliance-kernel.contract.test.ts` 5 passed; tsc and eslint clean.
 - Not here: the firm-export status words (G-02-T11 registers them with the card); the monthly schedule (G-02-T19); the implementation (Q-02-T43). The ADM-06 handoff gives INC-2026-005's title ("Credential-stuffing attempts against client portal sign-in") and the 2:14 AM discovery; the scheduled exports' `expired` status is inferred from the 7-day window at E0, and their manifest digests are placeholders until an archive exists.
 
+- 2026-10-25 (verification, branch tip): `pytest tests/unit tests/contracts tests/security` 28638 passed, 4 xfailed; integration `test_portal_sign_in`, `test_portal_mfa`, `test_portal_invitations`, `test_staff_session`, `test_security_incidents`, `test_portal_recovery`, `test_db_tls`, `test_uow_session_rollback`, `test_platform_tenancy`, `test_p08t20_portal_sign_in_independent`, `test_scenario_portal`, `test_portal_branding`, backfill `test_contacts_access`, `test_client_invitations`, `test_p07t26_contacts_g2_independent`: 212 passed, 3 xfailed; `test_schema_check_db` 192 passed; `make check-fast` green; vitest POR-01, fixtures, status, portal domain, app-core 543 passed.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

@@ -25,6 +25,8 @@ updated: 2026-10-25
 - 2026-10-25: built. `test_fresh_mfa_generated.py` 77 cases, `test_fresh_mfa_lint.py` 5, `test_fresh_mfa_actions.py` 22.
 - **Deferred (the rest of the row, not in this wave's brief):** the staff-route test that a session without a verified second factor (WorkOS `amr`) is refused (AC-43 first half: today `mfa_at` is only the fresh-MFA input, and refusing every staff route without `amr: mfa` changes sign-in for every firm; it waits for WorkOS MFA to be on in each environment, before M7, Fri Apr 16); the Safeguards floor for deliverable scopes (no deliverable grant kind exists; signing and approving are P-08-T17's `engagement_designation` predicate, owners its `owner_grant`); `make mfa-report`. Five listed actions have no route yet (`export.create`, `firm_export.*`: G-02 and Q-02-T43), so they are enforced wherever a service authorises them and show in the generated table when their routes land.
 
+- 2026-10-25 (verification, branch tip): `pytest tests/unit tests/contracts tests/security` 28638 passed, 4 xfailed; integration `test_portal_sign_in`, `test_portal_mfa`, `test_portal_invitations`, `test_staff_session`, `test_security_incidents`, `test_portal_recovery`, `test_db_tls`, `test_uow_session_rollback`, `test_platform_tenancy`, `test_p08t20_portal_sign_in_independent`, `test_scenario_portal`, `test_portal_branding`, backfill `test_contacts_access`, `test_client_invitations`, `test_p07t26_contacts_g2_independent`: 212 passed, 3 xfailed; `test_schema_check_db` 192 passed; `make check-fast` green; vitest POR-01, fixtures, status, portal domain, app-core 543 passed.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

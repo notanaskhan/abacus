@@ -29,6 +29,8 @@ updated: 2026-10-25
 - 2026-10-25: built and green. `test_portal_recovery.py` 10 passed; see the report for the other suites.
 - **Not here (follow-ups):** R-01 calls `issue_secure_link` from its POR-20 emails, and the invitation email moving onto secure links (the epic's §4.1 line) waits for it; the C16 templates `portal.link_renewed` and `portal.mfa_reset_notice` must be imported per environment (human to-do, as `portal.sign_in_code`); `portal_mfa.reset` is not on the database human-only register (the matrix, `_human` and the route's fresh MFA hold it; adding it needs a migration redefining `abacus_human_only_actions()` from main's list); the operator CLI `abacus_tools.platform_control` (ADR-157) still doesn't exist: a pause is set with `set_platform_control` as `abacus_ops`; IP and device in these audit rows (DEC-60) as for T10.
 
+- 2026-10-25 (verification, branch tip): `pytest tests/unit tests/contracts tests/security` 28638 passed, 4 xfailed; integration `test_portal_sign_in`, `test_portal_mfa`, `test_portal_invitations`, `test_staff_session`, `test_security_incidents`, `test_portal_recovery`, `test_db_tls`, `test_uow_session_rollback`, `test_platform_tenancy`, `test_p08t20_portal_sign_in_independent`, `test_scenario_portal`, `test_portal_branding`, backfill `test_contacts_access`, `test_client_invitations`, `test_p07t26_contacts_g2_independent`: 212 passed, 3 xfailed; `test_schema_check_db` 192 passed; `make check-fast` green; vitest POR-01, fixtures, status, portal domain, app-core 543 passed.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

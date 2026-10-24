@@ -26,6 +26,8 @@ SPEC-050 AC-17's settings validation outside local and test gains the database T
 - 2026-10-25: built. Unit: `test_db_tls.py` 14, `test_config.py` +12, `test_request_bodies.py` 209 (no xfail). Integration: `test_db_tls.py` 2, `test_uow_session_rollback.py`, `test_migrations_env.py`.
 - **Human to-do before the next hosted deploy:** set `ABACUS_DATABASE_CA_FILE` to the RDS CA bundle baked into the image (the system store does not hold Amazon's RDS roots), or the API, worker and migration job will refuse the database's certificate. The `abacus_tools` operator commands (`tenants.py`, `signup_codes.py`, `access_review.py`) still call `asyncpg.connect` without a context: a follow-up should give them the same `database_tls` call.
 
+- 2026-10-25 (verification, branch tip): `pytest tests/unit tests/contracts tests/security` 28638 passed, 4 xfailed; integration `test_portal_sign_in`, `test_portal_mfa`, `test_portal_invitations`, `test_staff_session`, `test_security_incidents`, `test_portal_recovery`, `test_db_tls`, `test_uow_session_rollback`, `test_platform_tenancy`, `test_p08t20_portal_sign_in_independent`, `test_scenario_portal`, `test_portal_branding`, backfill `test_contacts_access`, `test_client_invitations`, `test_p07t26_contacts_g2_independent`: 212 passed, 3 xfailed; `test_schema_check_db` 192 passed; `make check-fast` green; vitest POR-01, fixtures, status, portal domain, app-core 543 passed.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
