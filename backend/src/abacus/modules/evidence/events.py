@@ -135,3 +135,23 @@ class InboxFileSorted(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     inbox_file_id: Annotated[UUID, classified("internal")]
+
+
+class CitationMoved(DomainEvent):
+    """A citation's source was superseded (P-03-T12; AC6.1): P-04's staleness rules read it."""
+
+    event_type: ClassVar[str] = "citation.moved"
+
+    citation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    cause_ref: Annotated[str, classified("internal")]  # `evidence_version:<successor>`
+
+
+class CitationBroken(DomainEvent):
+    """A citation's source was voided, withdrawn or erased (P-03-T12; AC6.1)."""
+
+    event_type: ClassVar[str] = "citation.broken"
+
+    citation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    cause_ref: Annotated[str, classified("internal")]  # `withdrawn:<version>`

@@ -163,14 +163,45 @@ def host_of(host_ref: str) -> tuple[str, UUID] | None:
 # --- one row's display -------------------------------------------------------------------------
 
 
-def state_of(events: Sequence[CitationEvent]) -> tuple[str, CitationEvent | None]:
-    """The computed state and, when moved, the event that moved it (events oldest first)."""
+def state_of(
+    events: Sequence[CitationEvent], *, ignore: frozenset[str] = frozenset()
+) -> tuple[str, CitationEvent | None]:
+    """The computed state and, when moved, the event that moved it (events oldest first). A
+    `moved` event whose cause is in `ignore` (a successor since withdrawn, P-03-T12) no longer
+    counts."""
     if any(e.kind == "relinked" for e in events):
         return "relinked", None
-    latest = next((e for e in reversed(events) if e.kind in ("moved", "broken")), None)
+    latest = next(
+        (
+            e
+            for e in reversed(events)
+            if e.kind == "broken" or (e.kind == "moved" and e.cause_ref not in ignore)
+        ),
+        None,
+    )
     if latest is None:
         return "valid", None
     return latest.kind, latest if latest.kind == "moved" else None
+
+
+async def _withdrawn_successors(
+    session: AsyncSession, events: Sequence[CitationEvent]
+) -> frozenset[str]:
+    """The `moved` causes naming a successor the client withdrew since (P-03-T12): as if it
+    never arrived, so the cited version is the newest again."""
+    causes = {e.cause_ref for e in events if e.kind == "moved" and e.cause_ref}
+    gone: set[str] = set()
+    for cause in sorted(causes):
+        kind, _, raw = cause.partition(":")
+        if kind != "evidence_version":
+            continue
+        try:
+            successor = UUID(raw)
+        except ValueError:
+            continue
+        if await is_withdrawn(session, successor):
+            gone.add(cause)
+    return frozenset(gone)
 
 
 def _box(raw: object) -> tuple[float, float, float, float] | None:
@@ -285,6 +316,7 @@ async def _views(
     by_citation: dict[UUID, list[CitationEvent]] = {}
     for event in events:
         by_citation.setdefault(event.citation_id, []).append(event)
+    ignore = await _withdrawn_successors(session, events)
     used = await _used_in(session, ctx, sorted({r.match_id for r in rows if r.match_id}))
     people = {
         u for r in rows for u in (r.on_behalf_of_user_id, r.created_by_user_id) if u is not None
@@ -294,7 +326,7 @@ async def _views(
     read: set[tuple[UUID, str, UUID]] = set()  # sources whose text a quote shows
     out: list[CitationView] = []
     for row in rows:
-        state, moved = state_of(by_citation.get(row.id, []))
+        state, moved = state_of(by_citation.get(row.id, []), ignore=ignore)
         registered = citable(row.kind)
         if registered is not None and row.verified:
             # Only a verified row's source is known to be in its engagement; the display

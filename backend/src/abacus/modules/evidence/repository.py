@@ -1164,3 +1164,87 @@ async def verified_citations_into(
         .scalars()
         .all()
     )
+
+
+# --- moved and broken detection, relink (P-03-T12) ---------------------------------------------
+
+
+async def earlier_versions(
+    session: AsyncSession, item_id: UUID, version_no: int
+) -> Sequence[UUID]:
+    """The item's versions before `version_no` (withdrawn ones included: their citations are
+    broken, not moved, and the caller tells them apart). LIST_EXEMPT: the system detector."""
+    return (
+        (
+            await session.execute(
+                select(EvidenceVersion.id).where(
+                    EvidenceVersion.evidence_item_id == item_id,
+                    EvidenceVersion.version_no < version_no,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def newest_live_successor(
+    session: AsyncSession, item_id: UUID, version_no: int
+) -> EvidenceVersion | None:
+    """The item's newest version after `version_no` that the client did not withdraw."""
+    return (
+        await session.execute(
+            select(EvidenceVersion)
+            .where(
+                EvidenceVersion.evidence_item_id == item_id,
+                EvidenceVersion.version_no > version_no,
+                not_withdrawn(),
+            )
+            .order_by(EvidenceVersion.version_no.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def citations_on(
+    session: AsyncSession,
+    source_type: str,
+    source_ids: Sequence[UUID],
+    *,
+    source_version: str | None = None,
+) -> Sequence[Citation]:
+    """Every citation whose source is one of these (LIST_EXEMPT: the system detector, and an
+    owner's `mark_sources_superseded` in its own unit of work)."""
+    if not source_ids:
+        return []
+    stmt = select(Citation).where(
+        Citation.source_type == source_type, Citation.source_id.in_(list(source_ids))
+    )
+    if source_version is not None:
+        stmt = stmt.where(Citation.source_version == source_version)
+    return (await session.execute(stmt.order_by(Citation.id))).scalars().all()
+
+
+async def insert_citation_events(
+    session: AsyncSession, rows: Sequence[dict[str, object]]
+) -> list[UUID]:
+    """The citations that got a new event; a `moved` or `broken` event a run already wrote for
+    the same cause is left alone (`citation_events_once_per_cause`, 0152)."""
+    if not rows:
+        return []
+    added = await session.execute(
+        pg_insert(CitationEvent)
+        .values(list(rows))
+        .on_conflict_do_nothing()
+        .returning(CitationEvent.citation_id)
+    )
+    return list(added.scalars().all())
+
+
+async def lock_citation(session: AsyncSession, citation_id: UUID) -> None:
+    """Serialise relinks of one citation for the rest of the transaction (citations are
+    insert-only: no row lock)."""
+    await session.execute(_LOCK_ITEM, {"space": _CITATION_LOCK_SPACE, "item": str(citation_id)})
+
+
+_CITATION_LOCK_SPACE = 9_005

@@ -1,6 +1,8 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.uow import Handler
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.citations.matching import (
@@ -15,6 +17,11 @@ from abacus.modules.evidence.citations.matching import (
     quote_in,
 )
 from abacus.modules.evidence.citations.matching import normalised as normalised_text
+from abacus.modules.evidence.citations.moved import (
+    mark_sources_superseded,
+    on_version_created,
+    on_version_withdrawn,
+)
 from abacus.modules.evidence.citations.registry import Anchor as CitationAnchor
 from abacus.modules.evidence.citations.registry import (
     CitationClaim,
@@ -28,6 +35,7 @@ from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops_contract import drops_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
+    EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
     UploadChecksRecorded,
@@ -164,7 +172,19 @@ ACTIVITIES: tuple[object, ...] = (
     *HOLD_ACTIVITIES,
     *WITHDRAWAL_ACTIVITIES,
 )
-SUBSCRIPTIONS = {
+
+
+def in_turn(first: Handler, then: Handler) -> Handler:
+    """Two of this module's subscribers on one event, in order (one handler per module)."""
+
+    async def both(event: OutboxEvent) -> None:
+        await first(event)
+        await then(event)
+
+    return both
+
+
+_SUBSCRIPTIONS: dict[str, Handler] = {
     **{
         event: (
             with_hold_inheritance(handler)
@@ -175,6 +195,16 @@ SUBSCRIPTIONS = {
     },
     **HOLD_SUBSCRIPTIONS,
     **WITHDRAWAL_SUBSCRIPTIONS,
+}
+# P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
+SUBSCRIPTIONS = {
+    **_SUBSCRIPTIONS,
+    EvidenceVersionCreated.event_type: in_turn(
+        _SUBSCRIPTIONS[EvidenceVersionCreated.event_type], on_version_created
+    ),
+    EvidenceVersionWithdrawn.event_type: in_turn(
+        _SUBSCRIPTIONS[EvidenceVersionWithdrawn.event_type], on_version_withdrawn
+    ),
 }
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -258,6 +288,7 @@ __all__ = [
     "firm_router",
     "holds_covering",
     "is_version_withdrawn",
+    "mark_sources_superseded",
     "match_material",
     "normalised_text",
     "page_quote_reason",

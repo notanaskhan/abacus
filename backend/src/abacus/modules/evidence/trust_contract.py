@@ -3,7 +3,7 @@
 Citations v2, the source viewer, logged PII reveal and password unlock as a derivation. Each
 family sits behind its own flag. Off, its routes answer 404; on, 501 `not_implemented` until its
 service lands:
-- `evidence.citations_v2`: citations; the two reads are served (P-03-T08), relink is P-03-T12;
+- `evidence.citations_v2`: citations; the two reads are served (P-03-T08), relink too (P-03-T12);
 - `evidence.viewer_v1`: the viewer; served (P-03-T09);
 - `evidence.pii_reveal`: reveal; P-03-T12;
 - `evidence.viewer_unlock`: unlock; P-03-T14.
@@ -42,6 +42,7 @@ from abacus.modules.evidence.citations.display import (
     citation_display,
     citation_list,
 )
+from abacus.modules.evidence.citations.moved import relink
 from abacus.modules.evidence.routes import (
     _png_response,  # pyright: ignore[reportPrivateUsage] -- the module's own PNG answer
 )
@@ -238,8 +239,9 @@ async def list_citations_route(
 )
 async def relink_citation_route(citation_id: UUID, ctx: Ctx) -> CitationV2Out:
     """AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422
-    `relink_unverified`."""
-    await _stub(ctx, EVIDENCE_CITATIONS_V2)
+    `relink_unverified` (P-03-T12)."""
+    await _gate(ctx, EVIDENCE_CITATIONS_V2)
+    return _citation_out(await citation_display(ctx, await relink(ctx, citation_id)))
 
 
 @router.post(
