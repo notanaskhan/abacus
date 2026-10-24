@@ -446,7 +446,7 @@ const GLANCE: readonly GlanceRowOut[] = [
   {
     key: "people",
     tone: "ok",
-    facts: { used: 46, total: 46, pending: 0 },
+    facts: { used: 46, total: 46, pending: 0, partners: 7, operations: 2 },
     href: "/settings/people",
   },
   {

@@ -66,6 +66,11 @@ export interface SettingsLayoutProps {
   overlay?: ReactNode;
   /** The active section's form: fieldsets of value rows. */
   children: ReactNode;
+  /** A 330 column beside the 760 form in the form pane (ADM-01's "At a glance" card). */
+  aside?: ReactNode;
+  /** Inside the app's own shell (the routed screen): the settings bar and panes without a second
+   * AppShell and toolbar; `toolbar`, `embedded` and `height` are then ignored. */
+  bare?: boolean;
 }
 
 /** Can the form be saved: dirty, valid and editable. */
@@ -142,6 +147,8 @@ export function SettingsLayout({
   stepUp,
   overlay,
   children,
+  aside,
+  bare = false,
 }: SettingsLayoutProps): JSX.Element {
   const formTitle =
     groups.flatMap((g) => g.sections).find((s) => s.id === active)?.label ?? navTitle;
@@ -195,19 +202,14 @@ export function SettingsLayout({
       </Button>
     </>
   );
-  return (
-    <AppShell
-      {...(embedded ? { embedded: true } : {})}
-      {...(height === undefined ? {} : { height })}
-      toolbar={{ active: "", firmPressed: true, ...toolbar }}
-      record={record}
-      overlay={
-        <>
-          {overlay}
-          {stepUp}
-        </>
-      }
-    >
+  const form = (
+    <div className="flex max-w-[760px] min-w-0 flex-1 flex-col gap-[12px]">
+      {readOnly && readOnlyAt === "form" && banner}
+      {children}
+    </div>
+  );
+  const panes = (
+    <>
       <Pane width={240} title={navTitle}>
         <SectionList groups={groups} active={active} {...(onSelect ? { onSelect } : {})} />
       </Pane>
@@ -222,12 +224,42 @@ export function SettingsLayout({
           {...(readOnly ? { "data-read-only": "" } : {})}
           className="px-[12px] pt-[12px] pb-[24px]"
         >
-          <div className="flex max-w-[760px] flex-col gap-[12px]">
-            {readOnly && readOnlyAt === "form" && banner}
-            {children}
-          </div>
+          {aside === undefined ? (
+            form
+          ) : (
+            <div className="flex items-start gap-[12px]">
+              {form}
+              <aside className="w-[330px] flex-none">{aside}</aside>
+            </div>
+          )}
         </div>
       </Pane>
+    </>
+  );
+  if (bare) {
+    return (
+      <div data-settings="bare" className="relative flex min-h-0 flex-1 flex-col">
+        {record}
+        <div className="flex min-h-0 flex-1 gap-[10px] pt-[10px]">{panes}</div>
+        {overlay}
+        {stepUp}
+      </div>
+    );
+  }
+  return (
+    <AppShell
+      {...(embedded ? { embedded: true } : {})}
+      {...(height === undefined ? {} : { height })}
+      toolbar={{ active: "", firmPressed: true, ...toolbar }}
+      record={record}
+      overlay={
+        <>
+          {overlay}
+          {stepUp}
+        </>
+      }
+    >
+      {panes}
     </AppShell>
   );
 }

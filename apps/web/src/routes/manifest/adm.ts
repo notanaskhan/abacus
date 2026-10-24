@@ -4,7 +4,11 @@
 import type { Manifest } from "./types";
 
 export const admScreens = {
-  "ADM-01": { name: "Settings home · firm profile", status: "planned", path: null },
+  "ADM-01": {
+    name: "Settings home · firm profile",
+    status: "fixture", // G-01-T07: live behind firm_settings.v2 once walked on staging
+    path: "/settings/general",
+  },
   "ADM-02": { name: "Users & roles · permission matrix", status: "planned", path: null },
   "ADM-03": { name: "Offices, teams, walls & offshore", status: "planned", path: null },
   "ADM-04": { name: "AI policy & approval gates", status: "planned", path: null },

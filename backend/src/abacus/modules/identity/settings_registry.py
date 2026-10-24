@@ -359,15 +359,25 @@ async def _set_time_zone(tx: UnitOfWork, _tenant: UUID, value: Value, _by: UUID)
 
 _PEOPLE = text(
     "SELECT (SELECT count(*) FROM memberships WHERE status = 'active' AND kind = 'staff'), "
-    "(SELECT count(*) FROM staff_invitations WHERE status = 'pending')"
+    "(SELECT count(*) FROM staff_invitations WHERE status = 'pending'), "
+    "(SELECT count(*) FROM memberships WHERE status = 'active' AND kind = 'staff' "
+    "AND level = 'partner'), "
+    "(SELECT count(*) FROM memberships WHERE status = 'active' AND kind = 'staff' "
+    "AND (level = 'admin' OR role_template IN ('firm_admin', 'it_security')))"
 )
 
 
 async def _people(ctx: AuthContext) -> GlanceRow | None:
     """People: seat holders and pending invitations (AC2.1)."""
     async with tenant_session(ctx.tenant) as session:
-        used, pending = (await session.execute(_PEOPLE)).one()
-    facts = {"used": int(used) + int(pending), "pending": int(pending)}
+        used, pending, partners, operations = (await session.execute(_PEOPLE)).one()
+    # ADM-01 C's People line: partners and operations among the seat holders (G-01-T07).
+    facts = {
+        "used": int(used) + int(pending),
+        "pending": int(pending),
+        "partners": int(partners),
+        "operations": int(operations),
+    }
     total = await seat_total(ctx.tenant)
     if total is not None:
         facts["total"] = total

@@ -1,6 +1,8 @@
-import { createRoute } from "@tanstack/react-router";
+import { EmptyState } from "@abacus/ui";
+import { createRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useCan } from "../../app-core/can";
+import { FeatureGate } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
@@ -41,6 +43,47 @@ const screens = {
   Walls: lazyScreen(async () => (await import("../../legacy/Walls")).Walls),
 };
 
+// G-01-T07: ADM-01 at /settings/general behind `firm_settings.v2`; the other sections are planned
+// (G-01 §5.1) and answer "not built yet" until their screens land. The /admin redirects wait for
+// the People and Offices & teams screens (T10, T14), so they don't point at a planned page.
+const FirmSettingsGeneral = lazyScreen(async () => (await import("../../screens/ADM-01")).ADM01);
+
+function NotBuilt(): JSX.Element {
+  return (
+    <div className="flex flex-1 items-center justify-center p-8">
+      <EmptyState title="This settings section isn't built yet." />
+    </div>
+  );
+}
+
+const settingsGeneralRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/general",
+  component: function SettingsGeneralPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
+          <FirmSettingsGeneral
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+const settingsSectionRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/$section",
+  component: NotBuilt,
+});
+
 const AdminLayout = lazyScreen(async () => (await import("../../legacy/AdminLayout")).AdminLayout);
 const adminRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -64,6 +107,8 @@ const methodologyVersionRoute = createRoute({
 });
 
 export const settingsRoutes = [
+  settingsGeneralRoute,
+  settingsSectionRoute,
   adminRoute.addChildren([
     section("/admin/methodology", () => <screens.Methodology />),
     methodologyVersionRoute,
