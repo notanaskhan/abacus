@@ -1,13 +1,19 @@
 """Evidence's built-in citation verifiers: `document_text`, `sheet_cell` and `request_item`
 (P-03-T06; ADR-166 §§2-5, ADR-066; DEC-218, DEC-219). PROTECTED.
 
-- **`document_text`** `{evidence_version_id, page, bbox?, annotation_id?}`: the version must be in
-  the citing anchor's engagement (`source_not_visible`). The page and its words come from the word
-  layer (P-03-T05); a version with no layer, or a page the layer has no words for, is read from
-  the extraction's page text, where a quote can still be verified but no region resolved
-  (`verify_on_layer`, `page_quote_reason`). `annotation_id` is reserved (K-03) and must be null.
+Every verifier first authorises the actor on the anchor's engagement (`evidence.read`, or
+`request_item.read`): an anchor with no engagement, or an actor refused there, is
+`source_not_visible` before any source is read; a source that isn't in that engagement is
+`source_not_found`, exactly as if it didn't exist (security review).
+
+- **`document_text`** `{evidence_version_id, page, bbox?, annotation_id?}`: the page and its
+  words come from the word layer (P-03-T05); a version with no layer, or a page the layer has no
+  words for, is read from the extraction's page text, where a quote can still be verified but no
+  region resolved (`verify_on_layer`). A claim with nothing to check (no box, quote or value) is
+  `locator_invalid`. `annotation_id` is reserved (K-03) and must be null.
 - **`sheet_cell`** `{evidence_version_id, sheet?, cell, value?}`: the extraction's table (a single
-  sheet may be named or not); the quote must be in the cell, the value must equal its amount.
+  sheet may be named or not); the quote must be in the cell contiguously on word boundaries, the
+  value must equal its amount.
 - **`request_item`** `{request_item_id}`: the item exists in the anchor's engagement.
 
 Each derives the `match_id` (C4 §3.1) and renders `title` and `loc` by code. Verification reads
@@ -27,6 +33,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import transaction_context
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import UnitOfWork
+from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.citations.matching import (
     Box,
     Reason,
@@ -47,6 +54,7 @@ from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.processing import document_text
 from abacus.modules.evidence.repository import get_item, get_version, newest_extraction, pages_of
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
+from abacus.modules.identity.api import Actor, Forbidden, authorise
 from abacus.modules.requests.api import item_ref
 
 VERIFIER_VERSION: Final = "v1"
@@ -103,14 +111,31 @@ def _value(raw: str | None) -> Decimal | str | None:
     return found if found is not None else raw
 
 
+async def _authorised(actor: Actor, anchor: Anchor, action: str) -> Reason | None:
+    """The actor may `action` on the anchor's engagement, or `source_not_visible` (an anchor
+    with no engagement, an engagement outside the actor's reach, a wall). Checked before any
+    source is read, so a refused actor learns nothing about it (security review)."""
+    if anchor.engagement_id is None:
+        return "source_not_visible"
+    try:
+        engagement = await get_ref(actor, anchor.engagement_id)
+        await authorise(actor, action, engagement.resource())
+    except (NotFound, Forbidden):
+        return "source_not_visible"
+    return None
+
+
 async def _version(
-    tx: UnitOfWork, version_id: UUID, anchor: Anchor
+    tx: UnitOfWork, actor: Actor, version_id: UUID, anchor: Anchor
 ) -> tuple[EvidenceVersion | None, Reason | None]:
+    """The cited version, read only after the actor is allowed `evidence.read` on the anchor's
+    engagement; a version that isn't in that engagement is `source_not_found`, as if absent."""
+    refused = await _authorised(actor, anchor, "evidence.read")
+    if refused is not None:
+        return None, refused
     version = await get_version(tx.session, version_id)
-    if version is None:
+    if version is None or version.engagement_id != anchor.engagement_id:
         return None, "source_not_found"
-    if anchor.engagement_id is not None and version.engagement_id != anchor.engagement_id:
-        return None, "source_not_visible"
     return version, None
 
 
@@ -128,14 +153,16 @@ def _round(box: Box) -> list[float]:
     return [round(v, 2) for v in box]
 
 
-async def verify_document_text(tx: UnitOfWork, claim: CitationClaim, anchor: Anchor) -> Verdict:
+async def verify_document_text(
+    tx: UnitOfWork, actor: Actor, claim: CitationClaim, anchor: Anchor
+) -> Verdict:
     try:
         locator = DocumentTextLocator.model_validate(dict(claim.locator))
     except ValidationError:
         return unverifiable(claim)
     source = ("evidence_version", locator.evidence_version_id)
     kept = locator.model_dump(mode="json")
-    version, refused = await _version(tx, locator.evidence_version_id, anchor)
+    version, refused = await _version(tx, actor, locator.evidence_version_id, anchor)
     if version is None:
         return Verdict(refused, *source, kept)
     number = str(version.version_no)
@@ -179,14 +206,16 @@ async def verify_document_text(tx: UnitOfWork, claim: CitationClaim, anchor: Anc
     )
 
 
-async def verify_sheet_cell(tx: UnitOfWork, claim: CitationClaim, anchor: Anchor) -> Verdict:
+async def verify_sheet_cell(
+    tx: UnitOfWork, actor: Actor, claim: CitationClaim, anchor: Anchor
+) -> Verdict:
     try:
         locator = SheetCellLocator.model_validate(dict(claim.locator))
     except ValidationError:
         return unverifiable(claim)
     source = ("evidence_version", locator.evidence_version_id)
     kept = locator.model_dump(mode="json")
-    version, refused = await _version(tx, locator.evidence_version_id, anchor)
+    version, refused = await _version(tx, actor, locator.evidence_version_id, anchor)
     if version is None:
         return Verdict(refused, *source, kept)
     found = _value(claim.value if claim.value is not None else locator.value)
@@ -205,7 +234,7 @@ async def verify_sheet_cell(tx: UnitOfWork, claim: CitationClaim, anchor: Anchor
             amount(text) if text is not None else None,
             claim.quote,
             found,
-            exact_quote=False,
+            quote_rule="contiguous",
         )
     if reason is not None:
         return Verdict(reason, *source, kept, str(version.version_no))
@@ -220,19 +249,24 @@ async def verify_sheet_cell(tx: UnitOfWork, claim: CitationClaim, anchor: Anchor
     )
 
 
-async def verify_request_item(tx: UnitOfWork, claim: CitationClaim, anchor: Anchor) -> Verdict:
+async def verify_request_item(
+    tx: UnitOfWork, actor: Actor, claim: CitationClaim, anchor: Anchor
+) -> Verdict:
     try:
         locator = RequestItemLocator.model_validate(dict(claim.locator))
     except ValidationError:
         return unverifiable(claim)
     source = ("request_item", locator.request_item_id)
     kept = locator.model_dump(mode="json")
+    refused = await _authorised(actor, anchor, "request_item.read")
+    if refused is not None:
+        return Verdict(refused, *source, kept)
     try:
         item = await item_ref(tx, locator.request_item_id)
     except NotFound:
         return Verdict("source_not_found", *source, kept)
-    if anchor.engagement_id is not None and item.engagement_id != anchor.engagement_id:
-        return Verdict("source_not_visible", *source, kept)
+    if item.engagement_id != anchor.engagement_id:
+        return Verdict("source_not_found", *source, kept)
     return Verdict(None, *source, kept, None, f"req:{item.id}")
 
 

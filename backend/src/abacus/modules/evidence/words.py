@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import io
 import json
+import math
 import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal
@@ -56,6 +57,8 @@ WORDS_VERSION: Final = "w1"
 MAX_PAGES: Final = 200  # the extractor's cap (extraction.MAX_PAGES)
 MAX_PAGE_WORDS: Final = 5000
 MAX_WORD: Final = 200
+# PDF's largest page side (ISO 32000, 200 in at 72 pt); `evidence_pages` is numeric(8, 2) > 0.
+MAX_PAGE_PT: Final = 14_400.0
 PDF: Final = "application/pdf"
 _REFUSED: Final = frozenset({"Cc", "Cf", "Cs", "Co"})
 
@@ -95,7 +98,20 @@ def _clean(value: object) -> str:
 
 
 def _pt(value: object) -> float:
-    return round(float(cast(float, value)), 2)
+    try:
+        found = round(float(cast(float, value)), 2)
+    except (TypeError, ValueError, OverflowError):
+        return float("nan")
+    return found if math.isfinite(found) else float("nan")
+
+
+def _side(value: float) -> bool:
+    """A page side a reader could see and the table can hold."""
+    return math.isfinite(value) and 0 < value <= MAX_PAGE_PT
+
+
+def _clamped(value: float) -> float:
+    return min(max(value, 1.0), MAX_PAGE_PT) if math.isfinite(value) else 1.0
 
 
 def _rotation(value: object) -> int:
@@ -105,20 +121,28 @@ def _rotation(value: object) -> int:
 
 def _page_words(number: int, page: object) -> PageWords:
     width, height = _pt(getattr(page, "width", 0)), _pt(getattr(page, "height", 0))
+    rotation = _rotation(getattr(page, "rotation", 0))
+    if not (_side(width) and _side(height)):
+        # A hostile or broken MediaBox (zero, negative, tiny or past PDF's limit): unreadable,
+        # recorded without a text layer, with geometry the table can hold (security review).
+        return PageWords(number, _clamped(width), _clamped(height), rotation, ())
     found = cast(list[dict[str, object]], page.extract_words(keep_blank_chars=False))  # type: ignore[attr-defined]  # pdfplumber Page
     words: list[Word] = []
     for raw in found:
         text = _clean(raw.get("text"))
         if not text:
             continue
-        x0, top = max(0.0, _pt(raw["x0"])), max(0.0, _pt(raw["top"]))
-        x1, bottom = min(width, _pt(raw["x1"])), min(height, _pt(raw["bottom"]))
+        box = (_pt(raw.get("x0")), _pt(raw.get("top")), _pt(raw.get("x1")), _pt(raw.get("bottom")))
+        if not all(math.isfinite(v) for v in box):
+            continue
+        x0, top = max(0.0, box[0]), max(0.0, box[1])
+        x1, bottom = min(width, box[2]), min(height, box[3])
         if x1 < x0 or bottom < top:
             continue  # a box outside the page: nothing a reader could see
         words.append(Word(text, x0, top, x1, bottom))
         if len(words) >= MAX_PAGE_WORDS:
             break
-    return PageWords(number, width, height, _rotation(getattr(page, "rotation", 0)), tuple(words))
+    return PageWords(number, width, height, rotation, tuple(words))
 
 
 def _reason(exc: BaseException) -> str:

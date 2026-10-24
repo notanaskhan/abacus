@@ -1085,8 +1085,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/assurance/completion_repository.py", "records_of"),
         # TASK-344: PDFs the current extractor hasn't read, for the system re-read tool.
         ("src/abacus/modules/evidence/repository.py", "stale_pdf_uploads"),
-        # P-03-T05: one source's word-layer pages (the system, or after authorising on the
-        # source), the pages just written, and the backfill's next batch (the system only).
+        # P-03-T05, T06: one source's word-layer pages, read by the system (upload processing,
+        # the backfill) or by a citation verifier only after `authorise(evidence.read)` on the
+        # anchor's engagement and a check that the version is in it; the pages just written;
+        # and the backfill's next batch (the system only).
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),

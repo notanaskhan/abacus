@@ -6,11 +6,14 @@ and the agents' legacy verifiers (`agents.citations`, `agents.document_citations
 over the same rules, so one rule decides what "the quote is there" means.
 
 - Text is compared after Unicode NFKC, case folding, dropping invisible format and control
-  characters, and collapsing whitespace. A quote joining several lines counts when every line is
-  there.
-- On the word layer a quote is a run of consecutive words whose normalised text holds it. The
-  region is the union of that run's boxes; the stored hash is of the run's normalised text, so a
-  reader re-reading the words in the region gets the same digest (`quote_state`).
+  characters, and collapsing whitespace.
+- v2 (`quote_at`, `quote_span`): the whole quote, its lines joined by a space, must appear
+  contiguously and on word boundaries: never inside a longer word or number (`16,500` is not in
+  `16,500,000.00`). On the word layer the region is the run of words it covers, and the stored
+  hash is of that run's normalised text, so a reader re-reading the region gets the same digest.
+- Legacy (`quote_in`, the agents' adapters only): every line of the quote is somewhere on the
+  page, the rule SPEC-030 shipped with; v2 never uses it (security review).
+- A quote longer than `MAX_QUOTE` characters is never searched.
 - A box resolves when words sit inside it: a word belongs to a box when its centre does.
 """
 
@@ -19,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import re
 import unicodedata
+from bisect import bisect_right
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -35,10 +39,11 @@ Reason = Literal[
     "locator_invalid",
 ]
 Box = tuple[float, float, float, float]  # x0, top, x1, bottom in page points
+QuoteRule = Literal["exact", "lines", "contiguous"]
 
 _CELL: Final = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*)$")
 _AMOUNT: Final = re.compile(r"^\(?-?\$?\(?[0-9][0-9,]*(\.[0-9]+)?\)?-?$")
-MAX_SPAN_WORDS: Final = 400  # a quote longer than this many words isn't matched to a region
+MAX_QUOTE: Final = 2000  # characters: a longer quote is never searched (quote_not_found)
 
 
 class WordLike(Protocol):
@@ -63,10 +68,26 @@ def normalised(text: str) -> str:
 
 
 def quote_in(quote: str, text: str) -> bool:
-    """Every line of the quote appears in the text (a quote may join lines from one page)."""
+    """Legacy (SPEC-030; the agents' adapters only): every line of the quote appears somewhere in
+    the text. v2 verification uses `quote_at`."""
     parts = [normalised(line) for line in quote.splitlines() if normalised(line)]
     haystack = normalised(text)
     return bool(parts) and all(part in haystack for part in parts)
+
+
+def _target(quote: str) -> str:
+    return normalised(" ".join(quote.splitlines())) if len(quote) <= MAX_QUOTE else ""
+
+
+def _bounded(target: str) -> re.Pattern[str]:
+    """The target on word boundaries: not inside a longer word, nor a longer number."""
+    return re.compile(r"(?<!\w)(?<!\d[.,])" + re.escape(target) + r"(?!\w)(?![.,]\d)")
+
+
+def quote_at(quote: str, text: str) -> bool:
+    """v2: the whole quote is in the text, contiguously, on word boundaries."""
+    target = _target(quote)
+    return bool(target) and _bounded(target).search(normalised(text)) is not None
 
 
 def page_quote_reason(pages: Mapping[int, str], page: int, quote: str) -> Reason | None:
@@ -128,14 +149,23 @@ def cell_reason(
     quote: str | None,
     value: Decimal | None,
     *,
-    exact_quote: bool,
+    quote_rule: QuoteRule,
 ) -> Reason | None:
-    """A cited cell: it must exist; a quote must be its text (exactly, or contained after
-    normalisation); a value must equal its number."""
+    """A cited cell: it must exist; a quote must be its text (`exact`, the screener), every line
+    of it in the text (`lines`, the legacy upload reviewer) or in it contiguously on word
+    boundaries (`contiguous`, v2); a value must equal its number."""
     if text is None:
         return "cell_not_found"
-    if quote is not None and not (text == quote if exact_quote else quote_in(quote, text)):
-        return "quote_not_found"
+    if quote is not None:
+        found = (
+            text == quote
+            if quote_rule == "exact"
+            else quote_in(quote, text)
+            if quote_rule == "lines"
+            else quote_at(quote, text)
+        )
+        if not found:
+            return "quote_not_found"
     if value is not None and number != value:
         return "value_mismatch"
     return None
@@ -172,32 +202,36 @@ def union(words: Sequence[WordLike]) -> Box:
 
 
 def quote_span(words: Sequence[WordLike], quote: str) -> list[WordLike] | None:
-    """The shortest run of consecutive words whose normalised text holds the whole quote (its
-    lines joined by a space), or None."""
-    target = normalised(" ".join(quote.splitlines()))
+    """The run of consecutive words the whole quote covers, on word boundaries, or None. One pass
+    over the page: each word is normalised once and the quote is searched in the joined text."""
+    target = _target(quote)
     if not target:
         return None
-    best: list[WordLike] | None = None
-    for start in range(len(words)):
-        # Past this length the quote would have to start after the first word: a later start.
-        limit = len(target) + len(normalised(words[start].text)) + 1
-        text = ""
-        for end in range(start, min(len(words), start + MAX_SPAN_WORDS)):
-            text = normalised(f"{text} {words[end].text}")
-            if target in text:
-                if best is None or end + 1 - start < len(best):
-                    best = list(words[start : end + 1])
-                break
-            if len(text) > limit:
-                break
-    return best
+    kept: list[WordLike] = []
+    starts: list[int] = []
+    tokens: list[str] = []
+    at = 0
+    for word in words:
+        token = normalised(word.text)
+        if not token:
+            continue
+        kept.append(word)
+        starts.append(at)
+        tokens.append(token)
+        at += len(token) + 1
+    found = _bounded(target).search(" ".join(tokens))
+    if found is None:
+        return None
+    first = bisect_right(starts, found.start()) - 1
+    last = bisect_right(starts, found.end() - 1) - 1
+    return kept[first : last + 1]
 
 
 @dataclass(frozen=True)
 class LayerVerdict:
     reason: Reason | None
     box: Box | None  # the resolved region, when there is one
-    sha256: bytes | None  # of the region's words, when there is a region and a quote
+    sha256: bytes | None  # of the matched quote's normalised text, when a quote was cited
     value_text: str | None  # the printed value, when a cited value was found
 
 
@@ -213,15 +247,20 @@ def verify_on_layer(
     quote: str | None,
     value: Decimal | None,
 ) -> LayerVerdict:
-    """A `document_text` claim on one page (DEC-218):
+    """A `document_text` claim on one page (DEC-218, amended by the security review):
+    - a claim with no box, no quote and no value checks nothing: `locator_invalid`;
     - a box with no words in it is `bbox_mismatch`;
     - a quote must be inside the box (else `bbox_mismatch` when it is elsewhere on the page,
       `quote_not_found` when it isn't on the page); the region becomes the quote's words;
-    - with no box, the region is the quote's words; a quote found on the page but in no run of
-      words (rotated or multi-column text) is verified with no region, never failed for that;
+    - with no box, the region is the quote's words; a quote on the page text but in no run of
+      words is verified with no region, its hash that of the matched text, never failed for that;
     - a value must be one of the region's printed amounts (the page's, with no region; the
-      region is then the word that prints it)."""
+      region is then the word that prints it).
+    A verified verdict always carries a hash, a region or a printed value."""
+    if box is None and quote is None and value is None:
+        return LayerVerdict("locator_invalid", None, None, None)
     region: list[WordLike] | None = None
+    digest: bytes | None = None
     if box is not None:
         inside = words_in(words, box)
         if not inside:
@@ -231,15 +270,19 @@ def verify_on_layer(
         if region is not None:
             span = quote_span(region, quote)
             if span is None:
-                elsewhere = quote_span(words, quote) is not None or quote_in(quote, page_text)
+                elsewhere = quote_span(words, quote) is not None or quote_at(quote, page_text)
                 return LayerVerdict(
                     "bbox_mismatch" if elsewhere else "quote_not_found", None, None, None
                 )
             region = span
         else:
             region = quote_span(words, quote)
-            if region is None and not quote_in(quote, page_text):
-                return LayerVerdict("quote_not_found", None, None, None)
+            if region is None:
+                if not quote_at(quote, page_text):
+                    return LayerVerdict("quote_not_found", None, None, None)
+                digest = hashlib.sha256(_target(quote).encode()).digest()
+        if region is not None:
+            digest = layer_sha256(region)
     printed: str | None = None
     if value is not None:
         word = _value_in(region if region is not None else words, value)
@@ -250,16 +293,14 @@ def verify_on_layer(
             printed = next((t for t in page_text.split() if amount(t.strip(",;:")) == value), None)
         if printed is None:
             return LayerVerdict("value_mismatch", None, None, None)
-    if region is None:
-        return LayerVerdict(None, None, None, printed)
-    digest = layer_sha256(region) if quote is not None else None
-    return LayerVerdict(None, union(region), digest, printed)
+    return LayerVerdict(None, union(region) if region else None, digest, printed)
 
 
 __all__ = [
-    "MAX_SPAN_WORDS",
+    "MAX_QUOTE",
     "Box",
     "LayerVerdict",
+    "QuoteRule",
     "Reason",
     "amount",
     "cell_reason",
@@ -270,6 +311,7 @@ __all__ = [
     "layer_sha256",
     "normalised",
     "page_quote_reason",
+    "quote_at",
     "quote_in",
     "quote_span",
     "union",

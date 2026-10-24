@@ -35,9 +35,17 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v2-extracted",
         # v3 (TASK-056): `patched("previews")`.
         "upload-processing-v3-extracted",
+        # Security review: a words step that fails for good never fails the run.
+        "upload-processing-v4-words-failed",
         # v4 (P-03-T05): `patched("words")`, the word layer.
         "upload-processing-v4-words",
     ]
+
+
+def test_review_a_failed_word_layer_leaves_the_run_complete() -> None:
+    text = (HISTORIES / "upload-processing-v4-words-failed.json").read_text(encoding="utf-8")
+    assert "EVENT_TYPE_ACTIVITY_TASK_FAILED" in text
+    assert "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED" in text
 
 
 def test_p03t05_v4_reads_words_after_previews() -> None:

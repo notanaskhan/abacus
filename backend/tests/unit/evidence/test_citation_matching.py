@@ -11,12 +11,14 @@ from decimal import Decimal
 import pytest
 
 from abacus.modules.evidence.citations.matching import (
+    MAX_QUOTE,
     amount,
     cell_reason,
     cell_text,
     layer_sha256,
     normalised,
     page_quote_reason,
+    quote_at,
     quote_span,
     verify_on_layer,
 )
@@ -93,12 +95,55 @@ def test_ac2_a_value_not_printed_there_is_value_mismatch() -> None:
     assert (found.reason, found.value_text) == (None, "16,500,000.00")
 
 
-def test_ac3_a_quote_on_the_page_in_no_run_of_words_is_verified_without_a_box() -> None:
-    # Two lines quoted out of reading order: each is on the page, no run of words holds both.
+def test_review_lines_scattered_over_the_page_are_not_a_quote() -> None:
+    # Security review (#2): each line is on the page, but not together in that form.
     found = verify_on_layer(
         WORDS, TEXT, box=None, quote="Net assets\nTotal investments", value=None
     )
-    assert (found.reason, found.box, found.sha256) == (None, None, None)
+    assert (found.reason, found.box, found.sha256) == ("quote_not_found", None, None)
+
+
+def test_review_a_quote_matches_on_word_boundaries_only() -> None:
+    for fabricated in ("otal investments", "investments 16,500", "16,500,000.0", "assets 16"):
+        found = verify_on_layer(WORDS, TEXT, box=None, quote=fabricated, value=None)
+        assert found.reason == "quote_not_found", fabricated
+        assert not quote_at(fabricated, TEXT), fabricated
+    assert quote_at("total investments 16,500,000.00", TEXT)
+
+
+def test_review_a_claim_with_nothing_to_check_is_not_verified() -> None:
+    found = verify_on_layer(WORDS, TEXT, box=None, quote=None, value=None)
+    assert (found.reason, found.box) == ("locator_invalid", None)
+    assert verify_on_layer((), TEXT, box=None, quote=None, value=None).reason == "locator_invalid"
+
+
+def test_review_every_verified_result_carries_a_hash_a_region_or_a_value() -> None:
+    claims: list[tuple[tuple[float, float, float, float] | None, str | None, Decimal | None]] = [
+        (None, "Net assets", None),
+        (LINE_ONE, None, None),
+        (None, None, Decimal("16500000")),
+        (LINE_ONE, "investments", None),
+    ]
+    for box, quote, value in claims:
+        found = verify_on_layer(WORDS, TEXT, box=box, quote=quote, value=value)
+        assert found.reason is None
+        assert found.sha256 is not None or found.box is not None or found.value_text is not None
+
+
+def test_review_the_span_search_is_linear_and_long_quotes_are_bounded() -> None:
+    import time
+
+    many = tuple(Word(f"w{i}", 1.0, 1.0, 2.0, 2.0) for i in range(5000))
+    quote = " ".join(f"w{i}" for i in range(2500, 2700))
+    started = time.perf_counter()
+    span = quote_span(many, quote)
+    assert span is not None and len(span) == 200
+    assert quote_span(many, "w1 w3") is None
+    assert time.perf_counter() - started < 1.0
+    overlong = " ".join(f"w{i}" for i in range(2500, 2900))
+    assert len(overlong) > MAX_QUOTE
+    assert quote_span(many, overlong) is None  # never searched
+    assert not quote_at(overlong, " ".join(w.text for w in many))
 
 
 def test_ac3_page_text_alone_verifies_a_quote_with_no_region() -> None:
@@ -110,6 +155,8 @@ def test_ac3_page_text_alone_verifies_a_quote_with_no_region() -> None:
         value=Decimal("16500000"),
     )
     assert (found.reason, found.box, found.value_text) == (None, None, "16,500,000.00")
+    # A quote matched on page text alone carries the hash of the matched text (security review).
+    assert found.sha256 == hashlib.sha256(b"investments").digest()
 
 
 def test_zero_width_and_case_are_normalised_away() -> None:
@@ -124,17 +171,17 @@ def test_legacy_page_and_cell_reasons() -> None:
     rows = (("Account", "Balance"), ("Cash", "1,650.00"))
     assert cell_text(rows, "B2") == "1,650.00"
     assert cell_text(rows, "C9") is None
-    assert cell_reason(None, None, None, None, exact_quote=False) == "cell_not_found"
+    assert cell_reason(None, None, None, None, quote_rule="lines") == "cell_not_found"
     assert (
-        cell_reason("1,650.00", amount("1,650.00"), None, Decimal("1650"), exact_quote=False)
+        cell_reason("1,650.00", amount("1,650.00"), None, Decimal("1650"), quote_rule="lines")
         is None
     )
     assert (
-        cell_reason("1,650.00", amount("1,650.00"), None, Decimal("1600"), exact_quote=False)
+        cell_reason("1,650.00", amount("1,650.00"), None, Decimal("1600"), quote_rule="lines")
         == "value_mismatch"
     )
-    assert cell_reason("Cash", None, "cash", None, exact_quote=True) == "quote_not_found"
-    assert cell_reason("Cash", None, "cash", None, exact_quote=False) is None
+    assert cell_reason("Cash", None, "cash", None, quote_rule="exact") == "quote_not_found"
+    assert cell_reason("Cash", None, "cash", None, quote_rule="lines") is None
 
 
 @pytest.mark.parametrize(
