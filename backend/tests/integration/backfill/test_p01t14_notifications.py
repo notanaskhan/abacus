@@ -592,9 +592,12 @@ async def test_ac4_1_1_every_registered_kind_with_its_default(world: World) -> N
     assert response.status_code == 200, response.text
     choices = _choices(cast(Json, response.json()))
     assert set(choices) == set(notifications.registered())
-    assert choices["mention"] == (True, True)  # email on for mention only (inferred default)
-    assert {k: v for k, v in choices.items() if k != "mention"} == dict.fromkeys(
-        set(choices) - {"mention"}, (True, False)
+    # Email on by default for mention (inferred, P-01) and for an Accrued-side incident, which
+    # Q-02 §4 says is emailed "even when digests are on" (Q-02-T30); every other kind is off.
+    emailed = {"mention", "incident_from_accrued"}
+    assert {k: choices[k] for k in emailed} == dict.fromkeys(emailed, (True, True))
+    assert {k: v for k, v in choices.items() if k not in emailed} == dict.fromkeys(
+        set(choices) - emailed, (True, False)
     )
 
 
