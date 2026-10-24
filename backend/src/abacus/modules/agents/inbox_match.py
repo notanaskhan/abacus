@@ -28,7 +28,11 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.document_citations import sheet_lines, verify
-from abacus.modules.agents.handoff import MatchOutput, VerifiedDocumentCitation
+from abacus.modules.agents.handoff import (
+    DocumentCitation,
+    MatchOutput,
+    VerifiedDocumentCitation,
+)
 from abacus.modules.agents.repository import (
     finish_run,
     insert_inbox_match,
@@ -48,6 +52,7 @@ from abacus.modules.agents.service import (
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.agents.upload_review import TERMINAL
+from abacus.modules.agents.v2_citations import document_claims, record_agent_citations
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import MatchMaterial, match_material
 from abacus.modules.identity.api import AgentContext, authorise, is_active_member
@@ -235,6 +240,7 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
     known = refs(material)
     threshold = matcher.confidence_routing.below
     rows: list[dict[str, object]] = []
+    cited: list[list[DocumentCitation]] = []  # each kept proposal's citations, by rank
     seen: set[UUID] = set()
     for proposal in output.proposals:
         item = known.get(proposal.request)
@@ -243,6 +249,7 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
         seen.add(item)
         checked = verify(proposal.citations, material.pages, material.sheets)
         shown = any(c.verified for c in checked) and Decimal(str(proposal.confidence)) >= threshold
+        cited.append(list(proposal.citations))
         rows.append(
             {
                 "tenant_id": agent.tenant_id,
@@ -273,6 +280,16 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
             },
         )
         await insert_match_proposals(tx.session, [{**r, "match_id": match_id} for r in rows])
+        # P-03-T10: each proposal's quotes as v2 rows on the inbox file, verified by code.
+        for rank, citations in enumerate(cited, start=1):
+            await record_agent_citations(
+                tx,
+                agent,
+                anchor_type="inbox_match",
+                anchor_id=match_id,
+                ref=f"R{rank}",
+                claims=document_claims(citations, inbox_file_id=inbox_file_id),
+            )
         await finish_run(
             tx.session,
             run.id,

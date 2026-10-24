@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 from abacus_tools.synthetic.scenarios.brightwater_hale import SCENARIO_HASH, build, loader
-from abacus_tools.synthetic.scenarios.brightwater_hale.audits import PORTAL_USERS
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import PBC_LISTS, PORTAL_USERS
 from abacus_tools.synthetic.scenarios.brightwater_hale.binders import CLIENT_PEOPLE
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import DEMO_INSTANT
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
@@ -18,6 +18,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
     HOST_LABEL,
     PORTAL_PEOPLE,
     SAM_ORTIZ,
+    delegated_requests,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import registered
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
@@ -121,3 +122,23 @@ def test_holding_out_copperleaf_takes_tess_and_ben_with_it() -> None:
     held = build(holdouts=("copperleaf",), slices=loader.expand_slices(("portal",))).events
     names = {e.data.get("person") for e in held if e.kind == "identity.portal_person_added"}
     assert names == {"Claire Feld", "Meera Shah"}
+
+
+def test_por01d_the_invitation_delegates_9_northwind_requests_to_keystone() -> None:
+    """P-08-T18 (DEC-275): POR-01d's and POR-14's 9, CLI-04's 10 + 9 + 2 + 2 + 1 = 24."""
+    pbc = next(p for p in PBC_LISTS if p.engagement == SAM_ORTIZ.engagement)
+    assert len(pbc.requests) == 24
+    ids = delegated_requests(SAM_ORTIZ)
+    assert len(ids) == SAM_ORTIZ.items == 9
+    assert len(set(ids)) == 9
+    by_id = {pbc.request_id(n): r for n, r in enumerate(pbc.requests, 1)}
+    keystone = [r for r in pbc.requests if r.owner == SAM_ORTIZ.org]
+    assert all(
+        by_id[i] in keystone or by_id[i].category == "Trust / Recordkeeper Reports" for i in ids
+    )
+    assert all(pbc.request_id(n) in ids for n, r in enumerate(pbc.requests, 1) if r in keystone)
+    assert (SAM_ORTIZ.kind, SAM_ORTIZ.grant_role, SAM_ORTIZ.terms_version) == (
+        "delegate",
+        "third_party",
+        1,
+    )

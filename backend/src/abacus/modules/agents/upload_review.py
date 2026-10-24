@@ -54,6 +54,7 @@ from abacus.modules.agents.service import (
 )
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.stages import starts_in_shadow
+from abacus.modules.agents.v2_citations import document_claims, record_agent_citations
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import ReviewMaterial, review_material
 from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
@@ -289,6 +290,18 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
             },
         )
         await insert_review_flags(tx.session, [{**r, "review_id": review_id} for r in rows])
+        # P-03-T10: each flag's quotes as v2 rows on the version, verified by code (DEC-267).
+        for position, flag in enumerate(output.flags, start=1):
+            await record_agent_citations(
+                tx,
+                agent,
+                anchor_type="upload_review",
+                anchor_id=review_id,
+                ref=f"F{position}",
+                claims=document_claims(
+                    flag.citations, evidence_version_id=run.evidence_version_id
+                ),
+            )
         await finish_run(
             tx.session,
             run.id,

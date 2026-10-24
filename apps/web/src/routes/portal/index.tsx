@@ -63,6 +63,17 @@ export function takeLinkFromFragment(location: Location = window.location): stri
   return match[1];
 }
 
+/** `#token=<token>` from an invitation email (POR-01 d): into the page's memory, out of the
+ * address bar; never web storage or a query string (DEC-231's memory rule). */
+export function takeInvitationFromFragment(
+  location: Location = window.location,
+): string | undefined {
+  const match = /(?:^#|&)token=([\w-]{20,200})/.exec(location.hash);
+  if (match?.[1] === undefined) return undefined;
+  window.history.replaceState(null, "", location.pathname + location.search);
+  return match[1];
+}
+
 // The portal's paths are not the firm router's registered ones, so it moves through the router's
 // history by path rather than the typed `navigate`. A signed-in person goes back to the safe
 // `?return=` an expired session left (P-08-T11), else to their role's landing.
@@ -74,6 +85,20 @@ function SignInPage(): JSX.Element {
       {...(link === undefined ? {} : { opening: { email: "", linkToken: link } })}
       onSignedIn={(landing) => {
         history.push(returnFrom(window.location.search) ?? LANDING_PATH[landing]);
+      }}
+    />
+  );
+}
+
+/** POR-01 d: the invitation's preview, the code, then acceptance and the person's landing. */
+function AcceptPage(): JSX.Element {
+  const { history } = useRouter();
+  const [token] = useState(() => takeInvitationFromFragment());
+  return (
+    <SignIn
+      opening={{ email: "", invitationToken: token ?? "" }}
+      onSignedIn={(landing) => {
+        history.push(LANDING_PATH[landing]);
       }}
     />
   );
@@ -104,8 +129,7 @@ const page = (path: string, component: () => JSX.Element | null) =>
 
 export const portalTree = rootRoute.addChildren([
   page("/sign-in", SignInPage),
-  // POR-01 d (invitation acceptance) is P-08-T19's.
-  page("/accept", NotBuilt),
+  page("/accept", AcceptPage), // POR-01 d (P-08-T19)
   page("/", () => <Area area="Home" />),
   page("/documents", () => <Area area="Documents" />),
   page("/requests", NotBuilt),

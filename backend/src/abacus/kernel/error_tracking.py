@@ -8,7 +8,9 @@ rebuilt from an allowlist, so nothing classified can slip through a denylist we 
 the exception's type and stack frames (module, function, line; never local variables or source
 context), environment, release, the trace and span IDs, and two tags (route template, tenant ID).
 Exception messages are replaced by the type name (they can quote client data); requests,
-headers, cookies, users, breadcrumbs, extras and any other context are dropped.
+headers, cookies, users, breadcrumbs, extras and any other context are dropped. Every string the
+event keeps then passes the TIN backstop (`kernel.tin_patterns`, ADR-167): an unmasked SSN, ITIN
+or EIN form in a tag, a frame or a name is replaced by its mask.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from temporalio.worker import (
 
 from abacus.kernel.config import settings
 from abacus.kernel.telemetry import current_span_id, current_trace_id
+from abacus.kernel.tin_patterns import scrub_tins
 
 _FRAME_KEYS = ("module", "function", "lineno", "in_app", "filename")
 _TAGS = ("route", "tenant_id", "error_type", "activity")
@@ -81,6 +84,16 @@ def _trace(contexts: object) -> dict[str, object] | None:
     return {k: mapping[k] for k in ("trace_id", "span_id") if isinstance(mapping.get(k), str)}
 
 
+def _masked(value: object) -> object:
+    if isinstance(value, str):
+        return scrub_tins(value)
+    if isinstance(value, Mapping):
+        return {k: _masked(v) for k, v in cast(Mapping[str, object], value).items()}
+    if isinstance(value, list):
+        return [_masked(v) for v in cast(list[object], value)]
+    return value
+
+
 def scrub(event: Event, _hint: Hint | None = None) -> Event | None:
     """The event Sentry may receive: rebuilt from the allowlist above."""
     raw = cast(Mapping[str, object], event)
@@ -108,7 +121,7 @@ def scrub(event: Event, _hint: Hint | None = None) -> Event | None:
     if isinstance(tags, Mapping):
         tag_map = cast(Mapping[str, object], tags)
         kept["tags"] = {k: tag_map[k] for k in _TAGS if isinstance(tag_map.get(k), str)}
-    return cast(Event, kept)
+    return cast(Event, _masked(kept))
 
 
 def configure_error_tracking(service: str) -> bool:

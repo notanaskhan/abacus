@@ -352,6 +352,10 @@ class Settings(BaseSettings):
     # Peers whose X-Forwarded-For and X-Forwarded-Proto are believed (the load balancer's subnets,
     # as addresses or CIDR networks). Empty: proxy headers are ignored.
     proxy_trusted_hosts: Annotated[tuple[str, ...], NoDecode, classified("internal")] = ()
+    # Whether the edge sets `CloudFront-Viewer-Address` on every request and overwrites any the
+    # viewer sent (the portal distribution's origin request policy includes it): only then is it
+    # the viewer's address for the invitation preview's throttle (DEC-277). Off: never believed.
+    trust_cloudfront_viewer_address: Annotated[bool, classified("internal")] = False
 
     @field_validator("trusted_hosts", "proxy_trusted_hosts", mode="before")
     @classmethod

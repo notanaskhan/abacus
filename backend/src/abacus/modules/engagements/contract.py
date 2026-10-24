@@ -913,6 +913,7 @@ async def create_engagement_from_draft_route(
     """Human-only, one unit of work: 409 `possible_duplicate` until `confirm_duplicate`, 409
     `gate_unmet` (G1), 422 `unknown_engagement_type`, 422 `draft_incomplete`."""
     await _gate(ctx)
+    await draft_model.check_create(ctx, draft_id)
 
     async def run() -> tuple[int, dict[str, object]]:
         made = await draft_model.create_from_draft(

@@ -10,6 +10,10 @@ The per-call layer, before any network call on a route other than `fake`:
 
 Module facts arrive by registration; an unregistered fact means refused. A refusal is audited with
 its reason, counted, and raised as `DataBoundaryRefused`, never retried or rerouted.
+
+One more reason applies on every route, for every firm: `pii_in_context` (ADR-167 §2), when the
+assembled context holds an unmasked TIN form (`ai_gateway.pii`). It is audited with the context
+part's name as well, never the value.
 """
 
 from __future__ import annotations
@@ -17,7 +21,7 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final, Literal, cast
+from typing import Final, Literal, NoReturn, cast
 from uuid import UUID
 
 from abacus.kernel import provider_terms
@@ -34,8 +38,17 @@ FirmCheck = Callable[[TenantContext], Awaitable[bool]]
 EngagementCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
 StageCheck = Callable[[TenantContext, str], Awaitable[str | None]]
 AgentCheck = Callable[[str], bool]
-Reason = Literal["route", "terms", "firm", "agent", "engagement", "stage"]
-REASONS: Final[tuple[Reason, ...]] = ("route", "terms", "firm", "agent", "engagement", "stage")
+Reason = Literal["route", "terms", "firm", "agent", "engagement", "stage", "pii_in_context"]
+# Audited by index: append only, so the indices already recorded keep their meaning.
+REASONS: Final[tuple[Reason, ...]] = (
+    "route",
+    "terms",
+    "firm",
+    "agent",
+    "engagement",
+    "stage",
+    "pii_in_context",
+)
 CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
 _check: SyntheticCheck | None = None
@@ -179,21 +192,44 @@ async def enforce_boundary(
         reason = await _client_data_refusal(tenant, route, agent_id, engagement_id)
     if reason is None:
         return Basis("client_data", provider_terms.version())
+    await _refuse(tenant, route, prompt, reason)
+
+
+async def _refuse(
+    tenant: TenantContext,
+    route: Route,
+    prompt: str,
+    reason: Reason,
+    *,
+    part: tuple[str, int] | None = None,
+) -> NoReturn:
+    """Count, log, audit and raise. `part` is the context part (name, index) a
+    `pii_in_context` refusal found the value in; the value itself is never recorded."""
     _refused.add(1, {"route": route, "prompt": prompt, "reason": reason})
+    fields: dict[str, object] = {"part": part[0]} if part is not None else {}
     _log.warning(
         "ai.boundary_refused",
         tenant_id=tenant.tenant_id,
         route=route,
         prompt=prompt,
         reason=reason,
+        **fields,
+    )
+    after = (
+        Ref(reason=REASONS.index(reason), part=part[1])
+        if part is not None
+        else Ref(reason=REASONS.index(reason))
     )
     async with uow(tenant) as tx:
-        tx.record(
-            "ai.boundary_refused",
-            target=Target("firm", tenant.tenant_id),
-            after=Ref(reason=REASONS.index(reason)),
-        )
+        tx.record("ai.boundary_refused", target=Target("firm", tenant.tenant_id), after=after)
     raise DataBoundaryRefused(f"route {route!r} may not see this firm's data ({reason})", reason)
+
+
+async def refuse_pii_in_context(
+    tenant: TenantContext, route: Route, prompt: str, part: str, part_index: int
+) -> NoReturn:
+    """ADR-167 §2: the context holds an unmasked TIN form. Every route, every firm."""
+    await _refuse(tenant, route, prompt, "pii_in_context", part=(part, part_index))
 
 
 def clear_cache(tenant_id: UUID | None = None) -> None:

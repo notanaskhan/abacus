@@ -43,6 +43,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     # F-03-T07: collected from each module's api.py, in MODULES order.
     assert tuple(m.__name__.split(".")[2] for m in worker_main.MODULES) == (
         "agents",
+        "assurance",  # A-01-T05: a computed gate's `gate.met` derives the phase it opens
         "communications",  # SPEC-015: invitation emails
         "connections",
         "evidence",  # SPEC-029 (TASK-054): upload processing
@@ -87,6 +88,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "legal_hold.lifted",  # Q-02-T29: LegalHoldRelease starts (placed also notifies)
         "access.changed",  # P-08-T17: portal sessions and trusted devices end
         "client_access.revoked",
+        "gate.met",  # A-01-T05: the phase a computed gate opens is derived
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

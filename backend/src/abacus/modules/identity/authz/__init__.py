@@ -9,10 +9,13 @@ PROTECTED. TASK-007 design §5.
   2. relationships  the roles the actor holds here: firm role, plus engagement role on the
                     resource's engagement (no relationship at all: deny)
   3. roles          the matrix decision for those roles; an explicit `deny` beats any `allow`
-  3b. independence for an action marked `independence: required` (SPEC-025 AC-7), a staff
-                    engagement role grants it only once that person has confirmed their
-                    independence for the engagement (firm and client roles, support and system
-                    runs aren't bound; agents are, through their initiator)
+  3b. independence for an action marked `independence: required` (G2 v2: DEC-39, ADR-164),
+                    a staff engagement role grants it to a person not cleared for the engagement
+                    only where G2 doesn't apply: G2 applies when the engagement's client is an
+                    attest client (unknown counts as attest) and the action is not a read, or is
+                    a read and the firm has `g2_blocks_view` on (stricter only). Firm and client
+                    roles, support and system runs aren't bound; agents are, through their
+                    initiator. (SPEC-025's TASK-045 gated every read on every engagement.)
   4. attributes     archived engagements are read-only; `mfa_recent`; `requires: reason`;
                     `notify` obligations are met by the action's own event (SPEC-013)
 An agent is also bounded by its initiator, checked live (ADR-025): the initiator must be allowed
@@ -55,7 +58,7 @@ from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, conditions_hold
-from abacus.modules.identity.authz.matrix import RULES, Rule
+from abacus.modules.identity.authz.matrix import G2_BLOCKS_VIEW, RULES, Rule
 from abacus.modules.identity.authz.overrides import apply_override
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
@@ -70,6 +73,7 @@ from abacus.modules.identity.repository import (
     engagement_roles_in_firm,
     ethical_walls,
     firm_policy,
+    firm_setting_values,
     member_facts,
     walled_clients,
 )
@@ -446,11 +450,14 @@ async def authorise(
         decisions = (decisions - {AUTONOMY_POLICY}) | {"allow"}
     if "deny" in decisions or "allow" not in decisions:
         raise _deny(ctx, action, "role")
-    # 3b. Independence (SPEC-025 AC-7, per person): when only a staff engagement role grants a
-    # client-data action, it counts once that person has confirmed for this engagement. Firm and
-    # client roles, break-glass support and system runs aren't bound by it; an agent is, through
-    # its initiator below. A firm-level read (no engagement) lists rows that `visible()` filters
-    # by the same rule, engagement by engagement.
+    # 3b. Independence (G2 v2: DEC-39, ADR-164 items 2 to 4): when only a staff engagement role
+    # grants a marked action, a person not cleared for this engagement is refused where G2 applies
+    # (`_g2_applies`): an attest client's engagement, for anything but a read, and for reads too
+    # when the firm has `g2_blocks_view` on. Firm and client roles, break-glass support and system
+    # runs aren't bound by it; an agent is, through its initiator below. A firm-level read (no
+    # engagement) lists rows that `visible()` filters by the same rule, engagement by engagement.
+    # The cleared answer is read first (once per request), so the attest flag is read only for a
+    # person who isn't cleared.
     granting = {role for role, decision in by_role.items() if decision == "allow"}
     if (
         rule.independence
@@ -459,6 +466,7 @@ async def authorise(
         and not ctx.is_support
         and granting <= ENGAGEMENT_ROLES
         and not await _confirmed_for(ctx, resource)
+        and await _g2_applies(ctx, resource, rule, policy)
     ):
         raise _deny(ctx, action, "independence")
     # 3c. Conditions (F-03-T24; chapter 03 §4.4): narrow what the roles allowed; fail closed.
@@ -718,6 +726,34 @@ async def _confirmed_for(ctx: AuthContext, resource: Resource) -> bool:
     return confirmed
 
 
+async def _g2_applies(ctx: Actor, resource: Resource, rule: Rule, policy: FirmPolicy) -> bool:
+    """ADR-164 items 2 and 3: whether G2 binds this action here. A read is bound only when the
+    firm has `g2_blocks_view` on; any action only on an attest client's engagement. An unknown or
+    unregistered attest flag counts as attest (fail closed)."""
+    if rule.reads and G2_BLOCKS_VIEW not in policy.settings_on:
+        return False
+    lookup = LOOKUPS.attest
+    if lookup is None or resource.engagement_id is None:
+        return True
+    return await lookup(ctx.tenant, resource.engagement_id) is not False
+
+
+def _g2_blocks_reads(ctx: AuthContext, engagement_id: EngagementColumn) -> ColumnElement[bool]:
+    """`visible()`'s twin of `_g2_applies` for a read: the firm has `g2_blocks_view` on and the
+    row's engagement's client is an attest client (unregistered: attest, fail closed)."""
+    setting = (
+        select(firm_setting_values.c.key)
+        .where(
+            firm_setting_values.c.tenant_id == ctx.tenant_id,
+            firm_setting_values.c.key == G2_BLOCKS_VIEW,
+            firm_setting_values.c.value.is_(True),
+        )
+        .exists()
+    )
+    attest = LOOKUPS.attest_column
+    return and_(setting, attest(engagement_id)) if attest is not None else setting
+
+
 def _not_walled(ctx: Actor, engagement_id: EngagementColumn) -> ColumnElement[bool]:
     """Rows whose engagement's client the acting person isn't walled off from (ADR-026)."""
     walls = select(ethical_walls.c.id).where(
@@ -885,11 +921,14 @@ def _visible_by_role(
     staff = [role for role in allowed if role in ENGAGEMENT_ROLES]
     client = [role for role in allowed if role in CLIENT_ROLES]
     if rule.independence and not ctx.is_support:
-        # SPEC-025 (TASK-045): a staff engagement role counts once the person has confirmed.
+        # G2 v2 (ADR-164): a staff engagement role reaches a marked read unless the person isn't
+        # cleared and the firm's `g2_blocks_view` applies to the row's attest-client engagement.
+        # Unregistered, the confirmations can't be read and staff reach nothing (fail closed).
         reach = [_member_of(ctx, engagement_id, client)] if client else []
         if staff and _independence is not None:
             confirmed = _independence[0](engagement_id, ctx.user_id)
-            reach.append(and_(_member_of(ctx, engagement_id, staff), confirmed))
+            cleared = or_(confirmed, ~_g2_blocks_reads(ctx, engagement_id))
+            reach.append(and_(_member_of(ctx, engagement_id, staff), cleared))
         return or_(*reach) if reach else false()
     if not staff and not client:
         return false()

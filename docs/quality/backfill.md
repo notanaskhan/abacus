@@ -27,10 +27,10 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 032 | red | Engagement team management | SPEC-017 | S6 | T007 | back-filled | `backfill/test_team_management.py`; AC-7 `apps/web/src/legacy/spec017people.test.tsx` (TASK-992) |
 | 040 | red | Self-serve sign-up and engagement types | SPEC-024 | S6 | T008 | back-filled | `backfill/test_signup_and_engagement_types.py`; AC-8 `legacy/spec024states.test.tsx` (TASK-992) |
 | 044 | red | Acceptance, independence, letter and the engagement gate | SPEC-025 | S6 | T008 | back-filled | `backfill/test_acceptance_independence_letter.py`, `test_independence_gate.py`; AC-9 `legacy/spec025states.test.tsx` (TASK-992) |
-| 035 | red | Client portal, item visibility and client uploads | SPEC-020 | S7 | T014 | scheduled | |
-| 056 | red | Upload processing, part 3: previews | SPEC-029 | S7 | T014 | scheduled | |
-| 054 | red | Upload processing, part 1: scanning, workflow, extraction | SPEC-029 | S7 | T015 | scheduled | |
-| 055 | red | Upload processing, part 2: kinds and mechanical checks | SPEC-029 | S7 | T015 | scheduled | |
+| 035 | red | Client portal, item visibility and client uploads | SPEC-020 | S7 | T014 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140); AC-8 "received" is `uploaded` under DEC-09 |
+| 056 | red | Upload processing, part 3: previews | SPEC-029 | S7 | T014 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140) (AC-12) |
+| 054 | red | Upload processing, part 1: scanning, workflow, extraction | SPEC-029 | S7 | T015 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140); AC-3 follows SPEC-312 (`not_extracted`/`needs_ocr`); ED-018 to ED-021 open |
+| 055 | red | Upload processing, part 2: kinds and mechanical checks | SPEC-029 | S7 | T015 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140) (AC-5, AC-6, AC-8) |
 | 036 | red | Client connection flow, health, access log, revoke | SPEC-020 | S8 | T022 | scheduled | |
 | 052 | red | Ledger file import, part 1 | SPEC-028 | S8 | T022 | scheduled | |
 | 069 | red | GL detail, part 1: isolated parsing, immutable snapshots | SPEC-034 | S8 | T023 | scheduled | |
@@ -73,8 +73,8 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | Status | Rows |
 |---|---|
 | tranche 0 | 9 |
-| scheduled | 29 |
-| back-filled | 6 |
+| scheduled | 25 |
+| back-filled | 10 |
 | superseded | 11 |
 | **Total** | **55** |
 

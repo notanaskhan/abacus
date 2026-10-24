@@ -1119,7 +1119,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # F-03-T05 (migration 0068): work items and the assurance item's phase.
         "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
-        "assurance_work_items": frozenset({"phase", "auto_mode"}),
+        # A-01-T05 (0134): the EBP profile facts and the version; `phase` moves only through an
+        # assurance phase event's SECURITY DEFINER trigger (DEC-262).
+        "assurance_work_items": frozenset(
+            {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
+        ),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
         "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310 (TASK-321)
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
@@ -1164,7 +1168,12 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # P-01-T03 (migration 0090): preferences and deliveries.
         "notification_preferences": frozenset({"in_app", "email", "updated_at"}),
         "notification_deliveries": frozenset({"status", "message_ref"}),
-        "memberships": frozenset({"default_office_filter_id"}),  # P-01-T04 (migration 0091)
+        "memberships": frozenset(
+            {"default_office_filter_id"}  # P-01-T04 (migration 0091)
+            # G-01-T05 (0142): a person's template and attributes; firm roles stay in definers.
+            | {"role_template", "level", "job_title", "office_id", "service_lines"}
+            | {"access_ends_on", "offshore", "version"}
+        ),
         # P-04-T03 (migration 0093): a note's status and assignee; the gates projection.
         "reviewable_notes": frozenset({"status", "assignee_user_id"}),
         "human_gates": frozenset({"state", "assignee_user_id", "due_on", "updated_at"}),
@@ -1223,6 +1232,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "notifications": frozenset({"read_at"}),  # SPEC-013
         "client_invitations": frozenset(  # SPEC-015
             {"status", "accepted_by", "accepted_at", "expires_at"}
+            | {"terms_accepted_at"}  # P-08-T18 (0140)
         ),
         "support_sessions": frozenset(  # SPEC-012
             {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -1770,6 +1780,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
         | {"capacity_admit", "capacity_block"}
         | {"review_decision_reason_check", "review_reason_codes_list"}  # 0015 (TASK-019)
+        | {"assurance_phase_event_apply"}  # 0134 (A-01-T05): the phase moves only by an event
         | {"eval_eligible"}  # 0016 (TASK-020)
         | {"platform_spend_today", "engagement_spend_anomalies"}  # 0018 (TASK-022)
         | {"support_sessions_review"}  # 0023 (TASK-027)
@@ -1782,6 +1793,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0033 (TASK-041): staff invitations, memberships, firm roles and revocation.
         | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
         | {"membership_set_firm_role", "membership_revoke"}
+        # 0142 (G-01-T05): deactivation with its reason, and this firm's staff sign-ins.
+        | {"membership_deactivate", "staff_last_sign_ins", "staff_sign_in_history"}
         | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
         | {"platform_control_state", "set_platform_control", "provision_firm"}  # 0086 (Q-01-T19)
         | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
@@ -1801,9 +1814,14 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_mfa_enrol", "portal_mfa_complete", "portal_mfa_enrolled"}  # 0133
         | {"portal_session_mark_mfa", "portal_device_trust", "portal_device_check"}  # 0133
         | {"portal_access_revoke"}  # 0133
+        | {"portal_invitation_preview", "portal_invitation_start"}  # 0140
+        | {"portal_invitee_resolve", "portal_access_revoke_except"}  # 0140
+        | {"portal_mfa_begin_session"}  # 0140
+        | {"portal_session_mark_device", "client_invitations_revoke_by"}  # 0140 (DEC-277)
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112
+        | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

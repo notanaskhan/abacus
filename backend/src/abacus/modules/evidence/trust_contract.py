@@ -3,8 +3,8 @@
 Citations v2, the source viewer, logged PII reveal and password unlock as a derivation. Each
 family sits behind its own flag. Off, its routes answer 404; on, 501 `not_implemented` until its
 service lands:
-- `evidence.citations_v2`: citations; P-03-T05;
-- `evidence.viewer_v1`: the viewer; P-03-T07;
+- `evidence.citations_v2`: citations; the two reads are served (P-03-T08), relink is P-03-T12;
+- `evidence.viewer_v1`: the viewer; served (P-03-T09);
 - `evidence.pii_reveal`: reveal; P-03-T12;
 - `evidence.viewer_unlock`: unlock; P-03-T14.
 `POST /v1/citations` is reserved: 501 until its first anchor consumer.
@@ -18,11 +18,12 @@ Shapes per P-03 §4.3 and `docs/contracts/c04-citations-viewer.md`. Hard rules:
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Path, Query
+from fastapi import Depends, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from abacus.kernel._flags import (
@@ -35,6 +36,21 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.modules.evidence.citations.display import (
+    CitationFilters,
+    CitationView,
+    citation_display,
+    citation_list,
+)
+from abacus.modules.evidence.routes import (
+    _png_response,  # pyright: ignore[reportPrivateUsage] -- the module's own PNG answer
+)
+from abacus.modules.evidence.viewer import (
+    viewer_manifest,
+    viewer_page,
+    viewer_regions,
+    viewer_search,
+)
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -75,9 +91,14 @@ Rect = Annotated[list[float], Field(min_length=4, max_length=4)]
 router = AbacusRouter(prefix="/v1", tags=["trust kit"])
 
 
-async def _stub(ctx: AuthContext, gate: Flag) -> NoReturn:
+async def _gate(ctx: AuthContext, gate: Flag) -> None:
+    """A family's flag: off, its routes answer 404 (the repo's stub convention)."""
     if not await flag_enabled(ctx.tenant, gate):
         raise NotFound(gate.name)
+
+
+async def _stub(ctx: AuthContext, gate: Flag) -> NoReturn:
+    await _gate(ctx, gate)
     raise NotImplementedYet
 
 
@@ -154,6 +175,10 @@ class CitationCreateIn(BaseModel):
     locator: Annotated[CitationLocatorIn, classified("internal")]
 
 
+def _citation_out(view: CitationView) -> CitationV2Out:
+    return CitationV2Out.model_validate(asdict(view))
+
+
 @router.get(
     "/citations/{citation_id}",
     action="citation.read",
@@ -162,7 +187,8 @@ class CitationCreateIn(BaseModel):
 )
 async def get_citation_route(citation_id: UUID, ctx: Ctx) -> CitationV2Out:
     """AC1.5, AC2.1: one citation; walled or unknown answers 404, a client principal 403."""
-    await _stub(ctx, EVIDENCE_CITATIONS_V2)
+    await _gate(ctx, EVIDENCE_CITATIONS_V2)
+    return _citation_out(await citation_display(ctx, citation_id))
 
 
 @router.get(
@@ -184,8 +210,23 @@ async def list_citations_route(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> ListPage[CitationV2Out]:
     """AC2.2, AC2.6, AC3.2, AC3.6: an anchor's stack (by `n`), a section's list, the rows a
-    version's figures are cited by. Walled citations are omitted with no hidden count."""
-    await _stub(ctx, EVIDENCE_CITATIONS_V2)
+    version's figures are cited by. Walled citations are omitted with no hidden count.
+    `host_ref` is `<anchor_type>:<anchor_id>` (DEC-265)."""
+    await _gate(ctx, EVIDENCE_CITATIONS_V2)
+    found = await citation_list(
+        ctx,
+        CitationFilters(
+            anchor_type, anchor_id, anchor_ref, host_ref, section_id, source_version_id, kind
+        ),
+        cursor=cursor,
+        limit=limit,
+    )
+    return ListPage[CitationV2Out](
+        items=[_citation_out(v) for v in found.items],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+    )
 
 
 @router.post(
@@ -299,8 +340,11 @@ VersionId = Annotated[UUID, Path()]
     errors=(501,),
 )
 async def viewer_manifest_route(version_id: VersionId, ctx: Ctx) -> ViewerManifestOut:
-    """AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404."""
-    await _stub(ctx, EVIDENCE_VIEWER_V1)
+    """AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404. Until
+    masked renditions exist (P-03-T15) a rendered version reads `processing`, reason
+    `preview_outdated` (DEC-266)."""
+    await _gate(ctx, EVIDENCE_VIEWER_V1)
+    return ViewerManifestOut.model_validate(asdict(await viewer_manifest(ctx, version_id)))
 
 
 @router.get(
@@ -313,10 +357,11 @@ async def viewer_page_route(
     version_id: VersionId,
     page_no: Annotated[int, Path(ge=1, le=5000)],
     ctx: Ctx,
-) -> bytes:
+) -> Response:
     """AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made
-    before masking."""
-    await _stub(ctx, EVIDENCE_VIEWER_V1)
+    before masking. The read leaves an access event first (Q-02-T20)."""
+    await _gate(ctx, EVIDENCE_VIEWER_V1)
+    return _png_response(await viewer_page(ctx, version_id, page_no))
 
 
 @router.get(
@@ -331,22 +376,26 @@ async def viewer_regions_route(
     match_ids: Annotated[list[str] | None, Query(max_length=200)] = None,
 ) -> ViewerRegionsOut:
     """AC3.1, AC3.6: where the cited matches are, in page points."""
-    await _stub(ctx, EVIDENCE_VIEWER_V1)
+    await _gate(ctx, EVIDENCE_VIEWER_V1)
+    found = await viewer_regions(ctx, version_id, match_ids)
+    return ViewerRegionsOut.model_validate({"items": [asdict(r) for r in found]})
 
 
 @router.get(
     "/evidence-versions/{version_id}/search",
     action="evidence.read",
     response_model=ViewerSearchOut,
-    errors=(501,),
+    errors=(409, 501),
 )
 async def viewer_search_route(
     version_id: VersionId,
     ctx: Ctx,
-    q: Annotated[str, Query(min_length=1, max_length=200)],
+    q: Annotated[str, Query(min_length=3, max_length=200)],
 ) -> ViewerSearchOut:
-    """AC3.9: page rects only, at most 200; the query is never logged."""
-    await _stub(ctx, EVIDENCE_VIEWER_V1)
+    """AC3.9: page rects only, at most 200, over pages scanned for PII only (409
+    `preview_outdated` when none is); logged as a content read; the query is never logged."""
+    await _gate(ctx, EVIDENCE_VIEWER_V1)
+    return ViewerSearchOut.model_validate(asdict(await viewer_search(ctx, version_id, q)))
 
 
 # --- Logged reveal and unlock (human only) --------------------------------------------------

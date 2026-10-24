@@ -4,8 +4,8 @@
 import type { Manifest } from "./types";
 
 export const porScreens = {
-  // P-08-T09: a, b, e, f, g and the 390 layout on fixtures, in the portal entry at /sign-in
-  // (routes/portal), outside the firm's route tree, so it carries no firm path.
+  // P-08-T09, T19: every artboard (a to g, c′ and 390) on fixtures, in the portal entry at
+  // /sign-in and /accept (routes/portal), outside the firm's tree, so it carries no firm path.
   "POR-01": {
     name: "Portal sign-in · Brightwater Hale",
     status: "fixture",

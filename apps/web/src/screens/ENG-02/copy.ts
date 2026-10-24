@@ -9,10 +9,35 @@ export const COPY = {
   tabs: {
     label: "Engagement sections",
     overview: "Overview",
+    dashboard: "Dashboard",
+    board: "Board",
     workItems: "Work items",
     team: "Team",
     letter: "Letter & terms",
+    budget: "Budget",
   },
+  /** R2: the gear at the right end of the tabsbar; it opens ENG-11 (planned). */
+  gear: "Engagement settings",
+  /** The planned tabs' hosts in fixture builds (P-07-T28): their content is the target's. */
+  planned: {
+    dashboard: "Opens ENG-12 · the dashboard inside this record (see ENG-02f).",
+    board: "Opens ENG-10 · the board inside this record (see ENG-02g).",
+    budget: "Opens ENG-06 · budget, time and AI effort; Billing opens ENG-08.",
+    team: "Opens ENG-05 · team and roles",
+  },
+  /** a: under the approver of record, for a non-attest client. */
+  skeNotRequired: (client: string) =>
+    `SKE designation not required — ${client} is not an attest client.`,
+  roles: {
+    engagement_partner: "Engagement partner",
+    manager: "Manager",
+    senior: "Senior",
+    staff: "Staff",
+    reviewer: "Reviewer",
+    eqr_reviewer: "EQR reviewer",
+    specialist: "Specialist",
+    client_service: "Client service",
+  } as Readonly<Record<string, string>>,
   rail: {
     title: "Summary",
     bands: {
@@ -54,6 +79,9 @@ export const COPY = {
   group: {
     gates: "Gates",
     workItems: "Work items",
+    /** a: the close engagement's group ("7 of 12" is data). */
+    monthly: "Monthly closes",
+    team: "Team",
   },
   banner: {
     g3: (person: string, d: string) =>

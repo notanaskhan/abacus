@@ -418,3 +418,5 @@ export function specimenById(id: string): Specimen | undefined {
 
 // The seed names and figures specimens draw (F-05-T33), for the app's footing test.
 export * as SPECIMEN_SEED from "./seed-figures";
+// P-03-T07: the synthetic page images, for the C4 fixture handlers' page route.
+export { FORM_PAGE_PNG, STATEMENT_PAGE_PNG } from "./viewer-pages";

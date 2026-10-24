@@ -36,12 +36,11 @@ from abacus.modules.identity.api import (
     STAFF,
     AbacusRoute,
     current_context,
-    current_identity,
     current_member,
     current_signed_in,
     current_staff,
 )
-from abacus.modules.identity.routing import portal_public, pre_session
+from abacus.modules.identity.routing import current_invitee, portal_public, pre_session
 from abacus_tools.quality.banned_patterns import PUBLIC_ROUTE_EXCEPTIONS
 
 # The authentication each route marker needs; every matrix action needs `current_context`.
@@ -49,7 +48,9 @@ MARKER_AUTH: dict[str, Callable[..., object]] = {
     SELF: current_signed_in,
     STAFF: current_staff,
     OWN: current_member,
-    IDENTITY: current_identity,
+    # P-08-T18 (DEC-275): the hosted identity, or a portal session's person before any grant;
+    # sign-up and the staff acceptance also take `current_identity` alone at the route.
+    IDENTITY: current_invitee,
     PRE_SESSION: pre_session,
     PORTAL_PUBLIC: portal_public,
 }

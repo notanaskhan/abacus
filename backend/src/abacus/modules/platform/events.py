@@ -19,3 +19,24 @@ class TenantProvisioned(DomainEvent):
     plan: Annotated[str, classified("internal")]
     synthetic: Annotated[bool, classified("internal")]
     operator: Annotated[str, classified("internal")]
+
+
+class IncidentRecorded(DomainEvent):
+    """Q-02-T33: a firm's QI recorded a security incident (`incident_recorded`, C16: the QI and
+    partner-level members, never the person who recorded it)."""
+
+    event_type: ClassVar[str] = "incident.recorded"
+
+    incident_id: Annotated[UUID, classified("internal")]
+    notification_event: Annotated[bool, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+
+
+class IncidentPropagated(DomainEvent):
+    """Q-02-T33 (RB-27): platform staff propagated an Accrued incident into this firm's register
+    (`incident_from_accrued`, C16: the QI and firm admins, email even with digests on)."""
+
+    event_type: ClassVar[str] = "incident.propagated"
+
+    incident_id: Annotated[UUID, classified("internal")]
+    notification_event: Annotated[bool, classified("internal")]

@@ -212,3 +212,9 @@ class AssuranceWorkItem(Base):
     standards_set_id: Mapped[UUID | None]
     auto_mode: Mapped[bool] = mapped_column(server_default=FetchedValue())
     is_group_audit: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    # A-01-T05 (0134): the EBP profile facts and the record-mode phase stamps.
+    ebp_plan_kind: Mapped[str | None]
+    limited_scope_103a3c: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    phase_source: Mapped[str] = mapped_column(server_default=FetchedValue())
+    phase_changed_at: Mapped[datetime | None]
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())

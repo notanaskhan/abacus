@@ -4,6 +4,12 @@ import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
+import { ADM01 } from "./ADM-01";
+import {
+  type Adm01State,
+  STATES as ADM01_STATES,
+  scenarios as adm01Scenarios,
+} from "./ADM-01/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -33,6 +39,13 @@ import {
   type Cli02State,
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
+import { EngagementsIndex } from "./ENG-01";
+import {
+  STATES as ENG01_STATES,
+  SEARCH as ENG01_SEARCH,
+  type Eng01State,
+  scenarios as eng01Scenarios,
+} from "./ENG-01/scenarios";
 import { EngagementRecordPage } from "./ENG-02";
 import { ENG03 } from "./ENG-03";
 import {
@@ -44,6 +57,7 @@ import {
 import {
   OPENS as ENG02_OPENS,
   STATES as ENG02_STATES,
+  TABS as ENG02_TABS,
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
@@ -72,6 +86,18 @@ import { STATES, type Shl01State, scenarios } from "./SHL-01/scenarios";
 import { SHL03 } from "./SHL-03";
 import { SHL04 } from "./SHL-04";
 import { SHL06 } from "./SHL-06";
+import { SHL07 } from "./SHL-07/artboard";
+import {
+  STATES as SHL07_STATES,
+  type Shl07State,
+  scenarios as shl07Scenarios,
+} from "./SHL-07/scenarios";
+import { SHL08 } from "./SHL-08/artboard";
+import {
+  STATES as SHL08_STATES,
+  type Shl08State,
+  scenarios as shl08Scenarios,
+} from "./SHL-08/scenarios";
 import { RequestComposer } from "./SHL-14";
 import {
   OPENS as SHL14_OPENS,
@@ -239,6 +265,48 @@ function Bnd02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("BND-02", { title: "Binder builder & tracker", Component: Bnd02Artboard });
 
+// ADM-01 a–f (G-01-T07): the T12 frame inside the firm shell, the firm pill pressed.
+function Adm01Frame({ state }: { state: Adm01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/general" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <ADM01 />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm01State = ADM01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-01", { title: "Settings home & firm profile", Component: Adm01Artboard });
+
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -274,6 +342,43 @@ function Cli01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-01", { title: "Clients index", Component: Cli01Artboard });
+
+function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/engagements" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        {/* Rows open ENG-02 in the product; the artboard keeps that control (and its keyboard path). */}
+        <EngagementsIndex initial={ENG01_SEARCH[state]} onOpen={() => undefined} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Eng01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng01State = ENG01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Eng01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ENG-01", { title: "Engagements index", Component: Eng01Artboard });
 
 function Cli02Frame({ state }: { state: Cli02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -335,7 +440,12 @@ function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
   });
   return (
     <div data-artboard={state}>
-      <EngagementRecordPage engagementId={ENG02_OPENS[state]} toolbar={bar.toolbar} frame />
+      <EngagementRecordPage
+        engagementId={ENG02_OPENS[state]}
+        initialTab={ENG02_TABS[state]}
+        toolbar={bar.toolbar}
+        frame
+      />
     </div>
   );
 }
@@ -532,3 +642,43 @@ function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-03", { title: "Documents · Feld 2025 Binder", Component: Por03Artboard });
+
+// SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.
+function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl07State = SHL07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL07 key={state} state={state} /> : null;
+}
+
+registerScreen("SHL-07", { title: "Citation popover", Component: Shl07Artboard });
+
+// SHL-08 (P-03-T07): the source viewer's fixtures, a–f and h, on the E5 shell until P-03-T14.
+function Shl08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl08State = SHL08_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl08Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL08 key={state} state={state} /> : null;
+}
+
+registerScreen("SHL-08", { title: "Source viewer · drawer and pane", Component: Shl08Artboard });

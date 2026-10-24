@@ -244,6 +244,21 @@ def _check_unexplained_ignore(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "type-checker ignore without a reason after it")
 
 
+_FLAG_KEYS = frozenset({"x-tri", "x-phi", "x-pii-kind"})
+
+
+def _check_classification_flag_keys(src: SourceFile) -> Iterator[Finding]:
+    """CLS-001 (ADR-167): the flag keys are written by `classified()` and read by the path
+    helpers in `kernel/classification.py`; anywhere else they mean a hand-set or hand-read flag."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and node.value in _FLAG_KEYS:
+            yield Finding(
+                node.lineno,
+                f"{node.value!r}: set flags with classified(tri=, phi=, pii_kind=) and read them "
+                "with tri_paths, phi_paths or pii_paths",
+            )
+
+
 def _check_unexplained_any(src: SourceFile) -> Iterator[Finding]:
     import_lines: set[int] = set()
     any_lines: set[int] = set()
@@ -621,6 +636,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/portal/auth/refresh"}
     # P-08-T17 (ADR-168): the second step and its first-time setup, under `PRE_SESSION`.
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
+    # P-08-T18 (DEC-139): the invitation preview, under `PRE_SESSION`.
+    | {"/v1/invitations/preview"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"
@@ -1006,6 +1023,9 @@ LIST_EXEMPT = frozenset(
         # SPEC-013: notification recipients (the platform resolving who to tell, never returned
         # to a caller) and the idempotent insert's RETURNING.
         ("src/abacus/modules/identity/repository.py", "active_firm_admins"),
+        # Q-02-T33: the incident register's recipients (QI and partners), same footing.
+        ("src/abacus/modules/identity/repository.py", "active_security_admins"),
+        ("src/abacus/modules/identity/repository.py", "active_partner_members"),
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
@@ -1107,6 +1127,12 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
+        # P-03-T08, T09: the events of citations already read through `visible()` or authorised
+        # on; one source's PII regions and one preview's page rows, after the viewer or the
+        # citation reader authorised `evidence.read` / `citation.read` on that source.
+        ("src/abacus/modules/evidence/repository.py", "events_of"),
+        ("src/abacus/modules/evidence/repository.py", "pii_regions_of"),
+        ("src/abacus/modules/evidence/repository.py", "preview_pages_of"),
         # SPEC-316 (TASK-345): firm taxonomy content (after a firm-level check) and a mapping
         # set's edits (after authorising on its engagement).
         ("src/abacus/modules/ledger/mapping_repository.py", "grouping_sets"),
@@ -1820,6 +1846,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
             "tests/security/support.py",  # the security suite seeds as the superuser
+            "tests/contracts/undo/support.py",  # P-04-T13: the Undo suite seeds as the superuser
+            # P-04-T13: the human-only CHECKs and insert-only rules, as the app role and the owner
+            "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/test_seed_dev.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
@@ -1922,6 +1951,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "tests/integration/*",
             "tests/security/conftest.py",  # the suite's database (as integration's conftest)
+            "tests/contracts/undo/conftest.py",  # P-04-T13: the Undo suite's own database
         ),
     ),
     Rule(
@@ -1956,6 +1986,8 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",
             "tests/integration/test_schema_check_db.py",
+            # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
+            "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
@@ -2219,6 +2251,14 @@ RULES: list[Rule | TreeRule] = [
         check=_check_unstructured_logging,
         include=("src/abacus/*",),
         exclude=("src/abacus/kernel/logging.py",),
+    ),
+    Rule(
+        id="CLS-001",
+        description="Classification flags only through classified() and the path helpers",
+        adr="ADR-167, ADR-031",
+        check=_check_classification_flag_keys,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/kernel/classification.py",),
     ),
     Rule(
         id="ANY-001",

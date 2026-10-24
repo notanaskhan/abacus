@@ -14,6 +14,7 @@ from abacus.modules.engagements.contacts import (
     contact_portal_user,
     designate_contact,
     engagement_contacts,
+    invitation_parties,
     mfa_designated,
     work_item_scope,
 )
@@ -79,8 +80,11 @@ from abacus.modules.engagements.setup import (
     StoredFile,
     attach_acceptance_file,
     attach_letter_file,
+    attest_column,
     confirmed_for,
     confirmed_subquery,
+    g2_blocks,
+    independence_cleared,
     request_independence,
     require_open,
     stored_file,
@@ -95,6 +99,7 @@ from abacus.modules.engagements.slots import (
     UnknownWorkItemKind,
     WorkItemProvider,
     gate_fact,
+    gate_registered,
     judgments_of,
     progress_of,
     register_gate_provider,
@@ -104,15 +109,20 @@ from abacus.modules.engagements.slots import (
     work_item_provider,
 )
 from abacus.modules.engagements.work_items import (
+    WORK_ITEM_FUNCTIONS,
     AdvisoryProjectKind,
+    AssuranceItem,
     AssuranceKind,
     PortalWorkItem,
     WorkItemExists,
+    assign_work_item,
+    assurance_item,
     assurance_item_id,
     create_work_item,
+    lock_assurance_item,
     lock_engagement,
     portal_work_items,
-    set_assurance_phase,
+    set_assurance_profile,
 )
 from abacus.modules.engagements.workbook import (
     AccountRule,
@@ -125,12 +135,15 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
     register_attest_client,
+    register_attest_client_column,
     register_clients_of_engagements,
+    register_contact_activation,
     register_engagement_client,
     register_engagement_resource,
     register_engagement_service_line,
     register_engagements_of_scope,
     register_independence,
+    register_invitation_parties,
     register_member_added,
     register_mfa_requirement,
     register_scope_resolver,
@@ -139,6 +152,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.identity.api import register_gates as register_condition_gates
 from abacus.modules.organisations.api import (
     OverviewSection,
+    activate_contact,
     register_client_engagements,
     register_open_requests,
     register_overview_section,
@@ -174,6 +188,8 @@ register_work_item_functions(functions_on)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
+# P-07-T24 (ADR-164 item 3): the same flag as SQL, for `visible()` under `g2_blocks_view`.
+register_attest_client_column(attest_column)
 # F-03-T26 (ADR-146): the client-access scope kinds engagements owns.
 register_scope_resolver("work_item", work_item_scope)
 # F-03-T22: the two kinds engagements owns; tax, closes and notices register theirs.
@@ -181,6 +197,9 @@ register_work_item_kind("assurance", AssuranceKind())
 register_work_item_kind("advisory_project", AdvisoryProjectKind())
 register_scope_resolver("client", client_scope)
 register_scope_resolver("client_entity", client_entity_scope)
+# P-08-T18: POR-01 d's names, and the contact an accepted invitation activates (organisations').
+register_invitation_parties(invitation_parties)
+register_contact_activation(activate_contact)
 # P-08-T17 (DEC-34, DEC-63): approvers, signing officers and SKE designees need the second step.
 register_mfa_requirement("engagement_designation", mfa_designated)
 # F-03-T27 (ADR-145): the `client` scope kind reads through engagement visibility.
@@ -205,9 +224,11 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 __all__ = [
     "AUDIT_KINDS",
     "ROUTERS",
+    "WORK_ITEM_FUNCTIONS",
     "AccountRule",
     "ApprovedGuidance",
     "Area",
+    "AssuranceItem",
     "CheckFacts",
     "Designation",
     "Effort",
@@ -237,6 +258,8 @@ __all__ = [
     "WorkItemExists",
     "WorkItemProvider",
     "area_for",
+    "assign_work_item",
+    "assurance_item",
     "assurance_item_id",
     "attach_acceptance_file",
     "attach_letter_file",
@@ -253,11 +276,15 @@ __all__ = [
     "engagements_in_hold_scope",
     "entity_of",
     "firm_router",
+    "g2_blocks",
     "gate_client_data",
     "gate_fact",
+    "gate_registered",
     "get_ref",
+    "independence_cleared",
     "is_archived",
     "judgments_of",
+    "lock_assurance_item",
     "lock_engagement",
     "lock_ref",
     "methodology_router",
@@ -278,7 +305,7 @@ __all__ = [
     "router",
     "run_auto_retrieval",
     "service_line_of",
-    "set_assurance_phase",
+    "set_assurance_profile",
     "stored_file",
     "version_detail",
     "visible_among",

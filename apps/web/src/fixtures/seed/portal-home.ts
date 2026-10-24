@@ -42,6 +42,21 @@ export const NEUTRAL_BRANDING: PortalBrandingOut = {
 export const FIXTURE_CODE = "481027";
 /** f's mistyped code, one digit pair swapped. */
 export const MISTYPED_CODE = "481072";
+/** c and c′ (P-08-T19): the fixture authenticator shows the canvas's code too (fixtures only;
+ * a real TOTP changes every 30 seconds). */
+export const FIXTURE_TOTP = FIXTURE_CODE;
+/** c′'s 8 backup codes (16 Crockford base32 characters in four groups, as the BFF issues them;
+ * fixture values, never a real code). c's backup-code path accepts the first, once. */
+export const FIXTURE_BACKUP_CODES: readonly string[] = [
+  "7KQ2-M9XD-4HTP-WB3R",
+  "N6VC-2YJF-8RKS-QD5E",
+  "3PHM-WX7A-KD9N-T2GB",
+  "Y4RE-6CJZ-MQ8V-HS1K",
+  "D9TB-5NWF-2XKP-R7MA",
+  "Q2GS-H8VY-6EJD-4NCT",
+  "B5MK-R3XP-9WDT-ZJ6H",
+  "F8NA-4QYC-7SGM-2EVR",
+];
 
 const id = (label: string): string => stableId(`portal:${label}`);
 

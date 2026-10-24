@@ -20,8 +20,14 @@ export type AcceptIn = {
 
 /**
  * AcceptInvitationIn
+ *
+ * v2 (P-08-T18) adds the terms the invitee accepted (`InvitationAcceptV2In`'s field).
  */
 export type AcceptInvitationIn = {
+    /**
+     * Terms Version
+     */
+    terms_version?: number | null;
     /**
      * Token
      */
@@ -136,12 +142,16 @@ export type AcceptanceStartedOut = {
 
 /**
  * AcceptedInvitationOut
+ *
+ * `session` (v2, portal only): `signed_in` with the landing (the session accepted with
+ * continues), or the second step the new grants need, with its `mfa_token`.
  */
 export type AcceptedInvitationOut = {
     /**
      * Engagement Id
      */
     engagement_id: string;
+    session?: PortalSignInVerifyOut | null;
     /**
      * Tenant Id
      */
@@ -222,6 +232,38 @@ export type AccountsOut = {
      * Suggested Payables
      */
     suggested_payables: Array<string>;
+};
+
+/**
+ * AccruedIncidentFactsIn
+ *
+ * Accrued's facts, the same for every firm it touched.
+ */
+export type AccruedIncidentFactsIn = {
+    /**
+     * Confirmed At
+     */
+    confirmed_at: string;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
 };
 
 /**
@@ -990,6 +1032,46 @@ export type ArchiveOut = {
 };
 
 /**
+ * ArchiveRecordIn
+ *
+ * The external archive against a ready final binder export (interim G9): 409
+ * `final_export_required` or `export_stale` otherwise.
+ */
+export type ArchiveRecordIn = {
+    /**
+     * Export Id
+     */
+    export_id: string;
+    /**
+     * Firm Tool Ref
+     */
+    firm_tool_ref: string;
+};
+
+/**
+ * ArchiveRecordOut
+ */
+export type ArchiveRecordOut = {
+    /**
+     * Export Id
+     */
+    export_id: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string;
+    phase: AuditEngagementStatus;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * AreaOut
  */
 export type AreaOut = {
@@ -1095,6 +1177,531 @@ export type AttestBody = {
      * Attest
      */
     attest: boolean;
+};
+
+/**
+ * AuditArchiveOut
+ *
+ * The Archive cell: "Archive in 13 days" (clock from the release date + 60, on `kernel.clock`)
+ * or "Archived" with the firm-tool reference of an external archive (DV-4).
+ */
+export type AuditArchiveOut = {
+    /**
+     * Days Left
+     */
+    days_left?: number | null;
+    /**
+     * Firm Tool Ref
+     */
+    firm_tool_ref?: string | null;
+    /**
+     * State
+     */
+    state: 'archiving' | 'archived';
+};
+
+/**
+ * AuditBandOut
+ */
+export type AuditBandOut = {
+    /**
+     * Collapsed
+     */
+    collapsed?: boolean;
+    /**
+     * Key
+     */
+    key: 'overview' | 'planning' | 'group' | 'fieldwork' | 'completion' | 'reporting';
+    /**
+     * Rows
+     */
+    rows?: Array<AuditSectionRowOut>;
+};
+
+/**
+ * AuditBarOut
+ */
+export type AuditBarOut = {
+    /**
+     * Auto Mode
+     */
+    auto_mode?: boolean | null;
+    /**
+     * Methodology Label
+     */
+    methodology_label?: string | null;
+    /**
+     * Run Started At
+     */
+    run_started_at?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * AuditCockpitOut
+ *
+ * AUD-02's host: audit bar, overview card, bands of registered rows and the dock tabs.
+ * `allowed_actions` from `assurance.record_phase`, `engagement.update`, `export.create`,
+ * `agent.pause`; empty for metadata-only roles and archived work items.
+ */
+export type AuditCockpitOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    audit_bar: AuditBarOut;
+    /**
+     * Bands
+     */
+    bands?: Array<AuditBandOut>;
+    /**
+     * Dock Tabs
+     */
+    dock_tabs?: Array<'agent' | 'viewer'>;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    overview: AuditOverviewOut;
+    /**
+     * Phase Mode
+     */
+    phase_mode?: 'recorded' | 'derived';
+    /**
+     * Read Only Reason
+     */
+    read_only_reason?: 'archived' | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditEngagementStatus
+ */
+export type AuditEngagementStatus = 'planning' | 'fieldwork' | 'in_review' | 'completion' | 'ready_to_release' | 'released' | 'archiving' | 'archived';
+
+/**
+ * AuditIndexPage
+ *
+ * The P-36 envelope: `counts` per `audit_engagement` phase code **minus the active tile**
+ * (the tiles keep their own counts when one is pressed); `facets.segment` the segments with
+ * their counts (only registered segments the firm is entitled to); `facets.type`, `partner`,
+ * `office`, `period`. The tiles sum to `total`. No hidden-by-wall field.
+ */
+export type AuditIndexPage = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<AuditIndexRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    summary: AuditIndexSummaryOut;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * AuditIndexRowOut
+ *
+ * An AUD-01 row: metadata only, after `visible()` (INV-3). No amount, materiality or
+ * severity (AUD-01 AVOID).
+ */
+export type AuditIndexRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    archive?: AuditArchiveOut | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Ebp Plan Kind
+     */
+    ebp_plan_kind?: 'dc' | '403b' | 'db' | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Engagement Type
+     */
+    engagement_type: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit';
+    /**
+     * Is Group Audit
+     */
+    is_group_audit?: boolean;
+    /**
+     * Limited Scope 103A3C
+     */
+    limited_scope_103a3c?: boolean;
+    /**
+     * Manager Initials
+     */
+    manager_initials?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Office Name
+     */
+    office_name?: string | null;
+    /**
+     * Partner Initials
+     */
+    partner_initials?: string | null;
+    pbc?: AuditPbcOut | null;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    phase: AuditEngagementStatus;
+    /**
+     * Released On
+     */
+    released_on?: string | null;
+    /**
+     * Report Due On
+     */
+    report_due_on?: string | null;
+    /**
+     * Report Due Tone
+     */
+    report_due_tone?: 'past_due' | 'within_7_days' | 'within_30_days' | 'later' | null;
+    run_badge?: AuditRunBadgeOut | null;
+    /**
+     * Segment
+     */
+    segment: 'fs' | 'ebp' | 'review' | 'soc' | 'ia';
+    /**
+     * Tags
+     */
+    tags?: Array<AuditIndexTagOut>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditIndexSummaryOut
+ *
+ * The caption ("27 engagements · EBP 14 · FS audit 6 · Review 4 · Compilation/preparation
+ * 3"), over the same `visible()` predicate as the rows.
+ */
+export type AuditIndexSummaryOut = {
+    /**
+     * Compilation Preparation
+     */
+    compilation_preparation: number;
+    /**
+     * Ebp
+     */
+    ebp: number;
+    /**
+     * Fs Audit
+     */
+    fs_audit: number;
+    /**
+     * Internal Audit
+     */
+    internal_audit?: number;
+    /**
+     * Review
+     */
+    review: number;
+    /**
+     * Soc
+     */
+    soc?: number;
+};
+
+/**
+ * AuditIndexTagOut
+ *
+ * A tag from a registered index-tag provider (DV-10): code-built text, never model text.
+ */
+export type AuditIndexTagOut = {
+    /**
+     * Classification
+     */
+    classification: 'metadata' | 'content';
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * AuditOverviewOut
+ *
+ * The rail's OverviewCard.
+ */
+export type AuditOverviewOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Period Label
+     */
+    period_label?: string | null;
+    phase: AuditEngagementStatus;
+};
+
+/**
+ * AuditPbcOut
+ *
+ * "11 of 24": received over the client-visible requests of the work item's published PBC
+ * binders. The row's `pbc` is null before G3 (no published PBC binder, DEC-39).
+ */
+export type AuditPbcOut = {
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * AuditPhaseIn
+ *
+ * A record-mode forward move by a named person (409 `phase_backward`, `phase_skip`,
+ * `phase_follows_gate`).
+ */
+export type AuditPhaseIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    to: AuditEngagementStatus;
+};
+
+/**
+ * AuditPhaseOut
+ */
+export type AuditPhaseOut = {
+    /**
+     * Event Id
+     */
+    event_id: string;
+    from_phase: AuditEngagementStatus;
+    /**
+     * Mode
+     */
+    mode: 'recorded' | 'derived';
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    to_phase: AuditEngagementStatus;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditProfileIn
+ *
+ * The EBP label facts ("EBP DC · §103(a)(3)(C)"); a field left out is unchanged.
+ */
+export type AuditProfileIn = {
+    /**
+     * Ebp Plan Kind
+     */
+    ebp_plan_kind?: 'dc' | '403b' | 'db' | null;
+    /**
+     * Limited Scope 103A3C
+     */
+    limited_scope_103a3c?: boolean | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Standards Set Id
+     */
+    standards_set_id?: string | null;
+};
+
+/**
+ * AuditProfileOut
+ */
+export type AuditProfileOut = {
+    /**
+     * Ebp Plan Kind
+     */
+    ebp_plan_kind?: 'dc' | '403b' | 'db' | null;
+    /**
+     * Limited Scope 103A3C
+     */
+    limited_scope_103a3c: boolean;
+    /**
+     * Standards Set Id
+     */
+    standards_set_id?: string | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * AuditRunBadgeOut
+ *
+ * The "Processing" pill and its popover (AUD-01 d), from a C6 v1 engagement run only; the v1
+ * policy ticks never produce one (DV-11). `blocked_on_role` is the decider's role code.
+ */
+export type AuditRunBadgeOut = {
+    /**
+     * Blocked On Role
+     */
+    blocked_on_role?: 'partner' | 'manager' | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Run Number
+     */
+    run_number: number;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Started By Name
+     */
+    started_by_name: string;
+    /**
+     * Started By User Id
+     */
+    started_by_user_id: string;
+    /**
+     * Workpapers Complete
+     */
+    workpapers_complete: number;
+    /**
+     * Workpapers Total
+     */
+    workpapers_total: number;
+};
+
+/**
+ * AuditSectionRowOut
+ *
+ * A rail row from a registered section provider (DV-1): a missing provider hides the row.
+ * `sub_line` is code-built ("11 of 24 received", "Complete · 9:26 AM"), never model text.
+ */
+export type AuditSectionRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Blocked On Name
+     */
+    blocked_on_name?: string | null;
+    /**
+     * Blocked On User Id
+     */
+    blocked_on_user_id?: string | null;
+    /**
+     * Grammar
+     */
+    grammar: 'sub_line' | 'idle_pill' | 'link';
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Link
+     */
+    link: 'live' | 'planned';
+    /**
+     * Route
+     */
+    route: string;
+    section_state?: AuditSectionStatus | null;
+    /**
+     * Sub Line
+     */
+    sub_line?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Ref
+     */
+    work_item_ref: string;
 };
 
 /**
@@ -1464,14 +2071,20 @@ export type BinderRequestRowOut = {
      * Kind
      */
     kind: 'client_upload' | 'firm_provided';
+    latest_upload?: RequestLatestUploadOut | null;
     /**
      * Linked Count
      */
     linked_count?: number | null;
     /**
+     * Match Confidence
+     */
+    match_confidence?: number | null;
+    /**
      * Overdue
      */
     overdue: boolean;
+    owed_by?: RequestOwedByOut | null;
     /**
      * Requested At
      */
@@ -6881,12 +7494,23 @@ export type FirmRefIn = {
 
 /**
  * FirmRoleIn
+ *
+ * SPEC-024's firm role; with `role_template` (G-01-T05, AC4.2) the template, its level and
+ * the firm role it carries change together (`firm_role` is then a partner's oversight role).
  */
 export type FirmRoleIn = {
     /**
      * Firm Role
      */
-    firm_role: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
+    firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
+    /**
+     * Level
+     */
+    level?: 'partner' | 'manager' | 'senior' | 'staff' | 'seasonal' | 'admin' | null;
+    /**
+     * Role Template
+     */
+    role_template?: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security' | null;
 };
 
 /**
@@ -8332,6 +8956,194 @@ export type InboxFileOut = {
 };
 
 /**
+ * IncidentIn
+ *
+ * What the QI knows when recording; counts and encryption may be unknown yet.
+ */
+export type IncidentIn = {
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * IncidentOut
+ *
+ * One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;
+ * `clock_day` of `clock_days` have passed in the firm's time zone.
+ */
+export type IncidentOut = {
+    /**
+     * Accrued Confirmed At
+     */
+    accrued_confirmed_at?: string | null;
+    /**
+     * Accrued Ref
+     */
+    accrued_ref?: string | null;
+    /**
+     * Clock Day
+     */
+    clock_day: number;
+    /**
+     * Clock Days
+     */
+    clock_days: number;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Dpa Notice At
+     */
+    dpa_notice_at?: string | null;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Ftc Notify By
+     */
+    ftc_notify_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Notification Event
+     */
+    notification_event: boolean;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * IncidentPropagationEventOut
+ *
+ * One staff request (`requested`, `refused` with its reason code) or one run's end
+ * (`completed`, with the firms that failed every attempt).
+ */
+export type IncidentPropagationEventOut = {
+    /**
+     * Event
+     */
+    event: 'requested' | 'refused' | 'completed';
+    /**
+     * Failed Tenant Ids
+     */
+    failed_tenant_ids: Array<string>;
+    /**
+     * Firms
+     */
+    firms: number;
+    /**
+     * Identical
+     */
+    identical: number;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Refusal
+     */
+    refusal?: 'firm_not_found' | 'register_off' | 'facts_changed' | 'confirmed_out_of_order' | 'propagation_running' | 'firm_count' | null;
+    /**
+     * Staff Id
+     */
+    staff_id: string;
+    /**
+     * Written
+     */
+    written: number;
+};
+
+/**
+ * IncidentPropagationIn
+ */
+export type IncidentPropagationIn = {
+    facts: AccruedIncidentFactsIn;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Tenant Ids
+     */
+    tenant_ids: Array<string>;
+};
+
+/**
+ * IncidentPropagationLogOut
+ */
+export type IncidentPropagationLogOut = {
+    /**
+     * Items
+     */
+    items: Array<IncidentPropagationEventOut>;
+};
+
+/**
+ * IncidentPropagationOut
+ *
+ * `started`: the firms the run will write. `identical`: firms that already have this
+ * incident with these same facts, skipped rather than written again.
+ */
+export type IncidentPropagationOut = {
+    /**
+     * Accrued Ref
+     */
+    accrued_ref: string;
+    /**
+     * Identical
+     */
+    identical: Array<string>;
+    /**
+     * Started
+     */
+    started: Array<string>;
+};
+
+/**
  * IndependenceIn
  */
 export type IndependenceIn = {
@@ -8343,6 +9155,24 @@ export type IndependenceIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * InvitationAccessOut
+ */
+export type InvitationAccessOut = {
+    /**
+     * Item Count
+     */
+    item_count?: number | null;
+    /**
+     * Kind
+     */
+    kind: 'firm_invite' | 'colleague' | 'outside_org' | 'delegate';
+    /**
+     * Scope Label
+     */
+    scope_label: string;
 };
 
 /**
@@ -8392,6 +9222,56 @@ export type InvitationOut = {
      * Sent At
      */
     sent_at: string;
+};
+
+/**
+ * InvitationPreviewIn
+ *
+ * POST keeps the token out of URLs and logs.
+ */
+export type InvitationPreviewIn = {
+    /**
+     * Token
+     */
+    token: string;
+};
+
+/**
+ * InvitationPreviewOut
+ *
+ * POR-01 d. Every failure (expired, used, revoked, malformed, a staff member's) answers the
+ * same 404.
+ */
+export type InvitationPreviewOut = {
+    access: InvitationAccessOut;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Invitee Email
+     */
+    invitee_email: string;
+    /**
+     * Invitee Name
+     */
+    invitee_name?: string | null;
+    /**
+     * Organisation Name
+     */
+    organisation_name?: string | null;
+    /**
+     * Terms Url
+     */
+    terms_url?: string | null;
+    /**
+     * Terms Version
+     */
+    terms_version?: number | null;
 };
 
 /**
@@ -13343,6 +14223,50 @@ export type ReleaseOut = {
 };
 
 /**
+ * ReleaseRecordIn
+ *
+ * "Report released outside Accrued on Jul 29, 2026" (interim G8); a future date answers 422
+ * `release_date_future`.
+ */
+export type ReleaseRecordIn = {
+    /**
+     * Report Kind
+     */
+    report_kind: 'opinion' | 'no_report';
+    /**
+     * Report Released On
+     */
+    report_released_on: string;
+};
+
+/**
+ * ReleaseRecordOut
+ */
+export type ReleaseRecordOut = {
+    /**
+     * Archive Due On
+     */
+    archive_due_on: string;
+    phase: AuditEngagementStatus;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Report Kind
+     */
+    report_kind: 'opinion' | 'no_report';
+    /**
+     * Report Released On
+     */
+    report_released_on: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * RemovedOut
  */
 export type RemovedOut = {
@@ -13809,6 +14733,42 @@ export type RequestItemV2Out = {
      * Wave
      */
     wave?: 'planning' | 'year_end' | 'sample' | null;
+};
+
+/**
+ * RequestLatestUploadOut
+ */
+export type RequestLatestUploadOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Path Label
+     */
+    path_label: string;
+    /**
+     * Uploaded On
+     */
+    uploaded_on: string;
+    /**
+     * Uploader Kind
+     */
+    uploader_kind: 'client' | 'third_party' | 'firm' | 'connection';
+};
+
+/**
+ * RequestOwedByOut
+ */
+export type RequestOwedByOut = {
+    /**
+     * Display
+     */
+    display: string;
+    /**
+     * Kind
+     */
+    kind: 'client_contact' | 'third_party' | 'organisation';
 };
 
 /**
@@ -15901,6 +16861,125 @@ export type SnapshotOut = {
 };
 
 /**
+ * SourceDocumentGroupOut
+ *
+ * A category band ("Plan documents · 3 of 5"). `counted` is false for a band outside the
+ * totals ("Sample-driven · 0", populated by A-03).
+ */
+export type SourceDocumentGroupOut = {
+    /**
+     * Category Id
+     */
+    category_id?: string | null;
+    /**
+     * Counted
+     */
+    counted?: boolean;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Rows
+     */
+    rows?: Array<SourceDocumentRowOut>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * SourceDocumentRowOut
+ *
+ * A request row across the work item's PBC binders, with the C5 v1.1 additive fields
+ * (A-01-T10). Requested rows carry no upload, glyph or Linked count.
+ */
+export type SourceDocumentRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    latest_upload?: RequestLatestUploadOut | null;
+    /**
+     * Linked Count
+     */
+    linked_count?: number | null;
+    /**
+     * Match Confidence
+     */
+    match_confidence?: number | null;
+    /**
+     * Overdue
+     */
+    overdue: boolean;
+    owed_by?: RequestOwedByOut | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Requested At
+     */
+    requested_at?: string | null;
+    /**
+     * Returned Reason
+     */
+    returned_reason?: string | null;
+    screening?: EvidenceScreeningStatus | null;
+    status: RequestStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SourceDocumentsOut
+ *
+ * 24 requests = 11 received + 1 needs review + 12 requested at E0; the groups foot to the
+ * totals and the rail's "11 of 24 received" reads the same numbers.
+ */
+export type SourceDocumentsOut = {
+    /**
+     * Groups
+     */
+    groups?: Array<SourceDocumentGroupOut>;
+    /**
+     * Needs Review
+     */
+    needs_review: number;
+    /**
+     * Received
+     */
+    received: number;
+    /**
+     * Requested
+     */
+    requested: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * SourceOut
  */
 export type SourceOut = {
@@ -15965,8 +17044,19 @@ export type StaffInvitationOut = {
 
 /**
  * StaffInviteIn
+ *
+ * SPEC-024's invitation, grown for ADM-02c (G-01-T05): the template and what the membership
+ * takes on acceptance. A seasonal invite needs `access_ends_on` (422 `access_ends_required`).
  */
 export type StaffInviteIn = {
+    /**
+     * Access Ends On
+     */
+    access_ends_on?: string | null;
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
     /**
      * Email
      */
@@ -15975,6 +17065,34 @@ export type StaffInviteIn = {
      * Firm Role
      */
     firm_role?: 'firm_admin' | 'practice_leader' | 'quality_partner' | 'security_admin' | null;
+    /**
+     * Level
+     */
+    level?: 'partner' | 'manager' | 'senior' | 'staff' | 'seasonal' | 'admin' | null;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Offshore
+     */
+    offshore?: boolean;
+    /**
+     * Role Template
+     */
+    role_template?: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security' | null;
+    /**
+     * Service Lines
+     */
+    service_lines?: Array<'audit' | 'tax' | 'cas' | 'advisory'>;
+    /**
+     * Team Ids
+     */
+    team_ids?: Array<string>;
+    /**
+     * Title
+     */
+    title?: string | null;
 };
 
 /**
@@ -15989,16 +17107,49 @@ export type StaffInvitedOut = {
 
 /**
  * StaffListOut
+ *
+ * ADM-02a on the list envelope (G-01-T05): `items` in bands, `counts` per band over the
+ * filters, firm-wide `tallies`. `members` and `invitations` are SPEC-024's shape, kept for the
+ * legacy people screen until G-01-T17 retires it (unfiltered).
  */
 export type StaffListOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
     /**
      * Invitations
      */
     invitations: Array<StaffInvitationOut>;
     /**
+     * Items
+     */
+    items: Array<StaffRowV2Out>;
+    /**
      * Members
      */
     members: Array<StaffMemberOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    tallies: StaffTalliesOut;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -16030,7 +17181,8 @@ export type StaffMemberOut = {
 /**
  * StaffRowV2Out
  *
- * ADM-02a's row: the v2 shape `GET /v1/firm/staff` grows into (G-01-T05).
+ * ADM-02a's row: the v2 shape `GET /v1/firm/staff` grew into (G-01-T05). A pending
+ * invitation is a row too (ADM-02f): `invitation_id` set, `user_id` null.
  */
 export type StaffRowV2Out = {
     /**
@@ -16046,6 +17198,10 @@ export type StaffRowV2Out = {
      */
     band: 'partners' | 'managers' | 'seniors' | 'staff' | 'seasonal' | 'operations';
     /**
+     * Deactivated On
+     */
+    deactivated_on?: string | null;
+    /**
      * Display Name
      */
     display_name: string;
@@ -16057,6 +17213,10 @@ export type StaffRowV2Out = {
      * Invitation Expires On
      */
     invitation_expires_on?: string | null;
+    /**
+     * Invitation Id
+     */
+    invitation_id?: string | null;
     /**
      * Last Sign In At
      */
@@ -16093,7 +17253,61 @@ export type StaffRowV2Out = {
     /**
      * User Id
      */
-    user_id: string;
+    user_id: string | null;
+};
+
+/**
+ * StaffTalliesOut
+ *
+ * ADM-02a's tally strip, firm-wide (never filtered). `seats_used` counts pending invitations
+ * (AC3.4); `seats_total` is the provisioned seat count (DEC-285); `walls_active` is present only
+ * for a reader who may list walls (AC2.4).
+ */
+export type StaffTalliesOut = {
+    /**
+     * Operations
+     */
+    operations: number;
+    /**
+     * Partners
+     */
+    partners: number;
+    /**
+     * Professionals
+     */
+    professionals: number;
+    /**
+     * Seasonal
+     */
+    seasonal: number;
+    /**
+     * Seasonal Access Ends On
+     */
+    seasonal_access_ends_on?: string | null;
+    /**
+     * Seats Pending
+     */
+    seats_pending: number;
+    /**
+     * Seats Total
+     */
+    seats_total?: number | null;
+    /**
+     * Seats Used
+     */
+    seats_used: number;
+    /**
+     * Signed In Of
+     */
+    signed_in_of: number;
+    /**
+     * Sso Mfa
+     */
+    sso_mfa: number;
+    /**
+     * Walls Active
+     */
+    walls_active?: number | null;
 };
 
 /**
@@ -18291,6 +19505,475 @@ export type ExportRunTraceResponses = {
 };
 
 export type ExportRunTraceResponse = ExportRunTraceResponses[keyof ExportRunTraceResponses];
+
+export type AuditsIndexData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Segment
+         */
+        segment?: 'fs' | 'ebp' | 'review' | 'soc' | 'ia' | null;
+        /**
+         * Type
+         */
+        type?: 'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | null;
+        /**
+         * Phase
+         */
+        phase?: AuditEngagementStatus | null;
+        /**
+         * Partner
+         */
+        partner?: string | null;
+        /**
+         * Office
+         */
+        office?: string | null;
+        /**
+         * Due
+         */
+        due?: 'any' | '7d' | '14d' | '30d';
+        /**
+         * Period
+         */
+        period?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/audits';
+};
+
+export type AuditsIndexErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditsIndexError = AuditsIndexErrors[keyof AuditsIndexErrors];
+
+export type AuditsIndexResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditIndexPage;
+};
+
+export type AuditsIndexResponse = AuditsIndexResponses[keyof AuditsIndexResponses];
+
+export type AuditArchiveRecordData = {
+    body: ArchiveRecordIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/archive-record';
+};
+
+export type AuditArchiveRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditArchiveRecordError = AuditArchiveRecordErrors[keyof AuditArchiveRecordErrors];
+
+export type AuditArchiveRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: ArchiveRecordOut;
+};
+
+export type AuditArchiveRecordResponse = AuditArchiveRecordResponses[keyof AuditArchiveRecordResponses];
+
+export type AuditCockpitData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/cockpit';
+};
+
+export type AuditCockpitErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditCockpitError = AuditCockpitErrors[keyof AuditCockpitErrors];
+
+export type AuditCockpitResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditCockpitOut;
+};
+
+export type AuditCockpitResponse = AuditCockpitResponses[keyof AuditCockpitResponses];
+
+export type AuditPhaseData = {
+    body: AuditPhaseIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/phase';
+};
+
+export type AuditPhaseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditPhaseError = AuditPhaseErrors[keyof AuditPhaseErrors];
+
+export type AuditPhaseResponses = {
+    /**
+     * Successful Response
+     */
+    201: AuditPhaseOut;
+};
+
+export type AuditPhaseResponse = AuditPhaseResponses[keyof AuditPhaseResponses];
+
+export type AuditProfileData = {
+    body: AuditProfileIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/profile';
+};
+
+export type AuditProfileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditProfileError = AuditProfileErrors[keyof AuditProfileErrors];
+
+export type AuditProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditProfileOut;
+};
+
+export type AuditProfileResponse = AuditProfileResponses[keyof AuditProfileResponses];
+
+export type AuditReleaseRecordData = {
+    body: ReleaseRecordIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/release-record';
+};
+
+export type AuditReleaseRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditReleaseRecordError = AuditReleaseRecordErrors[keyof AuditReleaseRecordErrors];
+
+export type AuditReleaseRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: ReleaseRecordOut;
+};
+
+export type AuditReleaseRecordResponse = AuditReleaseRecordResponses[keyof AuditReleaseRecordResponses];
+
+export type AuditSourceDocumentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: {
+        /**
+         * Binder
+         */
+        binder?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Sort
+         */
+        sort?: 'missing_first' | 'received_first';
+    };
+    url: '/v1/audits/{work_item_id}/source-documents';
+};
+
+export type AuditSourceDocumentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditSourceDocumentsError = AuditSourceDocumentsErrors[keyof AuditSourceDocumentsErrors];
+
+export type AuditSourceDocumentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SourceDocumentsOut;
+};
+
+export type AuditSourceDocumentsResponse = AuditSourceDocumentsResponses[keyof AuditSourceDocumentsResponses];
 
 export type CallbackData = {
     body?: never;
@@ -35531,6 +37214,10 @@ export type ViewerSearchErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -37396,10 +39083,6 @@ export type RoleTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RoleTemplatesError = RoleTemplatesErrors[keyof RoleTemplatesErrors];
@@ -37520,6 +39203,53 @@ export type SearchRequestItemsResponses = {
 };
 
 export type SearchRequestItemsResponse = SearchRequestItemsResponses[keyof SearchRequestItemsResponses];
+
+export type RecordIncidentData = {
+    body: IncidentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security/incidents';
+};
+
+export type RecordIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RecordIncidentError = RecordIncidentErrors[keyof RecordIncidentErrors];
+
+export type RecordIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    201: IncidentOut;
+};
+
+export type RecordIncidentResponse = RecordIncidentResponses[keyof RecordIncidentResponses];
 
 export type ServiceLinesData = {
     body?: never;
@@ -37802,7 +39532,40 @@ export type StaffData = {
         'X-Abacus-Tenant'?: string | null;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Role Template
+         */
+        role_template?: 'partner' | 'manager' | 'tax_reviewer' | 'senior' | 'staff' | 'tax_preparer' | 'firm_admin' | 'it_security' | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Team Id
+         */
+        team_id?: string | null;
+        /**
+         * Status
+         */
+        status?: MembershipStatus | null;
+        /**
+         * Band
+         */
+        band?: 'partners' | 'managers' | 'seniors' | 'staff' | 'seasonal' | 'operations' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
     url: '/v1/firm/staff';
 };
 
@@ -37866,6 +39629,10 @@ export type InviteStaffErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -38026,10 +39793,6 @@ export type PersonErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PersonError = PersonErrors[keyof PersonErrors];
@@ -38086,10 +39849,6 @@ export type UpdatePersonErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdatePersonError = UpdatePersonErrors[keyof UpdatePersonErrors];
@@ -38146,10 +39905,6 @@ export type DeactivatePersonErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeactivatePersonError = DeactivatePersonErrors[keyof DeactivatePersonErrors];
@@ -38318,10 +40073,6 @@ export type SetSecurityRoleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetSecurityRoleError = SetSecurityRoleErrors[keyof SetSecurityRoleErrors];
@@ -39444,6 +41195,49 @@ export type AcceptInvitationResponses = {
 };
 
 export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
+
+export type PreviewInvitationData = {
+    body: InvitationPreviewIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/invitations/preview';
+};
+
+export type PreviewInvitationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PreviewInvitationError = PreviewInvitationErrors[keyof PreviewInvitationErrors];
+
+export type PreviewInvitationResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvitationPreviewOut;
+};
+
+export type PreviewInvitationResponse = PreviewInvitationResponses[keyof PreviewInvitationResponses];
 
 export type AcceptStaffInvitationData = {
     body: AcceptInvitationIn;
@@ -41792,6 +43586,106 @@ export type ImportEmailTemplateResponses = {
 };
 
 export type ImportEmailTemplateResponse = ImportEmailTemplateResponses[keyof ImportEmailTemplateResponses];
+
+export type PropagateIncidentData = {
+    body: IncidentPropagationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Accrued Ref
+         */
+        accrued_ref: string;
+    };
+    query?: never;
+    url: '/v1/platform/incidents/{accrued_ref}/propagate';
+};
+
+export type PropagateIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PropagateIncidentError = PropagateIncidentErrors[keyof PropagateIncidentErrors];
+
+export type PropagateIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    202: IncidentPropagationOut;
+};
+
+export type PropagateIncidentResponse = PropagateIncidentResponses[keyof PropagateIncidentResponses];
+
+export type IncidentPropagationLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Accrued Ref
+         */
+        accrued_ref: string;
+    };
+    query?: never;
+    url: '/v1/platform/incidents/{accrued_ref}/propagations';
+};
+
+export type IncidentPropagationLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type IncidentPropagationLogError = IncidentPropagationLogErrors[keyof IncidentPropagationLogErrors];
+
+export type IncidentPropagationLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: IncidentPropagationLogOut;
+};
+
+export type IncidentPropagationLogResponse = IncidentPropagationLogResponses[keyof IncidentPropagationLogResponses];
 
 export type ImportRetentionDefaultsData = {
     body: RetentionDefaultSetIn;

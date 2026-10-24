@@ -119,6 +119,11 @@ async def _team(net: Net, seed: Seeder, *, opened: bool) -> Team:
     partner, manager = await seed.person(tenant_id), await seed.person(tenant_id)
     await seed.member(site, partner, "engagement_partner")
     await seed.member(site, manager, "manager")
+    # ADR-164 items 2-3 (superseding SPEC-025 AC-7 in part): TASK-045's read gate is what a
+    # firm gets with `g2_blocks_view` on, for an attest client's engagement. This suite proves
+    # that gate; test_g2_v2 proves the default.
+    await seed.attest(tenant_id, site.engagement_id)
+    await seed.blocks_view(tenant_id, admin.user_id)
     return Team(net, tenant_id, site, partner, manager, admin)
 
 
@@ -288,6 +293,7 @@ async def test_ac7_confirming_on_one_engagement_does_not_open_another(
 ) -> None:
     team = await _team(net, seed, opened=True)
     other = await seed.site(team.tenant_id, team.admin.user_id, "second", opened=True)
+    await seed.attest(team.tenant_id, other.engagement_id)
     member = await seed.person(team.tenant_id)
     await net.call(
         "POST",

@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import FetchedValue, Float, Numeric
+from sqlalchemy import FetchedValue, Float, Integer, Numeric
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -190,6 +190,10 @@ class UploadPreview(Base):
     page_count: Mapped[int] = mapped_column(server_default=FetchedValue())
     truncated: Mapped[bool] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # 0109 (P-03-T04): an unlock's derived preview, and the masker that burned its boxes. Only a
+    # preview with `mask_version` set is a masked rendition (P-03-T09, T15).
+    derivation_id: Mapped[UUID | None]
+    mask_version: Mapped[str | None]
 
 
 class UploadPreviewPage(Base):
@@ -314,4 +318,60 @@ class Citation(Base):
     created_by_user_id: Mapped[UUID | None]
     created_by_run_id: Mapped[UUID | None]
     on_behalf_of_user_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class CitationEvent(Base):
+    """A citation moved, broke or was relinked (P-03-T04): its state is computed from these, the
+    citation itself is never updated. Insert-only."""
+
+    __tablename__ = "citation_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    citation_id: Mapped[UUID]
+    kind: Mapped[str]
+    cause_ref: Mapped[str | None]
+    successor_citation_id: Mapped[UUID | None]
+    actor_kind: Mapped[str]
+    actor_user_id: Mapped[UUID | None]
+    at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class PiiScanRun(Base):
+    """Which pages of a source the PII detector scanned, and which it couldn't (P-03-T04, T13).
+    Insert-only."""
+
+    __tablename__ = "pii_scan_runs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID | None]
+    inbox_file_id: Mapped[UUID | None]
+    derivation_id: Mapped[UUID | None]
+    detector_version: Mapped[str]
+    pages_scanned: Mapped[list[int]] = mapped_column(ARRAY(Integer))
+    pages_not_scannable: Mapped[list[int]] = mapped_column(ARRAY(Integer))
+    region_count: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class PiiRegion(Base):
+    """Where a detected PII value sits on a page (P-03-T04, T13). Deliberately maps no
+    `value_sealed`: nothing but the reveal service ever reads the sealed value (P-03 §4.2).
+    Insert-only."""
+
+    __tablename__ = "pii_regions"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID | None]
+    inbox_file_id: Mapped[UUID | None]
+    derivation_id: Mapped[UUID | None]
+    page_no: Mapped[int]
+    bbox: Mapped[list[Decimal]] = mapped_column(ARRAY(Numeric(10, 2)))
+    kind: Mapped[str]
+    last4: Mapped[str | None]
+    label_anchored: Mapped[bool]
+    detector_version: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

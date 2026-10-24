@@ -73,6 +73,8 @@ NON_TENANT_TABLES = frozenset(
     | {"sign_in_challenges", "sign_in_locks"}
     # 0133 (P-08-T17): a person's second step and the firm's trusted devices; definers only.
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}
+    # 0143 (Q-02-T33): the staff record of incident propagations; definers only.
+    | {"incident_propagations"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -217,12 +219,16 @@ GLOBAL_TABLES = frozenset(
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
     | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}  # 0133 (P-08-T17)
+    | {"incident_propagations"}  # 0143 (Q-02-T33)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
     {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
     | {"capacity_admit", "capacity_block"}
     | {"review_decision_reason_check", "review_reason_codes_list"}
+    # 0134 (A-01-T05; DEC-262): an assurance phase event's insert checks its actor and its move and
+    # moves the phase projection, which the app role may not update itself.
+    | {"assurance_phase_event_apply"}
     | {"eval_eligible"}  # 0016 (TASK-020): the gateway's evaluation eligibility
     # 0018 (TASK-022): one platform-wide number, and anomalous engagements' identifiers.
     | {"platform_spend_today", "engagement_spend_anomalies"}
@@ -238,6 +244,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0033 (TASK-041 D1, D2): staff invitations, staff memberships, firm roles and revocation.
     | {"staff_invitation_token_set", "staff_invitation_token_find", "add_staff_membership"}
     | {"membership_set_firm_role", "membership_revoke"}
+    # 0142 (G-01-T05): deactivation with its reason, and the firm's staff sign-ins.
+    | {"membership_deactivate", "staff_last_sign_ins", "staff_sign_in_history"}
     # 0027 (TASK-032 D1): staff role changes and removals, keeping a partner.
     | {"team_member_set_role", "team_member_remove"}
     # 0082 (F-03-T25, DEC-128): engagements keep the derived `clients.is_attest_client` current.
@@ -263,10 +271,16 @@ DEFINER_FUNCTIONS = frozenset(
     | {"portal_mfa_setup_claim", "portal_mfa_factor_pending", "portal_mfa_enrol"}
     | {"portal_mfa_complete", "portal_mfa_enrolled", "portal_session_mark_mfa"}
     | {"portal_device_trust", "portal_device_check", "portal_access_revoke"}
+    # 0140 (P-08-T18): the invitation preview, the invitee's start and acceptance's session.
+    | {"portal_invitation_preview", "portal_invitation_start", "portal_invitee_resolve"}
+    | {"portal_access_revoke_except", "portal_mfa_begin_session"}
+    | {"portal_session_mark_device", "client_invitations_revoke_by"}  # DEC-277
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}
     | {"retention_policy_history", "retention_defaults_backfill"}
+    # 0143 (Q-02-T33): the staff record of incident propagations, from no-tenant sessions only.
+    | {"record_incident_propagation", "incident_propagation_log"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

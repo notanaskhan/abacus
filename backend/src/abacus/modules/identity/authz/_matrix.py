@@ -78,6 +78,28 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "assurance.record_archive": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+        "independence": "required",
+    },
+    "assurance.record_phase": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+    },
+    "assurance.record_release": {
+        "engagement_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+        "independence": "required",
+    },
     "audit.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
@@ -266,6 +288,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_service": "allow",
         "agent": "deny",
         "mfa_recent": "required",
+        "independence": "required",
     },
     "client_access.revoke": {
         "firm_admin": "allow",
@@ -1047,6 +1070,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "agent": "deny",
         "system": "deny",
+        "independence": "required",
     },
     "methodology.manage": {
         "firm_admin": "allow",
@@ -1647,6 +1671,12 @@ ACTIONS: dict[str, dict[str, str]] = {
     "wall.remove": {
         "firm_admin": "allow",
         "mfa_recent": "required",
+    },
+    "work_item.assign": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "work_item.create": {
         "engagement_partner": "allow",

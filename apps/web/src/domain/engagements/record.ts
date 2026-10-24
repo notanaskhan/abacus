@@ -12,6 +12,7 @@ import {
   engagementRecordOptions,
   engagementRecordQueryKey,
   recordEngagementLetterMutation,
+  teamOptions,
   workItemsOptions,
   workItemsQueryKey,
 } from "@abacus/api-client/query";
@@ -27,6 +28,15 @@ export function useEngagementRecord(engagementId: string) {
 export function useEngagementWorkItems(engagementId: string, enabled = true) {
   return useQuery({
     ...workItemsOptions({ path: { engagement_id: engagementId } }),
+    retry: false,
+    enabled,
+  });
+}
+
+/** `GET /v1/engagements/{id}/team`: the Team tab host's roster (ENG-05 manages it later). */
+export function useEngagementTeam(engagementId: string, enabled = true) {
+  return useQuery({
+    ...teamOptions({ path: { engagement_id: engagementId } }),
     retry: false,
     enabled,
   });

@@ -6,6 +6,11 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
+AUDITS_COCKPIT = Flag(
+    name="audits.cockpit",
+    kind="boolean",
+    default="false",
+)
 BINDERS_ENGINE = Flag(
     name="binders.engine",
     kind="boolean",
@@ -176,6 +181,7 @@ UPLOADS_PROCESSING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
+    "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
     "clients.v2": CLIENTS_V2,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,

@@ -1,15 +1,31 @@
 // Portal sign-in (P-08 §5.2, L3): branding and the pre-session family over the generated client.
-// Start, verify and resend are the generated functions since P-08-T10 serves them (P-08-T11), so
+// Start, verify and resend are the generated functions since P-08-T10 serves them (P-08-T11), the
+// second step and the invitation since P-08-T17 and T18 (P-08-T19), so
 // fixture mode and the live API answer the same calls (fixture-mode swaps the client's fetch).
 // Branding and links/renew still name their paths on the generated `client` (P-08-T05 and T21
 // move them). Codes, emails and tokens are never logged, stored or put in a URL (P-08 §5.4).
 
-import { portalResend, portalStart, portalVerify } from "@abacus/api-client";
+import {
+  acceptInvitation,
+  portalMfa,
+  portalMfaSetup,
+  portalMfaSetupVerify,
+  portalResend,
+  portalStart,
+  portalVerify,
+  previewInvitation,
+} from "@abacus/api-client";
 import { client } from "@abacus/api-client/client";
 import type { PortalBrand } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import type {
+  AcceptInvitationIn,
+  AcceptedInvitationOut,
+  InvitationPreviewOut,
   PortalBrandingOut,
+  PortalMfaIn,
+  PortalMfaSetupOut,
+  PortalMfaSetupVerifyOut,
   PortalErrorOut,
   PortalLinkRenewIn,
   PortalLinkRenewOut,
@@ -45,6 +61,28 @@ export const signIn = {
   resend: async (body: PortalSignInResendIn): Promise<PortalSignInStartOut> =>
     (await portalResend({ body, throwOnError: true })).data,
   renewLink: (body: PortalLinkRenewIn) => post<PortalLinkRenewOut>("/v1/portal/links/renew", body),
+  // POR-01 c and c′ (P-08-T19): the second step with a single-use `mfa_token`, or its setup.
+  mfa: async (body: PortalMfaIn): Promise<PortalSignInVerifyOut> =>
+    (await portalMfa({ body, throwOnError: true })).data,
+  mfaSetup: async (mfaToken: string): Promise<PortalMfaSetupOut> =>
+    (await portalMfaSetup({ body: { mfa_token: mfaToken }, throwOnError: true })).data,
+  mfaSetupVerify: async (mfaToken: string, totp: string): Promise<PortalMfaSetupVerifyOut> =>
+    (await portalMfaSetupVerify({ body: { mfa_token: mfaToken, totp }, throwOnError: true })).data,
+};
+
+/** POR-01 d (P-08-T18, T19): the invitation's preview before any session (one 404 for every
+ * failure), and its acceptance with the invitee's own session (the bearer verify returned). */
+export const invitation = {
+  preview: async (token: string): Promise<InvitationPreviewOut> =>
+    (await previewInvitation({ body: { token }, throwOnError: true })).data,
+  accept: async (body: AcceptInvitationIn, accessToken: string): Promise<AcceptedInvitationOut> =>
+    (
+      await acceptInvitation({
+        body,
+        headers: { Authorization: `Bearer ${accessToken}` },
+        throwOnError: true,
+      })
+    ).data,
 };
 
 /** A pre-session failure as the screen reads it: its code and identifier facts, or `network`. */

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, insert, select, update
+from sqlalchemy import ColumnElement, Select, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
@@ -160,17 +160,41 @@ async def contact_ids_of_user(session: AsyncSession, user_id: UUID) -> list[UUID
 
 async def contacts_by_id(
     session: AsyncSession, contact_ids: list[UUID]
-) -> dict[UUID, tuple[UUID, str, UUID | None]]:
-    """Contacts by ID: their client, display name and portal user (P-06-T07: a binder's
-    recipients; P-06-T10: a request's delegate), for a caller that authorised the record."""
+) -> dict[UUID, tuple[UUID, str, UUID | None, str | None]]:
+    """Contacts by ID: their client, display name, portal user and organisation (P-06-T07: a
+    binder's recipients; P-06-T10: a request's delegate; P-08-T18: an invitation's card), for a
+    caller that authorised the record."""
     if not contact_ids:
         return {}
     rows = await session.execute(
-        select(Contact.id, Contact.client_id, Contact.display_name, Contact.user_id).where(
-            Contact.id.in_(contact_ids)
-        )
+        select(
+            Contact.id,
+            Contact.client_id,
+            Contact.display_name,
+            Contact.user_id,
+            Contact.organisation_name,
+        ).where(Contact.id.in_(contact_ids))
     )
-    return {r.id: (r.client_id, r.display_name, r.user_id) for r in rows}
+    return {r.id: (r.client_id, r.display_name, r.user_id, r.organisation_name) for r in rows}
+
+
+async def set_contact_active(
+    session: AsyncSession, contact_id: UUID, user_id: UUID
+) -> UUID | None:
+    """The contact's portal user and state after an accepted invitation (P-08-T18); its client,
+    or None when it is unknown or linked to someone else."""
+    row = (
+        await session.execute(
+            update(Contact)
+            .where(
+                Contact.id == contact_id,
+                (Contact.user_id.is_(None)) | (Contact.user_id == user_id),
+            )
+            .values(user_id=user_id, portal_state="active")
+            .returning(Contact.client_id)
+        )
+    ).first()
+    return None if row is None else row.client_id
 
 
 async def offices_in_firm(session: AsyncSession) -> list[tuple[UUID, str]]:
@@ -202,3 +226,10 @@ def office_name_column(office_id: Column) -> ColumnElement[str]:
         .correlate_except(Office)
         .scalar_subquery()
     )
+
+
+def attest_client_ids() -> Select[UUID]:
+    """The firm's attest clients (derived `is_attest_client`, DEC-128) as a subquery for identity's
+    `visible()` under `g2_blocks_view` (P-07-T24, ADR-164 item 3). Row-level security scopes it to
+    the session's tenant; it is only ever embedded in a query that `visible()` already filters."""
+    return select(Client.id).where(Client.is_attest_client.is_(True))

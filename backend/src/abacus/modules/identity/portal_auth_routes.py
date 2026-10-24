@@ -124,7 +124,7 @@ async def portal_start_route(
     body: PortalSignInStartIn, host: Annotated[str | None, Header()] = None
 ) -> Response:
     """Always 202 with the same shape, for any email on any host."""
-    found = await start_sign_in(host, body.email)
+    found = await start_sign_in(host, body.email, invitation_token=body.invitation_token)
     out = PortalSignInStartOut(
         challenge_id=found.challenge_id,
         code_expires_at=found.code_expires_at,

@@ -180,8 +180,10 @@ async def send_follow_up_route(
     follow_up_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FollowUpOut:
     """Human only. 409 `out_of_scope` (nothing sent), `follow_up_already_sent`; the email leaves
-    after the 10-s Undo window. A retry with the same key answers what the first answered."""
+    after the 10-s Undo window. A retry with the same key is authorised again, then answers what
+    the first answered and sends nothing again."""
     await _engine_on(ctx)
+    await service.check_send(ctx, [follow_up_id])
 
     async def run() -> tuple[int, dict[str, object]]:
         return 200, _out(await service.send(ctx, follow_up_id)).model_dump(mode="json")
@@ -202,8 +204,10 @@ async def send_follow_up_route(
 async def send_follow_ups_route(
     body: FollowUpSendManyIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FollowUpDraftsOut:
-    """BND-01 b "Send n follow-ups": all or none, in one unit of work."""
+    """BND-01 b "Send n follow-ups": all or none, in one unit of work. A retry with the same key
+    is authorised again."""
     await _engine_on(ctx)
+    await service.check_send(ctx, body.ids)
 
     async def run() -> tuple[int, dict[str, object]]:
         views = await service.send_many(ctx, body.ids)

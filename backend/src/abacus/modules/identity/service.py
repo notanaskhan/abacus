@@ -29,6 +29,8 @@ from abacus.modules.identity.repository import (
     WallRecord,
     active_firm_admins,
     active_memberships,
+    active_partner_members,
+    active_security_admins,
     active_staff_ids,
     all_walls,
     client_admin_ids,
@@ -219,6 +221,16 @@ async def firm_admins(tenant_id: UUID) -> list[UUID]:
     return await active_firm_admins(TenantContext(tenant_id, "system", "notifications"))
 
 
+async def security_admins(tenant_id: UUID) -> list[UUID]:
+    """Q-02-T33: recipients for the incident register's notifications (the firm's QI)."""
+    return await active_security_admins(TenantContext(tenant_id, "system", "notifications"))
+
+
+async def partner_members(tenant_id: UUID) -> list[UUID]:
+    """Q-02-T33: the firm's partner-level staff, for `incident_recorded` (Q-02 §4.8)."""
+    return await active_partner_members(TenantContext(tenant_id, "system", "notifications"))
+
+
 async def team_of(tenant_id: UUID, engagement_id: UUID) -> list[tuple[UUID, EngagementRole]]:
     """An engagement's members and roles, for notification recipients (SPEC-013)."""
     return await engagement_members_of(
@@ -277,15 +289,22 @@ async def could(ctx: AuthContext, user_id: UUID, action: str, resource: Resource
     same `authorise` (roles, walls, attributes). For giving work to someone who can do it
     (TASK-019 security review M2): never a grant for the caller. Fresh-MFA actions answer False,
     since only the person themself can have signed in recently."""
-    found = [m for m in await active_memberships(user_id) if m.tenant_id == ctx.tenant_id]
+    return await member_could(ctx.tenant_id, user_id, action, resource)
+
+
+async def member_could(tenant_id: UUID, user_id: UUID, action: str, resource: Resource) -> bool:
+    """`could` for a firm and a person, with no caller: an invitation's acceptance asks whether
+    its inviter may still invite (P-08-T18, DEC-277). Fresh-MFA actions answer False."""
+    found = [m for m in await active_memberships(user_id) if m.tenant_id == tenant_id]
     if not found:
         return False
     other = AuthContext(
-        tenant=TenantContext(ctx.tenant_id, "human", str(user_id)),
+        tenant=TenantContext(tenant_id, "human", str(user_id)),
         user_id=user_id,
         membership_id=found[0].membership_id,
         firm_role=found[0].firm_role,
         mfa_at=None,
+        client=found[0].kind == "client",
     )
     try:
         await authorise(other, action, resource)

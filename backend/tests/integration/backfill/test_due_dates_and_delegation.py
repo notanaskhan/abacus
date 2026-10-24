@@ -256,6 +256,10 @@ async def test_ac8_an_initiator_who_may_not_do_it_by_the_matrix_is_refused_at_de
 async def test_ac8_an_initiator_who_has_not_confirmed_independence_is_refused_at_delegation(
     board: Board,
 ) -> None:
+    # ADR-164 items 2-3: an unconfirmed member is refused client data on an attest client's
+    # engagement once the firm sets `g2_blocks_view` (TASK-045's gate, which this proves).
+    await board.seed.attest(board.tenant_id, board.site.engagement_id)
+    await board.seed.blocks_view(board.tenant_id, board.admin.user_id)
     newcomer = await board.seed.person(board.tenant_id)
     await board.seed.run(
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "

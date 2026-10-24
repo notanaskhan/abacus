@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ENG-01 Engagements index/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T01 · fixtures P-07-T11 · read model P-07-T15 · screen P-07-T27 · parity lock P-07-T63 |
-| Manifest status | planned (`routes/manifest/eng.ts`, path `/engagements`, `navArea: "Engagements"`) |
+| Manifest status | planned (`routes/manifest/eng.ts`, path `/engagements`, `navArea: "Engagements"`); a–e built on fixtures behind `engagements.v2` by P-07-T27 (TASK-1126), kept `planned` for CLI-02's reason (DEC-195): ENG-01 → ENG-02 is wired in `routes/firm/areas.tsx` |
 
-Code to come (P-07 §5): `src/routes/firm/engagements.tsx`, `src/domain/engagements/{index.ts, queries.ts, messages.ts}`, `src/screens/ENG-01/{index.tsx, scenarios.ts, copy.ts, ENG-01.test.tsx}`. Flag `engagements.v2`.
+Code (P-07-T27): `src/routes/firm/areas.tsx` (`/engagements` behind the flag), `src/domain/engagements/list.ts`, `src/screens/ENG-01/{index.tsx, scenarios.ts, copy.ts, ENG-01.test.tsx}`, `src/fixtures/{seed/engagement-index.ts, handlers/engagements.ts, scenarios/ENG-01.ts, engagements.foot.test.ts}`, `e2e/screens/ENG-01.spec.ts`. T1 gained a `segments` slot, an end-aligned chip, a `banner` slot and pending tile counts; StatusTile gained the `muted` and `soon` variants. Flag `engagements.v2`.
 
 ## States
 
@@ -17,11 +17,11 @@ Code to come (P-07 §5): `src/routes/firm/engagements.tsx`, `src/domain/engageme
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a | margaret-okonkwo (Margaret Okonkwo, Managing Partner) | Mon Sep 14, 2026, 9:24 AM CT (assumed: README says no frame states a time) | E0 | All service lines, period Current: 275 engagements; first 17 rows, past due first, then by next deadline | built · live (T27) |
-| b | margaret-okonkwo | same | E0 | Letter │ Not signed with the Accepted tile selected: the 4 Accepted engagements without a recorded letter (rows 4, 6, 7, 9); the Prospect estate engagement is excluded | built · live (T27) |
-| c | margaret-okonkwo | same | E0 | Segment Advisory: 1 row (Ridgeline cost segregation & §754 analysis); tiles recount to Accepted 1, all others 0 | built · live (T27) |
-| d | margaret-okonkwo | same | E0 | `q=Harbor Lane` matches nothing | built · live (T27) |
-| e | margaret-okonkwo | same | E0 | `GET /v1/engagements` never answers (`never()` handler) | built · live (T27) |
+| a | margaret-okonkwo (Margaret Okonkwo, Managing Partner) | Mon Sep 14, 2026, 9:24 AM CT (assumed: README says no frame states a time) | E0 | All service lines, period Current: 275 engagements; first 17 rows, past due first, then by next deadline | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
+| b | margaret-okonkwo | same | E0 | Letter │ Not signed with the Accepted tile selected: the 4 Accepted engagements without a recorded letter (rows 4, 6, 7, 9); the Prospect estate engagement is excluded | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
+| c | margaret-okonkwo | same | E0 | Segment Advisory: 1 row (Ridgeline cost segregation & §754 analysis); tiles recount to Accepted 1, all others 0 | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
+| d | margaret-okonkwo | same | E0 | `q=Harbor Lane` matches nothing | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
+| e | margaret-okonkwo | same | E0 | `GET /v1/engagements` never answers (`never()` handler) | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
 
 Not-allowed: a walled engagement is absent from rows, tiles, segments and totals; a guessed `/engagements/<id>` answers 404 (INV-3, DEC-43). Error: the ViewState error frame. Flag off (`engagements.v2`): the flag-off ViewState.
 
@@ -97,8 +97,8 @@ Inbound: SHL-01 nav "Engagements", SHL-02, CLI-01 Services tag, CLI-02 Engagemen
 ## Figures
 | Figure | Foots | Proven by |
 |---|---|---|
-| Segments (a) | 224 + 27 + 23 + 1 = 275 | P-07-T11 seed footing test |
-| Tiles (a) | 1 + 4 + 0 + 128 + 0 + 140 + 2 = 275 | same |
+| Segments (a) | 224 + 27 + 23 + 1 = 275 | `fixtures/engagements.foot.test.ts`; `ENG-01.test.tsx` |
+| Tiles (a) | 1 + 4 + 0 + 128 + 0 + 140 + 2 = 275 | same; the live footing on a constructed firm in `backfill/test_p07t14_engagements_independent.py` |
 | Summary (a) | 1 prospect = Prospect tile; 4 awaiting a signed letter = Accepted tile; 2 past due = Copperleaf + Bluebird | same |
 | Letter not signed (b) | "Showing 4 of 4" = rows 4, 6, 7, 9 = Accepted tile | scenario test |
 | Advisory (c) | 1 row; tiles Accepted 1, others 0 | scenario test |
@@ -114,12 +114,17 @@ Gradients in product UI, emoji, saturated blue SaaS accents, heavy shadows, inve
 | — | "Export" is hidden | Needs P-11's document writer (cut) | P-07 §2.3 |
 | — | The Letter cell opens ENG-02's Letter & terms record card instead of ENG-04 or SIG-01 | Interim recorded-letter G3 until N-02 (P-26, ADR-149) | P-07 §2.1 |
 | — | Work-item sub-lines are plain text until their target screen registers (CLS-02, TAX-02, AUD-02, NOT-02, PRJ-01) | Planned targets are hidden in production | P-07 §2.1 |
+| DEC-271 | The 258 engagements spec.md does not name are counts only (rows 1–17 are the rows); their split by line and status is derived | The handoff names 17 rows; the binders slice's precedent | DEC-271 |
+| DEC-271 | The Type cell reads "{line} · {type}"; a return's forms come from the engagement's name ("Tax · 1065", "Tax · 1040 · 1041 · 706"); Northwind reads "Audit · EBP DC" without "§103(a)(3)(C)" | The row carries the C1 type, not the form or the scope | DEC-271 |
+| DEC-271 | The Next due sub-line is "{label} · {n} days past due" when past due, else the label, else "{n} days"; the estate reads "Form 706" without "· 49 days" | One rule over the row's `next_due` (on, tone, label) | DEC-271 |
+| DEC-271 | Not drawn: row 14's name sub-line, Feld's "§7216 ✓", Shah's "Waiting on K-1" tag, "3 returns planned ·" on the estate | Not in the row model; follow-ups for P-07-T15's projection | DEC-271 |
+| ED-027 | The fixture counts Archived under Period │ Current (as a draws it); the live index excludes archived from `current` (DEC-224) | Spec and decision disagree; held as a strict xfail | `docs/quality/escaped-defects.md` ED-027 |
 | OQ-5 | Segment and tile counts are data-derived; where the seed's tax count differs from "Tax 224" the parity mask covers the count text | DEC-47 backs 214 tax engagements and 224 returns | P-07 OQ-5 decided in DEC-138 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, d | C (locked before M8) | not run (unbuilt) | P0 lock at Tier C (T63); mask segment count text if the seed differs (OQ-5) |
+| a, b, c, d | C (locked before M8) | not run (built on fixtures; axe in `e2e/screens/ENG-01.spec.ts`) | P0 lock at Tier C (T63); mask segment count text if the seed differs (OQ-5) |
 | e | C (report) | not run | mask the skeleton pulse |
 | host | D | — | toolbar 46, filter bar 50, tiles 120×72, pane header 46 with a 14.5/500 title, th 30, rows 44, pills 21 |
 

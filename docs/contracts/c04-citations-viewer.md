@@ -52,8 +52,8 @@ Each kind has a locator (chapter 05 §5.3.10) and a `match_id` derived by the se
 
 | `kind` | Locator fields | `match_id` |
 |---|---|---|
-| `document_text` | `evidence_version_id`, `page`, `bbox?` `[x0, top, x1, bottom]`, `annotation_id?` (**reserved**, always null in v1; K-03) | `ev:<version>#p<page>:<x0>,<top>,<x1>,<bottom>` |
-| `sheet_cell` | `evidence_version_id`, `sheet`, `cell`, `value?` | `<file>!<cell>` |
+| `document_text` | `evidence_version_id` (or `inbox_file_id` for a file still in the inbox, the matcher's; DEC-267), `page`, `bbox?` `[x0, top, x1, bottom]`, `annotation_id?` (**reserved**, always null in v1; K-03) | `ev:<version>#p<page>:<x0>,<top>,<x1>,<bottom>` (`inbox:<file>#p…` for an inbox file) |
+| `sheet_cell` | `evidence_version_id` (or `inbox_file_id`; DEC-267), `sheet`, `cell`, `value?` | `<file>!<cell>` (`inbox:<file>!<cell>`) |
 | `ledger_line` | `ledger_snapshot_id`, `account_code`, `period`, `amount`, `txn_id?` | `led:<snapshot>:<account>` |
 | `workpaper_cell` | `sheet_id`, `row_key`, `column_key`, `sheet_version` | `wp:<sheet>.<row>.<col>` |
 | `methodology_step` | `template_version_id`, `step_key`, `step_n` | `ms:<step_key>@<ver>` |

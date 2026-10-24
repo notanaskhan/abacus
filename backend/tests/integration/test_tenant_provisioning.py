@@ -31,6 +31,7 @@ from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.platform.api import (
     ACTIVITIES,
     WORKFLOWS,
+    IncidentPropagationWorkflow,
     InMemoryTenantKeyOps,
     ProvisionTenantResult,
     TenantKeyWorkflow,
@@ -110,7 +111,11 @@ def key_ops() -> Iterator[InMemoryTenantKeyOps]:
 
 @pytest.fixture
 async def worker(temporal: Client, key_ops: InMemoryTenantKeyOps) -> AsyncIterator[None]:
-    assert {TenantProvisioningWorkflow: "background", TenantKeyWorkflow: "keyops"} == WORKFLOWS
+    assert {
+        TenantProvisioningWorkflow: "background",
+        TenantKeyWorkflow: "keyops",
+        IncidentPropagationWorkflow: "time_sensitive",  # Q-02-T33's register (platform's own)
+    } == WORKFLOWS
     activities = cast("list[Callable[..., object]]", list(ACTIVITIES))
     # Two pools, as in production: the general one and the keyops one (P-65).
     async with (

@@ -541,6 +541,19 @@ async def _any_out_of_scope(ctx: AuthContext, ref: EngagementRef, texts: Sequenc
     return False
 
 
+async def check_send(ctx: AuthContext, follow_up_ids: Sequence[UUID]) -> None:
+    """Authorise `follow_up.send` on each follow-up (read-only), so a replayed send is checked
+    like the first one (ED-023's shape): the stored answer reaches only who may send now."""
+    _human(ctx, "follow_up.send")
+    async with tenant_session(ctx.tenant) as session:
+        rows = [await get_follow_up(session, f) for f in dict.fromkeys(follow_up_ids)]
+    for row in rows:
+        if row is None:
+            raise NotFound("follow_up")
+        ref = await get_ref(ctx, row.engagement_id)
+        await authorise(ctx, "follow_up.send", ref.resource())
+
+
 async def send(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
     """Human only. The email leaves when the Undo window ends (the grant's delivery)."""
     _human(ctx, "follow_up.send")

@@ -12,8 +12,11 @@ from fastapi import Cookie, Depends, Header, Query, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel._statuses import MembershipStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
+from abacus.kernel.listing import ListPage
+from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     AiClientDataView,
@@ -31,11 +34,31 @@ from abacus.modules.identity.firm_settings import (
     set_firm_time_zone,
     set_letter_policy,
 )
-from abacus.modules.identity.invitations import accept_invitation
+from abacus.modules.identity.invitations import (
+    VIEWER_ADDRESS_HEADER,
+    accept_invitation,
+    accept_portal_invitation,
+    preview_bucket,
+    preview_invitation,
+)
 from abacus.modules.identity.me import FirmFacts, firm_facts, me_details, set_default_office
 from abacus.modules.identity.mfa_floor import mfa_required
-from abacus.modules.identity.portal_contract import MeMfaOut, MePortalOut
-from abacus.modules.identity.portal_session import factor_enrolled
+from abacus.modules.identity.people import (
+    InviteTerms,
+    StaffFilters,
+    change_template,
+    invite,
+    staff_page,
+)
+from abacus.modules.identity.portal_contract import (
+    InvitationAccessOut,
+    InvitationPreviewIn,
+    InvitationPreviewOut,
+    MeMfaOut,
+    MePortalOut,
+    PortalSignInVerifyOut,
+)
+from abacus.modules.identity.portal_session import PortalInvitee, factor_enrolled
 from abacus.modules.identity.repository import FirmRole
 from abacus.modules.identity.routing import (
     IDENTITY,
@@ -46,6 +69,7 @@ from abacus.modules.identity.routing import (
     AbacusRouter,
     current_context,
     current_identity,
+    current_invitee,
     current_member,
     current_signed_in,
     current_staff,
@@ -59,13 +83,21 @@ from abacus.modules.identity.service import (
     list_walls,
     remove_wall_by_id,
 )
+from abacus.modules.identity.settings_contract import (
+    Band,
+    Level,
+    RoleTemplate,
+    ServiceLine,
+    StaffRowV2Out,
+    StaffTalliesOut,
+    row_out,
+    tallies_out,
+)
 from abacus.modules.identity.signup import sign_up
 from abacus.modules.identity.staff import (
     accept_staff_invitation,
     change_role,
-    invite,
     resend,
-    staff,
 )
 from abacus.modules.identity.staff import revoke as revoke_staff
 from abacus.modules.identity.staff import revoke_invitation as revoke_staff_invitation
@@ -416,27 +448,84 @@ invitation_router = AbacusRouter(prefix="/v1/invitations", tags=["invitations"])
 
 
 class AcceptInvitationIn(BaseModel):
+    """v2 (P-08-T18) adds the terms the invitee accepted (`InvitationAcceptV2In`'s field)."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     token: Annotated[str, Field(min_length=20, max_length=200), classified("restricted")]
+    terms_version: Annotated[int | None, Field(ge=1), classified("internal")] = None
 
 
 class AcceptedInvitationOut(BaseModel):
+    """`session` (v2, portal only): `signed_in` with the landing (the session accepted with
+    continues), or the second step the new grants need, with its `mfa_token`."""
+
     model_config = ConfigDict(frozen=True)
 
     tenant_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
+    session: Annotated[PortalSignInVerifyOut | None, classified("internal")] = None
 
 
 @invitation_router.post("/accept", action=IDENTITY, response_model=AcceptedInvitationOut)
 async def accept_invitation_route(
-    body: AcceptInvitationIn, identity: Annotated[VerifiedIdentity, Depends(current_identity)]
-) -> AcceptedInvitationOut:
-    """A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet."""
-    accepted = await accept_invitation(identity, body.token)
-    return AcceptedInvitationOut(
-        tenant_id=accepted.tenant_id, engagement_id=accepted.engagement_id
+    body: AcceptInvitationIn,
+    who: Annotated[PortalInvitee | VerifiedIdentity, Depends(current_invitee)],
+) -> Response:
+    """A passwordlessly signed-in person accepts (TASK-030 D2): no account is needed yet. On the
+    portal (v2) the invitee's code session accepts, with the invitation's terms version."""
+    if isinstance(who, PortalInvitee):
+        accepted = await accept_portal_invitation(who, body.token, body.terms_version)
+    else:
+        accepted = await accept_invitation(who, body.token)
+    step = accepted.step
+    out = AcceptedInvitationOut(
+        tenant_id=accepted.tenant_id,
+        engagement_id=accepted.engagement_id,
+        session=None
+        if step is None
+        else PortalSignInVerifyOut(
+            state=step.state,
+            landing=step.landing,  # pyright: ignore[reportArgumentType] -- a PortalLanding code
+            mfa_token=step.mfa_token,
+        ),
     )
+    # The hosted path's answer is unchanged (no `session`); a second-step token is no-store.
+    response = JSONResponse(out.model_dump(mode="json", exclude_none=True))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@invitation_router.post("/preview", action=PRE_SESSION, response_model=InvitationPreviewOut)
+async def preview_invitation_route(
+    body: InvitationPreviewIn, request: Request, host: Annotated[str | None, Header()] = None
+) -> Response:
+    """POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the
+    token out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the
+    edge forwards when trusted), kept only as a digest."""
+    bucket = preview_bucket(
+        request.headers.get(VIEWER_ADDRESS_HEADER),
+        request.client.host if request.client is not None else None,
+        body.token,
+    )
+    found = await preview_invitation(host, body.token, bucket)
+    out = InvitationPreviewOut(
+        firm_name=found.firm_name,
+        organisation_name=found.organisation_name,
+        invitee_name=found.invitee_name,
+        invitee_email=found.invitee_email,
+        access=InvitationAccessOut(
+            kind=found.access.kind,  # pyright: ignore[reportArgumentType] -- an invitation kind
+            item_count=found.access.item_count,
+            scope_label=found.access.scope_label,
+        ),
+        terms_url=found.terms_url,
+        terms_version=found.terms_version,
+        expires_at=found.expires_at,
+    )
+    response = JSONResponse(out.model_dump(mode="json"))
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 # --- Self-serve sign-up (SPEC-024 AC-1; TASK-040) ----------------------------------------------
@@ -495,24 +584,50 @@ class StaffInvitationOut(BaseModel):
     created_at: Annotated[datetime, classified("internal")]
 
 
-class StaffListOut(BaseModel):
+class StaffListOut(ListPage[StaffRowV2Out]):
+    """ADM-02a on the list envelope (G-01-T05): `items` in bands, `counts` per band over the
+    filters, firm-wide `tallies`. `members` and `invitations` are SPEC-024's shape, kept for the
+    legacy people screen until G-01-T17 retires it (unfiltered)."""
+
     model_config = ConfigDict(frozen=True)
 
+    tallies: Annotated[StaffTalliesOut, classified("internal")]
     members: Annotated[list[StaffMemberOut], classified("confidential")]
     invitations: Annotated[list[StaffInvitationOut], classified("confidential")]
 
 
 class StaffInviteIn(BaseModel):
+    """SPEC-024's invitation, grown for ADM-02c (G-01-T05): the template and what the membership
+    takes on acceptance. A seasonal invite needs `access_ends_on` (422 `access_ends_required`)."""
+
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
     email: Annotated[str, Field(min_length=3, max_length=320), classified("confidential")]
     firm_role: Annotated[StaffRole | None, classified("internal")] = None
+    role_template: Annotated[RoleTemplate | None, classified("internal")] = None
+    level: Annotated[Level | None, classified("internal")] = None
+    office_id: Annotated[UUID | None, classified("internal")] = None
+    team_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
+    service_lines: Annotated[list[ServiceLine], Field(max_length=4), classified("internal")] = []
+    access_ends_on: Annotated[date | None, classified("internal")] = None
+    offshore: Annotated[bool, classified("internal")] = False
+    display_name: Annotated[
+        SingleLineText | None, Field(default=None, max_length=200), classified("confidential")
+    ]
+    title: Annotated[
+        SingleLineText | None, Field(default=None, max_length=120), classified("confidential")
+    ]
 
 
 class FirmRoleIn(BaseModel):
+    """SPEC-024's firm role; with `role_template` (G-01-T05, AC4.2) the template, its level and
+    the firm role it carries change together (`firm_role` is then a partner's oversight role)."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    firm_role: Annotated[StaffRole | None, classified("internal")]
+    firm_role: Annotated[StaffRole | None, classified("internal")] = None
+    role_template: Annotated[RoleTemplate | None, classified("internal")] = None
+    level: Annotated[Level | None, classified("internal")] = None
 
 
 class StaffInvitedOut(BaseModel):
@@ -528,12 +643,64 @@ class JoinedOut(BaseModel):
 
 
 @router.get("/firm/staff", action="firm.manage_users", response_model=StaffListOut)
-async def staff_route(ctx: Ctx) -> StaffListOut:
-    """SPEC-024: the firm's staff and pending invitations (firm administrators)."""
-    found = await staff(ctx)
+async def staff_route(
+    ctx: Ctx,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    role_template: RoleTemplate | None = None,
+    office_id: UUID | None = None,
+    team_id: UUID | None = None,
+    status: Annotated[MembershipStatus | None, Query()] = None,
+    band: Band | None = None,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
+) -> StaffListOut:
+    """ADM-02a (G-01-T05; AC3.1, AC3.2): staff and pending invitations in bands, searched by name
+    or email (the term travels in the query string, never a path). Still `firm.manage_users`
+    with fresh MFA (SPEC-024 AC-3's tests hold it there); G-01 section 4.3's move to
+    `firm.read_people` waits on DEC-286."""
+    page = await staff_page(
+        ctx,
+        StaffFilters(
+            q=q,
+            role_template=role_template,
+            office_id=office_id,
+            team_id=team_id,
+            status=None if status is None else status.value,
+            band=band,
+            cursor=cursor,
+            limit=limit,
+        ),
+        legacy=True,
+    )
+    everyone = await staff_page(ctx, StaffFilters(limit=200), legacy=True)
     return StaffListOut(
-        members=[StaffMemberOut.model_validate(asdict(m)) for m in found.members],
-        invitations=[StaffInvitationOut.model_validate(asdict(i)) for i in found.invitations],
+        items=[row_out(r) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        counts=page.counts,
+        tallies=tallies_out(page.tallies),
+        members=[
+            StaffMemberOut(
+                user_id=r.user_id,
+                display_name=r.display_name,
+                email=r.email,
+                firm_role=cast(StaffRole | None, r.firm_role),
+                status="active" if r.status == "active" else "revoked",
+            )
+            for r in everyone.items
+            if r.user_id is not None
+        ],
+        invitations=[
+            StaffInvitationOut(
+                id=r.invitation_id,
+                email=r.email,
+                firm_role=cast(StaffRole | None, r.firm_role),
+                expires_at=cast(datetime, r.invitation_expires_at),
+                created_at=cast(datetime, r.invited_at),
+            )
+            for r in everyone.items
+            if r.invitation_id is not None
+        ],
     )
 
 
@@ -542,10 +709,25 @@ async def staff_route(ctx: Ctx) -> StaffListOut:
     action="firm.manage_users",
     response_model=StaffInvitedOut,
     status_code=201,
+    errors=(409,),
 )
 async def invite_staff_route(body: StaffInviteIn, ctx: Ctx) -> StaffInvitedOut:
-    """SPEC-024 AC-3: a single-use, expiring link by email."""
-    return StaffInvitedOut(id=await invite(ctx, body.email, body.firm_role))
+    """SPEC-024 AC-3 and ADM-02c: a single-use, 14-day link by email; 409 `seats_full`,
+    `already_member`; 422 `access_ends_required`."""
+    terms = InviteTerms(
+        email=body.email,
+        firm_role=body.firm_role,
+        role_template=body.role_template,
+        level=body.level,
+        office_id=body.office_id,
+        team_ids=list(body.team_ids),
+        service_lines=list(body.service_lines),
+        access_ends_on=body.access_ends_on,
+        offshore=body.offshore,
+        display_name=body.display_name,
+        title=body.title,
+    )
+    return StaffInvitedOut(id=await invite(ctx, terms))
 
 
 @router.post(
@@ -575,8 +757,12 @@ async def revoke_staff_invitation_route(invitation_id: UUID, ctx: Ctx) -> StaffI
     errors=(409,),
 )
 async def change_firm_role_route(user_id: UUID, body: FirmRoleIn, ctx: Ctx) -> StaffInvitedOut:
-    """SPEC-024 AC-4: applies on their next request; never the last administrator."""
-    await change_role(ctx, user_id, body.firm_role)
+    """SPEC-024 AC-4: applies on their next request; never the last administrator. With a
+    template (AC4.2): fresh MFA, one unit of work, "Role changed by <person>"."""
+    if body.role_template is None:
+        await change_role(ctx, user_id, body.firm_role)
+    else:
+        await change_template(ctx, user_id, body.role_template, body.level, body.firm_role)
     return StaffInvitedOut(id=user_id)
 
 
@@ -587,7 +773,8 @@ async def change_firm_role_route(user_id: UUID, body: FirmRoleIn, ctx: Ctx) -> S
     errors=(409,),
 )
 async def revoke_staff_route(user_id: UUID, ctx: Ctx) -> StaffInvitedOut:
-    """SPEC-024 AC-4: their next request is refused; never the last administrator."""
+    """SPEC-024 AC-4: their next request is refused; never the last administrator. Deactivate's
+    alias for one release (G-01-T05)."""
     await revoke_staff(ctx, user_id)
     return StaffInvitedOut(id=user_id)
 

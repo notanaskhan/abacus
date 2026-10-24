@@ -33,6 +33,7 @@ from abacus.modules.identity.authz import (
 )
 from abacus.modules.identity.authz.conditions import (
     register_attest_client,
+    register_attest_client_column,
     register_client_scope,
     register_engagement_service_line,
     register_gates,
@@ -118,6 +119,7 @@ from abacus.modules.identity.mfa_floor import (
     owner_grant,
     register_mfa_requirement,
 )
+from abacus.modules.identity.people import MemberProfile, set_member_profile
 from abacus.modules.identity.portal_auth_routes import portal_auth_router
 from abacus.modules.identity.portal_contract import contacts_router
 from abacus.modules.identity.portal_idp import (
@@ -191,7 +193,9 @@ from abacus.modules.identity.service import (
     member_context,
     my_engagements,
     names_of,
+    partner_members,
     role_codes,
+    security_admins,
     team_of,
     walled_from,
 )
@@ -202,22 +206,27 @@ from abacus.modules.identity.settings_registry import (
     GlanceRow,
     SettingKey,
     active_wall_count,
+    provision_setting,
     register_firm_setting,
     register_identity_settings,
     register_settings_area,
 )
 from abacus.modules.identity.slots import (
+    InvitationParties,
     ScopeFacts,
     consent_given,
     engagement_resource,
     register_consent_check,
+    register_contact_activation,
     register_engagement_resource,
+    register_invitation_parties,
+    register_member_teams,
     register_office_list,
     register_scope_resolver,
     resolve_scope,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
-from abacus.modules.identity.support import Staff
+from abacus.modules.identity.support import Staff, staff_from_token
 from abacus.modules.identity.team import (
     Candidate,
     LastPartner,
@@ -332,6 +341,7 @@ __all__ = [
     "GrantScopeInvalid",
     "InvalidToken",
     "InvitationLimit",
+    "InvitationParties",
     "IssuedCode",
     "IssuedInvitation",
     "ItemFacts",
@@ -339,6 +349,7 @@ __all__ = [
     "LastPartner",
     "LevelNotAvailable",
     "MemberFacts",
+    "MemberProfile",
     "MfaRequirement",
     "NoActiveTenant",
     "PortalIdp",
@@ -430,15 +441,19 @@ __all__ = [
     "my_engagements",
     "names_of",
     "note_budget_reviewed",
+    "partner_members",
     "policy_agent_may_hold",
     "portal_scopes",
+    "provision_setting",
     "record_tenant_key",
     "register_active_engagements",
     "register_ai_assistants",
     "register_attest_client",
+    "register_attest_client_column",
     "register_client_scope",
     "register_clients_of_engagements",
     "register_consent_check",
+    "register_contact_activation",
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
@@ -446,8 +461,10 @@ __all__ = [
     "register_firm_setting",
     "register_gates",
     "register_independence",
+    "register_invitation_parties",
     "register_member_added",
     "register_member_removed",
+    "register_member_teams",
     "register_mfa_requirement",
     "register_office_list",
     "register_scope_resolver",
@@ -463,12 +480,15 @@ __all__ = [
     "role_codes",
     "router",
     "scope_facts",
+    "security_admins",
     "serving_request",
     "set_autonomy",
     "set_demo_clock",
     "set_letter_policy",
+    "set_member_profile",
     "shell_of",
     "signup_router",
+    "staff_from_token",
     "staff_router",
     "system_context_for_run",
     "team_of",

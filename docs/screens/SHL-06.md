@@ -79,6 +79,8 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | DV-3 | The bottom line "Brightwater Hale LLP · US region" is not drawn | The firm and region are unknown until `/v1/me` answers, and the page leaves as soon as it does | DEC-149 |
 | DV-4 | The spinner is the 15 px design-system spinner, not 14 | The C-20 spinner comes in 10, 12 and 15 | DEC-149 |
 | DV-5 | "Privacy · Terms · System status" are text, not links | No staff policy or status URL exists in configuration yet (Q-01-T41 owns the status page) | DEC-149 |
+| DV-6 | With no return path, sign-in lands on `/engagements`, not `/home` | HOME-01 is `planned` until I-01 makes it live; the landing is the same in every environment and is removed with HOME-01 (P-01 R6) | P-01 epic, R6 |
+| DV-7 | The hosted a–f may differ from the SHL-06c/e/f copy where AuthKit cannot be configured to match: passkeys, the DEC-35 lockout (3 failed codes → 15 minutes), the 30-day trusted device, forced re-authentication for step-up and monochrome provider buttons are each to be verified on the staging WorkOS environment | P-01 Q2; the in-product T15 (the §2.2 follow-on, proposed for G-02) closes any gap. The provider settings and checks are in `docs/architecture/authkit-staff-sign-in.md` | P-01 Q2; DEC-22, DEC-35 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

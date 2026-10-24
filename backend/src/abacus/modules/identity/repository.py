@@ -16,6 +16,7 @@ from typing import Any, Final, Literal, cast, get_args
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     MetaData,
@@ -155,6 +156,18 @@ def client_grant_engagements(
 
 
 _CLIENT_WIDE: Final = ("client", "client_entity")
+
+
+# F-03-T24 (migration 0081): the firm settings a firm switched on. `visible()` reads the
+# stricter-only `g2_blocks_view` here (ADR-164 item 3, P-07-T24); `authorise` reads them all once
+# per request through `firm_policy`.
+firm_setting_values = Table(
+    "firm_setting_values",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("key", String, nullable=False),
+    Column("value", Boolean, nullable=False),
+)
 
 
 # Ethical walls (migration 0012; SPEC-002): `authorise` and `visible()` read active ones.
@@ -785,6 +798,30 @@ async def active_firm_admins(tenant: TenantContext) -> list[UUID]:
         return [cast(UUID, row.user_id) for row in rows.all()]
 
 
+async def active_security_admins(tenant: TenantContext) -> list[UUID]:
+    """Q-02-T33: the firm's active security admins (the Qualified Individual), under the tenant."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT user_id FROM memberships WHERE firm_role = 'security_admin' "
+                "AND status = 'active' ORDER BY user_id"
+            )
+        )
+        return [cast(UUID, row.user_id) for row in rows.all()]
+
+
+async def active_partner_members(tenant: TenantContext) -> list[UUID]:
+    """Q-02-T33: the firm's active partner-level staff (the derived `firm_partner`, DEC-132)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT user_id FROM memberships WHERE level = 'partner' AND kind = 'staff' "
+                "AND status = 'active' ORDER BY user_id"
+            )
+        )
+        return [cast(UUID, row.user_id) for row in rows.all()]
+
+
 # --- Client invitations (SPEC-015) -------------------------------------------------------------
 
 
@@ -792,10 +829,19 @@ async def insert_invitation(session: AsyncSession, values: dict[str, object]) ->
     await session.execute(
         text(
             "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
-            "invited_by, expires_at) VALUES (:id, :tenant_id, :engagement_id, :email, :role, "
-            ":invited_by, clock_timestamp() + make_interval(days => :days))"
+            "invited_by, expires_at, kind, contact_id, grant_template, terms_version, terms_url) "
+            "VALUES (:id, :tenant_id, :engagement_id, :email, :role, :invited_by, "
+            "clock_timestamp() + make_interval(days => :days), :kind, :contact_id, "
+            "CAST(:grant_template AS jsonb), :terms_version, :terms_url)"
         ),
-        values,
+        {
+            "kind": "firm_invite",
+            "contact_id": None,
+            "grant_template": None,
+            "terms_version": None,
+            "terms_url": None,
+        }
+        | values,
     )
 
 
@@ -826,11 +872,13 @@ async def get_invitation(
 ) -> RowMapping | None:
     plain = text(
         "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
+        "kind, contact_id, grant_template, terms_version, terms_url, "
         "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
         "FROM client_invitations WHERE id = :id"
     )
     locked = text(
         "SELECT id, engagement_id, email, role, invited_by, status, expires_at, created_at, "
+        "kind, contact_id, grant_template, terms_version, terms_url, "
         "(status = 'pending' AND expires_at > clock_timestamp()) AS live "
         "FROM client_invitations WHERE id = :id FOR UPDATE"
     )
@@ -860,6 +908,22 @@ async def set_invitation_status(
             "WHERE id = :id"
         ),
         {"id": invitation_id, "status": status, "by": accepted_by},
+    )
+
+
+async def accept_invitation_row(
+    session: AsyncSession, invitation_id: UUID, user_id: UUID, terms: bool
+) -> None:
+    """Accepted by `user_id`, with the terms' acceptance time when the invitation carries terms
+    (P-08-T18), in one statement (the table CHECKs that terms are accepted only on acceptance)."""
+    await session.execute(
+        text(
+            "UPDATE client_invitations SET status = 'accepted', accepted_by = :by, "
+            "accepted_at = clock_timestamp(), "
+            "terms_accepted_at = CASE WHEN :terms THEN clock_timestamp() END "
+            "WHERE id = :id AND status = 'pending'"
+        ),
+        {"id": invitation_id, "by": user_id, "terms": terms},
     )
 
 
@@ -1079,6 +1143,25 @@ async def user_contacts(user_ids: list[UUID]) -> dict[UUID, tuple[str, str]]:
     async with identity_engine().connect() as conn:
         rows = (await conn.execute(_USER_CONTACTS, {"ids": user_ids})).all()
     return {cast(UUID, r.id): (str(r.display_name), str(r.email)) for r in rows}
+
+
+_ELSEWHERE = text(
+    "SELECT user_id, bool_or(status = 'active') AS active FROM memberships "
+    "WHERE user_id IN :ids AND tenant_id <> :tenant GROUP BY user_id"
+).bindparams(bindparam("ids", expanding=True))
+
+
+async def memberships_elsewhere(tenant_id: UUID, user_ids: list[UUID]) -> dict[UUID, bool]:
+    """G-01-T05 (DEC-286): which of these people belong or belonged to another firm (True: one
+    still active there). Staff sessions carry no firm, so their sign-ins can't be told apart, and
+    deactivation here ends a person's sessions only when no other firm holds them."""
+    if not user_ids:
+        return {}
+    # A per-person fact for the caller's own firm members (LIST-001 does not apply: no rows of
+    # another firm are returned, only whether one exists).
+    async with identity_engine().connect() as conn:
+        result = await conn.execute(_ELSEWHERE, {"ids": user_ids, "tenant": tenant_id})
+        return {cast(UUID, r.user_id): bool(r.active) for r in result}
 
 
 async def staff_memberships(session: AsyncSession) -> Sequence[RowMapping]:

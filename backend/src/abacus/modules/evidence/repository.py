@@ -5,19 +5,23 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date, datetime
+from typing import cast
 from uuid import UUID
 
-from sqlalchemy import exists, func, insert, select, text, update
+from sqlalchemy import ColumnElement, exists, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from abacus.modules.evidence.models import (
     Citation,
+    CitationEvent,
     EvidenceItem,
     EvidencePage,
     EvidenceVersion,
     InboxFile,
+    PiiRegion,
+    PiiScanRun,
     ReviewAssignment,
     ReviewDecision,
     UploadCheck,
@@ -952,6 +956,138 @@ async def decisions_for_screenings(
                 .order_by(ReviewDecision.created_at)
             )
         )
+        .scalars()
+        .all()
+    )
+
+
+# --- citation and viewer reads (P-03-T08, T09) -------------------------------------------------
+
+
+async def get_citation(session: AsyncSession, citation_id: UUID) -> Citation | None:
+    """One citation in the session's firm; the caller authorises on its engagement."""
+    return await session.get(Citation, citation_id)
+
+
+async def events_of(
+    session: AsyncSession, citation_ids: Sequence[UUID]
+) -> Sequence[CitationEvent]:
+    """The citations' events, oldest first (LIST_EXEMPT: of rows the caller already read
+    through `visible()` or authorised on)."""
+    if not citation_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(CitationEvent)
+                .where(CitationEvent.citation_id.in_(list(citation_ids)))
+                .order_by(CitationEvent.at, CitationEvent.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def pii_regions_of(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+) -> Sequence[PiiRegion]:
+    """A source's detected regions (none derived), by page; never their sealed values
+    (LIST_EXEMPT: one source's regions, for a caller that authorised on it)."""
+    source = (
+        PiiRegion.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else PiiRegion.inbox_file_id == inbox_file_id
+    )
+    return (
+        (
+            await session.execute(
+                select(PiiRegion)
+                .where(source, PiiRegion.derivation_id.is_(None))
+                .order_by(PiiRegion.page_no, PiiRegion.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def scanned_pages(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+) -> set[int]:
+    """The pages any PII scan of the source (none derived) recorded as scanned (LIST_EXEMPT:
+    one source's scan runs, for a caller that authorised on it)."""
+    source = (
+        PiiScanRun.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else PiiScanRun.inbox_file_id == inbox_file_id
+    )
+    rows = (
+        await session.execute(
+            select(PiiScanRun.pages_scanned).where(source, PiiScanRun.derivation_id.is_(None))
+        )
+    ).scalars()
+    return {int(page) for pages in rows for page in pages}
+
+
+async def preview_pages_of(session: AsyncSession, preview_id: UUID) -> Sequence[UploadPreviewPage]:
+    """A preview's page images' rows, by page (LIST_EXEMPT: one preview's pages)."""
+    return (
+        (
+            await session.execute(
+                select(UploadPreviewPage)
+                .where(UploadPreviewPage.preview_id == preview_id)
+                .order_by(UploadPreviewPage.page_no)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def masked_preview_for(
+    session: AsyncSession, evidence_version_id: UUID
+) -> UploadPreview | None:
+    """The version's newest masked rendition (none derived): a preview with `mask_version` set
+    (P-03-T09, T15). None until the masker has rendered it."""
+    return (
+        await session.execute(
+            select(UploadPreview)
+            .where(
+                UploadPreview.evidence_version_id == evidence_version_id,
+                UploadPreview.derivation_id.is_(None),
+                UploadPreview.mask_version.is_not(None),
+            )
+            .order_by(UploadPreview.created_at.desc(), UploadPreview.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def verified_citations_into(
+    session: AsyncSession, ctx: AuthContext, version_id: UUID, match_ids: Sequence[str] | None
+) -> Sequence[Citation]:
+    """Verified citations whose source is the version, on engagements the caller may read the
+    evidence of (`visible()`), oldest first, at most 200 (P-03-T09 regions)."""
+    stmt = select(Citation).where(
+        Citation.source_type == "evidence_version",
+        Citation.source_id == version_id,
+        Citation.verified.is_(True),
+        Citation.match_id.is_not(None),
+        visible(
+            ctx, "evidence.read", cast(ColumnElement[UUID], Citation.engagement_id.expression)
+        ),
+    )
+    if match_ids is not None:
+        stmt = stmt.where(Citation.match_id.in_(list(match_ids)))
+    return (
+        (await session.execute(stmt.order_by(Citation.created_at, Citation.id).limit(200)))
         .scalars()
         .all()
     )

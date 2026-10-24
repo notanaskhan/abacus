@@ -6,7 +6,8 @@ Every verifier first authorises the actor on the anchor's engagement (`evidence.
 `source_not_visible` before any source is read; a source that isn't in that engagement is
 `source_not_found`, exactly as if it didn't exist (security review).
 
-- **`document_text`** `{evidence_version_id, page, bbox?, annotation_id?}`: the page and its
+- **`document_text`** `{evidence_version_id | inbox_file_id, page, bbox?, annotation_id?}` (an
+  inbox file for the matcher, DEC-267): the page and its
   words come from the word layer (P-03-T05); a version with no layer, or a page the layer has no
   words for, is read from the extraction's page text, where a quote can still be verified but no
   region resolved (`verify_on_layer`). A claim with nothing to check (no box, quote or value) is
@@ -27,7 +28,8 @@ from decimal import Decimal
 from typing import Annotated, Final
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import transaction_context
@@ -50,9 +52,15 @@ from abacus.modules.evidence.citations.registry import (
     register_citable,
     unverifiable,
 )
-from abacus.modules.evidence.models import EvidenceVersion
+from abacus.modules.evidence.models import EvidenceVersion, InboxFile
 from abacus.modules.evidence.processing import document_text
-from abacus.modules.evidence.repository import get_item, get_version, newest_extraction, pages_of
+from abacus.modules.evidence.repository import (
+    get_inbox_file,
+    get_item,
+    get_version,
+    newest_extraction,
+    pages_of,
+)
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import Actor, Forbidden, authorise
 from abacus.modules.requests.api import item_ref
@@ -63,21 +71,40 @@ Rect = Annotated[list[float], Field(min_length=4, max_length=4)]
 
 
 class DocumentTextLocator(BaseModel):
+    """An evidence version's page, or an inbox file's before it is one (the matcher cites a file
+    still in the inbox; DEC-267): exactly one of the two ids."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    evidence_version_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
+    inbox_file_id: Annotated[UUID | None, classified("internal")] = None
     page: Annotated[int, Field(ge=1, le=5000), classified("internal")]
     bbox: Annotated[Rect | None, classified("internal")] = None
     annotation_id: Annotated[None, classified("internal")] = None  # reserved for K-03
 
+    @model_validator(mode="after")
+    def _one_source(self) -> DocumentTextLocator:
+        if (self.evidence_version_id is None) == (self.inbox_file_id is None):
+            raise ValueError("a document citation names a version or an inbox file")
+        return self
+
 
 class SheetCellLocator(BaseModel):
+    """A version's cell, or an inbox file's (the matcher's; DEC-267): exactly one of the ids."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    evidence_version_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
+    inbox_file_id: Annotated[UUID | None, classified("internal")] = None
     sheet: Annotated[str | None, Field(max_length=120), classified("confidential")] = None
     cell: Annotated[str, Field(pattern=_CELL), classified("internal")]
     value: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+
+    @model_validator(mode="after")
+    def _one_source(self) -> SheetCellLocator:
+        if (self.evidence_version_id is None) == (self.inbox_file_id is None):
+            raise ValueError("a cell citation names a version or an inbox file")
+        return self
 
 
 class RequestItemLocator(BaseModel):
@@ -91,14 +118,14 @@ def _pt(value: float) -> str:
     return f"{round(value, 1):g}"
 
 
-def document_match_id(version_id: UUID, page: int, box: Box | None) -> str:
+def document_match_id(version_id: UUID, page: int, box: Box | None, *, prefix: str = "ev") -> str:
     """`ev:<version>#p<page>:<x0>,<top>,<x1>,<bottom>` (C4 §3.1), without the box when the
-    region didn't resolve."""
-    base = f"ev:{version_id}#p{page}"
+    region didn't resolve; an inbox file's is `inbox:<file>#p…` (DEC-267)."""
+    base = f"{prefix}:{version_id}#p{page}"
     return base if box is None else f"{base}:{','.join(_pt(v) for v in box)}"
 
 
-def sheet_match_id(version_id: UUID, sheet_index: int, cell: str) -> str:
+def sheet_match_id(version_id: UUID | str, sheet_index: int, cell: str) -> str:
     """`<file>!<cell>` (C4 §3.1); a workbook's later sheets are told apart by index."""
     return f"{version_id}!{cell}" if sheet_index == 0 else f"{version_id}.s{sheet_index}!{cell}"
 
@@ -139,10 +166,26 @@ async def _version(
     return version, None
 
 
+async def _inbox_file(
+    tx: UnitOfWork, actor: Actor, file_id: UUID, anchor: Anchor
+) -> tuple[InboxFile | None, Reason | None]:
+    """The cited inbox file, read only after the actor is allowed `evidence.read` on the
+    anchor's engagement; a file of another engagement is `source_not_found`, as if absent."""
+    refused = await _authorised(actor, anchor, "evidence.read")
+    if refused is not None:
+        return None, refused
+    found = await get_inbox_file(tx.session, file_id)
+    if found is None or found.engagement_id != anchor.engagement_id:
+        return None, "source_not_found"
+    return found, None
+
+
 async def _extracted_text(
-    tx: UnitOfWork, version_id: UUID
+    tx: UnitOfWork, version_id: UUID | None, *, inbox_file_id: UUID | None = None
 ) -> tuple[dict[int, str], dict[str, tuple[tuple[str, ...], ...]]]:
-    row = await newest_extraction(tx.session, evidence_version_id=version_id)
+    row = await newest_extraction(
+        tx.session, evidence_version_id=version_id, inbox_file_id=inbox_file_id
+    )
     if row is None:
         return {}, {}
     tenant = await transaction_context(tx.session)
@@ -160,12 +203,24 @@ async def verify_document_text(
         locator = DocumentTextLocator.model_validate(dict(claim.locator))
     except ValidationError:
         return unverifiable(claim)
-    source = ("evidence_version", locator.evidence_version_id)
     kept = locator.model_dump(mode="json")
-    version, refused = await _version(tx, actor, locator.evidence_version_id, anchor)
-    if version is None:
-        return Verdict(refused, *source, kept)
-    number = str(version.version_no)
+    kept.pop("inbox_file_id" if locator.inbox_file_id is None else "evidence_version_id")
+    version_id, inbox_id = locator.evidence_version_id, locator.inbox_file_id
+    number: str | None = None
+    if version_id is not None:
+        source = ("evidence_version", version_id)
+        version, refused = await _version(tx, actor, version_id, anchor)
+        if version is None:
+            return Verdict(refused, *source, kept)
+        number, source_id, prefix = str(version.version_no), version.id, "ev"
+    elif inbox_id is not None:
+        source = ("inbox_file", inbox_id)
+        found_file, refused = await _inbox_file(tx, actor, inbox_id, anchor)
+        if found_file is None:
+            return Verdict(refused, *source, kept)
+        source_id, prefix = found_file.id, "inbox"
+    else:  # the locator names exactly one; unreachable
+        return unverifiable(claim)
     found = _value(claim.value)
     if isinstance(found, str):
         return Verdict("value_mismatch", *source, kept, number)
@@ -174,7 +229,10 @@ async def verify_document_text(
         box = (locator.bbox[0], locator.bbox[1], locator.bbox[2], locator.bbox[3])
     tenant = await transaction_context(tx.session)
     pages = await pages_of(
-        tx.session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
+        tx.session,
+        evidence_version_id=version_id,
+        inbox_file_id=inbox_id,
+        extractor_version=WORDS_VERSION,
     )
     page = next((p for p in pages if p.page_no == locator.page), None)
     if pages and page is None:
@@ -185,7 +243,7 @@ async def verify_document_text(
     else:
         # No words for this page in the layer (no layer yet, or text only PDFium reads): the
         # extraction's page text verifies the quote; no region resolves (AC-3).
-        text_pages, _ = await _extracted_text(tx, version.id)
+        text_pages, _ = await _extracted_text(tx, version_id, inbox_file_id=inbox_id)
         if page is None and locator.page not in text_pages:
             return Verdict("page_not_found", *source, kept, number)
         if page is not None and box is not None:
@@ -200,7 +258,7 @@ async def verify_document_text(
         *source,
         kept,
         number,
-        document_match_id(version.id, locator.page, verdict.box),
+        document_match_id(source_id, locator.page, verdict.box, prefix=prefix),
         verdict.sha256,
         verdict.value_text,
     )
@@ -213,13 +271,26 @@ async def verify_sheet_cell(
         locator = SheetCellLocator.model_validate(dict(claim.locator))
     except ValidationError:
         return unverifiable(claim)
-    source = ("evidence_version", locator.evidence_version_id)
     kept = locator.model_dump(mode="json")
-    version, refused = await _version(tx, actor, locator.evidence_version_id, anchor)
-    if version is None:
-        return Verdict(refused, *source, kept)
+    kept.pop("inbox_file_id" if locator.inbox_file_id is None else "evidence_version_id")
+    version_id, inbox_id = locator.evidence_version_id, locator.inbox_file_id
+    number: str | None = None
+    if version_id is not None:
+        source = ("evidence_version", version_id)
+        version, refused = await _version(tx, actor, version_id, anchor)
+        if version is None:
+            return Verdict(refused, *source, kept)
+        number, base = str(version.version_no), str(version.id)
+    elif inbox_id is not None:
+        source = ("inbox_file", inbox_id)
+        found_file, refused = await _inbox_file(tx, actor, inbox_id, anchor)
+        if found_file is None:
+            return Verdict(refused, *source, kept)
+        base = f"inbox:{found_file.id}"
+    else:  # the locator names exactly one; unreachable
+        return unverifiable(claim)
     found = _value(claim.value if claim.value is not None else locator.value)
-    _, sheets = await _extracted_text(tx, version.id)
+    _, sheets = await _extracted_text(tx, version_id, inbox_file_id=inbox_id)
     names = list(sheets)
     name = locator.sheet or ""
     if name not in sheets and locator.sheet is None and len(sheets) == 1:
@@ -237,13 +308,13 @@ async def verify_sheet_cell(
             quote_rule="contiguous",
         )
     if reason is not None:
-        return Verdict(reason, *source, kept, str(version.version_no))
+        return Verdict(reason, *source, kept, number)
     return Verdict(
         None,
         *source,
         kept,
-        str(version.version_no),
-        sheet_match_id(version.id, names.index(name), locator.cell),
+        number,
+        sheet_match_id(base, names.index(name), locator.cell),
         None,
         text[:200] if found is not None and text else None,
     )
@@ -273,28 +344,56 @@ async def verify_request_item(
 # --- Display: rendered by code from the locator (INV-2) ----------------------------------------
 
 
-async def _file_title(tx: UnitOfWork, version_id: object) -> str:
+async def _file_title(
+    session: AsyncSession, version_id: object, engagement_id: UUID | None
+) -> str:
+    """The version's item title, only when the version is in the citation's engagement."""
     try:
-        version = await get_version(tx.session, UUID(str(version_id)))
+        version = await get_version(session, UUID(str(version_id)))
     except ValueError:
         version = None
-    item = await get_item(tx.session, version.evidence_item_id) if version is not None else None
+    if version is None or engagement_id is None or version.engagement_id != engagement_id:
+        return "Document"
+    item = await get_item(session, version.evidence_item_id)
     return item.title if item is not None else "Document"
 
 
-async def display_document_text(tx: UnitOfWork, locator: Mapping[str, object]) -> Display:
+async def _source_title(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> str:
+    """The cited file's name: the version's item title, or the inbox file's name (P-03-T10),
+    only when the source is in the citation's engagement."""
+    inbox_id = locator.get("inbox_file_id")
+    if inbox_id is not None:
+        try:
+            found = await get_inbox_file(session, UUID(str(inbox_id)))
+        except ValueError:
+            found = None
+        if found is None or engagement_id is None or found.engagement_id != engagement_id:
+            return "Document"
+        return found.file_name
+    return await _file_title(session, locator.get("evidence_version_id"), engagement_id)
+
+
+async def display_document_text(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> Display:
     return Display(
-        await _file_title(tx, locator.get("evidence_version_id")), f"p. {locator.get('page')}"
+        await _source_title(session, locator, engagement_id), f"p. {locator.get('page')}"
     )
 
 
-async def display_sheet_cell(tx: UnitOfWork, locator: Mapping[str, object]) -> Display:
+async def display_sheet_cell(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> Display:
     sheet, cell = locator.get("sheet"), locator.get("cell")
     loc = f"{sheet} · {cell}" if sheet else str(cell)
-    return Display(await _file_title(tx, locator.get("evidence_version_id")), loc)
+    return Display(await _source_title(session, locator, engagement_id), loc)
 
 
-async def display_request_item(tx: UnitOfWork, locator: Mapping[str, object]) -> Display:
+async def display_request_item(
+    session: AsyncSession, locator: Mapping[str, object], engagement_id: UUID | None
+) -> Display:
     return Display("Request item", "")
 
 

@@ -33,6 +33,11 @@ with it; `make seed-staging` passes it). Branding and the host go through `porta
 `brightwaterhale.<portal_base_domain>` from settings, left out on a laptop without that setting and
 refused on `--staging` without it. People, grants and the invitation are bootstrapped; see DEC-213.
 
+The `people` slice (G-01-T06: the seat total, the four teams and each seat holder's template,
+level, title, team, service line and seasonal end) is opt-in (`--slice people`). The seats and
+profiles go through identity's services in a unit of work; teams are bootstrapped like offices
+until G-01-T08 gives them a service.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -58,7 +63,7 @@ from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
-from typing import Final
+from typing import Final, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -70,8 +75,14 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
-from abacus.modules.identity.api import AuthContext, set_demo_clock
-from abacus.modules.organisations.api import client_with_entity, create_client
+from abacus.modules.identity.api import (
+    AuthContext,
+    MemberProfile,
+    provision_setting,
+    set_demo_clock,
+    set_member_profile,
+)
+from abacus.modules.organisations.api import NewClient, client_with_entity, create_client
 from abacus.modules.portal.api import (
     BrandingSlots,
     activate_portal_host,
@@ -106,8 +117,19 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.binders import (
     person_email,
     person_id,
 )
-from abacus_tools.synthetic.scenarios.brightwater_hale.clients import Client, build_clients
+from abacus_tools.synthetic.scenarios.brightwater_hale.clients import (
+    Client,
+    build_clients,
+    entity_id_of,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
+from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
+    SERVICE_LINE_OF_TEAM,
+    Level,
+    TeamName,
+    Template,
+    access_ends_of,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -120,6 +142,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
     INVITATION_BY_NAME,
     PERSON_BY_NAME,
     PortalPerson,
+    delegated_requests,
     work_item_of,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import NEEDS as PORTAL_NEEDS
@@ -357,18 +380,72 @@ async def _staff_member_added(conn: asyncpg.Connection, _: Scenario, event: Even
             email_of(seat.name),
             seat.name,
         )
+        # G-01-T06: one microsecond per ADM-02 row, so "in the order the firm added them" is the
+        # screen's order (the business clock is frozen at the setup instant for all 46).
         await conn.execute(
             "INSERT INTO memberships (tenant_id, user_id, status, kind, firm_role, office_id, "
-            "initials) VALUES ($1, $2, 'active', 'staff', $3, $4, $5) ON CONFLICT DO NOTHING",
+            "initials, created_at) VALUES ($1, $2, 'active', 'staff', $3, $4, $5, $6) "
+            "ON CONFLICT DO NOTHING",
             TENANT,
             user,
             FIRM_ROLES.get(seat.initials),
             office_id_of(seat.office),
             seat.initials,
+            event.at + timedelta(microseconds=seat.n),
         )
         return "membership.created", "user", str(user)
 
     await _bootstrap(conn, event, write)
+
+
+# --- the people slice (G-01-T06) --------------------------------------------------------------
+# The seat total and each profile go through identity (`provision_setting`, `set_member_profile`)
+# in a unit of work under the event's actor. Teams have no service until G-01-T08, so their rows
+# are bootstrapped like offices.
+
+
+def team_id_of(name: str) -> UUID:
+    return UUID(stable_id(f"team:{name}"))
+
+
+async def _seats_provisioned(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await provision_setting(
+            tx, TENANT, "plan", "seats", int(str(event.data["seats"])), UUID(int=0)
+        )
+
+
+async def _team_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    name = str(event.data["name"])
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO teams (id, tenant_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            team_id_of(name),
+            TENANT,
+            name,
+        )
+        return "team.created", "team", str(team_id_of(name))
+
+    await _bootstrap(conn, event, write)
+
+
+async def _member_profile_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    seat = _SEATS[str(event.data["initials"])]
+    team = cast(TeamName, event.data["team"])
+    line = SERVICE_LINE_OF_TEAM[team]
+    profile = MemberProfile(
+        role_template=cast(Template, event.data["template"]),
+        level=cast(Level, event.data["level"]),
+        title=str(event.data["title"]),
+        service_lines=[] if line is None else [line],
+        access_ends_on=access_ends_of(seat),
+        team_ids=[team_id_of(team)],
+    )
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await set_member_profile(tx, TENANT, user_id_of(seat), profile)
 
 
 # --- the shell slice (P-01-T07; bootstrap writes until identity and notifications own them) ----
@@ -545,9 +622,12 @@ def engagement_id_of(audit: Audit) -> UUID:
 async def _client_entity_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Through `organisations.api` under the engagement partner: a plan entity of its sponsor."""
     client = await _client_id(conn, str(event.client))
+    entity = str(event.data["entity"])
+    # F-04-T31: the entity id the fixtures use (`entityIdOf` in the TS seed).
+    entity_id = UUID(entity_id_of(_CLIENTS[str(event.client)].slug, entity))
     kind, actor = _actor(event)
     async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
-        await client_with_entity(tx, TENANT, client, None, str(event.data["entity"]))
+        await client_with_entity(tx, TENANT, client, None, entity, new_entity_id=entity_id)
 
 
 async def _engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -1136,17 +1216,43 @@ async def _portal_person_added(conn: asyncpg.Connection, _: Scenario, event: Eve
 
 
 async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """A pending invitation as the existing table holds it (no token: nothing is emailed)."""
+    """A pending invitation as the table holds it (no token: nothing is emailed), with its v2
+    fields (P-08-T18): the invitee's third-party contact, the kind, terms and grant template."""
     invitation = INVITATION_BY_NAME[str(event.data["invitee"])]
     engagement = engagement_id_of(BY_LABEL[invitation.engagement])
     by = user_id_of(_SEATS[event.actor])
     invitation_id = UUID(invitation.id)
+    contact_id = UUID(invitation.contact_id)
+    template = {
+        "role": invitation.grant_role,
+        "scope_kind": "request_item",
+        "scope_ids": list(delegated_requests(invitation)),
+    }
 
     async def write() -> tuple[str, str, str]:
+        client = await conn.fetchval(
+            "SELECT client_id FROM engagements WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            engagement,
+        )
+        await conn.execute(
+            "INSERT INTO contacts (id, tenant_id, client_id, display_name, email, title, "
+            "organisation_name, contact_kind, portal_state, created_at) VALUES ($1, $2, $3, $4, "
+            "$5, $6, $7, 'third_party', 'invited', $8) ON CONFLICT DO NOTHING",
+            contact_id,
+            TENANT,
+            client,
+            invitation.name,
+            invitation.email,
+            invitation.title,
+            invitation.org,
+            event.at,
+        )
         await conn.execute(
             "INSERT INTO client_invitations (id, tenant_id, engagement_id, email, role, "
-            "invited_by, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, "
-            "$8) ON CONFLICT DO NOTHING",
+            "invited_by, created_at, expires_at, kind, contact_id, grant_template, "
+            "terms_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12) "
+            "ON CONFLICT DO NOTHING",
             invitation_id,
             TENANT,
             engagement,
@@ -1155,6 +1261,10 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
             by,
             event.at,
             event.at + timedelta(days=invitation.days),
+            invitation.kind,
+            contact_id,
+            json.dumps(template),
+            invitation.terms_version,
         )
         return "client_invitation.created", "client_invitation", str(invitation_id)
 
@@ -1168,8 +1278,14 @@ async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> 
     """Through `organisations.api` under the relationship partner, as a person would."""
     client: Client = _CLIENTS[str(event.client)]
     kind, actor = _actor(event)
+    # F-04-T31: the ids the fixtures use (`client:<slug>` and `entityIdOf` in the TS seed), so the
+    # exported fixtures and the TS seed name the same client.
+    ids = NewClient(
+        UUID(stable_id(f"client:{client.slug}")),
+        UUID(entity_id_of(client.slug, client.entities[0])),
+    )
     async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
-        await create_client(tx, TENANT, client.name, client.entities[0])
+        await create_client(tx, TENANT, client.name, client.entities[0], ids=ids)
 
 
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
@@ -1194,6 +1310,10 @@ HANDLERS: Final[dict[str, Handler]] = {
     "portal.host_added": _host_added,
     "identity.portal_person_added": _portal_person_added,
     "identity.client_invitation_created": _client_invitation_created,
+    # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.
+    "identity.seats_provisioned": _seats_provisioned,
+    "organisations.team_created": _team_created,
+    "identity.member_profile_set": _member_profile_set,
     # The shell slice, after audit_core: the sandbox firm before its offices and membership.
     "identity.sandbox_firm_created": _sandbox_firm_created,
     "organisations.sandbox_office_created": _sandbox_office_created,

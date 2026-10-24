@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-005, ADR-024, ADR-026, ADR-031, ADR-139, ADR-140]
 related_specs: [SPEC-002, SPEC-025]
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 > **Outline.** Written with the clients contract stub (P-07-T04, TASK-470); Stories 3 and 4 added
@@ -79,6 +79,12 @@ on the model gateway and agents for `organisations`.
 - **AC-24** The record carries rail bands, contacts, letter, gates, tab counts and `read_only_reason`; gates are G1 to G9 with object-reference blockers.
 - **AC-25** F-02-T11's C1 check still holds; `single_audit` is absent from the catalogue; a draft takes a code string, so naming `single_audit` is the server's 422 `unknown_engagement_type`, which the catalogue lists and the draft and create routes document.
 
+### Story 6: contacts and portal-access consumer tests (P-07-T18; `docs/contracts/contacts-access.md`)
+- **AC-26** The contacts list is the P-36 envelope plus `summary` (active, invited, not invited, locked) and `delegated` (parts, total, received); its row carries what CLI-04's columns render (name, party kind, roles per entity, portal status, MFA, last seen, delegated count, allowed actions), and portal status is exactly the registry's `invitation` codes.
+- **AC-27** CLI-04 a's frame (Northwind's six contacts) is a valid `ContactsPage`: the header reads 3 active · 1 invited · 2 not invited, its four counts sum to the rows and agree with `counts`; the footer's parts are the non-zero per-row delegated counts in row order, 10 + 9 + 2 + 2 + 1 = 24, with 11 received of 24.
+- **AC-28** Grants carry ADR-146's role and scope codes and delegated request ids; an invitation's expiry is fixed at 14 days; no response schema of the contacts routes carries a token or link.
+- **AC-29** No contacts schema carries a wall field or a Restricted field.
+
 ## 6. Behaviour and flows
 | From | Event | To | Who can trigger |
 |---|---|---|---|
@@ -134,6 +140,7 @@ CLI-01 and CLI-02 screen contracts (`docs/screens/`); flag off shows F-05's flag
 | AC-10 to AC-15 | unit (contract) | `backend/tests/contracts/engagements_v2/test_engagements_v2_stub.py` |
 | AC-16 to AC-19 | integration | P-07-T14 (independent suite) |
 | AC-20 to AC-22 | contract (consumer) | `backend/tests/contracts/clients/test_clients_consumer.py`; `apps/web/src/fixtures/contracts/clients-engagements.test.ts` |
+| AC-26 to AC-29 | contract (consumer) | `backend/tests/contracts/contacts_access/test_contacts_access_consumer.py`; `apps/web/src/fixtures/contracts/contacts-access.test.ts` |
 | AC-23 to AC-25 | contract (consumer) | `backend/tests/contracts/engagements_v2/test_engagements_v2_consumer.py`; the same TypeScript file |
 
 ## 19. Rollout

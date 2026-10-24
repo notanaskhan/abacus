@@ -4,10 +4,13 @@
 import type { Manifest } from "./types";
 
 export const engScreens = {
+  // P-07-T27 built a–e on fixtures behind `engagements.v2` (the legacy index answers while it is
+  // off). It stays planned for the reason CLI-02 does (cli.ts, DEC-195): ENG-01 → ENG-02 and the
+  // inbound SHL-01, CLI-01, CLI-02 and ENG-02 links are wired in routes/firm, not with to.<ID>().
   "ENG-01": {
     name: "Engagements index",
     status: "planned",
-    path: "/engagements", // legacy Engagements
+    path: "/engagements",
     navArea: "Engagements",
   },
   // P-07-T20 built b, c, d, e and the prospect state on fixtures behind `engagements.v2` (the

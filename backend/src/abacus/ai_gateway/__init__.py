@@ -51,6 +51,7 @@ from abacus.ai_gateway.boundary import (
     DataBoundaryRefused,
     enforce_boundary,
     is_synthetic,
+    refuse_pii_in_context,
     register_client_data_facts,
     register_synthetic_tenants,
 )
@@ -80,6 +81,8 @@ from abacus.ai_gateway.embeddings import (
     embedder,
     embedding_route,
 )
+from abacus.ai_gateway.pii import PARTS as PII_PARTS
+from abacus.ai_gateway.pii import part_with_tin
 from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt, registry
 from abacus.ai_gateway.providers import (
     FakeModel,
@@ -659,6 +662,13 @@ async def _call[T: BaseModel](c: GatewayCall[T], found: Prompt) -> GatewayResult
     route: Route = planned[0] if planned else "fake"
     model = model_id(tier, route) or settings().model_catalog[tier].name
     user = c.context.render()
+    # ADR-167 §2: an unmasked TIN form anywhere in the input refuses the call before anything
+    # else (no budget read, admission, usage record or provider), on every route.
+    part = part_with_tin(found.text, c.context)
+    if part is not None:
+        await refuse_pii_in_context(
+            c.attribution.tenant, route, found.ref, part, PII_PARTS.index(part)
+        )
     inputs_hash = hashlib.sha256(f"{found.ref}\n{user}".encode()).hexdigest()
     spent = Decimal(0)
     earlier = await _spent_by_run(c.attribution)

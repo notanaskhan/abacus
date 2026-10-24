@@ -215,6 +215,8 @@ NOT_CREATING = {
     "/v1/portal/binders/{binder_id}/mark-done/undo",
     "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void",
     "/v1/portal/room/suggest",
+    # P-08-T18 (SPEC-320 AC-12): the invitation preview reads; nothing is created.
+    "/v1/invitations/preview",
 }
 
 
@@ -239,6 +241,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # Q-02-T29: placing and releasing a legal hold start their workflows, so 202.
         "/v1/legal-holds",
         "/v1/legal-holds/{hold_id}/release",
+        # Q-02-T33: staff propagation of an Accrued incident starts IncidentPropagation, so 202.
+        "/v1/platform/incidents/{accrued_ref}/propagate",
         # P-08-T10 (SPEC-320): a sign-in start and a resend answer 202 for any email.
         "/v1/portal/auth/start",
         # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
@@ -272,6 +276,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items/{item_id}/delegate",
         "/v1/portal/request-items/{item_id}/upload-intents",
         # P-07-T05 (engagements v2 stub): a draft, a Prospect engagement, an engagement.
+        # A-01-T02 (audits stub): a phase event, an external release and an external archive.
+        "/v1/audits/{work_item_id}/phase",
+        "/v1/audits/{work_item_id}/release-record",
+        "/v1/audits/{work_item_id}/archive-record",
         "/v1/engagement-drafts",
         "/v1/engagement-drafts/{draft_id}/start-acceptance",
         "/v1/engagement-drafts/{draft_id}/create",
@@ -401,6 +409,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/checkpoints/{checkpoint_id}/restore",
         "/v1/fields/{target_type}/{target_id}/{field_key}/references",
         "/v1/fields/{target_type}/{target_id}/{field_key}/ticks",
+        "/v1/firm/security/incidents",  # Q-02-T33: a register entry
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

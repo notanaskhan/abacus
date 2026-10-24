@@ -238,3 +238,22 @@ async def engagement(
         user_id,
     )
     return engagement_id
+
+
+async def scanned(
+    seed: Seeder,
+    firm: Firm,
+    pages: list[int],
+    *,
+    version: uuid.UUID | None = None,
+    inbox: uuid.UUID | None = None,
+) -> None:
+    """A PII scan run that lists `pages` as scanned (P-03-T13 writes these; seeded here)."""
+    await seed.run(
+        "INSERT INTO pii_scan_runs (tenant_id, evidence_version_id, inbox_file_id, "
+        "detector_version, pages_scanned, region_count) VALUES ($1, $2, $3, 'd1', $4, 0)",
+        firm.tenant_id,
+        version,
+        inbox,
+        pages,
+    )

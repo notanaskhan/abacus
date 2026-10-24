@@ -1,7 +1,9 @@
 // The portal domain's public entry (P-08 §5.2): what portal screens and the portal entry import.
 // Nothing here reaches the firm's shell or domains (INV-4).
 export type {
+  AcceptedInvitationOut,
   InvitationPreviewOut,
+  PortalMfaSetupOut,
   PortalBrandingOut,
   PortalSignInStartIn,
   PortalSignInVerifyIn,
@@ -32,6 +34,7 @@ export {
   brandOf,
   failureOf,
   getBranding,
+  invitation,
   signIn,
   useBranding,
 } from "./sign-in";

@@ -32,7 +32,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Target, uow
+from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Resource, authorise, engagement_client
 from abacus.modules.identity.authz.conditions import register_client_scope
 from abacus.modules.identity.context import AuthContext
@@ -203,28 +203,68 @@ async def grant_client_access(
     ):
         raise GrantScopeInvalid
     async with uow(ctx.tenant) as tx:
-        grant_id = await insert_grant(
-            tx.session,
-            {
-                "tenant_id": ctx.tenant_id,
-                "user_id": user_id,
-                "contact_id": contact_id,
-                "role": role,
-                "scope_kind": scope_kind,
-                "scope_id": scope_id,
-                "document_classes": list(document_classes) if document_classes else None,
-                "granted_by": ctx.user_id,
-                "expires_at": expires_at,
-            },
+        grant_id = await grant_in_unit_of_work(
+            tx,
+            tenant_id=ctx.tenant_id,
+            target=_target(resource),
+            user_id=user_id,
+            role=role,
+            scope_kind=scope_kind,
+            scope_id=scope_id,
+            granted_by=ctx.user_id,
+            contact_id=contact_id,
+            document_classes=document_classes,
+            expires_at=expires_at,
         )
         if grant_id is None:
             raise GrantExists
-        await insert_grant_event(
-            tx.session, tenant_id=ctx.tenant_id, grant_id=grant_id, event="granted", by=ctx.user_id
-        )
-        tx.record("client_access.granted", target=_target(resource))
-        tx.emit(ClientAccessGranted(grant_id=grant_id, user_id=user_id))
         tx.emit(AccessChanged(user_id=user_id))
+    return grant_id
+
+
+async def grant_in_unit_of_work(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    target: Target,
+    user_id: UUID,
+    role: GrantRole,
+    scope_kind: ScopeKind,
+    scope_id: UUID,
+    granted_by: UUID,
+    contact_id: UUID | None = None,
+    document_classes: Sequence[str] | None = None,
+    expires_at: datetime | None = None,
+) -> UUID | None:
+    """The one way a grant is written, inside the caller's unit of work: the grant, its
+    `client_access_events` row and the `client_access.granted` audit event and outbox event,
+    all `by` `granted_by`. None when the person already holds that role on that scope.
+    `grant_client_access` authorises first; an invitation's acceptance (P-08-T18) writes the
+    template the inviter was authorised to issue, attributed to the inviter. The caller emits
+    `access.changed` (acceptance ends the person's other sessions itself, DEC-275)."""
+    if role not in GRANT_ROLES or scope_kind not in SCOPE_KINDS:
+        raise GrantScopeInvalid
+    grant_id = await insert_grant(
+        tx.session,
+        {
+            "tenant_id": tenant_id,
+            "user_id": user_id,
+            "contact_id": contact_id,
+            "role": role,
+            "scope_kind": scope_kind,
+            "scope_id": scope_id,
+            "document_classes": list(document_classes) if document_classes else None,
+            "granted_by": granted_by,
+            "expires_at": expires_at,
+        },
+    )
+    if grant_id is None:
+        return None
+    await insert_grant_event(
+        tx.session, tenant_id=tenant_id, grant_id=grant_id, event="granted", by=granted_by
+    )
+    tx.record("client_access.granted", target=target)
+    tx.emit(ClientAccessGranted(grant_id=grant_id, user_id=user_id))
     return grant_id
 
 

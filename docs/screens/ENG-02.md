@@ -17,14 +17,14 @@ Code to come (P-07 §5): `src/screens/ENG-02/{index.tsx, scenarios.ts, copy.ts, 
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a | priya-raman (Priya Raman, CAS & Advisory Partner) | Mon Sep 14, 2026, 9:24 AM CT | E0 | Copperleaf Coffee Roasters, Inc. "2026 Close", Active, CAS (non-attest), letter signed Mar 3, 2026; August close 4 days past due | built · live (T28) for the rail and work-item rows; the RunCard and close task groups fixture until C-01 |
+| a | priya-raman (Priya Raman, CAS & Advisory Partner) | Mon Sep 14, 2026, 9:24 AM CT | E0 | Copperleaf Coffee Roasters, Inc. "2026 Close", Active, CAS (non-attest), letter signed Mar 3, 2026; August close 4 days past due | built (T28, TASK-1127): rail, the 12 close rows with "7 of 12", the SKE note; the stat rows, RunCard, Year-end and Related groups wait for C-01's close provider (DEC-272) |
 | b | priya-raman | same | E0 | Northwind Robotics 401(k) Plan "PY2025 EBP Audit", Active: gate rows G1–G3 met (live providers), G4 blocked; G5–G9 rows render only for registered providers | built · live (T20) |
 | c | priya-raman | same | E0 | Bluestem Analytics, LLC "2026 Close (from Oct)", Accepted, letter viewed Sep 11 and not signed: G3 unmet, no work items | built · live (T20) |
 | d | priya-raman | same | E0 | Meridian Tool & Die, Inc. "FY2025 FS Audit", Archived, archive locked Jun 12, 2026 (WORM): every write answers 409 `archived` | built · live (T20) |
 | e | priya-raman | same | E0 | `GET /v1/engagements/{id}` never answers (`never()` handler) | built · live (T20) |
 | prospect (no artboard) | priya-raman | same | E0 | The Estate of Walter Thornbury engagement, Prospect: acceptance pending with Daniel Reyes | built · live (T20) |
-| f | margaret-okonkwo (Margaret Okonkwo) | Tue Oct 6, 2026, 11:20 AM CT | Oct 6 snapshot | Granite Peak Outdoor Supply, Inc. "FY2026 Financial Statement Audit" on the Dashboard tab (the ENG-12 default) | built · fixture until K-04 |
-| g | priya-raman | Mon Sep 14, 2026, 9:24 AM CT | E0 | Copperleaf on the Board tab (the ENG-10 close variant) | built · fixture until K-04 |
+| f | margaret-okonkwo (Margaret Okonkwo) | Tue Oct 6, 2026, 11:20 AM CT | Oct 6 snapshot | Granite Peak Outdoor Supply, Inc. "FY2026 Financial Statement Audit" on the Dashboard tab (the ENG-12 default) | built (T28) · fixture: the tab hosts ENG-12's planned target until K-04 (DEC-272) |
+| g | priya-raman | Mon Sep 14, 2026, 9:24 AM CT | E0 | Copperleaf on the Board tab (the ENG-10 close variant) | built (T28) · fixture: the tab hosts ENG-10's planned target until K-04 (DEC-272) |
 
 Not-allowed: a walled or unknown engagement answers 404 and renders not-found (INV-3). A metadata-only role (firm admin) sees the rail and gates; content bands need `engagement.read`. Error: the ViewState error frame. Flag off: the flag-off ViewState.
 
@@ -143,9 +143,13 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | Letter & terms hosts a record-mode card with "Record signed letter…" (O3 sheet) instead of the ENG-04 composer; the Letter link opens it | Interim recorded-letter G3 until N-02 (P-26, ADR-149) | P-07 §2.1, DEC-64 |
 | — | The prospect pre-acceptance banner is built without a frame, from spec.md's ENG-01 interaction text | Spec'd, undesigned state | P-07 §2.1 |
 | — | a's RunCard and close task groups render only in fixture builds until C-01 registers the close kind provider; production shows the engagement's work-item rows | C-01 owns closes | P-07 §2.1 |
-| — | The Activity tab is hidden until P-07-T61 | Cut order item 4 | P-07 §2.3 |
+| — | The Activity tab is hidden until P-07-T61; "Activity ›" in the canvas header is its placeholder | Cut order item 4; R2's eight tabs exceed C-05's seven a track | P-07 §2.3, DEC-272 |
+| DEC-272 | Dashboard, Board and Budget tabs host their planned targets' "Opens …" line (fixture builds only); the gear is drawn disabled (ENG-11 planned) and marked on d | ENG-12, ENG-10, ENG-06 and ENG-11 are K-04's and I-04's to build ("do not restate") | DEC-272 |
+| DEC-272 | The Team tab hosts the roster from `GET …/team` (name, role words) until ENG-05 | P-07-T39 builds ENG-05 | DEC-272 |
+| DEC-272 | The status pill has no ⌄ menu and On hold… is not built | No hold route exists (P-07-T15 did not land it); waits for that route | DEC-272 |
+| DEC-272 | a draws no stat rows, RunCard, Year-end or Related groups; closes read their phase word, not spec.md's meta lines | Not in the record or `WorkItemOut`; C-01's close provider | DEC-272 |
 | — | The core's tabs are in-screen state (Overview, Work items, Letter & terms; Team drawn disabled in fixture builds), not the `/work-items`, `/team`, `/letter` routes | P-07-T28 adds the tab routes with the Team host | DEC-195 |
-| — | The status pill has no ⌄ menu yet | The hold route lands with P-07-T15 | DEC-195 |
+| — | The status pill has no ⌄ menu yet | The hold route did not land with P-07-T15; still waiting (DEC-272) | DEC-195 |
 | — | ENG-02 → CLI-02 is wired in `routes/firm/engagements.tsx`, and the manifest entry stays `planned` | As CLI-02 | DEC-195 |
 | G-1…G-4 | See Contract gaps | The v2 record projection | DEC-195 |
 

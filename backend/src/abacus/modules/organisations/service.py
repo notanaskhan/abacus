@@ -9,6 +9,7 @@ from datetime import date
 from typing import Final, Literal
 from uuid import UUID, uuid4
 
+from sqlalchemy import Select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,9 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Target, UnitOfWork
 from abacus.modules.organisations.models import Contact
+from abacus.modules.organisations.repository import (
+    attest_client_ids as _attest_client_ids,
+)
 from abacus.modules.organisations.repository import (
     clients_matching,
     contact_ids_of_user,
@@ -30,6 +34,7 @@ from abacus.modules.organisations.repository import (
     names_in_firm,
     names_of,
     offices_in_firm,
+    set_contact_active,
     update_client,
     update_entity,
 )
@@ -49,10 +54,16 @@ class ClientNames:
 
 
 async def create_client(
-    tx: UnitOfWork, tenant_id: UUID, client_name: str, client_entity_name: str
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    client_name: str,
+    client_entity_name: str,
+    *,
+    ids: NewClient | None = None,
 ) -> NewClient:
-    """Inside the caller's unit of work; the caller has authorised the action that needs it."""
-    new = NewClient(uuid4(), uuid4())
+    """Inside the caller's unit of work; the caller has authorised the action that needs it.
+    `ids` only for the synthetic scenario (F-04-T31): its clients keep the ids the fixtures use."""
+    new = ids or NewClient(uuid4(), uuid4())
     await insert_client(tx.session, tenant_id, new.client_id, client_name)
     await insert_client_entity(
         tx.session, tenant_id, new.client_id, new.client_entity_id, client_entity_name
@@ -145,7 +156,13 @@ async def find_clients(
 
 
 async def client_with_entity(
-    tx: UnitOfWork, tenant_id: UUID, client_id: UUID, entity_id: UUID | None, entity_name: str
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    client_id: UUID,
+    entity_id: UUID | None,
+    entity_name: str,
+    *,
+    new_entity_id: UUID | None = None,
 ) -> NewClient:
     """An existing client, with one of its entities or a new one (inside the caller's unit of
     work; the caller has authorised and checked walls). `NotFound` if either isn't the firm's."""
@@ -164,7 +181,7 @@ async def client_with_entity(
         if e.client_id == client_id
     ):
         raise EntityExists(entity_name)
-    new_entity = uuid4()
+    new_entity = new_entity_id or uuid4()  # a given id: the synthetic scenario's (F-04-T31)
     await insert_client_entity(tx.session, tenant_id, client_id, new_entity, entity_name)
     tx.record("client_entity.created", target=Target("client_entity", new_entity))
     return NewClient(client_id, new_entity)
@@ -195,6 +212,11 @@ PortalState = Literal["not_invited", "invited", "active", "locked"]
 _FOREIGN_KEY_VIOLATION: Final = "23503"
 _UNIQUE_VIOLATION: Final = "23505"
 _CHECK_VIOLATION: Final = "23514"
+
+
+class ContactLinked(NotFound):
+    """The invitation's contact is already linked to another person: the acceptance answers the
+    same 404 as every other failure (P-08-T18)."""
 
 
 class ContactExists(DomainConflict):
@@ -393,6 +415,7 @@ class ContactFacts:
     client_id: UUID
     display_name: str
     user_id: UUID | None = None  # the portal user, once the contact has signed in (P-06-T10)
+    organisation_name: str | None = None  # a third party's organisation (P-08-T18: POR-01 d)
 
 
 async def contact_facts(
@@ -401,13 +424,31 @@ async def contact_facts(
     """The firm's contacts among `contact_ids`; others (another firm's, unknown) are left out.
     For a caller that authorised the record the contacts are named on."""
     found = await contacts_by_id(session, contact_ids)
-    return {cid: ContactFacts(client, name, user) for cid, (client, name, user) in found.items()}
+    return {
+        cid: ContactFacts(client, name, user, organisation)
+        for cid, (client, name, user, organisation) in found.items()
+    }
+
+
+async def activate_contact(tx: UnitOfWork, contact_id: UUID, user_id: UUID) -> None:
+    """An accepted invitation's contact (P-08-T18): linked to the person who accepted and
+    active, in the acceptance's unit of work. A contact already linked to someone else is left
+    alone and the acceptance fails (`ContactLinked`), never silently relinked."""
+    client_id = await set_contact_active(tx.session, contact_id, user_id)
+    if client_id is None:
+        raise ContactLinked("contact")
+    tx.record("contact.portal_activated", target=Target("client", client_id))
 
 
 async def contacts_of_user(session: AsyncSession, user_id: UUID) -> list[UUID]:
     """The firm's contacts the portal user is linked to (P-08-T17: the MFA floor), read in the
     caller's tenant session."""
     return await contact_ids_of_user(session, user_id)
+
+
+def attest_client_ids() -> Select[UUID]:
+    """The attest clients' ids as a subquery (P-07-T24; `repository.attest_client_ids`)."""
+    return _attest_client_ids()
 
 
 async def attest_client_of(tenant: TenantContext, client_id: UUID) -> bool | None:

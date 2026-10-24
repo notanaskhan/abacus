@@ -38,6 +38,12 @@ FIRM_SETTING_KEYS: frozenset[str] = frozenset(
         "staff_can_accept_evidence",
     }
 )
+# ADR-164 item 3 (P-07-T24): firm settings that only make a rule stricter. They live in the same
+# `firm_setting_values` store (migration 0138 widens its CHECK) but no matrix cell may name one, so
+# they can never grant: `g2_blocks_view` restores the read gate on attest clients' engagements.
+G2_BLOCKS_VIEW = "g2_blocks_view"
+STRICTER_SETTING_KEYS: frozenset[str] = frozenset({G2_BLOCKS_VIEW})
+STORED_SETTING_KEYS: frozenset[str] = FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS
 AGENT_SETTING = "autonomy_policy"
 _MODIFIERS = {
     "mfa_recent": "required",

@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status
 
 setup:
 	cd backend && uv sync --locked
@@ -85,7 +85,7 @@ check-fast:
 
 # Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
 # check stays in ci-contracts, which needs the OpenAPI export.
-GENERATORS = permission_matrix feature_flags provider_terms agent_specs eval_suites status_vocabulary security_tests human_only_actions sub_processors
+GENERATORS = permission_matrix role_templates feature_flags provider_terms agent_specs eval_suites status_vocabulary security_tests human_only_actions sub_processors
 check-generated:
 	@cd backend && for g in $(GENERATORS); do \
 		uv run python -m abacus_tools.codegen.$$g --check || { \
@@ -189,6 +189,16 @@ audit-chain-verify:
 flag:
 	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) --flag $(FLAG) --value $(VALUE) --operator $(OPERATOR) --reason "$(REASON)"
 
+# Q-02-T33 (RB-27): propagate an Accrued incident into the firms it touched, as staff. Needs
+# ABACUS_STAFF_TOKEN (a staff-issuer token with MFA) in the environment; STAFF must be the id it
+# proves. DRY_RUN=1 checks and starts nothing. FACTS is a JSON file of Accrued's facts (never
+# committed). `make incident-status REF=…` prints the staff record: requests, refusals, failed firms.
+incident-propagate:
+	cd backend && uv run python -m abacus_tools.incidents propagate --ref $(REF) --firms $(FIRMS) --facts $(FACTS) --staff $(STAFF) --reason "$(REASON)" $(if $(DRY_RUN),--dry-run)
+
+incident-status:
+	cd backend && uv run python -m abacus_tools.incidents status --ref $(REF)
+
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:
 	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
@@ -227,9 +237,11 @@ RESET_CLOCK ?= E0
 seed-staging:
 	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK) --slice portal
 
-# Fixture JSON from the Python scenario arrives with F-04-T31 (S10); the TS seed is interim.
+# F-04-T31 (F-04.21): fixture JSON exported from the Python scenario at a snapshot, through the
+# API, into apps/web/src/fixtures/seed/exported/<SNAPSHOT>/. Throwaway Postgres (Docker), never
+# a hosted or the developer's database. The TS seed stays for the paths not exported yet.
 fixtures:
-	@echo "not implemented: F-04-T31 (fixture export from the scenario)" >&2; exit 1
+	cd backend && uv run python -m abacus_tools.synthetic.fixture_export --snapshot $(SNAPSHOT)
 
 # Journeys (F-04 §3.8): fixture mode, gated on pull requests; full stack nightly, against
 # `make dev` + `make seed-demo` with fakes and the injected clock, never a hosted database. The

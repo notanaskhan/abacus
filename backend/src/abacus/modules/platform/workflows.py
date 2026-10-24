@@ -25,14 +25,21 @@ Patch points. Each step that is not in v1 lands with its own change, behind its 
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 from typing import Final
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
+from temporalio.exceptions import ActivityError
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.platform.workflow_types import (
+        IncidentPropagationInput,
+        IncidentPropagationOutcome,
+        IncidentPropagationResult,
+        IncidentPropagationStep,
+        IncidentStepResult,
         ProvisionTenantInput,
         ProvisionTenantResult,
         TenantKeyInput,
@@ -153,3 +160,110 @@ class TenantKeyWorkflow:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_KEY_RETRY,
         )
+
+
+def incident_propagation_workflow_id(accrued_ref: str) -> str:
+    return f"incident_propagate:{accrued_ref}"
+
+
+# The DPA's 72-hour notice: retry briskly and for a long time; a firm that doesn't exist is
+# never retried (staff follow RB-27's manual step for it).
+_INCIDENT_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=2),
+    maximum_attempts=50,
+    non_retryable_error_types=["FirmNotFound"],
+)
+
+
+# v2 (security review, S7): every firm is its own branch. A firm whose step fails every attempt
+# (or fails non-retryably, such as changed facts) is named in the result and in the finishing
+# record, and the other firms are written anyway: one bad firm never holds back the 72-hour
+# notice to the rest. Steps run in batches so a long-retrying firm delays only its batch.
+INCIDENT_ISOLATED_PATCH: Final = "incident_isolated_v2"
+_INCIDENT_BATCH: Final = 25
+_INCIDENT_STEP_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=1),
+    maximum_attempts=12,
+    non_retryable_error_types=["FirmNotFound", "IncidentFactsChanged"],
+)
+
+
+@workflow.defn(name="IncidentPropagation")
+class IncidentPropagationWorkflow:
+    """Q-02-T33 (RB-27): `incident_propagate:<accrued_ref>` writes Accrued's facts into each named
+    firm's register as the system. Each step is repeat-safe (one entry per firm and Accrued
+    reference, the same facts), so a rerun converges.
+
+    v1 (recorded history `incident-propagation-v1-three-firms.json`): one firm at a time, and a
+    firm that failed ended the run. v2 (`incident_isolated_v2`): per-firm isolation, then
+    `platform.finish_incident_propagation` records the outcome with the failed firms."""
+
+    @workflow.run
+    async def run(self, given: IncidentPropagationInput) -> IncidentPropagationResult:
+        if not workflow.patched(INCIDENT_ISOLATED_PATCH):
+            refs: list[IncidentStepResult] = []
+            for tenant_id in given.tenant_ids:
+                ref = await workflow.execute_activity(
+                    "platform.propagate_incident",
+                    IncidentPropagationStep(
+                        given.accrued_ref,
+                        tenant_id,
+                        given.facts,
+                        given.staff_id,
+                        given.reason_sha256,
+                    ),
+                    result_type=str,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_INCIDENT_RETRY,
+                )
+                refs.append(IncidentStepResult(tenant_id, ref, "written"))
+            return IncidentPropagationResult(tuple(refs))
+
+        async def one(tenant_id: str) -> IncidentStepResult | None:
+            try:
+                return await workflow.execute_activity(
+                    "platform.propagate_incident_v2",
+                    IncidentPropagationStep(
+                        given.accrued_ref,
+                        tenant_id,
+                        given.facts,
+                        given.staff_id,
+                        given.reason_sha256,
+                    ),
+                    result_type=IncidentStepResult,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_INCIDENT_STEP_RETRY,
+                )
+            except ActivityError:
+                return None
+
+        done: list[IncidentStepResult] = []
+        failed: list[str] = []
+        firms = list(given.tenant_ids)
+        for start in range(0, len(firms), _INCIDENT_BATCH):
+            batch = firms[start : start + _INCIDENT_BATCH]
+            results = await asyncio.gather(*(one(t) for t in batch))
+            for tenant_id, result in zip(batch, results, strict=True):
+                if result is None:
+                    failed.append(tenant_id)
+                else:
+                    done.append(result)
+        await workflow.execute_activity(
+            "platform.finish_incident_propagation",
+            IncidentPropagationOutcome(
+                accrued_ref=given.accrued_ref,
+                staff_id=given.staff_id,
+                reason_sha256=given.reason_sha256,
+                firms=len(firms),
+                written=sum(1 for r in done if r.status == "written"),
+                identical=sum(1 for r in done if r.status == "identical"),
+                failed_tenant_ids=tuple(failed),
+            ),
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        return IncidentPropagationResult(tuple(done), tuple(failed))
