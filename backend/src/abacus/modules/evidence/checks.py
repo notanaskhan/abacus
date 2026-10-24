@@ -80,6 +80,14 @@ def readable(fields: ExtractedFields) -> CheckResult:
     return CheckResult("unreadable", "passed")
 
 
+def active_content(fields: ExtractedFields) -> CheckResult | None:
+    """DEC-296 (ED-021): a PDF carrying JavaScript, a launch action or embedded files was kept
+    and never read; the team sees why (a firm check, as `duplicate` flags a file for a person)."""
+    if fields.status == "not_extracted" and fields.reason == "active_content":
+        return CheckResult("active_content", "problem", "firm", "active_content")
+    return None
+
+
 def duplicate(other_item: UUID | None, found: bool) -> CheckResult:
     """The same file on another version of this engagement (AC-8)."""
     if not found:

@@ -8,7 +8,7 @@ from datetime import date, datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, exists, func, insert, select, text, update
+from sqlalchemy import ColumnElement, and_, exists, func, insert, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -17,8 +17,10 @@ from abacus.modules.evidence.models import (
     Citation,
     CitationEvent,
     EvidenceItem,
+    EvidenceObjectKey,
     EvidencePage,
     EvidenceVersion,
+    EvidenceWithdrawal,
     InboxFile,
     PiiRegion,
     PiiScanRun,
@@ -96,6 +98,7 @@ async def insert_version(
     snapshot_id: UUID | None,
     idempotency_key: str | None,
     upload_note: str | None = None,
+    storage_mode: str = "content_addressed",
 ) -> EvidenceVersion:
     return (
         await session.execute(
@@ -120,15 +123,62 @@ async def insert_version(
                 snapshot_id=snapshot_id,
                 idempotency_key=idempotency_key,
                 upload_note=upload_note,
+                storage_mode=storage_mode,
             )
             .returning(EvidenceVersion)
         )
     ).scalar_one()
 
 
+async def insert_object_key(
+    session: AsyncSession, *, tenant_id: UUID, version_id: UUID, key_id: str, wrapped: bytes
+) -> None:
+    """A detached-key version's wrapped data key, in the version's own unit of work."""
+    await session.execute(
+        insert(EvidenceObjectKey).values(
+            tenant_id=tenant_id, evidence_version_id=version_id, key_id=key_id, wrapped_key=wrapped
+        )
+    )
+
+
+def not_withdrawn() -> ColumnElement[bool]:
+    """P-06-T19 (ADR-162 §4): the version was not withdrawn by the client. Every read of
+    versions applies it: a withdrawn version is as if it never arrived (the audit trail apart)."""
+    return ~(
+        select(EvidenceWithdrawal.evidence_version_id)
+        .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
+        .exists()
+    )
+
+
+def live_citation_source() -> ColumnElement[bool]:
+    """P-06-T19: a citation whose source is not a withdrawn version: its quote, value and box
+    never reach anyone once the client withdrew the file (ADR-162 §4)."""
+    return or_(
+        Citation.source_type != "evidence_version",
+        ~(
+            select(EvidenceWithdrawal.evidence_version_id)
+            .where(EvidenceWithdrawal.evidence_version_id == Citation.source_id)
+            .exists()
+        ),
+    )
+
+
+async def is_withdrawn(session: AsyncSession, version_id: UUID) -> bool:
+    found = await session.execute(
+        select(EvidenceWithdrawal.evidence_version_id).where(
+            EvidenceWithdrawal.evidence_version_id == version_id
+        )
+    )
+    return found.scalar_one_or_none() is not None
+
+
 async def get_version(session: AsyncSession, version_id: UUID) -> EvidenceVersion | None:
+    """The version, unless the client withdrew it (P-06-T19)."""
     return (
-        await session.execute(select(EvidenceVersion).where(EvidenceVersion.id == version_id))
+        await session.execute(
+            select(EvidenceVersion).where(EvidenceVersion.id == version_id, not_withdrawn())
+        )
     ).scalar_one_or_none()
 
 
@@ -157,6 +207,7 @@ async def list_versions(
                 .where(
                     EvidenceVersion.engagement_id == engagement_id,
                     visible(ctx, "evidence.read", EvidenceVersion.engagement_id),
+                    not_withdrawn(),
                 )
                 .order_by(EvidenceVersion.created_at, EvidenceVersion.id)
             )
@@ -178,7 +229,9 @@ async def list_review_state(
     versions = (
         (
             await session.execute(
-                select(EvidenceVersion).where(EvidenceVersion.engagement_id == engagement_id, seen)
+                select(EvidenceVersion).where(
+                    EvidenceVersion.engagement_id == engagement_id, seen, not_withdrawn()
+                )
             )
         )
         .scalars()
@@ -384,7 +437,11 @@ async def uploaded_versions(
     rows = await session.execute(
         select(EvidenceVersion, EvidenceItem)
         .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
-        .where(EvidenceVersion.id.in_(version_ids), EvidenceVersion.method == "uploaded")
+        .where(
+            EvidenceVersion.id.in_(version_ids),
+            EvidenceVersion.method == "uploaded",
+            not_withdrawn(),
+        )
         .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
     )
     return [(version, item) for version, item in rows.tuples().all()]
@@ -398,7 +455,11 @@ async def fingerprint_among(
         return False
     found = await session.execute(
         select(EvidenceVersion.id)
-        .where(EvidenceVersion.id.in_(version_ids), EvidenceVersion.fingerprint == fingerprint)
+        .where(
+            EvidenceVersion.id.in_(version_ids),
+            EvidenceVersion.fingerprint == fingerprint,
+            not_withdrawn(),
+        )
         .limit(1)
     )
     return found.scalar_one_or_none() is not None
@@ -428,7 +489,7 @@ async def item_versions_with_decisions(
             & (ReviewDecision.decision_seq == newest_seq)
             & (ReviewDecision.decision != "undone"),
         )
-        .where(EvidenceVersion.id.in_(version_ids))
+        .where(EvidenceVersion.id.in_(version_ids), not_withdrawn())
         .order_by(EvidenceVersion.created_at.desc(), EvidenceVersion.id)
     )
     return list(rows.tuples().all())
@@ -445,6 +506,7 @@ async def methods_of(
             EvidenceVersion.id.in_(version_ids),
             EvidenceVersion.engagement_id == engagement_id,
             visible(ctx, "evidence.read", EvidenceVersion.engagement_id),
+            not_withdrawn(),
         )
     )
     return {version_id: method for version_id, method in rows.tuples().all()}
@@ -588,6 +650,7 @@ async def other_version_with_fingerprint(
                 EvidenceVersion.engagement_id == engagement_id,
                 EvidenceVersion.fingerprint == fingerprint,
                 EvidenceVersion.id != version_id,
+                not_withdrawn(),
             )
             .order_by(EvidenceVersion.created_at, EvidenceVersion.id)
             .limit(1)
@@ -788,6 +851,7 @@ async def stale_pdf_uploads(
                     ~has_version.where(
                         UploadExtraction.evidence_version_id == EvidenceVersion.id
                     ).exists(),
+                    not_withdrawn(),
                 )
                 .order_by(EvidenceVersion.created_at)
                 .limit(limit)
@@ -827,7 +891,14 @@ async def pages_of(
     """A source's word-layer pages by this extractor version, by page (none derived), for the
     system or a caller that authorised on the source (LIST_EXEMPT: one source's pages)."""
     source = (
-        EvidencePage.evidence_version_id == evidence_version_id
+        and_(
+            EvidencePage.evidence_version_id == evidence_version_id,
+            ~(
+                select(EvidenceWithdrawal.evidence_version_id)
+                .where(EvidenceWithdrawal.evidence_version_id == evidence_version_id)
+                .exists()
+            ),  # P-06-T19: a withdrawn version's word layer is never read
+        )
         if evidence_version_id is not None
         else EvidencePage.inbox_file_id == inbox_file_id
     )
@@ -888,6 +959,7 @@ async def sources_without_words(
         EvidenceVersion.media_type == "application/pdf",
         readable.where(UploadExtraction.evidence_version_id == EvidenceVersion.id).exists(),
         ~layered.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
+        not_withdrawn(),
     )
     if after_version is not None:
         version_query = version_query.where(EvidenceVersion.id > after_version)
@@ -1083,6 +1155,7 @@ async def verified_citations_into(
         visible(
             ctx, "evidence.read", cast(ColumnElement[UUID], Citation.engagement_id.expression)
         ),
+        live_citation_source(),
     )
     if match_ids is not None:
         stmt = stmt.where(Citation.match_id.in_(list(match_ids)))

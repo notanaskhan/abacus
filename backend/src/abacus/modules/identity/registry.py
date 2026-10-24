@@ -57,6 +57,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "engagement_id", "email", "role", "invited_by", "expires_at"}
         # P-08-T18 (0140): invitations v2.
         | {"kind", "contact_id", "grant_template", "terms_version", "terms_url"}
+        | {"grant_ids"}  # P-07-T25 (0146): a contact invitation's pending grants
     ),
     "staff_invitations": frozenset(  # SPEC-024 (TASK-041)
         {"id", "tenant_id", "email", "firm_role", "invited_by", "expires_at"}
@@ -107,12 +108,15 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "client_invitations": frozenset(
         {"status", "accepted_by", "accepted_at", "expires_at", "terms_accepted_at"}  # 0140
+        | {"used_at", "grant_ids"}  # 0146 (P-07-T25)
     ),
     "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
     "firm_setting_values": frozenset({"value", "version", "set_by", "set_at"}),  # F-03-T24
     "firm_settings": frozenset({"value", "updated_by", "updated_at"}),  # G-01-T04
     "firm_settings_sections": frozenset({"version", "updated_at"}),  # G-01-T04
-    "client_access_grants": frozenset({"status"}),  # F-03-T26: each change is an event row
+    # F-03-T26: each change is an event row. P-07-T25 (0146): `user_id` once, as a pending grant
+    # activates (trigger `client_access_grants_bind`).
+    "client_access_grants": frozenset({"status", "user_id"}),
     "firm_demo_clocks": frozenset(  # F-04-T07: set or reset by the demo-clock service
         {"mode", "anchor_at", "anchored_real_at", "set_by", "set_at"}
     ),

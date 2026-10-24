@@ -65,7 +65,13 @@ from abacus.modules.agents.spec import declared, spec
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.agents.v2_citations import cell_claims, record_agent_citations
 from abacus.modules.engagements.api import get_ref, lock_ref
-from abacus.modules.evidence.api import Proposal, read_content, version_view
+from abacus.modules.evidence.api import (
+    Proposal,
+    is_version_withdrawn,
+    read_content,
+    version_view,
+    withdrawn_among,
+)
 from abacus.modules.identity.api import (
     AgentContext,
     AuthContext,
@@ -119,6 +125,8 @@ async def create_screening_run(
     initiator = requested_by
     screener = spec(SCREENER)
     reader = _reader(tenant_id, f"agents:{screener.id}")
+    if await is_version_withdrawn(reader, evidence_version_id):
+        return None  # P-06-T19: agents never read a withdrawn upload
     version = await version_view(reader, evidence_version_id)
     if version.snapshot_id is None:
         return None
@@ -447,6 +455,9 @@ async def screening_results_for(
     await authorise(ctx, "evidence.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         rows = await latest_results(session, ctx, engagement_id)
+    # P-06-T19 (ADR-162 §4): nothing derived from a withdrawn upload reaches the firm.
+    hidden = await withdrawn_among(ctx.tenant, [r.evidence_version_id for r in rows])
+    rows = [r for r in rows if r.evidence_version_id not in hidden]
     if rows:
         # Results quote evidence content (cells, values): their reads are audited like
         # `evidence_version.read` (ADR-104; security review, TASK-012).

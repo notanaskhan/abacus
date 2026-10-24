@@ -95,3 +95,23 @@ class LegalHoldLifted(DomainEvent):
     hold_id: Annotated[UUID, classified("internal")]
     client_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
+
+
+class EvidenceVersionWithdrawn(DomainEvent):
+    """A client withdrew an unaccepted upload (ADR-162 §4; P-06-T19): its purge starts. No file
+    name, ever."""
+
+    event_type: ClassVar[str] = "evidence_version.withdrawn"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class EvidenceWithdrawalErased(DomainEvent):
+    """A withdrawn version's key was destroyed after its window (ADR-162 §7)."""
+
+    event_type: ClassVar[str] = "evidence_withdrawal.erased"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]

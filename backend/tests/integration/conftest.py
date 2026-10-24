@@ -6,6 +6,7 @@ testcontainers once per test session. Credentials are fixed local values.
 
 from __future__ import annotations
 
+import os
 import socket
 import time
 import urllib.request
@@ -19,6 +20,7 @@ import yaml
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
 
+from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, configure_identity_engine, configure_relay_engine
 from abacus_tools.quality.schema_check import provisioned_database
 
@@ -125,13 +127,33 @@ def migrated_db() -> Iterator[MigratedDatabase]:
     their own event loops may call it again to get a fresh pool.
     """
     with provisioned_database() as database:
+        # A test that disposes the engines (`dispose_engine()` resets all three) and reaches one
+        # it didn't configure again would fall back to the settings, whose local defaults name
+        # the dev database on 55432: present on a laptop, absent on CI, so the result depended
+        # on test order. The settings name this database instead.
+        exported = {
+            "ABACUS_DATABASE_URL": database.app_url,
+            "ABACUS_RELAY_DATABASE_URL": database.relay_url,
+            "ABACUS_IDENTITY_DATABASE_URL": database.identity_url,
+        }
+        previous = {key: os.environ.get(key) for key in exported}
+        os.environ.update(exported)
+        settings.cache_clear()
         configure_engine(database.app_url)
         configure_relay_engine(database.relay_url)
         configure_identity_engine(database.identity_url)
-        yield MigratedDatabase(
-            database.owner_url,
-            database.app_url,
-            database.relay_url,
-            database.identity_url,
-            database.superuser_dsn,
-        )
+        try:
+            yield MigratedDatabase(
+                database.owner_url,
+                database.app_url,
+                database.relay_url,
+                database.identity_url,
+                database.superuser_dsn,
+            )
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+            settings.cache_clear()

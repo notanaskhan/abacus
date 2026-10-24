@@ -167,6 +167,21 @@ class Fulfilment(Base):
     created_at: Mapped[datetime]
 
 
+class FulfilmentWithdrawal(Base):
+    """A fulfilment voided because its version was withdrawn by the client (P-06-T19; ADR-162).
+    Insert-only; requests reads leave such fulfilments out."""
+
+    __tablename__ = "fulfilment_withdrawals"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    fulfilment_id: Mapped[UUID] = mapped_column(primary_key=True)
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID]
+    withdrawn_by_user_id: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
 # --- Comments (SPEC-032; TASK-062; ADR-109) ------------------------------------------------------
 
 

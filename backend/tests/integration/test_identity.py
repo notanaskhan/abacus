@@ -324,6 +324,14 @@ def _assert_forbidden(response: httpx.Response) -> None:
     assert "WWW-Authenticate" not in response.headers
 
 
+def _assert_not_held(response: httpx.Response) -> None:
+    """P-01 AC 2.1.4 (DEC-304): a tenant header naming a tenant not held is the app's own 404,
+    real firm or not: the fixed body, no tenant, no user data."""
+    assert response.status_code == 404
+    assert response.json() == {"detail": "not found"}
+    assert "WWW-Authenticate" not in response.headers
+
+
 def _auth(token: str, tenant_id: uuid.UUID | str | None = None) -> dict[str, str]:
     headers = {"Authorization": f"Bearer {token}"}
     if tenant_id is not None:
@@ -461,24 +469,24 @@ async def test_ac1_several_memberships_with_a_malformed_header_is_403(
     _assert_forbidden(response)
 
 
-async def test_ac1_a_header_naming_a_firm_the_user_does_not_belong_to_is_403(
+async def test_ac1_a_header_naming_a_firm_the_user_does_not_belong_to_is_404(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder
 ) -> None:
     subject, _first, _second = await _two_firms(seed)
     stranger = await seed.firm()
     response = await client.get("/probe/context", headers=_auth(idp.token(subject), stranger))
-    _assert_forbidden(response)
+    _assert_not_held(response)
 
 
-async def test_ac1_a_header_naming_a_tenant_that_does_not_exist_is_403(
+async def test_ac1_a_header_naming_a_tenant_that_does_not_exist_is_404(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder
 ) -> None:
     subject, _first, _second = await _two_firms(seed)
     response = await client.get("/probe/context", headers=_auth(idp.token(subject), uuid.uuid4()))
-    _assert_forbidden(response)
+    _assert_not_held(response)
 
 
-async def test_ac1_a_header_naming_a_revoked_membership_is_403(
+async def test_ac1_a_header_naming_a_revoked_membership_is_404(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder
 ) -> None:
     tenant_a, tenant_b = await seed.firm(), await seed.firm()
@@ -487,7 +495,7 @@ async def test_ac1_a_header_naming_a_revoked_membership_is_403(
     await seed.membership(tenant_b, user_id)
     await seed.revoke(tenant_b, user_id)
     token = idp.token(subject)
-    _assert_forbidden(await client.get("/probe/context", headers=_auth(token, tenant_b)))
+    _assert_not_held(await client.get("/probe/context", headers=_auth(token, tenant_b)))
     assert (await client.get("/probe/context", headers=_auth(token, tenant_a))).status_code == 200
 
 
@@ -502,7 +510,7 @@ async def test_ac1_a_user_in_another_firm_cannot_borrow_this_firms_tenant_id(
     response = await client.get(
         "/probe/context", headers=_auth(idp.token(other_subject), victim.tenant_id)
     )
-    _assert_forbidden(response)
+    _assert_not_held(response)
 
 
 # --- AC-2: no membership, no access --------------------------------------------------------------
@@ -605,7 +613,7 @@ async def test_ac3_revoking_one_of_two_memberships_removes_only_that_tenant(
     )
     assert (await client.get("/probe/context", headers=_auth(token, first))).status_code == 200
     await seed.revoke(first, user_id)
-    _assert_forbidden(await client.get("/probe/context", headers=_auth(token, first)))
+    _assert_not_held(await client.get("/probe/context", headers=_auth(token, first)))
     assert (await client.get("/probe/context", headers=_auth(token, second))).status_code == 200
 
 

@@ -52,7 +52,13 @@ from abacus.modules.evidence.citations.matching import reread_span
 from abacus.modules.evidence.citations.registry import citable
 from abacus.modules.evidence.models import Citation, CitationEvent, EvidencePage
 from abacus.modules.evidence.projection import Projection, projection_of
-from abacus.modules.evidence.repository import events_of, get_citation, pages_of
+from abacus.modules.evidence.repository import (
+    events_of,
+    get_citation,
+    is_withdrawn,
+    live_citation_source,
+    pages_of,
+)
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import (
     AuthContext,
@@ -357,7 +363,12 @@ async def citation_display(ctx: AuthContext, citation_id: UUID) -> CitationView:
     _refuse_clients(ctx)
     async with tenant_session(ctx.tenant) as session:
         row = await get_citation(session, citation_id)
-    if row is None or row.engagement_id is None:
+        withdrawn = (
+            row is not None
+            and row.source_type == "evidence_version"
+            and await is_withdrawn(session, row.source_id)
+        )
+    if row is None or row.engagement_id is None or withdrawn:  # P-06-T19: withdrawn source
         raise NotFound("citation")
     engagement = await get_ref(ctx, row.engagement_id)
     resource = engagement.resource()
@@ -368,7 +379,7 @@ async def citation_display(ctx: AuthContext, citation_id: UUID) -> CitationView:
 
 
 def _filtered(ctx: AuthContext, filters: CitationFilters) -> Select[Citation] | None:
-    stmt = select(Citation).where(visible(ctx, READ, _ENGAGEMENT))
+    stmt = select(Citation).where(visible(ctx, READ, _ENGAGEMENT), live_citation_source())
     if filters.anchor_type is not None:
         stmt = stmt.where(Citation.cited_from_type == filters.anchor_type)
     if filters.anchor_id is not None:

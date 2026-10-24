@@ -25,7 +25,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.models import AgentRun
 from abacus.modules.agents.repository import engagement_runs, get_run, screening_results_of_run
 from abacus.modules.engagements.api import get_ref
-from abacus.modules.evidence.api import decisions_on_screenings
+from abacus.modules.evidence.api import decisions_on_screenings, withdrawn_among
 from abacus.modules.identity.api import AuthContext, authorise, engagement_team
 
 RUNTIME_LABEL: Final = "Abacus agent runtime"
@@ -167,6 +167,8 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
     attempts = await attempts_for(ctx.tenant, run.id)
     async with tenant_session(ctx.tenant) as session:
         results = await screening_results_of_run(session, run.id)
+    hidden = await withdrawn_among(ctx.tenant, [r.evidence_version_id for r in results])
+    results = [r for r in results if r.evidence_version_id not in hidden]  # P-06-T19
     decisions = await decisions_on_screenings(ctx.tenant, [r.id for r in results])
     rows: list[TraceRow] = [
         TraceRow(

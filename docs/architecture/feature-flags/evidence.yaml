@@ -58,3 +58,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: evidence.withdrawal
+    description: 'Client withdrawal of an unaccepted upload (P-06-T19; ADR-162, P-31): POST /v1/engagements/{eid}/evidence-versions/{vid}/withdraw and the start of the EvidenceWithdrawalPurge workflow. Off: the route answers 404 and R-01 hides the withdraw control; a withdrawal already made stays hidden and its purge still runs. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Must be on before PW2 (Jul 13).'
+    owner: notanaskhan
+    created: 2026-10-24
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

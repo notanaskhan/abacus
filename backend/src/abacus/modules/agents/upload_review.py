@@ -56,7 +56,7 @@ from abacus.modules.agents.spec import spec
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.agents.v2_citations import document_claims, record_agent_citations
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
-from abacus.modules.evidence.api import ReviewMaterial, review_material
+from abacus.modules.evidence.api import ReviewMaterial, is_version_withdrawn, review_material
 from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
 
 REVIEWER = "evidence.upload_reviewer"
@@ -270,6 +270,9 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
                 "shown": shown,
             }
         )
+    if await is_version_withdrawn(agent.tenant, run.evidence_version_id):
+        # P-06-T19 (ADR-162 §4): withdrawn while the run was in flight: it records nothing.
+        raise NotFound("evidence_version")
     async with uow(agent.tenant) as tx:
         locked = await lock_run(tx.session, run.id)
         if locked is None or locked.status != "running":

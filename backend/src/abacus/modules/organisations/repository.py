@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Select, insert, select, update
+from sqlalchemy import ColumnElement, Select, bindparam, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import QueryableAttribute
 
@@ -233,3 +234,86 @@ def attest_client_ids() -> Select[UUID]:
     `visible()` under `g2_blocks_view` (P-07-T24, ADR-164 item 3). Row-level security scopes it to
     the session's tenant; it is only ever embedded in a query that `visible()` already filters."""
     return select(Client.id).where(Client.is_attest_client.is_(True))
+
+
+# --- CLI-04 contacts (P-07-T25; 0146) -----------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ContactRoleRow:
+    contact_id: UUID
+    role: str
+    scope_kind: str
+    scope_id: UUID
+    title_text: str | None
+
+
+async def entities_of(session: AsyncSession, client_id: UUID) -> dict[UUID, str]:
+    rows = await session.execute(
+        select(ClientEntity.id, ClientEntity.name).where(ClientEntity.client_id == client_id)
+    )
+    return {r.id: r.name for r in rows}
+
+
+async def contact_roles_of(
+    session: AsyncSession, contact_ids: Sequence[UUID]
+) -> list[ContactRoleRow]:
+    if not contact_ids:
+        return []
+    rows = await session.execute(
+        text(
+            "SELECT contact_id, role, scope_kind, scope_id, title_text FROM contact_roles "
+            "WHERE contact_id IN :ids ORDER BY created_at, role, scope_id"
+        ).bindparams(bindparam("ids", expanding=True)),
+        {"ids": list(contact_ids)},
+    )
+    return [ContactRoleRow(r[0], r[1], r[2], r[3], r[4]) for r in rows.all()]
+
+
+async def replace_contact_roles(
+    session: AsyncSession,
+    tenant_id: UUID,
+    contact_id: UUID,
+    roles: Sequence[tuple[str, str, UUID, str | None]],
+) -> None:
+    """The contact's roles become `roles` (role, scope kind, scope id, title)."""
+    await session.execute(
+        text("DELETE FROM contact_roles WHERE contact_id = :contact"), {"contact": contact_id}
+    )
+    for role, kind, scope_id, title in roles:
+        await session.execute(
+            text(
+                "INSERT INTO contact_roles (tenant_id, contact_id, scope_kind, scope_id, role, "
+                "title_text) VALUES (:tenant, :contact, :kind, :scope, :role, :title)"
+            ),
+            {
+                "tenant": tenant_id,
+                "contact": contact_id,
+                "kind": kind,
+                "scope": scope_id,
+                "role": role,
+                "title": title,
+            },
+        )
+
+
+async def update_contact_versioned(
+    session: AsyncSession, contact_id: UUID, seen_version: int, values: Mapping[str, object]
+) -> int | None:
+    """The contact's fields set and its version moved on, only at `seen_version`: the new
+    version, or None when the contact has moved on (or is unknown)."""
+    row = (
+        await session.execute(
+            update(Contact)
+            .where(Contact.id == contact_id, Contact.version == seen_version)
+            .values(**dict(values), version=Contact.version + 1)
+            .returning(Contact.version)
+        )
+    ).first()
+    return None if row is None else int(row.version)
+
+
+async def set_portal_state(session: AsyncSession, contact_id: UUID, state: str) -> None:
+    await session.execute(
+        update(Contact).where(Contact.id == contact_id).values(portal_state=state)
+    )

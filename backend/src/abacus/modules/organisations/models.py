@@ -110,6 +110,8 @@ class Contact(Base):
     normalised_name: Mapped[str] = mapped_column(server_default=FetchedValue())  # 0103
     user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
     portal_state: Mapped[str] = mapped_column(server_default=FetchedValue())
+    party_kind: Mapped[str] = mapped_column(server_default=FetchedValue())  # 0146 (P-07-T25)
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())  # 0146
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 

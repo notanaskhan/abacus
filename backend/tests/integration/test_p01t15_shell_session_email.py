@@ -230,12 +230,6 @@ async def test_ac212_the_admin_rows_are_computed_from_capabilities_nav(
 # --- AC 2.1.4: switching firms -------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="ED-024: a tenant header naming a firm the person does not hold answers 403, not "
-    "P-01 AC 2.1.4's 404; tenant resolution is cross-cutting, held for the main session, "
-    "TASK-1140 (#393: the S7 batch PR)",
-)
 async def test_ac214_the_tenant_comes_from_a_held_membership_never_the_header_alone(
     seed: Seeder, http: httpx.AsyncClient, provider: Provider
 ) -> None:

@@ -8,14 +8,14 @@
 | Provider epic | P-06 (binders and requests half); P-08 (portal scopes). Schema half: F-03-T14, F-03-T15, F-03-T26 |
 | Consumers | A-01 (AUD-03), R-01 (POR-03, POR-04, POR-14, POR-20), T-02, C-01 (CLS-03), K-01, N-01, A-03, N-03, K-04, I-01. Screens: BND-01, BND-02, SHL-14 |
 | Freeze sprint | S3 (starts 2026-11-30); freeze Fri 2026-12-11 |
-| Flag | `binders.engine` (default off, created 2026-10-22, expires 2027-01-20). The withdraw route moves to `evidence.withdrawal` when P-06-T19 creates it (ADR-162 §3) |
+| Flag | `binders.engine` (default off, created 2026-10-22, expires 2027-01-20). The withdraw route is behind `evidence.withdrawal` (P-06-T19, 2026-10-24; ADR-162 §3) |
 | Spec | `docs/specs/SPEC-319-requests-binders-engine.md` (outline) |
 | ADRs | ADR-139 (P-36 conventions), ADR-140 (P-39 per-module files), ADR-161 (P-35 Undo), ADR-162 (P-31 withdrawal), ADR-005, ADR-031; DEC-09, DEC-20, DEC-31, DEC-37, DEC-38, DEC-58, DEC-74, DEC-136 |
 
 ## 1. Purpose
 Consumers can rely on binders as many `request_lists` per work item with a five-state lifecycle, on requests with the DEC-09 status set and the client's words, on the client's portal actions (mark done, ignore with a reason, upload intents, withdraw an unaccepted upload), and on a fixed set of human-only operations whose matrix rows deny the agent. Lists use the P-36 envelope; records carry `allowed_actions`; errors are catalogue codes with identifier-only facts; client-visible effects take an `Idempotency-Key`.
 
-**Stub behaviour.** With `binders.engine` off every route below answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-06-T19 (withdraw) and the follow-up override. **Implemented (P-06-T10, 2026-10-23):** the request lifecycle (PATCH, delete, send and its Undo, waive, return to client, delegate, incorporate, activity), the client's Ignore, upload intents and the live poll (DEC-158). **Implemented (P-06-T11):** the index read model. **Implemented (P-06-T07, 2026-10-23):** create, the binder record, its rows, publish and its Undo, unpublish, duplicate, recipients, the client preview, binder activity and the portal mark-done. These no longer document 501, an expected contract transition (`test_c5_stub.py` `IMPLEMENTED`). The Brightwater Hale binder slice and `stub_from_seed` arrive with P-06-T08 and F-04, so the stubs return no fixtures yet; the screens build on fixture scenarios typed with the generated client.
+**Stub behaviour.** With `binders.engine` off every route below answers 404 (the withdraw route: with `evidence.withdrawal` off). With it on, each answers 501 `not_implemented` until its task lands: the follow-up override. **Implemented (P-06-T19, 2026-10-24):** the client withdrawal (void and hide at once, 409 `evidence_accepted`, 409 `evidence_not_withdrawable` for anything but a client's detached-key upload, 403 `not_your_upload`; the purge after 30 days unless held; DEC-298). **Implemented (P-06-T10, 2026-10-23):** the request lifecycle (PATCH, delete, send and its Undo, waive, return to client, delegate, incorporate, activity), the client's Ignore, upload intents and the live poll (DEC-158). **Implemented (P-06-T11):** the index read model. **Implemented (P-06-T07, 2026-10-23):** create, the binder record, its rows, publish and its Undo, unpublish, duplicate, recipients, the client preview, binder activity and the portal mark-done. These no longer document 501, an expected contract transition (`test_c5_stub.py` `IMPLEMENTED`). The Brightwater Hale binder slice and `stub_from_seed` arrive with P-06-T08 and F-04, so the stubs return no fixtures yet; the screens build on fixture scenarios typed with the generated client.
 
 **Existing routes kept, not duplicated:** `POST/GET /v1/engagements/{eid}/request-items` (P-06-T10 extends the body additively: `title`, `category_id`, `period_start/end`, `due_on`, `wave`, `kind`, `firm_owner_user_id`, `linked_ref`, `supports_ref`; `binder_id` required while `binders.engine` is on), `PUT …/{id}/client-visibility`, `PUT …/{id}/client-assignee`, `GET …/request-items/{id}/client-view` (extended for drafts in T10), SPEC-042's `client-response` and `client-done` (until R-01 moves to the portal routes), and `POST …/evidence-versions/{vid}/decision/accept · reject · send-back`.
 
@@ -114,6 +114,8 @@ Codes are reserved for the implementing tasks; they enter `docs/architecture/err
 | 409 | `{"detail": "undo_window_closed"}` / `{"detail": "effect_started"}` | Undo after 10 s / after delivery began |
 | 409 | `{"detail": "evidence_accepted"}` | withdraw an ever-accepted version |
 | 403 | `{"detail": "not_your_upload"}` | a contributor withdraws someone else's upload |
+| 409 | `{"detail": "evidence_not_withdrawable"}` | withdraw a version that is not a client's detached-key upload (a firm upload, ADR-162 §8) |
+| 409 | `{"detail": "legal_hold_active"}` | withdraw a version a legal hold covers: refused and audited, nothing written (DEC-299) |
 | 422 | `{"detail": "idempotency_key_reused"}` | the same key with a different body (P-06-T06) |
 
 ## 7. Audit and outbox events

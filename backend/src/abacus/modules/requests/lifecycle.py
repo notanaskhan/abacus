@@ -73,12 +73,14 @@ from abacus.modules.requests.events import RequestItemSent
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
     binder_items,
+    end_delegations,
     get_binder,
     get_request_item,
     insert_client_response,
     insert_delegation,
     insert_upload_intent,
     live_upload_intents,
+    open_delegations,
     set_item_fields,
     stamp_sent,
 )
@@ -542,6 +544,64 @@ async def delegate_item(
             scope=_scope(item),
         )
     return DelegationView(item.id, contact_id, grant, ctx.user_id, now)
+
+
+# --- a contact's delegated requests (P-07-T25, C5; DEC-300) --------------------------------------
+
+
+async def record_contact_delegations(
+    tx: UnitOfWork, contact_id: UUID, delegated: Sequence[tuple[UUID, UUID]], by: UUID
+) -> None:
+    """In the inviting unit of work: each (grant, request item) a contact invitation limits the
+    contact to becomes a delegation. organisations has checked the items are the contact's
+    client's and identity has authorised the grants."""
+    for grant_id, item_id in delegated:
+        item = await get_request_item(tx.session, item_id)
+        if item is None or item.deleted_at is not None:
+            raise NotFound("request_item")
+        await insert_delegation(
+            tx.session,
+            tenant_id=item.tenant_id,
+            request_item_id=item.id,
+            contact_id=contact_id,
+            grant_id=grant_id,
+            granted_by=by,
+        )
+        tx.record(
+            "request_item.delegated",
+            target=Target("request_item", item.id),
+            after=Ref(grant=grant_id),
+            scope=_scope(item),
+        )
+
+
+async def end_contact_delegations(tx: UnitOfWork, grant_ids: Sequence[UUID]) -> list[UUID]:
+    """The delegations under these grants end; the requests stay with the client (they are
+    never reassigned or deleted). The request items whose delegation ended."""
+    ended = await end_delegations(tx.session, grant_ids)
+    for item_id, engagement_id in ended:
+        tx.record(
+            "request_item.delegation_ended",
+            target=Target("request_item", item_id),
+            scope=Scope(engagement_id=engagement_id),
+        )
+    return [item_id for item_id, _ in ended]
+
+
+async def contact_delegations(
+    tenant: TenantContext, contact_ids: Sequence[UUID]
+) -> dict[UUID, tuple[tuple[UUID, ...], tuple[UUID, ...]]]:
+    """CLI-04's delegated column and footer: per contact, the requests delegated to them now and
+    those of them the firm has received."""
+    async with tenant_session(tenant) as session:
+        rows = await open_delegations(session, contact_ids)
+    items: dict[UUID, dict[UUID, bool]] = {}
+    for contact, item, status in rows:
+        items.setdefault(contact, {})[item] = status == "received"
+    return {
+        c: (tuple(found), tuple(i for i, received in found.items() if received))
+        for c, found in items.items()
+    }
 
 
 # --- upload intents and the live poll ------------------------------------------------------------

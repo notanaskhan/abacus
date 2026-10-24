@@ -337,7 +337,7 @@ VersionId = Annotated[UUID, Path()]
     "/evidence-versions/{version_id}/viewer",
     action="evidence.read",
     response_model=ViewerManifestOut,
-    errors=(501,),
+    errors=(409, 501),
 )
 async def viewer_manifest_route(version_id: VersionId, ctx: Ctx) -> ViewerManifestOut:
     """AC3.1, AC3.4, AC4.8, AC5.1: the manifest; walled or invisible versions answer 404. Until
@@ -368,7 +368,7 @@ async def viewer_page_route(
     "/evidence-versions/{version_id}/regions",
     action="evidence.read",
     response_model=ViewerRegionsOut,
-    errors=(501,),
+    errors=(409, 501),
 )
 async def viewer_regions_route(
     version_id: VersionId,
