@@ -44,6 +44,17 @@ UNDO_REASON: Final = "undo"
 UNDOABLE_ITEM: Final = frozenset({"requested", "returned"})
 
 
+# How many ignore notes one request's thread takes (DEC-334): Ignore and Undo again and again
+# cannot flood the firm's thread; an Ignore without a note still works past it.
+IGNORE_NOTES_PER_REQUEST: Final = 3
+
+
+class IgnoreNotesExhausted(DomainConflict):
+    """The request's thread already holds its ignore notes: Ignore without one, or comment."""
+
+    code = "ignore_notes_exhausted"
+
+
 class FirmAlreadyActed(DomainConflict):
     """The firm has acted on the request or the binder since: the client's Undo is closed."""
 

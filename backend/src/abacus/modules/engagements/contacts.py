@@ -161,6 +161,30 @@ async def client_contact_organisations(
     )
 
 
+async def client_contact_organisations_of_users(
+    tenant: TenantContext, engagement_id: UUID, user_ids: list[UUID]
+) -> dict[UUID, str]:
+    """R-01-T07 (security review): for each of `user_ids` that is the portal user of one of the
+    engagement's client's contacts with an organisation, that organisation's name ("Harborline"):
+    how a third party's upload is attributed to a client, never by a person's name. For a caller
+    that authorised a read of the engagement."""
+    client = await client_of(tenant, engagement_id)
+    if client is None or not user_ids:
+        return {}
+    found: dict[UUID, str] = {}
+    async with tenant_session(tenant) as session:
+        for user_id in user_ids:
+            facts = await contact_facts(session, await contacts_of_user(session, user_id))
+            names = sorted(
+                f.organisation_name
+                for f in facts.values()
+                if f.client_id == client and f.organisation_name
+            )
+            if names:
+                found[user_id] = names[0]
+    return found
+
+
 async def contact_portal_user(
     tenant: TenantContext, engagement_id: UUID, contact_id: UUID
 ) -> UUID | None:

@@ -56,6 +56,7 @@ after Kevin waived the request answers 409."
   to the 10-second cases, two new checks (outlives 10 s; 409 after the firm acts): 29 pass.
   `tests/integration/test_portal_undo.py` (6). DEC-334. Deferred: in-app kinds (none exists for
   `binder.marked_done` to retract).
+- 2026-10-25: security review fixes (items 3, 4, 8), failing tests first in `test_portal_undo.py` (`test_review*`, 4 new; the race and the 501-event cases were also checked to fail on the old code): delegated requests 404 to Ignore and Undo under the row lock (delegation inserts lock the request), the mark-done Undo locks the binder's request rows and queries firm acts uncapped (`kernel.uow.audit_acted_since`), the note authorises `comment.create` and is capped at 3 per request (409 `ignore_notes_exhausted`). DEC-334 amended.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

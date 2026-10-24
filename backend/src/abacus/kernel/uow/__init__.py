@@ -359,6 +359,7 @@ __all__ = [
     "Target",
     "TargetEvent",
     "UnitOfWork",
+    "audit_acted_since",
     "audit_activity",
     "audit_facets",
     "audit_of_targets",
@@ -435,6 +436,34 @@ async def audit_of_targets(
         },
     )
     return [TargetEvent(*row) for row in rows.all()]
+
+
+async def audit_acted_since(
+    session: AsyncSession,
+    targets: Sequence[tuple[str, UUID]],
+    actions: Sequence[str],
+    since: datetime,
+) -> bool:
+    """Whether the active tenant's audit trail holds one of `actions` about any of `targets`
+    after `since` (business time), however many other events there are (R-01-T08: a client's
+    Undo closes once the firm acted). The caller has authorised a read of the targets."""
+    if not targets or not actions:
+        return False
+    found = await session.scalar(
+        text(
+            "SELECT EXISTS (SELECT 1 FROM audit_events "
+            "WHERE (target_type, target_id) IN (SELECT * FROM unnest("
+            "CAST(:types AS text[]), CAST(:ids AS text[]))) "
+            "AND action = ANY(CAST(:actions AS text[])) AND effective_at > :since)"
+        ),
+        {
+            "types": [t for t, _ in targets],
+            "ids": [str(i) for _, i in targets],
+            "actions": list(actions),
+            "since": since,
+        },
+    )
+    return bool(found)
 
 
 _audit_events = table(

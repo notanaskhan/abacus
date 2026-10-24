@@ -41,6 +41,7 @@ from abacus.kernel.uow import (
     Target,
     TargetEvent,
     UnitOfWork,
+    audit_acted_since,
     audit_of_targets,
     audit_total_of_targets,
     event_sha256,
@@ -1067,13 +1068,15 @@ async def firm_acted_since(
     session: AsyncSession, items: Sequence[RequestItem], since: datetime
 ) -> bool:
     """Whether the firm sent, waived or returned a request of the binder after `since` (DEC-24:
-    a client's Undo of Mark as Done closes then)."""
+    a client's Undo of Mark as Done closes then): the requests' own stamps, and the audit trail
+    for every such act, however many other events there are (DEC-334)."""
     if any(i.sent_at is not None and i.sent_at > since for i in items):
         return True
     if any(i.na_at is not None and i.na_at > since for i in items):
         return True
-    events = await audit_of_targets(session, [("request_item", i.id) for i in items], None, 500)
-    return any(e.at > since and e.action in FIRM_ITEM_ACTS for e in events)
+    return await audit_acted_since(
+        session, [("request_item", i.id) for i in items], sorted(FIRM_ITEM_ACTS), since
+    )
 
 
 async def undo_mark_done(ctx: AuthContext, binder_id: UUID) -> MarkDoneUndoneView:
@@ -1091,7 +1094,9 @@ async def undo_mark_done(ctx: AuthContext, binder_id: UUID) -> MarkDoneUndoneVie
             raise FirmAlreadyActed(facts={"binder_id": str(binder.id)})
         if binder.marked_done_by != ctx.user_id:
             raise Forbidden("binder.mark_done", "role")
-        items = await binder_items(tx.session, binder.id)
+        # Every request row of the binder, locked: a firm act in flight on one of them (each
+        # takes its request's lock) commits first and is then seen here, or waits for this Undo.
+        items = await binder_items(tx.session, binder.id, lock=True)
         if await firm_acted_since(tx.session, items, binder.marked_done_at):
             raise FirmAlreadyActed(facts={"binder_id": str(binder.id)})
         now = await clock.now(ctx.tenant)

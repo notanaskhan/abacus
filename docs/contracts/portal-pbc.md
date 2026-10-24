@@ -71,6 +71,7 @@ Identifier-only facts (ADR P-36).
 |---|---|---|
 | 404 | `{"detail": "not_found"}` | the flag is off; a binder, request, batch or room outside the caller's grant, a draft, an internal-only or delegated item, or a forged id (INV-4); one answer for every case |
 | 409 | `{"detail": "firm_already_acted", "facts": {"request_item_id" \| "binder_id"}}` | an undo after the firm waived, returned or accepted the request, or returned or sent a request in the binder (DEC-24) |
+| 409 | `{"detail": "ignore_notes_exhausted", "facts": {"request_item_id"}}` | P-06's Ignore with a note once the request's thread holds 3 ignore notes (DEC-334); nothing is written |
 | 409 | `{"detail": "nothing_to_undo", "facts": {"request_item_id" \| "binder_id"}}` | a second Undo, or an Undo of something never ignored or marked done (DEC-334) |
 | 409 | `{"detail": "not_voidable", "facts": {"fulfilment_id"}}` | a void of a human or agent fulfilment, an accepted one, or one already void |
 | 409 | `{"detail": "evidence_accepted", "facts": {"version_id"}}` | P-06's withdraw of an accepted or emailed version (unchanged) |

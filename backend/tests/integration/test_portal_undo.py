@@ -9,6 +9,7 @@ compensating row by the same person, a second Undo refused, nobody else's) is th
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 
@@ -18,10 +19,22 @@ from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed
 from abacus.kernel.db import configure_engine, dispose_engine
 from abacus.kernel.errors import NotFound
+from abacus.modules.identity.authz import recording_checks
 from abacus.modules.portal.documents import read_binder
 from abacus.modules.requests.binders import mark_done, undo_mark_done
-from abacus.modules.requests.client_undo import FirmAlreadyActed, NothingToUndo
-from abacus.modules.requests.lifecycle import ignore_item, undo_ignore, waive_item
+from abacus.modules.requests.client_undo import (
+    IGNORE_NOTES_PER_REQUEST,
+    FirmAlreadyActed,
+    IgnoreNotesExhausted,
+    NothingToUndo,
+)
+from abacus.modules.requests.lifecycle import (
+    announce_upload,
+    ignore_item,
+    return_to_client,
+    undo_ignore,
+    waive_item,
+)
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
@@ -198,3 +211,95 @@ async def test_ac_undo_of_mark_as_done_after_the_firm_acted_is_409(seed: Seeder)
     )
     with pytest.raises(FirmAlreadyActed):
         await undo_mark_done(claire, w.binder)
+
+
+# --- Security review of R-01-T08 (DEC-334 amended) ----------------------------------------------
+
+
+async def _delegate(seed: Seeder, w: World, key: str) -> None:
+    contact = await seed.value(
+        "SELECT contact_id FROM request_delegations WHERE request_item_id = $1",
+        w.items["delegated"],
+    )
+    grant = await seed.value(
+        "SELECT grant_id FROM request_delegations WHERE request_item_id = $1", w.items["delegated"]
+    )
+    await seed.run(
+        "INSERT INTO request_delegations (tenant_id, request_item_id, contact_id, grant_id, "
+        "granted_by) VALUES ($1, $2, $3, $4, $5)",
+        w.tenant,
+        w.items[key],
+        contact,
+        grant,
+        w.partner.user_id,
+    )
+
+
+async def test_review3_a_delegated_request_is_404_to_ignore_and_to_undo(seed: Seeder) -> None:
+    w = await feld_world(seed)
+    claire = client_ctx(w.claire)
+    with pytest.raises(NotFound):
+        await ignore_item(claire, w.items["delegated"], "not_this_year", None)
+    await ignore_item(claire, w.items["1099b"], "not_this_year", None)
+    await _delegate(seed, w, "1099b")
+    with pytest.raises(NotFound):
+        await undo_ignore(claire, w.items["1099b"])
+
+
+async def test_review4_an_undo_waiting_on_the_firms_act_sees_it(seed: Seeder) -> None:
+    """The firm's waive holds the request row; the Undo waits for it and then refuses."""
+    w = await feld_world(seed)
+    claire = client_ctx(w.claire)
+    await mark_done(claire, w.binder)
+    async with seed.held() as conn:
+        async with conn.transaction():  # the firm's waive, held open on the request row
+            await conn.execute(
+                "SELECT id FROM request_items WHERE id = $1 FOR UPDATE", w.items["1099b"]
+            )
+            await conn.execute(
+                "UPDATE request_items SET status = 'not_applicable', na_reason = 'firm_waived', "
+                "na_note = 'Not needed', na_by = $2, na_at = clock_timestamp() WHERE id = $1",
+                w.items["1099b"],
+                w.partner.user_id,
+            )
+            undo = asyncio.create_task(undo_mark_done(claire, w.binder))
+            await asyncio.sleep(1.0)
+            assert not undo.done()  # it waits on the request row the firm holds
+        with pytest.raises(FirmAlreadyActed):  # the waive committed first, and is seen
+            await undo
+    status = await seed.value("SELECT status FROM request_lists WHERE id = $1", w.binder)
+    assert status == "complete"
+
+
+async def test_review4_many_older_events_do_not_hide_the_firms_act(seed: Seeder) -> None:
+    """A return to the client leaves no stamp on the request, only its audit event; 501 later
+    events about the binder's requests must not push it out of sight."""
+    w = await feld_world(seed)
+    claire = client_ctx(w.claire)
+    await ignore_item(claire, w.items["1099b"], "not_this_year", None)
+    await mark_done(claire, w.binder)
+    await return_to_client(w.partner.context(), w.engagement, w.items["1099b"])
+    for _ in range(501):  # later, non-firm events about the binder's requests, past any cap
+        await announce_upload(claire, w.items["1095"], 1)
+    with pytest.raises(FirmAlreadyActed):
+        await undo_mark_done(claire, w.binder)
+
+
+async def test_review8_the_note_is_authorised_as_a_comment_and_capped(seed: Seeder) -> None:
+    w = await feld_world(seed)
+    claire = client_ctx(w.claire)
+    with recording_checks() as checked:
+        await ignore_item(claire, w.items["1099b"], "not_this_year", "Note 1")
+    assert "comment.create" in checked
+    for n in range(2, IGNORE_NOTES_PER_REQUEST + 1):
+        await undo_ignore(claire, w.items["1099b"])
+        await ignore_item(claire, w.items["1099b"], "not_this_year", f"Note {n}")
+    await undo_ignore(claire, w.items["1099b"])
+    with pytest.raises(IgnoreNotesExhausted):
+        await ignore_item(claire, w.items["1099b"], "not_this_year", "One note too many")
+    await ignore_item(claire, w.items["1099b"], "not_this_year", None)  # without a note: fine
+    notes = await seed.value(
+        "SELECT count(*) FROM comments WHERE request_item_id = $1 AND origin = 'ignore_note'",
+        w.items["1099b"],
+    )
+    assert notes == IGNORE_NOTES_PER_REQUEST

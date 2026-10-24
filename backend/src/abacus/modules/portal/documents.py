@@ -34,7 +34,12 @@ from abacus.kernel import clock
 from abacus.kernel._flags import EVIDENCE_WITHDRAWAL
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.engagements.api import EngagementRef, client_contact_organisations, get_ref
+from abacus.modules.engagements.api import (
+    EngagementRef,
+    client_contact_organisations,
+    client_contact_organisations_of_users,
+    get_ref,
+)
 from abacus.modules.evidence.api import PortalFile, client_pre_checks, portal_files
 from abacus.modules.identity.api import (
     FULL_ROLES,
@@ -104,6 +109,10 @@ _BANDED: Final = frozenset({"pbc", "third_party"})
 _YEARLY: Final = frozenset({"organizer", "intake"})
 _MATCHED_BY: Final = frozenset({"rule", "agent"})
 UNCATEGORISED: Final = "uncategorised"
+# The grants that open documents: the full-client roles except `delegate`, which P-06's
+# delegation issues on one request (a third party's, the room's), never the binder (DEC-333).
+DOCUMENT_ROLES: Final = FULL_ROLES - {"delegate"}
+_CLIENT_ROLES: Final = frozenset({"client_admin", "client_contributor"})
 
 
 def code_of(name: str) -> str:
@@ -191,7 +200,7 @@ def _on(at: datetime, zone: ZoneInfo) -> date:
 async def _grant_held(ctx: AuthContext) -> None:
     """A person with no full-client grant has no documents (a third party has the room)."""
     held = await portal_scopes(ctx)
-    if not any(g.role in FULL_ROLES for g in held.scopes):
+    if not any(g.role in DOCUMENT_ROLES for g in held.scopes):
         raise NotFound("portal_scope")
 
 
@@ -209,7 +218,7 @@ async def _authorised(ctx: AuthContext, ref: PortalBinderRef) -> EngagementRef:
 async def list_binders(ctx: AuthContext, scope_id: UUID | None) -> PortalBinderListOut:
     """The binder picker: newest published first; with `scope_id`, that grant's scope only."""
     held = await portal_scopes(ctx)
-    grants = [g for g in held.scopes if g.role in FULL_ROLES]
+    grants = [g for g in held.scopes if g.role in DOCUMENT_ROLES]
     if scope_id is not None:
         grants = [g for g in grants if g.scope_id == scope_id]
     if not grants:
@@ -295,6 +304,23 @@ async def _rows(
         if u is not None
     }
     names = await names_of(sorted(people, key=str))
+    # An uploader is named only to the engagement's client people: one with a client role on it
+    # (a first name, "Jonah"), else a third party by its organisation ("Harborline"), else not
+    # at all (DEC-333, security review).
+    uploaders = {f.uploader_user_id for fs in files.values() for f in fs} - {None, seen.me}
+    roles = {
+        u: await engagement_role_of(ctx.tenant, engagement.id, u)
+        for u in sorted((u for u in uploaders if u is not None), key=str)
+    }
+    organisations = await client_contact_organisations_of_users(
+        ctx.tenant, engagement.id, [u for u, role in roles.items() if role not in _CLIENT_ROLES]
+    )
+    shown_as = {
+        u: names.get(u, "").split(" ")[0] or None
+        if role in _CLIENT_ROLES
+        else organisations.get(u)
+        for u, role in roles.items()
+    }
     rows: list[_Row] = []
     for item in binder.items:
         own = files[item.id]
@@ -320,7 +346,7 @@ async def _rows(
         for n, f in enumerate(own):
             kind = receipt_kind(f, linked_by.get(f.version_id, "human"), seen.me)
             other = (
-                names.get(f.uploader_user_id, "").split(" ")[0]
+                shown_as.get(f.uploader_user_id)
                 if kind == "uploaded_by_other_contact" and f.uploader_user_id is not None
                 else None
             )
@@ -538,8 +564,12 @@ async def read_request(ctx: AuthContext, item_id: UUID) -> PortalRequestOut:
     prior = None
     found = await prior_year_link(ctx, binder, item)
     if found is not None:
-        prior_item, link = found
-        prior_files = await portal_files(ctx.tenant, prior_item, [link.evidence_version_id])
+        prior_binder, prior_item, link = found
+        try:  # last year's binder is authorised like any other (`scope_only`, INV-4)
+            await _authorised(ctx, prior_binder)
+            prior_files = await portal_files(ctx.tenant, prior_item, [link.evidence_version_id])
+        except NotFound:
+            prior_files = []
         if prior_files:
             prior = PortalPriorYearOut(
                 file_name=prior_files[0].name, sent_on=_on(prior_files[0].created_at, seen.zone)

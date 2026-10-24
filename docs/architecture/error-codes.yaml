@@ -399,6 +399,11 @@ codes:
     raised_by:
     - abacus.kernel.uow.idempotency.IdempotencyKeyReused
     summary: This key already answered a different request.
+  ignore_notes_exhausted:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_undo.IgnoreNotesExhausted
+    summary: 'The request''s thread already holds its ignore notes: Ignore without one, or comment.'
   illegal_transition:
     status: 409
     raised_by:

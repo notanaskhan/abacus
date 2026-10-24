@@ -899,20 +899,21 @@ async def insert_categories(
     return {name: category_id for name, category_id in made}
 
 
-async def binder_items(session: AsyncSession, binder_id: UUID) -> Sequence[RequestItem]:
+async def binder_items(
+    session: AsyncSession, binder_id: UUID, *, lock: bool = False
+) -> Sequence[RequestItem]:
     """Every request of a binder that isn't deleted, oldest first, for a caller that authorised
-    the binder: its counts, its publish and its client preview (LIST_EXEMPT)."""
-    return (
-        (
-            await session.execute(
-                select(RequestItem)
-                .where(RequestItem.request_list_id == binder_id, RequestItem.deleted_at.is_(None))
-                .order_by(RequestItem.created_at, RequestItem.id)
-            )
-        )
-        .scalars()
-        .all()
+    the binder: its counts, its publish and its client preview (LIST_EXEMPT). `lock` takes each
+    row FOR UPDATE, in id order, inside the caller's unit of work (R-01-T08: the client's Undo
+    of Mark as Done waits for, and then sees, a firm act in flight on any of them)."""
+    query = (
+        select(RequestItem)
+        .where(RequestItem.request_list_id == binder_id, RequestItem.deleted_at.is_(None))
+        .order_by(RequestItem.created_at, RequestItem.id)
     )
+    if lock:
+        query = query.with_for_update().execution_options(populate_existing=True)
+    return (await session.execute(query)).scalars().all()
 
 
 async def list_binder_requests(
@@ -1392,9 +1393,18 @@ async def binder_statuses(
 # --- The portal PBC read model (R-01-T07; C5 section portal-pbc) ---------------------------------
 
 # A binder a client reads: published or marked done, or closed after it was published (read-only).
+# A closed binder only if it was published when it closed: published, and not unpublished
+# since (an unpublish keeps `published_at`; a republish moves it past `unpublished_at`). AC-7.
 _PORTAL_BINDER = or_(
     RequestList.status.in_(("published", "complete")),
-    and_(RequestList.status == "closed", RequestList.published_at.is_not(None)),
+    and_(
+        RequestList.status == "closed",
+        RequestList.published_at.is_not(None),
+        or_(
+            RequestList.unpublished_at.is_(None),
+            RequestList.unpublished_at < RequestList.published_at,
+        ),
+    ),
 )
 
 
@@ -1546,8 +1556,10 @@ async def prior_year_item(
     the client reads it too (roll-forward copies the wording as it was)."""
     return await session.scalar(
         select(RequestItem)
+        .join(RequestList, RequestList.id == RequestItem.request_list_id)
         .where(
             RequestItem.request_list_id == prior_binder_id,
+            _PORTAL_BINDER,  # last year's binder is one a client may read at all
             func.coalesce(RequestItem.title, RequestItem.description) == title,
             _client_readable(),
             visible_items(
@@ -1561,3 +1573,63 @@ async def prior_year_item(
         .order_by(RequestItem.created_at, RequestItem.id)
         .limit(1)
     )
+
+
+async def is_delegated(session: AsyncSession, item_id: UUID) -> bool:
+    """Whether the request has an open delegation (R-01-T08: a client's Ignore and its Undo
+    answer 404 for it). Read inside the caller's unit of work, which holds the request's lock,
+    as every delegation's insert does."""
+    found = await session.scalar(
+        text(
+            "SELECT EXISTS (SELECT 1 FROM request_delegations "
+            "WHERE request_item_id = :item AND revoked_at IS NULL)"
+        ),
+        {"item": item_id},
+    )
+    return bool(found)
+
+
+async def ignore_note_count(session: AsyncSession, item_id: UUID) -> int:
+    """How many ignore notes the request's thread holds (R-01-T08: capped per request)."""
+    found = await session.scalar(
+        select(func.count()).where(
+            Comment.request_item_id == item_id, Comment.origin == "ignore_note"
+        )
+    )
+    return int(found or 0)
+
+
+async def portal_comment_counts(
+    session: AsyncSession, ctx: AuthContext, item_ids: Sequence[UUID]
+) -> dict[UUID, int]:
+    """R-01-T07: per request the client reads, its shared comments: the request's own thread
+    and the threads of its live files (a withdrawn file's thread is as gone as the file)."""
+    if not item_ids:
+        return {}
+    live_version = (
+        select(Fulfilment.id)
+        .where(
+            Fulfilment.request_item_id == Comment.request_item_id,
+            Fulfilment.evidence_version_id == Comment.evidence_version_id,
+            live_fulfilment(),
+        )
+        .exists()
+    )
+    rows = await session.execute(
+        select(Comment.request_item_id, func.count())
+        .join(RequestItem, RequestItem.id == Comment.request_item_id)
+        .where(
+            Comment.request_item_id.in_(item_ids),
+            Comment.visibility == "shared",
+            or_(Comment.evidence_version_id.is_(None), live_version),
+            visible_items(
+                ctx,
+                "comment.read",
+                RequestItem.engagement_id,
+                RequestItem.client_visible,
+                RequestItem.client_assignee_user_id,
+            ),
+        )
+        .group_by(Comment.request_item_id)
+    )
+    return {item: int(n) for item, n in rows.all()}

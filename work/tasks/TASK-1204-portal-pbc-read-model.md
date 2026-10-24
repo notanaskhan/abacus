@@ -61,6 +61,7 @@ POR-04; contract C5 section `portal-pbc` (stub R-01-T01, TASK-1042; DEC-240).
   the smaller seeded binder here. Upload intents are counted per request (`uploading_count`);
   the binder-level `upload_intents[]` the screen contract mentions is not in the C5 model, so it
   is not served (no shape change).
+- 2026-10-25: security review fixes (items 1, 2, 5, 6, 7), failing tests first in `test_portal_documents.py` (`test_review*`, 8 new): closed-after-unpublish binders 404, prior-year binder rule plus authorisation, `delegate` opens no documents (grant made by `delegate_item`), comment counts over live files only, hidden-only categories not named, uploaders named only as client people or a third party's organisation. DEC-333 amended.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

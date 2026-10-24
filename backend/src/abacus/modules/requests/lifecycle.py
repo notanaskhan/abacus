@@ -70,9 +70,11 @@ from abacus.modules.requests.binders import (
     check_action,
 )
 from abacus.modules.requests.client_undo import (
+    IGNORE_NOTES_PER_REQUEST,
     UNDO_REASON,
     UNDOABLE_ITEM,
     FirmAlreadyActed,
+    IgnoreNotesExhausted,
     NothingToUndo,
 )
 from abacus.modules.requests.events import RequestItemIgnoreUndone, RequestItemSent
@@ -82,9 +84,11 @@ from abacus.modules.requests.repository import (
     end_delegations,
     get_binder,
     get_request_item,
+    ignore_note_count,
     insert_client_response,
     insert_delegation,
     insert_upload_intent,
+    is_delegated,
     live_upload_intents,
     newest_response,
     open_delegations,
@@ -428,10 +432,19 @@ async def ignore_item(ctx: AuthContext, item_id: UUID, reason: str, note: str | 
         )
         try:
             await authorise(ctx, "request_item.ignore", resource, reason=reason)
+            if body is not None:  # the note is a shared comment: the client must be able to post
+                await authorise(ctx, "comment.create", resource)
         except Forbidden:
             raise NotFound("request_item") from None  # INV-4: not theirs, so not there
+        if await is_delegated(tx.session, item.id):
+            raise NotFound("request_item")  # it went to its third party directly (INV-4)
         if item.status not in ("requested", "returned"):
             raise RequestClosed(facts={"status": item.status})
+        if (
+            body is not None
+            and await ignore_note_count(tx.session, item.id) >= IGNORE_NOTES_PER_REQUEST
+        ):
+            raise IgnoreNotesExhausted(facts={"request_item_id": str(item.id)})
         now = await clock.now(ctx.tenant)
         await insert_client_response(
             tx.session,
@@ -510,6 +523,8 @@ async def undo_ignore(ctx: AuthContext, item_id: UUID) -> datetime:
             await authorise(ctx, "request_item.ignore", resource, reason=UNDO_REASON)
         except Forbidden:
             raise NotFound("request_item") from None  # INV-4: not theirs, so not there
+        if await is_delegated(tx.session, item.id):
+            raise NotFound("request_item")  # delegated since: the client's no longer (INV-4)
         response = await newest_response(tx.session, item.id)
         if response is None or response.kind != "not_applicable":
             raise NothingToUndo(facts={"request_item_id": str(item.id)})
@@ -625,6 +640,10 @@ async def delegate_item(
     )
     now = await clock.now(ctx.tenant)
     async with uow(ctx.tenant) as tx:
+        # The request's lock: a client's Ignore or its Undo in flight either commits first or
+        # waits and then finds the delegation (R-01-T08).
+        if await get_request_item(tx.session, item.id, lock=True) is None:
+            raise NotFound("request_item")
         await insert_delegation(
             tx.session,
             tenant_id=ctx.tenant_id,
@@ -652,7 +671,7 @@ async def record_contact_delegations(
     contact to becomes a delegation. organisations has checked the items are the contact's
     client's and identity has authorised the grants."""
     for grant_id, item_id in delegated:
-        item = await get_request_item(tx.session, item_id)
+        item = await get_request_item(tx.session, item_id, lock=True)  # as `delegate_item`
         if item is None or item.deleted_at is not None:
             raise NotFound("request_item")
         await insert_delegation(

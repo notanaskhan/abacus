@@ -32,6 +32,7 @@ from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.portal.documents import list_binders, read_binder, read_request
 from abacus.modules.portal.pbc_contract import PortalBinderOut, PortalRowOut
+from abacus.modules.requests.lifecycle import delegate_item
 
 from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
@@ -634,3 +635,208 @@ async def test_both_reads_record_the_one_action_for_the_route_guard(seed: Seeder
         with recording_checks() as checked:
             await read()
         assert "portal_documents.read" in checked
+
+
+# --- Security review of R-01-T07 (DEC-333 amended) ----------------------------------------------
+
+
+async def test_review1_a_binder_unpublished_then_closed_is_404_everywhere(seed: Seeder) -> None:
+    """AC-7: closing a binder while it is Unpublished never shows it to the client again."""
+    w = await feld_world(seed)
+    await _file(w, w.items["1095"], "Feld_1095C_2025.pdf", by=w.claire)
+    await seed.run(
+        "UPDATE request_lists SET published_at = now() - interval '1 hour', "
+        "status = 'unpublished', unpublished_at = now() - interval '30 minutes', "
+        "unpublished_by = $2 WHERE id = $1",
+        w.binder,
+        w.partner.user_id,
+    )
+    await seed.run(
+        "UPDATE request_lists SET status = 'closed', closed_at = now(), "
+        "closed_reason = 'work_delivered' WHERE id = $1",
+        w.binder,
+    )
+    claire = client_ctx(w.claire)
+    assert w.binder not in {b.id for b in (await list_binders(claire, None)).items}
+    with pytest.raises(NotFound):
+        await read_binder(claire, w.binder, "all", None)
+    for key in ("1095", "w2"):
+        with pytest.raises(NotFound):
+            await read_request(claire, w.items[key])
+
+
+async def test_review1_a_binder_republished_then_closed_stays_readable(seed: Seeder) -> None:
+    w = await feld_world(seed)
+    await seed.run(
+        "UPDATE request_lists SET unpublished_at = now() - interval '2 hours', "
+        "unpublished_by = $2, status = 'closed', closed_at = now(), "
+        "closed_reason = 'work_delivered' WHERE id = $1",
+        w.binder,
+        w.partner.user_id,
+    )
+    closed = await read_binder(client_ctx(w.claire), w.binder, "all", None)
+    assert closed.binder.closed and closed.allowed_actions == []
+
+
+async def _prior(w: World, status: str) -> uuid.UUID:
+    """Last year's binder with the 1095-C and its file; this year's binder rolled from it."""
+    prior = await _binder(
+        w.seed, w.tenant, w.engagement, w.partner, name="2024 Binder", status=status, part=5
+    )
+    old = await _item(
+        w.seed,
+        w.tenant,
+        w.engagement,
+        prior,
+        w.partner,
+        "Form 1095-C From Mercer Hill Health",
+        category=None,
+    )
+    await _file(w, old, "Feld_1095C_2024.pdf", by=w.claire)
+    await w.seed.run(
+        "UPDATE request_lists SET prior_year_source_ref = $2 WHERE id = $1", w.binder, prior
+    )
+    return prior
+
+
+async def test_review2_last_years_file_comes_only_from_a_binder_the_client_reads(
+    seed: Seeder,
+) -> None:
+    w = await feld_world(seed)
+    prior = await _prior(w, "published")
+    sheet = await read_request(client_ctx(w.claire), w.items["1095"])
+    assert sheet.prior_year is not None and sheet.prior_year.file_name == "Feld_1095C_2024.pdf"
+    await seed.run(
+        "UPDATE request_lists SET status = 'unpublished', unpublished_at = now(), "
+        "unpublished_by = $2 WHERE id = $1",
+        prior,
+        w.partner.user_id,
+    )
+    assert (await read_request(client_ctx(w.claire), w.items["1095"])).prior_year is None
+
+
+async def test_review2_a_draft_prior_binder_leaks_nothing(seed: Seeder) -> None:
+    w = await feld_world(seed)
+    prior = await _prior(w, "published")
+    await seed.run(
+        "UPDATE request_lists SET status = 'draft', published_at = NULL, published_by = NULL "
+        "WHERE id = $1",
+        prior,
+    )
+    assert (await read_request(client_ctx(w.claire), w.items["1095"])).prior_year is None
+
+
+async def test_review5_a_delegate_made_by_delegate_item_has_no_documents(seed: Seeder) -> None:
+    """The P-06 delegation issues role `delegate` (a full-shell role); it opens no documents."""
+    w = await feld_world(seed)
+    sam = await client_person(seed, w.tenant, "Sam Ortiz")
+    contact = await seed.value(
+        "INSERT INTO contacts (tenant_id, client_id, display_name, email, organisation_name, "
+        "contact_kind, user_id) VALUES ($1, $2, 'Sam Ortiz', 'sam@example.test', "
+        "'Keystone Retirement Services', 'third_party', $3) RETURNING id",
+        w.tenant,
+        w.client_id,
+        sam.user_id,
+    )
+    await delegate_item(
+        w.partner.context(), w.engagement, w.items["1099b"], cast(uuid.UUID, contact)
+    )
+    roles = await seed.rows(
+        "SELECT role, scope_kind FROM client_access_grants WHERE user_id = $1", sam.user_id
+    )
+    assert [(r["role"], r["scope_kind"]) for r in roles] == [("delegate", "request_item")]
+    ctx = client_ctx(sam)
+    with pytest.raises(NotFound):
+        await list_binders(ctx, None)
+    with pytest.raises(NotFound):
+        await read_binder(ctx, w.binder, "all", None)
+    with pytest.raises(NotFound):
+        await read_request(ctx, w.items["1099b"])
+
+
+async def _comment(w: World, item: uuid.UUID, version: uuid.UUID | None, by: Person) -> None:
+    await w.seed.run(
+        "INSERT INTO comments (tenant_id, engagement_id, request_item_id, evidence_version_id, "
+        "author_user_id, author_side, visibility, body_sealed, body_fingerprint) "
+        "VALUES ($1, $2, $3, $4, $5, 'client', 'shared', '\\x00'::bytea, $6)",
+        w.tenant,
+        w.engagement,
+        item,
+        version,
+        by.user_id,
+        hashlib.sha256(uuid.uuid4().bytes).hexdigest(),
+    )
+
+
+async def test_review6_the_comment_count_leaves_out_a_withdrawn_files_thread(
+    seed: Seeder,
+) -> None:
+    w = await feld_world(seed)
+    version, fulfilment = await _file(w, w.items["1095"], "Feld_wrong.pdf", by=w.claire)
+    await _comment(w, w.items["1095"], None, w.claire)
+    await _comment(w, w.items["1095"], version, w.claire)
+    assert (await read_request(client_ctx(w.claire), w.items["1095"])).comment_count == 2
+    await seed.as_actor(
+        w.tenant,
+        ("human", str(w.claire.user_id)),
+        "INSERT INTO fulfilment_withdrawals (tenant_id, fulfilment_id, engagement_id, "
+        "request_item_id, evidence_version_id, withdrawn_by_user_id) "
+        "VALUES ($1, $2, $3, $4, $5, $6)",
+        w.tenant,
+        fulfilment,
+        w.engagement,
+        w.items["1095"],
+        version,
+        w.claire.user_id,
+    )
+    assert (await read_request(client_ctx(w.claire), w.items["1095"])).comment_count == 1
+
+
+async def test_review6_a_category_of_only_hidden_requests_is_not_named(seed: Seeder) -> None:
+    w = await feld_world(seed)
+    business = await _category(seed, w.tenant, w.binder, "Business & Self-Employment", 9)
+    await _item(
+        seed,
+        w.tenant,
+        w.engagement,
+        w.binder,
+        w.partner,
+        "Partner memo 2",
+        category=business,
+        visible=False,
+    )
+    out = await read_binder(client_ctx(w.claire), w.binder, "all", None)
+    codes = [c.code for c in out.categories]
+    assert "business_self_employment" not in codes
+    assert "retirement" in codes  # an empty category still reads "Nothing requested"
+
+
+async def test_review7_a_third_partys_upload_names_only_its_organisation(seed: Seeder) -> None:
+    """After the delegation ends the request is the client's again: Harborline's upload stays on
+    it, named "Harborline", never the person who uploaded; a person with no client role on the
+    engagement and no contact is not named at all."""
+    w = await feld_world(seed)
+    sam = await client_person(seed, w.tenant, "Sam Ortiz")
+    await seed.run(
+        "UPDATE contacts SET user_id = $2 "
+        "WHERE tenant_id = $1 AND organisation_name = 'Harborline'",
+        w.tenant,
+        sam.user_id,
+    )
+    await _file(w, w.items["delegated"], "Harborline_cost_basis.pdf", by=sam)
+    await seed.run(
+        "UPDATE request_delegations SET revoked_at = now() WHERE request_item_id = $1",
+        w.items["delegated"],
+    )
+    stranger = await client_person(seed, w.tenant, "Pat Stranger")
+    await _file(w, w.items["1099b"], "stray.pdf", by=stranger)
+    rows = rows_of(await read_binder(client_ctx(w.claire), w.binder, "all", None))
+    [harborline] = rows[w.items["delegated"]].files
+    assert (harborline.receipt.kind, harborline.receipt.by_first_name) == (
+        "uploaded_by_other_contact",
+        "Harborline",
+    )
+    [stray] = rows[w.items["1099b"]].files
+    assert stray.receipt.by_first_name is None
+    dumped = (await read_binder(client_ctx(w.claire), w.binder, "all", None)).model_dump_json()
+    assert "Sam" not in dumped and "Pat" not in dumped

@@ -30,11 +30,11 @@ from abacus.modules.requests.repository import (
     binder_delegated_contacts,
     binder_items,
     client_responses,
-    list_comment_counts,
     live_links,
     live_upload_intents,
     portal_binder,
     portal_binders,
+    portal_comment_counts,
     portal_item,
     portal_items,
     prior_year_item,
@@ -141,7 +141,7 @@ async def _items(
             PortalLink(f.id, f.evidence_version_id, f.created_by_kind, f.created_at)
         )
     uploading = await live_upload_intents(session, ids)
-    comments = await list_comment_counts(session, ctx, binder.engagement_id, shared_only=True)
+    comments = await portal_comment_counts(session, ctx, ids)
     responses = await client_responses(session, ctx, binder.engagement_id)
     out: list[PortalItem] = []
     for r in rows:
@@ -173,7 +173,7 @@ async def _items(
                 guidance=swap.why if swap is not None else r.why,
                 links=tuple(links.get(r.id, ())),
                 uploading=uploading.get(r.id, 0),
-                comment_count=comments.get(r.id, (0, False))[0],
+                comment_count=comments.get(r.id, 0),
             )
         )
     return tuple(out)
@@ -183,15 +183,19 @@ async def _binder(
     session: AsyncSession, ctx: AuthContext, binder: RequestList, rows: Sequence[RequestItem]
 ) -> PortalBinder:
     shown = await drafted_guidance_to_clients(ctx.tenant)
+    every = await binder_items(session, binder.id)
+    readable = {i.category_id for i in await portal_items(session, ctx, binder.id)}
+    holding = {i.category_id for i in every}
+    # A category is named when the client reads a request of it, or when it holds none at all
+    # ("Nothing requested"); one holding only internal-only or delegated requests is not.
     categories = tuple(
         PortalCategory(c.id, c.name, c.position)
         for c in await binder_categories(session, binder.id)
+        if c.id in readable or c.id not in holding
     )
     acted = False
     if binder.status == "complete" and binder.marked_done_at is not None:
-        acted = await firm_acted_since(
-            session, await binder_items(session, binder.id), binder.marked_done_at
-        )
+        acted = await firm_acted_since(session, every, binder.marked_done_at)
     return PortalBinder(
         id=binder.id,
         engagement_id=binder.engagement_id,
@@ -245,21 +249,30 @@ async def portal_item_view(ctx: AuthContext, item_id: UUID) -> PortalBinder | No
 
 async def prior_year_link(
     ctx: AuthContext, binder: PortalBinder, item: PortalItem
-) -> tuple[UUID, PortalLink] | None:
+) -> tuple[PortalBinderRef, UUID, PortalLink] | None:
     """POR-04's "Last year you sent …": the newest live fulfilment of last year's request of the
-    same title, when this binder was rolled forward from one the client reads."""
+    same title, when this binder was rolled forward from one a client may read at all (published,
+    marked done, or closed after it was published) and the client reads the request. Returned
+    with last year's binder, which the caller authorises too."""
     if binder.prior_year_source_ref is None:
         return None
     async with tenant_session(ctx.tenant) as session:
         prior = await prior_year_item(session, ctx, binder.prior_year_source_ref, item.title)
         if prior is None:
             return None
+        prior_binder = await portal_binder(session, prior.request_list_id)
+        if prior_binder is None:
+            return None
         links = await live_links(session, [prior.id])
     if not links:
         return None
     newest = links[-1]
-    return prior.id, PortalLink(
-        newest.id, newest.evidence_version_id, newest.created_by_kind, newest.created_at
+    return (
+        _ref(prior_binder),
+        prior.id,
+        PortalLink(
+            newest.id, newest.evidence_version_id, newest.created_by_kind, newest.created_at
+        ),
     )
 
 
