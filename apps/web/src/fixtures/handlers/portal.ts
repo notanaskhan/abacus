@@ -178,10 +178,11 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
         return json(errorBody("mfa_expired"), 410);
       }
       setupShown.add(token);
-      const key = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"; // RFC 4648 example key, fixture only
+      // RFC 4648's example base32 text, a fixture value only (never a real factor).
+      const shown = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
       return json({
-        otpauth_uri: `otpauth://totp/Brightwater%20Hale:client?secret=${key}&issuer=Brightwater%20Hale`,
-        manual_key: key,
+        otpauth_uri: `otpauth://totp/Brightwater%20Hale:client?secret=${shown}&issuer=Brightwater%20Hale`,
+        manual_key: shown,
       });
     },
     "POST /v1/portal/auth/mfa/setup/verify": ({ body, persona }) => {
