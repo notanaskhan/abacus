@@ -14,7 +14,8 @@
 #     only those three paths;
 #   the deploy smoke (Q-01-T32): a red run fails the deploy, and the release is not recorded
 #     staging-verified;
-#   the release record: SSM `/abacus/staging/release` (the previous one kept for rollback),
+#   the release record, in its own job after the smoke's: SSM `/abacus/staging/release` (the
+#     previous one kept for rollback),
 #     `releases/<sha>/staging-verified.json` (production's gate), a GitHub deployment and a Sentry
 #     release.
 #
@@ -24,6 +25,10 @@
 # TASK_SUBNETS, TASK_SECURITY_GROUP, WEB_BUCKET, PORTAL_BUCKET, FIRM_DISTRIBUTION_ID,
 # SMOKE_BASE_URL; repository variable ECR_REPOSITORY. Optional secret SENTRY_AUTH_TOKEN (the
 # Sentry release). While any variable is unset the job skips with a notice.
+# Jobs: `deploy` (the lock, migrate, roll, publish), `smoke` (no OIDC token, no AWS credentials:
+# it runs Node packages), `record` (after a green smoke). Every job runs only from main; the
+# `staging` GitHub environment must be limited to main with required reviewers (human to-do,
+# DEC-360), because an environment-scoped OIDC token does not name the branch.
 # Every action is pinned to a full commit SHA.
 name: deploy-staging
 
@@ -47,13 +52,16 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: staging
+    outputs:
+      configured: ${{ steps.gate.outputs.configured }}
+      digest: ${{ steps.release.outputs.digest }}
     permissions:
       contents: read
       id-token: write # OIDC token for the staging deploy role
-      deployments: write # the GitHub deployment record
     env:
       ENV_NAME: staging
       GIT_SHA: ${{ inputs.sha }}
@@ -185,27 +193,72 @@ jobs:
           source deploy/scripts/release.sh
           publish_spa "$GIT_SHA"
 
+      - name: Release the deploy lock
+        if: always() && steps.lock.outputs.taken == 'true'
+        working-directory: backend
+        run: uv run --locked python -m abacus_tools.deploy_lock release --env staging --run-ref "$RUN_REF"
+
+  # The smoke runs Node packages (Playwright), so it runs in a job that holds no OIDC token and no
+  # AWS credentials, with install scripts off (security review, S8 wave B). A red smoke fails the
+  # run and the record job never runs: the release is not staging-verified.
+  smoke:
+    needs: deploy
+    if: github.ref == 'refs/heads/main' && needs.deploy.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: steps.gate.outputs.configured == 'true'
         with:
           node-version: 24
       - name: Deploy smoke
-        if: steps.gate.outputs.configured == 'true'
         run: |
           corepack enable
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --ignore-scripts
           pnpm -C apps/web exec playwright install --with-deps chromium
           pnpm -C apps/web exec playwright test --config e2e/smoke/playwright.config.ts --project=deploy-smoke
         env:
-          SMOKE_BASE_URL: ${{ env.SMOKE_BASE_URL }}
+          SMOKE_BASE_URL: ${{ vars.SMOKE_BASE_URL }}
           SMOKE_RELEASE: ${{ inputs.sha }}
           SMOKE_SIGN_IN: ${{ vars.SMOKE_SIGN_IN }} # "on" once the smoke user's hosted sign-in exists
 
+  record:
+    needs: [deploy, smoke]
+    if: github.ref == 'refs/heads/main' && needs.deploy.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the staging deploy role
+      deployments: write # the GitHub deployment record
+    env:
+      ENV_NAME: staging
+      GIT_SHA: ${{ inputs.sha }}
+      DIGEST: ${{ needs.deploy.outputs.digest }}
+      RUN_REF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ARTIFACTS: abacus-shared-artifacts
+      AWS_DEPLOY_ROLE: ${{ vars.AWS_DEPLOY_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: record-staging-${{ github.run_id }}
       - name: Record the release
-        if: steps.gate.outputs.configured == 'true'
-        env:
-          DIGEST: ${{ steps.release.outputs.digest }}
         run: |
+          aws s3 cp "s3://$ARTIFACTS/releases/$GIT_SHA/release.json" release.json --only-show-errors
           source deploy/scripts/release.sh
           record_release deploy-staging
           jq -n --arg sha "$GIT_SHA" --arg digest "$DIGEST" --arg run "$RUN_REF" \
@@ -214,7 +267,6 @@ jobs:
             > staging-verified.json
           aws s3 cp staging-verified.json "s3://$ARTIFACTS/releases/$GIT_SHA/staging-verified.json" --only-show-errors
       - name: GitHub deployment
-        if: steps.gate.outputs.configured == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
@@ -228,7 +280,6 @@ jobs:
               log_url: process.env.RUN_REF,
             });
       - name: Sentry release
-        if: steps.gate.outputs.configured == 'true'
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
@@ -240,8 +291,3 @@ jobs:
           curl -sf -X POST "https://sentry.io/api/0/organizations/$SENTRY_ORG/releases/" \
             -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" -H "Content-Type: application/json" \
             -d "{\"version\": \"$GIT_SHA\", \"projects\": [\"abacus-backend\", \"abacus-web\"]}" > /dev/null
-
-      - name: Release the deploy lock
-        if: always() && steps.lock.outputs.taken == 'true'
-        working-directory: backend
-        run: uv run --locked python -m abacus_tools.deploy_lock release --env staging --run-ref "$RUN_REF"

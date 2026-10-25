@@ -139,6 +139,7 @@ def _gate(rel: dict[str, object] | None = None, **facts: object) -> list[str]:
         replay=facts.get("replay", {"git_sha": SHA, "passed": True}),  # type: ignore[arg-type]  # test facts
         inspector_record=facts.get("inspector", _clean()),  # type: ignore[arg-type]  # test facts
         current_infra_sha=facts.get("infra", "e" * 40),  # type: ignore[arg-type]  # test facts
+        build_record=facts.get("build", dict(GOOD)),  # type: ignore[arg-type]  # test facts
     )
 
 
@@ -255,3 +256,20 @@ def test_an_ops_request_is_one_allowlisted_command() -> None:
         }
         with pytest.raises(Refused):
             ops_request(raw)
+
+
+# --- Security review (S8 wave B, MED 5): the PR's record must be the build's record ------------
+
+
+def test_the_release_must_equal_the_build_record_on_all_six_keys() -> None:
+    assert _gate(build=dict(GOOD)) == []
+    assert _gate(build=None) == ["build_record_missing"]
+    for key in sorted(release.RELEASE_KEYS):
+        forged = dict(GOOD)
+        forged[key] = "0" * len(str(GOOD[key])) if key != "image_digest" else "sha256:" + "0" * 64
+        assert _gate(build=forged) == ["release_differs_from_build"], key
+
+
+def test_a_production_release_may_add_only_its_two_recorded_facts() -> None:
+    excepted = {**GOOD, "infra_applied_sha": "e" * 40}
+    assert _gate(excepted, build=dict(GOOD)) == []

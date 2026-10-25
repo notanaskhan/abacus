@@ -68,7 +68,8 @@ OPS_COMMANDS: Final = frozenset(
         "abacus_tools.schedules show",
         "abacus_tools.schedules pause",
         "abacus_tools.schedules unpause",
-        "abacus_tools.drill verify",
+        # Not `abacus_tools.drill verify`: it swaps the production database host, so it runs only
+        # from drill.yml with the host of the restore it made (security review, S8 wave B).
     }
 )
 _HANDLE = re.compile(r"[a-z][a-z0-9._-]{0,60}")
@@ -219,13 +220,21 @@ def gate(
     replay: Mapping[str, object] | None,
     inspector_record: Mapping[str, object] | None,
     current_infra_sha: str | None,
+    build_record: Mapping[str, object] | None,
 ) -> list[str]:
     """Why a production release may not deploy; empty when it may. Staging verified this exact
     git SHA and image digest; the SHA's replay tests passed; Inspector found no fixable critical
     or high finding, or the release PR records an exception naming every one; and a changed
-    `infra_sha` was applied by hand first (SPEC-050 AC-6)."""
+    `infra_sha` was applied by hand first (SPEC-050 AC-6); and the record equals the one build.yml
+    wrote for the SHA on all six keys."""
     check(release, production=True)
     why: list[str] = []
+    # The PR's record is only a pointer: it must be the record build.yml wrote for that SHA, key
+    # for key, so a PR cannot name an image, bundle or schema the build never made.
+    if build_record is None:
+        why.append("build_record_missing")
+    elif any(build_record.get(key) != release[key] for key in RELEASE_KEYS):
+        why.append("release_differs_from_build")
     sha, digest = release["git_sha"], release["image_digest"]
     if not staging_verified or (
         staging_verified.get("git_sha") != sha
@@ -347,6 +356,7 @@ def _parser() -> argparse.ArgumentParser:
     gating.add_argument("--replay")
     gating.add_argument("--inspector")
     gating.add_argument("--current-infra-sha")
+    gating.add_argument("--build-record")
     config = sub.add_parser("runtime-config")
     for name in ("--environment", "--release", "--authority", "--client-id"):
         config.add_argument(name, required=True)
@@ -385,6 +395,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 replay=_optional(args.replay),
                 inspector_record=_optional(args.inspector),
                 current_infra_sha=args.current_infra_sha or None,
+                build_record=_optional(args.build_record),
             )
             if why:
                 print("refused: " + ", ".join(why), file=sys.stderr)

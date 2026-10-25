@@ -187,6 +187,12 @@ async def schedule(job: PlatformSchedule) -> Literal["created", "updated"]:
     return "created"
 
 
+async def schedule_ids() -> list[str]:
+    """Every Schedule's id in the namespace (the caller decides which are its own)."""
+    client = await temporal_client()
+    return [entry.id async for entry in await client.list_schedules()]
+
+
 async def pause(schedule_id: str, *, note: str) -> None:
     """Stop a Schedule starting runs (an open run carries on). `note` says who and why."""
     client = await temporal_client()
@@ -298,6 +304,7 @@ __all__ = [
     "queue_for",
     "register_work_classes",
     "schedule",
+    "schedule_ids",
     "schedule_results",
     "signal_with_start",
     "unpause",

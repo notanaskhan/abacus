@@ -14,6 +14,8 @@
 # Needs repository variables (no secrets; OIDC): AWS_BUILD_ROLE (the shared account's CI build
 # role) and ECR_REPOSITORY (`<shared account id>.dkr.ecr.us-east-2.amazonaws.com/abacus-backend`,
 # set in GitHub, never in git). While either is unset the jobs skip with a notice.
+# Every job runs only from main (security review, S8 wave B): a dispatch on another branch assumes
+# no role. The build role's trust must also be limited to refs/heads/main (human to-do, DEC-360).
 # Every action is pinned to a full commit SHA.
 name: build
 
@@ -37,7 +39,7 @@ env:
 
 jobs:
   image:
-    if: github.event_name != 'schedule'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -110,7 +112,7 @@ jobs:
 
   inspector:
     needs: image
-    if: needs.image.outputs.configured == 'true'
+    if: github.ref == 'refs/heads/main' && needs.image.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -136,12 +138,18 @@ jobs:
       - name: Wait for the scan, then record the gate
         run: |
           repo="${ECR_REPOSITORY#*/}"
+          status=""
           for _ in $(seq 1 60); do
             status=$(aws ecr describe-image-scan-findings --repository-name "$repo" \
               --image-id imageDigest="$DIGEST" --query 'imageScanStatus.status' --output text 2>/dev/null || true)
             [ "$status" = "COMPLETE" ] || [ "$status" = "ACTIVE" ] && break
             sleep 20
           done
+          # No findings from a scan that never finished: no inspector.json, so no promotion.
+          case "$status" in COMPLETE|ACTIVE) ;; *)
+            echo "::error title=inspector scan incomplete::scan status '$status' for $DIGEST; no Inspector record written"
+            exit 1 ;;
+          esac
           aws inspector2 list-findings --filter-criteria \
             "{\"ecrImageHash\":[{\"comparison\":\"EQUALS\",\"value\":\"$DIGEST\"}],\"findingStatus\":[{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]}" \
             --output json > findings.json
@@ -154,7 +162,7 @@ jobs:
 
   spa:
     needs: image
-    if: needs.image.outputs.configured == 'true'
+    if: github.ref == 'refs/heads/main' && needs.image.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -175,15 +183,12 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-        with:
-          role-to-assume: ${{ env.AWS_BUILD_ROLE }}
-          aws-region: ${{ env.REGION }}
-          role-session-name: spa-${{ github.run_id }}
       - name: Install
         run: |
           corepack enable
-          pnpm install --frozen-lockfile
+          # Before the role is assumed, and without install scripts: no package code runs while
+          # AWS credentials are in the job (security review, S8 wave B).
+          pnpm install --frozen-lockfile --ignore-scripts
           pnpm -C packages/api-client build:types
       - name: Build each entry present
         # One bundle for every environment: authority and client ID come from runtime-config.json
@@ -197,6 +202,11 @@ jobs:
             cp -R apps/web/dist/portal dist-release/portal
           fi
           rm -rf dist-release/firm/portal dist-release/*/.vite
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_BUILD_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: spa-${{ github.run_id }}
       - name: Manifest
         id: manifest
         run: echo "sha256=$(cd backend && uv run --locked python -m abacus_tools.release manifest ../dist-release)" >> "$GITHUB_OUTPUT"
@@ -211,7 +221,7 @@ jobs:
 
   record:
     needs: [image, spa]
-    if: needs.image.outputs.configured == 'true'
+    if: github.ref == 'refs/heads/main' && needs.image.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -250,7 +260,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   base-refresh:
-    if: github.event_name == 'schedule'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

@@ -3,7 +3,9 @@
 # previous SPA bundle (its hashed assets were never deleted), with runtime-config.json naming the
 # previous release. Never downgrades: there is no migrate step, migrations are expand-only within a
 # release (P-38), and a Temporal change rolls forward with a new `workflow.patched` branch.
-# Within 15 minutes (the job's timeout) with the canary green after (Q-01-T34 acceptance).
+# Runs only from main; the environment must be limited to main with required reviewers (human
+# to-do, DEC-360). A deploy still running is cancelled first (RB-01): the rollback waits at most
+# 5 minutes for its lock. Within 15 minutes (the job's timeout) with the canary green after (Q-01-T34 acceptance).
 #
 # The previous release is SSM `/abacus/<env>/release-previous`, written by each deploy. After a
 # rollback the two records swap, so a second dispatch returns to the release rolled back from.
@@ -27,12 +29,15 @@ on:
 permissions:
   contents: read
 
+# Its own group (security review, S8 wave B): in the shared `deploy-<env>` group a later deploy
+# dispatch would replace a pending rollback. It waits for a running deploy through the SSM lock.
 concurrency:
-  group: deploy-${{ inputs.environment }}
+  group: rollback-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
   rollback:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: ${{ inputs.environment }}

@@ -6,6 +6,12 @@
 # delete the instance and release the lock on every path. A failed drill fails this run: a SEV2
 # that blocks the next production release (RB-15).
 #
+# `abacus_tools.drill verify` reuses the production owner and app URLs with the host swapped, so
+# it refuses any host but `abacus-drill-<run id>.<id>.<region>.rds.amazonaws.com` and refuses to
+# start unless ABACUS_DATABASE_CA_FILE names the RDS CA bundle (verify-full). The `abacus-ops`
+# task definition must set ABACUS_DATABASE_CA_FILE to the bundle's path in the image (human
+# to-do; DEC-360). It is not an ops-request command: only this workflow runs it.
+#
 # The record holds times and results only, never data: the job summary and the
 # `drill-record` artefact. The builder copies them into docs/ops/drills/<year>-Q<n>.md.
 #
@@ -40,6 +46,7 @@ concurrency:
 
 jobs:
   drill:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     environment: ${{ inputs.environment }}

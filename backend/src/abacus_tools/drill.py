@@ -30,6 +30,13 @@ mismatch):
 
 The report is JSON of codes, counts and identifiers only, never content, with the restore-to-
 verified time and whether the RPO lag was within 5 minutes. Exit 1 when anything fails.
+
+Guards (security review, S8 wave B): the restored host decides where the production owner and
+app passwords go, so it must be the drill's own restore, `abacus-drill-<run id>.<id>.<us-east-2
+or us-west-2>.rds.amazonaws.com` (drill.yml names the instance after its run), and the task must
+set `ABACUS_DATABASE_CA_FILE` to the RDS CA bundle so every connection verifies the server
+(verify-full). Both are checked before anything connects; a refusal exits 2. The command is not
+an ops-request command: it runs only from drill.yml.
 """
 
 from __future__ import annotations
@@ -38,12 +45,14 @@ import argparse
 import asyncio
 import json
 import math
+import re
 import secrets
 import sys
 from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Final, cast
 from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID
@@ -67,6 +76,32 @@ SAMPLE_MINIMUM: Final = 50
 SETTLE_SECONDS: Final = 300
 _TIMESTAMPS: Final = ("created_at", "occurred_at", "recorded_at")
 _DRILL_ACTOR: Final = "drill:verify"
+# drill.yml restores to `abacus-drill-<github run id>`; RDS endpoints are
+# `<instance>.<account-specific id>.<region>.rds.amazonaws.com`, in the two permitted regions.
+_DRILL_HOST: Final = re.compile(
+    r"abacus-drill-[0-9]{1,20}\.[a-z0-9]{6,20}\.(?:us-east-2|us-west-2)\.rds\.amazonaws\.com"
+)
+
+
+class Refused(Exception):
+    """A guard refused the drill before it connected to anything."""
+
+
+def check_restored_host(host: str) -> str:
+    """The drill instance's RDS endpoint, or `Refused`: the passwords go nowhere else."""
+    if not _DRILL_HOST.fullmatch(host):
+        raise Refused(
+            "--restored-host must be the drill's own restore, "
+            "abacus-drill-<run id>.<id>.<us-east-2|us-west-2>.rds.amazonaws.com"
+        )
+    return host
+
+
+def check_ca_file(ca_file: str | None) -> str:
+    """The RDS CA bundle every drill connection verifies the server against (verify-full)."""
+    if not ca_file or not Path(ca_file).is_file():
+        raise Refused("ABACUS_DATABASE_CA_FILE must name the RDS CA bundle (verify-full)")
+    return ca_file
 
 
 @dataclass(frozen=True)
@@ -410,7 +445,7 @@ def _instant(value: str) -> datetime:
 async def _run_verify(args: argparse.Namespace) -> DrillReport:
     s = settings()
     if s.migrations_database_url is None or s.database_url is None:
-        raise SystemExit("the owner and app database URLs must be set")
+        raise Refused("the owner and app database URLs must be set")
     owner = s.migrations_database_url.get_secret_value()
     app = s.database_url.get_secret_value()
     # Evidence reads go to the replica bucket through the replica region's key (P-65 aliases
@@ -453,7 +488,13 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    report = asyncio.run(_run_verify(args))
+    try:
+        check_restored_host(args.restored_host)
+        check_ca_file(settings().database_ca_file)
+        report = asyncio.run(_run_verify(args))
+    except Refused as refused:
+        print(f"refused: {refused}", file=sys.stderr)
+        return 2
     print(report.as_json())
     return 0 if report.passed else 1
 

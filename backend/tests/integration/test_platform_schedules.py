@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator
+from datetime import timedelta
 
 import pytest
 from temporalio import activity
@@ -17,7 +18,7 @@ from temporalio.service import RPCError
 from temporalio.worker import Worker
 
 from abacus.kernel import dispatch
-from abacus.kernel.dispatch import queue_for
+from abacus.kernel.dispatch import PlatformSchedule, queue_for
 from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.notifications import api as notifications
 from abacus.modules.platform import api as platform
@@ -125,6 +126,26 @@ async def test_a_triggered_run_does_each_job_once_on_the_background_queue(
 async def test_delete_removes_the_schedule_and_ensure_brings_it_back(temporal: Client) -> None:
     await schedules.ensure()
     await dispatch.delete("notification_purge:platform")
-    listed = [s.id async for s in await temporal.list_schedules()]
-    assert "notification_purge:platform" not in listed
+    with pytest.raises(RPCError):  # gone (the listing is eventually consistent; describe is not)
+        await dispatch.describe_schedule("notification_purge:platform")
     assert (await schedules.ensure())["notification_purge:platform"] == "created"
+
+
+async def test_ensure_deletes_a_canary_schedule_no_longer_declared(temporal: Client) -> None:
+    """Security review (LOW 8): a firm that stops being the canary stops being probed."""
+    stale = PlatformSchedule(
+        id="canary:00000000-0000-4000-8000-0000000000aa",
+        workflow=platform.CanaryWorkflow,
+        every=timedelta(minutes=15),
+        note="stale",
+        arg=platform.CanaryInput("00000000-0000-4000-8000-0000000000aa"),
+    )
+    await dispatch.schedule(stale)
+    for _ in range(100):  # the listing ensure reads is eventually consistent
+        if stale.id in await dispatch.schedule_ids():
+            break
+        await asyncio.sleep(0.1)
+    result = await schedules.ensure()
+    assert result[stale.id] == "deleted"
+    with pytest.raises(RPCError):
+        await dispatch.describe_schedule(stale.id)

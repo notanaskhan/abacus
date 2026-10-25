@@ -136,9 +136,10 @@ def test_ac_each_workflow_that_changes_an_environment_locks_before_its_first_cha
         assert index(job, "Take the deploy lock") < index(job, first_change[name]), name
         assert str(step(job, "Release the deploy lock")["if"]).startswith("always()"), name
         concurrency = load(name)["concurrency"]
-        assert "deploy-" in str(concurrency) and "'cancel-in-progress': False" in str(
-            concurrency
-        ), name
+        # A rollback has its own group (security review): the SSM lock excludes deploys.
+        group = str(concurrency)
+        assert "deploy-" in group or "rollback-" in group, name
+        assert "'cancel-in-progress': False" in group, name
 
 
 # --- Digest-only references --------------------------------------------------------------------
@@ -178,6 +179,7 @@ def _decide(**overrides: object) -> list[str]:
         "replay": {"git_sha": SHA, "passed": True},
         "inspector_record": {"image_digest": DIGEST, "promotable": True, "finding_ids": []},
         "current_infra_sha": RELEASE["infra_sha"],
+        "build_record": dict(RELEASE),  # security review: the PR's record is the build's
     }
     facts.update(overrides)
     return gate(RELEASE, **facts)  # type: ignore[arg-type]  # test facts
@@ -211,6 +213,7 @@ def test_ac_production_refuses_a_fixable_critical_finding_without_a_recorded_exc
             replay={"git_sha": SHA, "passed": True},
             inspector_record=dirty,
             current_infra_sha=None,
+            build_record=dict(RELEASE),
         )
         == []
     )

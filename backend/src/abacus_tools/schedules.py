@@ -12,10 +12,14 @@ locally with `make schedules`.
         --reason "job retired"
 
 `ensure` creates each module's declared Schedule (`SCHEDULES` in its `api.py`) or converges it on
-the declaration, keeping an operator's pause; running it twice changes nothing. Every Schedule
-skips a run while the last is open and catches up at most an hour (`kernel.dispatch`). The other
-commands act on one declared Schedule id; an unknown id is refused. Notes carry the operator's
-handle and reason (at most 200 characters, no client data); nothing here touches a database.
+the declaration, keeping an operator's pause; running it twice changes nothing. It also deletes
+the Schedules it owns that are no longer declared (`<job>:platform`, `canary:<tenant uuid>`), so
+a firm that stops being the canary stops being probed; it never touches another id.
+`make schedules` runs `ensure --local-only`, which refuses a Temporal off the local stack.
+Every Schedule skips a run while the last is open and catches up at most an hour
+(`kernel.dispatch`). The other commands act on one declared Schedule id; an unknown id is
+refused. Notes carry the operator's handle and reason (at most 200 characters, no client
+data); nothing here touches a database.
 """
 
 from __future__ import annotations
@@ -23,17 +27,39 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import sys
 from dataclasses import asdict
 from importlib import import_module
 from typing import Final, cast
+from urllib.parse import urlsplit
+
+from temporalio.service import RPCError, RPCStatusCode
 
 from abacus.kernel import dispatch
+from abacus.kernel.config import settings
 from abacus.kernel.dispatch import PlatformSchedule
 from abacus.modules import MODULES
 from abacus.modules.platform.api import OPERATOR_HANDLE
 
 REASON_LIMIT: Final = 200
+_OWNED: Final = re.compile(
+    r"[a-z][a-z0-9_]*:platform|canary:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+)
+_LOCAL_HOSTS: Final = frozenset({"127.0.0.1", "localhost", "::1", "temporal"})
+
+
+def owned(schedule_id: str) -> bool:
+    """An id this tool creates: a platform job's or a canary's."""
+    return _OWNED.fullmatch(schedule_id) is not None
+
+
+def check_local() -> None:
+    """`make schedules` only ever touches the local stack's Temporal."""
+    target = settings().temporal_target or ""
+    host = urlsplit(f"//{target}").hostname or ""
+    if host.lower() not in _LOCAL_HOSTS:
+        raise Refused("--local-only: the configured Temporal is not on the local stack")
 
 
 class Refused(Exception):
@@ -71,8 +97,20 @@ def _known(schedule_id: str) -> str:
 
 
 async def ensure() -> dict[str, str]:
-    """Create or converge every declared Schedule; returns `{id: created | updated}`."""
-    return {job.id: await dispatch.schedule(job) for job in declared()}
+    """Create or converge every declared Schedule and delete the owned ones no longer declared;
+    returns `{id: created | updated | deleted}`."""
+    jobs = declared()
+    result: dict[str, str] = {job.id: await dispatch.schedule(job) for job in jobs}
+    wanted = {job.id for job in jobs}
+    for schedule_id in await dispatch.schedule_ids():
+        if owned(schedule_id) and schedule_id not in wanted:
+            try:
+                await dispatch.delete(schedule_id)
+            except RPCError as exc:  # the listing lags a delete: already gone is fine
+                if exc.status != RPCStatusCode.NOT_FOUND:
+                    raise
+            result[schedule_id] = "deleted"
+    return result
 
 
 async def show() -> list[dict[str, object]]:
@@ -82,7 +120,8 @@ async def show() -> list[dict[str, object]]:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m abacus_tools.schedules")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("ensure")
+    ensuring = sub.add_parser("ensure")
+    ensuring.add_argument("--local-only", action="store_true")
     sub.add_parser("show")
     for name in ("pause", "unpause", "delete"):
         acting = sub.add_parser(name)
@@ -96,6 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if args.command == "ensure":
+            if args.local_only:
+                check_local()
             print(json.dumps(asyncio.run(ensure()), sort_keys=True))
             return 0
         if args.command == "show":

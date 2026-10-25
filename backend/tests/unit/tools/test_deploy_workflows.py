@@ -44,8 +44,9 @@ def test_build_runs_on_main_pushes_and_weekly_for_the_base_refresh() -> None:
     on = triggers(build)
     assert cast(Mapping, on["push"])["branches"] == ["main"]
     assert set(on) == {"push", "schedule", "workflow_dispatch"}
-    assert jobs(build)["base-refresh"]["if"] == "github.event_name == 'schedule'"
-    assert jobs(build)["image"]["if"] == "github.event_name != 'schedule'"
+    main = "github.ref == 'refs/heads/main'"
+    assert jobs(build)["base-refresh"]["if"] == f"{main} && github.event_name == 'schedule'"
+    assert jobs(build)["image"]["if"] == f"{main} && github.event_name != 'schedule'"
 
 
 def test_build_reuses_the_digest_of_a_sha_already_built() -> None:
@@ -94,7 +95,8 @@ def test_staging_is_dispatched_never_on_a_merge_or_a_schedule() -> None:
 
 
 def test_staging_runs_the_sequence_in_order() -> None:
-    job = _job("deploy-staging.yml")
+    staging = jobs(load("deploy-staging.yml"))
+    job = staging["deploy"]
     order = [
         "The release record",
         "Take the deploy lock",
@@ -104,19 +106,21 @@ def test_staging_runs_the_sequence_in_order() -> None:
         "Roll the workers",
         "Roll the API",
         "Publish the SPA",
-        "Deploy smoke",
-        "Record the release",
+        "Release the deploy lock",
     ]
     positions = [index(job, name) for name in order]
     assert positions == sorted(positions)
+    # Then the smoke (its own job), then the record (after a green smoke).
+    assert staging["smoke"]["needs"] == "deploy"
+    assert staging["record"]["needs"] == ["deploy", "smoke"]
     preflight = str(step(job, "Pre-flight")["run"])
     assert "alembic heads" in preflight and "pytest tests/workflows" in preflight
     assert "infra_applied" in preflight  # a changed infra_sha stops until applied by hand
     assert 'run_task "$MIGRATE_TASK_DEFINITION" migrate migrate' in str(
         step(job, "Migrate")["run"]
     )
-    assert "staging-verified.json" in str(step(job, "Record the release")["run"])
-    assert "--project=deploy-smoke" in str(step(job, "Deploy smoke")["run"])
+    assert "staging-verified.json" in str(step(staging["record"], "Record the release")["run"])
+    assert "--project=deploy-smoke" in str(step(staging["smoke"], "Deploy smoke")["run"])
 
 
 # --- deploy-production.yml and rollback.yml (Q-01-T34) -----------------------------------------
@@ -133,7 +137,9 @@ def test_production_runs_only_on_a_merged_release_record() -> None:
     for record in ("staging-verified", "replay", "inspector"):
         assert record in gates
     assert index(job, "Gates") < index(job, "Take the deploy lock") < index(job, "Migrate")
-    assert index(job, "Canary smoke") < index(job, "Record the release")
+    production_jobs = jobs(production)
+    assert "--project=canary-smoke" in runs(production_jobs["smoke"])
+    assert production_jobs["record"]["needs"] == ["deploy", "smoke"]
     assert "placeholder" in str(step(job, "Production configured and a release named?")["run"])
 
 

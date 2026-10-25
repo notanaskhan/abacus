@@ -140,7 +140,7 @@ Operator commands run as ECS one-off `abacus-ops` tasks through `ops-task.yml`, 
 | `make entitlement` | `FIRM`, `MODULE`, `ENABLED`, `SEATS`, `OPERATOR`, `REASON` | one `tenant_entitlements` row changes | `tenant.entitlements_changed` |
 | `abacus_tools.platform_control set` | `--control`, `--scope`, `[--tenant]`, `[--route]`, `--active`, `--operator`, `--reason`, `[--request-ref]` | calls `set_platform_control(...)` | `platform_control.changed` (firm scope); `platform_control_changes` row (always) |
 | `abacus_tools.platform_control show` | `[--tenant]` | read-only: active rows | none |
-| `abacus_tools.drill verify` | `--env`, `--restored-host`, `--restore-point`, `--replica-bucket`, `[--restore-started-at]`, `[--rpo-lag-seconds]`, `[--tenant]` (Q-01-T38, DEC-361) | read-only restore-drill verification | drill record, no data |
+| `abacus_tools.drill verify` (drill.yml only, never an ops request) | `--env`, `--restored-host` (only `abacus-drill-<run id>` RDS endpoints; `ABACUS_DATABASE_CA_FILE` required), `--restore-point`, `--replica-bucket`, `[--restore-started-at]`, `[--rpo-lag-seconds]`, `[--tenant]` (Q-01-T38, DEC-361) | read-only restore-drill verification | drill record, no data |
 | `abacus_tools.schedules ensure` | none | creates or converges every declared platform-job Schedule, keeping an operator's pause (Q-01-T26, DEC-359; the deploys run it after migrate) | none (Temporal holds the Schedules) |
 | `abacus_tools.schedules show` | none | read-only: each Schedule's workflow, queue, interval, policy and pause | none |
 | `abacus_tools.schedules pause \| unpause \| delete` | `--id`, `--operator`, `--reason` | one declared Schedule; the note records the operator and reason | none (the Schedule's note) |

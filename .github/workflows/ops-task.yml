@@ -26,7 +26,6 @@ on:
           - abacus_tools.schedules show
           - abacus_tools.schedules pause
           - abacus_tools.schedules unpause
-          - abacus_tools.drill verify
       args:
         description: 'Arguments as a JSON array of strings, e.g. ["--tenant", "<uuid>"]'
         required: true
@@ -51,6 +50,7 @@ concurrency:
 
 jobs:
   ops:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: ${{ github.event_name == 'push' && 'production' || 'staging' }}

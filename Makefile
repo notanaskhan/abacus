@@ -232,9 +232,10 @@ entitlement:
 	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
 
 # Q-01-T26: create or converge the platform-job Schedules (spend anomaly, notification purge) on
-# the configured Temporal. Idempotent; the deploy runs it as an ops task after migrate.
+# the local stack's Temporal only (--local-only refuses any other). Idempotent; the deploys run it
+# as an ops task after migrate.
 schedules:
-	cd backend && uv run python -m abacus_tools.schedules ensure
+	cd backend && uv run python -m abacus_tools.schedules ensure --local-only
 
 # Q-01-T18 (platform-ops contract 3.4): who holds an environment's deploy lock, and for how long.
 # Read only: it never takes or releases the lock. ENV=staging|production
