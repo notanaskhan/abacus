@@ -8,12 +8,15 @@ import {
   Button,
   DASH,
   DEFAULT_TZ,
+  Dialog,
   DoneCount,
   EmptyState,
   Fieldset,
   Icon,
   IconButton,
   KvRowView,
+  Menu,
+  RadioGroup,
   RecordBand,
   RecordCockpit,
   type RegistryObject,
@@ -42,6 +45,7 @@ import {
   useEngagementRecord,
   useEngagementTeam,
   useEngagementWorkItems,
+  useHoldEngagement,
   useRecordLetter,
   waitsOnLetter,
 } from "../../domain/engagements";
@@ -132,6 +136,140 @@ function EngagementPill({ record }: { record: EngagementRecordOut }): JSX.Elemen
       {record.status === "archived" && <Icon name="lock" size={12} />}
       {word.label}
     </StatusPill>
+  );
+}
+
+type HoldReason = NonNullable<EngagementRecordOut["hold_reason"]>;
+const HOLD_REASONS = Object.keys(COPY.status.reasons) as HoldReason[];
+
+/** The status pill's ⌄ menu (spec.md; DEC-328, DEC-344): Active · "On hold…", which asks for a
+ * reason code. Offered only on an Active or On hold record whose `allowed_actions` hold
+ * `engagement.hold` (a person's act; never an agent's). While on hold the reason reads beside
+ * the pill. */
+function StatusControl({ record }: { record: EngagementRecordOut }): JSX.Element {
+  const { hold, resume } = useHoldEngagement(record.id);
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState<HoldReason | undefined>(undefined);
+  const [problem, setProblem] = useState<string | null>(null);
+  const movable =
+    allows(record, "engagement.hold") &&
+    record.read_only_reason !== "archived" &&
+    (record.status === "active" || record.status === "on_hold");
+  const held = record.status === "on_hold" && record.hold_reason != null;
+  const failed = (error: unknown): string => {
+    const code = conflictOf(error);
+    const known = COPY.status.errors as Readonly<Record<string, string>>;
+    return (code === null ? undefined : known[code]) ?? COPY.status.errors.failed;
+  };
+  const close = (): void => {
+    setAsking(false);
+    setReason(undefined);
+    setProblem(null);
+  };
+  const putOnHold = async (): Promise<void> => {
+    if (reason === undefined) return;
+    try {
+      await hold.mutateAsync({ path: { engagement_id: record.id }, body: { reason } });
+      toast.show({ kind: "success", text: COPY.status.held });
+      close();
+    } catch (error) {
+      setProblem(failed(error));
+    }
+  };
+  const backToActive = async (): Promise<void> => {
+    try {
+      await resume.mutateAsync({ path: { engagement_id: record.id } });
+      toast.show({ kind: "success", text: COPY.status.resumed });
+    } catch (error) {
+      toast.show({ kind: "error", text: failed(error) });
+    }
+  };
+  return (
+    <>
+      {movable ? (
+        <Menu
+          label={COPY.status.menu}
+          align="center"
+          width={176}
+          trigger={
+            <button type="button" className="inline-flex rounded-pill" data-status-menu="">
+              <StatusPill
+                variant={status("engagement", record.status).variant ?? "neutral"}
+                size="state"
+              >
+                {status("engagement", record.status).label}
+                <Icon name="chevron-down" size={12} />
+              </StatusPill>
+            </button>
+          }
+          sections={[
+            [
+              {
+                label: COPY.status.active,
+                checked: record.status === "active",
+                onSelect: () => {
+                  if (record.status === "on_hold") void backToActive();
+                },
+              },
+              {
+                label: COPY.status.onHold,
+                opensDialog: true,
+                checked: record.status === "on_hold",
+                onSelect: () => {
+                  if (record.status === "active") setAsking(true);
+                },
+              },
+            ],
+          ]}
+        />
+      ) : (
+        <EngagementPill record={record} />
+      )}
+      {held && record.hold_reason != null && (
+        <span data-hold-reason={record.hold_reason} className="text-body text-ink-3">
+          {COPY.status.reasons[record.hold_reason]}
+        </span>
+      )}
+      <Dialog
+        open={asking}
+        onOpenChange={(next) => {
+          if (!next) close();
+        }}
+        size="sm"
+        title={COPY.status.dialogTitle}
+        description={COPY.status.dialogDescription}
+        dirty={reason !== undefined}
+        action={
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={reason === undefined || hold.isPending}
+            onClick={() => void putOnHold()}
+          >
+            {COPY.status.confirm}
+          </Button>
+        }
+      >
+        <Fieldset title={COPY.status.reason}>
+          <div className="px-[14px] py-[10px]">
+            <RadioGroup
+              label={COPY.status.reason}
+              options={HOLD_REASONS.map((r) => ({ value: r, label: COPY.status.reasons[r] }))}
+              {...(reason === undefined ? {} : { value: reason })}
+              onChange={(v) => {
+                setReason(v as HoldReason);
+                setProblem(null);
+              }}
+            />
+          </div>
+        </Fieldset>
+        {problem !== null && (
+          <p role="alert" className="px-[14px] pt-[8px] text-body text-red-ink">
+            {problem}
+          </p>
+        )}
+      </Dialog>
+    </>
   );
 }
 
@@ -607,7 +745,7 @@ export function ENG02({
         <h1 className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-[8px] text-title tracking-[-0.012em] whitespace-nowrap">
           <span className="font-medium">{record.name}</span>
           <span className="text-ink-2">{record.client_name}</span>
-          <EngagementPill record={record} />
+          <StatusControl record={record} />
         </h1>
       )}
       {record?.letter.signed_on != null && (

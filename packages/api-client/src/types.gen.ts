@@ -6876,6 +6876,10 @@ export type EngagementRecordOut = {
      */
     gates: Array<EngagementGateOut>;
     /**
+     * Hold Reason
+     */
+    hold_reason?: 'client_unresponsive' | 'fees_outstanding' | 'scope_change' | 'independence_review' | 'other' | null;
+    /**
      * Id
      */
     id: string;

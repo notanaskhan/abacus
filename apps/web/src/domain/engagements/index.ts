@@ -8,6 +8,7 @@ export {
   useEngagementRecord,
   useEngagementTeam,
   useEngagementWorkItems,
+  useHoldEngagement,
   useRecordLetter,
   waitsOnLetter,
 } from "./record";
