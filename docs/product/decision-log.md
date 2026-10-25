@@ -13,6 +13,116 @@ The register of every product and engineering decision for Accrued, one row per 
 
 Dates are ISO. For open rows the date is the decide-by date from the plan.
 
+## Register facts for DEC-01 to DEC-101 (F-02-T01; SPEC-046 AC-1, AC-2)
+
+The plan's owner, effective decide-by and default-on-silence eligibility for the 101 register rows (DEC-01 to DEC-99 from chapter 09 §9.3, proposed DEC-100 and DEC-101 from chapter 01 §1.9). Where chapter 01 §1.9 lists a row, its owner and date win and chapter 09's date is kept in the note. Owners as written in the plan: **TF** is notanaskhan, **PF** is ayushkbhatia, **N** and **AY** likewise; under the solo amendment (`docs/plan/AMENDMENT-solo.md`) the builder holds every row, and a row marked "never defaults" stays open past its date until the builder records it. "Never defaults" covers SPEC-046 AC-2's list (DEC-03, DEC-17, DEC-22's commercial part, DEC-25, DEC-26, DEC-52, DEC-71, DEC-72, DEC-77, DEC-85), every row a red P-ADR records (`docs/adr/backlog.md`), and every row counsel must approve (chapter 09 §9.0). Status and artefact stay in the decisions table below. Generated from the plan on 2026-10-25 (DEC-364); a later row's facts come from its own entry.
+
+| DEC | Owner (plan) | Effective decide-by | Default on silence | Note |
+|---|---|---|---|---|
+| DEC-01 | Both (PF drafts) | Mon 19 Oct | defaults on silence |  |
+| DEC-02 | notanaskhan (ch 01) | Oct 23 (ch 01) | defaults on silence | ch 09: Mon 19 Oct |
+| DEC-03 | both (ch 01) | Oct 23 (unblocks TASK-014) (ch 01) | never defaults (SPEC-046 AC-2, red P-ADR) | ch 09: Mon 19 Oct |
+| DEC-04 | ayushkbhatia (ch 01) | S0 (ch 01) | defaults on silence | ch 09: Mon 19 Oct |
+| DEC-05 | both (ch 01) | Oct 23 (ch 01) | defaults on silence | ch 09: Wed 21 Oct |
+| DEC-06 | TF | Wed 21 Oct | never defaults (red P-ADR) |  |
+| DEC-07 | notanaskhan (ch 01) | S1 (ch 01) | never defaults (red P-ADR) | ch 09: Wed 21 Oct |
+| DEC-08 | ayushkbhatia (ch 01) | S1 (ch 01) | defaults on silence | ch 09: Wed 21 Oct |
+| DEC-09 | notanaskhan (ch 01) | S1 (ch 01) | never defaults (red P-ADR) | ch 09: Wed 21 Oct |
+| DEC-10 | TF | Wed 21 Oct | defaults on silence |  |
+| DEC-11 | ayushkbhatia (ch 01) | S0 (ch 01) | defaults on silence | ch 09: Fri 23 Oct |
+| DEC-12 | TF | Fri 23 Oct | defaults on silence |  |
+| DEC-13 | TF | Fri 23 Oct | defaults on silence |  |
+| DEC-14 | ayushkbhatia (ch 01) | Oct 30 (ch 01) | defaults on silence | ch 09: Fri 23 Oct (merge Fri 30 Oct) |
+| DEC-15 | ayushkbhatia (ch 01) | S0 (ch 01) | defaults on silence | ch 09: Fri 23 Oct |
+| DEC-16 | PF approves FE → TF installs; TF owns BE | Fri 23 Oct (fonts) · Fri 30 Oct (rest) | defaults on silence |  |
+| DEC-17 | ayushkbhatia (ch 01) | Oct 30 (ch 01) | never defaults (SPEC-046 AC-2) | ch 09: Fri 23 Oct |
+| DEC-18 | Both | Fri 23 Oct | defaults on silence |  |
+| DEC-19 | PF | Fri 23 Oct | defaults on silence |  |
+| DEC-20 | both (ch 01) | S2 (ch 01) | never defaults (red P-ADR) | ch 09: Fri 30 Oct |
+| DEC-21 | TF | Fri 30 Oct | never defaults (red P-ADR) |  |
+| DEC-22 | notanaskhan (ch 01) | Oct 23 (ch 01) | never defaults (commercial part) (SPEC-046 AC-2, red P-ADR) | ch 09: Fri 30 Oct |
+| DEC-23 | notanaskhan (ch 01) | before P-09 (ch 01) | defaults on silence | ch 09: Fri 30 Oct |
+| DEC-24 | Both | Fri 30 Oct | never defaults (red P-ADR) |  |
+| DEC-25 | notanaskhan (ch 01) | Oct 30; DocuSign go/no-go Dec 4 (ch 01) | never defaults (SPEC-046 AC-2, red P-ADR, counsel) | ch 09: Fri 30 Oct |
+| DEC-26 | TF (controls) + PF (vendor, legal) | Fri 30 Oct | never defaults (SPEC-046 AC-2) |  |
+| DEC-27 | notanaskhan (ch 01) | S1 (ch 01) | defaults on silence | ch 09: Fri 30 Oct |
+| DEC-28 | TF | Fri 30 Oct | never defaults (red P-ADR) |  |
+| DEC-29 | PF (design) + TF | Fri 30 Oct | never defaults (red P-ADR) |  |
+| DEC-30 | TF | Fri 30 Oct | defaults on silence |  |
+| DEC-31 | TF | Fri 30 Oct | defaults on silence |  |
+| DEC-32 | PF | Fri 30 Oct | defaults on silence |  |
+| DEC-33 | notanaskhan (ch 01) | S3 (ch 01) | never defaults (red P-ADR) | ch 09: Fri 6 Nov |
+| DEC-34 | TF | Fri 6 Nov | never defaults (red P-ADR) |  |
+| DEC-35 | PF → TF | Fri 6 Nov | never defaults (red P-ADR) |  |
+| DEC-36 | TF | Fri 6 Nov | never defaults (red P-ADR) |  |
+| DEC-37 | Both | Fri 6 Nov | defaults on silence |  |
+| DEC-38 | Both | Fri 6 Nov | defaults on silence |  |
+| DEC-39 | Both | Fri 6 Nov | never defaults (red P-ADR) |  |
+| DEC-40 | Both | Fri 6 Nov | never defaults (red P-ADR) |  |
+| DEC-41 | TF | Fri 6 Nov | never defaults (red P-ADR) |  |
+| DEC-42 | TF | Fri 6 Nov | defaults on silence |  |
+| DEC-43 | PF accepts → TF | Fri 6 Nov | defaults on silence |  |
+| DEC-44 | TF | Fri 6 Nov | defaults on silence |  |
+| DEC-45 | PF → TF | Fri 6 Nov | defaults on silence |  |
+| DEC-46 | notanaskhan (ch 01) | S2 (ch 01) | never defaults (red P-ADR) | ch 09: Fri 6 Nov |
+| DEC-47 | PF | Fri 6 Nov | defaults on silence |  |
+| DEC-48 | TF | Fri 6 Nov | defaults on silence |  |
+| DEC-49 | AY (vendor), N (adapter) (ch 01) | S14 (ch 01) | never defaults (red P-ADR) | ch 09: Fri 13 Nov |
+| DEC-50 | Both | Fri 13 Nov | never defaults (red P-ADR) |  |
+| DEC-51 | Both | Fri 13 Nov | defaults on silence |  |
+| DEC-52 | Both + counsel | Fri 13 Nov | never defaults (SPEC-046 AC-2, red P-ADR, counsel) |  |
+| DEC-53 | notanaskhan (ch 01) | — (ch 01) | never defaults (red P-ADR) | ch 09: Fri 13 Nov |
+| DEC-54 | Both | Fri 13 Nov | defaults on silence |  |
+| DEC-55 | notanaskhan (ch 01) | S3 (ch 01) | defaults on silence | ch 09: Fri 13 Nov |
+| DEC-56 | PF (TF reviews) | Fri 13 Nov | defaults on silence |  |
+| DEC-57 | Both | Fri 13 Nov | defaults on silence |  |
+| DEC-58 | PF → TF | Fri 13 Nov | never defaults (red P-ADR) |  |
+| DEC-59 | Both (PF domains) | Fri 13 Nov | never defaults (red P-ADR) |  |
+| DEC-60 | TF | Fri 13 Nov | defaults on silence |  |
+| DEC-61 | TF | Fri 13 Nov | defaults on silence |  |
+| DEC-62 | PF | Fri 13 Nov | defaults on silence |  |
+| DEC-63 | PF | Fri 13 Nov | never defaults (red P-ADR) |  |
+| DEC-64 | both (ch 01) | S2 (ch 01) | defaults on silence | ch 09: Fri 13 Nov |
+| DEC-65 | both (ch 01) | M3 (ch 01) | never defaults (red P-ADR) | ch 09: Fri 20 Nov |
+| DEC-66 | Both | Fri 20 Nov | never defaults (red P-ADR) |  |
+| DEC-67 | TF | Fri 20 Nov | never defaults (red P-ADR) |  |
+| DEC-68 | both (ch 01) | Dec 14–18 bundle (ch 01) | defaults on silence | ch 09: Fri 27 Nov |
+| DEC-69 | Both | Fri 27 Nov | never defaults (red P-ADR) |  |
+| DEC-70 | ayushkbhatia (ch 01) | M3 (ch 01) | defaults on silence | ch 09: Fri 27 Nov |
+| DEC-71 | TF + counsel | Fri 27 Nov | never defaults (SPEC-046 AC-2, red P-ADR, counsel) |  |
+| DEC-72 | Both + counsel | Fri 27 Nov | never defaults (SPEC-046 AC-2, red P-ADR, counsel) |  |
+| DEC-73 | Both | Fri 27 Nov | defaults on silence |  |
+| DEC-74 | Both | Fri 27 Nov | never defaults (red P-ADR) |  |
+| DEC-75 | Both | Fri 27 Nov | never defaults (red P-ADR) |  |
+| DEC-76 | PF (content) + TF (service) | Fri 27 Nov | defaults on silence |  |
+| DEC-77 | Both + CPA | Fri 27 Nov | never defaults (SPEC-046 AC-2) |  |
+| DEC-78 | Both | Fri 27 Nov | defaults on silence |  |
+| DEC-79 | both (ch 01) | before N-03 (ch 01) | never defaults (red P-ADR) | ch 09: Fri 11 Dec |
+| DEC-80 | Both | Fri 11 Dec | defaults on silence |  |
+| DEC-81 | Both | Fri 11 Dec | never defaults (red P-ADR) |  |
+| DEC-82 | TF | Fri 11 Dec | never defaults (red P-ADR) |  |
+| DEC-83 | Both | Fri 11 Dec | defaults on silence |  |
+| DEC-84 | Both | Fri 11 Dec | never defaults (red P-ADR) |  |
+| DEC-85 | Both + counsel | Fri 11 Dec | never defaults (SPEC-046 AC-2, counsel) |  |
+| DEC-86 | TF | Fri 11 Dec | never defaults (red P-ADR) |  |
+| DEC-87 | Both | Fri 11 Dec | defaults on silence |  |
+| DEC-88 | TF | Fri 11 Dec | defaults on silence |  |
+| DEC-89 | PF | Fri 11 Dec | defaults on silence |  |
+| DEC-90 | Both | Fri 18 Dec | never defaults (red P-ADR) |  |
+| DEC-91 | Both | Fri 18 Dec | defaults on silence |  |
+| DEC-92 | PF (TF reviews) | Fri 29 Jan (S6) | defaults on silence |  |
+| DEC-93 | PF | Fri 29 Jan | defaults on silence |  |
+| DEC-94 | PF | Fri 29 Jan | defaults on silence |  |
+| DEC-95 | Both | Fri 12 Feb (S7) | defaults on silence |  |
+| DEC-96 | PF | Fri 26 Feb (S8) | defaults on silence |  |
+| DEC-97 | PF | Fri 26 Feb | defaults on silence |  |
+| DEC-98 | Both | Revisit Apr 2027 | defaults on silence |  |
+| DEC-99 | PF | Deferred | never defaults (red P-ADR) |  |
+| DEC-100 | ayushkbhatia (ch 01) | M4 (ch 01) | defaults on silence | proposed in ch 01 §1.9 |
+| DEC-101 | both (ch 01) | M12 (ch 01) | defaults on silence | proposed in ch 01 §1.9 |
+
+## Decisions
+
 | ID | Decision | Decided option (plan row) | Date | Artefact that binds code | Blocks | Status |
 |---|---|---|---|---|---|---|
 | DEC-01 | Product name vs code namespace | (a) Accrued is the product name and abacus the code namespace; no rename. ADR-133 is accepted. [row](../plan/09-decisions-adrs.md#931-sprint-0-week-1-mon-19--fri-23-oct) | 2026-10-20 | ADR-133 (accepted); glossary entry; `AGENTS.md` | `AGENTS.md` rewrite (S0-17), glossary, all copy | decided |
@@ -271,3 +381,4 @@ Dates are ISO. For open rows the date is the decide-by date from the plan.
 | DEC-323 | Portal drops and their sort as built (R-01-T09; R-01 Story 2.1, 2.3; DEC-58 a, c, g; DEC-296, DEC-297) | **One policy, the contract's words:** a drop goes through `uploads.screened` like every channel (50 MB; the byte-sniffed allowlist with the extension agreeing; the malware scan; active content kept and flagged); the C5 portal-pbc contract answers its two refusals as 413 `file_too_large` and 415 `type_not_allowed` (kernel `DomainTooLarge`, `DomainUnsupported`), other channels keep DEC-296's 422 codes. **Scope:** the binder is authorised for `evidence.upload` with its client facts before any replay lookup; a forged, unpublished or out-of-scope binder is 404. The sort's candidates are the binder's client-visible, open, non-draft, non-delegated requests, each kept only when the dropper may upload to it now (`member_could`). **Who links:** a decisive match (`not should_match`) becomes a version and a `rule` fulfilment written by a `SystemContext` acting for the dropper on that one drop (`run_id` = the drop's inbox row, read under row-level security), so audit reads actor `system`, `on_behalf_of` the dropper (INV-5); SYS-001 now lets `evidence/drops.py` issue it. Nothing is accepted; a person accepts. **Stored:** drops are inbox rows (`channel = portal_drop`) with batch, binder and idempotency key; content-addressed (DEC-297); a duplicate of an engagement version is accepted, flagged (`duplicate_of_version_id`) and always waits for a person; the sort outcome is written once. **Unsorted:** `portal.drop_unsorted` (C16 `portal_drop_unsorted`) to the engagement's partner and managers; binders have no owner yet. **Deferred:** the staff void of a rule link **Security review (2026-10-25):** the route authorises the binder and the client-data gate before reading the body; the link re-checks everything inside its unit of work with the request row-locked (binder still published, request client-visible, open and not delegated, `member_could` for the dropper) and never links bytes already on that request; an active-content file is never rule-linked (so no unflagged version is made); a staff drop is recorded `firm_upload_for_client`; a duplicate reads `waiting` to the client (only the firm sees `duplicate_of_version_id`), and no longer blocks the sort by itself; the poll authorises every row's binder; the idempotency key is per dropper (`inbox_files_one_drop` on tenant, batch, dropper, key). `attach` is not reused because it authorises a person and writes a human fulfilment; its checks are repeated here instead. | 2026-10-25 | `backend/src/abacus/modules/evidence/{drops,drops_contract,workflows}.py`, `requests/{binders,service,repository}.py`, `migrations/versions/0153_portal_drop_sort.py`, `tests/integration/backfill/test_r01t09_portal_drops.py` | POR-03, POR-14 | decided |
 | DEC-362 | How the compliance-kernel spec is written after the kernel (Q-02-T04, SPEC-341) | **Numbers:** SPEC-341 keeps the epic's AC-1 to AC-46 so every test on `main` that cites "Q-02 AC-n" cites the spec. **Names:** where the code chose a different name than the epic, the spec uses the code's and cites the decision (DEC-227 `retention_policy.read`/`update`; access kind `model_context.built`; hold events `legal_hold.counted` and `legal_hold.activated`). **State:** each AC is marked built, partial or not built with its files, as of `9d7826d7`. **Contract:** `compliance-kernel.md` v1.2 adds the kernel slots with consumer, sprint and fail-closed behaviour; v1.1's firm-export section is unchanged. **Status:** the spec stays `draft` until the builder approves it and counsel answers the floors, the notice SLA and the retention basis. | 2026-10-25 | SPEC-341; `docs/contracts/compliance-kernel.md` v1.2; TASK-1239 | Q-02-T05, Q-02-T38 consumers, the M7 dossier | decided |
 | DEC-363 | The compliance seed slice (Q-02-T39) | **Seeded** by the opt-in `compliance` slice (`--slice compliance`, which brings `people`; `make seed-demo SLICE=compliance`), for the synthetic tenant only, through `evidence.api` and `platform.api` as the people the handoff names: the flags `compliance.legal_holds` and `compliance.incidents`; FIL-02a's eight firm policies, 7 years each from the row's clock-start event, Audit documentation locked, set by Felix Andersen (codes `efile_authorization`, `return_copy`, `tax_source_workpapers`, `audit_documentation`, `cas_workpapers`, `engagement_letter_consent`, `permanent_file`, `client_messages`; no basis text, FIL-02 gives none); FIL-02b's holds on Wren & Avery Collins TY2023 (Victor Hammond, `irs_examination`) and Meridian Tool & Die, Inc. TY2024 (Neil Ashcroft, `regulatory_inquiry`), the Reason column as details, taken to Active by `LegalHoldApply`'s own steps; INC-2026-005's facts, discovered Thu Sep 10, 2026 2:14 AM CT, recorded by Felix. **Never seeded:** legal floors or a default policy set (DEC-71: counsel's, two-person import), so the policies read without a legal minimum until a set is published. **Placed at setup:** the holds' canon dates (Aug 12, Aug 14) predate the firm's Sep 1 setup, so they are placed at the setup instant, as DEC-213 did for POR-02b's history. **Waits:** the export history (Q-02-T43's table); the agent stages (no stage service a loader can call for a synthetic firm); the `make fixtures` export of these reads. **Open:** the register mints the firm's own reference (DEC-290), so the loaded incident reads INC-2026-001, not canon's INC-2026-005 (strict xfail, TASK-1242). | 2026-10-25 | `abacus_tools/synthetic/scenarios/brightwater_hale/compliance.py`; loader; `tests/integration/test_scenario_compliance.py`; TASK-1242 | G-02 (ADM-06 live data), Q-05 (FIL-02) | decided |
+| DEC-364 | Register facts beside the decisions table, and the ADR backlog's minted list (F-02-T01, F-02-T02) | **Facts table:** SPEC-046 AC-1's owner, effective decide-by and default-on-silence eligibility for DEC-01 to DEC-101 live in their own table above the decisions table, generated once from chapter 09 §9.3 and chapter 01 §1.9 (chapter 01 wins on owner and date, chapter 09's date kept in a note), so the decisions table keeps its shape and later rows are not reshaped. **Never defaults:** AC-2's list, every DEC a red P-ADR records, and every row counsel must approve. **Issues:** none opened while the repository is public (AC-3); the log is the binding index. **Backlog:** the minted-number line is regenerated from the table and the ADR files (P-12 and P-47 read `accepted`, as their files do); `withdrawn` is a status (AC-7); the template names its deciders and points at `backlog.md` for the number. | 2026-10-25 | `docs/product/decision-log.md` (Register facts); `docs/adr/backlog.md`; `docs/adr/_TEMPLATE.md`; TASK-115, TASK-116 | — | decided |

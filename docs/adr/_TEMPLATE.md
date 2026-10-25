@@ -1,12 +1,12 @@
 <!-- Location in repo: docs/adr/_TEMPLATE.md -->
-<!-- Copy to docs/adr/ADR-XXX-short-name.md. Numbers are never reused. -->
+<!-- Copy to docs/adr/ADR-XXX-short-name.md. Numbers are never reused. Take the number from docs/adr/backlog.md (the only source) and record it there the day drafting starts. -->
 
 ---
 id: ADR-XXX
 title: <Decision in a few words>
 status: proposed         # proposed | accepted | superseded by ADR-YYY | deprecated
 date: YYYY-MM-DD
-deciders: <who decided>
+deciders: <who decided>   # GitHub handles. Red ADRs name every decider and never default on silence; solo edition: the builder (AMENDMENT-solo)
 risk_zone: amber         # green | amber | red
 ---
 
