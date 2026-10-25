@@ -21,10 +21,12 @@ from sqlalchemy import text
 
 from abacus.ai_gateway import forget_boundary_facts
 from abacus.kernel import clock, provider_terms
+from abacus.kernel._flags import AGENTS_CLIENT_DATA_OPTIN
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.authz import Resource, authorise
 from abacus.modules.identity.authz.matrix import STORED_SETTING_KEYS
@@ -399,10 +401,16 @@ def _terms() -> provider_terms.TermsEntry | None:
     return provider_terms.covering(CLIENT_DATA_ROUTE, system_now().date())
 
 
+async def _require_optin_flag(tenant: TenantContext) -> None:
+    if not await flag_enabled(tenant, AGENTS_CLIENT_DATA_OPTIN):
+        raise NotFound(AGENTS_CLIENT_DATA_OPTIN.name)
+
+
 async def ai_client_data_opted_in(tenant: TenantContext) -> bool:
-    """For the gateway (SPEC-036 §4.2 `firm`): opted in against today's material terms."""
+    """For the gateway (SPEC-036 §4.2 `firm`): opted in against today's material terms, with
+    the opt-in flag on (off is fail-closed: not opted in)."""
     terms = _terms()
-    if terms is None:
+    if terms is None or not await flag_enabled(tenant, AGENTS_CLIENT_DATA_OPTIN):
         return False
     async with tenant_session(tenant) as session:
         found = await ai_client_data(session)
@@ -410,6 +418,7 @@ async def ai_client_data_opted_in(tenant: TenantContext) -> bool:
 
 
 async def read_ai_client_data(ctx: AuthContext) -> AiClientDataView:
+    await _require_optin_flag(ctx.tenant)
     await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
     terms = _terms()
     async with tenant_session(ctx.tenant) as session:
@@ -438,7 +447,9 @@ async def read_ai_client_data(ctx: AuthContext) -> AiClientDataView:
 
 async def set_ai_client_data_setting(ctx: AuthContext, on: bool) -> AiClientDataView:
     """AC-3: a firm administrator with fresh MFA. On records who, when and the terms' material
-    fingerprint; off clears it, and the firm's cached boundary facts go in this request (Q5)."""
+    fingerprint; off clears it, and the firm's cached boundary facts go in this request (Q5).
+    Flag off: 404, like the read."""
+    await _require_optin_flag(ctx.tenant)
     await authorise(ctx, "firm.ai_client_data", Resource.firm(ctx.tenant_id))
     terms = _terms()
     if on and terms is None:

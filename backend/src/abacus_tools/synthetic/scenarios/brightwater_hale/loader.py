@@ -178,6 +178,7 @@ FLAGS_ON: Final = (
     "matching.enabled",
     "ledger.gl_import",
     "guidance.drafting",
+    "agents.client_data_optin",
     "audits.cockpit",  # A-01: "the local seed turns it on for Brightwater Hale"
 )
 OFFICE_ZONES: Final = {
