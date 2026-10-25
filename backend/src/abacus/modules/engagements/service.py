@@ -705,9 +705,12 @@ async def add_to_team(
     role: StaffRole,
     budget_hours: Decimal | None = None,
 ) -> None:
+    """The EQR takes no team role (409 `eqr_on_team`, DEC-327; ED-053)."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.member_add", ref.resource())
+        if await team_standing(ctx.tenant, engagement_id, user_id) == "eqr":
+            raise EqrOnTeam(facts={"user_id": str(user_id)})
         await add_member(tx, ctx, engagement_id, ref.client_id, user_id, role)
         if budget_hours is not None:  # P-07-T30: ENG-05's hours
             await set_member_hours(tx, engagement_id, user_id, budget_hours)
