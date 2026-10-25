@@ -4,7 +4,7 @@ title: Staff void of a wrong rule link (R-01-T09 remainder; portal-pbc contract,
 spec: SPEC-323
 acceptance_criteria: [AC-3]
 risk_zone: red
-status: in-progress
+status: done
 epic: R-01
 plan_key: R-01-T09
 branch: s8b-core
@@ -48,3 +48,4 @@ R-01-T09 landed the portal drop and sort (TASK-1193) but left `POST /v1/engageme
 - 2026-10-25: plan written; building in the core lane (main session).
 - 2026-10-25: built. Void tests in `test_r01t09_portal_drops.py`: 6 passed (22 in the file). Wider targeted run: 9,311 passed, 8 xfailed; one real failure (the pinned update-column contract in `test_schema_check_db.py`, now extended with `fulfilments`); every other failure was Docker timing out under load. The Docker VM then stopped; the extended contract test and the schema-check, projector and portal-documents files are to re-run once Docker is back.
 - 2026-10-25: security review fix round (one high, one medium, lows; DEC-339). High: the void now locks the request item before checking for an accept (`lock_rule_link`), matching the accept's lock order. Medium: the voided version is retired (`evidence_version_voids`, 0159) and left out by `not_withdrawn()` and `withdrawn_among`; gates hear `fulfilment.voided`. Lows: the poll reads `waiting` after a void, the idempotency key binds the engagement, the database stamps `voided_at`. Unit (no database): 5,928 + 3,250 passed after the pinned worker subscription list and a lint fix. Integration assertions added; to run once Docker is back (the Docker VM stopped mid-afternoon).
+- 2026-10-25 (after Docker returned): integration re-run. Schema check, human-only guard, 0158 migration, portal documents and the other top-level files: 271 passed. Backfill files in one process: projector, drops and void, kill switches, by-id: 34 passed; withdrawal: 13 passed. Under `-n 3` with mixed directories some backfill tests error at collection with `fixture 'net' not found` (a run-shape quirk, also seen on unrelated files); the end-of-day gate runs them as CI does.
