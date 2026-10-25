@@ -120,6 +120,7 @@ check-heads:
 check: check-fast
 	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) --cov --cov-fail-under=0
 	cd backend && uv run pytest $(XDIST_INTEGRATION) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
+	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
 	cd backend && uv run python -m abacus_tools.ci.coverage_floor
 	$(MAKE) ci-contracts ci-frontend
 
@@ -143,18 +144,25 @@ SHARDS ?= 1
 # one 340 s file (test_identity.py) would set a whole integration shard's time.
 PYTEST_WORKERS ?= auto
 PYTEST_INTEGRATION_WORKERS ?= 4
-XDIST = -n $(PYTEST_WORKERS) --dist loadgroup
-XDIST_INTEGRATION = -n $(PYTEST_INTEGRATION_WORKERS) --dist loadgroup
+XDIST = -n $(PYTEST_WORKERS) --dist loadgroup -m "not serial"
+XDIST_INTEGRATION = -n $(PYTEST_INTEGRATION_WORKERS) --dist loadgroup -m "not serial"
+# Wall-clock budget tests (`@pytest.mark.serial`) run after the workers, alone, so contention
+# never decides them (DEC-335). Exit 5 is pytest's "nothing collected" for a shard without one.
+SERIAL = -n 0 -m serial
 
 ci-unit:
 	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.unit-$(SHARD) \
-		uv run pytest $(XDIST) --cov --cov-report= --cov-fail-under=0 $$files
+		uv run pytest $(XDIST) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.unit-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
+			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 ci-integration:
 	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
-		uv run pytest $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files
+		uv run pytest $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
+			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 # The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.
 ci-coverage:
@@ -185,9 +193,11 @@ ci-visual:
 test:
 	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) tests/golden
 	cd backend && uv run pytest $(XDIST_INTEGRATION) tests/contracts $(INTEGRATION_TESTS)
+	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS)
 
 test-integration:
 	cd backend && uv run pytest $(XDIST_INTEGRATION) tests/integration
+	cd backend && uv run pytest $(SERIAL) tests/integration
 
 # Evaluation suites (SPEC-005): `make evals EVAL_ARGS="--agent evidence.screener --subset fast"`.
 # Throwaway containers; exits non-zero unless the run passes. Without a model provider it runs on

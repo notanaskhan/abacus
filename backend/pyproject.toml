@@ -133,6 +133,9 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
+markers = [
+    "serial: a wall-clock budget; runs alone after the parallel workers (DEC-335)",
+]
 
 [tool.coverage.run]
 source = ["abacus", "abacus_tools"]

@@ -345,6 +345,9 @@ async def test_the_approval_rows_refuse_an_agent_and_any_change(firm: _Firm) -> 
         )
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await firm.seed.run("UPDATE team_approvals SET approved_by = approved_by")
+    # The insert-only guards fire per row, so each table holds a row of this test's own (under
+    # xdist, another test's rows are on another worker's database).
+    await team_model.approve_eqr_eligibility(firm.ctx(firm.quinn), firm.py2025, firm.celia)
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await firm.seed.run("DELETE FROM eqr_eligibility_approvals")
     assert approval.approved_at is not None
