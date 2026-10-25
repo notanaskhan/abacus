@@ -33,6 +33,7 @@ from abacus.modules.evidence.events import (
     InboxFileExtracted,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.firm_export_contract import router as firm_export_router
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -157,6 +158,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
     legal_hold_router,  # Q-02-T29: legal holds
+    firm_export_router,  # Q-02-T38: the firm-export contract stub (Q-02-T43 implements it)
 )
 
 # Q-02-T29: the legal-hold workflows and their activities beside upload processing; a new version

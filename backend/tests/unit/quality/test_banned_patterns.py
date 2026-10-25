@@ -57,6 +57,13 @@ CASES: list[tuple[str, str, str, str]] = [
     ("DB-001", SERVICE, 'import asyncpg\nasyncpg.connect("x")\n', "import asyncpg\n"),
     ("DB-001", SERVICE, 'import asyncpg\nasyncpg.create_pool("x")\n', "import asyncpg\n"),
     ("DB-001", SERVICE, 'import psycopg\npsycopg.connect("x")\n', "import psycopg\n"),
+    # TLS-001 (G-09; P-08-T21 security review): a tool's connection names its TLS decision.
+    (
+        "TLS-001",
+        "src/abacus_tools/tenants.py",
+        'import asyncpg\nasyncpg.connect("x")\n',
+        'import asyncpg\nasyncpg.connect("x", ssl=False)\n',
+    ),
     # SQL-001
     (
         "SQL-001",
@@ -2604,3 +2611,16 @@ def test_q02_policy_001_allows_the_kernel_and_other_actors(
     tmp_path: Path, rel: str, source: str
 ) -> None:
     assert not _flags(tmp_path, "POLICY-001", rel, source)
+
+
+@pytest.mark.parametrize(
+    "rel", ["src/abacus_tools/stack.py", "src/abacus_tools/local/seed_dev.py"]
+)
+def test_tls001_exempts_only_the_local_stack_tools(tmp_path: Path, rel: str) -> None:
+    _write(tmp_path, rel, 'import asyncpg\nasyncpg.connect("x")\n')
+    assert "TLS-001" not in _rule_ids(tmp_path)
+
+
+def test_tls001_every_other_tool_connection_is_checked(tmp_path: Path) -> None:
+    _write(tmp_path, "src/abacus_tools/signup_codes.py", 'import asyncpg\nasyncpg.connect("x")\n')
+    assert "TLS-001" in _rule_ids(tmp_path)

@@ -69,3 +69,7 @@ actions:
     verb: approve  # P-07-T30 (DEC-327, 0155): the engagement partner approves the team
   - action: eqr.eligibility_approved
     verb: approve  # P-07-T30 (DEC-327, 0155): the quality owner approves an EQR's eligibility
+  - action: portal_mfa.reset
+    verb: decide  # P-08-T21 (DEC-329, 0156): a firm person resets a client's second step
+  - action: contact.unlocked
+    verb: decide  # P-08-T21 (DEC-329, 0156): a firm person clears a client's portal lock

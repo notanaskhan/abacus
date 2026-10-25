@@ -194,7 +194,7 @@ def control_active(
 | `model_route_block` | `model_route_block` | platform, with `route` | route selection skips the route as if an outage block had fired; client data is not rerouted off Bedrock | `ai_gateway` |
 | `email_pause` | `email_pause` | platform or firm | the transport records the message `blocked` with violation `platform_paused`; the SES configuration-set pause is the second line | `communications.transport` |
 | `read_only` | `read_only` | platform or firm | every non-GET route answers 503 `read_only`, except sign-in, support-session and operational routes | `AbacusRoute` |
-| `portal_sign_in` (the plan's epic text says `portal_sign_in_disabled`; see section 11) | `portal_sign_in` | firm | P-08's BFF refuses `start` with the neutral branding card | P-08 BFF |
+| `portal_sign_in` (renamed from 0086's `portal_sign_in_disabled` by migration 0156, P-08-T21) | `portal_sign_in` | firm | P-08's BFF answers 503 `sign_in_paused` for start, verify, resend and the second step; sessions carry on | P-08 BFF (`identity.portal_session.check_not_paused`; reader `kernel.controls.control_active`, re-exported as `platform.api.control_active`) |
 
 Tables behind it (owned by `platform`, no app privileges): `platform_controls`, insert-only `platform_control_changes`, and the definers `platform_control_state()` (EXECUTE to the app role) and `set_platform_control(...)` (EXECUTE to `abacus_ops` only). A switch is changed only through `abacus_tools.platform_control` (section 3.5). Existing pauses stay as they are: `firms.agents_paused_at`, per-engagement pause, feature flags.
 

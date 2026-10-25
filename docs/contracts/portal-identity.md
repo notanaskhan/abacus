@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` (this file is the portal half; the binders and requests half is `c5-requests-binders.md`) |
 | Version | v1.1 (additive to C5 v1) |
-| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the sign-in family (T10, T17) and the invitation preview and accept v2 (T18, 2026-10-24) are served; `links/renew` waits for T21 (DEC-139, §2.2) |
+| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the sign-in family (T10, T17) and the invitation preview and accept v2 (T18, 2026-10-24) are served; since P-08-T21 (2026-10-25, DEC-329) `links/renew`, the firm-side unlock and MFA reset and the sign-in pause are live |
 | Provider epic | P-08 (schema half: F-03-T26, F-03-T27, F-03-T30) |
 | Consumers | R-01 (POR-03, POR-04, POR-14, POR-20 emails), P-07 (CLI-04 unlock and invitations v2), G-02 (ADM-06 MFA policy), N-02, N-01, T-01, T-02, R-02, N-03, A-08, A-09, R-03. Screens: POR-01, POR-02 |
 | Freeze sprint | S3 (starts 2026-11-30) with the rest of C5; freeze Fri 2026-12-11 |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on a client's portal identity and home: the portal shell and scopes on `/v1/me` (role union, DEC-129), a home read model for one scope that carries client stage codes and client-facing role codes and never a firm status code, an amount, materiality, an agent name or a confidence (INV-4, DEC-19), per-scope preferences, and two firm-side recovery operations (unlock, MFA reset) that only a named person may run (INV-1). Sign-in is passwordless and never reveals whether an email has an account: `start`, `renew` and `preview` answer one shape for every input. The portal is the firm's: no payload carries the word "Accrued" and branding carries Public fields only (ADR-163).
 
-**Stub behaviour.** With its flag off every served route answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-08-T13 (home, preferences), P-08-T21 (unlock, MFA reset). `/v1/me.portal` is `null` until P-08-T07; `/v1/me.mfa` is filled for a client membership in the active firm since P-08-T17 (`trusted_until` stays null: `/v1/me` reads no device cookie). The Brightwater Hale portal slice (`stub_from_seed`) arrives with P-08-T08, so the stubs return no fixtures; the screens build on fixture scenarios typed with the generated client.
+**Stub behaviour.** With its flag off every served route answers 404. With it on, each answers 501 `not_implemented` until its task lands: P-08-T13 (home, preferences) and P-08-T21 (unlock, MFA reset) have landed. `/v1/me.portal` is `null` until P-08-T07; `/v1/me.mfa` is filled for a client membership in the active firm since P-08-T17 (`trusted_until` stays null: `/v1/me` reads no device cookie). The Brightwater Hale portal slice (`stub_from_seed`) arrives with P-08-T08, so the stubs return no fixtures; the screens build on fixture scenarios typed with the generated client.
 
 ## 2. Who may call it
 Matrix: `docs/architecture/permission-matrix/portal.yaml`, `identity.yaml`.
@@ -46,7 +46,7 @@ These answer before any session exists, so they cannot sit behind `AbacusRouter`
 | Two-step setup | `POST /v1/portal/auth/mfa/setup` `PortalMfaSetupIn` → `PortalMfaSetupOut`; `POST …/mfa/setup/verify` `PortalMfaSetupVerifyIn` → `PortalMfaSetupVerifyOut` | pre-session · served (`PRE_SESSION`) | P-08-T17 |
 | Refresh | `POST /v1/portal/auth/refresh` (cookie, `X-Abacus-CSRF`, Origin) | cookie exception (P-01 pattern) | P-08-T10 |
 | Sign out | `POST /v1/portal/auth/sign-out` | `OWN` | P-08-T10 |
-| Renew a link | `POST /v1/portal/links/renew` `PortalLinkRenewIn` → always **202** `PortalLinkRenewOut` | pre-session | P-08-T21 |
+| Renew a link | `POST /v1/portal/links/renew` `PortalLinkRenewIn` → always **202** `PortalLinkRenewOut` | pre-session · served (`PRE_SESSION`, communications) | P-08-T21 |
 | Invitation preview | `POST /v1/invitations/preview` `InvitationPreviewIn` → `InvitationPreviewOut`; one `404` for every failure | pre-session · served (`PRE_SESSION`) | P-08-T18 |
 | Accept v2 | `POST /v1/invitations/accept` `AcceptInvitationIn` (`token`, `terms_version?`) → `AcceptedInvitationOut` (`session?`) | `IDENTITY` (existing; since P-08-T18 also the invitee's portal session, `current_invitee`) | P-08-T18 (served, additive) |
 
@@ -65,7 +65,7 @@ Code: `backend/src/abacus/modules/portal/contract.py`, `backend/src/abacus/modul
   - **`PortalHomeTeamMemberOut`**: `user_id`, `display_name`*, `role_code` (`partner_signs_return · partner · engagement_partner · manager_reviews_return · manager · preparer_day_to_day · preparer · close_preparer · day_to_day_contact · client_service`; OQ-5 derives the day-to-day contact per work-item kind).
   - **`PortalHomeEarlierOut`**: `kind` (`return_filed · extension_filed · engagement_letter_signed · deliverable_released`), `date`, `facts`, `target`. **`PortalHomeK1Out`**: `k1_package_id`, `label`*, `released` (never the firm's package status), `expected_by`. **`PortalHomeThreadOut`**: `thread_id`, `subject`*, `from_name`*, `at`, `unread`. **`PortalHomeNoticeOut`**: `notice_id`, `code` (`agency_notice_in_review`), `subject`*.
 - **`PortalPreferencesIn`** `{scope_id, welcome_dismissed, version}` → **`PortalPreferencesOut`** `{scope_id, welcome_dismissed, welcome_dismissed_at, version}`.
-- **`ContactPortalStatusOut`** `{client_id, contact_id, portal_status (InvitationStatus), locked_until}`. **`ContactMfaResetOut`** `{client_id, contact_id, mfa_enrolled, trusted_devices_revoked, reset_at}`.
+- **`ContactPortalStatusOut`** `{client_id, contact_id, portal_status (InvitationStatus), locked_until}`. **`ContactMfaResetOut`** `{client_id, contact_id, trusted_devices_revoked, sessions_ended, reset_at}` (this firm's counts only; DEC-329).
 - Not served (§2.2): **`PortalBrandingOut`** (all Public: `firm_name`, `portal_name`, `logo_url`, `address_line`, `help_url`, `privacy_url`, `support_contact_name`, `secured_footer` default false, `sign_in {methods: [email_code], mfa_floor: [owner, signer, approver]}`, `maintenance_banner`; same shape with neutral nulls for an unknown host; no tenant identifier). **`PortalSignInStartIn`** `{email*, link_token?, invitation_token?}` → **`PortalSignInStartOut`** `{challenge_id, code_expires_at, resend_available_at}` for every input. **`PortalSignInVerifyIn`** `{challenge_id, code}` → **`PortalSignInVerifyOut`** `{state: signed_in · mfa_required · mfa_setup_required, access_token?, expires_in?, landing?, mfa_token?}`. **`PortalSignInResendIn`** `{challenge_id}`. **`PortalMfaIn`** `{mfa_token, totp? | backup_code?, trust_device}`. **`PortalMfaSetupIn`**, **`PortalMfaSetupOut`** `{otpauth_uri, manual_key}`, **`PortalMfaSetupVerifyIn`**, **`PortalMfaSetupVerifyOut`** `{backup_codes (8, once), session}`. **`PortalLinkRenewIn`** `{link_token}` → **`PortalLinkRenewOut`** `{accepted: true}` for every token. **`InvitationPreviewIn`** `{token}` → **`InvitationPreviewOut`** `{firm_name, organisation_name*, invitee_name*, invitee_email*, access {kind, item_count, scope_label*}, terms_url, terms_version, expires_at}`. **`InvitationAcceptV2In`** `{token, terms_version}`.
 
 (* confidential)
@@ -83,8 +83,8 @@ Denied to the agent and the system principal at the matrix (`agent: deny`, `syst
 
 | Action | Operation | Who |
 |---|---|---|
-| `contact.unlock` | clear a sign-in or two-step lock | a firm person (admin, security admin, partner, manager, client service); a walled staff member gets 404 (INV-3) |
-| `contact.mfa_reset` | remove the factor, backup codes and trusted devices; email the client | security admin with fresh MFA (P-08 OQ-1) |
+| `contact.unlock` | clear the firm's sign-in lock (which a third wrong code or second-step code sets); the person's own factor lock is never touched or reported (DEC-329) | a firm person (admin, security admin, partner, manager, client service); a walled staff member gets 404 (INV-3) |
+| `contact.mfa_reset` | end the person's trusted devices and portal sessions in this firm, so the next sign-in here asks for the second step again; email the client. Never the factor or backup codes (the person's across firms: POR-12 re-enrolment or platform support), and the same answer whatever other firms exist (DEC-329) | security admin with fresh MFA (P-08 OQ-1) |
 | `portal_home.read`, `portal_preferences.update` | the client's own reads and preferences | a client person only; every firm role and the agent denied |
 
 Sign-in, two-step and invitation acceptance are the client's own acts through the pre-session family; no firm or agent principal can perform them.
@@ -104,12 +104,13 @@ Codes are reserved for the implementing tasks; 409 and 422 codes enter `docs/arc
 | 401 / 423 | `mfa_mismatch {tries_left}` / `mfa_locked {locked_until}` | wrong or locked second step (T17); three wrong second-step codes lock sign-in for the email for 15 minutes |
 | 410 | `{"detail": "mfa_expired"}` | an `mfa_token` that is unknown, older than 5 minutes, used, of the other kind (`mfa_required` vs `mfa_setup_required`) or from another host; setup asked twice on one token (T17) |
 | 503 | `{"detail": "mfa_unavailable"}` | the identity provider didn't answer the second step; the guess still counts and no session starts (T17) |
-| 503 | `{"detail": "sign_in_paused"}` | the firm's `portal_sign_in_paused` control (Story 7.3) |
+| 503 | `{"detail": "sign_in_paused"}` | start, verify, resend and the second-step routes while the firm's `portal_sign_in` control is on (Story 7.3; ADR-157's one spelling; read through `control_active`, cached 10 s) |
+| 404 | `{"detail": "link_expired"}` | `start` with a `link_token` that can't be used: unknown, another firm's, used, revoked or expired, one answer for all (P-08-T21) |
 
 `locked_until` and `resend_available_at` are ISO 8601 UTC timestamps (`2026-09-14T14:37:00Z`), which `check_facts` accepts as identifier facts.
 
 ## 7. Audit and outbox events
-Audit events (UoW `tx.record`, identifiers only; IP, device and session captured per DEC-60; P-08 §4.6): `portal_sign_in.code_requested`, `portal_sign_in.succeeded`, `portal_sign_in.failed`, `portal_sign_in.locked`, `portal_sign_in.unlocked` (names the person who unlocked), `portal_sign_in.paused`, `portal_sign_in.resumed` (spelt with one dot, `entity.verb_past`, as the unit of work requires; DEC-212), `portal_mfa.enrolled`, `portal_mfa.verified`, `portal_mfa.failed`, `portal_mfa.locked`, `portal_mfa.reset`, `portal_backup_code.used`, `portal_device.trusted`, `portal_device.revoked` (one dot likewise; P-08-T17, DEC-250), `portal.link.renewed`, `client_invitation.accepted` (exists; attributed to the inviter, INV-5), `client_invitation.renewed`, `client_access.granted` (F-03), `session.started`, `session.ended`, `session.refresh_reused`, `portal_preferences.updated`, `portal_branding.updated`. An email that matches no contact writes no audit event (there is no subject); a security metric with a hashed fingerprint is kept instead.
+Audit events (UoW `tx.record`, identifiers only; IP, device and session captured per DEC-60; P-08 §4.6): `portal_sign_in.code_requested`, `portal_sign_in.succeeded`, `portal_sign_in.failed`, `portal_sign_in.locked`, `portal_sign_in.unlocked` (written as P-07's `contact.unlocked`, naming the person who unlocked; DEC-303), `portal_sign_in.paused`, `portal_sign_in.resumed` (written by `set_platform_control` as `platform_control.changed` in the firm, naming the operator, ADR-157; spelt with one dot, `entity.verb_past`, as the unit of work requires; DEC-212), `portal_mfa.enrolled`, `portal_mfa.verified`, `portal_mfa.failed`, `portal_mfa.locked`, `portal_mfa.reset`, `portal_backup_code.used`, `portal_device.trusted`, `portal_device.revoked` (one dot likewise; P-08-T17, DEC-250), `portal.link.renewed` (spelt `secure_link.renewed`, with `secure_link.issued` and `secure_link.token_issued`; P-08-T21), `client_invitation.accepted` (exists; attributed to the inviter, INV-5), `client_invitation.renewed`, `client_access.granted` (F-03), `session.started`, `session.ended`, `session.refresh_reused`, `portal_preferences.updated`, `portal_branding.updated`. An email that matches no contact writes no audit event (there is no subject); a security metric with a hashed fingerprint is kept instead.
 
 Outbox events (P-08 §4.5; identifiers and enums only, never an email, code, token or IP): `portal.sign_in_code_requested` {challenge_id} (communications issues the code at delivery, so it is never stored; DEC-212), `portal.link_renew_requested` {secure_link_id}, `contact.portal_state_changed` {contact_id, state}; consumed: `access.changed`, `client_access.revoked` (end portal sessions, revoke trusted devices).
 
@@ -161,5 +162,5 @@ Additive to C5 v1 in place (v1.1). Breaking changes ship as v2 with one sprint o
 
 ## 11. Open points
 - **DEC-139:** the pre-session family and `/branding/logo` need an ADR extending ADR-152's public-route list before P-08-T05 and T10 merge (P-08 OQ-2); the action spelling; the DTO fields added beyond the plan.
-- P-08 OQ-1: who may reset MFA (security admin with fresh MFA is the stub's cell; confirm before T21).
+- P-08 OQ-1: who may reset MFA: closed by P-08-T21 with the stub's cell, security admin with fresh MFA (DEC-329).
 - P-08 OQ-5: "Your day-to-day contact" per work-item kind, decided before T13.

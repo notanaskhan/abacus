@@ -356,3 +356,39 @@ def test_a_portal_base_domain_naming_the_product_is_refused(
 def test_a_neutral_portal_base_domain_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ABACUS_PORTAL_BASE_DOMAIN", "portal-domain.example.test")
     assert Settings().portal_base_domain == "portal-domain.example.test"
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "database_url",
+        "migrations_database_url",
+        "relay_database_url",
+        "identity_database_url",
+        "ops_database_url",
+    ],
+)
+def test_g09_a_dsn_turning_tls_off_is_refused_outside_local(
+    monkeypatch: pytest.MonkeyPatch, environment: str, name: str
+) -> None:
+    """G-09 (ASVS 9.2.3): outside local and test every database connection uses TLS."""
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    _explicit_connection_env(monkeypatch)
+    monkeypatch.setenv(
+        f"ABACUS_{name.upper()}",
+        "postgresql+asyncpg://x@db.example.test:5432/abacus?sslmode=disable",
+    )
+    with pytest.raises(ValueError, match=f"{name} must use TLS"):
+        Settings()
+
+
+@pytest.mark.parametrize("environment", ["local", "test"])
+def test_g09_local_and_test_may_connect_without_tls(
+    monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", environment)
+    monkeypatch.setenv(
+        "ABACUS_DATABASE_URL", "postgresql+asyncpg://x@127.0.0.1:55432/abacus?sslmode=disable"
+    )
+    assert Settings().database_url is not None

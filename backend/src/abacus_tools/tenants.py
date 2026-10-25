@@ -48,6 +48,7 @@ from abacus.modules.platform.api import (
     provisioning_workflow_id,
     start_provisioning,
 )
+from abacus_tools.db_connect import connect as connect_db
 
 REGION: Final = "us"  # the only region offered (firms.region CHECK; ADR-156)
 DEFAULT_TIME_ZONE: Final = "America/New_York"  # firms.time_zone default (migration 0040)
@@ -112,7 +113,7 @@ class ProvisionOutcome:
 async def create_firm(ops_dsn: str, request: ProvisionRequest, *, region: str = REGION) -> UUID:
     """`provision_firm(...)` as `abacus_ops`. `region` exists only so the refusal can be shown;
     the command line has no region argument."""
-    connection = await asyncpg.connect(_dsn(ops_dsn))
+    connection = await connect_db(_dsn(ops_dsn))
     try:
         found = await connection.fetchval(
             "SELECT provision_firm($1, $2, $3, $4, $5, $6)",
@@ -203,7 +204,7 @@ async def set_entitlement(
     if not 1 <= len(reason) <= 200:
         raise Refused("--reason is 1 to 200 characters, with no client data")
     actor = f"operator:{operator}"
-    connection = await asyncpg.connect(_dsn(owner_dsn))
+    connection = await connect_db(_dsn(owner_dsn))
     try:
         await connection.execute(
             "SELECT set_config('app.tenant_id', $1, false), "
@@ -268,7 +269,7 @@ async def set_plan_module(
     operator data the provisioning workflow applies to a new firm, never code."""
     if module not in _MODULES:
         raise Refused(f"unknown module {module!r}")
-    connection = await asyncpg.connect(_dsn(ops_dsn))
+    connection = await connect_db(_dsn(ops_dsn))
     try:
         await connection.execute(
             "SELECT set_plan_module($1, $2, $3, $4, $5)",
@@ -288,7 +289,7 @@ async def backfill_retention_defaults(ops_dsn: str, *, operator: str) -> dict[UU
     """The one-off back-fill (Q-02-T23), as `abacus_ops` (`retention_defaults_backfill`, 0112):
     every firm the platform created gets a policy per published default it lacks. Run once the
     default set is published; running it again writes nothing more."""
-    connection = await asyncpg.connect(_dsn(ops_dsn))
+    connection = await connect_db(_dsn(ops_dsn))
     try:
         async with connection.transaction():
             rows = await connection.fetch(

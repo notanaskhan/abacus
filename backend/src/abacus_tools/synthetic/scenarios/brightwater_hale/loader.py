@@ -89,6 +89,7 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
+from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
@@ -1386,7 +1387,7 @@ async def load(
         raise LoadRefused("--slice portal on staging needs portal_base_domain for its host")
     scenario = build(at, holdouts, ("audit_core", *slices))
     replayed = skipped = 0
-    conn = await asyncpg.connect(dsn)
+    conn = await connect_db(dsn)
     try:
         synthetic = await conn.fetchval("SELECT synthetic FROM firms WHERE tenant_id = $1", TENANT)
         if synthetic is False:

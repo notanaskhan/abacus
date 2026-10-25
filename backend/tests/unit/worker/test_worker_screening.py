@@ -88,6 +88,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "legal_hold.lifted",  # Q-02-T29: LegalHoldRelease starts (placed also notifies)
         "access.changed",  # P-08-T17: portal sessions and trusted devices end
         "client_access.revoked",
+        "portal.link_renew_requested",  # P-08-T21: a renewed link's email, token at delivery
+        "portal_mfa.reset_notice_requested",  # P-08-T21: the firm reset the second step
         "gate.met",  # A-01-T05: the phase a computed gate opens is derived
         "evidence_version.withdrawn",  # P-06-T19: the withdrawal purge starts
         "upload_review.recorded",  # P-06-T20: the screening aggregate recomposes

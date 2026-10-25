@@ -90,6 +90,7 @@ from abacus.modules.identity.events import (
     ClientAccessRevoked,
     ClientInvitationIssued,
     FirmAgentsResumed,
+    PortalMfaResetNoticeRequested,
     PortalSignInCodeRequested,
     StaffInvitationIssued,
     WallCreated,
@@ -161,7 +162,12 @@ from abacus.modules.identity.people import (
     staff_seats_by_office,
 )
 from abacus.modules.identity.portal_auth_routes import portal_auth_router
-from abacus.modules.identity.portal_contract import contacts_router
+from abacus.modules.identity.portal_contract import (
+    ContactMfaResetOut,
+    ContactPortalStatusOut,
+    PortalLinkRenewIn,
+    PortalLinkRenewOut,
+)
 from abacus.modules.identity.portal_idp import (
     CODE_DIGITS,
     TOTP_STEP_SECONDS,
@@ -173,7 +179,19 @@ from abacus.modules.identity.portal_idp import (
     totp_at,
 )
 from abacus.modules.identity.portal_mfa import revoke_portal_access
-from abacus.modules.identity.portal_session import IssuedCode, factor_enrolled, issue_sign_in_code
+from abacus.modules.identity.portal_recovery import (
+    MfaReset,
+    renew_invitation,
+    renew_invitation_by_id,
+    reset_portal_mfa,
+)
+from abacus.modules.identity.portal_session import (
+    IssuedCode,
+    SignInPaused,
+    check_not_paused,
+    factor_enrolled,
+    issue_sign_in_code,
+)
 from abacus.modules.identity.repository import (
     ContactGrantRow,
     EngagementRole,
@@ -255,6 +273,7 @@ from abacus.modules.identity.settings_registry import (
 )
 from abacus.modules.identity.slots import (
     InvitationParties,
+    LinkOutcome,
     ScopeFacts,
     consent_given,
     contact_delegations_provider,
@@ -263,14 +282,17 @@ from abacus.modules.identity.slots import (
     register_consent_check,
     register_contact_activation,
     register_contact_delegations,
+    register_contact_links_revoker,
     register_engagement_resource,
     register_invitation_parties,
+    register_link_claim,
     register_member_teams,
     register_office_list,
     register_scope_resolver,
     register_target_events,
     register_wall_assignments,
     resolve_scope,
+    revoke_contact_links,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
 from abacus.modules.identity.support import Staff, staff_from_token
@@ -324,7 +346,6 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_support_router,
     invitation_router,
     signup_router,
-    contacts_router,  # C5 v1.1 portal half (P-08-T01 stub)
     auth_router,
     portal_auth_router,  # P-08-T10 (ADR-168): the portal's sign-in by emailed code
     settings_router,  # firm-settings family v1 (G-01-T02 stub)
@@ -397,6 +418,8 @@ __all__ = [
     "ContactGrant",
     "ContactGrantRow",
     "ContactInvitation",
+    "ContactMfaResetOut",
+    "ContactPortalStatusOut",
     "ContactView",
     "DemoClockRefused",
     "DisplayNameRequired",
@@ -422,9 +445,11 @@ __all__ = [
     "LastPartner",
     "LevelNotAvailable",
     "MemberDetail",
+    "LinkOutcome",
     "MemberFacts",
     "MemberProfile",
     "MfaRequirement",
+    "MfaReset",
     "NoActiveTenant",
     "NotNamedApprover",
     "OffshoreConsentRequired",
@@ -432,6 +457,9 @@ __all__ = [
     "PersonInvalid",
     "PortalIdp",
     "PortalIdpUnavailable",
+    "PortalLinkRenewIn",
+    "PortalLinkRenewOut",
+    "PortalMfaResetNoticeRequested",
     "PortalScopes",
     "PortalSignInCodeRequested",
     "RelationshipPartner",
@@ -442,6 +470,7 @@ __all__ = [
     "ScopeKind",
     "SeasonalAccessEnds",
     "SettingKey",
+    "SignInPaused",
     "Staff",
     "StaffInvitationIssued",
     "StaffRole",
@@ -478,6 +507,7 @@ __all__ = [
     "change_contact_grants",
     "change_role",
     "check_issuer",
+    "check_not_paused",
     "client_admins",
     "clock_view",
     "close_contact_invitations",
@@ -559,6 +589,7 @@ __all__ = [
     "register_consent_check",
     "register_contact_activation",
     "register_contact_delegations",
+    "register_contact_links_revoker",
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
@@ -567,6 +598,7 @@ __all__ = [
     "register_gates",
     "register_independence",
     "register_invitation_parties",
+    "register_link_claim",
     "register_member_added",
     "register_member_removed",
     "register_member_teams",
@@ -580,12 +612,16 @@ __all__ = [
     "remove_client",
     "remove_member",
     "replace_eqr",
+    "renew_invitation",
+    "renew_invitation_by_id",
     "resend_contact_invitation",
     "resend_invitation",
+    "reset_portal_mfa",
     "reset_verifier",
     "resolve_scope",
     "revoke_client_access",
     "revoke_contact",
+    "revoke_contact_links",
     "revoke_invitation",
     "role_codes",
     "router",

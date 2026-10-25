@@ -231,6 +231,10 @@ NOT_CREATING = {
     # TASK-1198 (ENG-02 status menu): holding and resuming move an engagement, so 200.
     "/v1/engagements/{engagement_id}/hold",
     "/v1/engagements/{engagement_id}/resume",
+    # Q-02-T38 (compliance-kernel v1.1 stub): a decision on an existing export, and a link.
+    "/v1/firm/data-exports/{export_id}/approve",
+    "/v1/firm/data-exports/{export_id}/decline",
+    "/v1/firm/data-exports/{export_id}/link",
 }
 
 
@@ -262,6 +266,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
         "/v1/portal/binders/{binder_id}/drops",
         "/v1/portal/auth/resend",
+        # P-08-T21: a link renewal answers 202 for any token (the email goes out later).
+        "/v1/portal/links/renew",
+        # Q-02-T38: a firm-export request waits for its approver, then builds, so 202.
+        "/v1/firm/data-exports",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)

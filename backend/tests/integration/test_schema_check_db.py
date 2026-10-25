@@ -1167,6 +1167,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "entity_relationships": frozenset({"effective_to"}),  # P-07-T07 (0103)
         "approval_grants": frozenset({"used_at", "consumer_ref", "voided_at"}),  # P-04-T10
         "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46 (0104)
+        "secure_links": frozenset({"token_sha256", "revoked_at"}),  # P-08-T21 (0156)
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
             | {"email", "party_kind", "version"}  # P-07-T25 (0146)
@@ -1249,6 +1250,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "accepted_by", "accepted_at", "expires_at"}
             | {"terms_accepted_at"}  # P-08-T18 (0140)
             | {"used_at", "grant_ids"}  # P-07-T25 (0146)
+            | {"renewal_count"}  # P-08-T21 (0156): a recipient's renewal
         ),
         "support_sessions": frozenset(  # SPEC-012
             {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -1859,6 +1861,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_mfa_begin_session"}  # 0140
         | {"portal_session_mark_device", "client_invitations_revoke_by"}  # 0140 (DEC-277)
         | {"portal_sign_in_unlock", "portal_sign_in_locked"}  # 0146 (P-07-T25)
+        | {"portal_host_tenant", "portal_link_claim", "portal_link_find"}  # 0156 (P-08-T21)
+        | {"portal_invitation_find", "portal_mfa_reset"}  # 0156
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

@@ -11,6 +11,7 @@ from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
 )
+from abacus.modules.organisations.contacts import contact_portal_facts
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
     contact_invitations_router,
@@ -153,6 +154,7 @@ __all__ = [
     "client_with_entity",
     "contact_client",
     "contact_facts",
+    "contact_portal_facts",
     "contacts_of_user",
     "create_client",
     "find_clients",

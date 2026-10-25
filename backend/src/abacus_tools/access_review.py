@@ -15,10 +15,9 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-import asyncpg
-
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
+from abacus_tools.db_connect import connect as connect_db
 
 REPORTS = Path(__file__).resolve().parents[3] / "docs" / "operations" / "access-reviews"
 _QUARTER = re.compile(r"^(\d{4})Q([1-4])$")
@@ -48,7 +47,7 @@ def _plain(value: object) -> object:
 
 async def review(url: str, quarter: str) -> dict[str, object]:
     start, end = quarter_bounds(quarter)
-    conn = await asyncpg.connect(url.replace("postgresql+asyncpg://", "postgresql://"))
+    conn = await connect_db(url.replace("postgresql+asyncpg://", "postgresql://"))
     try:
         rows = await conn.fetch("SELECT * FROM support_sessions_review($1, $2)", start, end)
     finally:

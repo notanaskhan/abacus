@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
@@ -339,3 +339,42 @@ async def target_events(
     if not _TARGET_EVENTS:
         return []
     return await _TARGET_EVENTS[0](tenant, kind, target_id, before_seq, limit)
+# --- P-08-T21: a portal email's secure link at sign-in (communications owns the links) ---------
+
+LinkOutcome = Literal["bad", "other", "claimed"]
+LinkClaim = Callable[[str, str, str], Awaitable[LinkOutcome]]
+_LINK_CLAIM: list[LinkClaim] = []
+
+
+def register_link_claim(claim: LinkClaim) -> None:
+    """communications: (host, link token, typed email) -> `bad` for every link that can't be
+    used (unknown, another firm's, used, revoked, expired), `claimed` when the address is the
+    link's (which uses it), `other` otherwise."""
+    if _LINK_CLAIM and not _same(_LINK_CLAIM[0], claim):
+        raise ValueError("the link claim is already registered")
+    _LINK_CLAIM[:] = [claim]
+
+
+async def claim_link(host: str, token: str, email: str) -> LinkOutcome:
+    """Fails closed: with no claim registered every link is `bad`."""
+    return "bad" if not _LINK_CLAIM else await _LINK_CLAIM[0](host, token, email)
+
+
+# P-08-T21 (security review): a contact's secure links die with their access or their address.
+ContactLinksRevoker = Callable[["UnitOfWork", Sequence[UUID]], Awaitable[int]]
+_LINKS_REVOKER: list[ContactLinksRevoker] = []
+
+
+def register_contact_links_revoker(revoker: ContactLinksRevoker) -> None:
+    """communications: revoke every live secure link of these contacts in the caller's unit of
+    work; how many."""
+    if _LINKS_REVOKER and not _same(_LINKS_REVOKER[0], revoker):
+        raise ValueError("the contact links revoker is already registered")
+    _LINKS_REVOKER[:] = [revoker]
+
+
+async def revoke_contact_links(tx: UnitOfWork, contact_ids: Sequence[UUID]) -> int:
+    """Called where a contact's access ends or their address changes (organisations)."""
+    if not _LINKS_REVOKER or not contact_ids:
+        return 0
+    return await _LINKS_REVOKER[0](tx, contact_ids)

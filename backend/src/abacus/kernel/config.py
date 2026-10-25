@@ -18,6 +18,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from abacus.kernel import provider_terms
 from abacus.kernel.classification import classified
+from abacus.kernel.db_tls import turns_tls_off
 from abacus.kernel.work_class import WORK_CLASSES, WorkClass
 
 Environment = Literal["local", "test", "evaluation", "staging", "production"]
@@ -34,6 +35,13 @@ _LOCAL_RELAY_DB = "postgresql+asyncpg://abacus_relay:abacusrelay@127.0.0.1:55432
 _LOCAL_IDENTITY_DB = "postgresql+asyncpg://abacus_identity:abacusidentity@127.0.0.1:55432/abacus"
 _LOCAL_OPS_DB = "postgresql+asyncpg://abacus_ops:abacusops@127.0.0.1:55432/abacus"
 MIN_EVIDENCE_RETENTION_DAYS = 365
+_DATABASE_URLS = (
+    "database_url",
+    "migrations_database_url",
+    "relay_database_url",
+    "identity_database_url",
+    "ops_database_url",
+)
 _CONNECTIONS = (
     "database_url",
     "migrations_database_url",
@@ -227,6 +235,10 @@ class Settings(BaseSettings):
     workos_api_key: Annotated[SecretStr | None, classified("restricted")] = None
     workos_client_id: Annotated[str | None, classified("internal")] = None
     database_statement_timeout_ms: Annotated[int, classified("internal")] = 30_000
+    # G-09 (ASVS 9.2.3): the CA bundle that database certificates are verified against (for RDS,
+    # the AWS global bundle shipped in the image); unset, the system trust store. TLS with
+    # `verify-full` is always on outside local and test (`kernel.db_tls`).
+    database_ca_file: Annotated[str | None, classified("internal")] = None
     s3_endpoint_url: Annotated[str | None, classified("internal")] = None
     s3_access_key: Annotated[SecretStr | None, classified("restricted")] = None
     s3_secret_key: Annotated[SecretStr | None, classified("restricted")] = None
@@ -586,6 +598,17 @@ class Settings(BaseSettings):
                     raise ValueError(f"model_catalog[{tier!r}] has no model for route {route!r}")
                 if not _PINNED.fullmatch(found) or "latest" in found:
                     raise ValueError(f"model_catalog[{tier!r}][{route!r}] must be a pinned ID")
+        return self
+
+    @model_validator(mode="after")
+    def _database_tls_outside_local(self) -> Self:
+        """G-09: outside local and test a DSN may not turn TLS off (`sslmode=disable`)."""
+        if self.environment in LOCAL_STACK:
+            return self
+        for name in _DATABASE_URLS:
+            value = getattr(self, name)
+            if value is not None and turns_tls_off(value.get_secret_value()):
+                raise ValueError(f"{name} must use TLS outside local and test (G-09)")
         return self
 
     @model_validator(mode="after")

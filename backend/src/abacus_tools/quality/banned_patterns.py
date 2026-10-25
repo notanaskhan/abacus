@@ -173,6 +173,22 @@ def _check_raw_connection(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+def _check_tool_connection_tls(src: SourceFile) -> Iterator[Finding]:
+    """TLS-001 (G-09; P-08-T21 security review): a tooling connection names its TLS decision."""
+    for call in _calls(src.tree):
+        func = call.func
+        if (
+            isinstance(func, ast.Attribute)
+            and func.attr in {"connect", "create_pool"}
+            and _terminal_name(func.value) == "asyncpg"
+            and not any(k.arg == "ssl" for k in call.keywords)
+        ):
+            yield Finding(
+                call.lineno,
+                f"asyncpg.{func.attr}() without ssl=; use abacus_tools.db_connect.connect",
+            )
+
+
 def _is_built_string(node: ast.expr) -> bool:
     if isinstance(node, ast.JoinedStr):
         return True
@@ -638,6 +654,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
     # P-08-T18 (DEC-139): the invitation preview, under `PRE_SESSION`.
     | {"/v1/invitations/preview"}
+    # P-08-T21 (DEC-139): a recipient's link renewal, always 202, under `PRE_SESSION`.
+    | {"/v1/portal/links/renew"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"
@@ -1837,6 +1855,15 @@ RULES: list[Rule | TreeRule] = [
         ),
     ),
     Rule(
+        id="TLS-001",
+        description="A tooling database connection passes ssl= (verify-full whenever TLS is used)",
+        adr="ADR-014",
+        check=_check_tool_connection_tls,
+        include=("src/abacus_tools/*",),
+        # Local-only: the throwaway compose or test-container stack, never a hosted database.
+        exclude=("src/abacus_tools/stack.py", "src/abacus_tools/local/seed_dev.py"),
+    ),
+    Rule(
         id="DB-001",
         description="No engines or raw connections; use tenant_session(ctx)",
         adr="ADR-014",
@@ -1845,6 +1872,8 @@ RULES: list[Rule | TreeRule] = [
         # the local-stack smoke tests; the tenancy and schema tests (owner, app and admin roles).
         exclude=(
             "src/abacus/kernel/db/*",
+            # G-09: the tools' one connection helper, with the app's TLS decision.
+            "src/abacus_tools/db_connect.py",
             "src/abacus_tools/quality/schema_check.py",
             # SPEC-012: the access review runs as the owner role (the only one that may read it).
             "src/abacus_tools/access_review.py",

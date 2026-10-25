@@ -11,7 +11,12 @@ answers `mfa_required` or `mfa_setup_required` with a single-use `mfa_token` and
 Errors carry identifier facts only: 401 `code_mismatch {tries_left}`, 423 `sign_in_locked
 {locked_until}`, 410 `code_expired`, 429 `resend_too_soon {resend_available_at}`; 401
 `mfa_mismatch {tries_left}`, 423 `mfa_locked {locked_until}`, 410 `mfa_expired`, 503
-`mfa_unavailable`."""
+`mfa_unavailable`.
+
+The pause and links (P-08-T21; SPEC-320 AC-14, AC-20): while the host's firm has the
+`portal_sign_in` control on, start, verify, resend and the second-step routes answer 503
+`sign_in_paused` (refresh and signed-in routes are untouched, so sessions carry on). A start with
+a `link_token` that can't be used answers 404 `link_expired`, one answer for every reason."""
 
 from __future__ import annotations
 
@@ -48,11 +53,14 @@ from abacus.modules.identity.portal_session import (
     COOKIE_NAME,
     CodeExpired,
     CodeMismatch,
+    LinkUnusable,
     PortalSessionEnded,
     PortalTokens,
     ResendTooSoon,
     SecondStepRequired,
     SignInLocked,
+    SignInPaused,
+    check_not_paused,
     refresh_portal_session,
     resend_code,
     sign_out_portal,
@@ -107,6 +115,10 @@ def _signed_in(tokens: PortalTokens) -> Response:
     return _no_store(response)
 
 
+def _paused() -> Response:
+    return _error(503, "sign_in_paused")
+
+
 def _mfa_error(exc: Exception) -> Response:
     if isinstance(exc, MfaMismatch):
         return _error(401, "mfa_mismatch", {"tries_left": exc.tries_left})
@@ -118,13 +130,29 @@ def _mfa_error(exc: Exception) -> Response:
 
 
 @portal_auth_router.post(
-    "/start", action=PRE_SESSION, response_model=PortalSignInStartOut, status_code=202
+    "/start",
+    action=PRE_SESSION,
+    response_model=PortalSignInStartOut,
+    status_code=202,
+    errors=(503,),
 )
 async def portal_start_route(
     body: PortalSignInStartIn, host: Annotated[str | None, Header()] = None
 ) -> Response:
-    """Always 202 with the same shape, for any email on any host."""
-    found = await start_sign_in(host, body.email, invitation_token=body.invitation_token)
+    """Always 202 with the same shape, for any email on any host; 404 `link_expired` for a link
+    that can't be used; 503 `sign_in_paused`."""
+    try:
+        await check_not_paused(host)
+        found = await start_sign_in(
+            host,
+            body.email,
+            invitation_token=body.invitation_token,
+            link_token=body.link_token,
+        )
+    except SignInPaused:
+        return _paused()
+    except LinkUnusable:
+        return _error(404, "link_expired")
     out = PortalSignInStartOut(
         challenge_id=found.challenge_id,
         code_expires_at=found.code_expires_at,
@@ -134,7 +162,10 @@ async def portal_start_route(
 
 
 @portal_auth_router.post(
-    "/verify", action=PRE_SESSION, response_model=PortalSignInVerifyOut, errors=(410, 423)
+    "/verify",
+    action=PRE_SESSION,
+    response_model=PortalSignInVerifyOut,
+    errors=(410, 423, 503),
 )
 async def portal_verify_route(
     body: PortalSignInVerifyIn,
@@ -143,9 +174,12 @@ async def portal_verify_route(
     device: Annotated[str | None, Cookie(alias=DEVICE_COOKIE)] = None,
 ) -> Response:
     try:
+        await check_not_paused(host)
         tokens = await verify_code(
             host, body.challenge_id, body.code, previous_cookie=previous, device_cookie=device
         )
+    except SignInPaused:
+        return _paused()
     except SecondStepRequired as step:
         out = PortalSignInVerifyOut(state=step.state, mfa_token=step.mfa_token)
         return _no_store(JSONResponse(out.model_dump(mode="json", exclude_none=True)))
@@ -163,13 +197,16 @@ async def portal_verify_route(
     action=PRE_SESSION,
     response_model=PortalSignInStartOut,
     status_code=202,
-    errors=(410, 429),
+    errors=(410, 429, 503),
 )
 async def portal_resend_route(
     body: PortalSignInResendIn, host: Annotated[str | None, Header()] = None
 ) -> Response:
     try:
+        await check_not_paused(host)
         found = await resend_code(host, body.challenge_id)
+    except SignInPaused:
+        return _paused()
     except ResendTooSoon as soon:
         return _error(
             429, "resend_too_soon", {"resend_available_at": _iso(soon.resend_available_at)}
@@ -195,6 +232,7 @@ async def portal_mfa_route(
 ) -> Response:
     """The second step: a TOTP or a backup code; "trust this device" sets the device cookie."""
     try:
+        await check_not_paused(host)
         done = await second_step(
             host,
             body.mfa_token,
@@ -204,6 +242,8 @@ async def portal_mfa_route(
             previous_cookie=previous,
             user_agent=user_agent,
         )
+    except SignInPaused:
+        return _paused()
     except (MfaMismatch, MfaLocked, MfaExpired, PortalIdpUnavailable) as exc:
         return _mfa_error(exc)
     response = _signed_in(done.tokens)
@@ -228,7 +268,10 @@ async def portal_mfa_setup_route(
 ) -> Response:
     """A new TOTP factor for a person with none: the QR code's URI and the key, once."""
     try:
+        await check_not_paused(host)
         key = await setup_second_step(host, body.mfa_token)
+    except SignInPaused:
+        return _paused()
     except (MfaExpired, PortalIdpUnavailable) as exc:
         return _mfa_error(exc)
     out = PortalMfaSetupOut(otpauth_uri=key.otpauth_uri, manual_key=key.manual_key)
@@ -248,7 +291,10 @@ async def portal_mfa_setup_verify_route(
 ) -> Response:
     """The new factor's first code: enrolled, 8 backup codes once, and the session."""
     try:
+        await check_not_paused(host)
         done = await verify_setup(host, body.mfa_token, body.totp, previous_cookie=previous)
+    except SignInPaused:
+        return _paused()
     except (MfaMismatch, MfaLocked, MfaExpired, PortalIdpUnavailable) as exc:
         return _mfa_error(exc)
     out = PortalMfaSetupVerifyOut(

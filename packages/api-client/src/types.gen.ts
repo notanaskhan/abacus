@@ -4837,7 +4837,9 @@ export type ContactIn = {
 /**
  * ContactMfaResetOut
  *
- * After a reset the next sign-in goes to two-step setup (POR-01, the setup state).
+ * What a firm's reset ended: the person's trusted devices and portal sessions in this firm,
+ * so the next sign-in here asks for the second step again. Never the person's factor, which
+ * is theirs across firms (DEC-329), and nothing about other firms.
  */
 export type ContactMfaResetOut = {
     /**
@@ -4849,13 +4851,13 @@ export type ContactMfaResetOut = {
      */
     contact_id: string;
     /**
-     * Mfa Enrolled
-     */
-    mfa_enrolled: boolean;
-    /**
      * Reset At
      */
     reset_at: string;
+    /**
+     * Sessions Ended
+     */
+    sessions_ended: number;
     /**
      * Trusted Devices Revoked
      */
@@ -7927,6 +7929,128 @@ export type FirmClientOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * FirmExportDeclineIn
+ */
+export type FirmExportDeclineIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * FirmExportLinkOut
+ *
+ * A presigned download link for 15 minutes; Restricted (it opens the firm's whole archive)
+ * and never logged.
+ */
+export type FirmExportLinkOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
+ * FirmExportOut
+ */
+export type FirmExportOut = {
+    approver: FirmExportPersonOut;
+    /**
+     * Available Until
+     */
+    available_until?: string | null;
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256?: string | null;
+    /**
+     * Origin
+     */
+    origin: 'on_demand' | 'scheduled';
+    /**
+     * Ready At
+     */
+    ready_at?: string | null;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    requested_by: FirmExportPersonOut;
+    /**
+     * Scope
+     */
+    scope: 'all';
+    /**
+     * Size Bytes
+     */
+    size_bytes?: number | null;
+    /**
+     * Status
+     */
+    status: 'awaiting_approval' | 'declined' | 'building' | 'ready' | 'downloaded' | 'expired' | 'failed';
+};
+
+/**
+ * FirmExportPageOut
+ *
+ * The last 12 exports, newest first.
+ */
+export type FirmExportPageOut = {
+    /**
+     * Items
+     */
+    items: Array<FirmExportOut>;
+};
+
+/**
+ * FirmExportPersonOut
+ *
+ * A person named on the export, for the card's line ("Waiting for approval · Margaret
+ * Okonkwo"); the id links to ADM-02.
+ */
+export type FirmExportPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * FirmExportRequestIn
+ */
+export type FirmExportRequestIn = {
+    /**
+     * Approver User Id
+     */
+    approver_user_id: string;
+    /**
+     * Scope
+     */
+    scope?: 'all';
 };
 
 /**
@@ -11059,6 +11183,18 @@ export type LetterOut = {
 };
 
 /**
+ * LetterPolicyIn
+ *
+ * ED-034 (ASVS 5.1.2): the body refuses undeclared fields, as every input model does.
+ */
+export type LetterPolicyIn = {
+    /**
+     * Required
+     */
+    required: boolean;
+};
+
+/**
  * LetterPolicyOut
  */
 export type LetterPolicyOut = {
@@ -13833,6 +13969,29 @@ export type PortalHomeWorkCardOut = {
      * Work Item Id
      */
     work_item_id: string;
+};
+
+/**
+ * PortalLinkRenewIn
+ */
+export type PortalLinkRenewIn = {
+    /**
+     * Link Token
+     */
+    link_token: string;
+};
+
+/**
+ * PortalLinkRenewOut
+ *
+ * Always 202 with this shape, for any token; a new link goes only to the address the old one
+ * was sent to. The toast names that address from the SPA's own state, never from here.
+ */
+export type PortalLinkRenewOut = {
+    /**
+     * Accepted
+     */
+    accepted?: true;
 };
 
 /**
@@ -23976,10 +24135,6 @@ export type ResetContactMfaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResetContactMfaError = ResetContactMfaErrors[keyof ResetContactMfaErrors];
@@ -24036,10 +24191,6 @@ export type UnlockContactPortalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UnlockContactPortalError = UnlockContactPortalErrors[keyof UnlockContactPortalErrors];
@@ -42134,6 +42285,296 @@ export type MyConfirmationsResponses = {
 
 export type MyConfirmationsResponse = MyConfirmationsResponses[keyof MyConfirmationsResponses];
 
+export type ListFirmExportsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports';
+};
+
+export type ListFirmExportsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListFirmExportsError = ListFirmExportsErrors[keyof ListFirmExportsErrors];
+
+export type ListFirmExportsResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportPageOut;
+};
+
+export type ListFirmExportsResponse = ListFirmExportsResponses[keyof ListFirmExportsResponses];
+
+export type RequestFirmExportData = {
+    body: FirmExportRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports';
+};
+
+export type RequestFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestFirmExportError = RequestFirmExportErrors[keyof RequestFirmExportErrors];
+
+export type RequestFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    202: FirmExportOut;
+};
+
+export type RequestFirmExportResponse = RequestFirmExportResponses[keyof RequestFirmExportResponses];
+
+export type ApproveFirmExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/approve';
+};
+
+export type ApproveFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveFirmExportError = ApproveFirmExportErrors[keyof ApproveFirmExportErrors];
+
+export type ApproveFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportOut;
+};
+
+export type ApproveFirmExportResponse = ApproveFirmExportResponses[keyof ApproveFirmExportResponses];
+
+export type DeclineFirmExportData = {
+    body: FirmExportDeclineIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/decline';
+};
+
+export type DeclineFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeclineFirmExportError = DeclineFirmExportErrors[keyof DeclineFirmExportErrors];
+
+export type DeclineFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportOut;
+};
+
+export type DeclineFirmExportResponse = DeclineFirmExportResponses[keyof DeclineFirmExportResponses];
+
+export type LinkFirmExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/data-exports/{export_id}/link';
+};
+
+export type LinkFirmExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LinkFirmExportError = LinkFirmExportErrors[keyof LinkFirmExportErrors];
+
+export type LinkFirmExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportLinkOut;
+};
+
+export type LinkFirmExportResponse = LinkFirmExportResponses[keyof LinkFirmExportResponses];
+
 export type DraftedGuidanceData = {
     body?: never;
     headers?: {
@@ -42477,7 +42918,7 @@ export type LetterPolicyResponses = {
 export type LetterPolicyResponse = LetterPolicyResponses[keyof LetterPolicyResponses];
 
 export type SetLetterPolicyData = {
-    body: LetterPolicyOut;
+    body: LetterPolicyIn;
     headers?: {
         /**
          * Authorization
@@ -47772,7 +48213,7 @@ export type PortalMfaErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -47827,7 +48268,7 @@ export type PortalMfaSetupErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -47878,7 +48319,7 @@ export type PortalMfaSetupVerifyErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -47984,7 +48425,7 @@ export type PortalResendErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -47995,6 +48436,10 @@ export type PortalResendErrors = {
      * Too soon or too many: retry after Retry-After
      */
     429: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type PortalResendError = PortalResendErrors[keyof PortalResendErrors];
@@ -48085,6 +48530,10 @@ export type PortalStartErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type PortalStartError = PortalStartErrors[keyof PortalStartErrors];
@@ -48125,7 +48574,7 @@ export type PortalVerifyErrors = {
      */
     404: ErrorOut;
     /**
-     * Gone: the sign-in code expired or was used
+     * Gone: the code, link or window expired or was used
      */
     410: ErrorOut;
     /**
@@ -48136,6 +48585,10 @@ export type PortalVerifyErrors = {
      * Locked: too many wrong codes
      */
     423: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
 };
 
 export type PortalVerifyError = PortalVerifyErrors[keyof PortalVerifyErrors];
@@ -48662,6 +49115,49 @@ export type GetPortalHomeResponses = {
 };
 
 export type GetPortalHomeResponse = GetPortalHomeResponses[keyof GetPortalHomeResponses];
+
+export type PortalLinkRenewData = {
+    body: PortalLinkRenewIn;
+    headers?: {
+        /**
+         * Host
+         */
+        host?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/links/renew';
+};
+
+export type PortalLinkRenewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalLinkRenewError = PortalLinkRenewErrors[keyof PortalLinkRenewErrors];
+
+export type PortalLinkRenewResponses = {
+    /**
+     * Successful Response
+     */
+    202: PortalLinkRenewOut;
+};
+
+export type PortalLinkRenewResponse = PortalLinkRenewResponses[keyof PortalLinkRenewResponses];
 
 export type UpdatePortalPreferencesData = {
     body: PortalPreferencesIn;
