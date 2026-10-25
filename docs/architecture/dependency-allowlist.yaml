@@ -94,6 +94,7 @@ containers:
   clamav/clamav: approved         # malware scanning daemon for uploads, local and staging (ADR-110, P-64, Q-01-T05)
   public.ecr.aws/aws-observability/aws-otel-collector: approved  # OpenTelemetry collector sidecar (ADR-022, Q-01-T05)
   python: approved                # the backend's base image, slim variant, by digest (Q-01-T05, Q-01-T06)
+  zaproxy/zap-stable: approved    # OWASP ZAP baseline (passive) scan of staging, weekly in dast.yml; never run locally (QD-9, Q-03-T004, DEC-366)
 
 # Terraform core, providers and registry modules (Q-01-T05), checked by check_dependencies in every *.tf.
 # Local modules (./, ../) need no row; modules from git, URLs or buckets are refused.

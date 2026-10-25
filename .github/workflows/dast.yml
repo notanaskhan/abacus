@@ -1,0 +1,142 @@
+# Weekly DAST baseline of staging (Q-03-T004; QD-9; Q-03 D4; DEC-366). The OWASP ZAP baseline scan
+# (passive: it spiders and reads responses, it sends no attack payloads) runs against the staging
+# URL once a week, never while a staging deploy is in flight, and holds the deploy lock while it
+# runs. A high alert opens or updates a SEV3 ticket and fails the run.
+#
+# The deploy lock is the `staging-deploy` concurrency group, which deploy-staging.yml (SPEC-050
+# AC-26) must share; a queued run never cancels a running one. Because a newer queued run replaces
+# an older queued one in a group, the scan first skips itself when a deploy is running or queued.
+#
+# The repository and its logs are public: ZAP's own output goes to a file, the triage
+# (`abacus_tools.quality.dast`) prints counts only, the report is encrypted to the founders' public
+# key (repository variable DAST_REPORT_KEY) before it is kept, and the ticket carries counts and the
+# run link only. Off until staging exists: set STAGING_DAST=on and ABACUS_STAGING_URL. The ZAP
+# image is allowlisted under containers: and pinned by digest. Third-party actions are pinned to
+# full commit SHAs; no secrets are used.
+name: dast
+
+on:
+  schedule:
+    - cron: "0 10 * * 2" # Tuesdays, 4:00 CT (5:00 in daylight time)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false
+
+env:
+  ZAP_IMAGE: zaproxy/zap-stable:20261008@sha256:7aaa659b0d43078febd82e29bad112285c370727e86ab8340444220e17d9f0d2
+
+jobs:
+  baseline:
+    name: dast baseline (staging)
+    if: vars.STAGING_DAST == 'on'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read # the deploy-in-flight check reads workflow runs
+    outputs:
+      high: ${{ steps.triage.outputs.high }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET: ${{ vars.ABACUS_STAGING_URL }}
+      DAST_REPORT_KEY: ${{ vars.DAST_REPORT_KEY }}
+    steps:
+      - name: Staging is set and no deploy is in flight
+        id: lock
+        run: |
+          if [ -z "$TARGET" ] || [ -z "$DAST_REPORT_KEY" ]; then
+            echo "::error::ABACUS_STAGING_URL and DAST_REPORT_KEY must be set to scan staging"
+            exit 1
+          fi
+          busy="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml --limit 20 \
+            --json status --jq '[.[] | select(.status != "completed")] | length' 2>/dev/null || echo 0)"
+          if [ "$busy" != "0" ]; then
+            echo "::notice::A staging deploy is running or queued; this week's scan is skipped."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.lock.outputs.skip != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: steps.lock.outputs.skip != 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: ZAP baseline (output to a file, never the log)
+        if: steps.lock.outputs.skip != 'true'
+        run: |
+          WRK="$RUNNER_TEMP/zap"
+          mkdir -p "$WRK" && chmod a+rwx "$WRK"
+          status=0
+          docker run --rm -v "$WRK:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t "$TARGET" -J zap-report.json -r zap-report.html -I \
+            > "$WRK/zap.log" 2>&1 || status=$?
+          # 0 clean, 1 a rule set to FAIL, 2 warnings; 3 and above: the scan itself failed.
+          if [ "$status" -gt 2 ] || [ ! -s "$WRK/zap-report.json" ]; then
+            echo "::error::the ZAP baseline did not complete (exit $status)"
+            exit 1
+          fi
+      - name: Triage (counts only)
+        id: triage
+        if: steps.lock.outputs.skip != 'true'
+        run: |
+          cd backend && uv sync --frozen
+          uv run python -m abacus_tools.quality.dast "$RUNNER_TEMP/zap/zap-report.json" \
+            --summary "$GITHUB_STEP_SUMMARY" --github-output "$GITHUB_OUTPUT"
+      - name: Encrypt the report to the founders' key
+        if: always() && steps.lock.outputs.skip != 'true'
+        run: |
+          OUT="$RUNNER_TEMP/dast-report"
+          mkdir -p "$OUT"
+          printf '%s\n' "$DAST_REPORT_KEY" > "$RUNNER_TEMP/dast-key.asc"
+          tar -C "$RUNNER_TEMP" -cf "$RUNNER_TEMP/zap.tar" zap
+          gpg --batch --yes --trust-model always --recipient-file "$RUNNER_TEMP/dast-key.asc" \
+            --output "$OUT/zap-report.tar.gpg" --encrypt "$RUNNER_TEMP/zap.tar"
+          rm -rf "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap.tar"
+      - if: always() && steps.lock.outputs.skip != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dast-report-encrypted
+          path: ${{ runner.temp }}/dast-report
+          if-no-files-found: ignore
+          retention-days: 90
+      - name: A high alert fails the run
+        if: steps.triage.outputs.high != '' && steps.triage.outputs.high != '0'
+        run: |
+          echo "::error::${{ steps.triage.outputs.high }} high DAST alert(s) on staging: SEV3 ticket opened"
+          exit 1
+
+  sev3:
+    name: open or update the SEV3 DAST ticket
+    needs: [baseline]
+    if: always() && needs.baseline.outputs.high != '' && needs.baseline.outputs.high != '0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the ticket (counts and the run link only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HIGH: ${{ needs.baseline.outputs.high }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          for label in dast sev3; do
+            gh label create "$label" --repo "$REPO" --color B60205 --force \
+              --description "DAST finding (QD-9) / severity 3 (ADR-097)"
+          done
+          body="The weekly DAST baseline found $HIGH high alert(s) on staging: $RUN_URL. Triage from the encrypted report (Q-03-T004, QD-9; SEV3, ADR-097). Record no exploit detail here: the repository is public."
+          open=$(gh issue list --repo "$REPO" --label dast --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$REPO" --body "$body"
+          else
+            gh issue create --repo "$REPO" --label dast --label sev3 \
+              --title "SEV3: DAST high alert on staging" --body "$body"
+          fi
