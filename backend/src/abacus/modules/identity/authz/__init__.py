@@ -377,9 +377,12 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
             roles.add(role)
     elif (
         rule.reads
+        and not rule.scope_only
         and not ctx.is_support
         and (ctx.firm_role is None or rule.decisions.get(ctx.firm_role) != "allow")
     ):
+        # A `scope_only` read names its target (INV-4): it is never granted from the person's
+        # roles on other engagements (A-02 security review, DEC-316; `connection.read`).
         # SPEC-014: a firm-level read counts the person's engagement roles on the firm's active
         # engagements; skipped when the firm role already allows it (TASK-029 D2).
         roles |= await _engagement_roles_in_firm(ctx)

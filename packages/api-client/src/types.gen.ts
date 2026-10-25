@@ -17684,6 +17684,279 @@ export type TakenOut = {
 };
 
 /**
+ * TbChecksSummaryOut
+ *
+ * The check strip's tally; each check's result is `GET …/checks` (SPEC-310).
+ */
+export type TbChecksSummaryOut = {
+    /**
+     * Off
+     */
+    off: number;
+    /**
+     * Pending
+     */
+    pending: number;
+    /**
+     * Tie
+     */
+    tie: number;
+    worst: TieOutTallyStatus | null;
+};
+
+/**
+ * TbGroupOut
+ *
+ * One group of lines with its server subtotals. Live grouping is one level (audit area)
+ * until A-03's grouping sets; fixture mode may render Northwind's two levels.
+ */
+export type TbGroupOut = {
+    /**
+     * Boy
+     */
+    boy: string | null;
+    /**
+     * Eoy
+     */
+    eoy: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Lines
+     */
+    lines: Array<TbLayerLineOut>;
+};
+
+/**
+ * TbLayerBalanceOut
+ */
+export type TbLayerBalanceOut = {
+    /**
+     * Balanced
+     */
+    balanced: boolean;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+    /**
+     * Difference
+     */
+    difference: string;
+    layer: TrialBalanceLayerStatus;
+};
+
+/**
+ * TbLayerLineOut
+ */
+export type TbLayerLineOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Adjustment Refs
+     */
+    adjustment_refs?: Array<string>;
+    /**
+     * Aje
+     */
+    aje: string | null;
+    /**
+     * Area
+     */
+    area: string | null;
+    /**
+     * Boy
+     */
+    boy: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Eoy
+     */
+    eoy: string;
+    /**
+     * Final
+     */
+    final: string | null;
+    /**
+     * Flags
+     */
+    flags?: Array<TbLineFlagOut>;
+    /**
+     * Rje
+     */
+    rje: string | null;
+    /**
+     * Ticks
+     */
+    ticks?: Array<TbTickOut>;
+    /**
+     * Wp Ref
+     */
+    wp_ref: string | null;
+};
+
+/**
+ * TbLayerViewOut
+ *
+ * AUD-06's trial balance tab at one layer and version.
+ */
+export type TbLayerViewOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'trial_balance.adopt' | 'trial_balance.annotate' | 'trial_balance.export' | 'tie_out_check.define' | 'sign_off.prepare' | 'sign_off.review' | 'sign_off.manager' | 'sign_off.partner' | 'sign_off.eqr' | 'ledger.pull' | 'connection.reconnect_request'>;
+    balance: TbLayerBalanceOut;
+    checks: TbChecksSummaryOut;
+    /**
+     * Current Version No
+     */
+    current_version_no: number;
+    /**
+     * Display Unit
+     */
+    display_unit: 'cents' | 'whole_dollars';
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Groups
+     */
+    groups: Array<TbGroupOut>;
+    label: TrialBalanceLabelStatus;
+    layer: TrialBalanceLayerStatus;
+    /**
+     * Layers Available
+     */
+    layers_available: Array<TrialBalanceLayerStatus>;
+    /**
+     * Newer Snapshots
+     */
+    newer_snapshots: number;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Prior Period End
+     */
+    prior_period_end: string | null;
+    provenance: TbProvenanceOut;
+    /**
+     * Totals
+     */
+    totals: Array<TbNamedTotalOut>;
+    /**
+     * Trial Balance Id
+     */
+    trial_balance_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * TbLeadsheetAreaOut
+ */
+export type TbLeadsheetAreaOut = {
+    /**
+     * Area
+     */
+    area: string;
+    /**
+     * Change
+     */
+    change: string | null;
+    /**
+     * Change Pct
+     */
+    change_pct: string | null;
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Display Unit
+     */
+    display_unit: 'cents' | 'whole_dollars';
+    layer: TrialBalanceLayerStatus;
+    /**
+     * Py
+     */
+    py: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<TbLeadsheetRowOut>;
+    /**
+     * Trial Balance Id
+     */
+    trial_balance_id: string;
+    /**
+     * Unassigned
+     */
+    unassigned: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * TbLeadsheetRowOut
+ */
+export type TbLeadsheetRowOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Change
+     */
+    change: string | null;
+    /**
+     * Change Pct
+     */
+    change_pct: string | null;
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Py
+     */
+    py: string | null;
+};
+
+/**
  * TbLevelOut
  */
 export type TbLevelOut = {
@@ -17707,6 +17980,24 @@ export type TbLevelOut = {
      * Stale
      */
     stale: boolean;
+};
+
+/**
+ * TbLineFlagOut
+ */
+export type TbLineFlagOut = {
+    /**
+     * Check Id
+     */
+    check_id: string;
+    /**
+     * Issue Id
+     */
+    issue_id: string | null;
+    /**
+     * Kind
+     */
+    kind: 'does_not_tie';
 };
 
 /**
@@ -17787,6 +18078,105 @@ export type TbLinkOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * TbNamedTotalOut
+ *
+ * A total the screen shows as a row (Total investments, Net assets), computed by code.
+ */
+export type TbNamedTotalOut = {
+    /**
+     * Boy
+     */
+    boy: string | null;
+    /**
+     * Eoy
+     */
+    eoy: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * TbProvenanceOut
+ *
+ * The caption's facts ("Imported by Simone Baptiste from a NetSuite export, Sep 11, 10:02
+ * AM"); the screen builds the words.
+ */
+export type TbProvenanceOut = {
+    /**
+     * Adopted At
+     */
+    adopted_at: string;
+    /**
+     * Adopted By Name
+     */
+    adopted_by_name: string;
+    /**
+     * Adopted By User Id
+     */
+    adopted_by_user_id: string;
+    /**
+     * Pulled At
+     */
+    pulled_at: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Source Kind
+     */
+    source_kind: 'import' | 'connector' | 'fake' | 'other';
+};
+
+/**
+ * TbTickOut
+ */
+export type TbTickOut = {
+    /**
+     * Actor Kind
+     */
+    actor_kind: 'human' | 'agent';
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By Name
+     */
+    by_name: string;
+    /**
+     * By User Id
+     */
+    by_user_id: string;
+    /**
+     * Citation Id
+     */
+    citation_id: string | null;
+    /**
+     * Initials
+     */
+    initials: string | null;
+    /**
+     * Kind
+     */
+    kind: 'agreed' | 'reviewed';
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Verified
+     */
+    verified: boolean;
 };
 
 /**
@@ -18024,6 +18414,46 @@ export type ThreadReadOut = {
 };
 
 /**
+ * TieIssueLinkIn
+ */
+export type TieIssueLinkIn = {
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * TieIssueLinkOut
+ */
+export type TieIssueLinkOut = {
+    /**
+     * Check Id
+     */
+    check_id: string;
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    /**
+     * Linked At
+     */
+    linked_at: string;
+    /**
+     * Linked By User Id
+     */
+    linked_by_user_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * TieOutCheckBody
  */
 export type TieOutCheckBody = {
@@ -18177,6 +18607,11 @@ export type TieOutCheckOut = {
      */
     version_no: number;
 };
+
+/**
+ * TieOutTallyStatus
+ */
+export type TieOutTallyStatus = 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
 
 /**
  * TieResultOut
@@ -18414,6 +18849,16 @@ export type TrialBalanceDetailOut = {
      */
     versions: Array<TbVersionOut>;
 };
+
+/**
+ * TrialBalanceLabelStatus
+ */
+export type TrialBalanceLabelStatus = 'standard' | 'interim' | 'prior' | 'budget' | 'preliminary';
+
+/**
+ * TrialBalanceLayerStatus
+ */
+export type TrialBalanceLayerStatus = 'unadjusted' | 'aje' | 'rje' | 'final';
 
 /**
  * TrialBalanceOut
@@ -35486,6 +35931,220 @@ export type EditCheckResponses = {
 
 export type EditCheckResponse = EditCheckResponses[keyof EditCheckResponses];
 
+export type TieIssueLinkData = {
+    body: TieIssueLinkIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+        /**
+         * Check Id
+         */
+        check_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}/issue-link';
+};
+
+export type TieIssueLinkErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TieIssueLinkError = TieIssueLinkErrors[keyof TieIssueLinkErrors];
+
+export type TieIssueLinkResponses = {
+    /**
+     * Successful Response
+     */
+    201: TieIssueLinkOut;
+};
+
+export type TieIssueLinkResponse = TieIssueLinkResponses[keyof TieIssueLinkResponses];
+
+export type TbExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: {
+        layer?: TrialBalanceLayerStatus;
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx';
+};
+
+export type TbExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TbExportError = TbExportErrors[keyof TbExportErrors];
+
+export type TbExportResponses = {
+    /**
+     * Response Tb Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type TbExportResponse = TbExportResponses[keyof TbExportResponses];
+
+export type TbLayerViewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+        layer: TrialBalanceLayerStatus;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/layers/{layer}';
+};
+
+export type TbLayerViewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TbLayerViewError = TbLayerViewErrors[keyof TbLayerViewErrors];
+
+export type TbLayerViewResponses = {
+    /**
+     * Successful Response
+     */
+    200: TbLayerViewOut;
+};
+
+export type TbLayerViewResponse = TbLayerViewResponses[keyof TbLayerViewResponses];
+
 export type LeadsheetsData = {
     body?: never;
     headers?: {
@@ -35552,6 +36211,80 @@ export type LeadsheetsResponses = {
 };
 
 export type LeadsheetsResponse = LeadsheetsResponses[keyof LeadsheetsResponses];
+
+export type TbLeadsheetAreaData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+        /**
+         * Area
+         */
+        area: string;
+    };
+    query?: {
+        layer?: TrialBalanceLayerStatus;
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets/{area}';
+};
+
+export type TbLeadsheetAreaErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TbLeadsheetAreaError = TbLeadsheetAreaErrors[keyof TbLeadsheetAreaErrors];
+
+export type TbLeadsheetAreaResponses = {
+    /**
+     * Successful Response
+     */
+    200: TbLeadsheetAreaOut;
+};
+
+export type TbLeadsheetAreaResponse = TbLeadsheetAreaResponses[keyof TbLeadsheetAreaResponses];
 
 export type MappingData = {
     body?: never;

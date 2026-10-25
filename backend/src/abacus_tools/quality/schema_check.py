@@ -146,6 +146,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "gl_account_balances": "ledger_immutable",
     "gl_entries": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
+    "trial_balance_versions": "ledger_immutable",  # 0149 (A-02-T04; ED-037)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

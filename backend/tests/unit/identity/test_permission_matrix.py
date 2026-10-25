@@ -1011,8 +1011,10 @@ async def test_ac1_ac2_firm_level_reads_follow_the_matrix_for_engagement_roles(
     ctx = _ctx()
     firm_roles[ctx.user_id] = frozenset({role})
     resource = Resource.firm(ctx.tenant_id)
+    # A `scope_only` read names its target and is never granted at firm level from roles on
+    # other engagements (A-02 security review, DEC-316): it is refused here.
     if YAML_ACTIONS[action].get(role) == "allow" and not (
-        RULES[action].mfa_recent or RULES[action].requires_reason
+        RULES[action].mfa_recent or RULES[action].requires_reason or RULES[action].scope_only
     ):
         await authorise(ctx, action, resource)
     else:

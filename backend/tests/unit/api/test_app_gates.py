@@ -369,6 +369,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/versions",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/annotations",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks",  # SPEC-310
+        # A-02-T03 (C9 v1 stub): an issue linked to a check that does not tie.
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}/issue-link",
         # TASK-323: a password-protected upload saved again without its password
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/approve",

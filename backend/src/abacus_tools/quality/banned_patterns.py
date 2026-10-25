@@ -1869,6 +1869,9 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T13: the human-only CHECKs and insert-only rules, as the app role and the owner
             "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/test_seed_dev.py",
+            # A-02-T04: 0149's round trip on a private database; seeds as the superuser and
+            # proves the app role's refusals with the tenant set, as tenant_session sets it.
+            "tests/integration/test_tb_of_record_schema.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2008,6 +2011,8 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
             "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
+            # A-02-T04: the app role's refusals on 0149's tables, with the tenant set by hand.
+            "tests/integration/test_tb_of_record_schema.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),

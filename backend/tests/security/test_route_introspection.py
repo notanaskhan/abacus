@@ -205,7 +205,22 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks", "trial_balance.read"),
     (
         "GET",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx",
+        "trial_balance.export",
+    ),
+    (
+        "GET",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/layers/{layer}",
+        "trial_balance.read",
+    ),
+    (
+        "GET",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets",
+        "trial_balance.read",
+    ),
+    (
+        "GET",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets/{area}",
         "trial_balance.read",
     ),
     (
@@ -647,6 +662,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     (
         "POST",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks",
+        "tie_out_check.define",
+    ),
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}/issue-link",
         "tie_out_check.define",
     ),
     ("POST", "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/mapping", "mapping_set.edit"),

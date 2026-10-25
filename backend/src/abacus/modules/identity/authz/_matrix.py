@@ -390,6 +390,16 @@ ACTIONS: dict[str, dict[str, str]] = {
     "connection.pull": {
         "system": "allow",
     },
+    "connection.read": {
+        "client_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "scope_only": "required",
+    },
     "connection.read_log": {
         "client_admin": "allow",
         "engagement_partner": "allow",
@@ -397,6 +407,23 @@ ACTIONS: dict[str, dict[str, str]] = {
         "platform_support": "allow",
         "platform_support_content": "allow",
         "independence": "required",
+    },
+    "connection.reconnect_request": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+    },
+    "connection.retry": {
+        "client_admin": "allow",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "scope_only": "required",
     },
     "connection.revoke": {
         "client_admin": "allow",
@@ -1010,6 +1037,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "reviewer": "allow",
         "platform_support_content": "allow",
+    },
+    "ledger.pull": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
     },
     "ledger_import.upload": {
         "client_admin": "allow",
@@ -1628,6 +1663,15 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "agent": "deny",
         "independence": "required",
+    },
+    "trial_balance.export": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "mfa_recent": "required",
     },
     "trial_balance.read": {
         "engagement_partner": "allow",

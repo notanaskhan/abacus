@@ -63,6 +63,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Connection | A scoped, read-only, expiring link to a client entity's external system. Client-authorised; several per entity are allowed. Still read-only: firm-installed apps are **integrations** (own term), and writes happen only through declared integration adapters. | `connection` | `link`, `sync` |
 | Sync run | One execution of pulling data through a connection. A tax-engine export or import is an `engine_sync_event`, not a sync run. | `sync_run` | `job`, `import`, `fetch` |
 | Ledger snapshot | An immutable record of ledger data as pulled at a point in time. | `ledger_snapshot` | `ledger_copy`, `export` |
+| Connection consent | The client's write-once record of starting a connection: the consent copy key and version, what the firm will and won't do, the authorization text, the person, the time and a hashed IP. Never updated (A-02-T13). | `connection_consents` | — |
+| Reconnect request | A firm person's request that the client reconnect a connection that needs it: one open request per connection, a Reconnect request email from its database template and a portal to-do that clears on reconnect. | `reconnect_requests`, action `connection.reconnect_request` | — |
 | Change event | A detected change in ledger data after evidence was accepted. | `change_event` | `diff`, `update` |
 | Attachment | A file stored against a transaction in the client's ledger. Distinct from evidence. | `ledger_attachment` | `document`, `file` |
 
@@ -263,6 +265,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Workpaper | Cell keys such as `EBP-04!C14` are stable citation targets. | `workpapers`, `workpaper_sections`, `workpaper_versions`, `workpaper_cells` | — |
 | Sheet / column / row / cell / view | 11 column types. | `sheets`, `sheet_columns`, `sheet_rows`, `sheet_cells`, `sheet_views` | — |
 | Agent column | Cells hold suggestions until adopted. | `agent_columns`, `agent_column_runs` | — |
+| Tie-out check | A person's check that a trial balance figure agrees to a cited source: `balanced` (debits equal credits), `tie` (one figure to an expected value) or `rollforward` (components to a total). Results (tie · off n · Pending, registry `tie_out_tally`) are computed on read in exact `Decimal`, never stored; an expected value needs a citation. | `tie_out_checks`, action `tie_out_check.define` | — |
 
 ## New terms: methodology
 
@@ -311,6 +314,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Grouping | A heading of the statements (Cash and equivalents) with its class: assets, liabilities, equity, revenue or expenses. | `grouping` | — |
 | FS line | A line of the statements under a grouping, with its normal balance; account-number ranges map accounts to it. | `fs_line`, `fs_line_range_rules` | `caption` |
 | Mapping set | One trial balance of record's mapping to a published grouping set: rules from the ranges, people's edits on top (`mapping_set_edits`). "Mapping" names only this; request ↔ evidence links are fulfilments. | `mapping_set`, `mapping_set_edits` | `account_map` |
+| Trial balance of record | The one trial balance an audit work item uses for a client entity, label and period end: a named person adopts an immutable ledger snapshot as version 1, and a newer snapshot becomes the next version with a reason; nothing earlier changes (ADR-004). Only a human adopts (INV-1). UI "Trial balance" (AUD-06). | `trial_balances`, `trial_balance_versions`, actions `trial_balance.*` | — |
+| TB label | Which trial balance a snapshot or a trial balance of record is: Standard, Interim, Prior, Budget or Preliminary (registry `trial_balance_label`). Configurable labels wait for ADM-13 (G-03). UI chip "TB: Interim · 8/31/2026". | `label` (`trial_balances.label`, `ledger_snapshots.label`) | — |
+| Layer | A column set of the trial balance: Unadjusted, AJE, RJE or Final (registry `trial_balance_layer`). Code computes every layer; AJE, RJE and Final exist only once an adjustment source is registered, and answer `layer_unavailable` before. | `layer`, `register_adjustment_source` | — |
+| Leadsheet | One audit area's rollup of the trial balance: PY · CY · Δ · Δ%, in statement grammar, computed by code; accounts with no area appear under "Unassigned". | `leadsheet` | — |
 
 ## New terms: reporting
 

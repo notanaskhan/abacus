@@ -263,6 +263,24 @@ objects:
       ties_once_posted: {label: "Ties once posted", variant: null, disc: conic_dot_amber, text_tone: amber, terminal: false, derived: false}
       reconciled:     {label: "Reconciled", variant: green, terminal: true, derived: false}
 
+  # ---- Trial balance of record (A-02 §3.4, AUD-06 g; SPEC-333 AC-17, AC-31; TASK-1185) ----
+  trial_balance_label:   # trial_balances.label and ledger_snapshots.label; the AUD-06 label chip "TB: {label}"
+    source: "A-02 §3.4 (AUD-06 g); SPEC-309"
+    codes:
+      standard:    {label: "Standard", variant: null, terminal: false, derived: false}
+      interim:     {label: "Interim", variant: null, terminal: false, derived: false, context_labels: {chip: "TB: Interim · {date}"}}   # AUD-06 g "TB: Interim · 8/31/2026"
+      prior:       {label: "Prior", variant: null, terminal: false, derived: false}   # the prior-year pull (A-02-T30)
+      budget:      {label: "Budget", variant: null, terminal: false, derived: false}
+      preliminary: {label: "Preliminary", variant: null, terminal: false, derived: false}
+
+  trial_balance_layer:   # the AUD-06 layer control; AJE, RJE and Final need a registered adjustment source (C8)
+    source: "A-02 §3.4 (AUD-06 a, d); SPEC-311"
+    codes:
+      unadjusted: {label: "Unadjusted", variant: null, terminal: false, derived: false}
+      aje:        {label: "AJE", variant: null, terminal: false, derived: false}
+      rje:        {label: "RJE", variant: null, terminal: false, derived: false}
+      final:      {label: "Final", variant: null, terminal: false, derived: false}
+
   # ---- Requests and documents ----
   request:   # PBC / binder request; UI label "Request" (record: request_item)
     source: "blueprint 3.3.1; addendum 3.2; 9.5.6; DEC-09"
