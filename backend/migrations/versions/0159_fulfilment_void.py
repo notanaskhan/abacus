@@ -8,6 +8,10 @@ rule link.
   person acting (`app.actor_kind` human, `voided_by` = `app.actor_id`). Anything else is refused.
 - `abacus_human_only_actions()`: 0156's 32 entries plus `fulfilment.voided` (a decision, ADR-005);
   the downgrade restores 0156's list.
+- `evidence_version_voids` (insert-only, tenant-scoped): the version a voided rule link made is
+  retired with it, so every evidence read leaves it out as it does a withdrawn one (security
+  review): the dropped file is assigned afresh from the inbox. The void is the acting person's.
+- The database stamps `voided_at` itself (the app's value is never trusted).
 
 Revision ID: 0159
 Revises: 0158
@@ -16,6 +20,8 @@ Revises: 0158
 from __future__ import annotations
 
 from alembic import op
+
+from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0159"
 down_revision = "0158"
@@ -110,6 +116,7 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'a fulfilment void is a person''s own act'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            NEW.voided_at := clock_timestamp();
             IF EXISTS (
                 SELECT 1 FROM public.review_decisions d
                  WHERE d.tenant_id = OLD.tenant_id
@@ -128,10 +135,61 @@ def upgrade() -> None:
         "FOR EACH ROW EXECUTE FUNCTION fulfilments_void_only()"
     )
     op.execute("GRANT UPDATE (voided_at, voided_by, void_reason) ON fulfilments TO abacus_app")
+    op.execute(
+        """
+        CREATE TABLE evidence_version_voids (
+            tenant_id uuid NOT NULL,
+            evidence_version_id uuid NOT NULL,
+            engagement_id uuid NOT NULL,
+            fulfilment_id uuid NOT NULL,
+            voided_by uuid NOT NULL,
+            created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+            PRIMARY KEY (tenant_id, evidence_version_id),
+            FOREIGN KEY (tenant_id, engagement_id, evidence_version_id)
+                REFERENCES evidence_versions (tenant_id, engagement_id, id),
+            FOREIGN KEY (tenant_id, fulfilment_id) REFERENCES fulfilments (tenant_id, id)
+        )
+        """
+    )
+    tenant_table(op, "evidence_version_voids")
+    op.execute("REVOKE UPDATE, DELETE, TRUNCATE ON evidence_version_voids FROM abacus_app")
+    insert_columns(
+        op,
+        "evidence_version_voids",
+        ("tenant_id", "evidence_version_id", "engagement_id", "fulfilment_id", "voided_by"),
+    )
+    # Only the person voiding, for a fulfilment they voided, of that version.
+    op.execute(
+        """
+        CREATE FUNCTION evidence_version_voids_guard() RETURNS trigger
+        LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+               OR current_setting('app.actor_id', true) IS DISTINCT FROM NEW.voided_by::text
+               OR NOT EXISTS (
+                   SELECT 1 FROM public.fulfilments f
+                    WHERE f.tenant_id = NEW.tenant_id AND f.id = NEW.fulfilment_id
+                      AND f.evidence_version_id = NEW.evidence_version_id
+                      AND f.voided_by = NEW.voided_by
+               ) THEN
+                RAISE EXCEPTION 'a version is retired only with its voided rule link'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER evidence_version_voids_guard BEFORE INSERT ON evidence_version_voids "
+        "FOR EACH ROW EXECUTE FUNCTION evidence_version_voids_guard()"
+    )
     _human_only(_HUMAN_ONLY)
 
 
 def downgrade() -> None:
+    # Voided links come back to life with the columns: run this downgrade only before any void.
+    op.execute("DROP TABLE evidence_version_voids")
+    op.execute("DROP FUNCTION evidence_version_voids_guard()")
     _human_only(_HUMAN_ONLY_0156)
     op.execute("REVOKE UPDATE (voided_at, voided_by, void_reason) ON fulfilments FROM abacus_app")
     op.execute("DROP TRIGGER fulfilments_void_only ON fulfilments")

@@ -7,8 +7,9 @@ with `wrong_request`, in one unit of work:
 
 - requests stamps the fulfilment void (`fulfilment.voided`) and returns the request to `requested`
   when nothing else fulfils it;
-- the dropped file waits in the engagement inbox again, for a person to assign (`sort_outcome`
-  keeps `rule_linked`: it records what the sort did);
+- the version the link made is retired (`evidence_version_voids`): evidence reads, duplicate
+  checks and gates leave it out, and the dropped file waits in the engagement inbox again, for a
+  person to assign afresh (`sort_outcome` keeps `rule_linked`: it records what the sort did);
 - `fulfilment.voided` and `inbox_file.sorted` go to the outbox (the gates recompute).
 
 Only an unaccepted rule link is voidable: a version a person ever accepted, a link a person or the
@@ -26,9 +27,13 @@ from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.events import FulfilmentVoided, InboxFileSorted
-from abacus.modules.evidence.repository import ever_accepted, return_to_waiting
+from abacus.modules.evidence.repository import (
+    ever_accepted,
+    retire_voided_version,
+    return_to_waiting,
+)
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise, serving_request
-from abacus.modules.requests.api import VoidedRuleLink, rule_link_version_of, void_rule_link_in
+from abacus.modules.requests.api import VoidedRuleLink, lock_rule_link, void_rule_link_in
 
 ACTION = "fulfilment.confirm"
 
@@ -65,7 +70,8 @@ async def void_rule_link(
     async with uow(ctx.tenant) as tx:
         engagement = await lock_ref(tx, engagement_id)
         await authorise(ctx, ACTION, engagement.resource())
-        version = await rule_link_version_of(
+        # The request item is locked first, as an accept locks it (security review).
+        version = await lock_rule_link(
             tx, engagement_id=engagement_id, fulfilment_id=fulfilment_id
         )
         if version is None or await ever_accepted(tx.session, [version]):
@@ -75,6 +81,14 @@ async def void_rule_link(
         )
         if voided is None:
             raise refused
+        await retire_voided_version(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            engagement_id=engagement_id,
+            version_id=voided.evidence_version_id,
+            fulfilment_id=fulfilment_id,
+            voided_by=ctx.user_id,
+        )
         file_id = await return_to_waiting(tx.session, voided.evidence_version_id)
         tx.emit(
             FulfilmentVoided(

@@ -268,20 +268,21 @@ async def void_rule_link(
     )
 
 
-async def rule_link_version(
+async def rule_link(
     session: AsyncSession, fulfilment_id: UUID, engagement_id: UUID
-) -> UUID | None:
-    """The version a live `rule` fulfilment of the engagement links, if it is one."""
-    return (
+) -> tuple[UUID, UUID] | None:
+    """(request item, version) of a live `rule` fulfilment of the engagement, if it is one."""
+    row = (
         await session.execute(
-            select(Fulfilment.evidence_version_id).where(
+            select(Fulfilment.request_item_id, Fulfilment.evidence_version_id).where(
                 Fulfilment.id == fulfilment_id,
                 Fulfilment.engagement_id == engagement_id,
                 Fulfilment.created_by_kind == "rule",
                 live_fulfilment(),
             )
         )
-    ).scalar_one_or_none()
+    ).one_or_none()
+    return (row.request_item_id, row.evidence_version_id) if row is not None else None
 
 
 async def fulfilling_versions(session: AsyncSession, item_id: UUID) -> Sequence[UUID]:

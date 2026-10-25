@@ -171,7 +171,11 @@ async def void_fulfilment_route(
         ctx.tenant,
         route="fulfilment.void",
         key=idempotency_key,
-        body={"fulfilment_id": str(fulfilment_id), "reason": body.reason},
+        body={
+            "engagement_id": str(engagement_id),
+            "fulfilment_id": str(fulfilment_id),
+            "reason": body.reason,
+        },
         run=run,
     )
     return FulfilmentVoidedOut.model_validate(stored.body)

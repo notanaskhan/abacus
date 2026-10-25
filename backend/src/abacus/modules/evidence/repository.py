@@ -39,6 +39,7 @@ from abacus.modules.evidence.models import (
     EvidenceObjectKey,
     EvidencePage,
     EvidenceVersion,
+    EvidenceVersionVoid,
     EvidenceWithdrawal,
     InboxFile,
     PiiRegion,
@@ -161,12 +162,41 @@ async def insert_object_key(
 
 
 def not_withdrawn() -> ColumnElement[bool]:
-    """P-06-T19 (ADR-162 §4): the version was not withdrawn by the client. Every read of
-    versions applies it: a withdrawn version is as if it never arrived (the audit trail apart)."""
-    return ~(
-        select(EvidenceWithdrawal.evidence_version_id)
-        .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
-        .exists()
+    """P-06-T19 (ADR-162 §4): the version was not withdrawn by the client, nor retired with a
+    voided rule link (R-01 Story 2.2; 0159). Every read of versions applies it: such a version is
+    as if it never arrived (the audit trail apart)."""
+    return and_(
+        ~(
+            select(EvidenceWithdrawal.evidence_version_id)
+            .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
+            .exists()
+        ),
+        ~(
+            select(EvidenceVersionVoid.evidence_version_id)
+            .where(EvidenceVersionVoid.evidence_version_id == EvidenceVersion.id)
+            .exists()
+        ),
+    )
+
+
+async def retire_voided_version(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    version_id: UUID,
+    fulfilment_id: UUID,
+    voided_by: UUID,
+) -> None:
+    """R-01 Story 2.2: the version a voided rule link made leaves every evidence read."""
+    await session.execute(
+        insert(EvidenceVersionVoid).values(
+            tenant_id=tenant_id,
+            evidence_version_id=version_id,
+            engagement_id=engagement_id,
+            fulfilment_id=fulfilment_id,
+            voided_by=voided_by,
+        )
     )
 
 

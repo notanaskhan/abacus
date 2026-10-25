@@ -442,9 +442,11 @@ async def test_sec7_a_staff_drop_is_recorded_on_the_clients_behalf(firm: Firm) -
 # --- The staff void of a wrong rule link (R-01 Story 2.2; TASK-1248) ---------------------------
 
 
-async def _rule_linked(firm: Firm) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
+async def _rule_linked(
+    firm: Firm, batch: uuid.UUID | None = None
+) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
     """A dropped statement the rule linked to its request: (file, fulfilment, version)."""
-    dropped = await firm.drop(STATEMENT, "estimated-payment-q4.pdf", batch=uuid.uuid4())
+    dropped = await firm.drop(STATEMENT, "estimated-payment-q4.pdf", batch=batch or uuid.uuid4())
     file_id = uuid.UUID(dropped.json()["file_id"])
     assert await firm.sorted(file_id) == "rule_linked"
     [link] = await firm.seed.rows(
@@ -469,7 +471,8 @@ async def _void(
 
 
 async def test_story_2_2_a_person_voids_a_wrong_rule_link(firm: Firm) -> None:
-    file_id, fulfilment_id, version = await _rule_linked(firm)
+    batch = uuid.uuid4()
+    file_id, fulfilment_id, version = await _rule_linked(firm, batch)
     key = str(uuid.uuid4())
     response = await _void(firm, fulfilment_id, key=key)
     assert response.status_code == 200, response.text
@@ -516,7 +519,15 @@ async def test_story_2_2_a_person_voids_a_wrong_rule_link(firm: Firm) -> None:
     )
     replay = await _void(firm, fulfilment_id, key=key)
     assert replay.status_code == 200 and replay.json() == body
-    # The request no longer reads the link: the poll says the file waits for a person.
+    # The version is retired with the link (evidence reads leave it out), and the dropper's poll
+    # reads the file as waiting, with no request.
+    retired = await firm.seed.value(
+        "SELECT voided_by FROM evidence_version_voids WHERE evidence_version_id = $1", version
+    )
+    assert retired == firm.manager.user_id
+    polled = (await firm.poll(batch)).json()
+    assert [(f["outcome"], f["request_item_id"]) for f in polled["files"]] == [("waiting", None)]
+    # The request no longer reads the link.
     links = await firm.seed.value(
         "SELECT count(*) FROM fulfilments WHERE request_item_id = $1 AND voided_at IS NULL",
         firm.statement_item,
@@ -590,6 +601,14 @@ async def test_story_2_2_the_database_refuses_any_other_change_to_a_fulfilment(
             "UPDATE fulfilments SET request_item_id = $2 WHERE id = $1",
             fulfilment_id,
             firm.other_item,
+        )
+    with pytest.raises(Exception, match="retired only"):  # a retire without its void
+        await firm.seed.run(
+            "INSERT INTO evidence_version_voids (tenant_id, evidence_version_id, engagement_id, "
+            "fulfilment_id, voided_by) SELECT tenant_id, evidence_version_id, engagement_id, id, "
+            "$2 FROM fulfilments WHERE id = $1",
+            fulfilment_id,
+            firm.manager.user_id,
         )
     with pytest.raises(Exception, match="fulfilment"):  # a void not made by the acting person
         await firm.seed.run(

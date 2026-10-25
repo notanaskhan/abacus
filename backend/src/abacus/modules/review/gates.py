@@ -75,6 +75,7 @@ C13_EVENTS: Final = frozenset(
         "review_decision.recorded",  # evidence: a decision on a version, or its undo
         "inbox_file.sorted",  # evidence: an inbox file assigned or discarded
         "evidence_version.withdrawn",  # evidence: nothing derived from it waits on anyone
+        "fulfilment.voided",  # evidence: a voided rule link's version, likewise (R-01 Story 2.2)
     }
 )
 READ: Final = "human_gate.read"

@@ -9,6 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from decimal import Decimal
+from typing import cast
 from uuid import UUID
 
 import pytest
@@ -17,6 +18,7 @@ from pydantic import BaseModel
 import abacus.ai_gateway as gateway
 from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, boundary
 from abacus.ai_gateway.boundary import DataBoundaryRefused, enforce_boundary
+from abacus.kernel.config import Route
 from abacus.kernel.db import TenantContext
 from abacus_tools.platform_control import ControlChange, Refused
 
@@ -62,7 +64,7 @@ async def test_ai_pause_refuses_every_route_first(
     _paused_for(None, monkeypatch)
     tenant = TenantContext(uuid.uuid4(), "system", "test")
     with pytest.raises(DataBoundaryRefused) as refused:
-        await enforce_boundary(tenant, route, "evidence.screen@v0")  # type: ignore[arg-type]
+        await enforce_boundary(tenant, cast(Route, route), "evidence.screen@v0")
     assert refused.value.reason == "ai_paused"
     assert audited == ["ai.boundary_refused"]
 

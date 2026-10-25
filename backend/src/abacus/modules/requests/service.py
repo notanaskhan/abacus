@@ -73,7 +73,7 @@ from abacus.modules.requests.repository import (
     overdue_items,
     request_list_for,
     revert_to_requested,
-    rule_link_version,
+    rule_link,
     screening_subject_row,
     search_items,
     set_classification,
@@ -773,12 +773,20 @@ class VoidedRuleLink:
     voided_at: datetime
 
 
-async def rule_link_version_of(
+async def lock_rule_link(
     tx: UnitOfWork, *, engagement_id: UUID, fulfilment_id: UUID
 ) -> UUID | None:
-    """The version a live rule link of the engagement links, read in the caller's unit of work
-    (evidence checks the version was never accepted before the void)."""
-    return await rule_link_version(tx.session, fulfilment_id, engagement_id)
+    """The version a live rule link of the engagement links, with its request item locked first,
+    in the caller's unit of work: an accept locks the item before it records its decision, so a
+    void that locks it too either waits for the accept and then sees it, or goes first (the
+    accept then finds no live link). Evidence checks the version was never accepted next."""
+    found = await rule_link(tx.session, fulfilment_id, engagement_id)
+    if found is None:
+        return None
+    item_id, version_id = found
+    await get_request_item(tx.session, item_id, lock=True)
+    still = await rule_link(tx.session, fulfilment_id, engagement_id)  # read again, under lock
+    return version_id if still == found else None
 
 
 async def void_rule_link_in(
