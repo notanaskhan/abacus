@@ -99,3 +99,12 @@ export {
   TriadTree,
   type TriadTreeProps,
 } from "./evidence-triad";
+// T9 QueueDetailLayout (F-05-T55): queue, detail and evidence under three presets.
+export {
+  QUEUE_PRESETS,
+  QueueDetailLayout,
+  type QueueDetailLayoutProps,
+  type QueuePreset,
+} from "./queue-detail";
+// T8 InboxLayout (F-05-T56): the filter bar, the 392 rail and the reading pane.
+export { InboxLayout, type InboxLayoutProps } from "./inbox-layout";

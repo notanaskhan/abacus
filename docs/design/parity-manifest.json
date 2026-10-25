@@ -767,6 +767,125 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
+    },
+    "tpl-03.a": {
+      "selector": "[data-artboard=\"tpl-03a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03a.png",
+      "sha256": "262f99076c03f93b1b88b82b21a209ddebe44ad4ee132956746fc281fbdaa813",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.b": {
+      "selector": "[data-artboard=\"tpl-03b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03b.png",
+      "sha256": "6b3ba0672465c88f022dc4eae5cdbac06849c9b058c938b58cd15e8170720e73",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.c": {
+      "selector": "[data-artboard=\"tpl-03c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03c.png",
+      "sha256": "931cd1ef166a25024e53275ec024365990d35384e77b1c282476663e7c5d60b0",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.d": {
+      "selector": "[data-artboard=\"tpl-03d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03d.png",
+      "sha256": "b101acfe1e578c39e7be450322fc78fe652beaa7ae8ba93048a49f7f7b4ae496",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.e": {
+      "selector": "[data-artboard=\"tpl-03e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03e.png",
+      "sha256": "8233764419382ef5b966dc8057d8dcd6a5cb29f7f8137b33f53e9b682fe5e51b",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "t9-queue-detail.t9a": {
+      "selector": "[data-artboard=\"t9a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9a.png",
+      "sha256": "536df13098cb859445ffdbb35ab627fe374c9ac4b6722d63508b535a3773293a",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the composite 1099; the server's masked page renders replace them in the product"
+    },
+    "t9-queue-detail.t9b": {
+      "selector": "[data-artboard=\"t9b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9b.png",
+      "sha256": "324513083d7967bb104c6811401cc77de4460ba3f349aaf1588cb75d1c03b5fe",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t9-queue-detail.t9c": {
+      "selector": "[data-artboard=\"t9c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9c.png",
+      "sha256": "155ac70611dbd05625b0044973e2f88af32102a45d70f4fb8395c0d8cff0682c",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55 (DEC-354): the Ridgeline transfer and the 704(b) and Section 752 partner name the blueprint seed's Pell Street Ventures LLC and Pell Street II LLC where the board draws kit names"
+    },
+    "t9-queue-detail.t9d": {
+      "selector": "[data-artboard=\"t9d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9d.png",
+      "sha256": "da0440e82c6953c70fdc60dba16d99864f08e897d5d6b5db563025025f4d2ade",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the composite 1099"
+    },
+    "t9-queue-detail.t9e": {
+      "selector": "[data-artboard=\"t9e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9e.png",
+      "sha256": "e626c049dc13cec8b226b4634f4520167299d66209c4464664275cacd6408749",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55 (DEC-354): the Ridgeline transfer and the 704(b) partner name the blueprint seed's Pell Street Ventures LLC and Pell Street II LLC where the board draws kit names; the run's progress bar holds at 46%"
+    },
+    "t8-inbox.t8a": {
+      "selector": "[data-artboard=\"t8a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8a.png",
+      "sha256": "4da546b7bf6855fe0bbb147e927db96b39482b94fbee23d93b7aa25c0e84ce85",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8b": {
+      "selector": "[data-artboard=\"t8b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8b.png",
+      "sha256": "19750c3673058bc399a21c3f0f0cb264622b345577f720d529297daf1b957491",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8c": {
+      "selector": "[data-artboard=\"t8c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8c.png",
+      "sha256": "3f4e0a2c9590646409051949e341ee7a27635538395523adf4ffeefc0e438510",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8d": {
+      "selector": "[data-artboard=\"t8d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8d.png",
+      "sha256": "d027d236213a50383026720e94c74a4daa5c5439950aeed9d8b29e343e8c9036",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8e": {
+      "selector": "[data-artboard=\"t8e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8e.png",
+      "sha256": "ebf224567edd1da0bef5c19625e0aad02639097157489f1593bef29bbf6e0470",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
     }
   }
 }

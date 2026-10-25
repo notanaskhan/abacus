@@ -1,5 +1,5 @@
 import { type JSX, type ReactNode, useState } from "react";
-import { type Actor } from "../attribution/actor";
+import { type Actor, isPerson } from "../attribution/actor";
 import { HumanAction } from "../attribution/human-action";
 import { cn } from "../cn";
 import { Button, IconButton } from "../components/button";
@@ -58,6 +58,13 @@ export interface TriadDoc {
   approved?: boolean;
   /** Issues raised on it: the amber flag pill with the count. */
   flags?: number;
+  /** Where the flag pill leads (its tooltip): "Opens TAX-06 · Return issues". */
+  flagsNote?: string;
+  /** The ⓘ micro-pill: the row has provenance to show (SHL-09). */
+  info?: boolean;
+  /** Default true. A worksheet the firm prepares carries no document check (TPL-03's NYC
+   * worksheet shows ⓘ only). */
+  checkable?: boolean;
 }
 
 export interface TriadGroup {
@@ -212,15 +219,30 @@ function TreeDoc({
                 size="check"
                 data-flags={flags}
                 lead={<Icon name="flag" size={12} />}
+                {...(doc.flagsNote === undefined ? {} : { title: doc.flagsNote })}
               >
                 <span className="sr-only">Issues</span>
                 {flags}
               </Pill>
             )}
-            <CheckPill
-              approved={doc.approved === true}
-              {...(doc.approved === true ? { count: 1 } : {})}
-            />
+            {doc.checkable !== false && (
+              <CheckPill
+                approved={doc.approved === true}
+                {...(doc.approved === true ? { count: 1 } : {})}
+              />
+            )}
+            {doc.info === true && (
+              <Pill
+                variant="outline"
+                size="check"
+                role="img"
+                aria-label="Provenance"
+                data-info=""
+                className="w-[21px] justify-center p-0"
+              >
+                <Icon name="info" size={12} className="text-ink-3" />
+              </Pill>
+            )}
           </span>
         )}
       </button>
@@ -234,6 +256,7 @@ export function TriadFooter({
   approved,
   disabled = false,
   onApprove,
+  onUnapprove,
   onIssue,
   stacked = false,
 }: {
@@ -243,13 +266,27 @@ export function TriadFooter({
   /** No file to approve or raise an issue on (a requested document). */
   disabled?: boolean;
   onApprove?: () => void;
+  /** Given, an approved document offers the tonal "Unapprove Document" (TPL-03c) to the person who
+   * may approve it; without it the button reads "Approved", disabled. Never for an agent (INV-1). */
+  onUnapprove?: () => void;
   onIssue?: () => void;
   /** The narrow tree stacks the two; the wide one sets them in a row. */
   stacked?: boolean;
 }): JSX.Element {
   return (
     <div className={cn("flex w-full gap-[8px]", stacked ? "flex-col" : "flex-row")}>
-      {approved ? (
+      {approved && onUnapprove !== undefined && isPerson(actor) ? (
+        <Button
+          variant="tonal"
+          size="footer"
+          icon="x"
+          data-unapprove=""
+          className="flex-1"
+          onClick={onUnapprove}
+        >
+          Unapprove Document
+        </Button>
+      ) : approved ? (
         <Button variant="primary" size="footer" icon="check" disabled className="flex-1">
           Approved
         </Button>
@@ -300,6 +337,8 @@ export interface EvidenceTriadProps {
   tabs: { options: readonly Opt[]; active: string; label: string; onChange?: (l: string) => void };
   preset?: TriadPreset;
   defaultPreset?: TriadPreset;
+  /** The layout menu's options (default TRIAD_VIEWS); TPL-03 names each with its widths. */
+  views?: readonly ViewOption[];
   onPreset?: (preset: TriadPreset) => void;
   /** The tree pane: its search, its body and its footer. */
   tree: {
@@ -326,6 +365,7 @@ export function EvidenceTriad({
   tabs,
   preset,
   defaultPreset = "review",
+  views = TRIAD_VIEWS,
   onPreset,
   tree,
   viewer,
@@ -402,7 +442,7 @@ export function EvidenceTriad({
           {...(tabs.onChange === undefined ? {} : { onChange: tabs.onChange })}
           view={{
             view: current,
-            views: TRIAD_VIEWS,
+            views,
             onView: (v) => {
               const next = v as TriadPreset;
               setOwn(next);

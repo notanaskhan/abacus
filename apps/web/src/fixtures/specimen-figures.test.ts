@@ -9,6 +9,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { getSeed, meFor } from "./seed";
+import { sectionOf } from "../domain/clients";
+import { RIDGELINE, clientRecords } from "./seed/client-records";
+import { K1_FIGURES } from "./seed/trust";
 
 const seed = getSeed();
 
@@ -94,6 +97,32 @@ describe("the TPL-02 source documents are the seed's Northwind PBC list (F-05-T5
     expect(received.length).toBe(SPECIMEN_SEED.REQUEST_COUNTS.northwind.received);
     // Only a received document has a file path.
     expect(SPECIMEN_SEED.NORTHWIND_PBC.filter((r) => r.path !== undefined)).toEqual(received);
+  });
+});
+
+describe("the TPL-03 Feld K-1 is the seed's (F-05-T54)", () => {
+  const plain = (v: string): string => v.replace(/,/g, "");
+  it("boxes 2, 5 and 18A are the K-1 the viewer cites: 307,900 · 4,600 · 1,550", () => {
+    const { FELD_K1 } = SPECIMEN_SEED;
+    expect(K1_FIGURES.map((c) => plain(c.value_text ?? ""))).toEqual([
+      FELD_K1.box2,
+      FELD_K1.box5,
+      FELD_K1.box18a,
+    ]);
+  });
+
+  it("box 2 per partner is Ridgeline's K-1 packages; Feld's row is the specimen's", () => {
+    const k1 = sectionOf(clientRecords(seed)[RIDGELINE].overview, "k1_packages")?.items ?? [];
+    expect(k1.map((i) => i.figure)).toEqual(SPECIMEN_SEED.RIDGELINE_K1S.map((k) => k.box2));
+    const feld = SPECIMEN_SEED.RIDGELINE_K1S.find((k) => k.partner === "Jonah Feld");
+    expect(feld).toEqual({
+      partner: "Jonah Feld",
+      box2: SPECIMEN_SEED.FELD_K1.box2,
+      box5: SPECIMEN_SEED.FELD_K1.box5,
+      box18a: SPECIMEN_SEED.FELD_K1.box18a,
+      box19a: SPECIMEN_SEED.FELD_K1.box19a,
+    });
+    expect(SPECIMEN_SEED.FELD_K1.box19a).toBe("150000");
   });
 });
 

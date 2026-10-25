@@ -104,6 +104,9 @@ import { T11Specimen, Tpl11Specimen } from "./dashboard";
 import { SourceViewerSpecimen } from "./viewer";
 import { Tpl02Specimen } from "./tpl02";
 import { T3Specimen } from "./t3";
+import { Tpl03Specimen } from "./tpl03";
+import { T9Specimen } from "./t9";
+import { T8Specimen } from "./t8";
 import { FieldRowsSpecimen, GridSpecimen, LeadsheetSpecimen, VirtualGridSpecimen } from "./data-3";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
@@ -275,6 +278,12 @@ export const SPECIMENS: readonly Specimen[] = [
   },
   // T3 EvidenceTriad (F-05-T53): Review, Prepare and Two-pane presets, T3a to T3e
   { id: "t3-evidence-triad", kit: "T3", title: "Evidence triad", Component: T3Specimen },
+  // T8 InboxLayout and the C-15/C-18 File kit (F-05-T56): T8a to T8e
+  { id: "t8-inbox", kit: "T8", title: "Inbox master-detail", Component: T8Specimen },
+  // T9 QueueDetailLayout and the C-17 Issue kit (F-05-T55): T9a to T9e
+  { id: "t9-queue-detail", kit: "T9", title: "Queue · detail · evidence", Component: T9Specimen },
+  // TPL-03 Feld 1040 review specimen (F-05-T54): TPL-03a to TPL-03e
+  { id: "tpl-03", kit: "TPL-03", title: "Evidence triad specimen", Component: Tpl03Specimen },
   // TPL-02 Northwind 401(k) cockpit specimen (F-05-T51): TPL-02a to TPL-02e
   { id: "tpl-02", kit: "TPL-02", title: "Record cockpit specimen", Component: Tpl02Specimen },
   // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar

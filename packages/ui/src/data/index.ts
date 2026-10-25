@@ -29,6 +29,7 @@ export {
   TALLY_STAGGER_MS,
   type TallyCode,
   type TallyItem,
+  type TallyPillSpec,
   TallyStrip,
   type TallyStripProps,
 } from "./tally-strip";

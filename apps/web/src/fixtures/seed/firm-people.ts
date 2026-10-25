@@ -20,8 +20,10 @@ import type {
   StaffListOut,
   StaffRowV2Out,
   StaffTalliesOut,
+  WallOut,
 } from "@abacus/api-client";
 import { ROLE_TEMPLATES } from "../../app-core/roleTemplates.gen";
+import { slugOfClient } from "./clients";
 import { JOB_TITLES, OFFICES, SEATS, type Seat, type SeatRole, emailOf, slugOf } from "./people";
 import { stableId } from "./prng";
 
@@ -295,6 +297,71 @@ const LENA_SIGN_INS = [
   { at: "2026-09-10T08:05:00-05:00", method: "Microsoft SSO", mfa: true, ip: "198.51.100.62" },
 ];
 export const ASHFORD_WALL = stableId("wall:lena-park:ashford-manufacturing-co");
+
+/** ADM-03's three walls (G-01 §5.3): person, client, reason, added, approver. Lena Park's is
+ * today's, active at once and awaiting Margaret Okonkwo (DEC-73); the other two are approved. */
+const WALLS: readonly {
+  id: string;
+  person: string;
+  client: string;
+  reason: WallOut["reason_code"];
+  text: string;
+  at: string;
+  approver: string;
+  approvedAt: string | null;
+}[] = [
+  {
+    id: stableId("wall:victor-hammond:two-rivers-brewing-co"),
+    person: "VH",
+    client: "Two Rivers Brewing Co.",
+    reason: "financial_interest",
+    text: "Ownership stake",
+    at: "2026-02-03T10:00:00-06:00",
+    approver: "MO",
+    approvedAt: "2026-02-03T10:00:00-06:00",
+  },
+  {
+    id: ASHFORD_WALL,
+    person: "LP",
+    client: "Ashford Manufacturing Co.",
+    reason: "personal_relationship",
+    text: "Family member employed at Ashford",
+    at: "2026-09-14T09:20:00-05:00",
+    approver: "MO",
+    approvedAt: null,
+  },
+  {
+    id: stableId("wall:paige-sutton:harold-stein"),
+    person: "PS",
+    client: "Harold Stein",
+    reason: "relative",
+    text: "Brother-in-law",
+    at: "2026-02-18T10:00:00-06:00",
+    approver: "DR",
+    approvedAt: "2026-02-18T10:00:00-06:00",
+  },
+];
+
+/** `GET /v1/walls` (SPEC-002; G-01-T09's register) for the three walls. */
+export function firmWalls(): WallOut[] {
+  const grace = userIdOf(seatOf("GH"));
+  return WALLS.map((w) => ({
+    id: w.id,
+    user_id: userIdOf(seatOf(w.person)),
+    client_id: stableId(`client:${slugOfClient(w.client)}`),
+    reason_code: w.reason,
+    reason_text: w.text,
+    created_by: grace,
+    created_at: w.at,
+    approver_user_id: userIdOf(seatOf(w.approver)),
+    approval_status: w.approvedAt === null ? "awaiting" : "approved",
+    approved_at: w.approvedAt,
+    status: "active",
+    removed_at: null,
+    removed_by: null,
+    removed_reason: null,
+  }));
+}
 
 /** `GET /v1/firm/staff/{user_id}`: ADM-02d's drawer (Lena Park's facts from the design). */
 export function personOut(userId: string, snapshot: PeopleSnapshot = "e0"): PersonOut | undefined {

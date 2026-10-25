@@ -5,20 +5,67 @@
 // pending (46 of 46 · 1 pending, no 47th name); g is Margaret Okonkwo on the annual independence
 // segment (DF-07: no design data, so every member reads "Not yet").
 
-import { defineScenarios } from "../../app-core/fixture-mode";
+import type { CapabilitiesOut } from "@abacus/api-client";
+import { type FixtureRequest, defineScenarios, json } from "../../app-core/fixture-mode";
 import { firmSettingsHandlers } from "../handlers/firm-settings";
 import { seedScenario } from "../scenario";
+import { getSeed } from "../seed";
 import { DEMO_INSTANT } from "../seed/clock";
 import { type PeopleSnapshot, seatOf, userIdOf } from "../seed/firm-people";
+import { capabilitiesFor } from "../seed/shell";
 
 const E0 = seedScenario();
+const seed = getSeed();
+
+/** The matrix's answers for the two viewers (identity.yaml): Grace Holloway is the firm admin;
+ * Margaret Okonkwo is a partner (`firm.read_people`, `independence.annual_read`, the wall
+ * register), who can't read the people list while it stays on `firm.manage_users` (DEC-286). */
+const ACTIONS: Readonly<Record<string, readonly string[]>> = {
+  "grace-holloway": [
+    "firm.read_settings",
+    "firm.manage_settings",
+    "firm.read_people",
+    "firm.manage_users",
+    "security_role.assign",
+    "independence.annual_read",
+    "wall.list",
+    "wall.create",
+  ],
+  "margaret-okonkwo": [
+    "firm.read_settings",
+    "firm.read_people",
+    "independence.annual_read",
+    "wall.list",
+    "wall.create",
+  ],
+};
+
+function capabilities(persona: string | undefined): CapabilitiesOut {
+  const slug = persona ?? "grace-holloway";
+  const base = capabilitiesFor(seed, slug);
+  return {
+    ...base,
+    capabilities: [...base.capabilities, ...(ACTIONS[slug] ?? [])],
+    flags: { ...base.flags, "firm_settings.v2": true },
+  };
+}
 export const CLOCK_E = "2026-11-02T09:24:00-06:00";
 export const CLOCK_F = "2026-01-05T10:12:00-06:00";
 export const LENA = userIdOf(seatOf("LP"));
 
 function at(state: string, persona: string, clock: string, snapshot: PeopleSnapshot) {
   const own = firmSettingsHandlers(persona === "grace-holloway" ? "admin" : "partner", snapshot);
-  return { state, persona, clock, handlers: { ...own, ...E0.handlers, ...own } };
+  return {
+    state,
+    persona,
+    clock,
+    handlers: {
+      ...own,
+      ...E0.handlers,
+      ...own,
+      "GET /v1/me/capabilities": ({ persona: who }: FixtureRequest) => json(capabilities(who)),
+    },
+  };
 }
 
 export const scenarios = defineScenarios({

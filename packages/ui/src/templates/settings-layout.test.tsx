@@ -65,6 +65,30 @@ describe("SettingsLayout", () => {
     expect(onSelect).toHaveBeenCalledWith("people");
   });
 
+  it("a list section (ADM-02): wide body, centred segments and its own header actions", () => {
+    render(
+      <SettingsLayout
+        toolbar={TOOLBAR}
+        title="Firm settings"
+        navTitle="Settings"
+        groups={GROUPS}
+        active="people"
+        dirty={false}
+        wide
+        headerCenter={<span>Segments</span>}
+        headerActions={<button type="button">Invite user…</button>}
+      >
+        <p>Table</p>
+      </SettingsLayout>,
+    );
+    expect(screen.getByRole("heading", { name: "People", level: 2 })).toBeTruthy();
+    expect(screen.getByText("Segments").closest("[data-pane='center']")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Invite user…" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+    expect(screen.getByText("Table").closest("[data-settings='list']")).not.toBeNull();
+    expect(document.querySelector("[data-settings='form']")).toBeNull();
+  });
+
   it("draws the step-up slot over the shell when the screen passes one", () => {
     render(
       <SettingsLayout
