@@ -31,3 +31,7 @@ The gateway owns the data; this module authorises and serves it.
 
 ## Search slot (C15; `slots.py`)
 `register_search_projection(object_type, builder)`; an unregistered type is never indexed (fail closed).
+
+## Platform jobs and the canary (Q-01-T26, T30; DEC-358, DEC-359)
+- `SpendAnomalyWorkflow` (`jobs.py`, background) runs `ai_gateway.budgets.flag_anomalies` once an hour on the Schedule `spend_anomaly:platform`. `schedules()` in `api.py` declares it, and the canary's when `canary_tenant_id` is set; `python -m abacus_tools.schedules ensure` creates them (`kernel.dispatch.schedule`; overlap SKIP, one-hour catch-up).
+- `CanaryWorkflow` (`workflows.py`, time_sensitive; activities and checks in `canary.py`) runs every 15 minutes as the canary staff member of a synthetic firm. The steps go through the `CanaryProbe` port, whose service implementation lives beside the worker (`abacus.worker.canary_probe`), because this module depends on identity only (ADR-008). The INV-2 check, the route the boundary allows and the page on the second consecutive failure are decided here, in code; paging reads the Schedule's previous runs (`kernel.dispatch.schedule_results`), so the canary writes no row of its own.
