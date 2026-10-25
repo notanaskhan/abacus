@@ -233,6 +233,15 @@ export {
   TooltipProvider,
 } from "./components/popover";
 export { type Column, DataTable } from "./components/data-table";
+export {
+  type CapabilityCell,
+  type CapabilityColumn,
+  CapabilityMatrix,
+  type CapabilityMatrixProps,
+  type CapabilityRow,
+  type CapabilityWords,
+  capabilityText,
+} from "./components/capability-matrix";
 export { NumberedCitation } from "./components/citation";
 export {
   Amount,

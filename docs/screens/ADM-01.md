@@ -53,7 +53,7 @@ Copy keys live in `screens/ADM-01/copy.ts`; strings verbatim from spec.md. Key s
 ## Links
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
-| Section row "People"; At a glance People | ADM-02 `/settings/people` | built by G-01-T10 (fixture) |
+| Section row "People"; At a glance People | ADM-02 `/settings/people` | built by G-01-T10 (fixture); wired in `routes/firm/settings.tsx` (DEC-195) |
 | Section row "Offices & teams"; At a glance Offices & teams; an office row | ADM-03 `/settings/offices` (`?expand=<code>`) | planned (G-01-T14) |
 | Security · AI policy · Consents · Developer · Integrations · Portal · Quality · Monitoring · Audit log | ADM-06 · ADM-04 · ADM-05 · ADM-09 · ADM-08 · ADM-10 · ADM-11 · ADM-12 · ADM-07 | planned (G-02, T-01, R-01, Q-05); "not built yet" in dev and fixture builds, hidden in production |
 | "Add seats" helper | ADM-14 plan dialog (`?ov=add-seats`) | fixture only until G-04 |

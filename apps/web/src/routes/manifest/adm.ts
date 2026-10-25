@@ -9,7 +9,14 @@ export const admScreens = {
     status: "fixture", // G-01-T07: live behind firm_settings.v2 once walked on staging
     path: "/settings/general",
   },
-  "ADM-02": { name: "Users & roles · permission matrix", status: "planned", path: null },
+  // G-01-T10 built a–g on fixtures at /settings/people behind `firm_settings.v2`. It stays planned
+  // for the reason CLI-02 does (cli.ts, DEC-195): ADM-01 → ADM-02 is wired in routes/firm
+  // (settings.tsx), since `to` carries the manifest's names, which the production dist must not hold.
+  "ADM-02": {
+    name: "Users & roles · permission matrix",
+    status: "planned",
+    path: "/settings/people",
+  },
   "ADM-03": { name: "Offices, teams, walls & offshore", status: "planned", path: null },
   "ADM-04": { name: "AI policy & approval gates", status: "planned", path: null },
   "ADM-05": { name: "Consent registry (§7216)", status: "planned", path: null },

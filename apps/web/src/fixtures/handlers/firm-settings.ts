@@ -3,7 +3,12 @@
 // answers as the live route does for the viewer the scenario names; a save bumps the section's
 // version, an empty display name answers 422, and inviting with every seat held answers 409.
 
-import type { AnnualIndependenceOut, MeOut, SettingsPatchIn } from "@abacus/api-client";
+import type {
+  AnnualIndependenceOut,
+  MeOut,
+  PersonPatchIn,
+  SettingsPatchIn,
+} from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { getSeed, meFor } from "../seed";
 import {
@@ -13,6 +18,7 @@ import {
   type SettingsViewer,
   firmOffices,
   firmTeams,
+  firmWalls,
   personOut,
   roleTemplatesOut,
   settingsOverview,
@@ -83,17 +89,54 @@ export function firmSettingsHandlers(
       const found = personOut(params.user_id ?? "", snapshot);
       return found === undefined ? json(NOT_FOUND, 404) : json(found);
     },
+    "GET /v1/walls": () => json(firmWalls()),
+    // AC4.6 with no consent provider (DEC-286): offshore on over assignments is refused.
+    "PATCH /v1/firm/staff/{user_id}": ({ params, body }) => {
+      if (viewer !== "admin") return json({ detail: "forbidden" }, 403);
+      const found = personOut(params.user_id ?? "", snapshot);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      const patch = body as PersonPatchIn;
+      if (patch.version !== found.version) return json({ detail: "stale_version" }, 409);
+      if (patch.offshore === true && (found.assignment_count ?? 0) > 0) {
+        return json(
+          {
+            detail: "offshore_assignment_conflict",
+            facts: { assignments: found.assignment_count },
+          },
+          409,
+        );
+      }
+      return json({
+        ...found,
+        row: { ...found.row, offshore: patch.offshore ?? found.row.offshore },
+        version: found.version + 1,
+      });
+    },
+    "PUT /v1/firm/staff/{user_id}/role": ({ params }) =>
+      viewer === "admin" ? json({ id: params.user_id ?? "" }) : json({ detail: "forbidden" }, 403),
+    "POST /v1/firm/staff/{user_id}/deactivate": ({ params }) => {
+      if (viewer !== "admin") return json({ detail: "forbidden" }, 403);
+      const found = personOut(params.user_id ?? "", snapshot);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      return json({
+        ...found,
+        row: { ...found.row, status: "deactivated", allowed_actions: [] },
+      });
+    },
+    // DEC-286: the list stays on `firm.manage_users`, so a partner or security admin is refused.
     "GET /v1/firm/staff": ({ query }) =>
-      json(
-        staffList(snapshot, {
-          q: query.get("q"),
-          role_template: query.get("role_template"),
-          office_id: query.get("office_id"),
-          team_id: query.get("team_id"),
-          status: query.get("status"),
-          band: query.get("band"),
-        }),
-      ),
+      viewer !== "admin"
+        ? json({ detail: "forbidden" }, 403)
+        : json(
+            staffList(snapshot, {
+              q: query.get("q"),
+              role_template: query.get("role_template"),
+              office_id: query.get("office_id"),
+              team_id: query.get("team_id"),
+              status: query.get("status"),
+              band: query.get("band"),
+            }),
+          ),
     "POST /v1/firm/staff/invitations": () => {
       const t = tallies(staffRows(snapshot));
       const total = t.seats_total ?? 0;

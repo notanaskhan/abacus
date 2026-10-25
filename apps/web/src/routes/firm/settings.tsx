@@ -1,5 +1,5 @@
 import { EmptyState } from "@abacus/ui";
-import { createRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useCan } from "../../app-core/can";
 import { FeatureGate } from "../../app-core/flags";
@@ -47,6 +47,29 @@ const screens = {
 // (G-01 §5.1) and answer "not built yet" until their screens land. The /admin redirects wait for
 // the People and Offices & teams screens (T10, T14), so they don't point at a planned page.
 const FirmSettingsGeneral = lazyScreen(async () => (await import("../../screens/ADM-01")).ADM01);
+// G-01-T10: ADM-02 at /settings/people behind the same flag; its segment, filters, highlighted
+// template and open overlay live in the URL (G-01 §5.1), never a name or an email.
+const FirmSettingsPeople = lazyScreen(async () => (await import("../../screens/ADM-02")).ADM02);
+interface PeopleSearch {
+  segment?: string;
+  role?: string;
+  office?: string;
+  team?: string;
+  status?: string;
+  q?: string;
+  template?: string;
+  ov?: string;
+}
+const PEOPLE_SEARCH = [
+  "segment",
+  "role",
+  "office",
+  "team",
+  "status",
+  "q",
+  "template",
+  "ov",
+] as const;
 
 function NotBuilt(): JSX.Element {
   return (
@@ -66,6 +89,41 @@ const settingsGeneralRoute = createRoute({
       <div className="flex min-h-0 flex-1 flex-col">
         <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
           <FirmSettingsGeneral
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+const settingsPeopleRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/people",
+  validateSearch: (search: Record<string, unknown>): PeopleSearch =>
+    Object.fromEntries(
+      PEOPLE_SEARCH.flatMap((key) => {
+        const value = search[key];
+        return typeof value === "string" && value !== "" ? [[key, value]] : [];
+      }),
+    ),
+  component: function SettingsPeoplePage(): JSX.Element {
+    // Loose hooks: the page also mounts in tests' routers (the same path, any tree).
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
+          <FirmSettingsPeople
+            search={search}
+            onSearch={(next) => {
+              void navigate({ to: ".", search: { ...next }, replace: true });
+            }}
             onNavigate={(section) => {
               void navigate({ to: "/settings/$section", params: { section } });
             }}
@@ -108,6 +166,7 @@ const methodologyVersionRoute = createRoute({
 
 export const settingsRoutes = [
   settingsGeneralRoute,
+  settingsPeopleRoute,
   settingsSectionRoute,
   adminRoute.addChildren([
     section("/admin/methodology", () => <screens.Methodology />),

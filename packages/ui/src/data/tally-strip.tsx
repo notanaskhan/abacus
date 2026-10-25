@@ -4,7 +4,7 @@ import { Pill } from "../components/pill";
 import { TallyPill } from "../components/status";
 import { Icon } from "../icons";
 import { useMotion } from "../motion";
-import type { RegistryCode } from "../status";
+import type { PillVariant, RegistryCode } from "../status";
 
 // TallyStrip (C-01 spec 06; F-05-T43): the row of check cards over a workbook or a workpaper
 // ("CAPITAL FOOTS · Ties", "K-1s ISSUED · 3 / 4"). Each card is 52 tall, white e1, radius 10, an
@@ -24,11 +24,28 @@ interface TallyBase {
   link?: { text: string; onClick: () => void };
 }
 
+/** A pill on a card: after a value ("46 of 46" · "Full", ADM-02a) or as the second line itself
+ * (SIGN-IN "SSO + MFA 46 of 46", green with a check). */
+export interface TallyPillSpec {
+  text: string;
+  variant: PillVariant;
+  check?: boolean;
+}
+
 export type TallyItem =
-  | (TallyBase & { value: string; info?: string })
+  | (TallyBase & { value: string; info?: string; pill?: TallyPillSpec })
+  | (TallyBase & { pill: TallyPillSpec })
   | (TallyBase & { tally: TallyCode; vars?: Readonly<Record<string, string | number>> })
   | (TallyBase & { running: string })
   | (TallyBase & { signs: readonly { initials: string; when?: string; name: string }[] });
+
+function TallyPillOf({ pill }: { pill: TallyPillSpec }): JSX.Element {
+  return (
+    <Pill variant={pill.variant} size="sm" {...(pill.check === true ? { check: true } : {})}>
+      {pill.text}
+    </Pill>
+  );
+}
 
 function Second({ item }: { item: TallyItem }): JSX.Element {
   if ("value" in item) {
@@ -42,9 +59,11 @@ function Second({ item }: { item: TallyItem }): JSX.Element {
             <Icon name="info" size={15} className="text-ink-3" />
           </span>
         )}
+        {item.pill !== undefined && <TallyPillOf pill={item.pill} />}
       </span>
     );
   }
+  if ("pill" in item) return <TallyPillOf pill={item.pill} />;
   if ("tally" in item) {
     return (
       <TallyPill code={item.tally} {...(item.vars === undefined ? {} : { vars: item.vars })} />
