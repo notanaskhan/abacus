@@ -76,6 +76,9 @@ export const newEngagementRoute = createRoute({
           onCreated={(engagementId) => {
             void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
           }}
+          onOpen={(engagementId) => {
+            void navigate({ to: "/engagements/$engagementId", params: { engagementId } });
+          }}
         />
       </FeatureGate>
     );

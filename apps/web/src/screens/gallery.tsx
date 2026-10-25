@@ -49,6 +49,7 @@ import {
 import { EngagementRecordPage } from "./ENG-02";
 import { ENG03 } from "./ENG-03";
 import {
+  CONSENTS as ENG03_CONSENTS,
   OPENS as ENG03_OPENS,
   STATES as ENG03_STATES,
   type Eng03State,
@@ -499,7 +500,8 @@ function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("SHL-14", { title: "Request composer drawer", Component: Shl14Artboard });
 
-// ENG-03 (P-07-T21): the wizard over an empty frame, on the artboard's draft.
+// ENG-03 (P-07-T21, T34): the wizard over an empty frame, on the artboard's draft; e's §7216
+// consents card is fixture-only (DEC-345) and only the gallery passes it.
 function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Eng03State = ENG03_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -517,7 +519,7 @@ function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} className="h-[900px]">
-      <ENG03 draftId={ENG03_OPENS[state]} />
+      <ENG03 draftId={ENG03_OPENS[state]} consents={ENG03_CONSENTS[state]} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
-// ENG-03 · New engagement wizard, core (P-07-T21). One test per artboard this task builds (a, b,
-// c, d, f) on its fixture scenario, the contract's acceptance bullets for them, P-07 Story 6.3,
+// ENG-03 · New engagement wizard (P-07-T21 core; P-07-T34 e, g, h and the type-shaped steps). One
+// test per artboard on its fixture scenario, the contract's acceptance bullets for them, P-07 Story 6.3,
 // and the task's acceptance: "Scenarios a to d and f pass, Next stays disabled with the reason
 // announced while G1 is unmet, and the f tooltip text is verbatim."
 import { client } from "@abacus/api-client/client";
@@ -15,7 +15,12 @@ import { renderRoutes } from "../../testing/support";
 import { ENG03, catalogueGroups } from ".";
 import {
   CLOCK_AUG_24,
+  CLOCK_MAY_11,
+  CLOCK_SEP_14,
+  CLOCK_SEP_14_951,
   CLOCK_SEP_8,
+  CONSENTS,
+  FERRIS_DUPLICATE,
   type Eng03State,
   OPENS,
   STATES,
@@ -40,7 +45,11 @@ interface Seen {
   calls: { method: string; path: string; body: unknown }[];
 }
 
-function show(state: Eng03State, onCreated?: (id: string) => void): Seen {
+function show(
+  state: Eng03State,
+  onCreated?: (id: string) => void,
+  extra: { onOpen?: (id: string) => void; consents?: boolean } = {},
+): Seen {
   const seen: Seen = { calls: [] };
   const scenario: Scenario = freshScenario(state);
   const handlers = Object.fromEntries(
@@ -57,7 +66,12 @@ function show(state: Eng03State, onCreated?: (id: string) => void): Seen {
     {
       path: "/",
       component: () => (
-        <ENG03 draftId={OPENS[state]} {...(onCreated === undefined ? {} : { onCreated })} />
+        <ENG03
+          draftId={OPENS[state]}
+          {...(onCreated === undefined ? {} : { onCreated })}
+          {...(extra.onOpen === undefined ? {} : { onOpen: extra.onOpen })}
+          {...(extra.consents === true ? { consents: CONSENTS[state] } : {})}
+        />
       ),
     },
   ]);
@@ -73,11 +87,17 @@ function next(): HTMLButtonElement {
 }
 
 describe("ENG-03 artboards", () => {
-  it("defines a, b, c, d and f as Hannah Leclerc; d on Aug 24", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "f"]);
-    for (const s of STATES) expect(scenarios[s].persona).toBe("hannah-leclerc");
+  it("defines a–h: Hannah Leclerc a–f (d on Aug 24, e on Sep 14), Margaret g, Celia h", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
+    for (const s of ["a", "b", "c", "d", "e", "f"] as const)
+      expect(scenarios[s].persona).toBe("hannah-leclerc");
+    expect(scenarios.g.persona).toBe("margaret-okonkwo");
+    expect(scenarios.h.persona).toBe("celia-marsh");
     expect(scenarios.d.clock).toBe(CLOCK_AUG_24);
     expect(scenarios.a.clock).toBe(CLOCK_SEP_8);
+    expect(scenarios.e.clock).toBe(CLOCK_SEP_14);
+    expect(scenarios.g.clock).toBe(CLOCK_SEP_14_951);
+    expect(scenarios.h.clock).toBe(CLOCK_MAY_11);
   });
 
   it("ENG-03a step 1: Fairhaven, EBP audit selected, G1 met", async () => {
@@ -241,5 +261,160 @@ describe("ENG-03 acceptance", () => {
     expect(toastStore.list().map((t) => t.text)).toContain(
       "Engagement created · PY2025 EBP Audit",
     );
+  });
+});
+
+function stepLabels(): string[] {
+  const steps = within(wizard()).getByRole("navigation", { name: "Steps" });
+  return within(steps)
+    .getAllByRole("listitem")
+    .map((li) => li.textContent);
+}
+
+async function pickType(seen: Seen, label: string): Promise<void> {
+  const card = (await within(wizard()).findByText(label)).closest("button");
+  if (card === null) throw new Error(`no ${label} card`);
+  const before = seen.calls.filter((c) => c.method === "PATCH").length;
+  fireEvent.click(card);
+  await waitFor(() => {
+    expect(seen.calls.filter((c) => c.method === "PATCH").length).toBe(before + 1);
+  });
+}
+
+describe("ENG-03 remaining types (P-07-T34)", () => {
+  it("ENG-03e Ferris, Form 1040, step 5: Return setup, G2 not required, the §7216 consents card (fixture-only)", async () => {
+    show("e", undefined, { consents: true });
+    await within(await screen.findByRole("dialog")).findByText("Portal contacts");
+    expect(stepLabels()[1]).toContain("Return setup");
+    expect(within(wizard()).getByText("G2 Independence — not required (non-attest)")).toBeTruthy();
+    expect(within(wizard()).getByText("§7216 consents")).toBeTruthy();
+    expect(
+      within(wizard()).getByText(
+        "Use · AI disclosure (2 consents) · 1 of 2 signed (Morgan ✓ · Kai ○)",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(wizard()).getByText(
+        "Agents cannot read Ferris return information until both spouses sign.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("ENG-03e without the fixture slot (the route's case) draws no consents card: C19 is not live", async () => {
+    show("e");
+    await within(await screen.findByRole("dialog")).findByText("Portal contacts");
+    expect(within(wizard()).queryByText("§7216 consents")).toBeNull();
+  });
+
+  it("ENG-03e Create answers possible_duplicate: the notice offers Open it and Create anyway; the gate blocks agents, not the engagement", async () => {
+    const onCreated = vi.fn();
+    const onOpen = vi.fn();
+    const seen = show("e", onCreated, { onOpen, consents: true });
+    await within(await screen.findByRole("dialog")).findByText("Portal contacts");
+    fireEvent.click(next());
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.method === "PATCH")).toBe(true);
+    });
+    fireEvent.click(await within(wizard()).findByRole("button", { name: "Create" }));
+    const notice = await within(wizard()).findByRole("status", {
+      name: (_n, el) => el.hasAttribute("data-duplicate"),
+    });
+    expect(
+      within(notice).getByText("TY2025 Form 1040 already exists for Morgan & Kai Ferris"),
+    ).toBeTruthy();
+    expect(onCreated).not.toHaveBeenCalled();
+    fireEvent.click(within(notice).getByRole("button", { name: "Open it" }));
+    expect(onOpen).toHaveBeenCalledWith(FERRIS_DUPLICATE);
+    fireEvent.click(within(notice).getByRole("button", { name: "Create anyway" }));
+    await waitFor(() => {
+      expect(onCreated).toHaveBeenCalledTimes(1);
+    });
+    const creates = seen.calls.filter((c) => c.path.endsWith("/create"));
+    expect(creates.map((c) => c.body)).toEqual([{}, { confirm_duplicate: true }]);
+  });
+
+  it("ENG-03g Harlow & Pike: FS audit with Group audit (SAS 149) on, G2 all confirmed, Set up with AI planned", async () => {
+    show("g");
+    expect(
+      await within(await screen.findByRole("dialog")).findByText("Harlow & Pike Holdings, Inc."),
+    ).toBeTruthy();
+    const fs = within(wizard()).getByText("FS audit").closest("button");
+    expect(fs?.getAttribute("aria-pressed")).toBe("true");
+    const toggle = within(wizard()).getByRole("switch", { name: "Group audit (SAS 149)" });
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    expect(
+      within(wizard()).getByText(
+        "Adds the Group band (structure, scoping, component auditors) to the cockpit. SAS 149 applies to periods ending on or after Dec 15, 2026.",
+      ),
+    ).toBeTruthy();
+    expect(within(wizard()).getByText("G2 Team independence — all confirmed")).toBeTruthy();
+    expect(within(wizard()).getByText("Start from last year's files")).toBeTruthy();
+    const ai = within(wizard()).getByRole("button", { name: "Set up with AI…" });
+    expect((ai as HTMLButtonElement).disabled).toBe(true);
+    expect(ai.getAttribute("title")).toBe("Opens ENG-14 · Set up with AI");
+    expect(
+      within(wizard()).getByText(
+        "FY2026 Group Financial Statement Audit · Harlow & Pike Holdings, Inc. (group)",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("the Group audit toggle needs FS audit and the group_audit entitlement (a: Hannah has neither)", async () => {
+    const seen = show("a");
+    await within(await screen.findByRole("dialog")).findByText("Fairhaven Foods, Inc.");
+    expect(within(wizard()).queryByText("Group audit (SAS 149)")).toBeNull();
+    await pickType(seen, "FS audit");
+    expect(within(wizard()).queryByText("Group audit (SAS 149)")).toBeNull();
+  });
+
+  it("ENG-03h Tessellate, SOC 2 on step 2: SSAE · AT-C 205, the period, no §103(a)(3)(C) scope", async () => {
+    show("h");
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByText("SSAE · AT-C 205")).toBeTruthy();
+    expect(within(dialog).getByText("Oct 1, 2025 – Sep 30, 2026 · Type 2")).toBeTruthy();
+    expect(within(dialog).queryByRole("tablist", { name: "Audit scope" })).toBeNull();
+    expect(within(dialog).getByText("Draft · saved 10:00 AM")).toBeTruthy();
+  });
+
+  it("P-07-T34 acceptance: a firm without the attest entitlement cannot select SOC cards; with it (h) SOC 2 is selected", async () => {
+    show("a");
+    await within(await screen.findByRole("dialog")).findByText("Fairhaven Foods, Inc.");
+    for (const soc of ["SOC 1", "SOC 2"]) {
+      const card = within(wizard()).getByText(soc).closest("[data-type]");
+      expect(card?.getAttribute("data-availability")).toBe("coming-soon");
+      expect(card?.tagName).not.toBe("BUTTON");
+    }
+    cleanup();
+    restore?.();
+    restore = undefined;
+    const seen = show("h");
+    await within(await screen.findByRole("dialog")).findByText("SSAE · AT-C 205");
+    fireEvent.click(within(wizard()).getByRole("button", { name: "Back" }));
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.method === "PATCH")).toBe(true);
+    });
+    const soc2 = (await within(wizard()).findByText("SOC 2")).closest("[data-type]");
+    expect(soc2?.getAttribute("data-availability")).toBe("available");
+    expect(soc2?.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("the steps re-shape by type: Form 1040 reads Return setup, Monthly close the planned Close plan template, Advisory adds the planned proposal", async () => {
+    const seen = show("a");
+    await within(await screen.findByRole("dialog")).findByText("Fairhaven Foods, Inc.");
+    expect(stepLabels()[1]).toContain("Standards & methodology");
+    await pickType(seen, "Form 1040");
+    await waitFor(() => {
+      expect(stepLabels()[1]).toContain("Return setup");
+    });
+    await pickType(seen, "Monthly close");
+    await waitFor(() => {
+      expect(stepLabels()[1]).toContain("Close plan template");
+    });
+    await pickType(seen, "Advisory project");
+    const proposal = await within(wizard()).findByRole("button", {
+      name: "Start from proposal ⇕",
+    });
+    expect((proposal as HTMLButtonElement).disabled).toBe(true);
+    expect(proposal.getAttribute("title")).toBe("Opens ENG-09");
   });
 });

@@ -11,6 +11,7 @@ import {
   Dialog,
   Fieldset,
   GateCard,
+  Icon,
   Pill,
   Segmented,
   TypeCatalogue,
@@ -25,10 +26,17 @@ import { useMutation } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useEntitlement } from "../../app-core/flags";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { useClientRecord } from "../../domain/clients";
 import { useStaffNames } from "../../domain/requests";
-import { useDraft, useDraftWrites, useEngagementTypes } from "../../domain/engagements";
+import {
+  type ConsentPreview,
+  conflictOf,
+  useDraft,
+  useDraftWrites,
+  useEngagementTypes,
+} from "../../domain/engagements";
 import { COPY, type StepCode } from "./copy";
 
 // ENG-03 · New engagement wizard, core (P-07-T21; docs/screens/ENG-03.md). O6 `Wizard` with the
@@ -44,7 +52,17 @@ import { COPY, type StepCode } from "./copy";
 //   d  Granite Peak, FS audit, no acceptance decision: G1 unmet, Next disabled, Start acceptance
 //   f  a with the Single audit tile's tooltip: "Not in this release. …"
 //
-// e, g and h are P-07-T34's. Single audit is a static tile, never a catalogue type (D10).
+// P-07-T34 (DEC-345): the steps re-shape by the selected type's catalogue schema (tax "Return
+// setup", attest standards and EQR, the planned CAS close plan, the advisory proposal), and:
+//
+//   e  Ferris, Form 1040, step 5: the §7216 consents card (fixture-only until C19, passed in as
+//      `consents`); Create answers 409 `possible_duplicate`: "Open it · Create anyway"
+//   g  Harlow & Pike, FS audit: the Group audit (SAS 149) toggle with entitlement `group_audit`
+//   h  Tessellate, SOC 2 (entitlement `attest`) on step 2
+//
+// "Set up with AI" (ENG-14, K-04) and the proposal (ENG-09, T-09) are planned: fixture builds draw
+// them disabled with their hints; production draws neither. Single audit is a static tile, never a
+// catalogue type (D10).
 
 const STEPS: readonly StepCode[] = [
   "client_type",
@@ -101,9 +119,25 @@ export interface ENG03Props {
   draftId: string;
   onClose?: () => void;
   onCreated?: (engagementId: string) => void;
+  /** e's "Open it": the engagement a duplicate answer names. */
+  onOpen?: (engagementId: string) => void;
+  /** The §7216 consents card, fixture-only until C19 (DEC-345); the route never passes it. */
+  consents?: ConsentPreview | undefined;
 }
 
-export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element | null {
+function duplicateOf(error: unknown): string | null {
+  if (conflictOf(error) !== "possible_duplicate") return null;
+  const facts = (error as { facts?: { engagement_id?: unknown } } | null)?.facts;
+  return typeof facts?.engagement_id === "string" ? facts.engagement_id : "";
+}
+
+export function ENG03({
+  draftId,
+  onClose,
+  onCreated,
+  onOpen,
+  consents,
+}: ENG03Props): JSX.Element | null {
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const draftQ = useDraft(draftId);
@@ -111,16 +145,27 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
   const writes = useDraftWrites(draftId);
   const staff = useStaffNames();
   const attest = useEntitlement("attest");
+  const groupAudit = useEntitlement("group_audit");
   const [discarding, setDiscarding] = useState(false);
+  const [duplicate, setDuplicate] = useState<string | null>(null);
   const draft = draftQ.data;
   const client = useClientRecord(draft?.client_id ?? "");
   if (draft === undefined) return null;
 
   const step = draft.step;
   const index = STEPS.indexOf(step);
+  // The selected type's catalogue entry shapes the steps (P-07-T34; `steps_of` on the server).
+  const entry = types.find((t) => t.code === draft.type_code);
+  const kind = entry?.work_item_kind;
+  const fieldsOf = (s: StepCode): readonly string[] =>
+    entry?.steps.find((x) => x.step === s)?.field_codes ?? [];
+  const stepLabel = (s: StepCode): string => {
+    if (kind === undefined || (kind === "close" && !PLANNED_VISIBLE)) return COPY.steps[s];
+    return COPY.stepByKind[kind]?.[s] ?? COPY.steps[s];
+  };
   const steps: WizardStep[] = STEPS.map((s, i) => ({
     id: s,
-    label: COPY.steps[s],
+    label: stepLabel(s),
     state: i < index ? "done" : i === index ? "current" : "todo",
   }));
   const g1 = gate(draft, "G1");
@@ -173,12 +218,67 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
           <span id="eng03-g1-reason">{COPY.gates.g1Unmet}</span>
         </GateCard>
       )}
-      <GateCard tone={g2?.met === true ? "met" : "needs"}>{COPY.gates.g2}</GateCard>
+      {g2 === undefined ? (
+        <GateCard tone="met">{COPY.gates.g2NotRequired}</GateCard>
+      ) : (
+        <GateCard tone={g2.met ? "met" : "needs"}>
+          {g2.met ? COPY.gates.g2Met : COPY.gates.g2}
+        </GateCard>
+      )}
       <GateCard tone="needs">{COPY.gates.g3}</GateCard>
     </div>
   );
 
   const groups = catalogueGroups(types);
+  const entityName =
+    client.data?.entities.find((e) => e.id === draft.client_entity_id)?.name ?? null;
+  const displayLine =
+    [draft.payload.name, entityName].filter((v) => v != null && v !== "").join(" · ") || COPY.none;
+  const create = async (confirmDuplicate: boolean): Promise<void> => {
+    try {
+      const out = await writes.create(confirmDuplicate);
+      setDuplicate(null);
+      toast.show({ kind: "success", text: COPY.toast.created(draft.payload.name ?? "") });
+      onCreated?.(out.engagement_id);
+    } catch (error) {
+      const other = duplicateOf(error);
+      if (other !== null) setDuplicate(other);
+      else toast.show({ kind: "error", text: COPY.toast.createFailed });
+    }
+  };
+  const typeLine = [draft.payload.period_label, entry?.label]
+    .filter((v) => v != null && v !== "")
+    .join(" ");
+  const notice =
+    duplicate === null ? null : (
+      <div
+        role="status"
+        data-duplicate=""
+        className="flex min-h-[32px] items-center gap-[6px] rounded-pane bg-nested px-[12px] text-dense text-ink-2"
+      >
+        <span>{COPY.duplicate.notice(typeLine, client.data?.name ?? COPY.none)}</span>
+        <span aria-hidden="true">·</span>
+        <Button
+          variant="link"
+          size="sm"
+          disabled={duplicate === "" || onOpen === undefined}
+          onClick={() => {
+            onOpen?.(duplicate);
+          }}
+        >
+          {COPY.duplicate.open}
+        </Button>
+        <span aria-hidden="true">·</span>
+        <Button
+          variant="link"
+          size="sm"
+          disabled={writes.creating}
+          onClick={() => void create(true)}
+        >
+          {COPY.duplicate.anyway}
+        </Button>
+      </div>
+    );
   const team = draft.payload.team ?? [];
   const pendingName = team.find((m) => pendingIds.has(m.user_id));
 
@@ -187,6 +287,27 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
       case "client_type":
         return (
           <div className="flex flex-col gap-[10px]">
+            {PLANNED_VISIBLE && (
+              <section
+                aria-label={COPY.ai.title}
+                data-planned="ENG-14"
+                className="flex items-center gap-[12px] rounded-pane bg-card px-[14px] py-[12px] shadow-e1"
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-[28px] shrink-0 items-center justify-center rounded-tile bg-espresso text-on-dark"
+                >
+                  <Icon name="sparkles" size={14} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+                  <span className="text-section">{COPY.ai.title}</span>
+                  <span className="text-dense text-ink-2">{COPY.ai.body}</span>
+                </span>
+                <Button variant="secondary" size="sm" opensDialog disabled title={COPY.ai.hint}>
+                  {COPY.ai.action}
+                </Button>
+              </section>
+            )}
             <Fieldset title={COPY.card.client} flush>
               <ValueRow kind="info" label={COPY.keys.client}>
                 {client.data?.name ?? COPY.none}
@@ -204,10 +325,26 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
                   COPY.none
                 )}
               </ValueRow>
+              {PLANNED_VISIBLE && kind === "advisory_project" && (
+                <ValueRow kind="info" label={COPY.keys.proposal}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled
+                    title={COPY.advisory.proposalHint}
+                    data-planned="ENG-09"
+                  >
+                    {COPY.advisory.proposal}
+                  </Button>
+                </ValueRow>
+              )}
             </Fieldset>
             <TypeCatalogue
               groups={groups}
-              entitlements={attest ? ["attest"] : []}
+              entitlements={[
+                ...(attest ? ["attest"] : []),
+                ...(groupAudit ? ["group_audit"] : []),
+              ]}
               selected={draft.type_code ?? null}
               soonLabel={COPY.comingSoon.badge}
               soonHint={COPY.comingSoon.tooltip}
@@ -215,30 +352,73 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
                 void save({ type_code: code });
               }}
             />
+            <Fieldset title={COPY.card.name} flush>
+              <ValueRow kind="info" label={COPY.keys.name}>
+                {draft.payload.name ?? COPY.none}
+              </ValueRow>
+              <ValueRow kind="info" label={COPY.keys.display}>
+                <span className="text-ink-3">{displayLine}</span>
+              </ValueRow>
+              {entry?.group_audit_allowed === true && groupAudit && (
+                <ValueRow
+                  kind="toggle"
+                  label={COPY.groupAudit.label}
+                  help={COPY.groupAudit.helper}
+                  checked={draft.payload.group_audit === true}
+                  onChange={(on) => {
+                    void save({ payload: { ...draft.payload, group_audit: on } });
+                  }}
+                />
+              )}
+            </Fieldset>
           </div>
         );
       case "standards_methodology":
         return (
-          <Fieldset title={COPY.card.standards} flush>
-            <ValueRow kind="info" label={COPY.keys.standardsSet}>
-              {draft.payload.standards_code ?? COPY.none}
+          <Fieldset title={stepLabel("standards_methodology")} flush>
+            <ValueRow kind="info" label={COPY.keys.methodology}>
+              {COPY.none}
             </ValueRow>
-            <ValueRow kind="info" label={COPY.keys.auditScope}>
-              <Segmented
-                size="small"
-                label={COPY.keys.auditScope}
-                options={COPY.scope}
-                active={draft.payload.scope_code === "full_scope" ? COPY.scope[1] : COPY.scope[0]}
-                onChange={(label) => {
-                  void save({
-                    payload: {
-                      ...draft.payload,
-                      scope_code: label === COPY.scope[1] ? "full_scope" : "limited_scope",
-                    },
-                  });
-                }}
-              />
-            </ValueRow>
+            {(entry === undefined || fieldsOf(step).includes("standards_code")) && (
+              <ValueRow kind="info" label={COPY.keys.standardsSet}>
+                {draft.payload.standards_code ?? COPY.none}
+              </ValueRow>
+            )}
+            {(draft.type_code === "soc1" || draft.type_code === "soc2") && (
+              <ValueRow kind="info" label={COPY.keys.period}>
+                {draft.payload.period_label ?? COPY.none}
+              </ValueRow>
+            )}
+            {PLANNED_VISIBLE && kind === "close" && (
+              <ValueRow
+                kind="info"
+                label={COPY.closePlan.key}
+                help={COPY.closePlan.hint}
+                data-planned="C-01"
+              >
+                {COPY.none}
+              </ValueRow>
+            )}
+            {(entry === undefined || draft.type_code === "ebp_audit") && (
+              <ValueRow kind="info" label={COPY.keys.auditScope}>
+                <Segmented
+                  size="small"
+                  label={COPY.keys.auditScope}
+                  options={COPY.scope}
+                  active={
+                    draft.payload.scope_code === "full_scope" ? COPY.scope[1] : COPY.scope[0]
+                  }
+                  onChange={(label) => {
+                    void save({
+                      payload: {
+                        ...draft.payload,
+                        scope_code: label === COPY.scope[1] ? "full_scope" : "limited_scope",
+                      },
+                    });
+                  }}
+                />
+              </ValueRow>
+            )}
           </Fieldset>
         );
       case "period_deadlines":
@@ -284,11 +464,30 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
         );
       case "binder_portal":
         return (
-          <Fieldset title={COPY.card.portal} flush>
-            <ValueRow kind="info" label={COPY.keys.portalContacts}>
-              {String((draft.payload.portal_contact_ids ?? []).length)}
-            </ValueRow>
-          </Fieldset>
+          <div className="flex flex-col gap-[10px]">
+            <Fieldset title={COPY.card.portal} flush>
+              <ValueRow kind="info" label={COPY.keys.portalContacts}>
+                {String((draft.payload.portal_contact_ids ?? []).length)}
+              </ValueRow>
+              {kind === "close" && (
+                <ValueRow kind="info" label={COPY.keys.approverOfRecord}>
+                  {COPY.none}
+                </ValueRow>
+              )}
+            </Fieldset>
+            {PLANNED_VISIBLE && consents !== undefined && kind === "tax_return" && (
+              <Fieldset title={COPY.consents.card} flush>
+                <ValueRow
+                  kind="info"
+                  label={COPY.consents.key}
+                  help={COPY.consents.helper(consents.family)}
+                  helpTone="amber"
+                >
+                  {consents.summary}
+                </ValueRow>
+              </Fieldset>
+            )}
+          </div>
         );
       case "letter_review":
         return (
@@ -343,18 +542,19 @@ export function ENG03({ draftId, onClose, onCreated }: ENG03Props): JSX.Element 
               createLabel: COPY.create,
               createDisabled: !g1Met || writes.creating,
               onCreate: () => {
-                void writes.create().then((out) => {
-                  toast.show({
-                    kind: "success",
-                    text: COPY.toast.created(draft.payload.name ?? ""),
-                  });
-                  onCreated?.(out.engagement_id);
-                });
+                void create(false);
               },
             }
           : {})}
       >
-        {body}
+        {notice === null ? (
+          body
+        ) : (
+          <div className="flex flex-col gap-[10px]">
+            {notice}
+            {body}
+          </div>
+        )}
       </Wizard>
       <Dialog
         open={discarding}
@@ -394,11 +594,13 @@ export function NewEngagementPage({
   clientId,
   onClose,
   onCreated,
+  onOpen,
 }: {
   draftId?: string | undefined;
   clientId?: string | undefined;
   onClose?: () => void;
   onCreated?: (engagementId: string) => void;
+  onOpen?: (engagementId: string) => void;
 }): JSX.Element | null {
   const start = useMutation({ ...createEngagementDraftMutation() });
   const [id, setId] = useState<string | undefined>(draftId);
@@ -418,6 +620,7 @@ export function NewEngagementPage({
       draftId={id}
       {...(onClose === undefined ? {} : { onClose })}
       {...(onCreated === undefined ? {} : { onCreated })}
+      {...(onOpen === undefined ? {} : { onOpen })}
     />
   );
 }
