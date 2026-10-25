@@ -20,12 +20,20 @@ from abacus.modules.evidence.uploads import (
     sniff,
 )
 
+# A fixed timestamp: the bytes (and so the test ids made from them) don't depend on when the
+# module was collected, so every pytest-xdist worker collects the same tests (DEC-335).
+_ZIP_TIME = (2026, 1, 1, 0, 0, 0)
+
+
+def _entry(name: str) -> zipfile.ZipInfo:
+    return zipfile.ZipInfo(name, date_time=_ZIP_TIME)
+
 
 def _zip(*names: str) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as package:
         for name in names:
-            package.writestr(name, "<x/>")
+            package.writestr(_entry(name), "<x/>")
     return buffer.getvalue()
 
 

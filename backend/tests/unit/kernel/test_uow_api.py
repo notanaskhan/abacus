@@ -88,7 +88,10 @@ def test_ac4_target_rejects_a_type_that_is_not_lower_snake_case(type_: str) -> N
 
 
 @pytest.mark.parametrize(
-    "id_", [uuid.uuid4(), 7, 0, "12345", "007", str(uuid.uuid4()), str(uuid.uuid4()).upper()]
+    "id_",
+    [uuid.uuid4(), 7, 0, "12345", "007", str(uuid.uuid4()), str(uuid.uuid4()).upper()],
+    # Fixed ids: every pytest-xdist worker must collect the same test names (DEC-335).
+    ids=["uuid", "int", "zero", "digits", "leading_zeros", "uuid_string", "uuid_string_upper"],
 )
 def test_ac4_target_accepts_uuid_int_digit_and_uuid_string_ids(id_: uuid.UUID | int | str) -> None:
     Target("probe", id_)

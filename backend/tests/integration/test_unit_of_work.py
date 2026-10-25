@@ -655,7 +655,9 @@ async def test_ac4_the_database_rejects_a_target_id_that_is_neither_a_uuid_nor_d
             )
 
 
-@pytest.mark.parametrize("target_id", ["1", "0042", str(uuid.uuid4())])
+@pytest.mark.parametrize(
+    "target_id", ["1", "0042", str(uuid.uuid4())], ids=["digit", "leading_zeros", "uuid"]
+)
 async def test_ac4_the_database_accepts_a_uuid_or_digit_target_id(target_id: str) -> None:
     ctx = _ctx()
     async with tenant_connection(ctx) as conn:

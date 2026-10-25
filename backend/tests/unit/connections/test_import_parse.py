@@ -94,6 +94,9 @@ def test_ac6_an_unbalanced_export_is_caught() -> None:
         (b"just some text\nnot a trial balance\n", "qbo_tb_csv", "unrecognised_format"),
         (b"PK\x03\x04not really a zip", "xero_tb_xlsx", "unreadable"),
     ],
+    # Fixed ids: the workbook's bytes carry the time it was saved, and every pytest-xdist worker
+    # must collect the same test names (DEC-335).
+    ids=["xero_as_qbo", "qbo_as_xero", "not_a_trial_balance", "broken_zip"],
 )
 def test_ac6_the_wrong_or_an_unreadable_file_is_refused_with_a_code(
     content: bytes, chosen: str, code: str

@@ -95,7 +95,8 @@ jobs:
       - if: needs.changes.outputs.backend == 'true'
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
-        run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=2
+        # pytest-xdist on the runner's 4 cores (DEC-335).
+        run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=2 PYTEST_WORKERS=4
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -138,7 +139,8 @@ jobs:
       - if: needs.changes.outputs.backend == 'true'
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
-        run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=5
+        # Two workers, each with its own Postgres, S3 and Temporal containers, on 4 cores (DEC-335).
+        run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=5 PYTEST_INTEGRATION_WORKERS=2
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

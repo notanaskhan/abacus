@@ -38,7 +38,7 @@ make dev-fixtures   run the frontend alone on fixtures: no Docker, no backend
 make seed           dev firm and users for local sign-in
 make check-fast     stage 1 gates
 make check          stages 1 and 2 — must pass before you claim done
-make test           unit and integration tests
+make test           unit and integration tests, on parallel workers (PYTEST_WORKERS=0: one process)
 make e2e            the Playwright journey (needs make dev and make seed)
 make evals          evaluation suites (real models; costs money)
 make generate       regenerate the API client from OpenAPI

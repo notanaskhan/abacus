@@ -135,6 +135,9 @@ def test_q01t46_ses_events_parse_from_their_eventbridge_envelope(
         json.dumps({"id": "x", "time": "2026-10-23T14:05:00Z", "detail": {"eventType": "Bounce"}}),
         _envelope(uuid.uuid4(), uuid.uuid4(), "Bounce", event_id="bad id with spaces"),
     ],
+    # Fixed ids: the envelopes carry fresh UUIDs, and every pytest-xdist worker must collect the
+    # same test names (DEC-335).
+    ids=["not_json", "array", "open", "send", "bounce_untagged", "bad_event_id"],
 )
 def test_q01t46_anything_else_is_not_an_event_of_ours(raw: str) -> None:
     assert parse_ses_event(raw) is None

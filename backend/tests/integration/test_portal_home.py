@@ -7,10 +7,12 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import asdict
+from datetime import timedelta
 from typing import cast
 
 import pytest
 
+from abacus.kernel import clock
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, dispose_engine
 from abacus.kernel.errors import NotFound
@@ -93,7 +95,11 @@ async def _binder(seed: Seeder, claire: Person, engagement: uuid.UUID, partner: 
         hidden,
     )
     await seed.run("UPDATE request_items SET status = 'uploaded' WHERE id = $1", others[0])
-    await seed.run("UPDATE request_items SET due_on = current_date - 1 WHERE id = $1", others[1])
+    # Past due on the business date (the firm's zone), which the home derives overdue from. The
+    # database's `current_date` is UTC's, a day ahead of Central each evening, when
+    # `current_date - 1` was due today and the test failed (ED-045).
+    yesterday = await clock.today() - timedelta(days=1)
+    await seed.run("UPDATE request_items SET due_on = $2 WHERE id = $1", others[1], yesterday)
 
 
 async def test_ac15_the_home_composes_one_scope_in_client_codes(seed: Seeder) -> None:
