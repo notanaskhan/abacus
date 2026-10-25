@@ -48,7 +48,15 @@ from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
 from abacus.modules.evidence.hold_runs import WORKFLOWS as HOLD_WORKFLOWS
 from abacus.modules.evidence.hold_runs import with_hold_inheritance
-from abacus.modules.evidence.holds import holds_covering
+from abacus.modules.evidence.holds import (
+    HoldScope,
+    HoldView,
+    holds_covering,
+    list_holds,
+    place_hold,
+)
+from abacus.modules.evidence.holds import activate as legal_hold_activate
+from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.match_material import (
     Candidate,
@@ -99,7 +107,15 @@ from abacus.modules.evidence.render_gl import (
     render_journal_listing,
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
-from abacus.modules.evidence.retention import RECORD_TYPES, extend_retention_for, retain_until_for
+from abacus.modules.evidence.retention import (
+    RECORD_TYPES,
+    EffectivePolicy,
+    PolicyChange,
+    effective_policies,
+    extend_retention_for,
+    retain_until_for,
+    set_policy,
+)
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
 from abacus.modules.evidence.routes import firm_router, router
@@ -256,6 +272,7 @@ __all__ = [
     "CitationLabel",
     "CitationVerdict",
     "ContentTooLarge",
+    "EffectivePolicy",
     "EngagementArchived",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
@@ -266,6 +283,8 @@ __all__ = [
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
+    "HoldScope",
+    "HoldView",
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntegrityError",
@@ -274,6 +293,7 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "PolicyChange",
     "PortalFile",
     "Proposal",
     "Provenance",
@@ -306,16 +326,21 @@ __all__ = [
     "decided_among",
     "decisions_on_screenings",
     "drop_batch",
+    "effective_policies",
     "engagement_snapshots",
     "evidence_versions_for",
     "extend_retention_for",
     "firm_router",
     "holds_covering",
     "is_version_withdrawn",
+    "legal_hold_activate",
+    "legal_hold_apply_batch",
+    "list_holds",
     "mark_sources_superseded",
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "place_hold",
     "portal_files",
     "process_upload",
     "put_record",
@@ -333,6 +358,7 @@ __all__ = [
     "review_material",
     "router",
     "screening_facts",
+    "set_policy",
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",
