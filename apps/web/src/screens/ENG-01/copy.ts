@@ -34,10 +34,10 @@ export const COPY = {
     prior: "Prior",
     allPeriods: "All",
   },
-  /** "275 engagements · 1 prospect · 4 awaiting a signed letter · 2 past due" */
+  /** "273 engagements · 1 prospect · 4 awaiting a signed letter · 2 past due" */
   summary: (total: string, prospect: string, awaiting: string, pastDue: string) =>
     `${total} engagements · ${prospect} prospect · ${awaiting} awaiting a signed letter · ${pastDue} past due`,
-  /** "Showing 17 of 275" */
+  /** "Showing 16 of 273" */
   showing: (n: string, total: string) => `Showing ${n} of ${total}`,
   /** "+ New engagement": the plus is the button's icon. */
   newEngagement: "New engagement",

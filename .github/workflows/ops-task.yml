@@ -1,0 +1,149 @@
+# Operator commands as one-off ops tasks (Q-01-T34; platform-ops contract 3.5). Never from a
+# laptop. Exactly one allowlisted command per run (`abacus_tools.release ops-request` refuses any
+# other), under the deploy lock, on the environment's current release image (by digest).
+#   - staging: dispatched by hand with the command, its arguments (a JSON array of strings), the
+#     operator's handle and a reason;
+#   - production: only by merging a PR that adds deploy/production/ops-requests/<date>-<slug>.yaml
+#     (the PR is the change record). Each added file runs once, in name order.
+# Arguments and reasons hold no client data. Needs the environment variables of the deploy
+# workflows. Every action is pinned to a full commit SHA.
+name: ops-task
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "An allowlisted operator command (staging)"
+        type: choice
+        options:
+          - abacus_tools.tenants provision
+          - abacus_tools.tenants status
+          - abacus_tools.tenants key
+          - abacus_tools.tenants entitlement
+          - abacus_tools.platform_control set
+          - abacus_tools.platform_control show
+          - abacus_tools.schedules ensure
+          - abacus_tools.schedules show
+          - abacus_tools.schedules pause
+          - abacus_tools.schedules unpause
+      args:
+        description: 'Arguments as a JSON array of strings, e.g. ["--tenant", "<uuid>"]'
+        required: true
+        default: "[]"
+      operator:
+        description: "Your operator handle (never an email address)"
+        required: true
+      reason:
+        description: "Why (at most 200 characters, no client data)"
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - "deploy/production/ops-requests/*.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.event_name == 'push' && 'production' || 'staging' }}
+  cancel-in-progress: false
+
+jobs:
+  ops:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ github.event_name == 'push' && 'production' || 'staging' }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ENV_NAME: ${{ github.event_name == 'push' && 'production' || 'staging' }}
+      RUN_REF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      AWS_DEPLOY_ROLE: ${{ vars.AWS_DEPLOY_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      OPS_TASK_DEFINITION: ${{ vars.OPS_TASK_DEFINITION }}
+      TASK_SUBNETS: ${{ vars.TASK_SUBNETS }}
+      TASK_SECURITY_GROUP: ${{ vars.TASK_SECURITY_GROUP }}
+      INPUT_COMMAND: ${{ inputs.command }}
+      INPUT_ARGS: ${{ inputs.args }}
+      INPUT_OPERATOR: ${{ inputs.operator }}
+      INPUT_REASON: ${{ inputs.reason }}
+      BEFORE: ${{ github.event.before }}
+    steps:
+      - name: Environment configured?
+        id: gate
+        run: |
+          missing=""
+          for name in AWS_DEPLOY_ROLE AWS_REGION ECR_REPOSITORY ECS_CLUSTER OPS_TASK_DEFINITION \
+            TASK_SUBNETS TASK_SECURITY_GROUP; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=ops task skipped::variables not set:$missing (infra/README.md)"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          fetch-depth: 0 # the push's added request files
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: The requests
+        id: requests
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          mkdir -p requests
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            git diff --name-only --diff-filter=A "$BEFORE" "$GITHUB_SHA" -- 'deploy/production/ops-requests/*.yaml' \
+              | sort | while read -r file; do cp "$file" "requests/$(basename "$file")"; done
+          else
+            jq -n --arg c "$INPUT_COMMAND" --argjson a "$INPUT_ARGS" --arg o "$INPUT_OPERATOR" --arg r "$INPUT_REASON" \
+              '{command: $c, args: $a, operator: $o, reason: $r}' > requests/dispatch.yaml
+          fi
+          for file in requests/*.yaml; do
+            [ -e "$file" ] || continue
+            (cd backend && uv run --locked python -m abacus_tools.release ops-request "../$file") > "$file.argv"
+          done
+          ls requests/*.argv > /dev/null 2>&1 && echo "any=true" >> "$GITHUB_OUTPUT" || echo "any=false" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.requests.outputs.any == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: ops-task-${{ github.run_id }}
+      - name: Take the deploy lock
+        id: lock
+        if: steps.requests.outputs.any == 'true'
+        working-directory: backend
+        run: |
+          uv run --locked python -m abacus_tools.deploy_lock take --env "$ENV_NAME" --holder ops-task \
+            --run-ref "$RUN_REF" --git-sha "$GITHUB_SHA" --purpose ops-task --wait-seconds 1800
+          echo "taken=true" >> "$GITHUB_OUTPUT"
+      - name: Run each request on the current release image
+        if: steps.requests.outputs.any == 'true'
+        run: |
+          export DIGEST
+          DIGEST=$(aws ssm get-parameter --name "/abacus/$ENV_NAME/release" --query Parameter.Value \
+            --output text | jq -r .image_digest)
+          source deploy/scripts/release.sh
+          for argv in requests/*.argv; do
+            echo "::group::$(basename "$argv" .argv)"
+            mapfile -t command < <(jq -r '.[]' "$argv")
+            run_task "$OPS_TASK_DEFINITION" ops "${command[@]}"
+            echo "::endgroup::"
+          done
+      - name: Release the deploy lock
+        if: always() && steps.lock.outputs.taken == 'true'
+        working-directory: backend
+        run: uv run --locked python -m abacus_tools.deploy_lock release --env "$ENV_NAME" --run-ref "$RUN_REF"

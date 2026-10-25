@@ -14,6 +14,9 @@ never starts (ADR-104). Workflows and activities come from each module's registr
 polling and lets running activities finish (up to `GRACEFUL_SHUTDOWN`) before exiting. Locally
 the fake connector's fixture directory must be shared with the API (`fake_connector_dir`).
 
+Platform jobs (the hourly spend-anomaly pass, the daily notification purge) are not run here:
+they are workflows on Temporal Schedules (Q-01-T26), so two workers never run one twice.
+
 It also runs the outbox relay (TASK-011 Q4): events go to the handlers modules subscribe in
 their `SUBSCRIPTIONS` (e.g. `evidence_version.created` starts screening). The relay stops with
 the worker; an event mid-publish is simply republished later (at least once). If the relay task
@@ -37,8 +40,12 @@ from importlib import import_module
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from abacus.ai_gateway import FakeModel, check_provider_limits, configure_provider
-from abacus.ai_gateway.budgets import run_anomaly_job
+from abacus.ai_gateway import (
+    FakeModel,
+    check_provider_limits,
+    configure_provider,
+    hold_boundary_facts_for,
+)
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import key_service
@@ -58,7 +65,8 @@ from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules import MODULES as ALL_MODULES
 from abacus.modules.agents import api as agents
 from abacus.modules.evidence.api import check_ready
-from abacus.modules.notifications import api as notifications
+from abacus.modules.platform.api import configure_canary_probe
+from abacus.worker.canary_probe import ServiceProbe
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
 # The modules with worker parts (subscriptions, workflows, activities), in MODULES order (P-39;
@@ -109,8 +117,13 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     payload_codec()
     await check_ready()
     check_provider_limits()
+    # SPEC-036 Q5 (DEC-337): the worker makes the model calls, so it reads a firm's opt-in,
+    # exclusions and stages fresh each time; an opt-out in the API holds here at once.
+    hold_boundary_facts_for(0)
     if settings().environment == "local":
         configure_provider(agents.install_fake_responses(FakeModel()))
+    # Q-01-T30: the canary's steps run through the product's services, composed here.
+    configure_canary_probe(ServiceProbe())
     client = await temporal_client()
     workers = [_worker(client, queue_for(c), c) for c in classes]
     # The legacy queue (any class's work) drains only beside the interactive pool, so a batch-only
@@ -151,13 +164,10 @@ async def run(classes: Sequence[WorkClass] = WORK_CLASSES) -> None:
     pools = [asyncio.create_task(worker.run()) for worker in workers]
     # The relay (and its role, which reads every firm's outbox) runs only in the process that
     # serves the interactive pool, so splitting classes doesn't multiply it.
+    # The spend-anomaly and notification-purge jobs are platform workflows on Temporal Schedules
+    # (Q-01-T26; `abacus_tools.schedules`), not loops here: a loop ran once per worker process.
     relay = run_relay(publisher(), stop) if "interactive" in classes else None
-    # The spend-anomaly job (SPEC-007 AC-6) runs hourly beside the relay, once per deployment.
-    anomaly = run_anomaly_job(stop) if "interactive" in classes else None
-    # SPEC-013 AC-10: the daily notification purge, once per deployment like the relay.
-    purge = notifications.run_purge_job(stop) if "interactive" in classes else None
-    side = [job for job in (relay, anomaly, purge) if job is not None]
-    tasks = [*pools, *(asyncio.create_task(job) for job in side)]
+    tasks = [*pools, *([asyncio.create_task(relay)] if relay is not None else [])]
     stopped = asyncio.create_task(stop.wait())
     early: list[asyncio.Task[None]] = []
     try:

@@ -83,6 +83,10 @@ export const COPY = {
     waive: "Waive (Not applicable)…",
     returnToClient: "Return to client…",
     delete: "Delete",
+    /** R2: "Linked (1)"; "—" when nothing is attached (row.linkedNone). */
+    linked: (n: number | null) => `Linked (${n === null || n === 0 ? "—" : String(n)})`,
+    /** R2: "Evidence screening · Passed · 2 checks" */
+    screeningTooltip: (word: string) => `Evidence screening · ${word} · 2 checks`,
   },
   /** The client's Ignore reasons (SPEC-042 codes), in the client's words. */
   ignoreReasons: {
@@ -113,6 +117,10 @@ export const COPY = {
     waive: "Waive (Not applicable)",
     returnToClient: "Return to client…",
     remind: "Send reminder for this request",
+    /** g (R2) */
+    accept: "Accept",
+    return: "Return…",
+    notScreened: "Internal handoff from TXP-12 — screening runs on client uploads.",
     empty: "Select a request to see it here.",
   },
   preview: {
@@ -167,6 +175,7 @@ export const COPY = {
     shown: "Visible to the client",
     waived: "Waived as not applicable",
     returned: "Returned to client with your reason",
+    accepted: "Accepted",
     deleted: "Request deleted",
     failed: "Couldn’t update the binder",
   },

@@ -83,6 +83,10 @@ function dock(): HTMLElement {
   return screen.getByRole("region", { name: "Request dock" });
 }
 
+function dockReady(): Promise<HTMLElement> {
+  return screen.findByRole("region", { name: "Request dock" });
+}
+
 function liveCalls(seen: Seen): number {
   return seen.calls.filter((c) => c.path.endsWith("/live")).length;
 }
@@ -102,11 +106,14 @@ async function openMenu(row: HTMLElement): Promise<HTMLElement> {
 const PUBLISHED_A = "Published Feb 3 · 5 of 7 satisfied · 2 open";
 
 describe("BND-02 artboards", () => {
-  it("defines exactly the artboards P-06-T12 builds, as Kevin Osei at E0", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f"]);
+  it("defines exactly the artboards P-06-T12 and T22 build, as Kevin Osei at E0", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
     for (const s of STATES) {
       expect(scenarios[s].persona).toBe("kevin-osei");
-      expect(scenarios[s].clock).toBe("2026-09-14T09:24:00-05:00");
+      // g (R2) is 9:31 AM: the revision wins over the README's 9:24 (DEC-15).
+      expect(scenarios[s].clock).toBe(
+        s === "g" ? "2026-09-14T09:31:00-05:00" : "2026-09-14T09:24:00-05:00",
+      );
     }
   });
 
@@ -404,5 +411,97 @@ describe("BND-02 rows and live poll", () => {
     for (const word of [/^Approve/, /^Sign off/, /^Release/, /^Send$/, /^Post/]) {
       expect(screen.queryByRole("button", { name: word })).toBeNull();
     }
+  });
+});
+
+// P-06-T22: g and the R2 rows (Linked (n), the screening glyph, the dock ScreeningCard).
+describe("BND-02 R2", () => {
+  const EST = "2025 federal (1040-ES) and New York (IT-2105) estimated payment confirmations";
+  const K1 = "Schedule K-1 from Ridgeline Property Partners, LP";
+
+  it("every row carries Linked (n): rows 1, 2, 3, 4 and 6 read 1, rows 5 and 7 read —", async () => {
+    show("a");
+    await screen.findByText(PUBLISHED_A);
+    const linked = Array.from(document.querySelectorAll("[data-request]")).map((r) =>
+      r.querySelector("[data-linked]")?.getAttribute("aria-label"),
+    );
+    expect(linked).toEqual([
+      "Linked (1)",
+      "Linked (1)",
+      "Linked (1)",
+      "Linked (1)",
+      "Linked (—)",
+      "Linked (1)",
+      "Linked (—)",
+    ]);
+  });
+
+  it("client uploads carry the screening glyph; the firm-provided K-1 does not", async () => {
+    show("a");
+    await screen.findByText(PUBLISHED_A);
+    expect(within(rowOf(K1)).queryByRole("button", { name: /Evidence screening/ })).toBeNull();
+    const w2 = rowOf("2025 W-2 From Mercer Hill Health");
+    expect(
+      within(w2).getByRole("button", { name: "Evidence screening · Passed · 2 checks" }),
+    ).toBeTruthy();
+  });
+
+  it("the dock's card on the internal K-1 handoff reads Not screened", async () => {
+    show("a");
+    const card = await within(await dockReady()).findByRole("region", {
+      name: "Evidence screening",
+    });
+    expect(card.querySelector("[data-verdict]")?.textContent).toBe("Not screened");
+    expect(card.textContent).toContain(
+      "Internal handoff from TXP-12 — screening runs on client uploads.",
+    );
+    expect(within(card).queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("g: the estimates need review; the card passes both checks with the period rule", async () => {
+    show("g");
+    const est = await screen.findByRole("button", { name: EST });
+    const row = est.closest<HTMLElement>("[data-request]");
+    if (row === null) throw new Error("no row");
+    expect(within(row).getByText("Uploaded – needs review")).toBeTruthy();
+    const card = await within(dock()).findByRole("region", { name: "Evidence screening" });
+    await waitFor(() => {
+      expect(card.querySelector("[data-verdict]")?.textContent).toBe("Passed");
+    });
+    const checks = Array.from(card.querySelectorAll("[data-check]")).map((c) => c.textContent);
+    expect(checks).toEqual([
+      "Does this answer the request?All 2 files answer the request.",
+      "Is it inside the expected period?All files are dated inside Apr 15, 2025 – Jan 15, 2026.",
+    ]);
+    expect(card.textContent).toContain("Sep 14, 9:31 AM");
+    expect(card.textContent).not.toMatch(/\d\s*%/);
+    expect(within(dock()).getByRole("button", { name: "Accept" })).toBeTruthy();
+    expect(within(dock()).getByRole("button", { name: "Return…" })).toBeTruthy();
+  });
+
+  // Before Accept: a scenario's writes persist across this file's tests.
+  it("g: Return… opens the ReturnDialog with Wrong document preselected", async () => {
+    show("g");
+    const dockNow = await dockReady();
+    await within(dockNow).findByRole("region", { name: "Evidence screening" }, { timeout: 3000 });
+    fireEvent.click(within(dockNow).getByRole("button", { name: "Return…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Return to client" });
+    const wrong = await within(dialog).findByRole("radio", { name: "Wrong document" });
+    expect(wrong.getAttribute("aria-checked")).toBe("true");
+  });
+  it("g: Accept is the person's and accepts each uploaded file; nothing before the click", async () => {
+    const seen = show("g");
+    const accept = await within(await dockReady()).findByRole("button", { name: "Accept" });
+    await within(dock()).findByRole("region", { name: "Evidence screening" });
+    const accepts = (): number =>
+      seen.calls.filter((c) => c.method === "POST" && c.path.endsWith("/decision/accept")).length;
+    expect(accepts()).toBe(0);
+    await waitFor(() => {
+      expect(accept.hasAttribute("disabled")).toBe(false);
+    });
+    fireEvent.click(accept);
+    await waitFor(() => {
+      expect(accepts()).toBe(2);
+    });
   });
 });

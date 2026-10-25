@@ -30,6 +30,7 @@ from sqlalchemy import text
 from temporalio import activity
 
 from abacus.kernel.config import settings
+from abacus.kernel.controls import control_active
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import ServiceUnavailable
 from abacus.kernel.logging import get_logger
@@ -53,6 +54,9 @@ _EVENT_ID: Final = re.compile(r"[A-Za-z0-9._:/-]{1,200}")
 _BATCH: Final = 10
 # The violation a message records when its address is suppressed: a kind, never the address.
 SUPPRESSED: Final = {"kind": "suppressed", "ref": ""}
+# Q-01-T36 (P-66): email is paused for the platform or the firm (`email_pause`); the SES
+# configuration-set sending pause is the second line.
+PLATFORM_PAUSED: Final = {"kind": "platform_paused", "ref": ""}
 _log = get_logger(__name__)
 
 
@@ -82,7 +86,7 @@ async def is_suppressed(tenant_id: UUID, address: str) -> bool:
         return bool((await session.execute(_SUPPRESSED, {"hash": address_hash(address)})).scalar())
 
 
-async def send_email(
+async def deliver(
     *,
     tenant_id: UUID,
     message_id: UUID,
@@ -91,21 +95,25 @@ async def send_email(
     body: str,
     sender_name: str | None = None,
     reply_to: str | None = None,
-) -> bool:
-    """Send through the transport, unless the firm has suppressed the address: then nothing is
-    sent and False is returned, so the caller records the message `blocked` (`suppressed`).
+) -> dict[str, str] | None:
+    """Send through the transport, or say why not: the violation the caller records the message
+    `blocked` with. Email paused for the platform or the firm (`platform_paused`, Q-01-T36) is
+    checked first, before any other read; then a suppressed address (`suppressed`).
 
     F-04-T22: a synthetic firm's recipient is routed to the sink first (`sink.py`); a recipient
-    the sink can't take is refused the same way (False), logged without the address."""
+    the sink can't take is refused as `suppressed`, logged without the address."""
+    if await control_active("email_pause", tenant_id):
+        _log.info("email.platform_paused", tenant_id=tenant_id, message_id=message_id)
+        return PLATFORM_PAUSED
     if await is_synthetic_firm(TenantContext(tenant_id, "system", "mail_sink")):
         routed = sink_address(to, tenant_id)
         if routed is None:
             _log.warning("email.sink_refused", tenant_id=tenant_id, message_id=message_id)
-            return False
+            return SUPPRESSED
         to = routed
     if await is_suppressed(tenant_id, to):
         _log.info("email.suppressed", tenant_id=tenant_id, message_id=message_id)
-        return False
+        return SUPPRESSED
     await asyncio.to_thread(
         transport().send,
         to=to,
@@ -116,7 +124,30 @@ async def send_email(
         tenant_id=tenant_id,
         message_id=message_id,
     )
-    return True
+    return None
+
+
+async def send_email(
+    *,
+    tenant_id: UUID,
+    message_id: UUID,
+    to: str,
+    subject: str,
+    body: str,
+    sender_name: str | None = None,
+    reply_to: str | None = None,
+) -> bool:
+    """`deliver`, for callers that record no message: True when it went out."""
+    blocked = await deliver(
+        tenant_id=tenant_id,
+        message_id=message_id,
+        to=to,
+        subject=subject,
+        body=body,
+        sender_name=sender_name,
+        reply_to=reply_to,
+    )
+    return blocked is None
 
 
 @dataclass(frozen=True)

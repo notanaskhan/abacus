@@ -55,6 +55,7 @@ from abacus.modules.requests.guidance import (
 )
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    client_home_items,
     default_due_on,
     drop_item_rows,
     fulfilling_versions,
@@ -73,6 +74,7 @@ from abacus.modules.requests.repository import (
     overdue_items,
     request_list_for,
     revert_to_requested,
+    rule_link,
     screening_subject_row,
     search_items,
     set_classification,
@@ -84,6 +86,7 @@ from abacus.modules.requests.repository import (
     set_status,
     upload_link,
     void_fulfilments,
+    void_rule_link,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
 
@@ -760,6 +763,79 @@ async def upload_item_of(
         return await upload_link(session, evidence_version_id, uploader)
 
 
+@dataclass(frozen=True)
+class VoidedRuleLink:
+    """A rule link a person voided (R-01 Story 2.2), and where its request now stands."""
+
+    fulfilment_id: UUID
+    request_item_id: UUID
+    evidence_version_id: UUID
+    request_status: str
+    voided_at: datetime
+
+
+async def lock_rule_link(
+    tx: UnitOfWork, *, engagement_id: UUID, fulfilment_id: UUID
+) -> UUID | None:
+    """The version a live rule link of the engagement links, with its request item locked first,
+    in the caller's unit of work: an accept locks the item before it records its decision, so a
+    void that locks it too either waits for the accept and then sees it, or goes first (the
+    accept then finds no live link). Evidence checks the version was never accepted next."""
+    found = await rule_link(tx.session, fulfilment_id, engagement_id)
+    if found is None:
+        return None
+    item_id, version_id = found
+    await get_request_item(tx.session, item_id, lock=True)
+    still = await rule_link(tx.session, fulfilment_id, engagement_id)  # read again, under lock
+    return version_id if still == found else None
+
+
+async def void_rule_link_in(
+    tx: UnitOfWork, *, engagement_id: UUID, fulfilment_id: UUID, voided_by: UUID
+) -> VoidedRuleLink | None:
+    """R-01 Story 2.2, inside the caller's unit of work (a person's, already authorised for
+    `fulfilment.confirm`): stamp the rule link void, audit `fulfilment.voided`, and return the
+    request to `requested` when nothing else fulfils it. None when there is no live rule link."""
+    voided = await void_rule_link(tx.session, fulfilment_id, engagement_id, voided_by)
+    if voided is None:
+        return None
+    locked = await get_request_item(tx.session, voided.request_item_id, lock=True)
+    if locked is None:  # a fulfilment's item is never deleted (foreign key)
+        raise NotFound("request_item")
+    tx.record(
+        "fulfilment.voided",
+        target=Target("fulfilment", fulfilment_id),
+        after=Ref(
+            request_item_id=voided.request_item_id,
+            evidence_version_id=voided.evidence_version_id,
+        ),
+    )
+    before = locked.status
+    reverted = await revert_to_requested(tx.session, voided.request_item_id)
+    # The item's Activity: a wrong rule link was voided (identifiers only).
+    tx.record(
+        "request_item.rule_link_voided",
+        target=Target("request_item", voided.request_item_id),
+        after=Ref(fulfilment_id=fulfilment_id, reverted=int(reverted)),
+    )
+    if reverted:
+        tx.emit(
+            RequestItemStatusChanged(
+                request_item_id=voided.request_item_id,
+                engagement_id=engagement_id,
+                from_status="uploaded",
+                to_status="requested",
+            )
+        )
+    return VoidedRuleLink(
+        fulfilment_id,
+        voided.request_item_id,
+        voided.evidence_version_id,
+        "requested" if reverted else before,
+        voided.voided_at,
+    )
+
+
 async def withdraw_upload(
     tx: UnitOfWork, *, evidence_version_id: UUID, withdrawn_by: UUID, item_ids: Sequence[UUID]
 ) -> list[UUID]:
@@ -900,6 +976,30 @@ def _record_classified(
         tx.emit(RequestItemClassified(request_item_id=item_id, engagement_id=engagement_id))
 
 
+async def reclassify_described(tx: UnitOfWork, item: RequestItem, description: str) -> None:
+    """SPEC-022 §12: a changed description is classified again by the rules, unless a person
+    overrode the tier or the firm's methodology set it (§4's order; TASK-1232)."""
+    if item.tier_source in ("override", "methodology"):
+        return
+    found = classify(description, item.audit_area)
+    if (found.tier, found.dataset, found.source, found.rule_id) == (
+        item.retrievability_tier,
+        item.dataset,
+        item.tier_source,
+        item.tier_rule,
+    ):
+        return
+    await set_classification(
+        tx.session,
+        item.id,
+        tier=found.tier,
+        dataset=found.dataset,
+        source=found.source,
+        rule=found.rule_id,
+    )
+    _record_classified(tx, item.id, item.engagement_id, found, "request_item.classified")
+
+
 async def set_tier(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, tier: str | None
 ) -> RequestItemView:
@@ -1025,14 +1125,20 @@ class YourPart:
 async def your_part(ctx: AuthContext, engagement_id: UUID) -> YourPart:
     """AC-6: the items left for this client user (open or needing revision, assigned to them, or
     unassigned for client admins), how many block fieldwork, and the estimated minutes. Firm
-    roles have no part here."""
+    roles have no part here. Authorised first, so an engagement the caller's grants don't cover
+    answers 404 like every other uncovered scope (DEC-43; ED-054), never an unchecked 500."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise_items(ctx, "request_item.read", ref.resource())
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
     if role not in ("client_admin", "client_contributor"):
         return YourPart(0, 0, 0)
-    items = await request_items_for(ctx, engagement_id)
+    # The portal home's own rows (P-08-T13): only a published or done binder's requests, so a
+    # draft binder counts nowhere for the client and the two tie (DEC-210; ED-054).
+    async with tenant_session(ctx.tenant) as session:
+        rows = await client_home_items(session, ctx, engagement_id)
     mine = [
         i
-        for i in items
+        for i, _, _ in rows
         if i.client_visible
         and i.status in OPEN_FOR_CLIENT
         and (

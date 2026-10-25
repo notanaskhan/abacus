@@ -218,8 +218,8 @@ jobs:
     name: stage 2 gallery visual regression
     needs: [changes]
     runs-on: ubuntu-24.04
-    # The axe gate alone takes about 7 minutes (98 specs) and the screenshot regression about 3,
-    # plus setup: 8 cancelled every run that had gallery paths to check.
+    # The screenshot regression renders the base commit's specimens and compares: about 3 minutes
+    # plus setup. The axe gate runs in gallery-axe.
     timeout-minutes: 20
     steps:
       - if: needs.changes.outputs.gallery != 'true'
@@ -254,16 +254,6 @@ jobs:
       - if: needs.changes.outputs.gallery == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm -C apps/web exec playwright install-deps chromium
       - if: needs.changes.outputs.gallery == 'true'
-        name: Axe gate and accessibility harness on the gallery (fixtures server, port 5173)
-        run: |
-          make dev-fixtures > dev.log 2>&1 &
-          for _ in $(seq 1 60); do
-            curl -sf http://localhost:5173/components > /dev/null && break
-            sleep 2
-          done
-          curl -sf http://localhost:5173/components > /dev/null || { tail -50 dev.log; exit 1; }
-          pnpm -C apps/web exec playwright test --project=chromium components.spec.ts a11y.spec.ts e3.spec.ts inv.spec.ts ds-white-label.spec.ts --workers=4
-      - if: needs.changes.outputs.gallery == 'true'
         name: Screenshot regression and parity Tier A and D
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
@@ -274,6 +264,74 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: gallery-visual-report
+          path: |
+            apps/web/playwright-report
+            apps/web/parity-report
+            apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The gallery's axe gate and accessibility harness, in three shards of two workers each. On one
+  # 4-core runner with four workers the page-wide overlay checks starved for CPU against the vite
+  # dev server (about 3 minutes per test, failures under load, the 20-minute job limit hit); all
+  # pass locally. Playwright's --shard splits the parallel-mode axe tests individually.
+  gallery-axe:
+    name: stage 2 gallery axe (${{ matrix.shard }}/3)
+    needs: [changes]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - if: needs.changes.outputs.gallery != 'true'
+        run: echo "no gallery paths changed (abacus_tools.ci.paths), so nothing to run"
+      - if: needs.changes.outputs.gallery == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - if: needs.changes.outputs.gallery == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - if: needs.changes.outputs.gallery == 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - if: needs.changes.outputs.gallery == 'true'
+        run: corepack enable
+      - if: needs.changes.outputs.gallery == 'true'
+        run: make setup
+      - if: needs.changes.outputs.gallery == 'true'
+        name: Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: needs.changes.outputs.gallery == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - if: needs.changes.outputs.gallery == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm -C apps/web exec playwright install-deps chromium
+      - if: needs.changes.outputs.gallery == 'true'
+        name: Axe gate and accessibility harness on the gallery (fixtures server, port 5173)
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          make dev-fixtures > dev.log 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -sf http://localhost:5173/components > /dev/null && break
+            sleep 2
+          done
+          curl -sf http://localhost:5173/components > /dev/null || { tail -50 dev.log; exit 1; }
+          pnpm -C apps/web exec playwright test --project=chromium components.spec.ts a11y.spec.ts e3.spec.ts inv.spec.ts ds-white-label.spec.ts --workers=2 --shard="$SHARD/3"
+      - if: always() && needs.changes.outputs.gallery == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gallery-axe-report-${{ matrix.shard }}
           path: |
             apps/web/playwright-report
             apps/web/parity-report
@@ -405,7 +463,7 @@ jobs:
   stage-2:
     name: stages 1 and 2 (make check)
     if: always() && (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && !github.event.pull_request.draft))
-    needs: [stage-1, changes, unit, integration, contracts, frontend, gallery, journeys, coverage, evals-fast]
+    needs: [stage-1, changes, unit, integration, contracts, frontend, gallery, gallery-axe, journeys, coverage, evals-fast]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

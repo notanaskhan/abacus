@@ -6,7 +6,8 @@
 // follow the clients list (404 semantics: a walled client's engagements are absent from rows,
 // counts, facets and `total`). Filters: `service_line`, `status`, `tile` (counts minus the tile),
 // `letter`, `period`, `client_id`, `office_id`, `partner_id`, `next_due` and `q`. `period=current`
-// keeps Archived, as ENG-01a counts it (docs/screens/ENG-01.md; the live reading is ED-027).
+// is every status but archived and declined, `prior` archived, `all` all but declined, as the live
+// index reads them (DEC-224; DEC-343 settled ED-027: ENG-01a's Archived tile is 0).
 
 import type {
   EngagementIndexPage,
@@ -51,6 +52,7 @@ function dueWithin(row: EngagementIndexRowOut, window: string): boolean {
 function inPeriod(status: EngagementStatus, period: string): boolean {
   if (status === "declined") return false;
   if (period === "prior") return status === "archived";
+  if (period === "current") return status !== "archived";
   return true;
 }
 

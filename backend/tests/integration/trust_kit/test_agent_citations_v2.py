@@ -60,7 +60,13 @@ async def test_ac1_a_reviewers_quotes_become_agent_rows_that_resolve_to_a_region
     )
     async with uow(agent.tenant) as tx:
         found = await record_agent_citations(
-            tx, agent, anchor_type="upload_review", anchor_id=review, ref="F1", claims=claims
+            tx,
+            agent,
+            anchor_type="upload_review",
+            anchor_id=review,
+            ref="F1",
+            claims=claims,
+            shadow=False,
         )
     assert [(c.verified, c.verification_reason) for c in found] == [
         (True, None),
@@ -105,6 +111,7 @@ async def test_ac1_the_matcher_cites_an_inbox_file(seed: Seeder) -> None:
             claims=document_claims(
                 [DocumentCitation(page=1, quote="Harborline statement")], inbox_file_id=inbox
             ),
+            shadow=False,
         )
     assert cited.verified and str(cited.match_id).startswith(f"inbox:{inbox}#p1:")
     [row] = await seed.rows("SELECT source_type, source_id FROM citations WHERE id = $1", cited.id)
@@ -129,6 +136,7 @@ async def test_an_inbox_file_of_another_engagement_is_not_found(seed: Seeder) ->
             claims=document_claims(
                 [DocumentCitation(page=1, quote="Harborline statement")], inbox_file_id=inbox
             ),
+            shadow=False,
         )
     assert (cited.verified, cited.verification_reason) == (False, "source_not_found")
 
@@ -146,6 +154,7 @@ async def test_the_screeners_cells_are_sheet_cell_rows(seed: Seeder) -> None:
             anchor_id=uuid.uuid4(),
             ref=None,
             claims=cell_claims(sheet, [Citation(cell="B2", value=None, quote="1,650.00")]),
+            shadow=False,
         )
     assert [(c.kind, c.verified) for c in found] == [("sheet_cell", True)]
 
@@ -166,6 +175,7 @@ async def test_a_rolled_back_handoff_leaves_no_citation_rows(seed: Seeder) -> No
                 claims=document_claims(
                     [DocumentCitation(page=1, quote="Harborline")], evidence_version_id=version
                 ),
+                shadow=False,
             )
             tx.record(
                 "upload_review.created", target=Target("evidence_version", version), after=Ref()

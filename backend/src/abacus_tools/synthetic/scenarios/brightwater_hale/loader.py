@@ -38,6 +38,11 @@ level, title, team, service line and seasonal end) is opt-in (`--slice people`).
 profiles go through identity's services in a unit of work; teams are bootstrapped like offices
 until G-01-T08 gives them a service.
 
+The `compliance` slice (Q-02-T39: FIL-02a's retention policies, FIL-02b's two holds taken to
+Active, INC-2026-005, and the two rollout flags they sit behind) is opt-in (`--slice compliance`,
+which brings `people`) and goes through `evidence.api` and `platform.api` as the people the
+handoff names, with fresh MFA at the event's time; see the section comment and DEC-363.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -63,7 +68,8 @@ from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
-from typing import Final, cast
+from decimal import Decimal
+from typing import Final, Literal, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -77,6 +83,14 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.assurance.api import record_phase, update_profile
 from abacus.modules.engagements.api import answer_independence, assurance_item, assurance_item_id
+from abacus.modules.evidence.api import (
+    HoldScope,
+    PolicyChange,
+    legal_hold_activate,
+    legal_hold_apply_batch,
+    place_hold,
+    set_policy,
+)
 from abacus.modules.identity.api import (
     AuthContext,
     MemberProfile,
@@ -85,6 +99,7 @@ from abacus.modules.identity.api import (
     set_member_profile,
 )
 from abacus.modules.organisations.api import NewClient, client_with_entity, create_client
+from abacus.modules.platform.api import IncidentFacts, record_incident
 from abacus.modules.portal.api import (
     BrandingSlots,
     activate_portal_host,
@@ -124,6 +139,12 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.clients import (
     Client,
     build_clients,
     entity_id_of,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.compliance import (
+    NEEDS as COMPLIANCE_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.compliance import (
+    SLICE as COMPLIANCE_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
 from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
@@ -178,6 +199,7 @@ FLAGS_ON: Final = (
     "matching.enabled",
     "ledger.gl_import",
     "guidance.drafting",
+    "agents.client_data_optin",
     "audits.cockpit",  # A-01: "the local seed turns it on for Brightwater Hale"
 )
 OFFICE_ZONES: Final = {
@@ -1110,7 +1132,10 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
 # bootstrapped like `_portal_user_added`, with the `granted` history row the service writes. The
 # invitation is bootstrapped too: `create_invitation` would mint a token and email it.
 
-SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {PORTAL_SLICE: PORTAL_NEEDS}
+SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
+    PORTAL_SLICE: PORTAL_NEEDS,
+    COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
+}
 
 
 def expand_slices(slices: tuple[str, ...]) -> tuple[str, ...]:
@@ -1413,6 +1438,100 @@ async def _engagement_archived(conn: asyncpg.Connection, _: Scenario, event: Eve
     await _bootstrap(conn, event, write)
 
 
+# --- the compliance slice (Q-02-T39; DEC-363) ----------------------------------------------------
+# Each event goes through the owning module's service as the person the handoff names, signed in
+# with a second factor at the event's time (the services need fresh MFA). A hold is then taken to
+# Active by the same steps `LegalHoldApply` runs (repeat-safe), since the loader replays without
+# a worker; a running relay starting the workflow too changes nothing.
+
+
+# The services' own literals, restated: the loader reads them from the slice's event data.
+ServiceLine = Literal["audit", "tax", "cas", "advisory", "any"]
+Anchor = Literal[
+    "upload",
+    "report_release",
+    "filing_date",
+    "due_or_received_later",
+    "relationship_end",
+    "client_inactive",
+    "message_date",
+    "event_date",
+    "period_end",
+]
+ReasonCode = Literal["irs_examination", "litigation", "regulatory_inquiry", "subpoena", "other"]
+EventKind = Literal[
+    "unauthorized_access",
+    "credential_attack",
+    "data_exposure",
+    "lost_device",
+    "vendor_incident",
+    "other",
+]
+
+
+async def _staff_context(conn: asyncpg.Connection, event: Event) -> AuthContext:
+    """The event's actor as a signed-in member, with the firm role their membership holds now and
+    a second factor just verified (`authorise` checks its recency against the system clock, not
+    the event's business time)."""
+    user = user_id_of(_SEATS[event.actor])
+    role = await conn.fetchval(
+        "SELECT firm_role FROM memberships WHERE tenant_id = $1 AND user_id = $2", TENANT, user
+    )
+    return AuthContext(
+        TenantContext(TENANT, "human", str(user)), user, UUID(int=0), role, system_now()
+    )
+
+
+async def _flag_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    await set_flag(TENANT, str(event.data["flag"]), "true", LOADER, "Brightwater Hale scenario")
+
+
+async def _retention_policy_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    data = event.data
+    change = PolicyChange(
+        record_type=str(data["record_type"]),
+        service_line=cast(ServiceLine, data["service_line"]),
+        firm_years=Decimal(str(data["firm_years"])),
+        clock_start_event=cast(Anchor, data["clock_start_event"]),
+        lock=bool(data["lock"]),
+    )
+    await set_policy(await _staff_context(conn, event), change)
+
+
+async def _legal_hold_placed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    data = event.data
+    client: Client = _CLIENTS[str(data["client"])]
+    scope = HoldScope(
+        "client_tax_year",
+        client_id=UUID(stable_id(f"client:{client.slug}")),
+        tax_year=int(cast(int, data["tax_year"])),
+    )
+    view = await place_hold(
+        await _staff_context(conn, event),
+        scope,
+        cast(ReasonCode, data["reason_code"]),
+        str(data["details"]),
+        (),
+    )
+    while await legal_hold_apply_batch(TENANT, view.id) > 0:
+        pass
+    await legal_hold_activate(TENANT, view.id)
+
+
+async def _incident_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    data = event.data
+    consumers = data["consumers_affected"]
+    unencrypted = data["unencrypted"]
+    facts = IncidentFacts(
+        title=str(data["title"]),
+        event_kind=cast(EventKind, data["event_kind"]),
+        discovered_at=datetime.fromisoformat(str(data["discovered_at"])),
+        consumers_affected=None if consumers is None else int(cast(int, consumers)),
+        unencrypted=None if unencrypted is None else bool(unencrypted),
+    )
+    await record_incident(await _staff_context(conn, event), facts)
+
+
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
@@ -1452,6 +1571,11 @@ HANDLERS: Final[dict[str, Handler]] = {
     "identity.job_title_set": _job_title_set,
     "identity.default_office_set": _default_office_set,
     "notifications.preference_set": _preference_set,
+    # Q-02-T39 (`--slice compliance`): flags first, then policies, holds and the incident.
+    "platform.flag_set": _flag_set,
+    "evidence.retention_policy_set": _retention_policy_set,
+    "evidence.legal_hold_placed": _legal_hold_placed,
+    "platform.incident_recorded": _incident_recorded,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

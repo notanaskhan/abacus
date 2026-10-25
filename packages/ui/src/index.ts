@@ -233,6 +233,15 @@ export {
   TooltipProvider,
 } from "./components/popover";
 export { type Column, DataTable } from "./components/data-table";
+export {
+  type CapabilityCell,
+  type CapabilityColumn,
+  CapabilityMatrix,
+  type CapabilityMatrixProps,
+  type CapabilityRow,
+  type CapabilityWords,
+  capabilityText,
+} from "./components/capability-matrix";
 export { NumberedCitation } from "./components/citation";
 export {
   Amount,
@@ -388,3 +397,20 @@ export * from "./viewer";
 
 // C-02 Workpaper kit, SourceDocGroup and SourceDocRow (F-05-T50).
 export * from "./workpaper";
+// C-34 ScreeningCard (P-06-T22): evidence screening of an upload against its request.
+export {
+  SCREENING_LABELS,
+  type ScreeningAction,
+  ScreeningCard,
+  type ScreeningCardProps,
+  type ScreeningCheck,
+  type ScreeningCheckVerdict,
+  type ScreeningFlaggedFile,
+  type ScreeningVerdict,
+} from "./components/screening/ScreeningCard";
+
+// C-17 Issue kit (F-05-T55).
+export * from "./issues";
+
+// C-15 / C-18 File kit, inbox visuals (F-05-T56).
+export * from "./inbox";

@@ -1,3 +1,11 @@
+---
+id: RB-31
+title: Pause notification email for a firm or every firm
+owner: builder
+alarms: []
+last_rehearsed: never
+rehearse_by: 2026-12-11
+---
 # RB-31 · Pause notification email for a firm (or every firm)
 
 | Field | Value |

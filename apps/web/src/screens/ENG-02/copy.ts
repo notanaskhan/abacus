@@ -96,6 +96,31 @@ export const COPY = {
     workItems: "No work items yet.",
   },
   workItemHint: "Opens AUD-02 · audit cockpit",
+  /** The status pill's ⌄ menu (spec.md: "Active / On hold… (On hold asks for a reason)"). The
+   * dialog, the reason words and the toasts are undesigned; recorded in DEC-344. */
+  status: {
+    menu: "Status",
+    active: "Active",
+    onHold: "On hold…",
+    dialogTitle: "Put on hold",
+    dialogDescription:
+      "Choose why the engagement is on hold. Set it back to Active from the status menu.",
+    reason: "Reason",
+    confirm: "Put on hold",
+    held: "Engagement on hold",
+    resumed: "Engagement active",
+    reasons: {
+      client_unresponsive: "Client unresponsive",
+      fees_outstanding: "Fees outstanding",
+      scope_change: "Scope change",
+      independence_review: "Independence review",
+      other: "Other",
+    },
+    errors: {
+      illegal_transition: "Only an active engagement can go on hold.",
+      failed: "Couldn’t change the status.",
+    },
+  },
   letter: {
     title: "Letter & terms",
     status: "Status",

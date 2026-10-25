@@ -523,6 +523,98 @@ test.describe("tier D: T3 evidence triad", () => {
   }
 });
 
+// T8 InboxLayout (F-05-T56): filter bar 50 (−10), rail 392 beside the reading pane, panes 752 tall;
+// rail rows at least 52.
+test.describe("tier D: T8 inbox master-detail", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  test("t8a: rail 392, panes 752 tall, rows ≥ 52", async ({ page }) => {
+    const got = await specimen(page, "t8-inbox", '[data-artboard="t8a"]').evaluate((el) => {
+      const first = el.querySelector("[data-split-pane]");
+      const rows = [...el.querySelectorAll("[data-inbox-row]")].map((r) =>
+        Math.round(r.getBoundingClientRect().height),
+      );
+      return {
+        rail: first === null ? null : Math.round(first.getBoundingClientRect().width),
+        height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+        shortRows: rows.filter((h) => h < 52).length,
+      };
+    });
+    expect(got).toEqual({ rail: 392, height: 752, shortRows: 0 });
+  });
+});
+
+// T9 QueueDetailLayout (F-05-T55): the three presets' panes. Individual 546 · 433 · 377 (706
+// tall, queue card 262), close-review 790 · 576 (700 tall, queue 310), entity 470 · 896 (700 tall).
+test.describe("tier D: T9 queue · detail · evidence", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  for (const [id, expected] of [
+    ["t9a", { panes: [546, 433, 377], height: 706, queue: 262 }],
+    ["t9b", { panes: [790, 576], height: 700, queue: 310 }],
+    ["t9c", { panes: [470, 896], height: 700, queue: 470 }],
+  ] as const) {
+    test(`${id}: panes ${JSON.stringify(expected)}`, async ({ page }) => {
+      const got = await specimen(page, "t9-queue-detail", `[data-artboard="${id}"]`).evaluate(
+        (el) => {
+          const panes = [...el.querySelectorAll("[data-split-pane]")].map((p) =>
+            Math.round(p.getBoundingClientRect().width),
+          );
+          const first = el.querySelector("[data-split-pane]");
+          const queue = el.querySelector('[data-queue-part="queue"]');
+          return {
+            panes,
+            height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+            queue: queue === null ? null : Math.round(queue.getBoundingClientRect().width),
+          };
+        },
+      );
+      expect(got).toEqual(expected);
+    });
+  }
+});
+
+// TPL-03 (F-05-T54): the Feld 1040 review at 452 × 3 (a, c, d, e) and 214 · 571 · 571 (b), with
+// the K-1 matrix rows 41 tall.
+test.describe("tier D: TPL-03 Feld 1040 review", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  for (const [id, expected] of [
+    ["tpl-03a", { tree: 452, viewer: 452, sheet: 452 }],
+    ["tpl-03b", { tree: 214, viewer: 571, sheet: 571 }],
+  ] as const) {
+    test(`${id}: panes ${JSON.stringify(expected)}`, async ({ page }) => {
+      const got = await specimen(page, "tpl-03", `[data-artboard="${id}"]`).evaluate((el) => {
+        const w = (sel: string): number | null => {
+          const node = el.querySelector(sel);
+          return node === null ? null : Math.round(node.getBoundingClientRect().width);
+        };
+        return {
+          tree: w('[data-triad-pane="tree"]'),
+          viewer: w('[data-triad-pane="viewer"]'),
+          sheet: w('[data-triad-pane="sheet"]'),
+        };
+      });
+      expect(got).toEqual(expected);
+    });
+  }
+
+  test("tpl-03a: K-1 matrix rows are 41 tall", async ({ page }) => {
+    const h = await specimen(
+      page,
+      "tpl-03",
+      '[data-artboard="tpl-03a"] [data-k1-row="type"]',
+    ).evaluate((el) => Math.round(el.getBoundingClientRect().height));
+    expect(h).toBe(41);
+  });
+});
+
 // The M5 lock (F-05-T49): T11 DashboardLayout, T12 SettingsLayout and the O6 wizard, at the numbers
 // their canvases state (Wave 0 - Foundations `#t11`, `#t12`; Wave 0 - Templates TPL-11, TPL-12,
 // TPL-18). Box sizes are measured inside the 1400 window, so they hold at any page offset.

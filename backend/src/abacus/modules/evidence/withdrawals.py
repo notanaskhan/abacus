@@ -53,6 +53,7 @@ from abacus.modules.evidence.models import (
     EvidenceItem,
     EvidenceObjectKey,
     EvidenceVersion,
+    EvidenceVersionVoid,
     EvidenceWithdrawal,
     ReviewDecision,
 )
@@ -432,4 +433,10 @@ async def withdrawn_among(tenant: TenantContext, version_ids: Sequence[UUID]) ->
                 EvidenceWithdrawal.evidence_version_id.in_(ids)
             )
         )
-        return frozenset(found.scalars().all())
+        # R-01 Story 2.2: a version retired with its voided rule link closes the same way.
+        retired = await session.execute(
+            select(EvidenceVersionVoid.evidence_version_id).where(
+                EvidenceVersionVoid.evidence_version_id.in_(ids)
+            )
+        )
+        return frozenset(found.scalars().all()) | frozenset(retired.scalars().all())

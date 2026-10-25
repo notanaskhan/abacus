@@ -17,8 +17,10 @@ risk_zone: red
 
 ## Decision
 - **The freeze starts when the first non-synthetic firm goes live.**
-- **Windows** are Jan 1 - Apr 20 and Sep 1 - Oct 20 for tax-enabled firms, each preceded by a readiness test.
-- **Inside a window** only fixes and already-flagged features ship.
+- **Windows are per firm, from the date that firm first holds real data** (chapter 01 §1.2.4): Jan 1 - Apr 20 for every live firm, and Sep 1 - Oct 20 for firms live on tax or EBP work, each preceded by a readiness test.
+- **Mini-freezes** on Sep 8-15, Sep 23-30 and Oct 8-15, and **no production promotion in a deadline week** (Mar 15, Apr 15, Sep 15, Sep 30, Oct 15).
+- **Inside a window** only fixes and already-flagged features ship: live-path code changes only to fix defects; new modules merge dark behind default-off flags; migrations are expand-only; flags flip per firm in the Tuesday evening window with the journey passing on staging, a shadow run and a written rollback; no model or prompt upgrade without the full evaluation suite and a shadow run.
+- **There is no year-one exception.** The first real firm's first window is a window like any other.
 - **Until go-live,** the 18 Dec train is a stability milestone, not a freeze.
 
 ## Options considered

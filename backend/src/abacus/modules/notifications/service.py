@@ -333,19 +333,28 @@ async def read_all(ctx: AuthContext) -> int:
     return count
 
 
-async def run_purge_job(stop: asyncio.Event) -> None:
-    """Daily until `stop` (AC-10). The definer function reads across firms and returns a count."""
+async def purge_once() -> int:
+    """One purge pass (AC-10): notifications older than the retention, across firms, through the
+    definer function, which returns a count. Audited as the system. `NotificationPurgeWorkflow`
+    runs it daily on a Schedule (Q-01-T26)."""
     platform = TenantContext(UUID(int=0), "system", "notifications:purge")
+    async with uow(platform) as tx:
+        count = await purge(tx.session, RETENTION_DAYS)
+        tx.record(
+            "notifications.purged",
+            target=Target("retention", RETENTION_DAYS),
+            after=Ref(count=count),
+        )
+    _log.info("notifications.purged", count=count)
+    return count
+
+
+async def run_purge_job(stop: asyncio.Event) -> None:
+    """Daily until `stop` (AC-10). The worker no longer runs it: the daily pass is a Schedule
+    (Q-01-T26). Kept as the loop the SPEC-013 back-fill test drives."""
     while not stop.is_set():
         try:
-            async with uow(platform) as tx:
-                count = await purge(tx.session, RETENTION_DAYS)
-                tx.record(
-                    "notifications.purged",
-                    target=Target("retention", RETENTION_DAYS),
-                    after=Ref(count=count),
-                )
-            _log.info("notifications.purged", count=count)
+            await purge_once()
         except Exception as exc:
             _log.warning("notifications.purge_failed", error=type(exc).__name__)
         with contextlib.suppress(TimeoutError):

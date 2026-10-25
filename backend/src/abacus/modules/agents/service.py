@@ -429,6 +429,7 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
             anchor_id=result_id,
             ref=None,
             claims=cell_claims(version.id, output.citations),
+            shadow=locked.shadow,
         )
         await finish_run(
             tx.session,

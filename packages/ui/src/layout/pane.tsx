@@ -157,6 +157,9 @@ export interface PaneHeaderProps {
   titleAlign?: "center" | "left";
   left?: ReactNode;
   right?: ReactNode;
+  /** Centred on the pane beside a left-aligned title: a Segmented (ADM-02's "Users · Role
+   * templates · Invitations"). Ignored with a centred title. */
+  center?: ReactNode;
   /** The title's element id, so a pane can name itself by it. */
   titleId?: string;
   className?: string;
@@ -168,6 +171,7 @@ export function PaneHeader({
   titleAlign = "center",
   left,
   right,
+  center,
   titleId,
   className,
 }: PaneHeaderProps): JSX.Element {
@@ -210,6 +214,14 @@ export function PaneHeader({
           {title}
         </h2>
       )}
+      {center !== undefined && !centred && (
+        <div
+          data-pane="center"
+          className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center"
+        >
+          {center}
+        </div>
+      )}
       {centred && <span aria-hidden="true" className="flex-1" />}
       {right !== undefined && (
         <div ref={rightRef} className="flex flex-none items-center gap-[6px]">
@@ -246,6 +258,7 @@ export function Pane({
   titleAlign,
   left,
   right,
+  center,
   footer,
   scrollLabel,
   className,
@@ -270,6 +283,7 @@ export function Pane({
           {...(titleAlign === undefined ? {} : { titleAlign })}
           {...(left === undefined ? {} : { left })}
           {...(right === undefined ? {} : { right })}
+          {...(center === undefined ? {} : { center })}
           titleId={id}
         />
       )}

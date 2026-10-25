@@ -17,7 +17,7 @@ Rules (from [`README.md`](README.md)): only the tool's evidence moves a control 
 
 | ID | Map state | Seen on `main` today | Gap | Closing | Due | Ticket |
 |---|---|---|---|---|---|---|
-| SEC-01 | designed | QI designated (`README.md`) | WISP not written | Q-02-T40 | Fri Feb 19, 2027 | |
+| SEC-01 | designed | QI designated (`README.md`); WISP v1 drafted ([`wisp.md`](wisp.md), 2026-10-25) | WISP not yet approved by the QI; counsel review open | Q-02-T40 | Fri Feb 19, 2027 | |
 | SEC-02 | designed | — | training, acceptable-use policy | R-01; policies in the tool | Fri Jan 29, 2027 | |
 | SEC-03 | designed | `docs/operations/provider-terms.yaml` exists with no entries | status page, generated sub-processor list for customers | Q-01-T41; Q-02-T18 | Fri Feb 19, 2027 | |
 | SEC-04 | building | threat model refreshed (Q-03-T018) | risk assessment in the tool | R-01 | Fri Jan 29, 2027 | |

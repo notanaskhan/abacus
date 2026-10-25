@@ -37,12 +37,39 @@ def stems(patterns):
 PICK_SIDE = re.compile(r"\bgit\s+checkout\b.*\s--(ours|theirs)\b")
 
 
+# The mutation floors file (Q-03-T027) changes only through the edit hook, which refuses a lowered
+# floor; the shell may read it, never write it.
+FLOORS_NAME = "mutation-thresholds.yaml"
+FLOORS_READERS = re.compile(
+    r"^\s*(cat|head|tail|less|grep|rg|wc|diff|ls|"
+    r"git\s+(diff|show|log|blame|status|add|commit)|"
+    r"(uv\s+run\s+)?python3?\s+-m\s+abacus_tools\.quality\.mutation(_floors)?)\b"
+)
+
+
+def floors_write(cmd):
+    if FLOORS_NAME not in cmd:
+        return None
+    for segment in re.split(r"&&|\|\||;|\||\n", cmd):
+        if FLOORS_NAME not in segment:
+            continue
+        if re.search(r">>?\s*\S*" + re.escape(FLOORS_NAME), segment) or not FLOORS_READERS.match(segment):
+            return (
+                "backend/mutation-thresholds.yaml changes only through the Edit or Write tool, "
+                "where the hook refuses a lowered floor (Q-03-T027)."
+            )
+    return None
+
+
 def check(cmd):
     from _protected import GENERATED
 
     for pattern, reason in RULES:
         if re.search(pattern, cmd):
             return reason
+    floors = floors_write(cmd)
+    if floors:
+        return floors
     if PICK_SIDE.search(cmd):
         for stem in stems([pattern for pattern, _ in GENERATED]):
             if re.search(r"(?<![\w.-])" + re.escape(stem) + r"(?![\w-])", cmd, re.IGNORECASE):

@@ -197,6 +197,45 @@ async def review_of(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> 
     )
 
 
+@dataclass(frozen=True)
+class CitationStates:
+    """Q-01-T30 (the canary's INV-2 check): the latest review's run and status and, for each
+    shown flag, its category and each citation's code verification (None: never checked).
+    Categories and booleans only, no quote or rationale."""
+
+    run_id: UUID | None
+    status: str  # none | running | completed | failed | escalated
+    flags: tuple[tuple[str, tuple[bool | None, ...]], ...]
+
+
+def _verified(raw: object) -> tuple[bool | None, ...]:
+    citations = cast(list[dict[str, object]], raw if isinstance(raw, list) else [])
+    return tuple(
+        cast(bool, c["verified"]) if isinstance(c.get("verified"), bool) else None
+        for c in citations
+    )
+
+
+async def review_citation_states(
+    ctx: AuthContext, engagement_id: UUID, version_id: UUID
+) -> CitationStates:
+    """The latest review of a version as the canary checks it, with `review_of`'s rules."""
+    engagement = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "upload_review.read", engagement.resource())
+    await refuse_unmasked_read(ctx, "upload_review.read")
+    version = await version_view(ctx.tenant, version_id)
+    if version.engagement_id != engagement_id:
+        raise NotFound("evidence_version")
+    async with tenant_session(ctx.tenant) as session:
+        run = await latest_review_run(session, ctx, REVIEWER, version_id)
+        flags = await shown_flags(session, ctx, run.id) if run is not None else []
+    if run is None:
+        return CitationStates(None, "none", ())
+    return CitationStates(
+        run.id, run.status, tuple((f.category, _verified(f.citations)) for f in flags)
+    )
+
+
 async def review_flag_counts(ctx: AuthContext, engagement_id: UUID) -> dict[UUID, int]:
     """For the Board: per evidence version, the shown flags of its latest review."""
     engagement = await get_ref(ctx, engagement_id)

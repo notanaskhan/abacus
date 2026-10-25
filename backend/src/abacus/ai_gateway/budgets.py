@@ -12,8 +12,6 @@ recorded call, so a few concurrent calls may overshoot a limit slightly (accepte
 
 from __future__ import annotations
 
-import asyncio
-import contextlib
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -164,7 +162,7 @@ async def check_budget(
                 raise NotAdmitted("deferred", DEFER_SECONDS)
 
 
-ANOMALY_INTERVAL_SECONDS: Final = 3600
+ANOMALY_INTERVAL_SECONDS: Final = 3600  # `SpendAnomalyWorkflow`'s Schedule (Q-01-T26)
 # The job reads across firms only through `engagement_spend_anomalies` (SECURITY DEFINER), which
 # returns identifiers; the nil tenant matches no row under row-level security.
 _PLATFORM = TenantContext(UUID(int=0), "system", "budget:anomaly")
@@ -191,17 +189,6 @@ async def flag_anomalies() -> int:
             tx.record("budget.anomaly", target=Target("engagement", engagement_id))
             tx.emit(BudgetAnomaly(engagement_id=engagement_id))
     return len(rows)
-
-
-async def run_anomaly_job(stop: asyncio.Event) -> None:
-    """Hourly until `stop`. A failed run is logged and retried next hour."""
-    while not stop.is_set():
-        try:
-            await flag_anomalies()
-        except Exception as exc:
-            _log.warning("budget.anomaly_failed", error=exc)
-        with contextlib.suppress(TimeoutError):
-            await asyncio.wait_for(stop.wait(), ANOMALY_INTERVAL_SECONDS)
 
 
 @dataclass(frozen=True)

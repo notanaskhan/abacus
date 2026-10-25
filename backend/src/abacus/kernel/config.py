@@ -12,6 +12,7 @@ from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 from typing import Annotated, Final, Literal, Self, cast
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -345,6 +346,13 @@ class Settings(BaseSettings):
     mail_sink_domain: Annotated[str | None, classified("internal")] = None
     mail_sink_bucket: Annotated[str | None, classified("internal")] = None
     mail_sink_prefix: Annotated[str, classified("internal")] = "sink/"
+    # Q-01-T30 (Q-01 F6): the canary. Its synthetic firm, the staff member it acts as and the
+    # engagement it writes in; unset, no canary Schedule exists. A pass beats the heartbeat URL
+    # and the second consecutive failure calls its fail URL (the URL carries a token).
+    canary_tenant_id: Annotated[UUID | None, classified("internal")] = None
+    canary_staff_user_id: Annotated[UUID | None, classified("internal")] = None
+    canary_engagement_id: Annotated[UUID | None, classified("internal")] = None
+    canary_heartbeat_url: Annotated[SecretStr | None, classified("restricted")] = None
     # Observability (ADR-022; TASK-013). Traces export over OTLP only when an endpoint is set;
     # errors go to Sentry only when a DSN is set. Neither is required locally.
     # None: debug locally and in tests, info elsewhere.

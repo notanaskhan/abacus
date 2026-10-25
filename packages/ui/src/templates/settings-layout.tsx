@@ -71,6 +71,14 @@ export interface SettingsLayoutProps {
   /** Inside the app's own shell (the routed screen): the settings bar and panes without a second
    * AppShell and toolbar; `toolbar`, `embedded` and `height` are then ignored. */
   bare?: boolean;
+  /** Centred in the form pane's header (ADM-02's Segmented). */
+  headerCenter?: ReactNode;
+  /** The form pane header's right side in place of Discard and Save, for a section that is not a
+   * form (ADM-02's "Add seats…" and "Invite user…"). */
+  headerActions?: ReactNode;
+  /** The section is a list, not a form: the body spans the pane with no 760 column or padding
+   * (ADM-02's tally strip, filters and table). */
+  wide?: boolean;
 }
 
 /** Can the form be saved: dirty, valid and editable. */
@@ -149,6 +157,9 @@ export function SettingsLayout({
   children,
   aside,
   bare = false,
+  headerCenter,
+  headerActions,
+  wide = false,
 }: SettingsLayoutProps): JSX.Element {
   const formTitle =
     groups.flatMap((g) => g.sections).find((s) => s.id === active)?.label ?? navTitle;
@@ -185,23 +196,26 @@ export function SettingsLayout({
         {labels?.save ?? "Save"}
       </Button>
     ) : undefined;
-  const actions = readOnly ? (
-    readOnlyActions
-  ) : (
-    <>
-      {showDirty && (
-        <span data-settings="unsaved" className="pr-[8px] text-body text-ink-3">
-          {labels?.unsaved ?? "Unsaved changes"}
-        </span>
-      )}
-      <Button variant="ghost" size="lg" disabled={!showDirty} onClick={onDiscard}>
-        {labels?.discard ?? "Discard"}
-      </Button>
-      <Button size="lg" disabled={!canSave(dirty, invalid, readOnly)} onClick={onSave}>
-        {labels?.save ?? "Save"}
-      </Button>
-    </>
-  );
+  const actions =
+    headerActions !== undefined ? (
+      headerActions
+    ) : readOnly ? (
+      readOnlyActions
+    ) : (
+      <>
+        {showDirty && (
+          <span data-settings="unsaved" className="pr-[8px] text-body text-ink-3">
+            {labels?.unsaved ?? "Unsaved changes"}
+          </span>
+        )}
+        <Button variant="ghost" size="lg" disabled={!showDirty} onClick={onDiscard}>
+          {labels?.discard ?? "Discard"}
+        </Button>
+        <Button size="lg" disabled={!canSave(dirty, invalid, readOnly)} onClick={onSave}>
+          {labels?.save ?? "Save"}
+        </Button>
+      </>
+    );
   const form = (
     <div className="flex max-w-[760px] min-w-0 flex-1 flex-col gap-[12px]">
       {readOnly && readOnlyAt === "form" && banner}
@@ -218,21 +232,33 @@ export function SettingsLayout({
         titleAlign="left"
         scrollLabel={formTitle}
         {...(actions === undefined ? {} : { right: actions })}
+        {...(headerCenter === undefined ? {} : { center: headerCenter })}
       >
-        <div
-          data-settings="form"
-          {...(readOnly ? { "data-read-only": "" } : {})}
-          className="px-[12px] pt-[12px] pb-[24px]"
-        >
-          {aside === undefined ? (
-            form
-          ) : (
-            <div className="flex items-start gap-[12px]">
-              {form}
-              <aside className="w-[330px] flex-none">{aside}</aside>
-            </div>
-          )}
-        </div>
+        {wide ? (
+          <div
+            data-settings="list"
+            {...(readOnly ? { "data-read-only": "" } : {})}
+            className="flex min-h-full flex-col"
+          >
+            {readOnly && readOnlyAt === "form" && banner}
+            {children}
+          </div>
+        ) : (
+          <div
+            data-settings="form"
+            {...(readOnly ? { "data-read-only": "" } : {})}
+            className="px-[12px] pt-[12px] pb-[24px]"
+          >
+            {aside === undefined ? (
+              form
+            ) : (
+              <div className="flex items-start gap-[12px]">
+                {form}
+                <aside className="w-[330px] flex-none">{aside}</aside>
+              </div>
+            )}
+          </div>
+        )}
       </Pane>
     </>
   );

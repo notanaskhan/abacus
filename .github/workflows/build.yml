@@ -1,0 +1,293 @@
+# Build once (Q-01-T11; ADR-088; SPEC-050 AC-19). Every push to main builds one release candidate
+# for its SHA, in the `shared` account, and nothing deploys here:
+#   - the backend image, once: if the immutable tag `<sha>` already exists in ECR its digest is
+#     reused, so two runs on one SHA yield one digest; BuildKit SBOM and provenance attestations;
+#   - the Inspector record for that digest (`releases/<sha>/inspector.json`): a fixable critical or
+#     high finding makes the release unpromotable unless its release PR records an exception;
+#   - each SPA entry present (`index.html`; `portal.html` once `build:portal` exists) into
+#     `s3://abacus-shared-artifacts/web/<sha>/` with a SHA-256 manifest, uploaded only once;
+#   - `releases/<sha>/release.json` = {git_sha, image_digest, spa_manifest_sha256, alembic_head,
+#     openapi_sha256, infra_sha}: every deploy input by digest, never a tag.
+# Weekly, `base-refresh` opens a PR when python:3.12-slim has a newer digest than the one pinned in
+# backend/Dockerfile; merging it builds the refreshed image here like any other change.
+#
+# Needs repository variables (no secrets; OIDC): AWS_BUILD_ROLE (the shared account's CI build
+# role) and ECR_REPOSITORY (`<shared account id>.dkr.ecr.us-east-2.amazonaws.com/abacus-backend`,
+# set in GitHub, never in git). While either is unset the jobs skip with a notice.
+# Every job runs only from main (security review, S8 wave B): a dispatch on another branch assumes
+# no role. The build role's trust must also be limited to refs/heads/main (human to-do, DEC-360).
+# Every action is pinned to a full commit SHA.
+name: build
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * 1" # Mondays: base image refresh check
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  REGION: us-east-2
+  ARTIFACTS: abacus-shared-artifacts
+
+jobs:
+  image:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the build role
+    env:
+      AWS_BUILD_ROLE: ${{ vars.AWS_BUILD_ROLE }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      IMAGE_PLATFORM: ${{ vars.IMAGE_PLATFORM }} # the ECS tasks' CPU architecture; default linux/amd64
+    outputs:
+      configured: ${{ steps.gate.outputs.configured }}
+      digest: ${{ steps.digest.outputs.digest }}
+    steps:
+      - name: Build configured?
+        id: gate
+        run: |
+          if [ -n "$AWS_BUILD_ROLE" ] && [ -n "$ECR_REPOSITORY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=build skipped::repository variables AWS_BUILD_ROLE and ECR_REPOSITORY are not both set (infra/README.md)"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_BUILD_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: build-${{ github.run_id }}
+      - name: Existing digest for this SHA?
+        id: existing
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          repo="${ECR_REPOSITORY#*/}"
+          digest=$(aws ecr describe-images --repository-name "$repo" --image-ids imageTag="$GITHUB_SHA" \
+            --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)
+          if [ -n "$digest" ] && [ "$digest" != "None" ]; then
+            echo "digest=$digest" >> "$GITHUB_OUTPUT"
+            echo "::notice title=image reused::$GITHUB_SHA already built as $digest"
+          fi
+      - name: Build and push once
+        id: build
+        if: steps.gate.outputs.configured == 'true' && steps.existing.outputs.digest == ''
+        run: |
+          aws ecr get-login-password --region "$REGION" \
+            | docker login --username AWS --password-stdin "${ECR_REPOSITORY%%/*}"
+          docker buildx create --use --name abacus-build
+          docker buildx build backend \
+            --platform "${IMAGE_PLATFORM:-linux/amd64}" \
+            --tag "$ECR_REPOSITORY:$GITHUB_SHA" \
+            --provenance=mode=max \
+            --sbom=true \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --metadata-file build-metadata.json \
+            --push
+          echo "digest=$(jq -r '."containerimage.digest"' build-metadata.json)" >> "$GITHUB_OUTPUT"
+      - name: The image digest
+        id: digest
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          EXISTING: ${{ steps.existing.outputs.digest }}
+          BUILT: ${{ steps.build.outputs.digest }}
+        run: |
+          digest="${EXISTING:-$BUILT}"
+          case "$digest" in sha256:*) ;; *) echo "::error::no image digest"; exit 1 ;; esac
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  inspector:
+    needs: image
+    if: github.ref == 'refs/heads/main' && needs.image.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_BUILD_ROLE: ${{ vars.AWS_BUILD_ROLE }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      DIGEST: ${{ needs.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_BUILD_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: inspector-${{ github.run_id }}
+      - name: Wait for the scan, then record the gate
+        run: |
+          repo="${ECR_REPOSITORY#*/}"
+          status=""
+          for _ in $(seq 1 60); do
+            status=$(aws ecr describe-image-scan-findings --repository-name "$repo" \
+              --image-id imageDigest="$DIGEST" --query 'imageScanStatus.status' --output text 2>/dev/null || true)
+            [ "$status" = "COMPLETE" ] || [ "$status" = "ACTIVE" ] && break
+            sleep 20
+          done
+          # No findings from a scan that never finished: no inspector.json, so no promotion.
+          case "$status" in COMPLETE|ACTIVE) ;; *)
+            echo "::error title=inspector scan incomplete::scan status '$status' for $DIGEST; no Inspector record written"
+            exit 1 ;;
+          esac
+          aws inspector2 list-findings --filter-criteria \
+            "{\"ecrImageHash\":[{\"comparison\":\"EQUALS\",\"value\":\"$DIGEST\"}],\"findingStatus\":[{\"comparison\":\"EQUALS\",\"value\":\"ACTIVE\"}]}" \
+            --output json > findings.json
+          (cd backend && uv run --locked python -m abacus_tools.release inspector ../findings.json \
+            --image-digest "$DIGEST") > inspector.json
+          aws s3 cp inspector.json "s3://$ARTIFACTS/releases/$GITHUB_SHA/inspector.json" --only-show-errors
+          if [ "$(jq -r .promotable inspector.json)" != "true" ]; then
+            echo "::warning title=unpromotable::fixable critical or high Inspector findings; a release PR must record an exception"
+          fi
+
+  spa:
+    needs: image
+    if: github.ref == 'refs/heads/main' && needs.image.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_BUILD_ROLE: ${{ vars.AWS_BUILD_ROLE }}
+    outputs:
+      manifest: ${{ steps.manifest.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install
+        run: |
+          corepack enable
+          # Before the role is assumed, and without install scripts: no package code runs while
+          # AWS credentials are in the job (security review, S8 wave B).
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm -C packages/api-client build:types
+      - name: Build each entry present
+        # One bundle for every environment: authority and client ID come from runtime-config.json
+        # at boot (Q-01-T23), so nothing environment-specific is compiled in.
+        run: |
+          pnpm -C apps/web build
+          mkdir -p dist-release
+          cp -R apps/web/dist dist-release/firm
+          if jq -e '.scripts["build:portal"]' apps/web/package.json > /dev/null; then
+            pnpm -C apps/web build:portal
+            cp -R apps/web/dist/portal dist-release/portal
+          fi
+          rm -rf dist-release/firm/portal dist-release/*/.vite
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_BUILD_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: spa-${{ github.run_id }}
+      - name: Manifest
+        id: manifest
+        run: echo "sha256=$(cd backend && uv run --locked python -m abacus_tools.release manifest ../dist-release)" >> "$GITHUB_OUTPUT"
+      - name: Upload once
+        run: |
+          prefix="s3://$ARTIFACTS/web/$GITHUB_SHA/"
+          if aws s3 ls "$prefix$(basename manifest.sha256)" > /dev/null 2>&1; then
+            echo "::notice title=bundle reused::web/$GITHUB_SHA already uploaded"
+          else
+            aws s3 cp dist-release "$prefix" --recursive --only-show-errors
+          fi
+
+  record:
+    needs: [image, spa]
+    if: github.ref == 'refs/heads/main' && needs.image.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_BUILD_ROLE: ${{ vars.AWS_BUILD_ROLE }}
+      DIGEST: ${{ needs.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_BUILD_ROLE }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: record-${{ github.run_id }}
+      - name: Write release.json
+        env:
+          SPA_MANIFEST: ${{ needs.spa.outputs.manifest }}
+        run: |
+          infra_sha=$(git rev-parse "HEAD:infra")
+          (cd backend && uv run --locked python -m abacus_tools.release record \
+            --git-sha "$GITHUB_SHA" --image-digest "$DIGEST" \
+            --spa-manifest-sha256 "$SPA_MANIFEST" --infra-sha "$infra_sha" --out ../release.json)
+          aws s3 cp release.json "s3://$ARTIFACTS/releases/$GITHUB_SHA/release.json" --only-show-errors
+          {
+            echo "### Release candidate \`${GITHUB_SHA::7}\`"
+            echo '```json'
+            cat release.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  base-refresh:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # the refresh branch
+      pull-requests: write # the refresh PR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Newer python:3.12-slim?
+        id: base
+        run: |
+          pinned=$(sed -n 's/^ARG PYTHON_IMAGE=python:3.12-slim@\(sha256:[0-9a-f]*\)$/\1/p' backend/Dockerfile)
+          current=$(docker buildx imagetools inspect python:3.12-slim --format '{{json .Manifest.Digest}}' | tr -d '"')
+          echo "pinned=$pinned" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+      - name: Open the refresh PR
+        if: steps.base.outputs.current != '' && steps.base.outputs.current != steps.base.outputs.pinned
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PINNED: ${{ steps.base.outputs.pinned }}
+          CURRENT: ${{ steps.base.outputs.current }}
+        run: |
+          branch="base-refresh-$(date -u +%Y%m%d)"
+          sed -i "s|python:3.12-slim@$PINNED|python:3.12-slim@$CURRENT|" backend/Dockerfile
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "chore(image): refresh python:3.12-slim to $CURRENT (Q-01-T11 weekly base rebuild)"
+          git push -u origin "$branch"
+          gh pr create --title "Weekly base image refresh" \
+            --body "python:3.12-slim moved from \`$PINNED\` to \`$CURRENT\`. Merging builds the refreshed image once (build.yml). Holding for the batch."

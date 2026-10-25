@@ -30,9 +30,11 @@ from dataclasses import dataclass
 from typing import Final, Literal, NoReturn, cast
 from uuid import UUID
 
+from abacus.ai_gateway.admission import NotAdmitted
 from abacus.kernel import provider_terms
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import Route, settings
+from abacus.kernel.controls import control_state
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
@@ -53,6 +55,7 @@ Reason = Literal[
     "stage",
     "pii_in_context",
     "tax_return_information",
+    "ai_paused",
 ]
 # Audited by index: append only, so the indices already recorded keep their meaning.
 REASONS: Final[tuple[Reason, ...]] = (
@@ -64,9 +67,16 @@ REASONS: Final[tuple[Reason, ...]] = (
     "stage",
     "pii_in_context",
     "tax_return_information",  # P-06-T20 security review (DEC-324)
+    "ai_paused",  # Q-01-T36 (P-66): the platform's or the firm's AI kill switch
 )
 CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
+# How long this process keeps a firm's facts (opted in, excluded, stage). The API keeps them
+# `_CACHE_SECONDS` and drops a firm's in the request that changes them (its one model call, a
+# knowledge-search embedding, is refused for a real firm whatever the facts); a worker, which
+# makes the agents' model calls, keeps none (`hold_facts_for(0)`; DEC-337), so no stale grant
+# outlives a change made in another process.
+_fact_seconds: float = _CACHE_SECONDS
 _check: SyntheticCheck | None = None
 _opted_in: FirmCheck | None = None
 _excluded: EngagementCheck | None = None
@@ -149,7 +159,8 @@ async def _cached[T](key: tuple[object, ...], ask: Callable[[], Awaitable[T]]) -
     if found is not None and found[1] > now:
         return cast(T, found[0])  # stored by this function for `key`
     answer = await ask()
-    _facts[key] = (answer, now + _CACHE_SECONDS)
+    if _fact_seconds > 0:
+        _facts[key] = (answer, now + _fact_seconds)
     return answer
 
 
@@ -200,10 +211,19 @@ async def enforce_boundary(
     engagement_id: UUID | None = None,
 ) -> Basis | None:
     """Return why `route` may see this firm's data (None for `fake`); else audit, count and
-    raise with the reason. An engagement its partner excluded refuses every route, for every
-    firm (SPEC-036 AC-6)."""
+    raise with the reason. AI paused for the platform or the firm (Q-01-T36, `ai_pause`) refuses
+    every route first, the fake one too; then an engagement its partner excluded refuses every
+    route, for every firm (SPEC-036 AC-6). Every provider call passes here just before it leaves,
+    so with AI paused none does once the controls cache (10 s) has caught up."""
     excluded = _excluded
-    if (
+    paused = await control_state("ai_pause", tenant.tenant_id)
+    if paused == "unknown":
+        # The switches can't be read: no call leaves (fail closed), but this is an outage, not
+        # a pause, so the run waits and retries instead of ending (DEC-338, security review).
+        raise NotAdmitted("controls_unavailable", 10)
+    if paused == "on":
+        reason: Reason | None = "ai_paused"
+    elif (
         engagement_id is not None
         and excluded is not None
         and await _cached(
@@ -211,7 +231,7 @@ async def enforce_boundary(
             lambda: excluded(tenant, engagement_id),
         )
     ):
-        reason: Reason | None = "engagement"
+        reason = "engagement"
     elif route == "fake":
         return None
     elif await _synthetic(tenant):
@@ -260,6 +280,15 @@ async def refuse_pii_in_context(
 ) -> NoReturn:
     """ADR-167 §2: the context holds an unmasked TIN form. Every route, every firm."""
     await _refuse(tenant, route, prompt, "pii_in_context", part=(part, part_index))
+
+
+def hold_facts_for(seconds: float) -> None:
+    """How long this process caches firm facts; 0 reads them fresh for every call (DEC-337)."""
+    global _fact_seconds
+    if seconds < 0:
+        raise ValueError("seconds must not be negative")
+    _fact_seconds = seconds
+    _facts.clear()
 
 
 def clear_cache(tenant_id: UUID | None = None) -> None:

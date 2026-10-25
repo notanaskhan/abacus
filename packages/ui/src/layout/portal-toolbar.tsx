@@ -3,6 +3,7 @@ import { FirmMark, type FirmMarkProps, Wordmark } from "../brand";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
 import { Count } from "../components/pill";
+import { Menu, type MenuItem } from "../components/popover";
 import { Icon, type IconName } from "../icons";
 
 // The PortalToolbar (C-00 Shell Kit spec 03; F-05-T18): the client portal's 46px bar, white-labelled
@@ -15,6 +16,15 @@ export interface PortalNavItem {
   icon: IconName;
   /** A count beside the label ("Messages 1"). */
   count?: number;
+  /** The count's spoken words ("Documents, 2 to do"); the label and the count when left out. */
+  countLabel?: string;
+}
+
+/** The user chip's menu (POR-02: each scope with its role, account links, Sign out). */
+export interface PortalUserMenu {
+  /** The menu's accessible name. */
+  label: string;
+  sections: MenuItem[][];
 }
 
 export interface PortalToolbarProps {
@@ -34,6 +44,8 @@ export interface PortalToolbarProps {
   userOn?: boolean;
   onNavigate?: (label: string) => void;
   onUser?: () => void;
+  /** The user chip opens this menu (the chip is its trigger); `onUser` is not called then. */
+  userMenu?: PortalUserMenu;
   className?: string;
 }
 
@@ -53,8 +65,25 @@ export function PortalToolbar({
   userOn = false,
   onNavigate,
   onUser,
+  userMenu,
   className,
 }: PortalToolbarProps): JSX.Element {
+  const chip = (
+    <button
+      type="button"
+      aria-haspopup="menu"
+      data-pressed={userOn}
+      className={cn(
+        "inline-flex h-[30px] flex-none items-center gap-[7px] rounded-pill bg-nav-fill pr-[9px] pl-[10px] text-nav text-ink shadow-e1 hover:bg-sel-bg data-[pressed=true]:bg-sel-bg data-[state=open]:bg-sel-bg",
+        PRESS,
+      )}
+      {...(userMenu === undefined ? { onClick: onUser } : {})}
+    >
+      <Icon name="user" size={14} filled className="text-ink-2" />
+      {user}
+      <Icon name="chevron-down" size={12} className="text-ink-2" />
+    </button>
+  );
   return (
     <header
       data-shell="portal-toolbar"
@@ -78,6 +107,9 @@ export function PortalToolbar({
             key={item.label}
             type="button"
             {...(item.label === active ? { "aria-current": "page" as const } : {})}
+            {...(item.countLabel !== undefined && item.count !== undefined && item.count > 0
+              ? { "aria-label": item.countLabel }
+              : {})}
             className={cn(ITEM, PRESS)}
             onClick={() => onNavigate?.(item.label)}
           >
@@ -90,20 +122,11 @@ export function PortalToolbar({
         ))}
       </nav>
       <div className="flex min-w-0 flex-1 items-center justify-end">
-        <button
-          type="button"
-          aria-haspopup="menu"
-          data-pressed={userOn}
-          className={cn(
-            "inline-flex h-[30px] flex-none items-center gap-[7px] rounded-pill bg-nav-fill pr-[9px] pl-[10px] text-nav text-ink shadow-e1 hover:bg-sel-bg data-[pressed=true]:bg-sel-bg",
-            PRESS,
-          )}
-          onClick={onUser}
-        >
-          <Icon name="user" size={14} filled className="text-ink-2" />
-          {user}
-          <Icon name="chevron-down" size={12} className="text-ink-2" />
-        </button>
+        {userMenu === undefined ? (
+          chip
+        ) : (
+          <Menu trigger={chip} sections={userMenu.sections} label={userMenu.label} width={260} />
+        )}
       </div>
     </header>
   );

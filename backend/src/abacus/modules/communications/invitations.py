@@ -20,7 +20,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Target, uow
-from abacus.modules.communications.deliveries import SUPPRESSED, send_email
+from abacus.modules.communications.deliveries import deliver, send_email
 from abacus.modules.communications.repository import insert_message
 from abacus.modules.communications.templates import current_version, render
 from abacus.modules.engagements.api import engagement_label
@@ -66,7 +66,7 @@ async def deliver_invitation(event: OutboxEvent) -> None:
     link = f"{settings().app_base_url}/client/accept#token={issued.token}"
     names = await firm_wording(event.tenant_id, issued.engagement_id)
     message_id = uuid4()
-    sent = await send_email(
+    blocked = await deliver(
         to=issued.email,
         subject=SUBJECT.format(**names),
         body=TEMPLATE.format(link=link, expires=expires, **names),
@@ -84,15 +84,19 @@ async def deliver_invitation(event: OutboxEvent) -> None:
             channel="email",
             recipient_ref=f"invitation:{invitation_id}",
             body=TEMPLATE.format(link="[link removed]", expires=expires, **names),
-            status="sent" if sent else "blocked",
-            violations=[] if sent else [SUPPRESSED],
+            status="sent" if blocked is None else "blocked",
+            violations=[] if blocked is None else [blocked],
             created_by=issued.invited_by,
         )
         tx.record(
-            "message.sent" if sent else "message.blocked", target=Target("message", message_id)
+            "message.sent" if blocked is None else "message.blocked",
+            target=Target("message", message_id),
         )
     _log.info(
-        "invitation.email_sent", invitation_id=invitation_id, message_id=message_id, sent=sent
+        "invitation.email_sent",
+        invitation_id=invitation_id,
+        message_id=message_id,
+        sent=blocked is None,
     )
 
 
@@ -113,7 +117,7 @@ async def _deliver_contact_invitation(
     }
     rendered = render(version, {k: values.get(k, "") for k in version.variables})
     message_id = uuid4()
-    sent = await send_email(
+    blocked = await deliver(
         to=issued.email,
         subject=rendered.subject,
         body=rendered.body_text,
@@ -135,15 +139,19 @@ async def _deliver_contact_invitation(
             channel="email",
             recipient_ref=f"invitation:{invitation_id}",
             body=redacted.body_text,
-            status="sent" if sent else "blocked",
-            violations=[] if sent else [SUPPRESSED],
+            status="sent" if blocked is None else "blocked",
+            violations=[] if blocked is None else [blocked],
             created_by=issued.invited_by,
         )
         tx.record(
-            "message.sent" if sent else "message.blocked", target=Target("message", message_id)
+            "message.sent" if blocked is None else "message.blocked",
+            target=Target("message", message_id),
         )
     _log.info(
-        "invitation.email_sent", invitation_id=invitation_id, message_id=message_id, sent=sent
+        "invitation.email_sent",
+        invitation_id=invitation_id,
+        message_id=message_id,
+        sent=blocked is None,
     )
 
 

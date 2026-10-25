@@ -3,7 +3,7 @@
 // Data: the ENG-01 slice of the seed (seed/engagement-index.ts) through fixtures/handlers/
 // engagements.ts (`EngagementIndexPage`); each artboard is a data condition:
 //
-//   a  every line, Period │ Current: 275 engagements, the 17 named rows past due first
+//   a  every line, Period │ Current: 273 engagements (archived under Prior, DEC-343), 16 named rows
 //   b  Letter │ Not signed with the Accepted tile: rows 4, 6, 7, 9 ("Showing 4 of 4")
 //   c  Segment Advisory: the Ridgeline cost segregation & §754 project; Accepted 1, others 0
 //   d  q=Harbor Lane matches no engagement or client

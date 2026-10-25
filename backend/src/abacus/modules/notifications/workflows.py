@@ -66,3 +66,24 @@ class NotificationEmailWorkflow:
             retry_policy=_RECORD_RETRY,
         )
         return outcome
+
+
+# Q-01-T26: the daily purge (SPEC-013 AC-10), one pass per run on a Schedule, never a worker loop.
+NOTIFICATION_PURGE_ID = "notification_purge:platform"
+_PURGE_TIMEOUT = timedelta(minutes=5)
+_PURGE_RETRY = RetryPolicy(maximum_attempts=3)  # a failed day is retried by the next run
+
+
+@workflow.defn(name="NotificationPurge")
+class NotificationPurgeWorkflow:
+    """`notification_purge:platform`: one purge pass, audited as the system. Started only by its
+    Schedule (overlap SKIP), so two workers never purge twice."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "notifications.purge_expired",
+            result_type=int,
+            start_to_close_timeout=_PURGE_TIMEOUT,
+            retry_policy=_PURGE_RETRY,
+        )

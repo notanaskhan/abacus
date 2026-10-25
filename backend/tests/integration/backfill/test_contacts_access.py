@@ -249,6 +249,38 @@ async def test_revoke_ends_the_delegations_and_the_footer_drops_them(world: Worl
     assert row["portal_status"] == "not_invited"
 
 
+async def test_ed049_the_row_names_the_live_invitation_that_resend_and_revoke_take(
+    world: World,
+) -> None:
+    """ED-049 (P-07-T33): CLI-04's Resend and Revoke take an invitation id, so the row carries
+    the contact's live invitation (Invited, then Active) and none once Not invited again."""
+
+    async def harborline() -> dict[str, object]:
+        page = _json(
+            await world.net.call(
+                "GET", f"/v1/clients/{world.site.client_id}/contacts", world.grace
+            )
+        )
+        rows = cast(list[dict[str, object]], page["items"])
+        return next(r for r in rows if r["id"] == str(world.harborline))
+
+    before = await harborline()
+    assert (before["portal_status"], before["invitation_id"]) == ("not_invited", None)
+    invitation, _, _ = await _accepted(world)
+    active = await harborline()
+    assert (active["portal_status"], active["invitation_id"]) == (
+        "active",
+        invitation["invitation_id"],
+    )
+    _json(
+        await world.net.call(
+            "POST", f"/v1/invitations/{active['invitation_id']}/revoke", world.grace
+        )
+    )
+    after = await harborline()
+    assert (after["portal_status"], after["invitation_id"]) == ("not_invited", None)
+
+
 async def test_dec277_leaving_the_engagement_closes_the_contact_invitation_and_its_grants(
     world: World,
 ) -> None:

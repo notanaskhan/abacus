@@ -3,7 +3,7 @@ import { usePortalBrand } from "../brand";
 import { cn } from "../cn";
 import { AppShell } from "../layout/app-shell";
 import { MobileHeader, MobileTabBar } from "../layout/mobile-tab-bar";
-import { PortalFooter, type PortalNavItem } from "../layout/portal-toolbar";
+import { PortalFooter, type PortalNavItem, type PortalUserMenu } from "../layout/portal-toolbar";
 
 // T7 PortalLayout (F-05-T35; T7 and T7-M handoff, DEC-45): the client portal's frame in three
 // variants.
@@ -54,6 +54,8 @@ export interface PortalLayoutProps {
   active?: string;
   onNavigate?: (label: string) => void;
   onUser?: () => void;
+  /** The user chip's menu (the toolbar's, or the 390 header's account button). */
+  userMenu?: PortalUserMenu;
   /** The 336 rail beside the main pane (split only): a `Pane`. */
   rail?: ReactNode;
   /** The main pane (split, reduced), or the column's content (mobile). */
@@ -86,6 +88,7 @@ export function PortalLayout(props: PortalLayoutProps): JSX.Element {
     ...(brand.mark === undefined ? {} : { mark: brand.mark }),
     ...(onNavigate === undefined ? {} : { onNavigate }),
     ...(onUser === undefined ? {} : { onUser }),
+    ...(props.userMenu === undefined ? {} : { userMenu: props.userMenu }),
   };
   return (
     <AppShell
@@ -125,6 +128,7 @@ function MobileFrame({
   active,
   onNavigate,
   onUser,
+  userMenu,
   children,
   mobileFooter,
   moreOpen,
@@ -153,6 +157,7 @@ function MobileFrame({
         {...(brand.logo === undefined ? {} : { logo: brand.logo })}
         {...(brand.mark === undefined ? {} : { mark: brand.mark })}
         {...(onUser === undefined ? {} : { onUser })}
+        {...(userMenu === undefined ? {} : { userMenu })}
       />
       <main
         data-portal="column"

@@ -1,6 +1,9 @@
 """Public interface of the communications module; other modules import only this (ADR-008)."""
 
+from datetime import timedelta
+
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.modules.communications.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.communications.deliveries import (
     SesEventQueue,
@@ -96,9 +99,20 @@ register_link_claim(claim)
 register_contact_links_revoker(revoke_links_of)
 # SPEC-032 (TASK-062 D1): a firm comment is checked before it's shared with the client.
 register_comment_scope_check(comment_scope_kinds)
-# Q-01-T46: the every-minute drain of SES delivery events.
-WORKFLOWS: dict[type, str] = {DrainSesEventsWorkflow: "time_sensitive"}
+# Q-01-T46: the every-minute drain of SES delivery events, on its Schedule `ses_events:platform`
+# (Q-01-T26; `abacus_tools.schedules ensure`). Without `ses_events_queue_url` a run drains nothing.
+SES_EVENTS_ID = "ses_events:platform"
+WORKFLOWS: dict[type, WorkClass] = {DrainSesEventsWorkflow: "time_sensitive"}
+register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (drain_ses_events_activity,)
+SCHEDULES: tuple[PlatformSchedule, ...] = (
+    PlatformSchedule(
+        id=SES_EVENTS_ID,
+        workflow=DrainSesEventsWorkflow,
+        every=timedelta(minutes=1),
+        note="Q-01-T46: the SES delivery-event drain, every minute (Q-01-T26)",
+    ),
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -115,6 +129,8 @@ __all__ = [
     "REMINDER_TEMPLATE",
     "RETURN_TEMPLATE",
     "ROUTERS",
+    "SCHEDULES",
+    "SES_EVENTS_ID",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "ComposedFollowUp",

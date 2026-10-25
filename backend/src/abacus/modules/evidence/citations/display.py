@@ -56,8 +56,8 @@ from abacus.modules.evidence.repository import (
     events_of,
     get_citation,
     is_withdrawn,
-    live_citation_source,
     pages_of,
+    shown_citation,
 )
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import (
@@ -289,7 +289,11 @@ async def _used_in(
             Citation.match_id,
             func.count(distinct(tuple_(Citation.cited_from_type, Citation.cited_from_id))),
         )
-        .where(Citation.match_id.in_(list(match_ids)), visible(ctx, READ, _ENGAGEMENT))
+        .where(
+            Citation.match_id.in_(list(match_ids)),
+            visible(ctx, READ, _ENGAGEMENT),
+            shown_citation(),  # a shadow run's anchor is never counted (SPEC-036 AC-5)
+        )
         .group_by(Citation.match_id)
     )
     return {str(m): int(n) for m, n in rows.all()}
@@ -403,7 +407,8 @@ async def citation_display(ctx: AuthContext, citation_id: UUID) -> CitationView:
             and row.source_type == "evidence_version"
             and await is_withdrawn(session, row.source_id)
         )
-    if row is None or row.engagement_id is None or withdrawn:  # P-06-T19: withdrawn source
+    # P-06-T19: withdrawn source; SPEC-036 AC-5: a shadow run's citation is never shown.
+    if row is None or row.engagement_id is None or withdrawn or row.shadow:
         raise NotFound("citation")
     engagement = await get_ref(ctx, row.engagement_id)
     resource = engagement.resource()
@@ -414,7 +419,7 @@ async def citation_display(ctx: AuthContext, citation_id: UUID) -> CitationView:
 
 
 def _filtered(ctx: AuthContext, filters: CitationFilters) -> Select[Citation] | None:
-    stmt = select(Citation).where(visible(ctx, READ, _ENGAGEMENT), live_citation_source())
+    stmt = select(Citation).where(visible(ctx, READ, _ENGAGEMENT), shown_citation())
     if filters.anchor_type is not None:
         stmt = stmt.where(Citation.cited_from_type == filters.anchor_type)
     if filters.anchor_id is not None:

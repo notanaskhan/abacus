@@ -753,3 +753,12 @@ async def test_sec5_only_an_agent_context_writes_a_per_version_proposal(
                     "r": run,
                 },
             )
+
+
+# --- P-06-T22: the card names its request and expected period (DEC-351) --------------------------
+
+
+async def test_p06t22_the_card_carries_the_request_title_and_its_period(firm: Firm) -> None:
+    card = await firm.card()
+    assert isinstance(card["request_title"], str) and card["request_title"] != ""
+    assert (card["period_start"], card["period_end"]) == (JUNE_1.isoformat(), SEP_18.isoformat())

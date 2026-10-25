@@ -70,6 +70,20 @@ class EvidenceObjectKey(Base):
     destroyed_at: Mapped[datetime | None]
 
 
+class EvidenceVersionVoid(Base):
+    """A version retired with the rule link a person voided (R-01 Story 2.2; 0159): evidence
+    reads leave it out as they do a withdrawn one. Insert-only."""
+
+    __tablename__ = "evidence_version_voids"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    evidence_version_id: Mapped[UUID] = mapped_column(primary_key=True)
+    engagement_id: Mapped[UUID]
+    fulfilment_id: Mapped[UUID]
+    voided_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
 class EvidenceWithdrawal(Base):
     """A client's withdrawal of an unaccepted upload (ADR-162 §4; P-06-T19). Insert-only but for
     the purge's stamps (`erased_at` once; `erase_blocked_at` and `block_reason` on each retry)."""
@@ -361,6 +375,8 @@ class Citation(Base):
     created_by_user_id: Mapped[UUID | None]
     created_by_run_id: Mapped[UUID | None]
     on_behalf_of_user_id: Mapped[UUID | None]
+    # SPEC-036 AC-5 (0158): written by a shadow run, or succeeds one that was; never shown.
+    shadow: Mapped[bool] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 

@@ -8,6 +8,8 @@ export {
   useRequestBinder,
 } from "./binder";
 export {
+  BandRow,
+  BandSection,
   CategoryRail,
   type CategoryRailProps,
   DocGlyph,
@@ -22,6 +24,7 @@ export {
   type RequestEmptyKind,
   RequestRow,
   type RequestRowProps,
+  REVEAL_STAGGER_MS,
   RequestSection,
   SimpleMenu,
   type SimpleMenuItem,

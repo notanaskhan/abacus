@@ -87,10 +87,14 @@ async def record_citations(
     actor: Actor,
     anchor: Anchor,
     claims: Sequence[CitationClaim],
+    shadow: bool = False,
 ) -> list[RecordedCitation]:
     """Verify and write `claims` for `anchor`, in order, as `actor` (whose transaction `tx`
     is: the same firm and actor); returns each row's outcome. Each verifier authorises `actor`
-    on the anchor's engagement before reading the cited source."""
+    on the anchor's engagement before reading the cited source. `shadow`: an agent run that
+    started in shadow (SPEC-036 AC-5); its rows are never shown. Only an agent writes them."""
+    if shadow and not isinstance(actor, AgentContext):
+        raise ValueError("only an agent run writes shadow citations")
     if len(claims) > MAX_CLAIMS:
         raise ValueError(f"at most {MAX_CLAIMS} citations at once")
     unknown = sorted({c.kind for c in claims} - KINDS)
@@ -131,6 +135,7 @@ async def record_citations(
             "verified": verdict.verified,
             "verification_reason": verdict.reason,
             "verifier_version": registered.version if registered is not None else "none",
+            "shadow": shadow,
             **creator,
         }
         citation_id = await insert_citation(tx.session, values)

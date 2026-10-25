@@ -328,6 +328,7 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
                 claims=document_claims(
                     flag.citations, evidence_version_id=run.evidence_version_id
                 ),
+                shadow=locked.shadow,
             )
         await finish_run(
             tx.session,

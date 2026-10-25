@@ -44,7 +44,7 @@ def _lookalike(name: str) -> str:
 def _unicode(name: str) -> str:
     # Zero-width space inside the name and a right-to-left override before the legal suffix.
     middle = len(name) // 2
-    return f"{name[:middle]}​{name[middle:]}‮"
+    return f"{name[:middle]}\u200b{name[middle:]}\u202e"
 
 
 # Public names for reuse by evaluation suites (TASK-020).

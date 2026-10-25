@@ -18,17 +18,21 @@ becomes a `rule` fulfilment that a named person accepts (ADR-005).
 
 from __future__ import annotations
 
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel._flags import PORTAL_DROP_SORT
+from abacus.kernel._statuses import RequestStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainTooLarge, DomainUnsupported, NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.evidence.drops import check_drop, drop_file
+from abacus.modules.evidence.rule_voids import check_void, void_rule_link
 from abacus.modules.evidence.uploads import (
     MAX_UPLOAD_BYTES,
     UploadTooLarge,
@@ -63,6 +67,7 @@ class DropTypeNotAllowed(DomainUnsupported):
 
 
 drops_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
+void_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["requests"])
 
 
 @drops_router.post(
@@ -105,3 +110,72 @@ async def drop_file_route(
     except UploadTypeNotAllowed:
         raise DropTypeNotAllowed from None
     return DropAcceptedOut(batch_id=accepted.batch_id, file_id=accepted.file_id)
+
+
+# --- The firm's void of a wrong rule link (R-01 Story 2.2; TASK-1248) -------------------------
+
+# The one reason a person may void a rule fulfilment for.
+VoidReason = Literal["wrong_request"]
+
+
+class FulfilmentVoidIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason: Annotated[VoidReason, classified("internal")]
+
+
+class FulfilmentVoidedOut(BaseModel):
+    """The link is stamped void, never deleted. The request returns to `requested` when nothing
+    else fulfils it, and the version waits in the engagement drop zone for a person again."""
+
+    model_config = ConfigDict(frozen=True)
+
+    fulfilment_id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID, classified("internal")]
+    request_status: Annotated[RequestStatus, classified("internal")]  # C2
+    voided_at: Annotated[datetime, classified("internal")]
+
+
+@void_router.post(
+    "/fulfilments/{fulfilment_id}/void",
+    action="fulfilment.confirm",
+    response_model=FulfilmentVoidedOut,
+    errors=(409,),
+)
+async def void_fulfilment_route(
+    engagement_id: UUID,
+    fulfilment_id: UUID,
+    body: FulfilmentVoidIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> FulfilmentVoidedOut:
+    """Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment; a
+    human, agent, voided or accepted link answers 409 `not_voidable`. A person only: the agent is
+    denied `fulfilment.confirm` (INV-1). A retry with the same key is authorised again, then
+    answers what the first answered."""
+    if not await flag_enabled(ctx.tenant, PORTAL_DROP_SORT):
+        raise NotFound(PORTAL_DROP_SORT.name)
+    await check_void(ctx, engagement_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        voided = await void_rule_link(ctx, engagement_id, fulfilment_id)
+        out = FulfilmentVoidedOut(
+            fulfilment_id=voided.fulfilment_id,
+            request_item_id=voided.request_item_id,
+            request_status=cast(RequestStatus, voided.request_status),
+            voided_at=voided.voided_at,
+        )
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="fulfilment.void",
+        key=idempotency_key,
+        body={
+            "engagement_id": str(engagement_id),
+            "fulfilment_id": str(fulfilment_id),
+            "reason": body.reason,
+        },
+        run=run,
+    )
+    return FulfilmentVoidedOut.model_validate(stored.body)

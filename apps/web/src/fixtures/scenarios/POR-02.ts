@@ -1,8 +1,9 @@
-// POR-02 Portal home: the fixture scenarios P-08-T08 can build before the screen (P-08-T15): a, b,
-// c, d, e, f and M, each a data condition on `GET /v1/portal/home` and `/v1/me` → `portal`. g
-// (Granite Peak statements review, Thu Oct 22) and h (Tessellate SOC 2) are the R2 waves 6 and 7
-// and arrive with their epochs (docs/screens/POR-02.md). Clocks: E0 for all but b (Mon Feb 2,
-// 2026, the first visit).
+// POR-02 Portal home: one scenario per artboard, each a data condition on `GET /v1/portal/home`
+// and `/v1/me` → `portal` (P-08-T08 wrote a–f and M; P-08-T23 adds g and h). g (Granite Peak's
+// statements review, Thu Oct 22) and h (Tessellate's SOC 2) are the R2 waves 6 and 7: fixture-only,
+// behind the `statements_studio` and `attest` entitlements, until A-10/R-02 and X-01 register their
+// home sources (docs/screens/POR-02.md). Clocks: E0 for all but b (Mon Feb 2, 2026, the first
+// visit) and g (Thu Oct 22, 2026, 8:30 AM CT).
 
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
 import type { PortalHomeOut } from "@abacus/api-client";
@@ -13,7 +14,10 @@ import {
   claireAllDone,
   claireFirstVisit,
   claireHome,
+  luisHome,
+  marisolHome,
   meeraHome,
+  STATEMENTS_REVIEW_CLOCK,
   tessHome,
 } from "../seed/portal-home";
 
@@ -43,5 +47,7 @@ export const scenarios = defineScenarios({
   d: at("d", "tess-moreno", tessHome()),
   e: at("e", "meera-shah", meeraHome()),
   f: at("f", "claire-feld", null),
+  g: at("g", "luis-ferrante", luisHome(), STATEMENTS_REVIEW_CLOCK),
+  h: at("h", "marisol-vega", marisolHome()),
   M: at("M", "claire-feld", claireHome(feldOpenUploads())),
 });

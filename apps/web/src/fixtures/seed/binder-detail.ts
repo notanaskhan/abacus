@@ -193,6 +193,30 @@ const FELD_DONE_ROWS: readonly Spec[] = FELD_ROWS.map((r) => {
   return r;
 });
 
+/** g (R2): Mon Sep 14, 9:31 AM: Claire's two estimated-payment files land through the portal and
+ * wait for review ("Uploaded – needs review"); the files are c's (the same confirmations). */
+export const ESTIMATES_UPLOADED_AT = "2026-09-14T14:31:00.000Z";
+const FELD_UPLOADED_ROWS: readonly Spec[] = FELD_ROWS.map((r) =>
+  r.key === "est"
+    ? {
+        ...r,
+        status: "uploaded",
+        files: [
+          {
+            name: "Feld_2025_Estimated_Payments.pdf",
+            by: "Claire Feld",
+            at: ESTIMATES_UPLOADED_AT,
+          },
+          {
+            name: "Feld_2025_IT2105_Confirmations.pdf",
+            by: "Claire Feld",
+            at: ESTIMATES_UPLOADED_AT,
+          },
+        ],
+      }
+    : r,
+);
+
 /** b: the seven carried into the TY2026 Draft, unsent. */
 const FELD_DRAFT_ROWS: readonly Spec[] = FELD_ROWS.map(
   ({ key, category, kind, wording, title }) => ({
@@ -380,8 +404,13 @@ function build(spec: BinderSpec): BinderFixture {
       client_ignore_reason: ignored?.reason ?? null,
       source_tag: r.prior ? "prior_year" : null,
       incorporation_state: "none",
-      screening: null,
-      linked_count: null,
+      // R2 (P-06-T22): a client's upload carries its screening glyph; Linked (n) counts the live
+      // fulfilments, "—" at none. The firm-provided K-1 is not screened (it is no client upload).
+      screening:
+        (r.kind ?? "client_upload") === "client_upload" && (r.files ?? []).length > 0
+          ? "passed"
+          : null,
+      linked_count: (r.files ?? []).length > 0 ? (r.files ?? []).length : null,
       upload_count: (r.files ?? []).length,
       allowed_actions: [...ROW_ACTIONS, ...(r.status === "draft" ? ["request_item.send"] : [])],
     };
@@ -480,6 +509,8 @@ export interface BinderSet {
   feldHidden: BinderFixture;
   feldDraft: BinderFixture;
   feldDone: BinderFixture;
+  /** g (R2): the estimates uploaded and waiting for review. */
+  feldUploaded: BinderFixture;
   thornbury: BinderFixture;
   thornburyIgnored: BinderFixture;
   /** The Thornbury engagement and work item (not in the audit-core seed). */
@@ -548,6 +579,7 @@ export function binderSet(feldEngagementId: string, feldWorkItemId: string): Bin
       live: {},
       markedDone: { at: "2026-09-15T14:02:00.000Z", by: "Claire Feld" },
     }),
+    feldUploaded: build({ ...feld, rows: FELD_UPLOADED_ROWS, live: { aca: { waiting: 2 } } }),
     thornbury: build(thornbury),
     thornburyIgnored: build({
       ...thornbury,

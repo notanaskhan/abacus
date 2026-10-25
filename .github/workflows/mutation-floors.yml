@@ -1,0 +1,46 @@
+# Mutation floors only rise (Q-03-T027; QD-4; ADR-079; DEC-365). A pull request or merge-queue
+# entry that lowers or removes a floor in backend/mutation-thresholds.yaml, or narrows the mutation
+# scope (`SCOPES` in abacus_tools.quality.mutation, `[tool.mutmut]` in backend/pyproject.toml),
+# fails here, compared with its base on full history. The guard that judges is the BASE's copy, run
+# from a worktree of the base commit against this checkout, so a pull request cannot loosen the
+# guard that judges it (stage 1's `make check-fast` runs the head's, against origin/main). A base
+# without the guard has no floors to keep. The guard is standard-library Python, so nothing is
+# installed. This workflow file is itself the head's, as GitHub runs it; changing it is a reviewed
+# change. Making this check required on main is a repository-ruleset change the owner makes by hand.
+name: mutation-floors
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-floors-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  floors:
+    name: mutation floors only rise
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Compare the floors and the scope with the base, using the base's guard
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          guard=backend/src/abacus_tools/quality/mutation_floors.py
+          if ! git cat-file -e "$BASE:$guard" 2>/dev/null; then
+            echo "The base has no floors guard yet, so no floor to keep."
+            exit 0
+          fi
+          git worktree add --detach "$RUNNER_TEMP/base" "$BASE"
+          PYTHONPATH="$RUNNER_TEMP/base/backend/src" python3 -m abacus_tools.quality.mutation_floors \
+            --base "$BASE" --head-root "$GITHUB_WORKSPACE"

@@ -274,6 +274,7 @@ export const SERVICE_ORGANIZATIONS: readonly (readonly [string, string, "Yes" | 
 const BOX_2: Rect = [372, 420, 568, 440];
 const BOX_5: Rect = [372, 478, 568, 498];
 const BOX_18A: Rect = [372, 612, 568, 632];
+const STATES: Rect = [372, 700, 568, 720];
 const STMT_18A: Rect = [54, 300, 558, 336];
 const TB_4510: Rect = [54, 404, 558, 420];
 
@@ -322,8 +323,8 @@ export const K1_STACK: CitationV2Out[] = [
     K1_STATEMENT,
     3,
     STMT_18A,
-    "Ridgeline 2025 K-1 statement",
-    "p. 3",
+    "Ridgeline statement",
+    "p. 3 (municipal bond fund, 18A detail)",
     "1,550",
   ),
   k1Citation(
@@ -333,7 +334,7 @@ export const K1_STACK: CitationV2Out[] = [
     1,
     TB_4510,
     "Ridgeline TB 4510",
-    "Tax-exempt interest",
+    "Tax-exempt interest 6,200 × 25% = 1,550",
     "6,200",
   ),
 ];
@@ -353,6 +354,18 @@ export const K1_FIGURES: CitationV2Out[] = [
   k1Citation("box5", 5, K1_DRAFT, 1, BOX_5, "Interest income (box 5)", "Box 5", "4,600"),
   { ...(K1_STACK[0] as CitationV2Out), title: "Tax-exempt interest income (box 18A)" },
 ];
+
+/** The fourth linked-figure row: the partner's states (SHL-08a "States IL / CO / NY"). */
+export const K1_STATES: CitationV2Out = k1Citation(
+  "states",
+  6,
+  K1_DRAFT,
+  1,
+  STATES,
+  "States",
+  "Box 16",
+  "IL / CO / NY",
+);
 
 const K1_MASKS: PiiMaskOut[] = [
   {
@@ -440,6 +453,7 @@ export const DOCUMENTS: Record<string, SeededDocument> = {
       region(K1_DRAFT, 1, BOX_18A, K1_STACK[0]?.id ?? null, "Form 1040 · line 2a 1,550"),
       region(K1_DRAFT, 1, BOX_2, K1_FIGURES[0]?.id ?? null, "307,900"),
       region(K1_DRAFT, 1, BOX_5, K1_FIGURES[1]?.id ?? null, "4,600"),
+      region(K1_DRAFT, 1, STATES, K1_STATES.id, "IL / CO / NY"),
     ],
   },
   [K1_STATEMENT]: {
@@ -474,6 +488,16 @@ export const DOCUMENTS: Record<string, SeededDocument> = {
       allowed_actions: ["pii.reveal"],
     }),
     regions: [region(W2_CLAIRE, 1, W2_BOX_1, W2_WAGES.id, "268,400.00")],
+  },
+  // SHL-08e: the draft K-1 while its word layer and masked rendition are still being made (AC3.4):
+  // the manifest answers `processing` with no pages yet, and the viewer polls it every 3 s.
+  [K1_PROCESSING]: {
+    face: "form",
+    manifest: manifest(K1_PROCESSING, "Ridgeline_2025_K1_JonahFeld_DRAFT.pdf", 0, {
+      status: "processing",
+      pages: [],
+    }),
+    regions: [],
   },
   [HALVARD_1099]: {
     face: "form",

@@ -87,6 +87,74 @@ export const NORTHWIND_TB: readonly (readonly [string, string, string, string])[
   ["5200", "Administrative expenses", "38400.00", ""],
 ];
 
+/**
+ * Ridgeline Property Partners, LP's TY2025 K-1s (blueprint 01 §9.4): box 2 net rental real estate
+ * income, box 5 interest, box 18A tax-exempt interest and box 19A distributions per partner, all
+ * Draft (pre-release) on Sep 14. The five foot to Schedule K (FOOTINGS); Jonah Feld's is the K-1
+ * TPL-03 reviews.
+ */
+export const RIDGELINE_K1S: readonly {
+  partner: string;
+  box2: string;
+  box5: string;
+  box18a: string;
+  box19a: string;
+}[] = [
+  { partner: "Ridgeline GP LLC", box2: "24632", box5: "368", box18a: "124", box19a: "12000" },
+  { partner: "Meera Shah", box2: "468008", box5: "6992", box18a: "2356", box19a: "228000" },
+  {
+    partner: "Pell Street Ventures LLC",
+    box2: "400270",
+    box5: "5980",
+    box18a: "2015",
+    box19a: "180000",
+  },
+  { partner: "Pell Street II LLC", box2: "30790", box5: "460", box18a: "155", box19a: "30000" },
+  { partner: "Jonah Feld", box2: "307900", box5: "4600", box18a: "1550", box19a: "150000" },
+];
+
+/** Schedule K: the five K-1s' totals (blueprint 01 §9.4). */
+export const RIDGELINE_SCHEDULE_K = {
+  box2: "1231600",
+  box5: "18400",
+  box18a: "6200",
+  box19a: "600000",
+} as const;
+
+/**
+ * Jonah Feld's draft Ridgeline K-1 (TPL-03): Part III boxes and the Item L capital account as
+ * drafted (blueprint 01 §9.4; 25% beginning and ending). Item L foots: 1,500,000 + 250,000 +
+ * 312,500 − 150,000 = 1,912,500.
+ */
+export const FELD_K1 = {
+  box2: "307900",
+  box5: "4600",
+  box18a: "1550",
+  box19a: "150000",
+  beginningCapital: "1500000",
+  capitalContributed: "250000",
+  currentYearIncome: "312500",
+  withdrawals: "-150000",
+  endingCapital: "1912500",
+} as const;
+
+/**
+ * Halvard Securities' 2025 consolidated 1099 for the Felds (blueprint 01 §9.4) and the Form 1040
+ * lines TPL-03b draws from it: 3b = 1099-DIV 1a, 3a = 1b, 2b = 1099-INT 1 + Ridgeline box 5.
+ */
+export const FELD_HALVARD = {
+  ordinaryDividends: "14820",
+  qualifiedDividends: "11960",
+  interest: "2310",
+} as const;
+
+export const FELD_1040_LINES = {
+  line2a: "1550",
+  line2b: "6910",
+  line3a: "11960",
+  line3b: "14820",
+} as const;
+
 /** Every footing a specimen draws: `parts` add up to `total` (checked in the seed test). */
 export const FOOTINGS: readonly { name: string; parts: readonly string[]; total: string }[] = [
   {
@@ -115,6 +183,26 @@ export const FOOTINGS: readonly { name: string; parts: readonly string[]; total:
     total: "17663450.00",
   },
   ...FELD_T3_FOOTINGS,
+  {
+    name: "Feld K-1 Item L ending capital (TPL-03)",
+    parts: [
+      FELD_K1.beginningCapital,
+      FELD_K1.capitalContributed,
+      FELD_K1.currentYearIncome,
+      FELD_K1.withdrawals,
+    ],
+    total: FELD_K1.endingCapital,
+  },
+  {
+    name: "Feld Form 1040 line 2b taxable interest (TPL-03b)",
+    parts: [FELD_HALVARD.interest, FELD_K1.box5],
+    total: FELD_1040_LINES.line2b,
+  },
+  ...(["box2", "box5", "box18a", "box19a"] as const).map((box) => ({
+    name: `Ridgeline Schedule K ${box} (five K-1s)`,
+    parts: RIDGELINE_K1S.map((k) => k[box]),
+    total: RIDGELINE_SCHEDULE_K[box],
+  })),
   {
     name: "TY2025 returns by office",
     parts: Object.values(RETURNS_BY_OFFICE).map(String),

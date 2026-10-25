@@ -1,5 +1,6 @@
 """Unit tests have no database: `authorise` reads each firm's policy overrides and firm settings
-(F-03-T24) from a stub with none. Tests of overrides and settings replace it with their own."""
+(F-03-T24) from a stub with none. Tests of overrides and settings replace it with their own. The
+kill switches are stubbed for every suite but integration (`tests/conftest.py`)."""
 
 from __future__ import annotations
 

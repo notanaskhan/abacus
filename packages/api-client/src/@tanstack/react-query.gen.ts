@@ -3479,8 +3479,10 @@ export const sendDraftMutation = (options?: Partial<Options<SendDraftData>>): Us
 /**
  * Void Fulfilment Route
  *
- * Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment;
- * a human or accepted link answers 409 `not_voidable`.
+ * Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment; a
+ * human, agent, voided or accepted link answers 409 `not_voidable`. A person only: the agent is
+ * denied `fulfilment.confirm` (INV-1). A retry with the same key is authorised again, then
+ * answers what the first answered.
  */
 export const voidFulfilmentMutation = (options?: Partial<Options<VoidFulfilmentData>>): UseMutationOptions<VoidFulfilmentResponse, VoidFulfilmentError, Options<VoidFulfilmentData>> => {
     const mutationOptions: UseMutationOptions<VoidFulfilmentResponse, VoidFulfilmentError, Options<VoidFulfilmentData>> = {

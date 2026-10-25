@@ -4,12 +4,12 @@ title: "F-02-T02 · ADR programme: docs/adr/backlog.md (P-01..P-69 with drafter,
 spec: SPEC-046
 acceptance_criteria: [AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: green
-status: in-progress
+status: done
 epic: F-02
 plan_key: F-02-T02
 branch: task-116-adr-backlog
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-25
 ---
 
 > Solo edition. Write the plan below first (amber and red), then build. If scope must change, stop and add it to Questions. Append to the Progress log before ending a session.
@@ -70,6 +70,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Created in SU-12 (2026-10-20); verify
+- `2026-10-25` — S8b verification and completion. AC-4: 69 rows, P-01 to P-69, each with epic, number (or `next free`), needed-by and status; no reservation issues (solo). AC-5: `backlog.md` is the only source; its minted-number line was stale (missing P-37, P-44, P-06, P-09, P-10, P-28, P-03, P-26, P-17, P-29) and is regenerated from the table and the files. AC-6: README rows exist only for ADR files; `validate_docs` green. AC-7: `withdrawn` added to the status legend (none withdrawn yet). AC-8: the M1 rows' accept-by dates fixed in TASK-120's change (P-17 Nov 27, P-26 Dec 4, P-29 Dec 14-18). P-12 (ADR-167) and P-47 (ADR-169) read `accepted`, as their files do. `_TEMPLATE.md` carries the deciders note and points at `backlog.md` for numbers (DEC-364).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -83,8 +84,8 @@ Append-only. Newest at the bottom.
 - [ ] None.
 
 ## Handoff
-- **Current state:** Created in SU-12 (2026-10-20); not yet verified against the ACs.
-- **Exact next step:** Verify AC-4 to AC-8 against `docs/adr/backlog.md`.
+- **Current state:** done.
+- **Exact next step:** none.
 - **Uncommitted or partial work:** None known.
 - **Known failing checks:** None.
 - **Open issues:** None.

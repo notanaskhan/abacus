@@ -13,7 +13,8 @@ import type {
 } from "@abacus/api-client";
 import { stableId } from "./prng";
 
-export type CockpitGrammar = "run" | "idle" | "pills";
+/** `failed` is the run grammar with the Internal Control step failed (AUD-02 e, 9:58 AM). */
+export type CockpitGrammar = "run" | "idle" | "pills" | "failed";
 
 interface CockpitIds {
   workItemId: string;
@@ -129,11 +130,12 @@ function sectionRow(
       allowed_actions: [],
     };
   }
+  const failed = grammar === "failed" && key === "internal_control";
   return {
     ...base,
     grammar: "sub_line",
-    section_state: runState,
-    sub_line: runLine,
+    section_state: failed ? "failed" : runState,
+    sub_line: failed ? "Failed — see run" : runLine,
     ...(runState === "blocked_on_decision"
       ? { blocked_on_user_id: MARGARET, blocked_on_name: "Margaret Okonkwo" }
       : {}),
@@ -171,7 +173,8 @@ export function northwindCockpit(
     audit_bar: {
       title: "PY2025 Employee Benefit Plan Audit",
       methodology_label: "BH Audit Methodology · EBP v3",
-      run_started_at: grammar === "run" ? "2026-09-14T14:24:00.000Z" : null, // 9:24 AM CT
+      run_started_at:
+        grammar === "run" || grammar === "failed" ? "2026-09-14T14:24:00.000Z" : null, // 9:24 AM CT
       auto_mode: null, // no `engagement_run.auto_mode` before P-10-T39
     },
     overview: {

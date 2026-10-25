@@ -40,7 +40,7 @@ from abacus.modules.requests.lifecycle import (
     register_live_facts,
     request_item_scope,
 )
-from abacus.modules.requests.pbc_contract import pbc_firm_router, pbc_portal_router
+from abacus.modules.requests.pbc_contract import pbc_portal_router
 from abacus.modules.requests.portal_documents import (
     PortalBinder,
     PortalBinderRef,
@@ -70,6 +70,7 @@ from abacus.modules.requests.service import (
     RequestItemView,
     ReviewTarget,
     ScreeningSubject,
+    VoidedRuleLink,
     add_request_item,
     apply_drafted_guidance,
     drop_items,
@@ -82,6 +83,7 @@ from abacus.modules.requests.service import (
     item_versions,
     items_of_version,
     latest_version_of,
+    lock_rule_link,
     move_after_review,
     overdue_for,
     read_item,
@@ -91,6 +93,7 @@ from abacus.modules.requests.service import (
     review_targets,
     screening_subject,
     upload_item_of,
+    void_rule_link_in,
     withdraw_upload,
 )
 from abacus.modules.requests.source_documents import (
@@ -122,7 +125,6 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     items_router,
     portal_router,
     pbc_portal_router,  # C5 portal-pbc (R-01-T08): undo an Ignore, undo Mark as Done
-    pbc_firm_router,  # C5 portal-pbc stub (R-01-T01): void a rule fulfilment
 )
 
 # P-07-T08: the clients index's open-request count.
@@ -165,6 +167,7 @@ __all__ = [
     "ScreeningSubject",
     "SourceDocuments",
     "UploadFacts",
+    "VoidedRuleLink",
     "add_request_item",
     "apply_drafted_guidance",
     "classify",
@@ -184,6 +187,7 @@ __all__ = [
     "item_versions",
     "items_of_version",
     "latest_version_of",
+    "lock_rule_link",
     "methodology_router",
     "move_after_review",
     "overdue_for",
@@ -210,5 +214,6 @@ __all__ = [
     "screening_subject",
     "source_documents",
     "upload_item_of",
+    "void_rule_link_in",
     "withdraw_upload",
 ]

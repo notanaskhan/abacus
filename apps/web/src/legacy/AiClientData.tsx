@@ -57,7 +57,17 @@ function Disclosure({ data }: { data: AiClientDataOut }): JSX.Element | null {
   );
 }
 
-export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Element {
+function isNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "detail" in error &&
+    typeof error.detail === "string" &&
+    error.detail.replace(" ", "_") === "not_found"
+  );
+}
+
+export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Element | null {
   const queryClient = useQueryClient();
   const state = useQuery({ ...aiClientDataOptions(), retry: false });
   const [read, setRead] = useState(false);
@@ -74,6 +84,8 @@ export function AiClientDataSetting({ canSet }: { canSet: boolean }): JSX.Elemen
   });
   if (state.isPending) return <Skeleton className="h-40" />;
   if (state.isError) {
+    // `agents.client_data_optin` off for this firm (Q-02-T06): the setting isn't offered yet.
+    if (isNotFound(state.error)) return null;
     if (isForbidden(state.error)) {
       return (
         <Panel title="AI on your clients' data">

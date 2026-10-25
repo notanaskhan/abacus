@@ -4999,6 +4999,10 @@ export type ContactRowOut = {
      */
     id: string;
     /**
+     * Invitation Id
+     */
+    invitation_id?: string | null;
+    /**
      * Invited On
      */
     invited_on?: string | null;
@@ -6875,6 +6879,10 @@ export type EngagementRecordOut = {
      * Gates
      */
     gates: Array<EngagementGateOut>;
+    /**
+     * Hold Reason
+     */
+    hold_reason?: 'client_unresponsive' | 'fees_outstanding' | 'scope_change' | 'independence_review' | 'other' | null;
     /**
      * Id
      */
@@ -17189,11 +17197,23 @@ export type ScreeningCardOut = {
      */
     files_total: number;
     my_feedback: ScreeningFeedbackOut | null;
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
     provenance: ScreeningProvenanceOut;
     /**
      * Request Item Id
      */
     request_item_id: string;
+    /**
+     * Request Title
+     */
+    request_title: string;
     /**
      * Running
      */
@@ -30611,10 +30631,6 @@ export type VoidFulfilmentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VoidFulfilmentError = VoidFulfilmentErrors[keyof VoidFulfilmentErrors];

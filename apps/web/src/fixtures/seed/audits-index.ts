@@ -388,15 +388,24 @@ export function auditIndexRows(
 export interface AuditIndexQuery {
   segment?: Segment | undefined;
   phase?: AuditEngagementStatus;
+  type?: AuditIndexRowOut["engagement_type"];
+  office?: string;
   due?: DueWindow;
   q?: string;
 }
+
+/** The segments a firm sees: SOC & IT and Internal audit only under their entitlements (P-28);
+ * Brightwater Hale holds neither at E0, both in the wave-7 view (AUD-01 g, h). */
+export const E0_SEGMENTS: readonly Segment[] = ["fs", "ebp", "review"];
+export const E2_SEGMENTS: readonly Segment[] = ["fs", "ebp", "review", "soc", "ia"];
 
 const WINDOW: Record<Exclude<DueWindow, "any">, number> = { "7d": 7, "14d": 14, "30d": 30 };
 
 function matches(row: AuditIndexRowOut, query: AuditIndexQuery, today: string, tile: boolean) {
   if (query.segment !== undefined && row.segment !== query.segment) return false;
   if (tile && query.phase !== undefined && row.phase !== query.phase) return false;
+  if (query.type !== undefined && row.engagement_type !== query.type) return false;
+  if (query.office !== undefined && row.office_id !== query.office) return false;
   const due = query.due ?? "any";
   if (due !== "any") {
     if (row.report_due_on == null) return false;
@@ -406,6 +415,14 @@ function matches(row: AuditIndexRowOut, query: AuditIndexQuery, today: string, t
   const q = query.q?.trim().toLowerCase();
   if (q && !`${row.name} ${row.client_name}`.toLowerCase().includes(q)) return false;
   return true;
+}
+
+function typeFacet(rows: readonly AuditIndexRowOut[]): Facet[] {
+  const n = new Map<string, number>();
+  for (const r of rows) n.set(r.engagement_type, (n.get(r.engagement_type) ?? 0) + 1);
+  return [...n]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([value, count]) => ({ value, label: value, n: count }));
 }
 
 function summaryOf(rows: readonly AuditIndexRowOut[]): AuditIndexSummaryOut {
@@ -427,6 +444,7 @@ export function auditIndexPage(
   visible: readonly AuditIndexRowOut[],
   query: AuditIndexQuery,
   today: string,
+  shown: readonly Segment[] = E0_SEGMENTS,
 ): AuditIndexPage {
   const items = visible.filter((r) => matches(r, query, today, true));
   // Tiles: every filter but the active tile (P-36 counts minus the active tile).
@@ -438,7 +456,7 @@ export function auditIndexPage(
   const segmentBase = visible.filter((r) =>
     matches(r, { ...query, segment: undefined }, today, true),
   );
-  const segments: Facet[] = (["fs", "ebp", "review"] as const).map((s) => ({
+  const segments: Facet[] = shown.map((s) => ({
     value: s,
     label: s,
     n: segmentBase.filter((r) => r.segment === s).length,
@@ -449,7 +467,7 @@ export function auditIndexPage(
     total: items.length,
     total_capped: false,
     counts,
-    facets: { segment: segments },
+    facets: { segment: segments, type: typeFacet(tileBase) },
     summary: summaryOf(tileBase),
   };
 }
@@ -474,14 +492,52 @@ const OWED_BY: Readonly<Record<string, OwedBy>> = {
   "Keystone Retirement Services": { kind: "third_party", display: "Sam Ortiz, Keystone" },
 };
 
-/** The work item's Source Documents aggregate from its requests (Missing first is the screen's). */
+// The files that answer Northwind's received and uploaded requests, verbatim from the AUD-02 spec's
+// canvas (`initial-input/…`, `harborline-upload/…`). The Summary of net trust assets is the seeded
+// Harborline document the viewer opens (seed/trust.ts); the others have no page images in fixtures.
+const NORTHWIND_PATHS: Readonly<Record<string, string>> = {
+  "Plan document & amendments": "initial-input/Northwind 401k Plan Document 2021 restatement.pdf",
+  "Adoption agreement": "initial-input/Northwind Adoption Agreement 2024 amendment.pdf",
+  "Summary plan description": "initial-input/Northwind SPD 2025.pdf",
+  "Summary of net trust assets": "initial-input/Harborline Net Trust Assets 12-31-2025.pdf",
+  "Schedule of Account Balances": "initial-input/Keystone Account Balances PY2025.xlsx",
+  "Annual loan balance roll-forward": "initial-input/Keystone Loan Rollforward 2025.xlsx",
+  "Brokerage / SDBA asset detail — BrokerWindow":
+    "initial-input/BrokerWindow Asset Detail 2025.pdf",
+  "Certified trust report (full year, signed)":
+    "harborline-upload/Harborline Certification PY2025 signed.pdf",
+  "Employee Census File": "initial-input/Northwind Census PY2025.xlsx",
+  "Contribution Reports — PayGrid": "initial-input/PayGrid Contribution Detail 2025.xlsx",
+  "Quarterly 941 Forms": "initial-input/941 Filings 2025 Q1-Q4.pdf",
+  "SOC 1 Type 2 — Keystone Retirement Services":
+    "initial-input/Keystone SOC1 Type2 Oct24-Sep25.pdf",
+};
+
+/** The evidence version a row's file is: Harborline's is the seeded viewer document. */
+export function northwindVersionId(title: string): string {
+  return title === "Summary of net trust assets"
+    ? stableId("evidence-version:northwind:harborline-net-trust-assets")
+    : stableId(`evidence-version:northwind:${title}`);
+}
+
+export type SourceSort = "missing_first" | "received_first";
+
+const MISSING_RANK: Readonly<Record<string, number>> = { uploaded: 0, requested: 1, received: 2 };
+
+/** The work item's Source Documents aggregate from its requests: "Missing first" orders needs
+ * review, requested, received inside each category; "Received first" the other way (stable). */
 export function sourceDocuments(
   workItemId: string,
   binderId: string,
   requests: readonly RequestItemOut[],
   owners: Readonly<Record<string, string>>,
   today: string,
+  sort: SourceSort = "missing_first",
 ): SourceDocumentsOut {
+  const rank = (status: string): number => {
+    const r = MISSING_RANK[status] ?? 1;
+    return sort === "missing_first" ? r : -r;
+  };
   const groups: SourceDocumentGroupOut[] = NORTHWIND_CATEGORIES.map((label) => {
     const rows: SourceDocumentRowOut[] = requests
       .filter((r) => r.audit_area === label)
@@ -500,14 +556,25 @@ export function sourceDocuments(
             open && owner !== undefined
               ? (OWED_BY[owner] ?? { kind: "organisation", display: owner })
               : null,
-          latest_upload: null,
+          latest_upload:
+            open || NORTHWIND_PATHS[r.description] === undefined
+              ? null
+              : {
+                  evidence_version_id: northwindVersionId(r.description),
+                  path_label: NORTHWIND_PATHS[r.description] ?? "",
+                  uploaded_on: r.created_at.slice(0, 10),
+                  uploader_kind: "client" as const,
+                },
           match_confidence: null,
           linked_count: open ? null : 1,
           screening: null,
           returned_reason: null,
           allowed_actions: [],
         };
-      });
+      })
+      .map((row, i) => ({ row, i }))
+      .sort((a, b) => rank(a.row.status) - rank(b.row.status) || a.i - b.i)
+      .map(({ row }) => row);
     return {
       category_id: stableId(`category:${workItemId}:${label}`),
       label,
@@ -526,4 +593,159 @@ export function sourceDocuments(
     requested: all.filter((r) => r.status === "requested").length,
     groups,
   };
+}
+
+// --- Wave 7 (AUD-01 g, h; E2) -------------------------------------------------------------------
+
+/** The E2 instant AUD-01 g and h stand at: Mon Sep 14, 2026, 10:30 AM CT (revision R2). */
+export const WAVE7_INSTANT = "2026-09-14T10:30:00-05:00";
+
+interface Wave7Row {
+  name: string;
+  client: string;
+  type: AuditIndexRowOut["engagement_type"];
+  segment: Segment;
+  group?: true;
+  period: string;
+  phase: AuditEngagementStatus;
+  epMgr: string;
+  office: IndexFacts["office"];
+  due: string | null;
+  pbc?: readonly [number, number];
+  tag?: string;
+  released?: string;
+}
+
+// A28–A33, verbatim from AUD-01 revision.md g (blueprint §9.10). Fixture only: they are created
+// live by A-09, X-01 and X-03 under their entitlements. The contract has no report type, programme
+// or drafted-PBC count yet (DEC-340), so Type and PBC read from the fields it does carry.
+const WAVE7: readonly Wave7Row[] = [
+  {
+    name: "Harlow & Pike Holdings, Inc.",
+    client: "Harlow & Pike Holdings, Inc.",
+    type: "fs_audit",
+    segment: "fs",
+    group: true,
+    period: "FYE 12/31/2026",
+    phase: "planning",
+    epMgr: "MO / OH",
+    office: "Chicago",
+    due: "2027-03-19",
+    tag: "Component auditor",
+  },
+  {
+    name: "Larkfield Payroll Services",
+    client: "Larkfield Payroll Services",
+    type: "soc1",
+    segment: "soc",
+    period: "Jan 1 – Dec 31, 2026",
+    phase: "planning",
+    epMgr: "CM / LK",
+    office: "New York",
+    due: null,
+  },
+  {
+    name: "Prairie Lakes Community Bank",
+    client: "Prairie Lakes Community Bank",
+    type: "internal_audit",
+    segment: "ia",
+    period: "FY2026",
+    phase: "planning",
+    epMgr: "PR / LK",
+    office: "Denver",
+    due: null,
+  },
+  {
+    name: "Tessellate Health Cloud, Inc.",
+    client: "Tessellate Health Cloud, Inc.",
+    type: "soc2",
+    segment: "soc",
+    period: "Oct 1, 2025 – Sep 30, 2026",
+    phase: "fieldwork",
+    epMgr: "CM / LK",
+    office: "Denver",
+    due: "2026-11-13",
+    pbc: [186, 212],
+    tag: "3 exceptions",
+  },
+  {
+    name: "Ashford Manufacturing Co.",
+    client: "Ashford Manufacturing Co.",
+    type: "internal_audit",
+    segment: "ia",
+    period: "FY2026",
+    phase: "fieldwork",
+    epMgr: "PR / LK",
+    office: "Chicago",
+    due: null,
+    tag: "9 issues · 2 overdue",
+  },
+  {
+    name: "Brightline Telehealth",
+    client: "Brightline Telehealth",
+    type: "soc2",
+    segment: "soc",
+    period: "as of Jun 30, 2026",
+    phase: "released",
+    epMgr: "CM / LK",
+    office: "New York",
+    due: null,
+    released: "2026-08-21",
+  },
+];
+
+/** The six wave-7 rows at `today`; `clientIdOf` keeps a seeded client's id (Ashford's wall). */
+export function wave7Rows(today: string, clientIdOf: (name: string) => string): AuditIndexRow[] {
+  return WAVE7.map((w) => {
+    const [partner, manager] = w.epMgr.split(" / ");
+    return {
+      work_item_id: stableId(`work-item:wave7:${w.name}`),
+      engagement_id: stableId(`engagement:wave7:${w.name}`),
+      client_id: clientIdOf(w.client),
+      client_name: w.client,
+      name: w.name,
+      engagement_type: w.type,
+      segment: w.segment,
+      ebp_plan_kind: null,
+      limited_scope_103a3c: false,
+      is_group_audit: w.group === true,
+      period_label: w.period,
+      phase: w.phase,
+      released_on: w.released ?? null,
+      run_badge: null,
+      tags:
+        w.tag === undefined
+          ? []
+          : [{ source: "wave7", code: slugOf(w.tag), text: w.tag, classification: "content" }],
+      pbc: w.pbc === undefined ? null : { received: w.pbc[0], total: w.pbc[1] },
+      partner_initials: partner ?? null,
+      manager_initials: manager ?? null,
+      office_id: officeIdOf(w.office),
+      office_name: w.office,
+      report_due_on: w.due,
+      report_due_tone: tone(w.due, today),
+      archive:
+        w.released === undefined
+          ? null
+          : {
+              state: "archiving",
+              days_left: days(today, addDays(w.released, ARCHIVE_DAYS)),
+              firm_tool_ref: null,
+            },
+      allowed_actions: [],
+    };
+  });
+}
+
+type AuditIndexRow = AuditIndexRowOut;
+
+/** Rows in the server's order: tile order, then report due (none last), then name. */
+export function sortAuditRows(rows: readonly AuditIndexRowOut[]): AuditIndexRowOut[] {
+  const tileOrder = (p: AuditEngagementStatus) => TILE_PHASES.indexOf(p);
+  return [...rows].sort(
+    (a, b) =>
+      tileOrder(a.phase) - tileOrder(b.phase) ||
+      (a.report_due_on ?? "9999").localeCompare(b.report_due_on ?? "9999") ||
+      a.name.localeCompare(b.name),
+  );
 }

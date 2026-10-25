@@ -4,12 +4,12 @@ title: "Q-01-T10 · ADR drafts P-45 unauthenticated operational routes, P-64 mal
 spec: SPEC-050
 acceptance_criteria: [AC-18]
 risk_zone: red
-status: todo
+status: in-review
 epic: Q-01
 plan_key: Q-01-T10
 branch: task-151-ops-adr-drafts
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-25
 ---
 
 > **Rules for the agent working this task**
@@ -85,6 +85,7 @@ make check
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Task file written at kickoff (SU-14). No work started.
+- `2026-10-25` — S8b verification. The three drafts are on main as `proposed` since 2026-10-20 with their numbers in `backlog.md`: P-45 = ADR-152, P-64 = ADR-153, P-67 = ADR-154 (AC-18's "open by Fri Oct 30"). ADR-152 defines the ROUTE-001 exception list (`/healthz`, `/readyz`, portal branding and logo) and says later proposals (P-01, P-08) extend it through their own ADRs (AC-18's last clause). Acceptance by Fri Nov 13 is the decider's; none is marked accepted here. No change needed.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -100,8 +101,8 @@ Append-only. Newest at the bottom.
 
 ## Handoff
 Fill this in whenever a session ends before the task is done.
-- **Current state:** not started.
-- **Exact next step:** Check the next free ADR number and open the backlog entries.
+- **Current state:** three ADRs proposed on main; drafting part of AC-18 met.
+- **Exact next step:** accept ADR-152, ADR-153 and ADR-154 by Fri 13 Nov.
 - **Uncommitted or partial work:** none.
 - **Known failing checks:** none.
 - **Open issues:** none.

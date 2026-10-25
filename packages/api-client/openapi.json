@@ -10750,6 +10750,19 @@
             "title": "Id",
             "type": "string"
           },
+          "invitation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Invitation Id"
+          },
           "invited_on": {
             "anyOf": [
               {
@@ -14697,6 +14710,25 @@
             },
             "title": "Gates",
             "type": "array"
+          },
+          "hold_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "client_unresponsive",
+                  "fees_outstanding",
+                  "scope_change",
+                  "independence_review",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Reason"
           },
           "id": {
             "cls": "internal",
@@ -36072,6 +36104,32 @@
             ],
             "cls": "internal"
           },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period Start"
+          },
           "provenance": {
             "$ref": "#/components/schemas/ScreeningProvenanceOut",
             "cls": "internal"
@@ -36080,6 +36138,11 @@
             "cls": "internal",
             "format": "uuid",
             "title": "Request Item Id",
+            "type": "string"
+          },
+          "request_title": {
+            "cls": "confidential",
+            "title": "Request Title",
             "type": "string"
           },
           "running": {
@@ -36117,7 +36180,10 @@
           "file_flags",
           "provenance",
           "my_feedback",
-          "allowed_actions"
+          "allowed_actions",
+          "request_title",
+          "period_start",
+          "period_end"
         ],
         "title": "ScreeningCardOut",
         "type": "object"
@@ -65311,7 +65377,7 @@
     },
     "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void": {
       "post": {
-        "description": "Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment;\na human or accepted link answers 409 `not_voidable`.",
+        "description": "Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment; a\nhuman, agent, voided or accepted link answers 409 `not_voidable`. A person only: the agent is\ndenied `fulfilment.confirm` (INV-1). A retry with the same key is authorised again, then\nanswers what the first answered.",
         "operationId": "void_fulfilment",
         "parameters": [
           {
@@ -65448,16 +65514,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Void Fulfilment Route",

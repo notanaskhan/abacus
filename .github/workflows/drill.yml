@@ -1,0 +1,234 @@
+# Restore drill (Q-01-T38; Q-01 F9; ADR-093, ADR-096; RB-15). Dispatched by hand, never on a
+# push. Inside the environment's own account (ADR-087: production data never leaves production):
+# take the deploy lock, restore the database to a random point in the last 7 days (no later than
+# the latest restorable time) as `abacus-drill-<run id>` in the isolated drill subnet group, run
+# `python -m abacus_tools.drill verify` as a one-off ops task against it, record the timings, and
+# delete the instance and release the lock on every path. A failed drill fails this run: a SEV2
+# that blocks the next production release (RB-15).
+#
+# `abacus_tools.drill verify` reuses the production owner and app URLs with the host swapped, so
+# it refuses any host but `abacus-drill-<run id>.<id>.<region>.rds.amazonaws.com` and refuses to
+# start unless ABACUS_DATABASE_CA_FILE names the RDS CA bundle (verify-full). The `abacus-ops`
+# task definition must set ABACUS_DATABASE_CA_FILE to the bundle's path in the image (human
+# to-do; DEC-360). It is not an ops-request command: only this workflow runs it.
+#
+# The record holds times and results only, never data: the job summary and the
+# `drill-record` artefact. The builder copies them into docs/ops/drills/<year>-Q<n>.md.
+#
+# Needs, per GitHub environment (`staging`, `production`), variables only (no secrets; the
+# deploy role is assumed through OIDC): AWS_DEPLOY_ROLE, AWS_REGION, DB_INSTANCE_ID,
+# DRILL_SUBNET_GROUP, DRILL_SECURITY_GROUP, ECS_CLUSTER, OPS_TASK_DEFINITION, OPS_CONTAINER,
+# OPS_SUBNETS, OPS_SECURITY_GROUP, REPLICA_EVIDENCE_BUCKET, REPLICA_REGION. While any is unset
+# the job skips with a notice. Every action is pinned to a full commit SHA.
+name: drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment's database to drill"
+        type: choice
+        options: [production, staging]
+        default: production
+      restore_point:
+        description: "ISO 8601 UTC restore point; empty: a random time in the last 7 days"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+# The same group as the environment's deploys: a drill never overlaps a deploy, a rollback or an
+# ops task (the deploy lock is the second line, for anything outside GitHub).
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  drill:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the environment's deploy role
+    env:
+      ENV_NAME: ${{ inputs.environment }}
+      RUN_REF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      INSTANCE: abacus-drill-${{ github.run_id }}
+      AWS_DEPLOY_ROLE: ${{ vars.AWS_DEPLOY_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DB_INSTANCE_ID: ${{ vars.DB_INSTANCE_ID }}
+      DRILL_SUBNET_GROUP: ${{ vars.DRILL_SUBNET_GROUP }}
+      DRILL_SECURITY_GROUP: ${{ vars.DRILL_SECURITY_GROUP }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      OPS_TASK_DEFINITION: ${{ vars.OPS_TASK_DEFINITION }}
+      OPS_CONTAINER: ${{ vars.OPS_CONTAINER }}
+      OPS_SUBNETS: ${{ vars.OPS_SUBNETS }}
+      OPS_SECURITY_GROUP: ${{ vars.OPS_SECURITY_GROUP }}
+      REPLICA_EVIDENCE_BUCKET: ${{ vars.REPLICA_EVIDENCE_BUCKET }}
+      REPLICA_REGION: ${{ vars.REPLICA_REGION }}
+      REQUESTED_POINT: ${{ inputs.restore_point }}
+    steps:
+      - name: Environment configured?
+        id: gate
+        run: |
+          missing=""
+          for name in AWS_DEPLOY_ROLE AWS_REGION DB_INSTANCE_ID DRILL_SUBNET_GROUP DRILL_SECURITY_GROUP \
+            ECS_CLUSTER OPS_TASK_DEFINITION OPS_CONTAINER OPS_SUBNETS OPS_SECURITY_GROUP \
+            REPLICA_EVIDENCE_BUCKET REPLICA_REGION; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=drill skipped::environment variables not set:$missing (infra/README.md)"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: drill-${{ github.run_id }}
+
+      - name: Take the deploy lock
+        id: lock
+        if: steps.gate.outputs.configured == 'true'
+        working-directory: backend
+        run: |
+          uv run --locked python -m abacus_tools.deploy_lock take --env "$ENV_NAME" \
+            --holder drill --run-ref "$RUN_REF" --git-sha "$GITHUB_SHA" --purpose ops-task \
+            --wait-seconds 1800
+          echo "taken=true" >> "$GITHUB_OUTPUT"
+
+      - name: Choose the restore point
+        id: point
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          latest=$(aws rds describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" \
+            --query 'DBInstances[0].LatestRestorableTime' --output text)
+          now=$(date -u +%s)
+          latest_s=$(date -u -d "$latest" +%s)
+          echo "rpo_lag_seconds=$((now - latest_s))" >> "$GITHUB_OUTPUT"
+          if [ -n "$REQUESTED_POINT" ]; then
+            point="$REQUESTED_POINT"
+          else
+            earliest_s=$((now - 7 * 86400 + 3600))
+            point_s=$((earliest_s + $(shuf -i 0-$((latest_s - earliest_s)) -n 1)))
+            point=$(date -u -d "@$point_s" +%Y-%m-%dT%H:%M:%SZ)
+          fi
+          echo "restore_point=$point" >> "$GITHUB_OUTPUT"
+
+      - name: Restore into the drill subnet
+        id: restore
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          RESTORE_POINT: ${{ steps.point.outputs.restore_point }}
+        run: |
+          echo "restore_started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          aws rds restore-db-instance-to-point-in-time \
+            --source-db-instance-identifier "$DB_INSTANCE_ID" \
+            --target-db-instance-identifier "$INSTANCE" \
+            --restore-time "$RESTORE_POINT" \
+            --db-subnet-group-name "$DRILL_SUBNET_GROUP" \
+            --vpc-security-group-ids "$DRILL_SECURITY_GROUP" \
+            --no-publicly-accessible \
+            --no-multi-az \
+            --no-deletion-protection \
+            --tags Key=abacus:purpose,Value=drill Key=abacus:run,Value="${{ github.run_id }}" \
+            > /dev/null
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          aws rds wait db-instance-available --db-instance-identifier "$INSTANCE"
+          echo "available_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          endpoint=$(aws rds describe-db-instances --db-instance-identifier "$INSTANCE" \
+            --query 'DBInstances[0].Endpoint.Address' --output text)
+          echo "endpoint=$endpoint" >> "$GITHUB_OUTPUT"
+
+      - name: Verify as an ops task
+        id: verify
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          RESTORE_POINT: ${{ steps.point.outputs.restore_point }}
+          RESTORE_STARTED_AT: ${{ steps.restore.outputs.restore_started_at }}
+          RPO_LAG_SECONDS: ${{ steps.point.outputs.rpo_lag_seconds }}
+          ENDPOINT: ${{ steps.restore.outputs.endpoint }}
+        run: |
+          overrides=$(jq -cn --arg c "$OPS_CONTAINER" --arg env "$ENV_NAME" --arg host "$ENDPOINT" \
+            --arg point "$RESTORE_POINT" --arg started "$RESTORE_STARTED_AT" \
+            --arg lag "$RPO_LAG_SECONDS" --arg bucket "$REPLICA_EVIDENCE_BUCKET" \
+            --arg region "$REPLICA_REGION" \
+            '{containerOverrides: [{name: $c, command: ["python", "-m", "abacus_tools.drill",
+              "verify", "--env", $env, "--restored-host", $host, "--restore-point", $point,
+              "--restore-started-at", $started, "--rpo-lag-seconds", $lag,
+              "--replica-bucket", $bucket, "--replica-region", $region]}]}')
+          task=$(aws ecs run-task --cluster "$ECS_CLUSTER" --task-definition "$OPS_TASK_DEFINITION" \
+            --launch-type FARGATE --started-by "drill-${{ github.run_id }}" \
+            --network-configuration "awsvpcConfiguration={subnets=[$OPS_SUBNETS],securityGroups=[$OPS_SECURITY_GROUP],assignPublicIp=DISABLED}" \
+            --overrides "$overrides" --query 'tasks[0].taskArn' --output text)
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$task"
+          code=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$task" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          echo "verified_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Record the timings
+        if: always() && steps.gate.outputs.configured == 'true'
+        env:
+          RESTORE_POINT: ${{ steps.point.outputs.restore_point }}
+          RPO_LAG_SECONDS: ${{ steps.point.outputs.rpo_lag_seconds }}
+          RESTORE_STARTED_AT: ${{ steps.restore.outputs.restore_started_at }}
+          AVAILABLE_AT: ${{ steps.restore.outputs.available_at }}
+          VERIFIED_AT: ${{ steps.verify.outputs.verified_at }}
+          EXIT_CODE: ${{ steps.verify.outputs.exit_code }}
+        run: |
+          jq -n --arg env "$ENV_NAME" --arg run "$RUN_REF" --arg point "$RESTORE_POINT" \
+            --arg lag "$RPO_LAG_SECONDS" --arg started "$RESTORE_STARTED_AT" \
+            --arg available "$AVAILABLE_AT" --arg verified "$VERIFIED_AT" --arg code "$EXIT_CODE" \
+            '{env: $env, run: $run, restore_point: $point, rpo_lag_seconds: $lag,
+              rpo_seconds: 300, restore_started_at: $started, available_at: $available,
+              verified_at: $verified, verify_exit_code: $code}' > drill-record.json
+          {
+            echo "### Restore drill ($ENV_NAME)"
+            echo "| restore point | RPO lag (s, target 300) | restore started | available | verified | verify exit |"
+            echo "|---|---|---|---|---|---|"
+            echo "| $RESTORE_POINT | $RPO_LAG_SECONDS | $RESTORE_STARTED_AT | $AVAILABLE_AT | $VERIFIED_AT | $EXIT_CODE |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && steps.gate.outputs.configured == 'true'
+        with:
+          name: drill-record
+          path: drill-record.json
+          retention-days: 400
+
+      - name: Delete the drill instance
+        if: always() && steps.restore.outputs.created == 'true'
+        run: |
+          case "$INSTANCE" in abacus-drill-*) ;; *) echo "refusing to delete $INSTANCE"; exit 1 ;; esac
+          aws rds delete-db-instance --db-instance-identifier "$INSTANCE" \
+            --skip-final-snapshot --delete-automated-backups > /dev/null
+          aws rds wait db-instance-deleted --db-instance-identifier "$INSTANCE"
+      - name: Release the deploy lock
+        if: always() && steps.lock.outputs.taken == 'true'
+        working-directory: backend
+        run: uv run --locked python -m abacus_tools.deploy_lock release --env "$ENV_NAME" --run-ref "$RUN_REF"
+
+      - name: The drill passed
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          EXIT_CODE: ${{ steps.verify.outputs.exit_code }}
+        run: |
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error title=drill failed::abacus_tools.drill verify exited $EXIT_CODE: a SEV2 that blocks the next production release (RB-15)"
+            exit 1
+          fi

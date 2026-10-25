@@ -443,6 +443,94 @@ describe("ENG-02 remaining (P-07-T28)", () => {
     });
   });
 
+  it("On hold with a reason (DEC-328, DEC-344): the status pill ⌄ asks for a reason, holds, shows it, and Active resumes", async () => {
+    const seen = show("a");
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    const trigger = document.querySelector<HTMLElement>("[data-status-menu]");
+    if (trigger === null) throw new Error("no status menu");
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+    let menu = screen.getByRole("menu", { name: "Status" });
+    expect(
+      within(menu).getByRole("menuitemradio", { name: "Active" }).getAttribute("aria-checked"),
+    ).toBe("true");
+    fireEvent.click(within(menu).getByRole("menuitemradio", { name: "On hold…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Put on hold" });
+    const confirm = within(dialog).getByRole("button", { name: "Put on hold" });
+    expect((confirm as HTMLButtonElement).disabled).toBe(true);
+    expect(within(dialog).getAllByRole("radio")).toHaveLength(5);
+    for (const name of [
+      "Client unresponsive",
+      "Fees outstanding",
+      "Scope change",
+      "Independence review",
+      "Other",
+    ]) {
+      expect(within(dialog).getByRole("radio", { name })).toBeTruthy();
+    }
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Fees outstanding" }));
+    expect((confirm as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(confirm);
+    await waitFor(() => {
+      expect(toastStore.list()[0]?.text).toBe("Engagement on hold");
+    });
+    const held = seen.calls.find((c) => c.method === "POST" && c.path.endsWith("/hold"));
+    expect(held?.body).toEqual({ reason: "fees_outstanding" });
+    expect(await screen.findByText("Fees outstanding")).toBeTruthy();
+    expect(
+      within(screen.getByRole("heading", { name: /2026 Close/ })).getByText("On hold"),
+    ).toBeTruthy();
+
+    const again = document.querySelector<HTMLElement>("[data-status-menu]");
+    if (again === null) throw new Error("no status menu");
+    again.focus();
+    fireEvent.keyDown(again, { key: "ArrowDown" });
+    menu = screen.getByRole("menu", { name: "Status" });
+    fireEvent.click(within(menu).getByRole("menuitemradio", { name: "Active" }));
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/resume"))).toBe(true);
+    });
+    await waitFor(() => {
+      expect(document.querySelector("[data-hold-reason]")).toBeNull();
+    });
+  });
+
+  it("the status menu is offered only with engagement.hold on an Active or On hold record (b, c, d read a plain pill)", async () => {
+    for (const state of ["b", "c", "d"] as const) {
+      show(state);
+      await screen.findByRole("heading", { level: 1 });
+      await waitFor(() => {
+        expect(document.querySelector("[data-shell='record-header'] h1")).not.toBeNull();
+      });
+      expect(document.querySelector("[data-status-menu]")).toBeNull();
+      cleanup();
+      restore?.();
+      restore = undefined;
+    }
+  });
+
+  it("a hold the server refuses (409 illegal_transition) keeps the dialog open with the reason", async () => {
+    show("a", {
+      "POST /v1/engagements/{engagement_id}/hold": () =>
+        json({ detail: "illegal_transition" }, 409),
+    });
+    await screen.findByRole("heading", { name: /2026 Close/ });
+    const trigger = document.querySelector<HTMLElement>("[data-status-menu]");
+    if (trigger === null) throw new Error("no status menu");
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+    fireEvent.click(
+      within(screen.getByRole("menu", { name: "Status" })).getByRole("menuitemradio", {
+        name: "On hold…",
+      }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Put on hold" });
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Other" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Put on hold" }));
+    expect(await within(dialog).findByRole("alert")).toBeTruthy();
+    expect(within(dialog).getByText("Only an active engagement can go on hold.")).toBeTruthy();
+  });
+
   it("no control on the record is an agent-owned approve, sign-off, release, send, post or decide", async () => {
     show("a");
     await screen.findByRole("heading", { name: /2026 Close/ });

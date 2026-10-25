@@ -520,3 +520,42 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-24 | Tree search | 120 wide in the 452 tree; in the 214 tree the field shrinks to its 28px icon, as T3a draws a search button                                                                     |
 | 2026-10-24 | T3 figures  | The frame draws the T3 handoff's Feld 1040 lines (they foot: lines 9 and 33); TPL-03 (F-05-T54) draws the seed's                                                               |
 | 2026-10-24 | Page images | The viewer uses the gallery's synthetic page images (F-05-T47), so T3a to T3e carry a parity deviation                                                                         |
+
+### TPL-03 Feld 1040 review specimen (F-05-T54)
+
+| Date       | Item             | Decision                                                                                                                                                   |
+| ---------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-25 | Figures          | Seed figures only (`FELD_K1`, `FELD_HALVARD`, `FELD_1040_LINES`, `RIDGELINE_K1S`; blueprint 01 §9.4); Item L, line 2b and Schedule K foot in FOOTINGS      |
+| 2026-10-25 | Unapprove        | `TriadFooter` takes `onUnapprove`: an approved document then offers the tonal "Unapprove Document" (x), for a person only; without it, "Approved" disabled |
+| 2026-10-25 | Tree micro-pills | `TriadDoc.info` draws the ⓘ micro-pill (outline, 21 square); `checkable: false` drops the check (a firm worksheet); `flagsNote` is the flag pill's tooltip |
+| 2026-10-25 | Layout menu      | `EvidenceTriad.views` names each preset ("Review layout · 452 × 3", "Prepare layout · 214 · 571 · 571"); the default stays TRIAD_VIEWS                     |
+| 2026-10-25 | K-1 matrix       | Statement-like rows 41 tall, padding 14, 13px; a lit row takes the match fill with its label at 500 (one `useMatch` per row, INV-2)                        |
+| 2026-10-25 | Opened lit       | a, c, d open with box 5 pinned and b with box 1a pinned, so the board shows the cross-highlight; Escape or a second click clears it                        |
+| 2026-10-25 | Empty tabs       | Worksheets and 2-Year Comparison draw nothing: the handoff draws only Leadsheets, and no copy is invented                                                  |
+| 2026-10-25 | Page images      | As T3: the gallery's synthetic page images stand in for the K-1 and 1099 renders, so TPL-03a to e carry a parity deviation                                 |
+
+### T9 QueueDetailLayout and the C-17 Issue kit (F-05-T55)
+
+| Date       | Item           | Decision                                                                                                                                                      |
+| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-25 | Presets        | On the C-09 presets of the same names (`issues-individual`, `close-review`, `issues-entity`); panes 706, 700, 700 tall under their headers                    |
+| 2026-10-25 | Queue variants | `tree` (individual), `severity` (close), `radio` (entity); counts are the server's strings; ↑ ↓ move the selection                                            |
+| 2026-10-25 | Agent-fixable  | The tree row's trailing glyph is Settings 13 ink-3 with the name "The agent can fix this" (the kit's choice over the atom; plan F-05 T9 note)                 |
+| 2026-10-25 | Why surfaced   | The 15px olive `StatusDisc` done, never Sparkles                                                                                                              |
+| 2026-10-25 | Agent text     | What it blocks (figures at 500), Why This Was Surfaced, the explanation and the run line render through `AgentText`                                           |
+| 2026-10-25 | Human verbs    | Resolve, Mark as Resolved and Mark Not Applicable are a person's: `IssueFooter` draws nothing for an agent actor; the agent is assignable (first in the menu) |
+| 2026-10-25 | Agent working  | Amber "Agent working…" pill with a 10px spinner, the run row (AgentText, a 3px bar, the 15px spinner); the footer reads "Waiting on the agent", disabled      |
+| 2026-10-25 | Frame data     | The T9 handoff's issues (as T3's frame), with the seed's Ridgeline parties where the board draws kit names (DEC-354); TPL-09 draws the seed's issue lists     |
+
+### T8 InboxLayout and the C-15/C-18 File kit (F-05-T56)
+
+| Date       | Item          | Decision                                                                                                                                              |
+| ---------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-25 | Frame         | Filter bar 50 with −10 below in the AppShell tabs slot; the C-09 `inbox` preset (392 · flex); panes 752 tall in the 860 window                        |
+| 2026-10-25 | Dots          | `InboxDot` owns the four states (16 ring 1.5 ink-4, 16 amber, 15 olive ✓, 15 ink-4 ✕) with the words Not filed, Waiting to be filed, Filed, Ignored   |
+| 2026-10-25 | Rows          | Separated by a hairline inset, never borders; the subject is 13.5/500 on every row (no bold for unread); an ignored row is ink-3 at 400               |
+| 2026-10-25 | Thread        | A parent row toggles its replies (aria-expanded) and selects itself; children indent 34; the chevron is decorative, so no control nests in the row    |
+| 2026-10-25 | Client chip   | "Match client…" in amber ink when the sender matches no client; the menu lists the firm's clients                                                     |
+| 2026-10-25 | Agent note    | The filing note renders through `AgentText` with the sparkles glyph and offers only Review (INV-1); File…, Move… and Ignore live in the pane header   |
+| 2026-10-25 | Default chips | Received (Past 30 Days) and Channel (Email · Portal) read their defaults as the placeholder, so they stay white until changed; a set chip turns amber |
+| 2026-10-25 | Thumbnails    | 126 × 150 radius 6 on the gallery's synthetic page images; the state dot sits over the top-right corner (10 for waiting, 15 for filed)                |

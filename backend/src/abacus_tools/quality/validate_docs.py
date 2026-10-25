@@ -4,6 +4,11 @@ Run: python -m abacus_tools.quality.validate_docs
 
 Checks the machine contract only: frontmatter fields, enums, ids and cross-references.
 Bodies are not validated. Templates (`_TEMPLATE.md`) and `README.md` files are skipped.
+
+Runbooks (ADR-098; Q-01-T21): each `docs/runbooks/RB-<nn>-*.md` carries `id`, `title`, `owner`,
+`alarms` (a list, empty for a runbook no alarm links) and `last_rehearsed` (a date or `never`).
+Every alarm resource in `infra/` (`aws_cloudwatch_metric_alarm`, `aws_cloudwatch_composite_alarm`)
+names a runbook (`RB-<nn>`, in its description or a `runbook` tag) that exists.
 """
 
 from __future__ import annotations
@@ -47,6 +52,13 @@ TASK_FIELDS = (
     "updated",
 )
 ID_IN_NAME = re.compile(r"^((?:ADR|SPEC|TASK)-\d{3,})(?:-|\.md$)")
+RUNBOOK_IN_NAME = re.compile(r"^(RB-\d{2})-[a-z0-9-]+\.md$")
+RUNBOOK_FIELDS = ("id", "title", "owner", "alarms", "last_rehearsed")
+RUNBOOK_REF = re.compile(r"\bRB-\d{2}\b")
+ALARM_RESOURCE = re.compile(
+    r'^resource\s+"(aws_cloudwatch_metric_alarm|aws_cloudwatch_composite_alarm)"\s+"([^"]+)"\s*\{',
+    re.MULTILINE,
+)
 AC_ID = re.compile(r"\bAC-\d+\b")
 INDEX_ROW = re.compile(r"^\|\s*\[(ADR-\d{3})\]\(([^)]+)\)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|\s*$")
 
@@ -250,12 +262,73 @@ def check_policies(report: Report) -> None:
             report.add(path, f"does not parse: {exc}")
 
 
+def _runbook_dir() -> Path:
+    return REPO / "docs" / "runbooks"
+
+
+def check_runbooks(report: Report) -> set[str]:
+    """The runbooks' frontmatter (ADR-098); returns the runbook ids on disk."""
+    found: set[str] = set()
+    seen: dict[str, Path] = {}
+    for path in sorted(_runbook_dir().glob("RB-*.md")):
+        match = RUNBOOK_IN_NAME.match(path.name)
+        if match is None:
+            report.add(path, "a runbook is named RB-<nn>-<slug>.md")
+            continue
+        found.add(match.group(1))
+        doc = _load(path, report)
+        if doc is None or not _require(doc, ("id", "title", "owner", "last_rehearsed"), report):
+            continue
+        if doc.meta.get("id") != match.group(1):
+            report.add(path, f"id '{doc.meta.get('id')}' does not match the filename")
+        if match.group(1) in seen:
+            report.add(
+                path, f"duplicate id '{match.group(1)}' (also in {seen[match.group(1)].name})"
+            )
+        seen[match.group(1)] = path
+        if "alarms" not in doc.meta or _str_list(doc.meta.get("alarms")) is None:
+            report.add(path, "'alarms' must be a list (empty when no alarm links this runbook)")
+        rehearsed = doc.meta.get("last_rehearsed")
+        if rehearsed != "never" and not _is_date(rehearsed):
+            report.add(path, "'last_rehearsed' must be an ISO date or 'never'")
+    return found
+
+
+def _block(text: str, start: int) -> str:
+    """The resource body from its opening brace to the matching closing one."""
+    depth = 0
+    for index in range(start, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+    return text[start:]
+
+
+def check_alarm_runbooks(report: Report, runbooks: set[str]) -> None:
+    """ADR-098: every alarm resource names a runbook that exists (Q-01-T21)."""
+    infra = REPO / "infra"
+    for path in sorted(p for p in infra.rglob("*.tf") if ".terraform" not in p.parts):
+        text = path.read_text(encoding="utf-8")
+        for match in ALARM_RESOURCE.finditer(text):
+            body = _block(text, match.end() - 1)
+            named = set(RUNBOOK_REF.findall(body))
+            label = f"{match.group(1)}.{match.group(2)}"
+            if not named:
+                report.add(path, f"{label} has no runbook link (RB-<nn>, ADR-098)")
+            for missing in sorted(named - runbooks):
+                report.add(path, f"{label} links {missing}, which has no runbook file")
+
+
 def validate() -> list[str]:
     report = Report()
     check_adrs(report)
     specs = check_specs(report)
     check_tasks(specs, report)
     check_policies(report)
+    check_alarm_runbooks(report, check_runbooks(report))
     return report.errors
 
 

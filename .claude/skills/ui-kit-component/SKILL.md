@@ -5,10 +5,12 @@ description: Port one design-system kit, template or overlay (C-00…C-39, T1–
 
 # Port a kit into packages/ui
 
-## Paths that arrive later
-If one of these is missing when this skill needs it, stop and report which one and the task that creates it.
-- packages/ui/src/tokens/DECISIONS.md (arrives with F-05-T01, S0)
-- the /components specimen gallery's parity tiers (arrive with F-05)
+## Paths this skill relies on
+All on `main` as of 2026-10-25 (F-05-T25 check). If one is missing when this skill needs it, stop and report which one.
+- packages/ui/src/tokens/DECISIONS.md (F-05-T01)
+- the /components specimen gallery and its parity tiers (F-05; `apps/web/e2e/components.spec.ts`)
+- docs/design/HANDOFF_VERSION: the handoff version the kit is ported against. The handoff itself stays outside git while
+  the repository is public (no text mirror is committed); read it from $ACCRUED_HANDOFF_DIR
 
 Input: KIT (for example C-16 Request, T1 Index list, O3 Dialog). Sources, in this order:
 1. The kit's own handoff bundle, when one exists: $ACCRUED_HANDOFF_DIR/kit-handoffs/C-NN */design_handoff_*/ (C-00 to C-39,

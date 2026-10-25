@@ -39,6 +39,7 @@ from abacus.modules.evidence.models import (
     EvidenceObjectKey,
     EvidencePage,
     EvidenceVersion,
+    EvidenceVersionVoid,
     EvidenceWithdrawal,
     InboxFile,
     PiiRegion,
@@ -161,13 +162,48 @@ async def insert_object_key(
 
 
 def not_withdrawn() -> ColumnElement[bool]:
-    """P-06-T19 (ADR-162 §4): the version was not withdrawn by the client. Every read of
-    versions applies it: a withdrawn version is as if it never arrived (the audit trail apart)."""
-    return ~(
-        select(EvidenceWithdrawal.evidence_version_id)
-        .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
-        .exists()
+    """P-06-T19 (ADR-162 §4): the version was not withdrawn by the client, nor retired with a
+    voided rule link (R-01 Story 2.2; 0159). Every read of versions applies it: such a version is
+    as if it never arrived (the audit trail apart)."""
+    return and_(
+        ~(
+            select(EvidenceWithdrawal.evidence_version_id)
+            .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
+            .exists()
+        ),
+        ~(
+            select(EvidenceVersionVoid.evidence_version_id)
+            .where(EvidenceVersionVoid.evidence_version_id == EvidenceVersion.id)
+            .exists()
+        ),
     )
+
+
+async def retire_voided_version(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    version_id: UUID,
+    fulfilment_id: UUID,
+    voided_by: UUID,
+) -> None:
+    """R-01 Story 2.2: the version a voided rule link made leaves every evidence read."""
+    await session.execute(
+        insert(EvidenceVersionVoid).values(
+            tenant_id=tenant_id,
+            evidence_version_id=version_id,
+            engagement_id=engagement_id,
+            fulfilment_id=fulfilment_id,
+            voided_by=voided_by,
+        )
+    )
+
+
+def shown_citation() -> ColumnElement[bool]:
+    """A citation anyone may read: not from a shadow run (SPEC-036 AC-5; 0158) and its source
+    not withdrawn (`live_citation_source`)."""
+    return and_(Citation.shadow.is_(False), live_citation_source())
 
 
 def live_citation_source() -> ColumnElement[bool]:
@@ -581,6 +617,26 @@ async def decide_inbox_file(session: AsyncSession, file_id: UUID, **values: obje
         .where(InboxFile.id == file_id, InboxFile.status == "waiting")
         .values(decided_at=func.clock_timestamp(), **values)
     )
+
+
+async def return_to_waiting(session: AsyncSession, version_id: UUID) -> UUID | None:
+    """R-01 Story 2.2: the inbox file a voided rule link assigned to `version_id` waits for a
+    person again (status, assignment and decision cleared; `sort_outcome` keeps what the sort
+    did). None when no file was assigned to it."""
+    return (
+        await session.execute(
+            update(InboxFile)
+            .where(InboxFile.assigned_version_id == version_id, InboxFile.status == "assigned")
+            .values(
+                status="waiting",
+                assigned_item_id=None,
+                assigned_version_id=None,
+                decided_by=None,
+                decided_at=None,
+            )
+            .returning(InboxFile.id)
+        )
+    ).scalar_one_or_none()
 
 
 async def get_inbox_file(session: AsyncSession, file_id: UUID) -> InboxFile | None:
@@ -1174,7 +1230,7 @@ async def verified_citations_into(
         visible(
             ctx, "evidence.read", cast(ColumnElement[UUID], Citation.engagement_id.expression)
         ),
-        live_citation_source(),
+        shown_citation(),
     )
     if match_ids is not None:
         stmt = stmt.where(Citation.match_id.in_(list(match_ids)))
@@ -1199,7 +1255,7 @@ async def verified_citations_of(
             Citation.cited_from_type == cited_from_type,
             Citation.cited_from_id.in_(list(cited_from_ids)),
             Citation.verified.is_(True),
-            live_citation_source(),
+            shown_citation(),
         )
         .order_by(Citation.cited_from_id, Citation.n, Citation.id)
     )

@@ -10,6 +10,13 @@ import {
   STATES as ADM01_STATES,
   scenarios as adm01Scenarios,
 } from "./ADM-01/scenarios";
+import { PeoplePage } from "./ADM-02";
+import {
+  type Adm02State,
+  STATES as ADM02_STATES,
+  OPENS as ADM02_OPENS,
+  scenarios as adm02Scenarios,
+} from "./ADM-02/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -39,6 +46,34 @@ import {
   type Cli02State,
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
+import { AuditsIndex } from "./AUD-01";
+import {
+  STATES as AUD01_STATES,
+  SEARCH as AUD01_SEARCH,
+  type Aud01State,
+  scenarios as aud01Scenarios,
+} from "./AUD-01/scenarios";
+import { AuditCockpitPage } from "./AUD-02";
+import {
+  AUDIT_ID as AUD02_AUDIT_ID,
+  OPENS as AUD02_OPENS,
+  STATES as AUD02_STATES,
+  type Aud02State,
+  scenarios as aud02Scenarios,
+} from "./AUD-02/scenarios";
+import { AUD06Frame } from "./AUD-06/artboard";
+import {
+  STATES as AUD06_STATES,
+  type Aud06State,
+  scenarios as aud06Scenarios,
+} from "./AUD-06/scenarios";
+import {
+  OPENS as CLI04_OPENS,
+  OVERLAYS as CLI04_OVERLAYS,
+  STATES as CLI04_STATES,
+  type Cli04State,
+  scenarios as cli04Scenarios,
+} from "./CLI-04/scenarios";
 import { EngagementsIndex } from "./ENG-01";
 import {
   STATES as ENG01_STATES,
@@ -49,6 +84,7 @@ import {
 import { EngagementRecordPage } from "./ENG-02";
 import { ENG03 } from "./ENG-03";
 import {
+  CONSENTS as ENG03_CONSENTS,
   OPENS as ENG03_OPENS,
   STATES as ENG03_STATES,
   type Eng03State,
@@ -71,6 +107,7 @@ import {
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
 import {
+  MOBILE_STATES as POR02_MOBILE,
   STATES as POR02_STATES,
   type Por02State,
   scenarios as por02Scenarios,
@@ -98,6 +135,12 @@ import {
   type Shl08State,
   scenarios as shl08Scenarios,
 } from "./SHL-08/scenarios";
+import { SHL20 } from "./SHL-20/artboard";
+import {
+  STATES as SHL20_STATES,
+  type Shl20State,
+  scenarios as shl20Scenarios,
+} from "./SHL-20/scenarios";
 import { RequestComposer } from "./SHL-14";
 import {
   OPENS as SHL14_OPENS,
@@ -307,6 +350,48 @@ function Adm01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ADM-01", { title: "Settings home & firm profile", Component: Adm01Artboard });
 
+// ADM-02 a–g (G-01-T10): People on the T12 frame; each state opens with its search (OPENS).
+function Adm02Frame({ state }: { state: Adm02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/people" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <PeoplePage initial={ADM02_OPENS[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm02State = ADM02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-02", { title: "Users & roles · permission matrix", Component: Adm02Artboard });
+
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -380,6 +465,107 @@ function Eng01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ENG-01", { title: "Engagements index", Component: Eng01Artboard });
 
+function Aud01Frame({ state }: { state: Aud01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        {/* Rows open AUD-02 in the product; the artboard keeps that control. */}
+        <AuditsIndex initial={AUD01_SEARCH[state]} onOpen={() => undefined} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Aud01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud01State = AUD01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Aud01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-01", { title: "Audits index · All Audits", Component: Aud01Artboard });
+
+function Aud02Frame({ state }: { state: Aud02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <AuditCockpitPage
+          auditId={AUD02_AUDIT_ID}
+          initial={AUD02_OPENS[state]}
+          onBack={() => undefined}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Aud02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud02State = AUD02_STATES.find((s) => s === params.st) ?? "b";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Aud02Frame key={state} state={state} /> : null;
+}
+
+// AUD-06's fixture frames (A-02-T05): persona, clock and figures per artboard until A-02-T09 and
+// A-02-T14 draw the screen on the same scenarios.
+function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud06State = AUD06_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <AUD06Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-06", { title: "Trial balance & leadsheets", Component: Aud06Artboard });
+
+registerScreen("AUD-02", {
+  title: "Audit cockpit · Overview, Source Documents, Agent",
+  Component: Aud02Artboard,
+});
+
 function Cli02Frame({ state }: { state: Cli02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -429,6 +615,48 @@ function Cli02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-02", { title: "Client record · Overview", Component: Cli02Artboard });
+
+// CLI-04 (P-07-T33): the client record on its "Contacts & access" tab, opened on the artboard's
+// client and overlay.
+function Cli04Frame({ state }: { state: Cli04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/clients" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <ClientRecordPage
+        clientId={CLI04_OPENS[state]}
+        toolbar={bar.toolbar}
+        frame
+        initialTab="contacts"
+        contactsOpen={CLI04_OVERLAYS[state]}
+      />
+    </div>
+  );
+}
+
+function Cli04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli04State = CLI04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Cli04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("CLI-04", { title: "Contacts & portal access", Component: Cli04Artboard });
 
 function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -499,7 +727,8 @@ function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("SHL-14", { title: "Request composer drawer", Component: Shl14Artboard });
 
-// ENG-03 (P-07-T21): the wizard over an empty frame, on the artboard's draft.
+// ENG-03 (P-07-T21, T34): the wizard over an empty frame, on the artboard's draft; e's §7216
+// consents card is fixture-only (DEC-345) and only the gallery passes it.
 function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Eng03State = ENG03_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -517,7 +746,7 @@ function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} className="h-[900px]">
-      <ENG03 draftId={ENG03_OPENS[state]} />
+      <ENG03 draftId={ENG03_OPENS[state]} consents={ENG03_CONSENTS[state]} />
     </div>
   );
 }
@@ -582,8 +811,8 @@ function Por01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("POR-01", { title: "Portal sign-in · Brightwater Hale", Component: Por01Artboard });
 
-// POR-02 (P-08-T15): the portal home, a, b, c and f; the portal draws it from its own entry, the
-// gallery from the fixture scenario.
+// POR-02 (P-08-T15, T23): the portal home, a–h and the 390 layout M; the portal draws it from its
+// own entry, the gallery from the fixture scenario.
 function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por02State = POR02_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -601,15 +830,16 @@ function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} data-surface="portal">
-      <PortalHome scopeId={null} frame />
+      <PortalHome scopeId={null} frame mobile={POR02_MOBILE.has(state)} />
     </div>
   );
 }
 
 registerScreen("POR-02", { title: "Portal home · Feld household", Component: Por02Artboard });
 
-// POR-03 (R-01-T06): documents part 1, a, c, e, f, g and h; each artboard is its data plus what
-// the client is doing at that instant (uploads in flight, the Ignore popover).
+// POR-03 (R-01-T06, T10): documents, a–i, motion (`&static=1` freezes it at the sorted frame), c2
+// and the 390 layout M; each artboard is its data plus what the client is doing at that instant
+// (files over the list, the drop in flight, uploads, the Ignore popover).
 function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por03State = POR03_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -631,10 +861,14 @@ function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       <PortalDocuments
         binderId={board.binderId}
         frame
+        mobile={board.mobile === true}
         hold={{
           ...(board.uploads === undefined ? {} : { uploads: board.uploads }),
           ...(board.ignoreOpenOn === undefined ? {} : { ignoreOpenOn: board.ignoreOpenOn }),
           ...(board.dragging === undefined ? {} : { dragging: board.dragging }),
+          ...(board.motion === undefined ? {} : { motion: board.motion }),
+          ...(board.dropBatch === undefined ? {} : { dropBatch: board.dropBatch }),
+          ...(params.static ? { still: true } : {}),
         }}
       />
     </div>
@@ -663,7 +897,7 @@ function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("SHL-07", { title: "Citation popover", Component: Shl07Artboard });
 
-// SHL-08 (P-03-T07): the source viewer's fixtures, a–f and h, on the E5 shell until P-03-T14.
+// SHL-08 (P-03-T07, T14): the source viewer on its two hosts, a–f and h.
 function Shl08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Shl08State = SHL08_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -682,3 +916,23 @@ function Shl08Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-08", { title: "Source viewer · drawer and pane", Component: Shl08Artboard });
+
+// SHL-20 (P-06-T22): the C-34 screening card on the Granite Peak SURL upload, a–f.
+function Shl20Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl20State = SHL20_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl20Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL20 key={state} state={state} /> : null;
+}
+
+registerScreen("SHL-20", { title: "Evidence screening", Component: Shl20Artboard });

@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import pytest
+
+from abacus.kernel import controls
+from abacus.kernel.controls import Active
 
 NO_TESTS_COLLECTED = 5
 
@@ -21,3 +25,20 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     selected = [Path(str(arg).split("::", 1)[0]).resolve() for arg in session.config.args]
     if not any(any(p.rglob("test_*.py")) if p.is_dir() else p.exists() for p in selected):
         session.exitstatus = pytest.ExitCode.OK
+
+
+async def _no_switches() -> Active:
+    return frozenset()
+
+
+@pytest.fixture(autouse=True)
+def _no_kill_switches(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Q-01-T36, T37: every suite but integration runs without a database (unit, contracts,
+    security, property, acceptance, workflows), where an unreadable switch state fails closed and
+    every write would answer `read_only`. They read "no switch on" instead; integration tests read
+    the real `platform_controls`, and switch tests replace `_read` with their own."""
+    node = cast(pytest.Item, request.node)  # pyright: ignore[reportUnknownMemberType] -- pytest's request.node is untyped
+    if "integration" in node.path.parts:
+        return
+    controls.forget_controls()
+    monkeypatch.setattr(controls, "_read", _no_switches)

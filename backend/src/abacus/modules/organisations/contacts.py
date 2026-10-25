@@ -144,6 +144,7 @@ class RowView:
     mfa_enrolled: bool | None
     last_seen_at: datetime | None
     delegated_request_count: int
+    invitation_id: UUID | None
     allowed_actions: list[str]
 
 
@@ -388,6 +389,10 @@ async def _rows(ctx: AuthContext, client_id: UUID, contacts: Sequence[Contact]) 
                 await factor_enrolled(contact.user_id) if contact.user_id is not None else None,
                 None,  # P-08's sign-in history read is not yet a published identity read
                 len(counts.get(contact.id, ((), 0))[0]),
+                # ED-049: Resend and Revoke name the invitation; live states only.
+                cast(UUID, invitation["id"])
+                if invitation is not None and state in ("invited", "active", "locked")
+                else None,
                 actions,
             )
         )

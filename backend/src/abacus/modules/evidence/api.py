@@ -33,7 +33,7 @@ from abacus.modules.evidence.citations.registry import Verdict as CitationVerdic
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops import drop_batch
-from abacus.modules.evidence.drops_contract import drops_router
+from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
     EvidenceVersionWithdrawn,
@@ -48,7 +48,15 @@ from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
 from abacus.modules.evidence.hold_runs import WORKFLOWS as HOLD_WORKFLOWS
 from abacus.modules.evidence.hold_runs import with_hold_inheritance
-from abacus.modules.evidence.holds import holds_covering
+from abacus.modules.evidence.holds import (
+    HoldScope,
+    HoldView,
+    holds_covering,
+    list_holds,
+    place_hold,
+)
+from abacus.modules.evidence.holds import activate as legal_hold_activate
+from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
 from abacus.modules.evidence.match_material import (
     Candidate,
@@ -99,7 +107,15 @@ from abacus.modules.evidence.render_gl import (
     render_journal_listing,
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
-from abacus.modules.evidence.retention import RECORD_TYPES, extend_retention_for, retain_until_for
+from abacus.modules.evidence.retention import (
+    RECORD_TYPES,
+    EffectivePolicy,
+    PolicyChange,
+    effective_policies,
+    extend_retention_for,
+    retain_until_for,
+    set_policy,
+)
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
 from abacus.modules.evidence.routes import firm_router, router
@@ -139,10 +155,16 @@ from abacus.modules.evidence.storage import (
     ContentTooLarge,
     IntegrityError,
     check_ready,
+    configure_storage,
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.upload_facts import upload_facts
-from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATHS, upload
+from abacus.modules.evidence.uploads import (
+    UPLOAD_EDGE_BYTES,
+    UPLOAD_ROUTE_PATHS,
+    upload,
+    upload_preview,
+)
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
@@ -171,6 +193,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_router,
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
     drops_router,  # C5 portal-pbc stub (R-01-T01): a portal drop
+    void_router,  # C5 portal-pbc (TASK-1248): a person voids a wrong rule link
     trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
@@ -256,6 +279,7 @@ __all__ = [
     "CitationLabel",
     "CitationVerdict",
     "ContentTooLarge",
+    "EffectivePolicy",
     "EngagementArchived",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
@@ -266,6 +290,8 @@ __all__ = [
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
+    "HoldScope",
+    "HoldView",
     "InboxFileAdded",
     "InboxFileExtracted",
     "IntegrityError",
@@ -274,6 +300,7 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "PolicyChange",
     "PortalFile",
     "Proposal",
     "Provenance",
@@ -303,19 +330,25 @@ __all__ = [
     "citation_cell_text",
     "client_pre_checks",
     "column_letters",
+    "configure_storage",
     "decided_among",
     "decisions_on_screenings",
     "drop_batch",
+    "effective_policies",
     "engagement_snapshots",
     "evidence_versions_for",
     "extend_retention_for",
     "firm_router",
     "holds_covering",
     "is_version_withdrawn",
+    "legal_hold_activate",
+    "legal_hold_apply_batch",
+    "list_holds",
     "mark_sources_superseded",
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "place_hold",
     "portal_files",
     "process_upload",
     "put_record",
@@ -333,12 +366,14 @@ __all__ = [
     "review_material",
     "router",
     "screening_facts",
+    "set_policy",
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",
     "suggest_by_name",
     "undo_review_decision",
     "upload",
+    "upload_preview",
     "verified_citation_ids",
     "version_view",
     "waiting_among",

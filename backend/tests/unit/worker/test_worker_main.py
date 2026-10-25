@@ -206,6 +206,37 @@ async def test_ac1_the_relay_runs_only_in_a_process_serving_interactive(
     assert relay.started == expected
 
 
+async def test_q01t26_two_interactive_workers_start_no_side_jobs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Q-01-T26: the spend-anomaly and notification-purge passes are Schedules, not worker loops,
+    so two interactive workers run neither (each ran its own loop before)."""
+    from abacus.ai_gateway import budgets
+    from abacus.modules.notifications import service as notifications_service
+
+    passes: list[str] = []
+
+    async def flagged() -> int:
+        passes.append("anomaly")
+        return 0
+
+    async def purged() -> int:
+        passes.append("purge")
+        return 0
+
+    monkeypatch.setattr(budgets, "flag_anomalies", flagged)
+    monkeypatch.setattr(notifications_service, "purge_once", purged)
+    relay = _Relay(monkeypatch)
+    for _ in range(2):
+        _build(monkeypatch, [_FakeWorker()])
+        _signal()
+        await asyncio.wait_for(worker_main.run(("interactive",)), timeout=10)
+    assert relay.started == 2  # the relay still runs beside each interactive pool
+    assert passes == []
+    assert not hasattr(worker_main, "run_anomaly_job")
+    assert not hasattr(budgets, "run_anomaly_job")
+
+
 async def test_ac20_a_failed_boot_check_stops_the_worker_before_it_polls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

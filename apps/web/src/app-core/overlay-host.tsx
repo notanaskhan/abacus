@@ -6,6 +6,8 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Fragment, type JSX, useCallback, useMemo } from "react";
 import {
   type OverlayRef,
+  type SourceViewerTarget,
+  VIEWER_OVERLAY,
   closeRef,
   decodeOverlays,
   encodeOverlays,
@@ -14,6 +16,7 @@ import {
   normalizeOverlays,
   openRef,
   overlayEntry,
+  sourceViewerArgs,
 } from "./overlays";
 
 type Search = Record<string, unknown>;
@@ -65,6 +68,18 @@ export function useOverlays(): UseOverlays {
   );
 
   return { refs, open, close };
+}
+
+/** `openSourceViewer(target)` (P-03 AC3.1): the SHL-08 drawer at `?ov=viewer:<v>:<match>…`. It
+ * pushes history, so Back closes it; a second drawer replaces whatever drawer was open. */
+export function useOpenSourceViewer(): (target: SourceViewerTarget) => void {
+  const { open } = useOverlays();
+  return useCallback(
+    (target: SourceViewerTarget) => {
+      open(VIEWER_OVERLAY, ...sourceViewerArgs(target));
+    },
+    [open],
+  );
 }
 
 /** Draws the layers in the URL. Mount it once, inside the router, under the app's providers. */

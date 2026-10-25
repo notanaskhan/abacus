@@ -103,6 +103,21 @@ async def test_hold_with_a_reason_then_resume(world: _World) -> None:
     assert len(rows) == 2
 
 
+async def test_the_record_names_the_hold_reason_only_while_on_hold(world: _World) -> None:
+    """DEC-344: ENG-02's status pill reads the reason from the record (`hold_reason`)."""
+    who = world.ctx(world.partner)
+    assert (await contract.engagement_record_route(world.engagement, who)).hold_reason is None
+    await contract.hold_engagement_route(
+        world.engagement, contract.EngagementHoldIn(reason="client_unresponsive"), who
+    )
+    record = await contract.engagement_record_route(world.engagement, who)
+    assert (record.status, record.hold_reason) == ("on_hold", "client_unresponsive")
+    assert "engagement.hold" in record.allowed_actions
+    await contract.resume_engagement_route(world.engagement, who)
+    record = await contract.engagement_record_route(world.engagement, who)
+    assert (record.status, record.hold_reason) == ("active", None)
+
+
 async def test_only_an_active_engagement_is_held_and_archived_is_refused(world: _World) -> None:
     await world.status("archived")
     with pytest.raises(Forbidden) as archived:  # authorised first: archived writes are refused

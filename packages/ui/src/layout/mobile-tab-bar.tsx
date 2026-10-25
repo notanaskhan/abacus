@@ -10,9 +10,11 @@ import {
 import { FirmMark, type FirmMarkProps } from "../brand";
 import { cn } from "../cn";
 import { PRESS } from "../components/control-classes";
+import { Count } from "../components/pill";
+import { Menu } from "../components/popover";
 import { Icon } from "../icons";
 import { useMotion } from "../motion";
-import type { PortalNavItem } from "./portal-toolbar";
+import type { PortalNavItem, PortalUserMenu } from "./portal-toolbar";
 
 // The portal at 390 (T7-M; DEC-45, D-DS-8): the 56px MobileHeader and the 64px MobileTabBar with
 // its More sheet. The bar replaces the T7-M board's top pills: Home · Documents · Sign · Messages,
@@ -44,6 +46,8 @@ export interface MobileHeaderProps {
   logo?: string;
   mark?: FirmMarkProps["mark"];
   onUser?: () => void;
+  /** The account button opens this menu (the PortalToolbar's user menu). */
+  userMenu?: PortalUserMenu;
   className?: string;
 }
 
@@ -55,8 +59,24 @@ export function MobileHeader({
   logo,
   mark,
   onUser,
+  userMenu,
   className,
 }: MobileHeaderProps): JSX.Element {
+  const account =
+    user === undefined ? null : (
+      <button
+        type="button"
+        aria-label={user}
+        title={user}
+        aria-haspopup="menu"
+        {...(userMenu === undefined ? { onClick: onUser } : {})}
+        className={cn("inline-flex size-[44px] flex-none items-center justify-center", PRESS)}
+      >
+        <span className="inline-flex size-[28px] items-center justify-center rounded-pill bg-nav-fill text-ink-2 shadow-e1">
+          <Icon name="user" size={14} />
+        </span>
+      </button>
+    );
   return (
     <header
       data-shell="mobile-header"
@@ -74,20 +94,17 @@ export function MobileHeader({
       <span className="min-w-0 flex-1 truncate text-title font-medium tracking-[-0.02em] whitespace-nowrap">
         {firm}
       </span>
-      {user !== undefined && (
-        <button
-          type="button"
-          aria-label={user}
-          title={user}
-          aria-haspopup="menu"
-          onClick={onUser}
-          className={cn("inline-flex size-[44px] flex-none items-center justify-center", PRESS)}
-        >
-          <span className="inline-flex size-[28px] items-center justify-center rounded-pill bg-nav-fill text-ink-2 shadow-e1">
-            <Icon name="user" size={14} />
-          </span>
-        </button>
-      )}
+      {account !== null &&
+        (userMenu === undefined ? (
+          account
+        ) : (
+          <Menu
+            trigger={account}
+            sections={userMenu.sections}
+            label={userMenu.label}
+            width={260}
+          />
+        ))}
     </header>
   );
 }
@@ -239,13 +256,26 @@ export function MobileTabBar({
             key={item.label}
             type="button"
             {...(item.label === active && !open ? { "aria-current": "page" as const } : {})}
+            {...(item.count !== undefined && item.count > 0
+              ? { "aria-label": item.countLabel ?? `${item.label}, ${String(item.count)}` }
+              : {})}
             className={TAB}
             onClick={() => {
               setOpen(false);
               onNavigate?.(item.label);
             }}
           >
-            <Icon name={item.icon} size={20} />
+            <span className="relative inline-flex">
+              <Icon name={item.icon} size={20} />
+              {item.count !== undefined && item.count > 0 && (
+                <Count
+                  value={item.count}
+                  data-part="tab-count"
+                  aria-hidden="true"
+                  className="absolute -top-[8px] -right-[13px] px-[6px]"
+                />
+              )}
+            </span>
             {item.label}
           </button>
         ))}

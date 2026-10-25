@@ -3,6 +3,7 @@
 // stage codes, pill codes, team role codes and earlier-row kinds map to these strings. Names,
 // counts and dates are data. The firm's name is the branding's, never a constant here.
 
+import type { IconName } from "@abacus/ui";
 import type {
   PortalHomeEarlierOut,
   PortalHomePillOut,
@@ -39,7 +40,51 @@ export const COPY = {
       sign: "Go to Sign →",
       reconnect: "Go to Connections →",
       approve: "Go to Approvals →",
+      review_statements: "Go to Deliverables →",
+      control_requests: "Go to Documents →",
+      exceptions: "Go to Approvals →",
     } as Readonly<Partial<Record<PortalHomeTodoOut["kind"], string>>>,
+    /** Each kind's 15px glyph (the TodoCard grammar; R2 adds PenLine and ShieldCheck). */
+    glyph: {
+      upload: "file-text",
+      answer: "circle-help",
+      sign: "signature",
+      deliverables: "download",
+      approve: "circle-check",
+      reconnect: "plug",
+      review_statements: "pen-line",
+      control_requests: "shield-check",
+      exceptions: "shield-check",
+      description_approved: "circle-check",
+    } satisfies Record<PortalHomeTodoOut["kind"], IconName>,
+    /** d: an overdue close upload names its month ("Upload 2 documents for the August close"). */
+    uploadForClose: (n: number, month: string) =>
+      `Upload ${String(n)} ${plural(n, "document", "documents")} for the ${month} close`,
+    /** "Nothing to sign yet" lines by what comes next: the 8879 (a) or the representation
+     * letter (g). */
+    nothingToSignAfter: {
+      representation_letter: "The representation letter comes after your review.",
+    } as Readonly<Record<string, string>>,
+    reconnect: (institution: string, month: string) => ({
+      title: `Reconnect ${institution}`,
+      sub: `We can't bring in your ${month} card activity until it's reconnected.`,
+    }),
+    reviewStatements: (fiscalYear: string, by: string, on: string) => ({
+      title: `Review your ${fiscalYear} financial statements`,
+      sub: `Shared by ${by} on ${on} · suggest edits or comment on any page`,
+    }),
+    controlRequests: (n: number, grc: string) => ({
+      title: "Answer control requests",
+      sub: `${String(n)} open requests · synced with ${grc}`,
+    }),
+    exceptions: (n: number, criteria: string) => ({
+      title: `Respond to ${String(n)} ${plural(n, "exception", "exceptions")}`,
+      sub: `${criteria} — tell us what changed`,
+    }),
+    descriptionApproved: (on: string) => ({
+      title: "System description approved",
+      sub: `Approved ${on}`,
+    }),
     upload: (n: number) => `Upload ${String(n)} ${plural(n, "document", "documents")}`,
     answer: (n: number) => `Answer ${String(n)} ${plural(n, "question", "questions")}`,
     nothingToSign: { title: "Nothing to sign yet", sub: "Your Form 8879 comes after our review." },
@@ -125,6 +170,33 @@ export const COPY = {
       PortalHomeEarlierOut["kind"],
       (facts: Readonly<Record<string, string | number | boolean>>) => string
     >,
+  },
+  notice: {
+    agency_notice_in_review: (subject: string, firm: string) =>
+      `${subject} — ${firm} is reviewing it. Nothing needed from you.`,
+  },
+  myK1s: {
+    title: "My K-1s",
+    notReleased: "Not released yet",
+    expected: (date: string) => `Expected by ${date} · you'll get an email`,
+  },
+  stageCount: (done: number, total: number) => `${String(done)} of ${String(total)}`,
+  /** The user chip's menu (P-08-T23, e): each scope with its role, then the account links. */
+  userMenu: {
+    label: "Account",
+    scope: (label: string, role: string) => `${label} · ${role}`,
+    account: "Account & people",
+    connections: "Connections",
+    billing: "Billing & payments",
+    security: "Security",
+    signOut: "Sign out",
+  },
+  mobile: {
+    /** T7-M's collapsed team card: "4 people · Message Kevin". */
+    team: (n: number, first: string | null) =>
+      first === null
+        ? `${String(n)} ${plural(n, "person", "people")}`
+        : `${String(n)} ${plural(n, "person", "people")} · Message ${first}`,
   },
   welcome: {
     title: (firm: string) => `Welcome to ${firm}'s client portal.`,

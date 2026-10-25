@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-04 Contacts and portal access/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · stub P-07-T17 · consumer suite P-07-T18 · live P-07-T25 · AC suite P-07-T26 · screen P-07-T33 |
-| Manifest status | planned (`routes/manifest/cli.ts`, `path: null`) until P-07-T33 |
+| Manifest status | planned (`routes/manifest/cli.ts`, path `/clients/$clientId/contacts`): a–g built on fixtures by P-07-T33 (TASK-1216) as CLI-02's "Contacts & access" tab behind `contacts.v2`; kept `planned` for CLI-02's reason (DEC-195) |
 
-Code to come (P-07 §5): `src/screens/CLI-04/{index.tsx, scenarios.ts, copy.ts, CLI-04.test.tsx}`, `src/fixtures/handlers/contacts.ts`. Flag `contacts.v2`. API: `docs/contracts/contacts-access.md`.
+Code (P-07-T33): `src/screens/CLI-04/{index.tsx, scenarios.ts, copy.ts, CLI-04.test.tsx}` (hosted by `screens/CLI-02` on its contacts tab), `src/domain/clients/contacts.ts`, `src/fixtures/handlers/contacts.ts`, `src/fixtures/scenarios/CLI-04.ts`, `src/fixtures/contacts.foot.test.ts`, `e2e/screens/CLI-04.spec.ts`. Flag `contacts.v2`. API: `docs/contracts/contacts-access.md`.
 
 ## States
 
@@ -104,6 +104,14 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | unlock | Staff sign-in locks are not unlocked here | Only IT/Security (`security_admin`) unlocks staff | DF-24 |
 | email | The preview renders the firm's database Invitation template, not fixed copy | Email templates are database content | C16, AGENTS 16 |
 | expiry | Link expiry is fixed at 14 days (the ⇕ offers no other value yet) | ADM-02 expiry 7 → 14 | DF-24, DEC-226 |
+| T33-roles | Role tags are the contact role codes' words ("Plan administrator", "Recordkeeper", "TPA", "Custodian", "Payroll", "Owner", "Controller", …) plus "Third party" for recordkeeper, TPA, custodian and payroll roles; "Signer", "SKE designee", "TCWG" and "Approver of record" are engagement designations, not in the row model, so they are not drawn (g's "Approver of record" reads in Ben Ashby's second line from the role's title) | `ContactRowOut.roles` carries role codes only | TASK-1216 |
+| T33-scope | The Scope cell reads "{n} delegated requests only" for a third party (with the lock) and the role scopes' names plus "{n} requests" for anyone else; the handoff's request titles and "signs engagement & rep letters" are not in the row | No scope text in the row model | TASK-1216 |
+| T33-locked | d's sub-line reads "3 incorrect codes" without the time: the row has no lock time and the drawer's sign-in history is empty until P-08 publishes it (DEC-302) | DF-24 copy, data deferred | TASK-1216 |
+| T33-sheet | The sheet's "Who" is a picker of Not invited contacts (organisation or contact) with the email and role words; its "Contact" line for an organisation is not drawn. "What they can see" lists the contact's delegated requests (titles from C5's request list of the client's active engagements) as ticks, with "Due" the earliest due date among the ticked; a non-third party gets the client ("Access" reads the client's name) in the grant role its contact role maps to. Change scope's action reads "Save access" (undesigned). MFA required is drawn on and disabled, "Locked on by firm policy" (the portal MFA floor, DEC-250/DEC-303) | No firm-policy read; change scope's action is undesigned | TASK-1216 |
+| T33-preview | "Email preview" names its source ("Sent from your firm's Invitation email template.") instead of rendering the email: no read renders the firm's `portal.invitation` template (C16) for staff yet | Email templates are database content; no preview route | TASK-1216; follow-up for R-01 / C16 |
+| T33-dialogs | Unlock… opens a confirm dialog "Unlock portal sign-in for {name}?" / "They can sign in again with a new email code." / "Unlock"; toasts "Access changed", "Unlocked", "Access revoked", "Couldn’t save the change."; Resend toasts "Invite sent to {org}"; the drawer's bands "Roles", "Delegated requests", "Sign-in history" ("No sign-ins yet.") | Undesigned | TASK-1216 |
+| T33-order | The fixture serves rows in the handoff's order so the footer reads 10 + 9 + 2 + 2 + 1; the live list sorts by name (DEC-302), so its `parts` read in name order with the same sum | DEC-302 | TASK-1216 |
+| T33-preview-btn | "Portal preview" is drawn disabled with its hint in fixture builds and not at all in production | POR-02 as a contact is planned (R-01) | P-07 §2.1 |
 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
@@ -112,4 +120,4 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | d e f | C | — | |
 
 ## Open gaps
-None open. The footer's `parts` are the non-zero per-contact counts in row order (DEC-226).
+The footer's `parts` are the non-zero per-contact counts in row order (DEC-226). P-07-T33: (1) a Not invited third party has no delegated requests live (DEC-302 counts delegations under grants), so the live sheet has nothing to tick for Harborline until C5 records who owes a request before the invitation; (2) the fixture's delegated requests are the seed's 24 Northwind PBC requests handed out to match 10 + 9 + 2 + 2 + 1, so their titles differ from spec.md's (TASK-1161's owner-column gap); (3) the email preview needs a staff read of the `portal.invitation` template; (4) last seen and sign-in history wait for P-08 (DEC-302).

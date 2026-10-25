@@ -4,12 +4,12 @@ title: "F-02-T01 · Decision register: docs/product/decision-log.md with DEC-01.
 spec: SPEC-046
 acceptance_criteria: [AC-1, AC-2, AC-3]
 risk_zone: green
-status: in-progress
+status: done
 epic: F-02
 plan_key: F-02-T01
 branch: task-115-decision-log
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-25
 ---
 
 > Solo edition. Write the plan below first (amber and red), then build. If scope must change, stop and add it to Questions. Append to the Progress log before ending a session.
@@ -68,6 +68,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 Append-only. Newest at the bottom.
 
 - `2026-10-20` — Created in SU-12 (2026-10-20); verify
+- `2026-10-25` — S8b verification and completion. AC-1: the log has every DEC-01 to DEC-101 row (254 rows in all, no gaps, no duplicates), but no owner or default-eligibility column; added the "Register facts" table (owner, effective decide-by with chapter 09's date kept where chapter 01 differs, default on silence) generated from chapter 09 §9.3 and chapter 01 §1.9 (DEC-364). AC-2: 45 rows read "never defaults", including every row in AC-2's list and every DEC a red P-ADR records; DEC-22 reads "never defaults (commercial part)". AC-3: no issue opened; the repository is public and the log is the binding index. `validate_docs` green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -81,8 +82,8 @@ Append-only. Newest at the bottom.
 - [ ] None.
 
 ## Handoff
-- **Current state:** Created in SU-12 (2026-10-20); not yet verified against the ACs.
-- **Exact next step:** Verify AC-1 to AC-3 against `docs/product/decision-log.md`.
+- **Current state:** done.
+- **Exact next step:** none.
 - **Uncommitted or partial work:** None known.
 - **Known failing checks:** None.
 - **Open issues:** None.
