@@ -3,9 +3,10 @@ rule link.
 
 - `fulfilments` gains `voided_at`, `voided_by` and `void_reason` (`wrong_request`), all three set
   together. The app may update those three columns only.
-- `fulfilments_void_only` (BEFORE UPDATE): the one change a fulfilment ever takes is its void, once,
-  of a `rule` link whose version no one has accepted (an `accept` decision, undone or not), by the
-  person acting (`app.actor_kind` human, `voided_by` = `app.actor_id`). Anything else is refused.
+- `fulfilments_void_only` (BEFORE UPDATE): the one change a fulfilment ever takes is its void,
+  once, of a `rule` link whose version no one has accepted (an `accept` decision, undone or
+  not), by the person acting (`app.actor_kind` human, `voided_by` = `app.actor_id`). Anything
+  else is refused.
 - `abacus_human_only_actions()`: 0156's 32 entries plus `fulfilment.voided` (a decision, ADR-005);
   the downgrade restores 0156's list.
 - `evidence_version_voids` (insert-only, tenant-scoped): the version a voided rule link made is
@@ -109,7 +110,8 @@ def upgrade() -> None:
                     USING ERRCODE = 'check_violation';
             END IF;
             IF OLD.created_by_kind <> 'rule' THEN
-                RAISE EXCEPTION 'only a rule fulfilment is voided' USING ERRCODE = 'check_violation';
+                RAISE EXCEPTION 'only a rule fulfilment is voided'
+                    USING ERRCODE = 'check_violation';
             END IF;
             IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
                OR current_setting('app.actor_id', true) IS DISTINCT FROM NEW.voided_by::text THEN
