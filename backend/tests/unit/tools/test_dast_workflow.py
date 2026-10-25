@@ -58,8 +58,11 @@ def test_t004_the_zap_image_is_allowlisted_and_pinned_by_digest() -> None:
 
 def test_t004_dast_runs_weekly_on_staging_only_when_turned_on() -> None:
     assert _triggers("dast.yml")["schedule"] == [{"cron": "0 10 * * 2"}]
-    job = _jobs("dast.yml")["baseline"]
-    assert job["if"] == "vars.STAGING_DAST == 'on'"
+    jobs = _jobs("dast.yml")
+    assert jobs["preflight"]["if"] == "vars.STAGING_DAST == 'on'"
+    job = jobs["baseline"]
+    assert job["needs"] == ["preflight"]
+    assert job["if"] == "needs.preflight.outputs.proceed == 'true'"
     env = cast(dict[str, str], job["env"])
     assert env["TARGET"] == "${{ vars.ABACUS_STAGING_URL }}"
     assert 'zap-baseline.py -t "$TARGET"' in _runs(job)
@@ -69,13 +72,22 @@ def test_t004_dast_runs_weekly_on_staging_only_when_turned_on() -> None:
 
 def test_t004_dast_never_runs_during_a_deploy_and_holds_the_deploy_lock() -> None:
     raw = _load("dast.yml")
-    assert raw["concurrency"] == {"group": "staging-deploy", "cancel-in-progress": False}
-    job = _jobs("dast.yml")["baseline"]
-    first = _steps(job)[0]
-    assert "gh run list" in str(first["run"]) and "deploy-staging.yml" in str(first["run"])
-    assert "skip=true" in str(first["run"])
-    scan = next(s for s in _steps(job) if "docker run" in str(s.get("run", "")))
-    assert scan["if"] == "steps.lock.outputs.skip != 'true'"
+    # The lock is the scan job's, never the workflow's: a run that is off, or that finds a deploy
+    # running or queued, never joins the group (where it could replace a queued deploy).
+    assert "concurrency" not in raw
+    jobs = _jobs("dast.yml")
+    assert "concurrency" not in jobs["preflight"]
+    assert jobs["baseline"]["concurrency"] == {
+        "group": "staging-deploy",
+        "cancel-in-progress": False,
+    }
+    check = _runs(jobs["preflight"])
+    assert "set -euo pipefail" in check
+    assert "gh run list" in check and "deploy-staging.yml" in check
+    assert "|| echo" not in check  # a failed lookup stops the scan (fails closed)
+    assert 'echo "proceed=true"' in check
+    outputs = cast(dict[str, str], jobs["preflight"]["outputs"])
+    assert outputs["proceed"] == "${{ steps.lock.outputs.proceed }}"
 
 
 def test_t004_only_counts_are_public_and_the_report_is_encrypted() -> None:
@@ -95,7 +107,11 @@ def test_t004_a_high_alert_opens_a_sev3_ticket_and_fails_the_run() -> None:
     jobs = _jobs("dast.yml")
     baseline = jobs["baseline"]
     assert cast(dict[str, str], baseline["outputs"])["high"] == "${{ steps.triage.outputs.high }}"
-    assert "exit 1" in str(_steps(baseline)[-1]["run"])
+    last = _steps(baseline)[-1]
+    assert "exit 1" in str(last["run"])
+    # Step outputs reach the shell through env, never interpolated into the script.
+    assert "${{" not in str(last["run"])
+    assert cast(dict[str, str], last["env"])["HIGH"] == "${{ steps.triage.outputs.high }}"
     ticket = jobs["sev3"]
     assert ticket["needs"] == ["baseline"]
     assert ticket["permissions"] == {"issues": "write"}

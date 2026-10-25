@@ -7,11 +7,14 @@ pip-audit, bandit, Trivy (filesystem, IaC, image), CodeQL or Inspector that is n
 id, source, severity, the day it was first seen and, once fixed, the day it was closed. The SLA
 runs from the first-seen day: critical 7 days, high 30 days.
 
-- `check [--as-of DATE]`: the register parses, and no open finding is past its SLA (exit 1).
+- `check [--as-of DATE] [--base-register FILE]`: the register parses, no open finding is past its
+  SLA, and (on a pull request) nothing is loosened against the base's register (exit 1).
 - `ignores --tool pip-audit|trivy`: the scanner's ignore list, made of the open findings for that
   tool that are still inside their SLA. The scanners fail CI on any other high or critical
   finding, so a finding is either fixed, inside its SLA in the register, or a red build; once the
-  SLA passes, the ignore falls away and the build goes red until it is fixed (security.yml).
+  SLA passes, the ignore falls away and the build goes red until it is fixed (security.yml). On a
+  pull request the ignores come from the BASE's register, so a change cannot waive its own
+  findings; the register is human-only for agents (.claude/hooks/_protected.py).
 """
 
 from __future__ import annotations
@@ -122,6 +125,30 @@ def overdue(findings: list[Finding], day: date) -> list[str]:
     ]
 
 
+_RANK: Final = {"high": 1, "critical": 2}
+
+
+def weakened(base: list[Finding], head: list[Finding]) -> list[str]:
+    """What the head loosens against the base register: a finding removed, its first-seen day
+    moved later (a longer SLA), its severity lowered, or a closed finding reopened. Recording a
+    new finding or a closing day is a normal change."""
+    now = {(f.id, f.source): f for f in head}
+    found: list[str] = []
+    for old in base:
+        new = now.get((old.id, old.source))
+        name = f"{old.id} ({old.source})"
+        if new is None:
+            found.append(f"{name} was removed")
+            continue
+        if new.first_seen > old.first_seen:
+            found.append(f"{name}: first seen moved from {old.first_seen} to {new.first_seen}")
+        if _RANK[new.severity] < _RANK[old.severity]:
+            found.append(f"{name}: severity lowered from {old.severity} to {new.severity}")
+        if old.closed is not None and new.closed is None:
+            found.append(f"{name}: reopened without a new entry")
+    return found
+
+
 def ignores(findings: list[Finding], tool: str, day: date) -> list[str]:
     """Ids the tool may skip today: open, inside their SLA, from the tool's sources."""
     sources = TOOLS[tool]
@@ -140,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     check = commands.add_parser("check")
     check.add_argument("--as-of", type=date.fromisoformat)
     check.add_argument("--register", type=Path, default=REGISTER)
+    check.add_argument("--base-register", type=Path, help="the base's register: nothing loosened")
     ignore = commands.add_parser("ignores")
     ignore.add_argument("--tool", choices=sorted(TOOLS), required=True)
     ignore.add_argument("--as-of", type=date.fromisoformat)
@@ -154,6 +182,16 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if args.command == "check":
         late = overdue(findings, day)
+        base_path = cast(Path | None, args.base_register)
+        if base_path is not None:
+            try:
+                loosened = weakened(parse(base_path.read_text(encoding="utf-8")), findings)
+            except RegisterInvalid:
+                loosened = []  # the base predates the format; the head is what is checked
+            for line in loosened:
+                print(f"loosened: {line}")
+            if loosened:
+                return 1
         for line in late:
             print(f"past SLA: {line}")
         if not late:

@@ -51,3 +51,8 @@ quarter's end."
   Tests: `pytest tests/unit/quality/test_dast_triage.py tests/unit/quality/test_supply_chain.py
   tests/unit/tools/test_security_scan_workflows.py tests/unit/tools/test_dast_workflow.py`: 24
   passed.
+- 2026-10-26: security review fixes: dast.yml split into an unlocked `preflight` (switch and
+  deploy-in-flight check, failing closed) and the locked `baseline`; the high count reaches the
+  shell through env; on pull requests the scanners' ignores come from the base's register and
+  `check --base-register` refuses a loosened one; the register is human-only for agents. DEC-366
+  amended.

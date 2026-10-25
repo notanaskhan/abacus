@@ -14,16 +14,22 @@ kept in step by `tests/unit/quality/test_mutation_floors.py`.
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
+from typing import cast
 
 GIT = shutil.which("git") or "/usr/bin/git"
 REPO = Path(__file__).resolve().parents[4]
 FILE = REPO / "backend" / "mutation-thresholds.yaml"
 REL = "backend/mutation-thresholds.yaml"
+# The mutation scope is protected with the floors: narrowing it would drop a floor unmeasured.
+PYPROJECT_REL = "backend/pyproject.toml"
+DRIVER_REL = "backend/src/abacus_tools/quality/mutation.py"
 
 _FLOOR = re.compile(r"^  ([a-z0-9_]+(?:/[a-z0-9_]+)*):\s*(\d{1,3})\s*(?:#.*)?$")
 _TOP = re.compile(r"^([a-z_]+):\s*(\S.*)?$")
@@ -72,9 +78,9 @@ def lowered(base: dict[str, int], head: dict[str, int]) -> list[str]:
     return found
 
 
-def _git_show(ref: str) -> str | None:
+def _git_show(ref: str, rel: str = REL) -> str | None:
     result = subprocess.run(
-        [GIT, "-C", str(REPO), "show", f"{ref}:{REL}"],
+        [GIT, "-C", str(REPO), "show", f"{ref}:{rel}"],
         capture_output=True,
         text=True,
         check=False,
@@ -89,6 +95,68 @@ def _reachable(ref: str) -> bool:
         check=False,
     )
     return result.returncode == 0
+
+
+def scopes_of(driver_source: str) -> dict[str, set[str]]:
+    """`SCOPES` in abacus_tools.quality.mutation, read from source (the base's or the head's)."""
+    for node in ast.walk(ast.parse(driver_source)):
+        target = node.target if isinstance(node, ast.AnnAssign) else None
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+        value = getattr(node, "value", None)
+        if isinstance(target, ast.Name) and target.id == "SCOPES" and isinstance(value, ast.Dict):
+            found: dict[str, set[str]] = {}
+            for key, globs in zip(value.keys, value.values, strict=True):
+                if isinstance(key, ast.Constant) and isinstance(globs, ast.Tuple):
+                    found[str(key.value)] = {
+                        str(g.value) for g in globs.elts if isinstance(g, ast.Constant)
+                    }
+            return found
+    return {}
+
+
+def _mutmut(pyproject: str) -> dict[str, object]:
+    tool = cast(dict[str, object], tomllib.loads(pyproject).get("tool", {}))
+    return cast(dict[str, object], tool.get("mutmut", {}))
+
+
+def _strings(config: dict[str, object], key: str) -> set[str]:
+    raw: object = config.get(key) or []
+    return {str(v) for v in cast(list[object], raw)} if isinstance(raw, list) else set()
+
+
+def narrowed(
+    base_pyproject: str | None,
+    head_pyproject: str,
+    base_driver: str | None,
+    head_driver: str,
+) -> list[str]:
+    """What the head narrows in the mutation scope: a red scope or glob removed from SCOPES,
+    `only_mutate` or the test selection; a pattern added to `do_not_mutate`; other run arguments
+    changed. Widening is a normal change."""
+    found: list[str] = []
+    if base_driver is not None:
+        base_scopes, head_scopes = scopes_of(base_driver), scopes_of(head_driver)
+        for scope, globs in sorted(base_scopes.items()):
+            missing = sorted(globs - head_scopes.get(scope, set()))
+            if scope not in head_scopes:
+                found.append(f"{DRIVER_REL}: SCOPES drops the {scope} scope")
+            elif missing:
+                found.append(f"{DRIVER_REL}: SCOPES[{scope!r}] drops {missing}")
+    if base_pyproject is not None:
+        base, head = _mutmut(base_pyproject), _mutmut(head_pyproject)
+        if base:
+            for key in ("only_mutate", "pytest_add_cli_args_test_selection"):
+                gone = sorted(_strings(base, key) - _strings(head, key))
+                if gone:
+                    found.append(f"{PYPROJECT_REL}: [tool.mutmut] {key} drops {gone}")
+            added = sorted(_strings(head, "do_not_mutate") - _strings(base, "do_not_mutate"))
+            if added:
+                found.append(f"{PYPROJECT_REL}: [tool.mutmut] do_not_mutate adds {added}")
+            for key in ("source_paths", "pytest_add_cli_args"):
+                if base.get(key) != head.get(key):
+                    found.append(f"{PYPROJECT_REL}: [tool.mutmut] {key} changed")
+    return found
 
 
 def check(head_text: str, base_text: str | None) -> list[str]:
@@ -108,23 +176,39 @@ def check(head_text: str, base_text: str | None) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--base", help="the ref to compare with (required to be reachable)")
+    parser.add_argument(
+        "--head-root",
+        type=Path,
+        default=REPO,
+        help="the checkout whose files are judged (mutation-floors.yml runs the base's guard "
+        "from a base worktree against the pull request's checkout)",
+    )
     args = parser.parse_args(argv)
-    head_text = FILE.read_text(encoding="utf-8")
+    root = cast(Path, args.head_root)
+    head_text = (root / REL).read_text(encoding="utf-8")
+    ref: str | None
     if args.base:
         if not _reachable(args.base):
             print(f"mutation floors: base {args.base} is not reachable; fetch full history")
             return 1
-        base_text = _git_show(args.base)
+        ref = cast(str, args.base)
     elif _reachable("origin/main"):
-        base_text = _git_show("origin/main")
+        ref = "origin/main"
     else:
         print("mutation floors: origin/main is not reachable; format checked only")
-        base_text = None
-    problems = check(head_text, base_text)
+        ref = None
+    problems = check(head_text, None if ref is None else _git_show(ref))
+    if ref is not None:
+        problems += narrowed(
+            _git_show(ref, PYPROJECT_REL),
+            (root / PYPROJECT_REL).read_text(encoding="utf-8"),
+            _git_show(ref, DRIVER_REL),
+            (root / DRIVER_REL).read_text(encoding="utf-8"),
+        )
     for problem in problems:
-        print(f"{problem} (floors are only raised: ADR-079, QD-4)")
+        print(f"{problem} (floors and their scope are only raised: ADR-079, QD-4)")
     if not problems:
-        print(f"mutation floors: {len(parse(head_text))} scopes, none lowered")
+        print(f"mutation floors: {len(parse(head_text))} scopes, none lowered or narrowed")
     return 1 if problems else 0
 
 

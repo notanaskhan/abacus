@@ -4,8 +4,11 @@
 # runs. A high alert opens or updates a SEV3 ticket and fails the run.
 #
 # The deploy lock is the `staging-deploy` concurrency group, which deploy-staging.yml (SPEC-050
-# AC-26) must share; a queued run never cancels a running one. Because a newer queued run replaces
-# an older queued one in a group, the scan first skips itself when a deploy is running or queued.
+# AC-26) must share; a queued run never cancels a running one. Only the `baseline` job joins the
+# group, and only after the `preflight` job (outside the group) has found the scan turned on and no
+# staging deploy running or queued: a newer queued run in a group replaces an older queued one, so
+# a scan must never join the group while a deploy waits in it. The preflight fails closed: if the
+# deploy workflow exists and its runs cannot be read, nothing is scanned.
 #
 # The repository and its logs are public: ZAP's own output goes to a file, the triage
 # (`abacus_tools.quality.dast`) prints counts only, the report is encrypted to the founders' public
@@ -23,53 +26,75 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: staging-deploy
-  cancel-in-progress: false
-
 env:
   ZAP_IMAGE: zaproxy/zap-stable:20261008@sha256:7aaa659b0d43078febd82e29bad112285c370727e86ab8340444220e17d9f0d2
 
 jobs:
-  baseline:
-    name: dast baseline (staging)
+  preflight:
+    name: dast preflight (turned on, no deploy in flight)
     if: vars.STAGING_DAST == 'on'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 5
     permissions:
       contents: read
       actions: read # the deploy-in-flight check reads workflow runs
     outputs:
-      high: ${{ steps.triage.outputs.high }}
+      proceed: ${{ steps.lock.outputs.proceed }}
     env:
       GH_TOKEN: ${{ github.token }}
       TARGET: ${{ vars.ABACUS_STAGING_URL }}
       DAST_REPORT_KEY: ${{ vars.DAST_REPORT_KEY }}
     steps:
-      - name: Staging is set and no deploy is in flight
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Staging is set and no deploy is in flight (fails closed)
         id: lock
         run: |
+          set -euo pipefail
           if [ -z "$TARGET" ] || [ -z "$DAST_REPORT_KEY" ]; then
             echo "::error::ABACUS_STAGING_URL and DAST_REPORT_KEY must be set to scan staging"
             exit 1
           fi
-          busy="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml --limit 20 \
-            --json status --jq '[.[] | select(.status != "completed")] | length' 2>/dev/null || echo 0)"
-          if [ "$busy" != "0" ]; then
-            echo "::notice::A staging deploy is running or queued; this week's scan is skipped."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+          if [ -f .github/workflows/deploy-staging.yml ]; then
+            # A lookup error stops the scan: never guess that no deploy is running.
+            busy="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml \
+              --limit 20 --json status --jq '[.[] | select(.status != "completed")] | length')"
+          else
+            busy=0 # no deploy workflow exists, so no staging deploy can be in flight
           fi
-      - if: steps.lock.outputs.skip != 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+          if [ "$busy" = "0" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::A staging deploy is running or queued; this week's scan is skipped."
+          fi
+
+  baseline:
+    name: dast baseline (staging)
+    needs: [preflight]
+    if: needs.preflight.outputs.proceed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    # The deploy lock, joined only after the preflight found no deploy running or queued.
+    concurrency:
+      group: staging-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    outputs:
+      high: ${{ steps.triage.outputs.high }}
+    env:
+      TARGET: ${{ vars.ABACUS_STAGING_URL }}
+      DAST_REPORT_KEY: ${{ vars.DAST_REPORT_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - if: steps.lock.outputs.skip != 'true'
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
       - name: ZAP baseline (output to a file, never the log)
-        if: steps.lock.outputs.skip != 'true'
         run: |
           WRK="$RUNNER_TEMP/zap"
           mkdir -p "$WRK" && chmod a+rwx "$WRK"
@@ -84,13 +109,12 @@ jobs:
           fi
       - name: Triage (counts only)
         id: triage
-        if: steps.lock.outputs.skip != 'true'
         run: |
           cd backend && uv sync --frozen
           uv run python -m abacus_tools.quality.dast "$RUNNER_TEMP/zap/zap-report.json" \
             --summary "$GITHUB_STEP_SUMMARY" --github-output "$GITHUB_OUTPUT"
       - name: Encrypt the report to the founders' key
-        if: always() && steps.lock.outputs.skip != 'true'
+        if: always()
         run: |
           OUT="$RUNNER_TEMP/dast-report"
           mkdir -p "$OUT"
@@ -99,7 +123,7 @@ jobs:
           gpg --batch --yes --trust-model always --recipient-file "$RUNNER_TEMP/dast-key.asc" \
             --output "$OUT/zap-report.tar.gpg" --encrypt "$RUNNER_TEMP/zap.tar"
           rm -rf "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap.tar"
-      - if: always() && steps.lock.outputs.skip != 'true'
+      - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dast-report-encrypted
@@ -108,8 +132,10 @@ jobs:
           retention-days: 90
       - name: A high alert fails the run
         if: steps.triage.outputs.high != '' && steps.triage.outputs.high != '0'
+        env:
+          HIGH: ${{ steps.triage.outputs.high }}
         run: |
-          echo "::error::${{ steps.triage.outputs.high }} high DAST alert(s) on staging: SEV3 ticket opened"
+          echo "::error::$HIGH high DAST alert(s) on staging: SEV3 ticket opened"
           exit 1
 
   sev3:

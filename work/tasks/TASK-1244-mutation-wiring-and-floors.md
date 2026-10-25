@@ -57,3 +57,9 @@ updated: 2026-10-25
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-365 | Which suites mutation runs, budgets, the floor guard and its base | No (ADR-079) |
+- 2026-10-26: security review fixes: the floors guard also refuses narrowing the mutation scope
+  (`SCOPES`, `[tool.mutmut]`) and takes `--head-root`; `mutation-floors.yml` runs the base
+  commit's guard from a worktree; the weekly run fails a floored scope no mutant measured; the
+  edit hook protects the two scope blocks and reads only the protected files (a non-UTF-8 file no
+  longer blocks edits). Not done: hash-pinning mutmut's dependencies (needs a resolve, i.e. a
+  download). DEC-365 amended (the hooks are a guardrail, not a boundary).

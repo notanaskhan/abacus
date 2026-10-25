@@ -93,7 +93,12 @@ def test_t027_the_floors_job_compares_with_the_pull_requests_base() -> None:
     assert set(triggers) == {"pull_request", "merge_group"}
     job = _jobs("mutation-floors.yml")["floors"]
     assert cast(dict[str, object], _steps(job)[0]["with"])["fetch-depth"] == 0
-    assert 'python3 -m abacus_tools.quality.mutation_floors --base "$BASE"' in _runs(job)
+    runs = _runs(job)
+    # The base's guard judges the pull request, from a worktree of the base commit.
+    assert 'git worktree add --detach "$RUNNER_TEMP/base" "$BASE"' in runs
+    assert 'PYTHONPATH="$RUNNER_TEMP/base/backend/src"' in runs
+    assert '--base "$BASE" --head-root "$GITHUB_WORKSPACE"' in runs
+    assert "PYTHONPATH: backend/src" not in (WORKFLOWS / "mutation-floors.yml").read_text()
     makefile = (REPO / "Makefile").read_text()
     check_fast = makefile.split("check-fast:", 1)[1].split("\n\n", 1)[0]
     assert "abacus_tools.quality.mutation_floors" in check_fast

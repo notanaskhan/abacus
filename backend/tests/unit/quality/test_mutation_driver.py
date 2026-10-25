@@ -19,6 +19,7 @@ from abacus_tools.quality.mutation import (
     shards,
     tally,
     under_floor,
+    unmeasured,
 )
 
 
@@ -152,10 +153,9 @@ def test_t026_survivors_are_published_per_module(tmp_path: Path) -> None:
             str(out_json),
             "--markdown",
             str(out_md),
-            "--enforce-floors",
         ]
     )
-    assert code == 0  # every floor is 0 until T051
+    assert code == 0  # publishing alone never fails
     assert json.loads(out_json.read_text())["kernel/db"]["survivors"] == ["a__mutmut_2"]
 
 
@@ -165,3 +165,32 @@ def test_t026_a_scope_under_its_floor_fails_the_weekly_run() -> None:
         "evidence: 70.0% is under its floor of 75%"
     ]
     assert under_floor(results, {"evidence": 70}) == []
+
+
+def test_t026_a_floored_scope_with_no_results_fails_the_weekly_run() -> None:
+    files = ["src/abacus/kernel/db/session.py", "src/abacus/modules/evidence/viewer.py"]
+    results = {"kernel/db": ScopeResult(killed=3)}
+    # evidence has files but no mutant ran (excluded through do_not_mutate, say): it fails.
+    assert unmeasured(results, {"kernel/db": 0, "evidence": 0}, files) == [
+        "evidence: no mutant ran (floor 0%); the scope went unmeasured"
+    ]
+    # compute has no package yet: nothing to measure, nothing fails, unless it carries a floor.
+    assert unmeasured(results, {"compute": 0}, files) == []
+    assert unmeasured(results, {"compute": 50}, files) == [
+        "compute: no mutant ran (floor 50%); the scope went unmeasured"
+    ]
+    # A floor for a scope SCOPES no longer names fails too.
+    assert unmeasured(results, {"retired": 0}, files) == [
+        "retired: has a floor but is not a mutation scope (SCOPES)"
+    ]
+
+
+def test_t026_the_weekly_floors_check_fails_on_an_unmeasured_red_scope(tmp_path: Path) -> None:
+    mutants = tmp_path / "mutants"
+    meta = mutants / "src/abacus/kernel/db/session.py.meta"
+    meta.parent.mkdir(parents=True)
+    meta.write_text(json.dumps(_meta({"a__mutmut_1": 1})))
+    common = ["summarise", "--mutants", str(mutants), "--json", str(tmp_path / "s.json")]
+    common += ["--markdown", str(tmp_path / "s.md")]
+    assert mutation.main(common) == 0
+    assert mutation.main([*common, "--enforce-floors"]) == 1  # identity/authz and others ran none

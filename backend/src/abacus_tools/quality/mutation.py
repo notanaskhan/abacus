@@ -225,6 +225,22 @@ def under_floor(results: dict[str, ScopeResult], floors: dict[str, int]) -> list
     return found
 
 
+def unmeasured(
+    results: dict[str, ScopeResult], floors: dict[str, int], files: list[str]
+) -> list[str]:
+    """A floored scope the weekly run did not measure fails it (fail closed): one excluded through
+    `do_not_mutate`, dropped from `SCOPES` or lost to a shard that stopped would otherwise pass."""
+    on_disk = {scope_of(f) for f in files}
+    found: list[str] = []
+    for scope, floor in sorted(floors.items()):
+        ran = results[scope].ran if scope in results else 0
+        if scope not in SCOPES:
+            found.append(f"{scope}: has a floor but is not a mutation scope (SCOPES)")
+        elif ran == 0 and (floor > 0 or scope in on_disk):
+            found.append(f"{scope}: no mutant ran (floor {floor}%); the scope went unmeasured")
+    return found
+
+
 def markdown(results: dict[str, ScopeResult], floors: dict[str, int], title: str) -> str:
     rows = [
         f"## {title}",
@@ -292,7 +308,11 @@ def _summarise(args: argparse.Namespace) -> int:
     }
     Path(args.json).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     Path(args.markdown).write_text(markdown(results, floors, args.title), encoding="utf-8")
-    problems = under_floor(results, floors) if args.enforce_floors else []
+    problems = (
+        under_floor(results, floors) + unmeasured(results, floors, red_files())
+        if args.enforce_floors
+        else []
+    )
     for problem in problems:
         print(problem)
     return 1 if problems else 0

@@ -165,6 +165,53 @@ def floor_violation(path: str, new_text: str) -> str | None:
     return None
 
 
+# The mutation scope is protected with its floors (Q-03-T027; DEC-365): `[tool.mutmut]` in the
+# backend's pyproject and `SCOPES` in the driver. An agent edit that changes either block is
+# refused; a person widens the scope, and CI (`abacus_tools.quality.mutation_floors`) refuses any
+# narrowing however it is made. A guardrail, not a boundary: the shell can still write these files.
+SCOPE_BLOCKS = {
+    "backend/pyproject.toml": (r"^\[tool\.mutmut\]\s*$", r"^\["),
+    "backend/src/abacus_tools/quality/mutation.py": (r"^SCOPES\b", r"^\}\s*$"),
+}
+# Content checked by reading the edit's result: only these files are read by the edit hook.
+CONTENT_CHECKED = frozenset([FLOORS_FILE, *SCOPE_BLOCKS])
+# Human-only registers (Q-03-T029; DEC-366): a change could waive a finding's SLA.
+HUMAN_ONLY = ["docs/quality/supply-chain-findings.yaml"]
+
+
+def _block(text: str, start: str, end: str) -> str | None:
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if re.match(start, line):
+            out = [line]
+            for later in lines[i + 1:]:
+                if re.match(end, later):
+                    if end == r"^\}\s*$":
+                        out.append(later)
+                    break
+                out.append(later)
+            return "\n".join(out).rstrip()
+    return None
+
+
+def scope_violation(path: str, new_text: str) -> str | None:
+    """Refuse an edit that changes the mutation scope block of the file on disk."""
+    r = rel(path).lower()
+    if r not in SCOPE_BLOCKS:
+        return None
+    on_disk = os.path.join(ROOT, r)
+    if not os.path.exists(on_disk):
+        return None
+    with open(on_disk, encoding="utf-8") as handle:
+        old_text = handle.read()
+    start, end = SCOPE_BLOCKS[r]
+    before = _block(old_text, start, end)
+    if before is not None and _block(new_text, start, end) != before:
+        return "%s: the mutation scope (%s) is protected with its floors; a person changes it (Q-03-T027)." % (
+            r, "[tool.mutmut]" if r.endswith(".toml") else "SCOPES")
+    return None
+
+
 def violation(path: str) -> str | None:
     r = rel(path)
     if r == ".." or r.startswith("../"):
@@ -172,6 +219,8 @@ def violation(path: str) -> str | None:
     for pattern, command in GENERATED:
         if _match(r, [pattern]):
             return f"{r} is generated; never edit it by hand. Regenerate it: {command} (or make regenerate)."
+    if _match(r, HUMAN_ONLY):
+        return f"{r} is the supply-chain findings register; a person records findings and waivers (Q-03-T029)."
     if _match(r, SECRETS) and not _match(r, SECRET_TEMPLATES):
         return f"{r} holds secrets; agents never write it. Edit it yourself, outside the session."
     if _match(r, IMMUTABLE_ON_MAIN) and os.path.exists(os.path.join(ROOT, r)) and on_main(r):

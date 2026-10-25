@@ -45,17 +45,19 @@ def test_t029_security_adds_bandit_the_base_image_and_the_sla_check() -> None:
     settings = cast(dict[str, str], scan["with"])
     assert settings["scan-type"] == "image"
     assert settings["image-ref"] == "${{ steps.base.outputs.image }}"
-    assert "supply_chain check" in _runs(jobs["findings-sla"])
+    sla = _runs(jobs["findings-sla"])
+    assert "supply_chain check" in sla
+    assert 'supply_chain check --base-register "$REGISTER"' in sla
 
 
 def test_t029_scanners_skip_only_registered_findings_inside_their_sla() -> None:
     jobs = _jobs("security.yml")
     pip = _runs(jobs["pip-audit"])
-    assert "supply_chain ignores --tool pip-audit" in pip
+    assert 'supply_chain ignores --tool pip-audit --register "$REGISTER"' in pip
     assert "$PIP_AUDIT_IGNORES" in pip
     for name in ("trivy", "trivy-image"):
         job = jobs[name]
-        assert "supply_chain ignores --tool trivy" in _runs(job)
+        assert 'supply_chain ignores --tool trivy --register "$REGISTER"' in _runs(job)
         scan = next(s for s in _steps(job) if str(s.get("uses", "")).startswith("aquasecurity/"))
         assert cast(dict[str, str], scan["with"])["trivyignores"] == (
             "${{ runner.temp }}/trivyignore"
@@ -72,3 +74,16 @@ def test_security_scan_workflows_pin_actions_and_use_no_secrets() -> None:
         for job in _jobs(name).values():
             for uses in _uses(job):
                 assert re.fullmatch(r"[\w./-]+@[0-9a-f]{40}", uses), (name, uses)
+
+
+def test_t029_on_a_pull_request_the_base_register_decides() -> None:
+    jobs = _jobs("security.yml")
+    for name in ("pip-audit", "trivy", "trivy-image", "findings-sla"):
+        job = jobs[name]
+        env = cast(dict[str, str], job["env"])
+        assert env["BASE"].startswith("${{ github.event.pull_request.base.sha"), name
+        checkout = _steps(job)[0]
+        assert cast(dict[str, object], checkout["with"])["fetch-depth"] == 0, name
+        runs = _runs(job)
+        assert 'git show "$BASE:docs/quality/supply-chain-findings.yaml"' in runs, name
+        assert "printf 'findings: []\\n'" in runs, name  # a base without one waives nothing

@@ -208,3 +208,130 @@ def test_t027_the_shell_hook_lets_the_floors_be_read(
     project: tuple[Path, Run], command: str
 ) -> None:
     assert project[1]("guard_bash.py", {"command": command}) == 0
+
+
+# --- the mutation scope only widens (security review, DEC-365) --------------------------------
+
+DRIVER = (
+    "SCOPES: Final[dict[str, tuple[str, ...]]] = {\n"
+    '    "evidence": ("src/e/*.py",),\n'
+    '    "kernel/db": ("src/k/*.py", "src/k2/*.py"),\n'
+    "}\n"
+)
+PYPROJECT = """[tool.mutmut]
+source_paths = ["src/"]
+only_mutate = ["src/e/*", "src/k/*"]
+do_not_mutate = ["*/_flags.py"]
+pytest_add_cli_args_test_selection = ["tests/unit", "tests/property"]
+pytest_add_cli_args = ["-p", "no:xdist"]
+"""
+
+
+def test_t027_the_committed_scope_parses_from_source() -> None:
+    driver = (REPO / mutation_floors.DRIVER_REL).read_text(encoding="utf-8")
+    assert set(mutation_floors.scopes_of(driver)) == set(SCOPES)
+
+
+def test_t027_widening_the_scope_is_a_normal_change() -> None:
+    wider = DRIVER.replace('("src/e/*.py",)', '("src/e/*.py", "src/e2/*.py")')
+    more = PYPROJECT.replace('["src/e/*", "src/k/*"]', '["src/e/*", "src/k/*", "src/x/*"]')
+    assert mutation_floors.narrowed(PYPROJECT, more, DRIVER, wider) == []
+    assert mutation_floors.narrowed(None, more, None, wider) == []  # a base without the config
+
+
+@pytest.mark.parametrize(
+    ("pyproject", "driver", "problem"),
+    [
+        (
+            PYPROJECT,
+            DRIVER.replace('    "evidence": ("src/e/*.py",),\n', ""),
+            "drops the evidence",
+        ),
+        (PYPROJECT, DRIVER.replace(', "src/k2/*.py"', ","), "SCOPES['kernel/db'] drops"),
+        (PYPROJECT.replace('"src/e/*", ', ""), DRIVER, "only_mutate drops"),
+        (
+            PYPROJECT.replace('["*/_flags.py"]', '["*/_flags.py", "src/e/*"]'),
+            DRIVER,
+            "do_not_mutate adds",
+        ),
+        (PYPROJECT.replace(', "tests/property"', ""), DRIVER, "test_selection drops"),
+        (
+            PYPROJECT.replace('"no:xdist"', '"no:xdist", "-k", "nothing"'),
+            DRIVER,
+            "pytest_add_cli_args changed",
+        ),
+        (PYPROJECT.replace('["src/"]', '["lib/"]'), DRIVER, "source_paths changed"),
+    ],
+)
+def test_t027_narrowing_the_scope_is_refused(pyproject: str, driver: str, problem: str) -> None:
+    found = mutation_floors.narrowed(PYPROJECT, pyproject, DRIVER, driver)
+    assert any(problem in line for line in found), found
+
+
+def test_t027_the_guard_judges_another_checkout(tmp_path: Path) -> None:
+    for rel in (mutation_floors.REL, mutation_floors.PYPROJECT_REL, mutation_floors.DRIVER_REL):
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text((REPO / rel).read_text(encoding="utf-8"), encoding="utf-8")
+    assert mutation_floors.main(["--base", "HEAD", "--head-root", str(tmp_path)]) == 0
+    floors = tmp_path / mutation_floors.REL
+    floors.write_text(floors.read_text().replace("  evidence: 0\n", ""), encoding="utf-8")
+    assert mutation_floors.main(["--base", "HEAD", "--head-root", str(tmp_path)]) == 1
+
+
+# --- the hook protects the scope blocks and the findings register ------------------------------
+
+
+def _with_scope_files(project: tuple[Path, Run]) -> None:
+    root = project[0]
+    for rel in (mutation_floors.PYPROJECT_REL, mutation_floors.DRIVER_REL):
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text((REPO / rel).read_text(encoding="utf-8"), encoding="utf-8")
+
+
+def test_t027_the_hook_refuses_an_edit_to_the_mutmut_block(project: tuple[Path, Run]) -> None:
+    _with_scope_files(project)
+    path = str(project[0] / mutation_floors.PYPROJECT_REL)
+    edit = {
+        "file_path": path,
+        "old_string": '    "*/_flags.py",\n',
+        "new_string": '    "*/_flags.py",\n    "src/abacus/modules/evidence/*",\n',
+    }
+    assert project[1]("protect_paths.py", edit) == 2
+    other = {
+        "file_path": path,
+        "old_string": "[tool.pyright]",
+        "new_string": "[tool.pyright]\n# note",
+    }
+    assert project[1]("protect_paths.py", other) == 0
+
+
+def test_t027_the_hook_refuses_an_edit_to_scopes(project: tuple[Path, Run]) -> None:
+    _with_scope_files(project)
+    path = str(project[0] / mutation_floors.DRIVER_REL)
+    edit = {
+        "file_path": path,
+        "old_string": '    "compute": ("src/abacus/*/compute/*.py",),\n',
+        "new_string": "",
+    }
+    assert project[1]("protect_paths.py", edit) == 2
+    other = {
+        "file_path": path,
+        "old_string": "WEEKLY_SHARDS: Final = 4",
+        "new_string": "WEEKLY_SHARDS: Final = 5",
+    }
+    assert project[1]("protect_paths.py", other) == 0
+
+
+def test_t029_the_hook_keeps_agents_out_of_the_findings_register(
+    project: tuple[Path, Run],
+) -> None:
+    path = str(project[0] / "docs/quality/supply-chain-findings.yaml")
+    assert project[1]("protect_paths.py", {"file_path": path, "content": "findings: []\n"}) == 2
+
+
+def test_the_hook_never_reads_other_files(project: tuple[Path, Run]) -> None:
+    binary = project[0] / "assets" / "logo.txt"
+    binary.parent.mkdir()
+    binary.write_bytes(b"\xff\xfe\x00 not utf-8")
+    edit = {"file_path": str(binary), "old_string": "a", "new_string": "b"}
+    assert project[1]("protect_paths.py", edit) == 0

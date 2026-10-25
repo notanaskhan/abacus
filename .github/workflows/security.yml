@@ -77,10 +77,13 @@ jobs:
     name: security pip-audit
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the base's findings register
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
@@ -92,7 +95,15 @@ jobs:
         working-directory: backend
         run: |
           uv sync --frozen
-          echo "PIP_AUDIT_IGNORES=$(uv run python -m abacus_tools.quality.supply_chain ignores --tool pip-audit)" >> "$GITHUB_ENV"
+          # On a pull request the BASE's register decides (a change cannot waive its own
+          # findings); a base without one waives nothing.
+          REGISTER=../docs/quality/supply-chain-findings.yaml
+          if [ -n "$BASE" ]; then
+            REGISTER="$RUNNER_TEMP/base-register.yaml"
+            git show "$BASE:docs/quality/supply-chain-findings.yaml" > "$REGISTER" 2>/dev/null \
+              || printf 'findings: []\n' > "$REGISTER"
+          fi
+          echo "PIP_AUDIT_IGNORES=$(uv run python -m abacus_tools.quality.supply_chain ignores --tool pip-audit --register "$REGISTER")" >> "$GITHUB_ENV"
       - name: pip-audit
         # PIP_AUDIT_IGNORES is `--ignore-vuln <id>` per registered finding still inside its SLA.
         run: >-
@@ -106,10 +117,13 @@ jobs:
     name: security trivy
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the base's findings register
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
@@ -118,7 +132,15 @@ jobs:
         working-directory: backend
         run: |
           uv sync --frozen
-          uv run python -m abacus_tools.quality.supply_chain ignores --tool trivy --out "$RUNNER_TEMP/trivyignore"
+          # On a pull request the BASE's register decides (a change cannot waive its own
+          # findings); a base without one waives nothing.
+          REGISTER=../docs/quality/supply-chain-findings.yaml
+          if [ -n "$BASE" ]; then
+            REGISTER="$RUNNER_TEMP/base-register.yaml"
+            git show "$BASE:docs/quality/supply-chain-findings.yaml" > "$REGISTER" 2>/dev/null \
+              || printf 'findings: []\n' > "$REGISTER"
+          fi
+          uv run python -m abacus_tools.quality.supply_chain ignores --tool trivy --register "$REGISTER" --out "$RUNNER_TEMP/trivyignore"
       - name: trivy fs
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -138,10 +160,13 @@ jobs:
     name: security trivy base image
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the base's findings register
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
@@ -152,7 +177,15 @@ jobs:
         run: |
           echo "image=$(sed -n 's/^ARG PYTHON_IMAGE=//p' Dockerfile | head -n 1)" >> "$GITHUB_OUTPUT"
           uv sync --frozen
-          uv run python -m abacus_tools.quality.supply_chain ignores --tool trivy --out "$RUNNER_TEMP/trivyignore"
+          # On a pull request the BASE's register decides (a change cannot waive its own
+          # findings); a base without one waives nothing.
+          REGISTER=../docs/quality/supply-chain-findings.yaml
+          if [ -n "$BASE" ]; then
+            REGISTER="$RUNNER_TEMP/base-register.yaml"
+            git show "$BASE:docs/quality/supply-chain-findings.yaml" > "$REGISTER" 2>/dev/null \
+              || printf 'findings: []\n' > "$REGISTER"
+          fi
+          uv run python -m abacus_tools.quality.supply_chain ignores --tool trivy --register "$REGISTER" --out "$RUNNER_TEMP/trivyignore"
       - name: trivy image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -190,10 +223,13 @@ jobs:
     name: security findings SLA
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the base's findings register
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
@@ -202,4 +238,15 @@ jobs:
         working-directory: backend
         run: |
           uv sync --frozen
+          # On a pull request the BASE's register decides (a change cannot waive its own
+          # findings); a base without one waives nothing.
+          REGISTER=../docs/quality/supply-chain-findings.yaml
+          if [ -n "$BASE" ]; then
+            REGISTER="$RUNNER_TEMP/base-register.yaml"
+            git show "$BASE:docs/quality/supply-chain-findings.yaml" > "$REGISTER" 2>/dev/null \
+              || printf 'findings: []\n' > "$REGISTER"
+          fi
           uv run python -m abacus_tools.quality.supply_chain check
+          if [ -n "$BASE" ]; then
+            uv run python -m abacus_tools.quality.supply_chain check --base-register "$REGISTER"
+          fi

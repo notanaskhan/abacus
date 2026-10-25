@@ -409,6 +409,9 @@ async def _plan_of(
             raise _RolledBack
     except _RolledBack:
         pass
+    # The rolled-back rows are dead tuples now: reclaim them and restore the table's statistics
+    # for whatever runs next on this database.
+    await conn.execute(f"VACUUM ANALYZE {case.table}")
     assert planned is not None
     return planned
 

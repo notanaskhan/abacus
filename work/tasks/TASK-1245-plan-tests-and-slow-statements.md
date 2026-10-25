@@ -65,3 +65,5 @@ asserts the composite `(tenant_id, scope, status, sort)` index, and an integrati
   `#<n>` reference); the file is exempted, with reasons, from DB-001, TENANT-001 and SQL-001 in
   `banned_patterns.py` as the other superuser-seeding suites are; the fixture's transaction is left
   by raising `_RolledBack` (UOW-001).
+- 2026-10-26: security review: each case now runs `VACUUM ANALYZE` on its table after the
+  rollback, reclaiming the 20,000 dead rows and restoring the statistics.

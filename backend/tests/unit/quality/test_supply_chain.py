@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from abacus_tools.quality import supply_chain
-from abacus_tools.quality.supply_chain import RegisterInvalid, ignores, overdue, parse
+from abacus_tools.quality.supply_chain import RegisterInvalid, ignores, overdue, parse, weakened
 
 REGISTER = """
 findings:
@@ -96,3 +96,40 @@ def test_t029_ignore_lists_in_each_scanners_form(
 def test_t029_a_malformed_register_is_refused(text: str) -> None:
     with pytest.raises(RegisterInvalid):
         parse(text)
+
+
+def test_t029_a_change_may_not_loosen_the_base_register(tmp_path: Path) -> None:
+    base = parse(REGISTER)
+    assert weakened(base, base) == []
+    later = parse(
+        REGISTER.replace(
+            "first_seen: 2027-01-04\n  - id: CVE-2027-0001",
+            "first_seen: 2027-02-04\n  - id: CVE-2027-0001",
+        )
+    )
+    assert weakened(base, later) == [
+        "GHSA-aaaa-bbbb-cccc (pip-audit): first seen moved from 2027-01-04 to 2027-02-04"
+    ]
+    lower = parse(REGISTER.replace("severity: critical", "severity: high"))
+    assert weakened(base, lower) == [
+        "GHSA-aaaa-bbbb-cccc (pip-audit): severity lowered from critical to high"
+    ]
+    removed = parse(REGISTER.split("  - id: CVE-2027-0001")[0])
+    assert "CVE-2027-0001 (trivy-image) was removed" in weakened(base, removed)
+    reopened = parse(REGISTER.replace("    closed: 2026-11-20\n", ""))
+    assert weakened(base, reopened) == ["CVE-2027-0002 (trivy-fs): reopened without a new entry"]
+    closed = parse(
+        REGISTER.replace(
+            "first_seen: 2027-01-04\n  - id: CVE-2027-0001",
+            "first_seen: 2027-01-04\n    closed: 2027-01-06\n  - id: CVE-2027-0001",
+        )
+    )
+    assert weakened(base, closed) == []
+    base_file, head_file = tmp_path / "base.yaml", tmp_path / "head.yaml"
+    base_file.write_text(REGISTER, encoding="utf-8")
+    head_file.write_text(
+        REGISTER.replace("severity: critical", "severity: high"), encoding="utf-8"
+    )
+    common = ["check", "--as-of", "2027-01-05", "--register", str(head_file)]
+    assert supply_chain.main([*common, "--base-register", str(base_file)]) == 1
+    assert supply_chain.main(common) == 0
