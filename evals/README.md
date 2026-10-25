@@ -68,3 +68,7 @@ A run stops with `aborted_cost` before a case would pass the cost limit. The $50
 Cost per case is compared with `evals/baselines.yaml`: at most 10% over is allowed. That file is protected, and is added with the first real-model runs.
 
 These files aren't protected paths yet (TASK-020 D5, deferred).
+
+## Deterministic suites
+
+`evals/agent_blocks/suite.yaml` (P-09-T15) is code-only: an adversarial corpus of agent turns run through the gateway's `agent_blocks` output check, with no model and no containers. `tests/unit/agents/test_blocks_suite.py` runs it on every test run. It must score 1.0 on every case and every repeat, and removing any one lint rule must make it fail. Hooking it into the runner's `eval_runs` store and its signed reports is still to come.
