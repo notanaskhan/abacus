@@ -10750,6 +10750,19 @@
             "title": "Id",
             "type": "string"
           },
+          "invitation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Invitation Id"
+          },
           "invited_on": {
             "anyOf": [
               {
@@ -14697,6 +14710,25 @@
             },
             "title": "Gates",
             "type": "array"
+          },
+          "hold_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "client_unresponsive",
+                  "fees_outstanding",
+                  "scope_change",
+                  "independence_review",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Reason"
           },
           "id": {
             "cls": "internal",

@@ -60,6 +60,13 @@ import {
   type Aud06State,
   scenarios as aud06Scenarios,
 } from "./AUD-06/scenarios";
+import {
+  OPENS as CLI04_OPENS,
+  OVERLAYS as CLI04_OVERLAYS,
+  STATES as CLI04_STATES,
+  type Cli04State,
+  scenarios as cli04Scenarios,
+} from "./CLI-04/scenarios";
 import { EngagementsIndex } from "./ENG-01";
 import {
   STATES as ENG01_STATES,
@@ -70,6 +77,7 @@ import {
 import { EngagementRecordPage } from "./ENG-02";
 import { ENG03 } from "./ENG-03";
 import {
+  CONSENTS as ENG03_CONSENTS,
   OPENS as ENG03_OPENS,
   STATES as ENG03_STATES,
   type Eng03State,
@@ -552,6 +560,48 @@ function Cli02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("CLI-02", { title: "Client record · Overview", Component: Cli02Artboard });
 
+// CLI-04 (P-07-T33): the client record on its "Contacts & access" tab, opened on the artboard's
+// client and overlay.
+function Cli04Frame({ state }: { state: Cli04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/clients" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <ClientRecordPage
+        clientId={CLI04_OPENS[state]}
+        toolbar={bar.toolbar}
+        frame
+        initialTab="contacts"
+        contactsOpen={CLI04_OVERLAYS[state]}
+      />
+    </div>
+  );
+}
+
+function Cli04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli04State = CLI04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Cli04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("CLI-04", { title: "Contacts & portal access", Component: Cli04Artboard });
+
 function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -621,7 +671,8 @@ function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("SHL-14", { title: "Request composer drawer", Component: Shl14Artboard });
 
-// ENG-03 (P-07-T21): the wizard over an empty frame, on the artboard's draft.
+// ENG-03 (P-07-T21, T34): the wizard over an empty frame, on the artboard's draft; e's §7216
+// consents card is fixture-only (DEC-345) and only the gallery passes it.
 function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Eng03State = ENG03_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -639,7 +690,7 @@ function Eng03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} className="h-[900px]">
-      <ENG03 draftId={ENG03_OPENS[state]} />
+      <ENG03 draftId={ENG03_OPENS[state]} consents={ENG03_CONSENTS[state]} />
     </div>
   );
 }

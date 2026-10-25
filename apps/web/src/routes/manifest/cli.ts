@@ -18,7 +18,14 @@ export const cliScreens = {
     path: "/clients/$clientId",
     navArea: "Clients",
   },
-  "CLI-04": { name: "Contacts & portal access", status: "planned", path: null },
+  // P-07-T33 built a–g on fixtures at /clients/$clientId/contacts (CLI-02's "Contacts & access"
+  // tab) behind `contacts.v2`; planned for CLI-02's reason (its links are wired in routes/firm).
+  "CLI-04": {
+    name: "Contacts & portal access",
+    status: "planned",
+    path: "/clients/$clientId/contacts",
+    navArea: "Clients",
+  },
   "CLI-05": {
     name: "Tax profile, authorizations & consents · with Transcripts",
     status: "planned",

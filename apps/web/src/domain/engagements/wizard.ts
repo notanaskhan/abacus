@@ -41,13 +41,23 @@ export function useDraftWrites(draftId: string) {
       }),
     discard: () => discard.mutateAsync({ path: { draft_id: draftId } }),
     startAcceptance: () => accept.mutateAsync({ path: { draft_id: draftId } }),
-    create: () =>
+    /** `confirmDuplicate`: "Create anyway" after a 409 `possible_duplicate`. */
+    create: (confirmDuplicate = false) =>
       create.mutateAsync({
         path: { draft_id: draftId },
-        body: {},
+        body: confirmDuplicate ? { confirm_duplicate: true } : {},
         headers: { "Idempotency-Key": globalThis.crypto.randomUUID() },
       }),
     saving: patch.isPending,
     creating: create.isPending,
   };
+}
+
+/** ENG-03 e's §7216 consents card, fixture-only until C19 (T-01) serves consents (DEC-345): the
+ * route never passes one, so production draws no card; the gallery passes the artboard's. */
+export interface ConsentPreview {
+  /** "Use · AI disclosure (2 consents) · 1 of 2 signed (Morgan ✓ · Kai ○)": seed data. */
+  summary: string;
+  /** The household's family name, for the helper ("Agents cannot read Ferris return …"). */
+  family: string;
 }

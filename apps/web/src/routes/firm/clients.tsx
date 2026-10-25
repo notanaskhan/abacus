@@ -61,4 +61,36 @@ const clientRoute = createRoute({
   },
 });
 
-export const clientRoutes = [clientsRoute, clientRoute] as const;
+// CLI-04 (P-07-T33): the record on its "Contacts & access" tab, behind `clients.v2`; the tab
+// itself is live only with `contacts.v2` (otherwise the record opens on its Overview).
+const clientContactsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId/contacts",
+  component: function ClientContactsPage(): JSX.Element {
+    const clientId = useParam("clientId");
+    const navigate = useNavigate();
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="clients.v2" fallback={<ClientRecord clientId={clientId} />}>
+          <ClientRecordV2
+            clientId={clientId}
+            initialTab="contacts"
+            onNavigate={(target) => {
+              if (target.screen === "CLI-01") void navigate({ to: "/clients" });
+              else if (target.screen === "ENG-02") {
+                void navigate({
+                  to: "/engagements/$engagementId",
+                  params: { engagementId: target.engagementId },
+                });
+              } else {
+                void navigate({ to: "/binders/$binderId", params: { binderId: target.binderId } });
+              }
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+
+export const clientRoutes = [clientsRoute, clientRoute, clientContactsRoute] as const;

@@ -11,7 +11,9 @@ import type {
 import {
   engagementRecordOptions,
   engagementRecordQueryKey,
+  holdEngagementMutation,
   recordEngagementLetterMutation,
+  resumeEngagementMutation,
   teamOptions,
   workItemsOptions,
   workItemsQueryKey,
@@ -56,6 +58,20 @@ export function useRecordLetter(engagementId: string) {
       });
     },
   });
+}
+
+/** ENG-02's status menu (DEC-328, DEC-344): Active → On hold with a reason code, and back. A
+ * person's act with fresh MFA; the record is read again after either move. */
+export function useHoldEngagement(engagementId: string) {
+  const queryClient = useQueryClient();
+  const again = async (): Promise<void> => {
+    await queryClient.invalidateQueries({
+      queryKey: engagementRecordQueryKey({ path: { engagement_id: engagementId } }),
+    });
+  };
+  const hold = useMutation({ ...holdEngagementMutation(), onSuccess: again });
+  const resume = useMutation({ ...resumeEngagementMutation(), onSuccess: again });
+  return { hold, resume };
 }
 
 export function bandRows(

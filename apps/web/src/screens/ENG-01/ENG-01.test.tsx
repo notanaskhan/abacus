@@ -152,7 +152,6 @@ const ROW_CLIENTS = [
   "Estate of Walter Thornbury",
   "Lakeshore Literacy Alliance",
   "Estate of Walter Thornbury",
-  "Juniper & Oak Interiors, LLC",
 ];
 
 describe("ENG-01 artboards", () => {
@@ -164,12 +163,12 @@ describe("ENG-01 artboards", () => {
     }
   });
 
-  it("ENG-01a default: 275 engagements, the 17 rows past due first, the summary line", async () => {
+  it("ENG-01a default (Period │ Current, DEC-343): 273 engagements, the 16 rows past due first, the summary line", async () => {
     show("a");
-    expect(await screen.findByText("Showing 17 of 275")).toBeTruthy();
+    expect(await screen.findByText("Showing 16 of 273")).toBeTruthy();
     expect(clients()).toEqual(ROW_CLIENTS);
     expect(
-      screen.getByText("275 engagements · 1 prospect · 4 awaiting a signed letter · 2 past due"),
+      screen.getByText("273 engagements · 1 prospect · 4 awaiting a signed letter · 2 past due"),
     ).toBeTruthy();
     const first = rows()[0];
     if (first === undefined) throw new Error("no rows");
@@ -232,7 +231,7 @@ describe("ENG-01 artboards", () => {
     show("d");
     expect(await screen.findByText("No engagements match 'Harbor Lane'.")).toBeTruthy();
     fireEvent.click(screen.getByText("Clear filters"));
-    expect(await screen.findByText("Showing 17 of 275")).toBeTruthy();
+    expect(await screen.findByText("Showing 16 of 273")).toBeTruthy();
   });
 
   it("ENG-01e loading: skeleton tile counts and 8 skeleton rows; no count or summary", async () => {
@@ -256,17 +255,17 @@ describe("ENG-01 artboards", () => {
 });
 
 describe("ENG-01 acceptance", () => {
-  it("ENG-01 acceptance: segment counts foot: 224 + 27 + 23 + 1 = 275", async () => {
+  it("ENG-01 acceptance: segment counts foot: 224 + 25 + 23 + 1 = 273 (DEC-343)", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
-    expect(segments()).toEqual({ All: 275, Tax: 224, Audit: 27, CAS: 23, Advisory: 1 });
+    await screen.findByText("Showing 16 of 273");
+    expect(segments()).toEqual({ All: 273, Tax: 224, Audit: 25, CAS: 23, Advisory: 1 });
   });
 
-  it("ENG-01 acceptance: the seven tiles sum to 275 (1 + 4 + 0 + 128 + 0 + 140 + 2); Accepted 4 is the letters out, Prospect 1 the estate", async () => {
+  it("ENG-01 acceptance: the seven tiles sum to 273 (1 + 4 + 0 + 128 + 0 + 140 + 0); Accepted 4 is the letters out, Prospect 1 the estate", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
-    expect(TILE_WORDS.map(tileCount)).toEqual([1, 4, 0, 128, 0, 140, 2]);
-    expect(tileSum()).toBe(275);
+    await screen.findByText("Showing 16 of 273");
+    expect(TILE_WORDS.map(tileCount)).toEqual([1, 4, 0, 128, 0, 140, 0]);
+    expect(tileSum()).toBe(273);
     expect(tileLabels()).toEqual(TILE_WORDS);
     fireEvent.click(screen.getByRole("button", { name: /Prospect/ }));
     expect(await screen.findByText("Showing 1 of 1")).toBeTruthy();
@@ -277,7 +276,7 @@ describe("ENG-01 acceptance", () => {
 
   it("ENG-01 acceptance: status words come only from §3.3.1; sub-lines use the work item's own words", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     const words = new Set(rows().map((r) => cell(r, COL.status)));
     for (const w of words)
       expect(["Prospect", "Accepted", "Active", "Delivered", "Archived"]).toContain(w);
@@ -292,7 +291,7 @@ describe("ENG-01 acceptance", () => {
 
   it("ENG-01 acceptance: days to deadline: red ≤ 7, amber ≤ 30, ink-2 beyond; Copperleaf 4 and Bluebird 2 days past due", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     const due = rows().map((r) => r.querySelectorAll("td")[COL.due]?.querySelector("[data-due]"));
     const at = (i: number): [string, string] => [
       due[i]?.textContent ?? "",
@@ -305,12 +304,36 @@ describe("ENG-01 acceptance", () => {
     expect(at(11)).toEqual(["31 days", "ink"]);
     expect(at(12)).toEqual(["31 days", "ink"]);
     expect(at(13)).toEqual(["31 days", "ink"]);
-    expect(cell(rows()[16] ?? document.body, COL.due)).toBe("—");
+  });
+
+  it("DEC-343 (ED-027): Period │ All counts the two archived audits under Archived (275); Juniper & Oak's archived row has no next due", async () => {
+    show("a", scenarios.a);
+    await screen.findByText("Showing 16 of 273");
+    expect(tileCount("Archived")).toBe(0);
+    expect(clients()).not.toContain("Juniper & Oak Interiors, LLC");
+    cleanup();
+    restore?.();
+    restore = undefined;
+    install(scenarios.a);
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Harness initial={{ ...DEFAULT_ENGAGEMENT_FILTERS, period: "all" }} />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Showing 17 of 275")).toBeTruthy();
+    expect(tileCount("Archived")).toBe(2);
+    expect(tileSum()).toBe(275);
+    expect(segments()).toEqual({ All: 275, Tax: 224, Audit: 27, CAS: 23, Advisory: 1 });
+    const last = rows()[16];
+    if (last === undefined) throw new Error("no archived row");
+    expect(cell(last, COL.client)).toBe("Juniper & Oak Interiors, LLC");
+    expect(cell(last, COL.status)).toBe("Archived");
+    expect(cell(last, COL.due)).toBe("—");
   });
 
   it("ENG-01 acceptance: one pane with a centred title; rows hairline-separated, no zebra", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     expect(screen.getByRole("heading", { name: "Engagements" })).toBeTruthy();
     const classes = rows().map((r) => r.className);
     expect(classes.every((c) => c.includes("border-hair"))).toBe(true);
@@ -319,7 +342,7 @@ describe("ENG-01 acceptance", () => {
 
   it("ENG-01 acceptance: no Active engagement lacks a signed letter; the unsigned are Accepted, but the Prospect estate shows — and no work item", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     for (const r of rows()) {
       const word = cell(r, COL.status);
       const letter = cell(r, COL.letter);
@@ -355,27 +378,27 @@ describe("ENG-01 acceptance", () => {
 describe("ENG-01 behaviour", () => {
   it("a tile toggles the status filter, and the counts stay the counts without it", async () => {
     const seen = show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     fireEvent.click(screen.getByRole("button", { name: /Accepted/ }));
     expect(await screen.findByText("Showing 4 of 4")).toBeTruthy();
-    expect(tileSum()).toBe(275);
+    expect(tileSum()).toBe(273);
     expect(seen.calls.some((c) => c.query.includes("tile=accepted"))).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /Accepted/ }));
-    expect(await screen.findByText("Showing 17 of 275")).toBeTruthy();
+    expect(await screen.findByText("Showing 16 of 273")).toBeTruthy();
   });
 
   it("a segment is sent as service_line and recounts the tiles", async () => {
     const seen = show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     fireEvent.click(screen.getByRole("tab", { name: /^Audit/ }));
-    expect(await screen.findByText("Showing 5 of 27")).toBeTruthy();
-    expect(tileSum()).toBe(27);
+    expect(await screen.findByText("Showing 4 of 25")).toBeTruthy();
+    expect(tileSum()).toBe(25);
     expect(seen.calls.some((c) => c.query.includes("service_line=audit"))).toBe(true);
   });
 
   it("the search is sent as q and narrows the rows", async () => {
     const seen = show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Ridgeline" } });
     expect(await screen.findByText("Showing 2 of 2")).toBeTruthy();
     expect(seen.calls.some((c) => c.query.includes("q=Ridgeline"))).toBe(true);
@@ -383,7 +406,7 @@ describe("ENG-01 behaviour", () => {
 
   it("partner cells are initials with the partner's name as their tooltip", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     await waitFor(() => {
       expect(rows()[0]?.querySelector("abbr")?.getAttribute("title")).toBe("Priya Raman");
     });
@@ -401,7 +424,7 @@ describe("ENG-01 behaviour", () => {
         />
       </QueryClientProvider>,
     );
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     const first = rows()[0];
     if (first === undefined) throw new Error("no row");
     fireEvent.click(first);
@@ -410,7 +433,7 @@ describe("ENG-01 behaviour", () => {
 
   it("Export is hidden (cut) and no control is an agent-owned send, approve or sign-off", async () => {
     show("a");
-    await screen.findByText("Showing 17 of 275");
+    await screen.findByText("Showing 16 of 273");
     expect(screen.queryByRole("button", { name: /Export/ })).toBeNull();
     for (const word of [/^Approve/, /^Sign off/, /^Release/, /^Send/, /^Post/, /^Decide/]) {
       expect(screen.queryByRole("button", { name: word })).toBeNull();
@@ -427,7 +450,7 @@ describe("ENG-01 route /engagements", () => {
         <Page />
       </QueryClientProvider>,
     );
-    expect(await screen.findByText("Showing 17 of 275")).toBeTruthy();
+    expect(await screen.findByText("Showing 16 of 273")).toBeTruthy();
     expect(document.querySelector("[data-screen='ENG-01']")).not.toBeNull();
   });
 });

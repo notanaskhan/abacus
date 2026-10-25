@@ -35,3 +35,13 @@ export {
   useUpdateClient,
 } from "./record";
 export { MaskedTin, TIN_COPY } from "./MaskedTin";
+export {
+  type ContactRoleCode,
+  type GrantRole,
+  grantsFor,
+  isThirdParty,
+  useClientRequestItems,
+  useContact,
+  useContactWrites,
+  useContacts,
+} from "./contacts";

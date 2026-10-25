@@ -8,10 +8,11 @@ export {
   useEngagementRecord,
   useEngagementTeam,
   useEngagementWorkItems,
+  useHoldEngagement,
   useRecordLetter,
   waitsOnLetter,
 } from "./record";
-export { useDraft, useDraftWrites, useEngagementTypes } from "./wizard";
+export { type ConsentPreview, useDraft, useDraftWrites, useEngagementTypes } from "./wizard";
 export {
   DEFAULT_ENGAGEMENT_FILTERS,
   ENGAGEMENT_LINES,

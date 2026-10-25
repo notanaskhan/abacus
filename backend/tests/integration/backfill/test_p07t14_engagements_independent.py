@@ -334,25 +334,34 @@ async def test_ac16_the_seven_tiles_and_the_segments_foot_to_the_total(net: Net)
     }
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "ED-027: ENG-01 a counts 2 Archived inside the 275 under 'Period │ Current' "
-        "(docs/screens/ENG-01.md Figures); DEC-224 reads current as excluding archived, so the "
-        "Archived tile is 0 by default; introduced in #390, recorded in TASK-1125"
-    ),
-)
-async def test_ac16_the_default_view_counts_archived_engagements_in_the_archived_tile(
+async def test_ac16_the_default_view_leaves_archived_engagements_to_the_period_that_includes_them(
     net: Net,
 ) -> None:
-    """ENG-01 a, "Period │ Current": 1 + 4 + 0 + 128 + 0 + 140 + 2 = 275, Archived 2."""
+    """DEC-343 (ED-027, decided 2026-10-25): "Period │ Current" is every status but archived and
+    declined (DEC-224), so ENG-01 a's Archived tile is 0 and the archived engagement is neither a
+    row nor in the total; "Prior" and "All" count it under Archived."""
     firm, made = await _index_firm(net)
     archived = await firm.engagement(await firm.client("Halvorsen"), status="archived")
     await firm.signed_letter(archived)
+    shown = sum(len(v) for k, v in made.items() if k != "declined")
+
     page = _json(await firm.call("GET", "/v1/engagements/index"))
-    assert cast(dict[str, int], page["counts"]).get("archived", 0) == 1
-    assert page["total"] == sum(len(v) for k, v in made.items() if k != "declined") + 1
+    assert cast(dict[str, int], page["counts"]).get("archived", 0) == 0
+    assert str(archived) not in _ids(page)
+    assert page["total"] == shown
     assert _tile_sum(page) == page["total"]
+    assert _segment_sum(page) == page["total"]
+
+    prior = _json(await firm.call("GET", "/v1/engagements/index?period=prior"))
+    assert cast(dict[str, int], prior["counts"]).get("archived", 0) == 1
+    assert _ids(prior) == {str(archived)}
+    assert prior["total"] == 1
+    assert _tile_sum(prior) == prior["total"]
+    assert _segment_sum(prior) == prior["total"]
+
+    every = _json(await firm.call("GET", "/v1/engagements/index?period=all"))
+    assert cast(dict[str, int], every["counts"]).get("archived", 0) == 1
+    assert str(archived) in _ids(every)
 
 
 async def test_ac16_a_tile_filters_the_rows_and_the_tiles_still_count_without_it(

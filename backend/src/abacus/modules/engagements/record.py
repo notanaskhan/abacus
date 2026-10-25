@@ -66,6 +66,7 @@ _RECORD_ACTIONS: Final = (
     "letter.record",
     "client_contact.read",
     "engagement.update",
+    "engagement.hold",  # ENG-02's status pill menu (DEC-344)
 )
 
 

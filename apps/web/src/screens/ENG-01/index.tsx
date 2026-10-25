@@ -52,7 +52,7 @@ import { COPY } from "./copy";
 // selected tile) with the summary line, and the ledger rows past due first. Each artboard is its
 // data (fixtures/scenarios/ENG-01.ts):
 //
-//   a  Margaret Okonkwo, every line, Period │ Current: 275 engagements, the first 17 rows
+//   a  Margaret Okonkwo, every line, Period │ Current: 273 engagements (DEC-343), the first 16 rows
 //   b  Letter │ Not signed with the Accepted tile: rows 4, 6, 7, 9, the G3 banner, no Prospect
 //   c  Segment Advisory: the Ridgeline project; the tiles recount to Accepted 1
 //   d  "Harbor Lane" matches nothing: "No engagements match 'Harbor Lane'." and Clear filters

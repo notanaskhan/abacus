@@ -74,6 +74,9 @@ Copy keys live in `screens/ENG-02/copy.ts`; strings verbatim from spec.md and re
 | `archived.postLock` (d) | "Post-lock additions: 0" |
 | `banner.prospect` | "Acceptance pending — {partner} · Open acceptance ›" ("Acceptance pending — Daniel Reyes · Open acceptance ›") |
 | `status.menu` | "Active" · "On hold…" |
+| `status.dialog` (undesigned, DEC-344) | title and action "Put on hold"; "Choose why the engagement is on hold. Set it back to Active from the status menu."; fieldset "Reason" |
+| `status.reasons` (DEC-344) | "Client unresponsive" · "Fees outstanding" · "Scope change" · "Independence review" · "Other" (the API's five codes, DEC-328) |
+| `status.toasts` (DEC-344) | "Engagement on hold" · "Engagement active"; refused: "Only an active engagement can go on hold." · "Couldn’t change the status." |
 
 Rail values, task rows, gate facts ("Continuance approved by MO · May 28", "Letter signed by Dana Kowalski and MO · Jun 2", "Materiality blocked on a partner decision"…), related rows and f's dashboard tiles and milestones are seed data, never `copy.ts`. The Record signed letter sheet (O3) is composed from kits; its strings are recorded in this contract by P-07-T20 before it merges (P-07 §2.1, R-9).
 
@@ -146,10 +149,9 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | The Activity tab is hidden until P-07-T61; "Activity ›" in the canvas header is its placeholder | Cut order item 4; R2's eight tabs exceed C-05's seven a track | P-07 §2.3, DEC-272 |
 | DEC-272 | Dashboard, Board and Budget tabs host their planned targets' "Opens …" line (fixture builds only); the gear is drawn disabled (ENG-11 planned) and marked on d | ENG-12, ENG-10, ENG-06 and ENG-11 are K-04's and I-04's to build ("do not restate") | DEC-272 |
 | DEC-272 | The Team tab hosts the roster from `GET …/team` (name, role words) until ENG-05 | P-07-T39 builds ENG-05 | DEC-272 |
-| DEC-272 | The status pill has no ⌄ menu and On hold… is not built | The hold route landed with TASK-1198 (DEC-328); the control is wave B's | DEC-272, DEC-328 |
+| DEC-344 | The status pill ⌄ (Active · "On hold…") opens a sm Dialog with the five reason codes as a radio group; while on hold the reason word reads beside the pill (`hold_reason` on the record). Offered only with `engagement.hold` in `allowed_actions` on an Active or On hold record | spec.md says only "On hold asks for a reason"; the dialog is undesigned | DEC-344, DEC-328 |
 | DEC-272 | a draws no stat rows, RunCard, Year-end or Related groups; closes read their phase word, not spec.md's meta lines | Not in the record or `WorkItemOut`; C-01's close provider | DEC-272 |
 | — | The core's tabs are in-screen state (Overview, Work items, Letter & terms; Team drawn disabled in fixture builds), not the `/work-items`, `/team`, `/letter` routes | P-07-T28 adds the tab routes with the Team host | DEC-195 |
-| — | The status pill has no ⌄ menu yet | The hold route did not land with P-07-T15; still waiting (DEC-272) | DEC-195 |
 | — | ENG-02 → CLI-02 is wired in `routes/firm/engagements.tsx`, and the manifest entry stays `planned` | As CLI-02 | DEC-195 |
 | G-1…G-4 | See Contract gaps | The v2 record projection | DEC-195 |
 

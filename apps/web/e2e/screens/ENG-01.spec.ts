@@ -9,7 +9,7 @@ import { expect, test } from "@playwright/test";
 const SERIOUS = new Set(["serious", "critical"]);
 
 const ARTBOARDS = [
-  { st: "a", ready: "Showing 17 of 275" },
+  { st: "a", ready: "Showing 16 of 273" },
   { st: "b", ready: "Showing 4 of 4" },
   { st: "c", ready: "Showing 1 of 1" },
   { st: "d", ready: "No engagements match 'Harbor Lane'." },

@@ -382,7 +382,8 @@ function copperleaf(): EngagementRecordFixture {
     tab_counts: { work_items: 12, team: 3 },
     read_only_reason: null,
     version: 9,
-    allowed_actions: ["engagement.read_metadata", "engagement.read"],
+    // Priya Raman is Copperleaf's engagement partner: the status pill's ⌄ menu (DEC-344).
+    allowed_actions: ["engagement.read_metadata", "engagement.read", "engagement.hold"],
   };
   const workItems: WorkItemOut[] = MONTHS.map((month, i) => {
     const mm = String(i + 1).padStart(2, "0");

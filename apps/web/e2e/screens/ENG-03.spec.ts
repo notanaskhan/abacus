@@ -1,4 +1,4 @@
-// ENG-03 a, b, c, d, f in fixture mode (P-07-T21; build-screen-from-handoff §5): every scenario at
+// ENG-03 a–h in fixture mode (P-07-T21, P-07-T34; build-screen-from-handoff §5): every scenario at
 // 1440×900, DPR 2, from the /components gallery on fixtures, with axe at zero serious or critical
 // findings inside the wizard. Tier C parity is reported by the parity harness (P-07-T63).
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/screens/ENG-03.spec.ts`.
@@ -12,7 +12,10 @@ const ARTBOARDS = [
   { st: "b", ready: "GAAS nonissuer · periods ending 12/31/2025 · AU-C 703" },
   { st: "c", ready: "EQR eligible — not on team, no cooling-off conflict" },
   { st: "d", ready: "Acceptance is not approved yet (G1)." },
+  { st: "e", ready: "§7216 consents" },
   { st: "f", ready: "Single audit" },
+  { st: "g", ready: "Group audit (SAS 149)" },
+  { st: "h", ready: "SSAE · AT-C 205" },
 ] as const;
 
 test.use({

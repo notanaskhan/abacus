@@ -4999,6 +4999,10 @@ export type ContactRowOut = {
      */
     id: string;
     /**
+     * Invitation Id
+     */
+    invitation_id?: string | null;
+    /**
      * Invited On
      */
     invited_on?: string | null;
@@ -6875,6 +6879,10 @@ export type EngagementRecordOut = {
      * Gates
      */
     gates: Array<EngagementGateOut>;
+    /**
+     * Hold Reason
+     */
+    hold_reason?: 'client_unresponsive' | 'fees_outstanding' | 'scope_change' | 'independence_review' | 'other' | null;
     /**
      * Id
      */

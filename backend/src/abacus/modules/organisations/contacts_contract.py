@@ -124,6 +124,9 @@ class ContactRowOut(BaseModel):
     mfa_enrolled: Annotated[bool | None, classified("internal")] = None
     last_seen_at: Annotated[datetime | None, classified("internal")] = None
     delegated_request_count: Annotated[int, classified("internal")] = 0
+    # The contact's newest invitation while it is live (Invited, Active or Locked): what Resend
+    # and Revoke name (ED-049). Null when the contact is Not invited.
+    invitation_id: Annotated[UUID | None, classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")] = []
 
 

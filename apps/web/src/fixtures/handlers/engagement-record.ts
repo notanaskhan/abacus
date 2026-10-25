@@ -4,11 +4,15 @@
 // 409 `engagement_archived` on an archived record, 409 `gate_unmet` before G1, and 409
 // `letter_before_acceptance` when a signature date is not after the acceptance decision; once
 // recorded the engagement reads `contracted` and G3 is met. A walled or unknown engagement
-// answers 404 (INV-3). Writes change this handler set's own copy.
+// answers 404 (INV-3). The status menu's hold and resume (DEC-328, DEC-344) answer 403 without
+// `engagement.hold` in the record's `allowed_actions` or on an archived record, and 409
+// `illegal_transition` from any other status. Writes change this handler set's own copy.
 
 import type {
   EngagementGateOut,
+  EngagementHoldIn,
   EngagementLetterRecordOut,
+  EngagementStatusOut,
   LetterRecordIn,
   TeamMemberOut,
   WorkItemOut,
@@ -21,6 +25,17 @@ import { slugOf } from "../seed/people";
 import { stableId } from "../seed/prng";
 
 const NOT_FOUND = { detail: "not_found" };
+
+/** The hold route's refusals before the transition: the matrix (403) and archived (403). */
+function moveRefused(found: EngagementRecordFixture): Response | null {
+  if (found.record.read_only_reason === "archived") {
+    return json({ detail: "archived_write" }, 403);
+  }
+  if (!(found.record.allowed_actions ?? []).includes("engagement.hold")) {
+    return json({ detail: "forbidden" }, 403);
+  }
+  return null;
+}
 
 export function engagementRecordHandlers(
   seed: Seed,
@@ -77,6 +92,41 @@ export function engagementRecordHandlers(
         role: m.role,
       }));
       return json(body);
+    },
+    "POST /v1/engagements/{engagement_id}/hold": (request) => {
+      const found = find(request);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      const refused = moveRefused(found);
+      if (refused !== null) return refused;
+      if (found.record.status !== "active") return json({ detail: "illegal_transition" }, 409);
+      const { reason } = request.body as EngagementHoldIn;
+      found.record = {
+        ...found.record,
+        status: "on_hold",
+        hold_reason: reason,
+        version: found.record.version + 1,
+      };
+      const out: EngagementStatusOut = {
+        engagement_id: found.record.id,
+        status: "on_hold",
+        hold_reason: reason,
+      };
+      return json(out);
+    },
+    "POST /v1/engagements/{engagement_id}/resume": (request) => {
+      const found = find(request);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      const refused = moveRefused(found);
+      if (refused !== null) return refused;
+      if (found.record.status !== "on_hold") return json({ detail: "illegal_transition" }, 409);
+      found.record = {
+        ...found.record,
+        status: "active",
+        hold_reason: null,
+        version: found.record.version + 1,
+      };
+      const out: EngagementStatusOut = { engagement_id: found.record.id, status: "active" };
+      return json(out);
     },
     "PUT /v1/engagements/{engagement_id}/letter/record": (request) => {
       const found = find(request);

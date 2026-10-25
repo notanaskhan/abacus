@@ -249,6 +249,12 @@ class EngagementTabCountsOut(BaseModel):
     team: Annotated[int, classified("internal")]
 
 
+# `transitions.HOLD_REASONS`, as the API's enum (a test holds the two equal).
+HoldReason = Literal[
+    "client_unresponsive", "fees_outstanding", "scope_change", "independence_review", "other"
+]
+
+
 class EngagementRecordOut(BaseModel):
     """The extended C1 projection (C1 v1.1): subbar facts, rail bands, contacts, letter summary,
     gates, tab counts and why it is read-only."""
@@ -273,6 +279,8 @@ class EngagementRecordOut(BaseModel):
     gates: Annotated[list[EngagementGateOut], classified("internal")]
     tab_counts: Annotated[EngagementTabCountsOut, classified("internal")]
     read_only_reason: Annotated[ReadOnlyReason | None, classified("internal")] = None
+    # ENG-02's status pill while On hold names the reason code (DEC-344); null otherwise.
+    hold_reason: Annotated[HoldReason | None, classified("internal")] = None
     version: Annotated[int, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")] = []
 
@@ -613,6 +621,7 @@ def _record_out(v: record_model.RecordView) -> EngagementRecordOut:
         gates=_gates_out(v.gates),
         tab_counts=EngagementTabCountsOut(work_items=v.work_item_count, team=v.team_count),
         read_only_reason=v.read_only_reason,
+        hold_reason=cast(HoldReason, e.hold_reason) if e.status == "on_hold" else None,
         version=e.version,
         allowed_actions=v.allowed_actions,
     )
@@ -731,11 +740,6 @@ async def engagement_gates_route(engagement_id: UUID, ctx: Ctx) -> list[Engageme
 
 
 # --- ENG-02 status menu: Active ⇄ On hold (TASK-1198; DEC-328) ----------------------------------
-
-# `transitions.HOLD_REASONS`, as the API's enum (a test holds the two equal).
-HoldReason = Literal[
-    "client_unresponsive", "fees_outstanding", "scope_change", "independence_review", "other"
-]
 
 
 class EngagementHoldIn(BaseModel):

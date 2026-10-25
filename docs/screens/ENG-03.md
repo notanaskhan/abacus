@@ -51,6 +51,11 @@ Copy keys live in `screens/ENG-03/copy.ts`; strings verbatim from spec.md and re
 | `gates.g1` | "G1 Continuance approved — {person} · {date}" (a: "G1 Continuance approved — Margaret Okonkwo · Aug 28, 2026") |
 | `gates.g2` | "G2 Team independence — step 4" |
 | `gates.g3` | "G3 Letter signed — after Create" |
+| `gates.g2Met` (g) | "G2 Team independence — all confirmed" |
+| `gates.g2NotRequired` (e) | "G2 Independence — not required (non-attest)" |
+| `stepByKind` (e; spec.md interactions) | step 2 reads "Return setup" for a tax return and "Close plan template" for Monthly close (fixture builds; planned until C-01) |
+| `closePlan.hint` (DEC-345) | "Close plans arrive with closes (C-01)." (fixture builds only) |
+| `toast.createFailed` (DEC-345) | "Couldn’t create the engagement." |
 | `ai.title` (R2) | "Start from last year's files" |
 | `ai.body` (R2) | "Attach prior statements, a component list or a draft letter; the agent proposes a plan you confirm." |
 | `ai.action` (R2) | "Set up with AI…" |
@@ -132,12 +137,18 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | d adds "Start acceptance" (save the draft, create a Prospect engagement and an acceptance record, open CLI-07) | DEC-39: Prospect engagements exist before acceptance | DEC-39; P-07 §3.6 Story 6.3 |
 | — | Screen IDs in parentheses inside handoff strings ("…decision in CLI-07.", "(ADM-04)") are canvas cross-references, not product copy: `copy.ts` drops them and the reference becomes the link or action beside the string | Internal codes never show in product chrome (DF-22's rule for ENG-14 "A28"; ENG-02 "no internal engagement number") | DEC-138 |
 | — | The CAS "Close plan template" step is planned until C-01 and the "PBC list — Build from template" toggle seeds requests deterministically from the pinned methodology (no agent run) | C-01 owns close plans; agents propose only | P-07 §2.1 |
+| DEC-345 | Steps re-shape from the selected type's catalogue `steps` (field codes): standards set and the EQR only where the schema asks; the §103(a)(3)(C) scope only for EBP audit; SOC types show the period on step 2; step 2 reads "Return setup" for tax returns and, in fixture builds, "Close plan template" (with Approver of record on step 5) for Monthly close | spec.md "a type card click … re-shapes steps 2–6"; the catalogue serves the schema | DEC-345 |
+| DEC-345 | e's §7216 consents card is fixture-only: the screen takes it as a `consents` prop that only the gallery passes; the route never does, so production draws no card until C19 serves consents | No consents API until T-01 (C19); data only through the generated client | DEC-345 |
+| DEC-345 | e's duplicate notice shows when Create answers 409 `possible_duplicate` (with "Open it" to the named engagement and "Create anyway" sending `confirm_duplicate`), not on step 1 | The draft has no duplicate read before Create | DEC-345 |
+| DEC-345 | "Set up with AI" card and "Start from proposal ⇕" render disabled with their hints in fixture builds only | ENG-14 (K-04) and ENG-09 (T-09) are planned | DEC-345 |
 
 ### Core notes and contract gaps (P-07-T21)
 - The G1 reason is the gate card's status region; Next is disabled while G1 is unmet (DEC-197).
 - Discard dialog: title "Discard this draft?", buttons "Discard" · "Keep editing" (written for this task). Save failure toast: "Couldn’t save the draft."
 - Gaps, drawn as the draft's facts or "—" until P-07-T16's step schemas and a methodology read: the methodology chip and its version line, the independence request time, the Relationship, Proposal and Office rows, the Display line, the Agent defaults card, and the editors of steps 3, 5 and 6 (DEC-197).
 - Fixture names follow the handoff: client "Fairhaven Foods, Inc.", entity "Fairhaven Foods 401(k) Plan" (the TS seed names the client after the plan; open gap for F-04-T31's exported seed).
+
+- P-07-T34 gaps (DEC-345): g and h's G1 line reads "Acceptance approved" in the handoff; the draft's gate does not say whether G1 was an acceptance or a continuance, so the line keeps "Continuance approved"; the methodology row reads "—" until a methodology read exists (h's "BH SOC 2 · TSC 2017 (rev. 2022) v1"); h's "Categories" row and e's Binder card are not in the draft; a coming-soon SOC card (no `attest`) shows the kit's one soon tooltip, which names single audits.
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
