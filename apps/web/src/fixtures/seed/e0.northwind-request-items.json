@@ -1,7 +1,7 @@
 {
   "scenario": {
-    "version": "bh-2026.10.2",
-    "hash": "f25ed109665dc4167f1b5f460ee3f760cf05fe71ece99f7904ad2d904ff40016",
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
     "snapshot": "E0",
     "slices": [
       "portal"

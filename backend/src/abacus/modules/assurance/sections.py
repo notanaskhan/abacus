@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Final, Literal
 from uuid import UUID
 
@@ -61,6 +62,12 @@ class SectionState:
 SectionStateProvider = Callable[[TenantContext, UUID], Awaitable[SectionState | None]]
 
 
+LinkStatus = Literal["live", "planned"]
+# Where a section's required action is checked: on the work item's engagement, or on the firm
+# (a firm-level read such as `methodology.read`).
+ActionScope = Literal["engagement", "firm"]
+
+
 @dataclass(frozen=True)
 class AuditSection:
     key: str
@@ -68,6 +75,18 @@ class AuditSection:
     order: int
     route: str  # a manifest screen ID (AUD-06), resolved by the frontend's `to.<ID>()`
     state_provider: SectionStateProvider
+    # A-01-T09 (DEC-312, additive): the rail's words and whether the target screen is built.
+    title: str = ""
+    link: LinkStatus = "planned"
+    # Security review (DEC-312): a provider reads with the tenant's context, so it cannot check
+    # the reader's own rights; the cockpit checks this action for the reader before asking it.
+    required_action: str | None = None
+    action_scope: ActionScope = "engagement"
+
+    @property
+    def label(self) -> str:
+        """The row's title: the registered one, else the key in words ("Trial balance")."""
+        return self.title or self.key.replace("_", " ").capitalize()
 
 
 @dataclass(frozen=True)
@@ -112,15 +131,24 @@ def register_audit_section(
     order: int,
     route: str,
     state_provider: SectionStateProvider | None,
+    *,
+    title: str = "",
+    link: LinkStatus = "planned",
+    required_action: str | None = None,
+    action_scope: ActionScope = "engagement",
 ) -> None:
     if state_provider is None:
         raise ValueError(f"audit section {key!r} needs a state provider")
     if band not in BANDS:
         raise ValueError(f"band {band!r} is unknown")
-    section = AuditSection(key, band, order, route, state_provider)
+    section = AuditSection(
+        key, band, order, route, state_provider, title, link, required_action, action_scope
+    )
     known = _SECTIONS.get(key)
     if known is not None and (
-        (known.band, known.order, known.route) != (band, order, route)
+        (known.band, known.order, known.route, known.title, known.link)
+        != (band, order, route, title, link)
+        or (known.required_action, known.action_scope) != (required_action, action_scope)
         or not _same(known.state_provider, state_provider)
     ):
         raise ValueError(f"audit section {key!r} is already registered")
@@ -168,3 +196,48 @@ def registered_segments(entitlements: frozenset[str]) -> tuple[AuditSegment, ...
         if f in _SEGMENTS
         and (_SEGMENTS[f].entitlement is None or _SEGMENTS[f].entitlement in entitlements)
     )
+
+
+# --- The guarded C6 v1 run-summary read (A-01-T08, T09; DV-11) -------------------------------
+
+
+@dataclass(frozen=True)
+class RunSummary:
+    """An active C6 v1 engagement run on one work item: the "Processing" pill, its popover and
+    the audit bar's "Started 9:24 AM". v1 policy ticks are not engagement runs and never yield
+    one."""
+
+    run_id: UUID
+    run_number: int
+    started_at: datetime
+    started_by_user_id: UUID
+    started_by_name: str
+    workpapers_complete: int
+    workpapers_total: int
+    blocked_on_role: Literal["partner", "manager"] | None = None
+
+
+RunSummaryProvider = Callable[
+    [TenantContext, Sequence[UUID]], Awaitable[Mapping[UUID, RunSummary]]
+]
+_run_summary: list[RunSummaryProvider] = []
+
+
+def register_run_summary(provider: RunSummaryProvider) -> None:
+    """P-10's engagement runs register here (C6 v1). Until then no row shows "Processing"."""
+    if _run_summary and not _same(_run_summary[0], provider):
+        raise ValueError("the run summary provider is already registered")
+    _run_summary[:] = [provider]
+
+
+async def run_summaries(
+    tenant: TenantContext, work_item_ids: Sequence[UUID]
+) -> Mapping[UUID, RunSummary]:
+    """The active engagement runs of these work items, guarded: no provider, or a provider that
+    fails, yields none (the pill is never shown from a guess)."""
+    if not _run_summary or not work_item_ids:
+        return {}
+    try:
+        return await _run_summary[0](tenant, work_item_ids)
+    except Exception:  # a failing C6 read hides the pill, never the index or the cockpit
+        return {}

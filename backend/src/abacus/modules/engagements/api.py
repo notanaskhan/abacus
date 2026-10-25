@@ -38,7 +38,7 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
-from abacus.modules.engagements.index_facts import work_item_index
+from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -85,6 +85,7 @@ from abacus.modules.engagements.service import (
 from abacus.modules.engagements.setup import (
     EngagementNotOpen,
     StoredFile,
+    answer_independence,
     attach_acceptance_file,
     attach_letter_file,
     attest_column,
@@ -275,8 +276,10 @@ __all__ = [
     "VersionNotLatest",
     "WorkItemExists",
     "WorkItemProvider",
+    "answer_independence",
     "area_for",
     "assign_work_item",
+    "assurance_index",
     "assurance_item",
     "assurance_item_id",
     "attach_acceptance_file",
@@ -304,6 +307,7 @@ __all__ = [
     "independence_cleared",
     "is_archived",
     "judgments_of",
+    "letters_sent",
     "lock_assurance_item",
     "lock_engagement",
     "lock_ref",

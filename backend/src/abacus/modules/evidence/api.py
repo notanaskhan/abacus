@@ -132,6 +132,7 @@ from abacus.modules.evidence.storage import (
     check_ready,
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
+from abacus.modules.evidence.upload_facts import upload_facts
 from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATHS, upload
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
@@ -154,6 +155,7 @@ from abacus.modules.evidence.workflows import (
     UploadProcessing,
 )
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
+from abacus.modules.requests.api import register_upload_facts
 
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
@@ -192,6 +194,8 @@ SUBSCRIPTIONS = {
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
+register_upload_facts(upload_facts)
 
 __all__ = [
     "ACTIVITIES",

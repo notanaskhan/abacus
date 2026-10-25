@@ -219,6 +219,16 @@ def client_name_column(client_id: Column) -> ColumnElement[str]:
     )
 
 
+def entity_name_column(entity_id: Column) -> ColumnElement[str]:
+    """The client entity's name for each outer row (A-01-T08: AUD-01's row name)."""
+    return (
+        select(ClientEntity.name)
+        .where(ClientEntity.id == entity_id)
+        .correlate_except(ClientEntity)
+        .scalar_subquery()
+    )
+
+
 def office_name_column(office_id: Column) -> ColumnElement[str]:
     """The office's name for each outer row (None without an office)."""
     return (

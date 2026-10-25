@@ -851,6 +851,12 @@ codes:
     - abacus.modules.assurance.phase.PhaseFollowsGate
     summary: 'The target phase''s gate is computed by a registered provider: it derives from `gate.met`
       and cannot be recorded.'
+  phase_gate_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.phase.PhaseGateUnmet
+    summary: The gate a gate move names is not met (computed, never the caller's say), or does not open
+      the target phase.
   phase_invalid:
     status: 422
     raised_by:

@@ -32,8 +32,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice, slice_events
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event, ordered
 
-SCENARIO_VERSION: Final = "bh-2026.10.2"
-SCENARIO_HASH: Final = "f25ed109665dc4167f1b5f460ee3f760cf05fe71ece99f7904ad2d904ff40016"
+SCENARIO_VERSION: Final = "bh-2026.10.3"  # A-01-T07: the assurance events (DEC-310)
+SCENARIO_HASH: Final = "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2"
 FIRM_ID: Final = stable_id("firm:brightwater-hale")
 # The firm, its offices, seats and clients exist before the demo week opens.
 SETUP_AT: Final = datetime(2026, 9, 1, 8, 0, tzinfo=CT)

@@ -85,6 +85,14 @@ from abacus.modules.requests.service import (
     upload_item_of,
     withdraw_upload,
 )
+from abacus.modules.requests.source_documents import (
+    SourceDocuments,
+    UploadFacts,
+    pbc_counts,
+    pbc_counts_of,
+    register_upload_facts,
+    source_documents,
+)
 
 # P-07-T25 (C5): CLI-04 records, ends and counts a contact's delegated requests through this.
 register_contact_delegations(
@@ -146,6 +154,8 @@ __all__ = [
     "RequestOwedByOut",
     "ReviewTarget",
     "ScreeningSubject",
+    "SourceDocuments",
+    "UploadFacts",
     "add_request_item",
     "apply_drafted_guidance",
     "classify",
@@ -170,6 +180,8 @@ __all__ = [
     "portal_item_binder",
     "portal_item_view",
     "prior_year_link",
+    "pbc_counts",
+    "pbc_counts_of",
     "read_item",
     "read_item_versions",
     "register_available_datasets",
@@ -177,11 +189,13 @@ __all__ = [
     "register_binder_tag",
     "register_comment_scope_check",
     "register_live_facts",
+    "register_upload_facts",
     "reopen_after_undo",
     "request_items_for",
     "review_targets",
     "router",
     "screening_subject",
+    "source_documents",
     "upload_item_of",
     "withdraw_upload",
 ]

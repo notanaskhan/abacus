@@ -45231,7 +45231,7 @@
     },
     "/v1/audits": {
       "get": {
-        "description": "AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).",
+        "description": "AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311).",
         "operationId": "audits_index",
         "parameters": [
           {
@@ -45666,7 +45666,7 @@
     },
     "/v1/audits/{work_item_id}/cockpit": {
       "get": {
-        "description": "AUD-02's host projection (A-01-T09).",
+        "description": "AUD-02's host projection (A-01-T09, DEC-312): the bar and overview are metadata; the\nbands, dock and actions also need `engagement.read`.",
         "operationId": "audit_cockpit",
         "parameters": [
           {
@@ -45778,7 +45778,7 @@
         "tags": [
           "audits"
         ],
-        "x-abacus-action": "engagement.read"
+        "x-abacus-action": "engagement.read_metadata"
       }
     },
     "/v1/audits/{work_item_id}/phase": {
@@ -46216,7 +46216,7 @@
     },
     "/v1/audits/{work_item_id}/source-documents": {
       "get": {
-        "description": "AUD-02's canvas and AUD-03 (A-01-T10).",
+        "description": "AUD-02's canvas and AUD-03 (A-01-T10, DEC-313): the work item's asked PBC requests by\ncategory, with the C5 v1.1 row facts (firm only: client principals were refused).",
         "operationId": "audit_source_documents",
         "parameters": [
           {

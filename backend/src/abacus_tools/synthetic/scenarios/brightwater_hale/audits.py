@@ -547,6 +547,117 @@ FIRM_SETTINGS: Final[tuple[tuple[str, bool], ...]] = (("staff_can_accept_evidenc
 FIRM_ADMIN: Final = "GH"  # Grace Holloway sets firm settings (§9.2 "season setup")
 
 
+# --- A-01-T07: phases, EBP profile facts and archives through A-01's services (DEC-310) ---------
+
+# The phases in order, and how each is reached: `recorded` by the engagement partner while its gate
+# has no provider (Fieldwork, In review), `advanced` naming the gate SPEC-314 computes (Ready to
+# release G7, Released G8) until A-01-T23's external release record.
+PHASE_STEPS: Final[tuple[tuple[str, str, str | None], ...]] = (
+    ("fieldwork", "recorded", None),
+    ("in_review", "recorded", None),
+    ("ready_to_release", "advanced", "G7"),
+    ("released", "advanced", "G8"),
+)
+_PHASE_RANK: Final = {"planning": 0, "fieldwork": 1, "in_review": 2, "ready_to_release": 3}
+_PHASE_RANK_RELEASED: Final = 4
+# AUD-01's released dates (the spec's ROWS): Bayside Jul 29, Meridian Apr 17, Juniper Mar 20.
+RELEASED_ON: Final[dict[str, date]] = {
+    "A16": date(2026, 7, 29),
+    "A20": date(2026, 4, 17),
+    "A4": date(2026, 3, 20),
+}
+# The §103(a)(3)(C) limited-scope audits of the E0 slice (AUD-01 ROWS: Northwind).
+LIMITED_SCOPE: Final = frozenset({"A1"})
+
+
+def phase_rank(phase: str) -> int:
+    return _PHASE_RANK_RELEASED if phase == "released" else _PHASE_RANK[phase]
+
+
+def plan_kind(audit: Audit) -> str | None:
+    """The EBP plan kind from the plan's name: a 403(b) plan, else a defined-contribution plan."""
+    if audit.type != "ebp_audit":
+        return None
+    return "403b" if "403(b)" in audit.entity_name else "dc"
+
+
+def assurance_events(setup_at: datetime) -> list[Event]:
+    """Each audit's profile facts, its partner's independence, its phase moves and its archive,
+    after the engagement exists and before E0, one hour apart. A release carries its own date
+    (`on`), the business time the loader moves the phase at."""
+    events: list[Event] = []
+    for audit in AUDITS:
+        start = max(created_at(audit), setup_at)
+        hour = timedelta(hours=1)
+        common = {"client": audit.client}
+        kind = plan_kind(audit)
+        if kind is not None:
+            events.append(
+                Event(
+                    f"assurance-profile:{audit.label}",
+                    start + hour,
+                    "assurance.profile_set",
+                    audit.ep,
+                    SLICE,
+                    {"audit": audit.label, "plan": kind, "limited": audit.label in LIMITED_SCOPE},
+                    **common,
+                )
+            )
+        steps = phase_rank(audit.phase)
+        if steps == 0:
+            continue
+        events.append(
+            Event(
+                f"independence:{audit.label}",
+                start + 2 * hour,
+                "engagements.independence_confirmed",
+                audit.ep,
+                SLICE,
+                {"audit": audit.label},
+                **common,
+            )
+        )
+        at = start + 2 * hour
+        for to, mode, gate in PHASE_STEPS[:steps]:
+            at += hour
+            # A release before the firm's setup keeps its own date as the act's business time.
+            released = RELEASED_ON.get(audit.label) if to == "released" else None
+            events.append(
+                Event(
+                    f"phase:{audit.label}:{to}",
+                    at,
+                    "assurance.phase_recorded"
+                    if mode == "recorded"
+                    else "assurance.phase_advanced",
+                    audit.ep,
+                    SLICE,
+                    {
+                        "audit": audit.label,
+                        "to": to,
+                        "gate": gate,
+                        "on": released.isoformat() if released else None,
+                    },
+                    **common,
+                )
+            )
+        if audit.status == "archived":
+            events.append(
+                Event(
+                    f"archive:{audit.label}",
+                    at + timedelta(days=1),
+                    "engagements.engagement_archived",
+                    audit.ep,
+                    SLICE,
+                    {"audit": audit.label},
+                    **common,
+                )
+            )
+    late = [e.label for e in events if e.at >= DEMO_INSTANT]
+    if late:
+        raise ValueError(f"assurance events after E0: {late}")
+    return events
+
+
 def _audit_client(label: str) -> str:
     return BY_LABEL[label].client
 
@@ -620,6 +731,7 @@ def audit_events(setup_at: datetime) -> list[Event]:
         )
         for key, value in FIRM_SETTINGS
     ]
+    events += assurance_events(setup_at)
     unknown = {i for a in AUDITS for i, _ in team_of(a)} - _INITIALS
     if unknown:
         raise ValueError(f"team initials without a seat: {sorted(unknown)}")
