@@ -1,22 +1,32 @@
-import type { PortalHomeOut, PortalHomeTodoOut, PortalHomeWorkCardOut } from "@abacus/api-client";
+import type {
+  MePortalScopeOut,
+  PortalHomeOut,
+  PortalHomeTeamMemberOut,
+  PortalHomeTodoOut,
+  PortalHomeWorkCardOut,
+} from "@abacus/api-client";
 import {
   Button,
   DEFAULT_TZ,
+  EmptyState,
   Icon,
   IconButton,
+  type MenuItem,
   Pane,
   PortalBrandProvider,
   PortalLayout,
+  type PortalNavItem,
+  type PortalUserMenu,
   ProgressBar,
   StatusDisc,
   StatusPill,
-  EmptyState,
   count,
   date,
   usePortalBrand,
   weekdayDate,
 } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, type ReactNode, useState } from "react";
+import { goToSignIn, portalSignOut } from "../../app-core/auth/bff";
 import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import {
@@ -28,24 +38,35 @@ import {
 } from "../../domain/portal";
 import { COPY } from "./copy";
 
-// POR-02 · Portal home, part 1 (P-08-T15; docs/screens/POR-02.md). T7 split over
-// `GET /v1/portal/home` for the chosen scope: the rail (household card, team rows with their
-// client-facing labels, the Recent messages band and "Account & people", both planned and drawn
-// only in fixture builds), the greeting on `useNow`, the to-do cards from a kind registry, the
-// work card with its StageTracker and note, the Documents binder card and the Earlier list. Each
-// artboard is its data (fixtures/scenarios/POR-02.ts):
+// POR-02 · Portal home (P-08-T15 part 1, P-08-T23 part 2; docs/screens/POR-02.md). T7 split over
+// `GET /v1/portal/home` for the chosen scope, and T7-M at 390: the rail (household card, team rows
+// with their client-facing labels, the Recent messages band and "Account & people", both planned and
+// drawn only in fixture builds), the greeting on `useNow`, the to-do cards from a kind registry, the
+// work cards with their StageTracker and note, My K-1s, the notices info row, the Documents binder
+// card and the Earlier list. Each artboard is its data (fixtures/scenarios/POR-02.ts):
 //
 //   a  Claire Feld at E0: Upload 2, Answer 3, nothing to sign, 2 ready; the return at Review
 //   b  her first visit (Mon Feb 2, 2026): the welcome card, 0 of 21, sign and upload to-dos
 //   c  every open item done: "You're all set for now."
+//   d  Tess Moreno, Copperleaf: Approvals in the nav, red tint only on the past-due upload
+//   e  Meera Shah's role union: her own 1040 and My K-1s; the user chip switches scope
 //   f  the home never answers: skeletons
+//   g  Luis Ferrante, Granite Peak (Thu Oct 22): review the draft FY2026 statements
+//   h  Marisol Vega, Tessellate: SOC 2 control requests and exceptions
+//   M  a at 390: stacked to-dos, the tracker as a list, the team collapsed, tab bar badges
 //
-// d, e, g, h and M are P-08-T23's. White label: the firm's name comes from the branding; nothing
-// here names the product or the agent (INV-5, DEC-01). Red appears only on a past-due to-do.
+// g's and h's to-do kinds are fixture-only (the `statements_studio` and `attest` entitlements, P-08
+// Story 6.7): production hides them until A-10/R-02 and X-01 register their home sources. White
+// label: the firm's name comes from the branding; nothing here names the product or the agent
+// (INV-5, DEC-01). Red appears only on a past-due to-do.
 
 export interface POR02Props {
   /** The scope the person chose; null opens the first (P-08 §5.1). */
   scopeId: string | null;
+  /** The person picked another scope in the user menu (the route keeps it in `?scope=`). */
+  onScope?: (scopeId: string) => void;
+  /** T7-M at 390 (the portal entry decides from the viewport). */
+  mobile?: boolean;
   frame?: boolean;
 }
 
@@ -55,6 +76,32 @@ function onDay(day: string): string {
   return `${day}T12:00:00Z`;
 }
 
+/** Kinds whose home source is planned (P-08 §2.2): drawn in fixture builds, hidden in production
+ * until their epics register them (reconnect A-02; statements review A-10 with R-02 behind
+ * `statements_studio`; control requests, exceptions and the description X-01 behind `attest`). */
+const PLANNED_KINDS: ReadonlySet<PortalHomeTodoOut["kind"]> = new Set([
+  "reconnect",
+  "review_statements",
+  "control_requests",
+  "exceptions",
+  "description_approved",
+]);
+
+/** Scope kinds whose home is POR-02 (a full-client grant). A K-1 recipient's scope opens POR-13. */
+const HOME_SCOPES: ReadonlySet<MePortalScopeOut["kind"]> = new Set([
+  "client",
+  "client_entity",
+  "engagement",
+]);
+
+/** The team row the client writes to by default: the day-to-day contact (OQ-5). */
+const DAY_TO_DAY: ReadonlySet<PortalHomeTeamMemberOut["role_code"]> = new Set([
+  "preparer_day_to_day",
+  "day_to_day_contact",
+  "close_preparer",
+  "preparer",
+]);
+
 /** The to-do kinds whose screens exist in this build (none yet: every target is planned). */
 function goLink(todo: PortalHomeTodoOut): string | undefined {
   return PLANNED_VISIBLE ? COPY.todo.go[todo.kind] : undefined;
@@ -63,42 +110,92 @@ function goLink(todo: PortalHomeTodoOut): string | undefined {
 interface TodoWords {
   title: string;
   sub: string | null;
+  /** The title reads in ink-3: nothing is asked of the client ("Nothing to sign yet"). */
+  quiet?: boolean;
 }
 
-/** A to-do card's words from its kind, count and facts (the kind registry). */
-export function todoWords(todo: PortalHomeTodoOut, firstVisit: boolean): TodoWords | null {
+type Facts = Readonly<Record<string, string | number | boolean>>;
+
+const fact = (facts: Facts | undefined, key: string): string => String(facts?.[key] ?? "");
+
+/** A to-do card's words from its kind, count and facts (the kind registry). `day` formats a date
+ * fact on the scenario's clock. */
+export function todoWords(
+  todo: PortalHomeTodoOut,
+  firstVisit: boolean,
+  day: (iso: string) => string = (iso) => iso,
+): TodoWords | null {
   if (firstVisit && todo.state !== "none" && todo.detail != null) {
     return { title: todo.detail, sub: COPY.todo.firstVisit[todo.kind] ?? null };
   }
+  if (PLANNED_KINDS.has(todo.kind) && !PLANNED_VISIBLE) return null;
   const detail = todo.detail ?? null;
+  const facts = todo.facts;
   switch (todo.kind) {
-    case "upload":
-      return todo.count === 0 ? null : { title: COPY.todo.upload(todo.count), sub: detail };
+    case "upload": {
+      if (todo.count === 0) return null;
+      const month = facts?.close_month;
+      return {
+        title:
+          month === undefined
+            ? COPY.todo.upload(todo.count)
+            : COPY.todo.uploadForClose(todo.count, String(month)),
+        sub: detail,
+      };
+    }
     case "answer":
       return todo.count === 0 ? null : { title: COPY.todo.answer(todo.count), sub: detail };
-    case "sign":
-      return todo.state === "none" ? { ...COPY.todo.nothingToSign } : null;
+    case "sign": {
+      if (todo.state !== "none") return null;
+      const after = COPY.todo.nothingToSignAfter[fact(facts, "after")];
+      return {
+        ...COPY.todo.nothingToSign,
+        ...(after === undefined ? {} : { sub: after }),
+        quiet: true,
+      };
+    }
     case "deliverables":
       return todo.count === 0 ? null : { title: COPY.todo.ready(todo.count), sub: detail };
     case "approve":
-      return todo.state === "none" ? { ...COPY.todo.nothingToApprove } : null;
-    default:
-      // The other kinds (reconnect, statements review, control requests) are P-08-T23's.
-      return null;
+      return todo.state === "none" ? { ...COPY.todo.nothingToApprove, quiet: true } : null;
+    case "reconnect":
+      return todo.count === 0
+        ? null
+        : COPY.todo.reconnect(fact(facts, "institution"), fact(facts, "month"));
+    case "review_statements":
+      return todo.state === "none"
+        ? null
+        : COPY.todo.reviewStatements(
+            fact(facts, "fiscal_year"),
+            fact(facts, "shared_by"),
+            day(fact(facts, "shared_on")),
+          );
+    case "control_requests":
+      return todo.count === 0 ? null : COPY.todo.controlRequests(todo.count, fact(facts, "grc"));
+    case "exceptions":
+      return todo.count === 0 ? null : COPY.todo.exceptions(todo.count, fact(facts, "criteria"));
+    case "description_approved":
+      return {
+        ...COPY.todo.descriptionApproved(day(fact(facts, "approved_on"))),
+        quiet: true,
+      };
   }
 }
 
-function TodoCard({
-  todo,
-  firstVisit,
-  now,
-}: {
+interface ShownTodo {
   todo: PortalHomeTodoOut;
-  firstVisit: boolean;
-  now: Date;
-}): JSX.Element | null {
-  const words = todoWords(todo, firstVisit);
-  if (words === null) return null;
+  words: TodoWords;
+}
+
+function shownTodos(home: PortalHomeOut, day: (iso: string) => string): ShownTodo[] {
+  return (home.todos ?? []).flatMap((todo) => {
+    const words = todoWords(todo, home.first_visit, day);
+    return words === null ? [] : [{ todo, words }];
+  });
+}
+
+function TodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.Element {
+  const { todo, words } = shown;
   const link = todo.state === "none" ? undefined : goLink(todo);
   const overdue = todo.state === "overdue" && todo.due_date != null;
   return (
@@ -106,8 +203,16 @@ function TodoCard({
       data-todo={todo.kind}
       className="flex min-h-[116px] flex-col gap-[4px] rounded-pane bg-card p-[14px] shadow-e1"
     >
-      <span className="text-section font-medium">{words.title}</span>
-      {words.sub !== null && <span className="text-cell text-ink-2">{words.sub}</span>}
+      <span className="flex items-start gap-[8px]">
+        <Icon
+          name={COPY.todo.glyph[todo.kind]}
+          size={15}
+          className="mt-[2px] flex-none text-ink-2"
+        />
+        <span className={`text-section font-medium ${words.quiet === true ? "text-ink-3" : ""}`}>
+          {words.title}
+        </span>
+      </span>
       {overdue && todo.due_date != null && (
         <span>
           <StatusPill variant="red-tint">
@@ -115,6 +220,7 @@ function TodoCard({
           </StatusPill>
         </span>
       )}
+      {words.sub !== null && <span className="text-cell text-ink-2">{words.sub}</span>}
       {link !== undefined && (
         <span className="mt-auto text-cell font-medium text-ink" title={COPY.planned}>
           {link}
@@ -124,28 +230,92 @@ function TodoCard({
   );
 }
 
-function StageTracker({ card }: { card: PortalHomeWorkCardOut }): JSX.Element {
+/** T7-M's to-do card: 76 high, full width, glyph, title, line and a chevron when it leads on. */
+function MobileTodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.Element {
+  const { todo, words } = shown;
+  const link = todo.state === "none" ? undefined : goLink(todo);
+  const overdue = todo.state === "overdue" && todo.due_date != null;
+  return (
+    <li
+      data-todo={todo.kind}
+      className="flex min-h-[76px] items-center gap-[12px] rounded-pane bg-card px-[14px] py-[12px] shadow-e1"
+    >
+      <Icon name={COPY.todo.glyph[todo.kind]} size={15} className="flex-none text-ink-2" />
+      <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <span className={`text-section font-medium ${words.quiet === true ? "text-ink-3" : ""}`}>
+          {words.title}
+        </span>
+        {overdue && todo.due_date != null && (
+          <span>
+            <StatusPill variant="red-tint">
+              {COPY.todo.overdue(date(onDay(todo.due_date), { now, tz: TZ }))}
+            </StatusPill>
+          </span>
+        )}
+        {words.sub !== null && <span className="text-cell text-ink-2">{words.sub}</span>}
+      </span>
+      {link !== undefined && (
+        <Icon name="chevron-right" size={14} className="flex-none text-ink-3" />
+      )}
+    </li>
+  );
+}
+
+function StageTracker({
+  card,
+  vertical = false,
+}: {
+  card: PortalHomeWorkCardOut;
+  vertical?: boolean;
+}): JSX.Element {
   const stages = card.stages ?? [];
   return (
-    <ol aria-label={card.title} className="flex items-start gap-[8px]">
-      {stages.map((s) => (
-        <li
-          key={s.code}
-          {...(s.state === "current" ? { "aria-current": "step" as const } : {})}
-          className="flex min-w-0 flex-1 flex-col items-center gap-[6px] text-center"
-        >
-          <span className="flex items-center gap-[6px]">
-            <StatusDisc
-              state={s.state === "done" ? "done" : s.state === "current" ? "half" : "todo"}
-            />
-            <span className="sr-only">{COPY.stageState[s.state]}</span>
-          </span>
-          <span className={s.state === "upcoming" ? "text-cell text-ink-3" : "text-cell text-ink"}>
-            {COPY.stages[s.code]}
-          </span>
-        </li>
-      ))}
+    <ol
+      aria-label={card.title}
+      className={vertical ? "flex flex-col gap-[14px]" : "flex items-start gap-[8px]"}
+    >
+      {stages.map((s) => {
+        const done = s.facts?.done;
+        const total = s.facts?.total;
+        const tally =
+          typeof done === "number" && typeof total === "number"
+            ? COPY.stageCount(done, total)
+            : null;
+        return (
+          <li
+            key={s.code}
+            {...(s.state === "current" ? { "aria-current": "step" as const } : {})}
+            className={
+              vertical
+                ? "flex items-center gap-[10px]"
+                : "flex min-w-0 flex-1 flex-col items-center gap-[6px] text-center"
+            }
+          >
+            <span className="flex items-center gap-[6px]">
+              <StatusDisc
+                state={s.state === "done" ? "done" : s.state === "current" ? "half" : "todo"}
+              />
+              <span className="sr-only">{COPY.stageState[s.state]}</span>
+            </span>
+            <span
+              className={s.state === "upcoming" ? "text-cell text-ink-3" : "text-cell text-ink"}
+            >
+              {COPY.stages[s.code]}
+            </span>
+            {tally !== null && <span className="text-meta text-ink-3">{tally}</span>}
+          </li>
+        );
+      })}
     </ol>
+  );
+}
+
+function NoteRow({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <p className="flex items-start gap-[8px] rounded-nested bg-nested px-[12px] py-[10px] text-cell text-ink-2">
+      <Icon name="info" size={14} className="mt-[1px] flex-none text-ink-2" />
+      <span>{children}</span>
+    </p>
   );
 }
 
@@ -153,10 +323,12 @@ function WorkCard({
   card,
   firm,
   now,
+  mobile,
 }: {
   card: PortalHomeWorkCardOut;
   firm: string;
   now: Date;
+  mobile: boolean;
 }): JSX.Element {
   const note =
     card.note_code === "waiting_on_k1" && card.note_subject != null && card.note_date != null
@@ -168,32 +340,96 @@ function WorkCard({
       : card.note_code === "waiting_on_your_k1" && card.note_subject != null
         ? COPY.notes.waiting_on_your_k1(card.note_subject)
         : null;
+  const pill = (
+    <StatusPill
+      variant={
+        card.pill.variant === "success"
+          ? "green-tint"
+          : card.pill.variant === "state"
+            ? "amber"
+            : "neutral"
+      }
+    >
+      {COPY.pills[card.pill.code]}
+    </StatusPill>
+  );
   return (
     <section
       aria-label={card.title}
       data-work-card={card.kind}
       className="flex flex-col gap-[14px] rounded-pane bg-card p-[16px] shadow-e1"
     >
-      <div className="flex items-start gap-[10px]">
+      <div
+        className={mobile ? "flex flex-col items-start gap-[8px]" : "flex items-start gap-[10px]"}
+      >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-section font-medium">{card.title}</span>
           {card.sub != null && <span className="text-cell text-ink-3">{card.sub}</span>}
         </span>
-        <StatusPill
-          variant={
-            card.pill.variant === "success"
-              ? "green-tint"
-              : card.pill.variant === "state"
-                ? "amber"
-                : "neutral"
-          }
-        >
-          {COPY.pills[card.pill.code]}
-        </StatusPill>
+        {pill}
       </div>
-      {(card.stages ?? []).length > 0 && <StageTracker card={card} />}
-      {note !== null && <p className="text-cell text-ink-2">{note}</p>}
+      {(card.stages ?? []).length > 0 && <StageTracker card={card} vertical={mobile} />}
+      {note !== null && <NoteRow>{note}</NoteRow>}
     </section>
+  );
+}
+
+/** e: the K-1 packages the person receives, released or not. Nothing of the partnership's own
+ * return reaches this card (INV-4): a label, released, expected by. */
+function MyK1s({ home, now }: { home: PortalHomeOut; now: Date }): JSX.Element | null {
+  const k1s = home.my_k1s ?? [];
+  if (k1s.length === 0) return null;
+  return (
+    <section
+      aria-label={COPY.myK1s.title}
+      className="flex flex-col rounded-pane bg-card shadow-e1"
+    >
+      <h2 className="px-[16px] pt-[12px] pb-[10px] text-section font-medium">
+        {COPY.myK1s.title}
+      </h2>
+      <ul className="flex flex-col">
+        {k1s.map((k) => (
+          <li
+            key={k.k1_package_id}
+            className="flex min-h-[52px] items-center gap-[10px] px-[16px] py-[8px] hairline-t"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-body">{k.label}</span>
+              {!k.released && k.expected_by != null && (
+                <span className="text-cell text-ink-3">
+                  {COPY.myK1s.expected(date(onDay(k.expected_by), { now, tz: TZ }))}
+                </span>
+              )}
+            </span>
+            {!k.released && <StatusPill variant="neutral">{COPY.myK1s.notReleased}</StatusPill>}
+            {PLANNED_VISIBLE && (
+              <span title={COPY.planned} className="flex-none text-ink-3">
+                <Icon name="chevron-right" size={14} />
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Notices({ home, firm }: { home: PortalHomeOut; firm: string }): JSX.Element | null {
+  const notices = home.notices_info ?? [];
+  if (notices.length === 0) return null;
+  return (
+    <>
+      {notices.map((n) => (
+        <section
+          key={n.notice_id}
+          data-notice={n.code}
+          className="flex items-start gap-[8px] rounded-pane bg-card px-[16px] py-[12px] text-cell text-ink-2 shadow-e1"
+        >
+          <Icon name="info" size={14} className="mt-[1px] flex-none text-ink-2" />
+          <span>{COPY.notice[n.code](n.subject, firm)}</span>
+        </section>
+      ))}
+    </>
   );
 }
 
@@ -254,13 +490,25 @@ function Rail({ home }: { home: PortalHomeOut | undefined }): JSX.Element {
                 {COPY.rail.recent}
               </h2>
               {(home.recent_threads ?? []).map((t) => (
-                <div key={t.thread_id} className="flex flex-col px-[12px] py-[6px] hairline-b">
-                  <span className={t.unread ? "text-body font-medium" : "text-body"}>
-                    {t.subject}
+                <div
+                  key={t.thread_id}
+                  className="flex items-center gap-[8px] px-[12px] py-[6px] hairline-b"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className={t.unread ? "text-body font-medium" : "text-body"}>
+                      {t.subject}
+                    </span>
+                    <span className="text-meta text-ink-3">
+                      {`${t.from_name} · ${date(t.at, { now: new Date(t.at), tz: TZ })}`}
+                    </span>
                   </span>
-                  <span className="text-meta text-ink-3">
-                    {`${t.from_name} · ${date(t.at, { now: new Date(t.at), tz: TZ })}`}
-                  </span>
+                  {t.unread && (
+                    <span
+                      data-part="unread"
+                      aria-hidden="true"
+                      className="size-[8px] flex-none rounded-pill bg-amber"
+                    />
+                  )}
                 </div>
               ))}
             </section>
@@ -280,25 +528,49 @@ function Rail({ home }: { home: PortalHomeOut | undefined }): JSX.Element {
   );
 }
 
+/** T7-M's collapsed team: "4 people · Message Kevin" (the day-to-day contact's first name). */
+function MobileTeam({ home }: { home: PortalHomeOut }): JSX.Element | null {
+  const team = home.team ?? [];
+  if (team.length === 0) return null;
+  const contact = team.find((m) => DAY_TO_DAY.has(m.role_code));
+  const first = contact?.display_name.split(/\s+/)[0] ?? null;
+  return (
+    <section
+      aria-label={COPY.rail.title}
+      className="flex min-h-[64px] items-center gap-[12px] rounded-pane bg-card px-[14px] py-[12px] shadow-e1"
+    >
+      <Icon name="circle-user-round" size={15} className="flex-none text-ink-2" />
+      <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+        <span className="text-section font-medium">{COPY.rail.title}</span>
+        <span className="text-cell text-ink-2">{COPY.mobile.team(team.length, first)}</span>
+      </span>
+      <Icon name="chevron-right" size={14} className="flex-none text-ink-3" />
+    </section>
+  );
+}
+
 function Main({
   home,
   scopeId,
   firstName,
+  mobile,
 }: {
   home: PortalHomeOut;
   scopeId: string;
   firstName: string;
+  mobile: boolean;
 }): JSX.Element {
   const now = useNow();
   const brand = usePortalBrand();
   const firm = brand.portalName ?? brand.name;
   const dismiss = useDismissWelcome(scopeId);
   const [dismissed, setDismissed] = useState(false);
-  const todos = home.todos ?? [];
+  const day = (iso: string): string => date(onDay(iso), { now, tz: TZ });
+  const todos = shownTodos(home, day);
   const binder = home.binder;
   const showWelcome = home.first_visit && !home.welcome_dismissed && !dismissed;
   return (
-    <div className="flex flex-col gap-[14px] p-[18px]">
+    <div className={mobile ? "flex flex-col gap-[10px]" : "flex flex-col gap-[14px] p-[18px]"}>
       <header className="flex flex-col">
         <h1 className="text-title font-medium">{COPY.greeting(firstName)}</h1>
         <p className="text-body text-ink-3">{weekdayDate(now, { now, tz: TZ })}</p>
@@ -330,16 +602,30 @@ function Main({
           <p className="text-section font-medium">{COPY.allSet.title}</p>
           <p className="text-cell text-ink-2">{COPY.allSet.body}</p>
         </section>
-      ) : (
-        <ul aria-label={COPY.todo.label} className="grid grid-cols-4 gap-[10px]">
+      ) : mobile ? (
+        <ul aria-label={COPY.todo.label} className="flex flex-col gap-[10px]">
           {todos.map((t) => (
-            <TodoCard key={t.kind} todo={t} firstVisit={home.first_visit} now={now} />
+            <MobileTodoCard key={t.todo.kind} shown={t} now={now} />
+          ))}
+        </ul>
+      ) : (
+        <ul
+          aria-label={COPY.todo.label}
+          className="grid gap-[10px]"
+          style={{
+            gridTemplateColumns: `repeat(${String(Math.max(todos.length, 1))}, minmax(0, 1fr))`,
+          }}
+        >
+          {todos.map((t) => (
+            <TodoCard key={t.todo.kind} shown={t} now={now} />
           ))}
         </ul>
       )}
       {(home.work_cards ?? []).map((card) => (
-        <WorkCard key={card.work_item_id} card={card} firm={firm} now={now} />
+        <WorkCard key={card.work_item_id} card={card} firm={firm} now={now} mobile={mobile} />
       ))}
+      <MyK1s home={home} now={now} />
+      <Notices home={home} firm={firm} />
       {binder != null && (
         <section
           aria-label={COPY.binder.title}
@@ -398,17 +684,145 @@ function Main({
           </ul>
         </section>
       )}
+      {mobile && <MobileTeam home={home} />}
     </div>
   );
 }
 
-export function POR02({ scopeId, frame = false }: POR02Props): JSX.Element | null {
-  const bar = usePortalToolbar(scopeId);
-  const home = usePortalHome(scopeId);
+/** The user chip's menu (e): each scope the person holds with its role, then the account links
+ * and Sign out. A full-client scope switches the home; a K-1 recipient's scope opens POR-13 (My
+ * K-1s), planned: drawn disabled in fixture builds and left out in production (DEC-346). The
+ * account links (POR-12, POR-16, POR-10, Security) are planned too. */
+export function userMenuOf(
+  scopes: readonly MePortalScopeOut[],
+  current: string | null,
+  entity: boolean,
+  onScope: (scopeId: string) => void,
+  onSignOut: () => void,
+): PortalUserMenu {
+  const scopeItems: MenuItem[] = scopes.flatMap((s): MenuItem[] => {
+    const home = HOME_SCOPES.has(s.kind);
+    if (!home && !PLANNED_VISIBLE) return [];
+    return [
+      {
+        label: s.label,
+        hint: s.role_label,
+        checked: s.id === current,
+        ...(home
+          ? {
+              onSelect: () => {
+                onScope(s.id);
+              },
+            }
+          : { disabled: true, onSelect: () => undefined }),
+      },
+    ];
+  });
+  const planned: MenuItem[] = PLANNED_VISIBLE
+    ? [
+        COPY.userMenu.account,
+        ...(entity ? [COPY.userMenu.connections] : []),
+        COPY.userMenu.billing,
+        COPY.userMenu.security,
+      ].map((label) => ({ label, disabled: true, onSelect: () => undefined }))
+    : [];
+  return {
+    label: COPY.userMenu.label,
+    sections: [
+      ...(scopeItems.length > 0 ? [scopeItems] : []),
+      ...(planned.length > 0 ? [planned] : []),
+      [{ label: COPY.userMenu.signOut, icon: "log-out", onSelect: onSignOut }],
+    ],
+  };
+}
+
+/** The nav with T7-M's count badges: Documents (open uploads) and Messages (unread threads). */
+export function navWithCounts(
+  nav: readonly PortalNavItem[],
+  home: PortalHomeOut | undefined,
+): PortalNavItem[] {
+  if (home === undefined) return [...nav];
+  const uploads = (home.todos ?? [])
+    .filter((t) => t.kind === "upload" && t.state !== "none")
+    .reduce((n, t) => n + t.count, 0);
+  const unread = (home.recent_threads ?? []).filter((t) => t.unread).length;
+  const counts: Readonly<Record<string, number>> = {
+    Documents: uploads,
+    ...(PLANNED_VISIBLE ? { Messages: unread } : {}),
+  };
+  return nav.map((item) => {
+    const n = counts[item.label];
+    return n === undefined || n === 0
+      ? item
+      : { ...item, count: n, countLabel: COPY.todo.countLabel(item.label, n) };
+  });
+}
+
+export function POR02({
+  scopeId,
+  onScope,
+  mobile = false,
+  frame = false,
+}: POR02Props): JSX.Element | null {
+  const [picked, setPicked] = useState<string | null>(scopeId);
+  const bar = usePortalToolbar(picked);
+  const chosen = picked ?? bar?.scope?.id ?? null;
+  const home = usePortalHome(picked);
   if (bar === undefined) return null;
-  const chosen = scopeId ?? bar.scope?.id ?? null;
   const firstName = bar.user.split(/\s+/)[0] ?? bar.user;
   const data = home.data;
+  const userMenu = userMenuOf(
+    bar.scopes,
+    chosen,
+    bar.scope?.kind === "client_entity",
+    (id) => {
+      setPicked(id);
+      onScope?.(id);
+    },
+    () => {
+      void portalSignOut().finally(() => {
+        goToSignIn("/");
+      });
+    },
+  );
+  const body =
+    data === undefined || chosen === null ? (
+      home.isError ? (
+        <EmptyState
+          tone="error"
+          icon="circle-alert"
+          title={COPY.error.title}
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void home.refetch()}>
+              {COPY.error.retry}
+            </Button>
+          }
+        >
+          {COPY.error.body}
+        </EmptyState>
+      ) : (
+        <Loading />
+      )
+    ) : (
+      <Main home={data} scopeId={chosen} firstName={firstName} mobile={mobile} />
+    );
+  if (mobile) {
+    return (
+      <div data-screen="POR-02" className="flex min-h-0 flex-1 flex-col">
+        <PortalLayout
+          variant="mobile"
+          user={bar.user}
+          nav={navWithCounts(bar.nav, data)}
+          active="Home"
+          userMenu={userMenu}
+          frame={frame}
+          {...(frame ? { height: 844 } : {})}
+        >
+          {body}
+        </PortalLayout>
+      </div>
+    );
+  }
   return (
     <div data-screen="POR-02" className="flex min-h-0 flex-1 flex-col">
       <PortalLayout
@@ -416,32 +830,12 @@ export function POR02({ scopeId, frame = false }: POR02Props): JSX.Element | nul
         user={bar.user}
         nav={bar.nav}
         active="Home"
+        userMenu={userMenu}
         frame={frame}
         {...(frame ? { height: 860 } : {})}
         rail={<Rail home={data} />}
       >
-        <Pane header={false}>
-          {data === undefined || chosen === null ? (
-            home.isError ? (
-              <EmptyState
-                tone="error"
-                icon="circle-alert"
-                title={COPY.error.title}
-                action={
-                  <Button variant="secondary" size="sm" onClick={() => void home.refetch()}>
-                    {COPY.error.retry}
-                  </Button>
-                }
-              >
-                {COPY.error.body}
-              </EmptyState>
-            ) : (
-              <Loading />
-            )
-          ) : (
-            <Main home={data} scopeId={chosen} firstName={firstName} />
-          )}
-        </Pane>
+        <Pane header={false}>{body}</Pane>
       </PortalLayout>
     </div>
   );

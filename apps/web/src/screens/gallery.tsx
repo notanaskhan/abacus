@@ -71,6 +71,7 @@ import {
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
 import {
+  MOBILE_STATES as POR02_MOBILE,
   STATES as POR02_STATES,
   type Por02State,
   scenarios as por02Scenarios,
@@ -582,8 +583,8 @@ function Por01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("POR-01", { title: "Portal sign-in · Brightwater Hale", Component: Por01Artboard });
 
-// POR-02 (P-08-T15): the portal home, a, b, c and f; the portal draws it from its own entry, the
-// gallery from the fixture scenario.
+// POR-02 (P-08-T15, T23): the portal home, a–h and the 390 layout M; the portal draws it from its
+// own entry, the gallery from the fixture scenario.
 function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por02State = POR02_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -601,7 +602,7 @@ function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} data-surface="portal">
-      <PortalHome scopeId={null} frame />
+      <PortalHome scopeId={null} frame mobile={POR02_MOBILE.has(state)} />
     </div>
   );
 }

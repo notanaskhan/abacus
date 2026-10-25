@@ -121,7 +121,47 @@ function Area({ area }: { area: string }): JSX.Element | null {
     };
   }, [signedIn]);
   if (!signedIn) return null;
-  return area === "Home" ? <Home scopeId={null} /> : <Shell area={area} />;
+  return area === "Home" ? <HomePage /> : <Shell area={area} />;
+}
+
+/** The portal's 390 layout (T7-M, DEC-45) below 768 px wide (DEC-346). */
+export const PORTAL_MOBILE_QUERY = "(max-width: 767px)";
+
+function mediaQuery(): MediaQueryList | null {
+  return typeof window.matchMedia === "function" ? window.matchMedia(PORTAL_MOBILE_QUERY) : null;
+}
+
+function useMobileViewport(): boolean {
+  const [mobile, setMobile] = useState(() => mediaQuery()?.matches ?? false);
+  useEffect(() => {
+    const query = mediaQuery();
+    if (query === null) return undefined;
+    const on = (): void => {
+      setMobile(query.matches);
+    };
+    query.addEventListener("change", on);
+    return () => {
+      query.removeEventListener("change", on);
+    };
+  }, []);
+  return mobile;
+}
+
+/** POR-02 with `?scope=` (P-08 §5.1): the user menu's scope switch keeps the chosen scope in the
+ * address, so a reload opens the same home. */
+function HomePage(): JSX.Element {
+  const { history } = useRouter();
+  const mobile = useMobileViewport();
+  const [scope] = useState(() => new URLSearchParams(window.location.search).get("scope"));
+  return (
+    <Home
+      scopeId={scope}
+      mobile={mobile}
+      onScope={(id) => {
+        history.replace(`/?scope=${encodeURIComponent(id)}`);
+      }}
+    />
+  );
 }
 
 const page = (path: string, component: () => JSX.Element | null) =>

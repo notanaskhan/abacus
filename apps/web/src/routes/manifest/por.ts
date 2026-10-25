@@ -12,7 +12,7 @@ export const porScreens = {
     path: null,
     entry: true,
   },
-  // P-08-T15: a, b, c, f on fixtures at the portal root; d, e, g, h and M are P-08-T23's.
+  // P-08-T15: a, b, c, f on fixtures at the portal root; P-08-T23: d, e, g, h and M.
   "POR-02": { name: "Portal home · Feld household", status: "fixture", path: null },
   // R-01-T06: a, c, e, f, g and h render in the gallery on fixtures. The entry stays planned until
   // R-01-T10 mounts it at the portal's /documents and POR-02's "Go to Documents →" is wired to it

@@ -1,9 +1,10 @@
 // The portal's E0 rows (P-08-T08; docs/contracts/portal-identity.md §8; POR-01 and POR-02 screen
 // contracts): Brightwater Hale's branding, each portal persona's `/v1/me` portal shell, and the
 // POR-02 homes a (Claire Feld), b (her first visit, Feb 2), c (all set), d (Tess Moreno, Copperleaf,
-// overdue) and e (Meera Shah's role union). Names and figures are the handoff's and the blueprint's;
-// typed with the generated client so a schema change breaks the build. g and h (R2 waves 6 and 7:
-// Granite Peak statements review, Tessellate SOC 2) arrive with their epochs.
+// overdue), e (Meera Shah's role union), and P-08-T23's g (Luis Ferrante, Granite Peak's statements
+// review, Thu Oct 22) and h (Marisol Vega, Tessellate's SOC 2), the R2 frames fixture-only behind the
+// `statements_studio` and `attest` entitlements. Names and figures are the handoff's and the
+// blueprint's; typed with the generated client so a schema change breaks the build.
 
 import type { MePortalOut, PortalHomeOut, PortalHomeWorkCardOut } from "@abacus/api-client";
 import type { PortalBrandingOut } from "../../app-core/portal-contracts";
@@ -65,7 +66,19 @@ export const SCOPE_IDS = {
   copperleaf: id("scope:copperleaf"),
   meera: id("scope:meera-shah"),
   ridgelineK1: id("scope:ridgeline-k1-meera"),
+  granitePeak: id("scope:granite-peak"),
+  tessellate: id("scope:tessellate"),
 } as const;
+
+const ENTITY_NAV: MePortalOut["nav"] = [
+  "home",
+  "documents",
+  "questions",
+  "approvals",
+  "sign",
+  "messages",
+  "deliverables",
+];
 
 const FULL_NAV: MePortalOut["nav"] = [
   "home",
@@ -111,6 +124,33 @@ export const PORTAL_SHELLS: Readonly<Record<string, MePortalOut>> = {
       },
     ],
     nav: FULL_NAV,
+    landing: "home",
+  },
+  // P-08-T23: POR-02 g and h (owners of entity clients: Approvals in the nav).
+  "luis-ferrante": {
+    shell: "full",
+    scopes: [
+      {
+        kind: "client_entity",
+        id: SCOPE_IDS.granitePeak,
+        label: "Granite Peak Outdoor Supply, Inc.",
+        role_label: "Owner",
+      },
+    ],
+    nav: ENTITY_NAV,
+    landing: "home",
+  },
+  "marisol-vega": {
+    shell: "full",
+    scopes: [
+      {
+        kind: "client_entity",
+        id: SCOPE_IDS.tessellate,
+        label: "Tessellate Health Cloud, Inc.",
+        role_label: "Owner",
+      },
+    ],
+    nav: ENTITY_NAV,
     landing: "home",
   },
   "sam-ortiz": {
@@ -276,7 +316,22 @@ export function claireHome(openUploads: number): PortalHomeOut {
       { kind: "engagement_letter_signed", date: "2026-02-02" },
       { kind: "return_filed", facts: { tax_year: 2024, form: "1040" } },
     ],
-    recent_threads: [],
+    recent_threads: [
+      {
+        thread_id: id("thread:feld-digital-assets"),
+        subject: "A question about digital assets",
+        from_name: "Kevin Osei",
+        at: "2026-09-11T15:10:00Z",
+        unread: true,
+      },
+      {
+        thread_id: id("thread:feld-what-next"),
+        subject: "Your 2025 return — what happens next",
+        from_name: "Grace Holloway",
+        at: "2026-09-01T15:00:00Z",
+        unread: false,
+      },
+    ],
     first_visit: false,
     welcome_dismissed: true,
     all_done: false,
@@ -359,7 +414,7 @@ export function tessHome(): PortalHomeOut {
       kind: "client_entity",
       id: SCOPE_IDS.copperleaf,
       label: "Copperleaf Coffee Roasters, Inc.",
-      sub: "S corporation · Denver, CO",
+      sub: "S corporation · Colorado",
       role_label: "Owner",
     },
     todos: [
@@ -369,10 +424,23 @@ export function tessHome(): PortalHomeOut {
         state: "overdue",
         due_date: "2026-09-05",
         detail: "Requested by Raj Malhotra for your August books.",
+        facts: { close_month: "August" },
         target: { screen: "POR-11", params: {} },
       },
-      { kind: "answer", count: 3, state: "open", target: { screen: "POR-05", params: {} } },
-      { kind: "reconnect", count: 1, state: "open", detail: "American Express" },
+      {
+        kind: "answer",
+        count: 3,
+        state: "open",
+        detail: "About August transactions, from Raj Malhotra",
+        target: { screen: "POR-11", params: {} },
+      },
+      {
+        kind: "reconnect",
+        count: 1,
+        state: "open",
+        facts: { institution: "American Express", month: "August" },
+        target: { screen: "POR-16", params: {} },
+      },
       { kind: "approve", count: 0, state: "none" },
     ],
     work_cards: [
@@ -397,7 +465,31 @@ export function tessHome(): PortalHomeOut {
         work_item_id: id("work-item:copperleaf-1120s-2025"),
         kind: "tax_return",
         title: "TY2025 Form 1120-S",
+        sub: "2025 S corporation return",
         pill: { code: "filed_and_accepted", variant: "success" },
+      },
+    ],
+    notices_info: [
+      {
+        notice_id: id("notice:copperleaf-co-withholding-2025"),
+        code: "agency_notice_in_review",
+        subject: "Colorado Department of Revenue notice (2025 withholding)",
+      },
+    ],
+    recent_threads: [
+      {
+        thread_id: id("thread:copperleaf-august-questions"),
+        subject: "Questions about August transactions",
+        from_name: "Raj Malhotra",
+        at: "2026-09-11T16:00:00Z",
+        unread: true,
+      },
+      {
+        thread_id: id("thread:copperleaf-reconnect-amex"),
+        subject: "Reconnect your American Express card",
+        from_name: "Raj Malhotra",
+        at: "2026-09-08T16:00:00Z",
+        unread: false,
       },
     ],
     team: [
@@ -429,12 +521,36 @@ export function meeraHome(): PortalHomeOut {
       sub: "Individual",
       role_label: "Taxpayer",
     },
+    todos: [
+      {
+        kind: "upload",
+        count: 1,
+        state: "open",
+        detail: "Your 2025 business mileage log for your consulting work (Schedule C)",
+        target: { screen: "POR-03", params: {} },
+      },
+      {
+        kind: "answer",
+        count: 1,
+        state: "open",
+        detail: "From Lena Park",
+        target: { screen: "POR-05", params: {} },
+      },
+    ],
     work_cards: [
       {
         work_item_id: id("work-item:meera-1040-2025"),
         kind: "tax_return",
         title: "2025 Tax Return · Form 1040",
+        sub: "Extended to Oct 15, 2026",
         pill: { code: "preparing_return", variant: "state" },
+        stages: [
+          { code: "gather_documents", state: "done" },
+          { code: "prepare", state: "current" },
+          { code: "review", state: "upcoming" },
+          { code: "sign_form_8879", state: "upcoming" },
+          { code: "file", state: "upcoming" },
+        ],
         note_code: "waiting_on_your_k1",
         note_subject: "Ridgeline Property Partners, LP",
       },
@@ -458,6 +574,170 @@ export function meeraHome(): PortalHomeOut {
         user_id: stableId("user:grace-holloway"),
         display_name: "Grace Holloway",
         role_code: "client_service",
+      },
+    ],
+    recent_threads: [
+      {
+        thread_id: id("thread:meera-one-question"),
+        subject: "One question about your 2025 return",
+        from_name: "Lena Park",
+        at: "2026-09-11T17:00:00Z",
+        unread: true,
+      },
+    ],
+    first_visit: false,
+    welcome_dismissed: true,
+    all_done: false,
+  };
+}
+
+/** Thu Oct 22, 2026, 8:30 AM CT: POR-02 g, the morning after Hannah Leclerc shared the draft
+ * FY2026 statements for co-review (J21: Oct 21, 4:30 PM; Luis's co-review follows on Oct 23). */
+export const STATEMENTS_REVIEW_CLOCK = "2026-10-22T08:30:00-05:00";
+
+/** POR-02 g: Luis Ferrante, Granite Peak (R2 wave 6; the `statements_studio` entitlement). */
+export function luisHome(): PortalHomeOut {
+  return {
+    scope: {
+      kind: "client_entity",
+      id: SCOPE_IDS.granitePeak,
+      label: "Granite Peak Outdoor Supply, Inc.",
+      sub: "C corporation · Colorado",
+      role_label: "Owner",
+    },
+    todos: [
+      {
+        kind: "review_statements",
+        count: 1,
+        state: "open",
+        facts: { fiscal_year: "FY2026", shared_by: "Hannah Leclerc", shared_on: "2026-10-21" },
+        target: { screen: "POR-09", params: {} },
+      },
+      { kind: "sign", count: 0, state: "none", facts: { after: "representation_letter" } },
+    ],
+    work_cards: [
+      {
+        work_item_id: id("work-item:granite-peak-fs-audit-fy2026"),
+        kind: "financial_statement_audit",
+        title: "FY2026 Financial Statement Audit",
+        sub: "Year ended Jun 30, 2026",
+        pill: { code: "finishing_audit", variant: "state" },
+        stages: [
+          { code: "planning", state: "done" },
+          { code: "fieldwork", state: "done" },
+          { code: "statements_review", state: "current" },
+          { code: "report", state: "upcoming" },
+        ],
+      },
+    ],
+    team: [
+      {
+        user_id: stableId("user:margaret-okonkwo"),
+        display_name: "Margaret Okonkwo",
+        role_code: "engagement_partner",
+      },
+      {
+        user_id: stableId("user:hannah-leclerc"),
+        display_name: "Hannah Leclerc",
+        role_code: "manager",
+      },
+      {
+        user_id: stableId("user:simone-baptiste"),
+        display_name: "Simone Baptiste",
+        role_code: "day_to_day_contact",
+      },
+    ],
+    recent_threads: [
+      {
+        thread_id: id("thread:granite-peak-draft-statements"),
+        subject: "Your draft FY2026 statements",
+        from_name: "Hannah Leclerc",
+        at: "2026-10-21T21:30:00Z",
+        unread: true,
+      },
+    ],
+    first_visit: false,
+    welcome_dismissed: true,
+    all_done: false,
+  };
+}
+
+/** Tessellate's SOC 2 figures on the portal (blueprint 01 §9.5): open control requests, the
+ * exceptions to answer and the day the system description was approved. */
+export const TESSELLATE_SOC = {
+  openRequests: 26,
+  exceptions: ["CC6.2", "CC8.1", "A1.2"],
+  descriptionApproved: "2026-09-12",
+} as const;
+
+/** POR-02 h: Marisol Vega, Tessellate (R2 wave 7; the `attest` entitlement). */
+export function marisolHome(): PortalHomeOut {
+  return {
+    scope: {
+      kind: "client_entity",
+      id: SCOPE_IDS.tessellate,
+      label: "Tessellate Health Cloud, Inc.",
+      sub: "Service organization · Denver, CO",
+      role_label: "Owner",
+    },
+    todos: [
+      {
+        kind: "control_requests",
+        count: TESSELLATE_SOC.openRequests,
+        state: "open",
+        facts: { grc: "Drata" },
+        target: { screen: "POR-21", params: {} },
+      },
+      {
+        kind: "exceptions",
+        count: TESSELLATE_SOC.exceptions.length,
+        state: "open",
+        facts: { criteria: TESSELLATE_SOC.exceptions.join(" · ") },
+        target: { screen: "POR-21", params: {} },
+      },
+      {
+        kind: "description_approved",
+        count: 0,
+        state: "none",
+        facts: { approved_on: TESSELLATE_SOC.descriptionApproved },
+      },
+    ],
+    work_cards: [
+      {
+        work_item_id: id("work-item:tessellate-soc2-2026"),
+        kind: "soc2",
+        title: "SOC 2 Type 2 · Oct 1, 2025 – Sep 30, 2026",
+        sub: "Security · Availability · Confidentiality",
+        pill: { code: "testing_under_way", variant: "state" },
+        stages: [
+          { code: "scoping", state: "done" },
+          { code: "system_description", state: "done" },
+          { code: "testing", state: "current" },
+          { code: "exceptions", state: "upcoming" },
+          { code: "report", state: "upcoming" },
+        ],
+      },
+    ],
+    team: [
+      {
+        user_id: stableId("user:celia-marsh"),
+        display_name: "Celia Marsh",
+        role_code: "engagement_partner",
+      },
+      { user_id: stableId("user:laura-kemp"), display_name: "Laura Kemp", role_code: "manager" },
+      {
+        user_id: stableId("user:jasper-bell"),
+        display_name: "Jasper Bell",
+        role_code: "day_to_day_contact",
+      },
+    ],
+    recent_threads: [
+      {
+        thread_id: id("thread:tessellate-exceptions"),
+        subject: "Exceptions from testing",
+        from_name: "Laura Kemp",
+        at: "2026-09-14T14:00:00Z",
+        unread: true,
       },
     ],
     first_visit: false,

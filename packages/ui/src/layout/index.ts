@@ -43,6 +43,7 @@ export {
   PortalFooter,
   type PortalNavItem,
   PortalToolbar,
+  type PortalUserMenu,
   type PortalToolbarProps,
 } from "./portal-toolbar";
 export {
