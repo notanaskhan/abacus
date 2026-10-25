@@ -33,6 +33,7 @@ from sqlalchemy import (
     select,
     text,
     union,
+    update,
 )
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.engine import Row, RowMapping

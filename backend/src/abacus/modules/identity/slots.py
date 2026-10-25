@@ -339,6 +339,8 @@ async def target_events(
     if not _TARGET_EVENTS:
         return []
     return await _TARGET_EVENTS[0](tenant, kind, target_id, before_seq, limit)
+
+
 # --- P-08-T21: a portal email's secure link at sign-in (communications owns the links) ---------
 
 LinkOutcome = Literal["bad", "other", "claimed"]

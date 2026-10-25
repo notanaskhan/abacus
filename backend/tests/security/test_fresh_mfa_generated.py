@@ -20,12 +20,13 @@ from .route_checks import app
 
 CASES: tuple[tuple[str, str, str], ...] = (
     ("wall.create", "wall", "firm_admin"),
-    ("wall.remove", "wall", "firm_admin"),
+    ("wall.remove", "wall", "firm_partner"),
     ("wall.approve", "wall", "firm_partner"),
     ("autonomy_policy.update", "ai_policy", "firm_admin"),
     ("firm_agents.pause", "ai_policy", "firm_admin"),
     ("export.create", "export", "engagement_partner"),
     ("run_trace.export", "export", "engagement_partner"),
+    ("trial_balance.export", "export", "engagement_partner"),
     ("firm_export.request", "export", "security_admin"),
     ("firm_export.approve", "export", "security_admin"),
     ("firm_export.download", "export", "security_admin"),
@@ -33,6 +34,9 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("legal_hold.lift", "legal_hold", "firm_admin"),
     ("retention_policy.update", "legal_hold", "firm_admin"),
     ("acceptance.record", "independence", "engagement_partner"),
+    ("acceptance.decide", "independence", "engagement_partner"),
+    ("independence.conclude", "independence", "engagement_partner"),
+    ("team.approve", "team", "engagement_partner"),
     ("firm.ai_client_data", "data_boundary", "firm_admin"),
     ("tin.reveal", "reveal", "engagement_partner"),
     ("pii.reveal", "reveal", "engagement_partner"),
@@ -41,6 +45,11 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("security_role.assign", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
+    (
+        "GET",
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx",
+        "trial_balance.export",
+    ),
     ("GET", "/v1/firm/clients", "wall.create"),
     ("GET", "/v1/firm/members", "wall.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
@@ -49,7 +58,10 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),
     ("POST", "/v1/contacts/{contact_id}/unlock", "contact.unlock"),
+    ("POST", "/v1/engagements/{engagement_id}/acceptance/decision", "acceptance.decide"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/file", "acceptance.record"),
+    ("POST", "/v1/engagements/{engagement_id}/independence/conclude", "independence.conclude"),
+    ("POST", "/v1/engagements/{engagement_id}/team/approve", "team.approve"),
     ("POST", "/v1/evidence-versions/{version_id}/pii-reveals", "pii.reveal"),
     ("POST", "/v1/firm/agents/pause", "firm_agents.pause"),
     ("POST", "/v1/firm/agents/resume", "firm_agents.pause"),

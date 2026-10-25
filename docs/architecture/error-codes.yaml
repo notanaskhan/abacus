@@ -1107,7 +1107,6 @@ codes:
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
-    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
     summary: 'The team changed since it was read: read it again and approve what is there now.'
   statement_already_approved:
     status: 409

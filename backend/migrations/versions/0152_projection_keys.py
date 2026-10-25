@@ -15,7 +15,7 @@ No data changes: both tables are new enough that no duplicates exist (the projec
 detector are first written in this release).
 
 Revision ID: 0152
-Revises: 0146
+Revises: 0151
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0152"
-down_revision = "0146"
+down_revision = "0151"
 branch_labels = None
 depends_on = None
 
