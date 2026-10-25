@@ -6,7 +6,7 @@
   insert grant gains the column.
 
 Revision ID: 0157
-Revises: 0146
+Revises: 0156
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns
 
 revision = "0157"
-down_revision = "0146"
+down_revision = "0156"
 branch_labels = None
 depends_on = None
 

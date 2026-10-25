@@ -25,7 +25,7 @@
   exactly 0135's list.
 
 Revision ID: 0155
-Revises: 0146
+Revises: 0154
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0155"
-down_revision = "0146"
+down_revision = "0154"
 branch_labels = None
 depends_on = None
 

@@ -38,7 +38,7 @@ Security review (DEC-324):
 The downgrade refuses while any `request_batch` row exists.
 
 Revision ID: 0154
-Revises: 0146
+Revises: 0151
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0154"
-down_revision = "0146"
+down_revision = "0151"
 branch_labels = None
 depends_on = None
 

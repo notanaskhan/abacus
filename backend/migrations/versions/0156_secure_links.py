@@ -21,8 +21,9 @@
   codes: those are the person's, one across firms (DEC-250), reset only by the person
   (POR-12) or platform support, and the answer is the same whatever other firms exist
   (DEC-329). Unlock clears only the firm's sign-in lock (0146's `portal_sign_in_unlock`).
-- `abacus_human_only_actions()`: origin's 28 entries (0135) plus `portal_mfa.reset` and
-  `contact.unlocked`; the downgrade restores the 28.
+- `abacus_human_only_actions()`: 0155's 30 entries (0135's 28 plus `team.approved` and
+  `eqr.eligibility_approved`) plus `portal_mfa.reset` and
+  `contact.unlocked`; the downgrade restores 0155's 30.
 - `client_invitations.renewal_count` becomes updatable by the app (a recipient's renewal, at most
   twice: the column's CHECK).
 - ADR-157's one spelling: the `portal_sign_in_disabled` control becomes `portal_sign_in` (the
@@ -30,7 +31,7 @@
   history keeps its old rows, so its CHECK allows both.
 
 Revision ID: 0156
-Revises: 0146
+Revises: 0155
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0156"
-down_revision = "0146"
+down_revision = "0155"
 branch_labels = None
 depends_on = None
 
@@ -93,7 +94,9 @@ _HUMAN_ONLY_0135 = sorted(
     ]
 )
 # P-08-T21: resetting a client's second step and clearing their lock are a person's acts.
-_HUMAN_ONLY = sorted([*_HUMAN_ONLY_0135, "contact.unlocked", "portal_mfa.reset"])
+# 0155 (P-07-T30) added these two before this migration in the chain (S8 wave A assembly).
+_HUMAN_ONLY_0155 = sorted([*_HUMAN_ONLY_0135, "team.approved", "eqr.eligibility_approved"])
+_HUMAN_ONLY = sorted([*_HUMAN_ONLY_0155, "contact.unlocked", "portal_mfa.reset"])
 
 
 def _human_only(actions: list[str]) -> None:
@@ -299,7 +302,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    _human_only(_HUMAN_ONLY_0135)
+    _human_only(_HUMAN_ONLY_0155)
     _controls_check("platform_controls", _CONTROLS_HISTORY)
     op.execute(
         "UPDATE platform_controls SET control = 'portal_sign_in_disabled' "
