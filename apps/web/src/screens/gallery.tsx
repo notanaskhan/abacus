@@ -663,7 +663,7 @@ function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("SHL-07", { title: "Citation popover", Component: Shl07Artboard });
 
-// SHL-08 (P-03-T07): the source viewer's fixtures, a–f and h, on the E5 shell until P-03-T14.
+// SHL-08 (P-03-T07, T14): the source viewer on its two hosts, a–f and h.
 function Shl08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Shl08State = SHL08_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);

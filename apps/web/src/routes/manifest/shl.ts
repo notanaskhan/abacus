@@ -25,6 +25,8 @@ export const shlScreens = {
   // the area tree, reached only by redirect); a–f are the hosted provider's pages.
   "SHL-06": { name: "Firm sign-in", status: "live", path: null, entry: true },
   "SHL-07": { name: "Citation popover", status: "planned", path: null },
+  // P-03-T14 built a, b, e, f, h (`?ov=viewer:…` and the dock pane); it turns `fixture` with
+  // P-03-T19, whose d state wires the designed SHL-08 → SHL-14 "Ask …" link (link rule 1).
   "SHL-08": { name: "Source viewer · drawer and pane", status: "planned", path: null },
   "SHL-09": { name: "Field provenance popover", status: "planned", path: null },
   "SHL-10": { name: "Approve agent output", status: "planned", path: null },

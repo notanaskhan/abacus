@@ -1,4 +1,4 @@
-import { type JSX, type ReactNode, useId, useRef, useState } from "react";
+import { type JSX, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { cn } from "../cn";
 import { Menu, type MenuItem } from "../components/popover";
 import { Skeleton } from "../components/states";
@@ -34,6 +34,21 @@ export const VIEWER_ZOOM = { min: 0.5, max: 2, step: 0.25 } as const;
 /** Room a linked figure tag needs on a region's right before it flips left (C-08). */
 export const TAG_ROOM_PX = 170;
 
+/** Where a lit region comes to rest when the viewer scrolls to it: 30% from the well's top (SHL-08
+ * interactions; P-03 AC3.1). */
+export const LIT_AT = 0.3;
+
+/** The well's scrollTop that puts a region whose top is `regionTop` (viewport px) at `LIT_AT` of the
+ * well's height, given the well's own top and height and its current scrollTop. Never negative. */
+export function litScrollTop(
+  scrollTop: number,
+  wellTop: number,
+  wellHeight: number,
+  regionTop: number,
+): number {
+  return Math.max(0, Math.round(scrollTop + (regionTop - wellTop) - LIT_AT * wellHeight));
+}
+
 /** Only the server's page images: a same-origin path, a blob, or a PNG data URL (fixtures). */
 export function pageSrcAllowed(src: string): boolean {
   if (src.startsWith("/") && !src.startsWith("//")) return true;
@@ -66,6 +81,24 @@ export interface SourceViewerProps {
   /** A fixed height for the shell, px; it fills its parent otherwise. */
   height?: number;
   className?: string;
+  /** The full variant's centred name header. A host that draws the name itself (the O2 drawer's
+   * own header) turns it off. */
+  header?: boolean;
+  /** Skeleton pages while loading: 2 by default, 3 for SHL-08e. */
+  skeletons?: number;
+  /** Auto-highlight cited fields (SHL-08h): every region marked `cited` carries a 1px match-line
+   * outline with no fill until it is lit. */
+  outlineCited?: boolean;
+  /** Scroll the well so the lit region sits `LIT_AT` from its top, and move the page count to its
+   * page (SHL-08: a match lit from outside the viewer, or by a figure row). */
+  scrollToLit?: boolean;
+  /** The multi-source stack motif: page edges peek 6px (and 12px) under the page holding this
+   * match's region, each with a match-mark band level with the region. */
+  stack?: { match: MatchId; edges: 1 | 2 };
+  /** Above the well, under the bar (the SHL-08 linked-figure card). */
+  aboveWell?: ReactNode;
+  /** In the well, after the pages (the SHL-08 "Also cited" caption). */
+  afterPages?: ReactNode;
 }
 
 // ---- Toolbar ----------------------------------------------------------------------------------------
@@ -182,11 +215,13 @@ function Region({
   page,
   widthPx,
   zoom,
+  outline,
 }: {
   region: ViewerRegion;
   page: ViewerPage;
   widthPx: number;
   zoom: number;
+  outline: boolean;
 }): JSX.Element {
   const { bind, lit, pin } = useMatch(region.match, "region");
   return (
@@ -198,6 +233,7 @@ function Region({
           {...bind}
           data-match-kind="region"
           {...(region.band === true ? { "data-band": "" } : {})}
+          {...(outline && region.cited === true && !lit ? { "data-outlined": "" } : {})}
           onClick={(e) => {
             pin(e.currentTarget);
           }}
@@ -207,6 +243,7 @@ function Region({
             region.band === true
               ? "transition-[background-color,box-shadow] duration-[360ms] ease-out data-[lit]:bg-match-soft data-[lit]:shadow-[inset_0_1px_0_var(--color-match-line),inset_0_-1px_0_var(--color-match-line)]"
               : cn(MATCH_REGION, "rounded-[2px]"),
+            "data-[outlined]:inset-ring-1 data-[outlined]:inset-ring-match-line",
           )}
         />
       ))}
@@ -274,6 +311,8 @@ function Page({
   zoom,
   rotation,
   reveal,
+  outline,
+  stack,
 }: {
   page: ViewerPage;
   total: number;
@@ -282,12 +321,21 @@ function Page({
   zoom: number;
   rotation: number;
   reveal: RevealSlot | undefined;
+  outline: boolean;
+  stack: { match: MatchId; edges: 1 | 2 } | undefined;
 }): JSX.Element {
-  const ok = pageSrcAllowed(page.src);
+  // A page whose image is still on its way ("") is drawn blank with its regions: the geometry is
+  // the manifest's, so a lit region can be scrolled to before the image arrives.
+  const pending = page.src === "";
+  const ok = pending || pageSrcAllowed(page.src);
   const w = widthPx * zoom;
   const h = (w * page.height_pt) / page.width_pt;
   const turn = (page.rotation + rotation) % 360;
-  return (
+  const anchor =
+    stack === undefined
+      ? undefined
+      : file.regions.find((r) => r.page === page.n && r.match === stack.match)?.rects[0];
+  const sheet = (
     <div
       data-page={page.n}
       style={{
@@ -297,7 +345,7 @@ function Page({
       }}
       className="relative flex-none bg-card shadow-page"
     >
-      {ok ? (
+      {pending ? null : ok ? (
         <img
           src={page.src}
           alt={`Page ${String(page.n)} of ${String(total)}`}
@@ -318,11 +366,45 @@ function Page({
       {ok &&
         file.regions
           .filter((r) => r.page === page.n)
-          .map((r) => <Region key={r.match} region={r} page={page} widthPx={w} zoom={zoom} />)}
+          .map((r) => (
+            <Region
+              key={r.match}
+              region={r}
+              page={page}
+              widthPx={w}
+              zoom={zoom}
+              outline={outline}
+            />
+          ))}
       {ok &&
         (file.masks ?? [])
           .filter((m) => m.page === page.n)
           .map((m) => <Mask key={m.id} mask={m} page={page} reveal={reveal} />)}
+    </div>
+  );
+  if (anchor === undefined || stack === undefined) return sheet;
+  const band = box(anchor, page);
+  return (
+    <div
+      data-stack={stack.edges}
+      style={{ width: w + 6 * stack.edges, height: h + 6 * stack.edges }}
+      className="relative flex-none"
+    >
+      {Array.from({ length: stack.edges }, (_, i) => stack.edges - i).map((k) => (
+        <span
+          key={k}
+          aria-hidden="true"
+          data-stack-edge={k}
+          style={{ top: 6 * k, left: 6 * k, width: w, height: h }}
+          className="absolute overflow-hidden bg-card shadow-page"
+        >
+          <span
+            style={{ top: band.top, height: band.height }}
+            className="absolute inset-x-0 bg-match-mark"
+          />
+        </span>
+      ))}
+      <div className="absolute top-0 left-0">{sheet}</div>
     </div>
   );
 }
@@ -359,6 +441,13 @@ export function SourceViewer({
   pageWidth,
   height,
   className,
+  header = true,
+  skeletons = 2,
+  outlineCited = false,
+  scrollToLit = false,
+  stack,
+  aboveWell,
+  afterPages,
 }: SourceViewerProps): JSX.Element {
   const evidence = variant === "evidence";
   const widthPx = pageWidth ?? (evidence ? 400 : 600);
@@ -372,6 +461,30 @@ export function SourceViewer({
   const state = useMatchState();
   const total = file.pages.length;
   const ready = status === "ready" && !loading;
+
+  // Scroll the lit region to LIT_AT once per match and per set of page images (the regions are
+  // drawn as soon as the manifest is, so this runs before the images arrive).
+  const litPage = file.regions.find((r) => r.match === state.id)?.page;
+  const scrolled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!scrollToLit || state.id === null || litPage === undefined || !ready) return;
+    const key = `${state.id}@${String(zoom)}`;
+    if (scrolled.current === key) return;
+    const el = well.current;
+    const target = Array.from(
+      el?.querySelectorAll<HTMLElement>('[data-match-kind="region"]') ?? [],
+    ).find((r) => r.getAttribute("data-match") === state.id);
+    if (el === null || target === undefined) return;
+    scrolled.current = key;
+    setAt(litPage);
+    const frame = el.getBoundingClientRect();
+    el.scrollTop = litScrollTop(
+      el.scrollTop,
+      frame.top,
+      el.clientHeight,
+      target.getBoundingClientRect().top,
+    );
+  }, [scrollToLit, state.id, litPage, ready, zoom]);
 
   const zoomBy = (d: number): void => {
     setZoom((z) =>
@@ -451,12 +564,14 @@ export function SourceViewer({
     </div>
   ) : (
     <>
-      <div className="relative flex h-[46px] flex-none items-center justify-center gap-[6px] px-[40px] hairline-b">
-        <h2 className="max-w-[70%] truncate text-pane font-medium tracking-[-0.012em]">
-          {file.name}
-        </h2>
-        {menu !== undefined && menu.length > 0 && <MoreMenu items={menu} label={menuLabel} />}
-      </div>
+      {header && (
+        <div className="relative flex h-[46px] flex-none items-center justify-center gap-[6px] px-[40px] hairline-b">
+          <h2 className="max-w-[70%] truncate text-pane font-medium tracking-[-0.012em]">
+            {file.name}
+          </h2>
+          {menu !== undefined && menu.length > 0 && <MoreMenu items={menu} label={menuLabel} />}
+        </div>
+      )}
       <div
         data-viewer-bar="full"
         role="toolbar"
@@ -542,6 +657,7 @@ export function SourceViewer({
       )}
     >
       {bar}
+      {aboveWell}
       {!ready && !loading ? (
         <StatusPane status={status} />
       ) : (
@@ -560,7 +676,7 @@ export function SourceViewer({
           )}
         >
           {loading
-            ? [0, 1].map((i) => (
+            ? Array.from({ length: skeletons }, (_, i) => i).map((i) => (
                 <Skeleton
                   key={i}
                   immediate
@@ -578,8 +694,11 @@ export function SourceViewer({
                   zoom={zoom}
                   rotation={rotation}
                   reveal={reveal}
+                  outline={outlineCited}
+                  stack={stack}
                 />
               ))}
+          {!loading && afterPages}
         </div>
       )}
     </section>

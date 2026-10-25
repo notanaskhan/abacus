@@ -34,6 +34,9 @@ export interface ViewerRegion {
   linkedFigure?: LinkedFigure;
   /** A statement row: lit as a band with the ring on its top and bottom edges only. */
   band?: boolean;
+  /** A record the viewer can see cites this region (C4 `citation_id`): auto-highlight outlines it
+   * (SHL-08h). */
+  cited?: boolean;
 }
 
 export interface ViewerMask {
