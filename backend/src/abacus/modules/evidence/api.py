@@ -139,6 +139,7 @@ from abacus.modules.evidence.storage import (
     ContentTooLarge,
     IntegrityError,
     check_ready,
+    configure_storage,
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.upload_facts import upload_facts
@@ -308,6 +309,7 @@ __all__ = [
     "citation_cell_text",
     "client_pre_checks",
     "column_letters",
+    "configure_storage",
     "decided_among",
     "decisions_on_screenings",
     "drop_batch",
