@@ -177,6 +177,8 @@ describe("the engagements index over the seed", () => {
     const tiles = Object.values(all.counts ?? {}).reduce((sum, n) => sum + n, 0);
     expect(segments).toBe(all.total);
     expect(tiles).toBe(all.total);
-    expect(all.total).toBe(275); // ENG-01a (P-07-T27): 17 named rows and 258 counted
+    // ENG-01a (P-07-T27): 17 named rows and 258 counted, less the two archived audits that
+    // "Period │ Current" leaves to Prior (DEC-343).
+    expect(all.total).toBe(273);
   });
 });

@@ -2,8 +2,10 @@
 // 14, 2026, 9:24 AM CT, as Margaret Okonkwo opens it. The 17 named rows are spec.md ROWS 1–17
 // verbatim, in the screen's order (past due first, then by next deadline). The other 258
 // engagements are not named in the handoff, so the slice carries only their counts, as the binders
-// slice does (BND-01): segments 224 · 27 · 23 · 1 = 275 and tiles 1 + 4 + 0 + 128 + 0 + 140 + 2 =
-// 275 (docs/screens/ENG-01.md, Figures). How the unnamed counts split by line and status is
+// slice does (BND-01): over every period, segments 224 · 27 · 23 · 1 = 275 and tiles 1 + 4 + 0 +
+// 128 + 0 + 140 + 2 = 275; "Period │ Current" leaves out the two archived audits (DEC-343), so
+// ENG-01a reads 224 · 25 · 23 · 1 = 273 and Archived 0 (docs/screens/ENG-01.md, Figures). How the
+// unnamed counts split by line and status is
 // DEC-271: the audit line from the 27 audits of the seed (A1 to A27, audits.ts), every unnamed CAS
 // engagement Active (a 2026 close engagement runs to December), and tax takes the rest. F-04-T31's
 // exported seed replaces this file (`make fixtures`).
@@ -36,7 +38,7 @@ export const ENG01_TILES: readonly EngagementStatus[] = [
   "archived",
 ];
 
-/** §9 "275 engagements": the tiles at E0 (ENG-01a). */
+/** §9 "275 engagements": the tiles at E0 over every period ("Period │ All"). */
 export const ENG01_COUNTS: Readonly<Record<string, number>> = {
   prospect: 1,
   accepted: 4,
@@ -47,12 +49,24 @@ export const ENG01_COUNTS: Readonly<Record<string, number>> = {
   archived: 2,
 };
 
-/** The segments at E0: "All 275 · Tax 224 · Audit 27 · CAS 23 · Advisory 1". */
+/** The segments at E0 over every period: "All 275 · Tax 224 · Audit 27 · CAS 23 · Advisory 1". */
 export const ENG01_SEGMENTS: Readonly<Record<ServiceLineCode, number>> = {
   tax: 224,
   audit: 27,
   cas: 23,
   advisory: 1,
+};
+
+/** ENG-01a, "Period │ Current": every period's tiles less the two archived audits (DEC-343). */
+export const ENG01_CURRENT_COUNTS: Readonly<Record<string, number>> = {
+  ...ENG01_COUNTS,
+  archived: 0,
+};
+
+/** ENG-01a's segments: "All 273 · Tax 224 · Audit 25 · CAS 23 · Advisory 1" (DEC-343). */
+export const ENG01_CURRENT_SEGMENTS: Readonly<Record<ServiceLineCode, number>> = {
+  ...ENG01_SEGMENTS,
+  audit: 25,
 };
 
 interface Row {

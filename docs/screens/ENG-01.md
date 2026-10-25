@@ -17,7 +17,7 @@ Code (P-07-T27): `src/routes/firm/areas.tsx` (`/engagements` behind the flag), `
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a | margaret-okonkwo (Margaret Okonkwo, Managing Partner) | Mon Sep 14, 2026, 9:24 AM CT (assumed: README says no frame states a time) | E0 | All service lines, period Current: 275 engagements; first 17 rows, past due first, then by next deadline | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
+| a | margaret-okonkwo (Margaret Okonkwo, Managing Partner) | Mon Sep 14, 2026, 9:24 AM CT (assumed: README says no frame states a time) | E0 | All service lines, period Current: 273 engagements (archived ones count under Prior and All, DEC-343); first 16 rows, past due first, then by next deadline | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
 | b | margaret-okonkwo | same | E0 | Letter │ Not signed with the Accepted tile selected: the 4 Accepted engagements without a recorded letter (rows 4, 6, 7, 9); the Prospect estate engagement is excluded | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
 | c | margaret-okonkwo | same | E0 | Segment Advisory: 1 row (Ridgeline cost segregation & §754 analysis); tiles recount to Accepted 1, all others 0 | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
 | d | margaret-okonkwo | same | E0 | `q=Harbor Lane` matches nothing | built · fixture (T27); live once the backend E0 load carries ENG-01's engagements (F-04-T31) |
@@ -87,7 +87,7 @@ Inbound: SHL-01 nav "Engagements", SHL-02, CLI-01 Services tag, CLI-02 Engagemen
 
 ## Acceptance
 - ENG-01 acceptance: same toolbar as close-overview, except Home comes first, "Workbench" replaces Arc, the pill reads "Brightwater Hale", and Engagements is the active item.
-- ENG-01 acceptance: segment counts foot: 224 + 27 + 23 + 1 = 275; the seven tiles also sum to 275 (1 + 4 + 0 + 128 + 0 + 140 + 2); the Accepted tile (4) equals the four letters out (E11–E14); the Prospect tile (1) is the Estate of Walter Thornbury engagement.
+- ENG-01 acceptance: segment counts foot: 224 + 25 + 23 + 1 = 273; the seven tiles also sum to 273 (1 + 4 + 0 + 128 + 0 + 140 + 0); amended by DEC-343 (the handoff's 224 + 27 + 23 + 1 = 275 and Archived 2 are "Period │ All"); the Accepted tile (4) equals the four letters out (E11–E14); the Prospect tile (1) is the Estate of Walter Thornbury engagement.
 - ENG-01 acceptance: status words come only from §3.3.1 (Prospect, Accepted, Active, Delivered, Archived); work-item sub-lines use the work item's own vocabulary.
 - ENG-01 acceptance: days to deadline are red ink at ≤ 7 days, amber at ≤ 30, ink-2 beyond; Copperleaf reads "4 days past due" and Bluebird "2 days past due", so the summary reads "2 past due".
 - ENG-01 acceptance: one white pane on #F8F8F6 with a 46px header and a centered 14.5/500 title; rows hairline-separated, no zebra stripes.
@@ -97,8 +97,9 @@ Inbound: SHL-01 nav "Engagements", SHL-02, CLI-01 Services tag, CLI-02 Engagemen
 ## Figures
 | Figure | Foots | Proven by |
 |---|---|---|
-| Segments (a) | 224 + 27 + 23 + 1 = 275 | `fixtures/engagements.foot.test.ts`; `ENG-01.test.tsx` |
-| Tiles (a) | 1 + 4 + 0 + 128 + 0 + 140 + 2 = 275 | same; the live footing on a constructed firm in `backfill/test_p07t14_engagements_independent.py` |
+| Segments (a) | 224 + 25 + 23 + 1 = 273 (DEC-343: "Period │ Current" leaves out the two archived audits) | `fixtures/engagements.foot.test.ts`; `ENG-01.test.tsx` |
+| Tiles (a) | 1 + 4 + 0 + 128 + 0 + 140 + 0 = 273, Archived 0 (DEC-343) | same; the live footing on a constructed firm in `backfill/test_p07t14_engagements_independent.py` |
+| Period │ All | segments 224 + 27 + 23 + 1 = 275; tiles 1 + 4 + 0 + 128 + 0 + 140 + 2 = 275 (the handoff's a figures); Prior 2 | same (`test_ac16_the_default_view_leaves_archived_engagements_to_the_period_that_includes_them`) |
 | Summary (a) | 1 prospect = Prospect tile; 4 awaiting a signed letter = Accepted tile; 2 past due = Copperleaf + Bluebird | same |
 | Letter not signed (b) | "Showing 4 of 4" = rows 4, 6, 7, 9 = Accepted tile | scenario test |
 | Advisory (c) | 1 row; tiles Accepted 1, others 0 | scenario test |
@@ -118,7 +119,7 @@ Gradients in product UI, emoji, saturated blue SaaS accents, heavy shadows, inve
 | DEC-271 | The Type cell reads "{line} · {type}"; a return's forms come from the engagement's name ("Tax · 1065", "Tax · 1040 · 1041 · 706"); Northwind reads "Audit · EBP DC" without "§103(a)(3)(C)" | The row carries the C1 type, not the form or the scope | DEC-271 |
 | DEC-271 | The Next due sub-line is "{label} · {n} days past due" when past due, else the label, else "{n} days"; the estate reads "Form 706" without "· 49 days" | One rule over the row's `next_due` (on, tone, label) | DEC-271 |
 | DEC-271 | Not drawn: row 14's name sub-line, Feld's "§7216 ✓", Shah's "Waiting on K-1" tag, "3 returns planned ·" on the estate | Not in the row model; follow-ups for P-07-T15's projection | DEC-271 |
-| ED-027 | The fixture counts Archived under Period │ Current (as a draws it); the live index excludes archived from `current` (DEC-224) | Spec and decision disagree; held as a strict xfail | `docs/quality/escaped-defects.md` ED-027 |
+| DEC-343 | a reads 273 with Archived 0 under "Period │ Current" instead of the handoff's 275 with Archived 2; Juniper & Oak's archived preparation (row 17) shows under Prior and All | `current` excludes archived, as the live index reads it (DEC-224); decided by Ayush 2026-10-25, closing ED-027 | DEC-343 |
 | OQ-5 | Segment and tile counts are data-derived; where the seed's tax count differs from "Tax 224" the parity mask covers the count text | DEC-47 backs 214 tax engagements and 224 returns | P-07 OQ-5 decided in DEC-138 |
 
 ## Parity
