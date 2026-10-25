@@ -4748,6 +4748,16 @@ export type ConflictResultOut = {
 };
 
 /**
+ * ConnectionDisconnectIn
+ */
+export type ConnectionDisconnectIn = {
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
  * ConnectionOut
  */
 export type ConnectionOut = {
@@ -4791,6 +4801,112 @@ export type ConnectionOut = {
      * Status
      */
     status: 'active' | 'needs_attention';
+};
+
+/**
+ * ConnectionPersonOut
+ */
+export type ConnectionPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'firm';
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * ConnectionScopeOut
+ *
+ * A read scope as the catalogue words it ("Read ledger", "Read transactions and
+ * statements"). Writes are never listed (DF-19).
+ */
+export type ConnectionScopeOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * ConnectionStartIn
+ */
+export type ConnectionStartIn = {
+    /**
+     * Authorized
+     */
+    authorized: boolean;
+    /**
+     * Consent Version
+     */
+    consent_version: number;
+};
+
+/**
+ * ConnectionStartOut
+ *
+ * Sign-in happens on the provider's site, never in the portal. The URL carries a
+ * single-use state, so it is never logged.
+ */
+export type ConnectionStartOut = {
+    /**
+     * Authorise Url
+     */
+    authorise_url: string;
+    /**
+     * Consent Id
+     */
+    consent_id: string;
+    /**
+     * Expires At
+     */
+    expires_at: string;
+};
+
+/**
+ * ConsentCopyOut
+ *
+ * The consent sheet's copy (POR-16 b, e, i), from the catalogue (content, not code).
+ */
+export type ConsentCopyOut = {
+    /**
+     * Authorization
+     */
+    authorization: string;
+    /**
+     * Continue Label
+     */
+    continue_label: string;
+    /**
+     * Helper
+     */
+    helper?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Will
+     */
+    will: Array<string>;
+    /**
+     * Wont
+     */
+    wont: Array<string>;
 };
 
 /**
@@ -7650,6 +7766,23 @@ export type ExportCreateIn = {
 };
 
 /**
+ * ExportInsteadOut
+ *
+ * *Export instead* (ADR-108): the open trial-balance request, or none ("the team will ask
+ * when they need one").
+ */
+export type ExportInsteadOut = {
+    /**
+     * Binder Id
+     */
+    binder_id?: string | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id?: string | null;
+};
+
+/**
  * ExportPersonOut
  */
 export type ExportPersonOut = {
@@ -10330,6 +10463,11 @@ export type IndependenceSummaryOut = {
 };
 
 /**
+ * IntegrationStatus
+ */
+export type IntegrationStatus = 'available' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected' | 'coming_soon' | 'paused';
+
+/**
  * InvitationAccessOut
  */
 export type InvitationAccessOut = {
@@ -11342,6 +11480,17 @@ export type LeadsheetOut = {
      * Rows
      */
     rows: Array<LeadRowOut>;
+};
+
+/**
+ * LedgerPullIn
+ */
+export type LedgerPullIn = {
+    label?: TrialBalanceLabelStatus;
+    /**
+     * Period End
+     */
+    period_end: string;
 };
 
 /**
@@ -13982,6 +14131,128 @@ export type PortalCategoryRefOut = {
 };
 
 /**
+ * PortalConnectionCardOut
+ */
+export type PortalConnectionCardOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'connect' | 'reconnect' | 'details' | 'disconnect' | 'retry' | 'export_instead'>;
+    /**
+     * Catalog Key
+     */
+    catalog_key: string;
+    /**
+     * Category
+     */
+    category: 'ledger' | 'bank_feed' | 'card_feed' | 'sales' | 'payroll' | 'hr' | 'ticketing' | 'grc';
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    connected_by?: ConnectionPersonOut | null;
+    /**
+     * Connection Id
+     */
+    connection_id?: string | null;
+    consent?: ConsentCopyOut | null;
+    /**
+     * Display Label
+     */
+    display_label?: string | null;
+    export_instead?: ExportInsteadOut | null;
+    /**
+     * Helper
+     */
+    helper?: string | null;
+    /**
+     * Icon
+     */
+    icon: string;
+    /**
+     * Last Failed At
+     */
+    last_failed_at?: string | null;
+    /**
+     * Last Sync At
+     */
+    last_sync_at?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Reauth Requested At
+     */
+    reauth_requested_at?: string | null;
+    /**
+     * Reconnected
+     */
+    reconnected?: boolean;
+    /**
+     * Scopes
+     */
+    scopes?: Array<ConnectionScopeOut>;
+    status: IntegrationStatus;
+    /**
+     * Status Reason
+     */
+    status_reason?: 'token_expired' | 'invalid_grant' | 'sync_failed' | 'provider_unavailable' | null;
+    /**
+     * Tone
+     */
+    tone: 'olive' | 'espresso' | 'clay' | 'ochre';
+    /**
+     * Version
+     */
+    version?: number;
+};
+
+/**
+ * PortalConnectionDetailOut
+ *
+ * The details drawer: scopes, who connected it and when, the last 5 sync runs.
+ */
+export type PortalConnectionDetailOut = {
+    card: PortalConnectionCardOut;
+    /**
+     * Recent Syncs
+     */
+    recent_syncs?: Array<SyncRunSummaryOut>;
+};
+
+/**
+ * PortalConnectionsOut
+ *
+ * POR-16 a: the entity's cards in catalogue order.
+ */
+export type PortalConnectionsOut = {
+    entity: PortalEntityOut;
+    /**
+     * Firm Display Name
+     */
+    firm_display_name: string;
+    /**
+     * Items
+     */
+    items: Array<PortalConnectionCardOut>;
+};
+
+/**
+ * PortalEntityOut
+ */
+export type PortalEntityOut = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Display Name
+     */
+    display_name: string;
+};
+
+/**
  * PortalFileOut
  *
  * A file on a request. A withdrawn file is never listed; `withdrawable` only for the
@@ -15651,6 +15922,25 @@ export type ReconciliationOut = {
      * Reconciled
      */
     reconciled: boolean;
+};
+
+/**
+ * ReconnectRequestOut
+ */
+export type ReconnectRequestOut = {
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    requested_by: ConnectionPersonOut;
 };
 
 /**
@@ -19576,6 +19866,50 @@ export type SupportSessionOut = {
      * Status
      */
     status: 'requested' | 'active' | 'ended' | 'revoked' | 'expired';
+};
+
+/**
+ * SyncRunRefOut
+ */
+export type SyncRunRefOut = {
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'succeeded' | 'failed_validation' | 'failed';
+    /**
+     * Sync Run Id
+     */
+    sync_run_id: string;
+};
+
+/**
+ * SyncRunSummaryOut
+ */
+export type SyncRunSummaryOut = {
+    /**
+     * Failure Code
+     */
+    failure_code?: string | null;
+    /**
+     * Finished At
+     */
+    finished_at?: string | null;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'succeeded' | 'failed_validation' | 'failed';
+    /**
+     * Sync Run Id
+     */
+    sync_run_id: string;
+    /**
+     * Trigger
+     */
+    trigger: 'request_item' | 'on_demand' | 'schedule' | 'export';
 };
 
 /**
@@ -25344,6 +25678,70 @@ export type CompleteResponses = {
 
 export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
 
+export type ReconnectRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Connection Id
+         */
+        connection_id: string;
+    };
+    query?: never;
+    url: '/v1/connections/{connection_id}/reconnect-requests';
+};
+
+export type ReconnectRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReconnectRequestError = ReconnectRequestErrors[keyof ReconnectRequestErrors];
+
+export type ReconnectRequestResponses = {
+    /**
+     * Successful Response
+     */
+    201: ReconnectRequestOut;
+};
+
+export type ReconnectRequestResponse = ReconnectRequestResponses[keyof ReconnectRequestResponses];
+
 export type GetContactData = {
     body?: never;
     headers?: {
@@ -29295,6 +29693,70 @@ export type ProvidersResponses = {
 };
 
 export type ProvidersResponse = ProvidersResponses[keyof ProvidersResponses];
+
+export type LedgerPullData = {
+    body: LedgerPullIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/connection/pulls';
+};
+
+export type LedgerPullErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LedgerPullError = LedgerPullErrors[keyof LedgerPullErrors];
+
+export type LedgerPullResponses = {
+    /**
+     * Successful Response
+     */
+    202: SyncRunRefOut;
+};
+
+export type LedgerPullResponse = LedgerPullResponses[keyof LedgerPullResponses];
 
 export type RevokeData = {
     body?: never;
@@ -49983,6 +50445,190 @@ export type GetPortalLogoResponses = {
 
 export type GetPortalLogoResponse = GetPortalLogoResponses[keyof GetPortalLogoResponses];
 
+export type ConnectionDetailData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Connection Id
+         */
+        connection_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/connections/{connection_id}';
+};
+
+export type ConnectionDetailErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectionDetailError = ConnectionDetailErrors[keyof ConnectionDetailErrors];
+
+export type ConnectionDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalConnectionDetailOut;
+};
+
+export type ConnectionDetailResponse = ConnectionDetailResponses[keyof ConnectionDetailResponses];
+
+export type DisconnectConnectionData = {
+    body: ConnectionDisconnectIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Connection Id
+         */
+        connection_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/connections/{connection_id}/disconnect';
+};
+
+export type DisconnectConnectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DisconnectConnectionError = DisconnectConnectionErrors[keyof DisconnectConnectionErrors];
+
+export type DisconnectConnectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalConnectionCardOut;
+};
+
+export type DisconnectConnectionResponse = DisconnectConnectionResponses[keyof DisconnectConnectionResponses];
+
+export type RetryConnectionData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Connection Id
+         */
+        connection_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/connections/{connection_id}/retry';
+};
+
+export type RetryConnectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RetryConnectionError = RetryConnectionErrors[keyof RetryConnectionErrors];
+
+export type RetryConnectionResponses = {
+    /**
+     * Successful Response
+     */
+    202: SyncRunRefOut;
+};
+
+export type RetryConnectionResponse = RetryConnectionResponses[keyof RetryConnectionResponses];
+
 export type GetDropBatchData = {
     body?: never;
     headers?: {
@@ -50038,6 +50684,130 @@ export type GetDropBatchResponses = {
 };
 
 export type GetDropBatchResponse = GetDropBatchResponses[keyof GetDropBatchResponses];
+
+export type ListEntityConnectionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entity Id
+         */
+        entity_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/entities/{entity_id}/connections';
+};
+
+export type ListEntityConnectionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListEntityConnectionsError = ListEntityConnectionsErrors[keyof ListEntityConnectionsErrors];
+
+export type ListEntityConnectionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalConnectionsOut;
+};
+
+export type ListEntityConnectionsResponse = ListEntityConnectionsResponses[keyof ListEntityConnectionsResponses];
+
+export type StartConnectionData = {
+    body: ConnectionStartIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entity Id
+         */
+        entity_id: string;
+        /**
+         * Catalog Key
+         */
+        catalog_key: string;
+    };
+    query?: never;
+    url: '/v1/portal/entities/{entity_id}/connections/{catalog_key}/start';
+};
+
+export type StartConnectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StartConnectionError = StartConnectionErrors[keyof StartConnectionErrors];
+
+export type StartConnectionResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConnectionStartOut;
+};
+
+export type StartConnectionResponse = StartConnectionResponses[keyof StartConnectionResponses];
 
 export type GetPortalHomeData = {
     body?: never;

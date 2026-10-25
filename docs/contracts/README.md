@@ -29,7 +29,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C17 | Workbench tool registry (per-module read and compute tools, ADR-049) | `workbench-tools.md` | P-10 | W-02, W-03, I-02 | S32 | 2028-01-10 | v1 | planned |
 | C18 | Portal approvals (FS packages, client AJE approval) | `portal-approvals.md` | R-02 | A-06, A-07, C-02 | S30 | 2027-12-13 | v1 | planned |
 | C19 | Section 7216 consent gate and TRI data class (gateway condition 6) | `consent-7216.md` | T-01 | T-*, N-04, W-02, I-02 | S17 | 2027-06-14 | v1 | planned |
-| C20 | Integration framework and write-capability registry (firm, personal and client connections; W entries) | `integrations.md` | A-02, W-01 | POR-16, TAX-09, CLS-11, ATT-09, ADM-08 | framework S10, catalogue S45 | 2027-03-08, 2028-07-10 | v1 | planned |
+| C20 | Integration framework and write-capability registry (firm, personal and client connections; W entries) | `c20-integrations.md` | A-02, W-01 | POR-16, TAX-09, CLS-11, ATT-09, ADM-08 | framework S10, catalogue S45 | 2027-03-08, 2028-07-10 | v1 | stub (POR-16 family, reconnect requests, pulls, `IntegrationAdapter` and the write-capability registry schema: A-02-T06, 2026-10-26) |
 | C21 | Effective-dated rules tables (due dates, holidays, form sets and tolerances, thresholds, retention floors) | `rules-tables.md` | K-02 | T-01, T-02, T-03, T-08, C-02, Q-05 | S17 | 2027-06-14 | v1 | planned |
 
 C1 milestones: stub F-03-T06 (S0), freeze F-03-T19 (by Fri 2026-11-13, M2), live F-03-T31 (S3). C2: the YAML is authored by F-03-T04, the codegen is F-03-T09, and the `status.ts` runtime is F-05.

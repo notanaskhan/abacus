@@ -10245,6 +10245,22 @@
         "title": "ConflictResultOut",
         "type": "object"
       },
+      "ConnectionDisconnectIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "ConnectionDisconnectIn",
+        "type": "object"
+      },
       "ConnectionOut": {
         "properties": {
           "created_at": {
@@ -10351,6 +10367,173 @@
           "last_pull_at"
         ],
         "title": "ConnectionOut",
+        "type": "object"
+      },
+      "ConnectionPersonOut": {
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "firm"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "kind"
+        ],
+        "title": "ConnectionPersonOut",
+        "type": "object"
+      },
+      "ConnectionScopeOut": {
+        "description": "A read scope as the catalogue words it (\"Read ledger\", \"Read transactions and\nstatements\"). Writes are never listed (DF-19).",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "public",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ],
+        "title": "ConnectionScopeOut",
+        "type": "object"
+      },
+      "ConnectionStartIn": {
+        "additionalProperties": false,
+        "properties": {
+          "authorized": {
+            "cls": "internal",
+            "title": "Authorized",
+            "type": "boolean"
+          },
+          "consent_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Consent Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "consent_version",
+          "authorized"
+        ],
+        "title": "ConnectionStartIn",
+        "type": "object"
+      },
+      "ConnectionStartOut": {
+        "description": "Sign-in happens on the provider's site, never in the portal. The URL carries a\nsingle-use state, so it is never logged.",
+        "properties": {
+          "authorise_url": {
+            "cls": "restricted",
+            "title": "Authorise Url",
+            "type": "string"
+          },
+          "consent_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consent Id",
+            "type": "string"
+          },
+          "expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "authorise_url",
+          "expires_at"
+        ],
+        "title": "ConnectionStartOut",
+        "type": "object"
+      },
+      "ConsentCopyOut": {
+        "description": "The consent sheet's copy (POR-16 b, e, i), from the catalogue (content, not code).",
+        "properties": {
+          "authorization": {
+            "cls": "public",
+            "title": "Authorization",
+            "type": "string"
+          },
+          "continue_label": {
+            "cls": "public",
+            "title": "Continue Label",
+            "type": "string"
+          },
+          "helper": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Helper"
+          },
+          "title": {
+            "cls": "public",
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "will": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "title": "Will",
+            "type": "array"
+          },
+          "wont": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "title": "Wont",
+            "type": "array"
+          }
+        },
+        "required": [
+          "version",
+          "title",
+          "will",
+          "wont",
+          "authorization",
+          "continue_label"
+        ],
+        "title": "ConsentCopyOut",
         "type": "object"
       },
       "ContactAccessIn": {
@@ -16436,6 +16619,39 @@
         "title": "ExportCreateIn",
         "type": "object"
       },
+      "ExportInsteadOut": {
+        "description": "*Export instead* (ADR-108): the open trial-balance request, or none (\"the team will ask\nwhen they need one\").",
+        "properties": {
+          "binder_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Binder Id"
+          },
+          "request_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request Item Id"
+          }
+        },
+        "title": "ExportInsteadOut",
+        "type": "object"
+      },
       "ExportPersonOut": {
         "properties": {
           "display_name": {
@@ -21815,6 +22031,20 @@
         "title": "IndependenceSummaryOut",
         "type": "object"
       },
+      "IntegrationStatus": {
+        "enum": [
+          "available",
+          "connecting",
+          "connected",
+          "needs_attention",
+          "needs_reauth",
+          "disconnected",
+          "coming_soon",
+          "paused"
+        ],
+        "title": "IntegrationStatus",
+        "type": "string"
+      },
       "InvitationAccessOut": {
         "properties": {
           "item_count": {
@@ -24029,6 +24259,27 @@
           "change_pct"
         ],
         "title": "LeadsheetOut",
+        "type": "object"
+      },
+      "LedgerPullIn": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "$ref": "#/components/schemas/TrialBalanceLabelStatus",
+            "cls": "internal",
+            "default": "standard"
+          },
+          "period_end": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "period_end"
+        ],
+        "title": "LedgerPullIn",
         "type": "object"
       },
       "LegalHoldIn": {
@@ -29364,6 +29615,319 @@
         "title": "PortalCategoryRefOut",
         "type": "object"
       },
+      "PortalConnectionCardOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "connect",
+                "reconnect",
+                "details",
+                "disconnect",
+                "retry",
+                "export_instead"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "catalog_key": {
+            "cls": "internal",
+            "title": "Catalog Key",
+            "type": "string"
+          },
+          "category": {
+            "cls": "internal",
+            "enum": [
+              "ledger",
+              "bank_feed",
+              "card_feed",
+              "sales",
+              "payroll",
+              "hr",
+              "ticketing",
+              "grc"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "connected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Connected At"
+          },
+          "connected_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConnectionPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "connection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Connection Id"
+          },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsentCopyOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public"
+          },
+          "display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Display Label"
+          },
+          "export_instead": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExportInsteadOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "helper": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Helper"
+          },
+          "icon": {
+            "cls": "public",
+            "title": "Icon",
+            "type": "string"
+          },
+          "last_failed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Failed At"
+          },
+          "last_sync_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Sync At"
+          },
+          "name": {
+            "cls": "public",
+            "title": "Name",
+            "type": "string"
+          },
+          "reauth_requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reauth Requested At"
+          },
+          "reconnected": {
+            "cls": "internal",
+            "default": false,
+            "title": "Reconnected",
+            "type": "boolean"
+          },
+          "scopes": {
+            "cls": "public",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConnectionScopeOut"
+            },
+            "title": "Scopes",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IntegrationStatus",
+            "cls": "internal"
+          },
+          "status_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "token_expired",
+                  "invalid_grant",
+                  "sync_failed",
+                  "provider_unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status Reason"
+          },
+          "tone": {
+            "cls": "internal",
+            "enum": [
+              "olive",
+              "espresso",
+              "clay",
+              "ochre"
+            ],
+            "title": "Tone",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "catalog_key",
+          "name",
+          "category",
+          "icon",
+          "tone",
+          "status"
+        ],
+        "title": "PortalConnectionCardOut",
+        "type": "object"
+      },
+      "PortalConnectionDetailOut": {
+        "description": "The details drawer: scopes, who connected it and when, the last 5 sync runs.",
+        "properties": {
+          "card": {
+            "$ref": "#/components/schemas/PortalConnectionCardOut",
+            "cls": "confidential"
+          },
+          "recent_syncs": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SyncRunSummaryOut"
+            },
+            "maxItems": 5,
+            "title": "Recent Syncs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "card"
+        ],
+        "title": "PortalConnectionDetailOut",
+        "type": "object"
+      },
+      "PortalConnectionsOut": {
+        "description": "POR-16 a: the entity's cards in catalogue order.",
+        "properties": {
+          "entity": {
+            "$ref": "#/components/schemas/PortalEntityOut",
+            "cls": "confidential"
+          },
+          "firm_display_name": {
+            "cls": "public",
+            "title": "Firm Display Name",
+            "type": "string"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PortalConnectionCardOut"
+            },
+            "maxItems": 50,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entity",
+          "firm_display_name",
+          "items"
+        ],
+        "title": "PortalConnectionsOut",
+        "type": "object"
+      },
+      "PortalEntityOut": {
+        "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_entity_id",
+          "display_name"
+        ],
+        "title": "PortalEntityOut",
+        "type": "object"
+      },
       "PortalFileOut": {
         "description": "A file on a request. A withdrawn file is never listed; `withdrawable` only for the\ncaller's own unaccepted upload (never emailed, never accepted; ADR P-31).",
         "properties": {
@@ -32739,6 +33303,40 @@
           "reconciled"
         ],
         "title": "ReconciliationOut",
+        "type": "object"
+      },
+      "ReconnectRequestOut": {
+        "properties": {
+          "connection_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by": {
+            "$ref": "#/components/schemas/ConnectionPersonOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "connection_id",
+          "requested_by",
+          "requested_at"
+        ],
+        "title": "ReconnectRequestOut",
         "type": "object"
       },
       "RecordsReadOut": {
@@ -41131,6 +41729,106 @@
           "requests"
         ],
         "title": "SupportSessionOut",
+        "type": "object"
+      },
+      "SyncRunRefOut": {
+        "properties": {
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed_validation",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sync_run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Sync Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sync_run_id",
+          "status"
+        ],
+        "title": "SyncRunRefOut",
+        "type": "object"
+      },
+      "SyncRunSummaryOut": {
+        "properties": {
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Failure Code"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finished At"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed_validation",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sync_run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Sync Run Id",
+            "type": "string"
+          },
+          "trigger": {
+            "cls": "internal",
+            "enum": [
+              "request_item",
+              "on_demand",
+              "schedule",
+              "export"
+            ],
+            "title": "Trigger",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sync_run_id",
+          "trigger",
+          "status",
+          "started_at"
+        ],
+        "title": "SyncRunSummaryOut",
         "type": "object"
       },
       "TablePart": {
@@ -53934,6 +54632,144 @@
         "x-abacus-action": "connection.create"
       }
     },
+    "/v1/connections/{connection_id}/reconnect-requests": {
+      "post": {
+        "description": "AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection\n(a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from\nits database template, a POR-02 to-do. Audited `connection.reconnect_requested`.",
+        "operationId": "reconnect_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Connection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconnectRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Reconnect Request Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.reconnect_request"
+      }
+    },
     "/v1/contacts/{contact_id}": {
       "get": {
         "description": "The O2 drawer: roles, grants, sign-in history and delegated requests.",
@@ -62621,6 +63457,154 @@
           "connection"
         ],
         "x-abacus-action": "connection.read_log"
+      }
+    },
+    "/v1/engagements/{engagement_id}/connection/pulls": {
+      "post": {
+        "description": "*Pull latest* (A-02-T30): a `sync_runs` row with trigger `on_demand`; 409\n`connection_needs_reauth` or `connector_not_available`. Audited `ledger.pull_requested`.",
+        "operationId": "ledger_pull",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LedgerPullIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncRunRefOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ledger Pull Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "ledger.pull"
       }
     },
     "/v1/engagements/{engagement_id}/connection/revoke": {
@@ -107820,6 +108804,409 @@
         "x-abacus-action": "portal_public"
       }
     },
+    "/v1/portal/connections/{connection_id}": {
+      "get": {
+        "description": "The details drawer (A-02-T16).",
+        "operationId": "connection_detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Connection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalConnectionDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Connection Detail Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.read"
+      }
+    },
+    "/v1/portal/connections/{connection_id}/disconnect": {
+      "post": {
+        "description": "POR-16 f (A-02-T16): \"Disconnected\" (neutral); the secret is crypto-erased and received\ndata stays. 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.",
+        "operationId": "disconnect_connection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Connection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionDisconnectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalConnectionCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Disconnect Connection Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.revoke"
+      }
+    },
+    "/v1/portal/connections/{connection_id}/retry": {
+      "post": {
+        "description": "POR-16 g *Try again* (A-02-T16): one run; while it runs the same run is returned; 409\n`connection_needs_reauth` when the client must sign in again. Audited\n`connection.retry_requested`.",
+        "operationId": "retry_connection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Connection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncRunRefOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Retry Connection Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.retry"
+      }
+    },
     "/v1/portal/drops/{batch_id}": {
       "get": {
         "description": "The dropper's poll of one drop batch; anyone else's batch answers 404 (R-01-T09).",
@@ -107935,6 +109322,281 @@
           "portal"
         ],
         "x-abacus-action": "portal_documents.read"
+      }
+    },
+    "/v1/portal/entities/{entity_id}/connections": {
+      "get": {
+        "description": "POR-16 a (A-02-T16): cards for the catalogue rows with a registered adapter.",
+        "operationId": "list_entity_connections",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalConnectionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Entity Connections Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.read"
+      }
+    },
+    "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start": {
+      "post": {
+        "description": "POR-16 b, e, i (A-02-T16): one consent row, then the provider's sign-in. 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.started`, `connection.consent_recorded`.",
+        "operationId": "start_connection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "catalog_key",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z][a-z0-9_]{1,49}$",
+              "title": "Catalog Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionStartIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionStartOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Start Connection Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.create"
       }
     },
     "/v1/portal/home": {

@@ -46,6 +46,16 @@ COMPLIANCE_LEGAL_HOLDS = Flag(
     kind="boolean",
     default="false",
 )
+CONNECTIONS_LIVE_LEDGER = Flag(
+    name="connections.live_ledger",
+    kind="boolean",
+    default="false",
+)
+CONNECTIONS_PORTAL_V2 = Flag(
+    name="connections.portal_v2",
+    kind="boolean",
+    default="false",
+)
 CONTACTS_V2 = Flag(
     name="contacts.v2",
     kind="boolean",
@@ -214,6 +224,8 @@ FLAGS: dict[str, Flag] = {
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
+    "connections.live_ledger": CONNECTIONS_LIVE_LEDGER,
+    "connections.portal_v2": CONNECTIONS_PORTAL_V2,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,

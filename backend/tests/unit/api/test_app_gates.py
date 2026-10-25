@@ -237,6 +237,8 @@ NOT_CREATING = {
     "/v1/firm/data-exports/{export_id}/link",
     # A-01-T17 (engagement export v1 stub): Undo voids an existing export's grant.
     "/v1/exports/{export_id}/undo",
+    # A-02-T06 (C20 v1 stub): a disconnect revokes an existing connection and returns its card.
+    "/v1/portal/connections/{connection_id}/disconnect",
 }
 
 
@@ -274,6 +276,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/data-exports",
         # A-01-T17: an engagement export waits out its Undo window, then builds, so 202.
         "/v1/work-items/{work_item_id}/exports",
+        # A-02-T06 (C20 v1 stub): a retry and an on-demand pull start a sync run, so 202.
+        "/v1/portal/connections/{connection_id}/retry",
+        "/v1/engagements/{engagement_id}/connection/pulls",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -452,6 +457,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/fields/{target_type}/{target_id}/{field_key}/references",
         "/v1/fields/{target_type}/{target_id}/{field_key}/ticks",
         "/v1/firm/security/incidents",  # Q-02-T33: a register entry
+        # A-02-T06 (C20 v1 stub): a consent record, and a reconnect request.
+        "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start",
+        "/v1/connections/{connection_id}/reconnect-requests",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

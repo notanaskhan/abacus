@@ -1852,7 +1852,8 @@ export const STATUS_REGISTRY = {
       "label": "Available",
       "variant": "outline",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "clientLabel": "Not connected"
     },
     "connecting": {
       "label": "Connecting",
