@@ -93,6 +93,11 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - `RunItemOut.blocks` carries a validated payload. It is null on pre-v2 runs.
   - ESLint L4 now also covers `model_text`.
 
+- **AC-12 Deep link (TASK-5008; P-09-T10, T13).**
+  - `?ov=run-trace:<runId>` opens the WB-09 drawer over any firm route. Back closes it.
+  - "Copy link" in the drawer copies this page with only that trace open.
+  - The drawer loads as its own chunk, so the firm's initial bundle is unchanged.
+
 ## 3. Out of scope
 - Live streaming, cancelling and retrying runs.
 - Firm-wide run views.

@@ -138,11 +138,16 @@ function ToolCard({
 export function AgentDock({
   engagementId,
   children,
+  onTrace,
 }: {
   engagementId: string;
   children?: ReactNode;
+  /** Open the trace elsewhere (a route's `useOpenTrace`), instead of the dock's own drawer. */
+  onTrace?: (runId: string) => void;
 }): JSX.Element {
+  // A route may open the trace as its `?ov=run-trace` drawer; otherwise the dock holds it.
   const [trace, setTrace] = useState<string | null>(null);
+  const showTrace = onTrace ?? setTrace;
   const runs = useQuery({
     ...listAgentRunsOptions({ path: { engagement_id: engagementId }, query: { limit: 10 } }),
     retry: false,
@@ -162,7 +167,7 @@ export function AgentDock({
       ) : (
         <ol aria-label="Agent runs" className="flex flex-col gap-[8px] p-[12px]">
           {thread.map((run) => (
-            <ToolCard key={run.id} run={run} onTrace={setTrace} />
+            <ToolCard key={run.id} run={run} onTrace={showTrace} />
           ))}
         </ol>
       )}
