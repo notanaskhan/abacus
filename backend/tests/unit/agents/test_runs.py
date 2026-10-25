@@ -14,12 +14,14 @@ from abacus.modules.agents.repository import RunWriteRow
 from abacus.modules.agents.runs import (
     AGENT_LABEL,
     RUNTIME_LABEL,
+    RunItem,
     RunSummary,
     Trace,
     TraceRow,
     canonical,
     duration_ms,
     output_counts,
+    page_items,
     run_record_sha256,
     state_of,
     written_counts,
@@ -122,3 +124,32 @@ def test_c6_v1_the_run_record_fingerprint_is_stable_and_follows_the_record() -> 
 
 def test_dec87_the_runtime_is_named_never_the_model() -> None:
     assert RUNTIME_LABEL == "Accrued Agent runtime"
+
+
+def _item(kind: str, seconds: int, code: str = "c") -> RunItem:
+    return RunItem(0, kind, T0 + timedelta(seconds=seconds), code, None, None, None, None, None)  # type: ignore[arg-type]  # kind is one of the four
+
+
+def test_p09_story_1_3_items_are_numbered_by_time_and_paged_after_seq() -> None:
+    raw = [_item("decision", 5), _item("narration", 1), _item("tool_card", 0), _item("failure", 9)]
+    items, last, resync = page_items(raw, 0)
+    assert [(i.seq, i.kind) for i in items] == [
+        (1, "tool_card"),
+        (2, "narration"),
+        (3, "decision"),
+        (4, "failure"),
+    ]
+    assert (last, resync) == (4, False)
+    later, _, _ = page_items(raw, 2)
+    assert [i.seq for i in later] == [3, 4]
+    assert page_items(raw, 4)[0] == []
+
+
+def test_p09_story_1_3_a_client_ahead_of_the_server_resyncs() -> None:
+    items, last, resync = page_items([_item("tool_card", 0)], 7)
+    assert resync and last == 1 and [i.seq for i in items] == [1]
+
+
+def test_p09_the_tool_card_comes_first_at_the_same_instant() -> None:
+    items, _, _ = page_items([_item("narration", 0), _item("tool_card", 0)], 0)
+    assert items[0].kind == "tool_card"

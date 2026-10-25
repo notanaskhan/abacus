@@ -969,6 +969,7 @@ LIST_EXEMPT = frozenset(
         # `authorise(agent_run.read)` on the run's engagement.
         ("src/abacus/modules/agents/repository.py", "screening_results_of_run"),
         ("src/abacus/modules/agents/repository.py", "run_writes"),  # TASK-5000
+        ("src/abacus/modules/agents/repository.py", "run_activity"),  # TASK-5001
         # P-06-T20 (DEC-324): the screening aggregate's inputs, keyed by one request item's live
         # versions, read by the system composer or after `authorise(upload_review.read)` on the
         # item's engagement; the citations its flags carry, keyed by those reviews.
