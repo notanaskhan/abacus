@@ -270,7 +270,20 @@ async def test_walled_lenas_lists_omit_ashford_and_keep_granite(
 # --- Offshore: never reveals a TIN (§4.4/§4.5; DEC-52) -------------------------------------------
 
 
-@pytest.mark.parametrize(("offshore", "layer"), [(True, "wall"), (False, None)])
+@pytest.mark.parametrize(
+    ("offshore", "layer"),
+    [
+        pytest.param(
+            True,
+            "condition",
+            marks=pytest.mark.xfail(
+                strict=True,
+                reason="#395 TASK-1207: offshore is a wall until T-01 (DEC-319)",
+            ),
+        ),
+        (False, None),
+    ],
+)
 async def test_offshore_membership_decides_tin_reveal(
     firm: _Firm, monkeypatch: pytest.MonkeyPatch, offshore: bool, layer: str | None
 ) -> None:
@@ -281,11 +294,8 @@ async def test_offshore_membership_decides_tin_reveal(
     ctx = firm.ctx(manager)
     resource = granite.resource(firm.tenant)
     assert await _layer(ctx, "tin.reveal", resource, reason="Form W-9 check") == layer
-    # G-01-T09 (DEC-319): until T-01 registers an offshore consent provider, an offshore member
-    # reaches no client at all (a wall, failing closed), so every action on it is refused at the
-    # wall layer, not only the conditioned TIN reveal (supersedes F-03 section 4.4's narrower
-    # rule until then).
-    assert await _layer(ctx, "request_item.create", resource) == layer
+    # Offshore narrows only the conditioned action.
+    assert await _layer(ctx, "request_item.create", resource) is None
 
 
 # --- ADM-02 role templates: stricter-only overrides (story 4.3; DEC-127) ------------------------
