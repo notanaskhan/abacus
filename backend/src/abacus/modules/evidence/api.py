@@ -49,6 +49,12 @@ from abacus.modules.evidence.match_material import (
 )
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
+from abacus.modules.evidence.portal_files import (
+    PortalFile,
+    SentBack,
+    client_pre_checks,
+    portal_files,
+)
 from abacus.modules.evidence.processing import (
     SUBSCRIPTIONS as UPLOAD_SUBSCRIPTIONS,
 )
@@ -233,6 +239,7 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "PortalFile",
     "Proposal",
     "Provenance",
     "RecordClass",
@@ -240,6 +247,7 @@ __all__ = [
     "ReviewMaterial",
     "ScreeningDecision",
     "ScreeningFacts",
+    "SentBack",
     "StoredObject",
     "StoredRecord",
     "TrialBalance",
@@ -258,6 +266,7 @@ __all__ = [
     "check_upload_content",
     "citation_cell_reason",
     "citation_cell_text",
+    "client_pre_checks",
     "column_letters",
     "decisions_on_screenings",
     "engagement_snapshots",
@@ -269,6 +278,7 @@ __all__ = [
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "portal_files",
     "process_upload",
     "put_record",
     "quote_in",

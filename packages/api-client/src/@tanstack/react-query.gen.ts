@@ -9984,7 +9984,7 @@ export const markBinderDoneMutation = (options?: Partial<Options<MarkBinderDoneD
  * Undo Mark Done Route
  *
  * The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a
- * new one (409 `firm_already_acted`).
+ * new one (409 `firm_already_acted`, DEC-334).
  */
 export const undoMarkDoneMutation = (options?: Partial<Options<UndoMarkDoneData>>): UseMutationOptions<UndoMarkDoneResponse, UndoMarkDoneError, Options<UndoMarkDoneData>> => {
     const mutationOptions: UseMutationOptions<UndoMarkDoneResponse, UndoMarkDoneError, Options<UndoMarkDoneData>> = {
@@ -10163,7 +10163,8 @@ export const ignoreRequestItemMutation = (options?: Partial<Options<IgnoreReques
  * Undo Ignore Route
  *
  * The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until
- * the firm acts on the request (409 `firm_already_acted`, DEC-24).
+ * the firm acts on the request (409 `firm_already_acted`, DEC-24, DEC-334). A retry with the
+ * same key is authorised again, then answers what the first answered.
  */
 export const undoIgnoreMutation = (options?: Partial<Options<UndoIgnoreData>>): UseMutationOptions<UndoIgnoreResponse, UndoIgnoreError, Options<UndoIgnoreData>> => {
     const mutationOptions: UseMutationOptions<UndoIgnoreResponse, UndoIgnoreError, Options<UndoIgnoreData>> = {

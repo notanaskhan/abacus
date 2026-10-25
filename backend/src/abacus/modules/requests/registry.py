@@ -94,6 +94,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "engagement_id", "request_item_id", "evidence_version_id"}
         | {"author_user_id", "author_side", "visibility", "body_sealed", "body_fingerprint"}
         | {"corrects_comment_id"}
+        | {"origin"}  # R-01-T08 (0157): `ignore_note` for a client's note on an Ignore
     ),
     "comment_mentions": frozenset({"tenant_id", "comment_id", "user_id"}),
     "comment_redactions": frozenset({"tenant_id", "comment_id", "redacted_by", "reason"}),

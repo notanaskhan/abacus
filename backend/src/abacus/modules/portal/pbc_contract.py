@@ -8,7 +8,8 @@ the drop itself in `evidence/drops_contract.py`.
 
 Behind `portal.documents_v2` (binders, request), `portal.third_party_room` (room, suggest) and
 `portal.drop_sort` (drop batches): off, each route answers 404; on, 501 `not_implemented` until
-R-01-T07 (documents), R-01-T13 (room) and R-01-T09 (drops) land.
+R-01-T13 (room) and R-01-T09 (drops) land. The documents routes are live since R-01-T07, in
+`documents_routes.py` over the read model `documents.py`.
 
 These are a client's views. No field carries a firm status code, an amount, a confidence, a
 screening verdict, an agent name or another party's data: rows carry the client words (`to_do`,
@@ -24,10 +25,10 @@ from datetime import date
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import PORTAL_DOCUMENTS_V2, PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM
+from abacus.kernel._flags import PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
@@ -354,46 +355,6 @@ async def _stub(ctx: AuthContext, flag: Flag) -> NoReturn:
 
 
 pbc_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
-
-
-@pbc_router.get(
-    "/binders",
-    action="portal_documents.read",
-    response_model=PortalBinderListOut,
-    errors=(501,),
-)
-async def list_portal_binders_route(
-    ctx: Member, scope_id: Annotated[UUID | None, Query()] = None
-) -> PortalBinderListOut:
-    """The binder picker: every binder the caller can see; closed ones read-only."""
-    await _stub(ctx, PORTAL_DOCUMENTS_V2)
-
-
-@pbc_router.get(
-    "/binders/{binder_id}",
-    action="portal_documents.read",
-    response_model=PortalBinderOut,
-    errors=(501,),
-)
-async def get_portal_binder_route(
-    binder_id: UUID,
-    ctx: Member,
-    filter: Annotated[BinderFilter, Query()] = "requested",
-    category: Annotated[str | None, Query(max_length=64)] = None,
-) -> PortalBinderOut:
-    """POR-03. A binder outside the caller's grant, a draft or a forged id answers 404."""
-    await _stub(ctx, PORTAL_DOCUMENTS_V2)
-
-
-@pbc_router.get(
-    "/request-items/{item_id}",
-    action="portal_documents.read",
-    response_model=PortalRequestOut,
-    errors=(501,),
-)
-async def get_portal_request_route(item_id: UUID, ctx: Member) -> PortalRequestOut:
-    """POR-04. Out of scope, internal-only, delegated to a third party or forged: 404."""
-    await _stub(ctx, PORTAL_DOCUMENTS_V2)
 
 
 @pbc_router.get(

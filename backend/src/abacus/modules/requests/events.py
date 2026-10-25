@@ -100,6 +100,24 @@ class BinderMarkedDone(DomainEvent):
     open_count: Annotated[int, classified("internal")]
 
 
+class BinderMarkDoneUndone(DomainEvent):
+    """The client undid Mark as Done (R-01-T08; DEC-24): the binder is Published again."""
+
+    event_type: ClassVar[str] = "binder.mark_done_undone"
+
+    binder_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+
+
+class RequestItemIgnoreUndone(DomainEvent):
+    """The client undid an Ignore (R-01-T08; DEC-24): the request reads To do again."""
+
+    event_type: ClassVar[str] = "request_item.ignore_undone"
+
+    request_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+
+
 class BinderClosed(DomainEvent):
     event_type: ClassVar[str] = "binder.closed"
 

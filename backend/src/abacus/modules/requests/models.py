@@ -202,6 +202,8 @@ class Comment(Base):
     body_fingerprint: Mapped[str]
     corrects_comment_id: Mapped[UUID | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # R-01-T08 (0157): `thread`, or `ignore_note` (a client's note on an Ignore).
+    origin: Mapped[str] = mapped_column(server_default=FetchedValue())
 
 
 class CommentMention(Base):

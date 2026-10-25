@@ -6075,7 +6075,7 @@ export const markBinderDone = <ThrowOnError extends boolean = false>(options: Op
  * Undo Mark Done Route
  *
  * The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a
- * new one (409 `firm_already_acted`).
+ * new one (409 `firm_already_acted`, DEC-334).
  */
 export const undoMarkDone = <ThrowOnError extends boolean = false>(options: Options<UndoMarkDoneData, ThrowOnError>): RequestResult<UndoMarkDoneResponses, UndoMarkDoneErrors, ThrowOnError> => (options.client ?? client).post<UndoMarkDoneResponses, UndoMarkDoneErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6189,7 +6189,8 @@ export const ignoreRequestItem = <ThrowOnError extends boolean = false>(options:
  * Undo Ignore Route
  *
  * The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until
- * the firm acts on the request (409 `firm_already_acted`, DEC-24).
+ * the firm acts on the request (409 `firm_already_acted`, DEC-24, DEC-334). A retry with the
+ * same key is authorised again, then answers what the first answered.
  */
 export const undoIgnore = <ThrowOnError extends boolean = false>(options: Options<UndoIgnoreData, ThrowOnError>): RequestResult<UndoIgnoreResponses, UndoIgnoreErrors, ThrowOnError> => (options.client ?? client).post<UndoIgnoreResponses, UndoIgnoreErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
