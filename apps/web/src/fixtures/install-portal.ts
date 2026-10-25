@@ -4,7 +4,7 @@
 // of it.
 //
 // F-04-T26 (J12-core): once signed in, the person lands on their home, so the persona's POR-02
-// home (Claire a, Tess d, Meera e) answers `GET /v1/portal/home`; anyone else keeps the sign-in
+// home (Claire a, Tess d, Meera e, Luis g, Marisol h) answers `GET /v1/portal/home`; anyone else keeps the sign-in
 // scenario's answer.
 
 import { installFixtureMode } from "../app-core/fixture-mode";
@@ -15,6 +15,8 @@ const HOME_OF: Readonly<Record<string, keyof typeof homes>> = {
   "claire-feld": "a",
   "tess-moreno": "d",
   "meera-shah": "e",
+  "luis-ferrante": "g",
+  "marisol-vega": "h",
 };
 const HOME = "GET /v1/portal/home";
 

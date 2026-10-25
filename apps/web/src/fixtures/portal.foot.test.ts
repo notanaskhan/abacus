@@ -16,7 +16,9 @@ import {
   BRIGHTWATER_BRANDING,
   FELD_BINDER,
   PORTAL_SHELLS,
+  TESSELLATE_SOC,
   claireHome,
+  marisolHome,
   tessHome,
 } from "./seed/portal-home";
 import { PORTAL_USERS, SINK_DOMAIN } from "./seed/portal";
@@ -54,11 +56,24 @@ describe("POR-02 footing on the seed", () => {
     expect(home.todos?.filter((t) => t.state === "overdue")).toHaveLength(1);
   });
 
-  it("scenarios a, b, c, d, e, f and M exist with their personas and clocks", () => {
-    expect(Object.keys(por02)).toEqual(["a", "b", "c", "d", "e", "f", "M"]);
+  it("scenarios a, b, c, d, e, f, g, h and M exist with their personas and clocks", () => {
+    expect(Object.keys(por02)).toEqual(["a", "b", "c", "d", "e", "f", "g", "h", "M"]);
     expect(por02.b.clock).toBe("2026-02-02T09:04:00-06:00");
     expect(por02.d.persona).toBe("tess-moreno");
     expect(por02.e.persona).toBe("meera-shah");
+    expect(por02.g.persona).toBe("luis-ferrante");
+    expect(por02.g.clock).toBe("2026-10-22T08:30:00-05:00");
+    expect(por02.h.persona).toBe("marisol-vega");
+  });
+
+  it("Tessellate (h): 26 open control requests, 3 exceptions, description approved Sep 12 (§9.5)", () => {
+    const todos = marisolHome().todos ?? [];
+    const of = (kind: string) => todos.find((t) => t.kind === kind);
+    expect(of("control_requests")?.count).toBe(TESSELLATE_SOC.openRequests);
+    expect(TESSELLATE_SOC.openRequests).toBe(26);
+    expect(of("exceptions")?.count).toBe(3);
+    expect(of("exceptions")?.facts?.criteria).toBe("CC6.2 · CC8.1 · A1.2");
+    expect(of("description_approved")?.facts?.approved_on).toBe("2026-09-12");
   });
 });
 

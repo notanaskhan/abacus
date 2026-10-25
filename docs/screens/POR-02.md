@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-02 Portal home - Feld household/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-08 · contract P-08-T03; contract stub P-08-T01; stage projection P-08-T12; home read model P-08-T13; portal entry and shell data P-08-T07; data P-08-T08; a, b, c, f P-08-T15; d, e, g, h, M P-08-T23; parity and accessibility P-08-T27 |
-| Manifest status | fixture (`routes/manifest/por.ts`): a, b, c, f built by P-08-T15 (TASK-989); the portal route renders it for Home |
+| Manifest status | fixture (`routes/manifest/por.ts`): a, b, c, f built by P-08-T15 (TASK-989); d, e, g, h and M by P-08-T23 (TASK-1219); the portal route renders it for Home with `?scope=` and T7-M below 768 px |
 
 Code to come (P-08 §5.2): `src/routes/portal/{root,home}.tsx`, `src/shell/portal/{PortalToolbarData,EntitySwitcher}.tsx`, `src/domain/portal/{queries,mutations,messages}.ts`, `src/screens/POR-02/{index.tsx, scenarios.ts, copy.ts, POR-02.test.tsx}`.
 
@@ -15,7 +15,7 @@ Code to come (P-08 §5.2): `src/routes/portal/{root,home}.tsx`, `src/shell/porta
 
 ## States
 
-Fixture scenarios (P-08-T08, `fixtures/scenarios/POR-02.ts`, data in `fixtures/seed/portal-home.ts`): a, b, c, d, e, f and M are written and footed (`fixtures/portal.foot.test.ts`: Upload 2 = Intake 2, 3 = 2 + 1, binder 19 of 21 with 37 sorted, Copperleaf 7 of 9); g and h (R2 waves 6 and 7) wait for their epochs. The screen is P-08-T15's.
+Fixture scenarios (P-08-T08 and P-08-T23, `fixtures/scenarios/POR-02.ts`, data in `fixtures/seed/portal-home.ts`): a–h and M are written and footed (`fixtures/portal.foot.test.ts`: Upload 2 = Intake 2, 3 = 2 + 1, binder 19 of 21 with 37 sorted, Copperleaf 7 of 9, Tessellate 26 / 3 / Sep 12). g and h are fixture-only behind their entitlements. The screen is P-08-T15's (part 1) and P-08-T23's (part 2).
 
 9 artboards in the handoff (a–f from spec.md; g and h from revision R2; M at 390), 9 built here.
 
@@ -196,6 +196,13 @@ Each becomes a test in `POR-02.test.tsx` ("POR-02 avoid: …"): gradients in pro
 - The greeting is the handoff's "Good morning, {first_name}" at every hour: no other greeting is designed (open gap).
 - `PUT /v1/portal/preferences` needs a `version` the home does not carry: a scope never dismissed sends 0 (DEC-196).
 - The scope switcher and the role chips are P-08-T23's (e).
+
+### Part 2 notes (P-08-T23)
+- The user chip opens the menu: each scope with its role label as the chip line, then the planned account links (fixture builds only) and Sign out. A full-client scope switches the home (`?scope=`); a K-1 recipient's scope opens POR-13 (planned) and never becomes a home (DEC-346).
+- g's "Nothing to sign yet" line is the frame's "The representation letter comes after your review."; g's card lines "C corporation · Colorado" and "Year ended Jun 30, 2026" and every recent-message row come from the built frames.
+- The to-do kinds reconnect, review_statements, control_requests, exceptions and description_approved are planned sources: fixture builds draw them, production hides them (Story 6.7).
+- The 390 layout switches below 768 px. Badges: Documents = open upload to-dos; Messages = unread recent threads (planned, N-03).
+- Household-card icon tiles (House, Building, person) are not drawn: the scope carries no household-or-individual kind (parity masks them, T27).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

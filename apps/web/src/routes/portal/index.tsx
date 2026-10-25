@@ -34,10 +34,17 @@ const SignIn = lazy(async () => ({
 const Shell = lazy(async () => ({
   default: (await import("../../portal/PortalShell")).PortalShell,
 }));
-// POR-02 (P-08-T15): Home is its own chunk; the other areas keep the shell's planned state.
+// POR-02 (P-08-T15) and POR-03 (R-01-T10): Home and Documents are their own chunks; the other
+// areas keep the shell's planned state.
 const Home = lazy(async () => ({
   default: (await import("../../screens/POR-02")).POR02,
 }));
+const Documents = lazy(async () => ({
+  default: (await import("../../screens/POR-03")).POR03,
+}));
+
+/** The portal's built areas by nav label; the others stay the shell's planned page. */
+export const AREA_PATHS: Readonly<Record<string, string>> = { Home: "/", Documents: "/documents" };
 
 function Root(): JSX.Element {
   return (
@@ -121,7 +128,76 @@ function Area({ area }: { area: string }): JSX.Element | null {
     };
   }, [signedIn]);
   if (!signedIn) return null;
-  return area === "Home" ? <Home scopeId={null} /> : <Shell area={area} />;
+  if (area === "Home") return <HomePage />;
+  if (area === "Documents") return <DocumentsPage />;
+  return <Shell area={area} />;
+}
+
+/** A nav item, to-do link or "Open binder": built areas by path, the rest stay put. */
+function useAreaNavigate(): (area: string) => void {
+  const { history } = useRouter();
+  return (area) => {
+    const path = AREA_PATHS[area];
+    if (path !== undefined) history.push(path);
+  };
+}
+
+/** POR-03 with `?binder=` (R-01-T10; docs/screens/POR-03.md): the newest binder by default. */
+function DocumentsPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  const [binder] = useState(
+    () => new URLSearchParams(window.location.search).get("binder") ?? undefined,
+  );
+  return (
+    <Documents
+      {...(binder === undefined ? {} : { binderId: binder })}
+      mobile={mobile}
+      onNavigate={navigateTo}
+    />
+  );
+}
+
+/** The portal's 390 layout (T7-M, DEC-45) below 768 px wide (DEC-346). */
+export const PORTAL_MOBILE_QUERY = "(max-width: 767px)";
+
+function mediaQuery(): MediaQueryList | null {
+  return typeof window.matchMedia === "function" ? window.matchMedia(PORTAL_MOBILE_QUERY) : null;
+}
+
+function useMobileViewport(): boolean {
+  const [mobile, setMobile] = useState(() => mediaQuery()?.matches ?? false);
+  useEffect(() => {
+    const query = mediaQuery();
+    if (query === null) return undefined;
+    const on = (): void => {
+      setMobile(query.matches);
+    };
+    query.addEventListener("change", on);
+    return () => {
+      query.removeEventListener("change", on);
+    };
+  }, []);
+  return mobile;
+}
+
+/** POR-02 with `?scope=` (P-08 §5.1): the user menu's scope switch keeps the chosen scope in the
+ * address, so a reload opens the same home. */
+function HomePage(): JSX.Element {
+  const { history } = useRouter();
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  const [scope] = useState(() => new URLSearchParams(window.location.search).get("scope"));
+  return (
+    <Home
+      scopeId={scope}
+      mobile={mobile}
+      onNavigate={navigateTo}
+      onScope={(id) => {
+        history.replace(`/?scope=${encodeURIComponent(id)}`);
+      }}
+    />
+  );
 }
 
 const page = (path: string, component: () => JSX.Element | null) =>

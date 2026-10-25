@@ -67,6 +67,8 @@ export interface PortalHandlerOptions {
   linkIssuedAt?: string;
   /** POR-02's home for the persona; `null` never answers (f, loading). */
   home?: PortalHomeOut | null;
+  /** The person's other full-client scopes' homes, by scope id (a role union switching scope). */
+  homes?: Readonly<Record<string, PortalHomeOut>>;
   /** An MFA-floor persona with no factor yet goes to two-step setup (c′, DF-17). */
   mfaEnrolled?: boolean;
   /** POR-01 d's pending invitation, answered by `POST /v1/invitations/preview`. */
@@ -254,9 +256,15 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
       const body: MeOut = { ...me, portal: PORTAL_SHELLS[who] ?? null };
       return json(body);
     },
-    "GET /v1/portal/home": () => {
+    // `?scope_id=` picks the scope (P-08-T23, the role union's switcher): the scenario's home
+    // answers its own scope, any other scope the person holds a full-client grant on answers from
+    // `homes`, and anything else 404 (INV-4: a scope without a grant is never found).
+    "GET /v1/portal/home": ({ query }) => {
       if (options.home === null) return never();
-      return options.home === undefined ? json({ detail: "not found" }, 404) : json(options.home);
+      const scope = query.get("scope_id");
+      const home =
+        scope === null || scope === options.home?.scope.id ? options.home : options.homes?.[scope];
+      return home === undefined ? json({ detail: "not found" }, 404) : json(home);
     },
     // P-08-T15: the welcome card's dismissal, per user and scope (P-08 Story 6.2). A scope the
     // person holds no full-client grant on answers 404 (INV-4); a stale version 409.

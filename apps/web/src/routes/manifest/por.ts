@@ -12,11 +12,12 @@ export const porScreens = {
     path: null,
     entry: true,
   },
-  // P-08-T15: a, b, c, f on fixtures at the portal root; d, e, g, h and M are P-08-T23's.
+  // P-08-T15: a, b, c, f on fixtures at the portal root; P-08-T23: d, e, g, h and M.
   "POR-02": { name: "Portal home · Feld household", status: "fixture", path: null },
-  // R-01-T06: a, c, e, f, g and h render in the gallery on fixtures. The entry stays planned until
-  // R-01-T10 mounts it at the portal's /documents and POR-02's "Go to Documents →" is wired to it
-  // (link-contract rule 1: a fixture-to-fixture link must be wired).
+  // R-01-T06, T10: all twelve artboards render in the gallery on fixtures, and the portal entry
+  // mounts the screen at /documents with POR-02's "Go to Documents →" wired. The entry stays
+  // planned with a null path: manifest paths resolve in the firm's route tree, so the link
+  // checker cannot see the portal's (DEC-347).
   "POR-03": { name: "Documents · Feld 2025 Binder", status: "planned", path: null },
   "POR-04": { name: "Request detail · ignore reason sheet", status: "planned", path: null },
   "POR-05": { name: "Questions · Feld 2025 Tax Organizer", status: "planned", path: null },

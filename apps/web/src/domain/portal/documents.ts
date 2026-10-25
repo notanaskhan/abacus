@@ -135,6 +135,7 @@ function rowOf(
       return {
         ...base,
         st: "req",
+        ...(row.due_on == null ? {} : { due: DOCUMENT_WORDS.due(day(row.due_on)) }),
         ...(row.uploading_count !== undefined && row.uploading_count > 0
           ? { uploading: DOCUMENT_WORDS.uploadingN(row.uploading_count) }
           : {}),
@@ -206,6 +207,25 @@ export function binderView(
   };
 }
 
+/** An upload the policy refused at the door: its name and the contract's code. */
+export interface RefusedFile {
+  name: string;
+  code: "file_too_large" | "type_not_allowed";
+}
+
+export interface SendResult {
+  /** The drop's batch to poll; null for a request's own upload or when every file was refused. */
+  batch: string | null;
+  refused: readonly RefusedFile[];
+}
+
+/** The C5 refusal code of a failed drop (413 `file_too_large`, 415 `type_not_allowed`). */
+export function refusalOf(error: unknown): RefusedFile["code"] | null {
+  const detail =
+    typeof error === "object" && error !== null && "detail" in error ? error.detail : null;
+  return detail === "file_too_large" || detail === "type_not_allowed" ? detail : null;
+}
+
 /** The client's writes, each followed by a fresh read of the binder (the kit shows the change at
  * once; the next read replaces it). */
 export function useBinderActions(binder: PortalBinderOut | undefined) {
@@ -251,8 +271,10 @@ export function useBinderActions(binder: PortalBinderOut | undefined) {
       refresh();
     },
     /** Files for one request ("Upload…"), or dropped anywhere (null): the drop goes to the
-     * engagement drop zone in one batch for the code-rule sort (DEC-58 a). */
-    send: async (files: readonly File[], requestId: string | null): Promise<void> => {
+     * engagement drop zone in one batch for the code-rule sort (DEC-58 a). Answers the drop's
+     * batch id, which the screen polls (`useDropBatch`; null for a request's own upload), and the
+     * files the upload policy refused at the door (413, 415). */
+    send: async (files: readonly File[], requestId: string | null): Promise<SendResult> => {
       if (requestId !== null) {
         const row = rowOfId(requestId);
         await announceUploadIntent({
@@ -268,10 +290,16 @@ export function useBinderActions(binder: PortalBinderOut | undefined) {
             headers: { "Content-Type": file.type || "application/octet-stream" },
           });
         }
-      } else {
-        const batch = key();
-        for (const file of files) {
-          await dropFile({
+        refresh();
+        return { batch: null, refused: [] };
+      }
+      const batch = key();
+      const refused: RefusedFile[] = [];
+      // The server names the batch it sorts (`DropAcceptedOut.batch_id`); the poll reads that one.
+      let accepted: string | null = null;
+      for (const file of files) {
+        try {
+          const answer = await dropFile({
             path: { binder_id: binderId },
             query: { filename: file.name },
             body: file as never,
@@ -282,9 +310,15 @@ export function useBinderActions(binder: PortalBinderOut | undefined) {
               "Idempotency-Key": key(),
             },
           });
+          accepted = answer.data?.batch_id ?? accepted;
+        } catch (error) {
+          const code = refusalOf(error);
+          if (code === null) throw error;
+          refused.push({ name: file.name, code });
         }
       }
       refresh();
+      return { batch: accepted, refused };
     },
   };
 }

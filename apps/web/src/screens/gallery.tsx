@@ -100,6 +100,7 @@ import {
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
 import {
+  MOBILE_STATES as POR02_MOBILE,
   STATES as POR02_STATES,
   type Por02State,
   scenarios as por02Scenarios,
@@ -755,8 +756,8 @@ function Por01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("POR-01", { title: "Portal sign-in · Brightwater Hale", Component: Por01Artboard });
 
-// POR-02 (P-08-T15): the portal home, a, b, c and f; the portal draws it from its own entry, the
-// gallery from the fixture scenario.
+// POR-02 (P-08-T15, T23): the portal home, a–h and the 390 layout M; the portal draws it from its
+// own entry, the gallery from the fixture scenario.
 function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por02State = POR02_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -774,15 +775,16 @@ function Por02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div key={state} data-artboard={state} data-surface="portal">
-      <PortalHome scopeId={null} frame />
+      <PortalHome scopeId={null} frame mobile={POR02_MOBILE.has(state)} />
     </div>
   );
 }
 
 registerScreen("POR-02", { title: "Portal home · Feld household", Component: Por02Artboard });
 
-// POR-03 (R-01-T06): documents part 1, a, c, e, f, g and h; each artboard is its data plus what
-// the client is doing at that instant (uploads in flight, the Ignore popover).
+// POR-03 (R-01-T06, T10): documents, a–i, motion (`&static=1` freezes it at the sorted frame), c2
+// and the 390 layout M; each artboard is its data plus what the client is doing at that instant
+// (files over the list, the drop in flight, uploads, the Ignore popover).
 function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por03State = POR03_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -804,10 +806,14 @@ function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       <PortalDocuments
         binderId={board.binderId}
         frame
+        mobile={board.mobile === true}
         hold={{
           ...(board.uploads === undefined ? {} : { uploads: board.uploads }),
           ...(board.ignoreOpenOn === undefined ? {} : { ignoreOpenOn: board.ignoreOpenOn }),
           ...(board.dragging === undefined ? {} : { dragging: board.dragging }),
+          ...(board.motion === undefined ? {} : { motion: board.motion }),
+          ...(board.dropBatch === undefined ? {} : { dropBatch: board.dropBatch }),
+          ...(params.static ? { still: true } : {}),
         }}
       />
     </div>

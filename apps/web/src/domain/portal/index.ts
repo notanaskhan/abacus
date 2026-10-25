@@ -15,6 +15,8 @@ export type {
 export { useDismissWelcome, usePortalHome } from "./home";
 export {
   type BinderView,
+  type RefusedFile,
+  type SendResult,
   binderView,
   ignoreCodeOf,
   useBinder,
@@ -22,6 +24,7 @@ export {
   useBinders,
 } from "./documents";
 export { DOCUMENT_WORDS, SIGN_IN_WORDS, failureWords } from "./messages";
+export { DROP_POLL_MS, type DropOutcome, dropOutcome, useDropBatch } from "./drops";
 export { type PortalToolbarData, portalToolbarData, usePortalToolbar } from "./shell";
 export {
   LANDING_PATH,

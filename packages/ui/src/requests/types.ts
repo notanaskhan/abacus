@@ -81,6 +81,8 @@ export interface RequestItem {
   uploading?: string;
   /** Overrides the uploaded line: "Received by email Aug 3", "Jonah uploaded Aug 5". */
   upText?: string;
+  /** An open request's due line in the audit variant's bands: "Due Sep 18". */
+  due?: string;
 }
 
 /** A file in flight, `p` from 0 to 1. */
