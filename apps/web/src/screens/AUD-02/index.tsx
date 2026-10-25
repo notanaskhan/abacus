@@ -28,6 +28,7 @@ import {
   useAuditCockpit,
   useSourceDocuments,
 } from "../../domain/audits";
+import { AgentDock } from "../../domain/agents";
 import { COPY } from "./copy";
 
 // AUD-02 · Audit cockpit (A-01-T12; docs/screens/AUD-02.md): F-05's T2 RecordCockpit through the
@@ -244,7 +245,12 @@ function Cockpit({
           onTab: (tab) => {
             onDock?.(tab, doc ?? null);
           },
-          agent: <AgentActivityTab engagementId={cockpit.engagement_id} />,
+          // P-09-T09: the SHL-13 run pane, with the v1 activity list below its thread.
+          agent: (
+            <AgentDock engagementId={cockpit.engagement_id}>
+              <AgentActivityTab engagementId={cockpit.engagement_id} />
+            </AgentDock>
+          ),
           viewer: <DockViewer versionId={doc ?? null} />,
           aiUnavailable: agent.aiUnavailable,
           ...(pausable ? { action: <AgentDockMenu engagementId={cockpit.engagement_id} /> } : {}),

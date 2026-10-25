@@ -6,6 +6,7 @@
 
 import type {
   ActivityOut,
+  AgentRunOut,
   AgentOut,
   AuditEngagementStatus,
   AuditIndexRowOut,
@@ -35,6 +36,8 @@ export interface AuditHandlerOptions {
   epoch?: "E0" | "E2";
   /** The Agent tab's v1 activity (AUD-02; DV-2); empty when absent. */
   activity?: readonly ActivityOut[];
+  /** The dock's run thread (P-09-T09); empty when absent. */
+  agentRuns?: readonly AgentRunOut[];
 }
 
 export function auditHandlers(
@@ -136,6 +139,9 @@ export function auditHandlers(
       northwindEngagement(request) ? json(agent) : json(NOT_FOUND, 404),
     "GET /v1/engagements/{engagement_id}/activity": (request) =>
       northwindEngagement(request) ? json(options.activity ?? []) : json(NOT_FOUND, 404),
+    // P-09-T09: the dock's run thread; no runs unless a scenario scripts them.
+    "GET /v1/engagements/{engagement_id}/agent-runs": (request) =>
+      northwindEngagement(request) ? json(options.agentRuns ?? []) : json(NOT_FOUND, 404),
     "POST /v1/engagements/{engagement_id}/agent/pause": (request) => {
       if (!northwindEngagement(request)) return json(NOT_FOUND, 404);
       agent = {
