@@ -22,6 +22,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { currentRoute, signIn } from "../../app-core/auth";
+import { traceLink } from "./links";
 import { narrate } from "./narrate";
 import { isActive, useRunFeed } from "./runFeed";
 
@@ -218,16 +219,27 @@ export function TraceDrawer({
       title={t?.run.agent_label ?? "Run trace"}
       meta={t && <RunPill state={(feed.run ?? t.run).state} live={live} />}
       footer={
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={t === undefined || exp.isPending}
-          onClick={() => {
-            exp.mutate({ path: { run_id: runId }, body: { format: "json" } });
-          }}
-        >
-          Export JSON
-        </Button>
+        <>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              void navigator.clipboard.writeText(traceLink(runId, window.location.href));
+            }}
+          >
+            Copy link
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={t === undefined || exp.isPending}
+            onClick={() => {
+              exp.mutate({ path: { run_id: runId }, body: { format: "json" } });
+            }}
+          >
+            Export JSON
+          </Button>
+        </>
       }
     >
       {trace.isPending && <Skeleton className="h-48" />}
