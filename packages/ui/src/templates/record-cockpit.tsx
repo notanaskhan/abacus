@@ -254,7 +254,15 @@ function Dock({ dock }: { dock: CockpitDock }): JSX.Element {
           <div className="flex flex-none items-center gap-[6px]">{dock.action}</div>
         )}
       </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-auto">{dock.children}</div>
+      {/* A scrolling region a keyboard can reach (axe scrollable-region-focusable), as Pane's. */}
+      <div
+        role="region"
+        aria-label={`${dock.title ?? dock.view} content`}
+        tabIndex={0}
+        className="flex min-h-0 flex-1 flex-col overflow-auto"
+      >
+        {dock.children}
+      </div>
       {dock.composer !== undefined && (
         <div data-cockpit="composer" className="flex-none p-[10px]">
           {dock.composer}
