@@ -40,7 +40,7 @@ commits no PNGs."
 - 2026-10-25: `ABACUS_FIXTURES=1 ABACUS_VISUAL_PORT=5291 playwright test --project=fixture` on the
   two journeys: 2 passed (the walkable steps, with axe and INV-1 to INV-5), 9 fixme.
   `pnpm exec vitest run src/routes/screen-parity.test.ts`: 8 passed. `pnpm parity:screens`
-  (port 5291): 37 artboard rows over 11 built screens, all `unmeasured` because no handoff
+  (port 5291): 37 artboard rows over the 6 built screens with a Parity table, all `unmeasured` because no handoff
   baselines are on this machine (`ACCRUED_HANDOFF_DIR` unset, `.visual/` empty); ADM-01 (no
   contract file), SHL-01 and SHL-03 (parity in prose, no table) are listed as missing a Parity
   table. Not run: staging (not up), so J04's "walkable on staging by Mar 5" waits for staging and
