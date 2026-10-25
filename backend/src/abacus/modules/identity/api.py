@@ -36,6 +36,7 @@ from abacus.modules.identity.authz.conditions import (
     register_attest_client_column,
     register_client_scope,
     register_engagement_service_line,
+    register_engagement_service_line_column,
     register_gates,
     register_work_item_functions,
 )
@@ -605,6 +606,7 @@ __all__ = [
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
+    "register_engagement_service_line_column",
     "register_engagements_of_scope",
     "register_firm_setting",
     "register_gates",

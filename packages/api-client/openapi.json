@@ -95034,6 +95034,7 @@
     },
     "/v1/firm/service-lines": {
       "get": {
+        "description": "ADM-03's service lines (AC10.1): the four lines in order; a line never saved reads its\ndefaults (\"Engagement team only\", \"Hand-offs only\", version 0).",
         "operationId": "service_lines",
         "parameters": [
           {
@@ -95123,16 +95124,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Service Lines Route",
@@ -95144,7 +95135,7 @@
     },
     "/v1/firm/service-lines/{line}": {
       "put": {
-        "description": "Fresh MFA; 422 `audit_locked`; 409 `stale_version`.",
+        "description": "Fresh MFA; 422 `audit_locked` (Audit is never widened) and `service_line_lead_invalid`;\n409 `stale_version`. Members whose reach changes get `access.changed` (AC10.2).",
         "operationId": "set_service_line",
         "parameters": [
           {
@@ -95265,16 +95256,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Service Line Route",

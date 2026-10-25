@@ -7,12 +7,12 @@ risk_zone: red
 related_adrs: [ADR-026, ADR-020, ADR-023, ADR-024, ADR-025, ADR-027, ADR-007, ADR-031]
 related_specs: [SPEC-000]
 created: 2026-10-07
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 > **Amended 2026-10-07 during TASK-016** (founder approved the design): the list action is `wall.list`, not `wall.read`, because `*.read` actions are engagement-scoped reads that `visible()` filters. Removal is `POST /v1/walls/{id}/remove` returning the wall, because every route returns a response model. A firm admin can't lift a wall on themself (security review).
 
-> **Amended 2026-10-25 for walls v2 (G-01-T09; DEC-169, DEC-318, DEC-319):** a wall carries a reason and a named partner approver; firm admins and partners create walls, which apply at once (DEC-73); the named partner approves once with fresh MFA; lifting is a partner's (never a firm admin's, never on one's own wall); firm admins, security admins and partners list walls; a wall's creation ends the walled person's assignments on the client; offshore members are walled the same way from every client without an offshore-disclosure consent (DEC-52). AC-9 and AC-10 read as amended below; AC-12 to AC-20 are new.
+> **Amended 2026-10-25 for walls v2 (G-01-T09; DEC-169, DEC-318, DEC-319):** a wall carries a reason and a named partner approver; firm admins and partners create walls, which apply at once (DEC-73); the named partner approves once with fresh MFA; lifting is a partner's (never a firm admin's, never on one's own wall); firm admins, security admins and partners list walls; a wall's creation ends the walled person's assignments on the client; offshore members are walled the same way from every client without an offshore-disclosure consent (DEC-52). AC-9 and AC-10 read as amended below; AC-12 to AC-20 are new. **Amended 2026-10-26 (G-01-T12; DEC-380):** Story 6 adds the service-line need-to-know layer, AC-21 to AC-24.
 >
 > **Amended 2026-10-25 (TASK-1207, DEC-319 narrowed by Ayush, option 1):** offshore is not a wall. An offshore member sees and works on clients like anyone with the same role; offshore refuses only the actions whose matrix entry carries `not_offshore` (`tin.reveal`, `pii.reveal`), at the condition layer (403), as F-03 section 4.4 and P-07 AC-9 have it. AC-18 reads as amended below; the other walls v2 amendments stand.
 
@@ -79,6 +79,12 @@ Audit firms must keep people with a conflict (an independence issue, a personal 
 - **AC-18** (amended by TASK-1207, DEC-319) Given an offshore member, then the actions whose matrix entry carries `not_offshore` (`tin.reveal`, `pii.reveal`) are refused at the condition layer (403), consent or not, and fail closed; every other action follows their roles, so they list, search and open clients and engagements like anyone with the same roles, and so do agents acting for them. A wall binds an offshore member exactly as anyone else (404 everywhere). *(Was: refused at the wall on every client without a valid offshore-disclosure consent; narrowed to F-03 section 4.4 by Ayush, 2026-10-25.)*
 - **AC-19** Given an offshore member and a client without consent, then they can't be assigned work on it or added to its engagements (409 `offshore_consent_required`).
 - **AC-20** Given an offshore principal, then a response field tagged `pii_kind=tin` reaches them masked or null, and no reveal action is ever among their allowed actions.
+
+### Story 6: Service-line need-to-know (G-01-T12; G-01 §3.10; DEC-380, ADR-183 proposed)
+- **AC-21** Given a firm, then `GET /v1/firm/service-lines` lists Audit, Tax, CAS and Advisory, a line never saved reading "Engagement team only" and "Hand-offs only" at version 0; Audit can never be widened (422 `audit_locked`, and a database CHECK); a change is a firm or security admin's with fresh MFA, a live person's only, against the line's version (409 `stale_version`), and audited with codes only.
+- **AC-22** Given a line set to "Service line", then an active staff member whose service lines include it, with no role on one of the line's engagements, reads that engagement (plain reads only) and finds it in lists filtered by `visible()`; narrowing the line ends it on their next request; every member holding the line gets `access.changed` when its reach opens or narrows.
+- **AC-23** Given the line reach, then it never grants a write, never reaches an Audit engagement or an attest client's engagement, never a walled client, never an offshore member, and never a firm admin, security admin or level `admin` member (ADR-024).
+- **AC-24** Given another firm's policy, then it reaches nothing in this firm.
 
 ## 6. Behaviour and flows
 **Happy path**

@@ -4877,6 +4877,9 @@ export const recordIncident = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Service Lines Route
+ *
+ * ADM-03's service lines (AC10.1): the four lines in order; a line never saved reads its
+ * defaults ("Engagement team only", "Hand-offs only", version 0).
  */
 export const serviceLines = <ThrowOnError extends boolean = false>(options?: Options<ServiceLinesData, ThrowOnError>): RequestResult<ServiceLinesResponses, ServiceLinesErrors, ThrowOnError> => (options?.client ?? client).get<ServiceLinesResponses, ServiceLinesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4887,7 +4890,8 @@ export const serviceLines = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Set Service Line Route
  *
- * Fresh MFA; 422 `audit_locked`; 409 `stale_version`.
+ * Fresh MFA; 422 `audit_locked` (Audit is never widened) and `service_line_lead_invalid`;
+ * 409 `stale_version`. Members whose reach changes get `access.changed` (AC10.2).
  */
 export const setServiceLine = <ThrowOnError extends boolean = false>(options: Options<SetServiceLineData, ThrowOnError>): RequestResult<SetServiceLineResponses, SetServiceLineErrors, ThrowOnError> => (options.client ?? client).put<SetServiceLineResponses, SetServiceLineErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -8035,6 +8035,9 @@ export const serviceLinesQueryKey = (options?: Options<ServiceLinesData>) => cre
 
 /**
  * Service Lines Route
+ *
+ * ADM-03's service lines (AC10.1): the four lines in order; a line never saved reads its
+ * defaults ("Engagement team only", "Hand-offs only", version 0).
  */
 export const serviceLinesOptions = (options?: Options<ServiceLinesData>) => queryOptions<ServiceLinesResponse, ServiceLinesError, ServiceLinesResponse, ReturnType<typeof serviceLinesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8052,7 +8055,8 @@ export const serviceLinesOptions = (options?: Options<ServiceLinesData>) => quer
 /**
  * Set Service Line Route
  *
- * Fresh MFA; 422 `audit_locked`; 409 `stale_version`.
+ * Fresh MFA; 422 `audit_locked` (Audit is never widened) and `service_line_lead_invalid`;
+ * 409 `stale_version`. Members whose reach changes get `access.changed` (AC10.2).
  */
 export const setServiceLineMutation = (options?: Partial<Options<SetServiceLineData>>): UseMutationOptions<SetServiceLineResponse, SetServiceLineError, Options<SetServiceLineData>> => {
     const mutationOptions: UseMutationOptions<SetServiceLineResponse, SetServiceLineError, Options<SetServiceLineData>> = {

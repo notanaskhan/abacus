@@ -147,6 +147,16 @@ class WallApproved(DomainEvent):
     approved_by: Annotated[UUID, classified("internal")]
 
 
+class ServiceLinePolicyChanged(DomainEvent):
+    """A firm changed who reads a service line's content (G-01-T12; DEC-380). Members whose
+    reach changed also get `access.changed`."""
+
+    event_type: ClassVar[str] = "service_line_policy.changed"
+
+    service_line: Annotated[str, classified("internal")]
+    version: Annotated[int, classified("internal")]
+
+
 class WallRemoved(DomainEvent):
     """A partner lifted a wall (AC8.4)."""
 

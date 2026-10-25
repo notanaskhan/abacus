@@ -83,8 +83,10 @@ def _props(schema: str) -> dict[str, Json]:
 # Live since G-01-T04 (DEC-170): the overview and the sections; since G-01-T05 (DEC-286): the
 # person, its writes and the role templates; since G-01-T08 (DEC-317): offices, teams and the
 # Seasonal group's date; since G-01-T09 (DEC-318, DEC-319): the wall preview, approval and log,
-# and the offshore group.
+# and the offshore group; since G-01-T12 (DEC-380): the service lines.
 LIVE = {
+    ("get", "/v1/firm/service-lines"),
+    ("put", "/v1/firm/service-lines/{line}"),
     ("get", "/v1/walls/preview"),
     ("post", "/v1/walls/{wall_id}/approve"),
     ("get", "/v1/walls/{wall_id}/events"),

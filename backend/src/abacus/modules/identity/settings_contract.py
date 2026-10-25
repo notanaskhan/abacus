@@ -3,7 +3,7 @@ stub; ADR-139, P-36). Contract: `docs/contracts/firm-settings.md`.
 
 Behind `firm_settings.v2`: off, every route here answers 404; on, 501 `not_implemented` until
 the task that implements it (G-01-T04 settings; T05 people; T09 walls v2; T12 service lines;
-T13 annual independence). Offices and teams are organisations' (`organisations/
+T13 annual independence); all are live now. Offices and teams are organisations' (`organisations/
 settings_contract.py`).
 
 Routes that already exist keep their paths and grow additively in their tasks:
@@ -38,7 +38,7 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import CursorInvalid, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity import offshore, people, settings_registry, walls
+from abacus.modules.identity import offshore, people, service_lines, settings_registry, walls
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import AbacusRouter, current_context
 
@@ -589,27 +589,52 @@ async def annual_independence_route(
     await _stub(ctx)
 
 
+def _line_out(policy: service_lines.Policy) -> ServiceLinePolicyOut:
+    return ServiceLinePolicyOut(
+        service_line=policy.service_line,
+        enabled=policy.enabled,
+        lead_user_id=policy.lead_user_id,
+        content_visible_to=policy.content_visible_to,
+        cross_line_access=policy.cross_line_access,
+        version=policy.version,
+    )
+
+
 @settings_router.get(
     "/service-lines",
     action="firm.read_settings",
     response_model=list[ServiceLinePolicyOut],
-    errors=(501,),
 )
 async def service_lines_route(ctx: Ctx) -> list[ServiceLinePolicyOut]:
-    await _stub(ctx)
+    """ADM-03's service lines (AC10.1): the four lines in order; a line never saved reads its
+    defaults ("Engagement team only", "Hand-offs only", version 0)."""
+    await _gate(ctx)
+    return [_line_out(p) for p in await service_lines.policies(ctx)]
 
 
 @settings_router.put(
     "/service-lines/{line}",
     action="service_line_policy.manage",
     response_model=ServiceLinePolicyOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def set_service_line_route(
     line: ServiceLine, body: ServiceLinePolicyIn, ctx: Ctx
 ) -> ServiceLinePolicyOut:
-    """Fresh MFA; 422 `audit_locked`; 409 `stale_version`."""
-    await _stub(ctx)
+    """Fresh MFA; 422 `audit_locked` (Audit is never widened) and `service_line_lead_invalid`;
+    409 `stale_version`. Members whose reach changes get `access.changed` (AC10.2)."""
+    await _gate(ctx)
+    return _line_out(
+        await service_lines.set_policy(
+            ctx,
+            line,
+            version=body.version,
+            enabled=body.enabled,
+            lead_user_id=body.lead_user_id,
+            content_visible_to=body.content_visible_to,
+            cross_line_access=body.cross_line_access,
+        )
+    )
 
 
 @settings_router.get("/offshore", action="firm.read_settings", response_model=OffshoreOut)

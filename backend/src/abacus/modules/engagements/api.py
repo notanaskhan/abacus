@@ -8,7 +8,12 @@ from abacus.modules.engagements.acceptance_contract import (
 )
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
-from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
+from abacus.modules.engagements.conditions import (
+    functions_on,
+    gates_of,
+    service_line_column,
+    service_line_of,
+)
 from abacus.modules.engagements.contacts import (
     Designation,
     EngagementContact,
@@ -152,6 +157,7 @@ from abacus.modules.identity.api import (
     register_engagement_client,
     register_engagement_resource,
     register_engagement_service_line,
+    register_engagement_service_line_column,
     register_engagements_of_scope,
     register_independence,
     register_invitation_parties,
@@ -202,6 +208,8 @@ register_work_item_functions(functions_on)
 register_wall_assignments(wall_assignment_count, end_wall_assignments)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
+# G-01-T12 (DEC-380): the same as SQL, for `visible()`'s service-line reach.
+register_engagement_service_line_column(service_line_column)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
 # P-07-T24 (ADR-164 item 3): the same flag as SQL, for `visible()` under `g2_blocks_view`.
 register_attest_client_column(attest_column)
