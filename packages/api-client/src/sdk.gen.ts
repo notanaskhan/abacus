@@ -4145,6 +4145,8 @@ export const setFieldworkSettings = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Set Seasonal Access Ends Route
+ *
+ * Fresh MFA; one audit row per seasonal member.
  */
 export const setSeasonalAccessEnds = <ThrowOnError extends boolean = false>(options: Options<SetSeasonalAccessEndsData, ThrowOnError>): RequestResult<SetSeasonalAccessEndsResponses, SetSeasonalAccessEndsErrors, ThrowOnError> => (options.client ?? client).put<SetSeasonalAccessEndsResponses, SetSeasonalAccessEndsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4200,6 +4202,8 @@ export const firmMembers = <ThrowOnError extends boolean = false>(options?: Opti
 
 /**
  * Offices Route
+ *
+ * ADM-03a: the HQ first, then by name, with derived seats and registered facts.
  */
 export const offices = <ThrowOnError extends boolean = false>(options?: Options<OfficesData, ThrowOnError>): RequestResult<OfficesResponses, OfficesErrors, ThrowOnError> => (options?.client ?? client).get<OfficesResponses, OfficesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4237,6 +4241,9 @@ export const updateOffice = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Offshore Route
+ *
+ * ADM-03d: the offshore members and the clients a valid offshore-disclosure consent covers
+ * (0 until T-01 registers the provider; DEC-52). The two policy toggles are always on.
  */
 export const offshore = <ThrowOnError extends boolean = false>(options?: Options<OffshoreData, ThrowOnError>): RequestResult<OffshoreResponses, OffshoreErrors, ThrowOnError> => (options?.client ?? client).get<OffshoreResponses, OffshoreErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6115,6 +6122,9 @@ export const listWalls = <ThrowOnError extends boolean = false>(options?: Option
 
 /**
  * Create Wall Route
+ *
+ * Firm admin or partner, fresh MFA; active at once (DEC-73). 409 `relationship_partner`,
+ * `wall_exists`; 422 `approver_not_partner`.
  */
 export const createWall = <ThrowOnError extends boolean = false>(options: Options<CreateWallData, ThrowOnError>): RequestResult<CreateWallResponses, CreateWallErrors, ThrowOnError> => (options.client ?? client).post<CreateWallResponses, CreateWallErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6128,6 +6138,9 @@ export const createWall = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Wall Preview Route
+ *
+ * AC8.1, AC8.3: what saving would refuse and the assignments it would end; a client the
+ * caller can't see answers 404 (DEC-43).
  */
 export const wallPreview = <ThrowOnError extends boolean = false>(options: Options<WallPreviewData, ThrowOnError>): RequestResult<WallPreviewResponses, WallPreviewErrors, ThrowOnError> => (options.client ?? client).get<WallPreviewResponses, WallPreviewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6148,6 +6161,8 @@ export const approveWall = <ThrowOnError extends boolean = false>(options: Optio
 
 /**
  * Wall Events Route
+ *
+ * ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA).
  */
 export const wallEvents = <ThrowOnError extends boolean = false>(options: Options<WallEventsData, ThrowOnError>): RequestResult<WallEventsResponses, WallEventsErrors, ThrowOnError> => (options.client ?? client).get<WallEventsResponses, WallEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -6158,12 +6173,17 @@ export const wallEvents = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Remove Wall Route
  *
- * Walls are never deleted: removing one returns it, marked removed.
+ * A partner, fresh MFA, never on their own wall (409 `own_wall`). Walls are never deleted:
+ * lifting one returns it, marked removed.
  */
 export const removeWall = <ThrowOnError extends boolean = false>(options: Options<RemoveWallData, ThrowOnError>): RequestResult<RemoveWallResponses, RemoveWallErrors, ThrowOnError> => (options.client ?? client).post<RemoveWallResponses, RemoveWallErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/walls/{wall_id}/remove',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

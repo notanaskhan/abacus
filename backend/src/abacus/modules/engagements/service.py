@@ -71,11 +71,11 @@ from abacus.modules.identity.api import (
     contacts,
     create_invitation,
     engagement_team,
+    hidden_clients,
     remove_client,
     remove_member,
     resend_invitation,
     revoke_invitation,
-    walled_from,
 )
 from abacus.modules.organisations.api import (
     ClientChoice,
@@ -252,16 +252,15 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
         if new.client_id is None or new.client_entity_id is None:
             raise DomainInvalid("a roll-forward is for an existing client entity")
         await check_prior(ctx, roll, new.client_entity_id, new.type)
-    if new.client_id is not None and new.client_id in await walled_from(ctx.tenant, ctx.user_id):
+    if new.client_id is not None and await hidden_clients(
+        ctx.tenant, ctx.user_id, [new.client_id]
+    ):
         # Refused before anything is written; `authorise` below is the authoritative check.
         raise Forbidden("engagement.create", "wall")
     if new.client_id is None and not new.confirm_new:
-        walled = await walled_from(ctx.tenant, ctx.user_id)
-        matches = [
-            c
-            for c in await find_clients(ctx.tenant, new.client_name, exact=True)
-            if c.id not in walled
-        ]
+        found = await find_clients(ctx.tenant, new.client_name, exact=True)
+        walled = await hidden_clients(ctx.tenant, ctx.user_id, [c.id for c in found])
+        matches = [c for c in found if c.id not in walled]
         if matches:
             raise PossibleDuplicate(new.client_name)
     async with uow(ctx.tenant) as tx:
@@ -714,20 +713,25 @@ async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID)
 
 
 async def firm_clients(ctx: AuthContext) -> list[FirmName]:
-    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker."""
+    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker, minus any the
+    person is walled from or, offshore, has no consent for (G-01-T09 review: partners hold
+    `wall.create` now; DEC-43, DEC-52)."""
     await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
-    names = await firm_names(ctx.tenant)
-    return sorted((n for n in names if n.id == n.client_id), key=lambda n: n.name.casefold())
+    names = [n for n in await firm_names(ctx.tenant) if n.id == n.client_id]
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [n.client_id for n in names])
+    return sorted((n for n in names if n.client_id not in hidden), key=lambda n: n.name.casefold())
 
 
 # --- Clients you already have (SPEC-025 AC-1; TASK-043) ----------------------------------------
 
 
 async def search_clients(ctx: AuthContext, text_: str) -> list[ClientChoice]:
-    """The firm's clients matching a name, minus any the person is walled off from."""
+    """The firm's clients matching a name, minus any the person is walled off from (or, offshore,
+    has no consent for: DEC-52)."""
     await authorise(ctx, "client.read", Resource.firm(ctx.tenant_id))
-    walled = await walled_from(ctx.tenant, ctx.user_id)
-    return [c for c in await find_clients(ctx.tenant, text_) if c.id not in walled]
+    found = await find_clients(ctx.tenant, text_)
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [c.id for c in found])
+    return [c for c in found if c.id not in hidden]
 
 
 @dataclass(frozen=True)

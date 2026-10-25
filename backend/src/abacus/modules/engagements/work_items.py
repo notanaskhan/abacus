@@ -33,14 +33,15 @@ from abacus.kernel.listing import (
     query_hash,
     status_counts,
 )
-from abacus.kernel.uow import Target, UnitOfWork, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.models import AssuranceWorkItem, Engagement, WorkItem
 from abacus.modules.engagements.record import GateUnmet
-from abacus.modules.engagements.service import get_ref, lock_ref
+from abacus.modules.engagements.service import client_of, get_ref, lock_ref
 from abacus.modules.engagements.setup import g2_blocks
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import (
     AuthContext,
+    assert_assignable,
     authorise,
     is_synthetic_firm,
     visible,
@@ -327,6 +328,62 @@ _ASSIGN = text(
 )
 
 
+# G-01-T09 (AC8.5): a person's current assignments on a client's engagements (an assignment row
+# no later removal row undoes), and their ending by the `wall.created` consumer.
+_CURRENT_ON_CLIENT = text(
+    "SELECT a.work_item_id, a.engagement_id, a.function FROM work_item_assignments a "
+    "JOIN engagements e ON e.id = a.engagement_id "
+    "WHERE a.user_id = :user_id AND e.client_id = :client_id AND a.removed_at IS NULL "
+    "AND NOT EXISTS (SELECT 1 FROM work_item_assignments r "
+    "WHERE r.work_item_id = a.work_item_id AND r.user_id = a.user_id "
+    "AND r.function = a.function AND r.removed_at IS NOT NULL "
+    "AND r.assigned_at >= a.assigned_at) "
+    "ORDER BY a.engagement_id, a.work_item_id, a.function"
+)
+_UNASSIGN = text(
+    "INSERT INTO work_item_assignments "
+    "(tenant_id, work_item_id, engagement_id, user_id, function, assigned_by, removed_at) "
+    "VALUES (:tenant_id, :work_item_id, :engagement_id, :user_id, :function, :assigned_by, "
+    "abacus_now())"
+)
+
+
+async def wall_assignment_count(tenant: TenantContext, user_id: UUID, client_id: UUID) -> int:
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _CURRENT_ON_CLIENT, {"user_id": user_id, "client_id": client_id}
+        )
+        return len(rows.all())
+
+
+async def end_wall_assignments(
+    tx: UnitOfWork, tenant_id: UUID, user_id: UUID, client_id: UUID, on_behalf_of: UUID
+) -> int:
+    """In the consumer's unit of work (the system, on behalf of the wall's creator): one removal
+    row and one `work_item.unassigned` audit row per current assignment. Idempotent."""
+    rows = (
+        await tx.session.execute(_CURRENT_ON_CLIENT, {"user_id": user_id, "client_id": client_id})
+    ).all()
+    for work_item_id, engagement_id, function in rows:
+        await tx.session.execute(
+            _UNASSIGN,
+            {
+                "tenant_id": tenant_id,
+                "work_item_id": work_item_id,
+                "engagement_id": engagement_id,
+                "user_id": user_id,
+                "function": function,
+                "assigned_by": on_behalf_of,
+            },
+        )
+        tx.record(
+            "work_item.unassigned",
+            target=Target("engagement", engagement_id),
+            after=Ref(user_id=user_id, work_item_id=work_item_id),
+        )
+    return len(rows)
+
+
 async def assign_work_item(
     ctx: AuthContext, work_item_id: UUID, user_id: UUID, function: str
 ) -> None:
@@ -346,6 +403,11 @@ async def assign_work_item(
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "work_item.assign", ref.resource())
+        client_id = await client_of(ctx.tenant, engagement_id)
+        if client_id is None:
+            raise NotFound
+        # G-01-T09 (AC9.3): walled people aren't assignable (404); offshore without consent 409.
+        await assert_assignable(ctx.tenant, user_id, client_id)
         if await g2_blocks(ctx.tenant, engagement_id, user_id):
             raise GateUnmet(facts={"gate": "G2", "user_id": str(user_id)})
         await tx.session.execute(

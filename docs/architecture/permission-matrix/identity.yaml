@@ -9,9 +9,9 @@ actions:
   support_session.manage:   {firm_admin: allow, mfa_recent: required}   # SPEC-012 Q1
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   firm.read_settings:       {firm_admin: allow, practice_leader: allow, security_admin: allow, firm_partner: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA; P-01-T04 (DEC-132): partners read settings (SHL-03c)
-  wall.create:              {firm_admin: allow, mfa_recent: required}
-  wall.remove:              {firm_admin: allow, mfa_recent: required}
-  wall.list:                {firm_admin: allow, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there)
+  wall.create:              {firm_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # G-01-T09 (DEC-73): firm admins and partners wall at once
+  wall.remove:              {firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # G-01-T09 (DEC-73): lifting is a partner's, never on themself (own_wall)
+  wall.list:                {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there); G-01-T09: security admins and partners read the register
   firm_agents.pause:        {firm_admin: allow, mfa_recent: required}   # every agent in the firm
   demo_clock.set:           {firm_admin: allow, agent: deny, mfa_recent: required}   # F-04-T07 (ADR-143): synthetic firms outside production only, in the service; support stays read-only (SPEC-012)
   # F-03-T26 (ADR-146): client access grants. On an engagement for its scopes; on the firm (firm
@@ -25,7 +25,7 @@ actions:
   contact.mfa_reset:        {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # Story 7.2: remove the factor, backup codes and trusted devices (OQ-1)
   # --- Firm-settings family contract, v1 (G-01-T02 stub; G-01 section 4.3) ---
   # New actions only. `firm.read_settings` gained `security_admin` with the live settings
-  # (G-01-T04); `wall.create` and `wall.remove` move to partners with G-01-T09.
+  # (G-01-T04); `wall.create` and `wall.remove` moved to partners with G-01-T09 (DEC-318).
   firm.read_people:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}   # ADM-02 list, drawer, role templates
   security_role.assign:     {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # grant or remove security_admin only
   service_line_policy.manage: {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # ADM-03h; audit stays engagement-team-only

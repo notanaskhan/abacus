@@ -119,10 +119,12 @@ from abacus.modules.engagements.work_items import (
     assurance_item,
     assurance_item_id,
     create_work_item,
+    end_wall_assignments,
     lock_assurance_item,
     lock_engagement,
     portal_work_items,
     set_assurance_profile,
+    wall_assignment_count,
 )
 from abacus.modules.engagements.workbook import (
     AccountRule,
@@ -147,6 +149,7 @@ from abacus.modules.identity.api import (
     register_member_added,
     register_mfa_requirement,
     register_scope_resolver,
+    register_wall_assignments,
     register_work_item_functions,
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
@@ -185,6 +188,8 @@ register_independence(confirmed_subquery, confirmed_for)
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
 # F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
 register_work_item_functions(functions_on)
+# G-01-T09 (AC8.5): a wall's preview counts, and its consumer ends, the person's assignments.
+register_wall_assignments(wall_assignment_count, end_wall_assignments)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)

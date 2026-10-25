@@ -31,7 +31,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import MissingAuditEvent, Target, uow
 from abacus.modules.communications.api import NotificationMail, send_notification_email
-from abacus.modules.identity.api import engagement_resource, member_facts, walled_from
+from abacus.modules.identity.api import engagement_resource, hidden_clients, member_facts
 from abacus.modules.notifications.catalogue import CATALOGUE, TEMPLATES
 from abacus.modules.notifications.kinds import kind_of
 from abacus.modules.notifications.repository import (
@@ -138,7 +138,7 @@ async def _walled(tenant: TenantContext, user: UUID, engagement_id: UUID | None)
         client = (await engagement_resource(tenant, engagement_id)).client_id
     except NotFound:
         return True
-    return client is not None and client in await walled_from(tenant, user)
+    return client is not None and bool(await hidden_clients(tenant, user, [client]))
 
 
 @activity.defn(name="notifications.send_email")

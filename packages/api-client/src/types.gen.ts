@@ -7362,7 +7362,8 @@ export type FirmMemberOut = {
 /**
  * FirmOfficeIn
  *
- * 409 `office_code_taken`, `one_hq`; the time zone is an IANA name.
+ * 409 `office_code_taken`, `one_hq`, `office_name_taken`; the time zone is an IANA name.
+ * PATCH sends the `version` it read (409 `stale_version`; 422 without one).
  */
 export type FirmOfficeIn = {
     /**
@@ -7409,6 +7410,10 @@ export type FirmOfficeIn = {
      * Time Zone
      */
     time_zone: string;
+    /**
+     * Version
+     */
+    version?: number | null;
 };
 
 /**
@@ -7480,6 +7485,10 @@ export type FirmOfficeOut = {
      * Time Zone
      */
     time_zone: string;
+    /**
+     * Version
+     */
+    version?: number;
 };
 
 /**
@@ -7515,6 +7524,9 @@ export type FirmRoleIn = {
 
 /**
  * FirmTeamIn
+ *
+ * A `service_line` team names its line, and only it does (422 `org_structure_invalid`);
+ * 409 `team_name_taken`. PATCH sends the `version` it read.
  */
 export type FirmTeamIn = {
     /**
@@ -7533,6 +7545,14 @@ export type FirmTeamIn = {
      * Office Id
      */
     office_id?: string | null;
+    /**
+     * Service Line
+     */
+    service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
+    /**
+     * Version
+     */
+    version?: number | null;
 };
 
 /**
@@ -7579,6 +7599,14 @@ export type FirmTeamOut = {
      * Office Id
      */
     office_id?: string | null;
+    /**
+     * Service Line
+     */
+    service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
+    /**
+     * Version
+     */
+    version?: number;
 };
 
 /**
@@ -19365,12 +19393,27 @@ export type WallEventOut = {
 
 /**
  * WallIn
+ *
+ * Walls v2 (AC8.1): why, and the partner named to approve. The reason defaults to `other`
+ * and the approver may be left out (the legacy SPEC-019 screen sends neither; DEC-318).
  */
 export type WallIn = {
+    /**
+     * Approver User Id
+     */
+    approver_user_id?: string | null;
     /**
      * Client Id
      */
     client_id: string;
+    /**
+     * Reason Code
+     */
+    reason_code?: 'personal_relationship' | 'financial_interest' | 'relative' | 'prior_employment' | 'other';
+    /**
+     * Reason Text
+     */
+    reason_text?: string | null;
     /**
      * User Id
      */
@@ -19380,9 +19423,19 @@ export type WallIn = {
 /**
  * WallOut
  *
- * Who is walled off from which client is itself sensitive (conflicts of interest).
+ * Who is walled off from which client is itself sensitive (conflicts of interest). The v1
+ * shape plus `WallV2Out`'s fields (G-01-T09).
  */
 export type WallOut = {
+    approval_status: WallApprovalStatus;
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approver User Id
+     */
+    approver_user_id: string | null;
     /**
      * Client Id
      */
@@ -19400,6 +19453,14 @@ export type WallOut = {
      */
     id: string;
     /**
+     * Reason Code
+     */
+    reason_code: 'personal_relationship' | 'financial_interest' | 'relative' | 'prior_employment' | 'other';
+    /**
+     * Reason Text
+     */
+    reason_text: string | null;
+    /**
      * Removed At
      */
     removed_at: string | null;
@@ -19407,6 +19468,10 @@ export type WallOut = {
      * Removed By
      */
     removed_by: string | null;
+    /**
+     * Removed Reason
+     */
+    removed_reason: string | null;
     /**
      * Status
      */
@@ -19431,6 +19496,18 @@ export type WallPreviewOut = {
      * Blockers
      */
     blockers: Array<'relationship_partner' | 'wall_exists' | 'own_wall'>;
+};
+
+/**
+ * WallRemoveIn
+ *
+ * Why the wall is lifted (AC8.4); optional for the legacy screen's one release.
+ */
+export type WallRemoveIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
 };
 
 /**
@@ -39177,10 +39254,6 @@ export type SetSeasonalAccessEndsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetSeasonalAccessEndsError = SetSeasonalAccessEndsErrors[keyof SetSeasonalAccessEndsErrors];
@@ -39427,10 +39500,6 @@ export type OfficesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type OfficesError = OfficesErrors[keyof OfficesErrors];
@@ -39484,10 +39553,6 @@ export type CreateOfficeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateOfficeError = CreateOfficeErrors[keyof CreateOfficeErrors];
@@ -39544,10 +39609,6 @@ export type UpdateOfficeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateOfficeError = UpdateOfficeErrors[keyof UpdateOfficeErrors];
@@ -39595,10 +39656,6 @@ export type OffshoreErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type OffshoreError = OffshoreErrors[keyof OffshoreErrors];
@@ -40829,10 +40886,6 @@ export type TeamsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TeamsError = TeamsErrors[keyof TeamsErrors];
@@ -40879,13 +40932,13 @@ export type CreateTeamErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateTeamError = CreateTeamErrors[keyof CreateTeamErrors];
@@ -40935,13 +40988,13 @@ export type UpdateTeamErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateTeamError = UpdateTeamErrors[keyof UpdateTeamErrors];
@@ -40994,10 +41047,6 @@ export type SetTeamMembersErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetTeamMembersError = SetTeamMembersErrors[keyof SetTeamMembersErrors];
@@ -47658,6 +47707,10 @@ export type CreateWallErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -47717,10 +47770,6 @@ export type WallPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WallPreviewError = WallPreviewErrors[keyof WallPreviewErrors];
@@ -47777,10 +47826,6 @@ export type ApproveWallErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveWallError = ApproveWallErrors[keyof ApproveWallErrors];
@@ -47838,10 +47883,6 @@ export type WallEventsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WallEventsError = WallEventsErrors[keyof WallEventsErrors];
@@ -47856,7 +47897,10 @@ export type WallEventsResponses = {
 export type WallEventsResponse = WallEventsResponses[keyof WallEventsResponses];
 
 export type RemoveWallData = {
-    body?: never;
+    /**
+     * Body
+     */
+    body?: WallRemoveIn | null;
     headers?: {
         /**
          * Authorization

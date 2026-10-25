@@ -179,7 +179,7 @@ async def test_ac9_after_removal_a_new_retrieval_completes(
     net: Net, admin: Person, world: World
 ) -> None:
     wall_id = await _wall_requester(net, admin, world)
-    assert (await net.remove_wall(admin, wall_id)).status_code == 200
+    assert (await net.lift_wall(world.tenant_id, wall_id)).status_code == 200
     await retrieve(world)
     assert await net.seed.item_status(world.item_id) == "uploaded"
 
@@ -313,7 +313,7 @@ async def test_ac9_after_removal_a_new_screening_run_completes(
     net: Net, admin: Person, world: World, fake_model: FakeModel
 ) -> None:
     wall_id = await _wall_requester(net, admin, world)
-    await net.remove_wall(admin, wall_id)
+    await net.lift_wall(world.tenant_id, wall_id)
     run_id = await _ready(world)
     outcome = await screen(await load_agent_context(world.tenant_id, run_id))
     assert outcome.status == "completed"

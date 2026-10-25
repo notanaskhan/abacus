@@ -465,6 +465,14 @@ async def client_exists(tenant: TenantContext, client_id: UUID) -> bool:
         return await get_client(session, client_id) is not None
 
 
+async def client_partner_of(tenant: TenantContext, client_id: UUID) -> UUID | bool | None:
+    """G-01-T09 (AC8.3): the client's relationship partner (None when it has none), or False
+    when the firm has no such client; identity's wall checks read it."""
+    async with tenant_session(tenant) as session:
+        client = await get_client(session, client_id)
+    return False if client is None else client.relationship_partner_id
+
+
 async def client_of_entity(tenant: TenantContext, entity_id: UUID) -> UUID | None:
     """The client entity's client, or None outside the firm (the `client_entity` scope resolver,
     DEC-211)."""

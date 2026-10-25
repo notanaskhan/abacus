@@ -318,7 +318,7 @@ async def test_ac9_after_removal_access_follows_roles_again(env: Env, role: str)
     who = await env.actor(role)
     wall_id = await env.wall(who)
     _not_found(await env.get(who, env.eng_a))
-    assert (await env.net.remove_wall(env.admin, wall_id)).status_code == 200
+    assert (await env.net.lift_wall(env.tenant_id, wall_id)).status_code == 200
     for tail in READS:
         assert (await env.get(who, env.eng_a, tail)).status_code == 200, (role, tail)
     assert str(env.eng_a) in ids(await env.net.call("GET", "/v1/engagements", who))
@@ -327,7 +327,7 @@ async def test_ac9_after_removal_access_follows_roles_again(env: Env, role: str)
 async def test_ac9_a_new_wall_after_removal_walls_again(env: Env) -> None:
     who = await env.actor("senior")
     wall_id = await env.wall(who)
-    await env.net.remove_wall(env.admin, wall_id)
+    await env.net.lift_wall(env.tenant_id, wall_id)
     assert (await env.get(who, env.eng_a)).status_code == 200
     await env.wall(who)
     _not_found(await env.get(who, env.eng_a))
@@ -337,7 +337,7 @@ async def test_ac9_removing_one_of_two_walls_keeps_the_other(env: Env) -> None:
     who = await env.actor("manager")
     first = await env.wall(who, env.client_a)
     await env.wall(who, env.site_b.client_id)
-    await env.net.remove_wall(env.admin, first)
+    await env.net.lift_wall(env.tenant_id, first)
     assert (await env.get(who, env.eng_a)).status_code == 200
     _not_found(await env.get(who, env.eng_b))
 

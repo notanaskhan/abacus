@@ -21,6 +21,7 @@ from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import EngagementMemberAdded
 from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.member_hooks import member_added
+from abacus.modules.identity.offshore import assert_assignable
 from abacus.modules.identity.repository import (
     display_names,
     engagement_role,
@@ -86,6 +87,7 @@ async def add_member(
     await _within_limits(ctx, engagement_id, {role}, "engagement.member_add")
     if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
         raise NotFound("person")  # walled, a client user, another firm's, or already a member
+    await assert_assignable(ctx.tenant, user_id, client_id)  # G-01-T09: offshore needs consent
     await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
     tx.record(
         "engagement_member.added",
@@ -138,3 +140,25 @@ async def remove_member(
         after=Ref(user_id=user_id),
     )
     await revoke_invitations_by(tx, user_id, engagement_id)  # DEC-277
+
+
+async def remove_walled_member(
+    tx: UnitOfWork, engagement_id: UUID, user_id: UUID, on_behalf_of: UUID
+) -> bool:
+    """G-01-T09 (AC8.5): the `wall.created` consumer ends a walled person's membership of one
+    of the client's engagements, as the system for the wall's creator. Access is already denied
+    by the wall; this ends the assignment. False (nothing changed) when they aren't a staff
+    member there or are its last partner (the engagement keeps one; the wall still holds)."""
+    if _member_removed is None:
+        raise ServiceUnavailable("review assignments can't be released")
+    outcome = await remove_team_member_row(tx.session, engagement_id, user_id)
+    if outcome != "ok":
+        return False
+    await _member_removed(tx, engagement_id, user_id, on_behalf_of)
+    tx.record(
+        "engagement_member.removed",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=user_id),
+    )
+    await revoke_invitations_by(tx, user_id, engagement_id)  # DEC-277
+    return True
