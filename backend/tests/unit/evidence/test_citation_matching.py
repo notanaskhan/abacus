@@ -130,6 +130,7 @@ def test_review_every_verified_result_carries_a_hash_a_region_or_a_value() -> No
         assert found.sha256 is not None or found.box is not None or found.value_text is not None
 
 
+@pytest.mark.serial  # a wall-clock budget (DEC-335)
 def test_review_the_span_search_is_linear_and_long_quotes_are_bounded() -> None:
     import time
 

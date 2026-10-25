@@ -118,30 +118,51 @@ check-heads:
 		echo "multiple heads: rebase onto origin/main and renumber (P-38)"; exit 1; }
 
 check: check-fast
-	cd backend && uv run pytest $(UNIT_TESTS) --cov --cov-fail-under=0
-	cd backend && uv run pytest $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
+	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) --cov --cov-fail-under=0
+	cd backend && uv run pytest $(XDIST_INTEGRATION) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
+	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS) --cov --cov-append --cov-fail-under=0
 	cd backend && uv run python -m abacus_tools.ci.coverage_floor
 	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
 # run time (abacus_tools.ci.shard; every test file runs in exactly one shard), each shard keeps
 # its own coverage data, and ci-coverage combines them and applies the floor. Refresh the timings
-# after large test changes: pytest --durations=0 --durations-min=0 > report.txt, then
+# after large test changes, in one process (workers would skew them and charge each worker's
+# container start to whichever file it ran first):
+# pytest -n 0 --durations=0 --durations-min=0 > report.txt, then
 # python -m abacus_tools.ci.shard --record report.txt
 UNIT_TESTS = tests/unit tests/property tests/acceptance
 INTEGRATION_TESTS = tests/integration tests/security tests/workflows
 SHARD ?= 1
 SHARDS ?= 1
 
+# Parallel test workers (pytest-xdist, DEC-335). PYTEST_WORKERS is a count or `auto` (one per
+# core); 0 runs in one process, as before. Each worker is its own pytest session, so the
+# integration and security suites start their own Postgres, S3 and Temporal containers per worker:
+# PYTEST_INTEGRATION_WORKERS caps those (default 4). Tests go to whichever worker is free
+# (loadgroup), except that tests marked `xdist_group(name=...)` share one worker. Not loadfile:
+# one 340 s file (test_identity.py) would set a whole integration shard's time.
+PYTEST_WORKERS ?= auto
+PYTEST_INTEGRATION_WORKERS ?= 4
+XDIST = -n $(PYTEST_WORKERS) --dist loadgroup -m "not serial"
+XDIST_INTEGRATION = -n $(PYTEST_INTEGRATION_WORKERS) --dist loadgroup -m "not serial"
+# Wall-clock budget tests (`@pytest.mark.serial`) run after the workers, alone, so contention
+# never decides them (DEC-335). Exit 5 is pytest's "nothing collected" for a shard without one.
+SERIAL = -n 0 -m serial
+
 ci-unit:
 	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.unit-$(SHARD) \
-		uv run pytest --cov --cov-report= --cov-fail-under=0 $$files
+		uv run pytest $(XDIST) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.unit-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
+			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 ci-integration:
 	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
-		uv run pytest --cov --cov-report= --cov-fail-under=0 $$files
+		uv run pytest $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
+			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 # The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.
 ci-coverage:
@@ -166,11 +187,17 @@ ci-frontend:
 ci-visual:
 	pnpm -C apps/web run visual:ci
 
+# Every suite under backend/tests, in two runs: those without containers on PYTEST_WORKERS, then
+# those with them (the contracts' undo suite has its own database) on PYTEST_INTEGRATION_WORKERS.
+# PYTEST_WORKERS=0 PYTEST_INTEGRATION_WORKERS=0 make test runs each in one process.
 test:
-	cd backend && uv run pytest
+	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) tests/golden
+	cd backend && uv run pytest $(XDIST_INTEGRATION) tests/contracts $(INTEGRATION_TESTS)
+	cd backend && uv run pytest $(SERIAL) $(UNIT_TESTS) $(INTEGRATION_TESTS)
 
 test-integration:
-	cd backend && uv run pytest tests/integration
+	cd backend && uv run pytest $(XDIST_INTEGRATION) tests/integration
+	cd backend && uv run pytest $(SERIAL) tests/integration
 
 # Evaluation suites (SPEC-005): `make evals EVAL_ARGS="--agent evidence.screener --subset fast"`.
 # Throwaway containers; exits non-zero unless the run passes. Without a model provider it runs on

@@ -39,12 +39,20 @@ from abacus.modules.evidence.uploads import (
 from abacus.modules.evidence.words import extract_words
 from abacus_tools.synthetic.documents import bank_statement_pdf
 
+# A fixed timestamp: the bytes (and so the test ids made from them) don't depend on when the
+# module was collected, so every pytest-xdist worker collects the same tests (DEC-335).
+_ZIP_TIME = (2026, 1, 1, 0, 0, 0)
+
+
+def _entry(name: str) -> zipfile.ZipInfo:
+    return zipfile.ZipInfo(name, date_time=_ZIP_TIME)
+
 
 def _zip(*names: str) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as package:
         for name in names:
-            package.writestr(name, "<x/>")
+            package.writestr(_entry(name), "<x/>")
     return buffer.getvalue()
 
 
@@ -287,14 +295,14 @@ def _office(main: str, parts: list[tuple[str, bytes]], types: bytes = b"") -> by
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as package:
         package.writestr(
-            "[Content_Types].xml",
+            _entry("[Content_Types].xml"),
             b'<?xml version="1.0"?><Types><Override PartName="/x" ContentType="'
             + (types or b"application/xml")
             + b'"/></Types>',
         )
-        package.writestr(main, "<x/>")
+        package.writestr(_entry(main), "<x/>")
         for name, data in parts:
-            package.writestr(name, data)
+            package.writestr(_entry(name), data)
     return buffer.getvalue()
 
 
