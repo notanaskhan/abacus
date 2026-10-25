@@ -23,14 +23,23 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset({"tin_reveals"})
+INSERT_ONLY: frozenset[str] = frozenset({"tin_reveals", "team_rosters"})  # rosters: 0150
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "clients": frozenset({"id", "tenant_id", "name"}),
     "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
-    "offices": frozenset({"tenant_id", "name", "time_zone"}),
-    "teams": frozenset({"tenant_id", "office_id", "name"}),
-    "team_rosters": frozenset({"tenant_id", "team_id", "user_id"}),
+    "offices": frozenset(
+        {"tenant_id", "name", "time_zone"}
+        # G-01-T08 (0150): ADM-03a's office facts
+        | {"code", "is_hq", "address_line1", "address_line2", "city", "region_code"}
+        | {"postal_code", "lead_user_id", "default_reviewer_pool_team_id"}
+    ),
+    "teams": frozenset(
+        {"tenant_id", "office_id", "name"} | {"kind", "service_line", "lead_user_id"}  # 0150
+    ),
+    "team_rosters": frozenset(
+        {"tenant_id", "team_id", "user_id"} | {"removed_at"}  # 0150: history
+    ),
     "contacts": frozenset(  # F-03-T25 (0082)
         {"id", "tenant_id", "client_id", "display_name", "email", "phone", "title"}
         | {"organisation_name", "contact_kind"}
@@ -52,6 +61,13 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # G-01-T08 (0150): offices and teams are edited in place, versioned; never deleted.
+    "offices": frozenset(
+        {"name", "time_zone", "code", "is_hq", "address_line1", "address_line2", "city"}
+        | {"region_code", "postal_code", "lead_user_id", "default_reviewer_pool_team_id"}
+        | {"version"}
+    ),
+    "teams": frozenset({"name", "kind", "service_line", "office_id", "lead_user_id", "version"}),
     # F-03-T25 (0082): the client record (DEC-62). `is_attest_client` is the database's to
     # derive (DEC-128), never the app's.
     "clients": frozenset(

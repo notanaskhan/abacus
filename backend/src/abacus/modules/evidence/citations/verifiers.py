@@ -18,7 +18,8 @@ Every verifier first authorises the actor on the anchor's engagement (`evidence.
 - **`request_item`** `{request_item_id}`: the item exists in the anchor's engagement.
 
 Each derives the `match_id` (C4 §3.1) and renders `title` and `loc` by code. Verification reads
-the words as stored; once P-03-T13 records PII regions, it reads the masked projection instead.
+the words as stored. P-03-T13 now records PII regions; verifying on the masked projection, so a
+quote an agent copied from masked text still verifies, is P-03-T15's (DEC-322).
 """
 
 from __future__ import annotations

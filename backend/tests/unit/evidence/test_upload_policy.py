@@ -64,10 +64,12 @@ def test_the_limit_is_50_mb_and_the_edge_leaves_the_route_room_to_answer() -> No
         "/v1/engagements/e/inbox",
         "/v1/engagements/e/acceptance/file",
         "/v1/engagements/e/letter/file",
+        "/v1/portal/binders/b/drops",  # R-01-T09: the drop takes the same policy
     ):
         assert UPLOAD_ROUTE_PATHS.fullmatch(path), path
     assert not UPLOAD_ROUTE_PATHS.fullmatch("/v1/engagements")
     assert not UPLOAD_ROUTE_PATHS.fullmatch("/v1/engagements/e/request-items/i/uploads/x")
+    assert not UPLOAD_ROUTE_PATHS.fullmatch("/v1/portal/binders/b")
 
 
 @pytest.mark.parametrize(

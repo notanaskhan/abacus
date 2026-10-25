@@ -49,8 +49,8 @@ _ISSUER = object()
 class SystemContext:
     """The platform acting for a firm on one run, on one engagement (ADR-023; TASK-010 design §1,
     revision 1). Holds the matrix role `system`, and `authorise` confines it to `engagement_id`.
-    Built only by `identity.service.system_context_for_run`, which connections calls after
-    proving the run from the database (SYS-001, CTX-001)."""
+    Built only by `identity.service.system_context_for_run`, which connections and evidence's
+    drop sort call after proving the run from the database (SYS-001, CTX-001)."""
 
     tenant: TenantContext
     on_behalf_of: UUID
@@ -117,8 +117,9 @@ Actor = AuthContext | SystemContext | AgentContext
 def system_context_for_run(
     *, tenant_id: UUID, run_id: UUID, engagement_id: UUID, on_behalf_of: UUID
 ) -> SystemContext:
-    """The platform acting on one run. The caller (connections' run loader only, SYS-001) has
-    read the run from the database under the tenant's row-level security and passes its
+    """The platform acting on one run. The caller (SYS-001's issuers only: connections' run
+    loader, and evidence's portal drop sort, whose run is the drop's own inbox row, R-01-T09)
+    has read the run from the database under the tenant's row-level security and passes its
     recorded values: the run row is the proof, never a workflow's input."""
     return SystemContext(
         TenantContext(tenant_id, "system", f"run:{run_id}", on_behalf_of),

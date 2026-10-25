@@ -69,6 +69,17 @@ class Office(Base):
     name: Mapped[str]
     time_zone: Mapped[str] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # G-01-T08 (0150): ADM-03a's office facts. None of them is an access boundary (DEC-30).
+    code: Mapped[str] = mapped_column(server_default=FetchedValue())
+    is_hq: Mapped[bool] = mapped_column(server_default=FetchedValue())
+    address_line1: Mapped[str | None]
+    address_line2: Mapped[str | None]
+    city: Mapped[str | None]
+    region_code: Mapped[str | None]
+    postal_code: Mapped[str | None]
+    lead_user_id: Mapped[UUID | None]
+    default_reviewer_pool_team_id: Mapped[UUID | None]
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 
 class Team(Base):
@@ -79,18 +90,27 @@ class Team(Base):
     office_id: Mapped[UUID | None]
     name: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # G-01-T08 (0150): a team or group's kind; a service-line team names its line.
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    service_line: Mapped[str | None]
+    lead_user_id: Mapped[UUID | None]
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 
 class TeamRoster(Base):
-    """One person on a team's roster (the glossary's code name for engagement staff is
-    engagement_member, DEC-14, so a team keeps a roster)."""
+    """One change to a team's roster (the glossary's code name for engagement staff is
+    engagement_member, DEC-14, so a team keeps a roster). Insert-only (0150): a removal is a new
+    row with `removed_at`; the roster is each person's latest row per team without one."""
 
     __tablename__ = "team_rosters"
 
-    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
-    team_id: Mapped[UUID] = mapped_column(primary_key=True)
-    user_id: Mapped[UUID] = mapped_column(primary_key=True)
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    seq: Mapped[int] = mapped_column(server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    team_id: Mapped[UUID]
+    user_id: Mapped[UUID]
     added_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    removed_at: Mapped[datetime | None]
 
 
 class Contact(Base):

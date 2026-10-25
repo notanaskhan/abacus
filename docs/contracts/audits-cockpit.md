@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contract in `docs/contracts/README.md` (A-01 §8.1; chapter 01 may promote it into C1–C21) |
 | Version | v1 |
-| Status | stub (A-01-T02, 2026-10-24); PATCH profile and POST phase live behind the flag (A-01-T05, 2026-10-24) |
+| Status | stub (A-01-T02, 2026-10-24); PATCH profile and POST phase live behind the flag (A-01-T05, 2026-10-24); index, cockpit and Source Documents live behind the flag (A-01-T08 to T10, 2026-10-25) |
 | Provider epic | A-01 |
 | Consumers | AUD-01, AUD-02, AUD-03 (A-01-T11, T12, T15); A-02 (Trial Balance section), A-03…A-09, P-09 / P-10 (dock host, rail sync by `work_item_ref`), K-04 (Board, gear), X-01 / X-03 (segments), I-01 (index counts) |
 | Freeze sprint | S8 (freeze Fri Feb 19, 2027 per A-01 §8.1) |
@@ -20,13 +20,13 @@ Consumers can rely on an audits index on the P-36 envelope whose phase tiles (`c
 ## 2. Who may call it
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal | Implemented by |
 |---|---|---|---|---|---|
-| AUD-01 index | `GET /v1/audits?segment=&type=&phase=&partner=&office=&due=&period=&q=&cursor=&limit=` | `engagement.read_metadata` | every firm role through `visible()`; the route refuses portal principals (INV-4) | agent read-only | A-01-T08 |
-| Cockpit | `GET /v1/audits/{work_item_id}/cockpit` | `engagement.read` | content roles on the engagement; metadata-only roles get the bar and overview only | read-only | A-01-T09 |
+| AUD-01 index | `GET /v1/audits?segment=&type=&phase=&partner=&office=&due=&period=&q=&cursor=&limit=` | `engagement.read_metadata` | every firm role through `visible()`; the route refuses portal principals (INV-4) | refused | A-01-T08 |
+| Cockpit | `GET /v1/audits/{work_item_id}/cockpit` | `engagement.read_metadata` | every firm role on the engagement; bands, dock tabs and actions only with `engagement.read` as well (metadata-only roles get the bar and overview only, DEC-312) | refused | A-01-T09 |
 | EBP profile | `PATCH /v1/audits/{work_item_id}/profile` | `engagement.update` | engagement partner, manager | denied (no cell) | A-01-T05 |
 | Record a phase | `POST /v1/audits/{work_item_id}/phase` (`Idempotency-Key`; 201) | `assurance.record_phase` | engagement partner, manager; independence | **denied** | A-01-T05 |
 | Record an external release | `POST /v1/audits/{work_item_id}/release-record` (`Idempotency-Key`; 201) | `assurance.record_release` | engagement partner; `mfa_recent`; independence | **denied** | A-01-T23 |
 | Record an external archive | `POST /v1/audits/{work_item_id}/archive-record` (`Idempotency-Key`; 201) | `assurance.record_archive` | engagement partner, manager; `mfa_recent`; independence | **denied** | A-01-T23 |
-| Source Documents | `GET /v1/audits/{work_item_id}/source-documents?binder=&q=&sort=missing_first\|received_first` | `request_item.read` | as P-06 (`client_service` sees status and file names, never content) | `task_scope` | A-01-T10 |
+| Source Documents | `GET /v1/audits/{work_item_id}/source-documents?binder=&q=&sort=missing_first\|received_first` | `request_item.read` | as P-06 (`client_service` sees status and file names, never content) | refused | A-01-T10 |
 
 Every route first authorises its action (a client principal, an agent or the system is refused with 403; on a work item, its engagement through `authorise`), then answers 404 with the flag off and 501 `not_implemented` with it on until its task lands, so no principal learns the flag state it may not use (DEC-261). A work item outside the tenant, behind a wall or not of kind `assurance` answers 404 (INV-3). Client roles hold no cell on the three record actions.
 
@@ -90,14 +90,17 @@ Brightwater Hale (synthetic) only: the AUD-01 a index foots 7 + 9 + 6 + 2 + 3 = 
 ## 10. Registration slots (`assurance.api`)
 | Slot | Signature | Rule |
 |---|---|---|
-| `register_audit_section` | `(key, band, order, route, state_provider)` | the provider answers `SectionState(state, grammar, sub_line, blocked_on_user_id)` or `None` (row left out); no provider → refused; a taken key refuses a different registration |
+| `register_audit_section` | `(key, band, order, route, state_provider, *, title="", link="planned", required_action=None, action_scope="engagement")` (additive, DEC-312: the cockpit checks `required_action` for the reader, on the engagement or the firm, before asking the provider) | the provider answers `SectionState(state, grammar, sub_line, blocked_on_user_id)` or `None` (row left out); no provider → refused; a taken key refuses a different registration |
 | `register_index_tag` | `(name, provider, classification)` | `metadata` tags reach metadata-only roles; `content` tags do not (ADR-024) |
 | `register_audit_segment` | `(family, entitlement)` | A-01 registers `fs`, `ebp`, `review`; X-01 `soc`, X-03 `ia` with their entitlements |
+| `register_run_summary` | `(provider)`: `(tenant, work_item_ids) -> {work_item_id: RunSummary}` | P-10's C6 v1 engagement runs; none registered, or a failing provider, means no "Processing" and no "Started …" (DV-11, DEC-312) |
+
+A-01's own registrations (DEC-312): Overview rows `client`, `methodology`, `standards_set`, `source_documents`, `team`, `activity`; metadata tags `letter_sent`, `eqr`, `no_report`. C5 v1.1 facts are filled by `requests.source_documents` with evidence's `register_upload_facts` provider (DEC-313).
 
 ## 11. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | — | — | stub 2026-10-24 (A-01-T02); C5 v1.1 additive fields in place; profile and phase live (A-01-T05, DEC-262: phase-to-gate map, `phase_invalid` 422 for a reason over 300 characters) |
+| v1 | — | — | stub 2026-10-24 (A-01-T02); C5 v1.1 additive fields in place; profile and phase live (A-01-T05, DEC-262: phase-to-gate map, `phase_invalid` 422 for a reason over 300 characters); index, cockpit and Source Documents live 2026-10-25 (A-01-T08 to T10, DEC-311 to DEC-313; the cockpit's action is `engagement.read_metadata`, the C5 v1.1 fields filled) |
 
 ## 12. Open points
 - DEC-261: slot shapes, the `engagement.read_metadata` index refusing portal principals in the route, and the C5 v1.1 fields as optional.

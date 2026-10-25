@@ -1,9 +1,9 @@
 // The portal's fixture routes (P-08-T08): branding, the pre-session sign-in family, the portal
 // shell on `/v1/me` and the POR-02 home. They answer the shapes the backend contract fixes (the
 // generated types; app-core/portal-contracts.ts for the routes not served yet):
-// - `start` answers 202 with the same body for any email (no enumeration); a reminder link older
-//   than 14 days answers 410 `link_expired` (the contract has no such answer yet: an open gap in
-//   docs/screens/POR-01.md);
+// - `start` answers 202 with the same body for any email (no enumeration); a reminder link that
+//   can't be used (older than 14 days here) answers 404 `link_expired`, the one answer the backend
+//   gives for every bad link (P-08-T21);
 // - `verify` takes the fixture code 481027; a wrong code costs one of three tries (401
 //   `code_mismatch {tries_left}`), the third locks sign-in for 15 minutes (423 `sign_in_locked`);
 //   an owner (the MFA floor) answers `mfa_required` (or `mfa_setup_required` without a factor);
@@ -113,7 +113,7 @@ export function portalHandlers(options: PortalHandlerOptions): Record<string, Fi
       linkIssued !== undefined &&
       Date.parse(clock) - Date.parse(linkIssued) > LINK_DAYS * 24 * 60 * MINUTE
     ) {
-      return json(errorBody("link_expired"), 410);
+      return json(errorBody("link_expired"), 404);
     }
     return json(challenge(persona), 202);
   };

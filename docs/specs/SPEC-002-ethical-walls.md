@@ -7,10 +7,12 @@ risk_zone: red
 related_adrs: [ADR-026, ADR-020, ADR-023, ADR-024, ADR-025, ADR-027, ADR-007, ADR-031]
 related_specs: [SPEC-000]
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-25
 ---
 
 > **Amended 2026-10-07 during TASK-016** (founder approved the design): the list action is `wall.list`, not `wall.read`, because `*.read` actions are engagement-scoped reads that `visible()` filters. Removal is `POST /v1/walls/{id}/remove` returning the wall, because every route returns a response model. A firm admin can't lift a wall on themself (security review).
+
+> **Amended 2026-10-25 for walls v2 (G-01-T09; DEC-169, DEC-318, DEC-319):** a wall carries a reason and a named partner approver; firm admins and partners create walls, which apply at once (DEC-73); the named partner approves once with fresh MFA; lifting is a partner's (never a firm admin's, never on one's own wall); firm admins, security admins and partners list walls; a wall's creation ends the walled person's assignments on the client; offshore members are walled the same way from every client without an offshore-disclosure consent (DEC-52). AC-9 and AC-10 read as amended below; AC-12 to AC-20 are new.
 
 > **Instructions for coding agents**
 > - Implement only what this spec describes. Anything not listed here is out of scope.
@@ -58,12 +60,23 @@ Audit firms must keep people with a conflict (an independence issue, a personal 
 - **AC-7** Given U is walled from C, when an agent run or system run acts for U (as initiator or `on_behalf_of`) on an engagement of C, then its next authorised step is denied (layer `wall`) and the run ends as failed.
 - **AC-8** Given U is walled from C, then U's access to other clients is unchanged.
 
-### Story 3: As a firm admin I can lift a wall and see who is walled
-- **AC-9** Given a wall, when a firm admin with recent MFA removes it, then `wall.removed` is audited, and from the next request U's access follows their roles again.
-- **AC-10** Given walls in the firm, when a firm admin lists them, then they see each wall's user, client, creator and creation time. No one else may list walls (403).
+### Story 3: As a partner I can lift a wall, and wall administrators see who is walled
+- **AC-9** (amended by walls v2) Given a wall, when a partner-level member with recent MFA other than the walled person removes it, with an optional reason, then `wall.removed` is audited, the row stays marked removed, and from the next request U's access follows their roles again. A firm admin who isn't a partner gets 403; a partner lifting a wall on themself gets 409 `own_wall`.
+- **AC-10** (amended by walls v2) Given walls in the firm, when a firm admin or security admin with recent MFA lists them, then they see every wall's user, client, creator, creation time, reason, approver and approval; a partner sees the same except walls on themself and on a client they are walled from. No one else may list walls (403).
 
 ### Story 4: Production may start
 - **AC-11** Given walls are enforced (AC-4 to AC-8 pass), then `WALL_SAFE` is true and `create_app` starts in production.
+
+### Story 5: Walls v2 (G-01-T09; G-01 §3.8, §3.9)
+- **AC-12** Given a firm admin or a partner with recent MFA, when they create a wall with a reason code (one of five; `other` by default), optional reason text and a named approver, then it is active at once (DEC-73), `wall.created` names the approver, and the walled person's `access.changed` is emitted. A named approver who isn't an active partner-level member, or is the walled person, is 422 `approver_not_partner`.
+- **AC-13** Given the walled person is the client's relationship partner, then the preview lists `relationship_partner` and creating the wall is 409 `relationship_partner`; an active wall for the same pair is listed as `wall_exists` and 409 `wall_exists`.
+- **AC-14** Given a wall preview, then it counts the person's current engagement memberships and work-item assignments on the client; a client or person the caller can't see answers 404 as if unknown (DEC-43).
+- **AC-15** Given a wall naming an approver, when that partner approves with recent MFA, then `approved_by` and `approved_at` are set once (forward-only in the database), `wall.approved` is audited, and its creator is notified; anyone else gets 403 (`not_named_approver` for another partner), a second approval 409 `already_approved`, a lifted wall 404.
+- **AC-16** Given `wall.created`, then its consumer ends the walled person's engagement memberships (except where they are the last partner) and work-item assignments on the client, one audit row each as the system on behalf of the wall's creator, idempotently, and nothing for a wall lifted before it runs.
+- **AC-17** Given a wall, then its log (`GET /v1/walls/{id}/events`) lists its audit events newest first, for those who may list it; a wall on a client the reader is walled from answers 404.
+- **AC-18** Given an offshore member, then every resource naming a client without a valid offshore-disclosure consent is refused at the wall (404 everywhere, lists and counts without it), for agents and system runs acting for them too; with no consent provider registered, no client qualifies (DEC-52, fail closed).
+- **AC-19** Given an offshore member and a client without consent, then they can't be assigned work on it or added to its engagements (409 `offshore_consent_required`).
+- **AC-20** Given an offshore principal, then a response field tagged `pii_kind=tin` reaches them masked or null, and no reveal action is ever among their allowed actions.
 
 ## 6. Behaviour and flows
 **Happy path**
@@ -78,8 +91,9 @@ Audit firms must keep people with a conflict (an independence issue, a personal 
 **State transitions**
 | From | Event | To | Who can trigger |
 |---|---|---|---|
-| (none) | create | active | firm admin, fresh MFA |
-| active | remove | removed | firm admin, fresh MFA |
+| (none) | create | active (awaiting approval) | firm admin or partner, fresh MFA |
+| active (awaiting) | approve | active (approved) | the named partner, fresh MFA |
+| active | remove | removed | a partner other than the walled person, fresh MFA |
 
 ## 7. Domain and data changes
 - New table `ethical_walls`:
@@ -93,9 +107,12 @@ Audit firms must keep people with a conflict (an independence issue, a personal 
 ## 8. Interfaces
 | Method | Path | Action | Notes |
 |---|---|---|---|
-| POST | /v1/walls | wall.create | `{user_id, client_id}` → 201 WallOut |
-| POST | /v1/walls/{wall_id}/remove | wall.remove | 200 WallOut, marked removed; 409 `own_wall` on one's own wall |
-| GET | /v1/walls | wall.list | list (new matrix action, firm admin only; see Q2) |
+| POST | /v1/walls | wall.create | `{user_id, client_id, reason_code?, reason_text?, approver_user_id?}` → 201 WallOut; 409 `relationship_partner`, `wall_exists`; 422 `approver_not_partner` |
+| POST | /v1/walls/{wall_id}/remove | wall.remove | `{reason?}` → 200 WallOut, marked removed; 409 `own_wall` on one's own wall |
+| GET | /v1/walls | wall.list | list (firm admins, security admins, partners; see AC-10) |
+| GET | /v1/walls/preview | wall.create | blockers and assignments ended (walls v2, behind `firm_settings.v2`) |
+| POST | /v1/walls/{wall_id}/approve | wall.approve | the named partner (walls v2) |
+| GET | /v1/walls/{wall_id}/events | wall.list | the wall's log (walls v2) |
 
 ## 9. Authorisation and tenancy
 - **Order:** in `authorise`, layer 2 checks walls before roles (ADR-026). A walled actor is denied whatever the matrix says; the denial logs layer `wall` and the route answers 404.
@@ -118,8 +135,8 @@ None.
 
 ## 13. Security and privacy
 - 404 rather than 403 on walled engagements, so they aren't disclosed.
-- Wall creation and removal are firm-admin only, with fresh MFA, and audited.
-- The wall list is sensitive (it reveals conflicts): firm admin only, never in logs beyond IDs.
+- Wall creation is a firm admin's or partner's, removal a partner's, approval the named partner's; all with fresh MFA, all audited (walls v2).
+- The wall list is sensitive (it reveals conflicts): wall administrators and partners only (AC-10), never in logs beyond IDs.
 
 ## 14. Audit trail and evidence integrity
 `wall.created` and `wall.removed` audit events, with actor, target wall, and user and client IDs as refs. Wall rows are never deleted.

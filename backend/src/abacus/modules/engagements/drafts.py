@@ -65,7 +65,7 @@ from abacus.modules.identity.api import (
     add_member,
     authorise,
     engagement_team_query,
-    walled_from,
+    hidden_clients,
 )
 from abacus.modules.organisations.api import client_of_entity
 
@@ -192,7 +192,7 @@ async def _check_scope(
         return None
     # `authorise` does not wall a firm-level resource (identity's `_walled` needs an engagement),
     # so the person's walls are read here, before the role check (create_engagement's way).
-    if owner in await walled_from(ctx.tenant, ctx.user_id):
+    if await hidden_clients(ctx.tenant, ctx.user_id, [owner]):
         raise NotFound("client")
     try:
         await authorise(ctx, CREATE, Resource.client(ctx.tenant_id, owner))

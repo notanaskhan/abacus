@@ -49,6 +49,7 @@ from abacus.kernel.uow import (
     uow,
 )
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.assurance.completion_repository import archive_of, release_of
 from abacus.modules.assurance.phase_models import AssurancePhaseEvent
 from abacus.modules.engagements.api import (
     AssuranceItem,
@@ -342,6 +343,28 @@ async def derive_phase(tenant: TenantContext, engagement_id: UUID, gate: str) ->
     return moved
 
 
+class PhaseGateUnmet(DomainConflict):
+    """The gate a gate move names is not met (computed, never the caller's say), or does not
+    open the target phase."""
+
+    code = "phase_gate_unmet"
+
+
+async def _gate_met_in(
+    tx: UnitOfWork, tenant: TenantContext, engagement_id: UUID, gate: str
+) -> bool:
+    """Whether `gate` is met now, computed: G8 (released) and G9 (archive locked) from SPEC-314's
+    own rows read in the caller's unit, where the act that meets them was just written; any other
+    gate from its registered provider. An unregistered gate is never met."""
+    if not gate_registered(gate):
+        return False
+    if gate == "G8":
+        return await release_of(tx.session, engagement_id) is not None
+    if gate == "G9":
+        return await archive_of(tx.session, engagement_id) is not None
+    return (await gate_fact(tenant, engagement_id, gate)).met
+
+
 async def advance_by_gate(
     tx: UnitOfWork,
     tenant: TenantContext,
@@ -352,13 +375,27 @@ async def advance_by_gate(
 ) -> PhaseMove | None:
     """SPEC-314's release (G8) and archive lock (G9), in the caller's unit: the person whose act
     met the gate moves the phase forward to `to` with one derived event (mode `derived`, the
-    gate named), so the history has no gap. Nothing moves when the phase is already there."""
+    gate named), so the history has no gap. Nothing moves when the phase is already there.
+
+    Security review (DEC-312): module-internal (not in `assurance.api`); only a person's own
+    context (`actor_user_id` must be the session's actor; a system run derives through
+    `derive_phase`), only a gate that opens `to`, and only once that gate is met, computed here."""
+    if (
+        tenant.actor_kind != "human"
+        or actor_user_id is None
+        or str(actor_user_id) != tenant.actor_id
+    ):
+        raise Forbidden("assurance.phase_advance", "role")
+    if gate not in PHASE_GATES.get(to, ()):
+        raise PhaseGateUnmet(facts={"to_phase": to, "gate": gate})
     work_item = await assurance_item_id(tenant, engagement_id)
     if work_item is None:
         return None
     item = await lock_assurance_item(tx, work_item)
     if _rank(item.phase) >= _rank(to):
         return None
+    if not await _gate_met_in(tx, tenant, engagement_id, gate):
+        raise PhaseGateUnmet(facts={"to_phase": to, "gate": gate})
     return await _write_move(
         tx,
         tenant,

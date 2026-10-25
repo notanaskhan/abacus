@@ -93,7 +93,10 @@ async def _binder(seed: Seeder, claire: Person, engagement: uuid.UUID, partner: 
         hidden,
     )
     await seed.run("UPDATE request_items SET status = 'uploaded' WHERE id = $1", others[0])
-    await seed.run("UPDATE request_items SET due_on = current_date - 1 WHERE id = $1", others[1])
+    # Two days back: past due in every firm time zone (the overdue rule reads the firm's local
+    # date, and `current_date` is UTC, so one day back is still today in the US until midnight
+    # there).
+    await seed.run("UPDATE request_items SET due_on = current_date - 2 WHERE id = $1", others[1])
 
 
 async def test_ac15_the_home_composes_one_scope_in_client_codes(seed: Seeder) -> None:

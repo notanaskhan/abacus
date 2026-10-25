@@ -66,6 +66,16 @@ The repo has one request list per engagement and a PBC board. BND-01, BND-02 and
 - **AC-19** No code path lets the agent principal send: `follow_up.send` denies the agent at every autonomy level, the P-4 tick only drafts, `follow_up.sent` is human-only in the database, and the recorded engagement-agent histories replay unchanged.
 - **AC-20** Partners, managers, seniors, staff and `client_service` may draft and send; reviewers may not send.
 
+### Story 6: the evidence screening aggregate (P-06-T20; DEC-48, DEC-324; epic Stories 5.1 to 5.3)
+- **AC-21** Code composes a request batch's aggregate as a `request_batch` row of `screening_results` (`created_by_kind = system`). Each change supersedes the item's previous row with `batch_no + 1`; an unchanged composition writes nothing; no row is updated; the database refuses an aggregate from an agent or a person, and every 0010 rule still holds for `version` rows.
+- **AC-22** Any flag makes the batch flagged, both checks passing make it passed, anything else is not screened. "Right document" comes only from shown, code-verified reviewer flags (`irrelevant`). "Right period" comes only from code: the document's dates against the request's period, else the `wrong_period` check. No model output changes the period verdict, and no aggregate path writes a request's status or a review decision.
+- **AC-23** A withdrawn version is left out of the aggregate when it is composed and when the card is read; a withdrawal recomposes every batch that held it.
+- **AC-24** `GET …/screening` answers 404 with `screening.card` off; it is a firm reviewer's read (`upload_review.read`; clients and `client_service` refused); it carries no confidence; its file flags name the file, the reason (`wrong_document`, `wrong_year`) and the verified citation as region.
+- **AC-25** Rerun answers 202, starts reviews only for current versions without a completed review under the reviewer's current prompt, recomposes, and answers 409 `screening_running` while a review of the files runs.
+- **AC-26** Feedback is a person's insert-only row on an aggregate (a thumbs-down without a reason is 422; the agent is denied; a per-version result answers 404); the note is sealed; the card shows the viewer's latest.
+- **AC-27** On a `tax_return` work item at a firm that is not synthetic (no §7216 consent registration exists until C19), the reviewer makes no run and no model call, and the aggregate's model check stays not run; code checks still run.
+- **AC-28** A review decision's `screening_result_id` may name only a `version` row.
+
 ## 6. Behaviour and flows
 **State transitions**
 | From | Event | To | Who can trigger |

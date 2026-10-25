@@ -15,6 +15,14 @@ from abacus.modules.review.contract import (
     review_notes_router,
     sign_offs_router,
 )
+from abacus.modules.review.gates import (
+    C13_EVENTS,
+    GateSource,
+    OpenGate,
+    rebuild_human_gates,
+    register_gate_source,
+)
+from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.notes import notes_for, open_note_counts
@@ -73,18 +81,29 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
 
+# P-04-T16 (C13): the human-gate projector, on the events its sources may change.
+SUBSCRIPTIONS = dict(GATE_SUBSCRIPTIONS)
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
+
 __all__ = [
+    "ACTIVITIES",
+    "C13_EVENTS",
     "LEVELS",
     "REQUIRED_LEVELS",
     "ROUTERS",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "AlreadySigned",
     "DecisionKind",
     "FieldOwner",
+    "GateSource",
     "Json",
     "LevelState",
     "NotCanonical",
     "NotPrepared",
     "NotesOpen",
+    "OpenGate",
     "PreparerCannotReview",
     "Reviewable",
     "ReviewableFacts",
@@ -100,11 +119,13 @@ __all__ = [
     "gate_met",
     "notes_for",
     "open_note_counts",
+    "rebuild_human_gates",
     "record_sign_off",
     "register_decision_kind",
     "register_field_owner",
     "register_fix_runner",
     "register_gate_kind",
+    "register_gate_source",
     "register_reviewable",
     "register_reviewable_facts",
     "reviewable_fact_types",

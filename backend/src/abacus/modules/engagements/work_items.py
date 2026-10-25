@@ -33,16 +33,18 @@ from abacus.kernel.listing import (
     query_hash,
     status_counts,
 )
-from abacus.kernel.uow import Target, UnitOfWork, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.models import AssuranceWorkItem, Engagement, WorkItem
 from abacus.modules.engagements.record import GateUnmet
-from abacus.modules.engagements.service import get_ref, lock_ref
+from abacus.modules.engagements.service import client_of, get_ref, lock_ref
 from abacus.modules.engagements.setup import g2_blocks
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import (
     AuthContext,
+    assert_assignable,
     authorise,
     is_synthetic_firm,
+    team_standing,
     visible,
     visible_scope,
 )
@@ -327,10 +329,69 @@ _ASSIGN = text(
 )
 
 
+# G-01-T09 (AC8.5): a person's current assignments on a client's engagements (an assignment row
+# no later removal row undoes), and their ending by the `wall.created` consumer.
+_CURRENT_ON_CLIENT = text(
+    "SELECT a.work_item_id, a.engagement_id, a.function FROM work_item_assignments a "
+    "JOIN engagements e ON e.id = a.engagement_id "
+    "WHERE a.user_id = :user_id AND e.client_id = :client_id AND a.removed_at IS NULL "
+    "AND NOT EXISTS (SELECT 1 FROM work_item_assignments r "
+    "WHERE r.work_item_id = a.work_item_id AND r.user_id = a.user_id "
+    "AND r.function = a.function AND r.removed_at IS NOT NULL "
+    "AND r.assigned_at >= a.assigned_at) "
+    "ORDER BY a.engagement_id, a.work_item_id, a.function"
+)
+_UNASSIGN = text(
+    "INSERT INTO work_item_assignments "
+    "(tenant_id, work_item_id, engagement_id, user_id, function, assigned_by, removed_at) "
+    "VALUES (:tenant_id, :work_item_id, :engagement_id, :user_id, :function, :assigned_by, "
+    "abacus_now())"
+)
+
+
+async def wall_assignment_count(tenant: TenantContext, user_id: UUID, client_id: UUID) -> int:
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _CURRENT_ON_CLIENT, {"user_id": user_id, "client_id": client_id}
+        )
+        return len(rows.all())
+
+
+async def end_wall_assignments(
+    tx: UnitOfWork, tenant_id: UUID, user_id: UUID, client_id: UUID, on_behalf_of: UUID
+) -> int:
+    """In the consumer's unit of work (the system, on behalf of the wall's creator): one removal
+    row and one `work_item.unassigned` audit row per current assignment. Idempotent."""
+    rows = (
+        await tx.session.execute(_CURRENT_ON_CLIENT, {"user_id": user_id, "client_id": client_id})
+    ).all()
+    for work_item_id, engagement_id, function in rows:
+        await tx.session.execute(
+            _UNASSIGN,
+            {
+                "tenant_id": tenant_id,
+                "work_item_id": work_item_id,
+                "engagement_id": engagement_id,
+                "user_id": user_id,
+                "function": function,
+                "assigned_by": on_behalf_of,
+            },
+        )
+        tx.record(
+            "work_item.unassigned",
+            target=Target("engagement", engagement_id),
+            after=Ref(user_id=user_id, work_item_id=work_item_id),
+        )
+    return len(rows)
+
+
 async def assign_work_item(
     ctx: AuthContext, work_item_id: UUID, user_id: UUID, function: str
 ) -> None:
     """Assign `user_id` the `function` on the work item, in one unit of work with its audit event.
+    The assignee must be a staff member of the engagement's team and not walled from its client:
+    otherwise 404, the same answer for both so a wall is never revealed (P-07-T30, ED-042). The
+    `eqr` function goes to the engagement's EQR only, and the EQR takes no other (422).
     Refused 409 `gate_unmet` (`gate` G2, `user_id`) when the engagement's client is an attest
     client and that person is not cleared on the engagement (`setup.g2_blocks`); a non-attest
     client's engagement is never gated. An unknown function is 422; an unknown or walled work
@@ -346,6 +407,17 @@ async def assign_work_item(
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "work_item.assign", ref.resource())
+        standing = await team_standing(ctx.tenant, engagement_id, user_id)
+        if standing in ("none", "client"):
+            raise NotFound("team_member")
+        client_id = await client_of(ctx.tenant, engagement_id)
+        if client_id is None:
+            raise NotFound
+        # G-01-T09 (AC9.3): walled people aren't assignable (404); offshore without consent 409.
+        await assert_assignable(ctx.tenant, user_id, client_id)
+        # The `eqr` function is the EQR's, and the EQR's only function (security review, DEC-327).
+        if (standing == "eqr") != (function == "eqr"):
+            raise DomainInvalid(facts={"field": "function"})
         if await g2_blocks(ctx.tenant, engagement_id, user_id):
             raise GateUnmet(facts={"gate": "G2", "user_id": str(user_id)})
         await tx.session.execute(
@@ -501,3 +573,15 @@ async def list_work_items(
         total=total,
         counts=counts,
     )
+
+
+async def holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """For the gateway (P-06-T20 security review; DEC-324): whether the engagement holds a
+    `tax_return` work item, whose content is tax-return information (§7216)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(WorkItem.id)
+            .where(WorkItem.engagement_id == engagement_id, WorkItem.kind == "tax_return")
+            .limit(1)
+        )
+    return found is not None

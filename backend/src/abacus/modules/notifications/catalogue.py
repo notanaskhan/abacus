@@ -19,11 +19,11 @@ from abacus.modules.identity.api import (
     engagement_leads,
     engagement_partners,
     firm_admins,
+    hidden_clients,
     member_facts,
     partner_members,
     security_admins,
     team_of,
-    walled_from,
 )
 from abacus.modules.notifications.kinds import NotificationKind, register_kind
 
@@ -121,7 +121,7 @@ async def _hold_notify(tenant_id: UUID, payload: dict[str, object]) -> list[UUID
         member = await member_facts(tenant, user)
         if member is None or member.client:
             continue
-        if client is not None and client in await walled_from(tenant, user):
+        if client is not None and await hidden_clients(tenant, user, [client]):
             continue
         out.append(user)
     return out
@@ -139,6 +139,17 @@ async def _incident_recorded(tenant_id: UUID, payload: dict[str, object]) -> lis
 async def _incident_from_accrued(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """Q-02-T33 (RB-27): the firm's QI and firm admins, about an Accrued incident."""
     return sorted(set(await security_admins(tenant_id)) | set(await firm_admins(tenant_id)))
+
+
+async def _wall_approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-01-T09 (AC8.2): the partner a new wall names to approve it (none named: nobody)."""
+    approver = _uuid(payload, "approver_user_id")
+    return [approver] if approver is not None else []
+
+
+async def _wall_creator(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    creator = _uuid(payload, "created_by")
+    return [creator] if creator is not None else []
 
 
 @dataclass(frozen=True)
@@ -201,6 +212,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "incident.propagated": Kind(
         "incident_from_accrued", _incident_from_accrued, "security_incident", "incident_id", None
     ),
+    # G-01-T09 (DEC-73): a wall's named partner is asked to approve it; its creator is told.
+    "wall.created": Kind(
+        "wall_approval_requested", _wall_approver, "ethical_wall", "wall_id", None
+    ),
+    "wall.approved": Kind("wall_approved", _wall_creator, "ethical_wall", "wall_id", None),
+    # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
+    "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -228,6 +246,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "legal_hold.placed": "A legal hold was placed on {subject}.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
+    "wall.created": "An ethical wall is waiting for your approval.",
+    "wall.approved": "The ethical wall you added was approved.",
+    "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
 }
 
 
@@ -268,6 +289,10 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("incident_from_accrued", "system", "ShieldAlert", email_default=True),
     NotificationKind("firm_export_approval_requested", "approval", "Download"),
     NotificationKind("firm_export_ready", "system", "Download"),
+    # G-01-T09: the wall approval (actionable from ADM-03's drawer) and its outcome.
+    NotificationKind("wall_approval_requested", "approval", "ShieldCheck", email_default=True),
+    NotificationKind("wall_approved", "system", "ShieldCheck"),
+    NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

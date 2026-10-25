@@ -68,6 +68,7 @@ def real_firm_with_everything_else_true(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setattr(boundary, "_opted_in", yes)
     monkeypatch.setattr(boundary, "_excluded", not_excluded)
     monkeypatch.setattr(boundary, "_stage", live)
+    monkeypatch.setattr(boundary, "_tax_return", not_excluded)  # no tax-return work (DEC-324)
     boundary.clear_cache()
 
 

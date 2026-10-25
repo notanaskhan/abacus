@@ -10,3 +10,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: ledger.tb_workpaper
+    description: 'AUD-06 trial balance and leadsheets on C9 v1 (A-02; docs/contracts/c09-ledger.md; SPEC-333). Gates the C9 v1 routes added by A-02-T03: GET /v1/engagements/{id}/trial-balances/{tb}/layers/{layer}, /leadsheets/{area}, /export.xlsx and POST /checks/{check}/issue-link. Off: those routes answer 404 after authorising. On: 501 not_implemented until their task lands (view by layer and leadsheet by area A-02-T10; Open in Excel A-02-T22; issue link A-02-T17). The SPEC-309 to SPEC-311 trial balance routes stay live and ungated (DEC-314). Off until a founder switches it on per firm.'
+    owner: notanaskhan
+    created: 2026-10-25
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

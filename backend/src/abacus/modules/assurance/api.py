@@ -11,15 +11,20 @@ from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
+from abacus.modules.assurance.phase import record_phase, update_profile
+from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.sections import (
     AuditSection,
     IndexTag,
+    RunSummary,
     SectionState,
     register_audit_section,
     register_audit_segment,
     register_index_tag,
+    register_run_summary,
 )
+from abacus.modules.assurance.tb_contract import tb_router
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
@@ -28,6 +33,7 @@ from abacus.modules.review.api import register_reviewable, register_reviewable_f
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    tb_router,  # A-02-T03 C9 v1 stub (docs/contracts/c09-ledger.md)
     audits_router,  # A-01-T02 audits family stub (docs/contracts/audits-cockpit.md)
     completion_router,
     mapping_router,
@@ -60,6 +66,8 @@ ACTIVITIES: tuple[object, ...] = ()
 register_audit_segment("fs", None)
 register_audit_segment("ebp", None)
 register_audit_segment("review", None)
+# A-01-T09 (DEC-312): A-01's Overview rows and index tags, through the same slots as A-02's.
+register_a01_providers()
 
 __all__ = [
     "ACTIVITIES",
@@ -68,10 +76,14 @@ __all__ = [
     "WORKFLOWS",
     "AuditSection",
     "IndexTag",
+    "RunSummary",
     "SectionState",
     "completion_router",
+    "record_phase",
     "register_audit_section",
     "register_audit_segment",
     "register_index_tag",
+    "register_run_summary",
     "router",
+    "update_profile",
 ]

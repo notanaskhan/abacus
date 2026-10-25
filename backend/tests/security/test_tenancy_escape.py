@@ -183,15 +183,17 @@ async def test_adr014_another_firms_wall_invitation_and_notification_are_not_fou
     two: Two, role: str
 ) -> None:
     asker = await two.asker(role)
-    for method, path in (
-        ("POST", f"/v1/walls/{two.wall_id}/remove"),
-        ("POST", f"/v1/firm/staff/invitations/{two.invitation_id}/resend"),
-        ("POST", f"/v1/firm/staff/invitations/{two.invitation_id}/revoke"),
-        ("POST", f"/v1/notifications/{two.notification_id}/read"),
-        ("PUT", f"/v1/firm/staff/{two.admin_b.user_id}/role"),
-        ("POST", f"/v1/firm/staff/{two.admin_b.user_id}/revoke"),
+    role_body: dict[str, object] = {"firm_role": None}
+    for method, path, body in (
+        # Walls v2 (G-01-T09): the lift takes an optional `{reason}`, so it gets a body it accepts.
+        ("POST", f"/v1/walls/{two.wall_id}/remove", {"reason": "probe"}),
+        ("POST", f"/v1/firm/staff/invitations/{two.invitation_id}/resend", role_body),
+        ("POST", f"/v1/firm/staff/invitations/{two.invitation_id}/revoke", role_body),
+        ("POST", f"/v1/notifications/{two.notification_id}/read", role_body),
+        ("PUT", f"/v1/firm/staff/{two.admin_b.user_id}/role", role_body),
+        ("POST", f"/v1/firm/staff/{two.admin_b.user_id}/revoke", role_body),
     ):
-        response = await two.net.call(method, path, asker, body={"firm_role": None})
+        response = await two.net.call(method, path, asker, body=body)
         _gone(two, response)
     # Nothing changed in B.
     assert (

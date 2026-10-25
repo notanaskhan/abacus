@@ -17,7 +17,7 @@ The level actions are the existing `sign_off.prepare|review|manager|partner|eqr`
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -38,6 +38,7 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.review.gates import gates_waiting_on
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -475,8 +476,36 @@ async def human_gate_list_route(
     cursor: Annotated[str | None, Query(max_length=2000)] = None,
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[HumanGateOut]:
-    """What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports")."""
-    await _stub(ctx)
+    """What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+    P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+    are never listed or counted."""
+    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
+        raise NotFound("review.grammar_api")
+    found = await gates_waiting_on(
+        ctx, kind=kind, engagement_id=engagement_id, cursor=cursor, limit=limit
+    )
+    return ListPage[HumanGateOut](
+        items=[
+            HumanGateOut(
+                id=g.id,
+                kind=cast(GateKind, g.kind),
+                subject=ObjectRefOut(type=g.subject_type, id=g.subject_id),
+                engagement_id=g.engagement_id,
+                work_item_id=g.work_item_id,
+                client_id=g.client_id,
+                assignee_user_id=g.assignee_user_id,
+                role=g.role,
+                due_on=g.due_on,
+                state=cast(GateState, g.state),
+                created_at=g.created_at,
+            )
+            for g in found.items
+        ],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+        counts=found.counts,
+    )
 
 
 # --- Decision cards (SHL-11; ADR-160 clause 8) -------------------------------------------------

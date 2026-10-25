@@ -122,3 +122,44 @@ class PortalSignInCodeRequested(DomainEvent):
     event_type: ClassVar[str] = "portal.sign_in_code_requested"
 
     challenge_id: Annotated[UUID, classified("internal")]
+
+
+class WallCreated(DomainEvent):
+    """A wall shut a person out of a client (G-01-T09): its consumer ends their assignments
+    there (AC8.5), and the named partner is asked to approve it (`wall_approval_requested`)."""
+
+    event_type: ClassVar[str] = "wall.created"
+
+    wall_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    created_by: Annotated[UUID, classified("internal")]
+    approver_user_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class WallApproved(DomainEvent):
+    """The named partner approved a wall (AC8.2): its creator is told (`wall_approved`)."""
+
+    event_type: ClassVar[str] = "wall.approved"
+
+    wall_id: Annotated[UUID, classified("internal")]
+    created_by: Annotated[UUID, classified("internal")]
+    approved_by: Annotated[UUID, classified("internal")]
+
+
+class WallRemoved(DomainEvent):
+    """A partner lifted a wall (AC8.4)."""
+
+    event_type: ClassVar[str] = "wall.removed"
+
+    wall_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+
+
+class PortalMfaResetNoticeRequested(DomainEvent):
+    """A firm reset a client's second step (P-08-T21, Story 7.2): communications emails the
+    person in the firm's name (C16 `portal.mfa_reset_notice`). Identifiers only."""
+
+    event_type: ClassVar[str] = "portal_mfa.reset_notice_requested"
+
+    user_id: Annotated[UUID, classified("internal")]

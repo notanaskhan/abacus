@@ -31,7 +31,9 @@ ITEM = "/v1/audits/{work_item_id}"
 # (method, path) -> the one matrix action (A-01 §4.3).
 ROUTES: dict[tuple[str, str], str] = {
     ("get", "/v1/audits"): "engagement.read_metadata",
-    ("get", f"{ITEM}/cockpit"): "engagement.read",
+    # A-01-T09 (DEC-312): the bar and overview are metadata; bands and dock also need
+    # `engagement.read`, checked inside.
+    ("get", f"{ITEM}/cockpit"): "engagement.read_metadata",
     ("patch", f"{ITEM}/profile"): "engagement.update",
     ("post", f"{ITEM}/phase"): "assurance.record_phase",
     ("post", f"{ITEM}/release-record"): "assurance.record_release",

@@ -34,6 +34,11 @@ assigned to the person. Without the facts they deny. `visible_items` is their li
 Ethical walls (ADR-026, SPEC-002) come before roles: a person walled off from a client is denied
 every engagement of it, whatever their roles, and agents and system runs with them. The walled
 clients are read once per request (`recording_checks`) and live on every step elsewhere.
+Offshore (DEC-52, G-01-T09) is a wall of the same kind: an offshore member, and an agent or
+system run acting for one, is refused every resource that names a client unless a registered
+`offshore_disclosure` consent covers that client. Until T-01 registers the consent provider, no
+client qualifies (fail closed), so offshore members reach no client at all; `visible()` filters
+the same clients out, and the denial is the wall's (404, no count).
 Client access (`access_expired`) arrives with client users.
 
 A successful `authorise` (and every `visible` filter built) is recorded for the request being
@@ -75,8 +80,10 @@ from abacus.modules.identity.repository import (
     firm_policy,
     firm_setting_values,
     member_facts,
+    membership_offshore,
     walled_clients,
 )
+from abacus.modules.identity.slots import OFFSHORE_DISCLOSURE, consent_column, consent_given
 
 MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
@@ -169,6 +176,8 @@ _checked: ContextVar[set[str] | None] = ContextVar("abacus_authz_checked", defau
 _walls: ContextVar[dict[UUID, frozenset[UUID]] | None] = ContextVar(
     "abacus_authz_walls", default=None
 )
+# Whether each person is an offshore member here, read once per request (DEC-52).
+_offshore: ContextVar[dict[UUID, bool] | None] = ContextVar("abacus_authz_offshore", default=None)
 # Each person's confirmed engagements, answered once per request (SPEC-025).
 _confirmed: ContextVar[dict[tuple[UUID, UUID], bool] | None] = ContextVar(
     "abacus_authz_confirmed", default=None
@@ -261,6 +270,7 @@ def recording_checks() -> Generator[set[str]]:
     checked: set[str] = set()
     token = _checked.set(checked)
     walls_token = _walls.set({})
+    offshore_token = _offshore.set({})
     confirmed_token = _confirmed.set({})
     roles_token = _firm_engagement_roles.set({})
     policies_token = _policies.set({})
@@ -270,6 +280,7 @@ def recording_checks() -> Generator[set[str]]:
         _policies.reset(policies_token)
         _firm_engagement_roles.reset(roles_token)
         _confirmed.reset(confirmed_token)
+        _offshore.reset(offshore_token)
         _walls.reset(walls_token)
         _checked.reset(token)
 
@@ -377,9 +388,12 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
             roles.add(role)
     elif (
         rule.reads
+        and not rule.scope_only
         and not ctx.is_support
         and (ctx.firm_role is None or rule.decisions.get(ctx.firm_role) != "allow")
     ):
+        # A `scope_only` read names its target (INV-4): it is never granted from the person's
+        # roles on other engagements (A-02 security review, DEC-316; `connection.read`).
         # SPEC-014: a firm-level read counts the person's engagement roles on the firm's active
         # engagements; skipped when the firm role already allows it (TASK-029 D2).
         roles |= await _engagement_roles_in_firm(ctx)
@@ -397,6 +411,10 @@ async def authorise(
     # 2a. Ethical walls, before any role (ADR-026): the person acting (a user, the person a
     # system run or agent acts for) must not be walled off from the engagement's client.
     if await _walled(ctx, resource):
+        raise _deny(ctx, action, "wall")
+    # 2a'. Offshore (DEC-52): a client without the offshore-disclosure consent is walled off
+    # from an offshore member, and from what acts for one, the same way.
+    if await _offshore_refused(ctx, resource):
         raise _deny(ctx, action, "wall")
     # 2b. Relationships.
     roles = await _roles(ctx, resource, rule)
@@ -713,6 +731,60 @@ async def _walled(ctx: Actor, resource: Resource) -> bool:
     return client is None or client in walls
 
 
+async def _is_offshore(ctx: Actor, person: UUID) -> bool:
+    cache = _offshore.get()
+    if cache is not None and person in cache:
+        return cache[person]
+    member = await member_facts(ctx.tenant, person)
+    found = member is not None and not member.client and member.offshore
+    if cache is not None:
+        cache[person] = found
+    return found
+
+
+async def _offshore_refused(ctx: Actor, resource: Resource) -> bool:
+    """DEC-52 (G-01-T09, AC9.2): an offshore person and a client without a valid
+    offshore-disclosure consent. Unregistered consent provider: every client is refused."""
+    if resource.engagement_id is None and resource.client_id is None:
+        return False
+    if isinstance(ctx, AuthContext) and ctx.is_support:
+        return False  # platform support isn't a member of the firm (SPEC-012 governs it)
+    person = _person(ctx)
+    if not await _is_offshore(ctx, person):
+        return False
+    client = resource.client_id
+    if client is None and resource.engagement_id is not None:
+        if _engagement_client is None:
+            return True  # can't tell which client: refused (fail closed)
+        client = await _engagement_client[1](ctx.tenant, resource.engagement_id)
+    if client is None:
+        return True
+    if await consent_given(ctx.tenant, client, OFFSHORE_DISCLOSURE, system_now()):
+        return False
+    if not _probing.get():
+        _log.info("authz.offshore_refused", tenant_id=ctx.tenant_id, **_who(ctx))
+    return True
+
+
+def _offshore_clear(ctx: Actor, client_id: EngagementColumn | None) -> ColumnElement[bool]:
+    """`visible()`'s twin of `_offshore_refused`: the acting person isn't an offshore member
+    here, or a registered offshore-disclosure consent covers the row's client (DEC-52)."""
+    offshore = (
+        select(membership_offshore.c.user_id)
+        .where(
+            membership_offshore.c.tenant_id == ctx.tenant_id,
+            membership_offshore.c.user_id == _person(ctx),
+            membership_offshore.c.status == "active",
+            membership_offshore.c.offshore.is_(True),
+        )
+        .exists()
+    )
+    consented = consent_column(OFFSHORE_DISCLOSURE)
+    if client_id is None or consented is None:
+        return ~offshore
+    return or_(~offshore, consented(client_id, OFFSHORE_DISCLOSURE))
+
+
 async def _confirmed_for(ctx: AuthContext, resource: Resource) -> bool:
     if resource.engagement_id is None or _independence is None:
         return False  # unregistered: fail closed
@@ -761,9 +833,10 @@ def _not_walled(ctx: Actor, engagement_id: EngagementColumn) -> ColumnElement[bo
         ethical_walls.c.user_id == _person(ctx),
         ethical_walls.c.status == "active",
     )
-    if _engagement_client is not None:
-        walls = walls.where(ethical_walls.c.client_id == _engagement_client[0](engagement_id))
-    return ~walls.correlate_except(ethical_walls).exists()
+    client = _engagement_client[0](engagement_id) if _engagement_client is not None else None
+    if client is not None:
+        walls = walls.where(ethical_walls.c.client_id == client)
+    return and_(~walls.correlate_except(ethical_walls).exists(), _offshore_clear(ctx, client))
 
 
 def visible(ctx: Actor, action: str, engagement_id: EngagementColumn) -> ColumnElement[bool]:
@@ -810,7 +883,10 @@ def _not_walled_client(ctx: Actor, client_id: EngagementColumn) -> ColumnElement
         ethical_walls.c.status == "active",
         ethical_walls.c.client_id == client_id,
     )
-    return ~walls.correlate_except(ethical_walls).exists()
+    return and_(
+        ~walls.correlate_except(ethical_walls).exists(),
+        _offshore_clear(ctx, client_id),
+    )
 
 
 def visible_scope(

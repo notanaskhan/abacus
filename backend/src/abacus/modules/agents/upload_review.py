@@ -35,6 +35,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.document_citations import sheet_lines, verify
+from abacus.modules.agents.events import ProposalRecorded, UploadReviewRecorded
 from abacus.modules.agents.handoff import UploadReviewOutput, VerifiedDocumentCitation
 from abacus.modules.agents.repository import (
     finish_run,
@@ -54,10 +55,12 @@ from abacus.modules.agents.service import (
 )
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.stages import starts_in_shadow
+from abacus.modules.agents.tri_gate import model_blocked
 from abacus.modules.agents.v2_citations import document_claims, record_agent_citations
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import ReviewMaterial, is_version_withdrawn, review_material
 from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
+from abacus.modules.requests.api import items_of_version
 
 REVIEWER = "evidence.upload_reviewer"
 # Problems code already found (balances, totals, period, company): an "altered" flag about the
@@ -105,6 +108,9 @@ async def create_review_run(
         return None
     reviewer = spec(REVIEWER)
     reader = _reader(tenant_id, f"agents:{reviewer.id}")
+    items = await items_of_version(reader, evidence_version_id)
+    if await model_blocked(reader, [i.id for i in items]):
+        return None  # P-06-T20: tax-return information, no consent registered: no model call
     material = await review_material(reader, evidence_version_id)
     if material is None or material.extraction_status != "extracted":
         return None  # SPEC-030 AC-4: an unreadable or unextracted upload isn't reviewed
@@ -318,4 +324,11 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
             target=Target("evidence_version", run.evidence_version_id),
             after=Ref(agent_run_id=run.id, shown=shown_count, hidden=len(rows) - shown_count),
         )
+        # P-06-T20: the screening aggregates of its request batches recompose (code only).
+        tx.emit(
+            UploadReviewRecorded(
+                engagement_id=agent.engagement, evidence_version_id=run.evidence_version_id
+            )
+        )
+        tx.emit(ProposalRecorded(engagement_id=agent.engagement, source="upload_review"))
     return ReviewOutcome(run.id, "completed", shown_count, len(rows) - shown_count)

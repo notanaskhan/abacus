@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import FetchedValue
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -56,3 +57,24 @@ class ReviewableNoteEvent(Base):
     body: Mapped[str | None]
     by_user: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class HumanGate(Base):
+    """What waits on a person (P-04-T03 table, T16 projector; C13). A rebuildable projection of
+    owners' domain events: the projector writes `state` and `updated_at` only."""
+
+    __tablename__ = "human_gates"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    kind: Mapped[str]
+    subject_ref: Mapped[dict[str, str]] = mapped_column(JSONB)
+    engagement_id: Mapped[UUID | None]
+    work_item_id: Mapped[UUID | None]
+    client_id: Mapped[UUID | None]
+    assignee_user_id: Mapped[UUID | None]
+    role: Mapped[str | None]
+    due_on: Mapped[date | None]
+    state: Mapped[str] = mapped_column(server_default=FetchedValue())
+    source_event_id: Mapped[UUID]
+    updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

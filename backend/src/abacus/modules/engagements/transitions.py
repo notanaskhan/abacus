@@ -18,10 +18,10 @@ from sqlalchemy import select, update
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import DomainEvent, Target, UnitOfWork, uow
+from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.service import lock_ref
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, authorise, team_standing
 
 Status = Literal[
     "prospect",
@@ -57,11 +57,25 @@ LIFECYCLE: Final[dict[tuple[Status, Status], Move]] = {
 }
 
 _BY_PAIR: Final[dict[tuple[str, str], Move]] = {pair: move for pair, move in LIFECYCLE.items()}
+# The action a person needs to move an engagement *to* a state (one per target state): checked
+# before the current state is read, so a walled or unauthorised caller learns nothing about it.
+_HUMAN_ACTION_TO: Final[dict[str, str]] = {
+    to: move.action for (_, to), move in LIFECYCLE.items() if move.by == "human" and move.action
+}
 
-# Why an engagement is held (§3.1.3 "reason required"): codes, never free text.
-HOLD_REASONS: Final = frozenset(
-    {"client_unresponsive", "fees_outstanding", "scope_change", "independence_review", "other"}
+# Why an engagement is held (§3.1.3 "reason required"): codes, never free text. Append only: the
+# audit row of a hold stores the code's position here (`after.reason_code`), since an audit
+# reference carries identifiers and integers only (TASK-1198 security review, DEC-328).
+HOLD_REASON_CODES: Final = (
+    "client_unresponsive",
+    "fees_outstanding",
+    "scope_change",
+    "independence_review",
+    "other",
 )
+HOLD_REASONS: Final = frozenset(HOLD_REASON_CODES)
+# A hold for this reason is lifted by the engagement partner only (DEC-328).
+PARTNER_RESUMES: Final = frozenset({"independence_review"})
 
 
 class IllegalTransition(DomainConflict):
@@ -102,9 +116,17 @@ async def transition(
     reason: str | None = None,
 ) -> None:
     """Move the engagement to `to` inside `tx`, or raise without writing anything."""
+    action = _HUMAN_ACTION_TO.get(to)
+    if isinstance(by, AuthContext) and action is not None:
+        # INV-1 and walls first: only a signed-in person, through the matrix (which denies agents
+        # and the system), and before the state is read (a walled caller gets 404 for any state).
+        # A person asking for a system-only state is refused below (409 `illegal_transition`).
+        if by.tenant.actor_kind != "human":
+            raise Forbidden(action, "role")
+        await authorise(by, action, (await lock_ref(tx, engagement_id)).resource())
     row = (
         await tx.session.execute(
-            select(Engagement.status, Engagement.client_id)
+            select(Engagement.status, Engagement.client_id, Engagement.hold_reason)
             .where(Engagement.id == engagement_id)
             .with_for_update()
         )
@@ -114,18 +136,27 @@ async def transition(
     current = str(row.status)
     move = move_for(current, to)
     if move.by == "human":
-        # INV-1: only a signed-in person, through the matrix (which denies agents and the system).
-        if not isinstance(by, AuthContext) or by.tenant.actor_kind != "human":
+        if not isinstance(by, AuthContext):
             raise Forbidden(move.action or "engagement.transition", "role")
-        await authorise(by, move.action or "", (await lock_ref(tx, engagement_id)).resource())
     elif by != "system":
         raise IllegalTransition(facts={"from_status": current, "to_status": to})
     if to == "on_hold" and reason not in HOLD_REASONS:
         raise HoldReasonRequired
+    if (
+        current == "on_hold"
+        and row.hold_reason in PARTNER_RESUMES
+        and isinstance(by, AuthContext)
+        and await team_standing(by.tenant, engagement_id, by.user_id) != "partner"
+    ):
+        raise Forbidden("engagement.hold", "role")  # DEC-328: the EP lifts an independence hold
+    held = reason if to == "on_hold" else None
     await tx.session.execute(
-        update(Engagement).where(Engagement.id == engagement_id).values(status=to)
+        update(Engagement)
+        .where(Engagement.id == engagement_id)
+        .values(status=to, hold_reason=held)
     )
-    tx.record(move.audit, target=Target("engagement", engagement_id))
+    after = Ref(reason_code=HOLD_REASON_CODES.index(held)) if held is not None else None
+    tx.record(move.audit, target=Target("engagement", engagement_id), after=after)
     tx.emit(
         EngagementStatusChanged(
             engagement_id=engagement_id,

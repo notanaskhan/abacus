@@ -2,10 +2,16 @@
 
 from abacus.modules.identity.api import (
     AbacusRouter,
+    register_client_partner,
     register_member_teams,
     register_office_list,
     register_settings_area,
 )
+from abacus.modules.organisations.conflicts_contract import (
+    conflict_checks_router,
+    screening_records_router,
+)
+from abacus.modules.organisations.contacts import contact_portal_facts
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
     contact_invitations_router,
@@ -21,8 +27,12 @@ from abacus.modules.organisations.live import (
 )
 
 # P-06-T11: correlated name columns for another module's list (BND-01's client and office).
-from abacus.modules.organisations.repository import client_name_column, office_name_column
-from abacus.modules.organisations.rosters import member_teams, set_member_teams
+from abacus.modules.organisations.repository import (
+    client_name_column,
+    entity_name_column,
+    office_name_column,
+)
+from abacus.modules.organisations.rosters import member_teams, service_line_teams, set_member_teams
 from abacus.modules.organisations.service import (
     ClientChoice,
     ClientNames,
@@ -46,6 +56,7 @@ from abacus.modules.organisations.service import (
     client_exists,
     client_names,
     client_of_entity,
+    client_partner_of,
     client_record,
     client_with_entity,
     contact_client,
@@ -65,6 +76,7 @@ from abacus.modules.organisations.slots import (
     OverviewSection,
     SectionRows,
     register_client_engagements,
+    register_office_facts,
     register_open_requests,
     register_overview_section,
 )
@@ -85,13 +97,18 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     client_contacts_router,  # contacts and portal access, v1 stub (P-07-T17)
     contacts_router,
     contact_invitations_router,
+    conflict_checks_router,  # conflict checks and screening, v1 stub (P-07-T29)
+    screening_records_router,
     org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
 )
 
 # P-01-T04: identity's `/v1/me` lists the firm's offices through this.
 register_office_list(firm_offices)
-# G-01-T05: ADM-02 reads and replaces a person's teams through this.
-register_member_teams(member_teams, set_member_teams)
+# G-01-T05: ADM-02 reads and replaces a person's teams through this; G-01-T08: and the
+# service lines their service-line teams hold.
+register_member_teams(member_teams, set_member_teams, service_line_teams)  # T08: AC7.4
+# G-01-T09 (AC8.3): a wall on a client's relationship partner is refused.
+register_client_partner(client_partner_of)
 # G-01-T04: the Offices & teams row of the settings overview's At a glance.
 register_settings_area("offices_teams", 20, offices_glance)
 # P-07-T09: CLI-02's overview sections organisations owns (metadata; `client.read`).
@@ -141,14 +158,17 @@ __all__ = [
     "client_with_entity",
     "contact_client",
     "contact_facts",
+    "contact_portal_facts",
     "contacts_of_user",
     "create_client",
+    "entity_name_column",
     "find_clients",
     "firm_names",
     "mask_tin",
     "normalise",
     "office_name_column",
     "register_client_engagements",
+    "register_office_facts",
     "register_open_requests",
     "register_overview_section",
     "seal_tin",

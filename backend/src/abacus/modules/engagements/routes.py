@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -17,11 +18,13 @@ from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
+from abacus.modules.engagements import team as team_model
 from abacus.modules.engagements.gates import engagement_gates
 from abacus.modules.engagements.onboarding import Onboarding, StepId, acknowledge_step, onboarding
 from abacus.modules.engagements.onboarding import dismiss as dismiss_onboarding
 from abacus.modules.engagements.roll_forward import ItemKind, RollForward, propose
 from abacus.modules.engagements.service import (
+    KEEP_HOURS,
     AiExclusion,
     EngagementMetadata,
     EngagementType,
@@ -49,7 +52,6 @@ from abacus.modules.engagements.service import (
     self_join,
     set_ai_exclusion_of,
     team_candidates,
-    team_of_engagement,
 )
 from abacus.modules.engagements.setup import (
     AcceptanceInput,
@@ -130,6 +132,18 @@ class TeamMemberOut(BaseModel):
     user_id: Annotated[UUID, classified("internal")]
     display_name: Annotated[str, classified("confidential")]
     role: Annotated[EngagementRole, classified("internal")]
+
+
+class TeamRosterMemberOut(TeamMemberOut):
+    """The team routes' rows (P-07-T30, ENG-05): hours, the portal flag, when the person joined
+    and their independence confirmation here. C1's engagement projection keeps `TeamMemberOut`."""
+
+    budget_hours: Annotated[Decimal | None, classified("internal")] = None
+    shown_on_portal: Annotated[bool, classified("internal")] = False
+    proposed_at: Annotated[datetime | None, classified("internal")] = None
+    independence: Annotated[
+        Literal["requested", "confirmed", "declined"] | None, classified("internal")
+    ] = None
 
 
 class EngagementSummaryOut(BaseModel):
@@ -365,7 +379,11 @@ async def self_join_route(engagement_id: UUID, ctx: Ctx) -> EngagementOut:
 
 # --- Engagement team (SPEC-017 §8) -------------------------------------------------------------
 
-StaffRoleName = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
+# P-07-T30: `specialist` joins; the EQR is set through `POST …/eqr`, never as a team role.
+StaffRoleName = Literal[
+    "engagement_partner", "manager", "senior", "staff", "reviewer", "specialist"
+]
+BudgetHours = Annotated[Decimal, Field(ge=0, max_digits=7, decimal_places=1)]
 
 
 class CandidateOut(BaseModel):
@@ -380,22 +398,34 @@ class TeamMemberIn(BaseModel):
 
     user_id: Annotated[UUID, classified("internal")]
     role: Annotated[StaffRoleName, classified("internal")]
+    budget_hours: Annotated[BudgetHours | None, classified("internal")] = None  # P-07-T30
 
 
 class TeamRoleIn(BaseModel):
+    """ "Change role…" and "Edit hours…": either or both; an absent field is unchanged
+    (`budget_hours: null` clears the hours)."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    role: Annotated[StaffRoleName, classified("internal")]
+    role: Annotated[StaffRoleName | None, classified("internal")] = None
+    budget_hours: Annotated[BudgetHours | None, classified("internal")] = None
+
+    @model_validator(mode="after")
+    def _something(self) -> TeamRoleIn:
+        if self.role is None and "budget_hours" not in self.model_fields_set:
+            raise ValueError("name a role or budget hours")
+        return self
 
 
 @router.get(
-    "/{engagement_id}/team", action="engagement.read_metadata", response_model=list[TeamMemberOut]
+    "/{engagement_id}/team",
+    action="engagement.read_metadata",
+    response_model=list[TeamRosterMemberOut],
 )
-async def team_route(engagement_id: UUID, ctx: Ctx) -> list[TeamMemberOut]:
-    team = await team_of_engagement(ctx, engagement_id)
-    return [
-        TeamMemberOut(user_id=m.user_id, display_name=m.display_name, role=m.role) for m in team
-    ]
+async def team_route(engagement_id: UUID, ctx: Ctx) -> list[TeamRosterMemberOut]:
+    """SPEC-017; P-07-T30 adds ENG-05's hours, portal flag, joined date and independence."""
+    team = await team_model.team_of(ctx, engagement_id)
+    return [TeamRosterMemberOut.model_validate(asdict(m)) for m in team]
 
 
 @router.get(
@@ -411,38 +441,39 @@ async def team_candidates_route(engagement_id: UUID, ctx: Ctx) -> list[Candidate
 @router.post(
     "/{engagement_id}/team",
     action="engagement.member_add",
-    response_model=list[TeamMemberOut],
+    response_model=list[TeamRosterMemberOut],
     status_code=201,
 )
 async def add_team_member_route(
     engagement_id: UUID, body: TeamMemberIn, ctx: Ctx
-) -> list[TeamMemberOut]:
-    await add_to_team(ctx, engagement_id, body.user_id, body.role)
+) -> list[TeamRosterMemberOut]:
+    await add_to_team(ctx, engagement_id, body.user_id, body.role, body.budget_hours)
     return await team_route(engagement_id, ctx)
 
 
 @router.put(
     "/{engagement_id}/team/{user_id}",
     action="engagement.member_add",
-    response_model=list[TeamMemberOut],
+    response_model=list[TeamRosterMemberOut],
     errors=(409,),
 )
 async def change_team_role_route(
     engagement_id: UUID, user_id: UUID, body: TeamRoleIn, ctx: Ctx
-) -> list[TeamMemberOut]:
-    await change_team_role(ctx, engagement_id, user_id, body.role)
+) -> list[TeamRosterMemberOut]:
+    hours = body.budget_hours if "budget_hours" in body.model_fields_set else KEEP_HOURS
+    await change_team_role(ctx, engagement_id, user_id, body.role, hours)
     return await team_route(engagement_id, ctx)
 
 
 @router.delete(
     "/{engagement_id}/team/{user_id}",
     action="engagement.member_remove",
-    response_model=list[TeamMemberOut],
+    response_model=list[TeamRosterMemberOut],
     errors=(409,),
 )
 async def remove_team_member_route(
     engagement_id: UUID, user_id: UUID, ctx: Ctx
-) -> list[TeamMemberOut]:
+) -> list[TeamRosterMemberOut]:
     await remove_from_team(ctx, engagement_id, user_id)
     if user_id == ctx.user_id:
         # SPEC-017 §12: a person may leave; they can no longer read the team (Q-03-T007).

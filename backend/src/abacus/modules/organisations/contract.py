@@ -28,7 +28,7 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context, mask_tins_for
 from abacus.modules.organisations import live, tin
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -403,7 +403,7 @@ async def list_clients_route(
 @clients_router.get("/{client_id}", action="client.read", response_model=ClientRecordOut)
 async def get_client_route(client_id: UUID, ctx: Ctx) -> ClientRecordOut:
     await _gate(ctx)
-    return _record(await live.client_record(ctx, client_id))
+    return await mask_tins_for(ctx, _record(await live.client_record(ctx, client_id)))
 
 
 @clients_router.get(
@@ -464,7 +464,7 @@ async def update_client_route(client_id: UUID, body: ClientPatchIn, ctx: Ctx) ->
             status=None if body.status_change is None else body.status_change.status.value,
         ),
     )
-    return _record(await live.client_record(ctx, client_id))
+    return await mask_tins_for(ctx, _record(await live.client_record(ctx, client_id)))
 
 
 @clients_router.get(

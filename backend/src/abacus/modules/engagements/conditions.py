@@ -13,9 +13,15 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.slots import gate_fact
 
+# Assignments are insert-only: a removal is a later row with `removed_at` (0068), which undoes
+# the assignment it follows (G-01-T09's wall consumer writes the first ones).
 _FUNCTIONS = text(
-    "SELECT function FROM work_item_assignments "
-    "WHERE work_item_id = :work_item_id AND user_id = :user_id AND removed_at IS NULL"
+    "SELECT a.function FROM work_item_assignments a "
+    "WHERE a.work_item_id = :work_item_id AND a.user_id = :user_id AND a.removed_at IS NULL "
+    "AND NOT EXISTS (SELECT 1 FROM work_item_assignments r "
+    "WHERE r.work_item_id = a.work_item_id AND r.user_id = a.user_id "
+    "AND r.function = a.function AND r.removed_at IS NOT NULL "
+    "AND r.assigned_at >= a.assigned_at)"
 )
 
 

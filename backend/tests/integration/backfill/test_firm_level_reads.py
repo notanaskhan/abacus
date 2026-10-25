@@ -112,8 +112,14 @@ async def test_ac1_ac2_each_firm_level_read_follows_the_matrix_for_each_engageme
     wrong: list[str] = []
     for action in FIRM_READS:
         entry = MATRIX[action]
-        # A fresh-MFA person; a read that also needs a reason is never reached by role alone.
-        expected = entry.get(role) == "allow" and entry.get("requires") != "reason"
+        # A fresh-MFA person; a read that also needs a reason is never reached by role alone. A
+        # `scope_only` read names its target and is never granted from roles on the firm's other
+        # engagements (A-02 security review, DEC-316: `authz._roles`).
+        expected = (
+            entry.get(role) == "allow"
+            and entry.get("requires") != "reason"
+            and entry.get("scope_only") != "required"
+        )
         if await _allowed(member, action) != expected:
             wrong.append(f"{action}: expected {expected}")
     assert wrong == []

@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import EngagementRef, get_ref
 from abacus.modules.identity.api import (
     AuthContext,
@@ -133,6 +133,32 @@ def clean_text(text: str, limit: int) -> str:
     if len(kept) > limit:
         raise DomainInvalid("too long")
     return kept
+
+
+async def insert_ignore_note(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, item_id: UUID, body: str
+) -> UUID:
+    """R-01-T08: a client's note on their Ignore, in the Ignore's unit of work (which authorised
+    `request_item.ignore`): a shared client comment on the request with origin `ignore_note`,
+    sealed like every comment. The caller audits it (`request_item.ignore_note_added`)."""
+    fingerprint = hashlib.sha256(body.encode()).hexdigest()
+    sealed = await seal(ctx.tenant_id, body.encode(), fingerprint)
+    comment_id = uuid4()
+    await insert_comment(
+        tx.session,
+        id=comment_id,
+        tenant_id=ctx.tenant_id,
+        engagement_id=engagement_id,
+        request_item_id=item_id,
+        evidence_version_id=None,
+        author_user_id=ctx.user_id,
+        author_side="client",
+        visibility="shared",
+        body_sealed=sealed,
+        body_fingerprint=fingerprint,
+        origin="ignore_note",
+    )
+    return comment_id
 
 
 def _resource(ref: EngagementRef, item: RequestItemRef) -> Resource:

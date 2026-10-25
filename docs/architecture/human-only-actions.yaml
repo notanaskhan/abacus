@@ -65,3 +65,11 @@ actions:
     verb: send  # P-06-T14 (DEC-74): a follow-up to a client is sent by a person
   - action: assurance.phase_recorded
     verb: decide  # A-01-T05 (DEC-262, 0135): a person records an assurance phase in record mode
+  - action: team.approved
+    verb: approve  # P-07-T30 (DEC-327, 0155): the engagement partner approves the team
+  - action: eqr.eligibility_approved
+    verb: approve  # P-07-T30 (DEC-327, 0155): the quality owner approves an EQR's eligibility
+  - action: portal_mfa.reset
+    verb: decide  # P-08-T21 (DEC-329, 0156): a firm person resets a client's second step
+  - action: contact.unlocked
+    verb: decide  # P-08-T21 (DEC-329, 0156): a firm person clears a client's portal lock

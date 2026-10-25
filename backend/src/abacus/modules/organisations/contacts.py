@@ -31,7 +31,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.listing import Position, decode_cursor, encode_cursor, query_hash
 from abacus.kernel.uow import Ref, Target, uow
@@ -58,7 +58,9 @@ from abacus.modules.identity.api import (
     invite_contact,
     locked_addresses,
     resend_contact_invitation,
+    reset_portal_mfa,
     revoke_contact,
+    revoke_contact_links,
     scope_facts,
     sign_in_addresses,
     unlock_contact_sign_in,
@@ -539,6 +541,7 @@ async def update_contact(
             closed = await close_contact_invitations(tx, ctx, contact_id)
             if closed:
                 await contact_delegations_provider().end(tx, closed)
+            await revoke_contact_links(tx, [contact_id])  # P-08-T21: its links went there too
             if contact.portal_state == "invited":
                 await set_portal_state(tx.session, contact_id, "not_invited")
         tx.record(
@@ -646,6 +649,7 @@ async def revoke(ctx: AuthContext, invitation_id: UUID) -> RevokedView:
         done = await revoke_contact(tx, ctx, contact.client_id, invitation_id)
         ended = await contact_delegations_provider().end(tx, [g.id for g in done.revoked])
         await set_portal_state(tx.session, contact.id, "not_invited")
+        await revoke_contact_links(tx, [contact.id])  # P-08-T21: no link outlives the access
     kept = list(dict.fromkeys([*(item for _, item in _delegated(done.revoked)), *ended]))
     return RevokedView(
         invitation_id,
@@ -712,3 +716,85 @@ async def unlock(ctx: AuthContext, contact_id: UUID) -> tuple[UUID, str, datetim
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
     return contact.id, contact.portal_state, await clock.now(ctx.tenant)
+
+
+# --- P-08-T21: firm-side portal recovery on the client's own path (SPEC-320 AC-18, AC-19) ------
+
+
+@dataclass(frozen=True)
+class PortalUnlocked:
+    contact_id: UUID
+    portal_state: str
+
+
+@dataclass(frozen=True)
+class MfaResetView:
+    contact_id: UUID
+    trusted_devices_revoked: int
+    sessions_ended: int
+    reset_at: datetime
+
+
+async def _client_contact(
+    ctx: AuthContext, action: str, client_id: UUID, contact_id: UUID
+) -> Contact:
+    """The client's contact once `action` is authorised on the client; a contact of another
+    client, an unknown one and a wall all answer the same 404 (INV-3)."""
+    async with tenant_session(ctx.tenant) as session:
+        contact = await get_contact(session, contact_id)
+    if contact is None or contact.client_id != client_id:
+        raise NotFound("contact")
+    try:
+        await _authorise_for_client(ctx, action, contact.client_id)
+    except Forbidden as refused:
+        if refused.layer == "wall":
+            raise NotFound("contact") from None
+        raise
+    return contact
+
+
+async def portal_unlock(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> PortalUnlocked:
+    """Story 7.1: the firm's sign-in lock on where the contact signs in (DEC-303), cleared;
+    `contact.unlocked` names the person who unlocked (INV-5). The person's factor lock, theirs
+    across firms, is never touched or reported (DEC-329); it lapses on its own after 15 minutes."""
+    contact = await _client_contact(ctx, "contact.unlock", client_id, contact_id)
+    address = (await sign_in_addresses(ctx.tenant, [(contact.id, contact.user_id)])).get(
+        contact.id
+    )
+    async with uow(ctx.tenant) as tx:
+        await unlock_contact_sign_in(
+            tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
+        )
+    return PortalUnlocked(contact.id, contact.portal_state)
+
+
+async def check_mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> None:
+    """Before the idempotency lookup (ED-023's shape): a replay is checked like the first call."""
+    await _client_contact(ctx, "contact.mfa_reset", client_id, contact_id)
+
+
+async def mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> MfaResetView:
+    """Story 7.2: the contact's person's trusted devices and portal sessions here, ended in one
+    unit of work with `portal_mfa.reset`; the notice email follows. Never the factor (DEC-329)."""
+    contact = await _client_contact(ctx, "contact.mfa_reset", client_id, contact_id)
+    async with uow(ctx.tenant) as tx:
+        done = await reset_portal_mfa(
+            tx, ctx, client_id=contact.client_id, contact_id=contact.id, user_id=contact.user_id
+        )
+    return MfaResetView(
+        contact.id, done.devices_revoked, done.sessions_ended, await clock.now(ctx.tenant)
+    )
+
+
+async def contact_portal_facts(
+    tenant: TenantContext, contact_id: UUID
+) -> tuple[str, UUID | None, str | None] | None:
+    """P-08-T21: a contact's portal state, person and sign-in address (DEC-303: the person's
+    identity email, else the live invitation's), for communications' link renewal; None for a
+    contact the firm doesn't have."""
+    async with tenant_session(tenant) as session:
+        contact = await get_contact(session, contact_id)
+    if contact is None:
+        return None
+    address = (await sign_in_addresses(tenant, [(contact.id, contact.user_id)])).get(contact.id)
+    return contact.portal_state, contact.user_id, address

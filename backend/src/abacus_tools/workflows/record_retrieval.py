@@ -26,7 +26,6 @@ from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import asyncpg
 from temporalio.api.enums.v1 import EventType
 from temporalio.client import WorkflowFailureError, WorkflowHandle
 from temporalio.worker import Worker
@@ -41,6 +40,7 @@ from abacus.modules.connections.api import (
     start_retrieval,
     workflow_id,
 )
+from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.stack import (
     Stack,
     connect,
@@ -131,7 +131,7 @@ def slot_limits(work_class: str, **overrides: int) -> None:
 
 async def block_firm(superuser: str, tenant: uuid.UUID, work_class: str) -> None:
     """A live slot held by the firm's other work, so a run of the firm waits at `firm_cap`."""
-    conn = await asyncpg.connect(superuser)
+    conn = await connect_db(superuser)
     try:
         await conn.execute("DELETE FROM work_slots")
         await conn.execute("DELETE FROM work_waiters")
@@ -146,7 +146,7 @@ async def block_firm(superuser: str, tenant: uuid.UUID, work_class: str) -> None
 
 
 async def unblock(superuser: str) -> None:
-    conn = await asyncpg.connect(superuser)
+    conn = await connect_db(superuser)
     try:
         await conn.execute("DELETE FROM work_slots WHERE holder = 'recorder-blocker'")
     finally:

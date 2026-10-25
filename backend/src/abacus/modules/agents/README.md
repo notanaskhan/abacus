@@ -151,3 +151,24 @@ The firm's methodology documents, recalled by vector search. Knowledge is firm-w
 - **Spec** `fieldwork.entry_assessor` v2: prompt `fieldwork.entry_assess@v2`, small tier, propose only, $0.02 per entry, untrusted inputs `entry` and `documents`, batch, `client_data: none`, suite `evals/entry_assessment`.
 - **`entry_assess.py`:** reads one selected entry (`fieldwork.api.entry_facts`) and up to three documents a person tied to it: evidence linked on its newest result, then what fulfilled its support requests (D1; never a search). `ask` makes the one gateway call; `check` verifies every citation against the extraction (`document_citations.verify`) and, for amount claims, whether the quote holds the entry's amount (`shows_amount`, ADR-050). `explained` is shown only with all citations verified, a party citation and a matching amount quote; otherwise `unclear`. Records `entry_assessments` (insert-only; shadow runs hidden).
 - **`assess_start.py`:** `POST …/procedures/{id}/assess` (202, `entry_assessment.request`, flag `fieldwork.assessor`) starts one `EntryAssessWorkflow` per entry with documents and no assessment yet; `GET …/procedures/{id}/assessments` (`procedure.read`). Nothing is pre-filled into results (ADR-005); assessments stay out of the workpaper (D2).
+
+## The screening aggregate (P-06-T20; DEC-48, DEC-324)
+- **What:** the SHL-20 card for one request batch. It is a `request_batch` row of `screening_results` (migration 0154), composed by code in a system context (`screening_aggregate.compose_for_item`).
+- **Inputs:** the item's live fulfilments, minus withdrawn versions. For each file:
+  - code's facts (`evidence.api.screening_facts`: the document's dates and the `wrong_period` check);
+  - its newest completed upload review's shown flags.
+- **Checks:**
+  - "Right document" (model): a shown, code-verified `irrelevant` flag.
+  - "Right period" (code only): the request's `period_start/end` against the document's dates.
+- **Verdict:** any flag makes it flagged; both checks passing make it passed; anything else is not screened.
+- **Chain:** each change inserts a row that supersedes the previous one (`batch_no + 1`). An unchanged composition writes nothing. The database refuses an aggregate from an agent or a person.
+- **Triggers:** `upload_checks.recorded`, `upload_review.recorded` (emitted with each review) and `evidence_version.withdrawn`.
+- **Routes** (`screening_contract.py` over `screening_card.py`, behind `screening.card`):
+  - `GET …/request-items/{id}/screening` (`upload_review.read`);
+  - `POST …/screening/rerun` (`screening.request`). Reviews start only with `upload_review.request` and `upload_review.enabled`. Source events are deterministic. It is rate-limited to one rerun per item per 60 s under an advisory lock, and answers 409 `screening_running`;
+  - `POST /v1/screenings/{id}/feedback` (`screening.feedback`; insert-only `screening_feedback`, sealed note).
+  - None of these writes a request status or a review decision.
+- **TRI fail-closed:** on a `tax_return` work item at a firm that is not synthetic:
+  - `tri_gate.py` stops the reviewer's run and keeps model output out of the aggregate;
+  - the gateway refuses every agent's call (`tax_return_information`).
+  - Both hold until C19 registers §7216 consent.

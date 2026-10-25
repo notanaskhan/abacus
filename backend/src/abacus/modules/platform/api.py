@@ -1,5 +1,6 @@
 """Public interface of the platform module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.controls import ControlName, control_active
 from abacus.kernel.uow import Handler
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.platform.entitlements import (
@@ -108,6 +109,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "BudgetInvalid",
+    "ControlName",
     "Entitlement",
     "EntitlementRequired",
     "InMemoryTenantKeyOps",
@@ -130,6 +132,7 @@ __all__ = [
     "TenantProvisioningWorkflow",
     "check_entitlement",
     "configure_tenant_key_ops",
+    "control_active",
     "entitlement",
     "facts_sha256",
     "finish_propagation",

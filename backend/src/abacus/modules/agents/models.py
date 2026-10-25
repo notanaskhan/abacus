@@ -9,6 +9,7 @@ from uuid import UUID
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import ARRAY, FetchedValue, Numeric, String
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -41,6 +42,11 @@ class AgentRun(Base):
 
 
 class ScreeningResult(Base):
+    """One agent run's proposal on one version (`subject_kind = 'version'`), or, since 0154, the
+    code-composed aggregate of a request batch (`request_batch`, P-06-T20). The per-run columns
+    are typed for `version` rows: every reader of them filters `subject_kind = 'version'`
+    (`repository._version_rows()`); aggregates are read column by column (DEC-324)."""
+
     __tablename__ = "screening_results"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
@@ -55,6 +61,34 @@ class ScreeningResult(Base):
     unverified: Mapped[list[str]] = mapped_column(JSONB)
     created_by_kind: Mapped[str]
     created_at: Mapped[datetime]
+    subject_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    # P-06-T20 (0154): the aggregate's columns, NULL on `version` rows.
+    request_item_id: Mapped[UUID | None]
+    batch_no: Mapped[int | None]
+    source_result_ids: Mapped[list[UUID] | None] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    source_review_ids: Mapped[list[UUID] | None] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    evidence_version_ids: Mapped[list[UUID] | None] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
+    checks: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB)
+    file_flags: Mapped[list[dict[str, object]] | None] = mapped_column(JSONB)
+    verdict: Mapped[str | None]
+    supersedes_id: Mapped[UUID | None]
+
+
+class ScreeningFeedback(Base):
+    """A person's thumbs up or down on a screening aggregate (SHL-20 f; P-06-T20, 0154).
+    Insert-only; a thumbs-down carries a reason; the note is sealed."""
+
+    __tablename__ = "screening_feedback"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    screening_result_id: Mapped[UUID]
+    user_id: Mapped[UUID]
+    thumb: Mapped[str]
+    reason_code: Mapped[str | None]
+    note_sealed: Mapped[bytes | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
 class KnowledgeDocument(Base):
@@ -352,4 +386,19 @@ class EntryAssessmentRow(Base):
     shown_verdict: Mapped[str]
     rationale: Mapped[str]
     citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ScreeningRerunRequest(Base):
+    """A person's rerun of a request's screening (P-06-T20 security review, 0154): insert-only,
+    in system time, one per item per window."""
+
+    __tablename__ = "screening_rerun_requests"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    request_item_id: Mapped[UUID]
+    requested_by: Mapped[UUID]
+    files: Mapped[int]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())

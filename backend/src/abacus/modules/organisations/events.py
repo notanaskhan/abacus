@@ -25,3 +25,38 @@ class ContactCreated(DomainEvent):
 
     client_id: Annotated[UUID, classified("internal")]
     contact_id: Annotated[UUID, classified("internal")]
+
+
+class OfficeCreated(DomainEvent):
+    """A firm admin added an office (G-01-T08)."""
+
+    event_type: ClassVar[str] = "office.created"
+
+    office_id: Annotated[UUID, classified("internal")]
+
+
+class OfficeUpdated(DomainEvent):
+    """A firm admin changed an office (G-01-T08): which fields, never their values."""
+
+    event_type: ClassVar[str] = "office.updated"
+
+    office_id: Annotated[UUID, classified("internal")]
+    fields: Annotated[list[str], classified("internal")]
+
+
+class TeamMemberAdded(DomainEvent):
+    """Someone joined a team or group (G-01-T08; F-03's event)."""
+
+    event_type: ClassVar[str] = "team.member_added"
+
+    team_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+
+
+class TeamMemberRemoved(DomainEvent):
+    """Someone left a team or group (G-01-T08)."""
+
+    event_type: ClassVar[str] = "team.member_removed"
+
+    team_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]

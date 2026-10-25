@@ -6,12 +6,15 @@
 - `encrypted_pdf`: a text PDF whose trailer asks for a password nobody has.
 - `aging_schedule_xlsx`: an accounts receivable aging, optionally with formulas (no cached values)
   and a total row that doesn't add up.
+- `pii_corpus`: a W-2, a K-1, a 1099-INT and a direct-deposit form with synthetic TINs, accounts
+  and a date of birth where real forms print them (P-03-T13).
 """
 
 from __future__ import annotations
 
 import io
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -296,6 +299,101 @@ def invoice_pdf(
     )
 
 
+def vendor_statement_pdf(
+    *,
+    vendor: str = "Granite Rock Logistics",
+    customer: str = "Example Company Inc",
+    dated: date = date(2026, 8, 31),
+    footer_lines: tuple[str, ...] = (),
+) -> bytes:
+    """A vendor's monthly statement of account (P-06-T21; J22): it lists invoices and a balance
+    due, so it is the wrong document for a request for one invoice. `footer_lines` adds text (an
+    instruction carried in the file)."""
+    month = dated.replace(day=1)
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "STATEMENT OF ACCOUNT",
+                    vendor,
+                    f"Customer: {customer}",
+                    f"Statement date: {dated:%B} {dated.day}, {dated.year}",
+                    f"Activity from {month:%B} {month.day} to "
+                    f"{dated:%B} {dated.day}, {dated.year}",
+                    "Date Reference Charges Payments Balance",
+                    f"{month:%m}/04 Invoice GRL-5512 $1,840.00 $1,840.00",
+                    f"{month:%m}/11 Payment received $1,840.00 $0.00",
+                    f"{month:%m}/18 Invoice GRL-5547 $2,215.00 $2,215.00",
+                    f"{month:%m}/25 Invoice GRL-5590 $960.00 $3,175.00",
+                    "Balance due $3,175.00",
+                    "This statement lists invoices issued; it is not an invoice.",
+                    *footer_lines,
+                ]
+            )
+        ]
+    )
+
+
+def tax_form_pdf(
+    *,
+    form: Literal["W-2", "1099-NEC"] = "W-2",
+    tax_year: int = 2025,
+    payer: str = "Example Company Inc",
+    recipient: str = "Sam Example",
+    amount: Decimal = Decimal("48250.00"),
+) -> bytes:
+    """A wage or nonemployee-compensation statement (P-06-T21; J06). Identification numbers are
+    masked letters, never digits shaped like a taxpayer ID."""
+    if form == "W-2":
+        lines = [
+            f"Form W-2 Wage and Tax Statement {tax_year}",
+            f"Employer: {payer}",
+            "Employer identification number: XX-XXXXXXX",
+            f"Employee: {recipient}",
+            "Employee's social security number: XXX-XX-XXXX",
+            f"Box 1 Wages, tips, other compensation {_money(amount)}",
+            f"Box 2 Federal income tax withheld {_money(amount * Decimal('0.12'))}",
+        ]
+    else:
+        lines = [
+            f"Form 1099-NEC Nonemployee Compensation {tax_year}",
+            f"Payer: {payer}",
+            "Payer's TIN: XX-XXXXXXX",
+            f"Recipient: {recipient}",
+            "Recipient's TIN: XXX-XX-XXXX",
+            f"Box 1 Nonemployee compensation {_money(amount)}",
+            "Box 4 Federal income tax withheld $0.00",
+        ]
+    return _pdf([_text_page(lines)])
+
+
+def estimated_payment_pdf(
+    *,
+    taxpayer: str = "Sam Example",
+    tax_year: int = 2026,
+    quarter: int = 3,
+    paid_on: date = date(2026, 9, 15),
+    amount: Decimal = Decimal("3200.00"),
+) -> bytes:
+    """A confirmation of an estimated tax payment (P-06-T21): the right document for its
+    request, with nothing to flag."""
+    return _pdf(
+        [
+            _text_page(
+                [
+                    "Payment confirmation",
+                    f"Taxpayer: {taxpayer}",
+                    f"Payment type: Form 1040-ES estimated tax, {tax_year} quarter {quarter}",
+                    f"Payment date: {paid_on:%B} {paid_on.day}, {paid_on.year}",
+                    f"Amount paid {_money(amount)}",
+                    "Confirmation number: EXAMPLE-CONF-0001",
+                    "Status: Accepted for processing",
+                ]
+            )
+        ]
+    )
+
+
 def letter_pdf(dated: date = date(2027, 1, 10)) -> bytes:
     """A cover letter: the wrong kind of document for a statement or an aging."""
     return _pdf(
@@ -541,3 +639,106 @@ def card_statement_pdf(
         return _pdf([_text_page([*head, *rows])])
     half = len(rows) // 2
     return _pdf([_text_page([*head, *rows[:half]]), _text_page(["PURCHASES", *rows[half:]])])
+
+
+# --- PII corpus (P-03-T13; P-03 §4.4) ------------------------------------------------------------
+# Synthetic only: SSNs in the 000 and 9xx areas, EINs with the never-assigned 00 prefix, routing
+# numbers that fail the ABA checksum, `SYN-` accounts. Each value sits under or beside the label
+# a real form prints, as the detector must find it (recall 1.0 on this set).
+
+
+@dataclass(frozen=True)
+class PiiDocument:
+    """A synthetic form and what the detector must find on it: (page, kind, last four)."""
+
+    name: str
+    content: bytes
+    expected: tuple[tuple[int, str, str | None], ...]
+
+
+def w2_pdf() -> bytes:
+    """A W-2: box a holds the employee's SSN 000-00-6081, box b the employer's EIN."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "a Employee's social security number"),
+                (36.0, 726.0, "000-00-6081"),
+                (300.0, 740.0, "b Employer identification number (EIN)"),
+                (300.0, 726.0, "00-1230287"),
+                (36.0, 690.0, "c Employer's name, address, and ZIP code"),
+                (36.0, 676.0, "Brightwater Hale (Synthetic)"),
+                (300.0, 690.0, "1 Wages, tips, other compensation"),
+                (300.0, 676.0, "84,250.00"),
+            ]
+        ]
+    )
+
+
+def k1_pdf() -> bytes:
+    """A Schedule K-1 (Form 1065): the partnership's EIN in item A, the partner's SSN in E."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "A Partnership's employer identification number"),
+                (36.0, 726.0, "00-4567890"),
+                (36.0, 690.0, "E Partner's identifying number"),
+                (36.0, 676.0, "000-00-4412"),
+                (300.0, 690.0, "1 Ordinary business income (loss)"),
+                (300.0, 676.0, "12,480"),
+            ]
+        ]
+    )
+
+
+def form_1099_pdf() -> bytes:
+    """A 1099-INT: the payer's TIN, the recipient's TIN (900-12-3456) and the account number."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "PAYER'S TIN"),
+                (200.0, 740.0, "RECIPIENT'S TIN"),
+                (36.0, 726.0, "00-7654321"),
+                (200.0, 726.0, "900-12-3456"),
+                (36.0, 690.0, "Account number (see instructions)"),
+                (36.0, 676.0, "SYN-4410-2291"),
+                (300.0, 690.0, "1 Interest income"),
+                (300.0, 676.0, "2,310.00"),
+            ]
+        ]
+    )
+
+
+def direct_deposit_pdf() -> bytes:
+    """A direct-deposit form: routing and account numbers and a date of birth, with an
+    unlabelled number that fails every rule (never masked) and an invoice number."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 740.0, "Routing number"),
+                (36.0, 726.0, "000000001"),
+                (220.0, 740.0, "Account number"),
+                (220.0, 726.0, "SYN-0001-7731"),
+                (36.0, 690.0, "Date of birth"),
+                (36.0, 676.0, "01/01/1980"),
+                (36.0, 640.0, "Reference 000-00-1111 Invoice 12345 Total 4,210.55"),
+            ]
+        ]
+    )
+
+
+def pii_corpus() -> tuple[PiiDocument, ...]:
+    """The seeded PII corpus (P-03-T13 acceptance: recall 1.0)."""
+    return (
+        PiiDocument("W-2", w2_pdf(), ((1, "ssn", "6081"), (1, "ein", "0287"))),
+        PiiDocument("K-1", k1_pdf(), ((1, "ein", "7890"), (1, "ssn", "4412"))),
+        PiiDocument(
+            "1099-INT",
+            form_1099_pdf(),
+            ((1, "ein", "4321"), (1, "ssn", "3456"), (1, "bank_account", "2291")),
+        ),
+        PiiDocument(
+            "Direct deposit",
+            direct_deposit_pdf(),
+            ((1, "routing_number", "0001"), (1, "bank_account", "7731"), (1, "dob", None)),
+        ),
+    )

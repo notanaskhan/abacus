@@ -23,15 +23,49 @@ spec and the contracts, not the implementation.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import cast
+from typing import Final, cast
 
 import httpx
 import pytest
+from types_boto3_s3 import S3Client
 
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
+from abacus.kernel.storage import s3_client
+from abacus.modules.evidence import storage
 from abacus.modules.identity.api import Forbidden, Resource, agent_context_for_run, authorise
 
 from .support import Net, Person, Role, Seeder, Site
+
+# The acceptance and letter files are stored write-once in the evidence bucket. Wire storage to
+# this session's S3 container, never the settings default (the dev stack's S3, absent on CI).
+BUCKET: Final = "backfill-acceptance-letter"
+MASTER: Final = b"backfill-acceptance-letter-master-key-0123"
+
+
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=BUCKET, ObjectLockEnabledForBucket=True)
+    yield client
+
+
+@pytest.fixture(autouse=True)
+def wired(raw: S3Client) -> Iterator[None]:
+    reset_key_service()
+    storage.reset_storage()
+    configure_key_service(LocalKeyService(MASTER))
+    storage.configure_storage(raw, BUCKET)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+
 
 GATE_FACT_ACTIONS = ("acceptance.record", "letter.record", "independence.confirm")
 STAFF_OTHERS = ("manager", "senior", "staff", "reviewer")

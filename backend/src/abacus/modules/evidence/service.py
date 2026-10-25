@@ -33,7 +33,11 @@ from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence import storage
-from abacus.modules.evidence.events import EvidenceVersionCreated, ReviewAssigned
+from abacus.modules.evidence.events import (
+    EvidenceVersionCreated,
+    ReviewAssigned,
+    ReviewDecisionRecorded,
+)
 from abacus.modules.evidence.holds import inherit_holds
 from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.repository import (
@@ -743,6 +747,10 @@ async def decide(
                 target=Target("review_decision", decision_id),
                 after=refs,
             )
+            # P-04-T16: the gates on this version's proposals close.
+            tx.emit(
+                ReviewDecisionRecorded(engagement_id=engagement_id, evidence_version_id=version_id)
+            )
     except IntegrityError as exc:
         constraint = getattr(exc.orig, "constraint_name", None)
         if constraint in _ONE_DECISION:
@@ -863,6 +871,11 @@ async def undo_review_decision(
         after=Ref(
             undoes_decision_id=original.id, evidence_version_id=original.evidence_version_id
         ),
+    )
+    tx.emit(  # P-04-T16: the version's proposals wait on a person again
+        ReviewDecisionRecorded(
+            engagement_id=engagement_id, evidence_version_id=original.evidence_version_id
+        )
     )
     return UndoneView(
         undo_id,

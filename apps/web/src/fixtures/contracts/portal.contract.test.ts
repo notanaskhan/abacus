@@ -312,12 +312,12 @@ describe("firm-side recovery as P-07 (CLI-04) and G-02 (ADM-06) read it", () => 
     ).toHaveLength(1);
   });
 
-  it("answers an MFA reset with counts and a time, never a factor", () => {
+  it("answers an MFA reset with this firm's counts and a time, never a factor", () => {
     const reset: ContactMfaResetOut = {
       client_id: ID.copperleaf,
       contact_id: ID.contact,
-      mfa_enrolled: false,
       trusted_devices_revoked: 1,
+      sessions_ended: 1,
       reset_at: "2026-09-14T16:02:00Z",
     };
     expect(

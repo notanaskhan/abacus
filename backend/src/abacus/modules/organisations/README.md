@@ -1,6 +1,6 @@
 # organisations
 
-Clients and client entities (glossary). Owns `clients`, `client_entities`, `contacts`, `offices`, `teams` and `team_rosters` (`registry.py`; ADR-103). Offices are a filter, never an access boundary (F-03-T23; DEC-30); this module hands identity its office list through identity's `register_office_list` slot.
+Clients and client entities (glossary). Owns `clients`, `client_entities`, `contacts`, `offices`, `teams` and `team_rosters` (`registry.py`; ADR-103). Offices are a filter, never an access boundary (F-03-T23; DEC-30); this module hands identity its office list through identity's `register_office_list` slot. Offices, teams and groups are live in `org_structure.py` (G-01-T08, DEC-317): codes unique per firm, one HQ, versioned edits; `team_rosters` is insert-only history, and identity keeps each person's service lines in agreement with their service-line teams.
 
 ## Public interface (`api.py`)
 - `create_client(tx, tenant_id, client_name, client_entity_name) -> NewClient` runs inside the caller's unit of work and records `client.created` and `client_entity.created`. The caller authorises the action that needs it (for now `engagement.create`; client management routes come later).

@@ -34,6 +34,13 @@ WALL_KEYS = {
     "created_at",
     "removed_by",
     "removed_at",
+    # walls v2 (G-01-T09): why, the named approver and the approval, and why it was lifted.
+    "reason_code",
+    "reason_text",
+    "approver_user_id",
+    "approval_status",
+    "approved_at",
+    "removed_reason",
 }
 
 
@@ -119,6 +126,20 @@ class Net:
 
     async def remove_wall(self, admin: Person, wall_id: object) -> httpx.Response:
         return await self.call("POST", f"/v1/walls/{wall_id}/remove", admin)
+
+    async def partner(self, tenant_id: uuid.UUID) -> Person:
+        """A partner-level member: walls v2 moves the lift to partners (G-01 AC8.4; DEC-73)."""
+        who = await self.seed.person(tenant_id)
+        await self.seed.run(
+            "UPDATE memberships SET level = 'partner' WHERE tenant_id = $1 AND user_id = $2",
+            tenant_id,
+            who.user_id,
+        )
+        return who
+
+    async def lift_wall(self, tenant_id: uuid.UUID, wall_id: object) -> httpx.Response:
+        """Lift a wall as a partner (for tests about what happens once one is lifted)."""
+        return await self.remove_wall(await self.partner(tenant_id), wall_id)
 
     async def list_walls(self, who: Person, *, mfa: bool = True) -> httpx.Response:
         return await self.call("GET", "/v1/walls", who, mfa=mfa)

@@ -29,7 +29,7 @@ from uuid import UUID
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import CONTACTS_V2
+from abacus.kernel._flags import CONTACTS_V2, PORTAL_SIGN_IN_V2
 from abacus.kernel._statuses import InvitationStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -40,6 +40,8 @@ from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
+    ContactMfaResetOut,
+    ContactPortalStatusOut,
     GrantRole,
     ScopeKind,
     current_context,
@@ -538,3 +540,69 @@ async def unlock_contact_route(contact_id: UUID, ctx: Ctx) -> ContactUnlockedOut
     return ContactUnlockedOut(
         contact_id=found, portal_status=InvitationStatus(status), unlocked_at=at
     )
+
+
+# --- P-08-T21: firm-side portal recovery (SPEC-320 AC-18, AC-19; C5 v1.1 portal half) ---------
+
+
+async def _portal_gate(ctx: AuthContext) -> None:
+    if not await flag_enabled(ctx.tenant, PORTAL_SIGN_IN_V2):
+        raise NotFound("portal.sign_in_v2")
+
+
+@client_contacts_router.post(
+    "/{client_id}/contacts/{contact_id}/portal-unlock",
+    action="contact.unlock",
+    response_model=ContactPortalStatusOut,
+)
+async def unlock_contact_portal_route(
+    client_id: UUID, contact_id: UUID, ctx: Ctx
+) -> ContactPortalStatusOut:
+    """Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person
+    (INV-5); a walled client, or a contact of another client, answers 404 (INV-3). Only the
+    firm's sign-in lock: the same answer whatever else the person holds (DEC-329)."""
+    await _portal_gate(ctx)
+    done = await service.portal_unlock(ctx, client_id, contact_id)
+    return ContactPortalStatusOut(
+        client_id=client_id,
+        contact_id=done.contact_id,
+        portal_status=InvitationStatus(done.portal_state),
+        locked_until=None,
+    )
+
+
+@client_contacts_router.post(
+    "/{client_id}/contacts/{contact_id}/mfa-reset",
+    action="contact.mfa_reset",
+    response_model=ContactMfaResetOut,
+)
+async def reset_contact_mfa_route(
+    client_id: UUID, contact_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ContactMfaResetOut:
+    """End the person's trusted devices and portal sessions in this firm, so the next sign-in
+    here asks for the second step again; email the client in the firm's name. Security admin
+    with fresh MFA. Audited `portal_mfa.reset`. The factor and backup codes are the person's
+    and never deleted here (the person re-enrols, POR-12, or platform support resets them); the
+    answer is the same whatever other firms the person belongs to (DEC-329)."""
+    await _portal_gate(ctx)
+    await service.check_mfa_reset(ctx, client_id, contact_id)  # before the replay lookup
+
+    async def run() -> tuple[int, dict[str, object]]:
+        done = await service.mfa_reset(ctx, client_id, contact_id)
+        out = ContactMfaResetOut(
+            client_id=client_id,
+            contact_id=done.contact_id,
+            trusted_devices_revoked=done.trusted_devices_revoked,
+            sessions_ended=done.sessions_ended,
+            reset_at=done.reset_at,
+        )
+        return 200, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="contacts.mfa_reset",
+        key=idempotency_key,
+        body={"client_id": str(client_id), "contact_id": str(contact_id)},
+        run=run,
+    )
+    return ContactMfaResetOut.model_validate(stored.body)
