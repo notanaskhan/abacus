@@ -28,6 +28,7 @@ Firm-level runs (no engagement) answer 404 in v0.
 | Run list | `GET /v1/engagements/{engagement_id}/agent-runs?state=active\|recent&limit=` | `agent_run.read` | firm_admin, practice_leader, engagement_partner, manager, senior, staff, reviewer; independence required | denied (no cell) |
 | Run | `GET /v1/agent-runs/{run_id}` | `agent_run.read` | as above, on the run's engagement | denied |
 | Trace | `GET /v1/agent-runs/{run_id}/trace` | `agent_run.read` | as above | denied |
+| Items | `GET /v1/agent-runs/{run_id}/items?after_seq=` | `agent_run.read` | as above | denied |
 | Records read | `GET /v1/agent-runs/{run_id}/trace/records-read` | `agent_run.read` | as above | denied |
 | Writes | `GET /v1/agent-runs/{run_id}/trace/writes` | `agent_run.read` | as above | denied |
 | Trace export | `POST /v1/agent-runs/{run_id}/trace-exports` (201) | `run_trace.export` | engagement_partner, manager, senior; independence and fresh MFA required | agent: deny |
@@ -69,6 +70,21 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
   - `decision`, `decided_by_name`, `decided_at`: the newest decision.
 
   No model text appears here.
+- **RunItemsOut (v1, TASK-5001):**
+  - `run`: the header, which carries the current state;
+  - `items`: those after `after_seq`;
+  - `last_seq`;
+  - `resync`: true when `after_seq` is past the end. The client then replaces its items.
+- **RunItemOut:**
+  - `seq`, `at`;
+  - `kind`:
+    - `tool_card`: the legacy run as one card. Its state follows the header.
+    - `narration`: an engagement agent action, given as code words (`code` is the action, `state` the outcome, `detail` the reason).
+    - `decision`: a person's decision.
+    - `failure`: the failure code.
+  - `actor`, `ref_type`, `ref_id`.
+
+  Items are built when read from the run's own records, so nothing is back-filled. Seqs are numbered by time. The client polls every 1.5 s while the run is queued or running and the tab is visible.
 - **TraceExportIn:** `format`, which takes only `json` in v0.
 - **TraceExportOut:**
   - `filename`;
@@ -106,6 +122,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 
 ## 8. Changes v1 will make (P-09)
 - Done in TASK-5000: `GET /v1/agent-runs/{id}` (with `run_record_sha256` and `allowed_actions`), `/trace/records-read` and `/trace/writes`.
-- Still to come: P-09-T07's projection by level and the `items?after_seq=` feed; P-09-T08's `/trace/steps/{id}` and the content and metadata projections (DEC-87, `security_admin`). The single `/trace` response stays as the summary and timeline.
+- Done in TASK-5001: the `items?after_seq=` feed, with the read-time legacy adapter (P-09 Story 8.1).
+- Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}` and the content and metadata projections (DEC-87, `security_admin`). The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.

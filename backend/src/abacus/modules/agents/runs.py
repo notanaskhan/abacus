@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from typing import Final, Literal, cast
 from uuid import UUID
@@ -22,11 +22,12 @@ from abacus.ai_gateway import attempts_for
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.models import AgentRun
+from abacus.modules.agents.models import AgentActivity, AgentRun
 from abacus.modules.agents.repository import (
     RunWriteRow,
     engagement_runs,
     get_run,
+    run_activity,
     run_writes,
     screening_results_of_run,
 )
@@ -379,7 +380,7 @@ class RunWrite:
     target_type: str | None
     target_id: UUID | None
     key: str  # a code: the field key, the proposal kind or the screening action
-    state: str
+    outcome: str
     at: datetime
     decision: str | None
     decided_by_name: str | None
@@ -484,8 +485,146 @@ async def writes_for(ctx: AuthContext, run_id: UUID) -> list[RunWrite]:
     return sorted(out, key=lambda w: (w.at, str(w.id)))
 
 
+# --- C6 v1 run items (TASK-5001; P-09 Story 1.3 and 8.1) ------------------------------------
+
+ItemKind = Literal["tool_card", "narration", "decision", "failure"]
+_ITEM_ORDER: Final = ("tool_card", "narration", "decision", "failure")
+
+
+@dataclass(frozen=True)
+class RunItem:
+    """One entry in a run's thread, read-time from the run's own records (no back-fill).
+
+    `tool_card`: the whole legacy run as one card, `code` the agent spec; its state follows the
+    run header, so a polling client updates it from the header rather than a new item.
+    `narration`: the engagement agent's action (`code`, `outcome` what happened, `detail` the
+    reason), worded by the client from code words, never model text. `decision`: a person's
+    decision on what the run proposed. `failure`: the run's failure code."""
+
+    seq: int
+    kind: ItemKind
+    at: datetime
+    code: str
+    outcome: str | None
+    detail: str | None
+    actor: str | None
+    ref_type: str | None
+    ref_id: UUID | None
+
+
+@dataclass(frozen=True)
+class RunItems:
+    run: RunSummary
+    items: list[RunItem]
+    last_seq: int
+    resync: bool
+
+
+async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
+    """The run header plus its items after `after_seq`. Items are numbered by time from the
+    records, so a seq never changes meaning; asking past the end answers `resync`."""
+    run = await _run(ctx, run_id, "agent_run.read")
+    engagement_id = run.engagement_id
+    if engagement_id is None:
+        raise NotFound
+    names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
+    summary = _summary(run, names)
+    async with tenant_session(ctx.tenant) as session:
+        writes = await run_writes(session, run.id)
+        results = await screening_results_of_run(session, run.id)
+        activity: Sequence[AgentActivity] = (
+            await run_activity(
+                session, engagement_id, run.source_event_id, run.started_at, run.finished_at
+            )
+            if run.agent_id == "engagement.agent"
+            else []
+        )
+    hidden = await withdrawn_among(ctx.tenant, [r.evidence_version_id for r in results])
+    results = [r for r in results if r.evidence_version_id not in hidden]  # P-06-T19
+    decisions = await decisions_on_screenings(ctx.tenant, [r.id for r in results])
+    counts = written_counts(writes) or output_counts(run.output)
+    subject = _subject(run)
+    subject_id = run.evidence_version_id or run.inbox_file_id or run.methodology_version_id
+    raw: list[RunItem] = [
+        RunItem(
+            0,
+            "tool_card",
+            run.started_at,
+            run.agent_id,
+            summary.state,
+            ",".join(f"{k}:{n}" for k, n in counts) or None,
+            None,
+            subject,
+            subject_id,
+        )
+    ]
+    for a in activity:
+        raw.append(
+            RunItem(
+                0,
+                "narration",
+                a.created_at,
+                a.action,
+                a.outcome,
+                a.reason,
+                None,
+                a.record_type,
+                a.record_id,
+            )
+        )
+    for d in decisions:
+        actor = names.get(UUID(d.actor_id), "Former member") if d.actor_kind == "human" else None
+        raw.append(
+            RunItem(
+                0,
+                "decision",
+                d.at,
+                d.decision,
+                None,
+                "screening",
+                actor,
+                "screening_result",
+                d.screening_result_id,
+            )
+        )
+    for w in writes:
+        if w.decision is not None and w.decided_at is not None:
+            actor = None if w.decided_by is None else names.get(w.decided_by, "Former member")
+            raw.append(
+                RunItem(0, "decision", w.decided_at, w.decision, None, w.kind, actor, w.kind, w.id)
+            )
+    if run.status == "failed" and run.finished_at is not None:
+        raw.append(
+            RunItem(
+                0,
+                "failure",
+                run.finished_at,
+                run.failure_code or "failed",
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+        )
+    items, last, resync = page_items(raw, after_seq)
+    return RunItems(summary, items, last, resync)
+
+
+def page_items(raw: Sequence[RunItem], after_seq: int) -> tuple[list[RunItem], int, bool]:
+    """Number items by time (the tool card first at its instant) and keep those after
+    `after_seq`; a client ahead of the server gets everything back with `resync`."""
+    ordered = sorted(raw, key=lambda i: (i.at, _ITEM_ORDER.index(i.kind), str(i.ref_id)))
+    numbered = [replace(i, seq=n + 1) for n, i in enumerate(ordered)]
+    last = len(numbered)
+    if after_seq > last:
+        return numbered, last, True
+    return [i for i in numbered if i.seq > after_seq], last, False
+
+
 __all__: Sequence[str] = [
     "export_trace",
+    "items_for",
     "records_read_for",
     "run_view",
     "runs_for",

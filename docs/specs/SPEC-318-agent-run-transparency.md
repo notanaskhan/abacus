@@ -67,6 +67,12 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - The drawer has three views: Timeline, Records read, and Writes & approvals.
   - The runtime is named "Accrued Agent runtime" (DEC-87).
 
+- **AC-8 Live feed (TASK-5001).**
+  - `GET /v1/agent-runs/{id}/items?after_seq=` returns the header plus the new items: a tool card, the engagement agent's narration as code words, decisions, and any failure.
+  - It answers `resync` when the client is ahead.
+  - The drawer polls every 1.5 s while the run is active and the tab is visible. It shows "· live", narrates what the agent did, and stops polling when the run ends.
+  - The run list refreshes while any run is active.
+
 ## 3. Out of scope
 - Live streaming, cancelling and retrying runs.
 - Firm-wide run views.

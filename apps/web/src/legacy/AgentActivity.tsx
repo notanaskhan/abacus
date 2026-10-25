@@ -84,6 +84,16 @@ function describe(row: ActivityOut): string {
     : `Failed: ${what.toLowerCase()}`;
 }
 
+/** A run item's narration from code words only (P-09 Story 8.1): no counts, no model text. */
+export function narrate(action: string, outcome: string | null, reason: string | null): string {
+  const what = ACTION[action] ?? action;
+  if (outcome === "done" || outcome === null) return what;
+  const why = reason != null ? (REASON[reason] ?? reason) : "";
+  return outcome === "skipped"
+    ? `Skipped: ${what.toLowerCase()}, because ${why}`
+    : `Failed: ${what.toLowerCase()}`;
+}
+
 const TONE = { done: "success", skipped: "neutral", failed: "danger" } as const;
 
 /** SPEC-027 AC-7: what happened automatically on this engagement, by which policy and why. */

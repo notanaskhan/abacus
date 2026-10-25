@@ -136,7 +136,7 @@ describe("SPEC-318 agent runs", () => {
             target_type: "workpaper",
             target_id: "w-1",
             key: "materiality",
-            state: "adopted",
+            outcome: "adopted",
             at: RUN.started_at,
             decision: "adopted",
             decided_by_name: "Dana Leader",
@@ -148,7 +148,7 @@ describe("SPEC-318 agent runs", () => {
             target_type: null,
             target_id: null,
             key: "post_entry",
-            state: "pending",
+            outcome: "pending",
             at: RUN.started_at,
             decision: null,
             decided_by_name: null,
@@ -164,6 +164,44 @@ describe("SPEC-318 agent runs", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Writes & approvals" }));
     expect(await screen.findByText("adopted by Dana Leader")).toBeTruthy();
     expect(screen.getByText("Waiting on a person")).toBeTruthy();
+  });
+
+  it("follows a running run live and narrates the agent's actions (p-09 story 1.3)", async () => {
+    let state: AgentRunOut["state"] = "running";
+    const narration = {
+      seq: 2,
+      kind: "narration",
+      at: RUN.started_at,
+      code: "reminders.drafted",
+      outcome: "done",
+      detail: null,
+      actor: null,
+      ref_type: null,
+      ref_id: null,
+    };
+    const api = mockApi({
+      [`GET /v1/engagements/${E}/agent-runs`]: () => json([{ ...RUN, state }]),
+      [`GET /v1/agent-runs/r-1/trace`]: () => json({ ...TRACE, run: { ...RUN, state } }),
+      [`GET /v1/agent-runs/r-1/items`]: (call) =>
+        json({
+          run: { ...RUN, state },
+          items: call.query.get("after_seq") === "0" ? [narration] : [],
+          last_seq: 2,
+          resync: false,
+        }),
+    });
+    renderOne(() => <AgentRuns engagementId={E} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
+    expect(await screen.findByText("Running · live")).toBeTruthy();
+    expect(await screen.findByText("Drafted overdue reminders for you to send")).toBeTruthy();
+    state = "succeeded";
+    await waitFor(
+      () => {
+        expect(screen.queryByText("Running · live")).toBeNull();
+      },
+      { timeout: 4000 },
+    );
+    expect(api.calls.some((c) => c.path.endsWith("/items"))).toBe(true);
   });
 
   it("asks for a fresh sign-in when the export needs recent MFA (ac6)", async () => {
