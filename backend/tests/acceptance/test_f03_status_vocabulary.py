@@ -485,9 +485,10 @@ CLIENT_WORDS = {"request": {"To do", "Done", "Ignored"}, "k1_package": {"Not rel
 LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 # Words a sentence-case label may capitalise after its first: acronyms and the one hyphenated
 # compound the table spells with capitals.
-CAPITALISED_BY_SOURCE = {"TB-linked"}
-# AUD-06 g spells the interim chip "TB: Interim · 8/31/2026" (A-02-T02; copy verbatim, DEC-15).
-CAPITALISED_BY_SOURCE |= {"Interim"}
+CAPITALISED_BY_SOURCE = {
+    "TB-linked",
+    "Interim",  # AUD-06 g spells the chip "TB: Interim · 8/31/2026" (A-02-T02; verbatim, DEC-15)
+}
 
 # ---------------------------------------------------------------------------------------------
 # The handoff's lib/status.js: every word, per object. 21 objects, 144 words.
