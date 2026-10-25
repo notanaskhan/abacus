@@ -41,7 +41,7 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
 - **Hard limit:** deferrable work raises `BudgetExhausted`; the platform's hard limit stops all work.
 - **Failure:** if the sums can't be read, deferrable work is refused (fail closed).
 
-Sums are cached for 5 s per process and dropped after each recorded call. `run_anomaly_job` runs hourly in the worker, beside the relay.
+Sums are cached for 5 s per process and dropped after each recorded call. `flag_anomalies` runs hourly as `SpendAnomalyWorkflow` on a Temporal Schedule (`spend_anomaly:platform`, Q-01-T26), not in the worker.
 
 ## Embeddings (SPEC-009; TASK-024)
 `embed(EmbedCall)` is the only path to an embedding model. Before the provider is called, the call passes, in order:

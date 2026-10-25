@@ -31,10 +31,14 @@ from typing import Final
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
-from temporalio.exceptions import ActivityError
+from temporalio.exceptions import ActivityError, ApplicationError
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.platform.workflow_types import (
+        CanaryInput,
+        CanaryOutcome,
+        CanaryPlan,
+        CanaryResult,
         IncidentPropagationInput,
         IncidentPropagationOutcome,
         IncidentPropagationResult,
@@ -267,3 +271,129 @@ class IncidentPropagationWorkflow:
             retry_policy=_RETRY,
         )
         return IncidentPropagationResult(tuple(done), tuple(failed))
+
+
+# Q-01-T26 (SPEC-007 AC-6): the hourly spend-anomaly pass, one per run on a Schedule.
+SPEND_ANOMALY_ID: Final = "spend_anomaly:platform"
+_JOB_TIMEOUT = timedelta(minutes=5)
+_JOB_RETRY = RetryPolicy(maximum_attempts=3)  # a failed hour is retried by the next run
+
+
+@workflow.defn(name="SpendAnomaly")
+class SpendAnomalyWorkflow:
+    """`spend_anomaly:platform`: flag engagements spending past the anomaly multiple (it alerts,
+    never blocks). Started only by its Schedule (overlap SKIP), so two workers never flag twice."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "platform.flag_spend_anomalies",
+            result_type=int,
+            start_to_close_timeout=_JOB_TIMEOUT,
+            retry_policy=_JOB_RETRY,
+        )
+
+
+# --- Q-01-T30: the canary ----------------------------------------------------------------------
+
+CANARY_EVERY: Final = timedelta(minutes=15)
+_CANARY_STEP_TIMEOUT = timedelta(seconds=60)
+_CANARY_WAIT_TIMEOUT = timedelta(minutes=3)  # SLO-03: upload to preview within 2 minutes
+_CANARY_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    maximum_attempts=3,
+    non_retryable_error_types=["CanaryNotSynthetic", "CanaryStepFailed"],
+)
+_CANARY_ONCE = RetryPolicy(maximum_attempts=1)  # a wait or a check is not repeated within a run
+_CANARY_REPORT_RETRY = RetryPolicy(initial_interval=timedelta(seconds=5), maximum_attempts=5)
+
+
+def canary_workflow_id(tenant_id: str) -> str:
+    return f"canary:{tenant_id}"
+
+
+def _canary_code(error: ActivityError) -> str:
+    """The failed step's code: the probe's own, `timeout`, or `error` (never an error text)."""
+    cause = error.cause
+    if isinstance(cause, ApplicationError) and cause.type in ("CanaryStepFailed",):
+        return cause.message
+    if isinstance(cause, ApplicationError) and cause.type == "CanaryNotSynthetic":
+        return "not_synthetic"
+    if isinstance(cause, TimeoutError):
+        return "timeout"
+    return "error"
+
+
+@workflow.defn(name="Canary")
+class CanaryWorkflow:
+    """`canary:<tenant>` (Q-01-T30): the end-to-end probe, every 15 minutes on its Schedule. The
+    steps stop at the first failure; the report always runs, so every run counts and pages are
+    decided on the run's outcome."""
+
+    @workflow.run
+    async def run(self, given: CanaryInput) -> CanaryResult:
+        step = "prepare"
+        route: str | None = None
+        try:
+            plan = await workflow.execute_activity(
+                "canary.prepare",
+                given,
+                result_type=CanaryPlan,
+                start_to_close_timeout=_CANARY_STEP_TIMEOUT,
+                retry_policy=_CANARY_RETRY,
+            )
+            step = "create_item"
+            item = await workflow.execute_activity(
+                "canary.create_item",
+                plan,
+                result_type=str,
+                start_to_close_timeout=_CANARY_STEP_TIMEOUT,
+                retry_policy=_CANARY_RETRY,
+            )
+            step = "upload"
+            version = await workflow.execute_activity(
+                "canary.upload",
+                args=[plan, item],
+                result_type=str,
+                start_to_close_timeout=_CANARY_STEP_TIMEOUT,
+                retry_policy=_CANARY_ONCE,  # a retried upload would be a duplicate
+            )
+            step = "wait_processing"
+            await workflow.execute_activity(
+                "canary.wait_processing",
+                args=[plan, item, version],
+                start_to_close_timeout=_CANARY_WAIT_TIMEOUT,
+                retry_policy=_CANARY_ONCE,
+            )
+            step = "screen"
+            route = await workflow.execute_activity(
+                "canary.screen",
+                args=[plan, item, version],
+                result_type=str,
+                start_to_close_timeout=_CANARY_WAIT_TIMEOUT,
+                retry_policy=_CANARY_ONCE,
+            )
+            step = "observe_outbox"
+            await workflow.execute_activity(
+                "canary.observe_outbox",
+                args=[plan, version],
+                start_to_close_timeout=_CANARY_STEP_TIMEOUT,
+                retry_policy=_CANARY_ONCE,
+            )
+            step = "send_simulator"
+            await workflow.execute_activity(
+                "canary.send_simulator",
+                plan,
+                start_to_close_timeout=_CANARY_STEP_TIMEOUT,
+                retry_policy=_CANARY_RETRY,
+            )
+            outcome = CanaryOutcome(given.tenant_id, True, None, None, route)
+        except ActivityError as error:
+            outcome = CanaryOutcome(given.tenant_id, False, step, _canary_code(error), route)
+        return await workflow.execute_activity(
+            "canary.report",
+            outcome,
+            result_type=CanaryResult,
+            start_to_close_timeout=_CANARY_STEP_TIMEOUT,
+            retry_policy=_CANARY_REPORT_RETRY,
+        )

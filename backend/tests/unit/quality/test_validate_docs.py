@@ -403,3 +403,110 @@ def test_an_adr_accepts_any_deciders(pack: Write, deciders: str) -> None:
         _index(140).replace("| Decision | amber |", "| Decision | red |"),
     )
     assert vd.validate() == []
+
+
+# --- Q-01-T21 (ADR-098): runbooks and the alarms that link them ------------------------------
+
+RUNBOOK = """---
+id: RB-01
+title: Deploy and rollback
+owner: builder
+alarms: [SLO-01]
+last_rehearsed: never
+---
+# RB-01
+"""
+ALARM = """resource "aws_cloudwatch_metric_alarm" "api_fast_burn" {{
+  alarm_name        = "api-fast-burn"
+  alarm_description = "{description}"
+  tags = {{
+    runbook = "{tag}"
+  }}
+}}
+"""
+
+
+def test_q01t21_a_runbook_with_its_frontmatter_passes(pack: Write) -> None:
+    pack("docs/runbooks/RB-01-deploy-and-rollback.md", RUNBOOK)
+    pack("docs/runbooks/README.md", "# Runbooks\n")  # the index is not a runbook
+    assert vd.validate() == []
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "expected"),
+    [
+        ("owner: builder\n", "", "missing required field 'owner'"),
+        ("alarms: [SLO-01]\n", "", "'alarms' must be a list"),
+        ("alarms: [SLO-01]\n", "alarms: SLO-01\n", "'alarms' must be a list"),
+        ("last_rehearsed: never\n", "last_rehearsed: soon\n", "'last_rehearsed' must be"),
+        ("id: RB-01\n", "id: RB-02\n", "does not match the filename"),
+    ],
+)
+def test_q01t21_a_runbook_without_its_frontmatter_fails(
+    pack: Write, old: str, new: str, expected: str
+) -> None:
+    pack("docs/runbooks/RB-01-deploy-and-rollback.md", RUNBOOK.replace(old, new))
+    assert any(expected in error for error in vd.validate()), vd.validate()
+
+
+def test_q01t21_a_rehearsal_date_is_accepted(pack: Write) -> None:
+    pack(
+        "docs/runbooks/RB-01-deploy-and-rollback.md",
+        RUNBOOK.replace("last_rehearsed: never", "last_rehearsed: 2026-11-12"),
+    )
+    assert vd.validate() == []
+
+
+def test_q01t21_a_runbook_must_be_named_rb_nn(pack: Write) -> None:
+    pack("docs/runbooks/RB-1-deploy.md", RUNBOOK)
+    assert any("named RB-<nn>-<slug>.md" in e for e in vd.validate())
+
+
+def test_q01t21_an_alarm_linking_an_existing_runbook_passes(pack: Write) -> None:
+    pack("docs/runbooks/RB-01-deploy-and-rollback.md", RUNBOOK)
+    pack(
+        "infra/modules/observability/alarms.tf",
+        ALARM.format(
+            description="SLO-01 fast burn: docs/runbooks/RB-01-deploy-and-rollback.md", tag="RB-01"
+        ),
+    )
+    assert vd.validate() == []
+
+
+def test_q01t21_an_alarm_without_a_runbook_link_fails(pack: Write) -> None:
+    pack("docs/runbooks/RB-01-deploy-and-rollback.md", RUNBOOK)
+    pack(
+        "infra/modules/observability/alarms.tf", ALARM.format(description="fast burn", tag="none")
+    )
+    errors = vd.validate()
+    assert errors == [
+        "infra/modules/observability/alarms.tf: aws_cloudwatch_metric_alarm.api_fast_burn has no "
+        "runbook link (RB-<nn>, ADR-098)"
+    ]
+
+
+def test_q01t21_an_alarm_linking_a_missing_runbook_fails(pack: Write) -> None:
+    pack("docs/runbooks/RB-01-deploy-and-rollback.md", RUNBOOK)
+    pack("infra/envs/staging/alarms.tf", ALARM.format(description="see RB-99", tag="RB-99"))
+    assert any("links RB-99, which has no runbook file" in e for e in vd.validate())
+
+
+def test_q01t21_composite_alarms_are_held_to_the_same_rule(pack: Write) -> None:
+    pack(
+        "infra/envs/production/alarms.tf",
+        'resource "aws_cloudwatch_composite_alarm" "canary" {\n  alarm_name = "canary"\n}\n',
+    )
+    assert any(
+        "aws_cloudwatch_composite_alarm.canary has no runbook link" in e for e in vd.validate()
+    )
+
+
+def test_q01t21_the_repositorys_runbooks_and_alarms_pass() -> None:
+    report = vd.Report()
+    runbooks = vd.check_runbooks(report)
+    vd.check_alarm_runbooks(report, runbooks)
+    assert report.errors == []
+    assert {"RB-01", "RB-02", "RB-24"} <= runbooks  # R0 (Q-01-T21)
+    r1 = {"RB-03", "RB-06", "RB-07", "RB-08", "RB-09", "RB-10", "RB-11", "RB-12", "RB-15"}
+    assert r1 | {"RB-20", "RB-22", "RB-23", "RB-26", "RB-29"} <= runbooks  # R1 (Q-01-T40)
+    assert {"RB-04", "RB-05", "RB-13", "RB-14", "RB-16"} <= runbooks  # owned stubs

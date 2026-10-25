@@ -17,20 +17,26 @@ from abacus.modules.notifications.kinds import (
     register_kind,
     registered,
 )
+from abacus.modules.notifications.purge import ACTIVITIES as PURGE_ACTIVITIES
+from abacus.modules.notifications.purge import SCHEDULES
+from abacus.modules.notifications.purge import WORKFLOWS as PURGE_WORKFLOWS
 from abacus.modules.notifications.routes import router
 from abacus.modules.notifications.service import notify, run_purge_job
 from abacus.modules.notifications.workflows import (
+    NOTIFICATION_PURGE_ID,
     DeliveryOutcome,
     NotificationEmailInput,
     NotificationEmailWorkflow,
+    NotificationPurgeWorkflow,
     notification_email_id,
 )
 
 # The relay hands each catalogued event to `notify` (SPEC-013 §6).
 SUBSCRIPTIONS = dict.fromkeys(CATALOGUE, notify)
 # P-01-T12: the email channel's workflow and activities (the worker composes them).
-WORKFLOWS: dict[type, str] = dict(EMAIL_WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = EMAIL_ACTIVITIES
+# Q-01-T26: the daily purge runs as a workflow on a Schedule (`SCHEDULES`).
+WORKFLOWS: dict[type, str] = {**EMAIL_WORKFLOWS, **PURGE_WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = (*EMAIL_ACTIVITIES, *PURGE_ACTIVITIES)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (feed_router, router, preferences_router)
@@ -41,7 +47,9 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 __all__ = [
     "ACTIVITIES",
     "CATALOGUE",
+    "NOTIFICATION_PURGE_ID",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "TEMPLATES",
     "WORKFLOWS",
@@ -49,6 +57,7 @@ __all__ = [
     "NotificationEmailInput",
     "NotificationEmailWorkflow",
     "NotificationKind",
+    "NotificationPurgeWorkflow",
     "Row",
     "configure_email_starter",
     "kind_of",
