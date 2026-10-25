@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import re
 import subprocess
 
 ROOT = os.path.realpath(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
@@ -86,6 +87,82 @@ def on_main(r: str) -> bool:
     if known.returncode != 0:
         return True
     return result.returncode == 0
+
+
+# Mutation floors (Q-03-T027; QD-4; ADR-079): only ever raised. Mirrors
+# abacus_tools.quality.mutation_floors.parse (kept in step by tests/unit/quality/test_mutation_floors.py).
+FLOORS_FILE = "backend/mutation-thresholds.yaml"
+_FLOOR_LINE = re.compile(r"^  ([a-z0-9_]+(?:/[a-z0-9_]+)*):\s*(\d{1,3})\s*(?:#.*)?$")
+_TOP_LINE = re.compile(r"^([a-z_]+):\s*(\S.*)?$")
+
+
+def parse_floors(text: str) -> dict:
+    """{scope: percent} from the floors block; raises ValueError on anything else under it."""
+    floors = {}
+    inside = False
+    for number, raw in enumerate(text.splitlines(), start=1):
+        line = raw.rstrip()
+        if not line or line.lstrip().startswith("#"):
+            continue
+        top = _TOP_LINE.match(line)
+        if top is not None:
+            inside = top.group(1) == "floors" and top.group(2) is None
+            continue
+        floor = _FLOOR_LINE.match(line) if inside else None
+        if floor is None:
+            raise ValueError("line %d: %r is not `  <scope>: <0-100>` under floors:" % (number, line))
+        scope, value = floor.group(1), int(floor.group(2))
+        if value > 100 or scope in floors:
+            raise ValueError("line %d: %s is over 100 or listed twice" % (number, scope))
+        floors[scope] = value
+    if not floors:
+        raise ValueError("no floors: the file needs a `floors:` block")
+    return floors
+
+
+def _floors_at_main() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", ROOT, "show", "origin/main:" + FLOORS_FILE],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return result.stdout.decode("utf-8", "replace") if result.returncode == 0 else None
+
+
+def floor_violation(path: str, new_text: str) -> str | None:
+    """Refuse an edit that leaves the floors file unreadable, or lowers or drops a floor that the
+    file on disk or on origin/main holds."""
+    r = rel(path)
+    if r.lower() != FLOORS_FILE:
+        return None
+    try:
+        head = parse_floors(new_text)
+    except ValueError as exc:
+        return "%s would not parse (%s); keep its format." % (r, exc)
+    on_disk = os.path.join(ROOT, r)
+    bases = []
+    if os.path.exists(on_disk):
+        with open(on_disk, encoding="utf-8") as handle:
+            bases.append(handle.read())
+    main_text = _floors_at_main()
+    if main_text is not None:
+        bases.append(main_text)
+    for base_text in bases:
+        try:
+            base = parse_floors(base_text)
+        except ValueError:
+            continue
+        for scope in sorted(base):
+            if scope not in head:
+                return "%s: removing the %s floor lowers it; floors are only raised (QD-4)." % (r, scope)
+            if head[scope] < base[scope]:
+                return "%s: the %s floor would drop from %d to %d; floors are only raised (QD-4)." % (
+                    r, scope, base[scope], head[scope])
+    return None
 
 
 def violation(path: str) -> str | None:
