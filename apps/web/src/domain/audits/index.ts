@@ -5,7 +5,9 @@ export { AuditCockpit, type AuditCockpitProps } from "./AuditCockpit";
 export { BlockedSectionCard, type BlockedSectionCardProps } from "./BlockedSectionCard";
 export { type DockHostOptions, dockHost } from "./DockHost";
 export { AUDIT_MESSAGES, type BandKey } from "./messages";
-export { useAuditCockpit, useSourceDocuments } from "./queries";
+export { isNotFound, useAuditCockpit, useSourceDocuments } from "./queries";
+export { AgentActivityTab, AgentDockMenu, aiRefused, useAgentTab } from "./AgentActivityTab";
+export { DockViewer } from "./DockViewer";
 export {
   BEGIN_ACTION,
   type RailModel,
@@ -17,3 +19,26 @@ export {
   subLineOf,
 } from "./rail";
 export { SectionRail, type SectionRailProps } from "./SectionRail";
+export {
+  AUDIT_DUE_WINDOWS,
+  AUDIT_SEGMENTS,
+  AUDIT_TILES,
+  type AuditDueWindow,
+  type AuditFilters,
+  type AuditSegment,
+  type AuditTile,
+  type AuditType,
+  AUDIT_SEARCH_KEYS,
+  type AuditSearch,
+  DEFAULT_AUDIT_FILTERS,
+  auditFiltersOf,
+  auditQueryOf,
+  auditSearchOf,
+  auditTypeLabel,
+  auditTypeWord,
+  isAuditDue,
+  isAuditSegment,
+  isAuditTile,
+  isNarrowedAudits,
+  useAuditIndex,
+} from "./list";

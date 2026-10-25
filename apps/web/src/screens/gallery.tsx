@@ -39,6 +39,21 @@ import {
   type Cli02State,
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
+import { AuditsIndex } from "./AUD-01";
+import {
+  STATES as AUD01_STATES,
+  SEARCH as AUD01_SEARCH,
+  type Aud01State,
+  scenarios as aud01Scenarios,
+} from "./AUD-01/scenarios";
+import { AuditCockpitPage } from "./AUD-02";
+import {
+  AUDIT_ID as AUD02_AUDIT_ID,
+  OPENS as AUD02_OPENS,
+  STATES as AUD02_STATES,
+  type Aud02State,
+  scenarios as aud02Scenarios,
+} from "./AUD-02/scenarios";
 import { EngagementsIndex } from "./ENG-01";
 import {
   STATES as ENG01_STATES,
@@ -379,6 +394,86 @@ function Eng01Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ENG-01", { title: "Engagements index", Component: Eng01Artboard });
+
+function Aud01Frame({ state }: { state: Aud01State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        {/* Rows open AUD-02 in the product; the artboard keeps that control. */}
+        <AuditsIndex initial={AUD01_SEARCH[state]} onOpen={() => undefined} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Aud01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud01State = AUD01_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Aud01Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-01", { title: "Audits index · All Audits", Component: Aud01Artboard });
+
+function Aud02Frame({ state }: { state: Aud02State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <AuditCockpitPage
+          auditId={AUD02_AUDIT_ID}
+          initial={AUD02_OPENS[state]}
+          onBack={() => undefined}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Aud02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud02State = AUD02_STATES.find((s) => s === params.st) ?? "b";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Aud02Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-02", {
+  title: "Audit cockpit · Overview, Source Documents, Agent",
+  Component: Aud02Artboard,
+});
 
 function Cli02Frame({ state }: { state: Cli02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

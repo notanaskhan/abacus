@@ -17,6 +17,20 @@ export const AUDIT_MESSAGES = {
   layout: "Layout",
   dock: { agent: "Agent", viewer: "Viewer" },
   aiUnavailable: "AI isn't available for real client data yet",
+  /** The Viewer tab (SHL-08 in the dock). Not drawn in any artboard (DEC-341). */
+  viewer: {
+    none: "Select a document to view it here",
+    unavailable: "This document can't be shown here",
+  },
+  /** The v1 Agent tab (DV-2; SPEC-027 words). */
+  agent: {
+    pause: "Pause agent",
+    paused: (person: string) => `Paused by ${person}`,
+    menu: "Agent actions",
+    empty: "Nothing yet",
+    emptyBody:
+      "When the engagement agent screens, retrieves or suggests something, it shows here.",
+  },
   blocked: {
     title: (person: string) => `Waiting on ${person}`,
     action: "Open decision",

@@ -4,16 +4,22 @@
 import type { Manifest } from "./types";
 
 export const audScreens = {
+  // A-01-T11 built a–h on fixtures at /audits behind `audits.cockpit` (g, h fixture only until
+  // A-09, X-01 and X-03; i deferred to K-04). It stays planned for the reason ENG-01 does (eng.ts,
+  // DEC-195): AUD-01 → AUD-02 and AUD-02 → AUD-01 are wired in routes/firm/audits.tsx, and AUD-02's
+  // composer link (SHL-14, an overlay without a path) has no to.<ID>() builder.
   "AUD-01": {
     name: "Audits index · All Audits",
     status: "planned",
-    path: null,
+    path: "/audits",
     navArea: "Audits",
   },
+  // A-01-T12 built a–e and g on fixtures (b, g live); f is A-01-T31's, h A-09's, i K-04's.
   "AUD-02": {
     name: "Audit cockpit · Overview, Source Documents, Agent",
     status: "planned",
-    path: null,
+    path: "/audits/$auditId",
+    navArea: "Audits",
   },
   "AUD-03": { name: "Source documents · PBC with viewer", status: "planned", path: null },
   "AUD-04": {

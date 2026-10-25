@@ -75,6 +75,13 @@ export interface IndexListProps<Row> {
 
   /** Before the chips: a small Segmented ("Service line", ENG-01). */
   segments?: ReactNode;
+  /** A 44-high tabs bar above the filter bar (AUD-01 R2): a centred Segmented. */
+  tabs?: ReactNode;
+  /** The tabs bar's right end (a ViewToggle, when the screen offers one). */
+  tabsEnd?: ReactNode;
+  /** Group rows (ledger grammar, F-05-T27): consecutive rows with one key sit under one 24-high
+   * uppercase band, a `rowgroup` header ("PLANNING · 7"). The screen orders the rows. */
+  groupOf?: (row: Row) => { key: string; label: string };
   chips?: readonly IndexChip[];
   onChip?: (key: string, value: string | null) => void;
   tiles?: readonly IndexTile[];
@@ -125,6 +132,9 @@ export function IndexList<Row>({
   summary,
   onClear,
   segments,
+  tabs,
+  tabsEnd,
+  groupOf,
   banner,
   query = "",
   onQuery,
@@ -167,8 +177,76 @@ export function IndexList<Row>({
     </colgroup>
   );
 
+  const span = columns.length + 1;
+  const renderRow = (row: Row): JSX.Element => {
+    const id = rowKey(row);
+    const isSelected = id === selected;
+    return (
+      <tr
+        key={id}
+        aria-selected={isSelected}
+        data-row={id}
+        onClick={() => onSelect?.(row)}
+        onDoubleClick={() => onOpen?.(row)}
+        className={cn(
+          "group cursor-default border-b-[0.5px] border-hair text-body transition-colors duration-200",
+          twoLine?.(row) === true ? "h-[44px]" : "h-[38px]",
+          isSelected ? "bg-sel-bg font-medium" : "hover:bg-nested",
+        )}
+      >
+        {columns.map((c) => (
+          <td
+            key={c.key}
+            style={c.width === undefined ? undefined : { width: c.width }}
+            className={cn(
+              "truncate px-[14px]",
+              c.align === "right" ? "text-right tabular-nums" : "text-left",
+            )}
+          >
+            {c.cell(row)}
+          </td>
+        ))}
+        <td className="w-[28px] pr-[10px] text-ink-3">
+          {onOpen !== undefined && (
+            <button
+              type="button"
+              aria-label={`Open ${rowLabel(row, columns)}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen(row);
+              }}
+              className="relative flex size-[24px] items-center justify-center rounded-pill opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            >
+              <Icon name="chevron-right" size={12} />
+            </button>
+          )}
+        </td>
+      </tr>
+    );
+  };
+  const groups: { key: string; label: string; rows: Row[] }[] = [];
+  if (groupOf !== undefined) {
+    for (const row of items) {
+      const g = groupOf(row);
+      const last = groups[groups.length - 1];
+      if (last?.key === g.key) last.rows.push(row);
+      else groups.push({ ...g, rows: [row] });
+    }
+  }
+
   return (
     <div data-template="T1" className="flex min-h-0 flex-1 flex-col bg-shell">
+      {(tabs !== undefined || tabsEnd !== undefined) && (
+        <div
+          data-list="tabs"
+          className="relative flex h-[44px] shrink-0 items-center justify-center px-[12px]"
+        >
+          {tabs}
+          {tabsEnd !== undefined && (
+            <span className="absolute right-[12px] flex items-center">{tabsEnd}</span>
+          )}
+        </div>
+      )}
       <div
         role="toolbar"
         aria-label="Filters"
@@ -289,54 +367,24 @@ export function IndexList<Row>({
                 <table className="w-full table-fixed border-collapse">
                   <caption className="sr-only">{title}</caption>
                   {colgroup}
-                  <tbody>
-                    {items.map((row) => {
-                      const id = rowKey(row);
-                      const isSelected = id === selected;
-                      return (
-                        <tr
-                          key={id}
-                          aria-selected={isSelected}
-                          data-row={id}
-                          onClick={() => onSelect?.(row)}
-                          onDoubleClick={() => onOpen?.(row)}
-                          className={cn(
-                            "group cursor-default border-b-[0.5px] border-hair text-body transition-colors duration-200",
-                            twoLine?.(row) === true ? "h-[44px]" : "h-[38px]",
-                            isSelected ? "bg-sel-bg font-medium" : "hover:bg-nested",
-                          )}
-                        >
-                          {columns.map((c) => (
-                            <td
-                              key={c.key}
-                              style={c.width === undefined ? undefined : { width: c.width }}
-                              className={cn(
-                                "truncate px-[14px]",
-                                c.align === "right" ? "text-right tabular-nums" : "text-left",
-                              )}
-                            >
-                              {c.cell(row)}
-                            </td>
-                          ))}
-                          <td className="w-[28px] pr-[10px] text-ink-3">
-                            {onOpen !== undefined && (
-                              <button
-                                type="button"
-                                aria-label={`Open ${rowLabel(row, columns)}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpen(row);
-                                }}
-                                className="relative flex size-[24px] items-center justify-center rounded-pill opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                              >
-                                <Icon name="chevron-right" size={12} />
-                              </button>
-                            )}
-                          </td>
+                  {groupOf === undefined ? (
+                    <tbody>{items.map(renderRow)}</tbody>
+                  ) : (
+                    groups.map((g) => (
+                      <tbody key={g.key} data-group={g.key}>
+                        <tr>
+                          <th
+                            scope="rowgroup"
+                            colSpan={span}
+                            className="h-[24px] border-b-[0.5px] border-hair bg-band-hd px-[14px] text-left text-group-row font-medium tracking-[0.07em] text-ink-3 uppercase"
+                          >
+                            {g.label}
+                          </th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
+                        {g.rows.map(renderRow)}
+                      </tbody>
+                    ))
+                  )}
                 </table>
                 {footer !== undefined && (
                   <div data-list="footer" className="flex shrink-0 justify-center py-[12px]">

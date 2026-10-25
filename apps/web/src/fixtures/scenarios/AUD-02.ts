@@ -1,0 +1,64 @@
+// AUD-02 Audit cockpit: one fixture scenario per artboard A-01-T12 builds (a–e, g; f is A-01-T31's,
+// h A-09's, i K-04's). docs/screens/AUD-02.md. All seen by Hannah Leclerc on Northwind's PY2025 EBP
+// audit at E0; clocks are the state labels' times (DV-3):
+//
+//   a  9:41 AM  Marcus Delaney's run #4127: the run grammar; overview pill "Processing"
+//   b  9:20 AM  no run: every phase "Not started"; overview pill "Planning" (live)
+//   c  9:23 AM  the plan proposed, not yet run: the rail as b (the proposal card is P-09's dock)
+//   d  9:41 AM  the run, `?section=materiality`: "Waiting on Margaret Okonkwo"
+//   e  9:58 AM  the run with Internal Control "Failed — see run"
+//   g  9:41 AM  no run, the audit-program grammar: "Ready" / "In progress" (live)
+//
+// The dock of a, c, d and e (RunCard, transcript, plan approval, Retry) reads C6 v1 / P-10 and is
+// masked in parity; here the dock is the v1 Agent tab every state shares. Data: the cockpit
+// projections of seed/audit-cockpit.ts and the Source Documents aggregate of seed/audits-index.ts
+// through fixtures/handlers/audits.ts. src/screens/AUD-02/scenarios.ts re-exports them.
+
+import type { CapabilitiesOut } from "@abacus/api-client";
+import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
+import { auditHandlers, northwindAuditId } from "../handlers/audits";
+import { trustHandlers } from "../handlers/trust";
+import { seedScenario } from "../scenario";
+import { getSeed } from "../seed";
+import type { CockpitGrammar } from "../seed/audit-cockpit";
+import { capabilitiesFor } from "../seed/shell";
+import { DOCUMENTS } from "../seed/trust";
+
+const E0 = seedScenario();
+const seed = getSeed();
+
+/** Every artboard is Northwind's PY2025 EBP audit (`$auditId`). */
+export const AUDIT_ID = northwindAuditId(seed);
+
+function capabilities(persona: string | undefined): CapabilitiesOut {
+  const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
+  return {
+    ...base,
+    capabilities: [...base.capabilities, "engagement.read_metadata"],
+    flags: { ...base.flags, "audits.cockpit": true },
+  };
+}
+
+function at(state: string, time: string, grammar: CockpitGrammar): Scenario {
+  return {
+    state,
+    persona: "hannah-leclerc",
+    clock: `2026-09-14T${time}:00-05:00`,
+    handlers: {
+      ...E0.handlers,
+      // The Viewer tab reads the seeded Harborline document (SHL-08 b's).
+      ...trustHandlers({ documents: DOCUMENTS, citations: [] }),
+      ...auditHandlers(seed, grammar),
+      "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona)),
+    },
+  };
+}
+
+export const scenarios = defineScenarios({
+  a: at("a", "09:41", "run"),
+  b: at("b", "09:20", "idle"),
+  c: at("c", "09:23", "idle"),
+  d: at("d", "09:41", "run"),
+  e: at("e", "09:58", "failed"),
+  g: at("g", "09:41", "pills"),
+});
