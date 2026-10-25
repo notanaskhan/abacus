@@ -23,17 +23,25 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.models import AgentRun
-from abacus.modules.agents.repository import engagement_runs, get_run, screening_results_of_run
+from abacus.modules.agents.repository import (
+    RunWriteRow,
+    engagement_runs,
+    get_run,
+    run_writes,
+    screening_results_of_run,
+)
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import decisions_on_screenings, withdrawn_among
 from abacus.modules.identity.api import (
     AuthContext,
+    allowed_actions,
     authorise,
     engagement_team,
     refuse_unmasked_read,
 )
 
-RUNTIME_LABEL: Final = "Abacus agent runtime"
+# DEC-87: the trace names the runtime and region, never the model family.
+RUNTIME_LABEL: Final = "Accrued Agent runtime"
 REGION: Final = "United States (data and inference)"
 TRAINING: Final = "Firm data is never used for training"
 RENDERER_VERSION: Final = "trace-v1"
@@ -112,6 +120,14 @@ def _subject(run: AgentRun) -> str | None:
     if run.methodology_version_id is not None:
         return "template_version"
     return None
+
+
+def written_counts(writes: Sequence[RunWriteRow]) -> list[tuple[str, int]]:
+    """How many suggestions and proposals the run recorded (migration 0095), when it did."""
+    counts: dict[str, int] = {}
+    for w in writes:
+        counts[w.kind + "s"] = counts.get(w.kind + "s", 0) + 1
+    return sorted(counts.items())
 
 
 def output_counts(output: dict[str, object] | None) -> list[tuple[str, int]]:
@@ -212,7 +228,9 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
                 None,
             )
         )
-    counts = output_counts(run.output)
+    async with tenant_session(ctx.tenant) as session:
+        writes = await run_writes(session, run.id)
+    counts = written_counts(writes) or output_counts(run.output)
     model_text: str | None = None
     for r in results:
         model_text = r.rationale
@@ -242,6 +260,19 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
     for d in decisions:
         actor = names.get(UUID(d.actor_id), "Former member") if d.actor_kind == "human" else None
         rows.append(TraceRow(0, d.at, "decision", f"Decided: {d.decision}", "done", None, actor))
+    for w in writes:  # people's decisions on the run's suggestions and proposals (ADR-161)
+        if w.decision is not None and w.decided_at is not None and w.decided_by is not None:
+            rows.append(
+                TraceRow(
+                    0,
+                    w.decided_at,
+                    "decision",
+                    f"Decided: {w.decision.replace('_', ' ')}",
+                    "done",
+                    w.kind,
+                    names.get(w.decided_by, "Former member"),
+                )
+            )
     if run.finished_at is not None:
         state = state_of(run)
         rows.append(
@@ -268,12 +299,7 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
         TraceRow(i + 1, r.at, r.kind, r.title, r.state, r.detail, r.actor)
         for i, r in enumerate(ordered)
     ]
-    read: list[RecordsRead] = []
-    subject = _subject(run)
-    if subject is not None:
-        read.append(RecordsRead(subject, 1))
-    if run.task_scope:
-        read.append(RecordsRead("task_scope", len(run.task_scope)))
+    read = records_read_of(run)
     return Trace(
         _summary(run, names),
         RUNTIME_LABEL,
@@ -336,4 +362,133 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
     )
 
 
-__all__: Sequence[str] = ["export_trace", "runs_for", "trace_for"]
+# --- C6 v1 (TASK-5000): the run, its records read and its writes ---------------------------
+
+
+@dataclass(frozen=True)
+class RunView:
+    run: RunSummary
+    run_record_sha256: str
+    allowed_actions: list[str]
+
+
+@dataclass(frozen=True)
+class RunWrite:
+    kind: Literal["suggestion", "proposal", "screening"]
+    id: UUID
+    target_type: str | None
+    target_id: UUID | None
+    key: str  # a code: the field key, the proposal kind or the screening action
+    state: str
+    at: datetime
+    decision: str | None
+    decided_by_name: str | None
+    decided_at: datetime | None
+
+
+def run_record_sha256(run: AgentRun) -> str:
+    """A fingerprint of the run's own record, so a consumer can tell it changed."""
+    record = {
+        "id": run.id,
+        "agent_id": run.agent_id,
+        "spec_version": run.spec_version,
+        "engagement_id": run.engagement_id,
+        "evidence_version_id": run.evidence_version_id,
+        "inbox_file_id": run.inbox_file_id,
+        "methodology_version_id": run.methodology_version_id,
+        "status": run.status,
+        "context_hash": run.context_hash,
+        "failure_code": run.failure_code,
+        "started_at": run.started_at,
+        "finished_at": run.finished_at,
+        "output": run.output,
+    }
+    body = json.dumps(_plain(record), sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(body).hexdigest()
+
+
+async def run_view(ctx: AuthContext, run_id: UUID) -> RunView:
+    run = await _run(ctx, run_id, "agent_run.read")
+    engagement_id = run.engagement_id
+    if engagement_id is None:  # _run refuses firm-level runs
+        raise NotFound
+    names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
+    ref = await get_ref(ctx, engagement_id)
+    actions = await allowed_actions(ctx, ref.resource(), ["agent_run.read", "run_trace.export"])
+    return RunView(_summary(run, names), run_record_sha256(run), sorted(actions))
+
+
+def records_read_of(run: AgentRun) -> list[RecordsRead]:
+    read: list[RecordsRead] = []
+    subject = _subject(run)
+    if subject is not None:
+        read.append(RecordsRead(subject, 1))
+    if run.task_scope:
+        read.append(RecordsRead("task_scope", len(run.task_scope)))
+    return read
+
+
+async def records_read_for(ctx: AuthContext, run_id: UUID) -> list[RecordsRead]:
+    return records_read_of(await _run(ctx, run_id, "agent_run.read"))
+
+
+async def writes_for(ctx: AuthContext, run_id: UUID) -> list[RunWrite]:
+    """What the run proposed to write, and what people decided: suggestions, proposals and
+    screening results. Codes and references only; the model's words stay on the trace."""
+    run = await _run(ctx, run_id, "agent_run.read")
+    engagement_id = run.engagement_id
+    if engagement_id is None:
+        raise NotFound
+    names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
+    async with tenant_session(ctx.tenant) as session:
+        writes = await run_writes(session, run.id)
+        results = await screening_results_of_run(session, run.id)
+    hidden = await withdrawn_among(ctx.tenant, [r.evidence_version_id for r in results])
+    results = [r for r in results if r.evidence_version_id not in hidden]  # P-06-T19
+    decided = {
+        d.screening_result_id: d
+        for d in await decisions_on_screenings(ctx.tenant, [r.id for r in results])
+    }
+    out = [
+        RunWrite(
+            "suggestion" if w.kind == "suggestion" else "proposal",
+            w.id,
+            w.target_type,
+            w.target_id,
+            w.key,
+            w.state,
+            w.at,
+            w.decision,
+            None if w.decided_by is None else names.get(w.decided_by, "Former member"),
+            w.decided_at,
+        )
+        for w in writes
+    ]
+    for r in results:
+        d = decided.get(r.id)
+        human = d is not None and d.actor_kind == "human"
+        out.append(
+            RunWrite(
+                "screening",
+                r.id,
+                "evidence_version",
+                r.evidence_version_id,
+                r.action,
+                "decided" if d is not None else "pending",
+                r.created_at,
+                None if d is None else d.decision,
+                names.get(UUID(d.actor_id), "Former member") if d is not None and human else None,
+                None if d is None else d.at,
+            )
+        )
+    return sorted(out, key=lambda w: (w.at, str(w.id)))
+
+
+__all__: Sequence[str] = [
+    "export_trace",
+    "records_read_for",
+    "run_view",
+    "runs_for",
+    "trace_for",
+    "writes_for",
+]

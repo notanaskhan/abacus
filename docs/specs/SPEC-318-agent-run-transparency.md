@@ -60,6 +60,13 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - Each export is audited as `agent_run.trace_exported`, with the digest as a reference.
   - The browser downloads the file.
 
+- **AC-7 The run and its writes (C6 v1; TASK-5000).**
+  - `GET /v1/agent-runs/{id}` returns the run, a SHA-256 of its record and the caller's allowed actions.
+  - `/trace/records-read` and `/trace/writes` return what the run read, and what it proposed with each newest decision. Writes are codes and references only.
+  - The trace counts suggestions and proposals when the run recorded any.
+  - The drawer has three views: Timeline, Records read, and Writes & approvals.
+  - The runtime is named "Accrued Agent runtime" (DEC-87).
+
 ## 3. Out of scope
 - Live streaming, cancelling and retrying runs.
 - Firm-wide run views.

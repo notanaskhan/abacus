@@ -12,7 +12,17 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel.classification import classified
-from abacus.modules.agents.runs import RunSummary, Trace, export_trace, runs_for, trace_for
+from abacus.modules.agents.runs import (
+    RunSummary,
+    RunWrite,
+    Trace,
+    export_trace,
+    records_read_for,
+    run_view,
+    runs_for,
+    trace_for,
+    writes_for,
+)
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 engagement_runs_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["agents"])
@@ -80,6 +90,33 @@ class RunTraceOut(BaseModel):
     model_text: Annotated[str | None, classified("confidential")]
 
 
+class RunViewOut(BaseModel):
+    """C6 v1 (TASK-5000): one run, its record fingerprint and what the caller may do."""
+
+    model_config = ConfigDict(frozen=True)
+
+    run: Annotated[AgentRunOut, classified("internal")]
+    run_record_sha256: Annotated[str, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class RunWriteOut(BaseModel):
+    """What the run proposed to write and what a person decided. Codes and references only."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["suggestion", "proposal", "screening"], classified("internal")]
+    id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str | None, classified("internal")]
+    target_id: Annotated[UUID | None, classified("internal")]
+    key: Annotated[str, classified("internal")]
+    state: Annotated[str, classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+    decision: Annotated[str | None, classified("internal")]
+    decided_by_name: Annotated[str | None, classified("internal")]
+    decided_at: Annotated[datetime | None, classified("internal")]
+
+
 class TraceExportIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -125,6 +162,37 @@ async def list_agent_runs_route(
     engagement_id: UUID, ctx: Ctx, state: Literal["active", "recent"] = "recent", limit: int = 25
 ) -> list[AgentRunOut]:
     return [_run(r) for r in await runs_for(ctx, engagement_id, state, limit)]
+
+
+@runs_router.get("/{run_id}", action="agent_run.read", response_model=RunViewOut)
+async def agent_run_route(run_id: UUID, ctx: Ctx) -> RunViewOut:
+    view = await run_view(ctx, run_id)
+    return RunViewOut(
+        run=_run(view.run),
+        run_record_sha256=view.run_record_sha256,
+        allowed_actions=view.allowed_actions,
+    )
+
+
+@runs_router.get(
+    "/{run_id}/trace/records-read", action="agent_run.read", response_model=list[RecordsReadOut]
+)
+async def agent_run_records_read_route(run_id: UUID, ctx: Ctx) -> list[RecordsReadOut]:
+    return [
+        RecordsReadOut.model_validate(r, from_attributes=True)
+        for r in await records_read_for(ctx, run_id)
+    ]
+
+
+def _write(w: RunWrite) -> RunWriteOut:
+    return RunWriteOut.model_validate(w, from_attributes=True)
+
+
+@runs_router.get(
+    "/{run_id}/trace/writes", action="agent_run.read", response_model=list[RunWriteOut]
+)
+async def agent_run_writes_route(run_id: UUID, ctx: Ctx) -> list[RunWriteOut]:
+    return [_write(w) for w in await writes_for(ctx, run_id)]
 
 
 @runs_router.get("/{run_id}/trace", action="agent_run.read", response_model=RunTraceOut)

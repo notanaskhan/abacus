@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import ColumnElement, func, insert, select, update
+from sqlalchemy import ColumnElement, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1538,3 +1538,50 @@ async def undecided_drafts_for_gates(
         .all()
     )
     return [(r[0], r[1], r[2]) for r in candidates if r[0] not in decided]
+
+
+@dataclass(frozen=True)
+class RunWriteRow:
+    """A suggestion or proposal the run made (migration 0095), with its newest decision."""
+
+    kind: str  # suggestion | proposal
+    id: UUID
+    target_type: str | None
+    target_id: UUID | None
+    key: str  # the suggestion's field key, or the proposal's kind
+    state: str
+    at: datetime
+    decision: str | None
+    decided_by: UUID | None
+    decided_at: datetime | None
+
+
+async def run_writes(session: AsyncSession, run_id: UUID) -> list[RunWriteRow]:
+    """LIST_EXEMPT: one run's suggestions and proposals, after authorising on its engagement."""
+    found = await session.execute(
+        text(
+            """
+            SELECT 'suggestion' AS kind, s.id, s.target_type, s.target_id, s.field_key AS key,
+                   s.status AS state, s.created_at AS at,
+                   d.decision, d.decided_by, d.created_at AS decided_at
+              FROM suggestions s
+              LEFT JOIN LATERAL (
+                SELECT decision, decided_by, created_at FROM suggestion_decisions
+                 WHERE suggestion_id = s.id ORDER BY created_at DESC, id DESC LIMIT 1
+              ) d ON true
+             WHERE s.agent_run_id = :run
+            UNION ALL
+            SELECT 'proposal', p.id, NULL, NULL, p.kind, p.state, p.created_at,
+                   d.decision, d.decided_by, d.created_at
+              FROM proposals p
+              LEFT JOIN LATERAL (
+                SELECT decision, decided_by, created_at FROM proposal_decisions
+                 WHERE proposal_id = p.id ORDER BY created_at DESC, id DESC LIMIT 1
+              ) d ON true
+             WHERE p.agent_run_id = :run
+             ORDER BY at, id
+            """
+        ),
+        {"run": run_id},
+    )
+    return [RunWriteRow(*row) for row in found.all()]

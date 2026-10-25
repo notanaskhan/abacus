@@ -1,11 +1,11 @@
-# C6 · Agent runs (v0, live before the v1 contract)
+# C6 · Agent runs (v1 in progress; v0 live)
 
 | Field | Value |
 |---|---|
 | Register row | C6 in `docs/contracts/README.md` |
-| Version | v0: live routes that came before the v1 stub (Q-02-T45, P-09-T01) |
+| Version | v0 live; v1 in progress (TASK-5000): the run read, records read and writes |
 | Status | live, pre-contract. v1 extends these routes and does not replace them. |
-| Provider epic | P-09. First slice: SPEC-318 (TASK-461, TASK-900, TASK-901). |
+| Provider epic | P-09, owned by notanaskhan (DEC-336). SPEC-318: TASK-461, TASK-900, TASK-901, TASK-5000. |
 | Consumers | WB-09 trace drawer; SHL-13 dock (later); ADM-07 and AUD-29 trace links (later) |
 | Freeze sprint | v1 S12 (2027-04-05) |
 | Flag | none: read-only over existing runs |
@@ -26,7 +26,10 @@ Firm-level runs (no engagement) answer 404 in v0.
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
 |---|---|---|---|---|
 | Run list | `GET /v1/engagements/{engagement_id}/agent-runs?state=active\|recent&limit=` | `agent_run.read` | firm_admin, practice_leader, engagement_partner, manager, senior, staff, reviewer; independence required | denied (no cell) |
-| Trace | `GET /v1/agent-runs/{run_id}/trace` | `agent_run.read` | as above, on the run's engagement | denied |
+| Run | `GET /v1/agent-runs/{run_id}` | `agent_run.read` | as above, on the run's engagement | denied |
+| Trace | `GET /v1/agent-runs/{run_id}/trace` | `agent_run.read` | as above | denied |
+| Records read | `GET /v1/agent-runs/{run_id}/trace/records-read` | `agent_run.read` | as above | denied |
+| Writes | `GET /v1/agent-runs/{run_id}/trace/writes` | `agent_run.read` | as above | denied |
 | Trace export | `POST /v1/agent-runs/{run_id}/trace-exports` (201) | `run_trace.export` | engagement_partner, manager, senior; independence and fresh MFA required | agent: deny |
 
 The list filters through `visible()`. The trace and export check the run's engagement with `authorise`.
@@ -53,6 +56,19 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
   - `attempts`, `tokens_in`, `tokens_out`;
   - `rows`, `records_read` (source and count), `output_counts` (kind and count);
   - `model_text`: `confidential`. It is the run's own words, untrusted, rendered only through AgentText.
+- **RunViewOut (v1):**
+  - `run`;
+  - `run_record_sha256`: SHA-256 of the run row's canonical JSON, which changes whenever the record changes;
+  - `allowed_actions`: from `identity.allowed_actions` (every layer except fresh MFA).
+- **RunWriteOut (v1):**
+  - `kind`: suggestion, proposal or screening;
+  - `id`, `target_type`, `target_id`;
+  - `key`: a code (the field key, the proposal kind or the screening action);
+  - `state`: the row's own status code;
+  - `at`;
+  - `decision`, `decided_by_name`, `decided_at`: the newest decision.
+
+  No model text appears here.
 - **TraceExportIn:** `format`, which takes only `json` in v0.
 - **TraceExportOut:**
   - `filename`;
@@ -89,7 +105,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 | `agent_run.trace_exported` | Each export | Target `agent_run` id; `Ref(sha256, rows)` |
 
 ## 8. Changes v1 will make (P-09)
-- Q-02-T45 and P-09-T07 add `GET /v1/agent-runs/{id}` (projection by level, `allowed_actions`) and the `items?after_seq=` feed.
-- P-09-T08 splits the trace into `/trace/steps/{id}`, `/trace/records-read` and `/trace/writes`, and adds metadata projection. The single `/trace` response stays as the summary and timeline.
+- Done in TASK-5000: `GET /v1/agent-runs/{id}` (with `run_record_sha256` and `allowed_actions`), `/trace/records-read` and `/trace/writes`.
+- Still to come: P-09-T07's projection by level and the `items?after_seq=` feed; P-09-T08's `/trace/steps/{id}` and the content and metadata projections (DEC-87, `security_admin`). The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
-- Once migration 0095 has rows, the trace counts `suggestions` and `proposals` keyed on `agent_run_id`, instead of the lists in `agent_runs.output`.
+- Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.

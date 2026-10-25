@@ -20,7 +20,7 @@ const RUN: AgentRunOut = {
 };
 const TRACE: RunTraceOut = {
   run: RUN,
-  runtime: "Abacus agent runtime",
+  runtime: "Accrued Agent runtime",
   region: "United States (data and inference)",
   training: "Firm data is never used for training",
   attempts: 2,
@@ -122,6 +122,48 @@ describe("SPEC-318 agent runs", () => {
       expect(created).toHaveBeenCalled();
     });
     expect(api.calls.find((c) => c.method === "POST")?.body).toEqual({ format: "json" });
+  });
+
+  it("shows records read and the run's writes with who decided (c6 v1)", async () => {
+    mockApi({
+      [`GET /v1/engagements/${E}/agent-runs`]: () => json([RUN]),
+      [`GET /v1/agent-runs/r-1/trace`]: () => json(TRACE),
+      [`GET /v1/agent-runs/r-1/trace/writes`]: () =>
+        json([
+          {
+            kind: "suggestion",
+            id: "s-1",
+            target_type: "workpaper",
+            target_id: "w-1",
+            key: "materiality",
+            state: "adopted",
+            at: RUN.started_at,
+            decision: "adopted",
+            decided_by_name: "Dana Leader",
+            decided_at: RUN.finished_at,
+          },
+          {
+            kind: "proposal",
+            id: "p-1",
+            target_type: null,
+            target_id: null,
+            key: "post_entry",
+            state: "pending",
+            at: RUN.started_at,
+            decision: null,
+            decided_by_name: null,
+            decided_at: null,
+          },
+        ]),
+    });
+    renderOne(() => <AgentRuns engagementId={E} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
+    await screen.findByText("Model call");
+    fireEvent.click(screen.getByRole("tab", { name: "Records read" }));
+    expect(screen.getByText("An evidence version (1)")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Writes & approvals" }));
+    expect(await screen.findByText("adopted by Dana Leader")).toBeTruthy();
+    expect(screen.getByText("Waiting on a person")).toBeTruthy();
   });
 
   it("asks for a fresh sign-in when the export needs recent MFA (ac6)", async () => {
