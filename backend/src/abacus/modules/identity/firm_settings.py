@@ -420,6 +420,11 @@ async def ai_client_data_opted_in(tenant: TenantContext) -> bool:
 async def read_ai_client_data(ctx: AuthContext) -> AiClientDataView:
     await _require_optin_flag(ctx.tenant)
     await authorise(ctx, "firm.read_settings", Resource.firm(ctx.tenant_id))
+    return await _ai_client_data_view(ctx)
+
+
+async def _ai_client_data_view(ctx: AuthContext) -> AiClientDataView:
+    """The setting as the caller reads it (the caller has authorised the read or the change)."""
     terms = _terms()
     async with tenant_session(ctx.tenant) as session:
         found = await ai_client_data(session)
@@ -466,7 +471,9 @@ async def set_ai_client_data_setting(ctx: AuthContext, on: bool) -> AiClientData
             target=Target("firm", ctx.tenant_id),
         )
     forget_boundary_facts(ctx.tenant_id)
-    return await read_ai_client_data(ctx)
+    # The answer is the setting as it now stands, without the flag's read gate: an opt-out made
+    # with the flag off answers what it did, never a 404 for a change that took effect (ED-059).
+    return await _ai_client_data_view(ctx)
 
 
 # --- F-03-T24: firm setting values and stricter-only policy overrides (DEC-127) ---------------
