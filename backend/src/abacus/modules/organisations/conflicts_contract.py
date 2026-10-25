@@ -32,7 +32,14 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Forbidden,
+    Resource,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -138,7 +145,12 @@ class ScreeningRecordOut(BaseModel):
     recorded_at: Annotated[datetime, classified("internal")]
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+    """Security review (DEC-326): authorise before the flag or the stub answers (the audits
+    contract's order). Firm-level: no client principal, agent or system runs or reads a check."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
         raise NotFound("engagements.acceptance_v2")
     raise NotImplementedYet
@@ -153,7 +165,7 @@ screening_records_router = AbacusRouter(prefix="/v1/screening-records", tags=["c
 )
 async def run_conflict_check_route(body: ConflictCheckIn, ctx: Ctx) -> ConflictCheckOut:
     """AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`."""
-    await _stub(ctx)
+    await _stub(ctx, "conflict.run")
 
 
 @conflict_checks_router.get(
@@ -161,7 +173,7 @@ async def run_conflict_check_route(body: ConflictCheckIn, ctx: Ctx) -> ConflictC
 )
 async def get_conflict_check_route(check_id: UUID, ctx: Ctx) -> ConflictCheckOut:
     """The check and its results, walled matches redacted for this reader."""
-    await _stub(ctx)
+    await _stub(ctx, "conflict.run")
 
 
 @conflict_checks_router.post(
@@ -174,7 +186,7 @@ async def clear_conflict_result_route(
     check_id: UUID, result_id: UUID, body: ConflictClearIn, ctx: Ctx
 ) -> ConflictResultOut:
     """Human-only (AC-25): an insert-only event; `conflict.cleared`."""
-    await _stub(ctx)
+    await _stub(ctx, "conflict.clear")
 
 
 @screening_records_router.post(
@@ -186,4 +198,4 @@ async def clear_conflict_result_route(
 )
 async def record_screening_route(body: ScreeningRecordIn, ctx: Ctx) -> ScreeningRecordOut:
     """AC-26: insert-only; `screening.recorded`."""
-    await _stub(ctx)
+    await _stub(ctx, "screening.record")

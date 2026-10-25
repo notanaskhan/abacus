@@ -33,10 +33,17 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
-from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.engagements import team as team_model
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.engagements.service import get_ref
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Forbidden,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -521,11 +528,22 @@ class TeamApprovalOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     engagement_id: Annotated[UUID, classified("internal")]
+    # The current team's sha256, to send back with `POST …/team/approve` (stale: 409).
+    member_set_hash: Annotated[str, classified("internal")]
     approved_by: Annotated[UUID | None, classified("internal")] = None
     approved_by_name: Annotated[str | None, classified("confidential")] = None
     approved_at: Annotated[datetime | None, classified("internal")] = None
     changed: Annotated[bool, classified("internal")]
     added_since: Annotated[list[UUID], classified("internal")] = []
+
+
+class TeamApproveIn(BaseModel):
+    """The `member_set_hash` of the roster the partner approves (security review): a team that
+    changed since answers 409 `stale_version`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    member_set_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
 class PortalVisibilityIn(BaseModel):
@@ -602,18 +620,27 @@ class EqrEligibilityApprovalOut(BaseModel):
 # --- Routes -------------------------------------------------------------------------------------
 
 
-async def _stub_on(ctx: AuthContext, flag: Flag) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
+async def _allowed(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
+    """Security review (DEC-326; `audits_contract._allowed`'s order): authorise before the flag
+    or the stub answers, so no principal learns a flag state it may not use. No route here
+    serves a client principal, an agent or the system (every one is a firm person's); a walled
+    or unknown engagement is 404 whatever the flag."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, action, ref.resource())
+
+
+async def _acceptance_stub(ctx: AuthContext, action: str, engagement_id: UUID) -> NoReturn:
+    await _allowed(ctx, action, engagement_id)
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
+        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
     raise NotImplementedYet
 
 
-async def _acceptance_stub(ctx: AuthContext) -> NoReturn:
-    await _stub_on(ctx, ENGAGEMENTS_ACCEPTANCE_V2)
-
-
-async def _team_gate(ctx: AuthContext) -> None:
-    """ENG-05's rows are live (P-07-T30) behind the screen's flag."""
+async def _team_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
+    """ENG-05's rows are live (P-07-T30) behind the screen's flag, after the same check."""
+    await _allowed(ctx, action, engagement_id)
     if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
         raise NotFound(ENGAGEMENTS_V2.name)
 
@@ -632,7 +659,7 @@ EQR = "/{engagement_id}/eqr"
 )
 async def get_acceptance_route(engagement_id: UUID, ctx: Ctx) -> AcceptanceRecordOut:
     """CLI-07: the record, answers, checks, flags, decision and conditions."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.read", engagement_id)
 
 
 @acceptance_router.put(
@@ -645,7 +672,7 @@ async def put_acceptance_answers_route(
     engagement_id: UUID, section_code: Code, body: AcceptanceAnswersIn, ctx: Ctx
 ) -> AcceptanceSectionOut:
     """`acceptance.answers_updated`; 409 `stale_version`, 409 `decision_locked`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
 
 
 @acceptance_router.post(
@@ -659,7 +686,7 @@ async def add_acceptance_flag_route(
     engagement_id: UUID, body: AcceptanceFlagIn, ctx: Ctx
 ) -> AcceptanceFlagOut:
     """AC-2: an insert-only flag authored by the caller; `acceptance.flag_added`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
 
 
 @acceptance_router.post(
@@ -673,7 +700,7 @@ async def request_manual_check_route(
     engagement_id: UUID, section_code: Code, body: ManualCheckRequestIn, ctx: Ctx
 ) -> ManualCheckOut:
     """`acceptance.manual_check_requested`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
 
 
 @acceptance_router.post(
@@ -686,7 +713,7 @@ async def complete_manual_check_route(
     engagement_id: UUID, section_code: Code, body: ManualCheckCompleteIn, ctx: Ctx
 ) -> ManualCheckOut:
     """By the person it was requested of (client service included); `…manual_check_completed`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
 
 
 @acceptance_router.post(
@@ -699,7 +726,7 @@ async def send_to_partner_route(
     engagement_id: UUID, body: SendToPartnerIn, ctx: Ctx
 ) -> AcceptanceRecordOut:
     """AC-1, AC-3: Draft → Awaiting partner; 409 `acceptance_not_ready` (open checks as facts)."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
 
 
 @acceptance_router.post(
@@ -712,7 +739,7 @@ async def complete_condition_route(
     engagement_id: UUID, condition_id: UUID, body: ConditionCompleteIn, ctx: Ctx
 ) -> AcceptanceConditionOut:
     """AC-9: an insert-only completion event by a person; `acceptance.condition_completed`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
 
 
 @acceptance_router.post(
@@ -726,7 +753,7 @@ async def request_risk_partner_review_route(
     engagement_id: UUID, body: RiskPartnerReviewIn, ctx: Ctx
 ) -> RiskPartnerReviewOut:
     """AC-4: another partner, picked by the EP; `acceptance.review_requested`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.request_review", engagement_id)
 
 
 @acceptance_router.post(
@@ -742,7 +769,7 @@ async def decide_acceptance_route(
     """Human-only (INV-1), fresh MFA: one insert-only decision, `acceptance.decided`, Prospect →
     Accepted or Declined (AC-6 to AC-8); 409 `review_required`, `decision_locked`; 422
     `rationale_required`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "acceptance.decide", engagement_id)
 
 
 @independence_router.get(
@@ -750,7 +777,7 @@ async def decide_acceptance_route(
 )
 async def get_independence_route(engagement_id: UUID, ctx: Ctx) -> IndependenceSummaryOut:
     """CLI-08 a: the summary and the banner reasons."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.read", engagement_id)
 
 
 @independence_router.get(
@@ -761,7 +788,7 @@ async def get_independence_route(engagement_id: UUID, ctx: Ctx) -> IndependenceS
 )
 async def get_rotation_route(engagement_id: UUID, ctx: Ctx) -> RotationOut:
     """CLI-08 d (AC-27)."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.read", engagement_id)
 
 
 @independence_router.post(
@@ -774,7 +801,7 @@ async def confirm_independence_route(
     engagement_id: UUID, body: ConfirmIn, ctx: Ctx
 ) -> ConfirmationOut:
     """Human-only, self only (AC-17); `independence.confirmed`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.confirm", engagement_id)
 
 
 @independence_router.post(
@@ -787,7 +814,7 @@ async def decline_independence_route(
     engagement_id: UUID, body: DeclineIn, ctx: Ctx
 ) -> ConfirmationOut:
     """Self only; the note sealed, the EP notified, the member stays not cleared (DF-06)."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.confirm", engagement_id)
 
 
 @independence_router.post(
@@ -799,7 +826,7 @@ async def send_reminders_route(engagement_id: UUID, body: RemindersIn, ctx: Ctx)
     """Sent by the person clicking (no schedule); `independence.reminded` per member and the
     `independence.requested` notification again. Live with ENG-05 (P-07-T30) behind
     `engagements.v2`; 422 for a member whose confirmation is not requested or declined."""
-    await _team_gate(ctx)
+    await _team_gate(ctx, "independence.remind", engagement_id)
     reminded = await team_model.remind_independence(ctx, engagement_id, body.user_ids)
     return RemindersOut(reminded_user_ids=reminded)
 
@@ -809,7 +836,7 @@ async def send_reminders_route(engagement_id: UUID, body: RemindersIn, ctx: Ctx)
 )
 async def get_nas_route(engagement_id: UUID, ctx: Ctx) -> NasOut:
     """CLI-08 b; a non-attest client answers `attest_client: false` and no rows (AC-22)."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.read", engagement_id)
 
 
 @independence_router.put(
@@ -823,7 +850,7 @@ async def put_nas_route(
 ) -> NasRowOut:
     """AC-21, AC-22: an insert-only event; the evaluation decision is the EP's; refused without
     an SKE designee on an attest client; `nas.evaluated`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "nas.evaluate", engagement_id)
 
 
 @independence_router.post(
@@ -835,7 +862,7 @@ async def put_nas_route(
 )
 async def log_breach_route(engagement_id: UUID, body: BreachIn, ctx: Ctx) -> BreachOut:
     """AC-28: `independence_breach.logged`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.breach_manage", engagement_id)
 
 
 @independence_router.post(
@@ -849,7 +876,7 @@ async def add_breach_event_route(
     engagement_id: UUID, breach_id: UUID, body: BreachEventIn, ctx: Ctx
 ) -> BreachOut:
     """AC-28: insert-only; `independence_breach.updated`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.breach_manage", engagement_id)
 
 
 @independence_router.post(
@@ -863,12 +890,13 @@ async def conclude_independence_route(
     engagement_id: UUID, body: ConcludeIn, ctx: Ctx
 ) -> IndependenceConclusionOut:
     """Human-only, fresh MFA (AC-18 to AC-20); 409 `independence_preconditions_unmet`."""
-    await _acceptance_stub(ctx)
+    await _acceptance_stub(ctx, "independence.conclude", engagement_id)
 
 
 def _approval_out(a: team_model.TeamApproval) -> TeamApprovalOut:
     return TeamApprovalOut(
         engagement_id=a.engagement_id,
+        member_set_hash=a.member_set_hash,
         approved_by=a.approved_by,
         approved_by_name=a.approved_by_name,
         approved_at=a.approved_at,
@@ -886,17 +914,24 @@ def _checks_out(checks: list[team_model.Check]) -> list[EqrCheckOut]:
 )
 async def get_team_approval_route(engagement_id: UUID, ctx: Ctx) -> TeamApprovalOut:
     """ENG-05's footer facts."""
-    await _team_gate(ctx)
+    await _team_gate(ctx, "engagement.read_metadata", engagement_id)
     return _approval_out(await team_model.team_approval(ctx, engagement_id))
 
 
 @team_roles_router.post(
-    f"{TEAM}/approve", action="team.approve", response_model=TeamApprovalOut, status_code=201
+    f"{TEAM}/approve",
+    action="team.approve",
+    response_model=TeamApprovalOut,
+    status_code=201,
+    errors=(409,),
 )
-async def approve_team_route(engagement_id: UUID, ctx: Ctx) -> TeamApprovalOut:
-    """Human-only: the EP approves the current team (an insert-only row); `team.approved`."""
-    await _team_gate(ctx)
-    return _approval_out(await team_model.approve_team(ctx, engagement_id))
+async def approve_team_route(
+    engagement_id: UUID, body: TeamApproveIn, ctx: Ctx
+) -> TeamApprovalOut:
+    """Human-only, fresh MFA: the EP approves the team they saw (an insert-only row);
+    `team.approved`; 409 `stale_version` when it changed since."""
+    await _team_gate(ctx, "team.approve", engagement_id)
+    return _approval_out(await team_model.approve_team(ctx, engagement_id, body.member_set_hash))
 
 
 @team_roles_router.put(
@@ -908,7 +943,7 @@ async def put_portal_visibility_route(
     engagement_id: UUID, user_id: UUID, body: PortalVisibilityIn, ctx: Ctx
 ) -> PortalVisibilityOut:
     """POR-02's team card; `team.portal_visibility_changed`."""
-    await _team_gate(ctx)
+    await _team_gate(ctx, "engagement.update", engagement_id)
     await team_model.set_portal_visibility(ctx, engagement_id, user_id, body.shown_on_portal)
     return PortalVisibilityOut(user_id=user_id, shown_on_portal=body.shown_on_portal)
 
@@ -919,7 +954,7 @@ async def put_portal_visibility_route(
 async def eqr_candidates_route(engagement_id: UUID, ctx: Ctx) -> list[EqrCandidateOut]:
     """ENG-05 c: eligibility per candidate (not on the team, cooling-off, competence,
     independence, capacity)."""
-    await _team_gate(ctx)
+    await _team_gate(ctx, "eqr.assign", engagement_id)
     return [
         EqrCandidateOut(
             user_id=c.user_id,
@@ -935,7 +970,7 @@ async def eqr_candidates_route(engagement_id: UUID, ctx: Ctx) -> list[EqrCandida
 @team_roles_router.post(EQR, action="eqr.assign", response_model=EqrOut, errors=(409,))
 async def assign_eqr_route(engagement_id: UUID, body: EqrIn, ctx: Ctx) -> EqrOut:
     """Replaces the EQR; 409 `eqr_on_team`, 409 `eqr_not_eligible`; `eqr.assigned`."""
-    await _team_gate(ctx)
+    await _team_gate(ctx, "eqr.assign", engagement_id)
     checks = await team_model.assign_eqr(ctx, engagement_id, body.user_id)
     return EqrOut(
         engagement_id=engagement_id,
@@ -956,7 +991,7 @@ async def approve_eqr_eligibility_route(
     engagement_id: UUID, body: EqrEligibilityApprovalIn, ctx: Ctx
 ) -> EqrEligibilityApprovalOut:
     """Human-only, the quality owner: 409 `eqr_approver_is_ep`; `eqr.eligibility_approved`."""
-    await _team_gate(ctx)
+    await _team_gate(ctx, "eqr.approve_eligibility", engagement_id)
     a = await team_model.approve_eqr_eligibility(ctx, engagement_id, body.candidate_user_id)
     return EqrEligibilityApprovalOut(
         id=a.id,

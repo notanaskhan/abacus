@@ -13,7 +13,7 @@ import pytest
 from sqlalchemy import select, text
 
 from abacus.kernel.db import TenantContext, configure_engine, tenant_session
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.uow import Target, uow
 from abacus.modules.engagements.api import (
     assign_work_item,
@@ -279,3 +279,24 @@ async def test_p07t30_a_walled_team_member_is_404_like_a_stranger(firm: _Firm) -
     with pytest.raises(NotFound):
         await assign_work_item(firm.ctx(firm.partner), work_item, firm.ana, "preparer")
     assert await firm.assignments(work_item) == 0
+
+
+async def test_p07t30_review_the_eqr_function_is_the_eqrs_alone(firm: _Firm) -> None:
+    close, work_item = await firm.engagement("cas_monthly_close")  # never gated by G2
+    eqr = await firm.user()
+    await firm.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'eqr_reviewer')",
+        firm.tenant,
+        close,
+        eqr,
+    )
+    with pytest.raises(DomainInvalid):  # the EQR takes no other function
+        await assign_work_item(firm.ctx(firm.partner), work_item, eqr, "preparer")
+    with pytest.raises(DomainInvalid):  # and no one else takes `eqr`
+        await assign_work_item(firm.ctx(firm.partner), work_item, firm.ana, "eqr")
+    await assign_work_item(firm.ctx(firm.partner), work_item, eqr, "eqr")
+    written = await firm.seed.value(
+        "SELECT count(*) FROM work_item_assignments WHERE work_item_id = $1", work_item
+    )
+    assert int(str(written)) == 1

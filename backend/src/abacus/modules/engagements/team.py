@@ -39,11 +39,19 @@ from abacus.kernel.uow import DomainEvent, Ref, Target, uow
 from abacus.modules.engagements.events import IndependenceRequested
 from abacus.modules.engagements.models import Engagement, IndependenceConfirmation
 from abacus.modules.engagements.repository import confirmations_of
-from abacus.modules.engagements.service import get_ref, lock_ref
-from abacus.modules.engagements.team_errors import EqrApproverIsEp, EqrNotEligible, EqrOnTeam
+from abacus.modules.engagements.service import EngagementRef, get_ref, lock_ref
+from abacus.modules.engagements.team_errors import (
+    EqrApprovalRequired,
+    EqrApproverIsEp,
+    EqrApproverOnEngagement,
+    EqrNotEligible,
+    EqrOnTeam,
+    TeamChanged,
+)
 from abacus.modules.identity.api import (
     EQR_ROLE,
     AuthContext,
+    Forbidden,
     MemberDetail,
     candidates,
     engagements_served,
@@ -84,6 +92,7 @@ class RosterMember:
 @dataclass(frozen=True)
 class TeamApproval:
     engagement_id: UUID
+    member_set_hash: str  # the current team's, sent back with an approval (stale: 409)
     approved_by: UUID | None
     approved_by_name: str | None
     approved_at: datetime | None
@@ -139,8 +148,18 @@ def member_set_hash(details: list[MemberDetail]) -> str:
     return hashlib.sha256("\n".join(lines).encode()).hexdigest()
 
 
+def _firm_only(ctx: AuthContext) -> None:
+    """The internal roster (roles, hours, independence answers, approvers) is never a client's:
+    a client principal holds `engagement.read_metadata` for its own engagement (SPEC-020), so it
+    is refused here before anything is read (security review; a POR-02 projection would be a
+    separate, names-only read filtered on `shown_on_portal`)."""
+    if ctx.client:
+        raise Forbidden("engagement.read_metadata", "role")
+
+
 async def team_of(ctx: AuthContext, engagement_id: UUID) -> list[RosterMember]:
-    """The team routes' roster (`engagement.read_metadata`)."""
+    """The team routes' roster (`engagement.read_metadata`); never a client principal's."""
+    _firm_only(ctx)
     ref = await get_ref(ctx, engagement_id)
     await _authorise(ctx, "engagement.read_metadata", ref.resource())
     return await roster(ctx, engagement_id)
@@ -180,9 +199,10 @@ _APPROVE = text(
 async def _approval_of(tenant: TenantContext, engagement_id: UUID) -> TeamApproval:
     async with tenant_session(tenant) as session:
         latest = (await session.execute(_LATEST_APPROVAL, {"e": engagement_id})).one_or_none()
-    if latest is None:
-        return TeamApproval(engagement_id, None, None, None, False, [])
     details = await member_details(tenant, engagement_id)
+    current = member_set_hash(details)
+    if latest is None:
+        return TeamApproval(engagement_id, current, None, None, None, False, [])
     approved_at = cast(datetime, latest.approved_at)
     added = [
         d.user_id
@@ -193,27 +213,35 @@ async def _approval_of(tenant: TenantContext, engagement_id: UUID) -> TeamApprov
     names = await names_of([by])
     return TeamApproval(
         engagement_id,
+        current,
         by,
         names.get(by),
         approved_at,
-        member_set_hash(details) != str(latest.member_set_hash),
+        current != str(latest.member_set_hash),
         sorted(added, key=str),
     )
 
 
 async def team_approval(ctx: AuthContext, engagement_id: UUID) -> TeamApproval:
     """ENG-05's footer: "Team approved by {EP} · {date} · changes since: + {person}"."""
+    _firm_only(ctx)
     ref = await get_ref(ctx, engagement_id)
     await _authorise(ctx, "engagement.read_metadata", ref.resource())
     return await _approval_of(ctx.tenant, engagement_id)
 
 
-async def approve_team(ctx: AuthContext, engagement_id: UUID) -> TeamApproval:
-    """Human-only (INV-1): the engagement partner approves the current team."""
+async def approve_team(
+    ctx: AuthContext, engagement_id: UUID, member_set_hash_seen: str
+) -> TeamApproval:
+    """Human-only (INV-1), fresh MFA: the engagement partner approves exactly the team they saw.
+    `member_set_hash_seen` is the `member_set_hash` of the read they approved from; a team that
+    changed since answers 409 `stale_version` and nothing is written."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await _authorise(ctx, "team.approve", ref.resource())
         details = await member_details(ctx.tenant, engagement_id)
+        if member_set_hash(details) != member_set_hash_seen:
+            raise TeamChanged(facts={"engagement_id": str(engagement_id)})
         approval_id = (
             await tx.session.execute(
                 _APPROVE,
@@ -372,6 +400,10 @@ async def assign_eqr(ctx: AuthContext, engagement_id: UUID, user_id: UUID) -> li
             raise NotFound("person")
         if standing in ("partner", "team"):
             raise EqrOnTeam(facts={"user_id": str(user_id)})
+        # Who may be a candidate at all (active staff, not walled, not hidden) before any check,
+        # so a walled or unknown person is 404 and never a 409 carrying facts about them.
+        if standing != "eqr" and user_id not in await _candidate_ids(ctx, engagement_id, ref):
+            raise NotFound("person")
         target = await _target(ctx.tenant, engagement_id)
         answered = await _confirmations(ctx.tenant, engagement_id)
         checks = await eligibility_checks(
@@ -379,10 +411,36 @@ async def assign_eqr(ctx: AuthContext, engagement_id: UUID, user_id: UUID) -> li
         )
         if _eligibility(checks) == "not_eligible":
             raise EqrNotEligible(facts=_failing(checks))
+        if _needs_approval(checks) and not await _approved(ctx.tenant, engagement_id, user_id):
+            raise EqrApprovalRequired(facts={"user_id": str(user_id)})
         if standing == "eqr":
             return checks  # already the EQR: nothing to change
         await replace_eqr(tx, ctx, engagement_id, ref.client_id, user_id)
     return checks
+
+
+async def _candidate_ids(ctx: AuthContext, engagement_id: UUID, ref: EngagementRef) -> set[UUID]:
+    return {c.user_id for c in await candidates(ctx.tenant, engagement_id, ref.client_id)}
+
+
+def _needs_approval(checks: list[Check]) -> bool:
+    """Competence the history cannot show (`not_assessed`) is the quality owner's judgement: an
+    eligible approval of the candidate must exist before they are assigned (security review).
+    `capacity` is a placeholder and never asks for one."""
+    return any(c.code == "competence" and c.result == "not_assessed" for c in checks)
+
+
+_LATEST_EQR_APPROVAL = text(
+    "SELECT result FROM eqr_eligibility_approvals WHERE engagement_id = :e "
+    "AND candidate_user_id = :c ORDER BY approved_at DESC, id DESC LIMIT 1"
+)
+
+
+async def _approved(tenant: TenantContext, engagement_id: UUID, user_id: UUID) -> bool:
+    """The quality owner's latest approval of this candidate here reads eligible."""
+    async with tenant_session(tenant) as session:
+        result = await session.scalar(_LATEST_EQR_APPROVAL, {"e": engagement_id, "c": user_id})
+    return result == "eligible"
 
 
 _APPROVE_EQR = text(
@@ -396,19 +454,23 @@ async def approve_eqr_eligibility(
     ctx: AuthContext, engagement_id: UUID, candidate_user_id: UUID
 ) -> EqrApproval:
     """Human-only: the quality owner approves (or records as not eligible) an EQR candidate.
-    Never the engagement partner (409 `eqr_approver_is_ep`); never the candidate themself."""
+    Never someone with any role on the engagement: its partner (409 `eqr_approver_is_ep`), or
+    a manager, team member, specialist or its EQR (409 `eqr_approver_on_engagement`); never the
+    candidate themself (422)."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await _authorise(ctx, "eqr.approve_eligibility", ref.resource())
-        if await team_standing(ctx.tenant, engagement_id, ctx.user_id) == "partner":
+        approver = await team_standing(ctx.tenant, engagement_id, ctx.user_id)
+        if approver == "partner":
             raise EqrApproverIsEp
+        if approver != "none":
+            raise EqrApproverOnEngagement
         if candidate_user_id == ctx.user_id:
             raise DomainInvalid(facts={"field": "candidate_user_id"})
         standing = await team_standing(ctx.tenant, engagement_id, candidate_user_id)
-        eligible_ids = {
-            c.user_id for c in await candidates(ctx.tenant, engagement_id, ref.client_id)
-        }
-        if standing != "eqr" and candidate_user_id not in eligible_ids:
+        if standing != "eqr" and candidate_user_id not in await _candidate_ids(
+            ctx, engagement_id, ref
+        ):
             raise NotFound("person")
         target = await _target(ctx.tenant, engagement_id)
         answered = await _confirmations(ctx.tenant, engagement_id)

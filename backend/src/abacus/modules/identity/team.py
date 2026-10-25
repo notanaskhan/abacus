@@ -28,8 +28,8 @@ from abacus.modules.identity.repository import (
     engagement_role,
     insert_engagement_member,
     member_details_of,
-    my_engagement_roles,
     remove_team_member_row,
+    roles_ever_held,
     set_member_columns,
     set_team_role,
     team_candidate_ids,
@@ -235,17 +235,17 @@ async def team_standing(tenant: TenantContext, engagement_id: UUID, user_id: UUI
 
 @dataclass(frozen=True)
 class Served:
-    """The engagements a person is engagement partner on, and those they lead or review as EQR
-    (for cooling-off and competence, P-07-T30)."""
+    """The engagements a person has ever been engagement partner on, and those they ever led or
+    reviewed as EQR, from the insert-only membership history (0155), so a later role change or
+    removal never erases a cooling-off (P-07-T30 security review)."""
 
     as_partner: frozenset[UUID]
     as_partner_or_eqr: frozenset[UUID]
 
 
 async def engagements_served(tenant: TenantContext, user_id: UUID) -> Served:
-    held = await my_engagement_roles(tenant, user_id)
     by_kind: dict[str, set[UUID]] = {"engagement_partner": set(), EQR_ROLE: set()}
-    for engagement_id, held_as in held.items():
+    for engagement_id, held_as in await roles_ever_held(tenant, user_id):
         by_kind.get(held_as, set()).add(engagement_id)
     partner = frozenset(by_kind["engagement_partner"])
     eqr = frozenset(by_kind[EQR_ROLE])

@@ -651,6 +651,23 @@ async def member_details_of(tenant: TenantContext, engagement_id: UUID) -> list[
     ]
 
 
+async def roles_ever_held(tenant: TenantContext, user_id: UUID) -> list[tuple[UUID, str]]:
+    """Every (engagement, role) a person has held in the firm, from the insert-only membership
+    history (0155): what they are now, and what they were before any later change or removal
+    (P-07-T30 security review; LIST_EXEMPT: one person's own facts, never listed to a caller)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT engagement_id, role FROM engagement_member_events "
+                    "WHERE user_id = :u"
+                ),
+                {"u": user_id},
+            )
+        ).all()
+    return [(cast(UUID, r.engagement_id), str(r.role)) for r in rows]
+
+
 async def set_member_columns(
     session: AsyncSession, engagement_id: UUID, user_id: UUID, values: dict[str, object]
 ) -> bool:

@@ -19,9 +19,10 @@ import yaml
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
 from abacus.kernel.db import TenantContext
+from abacus.kernel.db.session import ActorKind
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.modules.engagements import acceptance_contract
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.organisations import conflicts_contract
 
@@ -241,15 +242,30 @@ def test_the_decision_and_conclusion_need_fresh_mfa_and_the_ep() -> None:
     }
 
 
-def _ctx() -> AuthContext:
+def _ctx(kind: ActorKind = "human", *, client: bool = False) -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
+        TenantContext(uuid.uuid4(), kind, str(user)),
+        user,
+        uuid.uuid4(),
+        None,
+        None,
+        client=client,
     )
 
 
-async def test_the_flags_gate_each_half(monkeypatch: pytest.MonkeyPatch) -> None:
+E_ID = uuid.uuid4()
+
+
+async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review (DEC-326): authorise first, then the flag, then 501 (the audits order)."""
     seen: list[object] = []
+
+    async def allowed(_ctx: object, action: str, _engagement_id: object) -> None:
+        seen.append(action)
+
+    async def authorised(_ctx: object, action: str, _resource: object) -> None:
+        seen.append(action)
 
     async def off(_tenant: object, flag: object) -> bool:
         seen.append(flag)
@@ -258,22 +274,55 @@ async def test_the_flags_gate_each_half(monkeypatch: pytest.MonkeyPatch) -> None
     async def on(_tenant: object, _flag: object) -> bool:
         return True
 
+    monkeypatch.setattr(acceptance_contract, "_allowed", allowed)
+    monkeypatch.setattr(conflicts_contract, "authorise", authorised)
     for module in (acceptance_contract, conflicts_contract):
         monkeypatch.setattr(module, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await acceptance_contract._acceptance_stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
+        await acceptance_contract._acceptance_stub(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(NotFound):
-        await acceptance_contract._team_gate(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
+        await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(NotFound):
-        await conflicts_contract._stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
-    assert seen == [ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2, ENGAGEMENTS_ACCEPTANCE_V2]
+        await conflicts_contract._stub(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- the gate
+    assert seen == [
+        "acceptance.read",
+        ENGAGEMENTS_ACCEPTANCE_V2,
+        "team.approve",
+        ENGAGEMENTS_V2,
+        "conflict.run",
+        ENGAGEMENTS_ACCEPTANCE_V2,
+    ]
     for module in (acceptance_contract, conflicts_contract):
         monkeypatch.setattr(module, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
-        await acceptance_contract._acceptance_stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
-    await acceptance_contract._team_gate(_ctx())  # pyright: ignore[reportPrivateUsage] -- live
+        await acceptance_contract._acceptance_stub(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
+    await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- live
     with pytest.raises(NotImplementedYet):
-        await conflicts_contract._stub(_ctx())  # pyright: ignore[reportPrivateUsage] -- the flag gate
+        await conflicts_contract._stub(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- the gate
+
+
+@pytest.mark.parametrize("flag_on", [False, True])
+@pytest.mark.parametrize("who", ["agent", "system", "client"])
+async def test_agent_system_and_client_are_refused_whatever_the_flag(
+    monkeypatch: pytest.MonkeyPatch, flag_on: bool, who: str
+) -> None:
+    """Security review (DEC-326): refused before the flag is read or any row is looked up."""
+    flags: list[object] = []
+
+    async def flag(_tenant: object, f: object) -> bool:
+        flags.append(f)
+        return flag_on
+
+    for module in (acceptance_contract, conflicts_contract):
+        monkeypatch.setattr(module, "flag_enabled", flag)
+    ctx = _ctx("human", client=True) if who == "client" else _ctx(cast(ActorKind, who))
+    with pytest.raises(Forbidden):
+        await acceptance_contract._acceptance_stub(ctx, "acceptance.decide", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
+    with pytest.raises(Forbidden):
+        await acceptance_contract._team_gate(ctx, "engagement.read_metadata", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
+    with pytest.raises(Forbidden):
+        await conflicts_contract._stub(ctx, "conflict.clear")  # pyright: ignore[reportPrivateUsage] -- the gate
+    assert flags == []
 
 
 def test_the_new_codes_are_in_the_catalogue() -> None:
@@ -288,6 +337,8 @@ def test_the_new_codes_are_in_the_catalogue() -> None:
         "not_self": 409,
         "eqr_on_team": 409,
         "eqr_approver_is_ep": 409,
+        "eqr_approver_on_engagement": 409,
+        "eqr_approval_required": 409,
         "eqr_not_eligible": 409,
     }
     assert {code: codes[code]["status"] for code in expected} == expected

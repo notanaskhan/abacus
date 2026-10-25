@@ -307,11 +307,22 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  eqr_approval_required:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrApprovalRequired
+    summary: 'The candidate''s competence is not shown by their history here: the quality owner approves
+      their eligibility first.'
   eqr_approver_is_ep:
     status: 409
     raised_by:
     - abacus.modules.engagements.team_errors.EqrApproverIsEp
     summary: The EQR's eligibility is approved by the quality owner, never the engagement partner.
+  eqr_approver_on_engagement:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrApproverOnEngagement
+    summary: The EQR's eligibility is approved by a quality owner with no role on this engagement.
   eqr_not_eligible:
     status: 409
     raised_by:
@@ -1014,10 +1025,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.people.StalePerson
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
-    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
+    summary: 'The team changed since it was read: read it again and approve what is there now.'
   statement_already_approved:
     status: 409
     raised_by:

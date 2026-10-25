@@ -979,6 +979,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "eqr_reviewer": "allow",
+        "specialist": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -1682,6 +1684,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "team.approve": {
         "engagement_partner": "allow",
+        "mfa_recent": "required",
         "agent": "deny",
         "system": "deny",
     },

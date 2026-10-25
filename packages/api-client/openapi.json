@@ -39923,13 +39923,36 @@
             "format": "uuid",
             "title": "Engagement Id",
             "type": "string"
+          },
+          "member_set_hash": {
+            "cls": "internal",
+            "title": "Member Set Hash",
+            "type": "string"
           }
         },
         "required": [
           "engagement_id",
+          "member_set_hash",
           "changed"
         ],
         "title": "TeamApprovalOut",
+        "type": "object"
+      },
+      "TeamApproveIn": {
+        "additionalProperties": false,
+        "description": "The `member_set_hash` of the roster the partner approves (security review): a team that\nchanged since answers 409 `stale_version`.",
+        "properties": {
+          "member_set_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Member Set Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "member_set_hash"
+        ],
+        "title": "TeamApproveIn",
         "type": "object"
       },
       "TeamMemberIn": {
@@ -81230,7 +81253,7 @@
     },
     "/v1/engagements/{engagement_id}/team/approve": {
       "post": {
-        "description": "Human-only: the EP approves the current team (an insert-only row); `team.approved`.",
+        "description": "Human-only, fresh MFA: the EP approves the team they saw (an insert-only row);\n`team.approved`; 409 `stale_version` when it changed since.",
         "operationId": "approve_team",
         "parameters": [
           {
@@ -81276,6 +81299,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamApproveIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -81316,6 +81349,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {

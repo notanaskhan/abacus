@@ -112,6 +112,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "methodology_version_id"}  # SPEC-008: pinned once
         | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
         | {"period_label"}  # P-07-T15 (0124); `version` is the trigger's, never the app's
+        | {"hold_reason"}  # TASK-1198 (0155): set and cleared with the hold
     ),
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
     "independence_confirmations": frozenset(

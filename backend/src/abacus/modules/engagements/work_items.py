@@ -42,8 +42,8 @@ from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.identity.api import (
     AuthContext,
     authorise,
-    engagement_role_of,
     is_synthetic_firm,
+    team_standing,
     visible,
     visible_scope,
     walled_from,
@@ -307,8 +307,6 @@ async def create_work_item(
 # --- P-07-T24: assigning a function on a work item, behind G2 v2 (ADR-164 item 2) -------------
 
 
-# A client principal's engagement roles: never an assignee of a firm function (P-07-T30).
-CLIENT_ENGAGEMENT_ROLES: Final = frozenset({"client_admin", "client_contributor"})
 # Migration 0068's CHECK on `work_item_assignments.function` (the matrix's `function_in` codes).
 WORK_ITEM_FUNCTIONS: Final = frozenset(
     {
@@ -336,7 +334,8 @@ async def assign_work_item(
 ) -> None:
     """Assign `user_id` the `function` on the work item, in one unit of work with its audit event.
     The assignee must be a staff member of the engagement's team and not walled from its client:
-    otherwise 404, the same answer for both so a wall is never revealed (P-07-T30, ED-042).
+    otherwise 404, the same answer for both so a wall is never revealed (P-07-T30, ED-042). The
+    `eqr` function goes to the engagement's EQR only, and the EQR takes no other (422).
     Refused 409 `gate_unmet` (`gate` G2, `user_id`) when the engagement's client is an attest
     client and that person is not cleared on the engagement (`setup.g2_blocks`); a non-attest
     client's engagement is never gated. An unknown function is 422; an unknown or walled work
@@ -352,11 +351,14 @@ async def assign_work_item(
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "work_item.assign", ref.resource())
-        role = await engagement_role_of(ctx.tenant, engagement_id, user_id)
-        if role is None or role in CLIENT_ENGAGEMENT_ROLES:
+        standing = await team_standing(ctx.tenant, engagement_id, user_id)
+        if standing in ("none", "client"):
             raise NotFound("team_member")
         if ref.client_id in await walled_from(ctx.tenant, user_id):
             raise NotFound("team_member")
+        # The `eqr` function is the EQR's, and the EQR's only function (security review, DEC-327).
+        if (standing == "eqr") != (function == "eqr"):
+            raise DomainInvalid(facts={"field": "function"})
         if await g2_blocks(ctx.tenant, engagement_id, user_id):
             raise GateUnmet(facts={"gate": "G2", "user_id": str(user_id)})
         await tx.session.execute(

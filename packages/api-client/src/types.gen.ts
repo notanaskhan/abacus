@@ -19020,6 +19020,23 @@ export type TeamApprovalOut = {
      * Engagement Id
      */
     engagement_id: string;
+    /**
+     * Member Set Hash
+     */
+    member_set_hash: string;
+};
+
+/**
+ * TeamApproveIn
+ *
+ * The `member_set_hash` of the roster the partner approves (security review): a team that
+ * changed since answers 409 `stale_version`.
+ */
+export type TeamApproveIn = {
+    /**
+     * Member Set Hash
+     */
+    member_set_hash: string;
 };
 
 /**
@@ -37833,7 +37850,7 @@ export type GetTeamApprovalResponses = {
 export type GetTeamApprovalResponse = GetTeamApprovalResponses[keyof GetTeamApprovalResponses];
 
 export type ApproveTeamData = {
-    body?: never;
+    body: TeamApproveIn;
     headers?: {
         /**
          * Authorization
@@ -37867,6 +37884,10 @@ export type ApproveTeamErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */

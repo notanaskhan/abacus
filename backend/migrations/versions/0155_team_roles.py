@@ -11,6 +11,15 @@
   sha256 of the member set it approved. `actor_kind` must be `human`.
 - `eqr_eligibility_approvals` (new, insert-only): the quality owner's approval of an EQR
   candidate, the checks as codes and the result. `actor_kind` must be `human`.
+- `engagement_member_events` (new, identity, insert-only): every change to `engagement_members`
+  (added, role_changed, removed, with the role), written by the trigger
+  `engagement_member_history` in the same statement. The app may insert (the trigger runs as
+  the caller) but never update or delete, so the history only grows: no edit to the current
+  membership, and no write of its own, can erase a past partner role. Existing rows are
+  recorded as `added` at their `created_at`. Cooling-off and competence read this history, not
+  the editable current membership (security review, DEC-327).
+- `engagements.hold_reason` (new): the reason code of an engagement on hold (TASK-1198), set and
+  cleared with the status; resuming an `independence_review` hold is the engagement partner's.
 - The human-only register gains `team.approved` and `eqr.eligibility_approved`:
   `abacus_human_only_actions()` is 0135's 28 entries plus these two; the downgrade restores
   exactly 0135's list.
@@ -65,6 +74,31 @@ _HUMAN_ONLY_0135 = sorted(
 )
 _HUMAN_ONLY = sorted([*_HUMAN_ONLY_0135, "team.approved", "eqr.eligibility_approved"])
 
+_HOLD_REASONS = (
+    "'client_unresponsive', 'fees_outstanding', 'scope_change', 'independence_review', 'other'"
+)
+_HISTORY = """
+    CREATE FUNCTION engagement_member_history() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    BEGIN
+        IF TG_OP = 'DELETE' THEN
+            INSERT INTO public.engagement_member_events
+                (tenant_id, engagement_id, user_id, role, event)
+            VALUES (OLD.tenant_id, OLD.engagement_id, OLD.user_id, OLD.role, 'removed');
+            RETURN OLD;
+        END IF;
+        IF TG_OP = 'UPDATE' AND NEW.role IS NOT DISTINCT FROM OLD.role THEN
+            RETURN NEW;
+        END IF;
+        INSERT INTO public.engagement_member_events
+            (tenant_id, engagement_id, user_id, role, event)
+        VALUES (NEW.tenant_id, NEW.engagement_id, NEW.user_id, NEW.role,
+                CASE TG_OP WHEN 'INSERT' THEN 'added' ELSE 'role_changed' END);
+        RETURN NEW;
+    END $$
+"""
 _STAFF_0027 = "'engagement_partner', 'manager', 'senior', 'staff', 'reviewer'"
 _TEAM = f"{_STAFF_0027}, 'specialist'"
 _REMOVABLE = f"{_TEAM}, 'eqr_reviewer'"
@@ -228,11 +262,63 @@ def upgrade() -> None:
         ("tenant_id", "engagement_id", "candidate_user_id", "checks", "result", "approved_by"),
     )
 
+    # --- engagement_member_events (identity): the membership history --------------------
+    op.execute(
+        """
+        CREATE TABLE engagement_member_events (
+            id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            tenant_id uuid NOT NULL,
+            engagement_id uuid NOT NULL,
+            user_id uuid NOT NULL,
+            role text NOT NULL,
+            event text NOT NULL CHECK (event IN ('added', 'role_changed', 'removed')),
+            at timestamptz NOT NULL DEFAULT clock_timestamp()
+        )
+        """
+    )
+    op.execute(
+        "CREATE INDEX engagement_member_events_by_user ON engagement_member_events "
+        "(tenant_id, user_id, engagement_id)"
+    )
+    # Existing rows first, while neither table holds the owner to a tenant (0030's pattern).
+    op.execute("ALTER TABLE engagement_members NO FORCE ROW LEVEL SECURITY")
+    op.execute(
+        "INSERT INTO engagement_member_events "
+        "(tenant_id, engagement_id, user_id, role, event, at) "
+        "SELECT tenant_id, engagement_id, user_id, role, 'added', created_at "
+        "FROM engagement_members"
+    )
+    op.execute("ALTER TABLE engagement_members FORCE ROW LEVEL SECURITY")
+    _insert_only("engagement_member_events")
+    insert_columns(
+        op,
+        "engagement_member_events",
+        ("tenant_id", "engagement_id", "user_id", "role", "event"),
+    )
+    op.execute(_HISTORY)
+    op.execute(
+        "CREATE TRIGGER engagement_member_history AFTER INSERT OR UPDATE OF role OR DELETE "
+        "ON engagement_members FOR EACH ROW EXECUTE FUNCTION engagement_member_history()"
+    )
+
+    # --- engagements.hold_reason -----------------------------------------------------------
+    op.execute(
+        "ALTER TABLE engagements ADD COLUMN hold_reason text NULL "
+        f"CHECK (hold_reason IN ({_HOLD_REASONS}))"
+    )
+    op.execute("GRANT UPDATE (hold_reason) ON engagements TO abacus_app")
+
     _human_only(_HUMAN_ONLY)
 
 
 def downgrade() -> None:
     _human_only(_HUMAN_ONLY_0135)
+    op.execute("REVOKE UPDATE (hold_reason) ON engagements FROM abacus_app")
+    op.execute("ALTER TABLE engagements DROP COLUMN hold_reason")
+    op.execute("DROP TRIGGER engagement_member_history ON engagement_members")
+    op.execute("DROP FUNCTION engagement_member_history()")
+    op.execute("DROP TABLE engagement_member_events")
+    op.execute("DROP FUNCTION engagement_member_events_immutable()")
     for table in ("eqr_eligibility_approvals", "team_approvals"):
         op.execute(f"DROP TABLE {table}")
         op.execute(f"DROP FUNCTION {table}_immutable()")

@@ -3738,12 +3738,17 @@ export const getTeamApproval = <ThrowOnError extends boolean = false>(options: O
 /**
  * Approve Team Route
  *
- * Human-only: the EP approves the current team (an insert-only row); `team.approved`.
+ * Human-only, fresh MFA: the EP approves the team they saw (an insert-only row);
+ * `team.approved`; 409 `stale_version` when it changed since.
  */
 export const approveTeam = <ThrowOnError extends boolean = false>(options: Options<ApproveTeamData, ThrowOnError>): RequestResult<ApproveTeamResponses, ApproveTeamErrors, ThrowOnError> => (options.client ?? client).post<ApproveTeamResponses, ApproveTeamErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/engagements/{engagement_id}/team/approve',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

@@ -13,6 +13,7 @@ TABLES: frozenset[str] = frozenset(
         "users",
         "memberships",
         "engagement_members",
+        "engagement_member_events",  # P-07-T30 (0155): the membership history, insert-only
         "ethical_walls",
         "support_sessions",  # SPEC-012
         "client_invitations",
@@ -42,10 +43,17 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset({"firm_policy_overrides", "client_access_events"})
+INSERT_ONLY: frozenset[str] = frozenset(
+    {"firm_policy_overrides", "client_access_events"}
+    | {"engagement_member_events"}  # P-07-T30 (0155)
+)
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
+    # P-07-T30 (0155): written by the `engagement_member_history` trigger as the caller.
+    "engagement_member_events": frozenset(
+        {"tenant_id", "engagement_id", "user_id", "role", "event"}
+    ),
     "ethical_walls": frozenset({"id", "tenant_id", "user_id", "client_id", "created_by"}),
     # Break-glass (SPEC-012): requested by staff; lifecycle columns updated as it is approved.
     "support_sessions": frozenset(

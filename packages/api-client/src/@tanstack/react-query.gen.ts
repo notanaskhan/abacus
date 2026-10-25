@@ -6185,7 +6185,8 @@ export const getTeamApprovalOptions = (options: Options<GetTeamApprovalData>) =>
 /**
  * Approve Team Route
  *
- * Human-only: the EP approves the current team (an insert-only row); `team.approved`.
+ * Human-only, fresh MFA: the EP approves the team they saw (an insert-only row);
+ * `team.approved`; 409 `stale_version` when it changed since.
  */
 export const approveTeamMutation = (options?: Partial<Options<ApproveTeamData>>): UseMutationOptions<ApproveTeamResponse, ApproveTeamError, Options<ApproveTeamData>> => {
     const mutationOptions: UseMutationOptions<ApproveTeamResponse, ApproveTeamError, Options<ApproveTeamData>> = {

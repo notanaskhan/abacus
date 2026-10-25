@@ -16,7 +16,11 @@ from abacus.kernel.db.session import ActorKind
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
 from abacus.modules.engagements import contract
-from abacus.modules.engagements.transitions import HOLD_REASONS, IllegalTransition
+from abacus.modules.engagements.transitions import (
+    HOLD_REASON_CODES,
+    HOLD_REASONS,
+    IllegalTransition,
+)
 from abacus.modules.identity.api import AuthContext, Forbidden
 
 from .agent_tests.support import Person, Seeder
@@ -101,10 +105,11 @@ async def test_hold_with_a_reason_then_resume(world: _World) -> None:
 
 async def test_only_an_active_engagement_is_held_and_archived_is_refused(world: _World) -> None:
     await world.status("archived")
-    with pytest.raises(IllegalTransition):
+    with pytest.raises(Forbidden) as archived:  # authorised first: archived writes are refused
         await contract.hold_engagement_route(
             world.engagement, contract.EngagementHoldIn(reason="other"), world.ctx(world.partner)
         )
+    assert archived.value.layer == "attribute"  # `archived_write: deny`
     await world.status("active")
     with pytest.raises(IllegalTransition):  # resume only from on hold
         await contract.resume_engagement_route(world.engagement, world.ctx(world.partner))
@@ -142,3 +147,76 @@ async def test_the_routes_are_404_with_the_flag_off(migrated_db: MigratedDatabas
             off.engagement, contract.EngagementHoldIn(reason="other"), off.ctx(off.partner)
         )
     assert await off.status() == "active"
+
+
+# --- Security review (DEC-328) --------------------------------------------------------------
+
+
+async def test_review_the_reason_is_kept_on_the_engagement_and_in_the_audit_row(
+    world: _World,
+) -> None:
+    await contract.hold_engagement_route(
+        world.engagement,
+        contract.EngagementHoldIn(reason="scope_change"),
+        world.ctx(world.partner),
+    )
+    kept = await world.seed.value(
+        "SELECT hold_reason FROM engagements WHERE id = $1", world.engagement
+    )
+    assert kept == "scope_change"
+    after = await world.seed.value(
+        "SELECT after_ref->>'reason_code' FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'engagement.held'",
+        world.tenant,
+    )
+    assert HOLD_REASON_CODES[int(str(after))] == "scope_change"
+    await contract.resume_engagement_route(world.engagement, world.ctx(world.partner))
+    cleared = await world.seed.value(
+        "SELECT hold_reason FROM engagements WHERE id = $1", world.engagement
+    )
+    assert cleared is None
+
+
+async def test_review_a_walled_member_gets_404_whatever_the_status(world: _World) -> None:
+    client = await world.seed.value(
+        "SELECT client_id FROM engagements WHERE id = $1", world.engagement
+    )
+    await world.seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, $3, $4)",
+        world.tenant,
+        world.partner.user_id,
+        client,
+        world.staff.user_id,
+    )
+    for status in ("active", "delivered", "prospect"):
+        await world.status(status)
+        # The wall layer, which the API answers 404 (`api.app`): never 409 naming the state.
+        with pytest.raises(Forbidden) as walled:
+            await contract.hold_engagement_route(
+                world.engagement,
+                contract.EngagementHoldIn(reason="other"),
+                world.ctx(world.partner),
+            )
+        assert walled.value.layer == "wall"
+
+
+async def test_review_only_the_partner_lifts_an_independence_review_hold(world: _World) -> None:
+    manager: Person = await world.seed.person(world.tenant)
+    await world.seed.member(world.engagement, manager, "manager")
+    await contract.hold_engagement_route(
+        world.engagement,
+        contract.EngagementHoldIn(reason="independence_review"),
+        world.ctx(manager),
+    )
+    with pytest.raises(Forbidden):
+        await contract.resume_engagement_route(world.engagement, world.ctx(manager))
+    assert await world.status() == "on_hold"
+    await contract.resume_engagement_route(world.engagement, world.ctx(world.partner))
+    assert await world.status() == "active"
+    # Any other reason, the manager lifts it.
+    await contract.hold_engagement_route(
+        world.engagement, contract.EngagementHoldIn(reason="fees_outstanding"), world.ctx(manager)
+    )
+    await contract.resume_engagement_route(world.engagement, world.ctx(manager))
+    assert await world.status() == "active"

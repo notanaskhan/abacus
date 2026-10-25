@@ -24,3 +24,22 @@ class EqrNotEligible(DomainConflict):
     reviewer."""
 
     code = "eqr_not_eligible"
+
+
+class EqrApproverOnEngagement(DomainConflict):
+    """The EQR's eligibility is approved by a quality owner with no role on this engagement."""
+
+    code = "eqr_approver_on_engagement"
+
+
+class EqrApprovalRequired(DomainConflict):
+    """The candidate's competence is not shown by their history here: the quality owner approves
+    their eligibility first."""
+
+    code = "eqr_approval_required"
+
+
+class TeamChanged(DomainConflict):
+    """The team changed since it was read: read it again and approve what is there now."""
+
+    code = "stale_version"

@@ -43,6 +43,13 @@ actions:
   # The independence conclusion
   - action: acceptance.record
     group: independence
+  - action: acceptance.decide  # P-07-T29: the acceptance decision (CLI-07)
+    group: independence
+  - action: independence.conclude  # P-07-T29: the independence conclusion (CLI-08)
+    group: independence
+  # The engagement partner's team approval (P-07-T30 security review, DEC-327)
+  - action: team.approve
+    group: team
   # The data-boundary opt-in (SPEC-036)
   - action: firm.ai_client_data
     group: data_boundary
