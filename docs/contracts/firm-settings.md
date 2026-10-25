@@ -77,7 +77,7 @@ Every write here is a live person's; the matrix denies the agent and the system,
 | 404 | `{"detail": "not found"}` | flag off; a section, person, office, team or wall the caller can't see |
 | 501 | `{"detail": "not_implemented"}` | flag on, before the implementing task |
 | 403 | `{"detail": "forbidden"}` | no action; stale MFA |
-| 403 | `not_named_approver` | a partner approving a wall that names another |
+| 403 | `not_named_approver` · `own_offshore` | a partner approving a wall that names another; clearing one's own offshore flag |
 | 409 | `stale_version` · `last_admin` · `seats_full` · `seats_not_provisioned` · `already_member` · `firm_role_held` · `offshore_assignment_conflict` · `office_code_taken` · `office_name_taken` · `team_name_taken` · `one_hq` · `already_approved` · `relationship_partner` · `wall_exists` · `own_wall` · `offshore_consent_required` | as named |
 | 422 | `unknown_setting` · `display_name_required` · `audit_locked` · `access_ends_required` · `person_invalid` · `deactivation_reason_invalid` · `org_structure_invalid` · `approver_not_partner` | as named |
 

@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.listing import (
     Position,
     clamp_limit,
@@ -49,13 +49,13 @@ from abacus.modules.identity.events import (
     StaffInvitationIssued,
 )
 from abacus.modules.identity.invitations import revoke_invitations_by
+from abacus.modules.identity.offshore import hidden_clients
 from abacus.modules.identity.repository import (
     memberships_elsewhere,
     pending_staff_invitation_for,
     set_staff_invitation_status,
     set_staff_token_hash,
     user_contacts,
-    walled_clients,
 )
 from abacus.modules.identity.settings_registry import active_wall_count, seat_total
 from abacus.modules.identity.slots import (
@@ -174,6 +174,13 @@ class LastAdministrator(DomainConflict):
 # shared `stale_version` summary.
 class StalePerson(DomainConflict):
     code = "stale_version"
+
+
+class OwnOffshore(DomainForbidden):
+    """Offshore restricts the person (DEC-52): nobody clears their own flag; another firm admin
+    must (G-01-T09 security review; a wall's `own_wall` rule)."""
+
+    code = "own_offshore"
 
 
 # --- shapes ------------------------------------------------------------------------------------
@@ -526,20 +533,23 @@ async def staff_page(ctx: AuthContext, f: StaffFilters, *, legacy: bool = False)
 
 
 async def _visible_walls(ctx: AuthContext, user_id: UUID) -> list[UUID]:
-    """The person's walls, for a reader who may list walls, less any on a client the reader is
-    walled from (DEC-43: a reader never learns of those)."""
+    """The person's walls, for a reader who may list walls, less any on a client hidden from the
+    reader (DEC-43: a reader never learns of those)."""
     if "wall.list" not in await allowed_actions(ctx, Resource.firm(ctx.tenant_id), ("wall.list",)):
         return []
-    hidden = await walled_clients(ctx.tenant, ctx.user_id)
     async with tenant_session(ctx.tenant) as session:
-        walls = await session.execute(
-            text(
-                "SELECT id, client_id FROM ethical_walls WHERE user_id = :u "
-                "AND status = 'active' ORDER BY created_at, id"
-            ),
-            {"u": user_id},
-        )
-        return [w.id for w in walls if w.client_id not in hidden]
+        walls = (
+            await session.execute(
+                text(
+                    "SELECT id, client_id FROM ethical_walls WHERE user_id = :u "
+                    "AND status = 'active' ORDER BY created_at, id"
+                ),
+                {"u": user_id},
+            )
+        ).all()
+    # Walled from, or offshore without consent for, the client: never learnt (DEC-43, DEC-52).
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [w.client_id for w in walls])
+    return [w.id for w in walls if w.client_id not in hidden]
 
 
 async def staff_user(ctx: AuthContext, user_id: UUID) -> UserDetail:
@@ -612,6 +622,8 @@ async def update_person(
         if level_of(template, member["level"]) == "seasonal" and merged["access_ends_on"] is None:
             raise AccessEndsRequired
         await _check_office(ctx, cast(UUID | None, merged["office_id"]))
+        if member["offshore"] and not merged["offshore"] and user_id == ctx.user_id:
+            raise OwnOffshore
         if merged["offshore"] and not member["offshore"]:
             # No offshore-disclosure consent provider is registered until T-01 (fail closed,
             # DEC-52): any assignment conflicts.
@@ -1011,13 +1023,21 @@ async def reconcile_service_lines(tx: UnitOfWork, user_id: UUID) -> list[str]:
     wanted = {line for line in lines if line not in managed} | set(held)
     ordered = [line for line in SERVICE_LINES if line in wanted]
     if set(ordered) != set(lines):
-        await tx.session.execute(
+        # A change of lines is a change of access (`in_scope`): versioned, audited, and the
+        # person's sessions and caches told (G-01-T09 review).
+        version = await tx.session.scalar(
             text(
-                "UPDATE memberships SET service_lines = :lines "
-                "WHERE user_id = :u AND kind = 'staff'"
+                "UPDATE memberships SET service_lines = :lines, version = version + 1 "
+                "WHERE user_id = :u AND kind = 'staff' RETURNING version"
             ),
             {"lines": ordered, "u": user_id},
         )
+        tx.record(
+            "membership.attributes_changed",
+            target=Target("user", user_id),
+            after=Ref(version=int(version or 0), service_lines=1),
+        )
+        tx.emit(AccessChanged(user_id=user_id))
     return ordered
 
 

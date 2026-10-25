@@ -235,3 +235,34 @@ async def test_ac9_1_adm03d_lists_remy_with_0_consented_clients_and_locked_toggl
         "block_without_consent": True,
         "mask_tins": True,
     }
+
+
+async def test_review_an_offshore_admin_cannot_clear_their_own_offshore_flag(firm: Firm) -> None:
+    """Offshore is a restriction on the person: they never lift it themself (another admin
+    may), like a wall."""
+    from abacus.modules.identity import people
+
+    await firm.net.seed.run(
+        "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
+        firm.tenant_id,
+        firm.grace.user_id,
+    )
+    grace = context(firm.grace, "firm_admin")
+    version = cast(
+        int,
+        await firm.net.seed.value(
+            "SELECT version FROM memberships WHERE user_id = $1", firm.grace.user_id
+        ),
+    )
+    with pytest.raises(people.OwnOffshore):
+        await people.update_person(grace, firm.grace.user_id, version, {"offshore": False})
+    assert await firm.net.seed.value(
+        "SELECT offshore FROM memberships WHERE user_id = $1", firm.grace.user_id
+    )
+    other = await firm.net.person(firm.tenant_id, "firm_admin")
+    await people.update_person(
+        context(other, "firm_admin"), firm.grace.user_id, version, {"offshore": False}
+    )
+    assert not await firm.net.seed.value(
+        "SELECT offshore FROM memberships WHERE user_id = $1", firm.grace.user_id
+    )

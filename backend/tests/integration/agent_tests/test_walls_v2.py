@@ -11,6 +11,7 @@ Expectations come from G-01 section 3.8, not from the implementation."""
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
@@ -20,14 +21,16 @@ import httpx
 import pytest
 
 from abacus.kernel.db import TenantContext
+from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.conditions import functions_on
+from abacus.modules.identity import walls
 from abacus.modules.identity.api import end_assignments_for_wall
 from abacus.modules.notifications.api import SUBSCRIPTIONS as NOTIFY
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
 from .support import Person, Seeder
-from .walls_support import FORBIDDEN, NOT_FOUND, Json, Net, Site
+from .walls_support import FORBIDDEN, NOT_FOUND, Json, Net, Site, context
 
 FLAG = "firm_settings.v2"
 
@@ -467,3 +470,122 @@ async def test_ac8_2_margaret_is_asked_and_grace_is_told(firm: Firm) -> None:
         (firm.grace.user_id, "wall_approved", "ethical_wall"),
     ]
     assert {r["subject_id"] for r in rows} == {wall_id}
+
+
+# --- security review (G-01-T09) ------------------------------------------------------------------
+
+
+async def _offshore(firm: Firm, who: Person) -> None:
+    await firm.seed.run(
+        "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
+        firm.tenant_id,
+        who.user_id,
+    )
+
+
+async def test_review_an_offshore_reader_learns_nothing_of_walls_on_non_consented_clients(
+    firm: Firm,
+) -> None:
+    """DEC-52 for the register: no consent provider, so every client is hidden from offshore
+    Daniel and offshore admin Ingrid: no list rows, no log, no approval, no lift, no drawer."""
+    wall_id = _body(await firm.wall_lena(approver=firm.daniel))["id"]
+    ingrid = await firm.net.person(firm.tenant_id, "firm_admin")
+    for who in (firm.daniel, ingrid):
+        await _offshore(firm, who)
+    for who in (firm.daniel, ingrid):
+        listed = await firm.call("GET", "/v1/walls", who)
+        assert listed.status_code == 200, listed.text
+        assert listed.json() == []
+        log = await firm.call("GET", f"/v1/walls/{wall_id}/events", who)
+        assert (log.status_code, log.json()) == (404, NOT_FOUND)
+    for path in (f"/v1/walls/{wall_id}/approve", f"/v1/walls/{wall_id}/remove"):
+        refused = await firm.call("POST", path, firm.daniel)
+        assert (refused.status_code, refused.json()) == (404, NOT_FOUND), path
+    from abacus.modules.identity import people
+    from abacus.modules.identity.api import audit_hidden_walls
+
+    assert await audit_hidden_walls(context(firm.daniel), [uuid.UUID(cast(str, wall_id))]) == {
+        uuid.UUID(cast(str, wall_id))
+    }
+    drawer = await people.staff_user(context(firm.daniel), firm.lena.user_id)
+    assert drawer.wall_ids == []
+
+
+async def test_review_the_named_approver_is_never_the_creator_nor_hidden_from_the_client(
+    firm: Firm,
+) -> None:
+    by_daniel = await firm.call(
+        "POST",
+        "/v1/walls",
+        firm.daniel,
+        {
+            "user_id": str(firm.lena.user_id),
+            "client_id": str(firm.ashford.client_id),
+            "approver_user_id": str(firm.daniel.user_id),
+        },
+    )
+    assert (by_daniel.status_code, by_daniel.json()["detail"]) == (422, "approver_not_partner")
+    await firm.net.wall(firm.grace, firm.margaret.user_id, firm.ashford.client_id)
+    walled = await firm.wall_lena(approver=firm.margaret)
+    assert (walled.status_code, walled.json()["detail"]) == (422, "approver_not_partner")
+    await _offshore(firm, firm.neil)
+    offshore = await firm.call(
+        "POST",
+        "/v1/walls",
+        firm.grace,
+        {
+            "user_id": str(firm.lena.user_id),
+            "client_id": str(firm.granite.client_id),
+            "approver_user_id": str(firm.neil.user_id),
+        },
+    )
+    assert (offshore.status_code, offshore.json()["detail"]) == (422, "approver_not_partner")
+
+
+async def _lift_in_a_held_transaction(
+    firm: Firm, wall_id: uuid.UUID, started: asyncio.Event, release: asyncio.Event
+) -> None:
+    """A partner's lift that locks the wall row first and commits only when released."""
+    async with firm.seed.held() as conn, conn.transaction():
+        await conn.execute("SELECT 1 FROM ethical_walls WHERE id = $1 FOR UPDATE", wall_id)
+        await conn.execute(
+            "UPDATE ethical_walls SET status = 'removed', removed_by = $2, "
+            "removed_at = now() WHERE id = $1",
+            wall_id,
+            firm.daniel.user_id,
+        )
+        started.set()
+        await release.wait()
+
+
+async def test_review_a_lift_racing_the_consumer_ends_no_assignments(firm: Firm) -> None:
+    """AC-16: the consumer reads the wall under a row lock, so a lift committed while it waits
+    is seen, and nothing ends."""
+    await firm.seed.member(firm.ashford.engagement_id, firm.lena, "staff")
+    await _assign(firm, firm.ashford, firm.lena, "preparer")
+    wall_id = uuid.UUID(cast(str, _body(await firm.wall_lena())["id"]))
+    [event] = await firm.outbox("wall.created")
+    started, release = asyncio.Event(), asyncio.Event()
+    lift = asyncio.create_task(_lift_in_a_held_transaction(firm, wall_id, started, release))
+    await started.wait()
+    consumer = asyncio.create_task(end_assignments_for_wall(event))
+    await asyncio.sleep(0.5)  # the consumer is now waiting on the lifter's lock (or done)
+    release.set()
+    await lift
+    await consumer
+    assert await firm.audit("engagement_member.removed") == []
+    assert await firm.audit("work_item.unassigned") == []
+
+
+async def test_review_an_approval_that_loses_to_a_lift_answers_404_not_409(firm: Firm) -> None:
+    """AC-15: when the lift commits first, the approval reads the wall again: lifted is 404."""
+    wall_id = uuid.UUID(cast(str, _body(await firm.wall_lena())["id"]))
+    started, release = asyncio.Event(), asyncio.Event()
+    lift = asyncio.create_task(_lift_in_a_held_transaction(firm, wall_id, started, release))
+    await started.wait()
+    approve = asyncio.create_task(walls.approve_wall(context(firm.margaret), wall_id))
+    await asyncio.sleep(0.5)
+    release.set()
+    await lift
+    with pytest.raises(NotFound):
+        await approve

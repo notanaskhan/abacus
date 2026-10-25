@@ -483,8 +483,9 @@ async def test_d1_no_list_route_carries_ashford(firm: Firm, role: str) -> None:
     )
     assert len(paths) > 60
     for path in paths:
-        if path.startswith(("/v1/walls", "/v1/firm/clients", "/v1/firm/members")):
-            continue  # wall management, firm admin only: Lena is not the admin who walls
+        if path.startswith(("/v1/walls", "/v1/firm/members")):
+            continue  # the wall register and the people picker name no client's content
+        # G-01-T09 review: the wall's client picker (`/v1/firm/clients`) is swept too.
         found += _no_leak(path, await firm.get(lena.person, path), firm)
         found += _no_leak(path, await firm.get(lena.person, f"{path}?q=Ashford&limit=100"), firm)
     assert found == []
@@ -707,3 +708,33 @@ async def test_d1_a_walled_partner_learns_nothing_of_ashford_from_the_v2_wall_ro
                 method, path.replace(str(wall_id), str(uuid.uuid4())), daniel
             )
             assert (response.status_code, response.text) == (never.status_code, never.text), path
+
+
+@pytest.mark.parametrize("who", ["walled_partner", "walled_admin", "offshore_partner"])
+async def test_d1_the_wall_client_picker_leaves_out_a_client_hidden_from_the_reader(
+    firm: Firm, granite_consented: None, who: str
+) -> None:
+    """G-01-T09 review: `GET /v1/firm/clients` (`wall.create`, which partners hold) lists
+    Granite but never Ashford to a partner or admin walled from it, or offshore without its
+    consent (DEC-43, DEC-52)."""
+    reader = await firm.seed.person(
+        firm.tenant_id, "firm_admin" if who == "walled_admin" else None
+    )
+    if who != "walled_admin":
+        await firm.seed.run(
+            "UPDATE memberships SET level = 'partner' WHERE tenant_id = $1 AND user_id = $2",
+            firm.tenant_id,
+            reader.user_id,
+        )
+    if who == "offshore_partner":
+        await firm.seed.run(
+            "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
+            firm.tenant_id,
+            reader.user_id,
+        )
+    else:
+        await firm.net.wall(firm.admin, reader, firm.ashford)
+    picker = await firm.get(reader, "/v1/firm/clients")
+    assert picker.status_code == 200, picker.text
+    assert firm.leaks(picker) == []
+    assert str(firm.granite.client_id) in picker.text

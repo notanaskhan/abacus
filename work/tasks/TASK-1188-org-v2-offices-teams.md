@@ -29,6 +29,7 @@ updated: 2026-10-25
 ## Progress log
 - 2026-10-25: plan written; building.
 - 2026-10-25: built. Migration 0150 (down_revision 0146): office code (back-filled; a trigger gives an insert without one the same rule), HQ, address, lead, reviewer pool and version; team kind, service line, lead and version; `team_rosters` insert-only history. `organisations/org_structure.py` serves the eight offices/teams/seasonal routes (live behind `firm_settings.v2`); identity keeps service lines in agreement with service-line teams (`reconcile_service_lines`, the member-teams slot's `lines`). Scenario loader writes CHI/DEN/NYC, Chicago HQ, and team kinds. `tests/integration/test_org_v2.py`: 16 pass (AC7.1 to AC7.4, DEC-30 property, roster history, code rule, line property). Contract suite: T08 routes leave the 501 list; organisations' flag-off gate tested on its own. Schema registries and `test_schema_check_db` pins extended. Deferred: the EQR pool, Monitoring reviewers and Seasonal groups as seeded rows (AY's seed slice).
+- 2026-10-25: security review fixes: service-line team changes need `firm.manage_users` (security admins refused); a line a team moves is versioned, audited and emits `access.changed`; the default-code function pins its search path and is not PUBLIC. Tests first: `test_review_*` in `test_org_v2.py` (failed, then pass).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

@@ -53,10 +53,13 @@ _BACKFILL_CODES = """
 
 # An office inserted without a code (older callers, the scenario bootstrap) takes one by the same
 # rule: its first three letters, or that and the first free fourth letter. Invoker rights, so it
-# sees only the inserting firm's offices.
+# sees only the inserting firm's offices; a pinned search path, and no EXECUTE for PUBLIC (a
+# trigger's function needs none to fire).
 _DEFAULT_CODE = """
     CREATE FUNCTION offices_default_code() RETURNS trigger
-    LANGUAGE plpgsql AS $$
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
     DECLARE
         stem text := rpad(left(upper(regexp_replace(NEW.name, '[^A-Za-z]', '', 'g')), 3), 3, 'X');
         candidate text := stem;
@@ -110,6 +113,7 @@ def upgrade() -> None:
     )
     op.execute("CREATE UNIQUE INDEX offices_one_hq ON offices (tenant_id) WHERE is_hq")
     op.execute(_DEFAULT_CODE)
+    op.execute("REVOKE ALL ON FUNCTION offices_default_code() FROM PUBLIC")
     op.execute(
         "CREATE TRIGGER offices_default_code BEFORE INSERT ON offices "
         "FOR EACH ROW WHEN (NEW.code IS NULL) EXECUTE FUNCTION offices_default_code()"

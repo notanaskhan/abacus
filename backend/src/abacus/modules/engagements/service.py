@@ -713,10 +713,13 @@ async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID)
 
 
 async def firm_clients(ctx: AuthContext) -> list[FirmName]:
-    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker."""
+    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker, minus any the
+    person is walled from or, offshore, has no consent for (G-01-T09 review: partners hold
+    `wall.create` now; DEC-43, DEC-52)."""
     await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
-    names = await firm_names(ctx.tenant)
-    return sorted((n for n in names if n.id == n.client_id), key=lambda n: n.name.casefold())
+    names = [n for n in await firm_names(ctx.tenant) if n.id == n.client_id]
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [n.client_id for n in names])
+    return sorted((n for n in names if n.client_id not in hidden), key=lambda n: n.name.casefold())
 
 
 # --- Clients you already have (SPEC-025 AC-1; TASK-043) ----------------------------------------

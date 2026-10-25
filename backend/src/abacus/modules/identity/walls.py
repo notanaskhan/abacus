@@ -33,7 +33,8 @@ from abacus.modules.identity.authz import (
 )
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import AccessChanged, WallApproved, WallCreated, WallRemoved
-from abacus.modules.identity.repository import ethical_walls, walled_clients
+from abacus.modules.identity.offshore import hidden_clients, offshore_hidden
+from abacus.modules.identity.repository import ethical_walls
 from abacus.modules.identity.slots import (
     client_partner,
     end_wall_assignments,
@@ -84,7 +85,9 @@ class AlreadyApproved(DomainConflict):
 
 
 class ApproverNotPartner(DomainInvalid):
-    """The named approver must be an active partner-level member other than the walled person."""
+    """The named approver must be an active partner-level member other than the walled person and
+    the wall's creator, who can see the client (not walled from it, not offshore without its
+    consent)."""
 
     code = "approver_not_partner"
 
@@ -161,22 +164,24 @@ def _sqlstate(exc: IntegrityError) -> str | None:
     return state if isinstance(state, str) else None
 
 
-async def _get(session: AsyncSession, wall_id: UUID) -> WallView | None:
-    row = (
-        (await session.execute(select(ethical_walls).where(ethical_walls.c.id == wall_id)))
-        .mappings()
-        .one_or_none()
-    )
+async def _get(session: AsyncSession, wall_id: UUID, *, lock: bool = False) -> WallView | None:
+    query = select(ethical_walls).where(ethical_walls.c.id == wall_id)
+    if lock:  # a concurrent lift commits first and is seen (G-01-T09 review)
+        query = query.with_for_update()
+    row = (await session.execute(query)).mappings().one_or_none()
     return _view(dict(row)) if row is not None else None
 
 
 async def _hidden(ctx: AuthContext, walls: list[WallView]) -> set[UUID]:
-    """Walls a reader outside the register roles must not learn of: on themself, or on a client
-    they are walled from (the audit explorer's rule, `audit_hidden_walls`)."""
+    """Walls the reader must not learn of. Anyone offshore: walls on clients without their
+    consent (DEC-52). Outside the register roles also: walls on themself, or on a client they
+    are walled from (the audit explorer's rule, `audit_hidden_walls`)."""
+    clients = [w.client_id for w in walls]
     if ctx.firm_role in _REGISTER_ROLES:
-        return set()
-    walled = await walled_clients(ctx.tenant, ctx.user_id)
-    return {w.id for w in walls if w.user_id == ctx.user_id or w.client_id in walled}
+        offshore = await offshore_hidden(ctx.tenant, ctx.user_id, clients)
+        return {w.id for w in walls if w.client_id in offshore}
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, clients)
+    return {w.id for w in walls if w.user_id == ctx.user_id or w.client_id in hidden}
 
 
 async def _partner(session: AsyncSession, user_id: UUID) -> bool:
@@ -271,7 +276,10 @@ async def create_wall(
     try:
         async with uow(ctx.tenant) as tx:
             if approver_user_id is not None and (
-                approver_user_id == user_id or not await _partner(tx.session, approver_user_id)
+                approver_user_id in (user_id, ctx.user_id)
+                or not await _partner(tx.session, approver_user_id)
+                # The approver must be able to see the client (walls, offshore; review).
+                or await hidden_clients(ctx.tenant, approver_user_id, [client_id])
             ):
                 raise ApproverNotPartner(facts={"field": "approver_user_id"})
             await tx.session.execute(
@@ -350,6 +358,10 @@ async def approve_wall(ctx: AuthContext, wall_id: UUID) -> WallView:
             .returning(ethical_walls.c.id)
         )
         if done.scalar_one_or_none() is None:
+            # Lost a race: a lift that committed first is 404 (AC-15), an approval 409.
+            now = await _get(tx.session, wall_id)
+            if now is None or now.status != "active":
+                raise NotFound("ethical wall")
             raise AlreadyApproved
         tx.record(
             "wall.approved",
@@ -487,7 +499,7 @@ async def end_assignments_for_wall(event: OutboxEvent) -> None:
     system = TenantContext(event.tenant_id, "system", "identity:wall_created", creator)
     try:
         async with uow(system) as tx:
-            wall = await _get(tx.session, wall_id)
+            wall = await _get(tx.session, wall_id, lock=True)
             if wall is None or wall.status != "active":
                 raise _NothingToEnd
             ended = 0

@@ -127,6 +127,14 @@ class TeamView:
     allowed_actions: list[str] = field(default_factory=list[str])
 
 
+async def _lines_authority(ctx: AuthContext) -> None:
+    """A service-line team's roster and line set people's service lines, which decide
+    `in_scope` for practice leaders and quality partners: the authority to set service lines
+    directly (`firm.manage_users`, a firm admin with fresh MFA), not just `org_structure.manage`
+    (G-01-T08 security review; DEC-317)."""
+    await authorise(ctx, "firm.manage_users", Resource.firm(ctx.tenant_id))
+
+
 def _human(ctx: AuthContext) -> None:
     """INV-1 behind the matrix: only a signed-in person of the firm changes its structure."""
     if ctx.tenant.actor_kind != "human" or ctx.client:
@@ -368,6 +376,8 @@ async def _check_team(tx: UnitOfWork, values: Mapping[str, object], team_id: UUI
 async def create_team(ctx: AuthContext, values: Mapping[str, object]) -> TeamView:
     await authorise(ctx, MANAGE, Resource.firm(ctx.tenant_id))
     _human(ctx)
+    if values["kind"] == "service_line":
+        await _lines_authority(ctx)
     try:
         async with uow(ctx.tenant) as tx:
             await _check_team(tx, values, None)
@@ -408,6 +418,8 @@ async def update_team(
                 raise NotFound("team")
             if row.version != version:
                 raise StaleOrgStructure(facts={"version": row.version})
+            if "service_line" in (row.kind, values["kind"]):
+                await _lines_authority(ctx)
             await _check_team(tx, values, team_id)
             changed = sorted(n for n in _TEAM_FIELDS if getattr(row, n) != values[n])
             lines_moved = (row.kind, row.service_line) != (values["kind"], values["service_line"])
@@ -449,6 +461,8 @@ async def set_team_members(ctx: AuthContext, team_id: UUID, member_ids: list[UUI
         row = await tx.session.get(Team, team_id)
         if row is None:
             raise NotFound("team")
+        if row.kind == "service_line":
+            await _lines_authority(ctx)
         wanted = list(dict.fromkeys(member_ids))
         if set(wanted) - await active_staff_among(tx.session, wanted):
             raise OrgStructureInvalid(facts={"field": "member_ids"})

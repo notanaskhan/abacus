@@ -15,12 +15,14 @@ from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 import pytest
+from sqlalchemy import text
 
 import abacus.modules.engagements.api  # registers the engagement-to-client lookup
 import abacus.modules.organisations.api  # registers member teams, the office list and facts
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import Target, uow
 from abacus.modules.identity import people
 from abacus.modules.identity.api import (
     AuthContext,
@@ -256,7 +258,7 @@ async def test_ac7_1_registered_office_facts_appear_and_a_failing_one_is_left_ou
     assert bare.facts == {}
 
 
-# --- AC7.2: unique codes, one HQ, IANA zones, versions, DEC-30 ----------------------------------
+# --- AC7.2: unique codes, one HQ, IANA zones, versions, DEC-30 -----------------------------------
 
 
 async def test_ac7_2_office_codes_are_unique_per_firm(firm: Firm, seed: Seeder) -> None:
@@ -427,7 +429,7 @@ async def test_ac7_2_an_office_inserted_without_a_code_takes_one_from_its_name(
     ]
 
 
-# --- AC7.3: teams, groups and the seasonal date ----------------------------------------------
+# --- AC7.3: teams, groups and the seasonal date --------------------------------------------------
 
 
 async def test_ac7_3_teams_and_groups_list_with_their_rosters(firm: Firm) -> None:
@@ -518,8 +520,14 @@ async def test_ac7_4_a_person_edit_that_disagrees_with_their_teams_is_refused(fi
     await org_structure.create_team(grace, _team("Audit & assurance", "service_line", "audit"))
     await people.update_person(grace, kevin.user_id, 1, {"team_ids": [tax.id]})
     assert await firm.lines(kevin) == ["tax"]
+    version = cast(
+        int,
+        await firm.seed.value("SELECT version FROM memberships WHERE user_id = $1", kevin.user_id),
+    )  # the edit, then the line the team gave him (each versioned)
     with pytest.raises(people.PersonInvalid) as refused:
-        await people.update_person(grace, kevin.user_id, 2, {"service_lines": ["audit", "tax"]})
+        await people.update_person(
+            grace, kevin.user_id, version, {"service_lines": ["audit", "tax"]}
+        )
     assert refused.value.facts == {"field": "service_lines"}
     assert await firm.lines(kevin) == ["tax"]
 
@@ -565,3 +573,90 @@ async def test_ac7_4_property_lines_and_teams_never_disagree(firm: Firm) -> None
                 if t.kind == "service_line" and who.user_id in t.member_ids
             }
             assert set(await firm.lines(who)) & managed == held
+
+
+# --- security review (G-01-T08): service-line teams are people management ------------------------
+
+
+async def test_review_a_security_admin_cannot_change_who_holds_a_service_line(firm: Firm) -> None:
+    """Service lines drive `in_scope` for practice leaders and quality partners, so anything
+    that moves them needs `firm.manage_users` (a firm admin), as setting them directly does;
+    a security admin manages offices and other teams only."""
+    grace = await firm.person("Grace Holloway", firm_role="firm_admin", level="admin")
+    felix = await firm.person("Felix Andersen", firm_role="security_admin", level="admin")
+    kevin = await firm.person("Kevin Osei")
+    with pytest.raises(Forbidden):
+        await org_structure.create_team(felix, _team("Tax", "service_line", "tax"))
+    pool = await org_structure.create_team(felix, _team("EQR pool", "eqr_pool"))  # not a line
+    with pytest.raises(Forbidden):
+        await org_structure.update_team(
+            felix, pool.id, pool.version, _team("EQR pool", "service_line", "audit")
+        )
+    tax = await org_structure.create_team(grace, _team("Tax", "service_line", "tax"))
+    with pytest.raises(Forbidden):
+        await org_structure.set_team_members(felix, tax.id, [kevin.user_id])
+    with pytest.raises(Forbidden):
+        await org_structure.update_team(felix, tax.id, tax.version, _team("Tax", "custom"))
+    assert await firm.lines(kevin) == []
+    await org_structure.set_team_members(felix, pool.id, [kevin.user_id])  # still allowed
+    await org_structure.set_team_members(grace, tax.id, [kevin.user_id])
+    assert await firm.lines(kevin) == ["tax"]
+
+
+async def test_review_a_line_moved_by_a_team_is_audited_versioned_and_ends_cached_access(
+    firm: Firm,
+) -> None:
+    grace = await firm.person("Grace Holloway", firm_role="firm_admin", level="admin")
+    kevin = await firm.person("Kevin Osei")
+    tax = await org_structure.create_team(grace, _team("Tax", "service_line", "tax"))
+    before = await firm.seed.value(
+        "SELECT version FROM memberships WHERE user_id = $1", kevin.user_id
+    )
+    await org_structure.set_team_members(grace, tax.id, [kevin.user_id])
+    after = await firm.seed.value(
+        "SELECT version FROM memberships WHERE user_id = $1", kevin.user_id
+    )
+    assert after == cast(int, before) + 1
+    events = [
+        e
+        for e in await firm.audit("membership.attributes_changed")
+        if e["target_id"] == str(kevin.user_id)
+    ]
+    assert len(events) == 1
+    assert "service_lines" in str(events[0]["a"])
+    changed = await firm.seed.rows(
+        "SELECT payload->>'user_id' AS u FROM outbox WHERE tenant_id = $1 "
+        "AND event_type = 'access.changed'",
+        firm.tenant,
+    )
+    assert str(kevin.user_id) in [r["u"] for r in changed]
+
+
+# --- security review (0150): the default-code trigger function -----------------------------------
+
+
+async def test_review_the_default_code_function_pins_its_search_path_and_is_not_public(
+    firm: Firm, seed: Seeder
+) -> None:
+    config = await seed.value(
+        "SELECT proconfig FROM pg_proc WHERE proname = 'offices_default_code'"
+    )
+    assert "search_path=pg_catalog, public, pg_temp" in cast(list[str], config)
+    assert (
+        await seed.value(
+            "SELECT has_function_privilege('abacus_app', 'offices_default_code()', 'EXECUTE')"
+        )
+        is False
+    )
+    # The trigger still fires for the app role (EXECUTE is checked when a trigger is created).
+    grace = await firm.person("Grace Holloway", firm_role="firm_admin", level="admin")
+    async with uow(grace.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO offices (tenant_id, name, time_zone) "
+                "VALUES (:t, 'Boston', 'America/New_York')"
+            ),
+            {"t": firm.tenant},
+        )
+        tx.record("office.created", target=Target("office", firm.tenant))
+    assert await seed.value("SELECT code FROM offices WHERE tenant_id = $1", firm.tenant) == "BOS"
