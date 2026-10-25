@@ -10,17 +10,20 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
+from abacus.modules.communications.api import DrainSesEventsWorkflow
 from abacus.modules.notifications.api import NotificationPurgeWorkflow
 from abacus.modules.platform.api import SpendAnomalyWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ANOMALY = sorted(HISTORIES.glob("spend-anomaly-v*.json"))
 PURGE = sorted(HISTORIES.glob("notification-purge-v*.json"))
+DRAIN = sorted(HISTORIES.glob("ses-drain-v*.json"))
 
 
 def test_the_histories_are_committed() -> None:
     assert [p.stem for p in ANOMALY] == ["spend-anomaly-v1-flagged"]
     assert [p.stem for p in PURGE] == ["notification-purge-v1-purged"]
+    assert [p.stem for p in DRAIN] == ["ses-drain-v1-drained"]
 
 
 @pytest.mark.parametrize("path", ANOMALY, ids=[p.stem for p in ANOMALY])
@@ -35,3 +38,9 @@ async def test_the_notification_purge_job_replays_its_recorded_history(path: Pat
         "notification_purge:platform", path.read_text(encoding="utf-8")
     )
     await Replayer(workflows=[NotificationPurgeWorkflow]).replay_workflow(history)
+
+
+@pytest.mark.parametrize("path", DRAIN, ids=[p.stem for p in DRAIN])
+async def test_the_ses_drain_replays_its_recorded_history(path: Path) -> None:
+    history = WorkflowHistory.from_json("ses_events:platform", path.read_text(encoding="utf-8"))
+    await Replayer(workflows=[DrainSesEventsWorkflow]).replay_workflow(history)

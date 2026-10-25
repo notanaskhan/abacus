@@ -23,7 +23,8 @@ from abacus.modules.notifications import api as notifications
 from abacus.modules.platform import api as platform
 from abacus_tools import schedules
 
-IDS = ("notification_purge:platform", "spend_anomaly:platform")
+IDS = ("notification_purge:platform", "ses_events:platform", "spend_anomaly:platform")
+BACKGROUND = ("notification_purge:platform", "spend_anomaly:platform")
 _passes: list[str] = []
 
 
@@ -64,8 +65,12 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["spend_anomaly:platform"]["every_seconds"] == (3600,)
     assert facts["notification_purge:platform"]["workflow_type"] == "NotificationPurge"
     assert facts["notification_purge:platform"]["every_seconds"] == (86400,)
-    for fact in facts.values():
+    assert facts["ses_events:platform"]["workflow_type"] == "DrainSesEvents"
+    assert facts["ses_events:platform"]["every_seconds"] == (60,)
+    assert facts["ses_events:platform"]["task_queue"] == queue_for("time_sensitive")
+    for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
+    for fact in facts.values():
         assert fact["overlap"] == "SKIP"
         assert fact["catchup_window_seconds"] == 3600
         assert fact["paused"] is False
@@ -104,7 +109,7 @@ async def test_a_triggered_run_does_each_job_once_on_the_background_queue(
             activities=[_flag, _purge],
         ),
     ):
-        for schedule_id in IDS:
+        for schedule_id in BACKGROUND:
             await temporal.get_schedule_handle(schedule_id).trigger()
         for _ in range(200):
             if sorted(_passes) == ["anomaly", "purge"]:
@@ -112,7 +117,7 @@ async def test_a_triggered_run_does_each_job_once_on_the_background_queue(
             await asyncio.sleep(0.1)
         await asyncio.sleep(1)  # nothing else arrives
     assert sorted(_passes) == ["anomaly", "purge"]
-    for schedule_id in IDS:
+    for schedule_id in BACKGROUND:
         described = await temporal.get_schedule_handle(schedule_id).describe()
         assert len(described.info.recent_actions) == 1
 

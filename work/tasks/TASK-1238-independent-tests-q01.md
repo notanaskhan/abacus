@@ -4,7 +4,7 @@ title: Independent tests for runtime config, the deploy smoke, provisioning and 
 spec: SPEC-050
 acceptance_criteria: [AC-26, AC-27, AC-31]
 risk_zone: amber
-status: in-progress
+status: done
 epic: Q-01
 plan_key: Q-01-T31; Q-01-T32; Q-01-T52; Q-01-T53
 branch: s8b-platform-ops
@@ -27,3 +27,5 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: T31 (2 vitest), T32 (spec lists 4 tests across the two projects; never run: no staging), T53 (3 vitest, 8 pytest) written and green.
+- 2026-10-25: T52 (`test_q01t52_provisioning_ses_independent.py`, 14 cases, as `abacus_ops` and `abacus_app` themselves) passed against Postgres. Docker went down on the shared machine mid-session (another session restarted Docker Desktop); runs resumed after it came back.
+- Open: T31's visible-error half (Q-01-T23); T32's upload, EICAR and simulator-mail steps and its signed-in steps (F-04-T22's sink reader and hosted sign-in; then set `SMOKE_SIGN_IN=on`). The smoke has never run against a host.

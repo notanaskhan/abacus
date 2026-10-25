@@ -26,6 +26,7 @@ from temporalio.client import (
 from abacus.kernel import dispatch
 from abacus.kernel.dispatch import PlatformSchedule, queue_for, register_work_classes
 from abacus.kernel.temporal import configure_temporal_client
+from abacus.modules.communications import api as communications
 from abacus.modules.notifications import api as notifications
 from abacus.modules.platform import api as platform
 
@@ -156,6 +157,14 @@ async def test_a_workflow_without_a_class_cannot_be_scheduled(client: _Client) -
     with pytest.raises(LookupError):
         await dispatch.schedule(_job("Unclassified", workflow_type=_Unclassified))
     assert client.schedules == {}
+
+
+def test_the_ses_drain_runs_every_minute_on_the_time_sensitive_queue() -> None:
+    """Q-01-T46's drain had no starter until these Schedules (Q-01 §4.5: every minute)."""
+    [job] = communications.SCHEDULES
+    assert (job.id, job.every) == ("ses_events:platform", timedelta(minutes=1))
+    assert job.workflow is communications.DrainSesEventsWorkflow
+    assert communications.WORKFLOWS[communications.DrainSesEventsWorkflow] == "time_sensitive"
 
 
 def test_the_two_moved_jobs_are_declared_as_background_schedules() -> None:
