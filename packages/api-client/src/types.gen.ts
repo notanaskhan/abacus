@@ -17034,6 +17034,10 @@ export type RunTraceOut = {
      */
     output_counts: Array<OutputCountOut>;
     /**
+     * Projection
+     */
+    projection: 'content' | 'metadata';
+    /**
      * Records Read
      */
     records_read: Array<RecordsReadOut>;
@@ -17074,6 +17078,10 @@ export type RunViewOut = {
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    /**
+     * Projection
+     */
+    projection: 'content' | 'metadata';
     run: AgentRunOut;
     /**
      * Run Record Sha256

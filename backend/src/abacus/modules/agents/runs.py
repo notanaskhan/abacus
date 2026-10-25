@@ -55,6 +55,9 @@ AGENT_LABEL: Final = {
     "engagement.agent": "Engagement agent",
 }
 State = Literal["queued", "running", "succeeded", "needs_input", "failed"]
+# DEC-87 (TASK-5002): content for the engagement's people and oversight in scope; metadata for
+# everyone else agent_run.read lets in (security and firm admins): what ran, never the content.
+Projection = Literal["content", "metadata"]
 RowKind = Literal["start", "queued", "attempt", "output", "decision", "finish"]
 
 
@@ -101,6 +104,7 @@ class Trace:
     records_read: list[RecordsRead]
     output_counts: list[tuple[str, int]]
     model_text: str | None  # the run's own words, rendered through AgentText
+    projection: Projection = "content"
 
 
 def state_of(run: AgentRun) -> State:
@@ -180,6 +184,13 @@ async def _run(ctx: AuthContext, run_id: UUID, action: str) -> AgentRun:
     return run
 
 
+async def projection_for(ctx: AuthContext, engagement_id: UUID) -> Projection:
+    """Content when the matrix grants `run_content.read` on the engagement, else metadata."""
+    ref = await get_ref(ctx, engagement_id)
+    found = await allowed_actions(ctx, ref.resource(), ["run_content.read"])
+    return "content" if "run_content.read" in found else "metadata"
+
+
 async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
     run = await _run(ctx, run_id, "agent_run.read")
     # DEC-52 (TASK-1207): a trace carries the model's text; its export, built from this, too.
@@ -188,6 +199,7 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
     if engagement_id is None:  # _run refuses firm-level runs
         raise NotFound
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
+    projection = await projection_for(ctx, engagement_id)
     attempts = await attempts_for(ctx.tenant, run.id)
     async with tenant_session(ctx.tenant) as session:
         results = await screening_results_of_run(session, run.id)
@@ -312,7 +324,8 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
         rows,
         read,
         counts,
-        model_text,
+        model_text if projection == "content" else None,
+        projection,
     )
 
 
@@ -371,6 +384,7 @@ class RunView:
     run: RunSummary
     run_record_sha256: str
     allowed_actions: list[str]
+    projection: Projection
 
 
 @dataclass(frozen=True)
@@ -416,7 +430,8 @@ async def run_view(ctx: AuthContext, run_id: UUID) -> RunView:
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     ref = await get_ref(ctx, engagement_id)
     actions = await allowed_actions(ctx, ref.resource(), ["agent_run.read", "run_trace.export"])
-    return RunView(_summary(run, names), run_record_sha256(run), sorted(actions))
+    projection = await projection_for(ctx, engagement_id)
+    return RunView(_summary(run, names), run_record_sha256(run), sorted(actions), projection)
 
 
 def records_read_of(run: AgentRun) -> list[RecordsRead]:
@@ -482,6 +497,8 @@ async def writes_for(ctx: AuthContext, run_id: UUID) -> list[RunWrite]:
                 None if d is None else d.at,
             )
         )
+    if await projection_for(ctx, engagement_id) == "metadata":  # DEC-87: no record references
+        out = [replace(w, target_id=None) for w in out]
     return sorted(out, key=lambda w: (w.at, str(w.id)))
 
 
@@ -608,6 +625,10 @@ async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
             )
         )
     items, last, resync = page_items(raw, after_seq)
+    if await projection_for(ctx, engagement_id) == "metadata":
+        # DEC-87: no narration and no record references. Numbering comes first, so a seq means
+        # the same thing to every viewer and polling still works.
+        items = [replace(i, ref_id=None) for i in items if i.kind != "narration"]
     return RunItems(summary, items, last, resync)
 
 
@@ -625,6 +646,7 @@ def page_items(raw: Sequence[RunItem], after_seq: int) -> tuple[list[RunItem], i
 __all__: Sequence[str] = [
     "export_trace",
     "items_for",
+    "projection_for",
     "records_read_for",
     "run_view",
     "runs_for",

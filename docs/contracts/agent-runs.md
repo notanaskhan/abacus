@@ -25,7 +25,7 @@ Firm-level runs (no engagement) answer 404 in v0.
 ## 2. Who may call it
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
 |---|---|---|---|---|
-| Run list | `GET /v1/engagements/{engagement_id}/agent-runs?state=active\|recent&limit=` | `agent_run.read` | firm_admin, practice_leader, engagement_partner, manager, senior, staff, reviewer; independence required | denied (no cell) |
+| Run list | `GET /v1/engagements/{engagement_id}/agent-runs?state=active\|recent&limit=` | `agent_run.read` | firm_admin, security_admin, practice_leader, quality_partner (in scope), engagement_partner, manager, senior, staff, reviewer; independence required | denied (no cell) |
 | Run | `GET /v1/agent-runs/{run_id}` | `agent_run.read` | as above, on the run's engagement | denied |
 | Trace | `GET /v1/agent-runs/{run_id}/trace` | `agent_run.read` | as above | denied |
 | Items | `GET /v1/agent-runs/{run_id}/items?after_seq=` | `agent_run.read` | as above | denied |
@@ -34,6 +34,18 @@ Firm-level runs (no engagement) answer 404 in v0.
 | Trace export | `POST /v1/agent-runs/{run_id}/trace-exports` (201) | `run_trace.export` | engagement_partner, manager, senior; independence and fresh MFA required | agent: deny |
 
 The list filters through `visible()`. The trace and export check the run's engagement with `authorise`.
+
+### Content and metadata (DEC-87, TASK-5002)
+`agent_run.read` lets a viewer see what ran. Only `run_content.read` lets them see the content. That action covers the engagement's people (partner, manager, senior, staff, reviewer) and practice and quality oversight in scope. It needs independence, and the agent is denied it.
+
+Everyone else gets `projection: "metadata"`. That means security and firm admins without an engagement role.
+- **They keep** the summary, timeline kinds, times, states, titles and code details, and records read as sources and counts.
+- **They lose:**
+  - `model_text`;
+  - record references (`target_id` on writes, `ref_id` on items);
+  - narration items.
+
+Item seqs are numbered before that filtering, so polling works the same for both projections.
 
 ## 3. Models
 Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `internal` unless stated otherwise.
@@ -123,6 +135,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 ## 8. Changes v1 will make (P-09)
 - Done in TASK-5000: `GET /v1/agent-runs/{id}` (with `run_record_sha256` and `allowed_actions`), `/trace/records-read` and `/trace/writes`.
 - Done in TASK-5001: the `items?after_seq=` feed, with the read-time legacy adapter (P-09 Story 8.1).
-- Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}` and the content and metadata projections (DEC-87, `security_admin`). The single `/trace` response stays as the summary and timeline.
+- Done in TASK-5002: the content and metadata projections (DEC-87).
+- Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}`. The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.

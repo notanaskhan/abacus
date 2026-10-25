@@ -211,6 +211,7 @@ export const ACTIONS = [
   "risk.approve",
   "risk.assess",
   "roll_forward.read",
+  "run_content.read",
   "run_trace.export",
   "sample.approve",
   "sample_set.create",
