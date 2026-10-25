@@ -10,6 +10,7 @@ from uuid import UUID
 import pytest
 
 from abacus.modules.agents.models import AgentRun
+from abacus.modules.agents.repository import RunWriteRow
 from abacus.modules.agents.runs import (
     AGENT_LABEL,
     RUNTIME_LABEL,
@@ -19,7 +20,9 @@ from abacus.modules.agents.runs import (
     canonical,
     duration_ms,
     output_counts,
+    run_record_sha256,
     state_of,
+    written_counts,
 )
 
 T0 = datetime(2026, 10, 22, 12, 0, tzinfo=UTC)
@@ -79,3 +82,43 @@ def test_ac6_the_export_is_canonical_and_deterministic() -> None:
     assert body == canonical(_trace())
     assert b'"started_at":"2026-10-22T12:00:00+00:00"' in body
     assert body.index(b'"agent"') < body.index(b'"agent_label"')  # sorted keys
+
+
+def _write(kind: str) -> RunWriteRow:
+    return RunWriteRow(kind, UUID(int=1), None, None, "k", "pending", T0, None, None, None)
+
+
+def test_c6_v1_counts_the_runs_suggestions_and_proposals() -> None:
+    assert written_counts([_write("suggestion"), _write("proposal"), _write("suggestion")]) == [
+        ("proposals", 1),
+        ("suggestions", 2),
+    ]
+    assert written_counts([]) == []
+
+
+def test_c6_v1_the_run_record_fingerprint_is_stable_and_follows_the_record() -> None:
+    fields = {
+        "id": UUID(int=7),
+        "agent_id": "evidence.screener",
+        "spec_version": 3,
+        "engagement_id": UUID(int=8),
+        "evidence_version_id": None,
+        "inbox_file_id": None,
+        "methodology_version_id": None,
+        "status": "completed",
+        "context_hash": "a" * 64,
+        "failure_code": None,
+        "started_at": T0,
+        "finished_at": T0,
+        "output": {"citations": [1]},
+    }
+    run = cast(AgentRun, SimpleNamespace(**fields))
+    same = cast(AgentRun, SimpleNamespace(**fields))
+    failed = cast(AgentRun, SimpleNamespace(**{**fields, "status": "failed"}))
+    assert run_record_sha256(run) == run_record_sha256(same)
+    assert run_record_sha256(run) != run_record_sha256(failed)
+    assert len(run_record_sha256(run)) == 64
+
+
+def test_dec87_the_runtime_is_named_never_the_model() -> None:
+    assert RUNTIME_LABEL == "Accrued Agent runtime"

@@ -17000,6 +17000,71 @@ export type RunTraceOut = {
 };
 
 /**
+ * RunViewOut
+ *
+ * C6 v1 (TASK-5000): one run, its record fingerprint and what the caller may do.
+ */
+export type RunViewOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    run: AgentRunOut;
+    /**
+     * Run Record Sha256
+     */
+    run_record_sha256: string;
+};
+
+/**
+ * RunWriteOut
+ *
+ * What the run proposed to write and what a person decided. Codes and references only.
+ */
+export type RunWriteOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string | null;
+    /**
+     * Decision
+     */
+    decision: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'suggestion' | 'proposal' | 'screening';
+    /**
+     * State
+     */
+    state: string;
+    /**
+     * Target Id
+     */
+    target_id: string | null;
+    /**
+     * Target Type
+     */
+    target_type: string | null;
+};
+
+/**
  * ScreenRequestIn
  */
 export type ScreenRequestIn = {
@@ -21448,6 +21513,58 @@ export type AbacusModulesFieldworkRoutesStartIn = {
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
 };
 
+export type AgentRunData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}';
+};
+
+export type AgentRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunError = AgentRunErrors[keyof AgentRunErrors];
+
+export type AgentRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunViewOut;
+};
+
+export type AgentRunResponse = AgentRunResponses[keyof AgentRunResponses];
+
 export type AgentRunTraceData = {
     body?: never;
     headers?: {
@@ -21551,6 +21668,114 @@ export type ExportRunTraceResponses = {
 };
 
 export type ExportRunTraceResponse = ExportRunTraceResponses[keyof ExportRunTraceResponses];
+
+export type AgentRunRecordsReadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}/trace/records-read';
+};
+
+export type AgentRunRecordsReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunRecordsReadError = AgentRunRecordsReadErrors[keyof AgentRunRecordsReadErrors];
+
+export type AgentRunRecordsReadResponses = {
+    /**
+     * Response Agent Run Records Read
+     *
+     * Successful Response
+     */
+    200: Array<RecordsReadOut>;
+};
+
+export type AgentRunRecordsReadResponse = AgentRunRecordsReadResponses[keyof AgentRunRecordsReadResponses];
+
+export type AgentRunWritesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}/trace/writes';
+};
+
+export type AgentRunWritesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunWritesError = AgentRunWritesErrors[keyof AgentRunWritesErrors];
+
+export type AgentRunWritesResponses = {
+    /**
+     * Response Agent Run Writes
+     *
+     * Successful Response
+     */
+    200: Array<RunWriteOut>;
+};
+
+export type AgentRunWritesResponse = AgentRunWritesResponses[keyof AgentRunWritesResponses];
 
 export type AuditsIndexData = {
     body?: never;

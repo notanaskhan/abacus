@@ -1,6 +1,7 @@
-import type { AgentRunOut, RunTraceOut } from "@abacus/api-client";
+import type { AgentRunOut, RunTraceOut, RunWriteOut } from "@abacus/api-client";
 import {
   agentRunTraceOptions,
+  agentRunWritesOptions,
   exportRunTraceMutation,
   listAgentRunsOptions,
 } from "@abacus/api-client/query";
@@ -13,6 +14,7 @@ import {
   EmptyState,
   Panel,
   ratio,
+  Segmented,
   Skeleton,
   StatusPill,
   type Tone,
@@ -121,6 +123,50 @@ function download(filename: string, content: string): void {
   URL.revokeObjectURL(url);
 }
 
+// WB-09: the trace's three views (P-09-T10).
+const VIEWS = ["Timeline", "Records read", "Writes & approvals"] as const;
+const WRITE_KIND: Record<RunWriteOut["kind"], string> = {
+  suggestion: "Suggestion",
+  proposal: "Proposal",
+  screening: "Screening",
+};
+
+/** C6 v1 (TASK-5000): what the run proposed to write, and who decided. Codes only. */
+export function RunWrites({ runId }: { runId: string }): JSX.Element {
+  const fmt = useFormat();
+  const writes = useQuery({
+    ...agentRunWritesOptions({ path: { run_id: runId } }),
+    retry: false,
+  });
+  if (writes.isPending) return <Skeleton className="h-24" />;
+  if (writes.isError) {
+    return <Alert title="Couldn't load the writes">{errorMessage(writes.error)}</Alert>;
+  }
+  if (writes.data.length === 0) {
+    return <p className="text-[13px] text-ink-2">This run proposed nothing to write.</p>;
+  }
+  return (
+    <ol aria-label="Writes and approvals" className="flex flex-col divide-y divide-hair">
+      {writes.data.map((w) => (
+        <li key={w.id} className="flex flex-wrap items-center gap-2 py-1.5 text-[13px]">
+          <span className="w-[64px] shrink-0 text-[12px] text-ink-3 tabular-nums">
+            {fmt.time(w.at)}
+          </span>
+          <span className="font-medium">{WRITE_KIND[w.kind]}</span>
+          <span className="font-mono text-[11px] text-ink-2">{w.key}</span>
+          {w.decision == null ? (
+            <StatusPill tone="warning">Waiting on a person</StatusPill>
+          ) : (
+            <span className="text-ink-2">
+              {`${w.decision.replaceAll("_", " ")}${w.decided_by_name == null ? "" : ` by ${w.decided_by_name}`}`}
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /** SPEC-318 AC-3: what the run did, step by step, computed from its records. */
 export function TraceDrawer({
   runId,
@@ -132,6 +178,7 @@ export function TraceDrawer({
   const fmt = useFormat();
   const trace = useQuery({ ...agentRunTraceOptions({ path: { run_id: runId } }), retry: false });
   const [confirm, setConfirm] = useState(false);
+  const [view, setView] = useState<string>("Timeline");
   const exp = useMutation({
     ...exportRunTraceMutation(),
     onError: (error) => {
@@ -190,49 +237,70 @@ export function TraceDrawer({
             <dt className="text-ink-3">Training</dt>
             <dd>{t.training}</dd>
           </dl>
-          <section aria-label="Timeline">
-            <h3 className="mb-1 text-[12px] font-medium text-ink-3">Timeline</h3>
-            <ol className="flex flex-col divide-y divide-hair">
-              {t.rows.map((row) => (
-                <li key={row.seq} className="flex flex-wrap items-center gap-2 py-1.5 text-[13px]">
-                  <span className="w-[64px] shrink-0 text-[12px] text-ink-3 tabular-nums">
-                    {fmt.time(row.at)}
-                  </span>
-                  <StatusPill tone={ROW_TONE[row.state]}>{row.title}</StatusPill>
-                  {row.detail != null && (
-                    <span className="font-mono text-[11px] text-ink-2">{row.detail}</span>
-                  )}
-                  {row.actor != null && <span className="text-ink-2">{row.actor}</span>}
-                </li>
-              ))}
-            </ol>
-          </section>
-          {t.output_counts.length > 0 && (
-            <section aria-label="Output">
-              <h3 className="mb-1 text-[12px] font-medium text-ink-3">Proposed</h3>
-              <p className="text-[13px]">
-                {t.output_counts
-                  .map((c) => `${count(c.count)} ${c.kind.replaceAll("_", " ")}`)
-                  .join(", ")}
-              </p>
-            </section>
+          <Segmented
+            size="small"
+            label="Trace views"
+            options={VIEWS}
+            active={view}
+            onChange={setView}
+          />
+          {view === "Timeline" && (
+            <>
+              <section aria-label="Timeline">
+                <ol className="flex flex-col divide-y divide-hair">
+                  {t.rows.map((row) => (
+                    <li
+                      key={row.seq}
+                      className="flex flex-wrap items-center gap-2 py-1.5 text-[13px]"
+                    >
+                      <span className="w-[64px] shrink-0 text-[12px] text-ink-3 tabular-nums">
+                        {fmt.time(row.at)}
+                      </span>
+                      <StatusPill tone={ROW_TONE[row.state]}>{row.title}</StatusPill>
+                      {row.detail != null && (
+                        <span className="font-mono text-[11px] text-ink-2">{row.detail}</span>
+                      )}
+                      {row.actor != null && <span className="text-ink-2">{row.actor}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+              {t.output_counts.length > 0 && (
+                <section aria-label="Output">
+                  <h3 className="mb-1 text-[12px] font-medium text-ink-3">Proposed</h3>
+                  <p className="text-[13px]">
+                    {t.output_counts
+                      .map((c) => `${count(c.count)} ${c.kind.replaceAll("_", " ")}`)
+                      .join(", ")}
+                  </p>
+                </section>
+              )}
+              {modelText != null && (
+                <section aria-label="The agent's words">
+                  <h3 className="mb-1 text-[12px] font-medium text-ink-3">
+                    The agent&apos;s words
+                  </h3>
+                  <AgentText text={modelText} />
+                </section>
+              )}
+            </>
           )}
-          {modelText != null && (
-            <section aria-label="The agent's words">
-              <h3 className="mb-1 text-[12px] font-medium text-ink-3">The agent&apos;s words</h3>
-              <AgentText text={modelText} />
-            </section>
-          )}
-          {t.records_read.length > 0 && (
+          {view === "Records read" && (
             <section aria-label="Records read">
-              <h3 className="mb-1 text-[12px] font-medium text-ink-3">Records read</h3>
-              <ul className="text-[13px]">
-                {t.records_read.map((r) => (
-                  <li key={r.source}>{`${SUBJECT[r.source] ?? r.source} (${count(r.count)})`}</li>
-                ))}
-              </ul>
+              {t.records_read.length === 0 ? (
+                <p className="text-[13px] text-ink-2">This run recorded no records read.</p>
+              ) : (
+                <ul className="text-[13px]">
+                  {t.records_read.map((r) => (
+                    <li
+                      key={r.source}
+                    >{`${SUBJECT[r.source] ?? r.source} (${count(r.count)})`}</li>
+                  ))}
+                </ul>
+              )}
             </section>
           )}
+          {view === "Writes & approvals" && <RunWrites runId={runId} />}
         </>
       )}
     </Drawer>
