@@ -101,6 +101,7 @@ from abacus.ai_gateway.sanitise import sanitise_text
 from abacus.kernel._flags import FLAGS
 from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, Route, settings
+from abacus.kernel.controls import control_active
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_variant
 from abacus.kernel.logging import get_logger
@@ -364,6 +365,11 @@ async def embed(c: EmbedCall) -> EmbedResult:
             await check_budget(
                 c.attribution.tenant, c.attribution.engagement_id, c.essential, estimate
             )
+            if embedding_route() != "fake" and await control_active(
+                "model_route_block", c.attribution.tenant.tenant_id, route=embedding_route()
+            ):
+                # Q-01-T36: the embedding route is blocked; the caller waits as for an outage.
+                raise NotAdmitted(refusal_reason(c.work_class), 60)
             admitted, wait = await admit(
                 c.attribution.tenant, embedding_route(), model, c.work_class, c.essential, tokens
             )
@@ -604,6 +610,13 @@ async def _admitted(
             for route in routes:
                 model = model_id(tier, route)
                 if model is None:
+                    continue
+                # Q-01-T36 (P-66): an operator's `model_route_block` skips the route as an
+                # outage block would; client data still never fails over (`barred_routes`).
+                if route != "fake" and await control_active(
+                    "model_route_block", tenant.tenant_id, route=route
+                ):
+                    _log.info("admission.route_blocked", route=route)
                     continue
                 # A cheaper tier needs a passing evaluation run (SPEC-005); outside synthetic
                 # environments so does every real route (SPEC-010 AC-6, ADR-073).

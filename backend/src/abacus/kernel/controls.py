@@ -10,8 +10,10 @@ last known value for at most 60 seconds after it was read and then counts as act
 pause must not lapse, P-08-T21 security review); the others keep their last known value, or
 count as inactive when there is none. Each such decision is logged by control name only.
 
-Readers today: P-08-T21's portal sign-in pause (`portal_sign_in`, per firm). The other controls
-get their enforcement points with Q-01-T36 and T37.
+Readers today: P-08-T21's portal sign-in pause (`portal_sign_in`, per firm); Q-01-T36's AI pause
+(`ai_gateway.boundary.enforce_boundary`), route block (`ai_gateway._admitted` and `embed`) and
+email pause (`communications.deliveries.deliver`); Q-01-T37's read-only mode
+(`identity.routing`: the platform half in `AbacusRoute`, the firm half in `firm_writable`).
 """
 
 from __future__ import annotations

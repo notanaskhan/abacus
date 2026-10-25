@@ -33,6 +33,7 @@ from uuid import UUID
 from abacus.kernel import provider_terms
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import Route, settings
+from abacus.kernel.controls import control_active
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
@@ -53,6 +54,7 @@ Reason = Literal[
     "stage",
     "pii_in_context",
     "tax_return_information",
+    "ai_paused",
 ]
 # Audited by index: append only, so the indices already recorded keep their meaning.
 REASONS: Final[tuple[Reason, ...]] = (
@@ -64,6 +66,7 @@ REASONS: Final[tuple[Reason, ...]] = (
     "stage",
     "pii_in_context",
     "tax_return_information",  # P-06-T20 security review (DEC-324)
+    "ai_paused",  # Q-01-T36 (P-66): the platform's or the firm's AI kill switch
 )
 CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
@@ -207,10 +210,14 @@ async def enforce_boundary(
     engagement_id: UUID | None = None,
 ) -> Basis | None:
     """Return why `route` may see this firm's data (None for `fake`); else audit, count and
-    raise with the reason. An engagement its partner excluded refuses every route, for every
-    firm (SPEC-036 AC-6)."""
+    raise with the reason. AI paused for the platform or the firm (Q-01-T36, `ai_pause`) refuses
+    every route first, the fake one too; then an engagement its partner excluded refuses every
+    route, for every firm (SPEC-036 AC-6). Every provider call passes here just before it leaves,
+    so with AI paused none does once the controls cache (10 s) has caught up."""
     excluded = _excluded
-    if (
+    if await control_active("ai_pause", tenant.tenant_id):
+        reason: Reason | None = "ai_paused"
+    elif (
         engagement_id is not None
         and excluded is not None
         and await _cached(
@@ -218,7 +225,7 @@ async def enforce_boundary(
             lambda: excluded(tenant, engagement_id),
         )
     ):
-        reason: Reason | None = "engagement"
+        reason = "engagement"
     elif route == "fake":
         return None
     elif await _synthetic(tenant):
