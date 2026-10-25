@@ -2,8 +2,9 @@
 
 The agents module drafts follow-ups; it reads the requests through this. A request is chased
 while it is open for the client: Requested or Returned, client-visible, not deleted, in a
-Published binder. Reads go through `visible()` for the caller, so a walled engagement's requests
-are absent.
+Published binder. A screening return (TASK-1252) names a request the client answered: Uploaded,
+or Returned once sent. Reads go through `visible()` for the caller, so a walled engagement's
+requests are absent.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from abacus.modules.requests.repository import (
     binder_statuses,
     binders_recipient_rows,
     follow_up_items,
+    fulfilling_versions,
 )
 
 
@@ -35,18 +37,29 @@ class FollowUpCandidate:
 
 
 async def follow_up_candidates(
-    ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
+    ctx: AuthContext,
+    binder_ids: Sequence[UUID],
+    item_ids: Sequence[UUID],
+    *,
+    returning: bool = False,
 ) -> list[FollowUpCandidate]:
     """The open client-visible requests of these binders or ids the caller may read, each once,
     in engagement, due-date and creation order. Only a Published binder is chased: a binder the
     caller may read that is not Published answers 409 `binder_not_published` (nothing is
-    drafted); requests asked for by id keep only those in Published binders."""
+    drafted); requests asked for by id keep only those in Published binders. `returning`: the
+    requests a screening return may name (Uploaded or Returned) instead of the open ones."""
     async with tenant_session(ctx.tenant) as session:
         statuses = await binder_statuses(session, ctx, binder_ids)
         for binder in binder_ids:
             if statuses.get(binder, "published") != "published":
                 raise BinderNotPublished(facts={"binder_id": str(binder)})
-        rows = await follow_up_items(session, ctx, binder_ids, item_ids)
+        rows = await follow_up_items(
+            session,
+            ctx,
+            binder_ids,
+            item_ids,
+            ("uploaded", "returned") if returning else ("requested", "returned"),
+        )
         binders = sorted({item.request_list_id for item, _ in rows}, key=str)
         history = await binders_recipient_rows(session, binders)
     recipients = {
@@ -65,3 +78,10 @@ async def follow_up_candidates(
         )
         for item, due in rows
     ]
+
+
+async def live_files(ctx: AuthContext, item_id: UUID) -> list[UUID]:
+    """The request's files (live fulfilments, oldest first), for a caller that read the request
+    through `follow_up_candidates` (TASK-1252)."""
+    async with tenant_session(ctx.tenant) as session:
+        return list(await fulfilling_versions(session, item_id))

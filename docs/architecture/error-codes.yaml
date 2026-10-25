@@ -360,6 +360,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.service.FieldworkUnavailable
+  file_answers_other_requests:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.service.ReturnSpansRequests
+    summary: 'A screening return names a file that also answers another request: review it there.'
   file_refused:
     status: 422
     raised_by:
@@ -390,6 +395,11 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpNotWaiting
     summary: 'The follow-up was dismissed: nothing is waiting to be sent.'
+  follow_up_send_alone:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.follow_up_drafts.FollowUpSendAlone
+    summary: 'A screening return sends back files: send it on its own, from its sheet.'
   follow_up_template_missing:
     status: 409
     raised_by:

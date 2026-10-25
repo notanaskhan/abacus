@@ -3,8 +3,8 @@ screening-return follow-up draft (P-06-T15; P-06 §4.3; contract `docs/contracts
 binders.md` §12). The follow-up's edit and send are the live follow-ups v2 routes (P-06-T14).
 
 Behind `screening.card`: off, every route here answers 404 (the card area shows nothing extra).
-On, the card, its rerun and feedback are live (P-06-T20, `screening_card`), and the
-screening-return draft answers 501 `not_implemented` until P-06-T22. The card is composed by
+On, the card, its rerun and feedback are live (P-06-T20, `screening_card`), and so is the
+screening-return draft (TASK-1252, `follow_up_drafts.draft_return`). The card is composed by
 code from the per-file screenings and verified reviewer flags (`screening_aggregate`). It never
 carries a confidence (P-06 §7), and its flags carry only code-verified quotes, through C4
 regions (INV-2). The agent screens; a person returns, sends and gives feedback (INV-1):
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends
@@ -24,10 +24,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from abacus.kernel._flags import SCREENING_CARD
 from abacus.kernel._statuses import EvidenceScreeningStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText
-from abacus.modules.agents.follow_up_routes import FollowUpOut
+from abacus.modules.agents.follow_up_drafts import draft_return
+from abacus.modules.agents.follow_up_routes import FollowUpOut, follow_up_out
 from abacus.modules.agents.screening_card import (
     CardView,
     FeedbackView,
@@ -50,12 +51,6 @@ screening_items_router = AbacusRouter(
     prefix="/v1/engagements/{engagement_id}/request-items/{item_id}", tags=["screening"]
 )
 screenings_router = AbacusRouter(prefix="/v1/screenings", tags=["screening"])
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, SCREENING_CARD):
-        raise NotFound("screening.card")
-    raise NotImplementedYet
 
 
 class ScreeningCheckOut(BaseModel):
@@ -218,12 +213,16 @@ async def screening_feedback_route(
     action="follow_up.draft",
     response_model=FollowUpOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def draft_screening_return_route(
     engagement_id: UUID, item_id: UUID, body: ScreeningReturnDraftIn, ctx: Ctx
 ) -> FollowUpOut:
     """SHL-20 b: a template-composed draft from the firm's Return template, with the files it
     returns. Its edit and send are `PATCH /v1/follow-ups/{id}` and `POST …/send` (P-06-T14);
-    for this kind, send also returns the files and posts the shared comment (P-06-T22)."""
-    await _stub(ctx)
+    for this kind, send also returns the files, and delivery posts the shared comment
+    (TASK-1252, DEC-368)."""
+    if not await flag_enabled(ctx.tenant, SCREENING_CARD):
+        raise NotFound("screening.card")
+    view = await draft_return(ctx, engagement_id, item_id, body.returning, body.reason_code)
+    return follow_up_out(view)

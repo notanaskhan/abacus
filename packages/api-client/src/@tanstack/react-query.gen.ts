@@ -5333,7 +5333,8 @@ export const setDocumentKindMutation = (options?: Partial<Options<SetDocumentKin
  *
  * SHL-20 b: a template-composed draft from the firm's Return template, with the files it
  * returns. Its edit and send are `PATCH /v1/follow-ups/{id}` and `POST …/send` (P-06-T14);
- * for this kind, send also returns the files and posts the shared comment (P-06-T22).
+ * for this kind, send also returns the files, and delivery posts the shared comment
+ * (TASK-1252, DEC-368).
  */
 export const draftScreeningReturnMutation = (options?: Partial<Options<DraftScreeningReturnData>>): UseMutationOptions<DraftScreeningReturnResponse, DraftScreeningReturnError, Options<DraftScreeningReturnData>> => {
     const mutationOptions: UseMutationOptions<DraftScreeningReturnResponse, DraftScreeningReturnError, Options<DraftScreeningReturnData>> = {

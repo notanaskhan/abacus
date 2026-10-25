@@ -46,6 +46,15 @@ class FollowUpItemOut(BaseModel):
     overdue: Annotated[bool, classified("internal")]
 
 
+class FollowUpReturnOut(BaseModel):
+    """A file a screening return sends back, with its reason (TASK-1252)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    reason_code: Annotated[str, classified("internal")]
+
+
 class FollowUpOut(BaseModel):
     """One follow-up: who it goes to, the open requests it lists (each once), and the email
     exactly as it will be sent. `body` is template-composed (DEC-79: never model text) or the
@@ -72,6 +81,8 @@ class FollowUpOut(BaseModel):
     sent_at: Annotated[datetime | None, classified("internal")]
     undo_until: Annotated[datetime | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # Additive (TASK-1252): a screening return's files, so its sender sees what they send back.
+    returning: Annotated[list[FollowUpReturnOut], classified("internal")] = []
 
 
 class FollowUpDraftsIn(BaseModel):
@@ -109,7 +120,7 @@ class FollowUpSendManyIn(BaseModel):
     ids: Annotated[list[UUID], Field(min_length=1, max_length=200), classified("internal")]
 
 
-def _out(view: service.FollowUpView) -> FollowUpOut:
+def follow_up_out(view: service.FollowUpView) -> FollowUpOut:
     return FollowUpOut(
         id=view.id,
         engagement_id=view.engagement_id,
@@ -138,6 +149,10 @@ def _out(view: service.FollowUpView) -> FollowUpOut:
         sent_at=view.sent_at,
         undo_until=view.undo_until,
         allowed_actions=view.allowed_actions,
+        returning=[
+            FollowUpReturnOut(evidence_version_id=r.evidence_version_id, reason_code=r.reason_code)
+            for r in view.returning
+        ],
     )
 
 
@@ -154,13 +169,13 @@ async def draft_selection_follow_ups_route(body: FollowUpDraftsIn, ctx: Ctx) -> 
     `follow_up_template_missing` when no Reminder template is published."""
     await _engine_on(ctx)
     views = await service.draft_for(ctx, body.binder_ids, body.request_item_ids)
-    return FollowUpDraftsOut(items=[_out(v) for v in views])
+    return FollowUpDraftsOut(items=[follow_up_out(v) for v in views])
 
 
 @follow_ups_router.get("/{follow_up_id}", action="follow_up.draft", response_model=FollowUpOut)
 async def get_follow_up_route(follow_up_id: UUID, ctx: Ctx) -> FollowUpOut:
     await _engine_on(ctx)
-    return _out(await service.read(ctx, follow_up_id))
+    return follow_up_out(await service.read(ctx, follow_up_id))
 
 
 @follow_ups_router.patch(
@@ -170,7 +185,7 @@ async def edit_follow_up_route(follow_up_id: UUID, body: FollowUpEditIn, ctx: Ct
     """Edit before sending: the person's wording replaces the composed body (sealed). 409
     `follow_up_already_sent` / `follow_up_not_waiting`."""
     await _engine_on(ctx)
-    return _out(await service.edit(ctx, follow_up_id, body.body))
+    return follow_up_out(await service.edit(ctx, follow_up_id, body.body))
 
 
 @follow_ups_router.post(
@@ -186,7 +201,7 @@ async def send_follow_up_route(
     await service.check_send(ctx, [follow_up_id])
 
     async def run() -> tuple[int, dict[str, object]]:
-        return 200, _out(await service.send(ctx, follow_up_id)).model_dump(mode="json")
+        return 200, follow_up_out(await service.send(ctx, follow_up_id)).model_dump(mode="json")
 
     stored = await idempotent(
         ctx.tenant,
@@ -211,7 +226,9 @@ async def send_follow_ups_route(
 
     async def run() -> tuple[int, dict[str, object]]:
         views = await service.send_many(ctx, body.ids)
-        return 200, FollowUpDraftsOut(items=[_out(v) for v in views]).model_dump(mode="json")
+        return 200, FollowUpDraftsOut(items=[follow_up_out(v) for v in views]).model_dump(
+            mode="json"
+        )
 
     stored = await idempotent(
         ctx.tenant,
@@ -229,7 +246,7 @@ async def send_follow_ups_route(
 async def undo_follow_up_route(follow_up_id: UUID, ctx: Ctx) -> FollowUpOut:
     """Within 10 s, by its sender: 409 `undo_window_closed`, `effect_started`."""
     await _engine_on(ctx)
-    return _out(await service.undo(ctx, follow_up_id))
+    return follow_up_out(await service.undo(ctx, follow_up_id))
 
 
 @follow_ups_router.post(
@@ -237,4 +254,4 @@ async def undo_follow_up_route(follow_up_id: UUID, ctx: Ctx) -> FollowUpOut:
 )
 async def dismiss_follow_up_route(follow_up_id: UUID, ctx: Ctx) -> FollowUpOut:
     await _engine_on(ctx)
-    return _out(await service.dismiss(ctx, follow_up_id))
+    return follow_up_out(await service.dismiss(ctx, follow_up_id))

@@ -17,6 +17,13 @@ through the same hold (`send_overdue`). The
 body sent is frozen in `body_sealed`; the relay's delivery of `follow_up.sent` sends the email
 through communications (COMM-001). Undo within the window voids the grant and puts the draft
 back; dismiss closes it. No model text reaches a client (DEC-79, ADR-111).
+
+SHL-20 b, the screening return (TASK-1252; C5 §12, DEC-368): drafted for one request from the
+firm's published Return template, with the files it returns. Its send also returns them, in the
+grant's unit of work: one `send_back` per file (evidence's, a person serving a request with
+`evidence.reject`) and the request `returned`; its sender must be allowed `comment.share`. Its
+delivery, after the Undo window, posts the shared comment (the body as sent) with the email, so
+nothing reaches the client while it can be undone; Undo also undoes the send-backs.
 """
 
 from __future__ import annotations
@@ -28,7 +35,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Final
-from uuid import UUID
+from uuid import UUID, uuid5
 
 from abacus.kernel import clock
 from abacus.kernel.crypto import open_sealed, seal
@@ -51,18 +58,23 @@ from abacus.modules.agents.models import FollowUpSchedule
 from abacus.modules.agents.repository import (
     follow_up_history,
     follow_up_item_rows,
+    follow_up_return_rows,
     get_follow_up,
     insert_chase_draft,
+    insert_follow_up_returns,
+    insert_return_draft,
     set_follow_up,
     waiting_pairs,
 )
 from abacus.modules.communications.api import (
     REMINDER_TEMPLATE,
+    RETURN_TEMPLATE,
     check_scope,
     compose_follow_up,
     deliver_follow_up,
 )
 from abacus.modules.engagements.api import EngagementRef, contact_portal_user, get_ref, lock_ref
+from abacus.modules.evidence.api import return_files, undo_returned_files
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -75,13 +87,23 @@ from abacus.modules.identity.api import (
     names_of,
     void_grant,
 )
-from abacus.modules.requests.api import FollowUpCandidate, follow_up_candidates
+from abacus.modules.requests.api import (
+    FollowUpCandidate,
+    check_return_comment,
+    follow_up_candidates,
+    insert_return_comment,
+    live_files,
+)
 
 UNDO_WINDOW: Final = timedelta(seconds=10)
 GRANT_LIFETIME: Final = timedelta(days=7)
 MAX_BODY: Final = 10_000
 _ACTIONS: Final = ("follow_up.draft", "follow_up.send")
 _LINK: Final = re.compile(r"https?://\S+")
+RETURN: Final = "screening_return"
+# A screening return's shared comment is one per follow-up: its id is derived from the
+# follow-up's, so a redelivery posts nothing twice.
+_RETURN_COMMENT: Final = UUID("5c2b1d3e-9f40-4a7e-8d61-0b9e2f6a1c47")
 
 
 class FollowUpAlreadySent(DomainConflict):
@@ -114,6 +136,12 @@ class FollowUpV2Only(DomainConflict):
     code = "follow_up_v2_only"
 
 
+class FollowUpSendAlone(DomainConflict):
+    """A screening return sends back files: send it on its own, from its sheet."""
+
+    code = "follow_up_send_alone"
+
+
 class FollowUpEffectStarted(DomainConflict):
     """The email's delivery has started (its grant was consumed): it can no longer be undone."""
 
@@ -126,6 +154,12 @@ class FollowUpItemView:
     title: str
     due_on: date | None
     overdue: bool  # past its due date on the firm's business date
+
+
+@dataclass(frozen=True)
+class FollowUpReturnView:
+    evidence_version_id: UUID
+    reason_code: str
 
 
 @dataclass(frozen=True)
@@ -149,6 +183,7 @@ class FollowUpView:
     sent_at: datetime | None
     undo_until: datetime | None
     allowed_actions: list[str]
+    returning: list[FollowUpReturnView]  # a screening return's files, as drafted
 
 
 def _human(ctx: AuthContext, action: str) -> None:
@@ -239,7 +274,7 @@ async def _open_candidates(ctx: AuthContext, row: FollowUpSchedule) -> list[Foll
     async with tenant_session(ctx.tenant) as session:
         ids = [i.request_item_id for i in await follow_up_item_rows(session, row.id)]
     # In the requests' own order (due date, then when they were made), as they were drafted.
-    return await follow_up_candidates(ctx, [], ids)
+    return await follow_up_candidates(ctx, [], ids, returning=row.kind == RETURN)
 
 
 async def _content(
@@ -271,6 +306,13 @@ async def _view(ctx: AuthContext, row: FollowUpSchedule) -> FollowUpView:
         else None
     )
     names = await names_of([row.recipient_user_id])
+    returning: list[FollowUpReturnView] = []
+    if row.kind == RETURN:
+        async with tenant_session(ctx.tenant) as session:
+            returning = [
+                FollowUpReturnView(r.evidence_version_id, r.reason_code)
+                for r in await follow_up_return_rows(session, row.id)
+            ]
     return FollowUpView(
         id=row.id,
         engagement_id=row.engagement_id,
@@ -296,6 +338,7 @@ async def _view(ctx: AuthContext, row: FollowUpSchedule) -> FollowUpView:
         allowed_actions=_state_actions(
             row, set(await allowed_actions(ctx, resource, _ACTIONS)), ctx.user_id, undo_until
         ),
+        returning=returning,
     )
 
 
@@ -384,6 +427,71 @@ async def draft_for(
     return [await read(ctx, f) for f in dict.fromkeys(made)]
 
 
+async def draft_return(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    item_id: UUID,
+    returning: Sequence[UUID],
+    reason_code: str,
+) -> FollowUpView:
+    """SHL-20 b: "Draft follow-up" on a flagged card. One draft for the request, composed from
+    the firm's published Return template, to its first recipient (DEC-220's order), naming the
+    files it returns with the reason. The request must be the client's to answer again: client
+    visible, Uploaded or Returned, in a Published binder; each file a live fulfilment of it (else
+    404). Before anything is written: 409 `out_of_scope` when the request's title names
+    something outside the engagement, 409 `follow_up_template_missing` when no Return template
+    is published. Drafting decides nothing: the send returns the files (`_send_one`)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "follow_up.draft", ref.resource())
+    found = [
+        c
+        for c in await follow_up_candidates(ctx, [], [item_id], returning=True)
+        if c.engagement_id == engagement_id
+    ]
+    if not found:
+        raise NotFound("request_item")
+    [item] = found
+    files = list(dict.fromkeys(returning))
+    live = set(await live_files(ctx, item.id))
+    if not files or any(f not in live for f in files):
+        raise NotFound("evidence_version")
+    if await _out_of_scope(ctx, ref, item.title):
+        raise FollowUpOutOfScope(facts={"request_item_id": str(item.id)})
+    pairs = (await _recipients(ctx, [item])).get(item.id, [])
+    if not pairs:
+        raise NotFound("recipient")
+    user, contact = pairs[0]
+    composed = await compose_follow_up(
+        ctx.tenant_id, engagement_id, user, [item.title], RETURN_TEMPLATE
+    )
+    body_fp = fingerprint(composed.body)
+    today = today_in(await firm_time_zone(ctx.tenant), await clock.now(ctx.tenant))
+    async with uow(ctx.tenant) as tx:
+        follow_up_id = await insert_return_draft(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            engagement_id=engagement_id,
+            binder_id=item.binder_id,
+            recipient_user_id=user,
+            request_item_id=item.id,
+            due_on=item.due_on or today,
+            template_key=RETURN_TEMPLATE,
+            body_fingerprint=body_fp,
+        )
+        if contact is not None:
+            await set_follow_up(tx.session, follow_up_id, {"recipient_contact_id": contact})
+        await insert_follow_up_returns(
+            tx.session, ctx.tenant_id, follow_up_id, [(f, reason_code) for f in files]
+        )
+        tx.record(
+            "follow_up.drafted",
+            target=_target(follow_up_id),
+            after=Ref(items=1, files=len(files), body=body_fp),
+            scope=Scope(engagement_id=engagement_id),
+        )
+    return await read(ctx, follow_up_id)
+
+
 async def read(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
     async with tenant_session(ctx.tenant) as session:
         row = await get_follow_up(session, follow_up_id)
@@ -440,9 +548,13 @@ async def edit(ctx: AuthContext, follow_up_id: UUID, body: str) -> FollowUpView:
     return await read(ctx, follow_up_id)
 
 
-async def _send_one(tx: UnitOfWork, ctx: AuthContext, follow_up_id: UUID) -> None:
+async def _send_one(
+    tx: UnitOfWork, ctx: AuthContext, follow_up_id: UUID, *, alone: bool = True
+) -> None:
     row, ref, resource = await _locked(tx, ctx, follow_up_id, "follow_up.send")
     _waiting(row)
+    if row.kind == RETURN and not alone:  # its sender sees the files it returns (ADR-005)
+        raise FollowUpSendAlone(facts={"follow_up_id": str(row.id)})
     now = await clock.now(ctx.tenant)
     items = await _open_items(ctx, row)
     if not items:  # everything it named was answered meanwhile: nothing to send
@@ -457,7 +569,27 @@ async def _send_one(tx: UnitOfWork, ctx: AuthContext, follow_up_id: UUID) -> Non
     added = await _added_text(ctx.tenant_id, row, items, body) if row.edit_fingerprint else ""
     if await _any_out_of_scope(ctx, ref, [*(t for _, t in items), added]):
         raise FollowUpOutOfScope
+    if row.kind == RETURN:
+        await _return(tx, ctx, row, [i for i, _ in items], body)
     await _hold(tx, ctx, row, resource, body, now)
+
+
+async def _return(
+    tx: UnitOfWork, ctx: AuthContext, row: FollowUpSchedule, item_ids: Sequence[UUID], body: str
+) -> None:
+    """A screening return's send, in the grant's unit of work: its sender may share the comment
+    delivery will post (the body is a comment's), and each file is sent back with its reason
+    (evidence's decision, the request `returned`)."""
+    [item_id] = item_ids
+    await check_return_comment(ctx, row.engagement_id, item_id, body)
+    returns = await follow_up_return_rows(tx.session, row.id)
+    await return_files(
+        tx,
+        ctx,
+        row.engagement_id,
+        item_id,
+        [(r.evidence_version_id, r.reason_code) for r in returns],
+    )
 
 
 async def _hold(
@@ -564,12 +696,13 @@ async def send(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
 
 async def send_many(ctx: AuthContext, follow_up_ids: Sequence[UUID]) -> list[FollowUpView]:
     """BND-01 b "Send n follow-ups": all in one unit of work, or none (a refusal names the
-    first that failed by its error)."""
+    first that failed by its error). A screening return is sent on its own (409
+    `follow_up_send_alone`)."""
     _human(ctx, "follow_up.send")
     ids = list(dict.fromkeys(follow_up_ids))
     async with uow(ctx.tenant) as tx:
         for follow_up_id in ids:
-            await _send_one(tx, ctx, follow_up_id)
+            await _send_one(tx, ctx, follow_up_id, alone=False)
     return [await read(ctx, f) for f in ids]
 
 
@@ -590,6 +723,11 @@ async def undo(ctx: AuthContext, follow_up_id: UUID) -> FollowUpView:
         grant = await _sent_grant(tx, row.id)
         if grant is None or not await void_grant(tx, grant):
             raise FollowUpEffectStarted
+        if row.kind == RETURN:  # the files and the request go back too
+            returns = await follow_up_return_rows(tx.session, row.id)
+            await undo_returned_files(
+                tx, ctx, row.engagement_id, [r.evidence_version_id for r in returns]
+            )
         values: dict[str, object] = {
             "status": "drafted",
             "sent_by": None,
@@ -711,6 +849,8 @@ async def on_follow_up_sent(event: OutboxEvent) -> None:
     if row is None or row.status != "sent" or row.sent_by is None or row.body_sealed is None:
         return
     body = (await open_sealed(event.tenant_id, row.body_sealed, _seal_context(row.id))).decode()
+    if row.kind == RETURN:
+        await _post_return_comment(system, row, row.sent_by, body)
     composed = await compose_follow_up(
         event.tenant_id,
         row.engagement_id,
@@ -727,3 +867,43 @@ async def on_follow_up_sent(event: OutboxEvent) -> None:
         composed.subject,
         body,
     )
+
+
+async def _post_return_comment(
+    system: TenantContext, row: FollowUpSchedule, sent_by: UUID, body: str
+) -> None:
+    """A screening return's shared comment on its request: the body as sent, by its sender, once
+    (before the email, so a failed comment is retried with it)."""
+    async with tenant_session(system) as session:
+        [item] = await follow_up_item_rows(session, row.id)
+    comment_id = uuid5(_RETURN_COMMENT, str(row.id))
+    # The platform posts it for its sender (ADR-018): audit rows carry who it acts for.
+    for_sender = TenantContext(
+        system.tenant_id, system.actor_kind, system.actor_id, on_behalf_of_user_id=sent_by
+    )
+    try:
+        async with uow(for_sender) as tx:
+            if not await insert_return_comment(
+                tx,
+                row.tenant_id,
+                row.engagement_id,
+                item.request_item_id,
+                comment_id=comment_id,
+                author_user_id=sent_by,
+                body=body,
+            ):
+                return  # posted by an earlier delivery
+            tx.record(
+                "comment.posted",
+                target=Target("comment", comment_id),
+                after=Ref(
+                    request_item_id=item.request_item_id,
+                    shared=1,
+                    follow_up_id=row.id,
+                    sent_by=sent_by,
+                    body=fingerprint(body),
+                ),
+                scope=_scope(row),
+            )
+    except MissingAuditEvent:  # nothing was written
+        return

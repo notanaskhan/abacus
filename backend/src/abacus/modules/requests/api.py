@@ -18,7 +18,11 @@ from abacus.modules.requests.binders import (
     register_binder_close_rule,
 )
 from abacus.modules.requests.classification import classify, document_kind
-from abacus.modules.requests.comments import register_comment_scope_check
+from abacus.modules.requests.comments import (
+    check_return_comment,
+    insert_return_comment,
+    register_comment_scope_check,
+)
 from abacus.modules.requests.contract import (
     RequestLatestUploadOut,
     RequestOwedByOut,
@@ -32,7 +36,11 @@ from abacus.modules.requests.events import (
     RequestItemCreated,
     RequestItemDocumentKindChanged,
 )
-from abacus.modules.requests.follow_up_reads import FollowUpCandidate, follow_up_candidates
+from abacus.modules.requests.follow_up_reads import (
+    FollowUpCandidate,
+    follow_up_candidates,
+    live_files,
+)
 from abacus.modules.requests.lifecycle import (
     contact_delegations,
     end_contact_delegations,
@@ -170,6 +178,7 @@ __all__ = [
     "VoidedRuleLink",
     "add_request_item",
     "apply_drafted_guidance",
+    "check_return_comment",
     "classify",
     "client_home",
     "document_kind",
@@ -183,10 +192,12 @@ __all__ = [
     "fulfil_by_upload",
     "fulfilled_items",
     "fulfilled_versions",
+    "insert_return_comment",
     "item_ref",
     "item_versions",
     "items_of_version",
     "latest_version_of",
+    "live_files",
     "lock_rule_link",
     "methodology_router",
     "move_after_review",

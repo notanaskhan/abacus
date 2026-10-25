@@ -1401,11 +1401,13 @@ async def follow_up_items(
     ctx: AuthContext,
     binder_ids: Sequence[UUID],
     item_ids: Sequence[UUID],
+    statuses: tuple[str, ...] = ("requested", "returned"),
 ) -> Sequence[tuple[RequestItem, date | None]]:
     """P-06-T14: the open (Requested or Returned), client-visible, never-deleted requests of
     Published binders, among these binders or these ids, that the caller may read (walls and
     independence apply), with their due date (their own, else the binder's). A Draft,
-    Unpublished, Complete or Closed binder's requests are never chased."""
+    Unpublished, Complete or Closed binder's requests are never chased. A screening return
+    (TASK-1252) reads Uploaded or Returned requests instead (`statuses`)."""
     if not binder_ids and not item_ids:
         return []
     due = func.coalesce(RequestItem.due_on, RequestList.default_due_on)
@@ -1419,7 +1421,7 @@ async def follow_up_items(
         .join(RequestList, RequestList.id == RequestItem.request_list_id)
         .where(
             or_(*picked),
-            RequestItem.status.in_(("requested", "returned")),
+            RequestItem.status.in_(statuses),
             RequestItem.client_visible,
             RequestItem.deleted_at.is_(None),
             RequestList.status == "published",
