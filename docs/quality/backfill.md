@@ -18,7 +18,7 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 021 | red | Output controls and the outbound scope checker | SPEC-006 | S0–S3 | T059 | tranche 0 | re-run at S12 |
 | 022 | red | Budget hierarchy, metering, denial-of-wallet | SPEC-007 | S0–S3 | T059 | tranche 0 | re-run at S12 |
 | 019 | red | Review queues and review decisions | SPEC-004 | S0–S3 | T059 | tranche 0 | re-run at S12 |
-| 029 | red | Firm-level reads for engagement roles | SPEC-014 | S0–S3 | T059; T021 (S8) | tranche 0 | `tests/integration/backfill/test_firm_level_reads.py`; extended to the P-06 scope kinds by T021 |
+| 029 | red | Firm-level reads for engagement roles | SPEC-014 | S0–S3 | T059; T021 (S8) | tranche 0 | `tests/integration/backfill/test_firm_level_reads.py`; extended to the P-06 scope kinds by `backfill/test_q03t021_scope_kinds.py` (T021, TASK-1232) |
 | 027 | red | Break-glass support access | SPEC-012 | S0–S3 | T059 | tranche 0 | re-run at S12 |
 | 020 | amber | Evaluation runner, graders and calibration | SPEC-005 | S0–S3 | T059 | tranche 0 | re-run at S12 |
 | 041 | red | People and firm roles | SPEC-024 | S6 | T006 | back-filled | `backfill/test_staff_people.py`; AC-8 `apps/web/src/legacy/spec024states.test.tsx` (TASK-992) |
@@ -31,14 +31,14 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 056 | red | Upload processing, part 3: previews | SPEC-029 | S7 | T014 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140) (AC-12) |
 | 054 | red | Upload processing, part 1: scanning, workflow, extraction | SPEC-029 | S7 | T015 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140); AC-3 follows SPEC-312 (`not_extracted`/`needs_ocr`); ED-018 to ED-021 open |
 | 055 | red | Upload processing, part 2: kinds and mechanical checks | SPEC-029 | S7 | T015 | back-filled | `backfill/test_client_uploads_and_processing.py`; hostile files `tests/security/test_upload_hostile_files.py` (TASK-1140) (AC-5, AC-6, AC-8) |
-| 036 | red | Client connection flow, health, access log, revoke | SPEC-020 | S8 | T022 | scheduled | |
-| 052 | red | Ledger file import, part 1 | SPEC-028 | S8 | T022 | scheduled | |
-| 069 | red | GL detail, part 1: isolated parsing, immutable snapshots | SPEC-034 | S8 | T023 | scheduled | |
-| 048 | red | Roll forward from last year's engagement | SPEC-025 | S8 | T023 | scheduled | |
-| 038 | amber | Classification, automatic retrieval, evidence board | SPEC-022 | S8 | T024 | scheduled | |
-| 068 | amber | Ledger file import, part 3: TB exports | SPEC-028 | S8 | T024 | scheduled | |
-| 070 | amber | GL detail, part 2: workbooks and upload screens | SPEC-034 | S8 | T024 | scheduled | |
-| 071 | amber | GL detail, part 3: GL exports | SPEC-034 | S8 | T024 | scheduled | |
+| 036 | red | Client connection flow, health, access log, revoke | SPEC-020 | S8 | T022 | back-filled | `backfill/test_q03t022_connections_and_ledger_import.py` (TASK-1232); CONN-001 spy in every test; routes follow TASK-036 D1, D3 to D5 |
+| 052 | red | Ledger file import, part 1 | SPEC-028 | S8 | T022 | back-filled | `backfill/test_q03t022_connections_and_ledger_import.py` (TASK-1232); routes follow TASK-052 and TASK-053 (`…/connection/import`, no period) |
+| 069 | red | GL detail, part 1: isolated parsing, immutable snapshots | SPEC-034 | S8 | T023 | back-filled | `backfill/test_gl_detail.py` (TASK-1232); AC-6 same-bytes not reachable over HTTP |
+| 048 | red | Roll forward from last year's engagement | SPEC-025 | S8 | T023 | back-filled | `backfill/test_roll_forward.py` (TASK-1232); AC-9 `legacy/spec025states.test.tsx` |
+| 038 | amber | Classification, automatic retrieval, evidence board | SPEC-022 | S8 | T024 | back-filled | `backfill/test_classification_board.py` (TASK-1232); two defects fixed (reclassify on a changed description; the retrievable share's denominator) |
+| 068 | amber | Ledger file import, part 3: TB exports | SPEC-028 | S8 | T024 | back-filled | `backfill/test_ledger_formats.py` (TASK-1232); five formats round-trip |
+| 070 | amber | GL detail, part 2: workbooks and upload screens | SPEC-034 | S8 | T024 | back-filled | `backfill/test_gl_detail.py`; AC-9 `legacy/q03ledgerstates.test.tsx` (TASK-1232); GL error state fixed |
+| 071 | amber | GL detail, part 3: GL exports | SPEC-034 | S8 | T024 | back-filled | `backfill/test_gl_detail.py` (TASK-1232); five GL formats round-trip |
 | 050 | red | Engagement agent v1, part 1 | SPEC-027 | S9 | T031 | scheduled | |
 | 051 | red | Engagement agent v1, part 2: due dates, reminders, digest | SPEC-027 | S9 | T031 | scheduled | AC-3 to AC-5, AC-8, AC-9 already on `main`: `tests/integration/backfill/test_follow_ups_and_due_dates.py`, `test_due_dates_and_delegation.py` |
 | 058 | red | Upload reviewer, part 1 | SPEC-030 | S9 | T032 | scheduled | |

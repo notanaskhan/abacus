@@ -59,5 +59,6 @@ async def board_summary(ctx: AuthContext, engagement_id: UUID) -> BoardSummary:
         by_tier=dict(tiers),
         unclassified=len(items) - classified,
         retrieved_never_asked=never_asked,
-        retrievable_share=None if classified == 0 else round(retrievable / classified, 4),
+        # SPEC-022 §4: A to C as a share of the whole request list, unclassified included.
+        retrievable_share=None if not items else round(retrievable / len(items), 4),
     )
