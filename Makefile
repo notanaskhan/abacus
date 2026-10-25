@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -235,6 +235,23 @@ entitlement:
 # the configured Temporal. Idempotent; the deploy runs it as an ops task after migrate.
 schedules:
 	cd backend && uv run python -m abacus_tools.schedules ensure
+
+# Q-01-T18 (platform-ops contract 3.4): who holds an environment's deploy lock, and for how long.
+# Read only: it never takes or releases the lock. ENV=staging|production
+deploy-lock:
+	@cd backend && uv run python -m abacus_tools.deploy_lock show --env $(ENV)
+
+# Q-01-T34: open the release PR for a staging-verified SHA. Needs a shared-account read session
+# (AWS_PROFILE) and gh. Merging the PR runs deploy-production.yml.
+release-pr:
+	@test -n "$(SHA)" || (echo "usage: make release-pr SHA=<40-character git sha>"; exit 2)
+	aws s3 cp s3://abacus-shared-artifacts/releases/$(SHA)/release.json deploy/production/release.json
+	cd backend && uv run python -m abacus_tools.release check ../deploy/production/release.json --production
+	git switch -c release/$(SHA)
+	git add deploy/production/release.json
+	git commit -m "release: promote $(SHA) to production"
+	git push -u origin release/$(SHA)
+	gh pr create --title "Release $(SHA)" --body "Promotes $(SHA) (deploy/production/release.json). deploy-production.yml checks the staging-verified, replay and Inspector gates."
 
 # SPEC-010: the route parity check, with real credentials (costs a little). ROUTE=direct|bedrock
 route-parity:

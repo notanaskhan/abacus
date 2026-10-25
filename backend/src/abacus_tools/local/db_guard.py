@@ -6,13 +6,20 @@ Exits 1, naming the setting (never its value), when any database URL the setting
 a host outside the local stack. `make migrate`, `make seed`, `make seed-staging` and
 `make loadtest` run it first. Sanctioned operator flows against staging arrive with Q-01, with
 their own checks (deploy in flight, deploy lock).
+
+Q-01-T18 (platform-ops contract 3.4): with `ABACUS_DEPLOY_LOCK_ENV` set (`staging` or
+`production`), it also exits 1 while that environment's deploy lock is held, naming the holder:
+nothing touches a database a deploy is migrating (the working agreement: no local production
+build or manual migration while a hosted build uses the same database).
 """
 
 from __future__ import annotations
 
+import os
 import sys
 from urllib.parse import urlsplit
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 
 LOCAL_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "db"})
@@ -38,11 +45,25 @@ def violations() -> list[str]:
     return found
 
 
+def lock_holder() -> str | None:
+    """The deploy lock's holder for `ABACUS_DEPLOY_LOCK_ENV`, or None (unset, or free)."""
+    env = os.environ.get("ABACUS_DEPLOY_LOCK_ENV")
+    if not env:
+        return None
+    from abacus_tools.deploy_lock import describe, held  # boto3 only when asked
+
+    found = held(env)
+    return describe(found, system_now()) if found is not None else None
+
+
 def main() -> int:
     found = violations()
     for name in found:
         print(f"{name}: never point a local run at a hosted database", file=sys.stderr)
-    return 1 if found else 0
+    holder = lock_holder()
+    if holder is not None:
+        print(f"deploy lock {holder}: wait for the deploy to finish", file=sys.stderr)
+    return 1 if found or holder is not None else 0
 
 
 if __name__ == "__main__":

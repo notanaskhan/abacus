@@ -1,0 +1,206 @@
+# Production release (Q-01-T34; DEC-54 / P-56; SOC 2 CC8.1). The only way to change production
+# code: a PR that edits deploy/production/release.json (`make release-pr SHA=<sha>`), merged to
+# main. This runs on that merge and on nothing else. Gates first, in code
+# (`abacus_tools.release gate`): staging verified this exact SHA and image digest with a green
+# smoke; the SHA's replay tests passed; Inspector found no fixable critical or high finding, or the
+# release PR records an exception naming each; a changed infra_sha was applied by hand and recorded
+# as `infra_applied_sha` (SPEC-050 AC-6: no workflow holds apply). Then the deploy lock and the
+# staging sequence (migrate as the owner, Schedules, workers, API with circuit breaker and alarm
+# rollback, SPA, runtime-config.json), the smoke against the production canary, and the release
+# record (SSM `/abacus/production/release`, the previous kept for rollback.yml).
+#
+# Cadence (chapter 08 reconciliation #2): at most one promotion a week, Thursday 10:00 CT, plus
+# milestone releases; the PR is the record. The placeholder release.json (git_sha null) deploys
+# nothing.
+#
+# Needs, in the GitHub environment `production`, the same variables as deploy-staging.yml, plus
+# repository variable ECR_REPOSITORY. While any is unset the job skips with a notice.
+# Every action is pinned to a full commit SHA.
+name: deploy-production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - deploy/production/release.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the production deploy role (main ref only)
+      deployments: write
+    env:
+      ENV_NAME: production
+      RUN_REF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ARTIFACTS: abacus-shared-artifacts
+      AWS_DEPLOY_ROLE: ${{ vars.AWS_DEPLOY_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      API_SERVICE: ${{ vars.API_SERVICE }}
+      WORKER_SERVICES: ${{ vars.WORKER_SERVICES }}
+      API_ALARMS: ${{ vars.API_ALARMS }}
+      MIGRATE_TASK_DEFINITION: ${{ vars.MIGRATE_TASK_DEFINITION }}
+      OPS_TASK_DEFINITION: ${{ vars.OPS_TASK_DEFINITION }}
+      TASK_SUBNETS: ${{ vars.TASK_SUBNETS }}
+      TASK_SECURITY_GROUP: ${{ vars.TASK_SECURITY_GROUP }}
+      WEB_BUCKET: ${{ vars.WEB_BUCKET }}
+      PORTAL_BUCKET: ${{ vars.PORTAL_BUCKET }}
+      FIRM_DISTRIBUTION_ID: ${{ vars.FIRM_DISTRIBUTION_ID }}
+      SMOKE_BASE_URL: ${{ vars.SMOKE_BASE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Production configured and a release named?
+        id: gate
+        run: |
+          if [ "$(jq -r '.git_sha // empty' deploy/production/release.json)" = "" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=nothing to release::deploy/production/release.json is the placeholder"
+            exit 0
+          fi
+          missing=""
+          for name in AWS_DEPLOY_ROLE AWS_REGION ECR_REPOSITORY ECS_CLUSTER API_SERVICE WORKER_SERVICES \
+            MIGRATE_TASK_DEFINITION OPS_TASK_DEFINITION TASK_SUBNETS TASK_SECURITY_GROUP WEB_BUCKET \
+            FIRM_DISTRIBUTION_ID SMOKE_BASE_URL; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=deploy skipped::production variables not set:$missing (infra/README.md)"
+          fi
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: deploy-production-${{ github.run_id }}
+
+      - name: Gates
+        id: release
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          cp deploy/production/release.json release.json
+          sha=$(jq -r .git_sha release.json)
+          for record in staging-verified replay inspector; do
+            aws s3 cp "s3://$ARTIFACTS/releases/$sha/$record.json" "$record.json" --only-show-errors || true
+          done
+          current=$(aws ssm get-parameter --name /abacus/production/release --query Parameter.Value \
+            --output text 2>/dev/null | jq -r '.infra_sha // empty' || true)
+          (cd backend && uv run --locked python -m abacus_tools.release gate --release ../release.json \
+            --staging-verified ../staging-verified.json --replay ../replay.json \
+            --inspector ../inspector.json --current-infra-sha "$current")
+          echo "git_sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "digest=$(jq -r .image_digest release.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Take the deploy lock
+        id: lock
+        if: steps.gate.outputs.configured == 'true'
+        working-directory: backend
+        env:
+          GIT_SHA: ${{ steps.release.outputs.git_sha }}
+        run: |
+          uv run --locked python -m abacus_tools.deploy_lock take --env production \
+            --holder deploy-production --run-ref "$RUN_REF" --git-sha "$GIT_SHA" --purpose deploy \
+            --wait-seconds 1800
+          echo "taken=true" >> "$GITHUB_OUTPUT"
+
+      - name: Migrate
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          run_task "$MIGRATE_TASK_DEFINITION" migrate migrate
+
+      - name: Ensure the platform-job Schedules
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          run_task "$OPS_TASK_DEFINITION" ops ops schedules ensure
+
+      - name: Roll the workers
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          for service in $WORKER_SERVICES; do roll_service "$service"; done
+
+      - name: Roll the API
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          roll_service "$API_SERVICE" "$API_ALARMS"
+
+      - name: Publish the SPA
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          GIT_SHA: ${{ steps.release.outputs.git_sha }}
+        run: |
+          source deploy/scripts/release.sh
+          publish_spa "$GIT_SHA"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          node-version: 24
+      - name: Canary smoke
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          SMOKE_RELEASE: ${{ steps.release.outputs.git_sha }}
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm -C apps/web exec playwright install --with-deps chromium
+          pnpm -C apps/web exec playwright test --config e2e/smoke/playwright.config.ts --project=canary-smoke
+
+      - name: Record the release
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          source deploy/scripts/release.sh
+          record_release deploy-production
+      - name: GitHub deployment
+        if: steps.gate.outputs.configured == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          GIT_SHA: ${{ steps.release.outputs.git_sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const deployment = await github.rest.repos.createDeployment({
+              owner, repo, ref: process.env.GIT_SHA, environment: 'production',
+              auto_merge: false, required_contexts: [], description: 'production release',
+            });
+            await github.rest.repos.createDeploymentStatus({
+              owner, repo, deployment_id: deployment.data.id, state: 'success',
+              log_url: process.env.RUN_REF,
+            });
+
+      - name: Release the deploy lock
+        if: always() && steps.lock.outputs.taken == 'true'
+        working-directory: backend
+        run: uv run --locked python -m abacus_tools.deploy_lock release --env production --run-ref "$RUN_REF"

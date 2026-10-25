@@ -1,0 +1,246 @@
+# Staging train deploy (Q-01-T18; SPEC-050 AC-26; DEC-54 / P-56 amending ADR-088). Dispatched
+# once per F-01 merge window for the last green SHA, or by "Ship batch"; a merge never deploys by
+# itself, and there is no schedule. One run at a time (concurrency `deploy-staging`), then the SSM
+# deploy lock, which F-01's db_guard also honours. The sequence:
+#   pre-flight: the SHA's release record (digests only), `alembic heads`, the SHA's replay tests
+#     (ADR-090); a changed infra_sha stops the deploy until the builder has applied it by hand
+#     (SPEC-050 AC-6: no workflow holds apply);
+#   migrate: the `abacus-migrate` task runs `alembic upgrade head` as abacus_owner with
+#     lock_timeout=5s; a failed migration stops here, with the old code still serving against the
+#     expanded schema (expand-only within a release);
+#   the platform-job Schedules are ensured (Q-01-T26), the workers roll, then the API rolls with
+#     the circuit breaker and alarm rollback;
+#   the SPA: hashed assets, then index.html / portal.html, then runtime-config.json, invalidating
+#     only those three paths;
+#   the deploy smoke (Q-01-T32): a red run fails the deploy, and the release is not recorded
+#     staging-verified;
+#   the release record: SSM `/abacus/staging/release` (the previous one kept for rollback),
+#     `releases/<sha>/staging-verified.json` (production's gate), a GitHub deployment and a Sentry
+#     release.
+#
+# Needs, in the GitHub environment `staging` (variables; the deploy role through OIDC):
+# AWS_DEPLOY_ROLE, AWS_REGION, ECS_CLUSTER, API_SERVICE, WORKER_SERVICES (space separated),
+# API_ALARMS (comma separated alarm names), MIGRATE_TASK_DEFINITION, OPS_TASK_DEFINITION,
+# TASK_SUBNETS, TASK_SECURITY_GROUP, WEB_BUCKET, PORTAL_BUCKET, FIRM_DISTRIBUTION_ID,
+# SMOKE_BASE_URL; repository variable ECR_REPOSITORY. Optional secret SENTRY_AUTH_TOKEN (the
+# Sentry release). While any variable is unset the job skips with a notice.
+# Every action is pinned to a full commit SHA.
+name: deploy-staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "The commit to deploy: the merge window's last green SHA on main"
+        required: true
+      infra_applied:
+        description: "The infra change in this release was applied by hand (infra/README.md)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false # a second deploy waits; it never cancels one mid-migration
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write # OIDC token for the staging deploy role
+      deployments: write # the GitHub deployment record
+    env:
+      ENV_NAME: staging
+      GIT_SHA: ${{ inputs.sha }}
+      RUN_REF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ARTIFACTS: abacus-shared-artifacts
+      AWS_DEPLOY_ROLE: ${{ vars.AWS_DEPLOY_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      API_SERVICE: ${{ vars.API_SERVICE }}
+      WORKER_SERVICES: ${{ vars.WORKER_SERVICES }}
+      API_ALARMS: ${{ vars.API_ALARMS }}
+      MIGRATE_TASK_DEFINITION: ${{ vars.MIGRATE_TASK_DEFINITION }}
+      OPS_TASK_DEFINITION: ${{ vars.OPS_TASK_DEFINITION }}
+      TASK_SUBNETS: ${{ vars.TASK_SUBNETS }}
+      TASK_SECURITY_GROUP: ${{ vars.TASK_SECURITY_GROUP }}
+      WEB_BUCKET: ${{ vars.WEB_BUCKET }}
+      PORTAL_BUCKET: ${{ vars.PORTAL_BUCKET }}
+      FIRM_DISTRIBUTION_ID: ${{ vars.FIRM_DISTRIBUTION_ID }}
+      SMOKE_BASE_URL: ${{ vars.SMOKE_BASE_URL }}
+    steps:
+      - name: Staging configured?
+        id: gate
+        run: |
+          missing=""
+          for name in AWS_DEPLOY_ROLE AWS_REGION ECR_REPOSITORY ECS_CLUSTER API_SERVICE WORKER_SERVICES \
+            MIGRATE_TASK_DEFINITION OPS_TASK_DEFINITION TASK_SUBNETS TASK_SECURITY_GROUP WEB_BUCKET \
+            FIRM_DISTRIBUTION_ID SMOKE_BASE_URL; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=deploy skipped::staging variables not set:$missing (infra/README.md)"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: deploy-staging-${{ github.run_id }}
+
+      - name: The release record
+        id: release
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          [[ "$GIT_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::sha must be a full 40-character commit SHA"; exit 1; }
+          aws s3 cp "s3://$ARTIFACTS/releases/$GIT_SHA/release.json" release.json --only-show-errors
+          (cd backend && uv run --locked python -m abacus_tools.release check ../release.json)
+          [ "$(jq -r .git_sha release.json)" = "$GIT_SHA" ] || { echo "::error::release.json names another SHA"; exit 1; }
+          echo "digest=$(jq -r .image_digest release.json)" >> "$GITHUB_OUTPUT"
+          echo "infra_sha=$(jq -r .infra_sha release.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Take the deploy lock
+        id: lock
+        if: steps.gate.outputs.configured == 'true'
+        working-directory: backend
+        run: |
+          uv run --locked python -m abacus_tools.deploy_lock take --env staging --holder deploy-staging \
+            --run-ref "$RUN_REF" --git-sha "$GIT_SHA" --purpose deploy --wait-seconds 1800
+          echo "taken=true" >> "$GITHUB_OUTPUT"
+
+      - name: Pre-flight
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          INFRA_SHA: ${{ steps.release.outputs.infra_sha }}
+          INFRA_APPLIED: ${{ inputs.infra_applied }}
+        run: |
+          (cd backend && uv run --locked alembic heads)
+          current=$(aws ssm get-parameter --name /abacus/staging/release --query Parameter.Value \
+            --output text 2>/dev/null | jq -r '.infra_sha // empty' || true)
+          if [ -n "$current" ] && [ "$current" != "$INFRA_SHA" ] && [ "$INFRA_APPLIED" != "true" ]; then
+            echo "::error title=infra changed::apply infra/envs/staging by hand first (infra/README.md), then dispatch again with infra_applied"
+            exit 1
+          fi
+          # ADR-090: the SHA's workflow replay tests pass before any worker runs it.
+          (cd backend && uv run --locked pytest tests/workflows -q -p no:randomly)
+          jq -n --arg sha "$GIT_SHA" --arg run "$RUN_REF" '{git_sha: $sha, passed: true, run: $run}' > replay.json
+          aws s3 cp replay.json "s3://$ARTIFACTS/releases/$GIT_SHA/replay.json" --only-show-errors
+
+      - name: Migrate
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          # The image's `migrate` entrypoint runs `alembic upgrade head` as abacus_owner with
+          # lock_timeout=5s; a failure stops the deploy before any service changes.
+          run_task "$MIGRATE_TASK_DEFINITION" migrate migrate
+
+      - name: Ensure the platform-job Schedules
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          run_task "$OPS_TASK_DEFINITION" ops ops schedules ensure
+
+      - name: Roll the workers
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          for service in $WORKER_SERVICES; do roll_service "$service"; done
+
+      - name: Roll the API
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          roll_service "$API_SERVICE" "$API_ALARMS"
+
+      - name: Publish the SPA
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          source deploy/scripts/release.sh
+          publish_spa "$GIT_SHA"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          node-version: 24
+      - name: Deploy smoke
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm -C apps/web exec playwright install --with-deps chromium
+          pnpm -C apps/web exec playwright test --config e2e/smoke/playwright.config.ts --project=deploy-smoke
+        env:
+          SMOKE_BASE_URL: ${{ env.SMOKE_BASE_URL }}
+          SMOKE_RELEASE: ${{ inputs.sha }}
+
+      - name: Record the release
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          record_release deploy-staging
+          jq -n --arg sha "$GIT_SHA" --arg digest "$DIGEST" --arg run "$RUN_REF" \
+            --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{git_sha: $sha, image_digest: $digest, smoke: "passed", run: $run, verified_at: $at}' \
+            > staging-verified.json
+          aws s3 cp staging-verified.json "s3://$ARTIFACTS/releases/$GIT_SHA/staging-verified.json" --only-show-errors
+      - name: GitHub deployment
+        if: steps.gate.outputs.configured == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const deployment = await github.rest.repos.createDeployment({
+              owner, repo, ref: process.env.GIT_SHA, environment: 'staging',
+              auto_merge: false, required_contexts: [], description: 'staging train deploy',
+            });
+            await github.rest.repos.createDeploymentStatus({
+              owner, repo, deployment_id: deployment.data.id, state: 'success',
+              log_url: process.env.RUN_REF,
+            });
+      - name: Sentry release
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_ORG" ]; then
+            echo "::notice title=sentry release skipped::SENTRY_AUTH_TOKEN or SENTRY_ORG not set"
+            exit 0
+          fi
+          curl -sf -X POST "https://sentry.io/api/0/organizations/$SENTRY_ORG/releases/" \
+            -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" -H "Content-Type: application/json" \
+            -d "{\"version\": \"$GIT_SHA\", \"projects\": [\"abacus-backend\", \"abacus-web\"]}" > /dev/null
+
+      - name: Release the deploy lock
+        if: always() && steps.lock.outputs.taken == 'true'
+        working-directory: backend
+        run: uv run --locked python -m abacus_tools.deploy_lock release --env staging --run-ref "$RUN_REF"

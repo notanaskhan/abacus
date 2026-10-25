@@ -1,0 +1,152 @@
+# Rollback (Q-01-T34; RB-01). Re-points an environment to its previous release: the previous image
+# digest for the workers and the API (with the same circuit breaker and alarm rollback) and the
+# previous SPA bundle (its hashed assets were never deleted), with runtime-config.json naming the
+# previous release. Never downgrades: there is no migrate step, migrations are expand-only within a
+# release (P-38), and a Temporal change rolls forward with a new `workflow.patched` branch.
+# Within 15 minutes (the job's timeout) with the canary green after (Q-01-T34 acceptance).
+#
+# The previous release is SSM `/abacus/<env>/release-previous`, written by each deploy. After a
+# rollback the two records swap, so a second dispatch returns to the release rolled back from.
+#
+# Needs the same environment variables as the deploy workflows. Every action is pinned to a full
+# commit SHA.
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment to roll back"
+        type: choice
+        options: [staging, production]
+        default: staging
+      reason:
+        description: "Why (the incident or ticket; no client data)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ENV_NAME: ${{ inputs.environment }}
+      RUN_REF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ARTIFACTS: abacus-shared-artifacts
+      AWS_DEPLOY_ROLE: ${{ vars.AWS_DEPLOY_ROLE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      API_SERVICE: ${{ vars.API_SERVICE }}
+      WORKER_SERVICES: ${{ vars.WORKER_SERVICES }}
+      API_ALARMS: ${{ vars.API_ALARMS }}
+      WEB_BUCKET: ${{ vars.WEB_BUCKET }}
+      PORTAL_BUCKET: ${{ vars.PORTAL_BUCKET }}
+      FIRM_DISTRIBUTION_ID: ${{ vars.FIRM_DISTRIBUTION_ID }}
+    steps:
+      - name: Environment configured?
+        id: gate
+        run: |
+          missing=""
+          for name in AWS_DEPLOY_ROLE AWS_REGION ECR_REPOSITORY ECS_CLUSTER API_SERVICE WORKER_SERVICES \
+            WEB_BUCKET FIRM_DISTRIBUTION_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=rollback skipped::variables not set:$missing (infra/README.md)"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: rollback-${{ github.run_id }}
+
+      - name: The previous release
+        id: previous
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          aws ssm get-parameter --name "/abacus/$ENV_NAME/release-previous" --query Parameter.Value \
+            --output text > previous.json
+          aws ssm get-parameter --name "/abacus/$ENV_NAME/release" --query Parameter.Value \
+            --output text > current.json
+          jq '{git_sha, image_digest, spa_manifest_sha256, alembic_head, openapi_sha256, infra_sha}' \
+            previous.json > release.json
+          (cd backend && uv run --locked python -m abacus_tools.release check ../release.json)
+          echo "git_sha=$(jq -r .git_sha release.json)" >> "$GITHUB_OUTPUT"
+          echo "digest=$(jq -r .image_digest release.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Take the deploy lock
+        id: lock
+        if: steps.gate.outputs.configured == 'true'
+        working-directory: backend
+        env:
+          GIT_SHA: ${{ steps.previous.outputs.git_sha }}
+        run: |
+          uv run --locked python -m abacus_tools.deploy_lock take --env "$ENV_NAME" --holder rollback \
+            --run-ref "$RUN_REF" --git-sha "$GIT_SHA" --purpose deploy --wait-seconds 300
+          echo "taken=true" >> "$GITHUB_OUTPUT"
+
+      - name: Re-point the workers
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.previous.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          for service in $WORKER_SERVICES; do roll_service "$service"; done
+
+      - name: Re-point the API
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          DIGEST: ${{ steps.previous.outputs.digest }}
+        run: |
+          source deploy/scripts/release.sh
+          roll_service "$API_SERVICE" "$API_ALARMS"
+
+      - name: Re-point the SPA
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          GIT_SHA: ${{ steps.previous.outputs.git_sha }}
+        run: |
+          source deploy/scripts/release.sh
+          publish_spa "$GIT_SHA"
+
+      - name: Swap the release records
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          REASON: ${{ inputs.reason }}
+        run: |
+          jq -c --arg run "$RUN_REF" --arg reason "$REASON" '. + {rolled_back_by: $run, reason: $reason}' \
+            previous.json > now-current.json
+          aws ssm put-parameter --name "/abacus/$ENV_NAME/release" --type String --overwrite \
+            --value "file://now-current.json" > /dev/null
+          aws ssm put-parameter --name "/abacus/$ENV_NAME/release-previous" --type String --overwrite \
+            --value "file://current.json" > /dev/null
+          echo "### Rolled $ENV_NAME back to \`$(jq -r .git_sha release.json | cut -c1-7)\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Release the deploy lock
+        if: always() && steps.lock.outputs.taken == 'true'
+        working-directory: backend
+        run: uv run --locked python -m abacus_tools.deploy_lock release --env "$ENV_NAME" --run-ref "$RUN_REF"
