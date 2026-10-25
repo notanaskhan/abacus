@@ -172,6 +172,7 @@ jobs:
         if: steps.gate.outputs.configured == 'true'
         env:
           SMOKE_RELEASE: ${{ steps.release.outputs.git_sha }}
+          SMOKE_SIGN_IN: ${{ vars.SMOKE_SIGN_IN }} # "on" once the smoke user's hosted sign-in exists
         run: |
           corepack enable
           pnpm install --frozen-lockfile

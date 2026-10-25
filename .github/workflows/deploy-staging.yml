@@ -199,6 +199,7 @@ jobs:
         env:
           SMOKE_BASE_URL: ${{ env.SMOKE_BASE_URL }}
           SMOKE_RELEASE: ${{ inputs.sha }}
+          SMOKE_SIGN_IN: ${{ vars.SMOKE_SIGN_IN }} # "on" once the smoke user's hosted sign-in exists
 
       - name: Record the release
         if: steps.gate.outputs.configured == 'true'

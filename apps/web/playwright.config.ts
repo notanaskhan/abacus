@@ -52,7 +52,8 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["**/visual/**", ...JOURNEY_FILES],
+      // The deploy smoke (Q-01-T32) runs only against deployed hosts, with its own config.
+      testIgnore: ["**/visual/**", "**/smoke/**", ...JOURNEY_FILES],
       use: { ...devices["Desktop Chrome"] },
     },
     {
