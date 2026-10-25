@@ -410,7 +410,7 @@ async def ai_client_data_opted_in(tenant: TenantContext) -> bool:
     """For the gateway (SPEC-036 §4.2 `firm`): opted in against today's material terms, with
     the opt-in flag on (off is fail-closed: not opted in)."""
     terms = _terms()
-    if terms is None or not await flag_enabled(tenant, AGENTS_CLIENT_DATA_OPTIN):
+    if terms is None or not await flag_enabled(tenant, AGENTS_CLIENT_DATA_OPTIN, fresh=True):
         return False
     async with tenant_session(tenant) as session:
         found = await ai_client_data(session)
@@ -448,8 +448,9 @@ async def read_ai_client_data(ctx: AuthContext) -> AiClientDataView:
 async def set_ai_client_data_setting(ctx: AuthContext, on: bool) -> AiClientDataView:
     """AC-3: a firm administrator with fresh MFA. On records who, when and the terms' material
     fingerprint; off clears it, and the firm's cached boundary facts go in this request (Q5).
-    Flag off: 404, like the read."""
-    await _require_optin_flag(ctx.tenant)
+    Flag off: opting in answers 404, like the read; opting out is always allowed (DEC-336)."""
+    if on:
+        await _require_optin_flag(ctx.tenant)
     await authorise(ctx, "firm.ai_client_data", Resource.firm(ctx.tenant_id))
     terms = _terms()
     if on and terms is None:

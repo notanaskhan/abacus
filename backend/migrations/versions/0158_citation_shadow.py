@@ -4,8 +4,12 @@
   (`agent_runs.shadow`, 0056), or succeeds one that was (a move keeps it). Every firm-facing
   citation reader leaves these out, as the agents module's readers leave out the runs' outputs.
   The app's insert grant gains the column; the writer sets it from the run, never the caller.
-- Existing rows are back-filled from `agent_runs` (the update guard stands aside for this
-  statement only), then successors from their predecessors.
+- Existing rows are back-filled from `agent_runs`, then successors from their predecessors.
+  The owner is held to row-level security, so the two tables read are unforced for the
+  statements (as 0068 and 0082 do) and the update guard stands aside for them only.
+- `citations_shadow_follows` (BEFORE INSERT, security invoker): a row whose run started in
+  shadow, or whose predecessor is shadow, is stored shadow whatever the writer passed, so the
+  database keeps the flag right even if a writer forgets it (security review, TASK-1210).
 
 Revision ID: 0158
 Revises: 0157
@@ -33,6 +37,8 @@ _INSERT_V1 = (
 
 def upgrade() -> None:
     op.execute("ALTER TABLE citations ADD COLUMN shadow boolean NOT NULL DEFAULT false")
+    for table in ("citations", "agent_runs"):
+        op.execute(f"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY")
     op.execute("ALTER TABLE citations DISABLE TRIGGER citations_immutable_update")
     op.execute(
         """
@@ -52,9 +58,36 @@ def upgrade() -> None:
         """
     )
     op.execute("ALTER TABLE citations ENABLE TRIGGER citations_immutable_update")
+    for table in ("citations", "agent_runs"):
+        op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
+    op.execute(
+        """
+        CREATE FUNCTION citations_shadow_follows() RETURNS trigger
+        LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            IF NEW.shadow THEN
+                RETURN NEW;
+            END IF;
+            NEW.shadow := EXISTS (
+                SELECT 1 FROM public.agent_runs r
+                 WHERE r.id = NEW.created_by_run_id AND r.tenant_id = NEW.tenant_id AND r.shadow
+            ) OR EXISTS (
+                SELECT 1 FROM public.citations p
+                 WHERE p.id = NEW.supersedes_id AND p.tenant_id = NEW.tenant_id AND p.shadow
+            );
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER citations_shadow_follows BEFORE INSERT ON citations "
+        "FOR EACH ROW EXECUTE FUNCTION citations_shadow_follows()"
+    )
     insert_columns(op, "citations", (*_INSERT_V1, "shadow"))
 
 
 def downgrade() -> None:
     insert_columns(op, "citations", _INSERT_V1)
+    op.execute("DROP TRIGGER citations_shadow_follows ON citations")
+    op.execute("DROP FUNCTION citations_shadow_follows()")
     op.execute("ALTER TABLE citations DROP COLUMN shadow")

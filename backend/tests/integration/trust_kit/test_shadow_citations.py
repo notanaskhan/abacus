@@ -19,6 +19,7 @@ from abacus.modules.evidence.api import (
     process_upload,
     record_citations,
 )
+from abacus.modules.evidence.audit_targets import audit_owners
 from abacus.modules.evidence.citations.display import (
     CitationFilters,
     citation_display,
@@ -171,3 +172,60 @@ async def test_only_an_agent_run_writes_a_shadow_citation(seed: Seeder) -> None:
                 ],
                 shadow=True,
             )
+
+
+async def test_ac5_used_in_never_counts_a_shadow_runs_anchor(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    version = await _rendered(firm)
+    await scanned(seed, firm, [1, 2], version=version)
+    await _cite(firm, version, uuid.uuid4(), shadow=True)
+    shown = await _cite(firm, version, uuid.uuid4(), shadow=False)
+    assert (await citation_display(firm.person(), shown.id)).used_in == 1
+
+
+async def test_ac5_its_audit_events_name_no_owner(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    version = await _rendered(firm)
+    hidden = await _cite(firm, version, uuid.uuid4(), shadow=True)
+    shown = await _cite(firm, version, uuid.uuid4(), shadow=False)
+    owners = await audit_owners(firm.system, "citation", [hidden.id, shown.id])
+    assert owners == {shown.id: firm.engagement_id}
+
+
+async def test_ac5_the_database_marks_a_shadow_runs_citation_the_writer_forgot(
+    seed: Seeder,
+) -> None:
+    firm = await make_firm(seed)
+    version = await _rendered(firm)
+    run = await seed.id(
+        "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, "
+        "initiator_user_id, task_scope, status, shadow) VALUES ($1, "
+        "'evidence.upload_reviewer', 1, $2, $3, ARRAY['evidence.read'], 'running', true) "
+        "RETURNING id",
+        firm.tenant_id,
+        firm.engagement_id,
+        firm.user_id,
+    )
+    agent = await agent_context_for_run(
+        tenant_id=firm.tenant_id,
+        run_id=run,
+        agent_id="evidence.upload_reviewer",
+        engagement_id=firm.engagement_id,
+        task_scope=frozenset({"evidence.read"}),
+        initiator_user_id=firm.user_id,
+    )
+    async with uow(agent.tenant) as tx:
+        [cited] = await record_citations(
+            tx,
+            actor=agent,
+            anchor=CitationAnchor("upload_review", uuid.uuid4(), "F1", None, firm.engagement_id),
+            claims=[
+                CitationClaim(
+                    "document_text",
+                    {"evidence_version_id": str(version), "page": 2},
+                    value="16,500,000.00",
+                )
+            ],
+            shadow=False,
+        )
+    assert await seed.value("SELECT shadow FROM citations WHERE id = $1", cited.id) is True

@@ -289,7 +289,11 @@ async def _used_in(
             Citation.match_id,
             func.count(distinct(tuple_(Citation.cited_from_type, Citation.cited_from_id))),
         )
-        .where(Citation.match_id.in_(list(match_ids)), visible(ctx, READ, _ENGAGEMENT))
+        .where(
+            Citation.match_id.in_(list(match_ids)),
+            visible(ctx, READ, _ENGAGEMENT),
+            shown_citation(),  # a shadow run's anchor is never counted (SPEC-036 AC-5)
+        )
         .group_by(Citation.match_id)
     )
     return {str(m): int(n) for m, n in rows.all()}
