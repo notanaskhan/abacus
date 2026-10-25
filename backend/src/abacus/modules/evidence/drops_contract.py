@@ -28,7 +28,7 @@ from abacus.kernel._flags import PORTAL_DROP_SORT
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainTooLarge, DomainUnsupported, NotFound
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.evidence.drops import drop_file
+from abacus.modules.evidence.drops import check_drop, drop_file
 from abacus.modules.evidence.uploads import (
     MAX_UPLOAD_BYTES,
     UploadTooLarge,
@@ -85,6 +85,7 @@ async def drop_file_route(
     `type_not_allowed`, the one upload policy's refusals in this contract's words (DEC-323)."""
     if not await flag_enabled(ctx.tenant, PORTAL_DROP_SORT):
         raise NotFound(PORTAL_DROP_SORT.name)
+    await check_drop(ctx, binder_id)  # authorised before a byte of the file is read
     try:
         data = bytearray()
         async for chunk in request.stream():

@@ -5,7 +5,8 @@ c, g; DEC-323).
 - `channel` (`firm` by default, or `portal_drop`);
 - `drop_batch_id`, `drop_binder_id` and `drop_key` (the client's `X-Drop-Batch`, the binder it
   was dropped on and its per-file `Idempotency-Key`), all three set exactly for a portal drop,
-  one file per (batch, key) (`inbox_files_one_drop`);
+  one file per (dropper, batch, key) (`inbox_files_one_drop`: one person's key never blocks or
+  answers for another's);
 - `duplicate_of_version_id`: a drop with the same bytes as a version of the engagement is
   accepted and flagged for a person (DEC-58 g), never refused;
 - `sort_outcome` (`rule_linked`, `waiting`; `assigned` and `discarded` later), which the app may
@@ -77,7 +78,7 @@ def upgrade() -> None:
     )
     op.execute(
         "CREATE UNIQUE INDEX inbox_files_one_drop ON inbox_files "
-        "(tenant_id, drop_batch_id, drop_key) WHERE channel = 'portal_drop'"
+        "(tenant_id, drop_batch_id, uploaded_by, drop_key) WHERE channel = 'portal_drop'"
     )
     op.execute("CREATE INDEX inbox_files_by_batch ON inbox_files (tenant_id, drop_batch_id)")
     op.execute("DROP INDEX inbox_files_one_waiting")

@@ -1327,14 +1327,17 @@ async def insert_scan_run(session: AsyncSession, **values: object) -> bool:
 # --- portal drops (R-01-T09) ---------------------------------------------------------------------
 
 
-async def drop_by_key(session: AsyncSession, batch_id: UUID, key: str) -> InboxFile | None:
-    """The drop a (batch, idempotency key) already made, if any."""
+async def drop_by_key(
+    session: AsyncSession, batch_id: UUID, key: str, dropped_by: UUID
+) -> InboxFile | None:
+    """The drop this person's (batch, idempotency key) already made, if any."""
     return (
         await session.execute(
             select(InboxFile).where(
                 InboxFile.channel == "portal_drop",
                 InboxFile.drop_batch_id == batch_id,
                 InboxFile.drop_key == key,
+                InboxFile.uploaded_by == dropped_by,
             )
         )
     ).scalar_one_or_none()

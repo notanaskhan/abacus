@@ -73,6 +73,17 @@ class Seeder:
         finally:
             await conn.close()
 
+    async def run_untriggered(self, sql: str, *args: object) -> None:
+        """A row whose prerequisites no test builds (a delegation without its contact and grant,
+        R-01-T09): one transaction with triggers and foreign-key checks off."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            async with conn.transaction():
+                await conn.execute("SET LOCAL session_replication_role = replica")
+                await conn.execute(sql, *args)
+        finally:
+            await conn.close()
+
     async def value(self, sql: str, *args: object) -> object:
         conn = await asyncpg.connect(self._dsn)
         try:

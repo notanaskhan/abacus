@@ -82,7 +82,9 @@ class UploadProcessing:
             except ActivityError:
                 workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
         # v5 (P-03-T13): PII detection over the word layer. A scan that can't run never undoes
-        # the steps before it; until a scan lists a page, nothing reads it (fail closed).
+        # the steps before it. Until a scan lists a page, the word-layer readers (quotes,
+        # search, relink) and a portal drop's matcher never read it; other agent material
+        # still comes from the extraction until P-03-T15 masks it (DEC-322).
         if workflow.patched("pii_scan"):
             try:
                 await workflow.execute_activity(

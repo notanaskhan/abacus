@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import date
 from typing import Final, cast
@@ -28,7 +28,7 @@ from types_boto3_s3 import S3Client
 
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.storage import s3_client
-from abacus.modules.evidence import storage
+from abacus.modules.evidence import drops, storage
 from abacus.modules.evidence.api import UPLOAD_INBOX, UploadInput
 from abacus.modules.evidence.api import process_upload as extract_upload
 from abacus.modules.evidence.drops import sort_drop
@@ -256,7 +256,8 @@ async def test_story_2_3_a_duplicate_is_accepted_flagged_and_waits(firm: Firm) -
     )
     assert flagged is not None
     body = (await firm.poll(batch)).json()
-    assert [f["outcome"] for f in body["files"]] == ["duplicate_flagged"]
+    # DEC-323 (security review): the client reads `waiting`; only the firm sees the flag.
+    assert [f["outcome"] for f in body["files"]] == ["waiting"]
 
 
 async def test_the_poll_is_the_droppers_own_and_a_replay_is_the_same_file(firm: Firm) -> None:
@@ -288,3 +289,151 @@ async def test_the_drop_is_off_with_its_flag(net: Net, seed: Seeder) -> None:
         },
     )
     assert response.status_code == 404
+
+
+# --- Security review (DEC-323) -------------------------------------------------------------------
+
+ACTIVE: Final = STATEMENT.replace(
+    b"%%EOF", b"99 0 obj << /S /JavaScript /JS (app.alert\\(1\\);) >> endobj\n%%EOF"
+)
+
+
+async def _forced(firm: Firm, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The sort's first read found the statement request decisive; what happens next is the
+    link's own re-check (a change between the read and the link)."""
+
+    async def decisive(_row: object, _tenant: object) -> uuid.UUID:
+        return firm.statement_item
+
+    monkeypatch.setattr(drops, "_decisive", decisive)
+
+
+async def _rule_links(firm: Firm) -> int:
+    found = await firm.seed.value(
+        "SELECT count(*) FROM fulfilments WHERE tenant_id = $1 AND created_by_kind = 'rule'",
+        firm.tenant_id,
+    )
+    return found if isinstance(found, int) else -1
+
+
+@pytest.mark.parametrize("change", ["delegated", "hidden", "unpublished", "revoked"])
+async def test_sec1_the_link_checks_the_droppers_scope_again(
+    firm: Firm, monkeypatch: pytest.MonkeyPatch, change: str
+) -> None:
+    response = await firm.drop(STATEMENT, "estimated-payment-q4.pdf", batch=uuid.uuid4())
+    assert response.status_code == 202, response.text
+    file_id = uuid.UUID(response.json()["file_id"])
+    if change == "delegated":
+        await firm.seed.run_untriggered(
+            "INSERT INTO request_delegations (tenant_id, request_item_id, contact_id, grant_id, "
+            "granted_by) VALUES ($1, $2, $3, $4, $5)",
+            firm.tenant_id,
+            firm.statement_item,
+            uuid.uuid4(),
+            uuid.uuid4(),
+            firm.manager.user_id,
+        )
+    elif change == "hidden":
+        await firm.seed.run(
+            "UPDATE request_items SET client_visible = false WHERE id = $1", firm.statement_item
+        )
+    elif change == "unpublished":
+        await firm.seed.run(
+            "UPDATE request_lists SET status = 'draft' WHERE id = $1", firm.binder_id
+        )
+    else:
+        await firm.seed.revoke(firm.claire)
+    await _forced(firm, monkeypatch)
+    assert await firm.sorted(file_id) == "waiting"
+    assert await _rule_links(firm) == 0
+
+
+async def test_sec2_the_drop_authorises_before_it_reads_the_file(firm: Firm) -> None:
+    read: list[int] = []
+
+    async def body() -> AsyncIterator[bytes]:
+        read.append(1)
+        yield STATEMENT
+
+    response = await firm.net.http.post(
+        f"/v1/portal/binders/{uuid.uuid4()}/drops",
+        params={"filename": "a.pdf"},
+        content=body(),
+        headers={
+            **firm.net.headers(firm.claire),
+            "X-Drop-Batch": str(uuid.uuid4()),
+            "Idempotency-Key": "k",
+        },
+    )
+    assert response.status_code == 404
+    assert read == []  # refused before a byte of the file was read
+
+
+async def test_sec5_a_duplicate_reads_waiting_to_the_client(firm: Firm) -> None:
+    first = await firm.drop(STATEMENT, "estimated-payment-q4.pdf", batch=uuid.uuid4())
+    assert await firm.sorted(uuid.UUID(first.json()["file_id"])) == "rule_linked"
+    batch = uuid.uuid4()
+    again = await firm.drop(STATEMENT, "estimated-payment-q4 (1).pdf", batch=batch)
+    file_id = uuid.UUID(again.json()["file_id"])
+    assert await firm.sorted(file_id) == "waiting"  # the same bytes are on that request
+    assert (
+        await firm.seed.value(
+            "SELECT duplicate_of_version_id FROM inbox_files WHERE id = $1", file_id
+        )
+        is not None
+    )  # the firm still sees the duplicate
+    body = (await firm.poll(batch)).json()
+    assert [f["outcome"] for f in body["files"]] == ["waiting"]  # no oracle for the client
+
+
+async def test_sec6_the_poll_authorises_every_binder_and_keys_are_per_person(
+    firm: Firm,
+) -> None:
+    second = cast(
+        uuid.UUID,
+        await firm.seed.value(
+            "INSERT INTO request_lists (tenant_id, engagement_id, status, part) "
+            "VALUES ($1, $2, 'published', 2) RETURNING id",
+            firm.tenant_id,
+            firm.site.engagement_id,
+        ),
+    )
+    batch = uuid.uuid4()
+    one = await firm.drop(letter_pdf(), "a.pdf", batch=batch)
+    two = await firm.drop(letter_pdf(), "b.pdf", batch=batch, binder=second)
+    assert one.status_code == two.status_code == 202, two.text
+    assert (await firm.poll(batch)).status_code == 200
+    await firm.seed.run("UPDATE request_lists SET status = 'draft' WHERE id = $1", second)
+    assert (await firm.poll(batch)).status_code == 404
+    # Another person's (batch, key) never blocks or answers for mine.
+    other = await firm.seed.client_contact(firm.site, "client_admin")
+    key = str(uuid.uuid4())
+    mine = await firm.drop(letter_pdf(), "c.pdf", batch=batch, key=key)
+    theirs = await firm.drop(letter_pdf(), "c.pdf", batch=batch, key=key, who=other)
+    assert mine.status_code == theirs.status_code == 202, theirs.text
+    assert mine.json()["file_id"] != theirs.json()["file_id"]
+
+
+async def test_sec7_an_active_content_drop_is_never_rule_linked(
+    firm: Firm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    response = await firm.drop(ACTIVE, "estimated-payment-q4.pdf", batch=uuid.uuid4())
+    assert response.status_code == 202, response.text
+    await _forced(firm, monkeypatch)
+    assert await firm.sorted(uuid.UUID(response.json()["file_id"])) == "waiting"
+    assert await _rule_links(firm) == 0
+
+
+async def test_sec7_a_staff_drop_is_recorded_on_the_clients_behalf(firm: Firm) -> None:
+    response = await firm.drop(
+        STATEMENT, "estimated-payment-q4.pdf", batch=uuid.uuid4(), who=firm.manager
+    )
+    assert response.status_code == 202, response.text
+    assert await firm.sorted(uuid.UUID(response.json()["file_id"])) == "rule_linked"
+    sources = await firm.seed.rows(
+        "SELECT v.source FROM fulfilments f JOIN evidence_versions v "
+        "ON v.tenant_id = f.tenant_id AND v.id = f.evidence_version_id "
+        "WHERE f.request_item_id = $1",
+        firm.statement_item,
+    )
+    assert [s["source"] for s in sources] == ["firm_upload_for_client"]

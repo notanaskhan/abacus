@@ -18,6 +18,7 @@ import uuid
 import asyncpg
 import pytest
 
+from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.evidence.api import (
@@ -37,8 +38,9 @@ from abacus.modules.evidence.citations.moved import (
     on_version_withdrawn,
     relink,
 )
+from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.words import words_upload
-from abacus.modules.identity.api import Forbidden, agent_context_for_run
+from abacus.modules.identity.api import RULES, Forbidden, agent_context_for_run
 from abacus.modules.identity.authz import recording_checks
 from abacus_tools.synthetic.documents import positioned_pdf
 
@@ -61,7 +63,9 @@ V2 = positioned_pdf(
 GONE = positioned_pdf([[(72.0, 700.0, "Nothing here any more")]])
 
 
-async def _version(firm: Firm, content: bytes, item: uuid.UUID | None = None) -> uuid.UUID:
+async def _version(
+    firm: Firm, content: bytes, item: uuid.UUID | None = None, *, scan: bool = True
+) -> uuid.UUID:
     stored = await stage_content(firm.tenant_id, content)
     async with uow(firm.system) as tx:
         ref = await add_version(
@@ -73,6 +77,8 @@ async def _version(firm: Firm, content: bytes, item: uuid.UUID | None = None) ->
             provenance=Provenance(source="upload", method="uploaded"),
         )
     await words_upload(as_version(firm, ref.id))
+    if scan:  # P-03-T13: a page no scan lists is never searched (fail closed)
+        await pii_scan_upload(as_version(firm, ref.id))
     return ref.id
 
 
@@ -306,4 +312,55 @@ async def test_ac6_3_a_relink_outside_a_request_or_by_an_agent_is_refused(seed: 
             cited[0],
             cited[1],
         )
+    assert [k for k, _, _ in await _events(firm, cited[0])] == ["moved"]
+
+
+# --- Security review (DEC-321) -------------------------------------------------------------------
+
+
+async def test_sec4_a_successor_page_never_scanned_is_never_searched(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    v1 = await _version(firm, V1)
+    cited = await _cited(firm, v1)
+    v2 = await _version(firm, V2, await _item(firm, v1), scan=False)
+    await on_version_created(_created(firm, v2))
+    with recording_checks(), pytest.raises(RelinkUnverified):
+        await relink(firm.person(), cited[0])
+
+
+async def test_sec4_a_walled_person_is_refused_at_the_wall(seed: Seeder) -> None:
+    """The API answers a wall's refusal as 404 (DEC-43); the service raises it at `wall`."""
+    firm = await make_firm(seed)
+    cited, _ = await _moved(firm)
+    client_id = await seed.id(
+        "SELECT client_id FROM engagements WHERE id = $1", firm.engagement_id
+    )
+    await seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, $3, $2)",
+        firm.tenant_id,
+        firm.user_id,
+        client_id,
+    )
+    with recording_checks(), pytest.raises(Forbidden) as refused:
+        await relink(firm.person(), cited[0])
+    assert refused.value.layer == "wall"
+
+
+def test_sec4_relink_needs_independence_on_the_engagement() -> None:
+    """The matrix row `authorise` applies on the citing host (independence is checked there for
+    attest clients, G2 v2; tests/unit/identity/test_independence.py lists the action)."""
+    rule = RULES["citation.relink"]
+    assert rule.independence
+    assert rule.decisions.get("agent") == "deny" and rule.decisions.get("system") == "deny"
+
+
+async def test_sec4_an_archived_engagement_is_never_relinked(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    cited, _ = await _moved(firm)
+    await seed.run_untriggered(
+        "UPDATE engagements SET status = 'archived' WHERE id = $1", firm.engagement_id
+    )
+    with recording_checks(), pytest.raises((Forbidden, DomainConflict)):
+        await relink(firm.person(), cited[0])
     assert [k for k, _, _ in await _events(firm, cited[0])] == ["moved"]

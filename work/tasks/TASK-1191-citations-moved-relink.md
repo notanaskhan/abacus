@@ -25,6 +25,7 @@ updated: 2026-10-25
 ## Progress log
 - 2026-10-25: built as planned; 7 new integration tests and the whole `trust_kit` package (60) pass; C4 contract and evidence unit tests pass. `trust_kit/support.Seeder.run_untriggered` seeds a withdrawal row for a version that is not a detached-key upload (the route's own guard is tested by P-06-T19's suites). **Deferred:** P-03-T18's independent suite; methodology and workpaper owners calling `mark_sources_superseded` (K-01, A-04).
 - 2026-10-25 (close): full `tests/unit tests/contracts tests/security` 28,473 passed (2 C3/C5 stub tests updated to mark the served routes live, the repo's `LIVE` pattern); integration, workflow and hostile-file run 996 passed + `test_schema_check_db` 192 passed after pinning `inbox_files.sort_outcome`; `make check-fast` green.
+- 2026-10-25 (security review): eight findings fixed in one commit, each with a test written first (DEC-321 to DEC-323 updated). Targeted suites 19,363 passed; `make check-fast` green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

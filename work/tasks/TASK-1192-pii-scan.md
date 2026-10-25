@@ -25,6 +25,7 @@ updated: 2026-10-25
 ## Progress log
 - 2026-10-25: built as planned. 12 unit, 5 integration and 16 replay tests pass. **Deferred:** the trust-layer backfill also scanning old uploads (it runs only `upload.words`; a patched backfill step belongs with P-03-T15's masked-preview backfill); masked renditions (T15); reveal (T16); P-03-T21's independent suite. Inbox files are scanned too (the step runs for both kinds).
 - 2026-10-25 (close): full `tests/unit tests/contracts tests/security` 28,473 passed (2 C3/C5 stub tests updated to mark the served routes live, the repo's `LIVE` pattern); integration, workflow and hostile-file run 996 passed + `test_schema_check_db` 192 passed after pinning `inbox_files.sort_outcome`; `make check-fast` green.
+- 2026-10-25 (security review): eight findings fixed in one commit, each with a test written first (DEC-321 to DEC-323 updated). Targeted suites 19,363 passed; `make check-fast` green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

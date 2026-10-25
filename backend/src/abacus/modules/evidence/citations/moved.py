@@ -19,18 +19,21 @@ A citation is never updated: its state is computed from `citation_events` (`disp
 - Idempotent on the event: a redelivery, or two relays at once, write each event once
   (`citation_events_once_per_cause`, 0152) and emit only for rows they wrote. A citation already
   relinked is retired and never moves again (its successor row does).
-- **Relink** (`relink`, `POST /v1/citations/{id}/relink`): a person, in a request they are making
+- **Relink** (`relink`, `POST /v1/citations/{id}/relink`): `citation.relink` authorised on the
+  citing host (its engagement and work item), by a person in a request they are making
   themself (`serving_request()`; the matrix denies agents and the system; a DB CHECK refuses a
   `relinked` event not by a person). The old quote is read from the old, immutable layer (the run
-  hashing to `quote_sha256`), found on the newest live successor, and verified there by the kind's
-  verifier as the person; a new verified row (`supersedes_id`, the same anchor and `n`) and a
-  `relinked` event on the old row are written with a `citation.relinked` audit event. Not moved:
-  409 `not_moved`; the text gone: 422 `relink_unverified` and nothing is written.
+  hashing to `quote_sha256`), found on the newest live successor's PII-scanned pages only, and
+  verified there by the kind's verifier as the person; a new verified row (`supersedes_id`, the
+  same anchor and `n`) and a `relinked` event on the old row are written with a
+  `citation.relinked` audit event. Not moved: 409 `not_moved`; the text gone: 422
+  `relink_unverified` and nothing is written.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 from typing import Final
 from uuid import UUID
 
@@ -48,6 +51,7 @@ from abacus.modules.evidence.citations.registry import Anchor, CitationClaim
 from abacus.modules.evidence.citations.service import verify_claim
 from abacus.modules.evidence.events import CitationBroken, CitationMoved
 from abacus.modules.evidence.models import Citation, CitationEvent, EvidenceVersion
+from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
     citations_on,
     earlier_versions,
@@ -249,9 +253,11 @@ async def _claim(
     pages = await pages_of(
         session, evidence_version_id=successor.id, extractor_version=WORDS_VERSION
     )
+    # A successor page no PII scan covers is never searched (fail closed, `projection`).
+    projection = await projection_of(session, evidence_version_id=successor.id)
     cited_page = row.locator.get("page")
     for page in sorted(pages, key=lambda p: (p.page_no != cited_page, p.page_no)):
-        if not page.has_text_layer:
+        if not page.has_text_layer or not projection.readable(page.page_no):
             continue
         try:
             layer = await read_page_layer(tenant_id, page)
@@ -286,7 +292,12 @@ async def relink(ctx: AuthContext, citation_id: UUID) -> UUID:
     if row is None or row.engagement_id is None or withdrawn:
         raise NotFound("citation")
     engagement = await get_ref(ctx, row.engagement_id)
-    await authorise(ctx, RELINK, engagement.resource())
+    # On the citing host: its engagement and, where it has one, its work item (walls, the
+    # archived rule, independence and work-item conditions all apply there).
+    host = engagement.resource()
+    if row.work_item_id is not None:
+        host = replace(host, work_item_id=row.work_item_id)
+    await authorise(ctx, RELINK, host)
     async with uow(ctx.tenant) as tx:
         await lock_citation(tx.session, row.id)
         events = await events_of(tx.session, [row.id])

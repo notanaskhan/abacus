@@ -14,12 +14,14 @@ import uuid
 
 from abacus.kernel.crypto import open_sealed
 from abacus.kernel.db import tenant_session
+from abacus.modules.evidence.api import match_material, worth_matching
+from abacus.modules.evidence.api import process_upload as extract_upload
 from abacus.modules.evidence.pii import DETECTOR_VERSION, pii_scan_upload, value_context
 from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.words import words_upload
 from abacus_tools.synthetic.documents import pii_corpus, scanned_pdf, w2_pdf
 
-from .support import Firm, Seeder, as_version, make_firm
+from .support import Firm, Seeder, as_inbox, as_version, make_firm
 
 
 async def _scanned(firm: Firm, content: bytes) -> tuple[uuid.UUID, int]:
@@ -133,3 +135,32 @@ async def test_a_withdrawn_version_and_an_active_pdf_are_never_scanned(seed: See
         )
         == 0
     )
+
+
+# --- Security review (DEC-322): agents never read a portal drop's PII ----------------------------
+
+
+async def test_sec3_a_portal_drop_reaches_the_matcher_only_masked_after_its_scan(
+    seed: Seeder,
+) -> None:
+    firm = await make_firm(seed)
+    inbox_id = await firm.inbox_file(w2_pdf())
+    await seed.run(
+        "UPDATE inbox_files SET channel = 'portal_drop', drop_batch_id = $2, "
+        "drop_binder_id = $3, drop_key = 'k' WHERE id = $1",
+        inbox_id,
+        uuid.uuid4(),
+        uuid.uuid4(),
+    )
+    await extract_upload(as_inbox(firm, inbox_id))
+    await words_upload(as_inbox(firm, inbox_id))
+    # Extracted, not yet scanned: the matcher gets nothing (fail closed).
+    assert await match_material(firm.system, inbox_id) is None
+    assert await worth_matching(firm.system, inbox_id) is False
+    await pii_scan_upload(as_inbox(firm, inbox_id))
+    material = await match_material(firm.system, inbox_id)
+    assert material is not None
+    text = " ".join(material.pages.values()) + " ".join(t for _, t in material.excerpt_pages)
+    assert "6081" in text and "000-00-6081" not in text and "00-1230287" not in text
+    assert "•••-••-6081" in text
+    assert material.sheets == {}

@@ -27,6 +27,7 @@ SPEC-323 AC-3 is the section's routes; the drop sort's own acceptance is R-01 St
 ## Progress log
 - 2026-10-25: built drop, sort, poll, migration and history; 7 integration tests and 18 replay tests pass. **Deferred (not built):** the staff void of a wrong rule link (`POST …/fulfilments/{id}/void` stays a 501 stub behind `portal.drop_sort`): it needs `fulfilments` void columns with a trigger, every fulfilment read path excluding voided rows and the inbox file returning to waiting, a second migration's worth of red work in `requests`; it goes with R-01-T15's suite or a follow-up row. Also deferred: `sort_outcome` `assigned`/`discarded` when a person sorts a waiting drop (the inbox status already says it), HEIC end-to-end (the policy's own unit tests cover the sniffing), the binder owner as the unsorted recipient (the engagement's leads for now; binders have no owner column).
 - 2026-10-25 (close): full `tests/unit tests/contracts tests/security` 28,473 passed (2 C3/C5 stub tests updated to mark the served routes live, the repo's `LIVE` pattern); integration, workflow and hostile-file run 996 passed + `test_schema_check_db` 192 passed after pinning `inbox_files.sort_outcome`; `make check-fast` green.
+- 2026-10-25 (security review): eight findings fixed in one commit, each with a test written first (DEC-321 to DEC-323 updated). Targeted suites 19,363 passed; `make check-fast` green.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
