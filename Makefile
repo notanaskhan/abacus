@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status
+.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules
 
 setup:
 	cd backend && uv sync --locked
@@ -230,6 +230,11 @@ incident-status:
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:
 	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)"
+
+# Q-01-T26: create or converge the platform-job Schedules (spend anomaly, notification purge) on
+# the configured Temporal. Idempotent; the deploy runs it as an ops task after migrate.
+schedules:
+	cd backend && uv run python -m abacus_tools.schedules ensure
 
 # SPEC-010: the route parity check, with real credentials (costs a little). ROUTE=direct|bedrock
 route-parity:

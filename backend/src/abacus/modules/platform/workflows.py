@@ -267,3 +267,24 @@ class IncidentPropagationWorkflow:
             retry_policy=_RETRY,
         )
         return IncidentPropagationResult(tuple(done), tuple(failed))
+
+
+# Q-01-T26 (SPEC-007 AC-6): the hourly spend-anomaly pass, one per run on a Schedule.
+SPEND_ANOMALY_ID: Final = "spend_anomaly:platform"
+_JOB_TIMEOUT = timedelta(minutes=5)
+_JOB_RETRY = RetryPolicy(maximum_attempts=3)  # a failed hour is retried by the next run
+
+
+@workflow.defn(name="SpendAnomaly")
+class SpendAnomalyWorkflow:
+    """`spend_anomaly:platform`: flag engagements spending past the anomaly multiple (it alerts,
+    never blocks). Started only by its Schedule (overlap SKIP), so two workers never flag twice."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "platform.flag_spend_anomalies",
+            result_type=int,
+            start_to_close_timeout=_JOB_TIMEOUT,
+            retry_policy=_JOB_RETRY,
+        )

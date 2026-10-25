@@ -30,6 +30,9 @@ from abacus.modules.platform.incidents import (
     start_propagation,
 )
 from abacus.modules.platform.incidents import WORKFLOWS as INCIDENT_WORKFLOWS
+from abacus.modules.platform.jobs import ACTIVITIES as JOB_ACTIVITIES
+from abacus.modules.platform.jobs import SCHEDULES
+from abacus.modules.platform.jobs import WORKFLOWS as JOB_WORKFLOWS
 from abacus.modules.platform.provisioning import (
     OPERATOR_HANDLE,
     apply_retention_defaults_activity,
@@ -68,7 +71,9 @@ from abacus.modules.platform.workflow_types import (
 )
 from abacus.modules.platform.workflows import (
     G04_PLAN_PATCH,
+    SPEND_ANOMALY_ID,
     IncidentPropagationWorkflow,
+    SpendAnomalyWorkflow,
     TenantKeyWorkflow,
     TenantProvisioningWorkflow,
     incident_propagation_workflow_id,
@@ -84,8 +89,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 )
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156); Q-02-T33 adds the
-# incident propagation (time_sensitive).
-WORKFLOWS = {**PROVISIONING_WORKFLOWS, **INCIDENT_WORKFLOWS}
+# incident propagation (time_sensitive); Q-01-T26 the hourly spend-anomaly job (background), on
+# its Schedule (`SCHEDULES`, ensured by `abacus_tools.schedules`).
+WORKFLOWS = {**PROVISIONING_WORKFLOWS, **INCIDENT_WORKFLOWS, **JOB_WORKFLOWS}
 SUBSCRIPTIONS: dict[str, Handler] = {}
 ACTIVITIES: tuple[object, ...] = (
     emit_tenant_provisioned_activity,
@@ -95,6 +101,7 @@ ACTIVITIES: tuple[object, ...] = (
     apply_retention_defaults_activity,  # Q-02-T23 (0112)
     *TENANT_KEY_ACTIVITIES,  # the keyops queue's (P-65)
     *INCIDENT_ACTIVITIES,  # Q-02-T33: IncidentPropagation
+    *JOB_ACTIVITIES,  # Q-01-T26: SpendAnomaly
 )
 
 __all__ = [
@@ -106,6 +113,8 @@ __all__ = [
     "NOTIFY_THRESHOLD",
     "OPERATOR_HANDLE",
     "ROUTERS",
+    "SCHEDULES",
+    "SPEND_ANOMALY_ID",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "BudgetInvalid",
@@ -126,6 +135,7 @@ __all__ = [
     "ProvisionTenantInput",
     "ProvisionTenantResult",
     "SearchDocument",
+    "SpendAnomalyWorkflow",
     "TenantKeyInput",
     "TenantKeyWorkflow",
     "TenantProvisioned",
