@@ -47,6 +47,7 @@ from abacus.modules.evidence.routes import (
     _png_response,  # pyright: ignore[reportPrivateUsage] -- the module's own PNG answer
 )
 from abacus.modules.evidence.viewer import (
+    authorise_reveal,
     viewer_manifest,
     viewer_page,
     viewer_regions,
@@ -447,8 +448,12 @@ class EvidenceUnlockOut(BaseModel):
     errors=(501,),
 )
 async def reveal_pii_route(version_id: VersionId, body: PiiRevealIn, ctx: Ctx) -> PiiRevealOut:
-    """AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`."""
-    await _stub(ctx, EVIDENCE_PII_REVEAL)
+    """AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.
+    Authorised before the stub answers (TASK-1207 review): an offshore member is refused at the
+    condition layer (`not_offshore`) now, not only once the reveal is built."""
+    await _gate(ctx, EVIDENCE_PII_REVEAL)
+    await authorise_reveal(ctx, version_id)
+    raise NotImplementedYet
 
 
 @router.post(

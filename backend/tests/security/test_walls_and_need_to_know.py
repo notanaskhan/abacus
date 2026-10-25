@@ -17,10 +17,12 @@ superuser, plus the public `identity.api.authorise` for an agent acting for Lena
 Expectations come from SPEC-002, DEC-43, DEC-233, ADR-024, ADR-026, ADR-145, ADR-147 and the
 contracts (`clients.md`, `engagements-v2.md`, `agent-runs.md`, `notifications.md`).
 
-G-01-T09 extends it to walls v2 and offshore (DEC-52): Remy Vidal, an offshore member with no
-offshore-disclosure consent for Ashford, gets the same answers on every surface and route as
-walled Lena (Granite, consented, is his control), and with no consent provider at all he reaches
-no client; a partner walled from Ashford learns nothing of it from the wall routes v2 adds.
+G-01-T09 extends it to walls v2 and offshore (DEC-52; DEC-319 narrowed by TASK-1207): offshore is
+not a wall, so Remy Vidal, an offshore member with no offshore-disclosure consent for Ashford, gets
+on every surface exactly the answers he gets onshore, and with no consent provider at all he still
+reaches both clients (refused only the `not_offshore` reveals); walled from Ashford as well, he
+reads it as never-existed like Lena; a partner walled from Ashford learns nothing of it from the
+wall routes v2 adds.
 """
 
 from __future__ import annotations
@@ -29,7 +31,7 @@ import re
 import uuid
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Final, cast
 
 import httpx
@@ -39,7 +41,13 @@ from sqlalchemy import ColumnElement, literal
 from abacus.api import create_app
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity import slots
-from abacus.modules.identity.api import Forbidden, Resource, agent_context_for_run, authorise
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    Resource,
+    agent_context_for_run,
+    authorise,
+)
 from abacus_tools.codegen.security_tests import served
 
 from .support import FIRM_ROLES, ROLES, Net, Person, Role, Seeder, Site
@@ -612,35 +620,73 @@ async def _lena_unwalled(firm: Firm, role: str) -> Lena:
 
 @pytest.mark.parametrize("surface", list(SURFACES))
 @pytest.mark.parametrize("role", ["manager", "staff", "firm_admin"])
-async def test_i_offshore_every_surface_hides_a_non_consented_client(
+async def test_i_offshore_every_surface_answers_remy_as_it_does_onshore(
     firm: Firm, granite_consented: None, surface: str, role: str
 ) -> None:
-    """I-OFFSHORE: Ashford, without a consent, is walled off from offshore Remy on all seven
-    surfaces (404, no row, no count, nothing says it is hidden), and Granite still shows."""
+    """I-OFFSHORE (TASK-1207): Ashford, without a consent, is not hidden from offshore Remy: each
+    of the seven surfaces reports Ashford to him, exactly as it does once offshore is off, except
+    that a run's trace and its export carry the model's text and are refused to him (403; the
+    re-check, DEC-319)."""
     remy = await _remy(firm, role)
-    assert await SURFACES[surface](firm, remy) == []
+    probe = SURFACES[surface]
+    offshore = await probe(firm, remy)
+    assert offshore != []  # Ashford is reached
+    await firm.seed.run(
+        "UPDATE memberships SET offshore = false WHERE user_id = $1", remy.person.user_id
+    )
+    assert offshore == [_refused_if_trace(line) for line in await probe(firm, remy)]
+
+
+def _refused_if_trace(line: str) -> str:
+    """An onshore finding as an offshore reader gets it: a trace route answers 403."""
+    path, _, rest = line.partition(": ")
+    if path.endswith(("/trace", "/trace-exports")) and rest.endswith(", not 404"):
+        return f"{path}: 403, not 404"
+    return line
+
+
+def _human(who: Person) -> AuthContext:
+    """A person's context with fresh MFA, for a direct `authorise`."""
+    return AuthContext(
+        tenant=TenantContext(who.tenant_id, "human", str(who.user_id)),
+        user_id=who.user_id,
+        membership_id=uuid.uuid4(),
+        firm_role=None,
+        mfa_at=datetime.now(UTC) - timedelta(minutes=1),
+    )
+
+
+async def _walled_remy(firm: Firm, role: str) -> Lena:
+    """Remy, offshore, and walled from Ashford by the admin as well."""
+    remy = await _remy(firm, role)
+    await firm.net.wall(firm.admin, remy.person, firm.ashford)
+    return remy
 
 
 @pytest.mark.parametrize("surface", list(SURFACES))
-async def test_i_offshore_a_seeded_bypass_fails_every_surface(
+async def test_i_offshore_a_wall_binds_remy_and_a_seeded_bypass_fails_every_surface(
     firm: Firm, granite_consented: None, surface: str
 ) -> None:
-    """The offshore probes aren't vacuous: turning offshore off in the database, behind the
-    product's back, makes every surface report Ashford."""
-    remy = await _remy(firm, "manager")
+    """Walls bind offshore people like anyone: walled from Ashford, offshore Remy finds nothing of
+    it on any surface; lifting the wall in the database, behind the product's back, makes every
+    surface report Ashford (the probes aren't vacuous), with offshore still on."""
+    remy = await _walled_remy(firm, "manager")
     probe = SURFACES[surface]
     assert await probe(firm, remy) == []
     await firm.seed.run(
-        "UPDATE memberships SET offshore = false WHERE user_id = $1", remy.person.user_id
+        "UPDATE ethical_walls SET status = 'removed', removed_at = now(), removed_by = $2 "
+        "WHERE user_id = $1",
+        remy.person.user_id,
+        firm.admin.user_id,
     )
     assert await probe(firm, remy) != []
 
 
 @pytest.mark.parametrize("role", ["manager", "firm_admin"])
-async def test_i_offshore_every_record_route_reads_ashford_as_if_it_never_existed(
+async def test_i_offshore_a_walled_offshore_member_reads_ashford_as_if_it_never_existed(
     firm: Firm, granite_consented: None, role: str
 ) -> None:
-    remy = await _remy(firm, role)
+    remy = await _walled_remy(firm, role)
     found: list[str] = []
     for route in _walled_routes():
         hidden = await firm.get(remy.person, _fill(route, firm, remy, real=True))
@@ -653,18 +699,23 @@ async def test_i_offshore_every_record_route_reads_ashford_as_if_it_never_existe
     assert found == []
 
 
-async def test_i_offshore_with_no_consent_provider_no_client_is_reached(firm: Firm) -> None:
-    """DEC-52 fail closed: before T-01 registers its provider, both clients read as unknown."""
+async def test_i_offshore_with_no_consent_provider_both_clients_are_reached(firm: Firm) -> None:
+    """TASK-1207 (DEC-52 narrowed): before T-01 registers its provider, offshore Remy still
+    reaches both clients; only the `not_offshore` reveals fail closed (403, the condition)."""
     remy = await _remy(firm, "manager")
     clients = await firm.get(remy.person, "/v1/clients")
     assert clients.status_code == 200, clients.text
-    assert _int(clients.json(), "total") == 0
+    assert _int(clients.json(), "total") == 2
     for site in (firm.ashford, firm.granite):
         for path in (f"/v1/clients/{site.client_id}", f"/v1/engagements/{site.engagement_id}"):
             response = await firm.get(remy.person, path)
-            assert (response.status_code, response.json()) == (404, NOT_FOUND), path
+            assert response.status_code == 200, (path, response.text)
+        resource = Resource.engagement(firm.tenant_id, site.engagement_id, archived=False)
+        with pytest.raises(Forbidden) as denied:
+            await authorise(_human(remy.person), "tin.reveal", resource, reason="Form W-9 check")
+        assert denied.value.layer == "condition"
     index = await firm.get(remy.person, "/v1/engagements/index")
-    assert _int(index.json(), "total") == 0
+    assert _int(index.json(), "total") == 2
 
 
 # --- G-01-T09: the wall routes v2 adds say nothing of a client the reader is walled from -------
@@ -710,13 +761,16 @@ async def test_d1_a_walled_partner_learns_nothing_of_ashford_from_the_v2_wall_ro
             assert (response.status_code, response.text) == (never.status_code, never.text), path
 
 
-@pytest.mark.parametrize("who", ["walled_partner", "walled_admin", "offshore_partner"])
+@pytest.mark.parametrize(
+    "who", ["walled_partner", "walled_admin", "offshore_partner", "walled_offshore_partner"]
+)
 async def test_d1_the_wall_client_picker_leaves_out_a_client_hidden_from_the_reader(
     firm: Firm, granite_consented: None, who: str
 ) -> None:
     """G-01-T09 review: `GET /v1/firm/clients` (`wall.create`, which partners hold) lists
-    Granite but never Ashford to a partner or admin walled from it, or offshore without its
-    consent (DEC-43, DEC-52)."""
+    Granite but never Ashford to a partner or admin walled from it, offshore or not (DEC-43).
+    Offshore alone hides nothing (TASK-1207, DEC-319 narrowed): Ashford is listed to an offshore
+    partner without its consent."""
     reader = await firm.seed.person(
         firm.tenant_id, "firm_admin" if who == "walled_admin" else None
     )
@@ -726,15 +780,18 @@ async def test_d1_the_wall_client_picker_leaves_out_a_client_hidden_from_the_rea
             firm.tenant_id,
             reader.user_id,
         )
-    if who == "offshore_partner":
+    if who.startswith(("offshore", "walled_offshore")):
         await firm.seed.run(
             "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
             firm.tenant_id,
             reader.user_id,
         )
-    else:
+    if who.startswith("walled"):
         await firm.net.wall(firm.admin, reader, firm.ashford)
     picker = await firm.get(reader, "/v1/firm/clients")
     assert picker.status_code == 200, picker.text
-    assert firm.leaks(picker) == []
+    if who == "offshore_partner":
+        assert str(firm.ashford.client_id) in picker.text
+    else:
+        assert firm.leaks(picker) == []
     assert str(firm.granite.client_id) in picker.text

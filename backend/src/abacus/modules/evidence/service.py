@@ -14,6 +14,7 @@ is content-addressed and reused by the next attempt.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -70,6 +71,7 @@ from abacus.modules.identity.api import (
     authorise,
     could,
     engagement_role_of,
+    may_read_unmasked,
     my_engagements,
     serving_request,
 )
@@ -546,6 +548,14 @@ async def review_queue(ctx: AuthContext, engagement_id: UUID) -> list[QueueEntry
         if f.evidence_version_id in by_id and f.evidence_version_id not in decided:
             queued.setdefault(f.evidence_version_id, f)
     proposals = await _proposals[0](ctx, engagement_id) if _proposals and queued else {}
+    if proposals and not await may_read_unmasked(ctx):
+        # DEC-52 (TASK-1207 re-check): the proposal's rationale, cells' quotes and values and
+        # unverified claims quote the evidence; an offshore reader keeps what the agent proposed
+        # (and its id, to decide against) without them.
+        proposals = {
+            v: dataclasses.replace(p, rationale="", citations=[], unverified=[])
+            for v, p in proposals.items()
+        }
     entries = [
         QueueEntry(
             _summary(by_id[version_id]),

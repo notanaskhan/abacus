@@ -7,7 +7,7 @@ actions:
   # --- The engagement agent (SPEC-027; TASK-050) ---
   activity.read:            {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # the activity feed
   agent_run.read:           {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # SPEC-318 (TASK-461): the run list and trace; shadow runs never
-  run_trace.export:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required, mfa_recent: required}   # SPEC-318 (P-09-T11): canonical JSON with a SHA-256 manifest, audited; fresh MFA
+  run_trace.export:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required, mfa_recent: required, not_offshore: required}   # SPEC-318 (P-09-T11): canonical JSON with a SHA-256 manifest, audited; fresh MFA
   agent.pause:              {engagement_partner: allow, manager: allow}   # pause or resume an engagement's agent
   engagement.read:          # content, not just metadata — ADR-024
     practice_leader: in_scope

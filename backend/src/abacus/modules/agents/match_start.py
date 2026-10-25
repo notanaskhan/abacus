@@ -43,7 +43,13 @@ from abacus.modules.agents.workflow_types import MatchInput
 from abacus.modules.agents.workflows import InboxMatchWorkflow
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import match_material, register_match_picks, worth_matching
-from abacus.modules.identity.api import AuthContext, authorise, autonomy_level, earliest_partner
+from abacus.modules.identity.api import (
+    AuthContext,
+    authorise,
+    autonomy_level,
+    earliest_partner,
+    refuse_unmasked_read,
+)
 
 _log = get_logger(__name__)
 WORKFLOWS: dict[type, WorkClass] = {InboxMatchWorkflow: spec(MATCHER).work_class}
@@ -170,6 +176,8 @@ async def matches_of(ctx: AuthContext, engagement_id: UUID) -> list[FileMatchVie
     """The latest matcher run of each inbox file, firm roles only (`inbox_match.read`)."""
     engagement = await get_ref(ctx, engagement_id)
     await authorise(ctx, "inbox_match.read", engagement.resource())
+    # DEC-52 (TASK-1207 re-check): stored quotes of the evidence, refused to offshore readers.
+    await refuse_unmasked_read(ctx, "inbox_match.read")
     async with tenant_session(ctx.tenant) as session:
         runs = await latest_match_runs(session, ctx, MATCHER, engagement_id)
         results = await list_match_results(session, ctx, [r.id for r in runs])

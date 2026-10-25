@@ -1,10 +1,12 @@
 # ac-test-author: notanaskhan (G-01-T09; T-01 adds the I-7216 cases with its consent provider)
-"""I-OFFSHORE (G-01 AC9.2 to AC9.4; DEC-52, ADR P-12, §7216) against Postgres: an offshore
-member, and an agent or system run acting for one, is refused every matrix action on a client
-without a valid offshore-disclosure consent, at the wall (404 everywhere); no reveal of a TIN or
-other identifier is ever among their allowed actions, consent or not; and every response field
-tagged `pii_kind=tin` reaches them masked or null. TIN fields are few until T-01 adds them: the
-served routes that carry one are pinned here, and the hook is proved on a tagged test model.
+"""I-OFFSHORE (G-01 AC9.2 to AC9.4 as amended by TASK-1207; DEC-52, DEC-319 narrowed, ADR P-12,
+§7216, F-03 section 4.4) against Postgres: an offshore member is refused exactly the matrix
+actions that carry `not_offshore` (the reveals), at the condition layer (403), and allowed
+everything else their roles allow; an agent acting for one works like them and is walled with
+them; no reveal of a TIN or other identifier is ever among their allowed actions, consent or not;
+and every response field tagged `pii_kind=tin` reaches them masked or null. TIN fields are few
+until T-01 adds them: the served routes that carry one are pinned here, and the hook is proved on
+a tagged test model.
 
 The control is an onshore manager on the same engagements: their answers differ, so a refusal
 can't pass by accident."""
@@ -13,6 +15,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, cast, get_args
 
@@ -88,29 +91,76 @@ def b_consented(env: Env) -> Iterator[None]:
     slots._CONSENT_COLUMNS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
 
 
-# --- refused at the wall, for every action -------------------------------------------------------
+# --- refused only the `not_offshore` actions, at the condition layer -----------------------------
+
+NOT_OFFSHORE = frozenset(a for a, rule in RULES.items() if rule.not_offshore)
 
 
-async def test_i_offshore_every_action_on_a_non_consented_client_is_refused_at_the_wall(
+async def _outcome(ctx: AuthContext, action: str, resource: Resource) -> str:
+    try:
+        await authorise(ctx, action, resource, reason="probe")
+    except Forbidden as denied:
+        return denied.layer
+    return "allowed"
+
+
+async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condition_layer(
     env: Env,
 ) -> None:
+    """Remy (offshore) and an onshore manager hold the same roles on both engagements: over every
+    matrix action, their answers differ only on `not_offshore` actions, which Remy is refused at
+    the condition layer, and the onshore manager is allowed at least one of them."""
     remy = _ctx(await _offshore(env))
+    manager = await env.net.seed.person(env.tenant_id)
+    for site in (env.a, env.b):
+        await env.net.seed.member(site, manager, "manager")
+    control = _ctx(manager)
     resources = (
         Resource.client(env.tenant_id, env.a.client_id),
         Resource.engagement(env.tenant_id, env.a.engagement_id, archived=False),
     )
     found: list[str] = []
+    refused: set[str] = set()
     for action in sorted(RULES):
         for resource in resources:
-            try:
-                await authorise(remy, action, resource, reason="probe")
-            except Forbidden as denied:
-                if denied.layer != "wall":
-                    found.append(f"{action}: {denied.layer}")
-            else:
-                found.append(f"{action}: allowed")
+            mine = await _outcome(remy, action, resource)
+            theirs = await _outcome(control, action, resource)
+            if mine == theirs:
+                continue
+            if action in NOT_OFFSHORE and mine == "condition" and theirs == "allowed":
+                refused.add(action)
+                continue
+            found.append(f"{action}: offshore {mine}, onshore {theirs}")
     assert found == []
-    assert await allowed_actions(remy, resources[1]) == frozenset()
+    # Not vacuous: every `not_offshore` action is reached and refused at the condition, where the
+    # onshore manager is allowed it (security review: both reveals, independence confirmed; the
+    # re-check's exports). `firm_export.download` is firm-level and a manager's role never holds
+    # it: the security admins below show it.
+    assert {
+        "tin.reveal",
+        "pii.reveal",
+        "export.create",
+        "run_trace.export",
+        "trial_balance.export",
+        "firm_export.download",
+    } == NOT_OFFSHORE
+    assert refused == NOT_OFFSHORE - {"firm_export.download"}
+    admin = await env.net.seed.person(env.tenant_id, "security_admin")
+    offshore_admin = await env.net.seed.person(env.tenant_id, "security_admin")
+    await env.net.seed.run(
+        "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
+        env.tenant_id,
+        offshore_admin.user_id,
+    )
+    firm = Resource.firm(env.tenant_id)
+    as_admin = replace(_ctx(admin), firm_role="security_admin")
+    as_offshore = replace(_ctx(offshore_admin), firm_role="security_admin")
+    assert await _outcome(as_admin, "firm_export.download", firm) == "allowed"
+    assert await _outcome(as_offshore, "firm_export.download", firm) == "condition"
+    engagement = resources[1]
+    mine_allowed = await allowed_actions(remy, engagement)
+    assert "engagement.read" in mine_allowed
+    assert mine_allowed == await allowed_actions(control, engagement) - NOT_OFFSHORE
 
 
 async def test_i_offshore_the_control_onshore_manager_is_allowed(env: Env) -> None:
@@ -120,7 +170,9 @@ async def test_i_offshore_the_control_onshore_manager_is_allowed(env: Env) -> No
     assert "engagement.read" in await allowed_actions(_ctx(manager), resource)
 
 
-async def test_i_offshore_an_agent_and_a_system_run_for_remy_are_refused_too(env: Env) -> None:
+async def test_i_offshore_an_agent_for_remy_works_like_him_and_is_walled_with_him(
+    env: Env,
+) -> None:
     remy = await _offshore(env)
     run = await env.net.seed.value(
         "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, "
@@ -139,12 +191,21 @@ async def test_i_offshore_an_agent_and_a_system_run_for_remy_are_refused_too(env
         initiator_user_id=remy.user_id,
     )
     resource = Resource.engagement(env.tenant_id, env.a.engagement_id, archived=False)
+    await authorise(agent, "evidence.read", resource)  # offshore is no wall (TASK-1207)
+    await env.net.wall(env.admin, remy, env.a)
     with pytest.raises(Forbidden) as denied:
         await authorise(agent, "evidence.read", resource)
     assert denied.value.layer == "wall"
 
 
 # --- no reveal, ever -----------------------------------------------------------------------------
+
+
+def test_recheck_every_export_and_download_of_client_content_is_not_offshore() -> None:
+    """TASK-1207 re-check, item 10: an export or download hands over client content wholesale,
+    so offshore is refused it at the condition layer like a reveal."""
+    exports = {"export.create", "firm_export.download", "run_trace.export", "trial_balance.export"}
+    assert [a for a in sorted(exports) if not RULES[a].not_offshore] == []
 
 
 def test_i_offshore_every_reveal_action_is_not_offshore_in_the_matrix() -> None:
@@ -157,12 +218,11 @@ async def test_i_offshore_a_consented_client_still_allows_no_reveal(
     env: Env, b_consented: None
 ) -> None:
     remy = _ctx(await _offshore(env))
-    resource = Resource.engagement(env.tenant_id, env.b.engagement_id, archived=False)
-    allowed = await allowed_actions(remy, resource)
-    assert "engagement.read" in allowed  # consented: his manager role applies again
-    assert not set(REVEALS) & allowed
-    walled = Resource.engagement(env.tenant_id, env.a.engagement_id, archived=False)
-    assert await allowed_actions(remy, walled) == frozenset()
+    for site in (env.b, env.a):  # B consented, A not: the same answers (TASK-1207)
+        resource = Resource.engagement(env.tenant_id, site.engagement_id, archived=False)
+        allowed = await allowed_actions(remy, resource)
+        assert "engagement.read" in allowed  # his manager role applies, consent or not
+        assert not set(REVEALS) & allowed
 
 
 # --- TIN fields reach an offshore principal masked -----------------------------------------------

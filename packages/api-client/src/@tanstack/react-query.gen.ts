@@ -7045,6 +7045,8 @@ export const viewerPageOptions = (options: Options<ViewerPageData>) => queryOpti
  * Reveal Pii Route
  *
  * AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.
+ * Authorised before the stub answers (TASK-1207 review): an offshore member is refused at the
+ * condition layer (`not_offshore`) now, not only once the reveal is built.
  */
 export const revealPiiMutation = (options?: Partial<Options<RevealPiiData>>): UseMutationOptions<RevealPiiResponse, RevealPiiError, Options<RevealPiiData>> => {
     const mutationOptions: UseMutationOptions<RevealPiiResponse, RevealPiiError, Options<RevealPiiData>> = {

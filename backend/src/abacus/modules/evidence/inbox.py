@@ -63,6 +63,7 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_role_of,
     names_of,
+    refuse_unmasked_read,
 )
 from abacus.modules.requests.api import RequestItemView, read_item_versions, request_items_for
 
@@ -359,6 +360,7 @@ async def _seen_file(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> No
 async def inbox_preview(ctx: AuthContext, engagement_id: UUID, file_id: UUID) -> PreviewView:
     """SPEC-029 goal 8 (TASK-056)."""
     await _seen_file(ctx, engagement_id, file_id)
+    await refuse_unmasked_read(ctx, "evidence.upload")  # `page_lines` is raw text (DEC-52)
     return await preview_of(ctx.tenant, evidence_version_id=None, inbox_file_id=file_id)
 
 
@@ -366,6 +368,7 @@ async def inbox_preview_page(
     ctx: AuthContext, engagement_id: UUID, file_id: UUID, page_no: int
 ) -> bytes:
     await _seen_file(ctx, engagement_id, file_id)
+    await refuse_unmasked_read(ctx, "evidence.upload")  # an unmasked page image (DEC-52)
     page = await preview_page_of(
         ctx.tenant, evidence_version_id=None, inbox_file_id=file_id, page_no=page_no
     )

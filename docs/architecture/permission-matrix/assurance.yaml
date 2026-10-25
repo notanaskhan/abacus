@@ -6,7 +6,7 @@ actions:
   trial_balance.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; client and agent principals deny
   trial_balance.adopt:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # human only (the database CHECK agrees)
   trial_balance.annotate:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # audit area and WP ref; amounts are never editable
-  trial_balance.export:     {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required, mfa_recent: required}   # A-02 §4.4 (TASK-1185): Open in Excel (C9 v1 stub, A-02-T22 live); audited; a fresh second factor and no wider than run_trace.export (DEC-316, amended by the security review)
+  trial_balance.export:     {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required}   # A-02 §4.4 (TASK-1185): Open in Excel (C9 v1 stub, A-02-T22 live); audited; a fresh second factor and no wider than run_trace.export (DEC-316, amended by the security review)
   # --- Completion, release and archive (SPEC-314; TASK-332; A-07 record mode) ---
   completion.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}
   completion.record:        {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # the report record and the signed representation letter (documents and dates)

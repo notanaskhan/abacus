@@ -26,6 +26,7 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_role_of,
     names_of,
+    refuse_unmasked_read,
 )
 from abacus.modules.requests.api import read_item, read_item_versions
 
@@ -174,6 +175,11 @@ async def download(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> D
     if version is None or item is None or version.engagement_id != engagement_id:
         raise NotFound("evidence_version")
     await _firm_side(ctx, engagement_id)
+    # DEC-52 (TASK-1207 review): the original is unmasked; an offshore member is refused it at
+    # the condition layer, after the authorise that answers 404 for a wall or an unknown version.
+    engagement = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "evidence.read", engagement.resource())
+    await refuse_unmasked_read(ctx, "evidence.read")
     try:
         content = await read_version(ctx, version_id)
     except storage.IntegrityError:

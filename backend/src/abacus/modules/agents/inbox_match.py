@@ -56,7 +56,13 @@ from abacus.modules.agents.upload_review import TERMINAL
 from abacus.modules.agents.v2_citations import document_claims, record_agent_citations
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import MatchMaterial, match_material
-from abacus.modules.identity.api import AgentContext, authorise, is_active_member
+from abacus.modules.identity.api import (
+    AgentContext,
+    authorise,
+    is_active_member,
+    may_read_unmasked,
+    person_reads_unmasked,
+)
 
 MATCHER = "evidence.matcher"
 REASON_TEXT = {
@@ -99,7 +105,9 @@ async def create_match_run(
         return None
     matcher = spec(MATCHER)
     reader = _reader(tenant_id, f"agents:{matcher.id}")
-    material = await match_material(reader, inbox_file_id)
+    # DEC-52 (TASK-1207 review): for an offshore member, only the masked text, after its scan.
+    masked = not await person_reads_unmasked(reader, requested_by)
+    material = await match_material(reader, inbox_file_id, masked=masked)
     if material is None or material.extraction_status != "extracted" or not material.candidates:
         return None  # SPEC-033 §4.5: an unreadable or unextracted file isn't matched
     run_id: UUID | None = None
@@ -198,12 +206,21 @@ def _citation(c: VerifiedDocumentCitation) -> dict[str, object]:
     return found
 
 
+async def match_material_for(agent: AgentContext, inbox_file_id: UUID) -> MatchMaterial | None:
+    """What the matcher reads, for a run authorised on the file's engagement: a firm upload's
+    extracted text, or only its masked projection when the run acts for an offshore member (as a
+    portal drop always is; DEC-52, DEC-322, TASK-1207 review; None before the PII scan)."""
+    return await match_material(
+        agent.tenant, inbox_file_id, masked=not await may_read_unmasked(agent)
+    )
+
+
 async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
     run = await _run(agent)
     matcher = spec(run.agent_id)
     engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "evidence.read", engagement.resource())
-    material = await match_material(agent.tenant, inbox_file_id)
+    material = await match_material_for(agent, inbox_file_id)
     facts = await check_facts(agent.tenant, agent.engagement)
     if material is None or facts is None or material.engagement_id != agent.engagement:
         raise NotFound("inbox_file")

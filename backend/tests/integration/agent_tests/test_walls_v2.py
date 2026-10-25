@@ -483,11 +483,12 @@ async def _offshore(firm: Firm, who: Person) -> None:
     )
 
 
-async def test_review_an_offshore_reader_learns_nothing_of_walls_on_non_consented_clients(
+async def test_review_an_offshore_reader_reads_the_register_like_an_onshore_one(
     firm: Firm,
 ) -> None:
-    """DEC-52 for the register: no consent provider, so every client is hidden from offshore
-    Daniel and offshore admin Ingrid: no list rows, no log, no approval, no lift, no drawer."""
+    """TASK-1207 (DEC-319 narrowed; DEC-52): offshore is not a wall, so offshore Daniel (the named
+    approver) and offshore admin Ingrid read the register, the log and the drawer as they would
+    onshore, and Daniel approves and lifts. Walls on themself stay hidden from Daniel."""
     wall_id = _body(await firm.wall_lena(approver=firm.daniel))["id"]
     ingrid = await firm.net.person(firm.tenant_id, "firm_admin")
     for who in (firm.daniel, ingrid):
@@ -495,9 +496,34 @@ async def test_review_an_offshore_reader_learns_nothing_of_walls_on_non_consente
     for who in (firm.daniel, ingrid):
         listed = await firm.call("GET", "/v1/walls", who)
         assert listed.status_code == 200, listed.text
-        assert listed.json() == []
+        assert [w["id"] for w in cast(list[Json], listed.json())] == [wall_id]
         log = await firm.call("GET", f"/v1/walls/{wall_id}/events", who)
-        assert (log.status_code, log.json()) == (404, NOT_FOUND)
+        assert log.status_code == 200, log.text
+    from abacus.modules.identity import people
+    from abacus.modules.identity.api import audit_hidden_walls
+
+    assert await audit_hidden_walls(context(firm.daniel), [uuid.UUID(cast(str, wall_id))]) == set()
+    drawer = await people.staff_user(context(firm.daniel), firm.lena.user_id)
+    assert [str(w) for w in drawer.wall_ids] == [wall_id]
+    approved = await firm.call("POST", f"/v1/walls/{wall_id}/approve", firm.daniel)
+    assert approved.status_code == 200, approved.text
+    lifted = await firm.call(
+        "POST", f"/v1/walls/{wall_id}/remove", firm.daniel, {"reason": "Relative left Ashford"}
+    )
+    assert lifted.status_code == 200, lifted.text
+
+
+async def test_review_a_wall_still_hides_walls_from_an_offshore_reader(firm: Firm) -> None:
+    """Walls bind offshore people like anyone: offshore Daniel, walled from Ashford, learns nothing
+    of Lena's Ashford wall (no row, no log, no approval, no drawer entry, hidden in audit rows)."""
+    wall_id = _body(await firm.wall_lena(approver=firm.margaret))["id"]
+    await _offshore(firm, firm.daniel)
+    await firm.net.wall(firm.grace, firm.daniel.user_id, firm.ashford.client_id)
+    listed = await firm.call("GET", "/v1/walls", firm.daniel)
+    assert listed.status_code == 200, listed.text
+    assert str(wall_id) not in listed.text
+    log = await firm.call("GET", f"/v1/walls/{wall_id}/events", firm.daniel)
+    assert (log.status_code, log.json()) == (404, NOT_FOUND)
     for path in (f"/v1/walls/{wall_id}/approve", f"/v1/walls/{wall_id}/remove"):
         refused = await firm.call("POST", path, firm.daniel)
         assert (refused.status_code, refused.json()) == (404, NOT_FOUND), path
@@ -528,6 +554,8 @@ async def test_review_the_named_approver_is_never_the_creator_nor_hidden_from_th
     await firm.net.wall(firm.grace, firm.margaret.user_id, firm.ashford.client_id)
     walled = await firm.wall_lena(approver=firm.margaret)
     assert (walled.status_code, walled.json()["detail"]) == (422, "approver_not_partner")
+    # TASK-1207 (DEC-319 narrowed): offshore hides no client, so an offshore partner is a valid
+    # approver; only a wall makes the client hidden from them (above).
     await _offshore(firm, firm.neil)
     offshore = await firm.call(
         "POST",
@@ -539,7 +567,7 @@ async def test_review_the_named_approver_is_never_the_creator_nor_hidden_from_th
             "approver_user_id": str(firm.neil.user_id),
         },
     )
-    assert (offshore.status_code, offshore.json()["detail"]) == (422, "approver_not_partner")
+    assert offshore.status_code == 201, offshore.text
 
 
 async def _lift_in_a_held_transaction(

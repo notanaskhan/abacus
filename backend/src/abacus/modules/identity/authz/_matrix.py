@@ -738,6 +738,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "mfa_recent": "required",
+        "not_offshore": "required",
     },
     "field.add_reference": {
         "engagement_partner": "allow",
@@ -841,6 +842,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",
+        "not_offshore": "required",
     },
     "firm_export.read": {
         "firm_admin": "allow",
@@ -1567,6 +1569,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
         "mfa_recent": "required",
+        "not_offshore": "required",
     },
     "sample.approve": {
         "engagement_partner": "allow",
@@ -1777,6 +1780,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
         "mfa_recent": "required",
+        "not_offshore": "required",
     },
     "trial_balance.read": {
         "engagement_partner": "allow",

@@ -41,7 +41,7 @@ from abacus.modules.evidence.statements import (
     reconcile,
 )
 from abacus.modules.evidence.uploads import item_resource, uploads_for
-from abacus.modules.identity.api import AuthContext, authorise, names_of
+from abacus.modules.identity.api import AuthContext, authorise, names_of, refuse_unmasked_read
 from abacus.modules.requests.api import read_item
 
 _CENTS: Final = Decimal("0.01")
@@ -231,6 +231,9 @@ async def _authorised_upload(
     )
     if found is None:
         raise NotFound("evidence_version")
+    # DEC-52 (TASK-1207 re-check): transactions read from the file, or approved from it, are its
+    # content; refused to an offshore reader (draft, preview and approval alike).
+    await refuse_unmasked_read(ctx, "evidence.read")
     return found.media_type
 
 

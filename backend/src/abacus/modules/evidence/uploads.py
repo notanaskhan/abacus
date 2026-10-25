@@ -50,6 +50,7 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_role_of,
     names_of,
+    refuse_unmasked_read,
 )
 from abacus.modules.requests.api import (
     ItemNotFulfillable,
@@ -771,6 +772,7 @@ async def upload_preview(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID
 ) -> PreviewView:
     await _authorised_version(ctx, engagement_id, item_id, version_id)
+    await refuse_unmasked_read(ctx, "evidence.read")  # `page_lines` is raw text (DEC-52)
     return await preview_of(ctx.tenant, evidence_version_id=version_id, inbox_file_id=None)
 
 
@@ -778,6 +780,7 @@ async def upload_preview_page(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID, page_no: int
 ) -> bytes:
     await _authorised_version(ctx, engagement_id, item_id, version_id)
+    await refuse_unmasked_read(ctx, "evidence.read")  # an unmasked page image (DEC-52)
     page = await preview_page_of(
         ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
     )
@@ -803,6 +806,7 @@ async def _authorised_any_version(ctx: AuthContext, engagement_id: UUID, version
 
 async def version_preview(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> PreviewView:
     await _authorised_any_version(ctx, engagement_id, version_id)
+    await refuse_unmasked_read(ctx, "evidence.read")  # `page_lines` is raw text (DEC-52)
     return await preview_of(ctx.tenant, evidence_version_id=version_id, inbox_file_id=None)
 
 
@@ -810,6 +814,7 @@ async def version_preview_page(
     ctx: AuthContext, engagement_id: UUID, version_id: UUID, page_no: int
 ) -> bytes:
     await _authorised_any_version(ctx, engagement_id, version_id)
+    await refuse_unmasked_read(ctx, "evidence.read")  # an unmasked page image (DEC-52)
     page = await preview_page_of(
         ctx.tenant, evidence_version_id=version_id, inbox_file_id=None, page_no=page_no
     )

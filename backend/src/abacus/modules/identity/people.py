@@ -547,7 +547,7 @@ async def _visible_walls(ctx: AuthContext, user_id: UUID) -> list[UUID]:
                 {"u": user_id},
             )
         ).all()
-    # Walled from, or offshore without consent for, the client: never learnt (DEC-43, DEC-52).
+    # Walled from the client: never learnt (DEC-43).
     hidden = await hidden_clients(ctx.tenant, ctx.user_id, [w.client_id for w in walls])
     return [w.id for w in walls if w.client_id not in hidden]
 
@@ -971,6 +971,12 @@ async def set_member_profile(
     member = await repo.staff_row(tx.session, user_id)
     if member is None or member["status"] != "active":
         raise NotFound("staff_member")
+    if profile.offshore and not member["offshore"]:
+        # AC4.6's guard, as in `update_person` (TASK-1207 review): no consent provider is
+        # registered until T-01 (DEC-52), so any assignment conflicts.
+        held = await repo.assignment_count(tx.session, user_id)
+        if held:
+            raise OffshoreAssignmentConflict(facts={"assignments": held})
     firm_role = _firm_role_of(profile.role_template)
     if firm_role is None:
         oversight = member["firm_role"] in _OVERSIGHT and profile.role_template == "partner"

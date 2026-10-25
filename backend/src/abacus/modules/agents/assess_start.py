@@ -32,7 +32,7 @@ from abacus.modules.agents.workflow_types import EntryAssessInput
 from abacus.modules.agents.workflows import EntryAssessWorkflow
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.fieldwork.api import assessable_items, selection_item_ids
-from abacus.modules.identity.api import AuthContext, authorise
+from abacus.modules.identity.api import AuthContext, authorise, refuse_unmasked_read
 
 WORKFLOWS: dict[type, WorkClass] = {EntryAssessWorkflow: spec(ASSESSOR).work_class}
 register_work_classes(WORKFLOWS)
@@ -102,6 +102,8 @@ async def assessments_of(
 ) -> list[AssessmentView]:
     engagement = await get_ref(ctx, engagement_id)
     await authorise(ctx, "procedure.read", engagement.resource())
+    # DEC-52 (TASK-1207 re-check): stored quotes of the evidence, refused to offshore readers.
+    await refuse_unmasked_read(ctx, "procedure.read")
     items = await selection_item_ids(ctx, engagement_id, procedure_id)
     async with tenant_session(ctx.tenant) as session:
         rows = await newest_assessments(session, ctx, engagement_id, items)

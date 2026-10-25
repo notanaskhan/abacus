@@ -33,7 +33,7 @@ from abacus.modules.identity.authz import (
 )
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import AccessChanged, WallApproved, WallCreated, WallRemoved
-from abacus.modules.identity.offshore import hidden_clients, offshore_hidden
+from abacus.modules.identity.offshore import hidden_clients
 from abacus.modules.identity.repository import ethical_walls
 from abacus.modules.identity.slots import (
     client_partner,
@@ -86,8 +86,7 @@ class AlreadyApproved(DomainConflict):
 
 class ApproverNotPartner(DomainInvalid):
     """The named approver must be an active partner-level member other than the walled person and
-    the wall's creator, who can see the client (not walled from it, not offshore without its
-    consent)."""
+    the wall's creator, who can see the client (not walled from it)."""
 
     code = "approver_not_partner"
 
@@ -173,14 +172,12 @@ async def _get(session: AsyncSession, wall_id: UUID, *, lock: bool = False) -> W
 
 
 async def _hidden(ctx: AuthContext, walls: list[WallView]) -> set[UUID]:
-    """Walls the reader must not learn of. Anyone offshore: walls on clients without their
-    consent (DEC-52). Outside the register roles also: walls on themself, or on a client they
-    are walled from (the audit explorer's rule, `audit_hidden_walls`)."""
-    clients = [w.client_id for w in walls]
+    """Walls the reader must not learn of. The register roles see the whole register; anyone
+    else not walls on themself, or on a client they are walled from (the audit explorer's rule,
+    `audit_hidden_walls`). Offshore hides nothing here (TASK-1207, DEC-319)."""
     if ctx.firm_role in _REGISTER_ROLES:
-        offshore = await offshore_hidden(ctx.tenant, ctx.user_id, clients)
-        return {w.id for w in walls if w.client_id in offshore}
-    hidden = await hidden_clients(ctx.tenant, ctx.user_id, clients)
+        return set()
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [w.client_id for w in walls])
     return {w.id for w in walls if w.user_id == ctx.user_id or w.client_id in hidden}
 
 
@@ -232,7 +229,7 @@ async def _client_partner_or_404(ctx: AuthContext, client_id: UUID) -> UUID | No
 
 async def preview(ctx: AuthContext, *, user_id: UUID, client_id: UUID) -> WallPreview:
     """AC8.1, AC8.3: what POST would refuse, and how many current assignments it would end. A
-    client the caller can't see (walled, offshore) or doesn't exist answers 404 (DEC-43)."""
+    client the caller can't see (walled) or doesn't exist answers 404 (DEC-43)."""
     await authorise(ctx, "wall.create", Resource.client(ctx.tenant_id, client_id))
     partner = await _client_partner_or_404(ctx, client_id)
     async with tenant_session(ctx.tenant) as session:
@@ -278,7 +275,7 @@ async def create_wall(
             if approver_user_id is not None and (
                 approver_user_id in (user_id, ctx.user_id)
                 or not await _partner(tx.session, approver_user_id)
-                # The approver must be able to see the client (walls, offshore; review).
+                # The approver must be able to see the client (walls; review).
                 or await hidden_clients(ctx.tenant, approver_user_id, [client_id])
             ):
                 raise ApproverNotPartner(facts={"field": "approver_user_id"})

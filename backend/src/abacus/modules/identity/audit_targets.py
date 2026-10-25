@@ -36,8 +36,8 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
 
 async def audit_hidden_walls(ctx: AuthContext, ids: Sequence[UUID]) -> set[UUID]:
     """Of these walls, the ones the reader must not learn of: walls on the reader themself, and
-    walls from a client hidden from the reader: walled off from it, or offshore without its
-    consent (events name the client and the person; DEC-43, DEC-52)."""
+    walls from a client hidden from the reader: walled off from it (events name the client and
+    the person; DEC-43)."""
     async with tenant_session(ctx.tenant) as session:
         rows = (
             await session.execute(
