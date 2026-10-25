@@ -559,3 +559,27 @@ async def test_t07_approvals_is_in_the_nav_only_for_an_entity_scope(world: World
     for portal in (plain, owner):
         assert "home" in cast(list[str], portal["nav"])
         assert "bell" not in str(portal) and "notifications" not in str(portal)  # DEC-58(d)
+
+
+# ================================================================================================
+# Leftovers from the S8 wave B acceptance suites (DEC-210; INV-4)
+# ================================================================================================
+
+
+async def test_leftover_the_binder_picker_of_a_client_with_nothing_published_is_empty(
+    world: World,
+) -> None:
+    """A client whose only binder is a draft gets an empty picker, never a 500 from the route
+    guard (no binder meant no `portal_documents.read` check was ever recorded)."""
+    await world.seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'portal.documents_v2', 'true', 'test-seed', 'leftover')",
+        world.tenant,
+    )
+    who, email = await _client(world, ("contributor", "engagement", world.a.engagement_id))
+    await _requests(world, world.a, who, 2, publish=False)
+    token = await _session(world, email)
+    response = await _get(world, token, "/v1/portal/binders")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert (body["items"], body["total"]) == ([], 0)
