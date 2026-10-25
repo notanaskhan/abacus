@@ -54,6 +54,12 @@ import {
   type Aud02State,
   scenarios as aud02Scenarios,
 } from "./AUD-02/scenarios";
+import { AUD06Frame } from "./AUD-06/artboard";
+import {
+  STATES as AUD06_STATES,
+  type Aud06State,
+  scenarios as aud06Scenarios,
+} from "./AUD-06/scenarios";
 import { EngagementsIndex } from "./ENG-01";
 import {
   STATES as ENG01_STATES,
@@ -469,6 +475,27 @@ function Aud02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   }, [state, params.as]);
   return ready === state ? <Aud02Frame key={state} state={state} /> : null;
 }
+
+// AUD-06's fixture frames (A-02-T05): persona, clock and figures per artboard until A-02-T09 and
+// A-02-T14 draw the screen on the same scenarios.
+function Aud06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud06State = AUD06_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud06Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <AUD06Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-06", { title: "Trial balance & leadsheets", Component: Aud06Artboard });
 
 registerScreen("AUD-02", {
   title: "Audit cockpit · Overview, Source Documents, Agent",
