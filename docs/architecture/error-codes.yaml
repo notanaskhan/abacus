@@ -742,6 +742,11 @@ codes:
     raised_by:
     - abacus.modules.review.notes.NotTheRaiser
     summary: Only the reviewer who raised a note, or the engagement partner, clears it.
+  not_voidable:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.rule_voids.NotVoidable
+    summary: Only an unaccepted rule fulfilment is voided (R-01 Story 2.2).
   note_cleared:
     status: 409
     raised_by:

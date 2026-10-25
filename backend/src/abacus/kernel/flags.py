@@ -47,10 +47,10 @@ def forget_flags() -> None:
     _cache.clear()
 
 
-async def _stored(tenant: TenantContext, name: str) -> str | None:
+async def _stored(tenant: TenantContext, name: str, *, fresh: bool = False) -> str | None:
     key = (tenant.tenant_id, name)
     hit = _cache.get(key)
-    if hit is not None and time.monotonic() - hit[0] < CACHE_SECONDS:
+    if not fresh and hit is not None and time.monotonic() - hit[0] < CACHE_SECONDS:
         return hit[1]
     async with tenant_session(tenant) as session:
         value = await session.scalar(
@@ -61,21 +61,22 @@ async def _stored(tenant: TenantContext, name: str) -> str | None:
     return stored
 
 
-async def flag(tenant: TenantContext, f: Flag) -> bool | str:
-    """The firm's value for `f`, else its default (AC-1, AC-2)."""
+async def flag(tenant: TenantContext, f: Flag, *, fresh: bool = False) -> bool | str:
+    """The firm's value for `f`, else its default (AC-1, AC-2). `fresh` reads past the cache
+    (a gate whose turning off must hold at once, such as the AI opt-in's)."""
     try:
-        return f.parse(await _stored(tenant, f.name))
+        return f.parse(await _stored(tenant, f.name, fresh=fresh))
     except Exception as exc:
         _failed.add(1, {"flag": f.name})
         _log.warning("flag.read_failed", flag=f.name, error=type(exc).__name__)
         return f.parse(None)
 
 
-async def flag_enabled(tenant: TenantContext, f: Flag) -> bool:
+async def flag_enabled(tenant: TenantContext, f: Flag, *, fresh: bool = False) -> bool:
     """A boolean flag's value."""
     if f.kind != "boolean":
         raise TypeError(f"{f.name} is a variant flag")
-    return bool(await flag(tenant, f))
+    return bool(await flag(tenant, f, fresh=fresh))
 
 
 async def flag_variant(tenant: TenantContext, f: Flag) -> str:

@@ -1,33 +1,29 @@
 """C5 section `portal-pbc`, the requests writes (R-01-T01 stub; ADR P-36, ADR-139, DEC-24).
 Contract: `docs/contracts/portal-pbc.md`; screens POR-03 and POR-04, BND-02 and AUD-03 firm-side.
 
-The client's Undo of an Ignore and of Mark as Done, as compensating events (never a delete), and
-the firm's void of a wrong rule fulfilment. The Ignore itself and Mark as Done are P-06's
-(`contract.py`); R-01's additive note on the Ignore is P-06's `IgnoreIn.note`, stored as a shared
-comment with origin `ignore_note` (R-01-T08).
+The client's Undo of an Ignore and of Mark as Done, as compensating events (never a delete). The
+firm's void of a wrong rule fulfilment is served by evidence (`drops_contract.py`, TASK-1248): it
+returns the dropped file to the inbox in the same unit of work. The Ignore itself and Mark as
+Done are P-06's (`contract.py`); R-01's additive note on the Ignore is P-06's `IgnoreIn.note`,
+stored as a shared comment with origin `ignore_note` (R-01-T08).
 
-Behind `portal.documents_v2` (the two undos, live since R-01-T08) and `portal.drop_sort` (the
-void): off, each route answers 404; the void answers 501 `not_implemented` with its flag on until
-R-01-T09 lands. An undo
-after the firm has acted on the request or the binder answers 409 `firm_already_acted`; a void of
-anything but an unaccepted rule fulfilment answers 409 `not_voidable`. The void is human only: the
-agent is denied `fulfilment.confirm` (INV-1).
+Behind `portal.documents_v2` (the two undos, live since R-01-T08): off, each route answers 404.
+An undo after the firm has acted on the request or the binder answers 409 `firm_already_acted`.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict
 
-from abacus.kernel._flags import PORTAL_DOCUMENTS_V2, PORTAL_DROP_SORT
-from abacus.kernel._statuses import RequestStatus
+from abacus.kernel._flags import PORTAL_DOCUMENTS_V2
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.errors import NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.requests import binders, lifecycle
@@ -35,8 +31,6 @@ from abacus.modules.requests import binders, lifecycle
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 
-# The one reason a person may void a rule fulfilment for (R-01 Story 2.2).
-VoidReason = Literal["wrong_request"]
 # What the portal answers carry instead of a firm status code (the portal read model's words):
 # the request's client words, and the Mark as Done button's state.
 ClientStatus = Literal["to_do", "done", "ignored", "returned"]
@@ -65,38 +59,13 @@ class MarkDoneUndoneOut(BaseModel):
     undone_at: Annotated[datetime, classified("internal")]
 
 
-class FulfilmentVoidIn(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    reason: Annotated[VoidReason, classified("internal")]
-
-
-class FulfilmentVoidedOut(BaseModel):
-    """The link is stamped void, never deleted. The request returns to `requested` when nothing
-    else fulfils it, and the version waits in the engagement drop zone for a person again."""
-
-    model_config = ConfigDict(frozen=True)
-
-    fulfilment_id: Annotated[UUID, classified("internal")]
-    request_item_id: Annotated[UUID, classified("internal")]
-    request_status: Annotated[RequestStatus, classified("internal")]  # C2
-    voided_at: Annotated[datetime, classified("internal")]
-
-
 async def _documents_on(ctx: AuthContext) -> None:
     """`portal.documents_v2` off: the undos answer 404."""
     if not await flag_enabled(ctx.tenant, PORTAL_DOCUMENTS_V2):
         raise NotFound(PORTAL_DOCUMENTS_V2.name)
 
 
-async def _stub(ctx: AuthContext, flag: Flag) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
-    raise NotImplementedYet
-
-
 pbc_portal_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
-pbc_firm_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["requests"])
 
 
 @pbc_portal_router.post(
@@ -160,21 +129,3 @@ async def undo_mark_done_route(
         run=run,
     )
     return MarkDoneUndoneOut.model_validate(stored.body)
-
-
-@pbc_firm_router.post(
-    "/fulfilments/{fulfilment_id}/void",
-    action="fulfilment.confirm",
-    response_model=FulfilmentVoidedOut,
-    errors=(409, 501),
-)
-async def void_fulfilment_route(
-    engagement_id: UUID,
-    fulfilment_id: UUID,
-    body: FulfilmentVoidIn,
-    ctx: Ctx,
-    idempotency_key: IdempotencyKey,
-) -> FulfilmentVoidedOut:
-    """Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment;
-    a human or accepted link answers 409 `not_voidable`."""
-    await _stub(ctx, PORTAL_DROP_SORT)

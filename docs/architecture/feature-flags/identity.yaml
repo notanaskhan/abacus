@@ -2,6 +2,14 @@
 # file into kernel/_flags.py by `make regenerate`.
 
 flags:
+  - name: agents.client_data_optin
+    description: 'The firm''s AI opt-in on clients'' data (SPEC-036, TASK-076; Q-02-T06): GET and PUT /v1/firm/ai-client-data. Off: both answer 404, the settings panel is hidden, and the boundary treats the firm as not opted in, so a real firm stays refused at `firm` (fail-closed). Synthetic firms are unaffected. Engagement exclusion is never flagged: it only restricts (DEC-367). Retired once on for every live firm (Q-04-T349).'
+    owner: notanaskhan
+    created: 2026-10-25
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
   - name: portal.sign_in_v2
     description: 'Portal sign-in v2 (C5 v1.1 portal half, P-08): the in-product POR-01 sign-in through the portal BFF, MFA for the DEC-34 floor, invitations v2, and the firm-side contact unlock and MFA reset routes. Off: those routes answer 404 and the portal entry falls back to the hosted OIDC client sign-in (the ClientAccept path). On: 501 not_implemented until P-08-T10, T17, T18 and T21 land. Off by default. Renewal before expiry or retirement with the legacy path is P-08-T28.'
     owner: notanaskhan

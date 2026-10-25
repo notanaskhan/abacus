@@ -28,6 +28,7 @@ from abacus.api.middleware import BodyLimit, TrustedHosts
 from abacus.api.public_routes import PUBLIC_ROUTES
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
+from abacus.kernel.controls import ReadOnlyMode
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
 from abacus.kernel.errors import (
     DomainConflict,
@@ -122,6 +123,10 @@ async def _unsupported(_request: Request, exc: Exception) -> JSONResponse:
 
 async def _unavailable(_request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": "service unavailable"}, status_code=503)
+
+
+async def _read_only(_request: Request, _exc: Exception) -> JSONResponse:
+    return JSONResponse({"detail": "read_only"}, status_code=503)  # Q-01-T37
 
 
 async def _not_implemented(_request: Request, _exc: Exception) -> JSONResponse:
@@ -235,6 +240,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(DomainTooLarge, _too_large)  # R-01-T09
     app.add_exception_handler(DomainUnsupported, _unsupported)  # R-01-T09
     app.add_exception_handler(ServiceUnavailable, _unavailable)
+    app.add_exception_handler(ReadOnlyMode, _read_only)
     app.add_exception_handler(NotImplementedYet, _not_implemented)
     app.add_exception_handler(RequestValidationError, _invalid)
     app.add_exception_handler(Exception, _unexpected)

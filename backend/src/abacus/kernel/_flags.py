@@ -6,6 +6,11 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
+AGENTS_CLIENT_DATA_OPTIN = Flag(
+    name="agents.client_data_optin",
+    kind="boolean",
+    default="false",
+)
 AUDITS_COCKPIT = Flag(
     name="audits.cockpit",
     kind="boolean",
@@ -196,6 +201,7 @@ UPLOADS_PROCESSING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
+    "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
     "clients.v2": CLIENTS_V2,

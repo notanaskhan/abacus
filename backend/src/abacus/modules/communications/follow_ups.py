@@ -28,7 +28,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Target, uow
-from abacus.modules.communications.deliveries import SUPPRESSED, send_email
+from abacus.modules.communications.deliveries import SUPPRESSED, deliver
 from abacus.modules.communications.models import Message
 from abacus.modules.communications.notification_email import display_name, single_line
 from abacus.modules.communications.repository import insert_message
@@ -99,16 +99,16 @@ async def deliver_follow_up(
     body: str,
 ) -> bool:
     """Send one follow-up email the person sent, once. True when it went out (or already had);
-    False when the address is unknown or suppressed (recorded `blocked`)."""
+    False when the address is unknown or suppressed, or email is paused (recorded `blocked`)."""
     system = _system(tenant_id, engagement_id)
     async with tenant_session(system) as session:
         done = await session.scalar(select(Message.id).where(Message.id == follow_up_id))
     if done is not None:
         return True  # a redelivery: the message is already recorded
     address = (await contact_emails([recipient_user_id])).get(recipient_user_id)
-    sent = False
+    blocked: dict[str, str] | None = SUPPRESSED  # no address: recorded as not deliverable
     if address is not None:
-        sent = await send_email(
+        blocked = await deliver(
             to=address,
             subject=subject,
             body=body,
@@ -127,11 +127,12 @@ async def deliver_follow_up(
             channel="email",
             recipient_ref=f"user:{recipient_user_id}",
             body=body,
-            status="sent" if sent else "blocked",
-            violations=[] if sent else [SUPPRESSED],
+            status="sent" if blocked is None else "blocked",
+            violations=[] if blocked is None else [blocked],
             created_by=sent_by,
         )
         tx.record(
-            "message.sent" if sent else "message.blocked", target=Target("message", follow_up_id)
+            "message.sent" if blocked is None else "message.blocked",
+            target=Target("message", follow_up_id),
         )
-    return sent
+    return blocked is None

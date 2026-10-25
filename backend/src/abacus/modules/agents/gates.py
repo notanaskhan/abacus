@@ -71,6 +71,7 @@ async def open_drafts(tenant: TenantContext, engagement_id: UUID | None) -> list
 
 _ON_VERSIONS = frozenset(
     {"proposal.recorded", "review_decision.recorded", "evidence_version.withdrawn"}
+    | {"fulfilment.voided"}  # R-01 Story 2.2: its version is retired, as a withdrawal is
 )
 SOURCES = (
     GateSource("screening_result", "proposal", "review.read", _ON_VERSIONS, open_screenings),

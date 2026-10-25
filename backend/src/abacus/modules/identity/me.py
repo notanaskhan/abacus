@@ -102,6 +102,7 @@ async def set_default_office(ctx: AuthContext, office_id: UUID | None) -> MeDeta
         tx.record(
             "user_preference.updated",
             target=Target("user", ctx.user_id),
-            after=Ref(preference="default_office"),
+            # ED-046: a Ref holds ids only; the office set, or nothing when cleared.
+            after=Ref(office=office_id) if office_id is not None else Ref(),
         )
     return await me_details(ctx.tenant, ctx.user_id)

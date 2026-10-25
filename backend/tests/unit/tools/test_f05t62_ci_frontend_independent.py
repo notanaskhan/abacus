@@ -160,3 +160,16 @@ def test_the_frontend_job_has_no_database() -> None:
 def test_the_gallery_job_runs_on_component_library_changes() -> None:
     jobs = cast("dict[str, Any]", _workflow()["jobs"])
     assert _gated_on(cast("dict[str, Any]", jobs["gallery"]), "gallery")
+
+
+def test_the_gallery_axe_gate_runs_sharded_on_component_library_changes() -> None:
+    # TASK-1208: four workers on one 4-core runner starved the overlay checks; three shards of two.
+    jobs = cast("dict[str, Any]", _workflow()["jobs"])
+    job = cast("dict[str, Any]", jobs["gallery-axe"])
+    assert _gated_on(job, "gallery")
+    assert job["strategy"]["matrix"]["shard"] == [1, 2, 3]
+    runs = " ".join(str(s.get("run", "")) for s in job["steps"])
+    assert "a11y.spec.ts" in runs and '--shard="$SHARD/3"' in runs and "--workers=2" in runs
+    gallery_runs = " ".join(str(s.get("run", "")) for s in jobs["gallery"]["steps"])
+    assert "a11y.spec.ts" not in gallery_runs, "the axe gate runs once, in gallery-axe"
+    assert "gallery-axe" in jobs["stage-2"]["needs"]

@@ -129,12 +129,26 @@ class ReviewDecisionRecorded(DomainEvent):
 
 class InboxFileSorted(DomainEvent):
     """A person assigned an inbox file to a request item or discarded it (P-04-T16: its match
-    proposals no longer wait on anyone)."""
+    proposals no longer wait on anyone), or voided its rule link so it waits again (R-01
+    Story 2.2): the gates recompute the engagement either way."""
 
     event_type: ClassVar[str] = "inbox_file.sorted"
 
     engagement_id: Annotated[UUID, classified("internal")]
     inbox_file_id: Annotated[UUID, classified("internal")]
+
+
+class FulfilmentVoided(DomainEvent):
+    """A person voided a wrong rule link (R-01 Story 2.2; portal-pbc contract): the request is
+    back to `requested` if nothing else fulfils it and the dropped file waits in the inbox."""
+
+    event_type: ClassVar[str] = "fulfilment.voided"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    fulfilment_id: Annotated[UUID, classified("internal")]
+    request_item_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID | None, classified("internal")]
 
 
 class CitationMoved(DomainEvent):

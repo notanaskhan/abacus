@@ -402,6 +402,17 @@ async def sort_drop(given: UploadInput) -> str:
 # --- The poll ----------------------------------------------------------------------------------
 
 
+def _drop_file_view(r: InboxFile) -> DropFileView:
+    """A duplicate reads `waiting`: the firm sees the flag, not the client. A rule link reads as
+    one only while it stands (status `assigned`, decided by no one): once a person voided it the
+    file reads `waiting`, and a request a person later assigns it to is never shown to the
+    dropper (R-01 Story 2.2 security review; INV-4)."""
+    linked = r.sort_outcome == "rule_linked"
+    standing = linked and r.status == "assigned" and r.decided_by is None
+    outcome = "waiting" if linked and not standing else r.sort_outcome
+    return DropFileView(r.id, r.file_name, outcome, r.assigned_item_id if standing else None)
+
+
 async def drop_batch(ctx: AuthContext, batch_id: UUID) -> DropBatchView:
     """The dropper's files in one batch (POR-03 c, d). Someone else's batch answers 404."""
     async with tenant_session(ctx.tenant) as session:
@@ -414,15 +425,7 @@ async def drop_batch(ctx: AuthContext, batch_id: UUID) -> DropBatchView:
     for binder in binders:  # every row's binder, still in the caller's scope
         await drop_binder(ctx, binder, "portal_documents.read")
     binder_id = rows[0].drop_binder_id or binders[0]
-    files = [
-        DropFileView(
-            r.id,
-            r.file_name,
-            r.sort_outcome,  # a duplicate reads `waiting`: the firm sees the flag, not the client
-            r.assigned_item_id if r.sort_outcome == "rule_linked" else None,
-        )
-        for r in rows
-    ]
+    files = [_drop_file_view(r) for r in rows]
     return DropBatchView(batch_id, binder_id, files, all(f.outcome is not None for f in files))
 
 

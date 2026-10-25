@@ -27,6 +27,7 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from abacus.kernel.classification import classified
+from abacus.kernel.controls import control_active, ensure_writable
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
@@ -132,6 +133,29 @@ _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
 }
 ACTION_KEY: Final = "x-abacus-action"
 _log = get_logger(__name__)
+# Q-01-T37 (P-66): with `read_only` on for the platform or a firm, every route but a read answers
+# 503 `read_only`, except sign-in and sign-out (pre-session routes and the two sign-outs), staff
+# and support-session routes, and browser error reports (operational).
+_READS: Final = frozenset({"GET", "HEAD", "OPTIONS"})
+# A firm's own support-session controls and the routes that only take access away stay
+# writable: an incident must never stop anyone ending access (security review, DEC-338).
+_WRITABLE_ACTIONS: Final = frozenset({STAFF, PRE_SESSION, "support_session.manage"})
+_WRITABLE_PATHS: Final = frozenset(
+    {
+        "/v1/auth/sign-out",
+        "/v1/portal/auth/sign-out",
+        "/v1/telemetry/errors",
+        "/v1/knowledge/search",  # a read, sent as a POST for its body
+        "/v1/firm/staff/{user_id}/revoke",
+        "/v1/firm/staff/invitations/{invitation_id}/revoke",
+    }
+)
+READ_ONLY: Final = "read_only"
+
+
+def stays_writable(action: str | None, path: str) -> bool:
+    """Whether a non-read route keeps working in read-only mode."""
+    return action in _WRITABLE_ACTIONS or path in _WRITABLE_PATHS
 
 
 async def requested_tenant(
@@ -255,6 +279,15 @@ async def current_member(
     return ctx
 
 
+async def firm_writable(
+    request: Request, ctx: Annotated[AuthContext, Depends(current_context)]
+) -> None:
+    """The firm-scoped half of read-only mode, once the request's firm is known (the platform
+    half runs before the handler, in `AbacusRoute`)."""
+    if request.method not in _READS:
+        await ensure_writable(ctx.tenant_id)
+
+
 async def current_staff(authorization: Annotated[str | None, Header()] = None) -> Staff:
     """A platform staff member (the staff issuer, with MFA): staff routes only (`STAFF`)."""
     try:
@@ -278,6 +311,12 @@ class AbacusRoute(APIRoute):
         path = self.path
 
         async def guarded(request: Request) -> Response:
+            if (
+                request.method not in _READS
+                and not stays_writable(action, path)
+                and await control_active(READ_ONLY)
+            ):
+                return JSONResponse({"detail": READ_ONLY}, status_code=503)
             with recording_checks() as checked:
                 response = await handler(request)
             if (
@@ -326,13 +365,18 @@ class AbacusRouter(APIRouter):
             PRE_SESSION: pre_session,
             PORTAL_PUBLIC: portal_public,
         }.get(action, current_context)
+        dependencies = [Depends(auth)]
+        writes = any(m not in _READS for m in methods)
+        firm_scoped = auth in (current_context, current_member)
+        if writes and firm_scoped and not stays_writable(action, self.prefix + path):
+            dependencies.append(Depends(firm_writable))
         super().add_api_route(
             path,
             endpoint,
             response_model=response_model,
             methods=list(methods),
             status_code=status_code,
-            dependencies=[Depends(auth)],
+            dependencies=dependencies,
             openapi_extra={ACTION_KEY: action},
             responses={**_RESPONSES, **{code: _OPTIONAL_RESPONSES[code] for code in errors}},
         )

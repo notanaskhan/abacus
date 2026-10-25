@@ -79,12 +79,14 @@ async def record_agent_citations(
     anchor_id: UUID,
     ref: str | None,
     claims: Sequence[CitationClaim],
+    shadow: bool,
 ) -> list[RecordedCitation]:
-    """Write `claims` as the agent, in its handoff's unit of work, on its engagement."""
+    """Write `claims` as the agent, in its handoff's unit of work, on its engagement. `shadow`
+    is the locked run row's (SPEC-036 AC-5): a run that started in shadow writes hidden rows."""
     if not claims:
         return []
     anchor = CitationAnchor(anchor_type, anchor_id, ref, None, agent.engagement)
-    return await record_citations(tx, actor=agent, anchor=anchor, claims=claims)
+    return await record_citations(tx, actor=agent, anchor=anchor, claims=claims, shadow=shadow)
 
 
 __all__ = ["cell_claims", "document_claims", "record_agent_citations"]

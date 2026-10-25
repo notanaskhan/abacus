@@ -30481,10 +30481,6 @@ export type VoidFulfilmentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type VoidFulfilmentError = VoidFulfilmentErrors[keyof VoidFulfilmentErrors];

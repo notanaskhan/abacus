@@ -73,6 +73,7 @@ from abacus.modules.requests.repository import (
     overdue_items,
     request_list_for,
     revert_to_requested,
+    rule_link,
     screening_subject_row,
     search_items,
     set_classification,
@@ -84,6 +85,7 @@ from abacus.modules.requests.repository import (
     set_status,
     upload_link,
     void_fulfilments,
+    void_rule_link,
 )
 from abacus.modules.requests.workbook import SheetPreview, normalise, preview, read_rows
 
@@ -758,6 +760,79 @@ async def upload_item_of(
     """P-06-T19: the request item a person's upload was made to (not a later link)."""
     async with tenant_session(tenant) as session:
         return await upload_link(session, evidence_version_id, uploader)
+
+
+@dataclass(frozen=True)
+class VoidedRuleLink:
+    """A rule link a person voided (R-01 Story 2.2), and where its request now stands."""
+
+    fulfilment_id: UUID
+    request_item_id: UUID
+    evidence_version_id: UUID
+    request_status: str
+    voided_at: datetime
+
+
+async def lock_rule_link(
+    tx: UnitOfWork, *, engagement_id: UUID, fulfilment_id: UUID
+) -> UUID | None:
+    """The version a live rule link of the engagement links, with its request item locked first,
+    in the caller's unit of work: an accept locks the item before it records its decision, so a
+    void that locks it too either waits for the accept and then sees it, or goes first (the
+    accept then finds no live link). Evidence checks the version was never accepted next."""
+    found = await rule_link(tx.session, fulfilment_id, engagement_id)
+    if found is None:
+        return None
+    item_id, version_id = found
+    await get_request_item(tx.session, item_id, lock=True)
+    still = await rule_link(tx.session, fulfilment_id, engagement_id)  # read again, under lock
+    return version_id if still == found else None
+
+
+async def void_rule_link_in(
+    tx: UnitOfWork, *, engagement_id: UUID, fulfilment_id: UUID, voided_by: UUID
+) -> VoidedRuleLink | None:
+    """R-01 Story 2.2, inside the caller's unit of work (a person's, already authorised for
+    `fulfilment.confirm`): stamp the rule link void, audit `fulfilment.voided`, and return the
+    request to `requested` when nothing else fulfils it. None when there is no live rule link."""
+    voided = await void_rule_link(tx.session, fulfilment_id, engagement_id, voided_by)
+    if voided is None:
+        return None
+    locked = await get_request_item(tx.session, voided.request_item_id, lock=True)
+    if locked is None:  # a fulfilment's item is never deleted (foreign key)
+        raise NotFound("request_item")
+    tx.record(
+        "fulfilment.voided",
+        target=Target("fulfilment", fulfilment_id),
+        after=Ref(
+            request_item_id=voided.request_item_id,
+            evidence_version_id=voided.evidence_version_id,
+        ),
+    )
+    before = locked.status
+    reverted = await revert_to_requested(tx.session, voided.request_item_id)
+    # The item's Activity: a wrong rule link was voided (identifiers only).
+    tx.record(
+        "request_item.rule_link_voided",
+        target=Target("request_item", voided.request_item_id),
+        after=Ref(fulfilment_id=fulfilment_id, reverted=int(reverted)),
+    )
+    if reverted:
+        tx.emit(
+            RequestItemStatusChanged(
+                request_item_id=voided.request_item_id,
+                engagement_id=engagement_id,
+                from_status="uploaded",
+                to_status="requested",
+            )
+        )
+    return VoidedRuleLink(
+        fulfilment_id,
+        voided.request_item_id,
+        voided.evidence_version_id,
+        "requested" if reverted else before,
+        voided.voided_at,
+    )
 
 
 async def withdraw_upload(

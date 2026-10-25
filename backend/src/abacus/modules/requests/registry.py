@@ -104,6 +104,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),  # R-01 Story 2.2 (0159)
     "request_lists": frozenset(
         {"default_due_on"}  # SPEC-027 (TASK-051)
         | {"status", "published_at", "published_by", "marked_done_at", "marked_done_by"}  # T14

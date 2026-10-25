@@ -1085,6 +1085,8 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
+        # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
+        "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(
             {"status", "removed_by", "removed_at"}  # TASK-016
             | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): walls v2

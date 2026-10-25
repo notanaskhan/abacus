@@ -40,6 +40,7 @@ TABLES: frozenset[str] = frozenset(
         # P-06-T18 (0144; ADR-162): detached keys and client withdrawals.
         "evidence_object_keys",
         "evidence_withdrawals",
+        "evidence_version_voids",  # R-01 Story 2.2 (0159): retired with its voided rule link
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -61,6 +62,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "pii_regions",  # P-03-T04
         "pii_reveals",  # P-03-T04
         "retention_policy_versions",  # Q-02-T23: written by the policy trigger only
+        "evidence_version_voids",  # R-01 Story 2.2 (0159)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -84,6 +86,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "evidence_withdrawals": frozenset(
         {"tenant_id", "evidence_version_id", "engagement_id", "request_item_id"}
         | {"withdrawn_by_user_id", "withdrawn_at", "erase_after"}
+    ),
+    # R-01 Story 2.2 (0159): a version retired with its voided rule link; the trigger binds it.
+    "evidence_version_voids": frozenset(
+        {"tenant_id", "evidence_version_id", "engagement_id", "fulfilment_id", "voided_by"}
     ),
     # SPEC-023 (TASK-039): files dropped at the engagement level, waiting to be matched.
     "inbox_files": frozenset(

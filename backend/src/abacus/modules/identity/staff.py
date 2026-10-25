@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 
 from abacus.kernel import clock
+from abacus.kernel.controls import ensure_writable
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
@@ -305,6 +306,7 @@ async def accept_staff_invitation(identity: VerifiedIdentity, token: str) -> UUI
     if found is None:
         raise StaffInvitationNotFound("staff_invitation")
     tenant_id, invitation_id = found["tenant_id"], found["invitation_id"]
+    await ensure_writable(tenant_id)  # Q-01-T37: no one joins a firm in read-only mode
     ctx = TenantContext(tenant_id, "system", f"staff_invitation:{invitation_id}")
     async with uow(ctx) as tx:
         row = await get_staff_invitation(tx.session, invitation_id, lock=True)

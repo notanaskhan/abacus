@@ -82,6 +82,17 @@ describe("ac9 states", () => {
     setting(() => json({ detail: "boom" }, 500));
     expect(await screen.findByText("Couldn't load this setting")).toBeTruthy();
   });
+
+  it("shows nothing while the opt-in flag is off for the firm (Q-02-T06)", async () => {
+    const { calls } = setting(() => json({ detail: "not_found" }, 404));
+    await waitFor(() => {
+      expect(calls.some((c) => c.method === "GET")).toBe(true);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("AI on your clients' data")).toBeNull();
+      expect(screen.queryByText("Couldn't load this setting")).toBeNull();
+    });
+  });
 });
 
 describe("ac6 engagement exclusion", () => {

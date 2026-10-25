@@ -12,7 +12,9 @@ from uuid import UUID
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.ai_gateway import DataBoundaryRefused, NotAdmitted
 from abacus.kernel.classification import classified
+from abacus.kernel.errors import ServiceUnavailable
 from abacus.kernel.text import MultiLineText
 from abacus.modules.agents.adopt import adopt
 from abacus.modules.agents.assess_start import assessments_of, request_assessments
@@ -854,7 +856,12 @@ async def withdraw_document_route(document_id: UUID, ctx: Ctx) -> KnowledgeDocum
 
 @knowledge_router.post("/search", action="knowledge.read", response_model=list[KnowledgeHitOut])
 async def search_route(body: KnowledgeSearchIn, ctx: Ctx) -> list[KnowledgeHitOut]:
-    hits = await search_knowledge(ctx, body.query, body.k)
+    try:
+        hits = await search_knowledge(ctx, body.query, body.k)
+    except (DataBoundaryRefused, NotAdmitted):
+        # The query's embedding was refused (AI paused, the boundary) or must wait: no search
+        # now, never a 500 (Q-01-T36 security review).
+        raise ServiceUnavailable("knowledge search") from None
     return [KnowledgeHitOut.model_validate(asdict(h)) for h in hits]
 
 

@@ -41,6 +41,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import RowMapping, text
 
 from abacus.kernel.config import settings
+from abacus.kernel.controls import ensure_writable
 from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
@@ -638,6 +639,7 @@ async def accept_invitation(identity: VerifiedIdentity, token: str) -> AcceptedI
     if found is None:
         raise InvitationNotFound("invitation")
     tenant_id, invitation_id = found["tenant_id"], found["invitation_id"]
+    await ensure_writable(tenant_id)  # Q-01-T37: no one joins a firm in read-only mode
     inviter = await _inviter(tenant_id, invitation_id)
     ctx = TenantContext(
         tenant_id, "system", f"invitation:{invitation_id}", on_behalf_of_user_id=inviter
@@ -749,6 +751,7 @@ async def accept_portal_invitation(
     if found is None or found["tenant_id"] != invitee.tenant_id:
         raise InvitationNotFound("invitation")
     tenant_id, invitation_id = invitee.tenant_id, cast(UUID, found["invitation_id"])
+    await ensure_writable(tenant_id)  # Q-01-T37: no one joins a firm in read-only mode
     inviter = await _inviter(tenant_id, invitation_id)
     ctx = TenantContext(
         tenant_id, "system", f"invitation:{invitation_id}", on_behalf_of_user_id=inviter
