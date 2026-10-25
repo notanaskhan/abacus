@@ -15,6 +15,7 @@ from types import ModuleType
 from typing import cast
 
 import pytest
+from fastapi import Request
 from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
@@ -205,7 +206,9 @@ async def test_flag_off_is_404_and_flag_on_is_501(
         await stub(ctx, flag)
 
 
-async def test_the_drop_is_404_off_and_501_on(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_the_drop_is_404_off_and_live_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live since R-01-T09 (tests/integration/backfill/test_r01t09_portal_drops.py): off, the
+    route answers 404 before reading the body; on, it is served (no longer a 501 stub)."""
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -215,17 +218,18 @@ async def test_the_drop_is_404_off_and_501_on(monkeypatch: pytest.MonkeyPatch) -
         assert asked is PORTAL_DROP_SORT
         return False
 
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
     module = drops_contract
-    stub = cast(Callable[[AuthContext], Awaitable[object]], vars(module)["_stub"])
+    assert "_stub" not in vars(module)
     monkeypatch.setattr(module, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await stub(ctx)
-    monkeypatch.setattr(module, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await stub(ctx)
+        await module.drop_file_route(
+            uuid.uuid4(),
+            cast(Request, None),
+            ctx,
+            filename="a.pdf",
+            batch_id=uuid.uuid4(),
+            idempotency_key="k",
+        )
 
 
 @pytest.mark.parametrize("flag", [PORTAL_DOCUMENTS_V2, PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM])

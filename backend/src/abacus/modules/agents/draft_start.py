@@ -35,6 +35,7 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.agents.events import GuidanceDraftDecided
 from abacus.modules.agents.guidance_checks import check_draft
 from abacus.modules.agents.guidance_draft import DRAFTER, model_available, template_item
 from abacus.modules.agents.handoff import GuidanceDraft
@@ -250,6 +251,7 @@ async def decide_drafts(
                 target=Target("request_item", row.request_item_id),
                 after=Ref(draft_id=a.draft_id, edited=int(edited and not discard)),
             )
+        tx.emit(GuidanceDraftDecided(engagement_id=engagement_id))  # P-04-T16
     return len(approvals)
 
 

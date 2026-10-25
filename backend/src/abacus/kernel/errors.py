@@ -80,6 +80,20 @@ class DomainRateLimited(_Coded):
     code: ClassVar[str] = "rate_limited"
 
 
+class DomainTooLarge(_Coded):
+    """The request's file is over the size the route takes: 413 with the class's fixed `code`
+    (R-01-T09: a portal drop's contract answer for the one upload policy's size refusal)."""
+
+    code: ClassVar[str] = "too_large"
+
+
+class DomainUnsupported(_Coded):
+    """The request's file is of a type the route never takes: 415 with the class's fixed `code`
+    (R-01-T09: a portal drop's contract answer for the one upload policy's type refusal)."""
+
+    code: ClassVar[str] = "unsupported"
+
+
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""
 

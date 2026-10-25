@@ -64,10 +64,12 @@ from abacus.modules.requests.api import (
 
 MAX_UPLOAD_BYTES: Final = 50 * 1024 * 1024  # DEC-58 (c), DEC-296; was SPEC-020's 25 MB
 # The edge lets a file route's body run this far past the limit, so the route answers 422
-# `upload_too_large` itself (DEC-296; ED-018): the item upload, the inbox and the setup files.
+# `upload_too_large` itself (DEC-296; ED-018): the item upload, the inbox, the setup files and
+# the portal drop (R-01-T09).
 UPLOAD_EDGE_BYTES: Final = MAX_UPLOAD_BYTES + 1024 * 1024
 UPLOAD_ROUTE_PATHS: Final = re.compile(
-    r"/v1/engagements/[^/]+/(?:request-items/[^/]+/uploads|inbox|acceptance/file|letter/file)"
+    r"/v1/(?:engagements/[^/]+/(?:request-items/[^/]+/uploads|inbox|acceptance/file|letter/file)"
+    r"|portal/binders/[^/]+/drops)"  # R-01-T09: a portal drop, under the same policy
 )
 MAX_NAME: Final = 200
 SOURCE: Final = "client_upload"

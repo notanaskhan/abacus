@@ -8,8 +8,8 @@ the drop itself in `evidence/drops_contract.py`.
 
 Behind `portal.documents_v2` (binders, request), `portal.third_party_room` (room, suggest) and
 `portal.drop_sort` (drop batches): off, each route answers 404; on, 501 `not_implemented` until
-R-01-T13 (room) and R-01-T09 (drops) land. The documents routes are live since R-01-T07, in
-`documents_routes.py` over the read model `documents.py`.
+R-01-T13 (room) lands. The documents routes are live since R-01-T07, in `documents_routes.py`
+over the read model `documents.py`; the drop poll is served (R-01-T09).
 
 These are a client's views. No field carries a firm status code, an amount, a confidence, a
 screening verdict, an agent name or another party's data: rows carry the client words (`to_do`,
@@ -22,7 +22,7 @@ frontend copy registry (ADR P-36 code to words). Every list is filtered by the c
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends
@@ -33,6 +33,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.text import SingleLineText
+from abacus.modules.evidence.api import drop_batch
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
 
 # A portal person themself, never a break-glass support context.
@@ -387,5 +388,21 @@ async def suggest_room_request_route(body: RoomSuggestIn, ctx: Member) -> RoomSu
     errors=(501,),
 )
 async def get_drop_batch_route(batch_id: UUID, ctx: Member) -> DropBatchOut:
-    """The dropper's poll of one drop batch; anyone else's batch answers 404."""
-    await _stub(ctx, PORTAL_DROP_SORT)
+    """The dropper's poll of one drop batch; anyone else's batch answers 404 (R-01-T09)."""
+    if not await flag_enabled(ctx.tenant, PORTAL_DROP_SORT):
+        raise NotFound(PORTAL_DROP_SORT.name)
+    found = await drop_batch(ctx, batch_id)
+    return DropBatchOut(
+        batch_id=found.batch_id,
+        binder_id=found.binder_id,
+        files=[
+            DropFileOut(
+                file_id=f.file_id,
+                file_name=f.file_name,
+                outcome=cast(DropOutcome | None, f.outcome),
+                request_item_id=f.request_item_id,
+            )
+            for f in found.files
+        ],
+        settled=found.settled,
+    )

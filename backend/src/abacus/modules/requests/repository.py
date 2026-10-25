@@ -14,6 +14,7 @@ from sqlalchemy import (
     bindparam,
     func,
     insert,
+    literal_column,
     or_,
     select,
     text,
@@ -1666,3 +1667,31 @@ async def portal_comment_counts(
         .group_by(Comment.request_item_id)
     )
     return {item: int(n) for item, n in rows.all()}
+
+
+async def drop_item_rows(session: AsyncSession, binder_id: UUID) -> Sequence[RequestItem]:
+    """R-01-T09: the requests of one binder a portal drop may land on: client-visible, open to
+    evidence (never a draft) and not delegated to a third party (LIST_EXEMPT: the system sort,
+    which then checks each against the dropper with `member_could`)."""
+    delegated = (
+        select(cast(ColumnElement[UUID], literal_column("d.request_item_id")))
+        .select_from(text("request_delegations d"))
+        .where(text("d.revoked_at IS NULL"))
+    )
+    return (
+        (
+            await session.execute(
+                select(RequestItem)
+                .where(
+                    RequestItem.request_list_id == binder_id,
+                    RequestItem.client_visible.is_(True),
+                    RequestItem.deleted_at.is_(None),
+                    RequestItem.status.in_(("requested", "uploaded", "returned")),
+                    RequestItem.id.not_in(delegated),
+                )
+                .order_by(RequestItem.created_at, RequestItem.id)
+            )
+        )
+        .scalars()
+        .all()
+    )

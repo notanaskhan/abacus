@@ -152,6 +152,13 @@ class InboxFile(Base):
     decided_by: Mapped[UUID | None]
     decided_at: Mapped[datetime | None]
     created_at: Mapped[datetime]
+    # R-01-T09 (0153): a portal drop, waiting for the code-rule sort.
+    channel: Mapped[str] = mapped_column(server_default=FetchedValue())
+    drop_batch_id: Mapped[UUID | None]
+    drop_binder_id: Mapped[UUID | None]
+    drop_key: Mapped[str | None]
+    duplicate_of_version_id: Mapped[UUID | None]
+    sort_outcome: Mapped[str | None]
 
 
 class UploadExtraction(Base):

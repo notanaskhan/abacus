@@ -89,6 +89,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "inbox_files": frozenset(
         {"tenant_id", "engagement_id", "file_name", "media_type", "size_bytes", "fingerprint"}
         | {"storage_key", "storage_version_id", "uploaded_by", "uploaded_by_staff", "note"}
+        # R-01-T09 (0153): a portal drop.
+        | {"channel", "drop_batch_id", "drop_binder_id", "drop_key", "duplicate_of_version_id"}
     ),
     "review_decisions": frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "request_item_id"}
@@ -118,6 +120,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "inbox_files": frozenset(  # SPEC-023: assigned or discarded, once
         {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
+        | {"sort_outcome"}  # R-01-T09 (0153): once, from NULL (trigger)
     ),
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "retention_policies": frozenset(  # Q-02-T23: version and history are the trigger's

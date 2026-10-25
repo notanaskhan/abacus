@@ -56,7 +56,9 @@ from abacus.modules.requests.guidance import (
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
     default_due_on,
+    drop_item_rows,
     fulfilling_versions,
+    get_binder,
     get_request_item,
     insert_fulfilment,
     insert_request_item,
@@ -1156,3 +1158,30 @@ async def search_request_items(ctx: AuthContext, q: str) -> list[RequestItem]:
         return []
     async with tenant_session(ctx.tenant) as session:
         return list(await search_items(session, ctx, text[:100], SEARCH_LIMIT))
+
+
+# --- R-01-T09: where a portal drop may land ---------------------------------------------------
+
+
+async def drop_items(tenant: TenantContext, binder_id: UUID) -> Sequence[RequestItemView]:
+    """The system sort's candidates in one binder: client-visible, open to evidence (never a
+    draft), not delegated. The caller still checks each against the dropper (`member_could`)."""
+    async with tenant_session(tenant) as session:
+        rows = await drop_item_rows(session, binder_id)
+    return [_view(item) for item in rows]
+
+
+async def drop_target(tx: UnitOfWork, binder_id: UUID, item_id: UUID) -> RequestItemRef | None:
+    """Inside the rule link's unit of work (R-01-T09 security review): the request, row-locked,
+    while it is still a place the drop may land: its binder published, the request client-visible,
+    open, never a draft and not delegated. None otherwise."""
+    item = await item_ref(tx, item_id, lock=True)
+    binder = await get_binder(tx.session, binder_id)
+    if (
+        binder is None
+        or binder.status != "published"
+        or binder.engagement_id != item.engagement_id
+    ):
+        return None
+    still = {row.id for row in await drop_item_rows(tx.session, binder_id)}
+    return item if item_id in still else None

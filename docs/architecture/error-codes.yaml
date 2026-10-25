@@ -703,6 +703,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.unlock.NotLocked
     summary: The file isn't a password-protected PDF.
+  not_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.citations.moved.NotMoved
+    summary: Only a moved citation is relinked, onto a successor that is still there.
   not_note_raiser:
     status: 409
     raised_by:
@@ -939,6 +944,11 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.RelationshipPartner
     summary: 'The person leads the client''s relationship: reassign it first (AC8.3).'
+  relink_unverified:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.citations.moved.RelinkUnverified
+    summary: 'The cited text is not on the successor: the popover offers "Open source" instead.'
   request_already_sent:
     status: 409
     raised_by:

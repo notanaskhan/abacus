@@ -115,3 +115,53 @@ class EvidenceWithdrawalErased(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class ReviewDecisionRecorded(DomainEvent):
+    """A person accepted, rejected or sent back a version, or undid that (P-04-T16: the gates on
+    the version's proposals close or open again)."""
+
+    event_type: ClassVar[str] = "review_decision.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class InboxFileSorted(DomainEvent):
+    """A person assigned an inbox file to a request item or discarded it (P-04-T16: its match
+    proposals no longer wait on anyone)."""
+
+    event_type: ClassVar[str] = "inbox_file.sorted"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID, classified("internal")]
+
+
+class CitationMoved(DomainEvent):
+    """A citation's source was superseded (P-03-T12; AC6.1): P-04's staleness rules read it."""
+
+    event_type: ClassVar[str] = "citation.moved"
+
+    citation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    cause_ref: Annotated[str, classified("internal")]  # `evidence_version:<successor>`
+
+
+class CitationBroken(DomainEvent):
+    """A citation's source was voided, withdrawn or erased (P-03-T12; AC6.1)."""
+
+    event_type: ClassVar[str] = "citation.broken"
+
+    citation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    cause_ref: Annotated[str, classified("internal")]  # `withdrawn:<version>`
+
+
+class PortalDropUnsorted(DomainEvent):
+    """A client's drop matched no request decisively: it waits in the inbox for a person, and
+    the engagement's leads are told in the app (`portal.drop_unsorted`, R-01-T09)."""
+
+    event_type: ClassVar[str] = "portal.drop_unsorted"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    inbox_file_id: Annotated[UUID, classified("internal")]

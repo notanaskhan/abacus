@@ -10,7 +10,13 @@ from abacus.modules.identity.api import (
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_tag
-from abacus.modules.requests.binders import SUBSCRIPTIONS, register_binder_close_rule
+from abacus.modules.requests.binders import (
+    SUBSCRIPTIONS,
+    DropBinder,
+    drop_binder,
+    drop_binder_open,
+    register_binder_close_rule,
+)
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
 from abacus.modules.requests.contract import (
@@ -66,6 +72,8 @@ from abacus.modules.requests.service import (
     ScreeningSubject,
     add_request_item,
     apply_drafted_guidance,
+    drop_items,
+    drop_target,
     fulfil_by_rule,
     fulfil_by_upload,
     fulfilled_items,
@@ -131,6 +139,7 @@ __all__ = [
     "WORKFLOWS",
     "BinderProgress",
     "ClientHome",
+    "DropBinder",
     "DueDatesChanged",
     "FollowUpCandidate",
     "FulfilledVersion",
@@ -161,6 +170,10 @@ __all__ = [
     "classify",
     "client_home",
     "document_kind",
+    "drop_binder",
+    "drop_binder_open",
+    "drop_items",
+    "drop_target",
     "firm_router",
     "follow_up_candidates",
     "fulfil_by_rule",

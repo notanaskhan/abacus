@@ -973,7 +973,7 @@ export const getCitationOptions = (options: Options<GetCitationData>) => queryOp
  * Relink Citation Route
  *
  * AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422
- * `relink_unverified`.
+ * `relink_unverified` (P-03-T12).
  */
 export const relinkCitationMutation = (options?: Partial<Options<RelinkCitationData>>): UseMutationOptions<RelinkCitationResponse, RelinkCitationError, Options<RelinkCitationData>> => {
     const mutationOptions: UseMutationOptions<RelinkCitationResponse, RelinkCitationError, Options<RelinkCitationData>> = {
@@ -8646,6 +8646,8 @@ export const humanGateListQueryKey = (options?: Options<HumanGateListData>) => c
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+ * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * are never listed or counted.
  */
 export const humanGateListOptions = (options?: Options<HumanGateListData>) => queryOptions<HumanGateListResponse, HumanGateListError, HumanGateListResponse, ReturnType<typeof humanGateListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8666,6 +8668,8 @@ export const humanGateListInfiniteQueryKey = (options?: Options<HumanGateListDat
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+ * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * are never listed or counted.
  */
 export const humanGateListInfiniteOptions = (options?: Options<HumanGateListData>) => {
     const opts = infiniteQueryOptions<HumanGateListResponse, HumanGateListError, InfiniteData<HumanGateListResponse>, QueryKey<Options<HumanGateListData>>, string | null | Pick<QueryKey<Options<HumanGateListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -9947,7 +9951,9 @@ export const getPortalBinderOptions = (options: Options<GetPortalBinderData>) =>
 /**
  * Drop File Route
  *
- * One dropped file (POR-03 b → c, d). Sorted by code against the dropper's visible items.
+ * One dropped file (POR-03 b → c, d). Sorted by code against the dropper's visible items
+ * (R-01-T09). Over the limit or outside the allowlist: 413 `file_too_large` or 415
+ * `type_not_allowed`, the one upload policy's refusals in this contract's words (DEC-323).
  */
 export const dropFileMutation = (options?: Partial<Options<DropFileData>>): UseMutationOptions<DropFileResponse, DropFileError, Options<DropFileData>> => {
     const mutationOptions: UseMutationOptions<DropFileResponse, DropFileError, Options<DropFileData>> = {
@@ -10049,7 +10055,7 @@ export const getDropBatchQueryKey = (options: Options<GetDropBatchData>) => crea
 /**
  * Get Drop Batch Route
  *
- * The dropper's poll of one drop batch; anyone else's batch answers 404.
+ * The dropper's poll of one drop batch; anyone else's batch answers 404 (R-01-T09).
  */
 export const getDropBatchOptions = (options: Options<GetDropBatchData>) => queryOptions<GetDropBatchResponse, GetDropBatchError, GetDropBatchResponse, ReturnType<typeof getDropBatchQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

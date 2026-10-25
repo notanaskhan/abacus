@@ -1,6 +1,8 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.uow import Handler
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.citations.matching import (
@@ -15,6 +17,11 @@ from abacus.modules.evidence.citations.matching import (
     quote_in,
 )
 from abacus.modules.evidence.citations.matching import normalised as normalised_text
+from abacus.modules.evidence.citations.moved import (
+    mark_sources_superseded,
+    on_version_created,
+    on_version_withdrawn,
+)
 from abacus.modules.evidence.citations.registry import Anchor as CitationAnchor
 from abacus.modules.evidence.citations.registry import (
     CitationClaim,
@@ -25,6 +32,7 @@ from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.contract import withdrawal_router
+from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
@@ -34,6 +42,7 @@ from abacus.modules.evidence.events import (
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.firm_export_contract import router as firm_export_router
+from abacus.modules.evidence.gate_facts import decided_among, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -179,7 +188,19 @@ ACTIVITIES: tuple[object, ...] = (
     *HOLD_ACTIVITIES,
     *WITHDRAWAL_ACTIVITIES,
 )
-SUBSCRIPTIONS = {
+
+
+def in_turn(first: Handler, then: Handler) -> Handler:
+    """Two of this module's subscribers on one event, in order (one handler per module)."""
+
+    async def both(event: OutboxEvent) -> None:
+        await first(event)
+        await then(event)
+
+    return both
+
+
+_SUBSCRIPTIONS: dict[str, Handler] = {
     **{
         event: (
             with_hold_inheritance(handler)
@@ -190,6 +211,16 @@ SUBSCRIPTIONS = {
     },
     **HOLD_SUBSCRIPTIONS,
     **WITHDRAWAL_SUBSCRIPTIONS,
+}
+# P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
+SUBSCRIPTIONS = {
+    **_SUBSCRIPTIONS,
+    EvidenceVersionCreated.event_type: in_turn(
+        _SUBSCRIPTIONS[EvidenceVersionCreated.event_type], on_version_created
+    ),
+    EvidenceVersionWithdrawn.event_type: in_turn(
+        _SUBSCRIPTIONS[EvidenceVersionWithdrawn.event_type], on_version_withdrawn
+    ),
 }
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -272,13 +303,16 @@ __all__ = [
     "citation_cell_text",
     "client_pre_checks",
     "column_letters",
+    "decided_among",
     "decisions_on_screenings",
+    "drop_batch",
     "engagement_snapshots",
     "evidence_versions_for",
     "extend_retention_for",
     "firm_router",
     "holds_covering",
     "is_version_withdrawn",
+    "mark_sources_superseded",
     "match_material",
     "normalised_text",
     "page_quote_reason",
@@ -307,6 +341,7 @@ __all__ = [
     "upload",
     "verified_citation_ids",
     "version_view",
+    "waiting_among",
     "withdrawn_among",
     "worth_matching",
 ]
