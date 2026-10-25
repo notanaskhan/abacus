@@ -1,0 +1,27 @@
+# Supply-chain findings register (Q-03-T029; Q-03 §3.9 I2; ADR-099; DEC-366).
+#
+# Every high or critical finding from pip-audit, bandit, Trivy (fs, IaC, image), CodeQL or
+# Inspector that is not fixed on the day it is found goes here, with the day it was first seen.
+# SLA from that day: critical 7 days, high 30 days. While a finding is inside its SLA,
+# `python -m abacus_tools.quality.supply_chain ignores` lets pip-audit and Trivy skip it in
+# security.yml; past its SLA it is no longer skipped and security.yml fails, as does
+# `supply_chain check`, until it is fixed (record `closed`). Fixed findings stay listed.
+#
+# Never record exploit detail here (the repository is public): the advisory id, the package and
+# one line of status are enough.
+#
+# - id: GHSA-xxxx-xxxx-xxxx      # advisory, CVE or rule id
+#   source: pip-audit            # pip-audit | bandit | trivy-fs | trivy-iac | trivy-image | codeql | inspector
+#   severity: high               # critical | high
+#   package: example==1.2.3
+#   first_seen: 2027-01-04
+#   closed: 2027-01-12           # absent while open
+#   note: no fixed release yet; upstream issue tracked
+findings:
+  - id: B613
+    source: bandit
+    severity: high
+    package: backend/src/abacus_tools/synthetic/adversarial.py
+    first_seen: 2026-10-25
+    closed: 2026-10-25
+    note: literal bidirectional control characters in source; written as escapes (ED-057)

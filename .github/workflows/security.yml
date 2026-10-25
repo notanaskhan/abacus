@@ -1,5 +1,8 @@
 # The security stage (Q-02-T15, Q-02 AC-46; chapter 10 §10.3.4): CodeQL, dependency review,
-# pip-audit and Trivy. The generated security suites (tenant isolation, permission matrix, route
+# pip-audit, bandit and Trivy (filesystem, and the backend's pinned base image). Findings to SLA
+# (Q-03-T029, DEC-366): a high or critical finding that cannot be fixed the day it is found is
+# recorded in docs/quality/supply-chain-findings.yaml; pip-audit and Trivy skip it only while it is
+# inside its SLA (critical 7 days, high 30), and the `findings SLA` job fails once one is past it. The generated security suites (tenant isolation, permission matrix, route
 # introspection: backend/tests/security) run in ci.yml's stage 2 integration shards with the
 # database they need. Third-party actions are pinned to full commit SHAs; the token is read-only
 # except where CodeQL uploads its results; no secrets are used.
@@ -85,11 +88,17 @@ jobs:
       - name: export the lock
         working-directory: backend
         run: uv export --locked --no-emit-project --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
+      - name: findings inside their SLA (Q-03-T029)
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          echo "PIP_AUDIT_IGNORES=$(uv run python -m abacus_tools.quality.supply_chain ignores --tool pip-audit)" >> "$GITHUB_ENV"
       - name: pip-audit
+        # PIP_AUDIT_IGNORES is `--ignore-vuln <id>` per registered finding still inside its SLA.
         run: >-
           uvx --from pip-audit==2.9.0 pip-audit
           -r "$RUNNER_TEMP/requirements.txt" --require-hashes --disable-pip
-          --progress-spinner off
+          --progress-spinner off $PIP_AUDIT_IGNORES
 
   # Known vulnerabilities in every lockfile in the repository (uv.lock, pnpm-lock.yaml), high and
   # critical with a fix available. infra.yml's Trivy config scan covers Terraform.
@@ -101,6 +110,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: findings inside their SLA (Q-03-T029)
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          uv run python -m abacus_tools.quality.supply_chain ignores --tool trivy --out "$RUNNER_TEMP/trivyignore"
       - name: trivy fs
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -111,3 +129,77 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           hide-progress: true
+          trivyignores: ${{ runner.temp }}/trivyignore
+
+  # The backend's base image exactly as the Dockerfile pins it (Q-03-T029: Trivy image; a digest
+  # bump goes through the protected-manifest change). Weekly runs catch new advisories against an
+  # unchanged digest.
+  trivy-image:
+    name: security trivy base image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: the pinned base image and findings inside their SLA
+        id: base
+        working-directory: backend
+        run: |
+          echo "image=$(sed -n 's/^ARG PYTHON_IMAGE=//p' Dockerfile | head -n 1)" >> "$GITHUB_OUTPUT"
+          uv sync --frozen
+          uv run python -m abacus_tools.quality.supply_chain ignores --tool trivy --out "$RUNNER_TEMP/trivyignore"
+      - name: trivy image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.base.outputs.image }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          hide-progress: true
+          trivyignores: ${{ runner.temp }}/trivyignore
+
+  # Static analysis of the backend's own code (bandit is on the dev allowlist and in the lock):
+  # high severity at medium or high confidence fails. Tests are not scanned (asserts, fixtures).
+  bandit:
+    name: security bandit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: bandit
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          uv run bandit -q -r src --severity-level high --confidence-level medium
+
+  # No registered high or critical finding is open past its SLA (Q-03-T029 acceptance).
+  findings-sla:
+    name: security findings SLA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: findings to SLA
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          uv run python -m abacus_tools.quality.supply_chain check
