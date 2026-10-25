@@ -8,15 +8,17 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel.classification import classified
 from abacus.modules.agents.runs import (
+    RunItems,
     RunSummary,
     RunWrite,
     Trace,
     export_trace,
+    items_for,
     records_read_for,
     run_view,
     runs_for,
@@ -110,11 +112,42 @@ class RunWriteOut(BaseModel):
     target_type: Annotated[str | None, classified("internal")]
     target_id: Annotated[UUID | None, classified("internal")]
     key: Annotated[str, classified("internal")]
-    state: Annotated[str, classified("internal")]
+    # The row's own status code (a suggestion's, a proposal's or pending/decided).
+    outcome: Annotated[str, classified("internal")]
     at: Annotated[datetime, classified("internal")]
     decision: Annotated[str | None, classified("internal")]
     decided_by_name: Annotated[str | None, classified("internal")]
     decided_at: Annotated[datetime | None, classified("internal")]
+
+
+class RunItemOut(BaseModel):
+    """A thread item: code words and references only (P-09 Story 8.1); the client words it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    seq: Annotated[int, classified("internal")]
+    kind: Annotated[
+        Literal["tool_card", "narration", "decision", "failure"], classified("internal")
+    ]
+    at: Annotated[datetime, classified("internal")]
+    code: Annotated[str, classified("internal")]
+    # The row's own code: mixed objects, so not one status vocabulary (codes only).
+    outcome: Annotated[str | None, classified("internal")]
+    detail: Annotated[str | None, classified("internal")]
+    actor: Annotated[str | None, classified("internal")]
+    ref_type: Annotated[str | None, classified("internal")]
+    ref_id: Annotated[UUID | None, classified("internal")]
+
+
+class RunItemsOut(BaseModel):
+    """The run header plus the items after `after_seq` (P-09 Story 1.3 polling)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    run: Annotated[AgentRunOut, classified("internal")]
+    items: Annotated[list[RunItemOut], classified("internal")]
+    last_seq: Annotated[int, classified("internal")]
+    resync: Annotated[bool, classified("internal")]
 
 
 class TraceExportIn(BaseModel):
@@ -172,6 +205,22 @@ async def agent_run_route(run_id: UUID, ctx: Ctx) -> RunViewOut:
         run_record_sha256=view.run_record_sha256,
         allowed_actions=view.allowed_actions,
     )
+
+
+def _items(found: RunItems) -> RunItemsOut:
+    return RunItemsOut(
+        run=_run(found.run),
+        items=[RunItemOut.model_validate(i, from_attributes=True) for i in found.items],
+        last_seq=found.last_seq,
+        resync=found.resync,
+    )
+
+
+@runs_router.get("/{run_id}/items", action="agent_run.read", response_model=RunItemsOut)
+async def agent_run_items_route(
+    run_id: UUID, ctx: Ctx, after_seq: Annotated[int, Query(ge=0)] = 0
+) -> RunItemsOut:
+    return _items(await items_for(ctx, run_id, after_seq))
 
 
 @runs_router.get(

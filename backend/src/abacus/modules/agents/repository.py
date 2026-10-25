@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import cast
 from uuid import UUID, uuid4
@@ -1600,3 +1600,39 @@ async def run_writes(session: AsyncSession, run_id: UUID) -> list[RunWriteRow]:
         {"run": run_id},
     )
     return [RunWriteRow(*row) for row in found.all()]
+
+
+ACTIVITY_GRACE = timedelta(seconds=5)
+
+
+async def run_activity(
+    session: AsyncSession,
+    engagement_id: UUID,
+    source_event_id: UUID | None,
+    start: datetime,
+    end: datetime | None,
+) -> Sequence[AgentActivity]:
+    """LIST_EXEMPT: the engagement agent's actions during one run (P-09 Story 8.1), after the
+    caller was authorised on the run's engagement. Activity carries no run id: it belongs to the
+    run that shares its source event, or that was running when it happened. The tick records
+    its activity just after closing the run, so the window runs a few seconds past the finish."""
+    during = AgentActivity.created_at >= start
+    if end is not None:
+        during = during & (AgentActivity.created_at <= end + ACTIVITY_GRACE)
+    match = (
+        during
+        if source_event_id is None
+        else during | (AgentActivity.source_event_id == source_event_id)
+    )
+    return (
+        (
+            await session.execute(
+                select(AgentActivity)
+                .where(AgentActivity.engagement_id == engagement_id, match)
+                .order_by(AgentActivity.created_at, AgentActivity.id)
+                .limit(500)
+            )
+        )
+        .scalars()
+        .all()
+    )

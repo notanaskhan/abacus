@@ -1,6 +1,7 @@
 import type { AgentRunOut, RunTraceOut, RunWriteOut } from "@abacus/api-client";
 import {
   agentRunTraceOptions,
+  agentRunTraceQueryKey,
   agentRunWritesOptions,
   exportRunTraceMutation,
   listAgentRunsOptions,
@@ -20,8 +21,10 @@ import {
   type Tone,
   useFormat,
 } from "@abacus/ui";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type JSX, useEffect, useState } from "react";
+import { isActive, POLL_MS, useRunFeed } from "../domain/agents/runFeed";
+import { narrate } from "./AgentActivity";
 import { errorMessage } from "../api";
 import { ConfirmItsYou, isForbidden } from "../shell/mfa";
 
@@ -62,6 +65,9 @@ export function AgentRuns({ engagementId }: { engagementId: string }): JSX.Eleme
   const runs = useQuery({
     ...listAgentRunsOptions({ path: { engagement_id: engagementId }, query: { limit: 25 } }),
     retry: false,
+    // P-09 Story 1.3: keep the list current while any run is still going.
+    refetchInterval: (q) => (q.state.data?.some((r) => isActive(r)) === true ? POLL_MS : false),
+    refetchIntervalInBackground: false,
   });
   if (runs.isPending) return <Skeleton className="h-32" />;
   if (runs.isError) {
@@ -123,6 +129,15 @@ function download(filename: string, content: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** The run's state; "live" while the drawer is following it (P-09 Story 1.3). */
+function RunPill({ state, live }: { state: AgentRunOut["state"]; live: boolean }): JSX.Element {
+  return (
+    <StatusPill tone={STATE[state].tone}>
+      {live ? `${STATE[state].label} · live` : STATE[state].label}
+    </StatusPill>
+  );
+}
+
 // WB-09: the trace's three views (P-09-T10).
 const VIEWS = ["Timeline", "Records read", "Writes & approvals"] as const;
 const WRITE_KIND: Record<RunWriteOut["kind"], string> = {
@@ -179,6 +194,18 @@ export function TraceDrawer({
   const trace = useQuery({ ...agentRunTraceOptions({ path: { run_id: runId } }), retry: false });
   const [confirm, setConfirm] = useState(false);
   const [view, setView] = useState<string>("Timeline");
+  const client = useQueryClient();
+  const feed = useRunFeed(runId);
+  const live = isActive(feed.run);
+  // A new item or a new state means the trace moved on: read it again.
+  useEffect(() => {
+    if (feed.lastSeq > 0) {
+      void client.invalidateQueries({
+        queryKey: agentRunTraceQueryKey({ path: { run_id: runId } }),
+      });
+    }
+  }, [client, runId, feed.lastSeq, feed.run?.state]);
+  const narration = feed.items.filter((i) => i.kind === "narration");
   const exp = useMutation({
     ...exportRunTraceMutation(),
     onError: (error) => {
@@ -199,9 +226,7 @@ export function TraceDrawer({
         if (!o) onClose();
       }}
       title={t?.run.agent_label ?? "Run trace"}
-      meta={
-        t && <StatusPill tone={STATE[t.run.state].tone}>{STATE[t.run.state].label}</StatusPill>
-      }
+      meta={t && <RunPill state={(feed.run ?? t.run).state} live={live} />}
       footer={
         <Button
           size="sm"
@@ -265,6 +290,16 @@ export function TraceDrawer({
                   ))}
                 </ol>
               </section>
+              {narration.length > 0 && (
+                <section aria-label="What the agent did">
+                  <h3 className="mb-1 text-[12px] font-medium text-ink-3">What the agent did</h3>
+                  <ul className="text-[13px]">
+                    {narration.map((i) => (
+                      <li key={i.seq}>{narrate(i.code, i.outcome, i.detail)}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
               {t.output_counts.length > 0 && (
                 <section aria-label="Output">
                   <h3 className="mb-1 text-[12px] font-medium text-ink-3">Proposed</h3>

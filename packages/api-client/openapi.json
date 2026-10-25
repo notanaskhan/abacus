@@ -35621,6 +35621,147 @@
         "title": "RowStateOut",
         "type": "object"
       },
+      "RunItemOut": {
+        "description": "A thread item: code words and references only (P-09 Story 8.1); the client words it.",
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Detail"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "tool_card",
+              "narration",
+              "decision",
+              "failure"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome"
+          },
+          "ref_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ref Id"
+          },
+          "ref_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ref Type"
+          },
+          "seq": {
+            "cls": "internal",
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "kind",
+          "at",
+          "code",
+          "outcome",
+          "detail",
+          "actor",
+          "ref_type",
+          "ref_id"
+        ],
+        "title": "RunItemOut",
+        "type": "object"
+      },
+      "RunItemsOut": {
+        "description": "The run header plus the items after `after_seq` (P-09 Story 1.3 polling).",
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RunItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "last_seq": {
+            "cls": "internal",
+            "title": "Last Seq",
+            "type": "integer"
+          },
+          "resync": {
+            "cls": "internal",
+            "title": "Resync",
+            "type": "boolean"
+          },
+          "run": {
+            "$ref": "#/components/schemas/AgentRunOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "run",
+          "items",
+          "last_seq",
+          "resync"
+        ],
+        "title": "RunItemsOut",
+        "type": "object"
+      },
       "RunTraceOut": {
         "properties": {
           "attempts": {
@@ -35806,9 +35947,9 @@
             "title": "Kind",
             "type": "string"
           },
-          "state": {
+          "outcome": {
             "cls": "internal",
-            "title": "State",
+            "title": "Outcome",
             "type": "string"
           },
           "target_id": {
@@ -35843,7 +35984,7 @@
           "target_type",
           "target_id",
           "key",
-          "state",
+          "outcome",
           "at",
           "decision",
           "decided_by_name",
@@ -45315,6 +45456,123 @@
           }
         },
         "summary": "Agent Run Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "agent_run.read"
+      }
+    },
+    "/v1/agent-runs/{run_id}/items": {
+      "get": {
+        "operationId": "agent_run_items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after_seq",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After Seq",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunItemsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Agent Run Items Route",
         "tags": [
           "agents"
         ],

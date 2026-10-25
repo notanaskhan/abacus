@@ -16961,6 +16961,71 @@ export type RowStateOut = {
 };
 
 /**
+ * RunItemOut
+ *
+ * A thread item: code words and references only (P-09 Story 8.1); the client words it.
+ */
+export type RunItemOut = {
+    /**
+     * Actor
+     */
+    actor: string | null;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Detail
+     */
+    detail: string | null;
+    /**
+     * Kind
+     */
+    kind: 'tool_card' | 'narration' | 'decision' | 'failure';
+    /**
+     * Outcome
+     */
+    outcome: string | null;
+    /**
+     * Ref Id
+     */
+    ref_id: string | null;
+    /**
+     * Ref Type
+     */
+    ref_type: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
+};
+
+/**
+ * RunItemsOut
+ *
+ * The run header plus the items after `after_seq` (P-09 Story 1.3 polling).
+ */
+export type RunItemsOut = {
+    /**
+     * Items
+     */
+    items: Array<RunItemOut>;
+    /**
+     * Last Seq
+     */
+    last_seq: number;
+    /**
+     * Resync
+     */
+    resync: boolean;
+    run: AgentRunOut;
+};
+
+/**
  * RunTraceOut
  */
 export type RunTraceOut = {
@@ -17059,9 +17124,9 @@ export type RunWriteOut = {
      */
     kind: 'suggestion' | 'proposal' | 'screening';
     /**
-     * State
+     * Outcome
      */
-    state: string;
+    outcome: string;
     /**
      * Target Id
      */
@@ -21584,6 +21649,63 @@ export type AgentRunResponses = {
 };
 
 export type AgentRunResponse = AgentRunResponses[keyof AgentRunResponses];
+
+export type AgentRunItemsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: {
+        /**
+         * After Seq
+         */
+        after_seq?: number;
+    };
+    url: '/v1/agent-runs/{run_id}/items';
+};
+
+export type AgentRunItemsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunItemsError = AgentRunItemsErrors[keyof AgentRunItemsErrors];
+
+export type AgentRunItemsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunItemsOut;
+};
+
+export type AgentRunItemsResponse = AgentRunItemsResponses[keyof AgentRunItemsResponses];
 
 export type AgentRunTraceData = {
     body?: never;
