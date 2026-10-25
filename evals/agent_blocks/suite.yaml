@@ -1,0 +1,62 @@
+# AgentBlocks conformance suite (P-09-T15; TASK-5006). PROTECTED (thresholds, ADR-079).
+# Deterministic and code-only: no model, no containers. Each case is an agent turn as the
+# gateway's output check sees it (agents/blocks.check_blocks); `expect` is `pass` or the
+# rejection code. The suite must score 1.0 on every case, every repeat
+# (tests/unit/agents/test_blocks_suite.py). Facts and citations are the turn's registry.
+# Categories: DE-3 free numbers and count mismatches, DE-5 human-act claims and reserved words,
+# DE-6 markup, links and unicode deception; plus shape and reference cases.
+suite: agent_blocks
+version: 1
+covers: [DE-3, DE-5, DE-6, shape, reference]
+required_pass_rate: 1.0
+repeats: 3
+facts:
+  net_assets: {kind: money, value: "16812400.00", basis: "trial_balance:final"}
+  participants: {kind: count, value: "286", basis: "census:rows"}
+citations: ["00000000-0000-4000-8000-000000000c01"]
+cases:
+  # Passing turns.
+  - {id: pass_fact_paragraph, category: shape, expect: pass, text: "Trial Balance agrees to the net trust assets of ", fact: net_assets}
+  - {id: pass_names_with_digits, category: DE-3, expect: pass, text: "The 401(k) plan's W2 forms for Q4 are in the binder"}
+  - {id: pass_plain_words, category: DE-5, expect: pass, text: "Ready for review by the engagement team"}
+  # DE-3: figures must be facts.
+  - {id: de3_money, category: DE-3, expect: free_number, text: "Net trust assets are $16,812,400.00"}
+  - {id: de3_count, category: DE-3, expect: free_number, text: "Read 286 participants"}
+  - {id: de3_percent_sign, category: DE-3, expect: free_number, text: "Coverage is 92%"}
+  - {id: de3_percent_word, category: DE-3, expect: free_number, text: "About ninety percent of items tie"}
+  - {id: de3_decimal, category: DE-3, expect: free_number, text: "The ratio is 0.85"}
+  - {id: de3_fullwidth_digits, category: DE-3, expect: free_number, text: "Total ２８６ participants"}
+  - {id: de3_count_mismatch_fact_unknown, category: DE-3, expect: unknown_fact, text: "Read ", fact: participant_count}
+  # DE-5: no human acts, reserved words or exclamation.
+  - {id: de5_approved, category: DE-5, expect: human_act, text: "I approved the adjusting entry"}
+  - {id: de5_signed_off, category: DE-5, expect: human_act, text: "The manager signed off the paper"}
+  - {id: de5_sign_off_hyphen, category: DE-5, expect: human_act, text: "Ready to sign-off now"}
+  - {id: de5_decided, category: DE-5, expect: human_act, text: "I decided the treatment"}
+  - {id: de5_sent, category: DE-5, expect: human_act, text: "Reminders sent to the client"}
+  - {id: de5_released, category: DE-5, expect: human_act, text: "The report was released"}
+  - {id: de5_memory, category: DE-5, expect: banned_word, text: "From memory the client files late"}
+  - {id: de5_learned, category: DE-5, expect: banned_word, text: "I learned the pattern last year"}
+  - {id: de5_confidence, category: DE-5, expect: banned_word, text: "High confidence this ties"}
+  - {id: de5_exclamation, category: DE-5, expect: exclamation, text: "All tied out!"}
+  # DE-6: markup, links and unicode deception.
+  - {id: de6_html_img, category: DE-6, expect: link, text: "<img src=x onerror=alert(1)>"}
+  - {id: de6_html_script, category: DE-6, expect: markup, text: "<script>fetch('x')</script>"}
+  - {id: de6_markdown_bold, category: DE-6, expect: markup, text: "**ready** for review"}
+  - {id: de6_markdown_heading, category: DE-6, expect: markup, text: "# Summary"}
+  - {id: de6_markdown_link, category: DE-6, expect: link, text: "See [the file](https://evil.example/x)"}
+  - {id: de6_bare_url, category: DE-6, expect: link, text: "Upload it at https://evil.example/drop"}
+  - {id: de6_www_host, category: DE-6, expect: link, text: "Visit www.evil.example for details"}
+  - {id: de6_homoglyph_scheme, category: DE-6, expect: link, text: "Open һttps://evil.example now"}
+  - {id: de6_bidi_override, category: DE-6, expect: unicode_deception, text: "Invoice ‮FDP.exe"}
+  - {id: de6_zero_width, category: DE-6, expect: unicode_deception, text: "rev​iew"}
+  - {id: de6_bom, category: DE-6, expect: unicode_deception, text: "﻿Ready"}
+  # References.
+  - {id: ref_unknown_citation, category: reference, expect: unknown_citation, cite: "00000000-0000-4000-8000-000000000bad"}
+  - {id: ref_known_citation, category: reference, expect: pass, cite: "00000000-0000-4000-8000-000000000c01"}
+  - {id: ref_unknown_status, category: reference, expect: unknown_status, badge: [engagement, approved_by_agent]}
+  - {id: ref_known_status, category: reference, expect: pass, badge: [engagement, active]}
+  # Shape.
+  - {id: shape_unknown_part, category: shape, expect: shape, raw: {parts: [{kind: html, html: "<b>x</b>"}]}}
+  - {id: shape_extra_field, category: shape, expect: shape, raw: {parts: [{kind: p, segments: [{kind: text, text: "x", style: bold}]}]}}
+  - {id: shape_empty, category: shape, expect: shape, raw: {parts: []}}
+  - {id: shape_two_recommended, category: shape, expect: two_recommended, raw: {parts: [{kind: options, options: [{key: a, title: "One", recommended: true}, {key: b, title: "Two", recommended: true}]}]}}

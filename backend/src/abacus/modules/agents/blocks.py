@@ -212,11 +212,18 @@ _BANNED = re.compile(
     r"\b(memory|memories|trained|learned|learnt|confidence|certain(?:ty)?)\b", re.I
 )
 _PERCENT_WORDS = re.compile(r"\b(percent|per\s+cent)\b", re.IGNORECASE)
+# Anything link-shaped, whatever precedes it. A homoglyph scheme (a Cyrillic letter, then
+# "ttps://") defeats the word boundary sanitise_text's URL pattern needs (TASK-5006).
+_LINKISH = re.compile(r"://|(?<![A-Za-z0-9])www\.", re.IGNORECASE)
+# Unicode deception (DE-6): bidi overrides and isolates, zero-width and invisible characters.
+_DECEPTIVE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u00ad]")
 
 
 def lint_text(text: str, where: str) -> None:
     """The deterministic copy lint on one string of agent text."""
-    if sanitise_text(text) != text:
+    if _DECEPTIVE.search(text):
+        raise BlocksRejected("unicode_deception", where)
+    if sanitise_text(text) != text or _LINKISH.search(text):
         raise BlocksRejected("link", where)
     if _HTML.search(text) or _MARKDOWN.search(text):
         raise BlocksRejected("markup", where)
