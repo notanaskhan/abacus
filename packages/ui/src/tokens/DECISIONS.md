@@ -520,3 +520,16 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-24 | Tree search | 120 wide in the 452 tree; in the 214 tree the field shrinks to its 28px icon, as T3a draws a search button                                                                     |
 | 2026-10-24 | T3 figures  | The frame draws the T3 handoff's Feld 1040 lines (they foot: lines 9 and 33); TPL-03 (F-05-T54) draws the seed's                                                               |
 | 2026-10-24 | Page images | The viewer uses the gallery's synthetic page images (F-05-T47), so T3a to T3e carry a parity deviation                                                                         |
+
+### TPL-03 Feld 1040 review specimen (F-05-T54)
+
+| Date       | Item           | Decision                                                                                                                                                  |
+| ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-25 | Figures        | Seed figures only (`FELD_K1`, `FELD_HALVARD`, `FELD_1040_LINES`, `RIDGELINE_K1S`; blueprint 01 §9.4); Item L, line 2b and Schedule K foot in FOOTINGS        |
+| 2026-10-25 | Unapprove      | `TriadFooter` takes `onUnapprove`: an approved document then offers the tonal "Unapprove Document" (x), for a person only; without it, "Approved" disabled |
+| 2026-10-25 | Tree micro-pills | `TriadDoc.info` draws the ⓘ micro-pill (outline, 21 square); `checkable: false` drops the check (a firm worksheet); `flagsNote` is the flag pill's tooltip |
+| 2026-10-25 | Layout menu    | `EvidenceTriad.views` names each preset ("Review layout · 452 × 3", "Prepare layout · 214 · 571 · 571"); the default stays TRIAD_VIEWS                       |
+| 2026-10-25 | K-1 matrix     | Statement-like rows 41 tall, padding 14, 13px; a lit row takes the match fill with its label at 500 (one `useMatch` per row, INV-2)                          |
+| 2026-10-25 | Opened lit     | a, c, d open with box 5 pinned and b with box 1a pinned, so the board shows the cross-highlight; Escape or a second click clears it                        |
+| 2026-10-25 | Empty tabs     | Worksheets and 2-Year Comparison draw nothing: the handoff draws only Leadsheets, and no copy is invented                                                  |
+| 2026-10-25 | Page images    | As T3: the gallery's synthetic page images stand in for the K-1 and 1099 renders, so TPL-03a to e carry a parity deviation                                 |

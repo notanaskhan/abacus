@@ -767,6 +767,46 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T53 frame: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the 1099, W-2 and 1098 forms; the server's masked page renders replace them in the product"
+    },
+    "tpl-03.a": {
+      "selector": "[data-artboard=\"tpl-03a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03a.png",
+      "sha256": "262f99076c03f93b1b88b82b21a209ddebe44ad4ee132956746fc281fbdaa813",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.b": {
+      "selector": "[data-artboard=\"tpl-03b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03b.png",
+      "sha256": "6b3ba0672465c88f022dc4eae5cdbac06849c9b058c938b58cd15e8170720e73",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.c": {
+      "selector": "[data-artboard=\"tpl-03c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03c.png",
+      "sha256": "931cd1ef166a25024e53275ec024365990d35384e77b1c282476663e7c5d60b0",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.d": {
+      "selector": "[data-artboard=\"tpl-03d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03d.png",
+      "sha256": "b101acfe1e578c39e7be450322fc78fe652beaa7ae8ba93048a49f7f7b4ae496",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "tpl-03.e": {
+      "selector": "[data-artboard=\"tpl-03e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-03 Evidence triad specimen - Feld 1040 review/screenshots/TPL-03e.png",
+      "sha256": "8233764419382ef5b966dc8057d8dcd6a5cb29f7f8137b33f53e9b682fe5e51b",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
     }
   }
 }

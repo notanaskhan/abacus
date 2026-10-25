@@ -523,6 +523,43 @@ test.describe("tier D: T3 evidence triad", () => {
   }
 });
 
+// TPL-03 (F-05-T54): the Feld 1040 review at 452 × 3 (a, c, d, e) and 214 · 571 · 571 (b), with
+// the K-1 matrix rows 41 tall.
+test.describe("tier D: TPL-03 Feld 1040 review", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  for (const [id, expected] of [
+    ["tpl-03a", { tree: 452, viewer: 452, sheet: 452 }],
+    ["tpl-03b", { tree: 214, viewer: 571, sheet: 571 }],
+  ] as const) {
+    test(`${id}: panes ${JSON.stringify(expected)}`, async ({ page }) => {
+      const got = await specimen(page, "tpl-03", `[data-artboard="${id}"]`).evaluate((el) => {
+        const w = (sel: string): number | null => {
+          const node = el.querySelector(sel);
+          return node === null ? null : Math.round(node.getBoundingClientRect().width);
+        };
+        return {
+          tree: w('[data-triad-pane="tree"]'),
+          viewer: w('[data-triad-pane="viewer"]'),
+          sheet: w('[data-triad-pane="sheet"]'),
+        };
+      });
+      expect(got).toEqual(expected);
+    });
+  }
+
+  test("tpl-03a: K-1 matrix rows are 41 tall", async ({ page }) => {
+    const h = await specimen(
+      page,
+      "tpl-03",
+      '[data-artboard="tpl-03a"] [data-k1-row="type"]',
+    ).evaluate((el) => Math.round(el.getBoundingClientRect().height));
+    expect(h).toBe(41);
+  });
+});
+
 // The M5 lock (F-05-T49): T11 DashboardLayout, T12 SettingsLayout and the O6 wizard, at the numbers
 // their canvases state (Wave 0 - Foundations `#t11`, `#t12`; Wave 0 - Templates TPL-11, TPL-12,
 // TPL-18). Box sizes are measured inside the 1400 window, so they hold at any page offset.
