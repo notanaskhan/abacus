@@ -13709,6 +13709,261 @@
         "title": "EngagementDraftValidationOut",
         "type": "object"
       },
+      "EngagementExportOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "undo",
+                "download"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "bundle_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Bundle Sha256"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expires At"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "integrity_mismatch",
+                  "export_section_missing",
+                  "build_error"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Failure Code"
+          },
+          "file_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "File Count"
+          },
+          "format_version": {
+            "cls": "public",
+            "const": "1.0",
+            "title": "Format Version",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "binder",
+              "final_binder"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Manifest Sha256"
+          },
+          "not_before": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Not Before",
+            "type": "string"
+          },
+          "ready_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ready At"
+          },
+          "request_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request Count"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by": {
+            "$ref": "#/components/schemas/ExportPersonOut",
+            "cls": "internal"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ExportScopeOut",
+            "cls": "internal"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Size Bytes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EngagementExportStatus",
+            "cls": "internal"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "withdrawn_content",
+                  "expired"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Void Reason"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "engagement_id",
+          "work_item_id",
+          "kind",
+          "scope",
+          "format_version",
+          "status",
+          "requested_by",
+          "requested_at",
+          "not_before"
+        ],
+        "title": "EngagementExportOut",
+        "type": "object"
+      },
+      "EngagementExportPageOut": {
+        "description": "The work item's exports, newest first (P-36 envelope without facets).",
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/EngagementExportOut"
+            },
+            "maxItems": 50,
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "EngagementExportPageOut",
+        "type": "object"
+      },
+      "EngagementExportStatus": {
+        "enum": [
+          "queued",
+          "packaging",
+          "ready",
+          "failed",
+          "expired",
+          "undone"
+        ],
+        "title": "EngagementExportStatus",
+        "type": "string"
+      },
       "EngagementFromDraftOut": {
         "description": "One unit of work: the engagement (Accepted), its work items by type cardinality, the team\nand independence requests, the methodology pin and `engagement.created`.",
         "properties": {
@@ -16153,6 +16408,115 @@
           "agent_run_id"
         ],
         "title": "ExplainAcceptedOut",
+        "type": "object"
+      },
+      "ExportCreateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "default": "binder",
+            "enum": [
+              "binder",
+              "final_binder"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ExportScopeIn",
+            "cls": "internal",
+            "default": {
+              "binder_ids": [],
+              "include_audit_trail": true,
+              "include_unaccepted": false
+            }
+          }
+        },
+        "title": "ExportCreateIn",
+        "type": "object"
+      },
+      "ExportPersonOut": {
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name"
+        ],
+        "title": "ExportPersonOut",
+        "type": "object"
+      },
+      "ExportScopeIn": {
+        "additionalProperties": false,
+        "description": "The export sheet's options. No binder ids means every PBC binder of the work item.",
+        "properties": {
+          "binder_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Binder Ids",
+            "type": "array"
+          },
+          "include_audit_trail": {
+            "cls": "internal",
+            "default": true,
+            "title": "Include Audit Trail",
+            "type": "boolean"
+          },
+          "include_unaccepted": {
+            "cls": "internal",
+            "default": false,
+            "title": "Include Unaccepted",
+            "type": "boolean"
+          }
+        },
+        "title": "ExportScopeIn",
+        "type": "object"
+      },
+      "ExportScopeOut": {
+        "description": "The scope as resolved at create: the binder ids are always listed.",
+        "properties": {
+          "binder_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Binder Ids",
+            "type": "array"
+          },
+          "include_audit_trail": {
+            "cls": "internal",
+            "title": "Include Audit Trail",
+            "type": "boolean"
+          },
+          "include_unaccepted": {
+            "cls": "internal",
+            "title": "Include Unaccepted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "binder_ids",
+          "include_unaccepted",
+          "include_audit_trail"
+        ],
+        "title": "ExportScopeOut",
         "type": "object"
       },
       "Facet": {
@@ -90313,6 +90677,406 @@
         "x-abacus-action": "evidence.read"
       }
     },
+    "/v1/exports/{export_id}": {
+      "get": {
+        "description": "The sheet's poll: Queued, Packaging\u2026, Ready, Export failed, Expired, Undone (A-01-T18).",
+        "operationId": "get_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Export Route",
+        "tags": [
+          "engagement export"
+        ],
+        "x-abacus-action": "export.read"
+      }
+    },
+    "/v1/exports/{export_id}/download": {
+      "get": {
+        "description": "The ZIP (`application/zip`, `Cache-Control: no-store`, a safe `Content-Disposition`),\nresumable with `Range` (A-01-T22). 409 `export_not_ready`, 410 `export_expired`. Audited\n`engagement_export.downloaded` with bytes and range.",
+        "operationId": "download_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Range",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Range"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Download Export",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the code, link or window expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Download Export Route",
+        "tags": [
+          "engagement export"
+        ],
+        "x-abacus-action": "export.download"
+      }
+    },
+    "/v1/exports/{export_id}/undo": {
+      "post": {
+        "description": "Undo inside the window voids the grant: `undone`, no package (A-01-T18); 409\n`undo_window_closed` after it. Audited `engagement_export.undone`.",
+        "operationId": "undo_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Undo Export Route",
+        "tags": [
+          "engagement export"
+        ],
+        "x-abacus-action": "export.create"
+      }
+    },
     "/v1/fields/{target_type}/{target_id}/{field_key}/provenance": {
       "get": {
         "description": "SHL-09 a to f: versions, prior values, citations, ticks and flags with staleness.",
@@ -112945,6 +113709,286 @@
           "engagements"
         ],
         "x-abacus-action": "work_item.read_metadata"
+      }
+    },
+    "/v1/work-items/{work_item_id}/exports": {
+      "get": {
+        "description": "The export sheet's history for the work item, newest first (A-01-T18).",
+        "operationId": "list_exports",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementExportPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Exports Route",
+        "tags": [
+          "engagement export"
+        ],
+        "x-abacus-action": "export.read"
+      },
+      "post": {
+        "description": "AUD-02/03 \"Export binder\u2026\" (A-01-T18): `queued` with a 10-second Undo window; 422\n`export_kind_unsupported` for a non-audit work item; audited `engagement_export.requested`.",
+        "operationId": "create_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Export Route",
+        "tags": [
+          "engagement export"
+        ],
+        "x-abacus-action": "export.create"
       }
     }
   },

@@ -101,6 +101,8 @@ export const ACTIONS = [
   "evidence.void",
   "evidence.withdraw",
   "export.create",
+  "export.download",
+  "export.read",
   "field.add_reference",
   "field.edit",
   "field.read",

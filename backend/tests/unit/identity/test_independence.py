@@ -179,6 +179,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.reject",
         "evidence.unlock",  # P-03-T02 (C4 v1)
         "evidence.upload",
+        "export.create",  # A-01-T17 (TASK-1261): an engagement export is client data
+        "export.download",
+        "export.read",
         "finding.communicate",  # SPEC-301 (TASK-302)
         "finding.conclude_severity",
         "finding.propose_severity",

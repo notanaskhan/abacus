@@ -739,8 +739,27 @@ ACTIONS: dict[str, dict[str, str]] = {
     "export.create": {
         "engagement_partner": "allow",
         "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
         "mfa_recent": "required",
         "not_offshore": "required",
+    },
+    "export.download": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "mfa_recent": "required",
+        "not_offshore": "required",
+    },
+    "export.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
     },
     "field.add_reference": {
         "engagement_partner": "allow",

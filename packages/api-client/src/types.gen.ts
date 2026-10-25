@@ -6422,6 +6422,104 @@ export type EngagementDraftValidationOut = {
 };
 
 /**
+ * EngagementExportOut
+ */
+export type EngagementExportOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'undo' | 'download'>;
+    /**
+     * Bundle Sha256
+     */
+    bundle_sha256?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * Failure Code
+     */
+    failure_code?: 'integrity_mismatch' | 'export_section_missing' | 'build_error' | null;
+    /**
+     * File Count
+     */
+    file_count?: number | null;
+    /**
+     * Format Version
+     */
+    format_version: '1.0';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'binder' | 'final_binder';
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256?: string | null;
+    /**
+     * Not Before
+     */
+    not_before: string;
+    /**
+     * Ready At
+     */
+    ready_at?: string | null;
+    /**
+     * Request Count
+     */
+    request_count?: number | null;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    requested_by: ExportPersonOut;
+    scope: ExportScopeOut;
+    /**
+     * Size Bytes
+     */
+    size_bytes?: number | null;
+    status: EngagementExportStatus;
+    /**
+     * Void Reason
+     */
+    void_reason?: 'withdrawn_content' | 'expired' | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * EngagementExportPageOut
+ *
+ * The work item's exports, newest first (P-36 envelope without facets).
+ */
+export type EngagementExportPageOut = {
+    /**
+     * Items
+     */
+    items: Array<EngagementExportOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * EngagementExportStatus
+ */
+export type EngagementExportStatus = 'queued' | 'packaging' | 'ready' | 'failed' | 'expired' | 'undone';
+
+/**
  * EngagementFromDraftOut
  *
  * One unit of work: the engagement (Accepted), its work items by type cardinality, the team
@@ -7538,6 +7636,71 @@ export type ExplainAcceptedOut = {
      * Issue Id
      */
     issue_id: string;
+};
+
+/**
+ * ExportCreateIn
+ */
+export type ExportCreateIn = {
+    /**
+     * Kind
+     */
+    kind?: 'binder' | 'final_binder';
+    scope?: ExportScopeIn;
+};
+
+/**
+ * ExportPersonOut
+ */
+export type ExportPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * ExportScopeIn
+ *
+ * The export sheet's options. No binder ids means every PBC binder of the work item.
+ */
+export type ExportScopeIn = {
+    /**
+     * Binder Ids
+     */
+    binder_ids?: Array<string>;
+    /**
+     * Include Audit Trail
+     */
+    include_audit_trail?: boolean;
+    /**
+     * Include Unaccepted
+     */
+    include_unaccepted?: boolean;
+};
+
+/**
+ * ExportScopeOut
+ *
+ * The scope as resolved at create: the binder ids are always listed.
+ */
+export type ExportScopeOut = {
+    /**
+     * Binder Ids
+     */
+    binder_ids: Array<string>;
+    /**
+     * Include Audit Trail
+     */
+    include_audit_trail: boolean;
+    /**
+     * Include Unaccepted
+     */
+    include_unaccepted: boolean;
 };
 
 /**
@@ -42035,6 +42198,192 @@ export type ViewerManifestResponses = {
 
 export type ViewerManifestResponse = ViewerManifestResponses[keyof ViewerManifestResponses];
 
+export type GetExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/exports/{export_id}';
+};
+
+export type GetExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetExportError = GetExportErrors[keyof GetExportErrors];
+
+export type GetExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementExportOut;
+};
+
+export type GetExportResponse = GetExportResponses[keyof GetExportResponses];
+
+export type DownloadExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Range
+         */
+        Range?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/exports/{export_id}/download';
+};
+
+export type DownloadExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DownloadExportError = DownloadExportErrors[keyof DownloadExportErrors];
+
+export type DownloadExportResponses = {
+    /**
+     * Response Download Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type DownloadExportResponse = DownloadExportResponses[keyof DownloadExportResponses];
+
+export type UndoExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/exports/{export_id}/undo';
+};
+
+export type UndoExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UndoExportError = UndoExportErrors[keyof UndoExportErrors];
+
+export type UndoExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementExportOut;
+};
+
+export type UndoExportResponse = UndoExportResponses[keyof UndoExportResponses];
+
 export type FieldProvenanceData = {
     body?: never;
     headers?: {
@@ -52289,3 +52638,128 @@ export type ListWorkItemsResponses = {
 };
 
 export type ListWorkItemsResponse = ListWorkItemsResponses[keyof ListWorkItemsResponses];
+
+export type ListExportsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/work-items/{work_item_id}/exports';
+};
+
+export type ListExportsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListExportsError = ListExportsErrors[keyof ListExportsErrors];
+
+export type ListExportsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementExportPageOut;
+};
+
+export type ListExportsResponse = ListExportsResponses[keyof ListExportsResponses];
+
+export type CreateExportData = {
+    body: ExportCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/exports';
+};
+
+export type CreateExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateExportError = CreateExportErrors[keyof CreateExportErrors];
+
+export type CreateExportResponses = {
+    /**
+     * Successful Response
+     */
+    202: EngagementExportOut;
+};
+
+export type CreateExportResponse = CreateExportResponses[keyof CreateExportResponses];

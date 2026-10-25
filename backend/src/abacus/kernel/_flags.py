@@ -11,6 +11,11 @@ AGENTS_CLIENT_DATA_OPTIN = Flag(
     kind="boolean",
     default="false",
 )
+AUDITS_BINDER_EXPORT = Flag(
+    name="audits.binder_export",
+    kind="boolean",
+    default="false",
+)
 AUDITS_COCKPIT = Flag(
     name="audits.cockpit",
     kind="boolean",
@@ -202,6 +207,7 @@ UPLOADS_PROCESSING = Flag(
 
 FLAGS: dict[str, Flag] = {
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
+    "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
     "clients.v2": CLIENTS_V2,
