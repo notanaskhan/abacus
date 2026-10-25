@@ -264,7 +264,7 @@ async def test_ac9_the_tin_is_sealed_and_never_in_the_row_outbox_or_audit_trail(
     assert (record.entities[0].tin_kind, record.entities[0].tin_last4) == ("ssn", "3456")
 
 
-async def test_ac9_an_offshore_member_gets_403_and_nothing_is_logged(
+async def test_ac9_an_offshore_member_is_refused_and_nothing_is_logged(
     migrated_db: MigratedDatabase,
 ) -> None:
     firm, _, client, entity, engagement = await _world(migrated_db)
@@ -272,9 +272,12 @@ async def test_ac9_an_offshore_member_gets_403_and_nothing_is_logged(
     offshore, _ = await firm.person(offshore=True)
     await firm.member(engagement, offshore, "manager")
 
-    with pytest.raises(Forbidden):
+    # G-01-T09 (DEC-319): until T-01 registers an offshore consent provider, an offshore member
+    # reaches no client (a wall: 404, as if it never existed), which is stricter than AC-9's 403.
+    with pytest.raises(NotFound):
         await reveal_tin(offshore, entity, "review_return")
-    assert "tin.reveal" not in (await live.client_record(offshore, client)).allowed_actions
+    with pytest.raises(NotFound):
+        await live.client_record(offshore, client)
     assert (
         await firm.count("SELECT count(*) FROM tin_reveals WHERE tenant_id = $1", firm.tenant) == 0
     )

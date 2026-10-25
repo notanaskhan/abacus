@@ -442,5 +442,9 @@ def test_ac34_the_downgrade_is_refused_while_a_snapshot_is_not_standard(db: sc.D
     head = asyncio.run(_revision(db))
     with pytest.raises(DBAPIError, match="refusing to downgrade 0149"):
         migrate(db.owner_url, BEFORE, down=True)
+    # The guard held: 0149 is still applied. Later migrations in the chain downgrade first, each
+    # in its own transaction, so the database stops at 0149, not at head (S8 wave A assembly).
+    assert asyncio.run(_revision(db)) == REVISION
+    migrate(db.owner_url, head)
     assert asyncio.run(_revision(db)) == head
     assert sc.check(db.owner_url, db.app_url) == []
