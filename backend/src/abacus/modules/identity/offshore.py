@@ -1,12 +1,13 @@
-"""Offshore members, fail closed (G-01-T09; DEC-52, ADR P-12; §7216; DEC-319).
+"""Offshore members (G-01-T09; DEC-52, ADR P-12; §7216; DEC-319, narrowed by TASK-1207).
 
-An offshore member sees only clients a valid offshore-disclosure consent covers. The consent
-provider is T-01's (C19: `register_consent_check('offshore_disclosure', ...)`); until it
-registers, no client qualifies, so an offshore member reaches no client at all. Enforcement is
-`authorise` and `visible()` (walls' layer, so every surface answers 404 with no count); this
-module adds the ADM-03d read, the assignment guard and the TIN masking hook. The two policy
-toggles ("Block offshore assignment without consent", "Mask TINs for restricted members") are
-code, always on: there is nothing to switch off.
+Offshore is not a wall: an offshore member sees and works on clients like anyone else with the
+same role (F-03 section 4.4). What offshore refuses is the restricted, offshore-conditioned
+actions (`not_offshore` in the matrix: `tin.reveal`, `pii.reveal`), at `authorise`'s condition
+layer (403). This module adds the ADM-03d read, the assignment guard (a new assignment on a
+client needs a valid offshore-disclosure consent, T-01's provider through
+`register_consent_check('offshore_disclosure', ...)`; unregistered, none is valid: fail closed)
+and the TIN masking hook. The two policy toggles ("Block offshore assignment without consent",
+"Mask TINs for restricted members") are code, always on: there is nothing to switch off.
 """
 
 from __future__ import annotations
@@ -111,29 +112,15 @@ async def mask_tins_for[M: BaseModel](ctx: Actor, model: M) -> M:
     return _masked(model)
 
 
-async def offshore_hidden(
-    tenant: TenantContext, user_id: UUID, client_ids: Iterable[UUID]
-) -> frozenset[UUID]:
-    """Of these clients, the ones an offshore member has no valid offshore-disclosure consent for
-    (all of them until T-01 registers its provider); none for anyone onshore (DEC-52)."""
-    wanted = list(dict.fromkeys(client_ids))
-    if not wanted or not await is_offshore(tenant, user_id):
-        return frozenset()
-    at = system_now()
-    return frozenset(
-        [c for c in wanted if not await consent_given(tenant, c, OFFSHORE_DISCLOSURE, at)]
-    )
-
-
 async def hidden_clients(
     tenant: TenantContext, user_id: UUID, client_ids: Iterable[UUID]
 ) -> frozenset[UUID]:
     """Of these clients, the ones that must read as unknown to the person: walled off from them
-    (ADR-026), or, for an offshore member, without a valid offshore-disclosure consent (DEC-52).
-    For code that filters or refuses by client outside `authorise` and `visible()` (pickers,
-    duplicate checks, recipient lists, the wall register); `walled_from` alone misses offshore."""
+    (ADR-026). For code that filters or refuses by client outside `authorise` and `visible()`
+    (pickers, duplicate checks, recipient lists, the wall register). Offshore hides nothing
+    (TASK-1207, DEC-319): it refuses only the `not_offshore` actions, in `authorise`."""
     wanted = list(dict.fromkeys(client_ids))
+    if not wanted:
+        return frozenset()
     walled = await walled_clients(tenant, user_id)
-    return frozenset(c for c in wanted if c in walled) | await offshore_hidden(
-        tenant, user_id, wanted
-    )
+    return frozenset(c for c in wanted if c in walled)

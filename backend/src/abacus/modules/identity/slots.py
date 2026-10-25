@@ -56,8 +56,9 @@ async def resolve_scope(
     return None if lookup is None else await lookup(tenant, scope_id)
 
 
-# G-01-T09 (DEC-52, AC9.2): the same consent as a SQL predicate over a client-id column, for
-# `visible()`'s offshore filter. Registered with the check; without one, no client qualifies.
+# G-01-T09 (DEC-52): the same consent as a SQL predicate over a client-id column, part of C19's
+# registration shape. Since TASK-1207 (DEC-319, narrowed) offshore is not a wall, so `visible()`
+# doesn't read it; unregistered, no client qualifies (fail closed) for any later reader.
 ConsentColumn = Callable[[Any, str], "ColumnElement[bool]"]  # Any: the client-id column
 # How many of the firm's clients the consent covers now (ADM-03d's "clients with a valid
 # offshore consent"); unregistered, 0.

@@ -264,10 +264,6 @@ async def test_ac9_the_tin_is_sealed_and_never_in_the_row_outbox_or_audit_trail(
     assert (record.entities[0].tin_kind, record.entities[0].tin_last4) == ("ssn", "3456")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#395 TASK-1207: offshore is a wall until T-01 (DEC-319)",
-)
 async def test_ac9_an_offshore_member_gets_403_and_nothing_is_logged(
     migrated_db: MigratedDatabase,
 ) -> None:

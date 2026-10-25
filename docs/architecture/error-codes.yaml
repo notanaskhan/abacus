@@ -123,7 +123,7 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.ApproverNotPartner
     summary: The named approver must be an active partner-level member other than the walled person and
-      the wall's creator, who can see the client (not walled from it, not offshore without its consent).
+      the wall's creator, who can see the client (not walled from it).
   archive_locked:
     status: 409
     raised_by:

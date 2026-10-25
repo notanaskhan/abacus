@@ -197,15 +197,6 @@ ethical_walls = Table(
     Column("approved_at", DateTime(timezone=True), nullable=True),
     Column("removed_reason", String, nullable=True),
 )
-# G-01-T09 (DEC-52): who is offshore, for `visible()`'s fail-closed offshore predicate.
-membership_offshore = Table(
-    "memberships",
-    _metadata,
-    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
-    Column("user_id", PgUUID(as_uuid=True), nullable=False),
-    Column("status", String, nullable=False),
-    Column("offshore", Boolean, nullable=False),
-)
 
 
 @dataclass(frozen=True)

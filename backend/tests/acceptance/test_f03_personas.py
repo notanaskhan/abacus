@@ -274,10 +274,6 @@ def offshore_manager(firm: Firm) -> AuthContext:
 
 
 @pytest.mark.usefixtures("tin_reveal")
-@pytest.mark.xfail(
-    strict=True,
-    reason="#395 TASK-1207: offshore is a wall until T-01 (DEC-319)",
-)
 async def test_an_offshore_manager_cannot_reveal_a_tin(offshore_manager: AuthContext) -> None:
     """Deny: the role allows it, fresh MFA and a reason are given, and still the offshore
     condition refuses; capabilities never offer it."""
@@ -296,10 +292,6 @@ async def test_the_same_manager_onshore_may_reveal(firm: Firm) -> None:
 
 
 @pytest.mark.usefixtures("tin_reveal")
-@pytest.mark.xfail(
-    strict=True,
-    reason="#395 TASK-1207: offshore is a wall until T-01 (DEC-319)",
-)
 async def test_an_offshore_manager_keeps_ordinary_work(offshore_manager: AuthContext) -> None:
     """Allow: offshore narrows only the actions that carry the condition."""
     for action in ("request_item.create", "evidence.read", "workpaper.read"):

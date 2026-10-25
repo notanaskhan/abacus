@@ -547,7 +547,7 @@ async def _visible_walls(ctx: AuthContext, user_id: UUID) -> list[UUID]:
                 {"u": user_id},
             )
         ).all()
-    # Walled from, or offshore without consent for, the client: never learnt (DEC-43, DEC-52).
+    # Walled from the client: never learnt (DEC-43).
     hidden = await hidden_clients(ctx.tenant, ctx.user_id, [w.client_id for w in walls])
     return [w.id for w in walls if w.client_id not in hidden]
 
