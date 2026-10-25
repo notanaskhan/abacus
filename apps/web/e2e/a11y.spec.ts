@@ -211,6 +211,23 @@ async function running(page: Page): Promise<string[]> {
   );
 }
 
+/** Wait `n` animation frames: any transition a click or a key started has begun by then. */
+async function frames(page: Page, n: number): Promise<void> {
+  await page.evaluate(
+    (count) =>
+      new Promise<void>((done) => {
+        let left = count;
+        const tick = (): void => {
+          left -= 1;
+          if (left <= 0) done();
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+    n,
+  );
+}
+
 test.describe("reduced motion with an overlay open", () => {
   test.use({ reducedMotion: "reduce" });
 
@@ -223,15 +240,16 @@ test.describe("reduced motion with an overlay open", () => {
       .first();
     await trigger.click();
     await expect(page.locator(OPEN_LAYER).last()).toBeVisible();
-    // Reduced motion clamps any CSS transition to 0.01ms, which a sample can still catch for a
-    // frame; a real animation (the shortest the kit draws is 160ms) is still running at 100ms.
-    await expect
-      .poll(() => running(page), { message: "animations with the layer open", timeout: 100 })
-      .toEqual([]);
+    // Reduced motion clamps any CSS transition to 0.01ms, which `running` leaves out; a real
+    // animation (the shortest the kit draws is 160ms) is still running two frames after it
+    // starts. One sample after two frames, not a wall-clock poll: `getAnimations()` over the
+    // whole gallery can take longer than a 100ms poll budget on a loaded runner, which failed
+    // the poll before it sampled anything.
+    await frames(page, 2);
+    expect(await running(page), "animations with the layer open").toEqual([]);
     await page.keyboard.press("Escape");
-    await expect
-      .poll(() => running(page), { message: "animations after closing it", timeout: 100 })
-      .toEqual([]);
+    await frames(page, 2);
+    expect(await running(page), "animations after closing it").toEqual([]);
   });
 });
 
