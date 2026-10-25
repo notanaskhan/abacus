@@ -39,6 +39,13 @@ import {
   type Cli02State,
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
+import {
+  OPENS as CLI04_OPENS,
+  OVERLAYS as CLI04_OVERLAYS,
+  STATES as CLI04_STATES,
+  type Cli04State,
+  scenarios as cli04Scenarios,
+} from "./CLI-04/scenarios";
 import { EngagementsIndex } from "./ENG-01";
 import {
   STATES as ENG01_STATES,
@@ -430,6 +437,48 @@ function Cli02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("CLI-02", { title: "Client record · Overview", Component: Cli02Artboard });
+
+// CLI-04 (P-07-T33): the client record on its "Contacts & access" tab, opened on the artboard's
+// client and overlay.
+function Cli04Frame({ state }: { state: Cli04State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/clients" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <ClientRecordPage
+        clientId={CLI04_OPENS[state]}
+        toolbar={bar.toolbar}
+        frame
+        initialTab="contacts"
+        contactsOpen={CLI04_OVERLAYS[state]}
+      />
+    </div>
+  );
+}
+
+function Cli04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli04State = CLI04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Cli04Frame key={state} state={state} /> : null;
+}
+
+registerScreen("CLI-04", { title: "Contacts & portal access", Component: Cli04Artboard });
 
 function Eng02Frame({ state }: { state: Eng02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

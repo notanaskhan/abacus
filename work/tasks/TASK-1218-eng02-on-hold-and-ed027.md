@@ -2,7 +2,7 @@
 id: TASK-1218
 title: ENG-02 "On hold with reason" control (carried from P-07-T28) and ED-027's decision (DEC-343)
 spec: SPEC-321
-acceptance_criteria: []
+acceptance_criteria: [AC-11, AC-16]
 risk_zone: green
 status: done
 epic: P-07

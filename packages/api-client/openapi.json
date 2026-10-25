@@ -10750,6 +10750,19 @@
             "title": "Id",
             "type": "string"
           },
+          "invitation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Invitation Id"
+          },
           "invited_on": {
             "anyOf": [
               {

@@ -2,7 +2,7 @@
 id: TASK-1217
 title: ENG-03 remaining types — step shapes, e consent gate (fixture-only), g group toggle, h SOC 2 (P-07-T34)
 spec: SPEC-321
-acceptance_criteria: []
+acceptance_criteria: [AC-18, AC-19]
 risk_zone: green
 status: done
 epic: P-07

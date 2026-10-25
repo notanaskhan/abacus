@@ -7,6 +7,7 @@ import type {
 } from "@abacus/api-client";
 import { clientRelationshipsOptions } from "@abacus/api-client/query";
 import {
+  AppShell,
   Button,
   Count,
   DASH,
@@ -37,6 +38,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useFlag } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import {
@@ -54,6 +56,7 @@ import {
   useStaff,
   useUpdateClient,
 } from "../../domain/clients";
+import { CLI04, type Cli04Open } from "../CLI-04";
 import { COPY } from "./copy";
 
 // CLI-02 · Client record · Overview (P-07-T19; docs/screens/CLI-02.md). T2 without the dock (the
@@ -70,7 +73,7 @@ import { COPY } from "./copy";
 // Planned targets (CLI-04, CLI-05, CLI-07, CLI-08, ENG-01, ENG-03, FIL-01, INB-04, INS-05, BND-04,
 // TAX-02, TXP-10, TXP-12, HOME-03) are hidden in production and disabled with their hint elsewhere.
 
-export type Cli02Tab = "overview" | "engagements" | "relationships";
+export type Cli02Tab = "overview" | "engagements" | "relationships" | "contacts";
 
 /** Where a CLI-02 control goes: a `to.<ID>()` link the route navigates to. */
 export type Cli02Target =
@@ -85,6 +88,8 @@ export interface CLI02Props {
   onNavigate?: (target: Cli02Target) => void;
   toolbar?: ToolbarProps;
   frame?: boolean;
+  /** CLI-04's artboards: the overlay the contacts tab opens on (the gallery only). */
+  contactsOpen?: Cli04Open | undefined;
 }
 
 const MONTHS = [
@@ -907,7 +912,10 @@ export function CLI02({
   onNavigate,
   toolbar,
   frame = false,
+  contactsOpen,
 }: CLI02Props): JSX.Element {
+  // CLI-04 (P-07-T33) is live behind `contacts.v2`; without it the tab stays planned.
+  const contactsLive = useFlag("contacts.v2") === true;
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const record = useClientRecord(clientId);
@@ -951,15 +959,19 @@ export function CLI02({
             : { count: counts.engagements }),
         },
         { label: COPY.tabs.relationships },
-        ...(PLANNED_VISIBLE
+        ...(contactsLive || PLANNED_VISIBLE
           ? [
               {
                 label: COPY.tabs.contacts,
-                disabled: true,
+                ...(contactsLive ? {} : { disabled: true }),
                 ...(counts?.contacts == null || counts.contacts === 0
                   ? {}
                   : { count: counts.contacts }),
               },
+            ]
+          : []),
+        ...(PLANNED_VISIBLE
+          ? [
               { label: COPY.tabs.taxProfile, disabled: true },
               { label: COPY.tabs.files, disabled: true },
               {
@@ -976,7 +988,9 @@ export function CLI02({
           ? COPY.tabs.engagements
           : tab === "relationships"
             ? COPY.tabs.relationships
-            : COPY.tabs.overview
+            : tab === "contacts" && contactsLive
+              ? COPY.tabs.contacts
+              : COPY.tabs.overview
       }
       onChange={(label) => {
         onTab(
@@ -984,7 +998,9 @@ export function CLI02({
             ? "engagements"
             : label === COPY.tabs.relationships
               ? "relationships"
-              : "overview",
+              : label === COPY.tabs.contacts
+                ? "contacts"
+                : "overview",
         );
       }}
     />
@@ -1015,25 +1031,56 @@ export function CLI02({
         ? COPY.tabs.relationships
         : COPY.canvas.title;
 
+  const subbar = (
+    <Subbar
+      record={data}
+      partner={partner}
+      {...(onNavigate === undefined
+        ? {}
+        : {
+            onBack: () => {
+              onNavigate({ screen: "CLI-01" });
+            },
+          })}
+    />
+  );
+  if (tab === "contacts" && contactsLive) {
+    // CLI-04: T1 inside the record — the same subbar and tabs over one full-width pane.
+    const pane = (
+      <div data-shell="cols" className="flex min-h-0 flex-1 items-stretch pt-(--gutter-pane)">
+        <CLI04 clientId={clientId} record={data} opens={contactsOpen} />
+      </div>
+    );
+    return (
+      <div data-screen="CLI-02" className="flex min-h-0 flex-1 flex-col">
+        {toolbar === undefined ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {subbar}
+            {tabs}
+            {pane}
+          </div>
+        ) : (
+          <AppShell
+            toolbar={toolbar}
+            frame={frame}
+            {...(frame ? { height: 860 } : {})}
+            record={subbar}
+            tabs={tabs}
+          >
+            {pane}
+          </AppShell>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div data-screen="CLI-02" className="flex min-h-0 flex-1 flex-col">
       <RecordCockpit
         {...(toolbar === undefined ? {} : { toolbar })}
         frame={frame}
         {...(frame ? { height: 860 } : {})}
-        header={
-          <Subbar
-            record={data}
-            partner={partner}
-            {...(onNavigate === undefined
-              ? {}
-              : {
-                  onBack: () => {
-                    onNavigate({ screen: "CLI-01" });
-                  },
-                })}
-          />
-        }
+        header={subbar}
         tabs={tabs}
         rail={rail}
         canvas={{
@@ -1086,18 +1133,23 @@ export function ClientRecordPage({
   onNavigate,
   toolbar,
   frame = false,
+  initialTab = "overview",
+  contactsOpen,
 }: {
   clientId: string;
   onNavigate?: (target: Cli02Target) => void;
   toolbar?: ToolbarProps;
   frame?: boolean;
+  initialTab?: Cli02Tab;
+  contactsOpen?: Cli04Open | undefined;
 }): JSX.Element {
-  const [tab, setTab] = useState<Cli02Tab>("overview");
+  const [tab, setTab] = useState<Cli02Tab>(initialTab);
   return (
     <CLI02
       clientId={clientId}
       tab={tab}
       onTab={setTab}
+      contactsOpen={contactsOpen}
       {...(onNavigate === undefined ? {} : { onNavigate })}
       {...(toolbar === undefined ? {} : { toolbar })}
       frame={frame}

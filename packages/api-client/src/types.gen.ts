@@ -4999,6 +4999,10 @@ export type ContactRowOut = {
      */
     id: string;
     /**
+     * Invitation Id
+     */
+    invitation_id?: string | null;
+    /**
      * Invited On
      */
     invited_on?: string | null;
