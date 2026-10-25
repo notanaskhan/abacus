@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-01 Audits index - All Audits/` (README.md, spec.md, revision.md R2; revision wins, DEC-15) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | A-01 · contract A-01-T01 (this file); stub A-01-T02; consumer tests A-01-T03; phase service A-01-T05; scenario slice A-01-T07; read model `GET /v1/audits` A-01-T08; screen a–f live and g, h fixture-only A-01-T11; live swap A-01-T16; Processing swap to C6 v1 A-01-T27; parity and a11y A-01-T28 |
-| Manifest status | planned (`routes/manifest/aud.ts`, `navArea: "Audits"`); turns `fixture` with A-01-T11, `live` with A-01-T16 |
+| Manifest status | planned (`routes/manifest/aud.ts`, `navArea: "Audits"`); turns `fixture` with A-01-T11, `live` with A-01-T16. Built on fixtures by A-01-T11: routed with its path, status kept `planned` for DEC-195's reason (DEC-340) |
 
 Code to come (A-01 §5.2): `src/screens/AUD-01/{index.tsx, scenarios.ts, copy.ts, AUD-01.test.tsx}`, `src/domain/audits/{queries.ts, messages.ts}`, `src/routes/firm/audits.tsx`, `src/fixtures/handlers/audits.ts`. Tags come only from registered index-tag providers (DV-10); the run badge only from C6 v1 engagement runs (DV-11).
 

@@ -18,3 +18,10 @@ export function useSourceDocuments(
     auditSourceDocumentsOptions({ path: { work_item_id: workItemId }, query: { sort } }),
   );
 }
+
+/** A 404 from the audits routes: outside the tenant, behind a wall, or not assurance (INV-3). */
+export function isNotFound(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const detail = (error as { detail?: unknown }).detail;
+  return detail === "not_found" || (error as { status?: unknown }).status === 404;
+}

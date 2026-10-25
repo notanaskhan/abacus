@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-02 Audit cockpit - Overview- Source Documents- Agent/` (README.md, spec.md, revision.md R2; revision wins, DEC-15) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | A-01 · contract A-01-T01 (this file); stub A-01-T02; consumer tests A-01-T03; phase service A-01-T05; cockpit L3 (`AuditBar`, `SectionRail`, `BlockedSectionCard`, `DockHost`) A-01-T06; cockpit projection and providers A-01-T09; screen A-01-T12; f frame A-01-T31; export sheet A-01-T24; parity A-01-T28. Dock content of a–e: P-09 on P-10 |
-| Manifest status | planned (`routes/manifest/aud.ts`); turns `fixture` with A-01-T12 |
+| Manifest status | planned (`routes/manifest/aud.ts`); turns `fixture` with A-01-T12. Built on fixtures by A-01-T12: routed with its path, status kept `planned` for DEC-195's reason (DEC-341) |
 
 Code to come (A-01 §5.2): `src/domain/audits/{AuditBar.tsx, SectionRail.tsx, BlockedSectionCard.tsx, DockHost.tsx, queries.ts, mutations.ts, messages.ts}` (A-01-T06), `src/screens/AUD-02/{index.tsx, scenarios.ts, copy.ts, AUD-02.test.tsx}` (A-01-T12), `src/routes/firm/audits.tsx`, `src/fixtures/handlers/audits.ts`.
 

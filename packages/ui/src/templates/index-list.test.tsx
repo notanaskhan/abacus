@@ -300,3 +300,28 @@ describe("screen-worded header and footer (P-07-T12, CLI-01)", () => {
     expect(screen.queryByText(/No results/)).toBeNull();
   });
 });
+
+describe("T1 group rows and the tabs bar (AUD-01, A-01-T11)", () => {
+  it("consecutive rows with one key sit under one rowgroup band", () => {
+    list({
+      groupOf: (r) => ({ key: r.status, label: `${r.status} · 1` }),
+    });
+    const bands = screen.getAllByRole("rowheader").map((h) => h.textContent);
+    expect(bands).toEqual(["In review · 1", "Issues · 1"]);
+    const band = screen.getAllByRole("rowheader")[0];
+    expect(band?.getAttribute("scope")).toBe("rowgroup");
+    expect(band?.className).toContain("uppercase");
+    expect(document.querySelectorAll("tbody[data-group]")).toHaveLength(2);
+    expect(document.querySelectorAll("tr[data-row]")).toHaveLength(2);
+  });
+
+  it("a 44-high tabs bar sits above the filter bar only when given", () => {
+    list();
+    expect(document.querySelector("[data-list='tabs']")).toBeNull();
+    cleanup();
+    list({ tabs: <span>Segments</span> });
+    const bar = document.querySelector("[data-list='tabs']");
+    expect(bar?.className).toContain("h-[44px]");
+    expect(bar?.textContent).toBe("Segments");
+  });
+});

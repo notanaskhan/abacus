@@ -1,4 +1,5 @@
 import { areaRoutes } from "./areas";
+import { auditRoutes } from "./audits";
 import { binderRoutes } from "./binders";
 import { clientRoutes } from "./clients";
 import { engagementRoutes } from "./engagements";
@@ -19,7 +20,7 @@ export const FIRM_AREAS = [
   { key: "clients", label: "Clients", routes: clientRoutes },
   { key: "binders", label: "Binders", routes: binderRoutes },
   { key: "notices", label: "Notices", routes: [] },
-  { key: "audits", label: "Audits", routes: [] },
+  { key: "audits", label: "Audits", routes: auditRoutes },
   { key: "closes", label: "Closes", routes: [] },
   { key: "signatures", label: "Signatures", routes: [] },
   { key: "settings", label: "Settings", routes: settingsRoutes },
@@ -32,6 +33,8 @@ export const firmRoutes = [
   ...clientRoutes,
   ...binderRoutes,
   ...settingsRoutes,
+  // A-01-T11, A-01-T12: AUD-01 and AUD-02 behind `audits.cockpit`.
+  ...auditRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,
 ] as const;
