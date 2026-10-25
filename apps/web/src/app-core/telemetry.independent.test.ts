@@ -24,7 +24,7 @@ const CONFIG: RuntimeConfig = {
   release: "fedcba9876543210fedcba9876543210fedcba98",
   portal_base_domain: "portal.example.test",
 };
-const QUERY_SECRET = "reset_code=774411";
+const PAGE_QUERY = "reset_code=774411";
 const USER_EMAIL = "sam.rivera@example.test";
 const CRUMB = "Opened statement for account ending 5521";
 
@@ -55,7 +55,7 @@ function eventItems(): Record<string, unknown>[] {
 beforeEach(() => {
   fetchMock = vi.fn(() => Promise.resolve(new Response("", { status: 200 })));
   vi.stubGlobal("fetch", fetchMock);
-  window.history.replaceState(null, "", `/requests/r-9?${QUERY_SECRET}`);
+  window.history.replaceState(null, "", `/requests/r-9?${PAGE_QUERY}`);
 });
 
 afterEach(async () => {
@@ -75,29 +75,29 @@ describe("Q-01-T53: what a browser error payload may carry", () => {
         values: [
           {
             type: "TypeError",
-            value: `failed at https://app.example.test/requests/r-9?${QUERY_SECRET}`,
+            value: `failed at https://app.example.test/requests/r-9?${PAGE_QUERY}`,
             stacktrace: {
               frames: [
-                { filename: `https://app.example.test/assets/a.js?${QUERY_SECRET}`, lineno: 1 },
+                { filename: `https://app.example.test/assets/a.js?${PAGE_QUERY}`, lineno: 1 },
               ],
             },
           },
         ],
       },
       request: {
-        url: `https://app.example.test/requests/r-9?${QUERY_SECRET}`,
-        query_string: QUERY_SECRET,
+        url: `https://app.example.test/requests/r-9?${PAGE_QUERY}`,
+        query_string: PAGE_QUERY,
       },
       user: { email: USER_EMAIL, id: "user-1", ip_address: "203.0.113.9" },
       breadcrumbs: [{ message: CRUMB, category: "ui.click" }],
       extra: { note: CRUMB },
-      contexts: { page: { url: `?${QUERY_SECRET}` } },
+      contexts: { page: { url: `?${PAGE_QUERY}` } },
       tags: { tenant: "t-1" },
     };
     const kept = scrubEvent(hostile, "/requests/$requestId");
     expect(kept).not.toBeNull();
     const text = JSON.stringify(kept);
-    for (const leaked of [QUERY_SECRET, "774411", USER_EMAIL, "203.0.113.9", CRUMB, "user-1"]) {
+    for (const leaked of [PAGE_QUERY, "774411", USER_EMAIL, "203.0.113.9", CRUMB, "user-1"]) {
       expect(text, leaked).not.toContain(leaked);
     }
     for (const key of ["request", "user", "breadcrumbs", "extra", "contexts"]) {
@@ -128,7 +128,7 @@ describe("Q-01-T53: what a browser error payload may carry", () => {
     setTag("email", USER_EMAIL);
     setContext("page", { href: window.location.href });
     addBreadcrumb({ message: CRUMB });
-    captureException(new TypeError(`could not load ?${QUERY_SECRET}`));
+    captureException(new TypeError(`could not load ?${PAGE_QUERY}`));
     await flush(2000);
 
     const [event] = eventItems();
@@ -137,7 +137,7 @@ describe("Q-01-T53: what a browser error payload may carry", () => {
     for (const key of ["user", "breadcrumbs", "request"])
       expect(event, key).not.toHaveProperty(key);
     const body = payloads();
-    for (const leaked of [QUERY_SECRET, "774411", USER_EMAIL, CRUMB]) {
+    for (const leaked of [PAGE_QUERY, "774411", USER_EMAIL, CRUMB]) {
       expect(body, leaked).not.toContain(leaked);
     }
     expect(fetchMock.mock.calls.every((call) => call[0] === TUNNEL)).toBe(true);
