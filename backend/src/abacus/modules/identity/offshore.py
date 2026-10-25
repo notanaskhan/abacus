@@ -80,7 +80,22 @@ def _person(ctx: Actor) -> UUID:
     return ctx.on_behalf_of
 
 
-async def acts_for_offshore(ctx: Actor) -> bool:
+# --- unmasked client content (DEC-52, DEC-319; TASK-1207 security review and re-check) ----------
+#
+# The one place this rule lives. An offshore member, and an agent or system run acting for one,
+# reads a client's documents, and anything quoting them, only masked:
+# - a route that serves raw content (an original file, a legacy preview or page, a statement read
+#   from the file, a setup file) or a stored output quoting it verbatim (agent flags, proposals,
+#   assessments, screening results, run traces), until masked projections of those outputs exist
+#   (SPEC-322 AC-25, P-03-T15), calls `refuse_unmasked_read` after its own `authorise`, so a wall
+#   or an unknown record still answers 404 first, then 403 at the condition layer;
+# - a route mixing metadata with quoted fields asks `may_read_unmasked` and leaves those out;
+# - an agent's material is the masked projection when `may_read_unmasked` is False for its run
+#   (`person_reads_unmasked` for its requester, before the run starts);
+# - TIN fields go through `mask_tins_for`; reveals and exports are `not_offshore` in the matrix.
+
+
+async def _acts_for_offshore(ctx: Actor) -> bool:
     """Whether the person acting is an offshore member here: the user, the person an agent's run
     was started by, or the person a system run acts for. A support session isn't a member."""
     if isinstance(ctx, AuthContext) and ctx.is_support:
@@ -88,13 +103,19 @@ async def acts_for_offshore(ctx: Actor) -> bool:
     return await is_offshore(ctx.tenant, _person(ctx))
 
 
+async def may_read_unmasked(ctx: Actor) -> bool:
+    """Whether `ctx` may read a client's content, or a stored quote of it, unmasked."""
+    return not await _acts_for_offshore(ctx)
+
+
+async def person_reads_unmasked(tenant: TenantContext, user_id: UUID) -> bool:
+    """`may_read_unmasked` for the person an agent run would act for, before it exists."""
+    return not await is_offshore(tenant, user_id)
+
+
 async def refuse_unmasked_read(ctx: Actor, action: str) -> None:
-    """DEC-52 (TASK-1207 security review): an offshore member reads a client's documents only
-    through masked renditions. A route that serves one unmasked (the original file, a legacy
-    preview with its raw text, a legacy page image, an inbox preview) calls this after its own
-    `authorise`, so a wall or an unknown record still answers 404 first; offshore is then refused
-    at the condition layer (403), before anything is read or logged as read."""
-    if await acts_for_offshore(ctx):
+    """403 at the condition layer for a reader who may not read unmasked content (above)."""
+    if not await may_read_unmasked(ctx):
         raise Forbidden(action, "condition")
 
 
@@ -137,7 +158,7 @@ async def mask_tins_for[M: BaseModel](ctx: Actor, model: M) -> M:
     tagged `pii_kind=tin` masked or null, nested models, lists and dicts included; anyone else
     gets it as is. Every route returning a TIN-tagged model calls it, or is a `not_offshore`
     action (`tests/contracts/test_offshore_tin_masking.py`)."""
-    if not await acts_for_offshore(ctx):
+    if await may_read_unmasked(ctx):
         return model
     return mask_tins(model)
 

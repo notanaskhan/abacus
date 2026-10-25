@@ -80,6 +80,9 @@ from abacus.modules.identity.api import (
     agent_context_for_run,
     authorise,
     is_active_member,
+    may_read_unmasked,
+    person_reads_unmasked,
+    refuse_unmasked_read,
 )
 from abacus.modules.requests.api import fulfilled_items
 
@@ -126,6 +129,10 @@ async def create_screening_run(
     initiator = requested_by
     screener = spec(SCREENER)
     reader = _reader(tenant_id, f"agents:{screener.id}")
+    if not await person_reads_unmasked(reader, requested_by):
+        # DEC-52 (TASK-1207 re-check): the screener reads the raw sheet; masked material has no
+        # sheets, so for an offshore member there is nothing it may send: no run.
+        return None
     if await is_version_withdrawn(reader, evidence_version_id):
         return None  # P-06-T19: agents never read a withdrawn upload
     version = await version_view(reader, evidence_version_id)
@@ -305,6 +312,10 @@ async def _screen(agent: AgentContext) -> ScreeningOutcome:
     screener = spec(run.agent_id)
     engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "evidence.read", engagement.resource())
+    if not await may_read_unmasked(agent):
+        # The initiator turned offshore since the run started: no sheet content may be read or
+        # sent (DEC-52); the run fails, before any model call.
+        raise NotFound("screening_material")
     version = await version_view(agent.tenant, run.evidence_version_id)
     if version.period_start is None or version.period_end is None:
         raise NotFound("evidence_period")
@@ -453,8 +464,16 @@ class ScreeningResultView:
 async def screening_results_for(
     ctx: AuthContext, engagement_id: UUID
 ) -> list[ScreeningResultView]:
+    """The board's screening results: they quote the evidence (cells, values, rationale), so an
+    offshore reader is refused them (DEC-52; TASK-1207 re-check)."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "evidence.read", ref.resource())
+    await refuse_unmasked_read(ctx, "evidence.read")
+    return await _screening_results(ctx, engagement_id)
+
+
+async def _screening_results(ctx: AuthContext, engagement_id: UUID) -> list[ScreeningResultView]:
+    """After `evidence.read` on the engagement."""
     async with tenant_session(ctx.tenant) as session:
         rows = await latest_results(session, ctx, engagement_id)
     # P-06-T19 (ADR-162 §4): nothing derived from a withdrawn upload reaches the firm.
@@ -489,8 +508,11 @@ def _proposal(r: ScreeningResult) -> Proposal:
 
 async def proposals_for(ctx: AuthContext, engagement_id: UUID) -> dict[UUID, Proposal]:
     """The latest proposal per version, for the review queue: read like the evidence board's
-    screening results (authorised `evidence.read`, and audited when any is shown)."""
-    results = await screening_results_for(ctx, engagement_id)
+    screening results (authorised `evidence.read`, and audited when any is shown). An offshore
+    reader gets them too: the queue leaves out their quoted fields (`evidence.review_queue`)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "evidence.read", ref.resource())
+    results = await _screening_results(ctx, engagement_id)
     return {
         r.evidence_version_id: Proposal(
             r.id, r.action, r.confidence, r.rationale, r.citations, r.unverified

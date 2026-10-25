@@ -66,6 +66,7 @@ from abacus.modules.identity.api import (
     Resource,
     allowed_actions,
     authorise,
+    may_read_unmasked,
     names_of,
     visible,
 )
@@ -312,6 +313,8 @@ async def _views(
     resources: dict[UUID, Resource],
 ) -> list[CitationView]:
     reads = _Reads()
+    # DEC-52 (TASK-1207 re-check): the printed value is raw; the quote is re-read masked.
+    values_shown = await may_read_unmasked(ctx)
     events = await events_of(session, [r.id for r in rows])
     by_citation: dict[UUID, list[CitationEvent]] = {}
     for event in events:
@@ -360,7 +363,7 @@ async def _views(
                 loc=loc,
                 quote=quote,
                 quote_state=quote_state,
-                value_text=row.value_text if verified else None,
+                value_text=row.value_text if verified and values_shown else None,
                 match_id=row.match_id,
                 state=state,
                 verified=verified,

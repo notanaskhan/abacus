@@ -176,3 +176,44 @@ The four strict xfails: marks removed, assertions unchanged; all pass.
   backfill conftests in one session) were the backfill and gateway files, which rerun on their own
   pass: 319 passed, 4 xfailed. ruff, pyright, banned patterns, validate_docs, error_codes and
   `make check-fast` pass.
+- 2026-10-25: re-check of 05352733 (ten items; root cause: agent outputs store verbatim quotes and
+  rationales from unmasked runs onshore people started). One commit, failing closed, each with a
+  test written first and seen failing. The rule lives in `identity/offshore.py` only
+  (`refuse_unmasked_read`, `may_read_unmasked`, `person_reads_unmasked`; `acts_for_offshore` is now
+  private). Choices, per route:
+  1-3. Upload-reviewer flags (`review_of`), inbox-matcher proposals (`matches_of`), entry-assessor
+     assessments (`assessments_of`): refused, 403 condition, after their `authorise`.
+  4. Statements: refused in `_authorised_upload`, so the draft, the preview and the approval alike.
+  5. Setup files: refused in `download_setup_file` after `stored_file`'s `setup.read`.
+  6. Screening results: refused. Review queue (mixed): kept, its proposal without rationale,
+     citations and unverified claims (id and action stay, so a decision still names it);
+     `proposals_for` reads through an unrefused `_screening_results`.
+  7. Run traces: refused in `trace_for`, which the export builds on (all runs, fail closed).
+  8. Screener: no run for an offshore requester (`create_screening_run`), and `_screen` fails a
+     run whose initiator turned offshore before reading the sheet or calling the model. Masked
+     material has no sheets, so there is nothing to send.
+  9. `value_text` left out for offshore readers in citation views and viewer regions.
+  10. `not_offshore` on `export.create`, `firm_export.download`, `run_trace.export`,
+     `trial_balance.export`; `make regenerate` (matrix, its generated tests, OpenAPI: the reveal
+     route's docstring from the last commit too).
+  Tests: `backfill/test_offshore_agent_outputs.py` (the sweep over every served firm GET route,
+  NAMED surfaces non-vacuous; 403 per refused route; the queue's metadata; the citation value;
+  the content POSTs; the setup file; a wall still first), `agent_tests/test_offshore_screener.py`,
+  `test_tri_and_offshore.py` (the exports are `not_offshore`; `refused == NOT_OFFSHORE` minus the
+  firm-level download, which security admins show). The sweep fills only this engagement's ids:
+  stored content behind other ids (audits' source documents) isn't reached by it.
+  Changed test: `test_walls_and_need_to_know.py::test_i_offshore_every_surface_answers_remy_as_it_does_onshore`
+  now expects a run's trace and its export to answer 403 to offshore Remy (item 7); every other
+  finding still equals onshore.
+  Checks (targeted, five sessions so the conftests don't collide): agent tests (offshore, walls
+  v2/api/enforcement/runs, agent runs, board reads, screener, screening, observability, gateway)
+  445 passed, 1 failed (`test_observability_audit` relay test: order-dependent, its batch of 500
+  outbox rows; the file passes alone, 27 passed); backfills (both offshore files, independence
+  letter, gate, human-gate projector, P-06-T18/T19/T20, uploads, portal drops, identity backfills)
+  348 passed, 5 xfailed; trust kit 74 passed; evidence, TIN reveal, audits read models, review
+  undo and staleness, retrieval, people v2, engagements, team roles, `test_schema_check_db`,
+  journey 744 passed, 2 xfailed; security (TRI and offshore, walls sweep, tenancy escape, matrix
+  generated, fresh MFA, route introspection), contracts, unit agents/evidence/identity/
+  engagements/api 21,889 passed (the 5 surface cases above, fixed and rerun: 21 passed).
+  ruff, pyright, banned patterns, validate_docs, error_codes, `make regenerate` and
+  `make check-fast` pass.

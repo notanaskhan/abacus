@@ -59,7 +59,13 @@ from abacus.modules.evidence.uploads import (
     _authorised_any_version,  # pyright: ignore[reportPrivateUsage] -- the module's own check
 )
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise, visible
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise,
+    may_read_unmasked,
+    visible,
+)
 
 READ: Final = "evidence.read"
 REVEAL: Final = "pii.reveal"
@@ -334,6 +340,7 @@ async def viewer_regions(
     version = await visible_version(ctx, version_id)
     async with tenant_session(ctx.tenant) as session:
         rows = await verified_citations_into(session, ctx, version.id, match_ids)
+    values_shown = await may_read_unmasked(ctx)  # a printed value is raw (DEC-52; TASK-1207)
     regions: dict[str, ViewerRegion] = {}
     for row in rows:
         match = row.match_id
@@ -349,7 +356,7 @@ async def viewer_regions(
                 sheet if isinstance(sheet, str) else None,
                 cell if isinstance(cell, str) else None,
                 row.id,
-                row.value_text,
+                row.value_text if values_shown else None,
             )
             continue
         page = locator.get("page")
@@ -361,7 +368,7 @@ async def viewer_regions(
             None,
             None,
             row.id,
-            row.value_text,
+            row.value_text if values_shown else None,
         )
     return list(regions.values())
 

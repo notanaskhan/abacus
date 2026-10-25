@@ -34,7 +34,13 @@ from abacus.modules.agents.workflow_types import ScreeningInput
 from abacus.modules.agents.workflows import UploadReviewWorkflow
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import version_view, withdrawn_among
-from abacus.modules.identity.api import AuthContext, authorise, autonomy_level, earliest_partner
+from abacus.modules.identity.api import (
+    AuthContext,
+    authorise,
+    autonomy_level,
+    earliest_partner,
+    refuse_unmasked_read,
+)
 
 _log = get_logger(__name__)
 WORKFLOWS: dict[type, WorkClass] = {UploadReviewWorkflow: spec(REVIEWER).work_class}
@@ -172,6 +178,8 @@ async def review_of(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> 
     """The latest review of a version, firm roles only (`upload_review.read`)."""
     engagement = await get_ref(ctx, engagement_id)
     await authorise(ctx, "upload_review.read", engagement.resource())
+    # DEC-52 (TASK-1207 re-check): stored quotes of the evidence, refused to offshore readers.
+    await refuse_unmasked_read(ctx, "upload_review.read")
     version = await version_view(ctx.tenant, version_id)
     if version.engagement_id != engagement_id:
         raise NotFound("evidence_version")

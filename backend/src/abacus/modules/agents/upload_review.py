@@ -62,10 +62,10 @@ from abacus.modules.evidence.api import ReviewMaterial, is_version_withdrawn, re
 from abacus.modules.identity.api import (
     AgentContext,
     Forbidden,
-    acts_for_offshore,
     authorise,
     is_active_member,
-    is_offshore,
+    may_read_unmasked,
+    person_reads_unmasked,
 )
 from abacus.modules.requests.api import items_of_version
 
@@ -119,7 +119,7 @@ async def create_review_run(
     if await model_blocked(reader, [i.id for i in items]):
         return None  # P-06-T20: tax-return information, no consent registered: no model call
     # DEC-52 (TASK-1207 review): for an offshore member, only the masked text, after its scan.
-    masked = await is_offshore(reader, requested_by)
+    masked = not await person_reads_unmasked(reader, requested_by)
     material = await review_material(reader, evidence_version_id, masked=masked)
     if material is None or material.extraction_status != "extracted":
         return None  # SPEC-030 AC-4: an unreadable or unextracted upload isn't reviewed
@@ -221,7 +221,9 @@ async def review_material_for(agent: AgentContext, version_id: UUID) -> ReviewMa
     """What the reviewer reads, for a run authorised on the version's engagement: the
     extraction's text, or only its masked projection when the run acts for an offshore member
     (DEC-52, TASK-1207 review; None before the PII scan: the run can't proceed)."""
-    return await review_material(agent.tenant, version_id, masked=await acts_for_offshore(agent))
+    return await review_material(
+        agent.tenant, version_id, masked=not await may_read_unmasked(agent)
+    )
 
 
 async def _review(agent: AgentContext) -> ReviewOutcome:

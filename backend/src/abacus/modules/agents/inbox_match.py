@@ -58,10 +58,10 @@ from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import MatchMaterial, match_material
 from abacus.modules.identity.api import (
     AgentContext,
-    acts_for_offshore,
     authorise,
     is_active_member,
-    is_offshore,
+    may_read_unmasked,
+    person_reads_unmasked,
 )
 
 MATCHER = "evidence.matcher"
@@ -106,7 +106,7 @@ async def create_match_run(
     matcher = spec(MATCHER)
     reader = _reader(tenant_id, f"agents:{matcher.id}")
     # DEC-52 (TASK-1207 review): for an offshore member, only the masked text, after its scan.
-    masked = await is_offshore(reader, requested_by)
+    masked = not await person_reads_unmasked(reader, requested_by)
     material = await match_material(reader, inbox_file_id, masked=masked)
     if material is None or material.extraction_status != "extracted" or not material.candidates:
         return None  # SPEC-033 §4.5: an unreadable or unextracted file isn't matched
@@ -210,7 +210,9 @@ async def match_material_for(agent: AgentContext, inbox_file_id: UUID) -> MatchM
     """What the matcher reads, for a run authorised on the file's engagement: a firm upload's
     extracted text, or only its masked projection when the run acts for an offshore member (as a
     portal drop always is; DEC-52, DEC-322, TASK-1207 review; None before the PII scan)."""
-    return await match_material(agent.tenant, inbox_file_id, masked=await acts_for_offshore(agent))
+    return await match_material(
+        agent.tenant, inbox_file_id, masked=not await may_read_unmasked(agent)
+    )
 
 
 async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:

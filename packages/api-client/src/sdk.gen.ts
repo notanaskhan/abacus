@@ -4285,6 +4285,8 @@ export const viewerPage = <ThrowOnError extends boolean = false>(options: Option
  * Reveal Pii Route
  *
  * AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.
+ * Authorised before the stub answers (TASK-1207 review): an offshore member is refused at the
+ * condition layer (`not_offshore`) now, not only once the reveal is built.
  */
 export const revealPii = <ThrowOnError extends boolean = false>(options: Options<RevealPiiData, ThrowOnError>): RequestResult<RevealPiiResponses, RevealPiiErrors, ThrowOnError> => (options.client ?? client).post<RevealPiiResponses, RevealPiiErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

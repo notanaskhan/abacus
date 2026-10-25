@@ -19,7 +19,7 @@ from abacus.modules.engagements.api import (
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.item_detail import IntegrityFailed, download_name
 from abacus.modules.evidence.uploads import clean_name, screened
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, refuse_unmasked_read
 
 Which = Literal["acceptance", "letter"]
 
@@ -49,6 +49,7 @@ async def download_setup_file(
 ) -> tuple[bytes, str, str]:
     """(content, media type, file name); audited and verified."""
     file = await stored_file(ctx, engagement_id, which)  # authorises `setup.read`
+    await refuse_unmasked_read(ctx, "setup.read")  # raw client documents (DEC-52; TASK-1207)
     async with uow(ctx.tenant) as tx:
         tx.record(
             f"engagement.{which}_file_read",

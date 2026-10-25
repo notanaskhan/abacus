@@ -56,9 +56,9 @@ from abacus.modules.evidence.api import ReviewMaterial, review_material
 from abacus.modules.fieldwork.api import EntryFacts, entry_facts
 from abacus.modules.identity.api import (
     AgentContext,
-    acts_for_offshore,
     authorise,
     is_active_member,
+    may_read_unmasked,
 )
 
 ASSESSOR = "fieldwork.entry_assessor"
@@ -292,7 +292,7 @@ async def _assess(agent: AgentContext, item_id: UUID) -> AssessOutcome:
     entry = await entry_facts(agent.tenant, item_id)
     if entry is None or entry.engagement_id != agent.engagement:
         raise NotFound("selected_item")
-    documents = await materials(agent.tenant, entry, masked=await acts_for_offshore(agent))
+    documents = await materials(agent.tenant, entry, masked=not await may_read_unmasked(agent))
     if not documents:
         raise NotFound("upload_extraction")
     output, context = await ask(

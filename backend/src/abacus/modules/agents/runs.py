@@ -26,7 +26,12 @@ from abacus.modules.agents.models import AgentRun
 from abacus.modules.agents.repository import engagement_runs, get_run, screening_results_of_run
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import decisions_on_screenings, withdrawn_among
-from abacus.modules.identity.api import AuthContext, authorise, engagement_team
+from abacus.modules.identity.api import (
+    AuthContext,
+    authorise,
+    engagement_team,
+    refuse_unmasked_read,
+)
 
 RUNTIME_LABEL: Final = "Abacus agent runtime"
 REGION: Final = "United States (data and inference)"
@@ -160,6 +165,8 @@ async def _run(ctx: AuthContext, run_id: UUID, action: str) -> AgentRun:
 
 async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
     run = await _run(ctx, run_id, "agent_run.read")
+    # DEC-52 (TASK-1207): a trace carries the model's text; its export, built from this, too.
+    await refuse_unmasked_read(ctx, "agent_run.read")
     engagement_id = run.engagement_id
     if engagement_id is None:  # _run refuses firm-level runs
         raise NotFound

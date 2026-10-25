@@ -624,7 +624,9 @@ async def test_i_offshore_every_surface_answers_remy_as_it_does_onshore(
     firm: Firm, granite_consented: None, surface: str, role: str
 ) -> None:
     """I-OFFSHORE (TASK-1207): Ashford, without a consent, is not hidden from offshore Remy: each
-    of the seven surfaces reports Ashford to him, exactly as it does once offshore is off."""
+    of the seven surfaces reports Ashford to him, exactly as it does once offshore is off, except
+    that a run's trace and its export carry the model's text and are refused to him (403; the
+    re-check, DEC-319)."""
     remy = await _remy(firm, role)
     probe = SURFACES[surface]
     offshore = await probe(firm, remy)
@@ -632,7 +634,15 @@ async def test_i_offshore_every_surface_answers_remy_as_it_does_onshore(
     await firm.seed.run(
         "UPDATE memberships SET offshore = false WHERE user_id = $1", remy.person.user_id
     )
-    assert await probe(firm, remy) == offshore
+    assert offshore == [_refused_if_trace(line) for line in await probe(firm, remy)]
+
+
+def _refused_if_trace(line: str) -> str:
+    """An onshore finding as an offshore reader gets it: a trace route answers 403."""
+    path, _, rest = line.partition(": ")
+    if path.endswith(("/trace", "/trace-exports")) and rest.endswith(", not 404"):
+        return f"{path}: 403, not 404"
+    return line
 
 
 def _human(who: Person) -> AuthContext:

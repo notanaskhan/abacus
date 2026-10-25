@@ -145,13 +145,14 @@ from abacus.modules.identity.mfa_floor import (
 )
 from abacus.modules.identity.offshore import (
     OffshoreConsentRequired,
-    acts_for_offshore,
     assert_assignable,
     hidden_clients,
     is_offshore,
     mask_tins,
     mask_tins_for,
+    may_read_unmasked,
     offshore_consented,
+    person_reads_unmasked,
     refuse_unmasked_read,
 )
 from abacus.modules.identity.people import (
@@ -492,7 +493,6 @@ __all__ = [
     "acknowledge",
     "active_staff_among",
     "active_wall_count",
-    "acts_for_offshore",
     "add_creator_as_partner",
     "add_member",
     "add_rolled_forward_member",
@@ -572,6 +572,7 @@ __all__ = [
     "locked_addresses",
     "mask_tins",
     "mask_tins_for",
+    "may_read_unmasked",
     "member_context",
     "member_could",
     "member_details",
@@ -583,6 +584,7 @@ __all__ = [
     "note_budget_reviewed",
     "offshore_consented",
     "partner_members",
+    "person_reads_unmasked",
     "policy_agent_may_hold",
     "portal_scopes",
     "provision_setting",

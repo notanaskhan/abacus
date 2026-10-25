@@ -74,7 +74,7 @@ actions:
     senior: firm_setting(seniors_can_accept)
     agent: deny               # ADR-005
   review.assign:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}
-  export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required}
+  export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required, not_offshore: required}   # TASK-1207: an export hands over client content (DEC-52)
   # --- Statement transactions (SPEC-312; TASK-324) ---
   statement.approve:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # a person approves the reconciled transactions (ADR-005; a database CHECK agrees); reading them follows evidence.read
   # --- Trust kit, C4 v1 (P-03-T02; ADR-166 for P-48; P-03 §4.3) ---
@@ -108,5 +108,5 @@ actions:
   # The service holds requester != approver and that download is the requester's or approver's.
   firm_export.request:      {security_admin: allow, agent: deny, system: deny, mfa_recent: required}
   firm_export.approve:      {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
-  firm_export.download:     {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
+  firm_export.download:     {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required, not_offshore: required}   # TASK-1207 (DEC-52)
   firm_export.read:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}
