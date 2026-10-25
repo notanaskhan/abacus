@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Final, Literal, cast, get_args
 from uuid import UUID
 
@@ -20,6 +21,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     MetaData,
+    Numeric,
     Select,
     String,
     Table,
@@ -66,6 +68,10 @@ engagement_members = Table(
     Column("engagement_id", PgUUID(as_uuid=True), nullable=False),
     Column("user_id", PgUUID(as_uuid=True), nullable=False),
     Column("role", String, nullable=False),
+    # P-07-T30 (0155): ENG-05's hours, POR-02's team card and when the person joined the team.
+    Column("budget_hours", Numeric(7, 1)),
+    Column("shown_on_portal", Boolean, nullable=False),
+    Column("proposed_at", DateTime(timezone=True)),
 )
 
 
@@ -183,6 +189,22 @@ ethical_walls = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("removed_by", PgUUID(as_uuid=True), nullable=True),
     Column("removed_at", DateTime(timezone=True), nullable=True),
+    # G-01-T09 (0151): walls v2.
+    Column("reason_code", String, nullable=False),
+    Column("reason_text", String, nullable=True),
+    Column("approver_user_id", PgUUID(as_uuid=True), nullable=True),
+    Column("approved_by", PgUUID(as_uuid=True), nullable=True),
+    Column("approved_at", DateTime(timezone=True), nullable=True),
+    Column("removed_reason", String, nullable=True),
+)
+# G-01-T09 (DEC-52): who is offshore, for `visible()`'s fail-closed offshore predicate.
+membership_offshore = Table(
+    "memberships",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("user_id", PgUUID(as_uuid=True), nullable=False),
+    Column("status", String, nullable=False),
+    Column("offshore", Boolean, nullable=False),
 )
 
 
@@ -604,6 +626,82 @@ async def engagement_members_of(
     return [(cast(UUID, row.user_id), cast(EngagementRole, row.role)) for row in rows]
 
 
+@dataclass(frozen=True)
+class MemberDetail:
+    """A firm team row with ENG-05's extras (P-07-T30)."""
+
+    user_id: UUID
+    role: EngagementRole
+    budget_hours: Decimal | None
+    shown_on_portal: bool
+    proposed_at: datetime | None
+
+
+async def member_details_of(tenant: TenantContext, engagement_id: UUID) -> list[MemberDetail]:
+    """An engagement's firm team with hours, the portal flag and when each joined, for a caller
+    that authorised a read of the engagement (P-07-T30; LIST_EXEMPT)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(
+                    engagement_members.c.user_id,
+                    engagement_members.c.role,
+                    engagement_members.c.budget_hours,
+                    engagement_members.c.shown_on_portal,
+                    engagement_members.c.proposed_at,
+                )
+                .where(engagement_members.c.engagement_id == engagement_id)
+                .where(engagement_members.c.role.in_(sorted(ENGAGEMENT_ROLES)))
+                .order_by(engagement_members.c.role, engagement_members.c.user_id)
+            )
+        ).all()
+    return [
+        MemberDetail(
+            cast(UUID, r.user_id),
+            cast(EngagementRole, r.role),
+            cast(Decimal | None, r.budget_hours),
+            bool(r.shown_on_portal),
+            cast(datetime | None, r.proposed_at),
+        )
+        for r in rows
+    ]
+
+
+async def roles_ever_held(tenant: TenantContext, user_id: UUID) -> list[tuple[UUID, str]]:
+    """Every (engagement, role) a person has held in the firm, from the insert-only membership
+    history (0155): what they are now, and what they were before any later change or removal
+    (P-07-T30 security review; LIST_EXEMPT: one person's own facts, never listed to a caller)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT engagement_id, role FROM engagement_member_events "
+                    "WHERE user_id = :u"
+                ),
+                {"u": user_id},
+            )
+        ).all()
+    return [(cast(UUID, r.engagement_id), str(r.role)) for r in rows]
+
+
+async def set_member_columns(
+    session: AsyncSession, engagement_id: UUID, user_id: UUID, values: dict[str, object]
+) -> bool:
+    """Set `budget_hours` or `shown_on_portal` on a firm team row; False if there is no such
+    row. Only those two columns are the app's to update (0155)."""
+    if not values or set(values) - {"budget_hours", "shown_on_portal"}:
+        raise ValueError("only budget_hours and shown_on_portal are updatable")
+    found = await session.execute(
+        update(engagement_members)
+        .where(engagement_members.c.engagement_id == engagement_id)
+        .where(engagement_members.c.user_id == user_id)
+        .where(engagement_members.c.role.in_(sorted(ENGAGEMENT_ROLES)))
+        .values(**values)
+        .returning(engagement_members.c.user_id)
+    )
+    return found.scalar_one_or_none() is not None
+
+
 async def display_names(user_ids: list[UUID]) -> dict[UUID, str]:
     """Names for users already known to belong to the tenant (IDs read under RLS by the caller)."""
     if not user_ids:
@@ -611,31 +709,6 @@ async def display_names(user_ids: list[UUID]) -> dict[UUID, str]:
     async with identity_engine().connect() as conn:
         rows = (await conn.execute(_USER_NAMES, {"ids": user_ids})).all()
     return {cast(UUID, row.id): str(row.display_name) for row in rows}
-
-
-@dataclass(frozen=True)
-class WallRecord:
-    id: UUID
-    user_id: UUID
-    client_id: UUID
-    status: str
-    created_by: UUID
-    created_at: datetime
-    removed_by: UUID | None
-    removed_at: datetime | None
-
-
-def _wall(m: RowMapping) -> WallRecord:
-    return WallRecord(
-        id=cast(UUID, m["id"]),
-        user_id=cast(UUID, m["user_id"]),
-        client_id=cast(UUID, m["client_id"]),
-        status=cast(str, m["status"]),
-        created_by=cast(UUID, m["created_by"]),
-        created_at=cast(datetime, m["created_at"]),
-        removed_by=cast(UUID | None, m["removed_by"]),
-        removed_at=cast(datetime | None, m["removed_at"]),
-    )
 
 
 async def walled_clients(tenant: TenantContext, user_id: UUID) -> frozenset[UUID]:
@@ -647,61 +720,6 @@ async def walled_clients(tenant: TenantContext, user_id: UUID) -> frozenset[UUID
             )
         )
         return frozenset(cast(UUID, client) for client in rows.scalars().all())
-
-
-async def insert_wall(
-    session: AsyncSession,
-    *,
-    wall_id: UUID,
-    tenant_id: UUID,
-    user_id: UUID,
-    client_id: UUID,
-    created_by: UUID,
-) -> None:
-    await session.execute(
-        insert(ethical_walls).values(
-            id=wall_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
-            client_id=client_id,
-            created_by=created_by,
-        )
-    )
-
-
-async def remove_wall(session: AsyncSession, wall_id: UUID, removed_by: UUID) -> WallRecord | None:
-    """Mark an active wall removed; None if there is no active wall with this id."""
-    row = (
-        (
-            await session.execute(
-                update(ethical_walls)
-                .where(ethical_walls.c.id == wall_id, ethical_walls.c.status == "active")
-                .values(status="removed", removed_by=removed_by, removed_at=func.clock_timestamp())
-                .returning(*ethical_walls.c)
-            )
-        )
-        .mappings()
-        .one_or_none()
-    )
-    return _wall(row) if row is not None else None
-
-
-async def get_wall(session: AsyncSession, wall_id: UUID) -> WallRecord | None:
-    row = (
-        (await session.execute(select(ethical_walls).where(ethical_walls.c.id == wall_id)))
-        .mappings()
-        .one_or_none()
-    )
-    return _wall(row) if row is not None else None
-
-
-async def all_walls(tenant: TenantContext) -> Sequence[WallRecord]:
-    """Every wall of the firm, newest first (firm-level: the caller authorised `wall.list`)."""
-    async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            select(ethical_walls).order_by(ethical_walls.c.created_at.desc(), ethical_walls.c.id)
-        )
-        return [_wall(row) for row in rows.mappings().all()]
 
 
 # --- Support sessions (SPEC-012) ---------------------------------------------------------------
@@ -937,6 +955,21 @@ async def extend_invitation(session: AsyncSession, invitation_id: UUID, days: in
             "make_interval(days => :days) WHERE id = :id AND status = 'pending'"
         ),
         {"id": invitation_id, "days": days},
+    )
+
+
+async def count_invitation_renewal(
+    session: AsyncSession, invitation_id: UUID, most: int
+) -> int | None:
+    """P-08-T21 (AC-14): one more recipient renewal of an expired pending invitation, below
+    `most`; the new count, or None when it may not be renewed."""
+    return await session.scalar(
+        text(
+            "UPDATE client_invitations SET renewal_count = renewal_count + 1 "
+            "WHERE id = :id AND status = 'pending' AND expires_at <= clock_timestamp() "
+            "AND renewal_count < :most RETURNING renewal_count"
+        ),
+        {"id": invitation_id, "most": most},
     )
 
 

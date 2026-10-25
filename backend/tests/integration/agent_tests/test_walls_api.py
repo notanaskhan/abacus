@@ -1,5 +1,7 @@
 """AC-1, AC-2, AC-3, AC-9, AC-10: the wall routes over HTTP (TASK-016 interface contract,
-"Routes"; SPEC-002 §5, §8).
+"Routes"; SPEC-002 §5, §8). SPEC-002 as amended for walls v2 (DEC-169; G-01 AC8.4, DEC-73):
+lifting a wall is a partner's (a partner-level member), never a firm admin's, and a partner
+can't lift a wall on themself.
 
 Rows are seeded as the superuser with a fresh firm per test. Expectations come from the contract,
 not the implementation.
@@ -42,6 +44,7 @@ class Env:
     admin: Person
     member: Person
     site: Site
+    partner: Person  # walls v2: lifting is a partner's (DEC-73)
 
 
 @pytest.fixture
@@ -50,7 +53,17 @@ async def env(net: Net, seed: Seeder) -> Env:
     admin = await net.person(tenant_id, "firm_admin")
     member = await net.person(tenant_id)
     site = await net.site(tenant_id, admin.user_id)
-    return Env(net, tenant_id, admin, member, site)
+    return Env(net, tenant_id, admin, member, site, await _partner(net, tenant_id))
+
+
+async def _partner(net: Net, tenant_id: uuid.UUID) -> Person:
+    who = await net.person(tenant_id)
+    await net.seed.run(
+        "UPDATE memberships SET level = 'partner' WHERE tenant_id = $1 AND user_id = $2",
+        tenant_id,
+        who.user_id,
+    )
+    return who
 
 
 def _body(response: httpx.Response) -> Json:
@@ -247,7 +260,7 @@ async def test_ac3_a_different_user_or_client_is_not_a_duplicate(env: Env) -> No
 
 async def test_ac3_a_removed_wall_does_not_block_a_new_one_for_the_same_pair(env: Env) -> None:
     first = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
-    assert (await env.net.remove_wall(env.admin, first)).status_code == 200
+    assert (await env.net.remove_wall(env.partner, first)).status_code == 200
     second = await env.net.create_wall(env.admin, env.member.user_id, env.site.client_id)
     assert second.status_code == 201
     assert _body(second)["id"] != str(first)
@@ -257,9 +270,9 @@ async def test_ac3_a_removed_wall_does_not_block_a_new_one_for_the_same_pair(env
 # --- remove --------------------------------------------------------------------------------------
 
 
-async def test_ac9_a_firm_admin_removes_a_wall_and_gets_it_back_marked_removed(env: Env) -> None:
+async def test_ac9_a_partner_removes_a_wall_and_gets_it_back_marked_removed(env: Env) -> None:
     wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
-    response = await env.net.remove_wall(env.admin, wall_id)
+    response = await env.net.remove_wall(env.partner, wall_id)
     assert response.status_code == 200, response.text
     body = _body(response)
     assert set(body) == WALL_KEYS
@@ -267,7 +280,7 @@ async def test_ac9_a_firm_admin_removes_a_wall_and_gets_it_back_marked_removed(e
     assert body["status"] == "removed"
     assert body["user_id"] == str(env.member.user_id)
     assert body["client_id"] == str(env.site.client_id)
-    assert body["removed_by"] == str(env.admin.user_id)
+    assert body["removed_by"] == str(env.partner.user_id)
     removed_at = datetime.fromisoformat(cast(str, body["removed_at"]))
     assert removed_at.tzinfo is not None
     assert abs(datetime.now(UTC) - removed_at) < timedelta(minutes=5)
@@ -275,21 +288,21 @@ async def test_ac9_a_firm_admin_removes_a_wall_and_gets_it_back_marked_removed(e
 
 async def test_ac9_the_wall_row_is_kept_not_deleted(env: Env) -> None:
     wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
-    await env.net.remove_wall(env.admin, wall_id)
+    await env.net.remove_wall(env.partner, wall_id)
     [row] = await env.net.seed.rows(
         "SELECT status, removed_by, removed_at FROM ethical_walls WHERE id = $1", wall_id
     )
     assert row["status"] == "removed"
-    assert row["removed_by"] == env.admin.user_id
+    assert row["removed_by"] == env.partner.user_id
     assert row["removed_at"] is not None
 
 
 async def test_ac9_wall_removed_is_audited(env: Env) -> None:
     wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
-    await env.net.remove_wall(env.admin, wall_id)
+    await env.net.remove_wall(env.partner, wall_id)
     [event] = await env.net.audit(env.tenant_id, "wall.removed")
     assert event["actor_kind"] == "human"
-    assert event["actor_id"] == str(env.admin.user_id)
+    assert event["actor_id"] == str(env.partner.user_id)
     assert event["target_type"] == "ethical_wall"
     assert event["target_id"] == str(wall_id)
     assert str(env.member.user_id) in str(event["before_ref"])
@@ -297,15 +310,15 @@ async def test_ac9_wall_removed_is_audited(env: Env) -> None:
 
 
 async def test_ac9_an_unknown_wall_is_404(env: Env) -> None:
-    response = await env.net.remove_wall(env.admin, uuid.uuid4())
+    response = await env.net.remove_wall(env.partner, uuid.uuid4())
     assert response.status_code == 404
     assert response.json() == NOT_FOUND
 
 
 async def test_ac9_an_already_removed_wall_is_404_and_audited_once(env: Env) -> None:
     wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
-    assert (await env.net.remove_wall(env.admin, wall_id)).status_code == 200
-    again = await env.net.remove_wall(env.admin, wall_id)
+    assert (await env.net.remove_wall(env.partner, wall_id)).status_code == 200
+    again = await env.net.remove_wall(env.partner, wall_id)
     assert again.status_code == 404
     assert again.json() == NOT_FOUND
     assert len(await env.net.audit(env.tenant_id, "wall.removed")) == 1
@@ -317,7 +330,7 @@ async def test_ac9_another_firms_wall_is_404(env: Env, net: Net, seed: Seeder) -
     other_member = await net.person(other_firm)
     other_site = await net.site(other_firm, other_admin.user_id)
     foreign = await net.wall(other_admin, other_member.user_id, other_site.client_id)
-    response = await env.net.remove_wall(env.admin, foreign)
+    response = await env.net.remove_wall(env.partner, foreign)
     assert response.status_code == 404
     [row] = await seed.rows("SELECT status FROM ethical_walls WHERE id = $1", foreign)
     assert row["status"] == "active"
@@ -327,8 +340,8 @@ async def test_ac9_removal_without_fresh_mfa_is_403_and_the_wall_stays(env: Env)
     wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
     path = f"/v1/walls/{wall_id}/remove"
     for response in (
-        await env.net.call("POST", path, env.admin, mfa=False),
-        await env.net.call("POST", path, env.admin, mfa_age=timedelta(minutes=20)),
+        await env.net.call("POST", path, env.partner, mfa=False),
+        await env.net.call("POST", path, env.partner, mfa_age=timedelta(minutes=20)),
     ):
         assert response.status_code == 403
         assert response.json() == FORBIDDEN
@@ -337,7 +350,7 @@ async def test_ac9_removal_without_fresh_mfa_is_403_and_the_wall_stays(env: Env)
     assert await env.net.audit(env.tenant_id, "wall.removed") == []
 
 
-@pytest.mark.parametrize("role", [None, "practice_leader", "quality_partner"])
+@pytest.mark.parametrize("role", [None, "practice_leader", "quality_partner", "firm_admin"])
 async def test_ac9_other_roles_cannot_remove_a_wall(env: Env, role: str | None) -> None:
     wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
     who = await env.net.person(env.tenant_id, role)
@@ -355,12 +368,12 @@ async def test_ac9_the_person_walled_cannot_lift_their_own_wall(env: Env) -> Non
     assert response.status_code == 403
 
 
-# --- a firm admin can't lift a wall on themself --------------------------------------------------
+# --- a partner can't lift a wall on themself (ADR-026; DEC-73) ----------------------------------
 
 
-async def test_ac9_a_firm_admin_cannot_remove_a_wall_on_themself(env: Env) -> None:
-    wall_id = await env.net.wall(env.admin, env.admin.user_id, env.site.client_id)
-    response = await env.net.remove_wall(env.admin, wall_id)
+async def test_ac9_a_partner_cannot_remove_a_wall_on_themself(env: Env) -> None:
+    wall_id = await env.net.wall(env.admin, env.partner.user_id, env.site.client_id)
+    response = await env.net.remove_wall(env.partner, wall_id)
     assert response.status_code == 409
     assert response.json() == {"detail": "own_wall"}
     [row] = await env.net.seed.rows(
@@ -370,20 +383,33 @@ async def test_ac9_a_firm_admin_cannot_remove_a_wall_on_themself(env: Env) -> No
     assert await env.net.audit(env.tenant_id, "wall.removed") == []
 
 
-async def test_ac9_another_firm_admin_can_remove_a_wall_on_a_firm_admin(env: Env) -> None:
-    wall_id = await env.net.wall(env.admin, env.admin.user_id, env.site.client_id)
-    second = await env.net.person(env.tenant_id, "firm_admin")
+async def test_ac9_another_partner_can_remove_a_wall_on_a_partner(env: Env) -> None:
+    wall_id = await env.net.wall(env.admin, env.partner.user_id, env.site.client_id)
+    second = await _partner(env.net, env.tenant_id)
     response = await env.net.remove_wall(second, wall_id)
     assert response.status_code == 200
     assert _body(response)["removed_by"] == str(second.user_id)
     assert len(await env.net.audit(env.tenant_id, "wall.removed")) == 1
 
 
-async def test_ac9_a_firm_admin_can_still_remove_walls_on_others(env: Env) -> None:
-    mine = await env.net.wall(env.admin, env.admin.user_id, env.site.client_id)
-    theirs = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
-    assert (await env.net.remove_wall(env.admin, mine)).status_code == 409
-    assert (await env.net.remove_wall(env.admin, theirs)).status_code == 200
+async def test_ac9_a_partner_can_still_remove_walls_on_others(env: Env) -> None:
+    """On another client: a partner walled from a client learns nothing of walls on it
+    (DEC-43, DEC-318), so `theirs` is on a client the partner isn't walled from."""
+    other = await env.net.site(env.tenant_id, env.admin.user_id)
+    mine = await env.net.wall(env.admin, env.partner.user_id, env.site.client_id)
+    theirs = await env.net.wall(env.admin, env.member.user_id, other.client_id)
+    assert (await env.net.remove_wall(env.partner, mine)).status_code == 409
+    assert (await env.net.remove_wall(env.partner, theirs)).status_code == 200
+
+
+async def test_ac9_a_firm_admin_no_longer_lifts_walls_even_on_others(env: Env) -> None:
+    """G-01 AC8.4 (DEC-73): a firm admin who isn't a partner gets 403 and the wall stays."""
+    wall_id = await env.net.wall(env.admin, env.member.user_id, env.site.client_id)
+    response = await env.net.remove_wall(env.admin, wall_id)
+    assert response.status_code == 403
+    assert response.json() == FORBIDDEN
+    [row] = await env.net.seed.rows("SELECT status FROM ethical_walls WHERE id = $1", wall_id)
+    assert row["status"] == "active"
 
 
 # --- AC-10: list ---------------------------------------------------------------------------------
@@ -412,7 +438,7 @@ async def test_ac10_the_list_is_every_wall_of_the_firm_newest_first_including_re
     other_site = await env.net.site(env.tenant_id, env.admin.user_id)
     second = await env.net.wall(env.admin, env.member.user_id, other_site.client_id)
     third = await env.net.wall(env.admin, env.admin.user_id, env.site.client_id)
-    await env.net.remove_wall(env.admin, first)
+    await env.net.remove_wall(env.partner, first)
     listed = cast(list[Json], (await env.net.list_walls(env.admin)).json())
     assert [w["id"] for w in listed] == [str(third), str(second), str(first)]
     assert [w["status"] for w in listed] == ["active", "active", "removed"]

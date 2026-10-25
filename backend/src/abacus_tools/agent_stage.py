@@ -26,6 +26,7 @@ import asyncpg
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
+from abacus_tools.db_connect import connect as connect_db
 
 ACTOR: Final = "platform:founder"
 MIN_RUNS: Final = 50
@@ -62,7 +63,7 @@ def _dsn() -> str:
 
 
 async def _connect(firm: UUID) -> asyncpg.Connection:
-    connection = await asyncpg.connect(_dsn())
+    connection = await connect_db(_dsn())
     await connection.execute(
         "SELECT set_config('app.tenant_id', $1, false), "
         "set_config('app.actor_kind', 'system', false), set_config('app.actor_id', $2, false)",

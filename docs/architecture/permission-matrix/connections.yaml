@@ -9,3 +9,12 @@ actions:
   connection.pull:          {system: allow}
   connection.read_log:     {client_admin: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, independence: required}
   ledger_import.upload:     {client_admin: allow, engagement_partner: allow, manager: allow, senior: allow, independence: required}   # SPEC-028 (TASK-052): an exported trial balance (staff: on behalf, Q4)
+  # --- Entity-scoped connections, POR-16 (A-02 §4.4; TASK-1185; C20 v1 stub A-02-T06, live T16, T23) ---
+  # connection.read is a read verb: authorise it on an engagement resource only (the entity's engagement, or the portal grant's
+  # target engagement). A firm- or client-level resource would draw roles from every engagement and skip independence; for this
+  # scope_only action `authorise` refuses that fallback (A-02 security review, DEC-316).
+  connection.read:          {client_admin: allow, engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required, scope_only: required}   # POR-16 cards and details: a client Owner on the entities their grant covers (INV-4); firm side on an engagement for the entity
+  connection.retry:         {client_admin: allow, engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, scope_only: required}   # POR-16 g "Try again": one run, idempotent while it runs; a client Owner on a covered entity only (INV-4), firm side cleared
+  connection.reconnect_request: {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # AUD-06 source menu: ask the client to reconnect (POR-20 email, POR-02 to-do)
+  # --- Ledger (A-02 §4.4): the ledger module serves no route, so its action sits with the module that does ---
+  ledger.pull:              {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # POST /v1/engagements/{id}/connection/pulls: an on-demand pull through a live connection (A-02-T30)

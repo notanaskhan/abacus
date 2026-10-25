@@ -27,10 +27,10 @@ from abacus.modules.identity.api import (
     clock_view,
     engagement_resource,
     firm_time_zone,
+    hidden_clients,
     member_facts,
     portal_scopes,
     role_codes,
-    walled_from,
 )
 from abacus.modules.platform.entitlements import MODULES, Module, entitlement
 
@@ -97,8 +97,8 @@ async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabili
         else await engagement_resource(ctx.tenant, engagement_id)
     )
     # INV-3: a walled engagement answers exactly as an unknown one, so its existence never leaks.
-    if resource.client_id is not None and resource.client_id in await walled_from(
-        ctx.tenant, ctx.user_id
+    if resource.client_id is not None and await hidden_clients(
+        ctx.tenant, ctx.user_id, [resource.client_id]
     ):
         raise NotFound("engagement")
     allowed = await allowed_actions(ctx, resource)

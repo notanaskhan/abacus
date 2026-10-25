@@ -61,7 +61,7 @@ import subprocess
 import sys
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Final, cast
 from urllib.parse import urlsplit
@@ -75,6 +75,8 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
+from abacus.modules.assurance.api import record_phase, update_profile
+from abacus.modules.engagements.api import answer_independence, assurance_item, assurance_item_id
 from abacus.modules.identity.api import (
     AuthContext,
     MemberProfile,
@@ -89,6 +91,7 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
+from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
@@ -175,12 +178,16 @@ FLAGS_ON: Final = (
     "matching.enabled",
     "ledger.gl_import",
     "guidance.drafting",
+    "audits.cockpit",  # A-01: "the local seed turns it on for Brightwater Hale"
 )
 OFFICE_ZONES: Final = {
     "Chicago": "America/Chicago",
     "Denver": "America/Denver",
     "New York": "America/New_York",
 }
+# G-01-T08 (AC7.1): ADM-03a's office codes; Chicago is the HQ.
+OFFICE_CODES: Final = {"Chicago": "CHI", "Denver": "DEN", "New York": "NYC"}
+HQ_OFFICE: Final = "Chicago"
 
 
 class LoadRefused(RuntimeError):
@@ -354,12 +361,14 @@ async def _office_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
 
     async def write() -> tuple[str, str, str]:
         await conn.execute(
-            "INSERT INTO offices (id, tenant_id, name, time_zone) VALUES ($1, $2, $3, $4) "
-            "ON CONFLICT DO NOTHING",
+            "INSERT INTO offices (id, tenant_id, name, time_zone, code, is_hq) "
+            "VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
             office_id_of(name),
             TENANT,
             name,
             OFFICE_ZONES[name],
+            OFFICE_CODES[name],
+            name == HQ_OFFICE,
         )
         return "office.created", "office", str(office_id_of(name))
 
@@ -420,11 +429,16 @@ async def _team_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> 
     name = str(event.data["name"])
 
     async def write() -> tuple[str, str, str]:
+        line = SERVICE_LINE_OF_TEAM.get(cast(TeamName, name))
+        # G-01-T08: a service line's team carries its line; Firm operations is a practice group.
         await conn.execute(
-            "INSERT INTO teams (id, tenant_id, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            "INSERT INTO teams (id, tenant_id, name, kind, service_line) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
             team_id_of(name),
             TENANT,
             name,
+            "practice_group" if line is None else "service_line",
+            line,
         )
         return "team.created", "team", str(team_id_of(name))
 
@@ -654,28 +668,21 @@ async def _engagement_created(conn: asyncpg.Connection, _: Scenario, event: Even
             audit.type,
             audit.period[0],
             audit.period[1],
-            audit.status,
+            "delivered" if audit.status == "archived" else audit.status,
             creator,
             created,
             office,
         )
+        # A-01-T07 (DEC-310): the phase is never written here; it moves through A-01's services
+        # (`assurance.phase_*` events), and an archived engagement is archived after them.
         await conn.execute(
-            "UPDATE work_items SET due_on = $3, office_id = $4, created_at = $5, "
-            "status = CASE WHEN $6 THEN 'archived' ELSE status END "
+            "UPDATE work_items SET due_on = $3, office_id = $4, created_at = $5 "
             "WHERE tenant_id = $1 AND engagement_id = $2 AND kind = 'assurance'",
             TENANT,
             engagement,
             audit.due_on,
             office,
             created,
-            audit.status == "archived",
-        )
-        await conn.execute(
-            "UPDATE assurance_work_items SET phase = $3 "
-            "WHERE tenant_id = $1 AND engagement_id = $2",
-            TENANT,
-            engagement,
-            audit.phase,
         )
         for initials, role in team_of(audit):
             await conn.execute(
@@ -1288,6 +1295,124 @@ async def _client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> 
         await create_client(tx, TENANT, client.name, client.entities[0], ids=ids)
 
 
+# --- A-01-T07: the assurance slice through A-01's services (DEC-310) ----------------------------
+
+
+def _partner_context(audit: Audit, at: datetime) -> AuthContext:
+    """The engagement partner signed in, with MFA at the event's time."""
+    seat = _SEATS[audit.ep]
+    user = user_id_of(seat)
+    return AuthContext(
+        TenantContext(TENANT, "human", str(user)),
+        user,
+        UUID(int=0),
+        FIRM_ROLES.get(seat.initials),
+        at,
+    )
+
+
+async def _assurance_work_item(audit: Audit) -> UUID:
+    found = await assurance_item_id(
+        TenantContext(TENANT, "system", LOADER), engagement_id_of(audit)
+    )
+    if found is None:
+        raise LookupError(f"no assurance work item on {audit.label}")
+    return found
+
+
+async def _profile_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """The EBP label facts through PATCH profile's service, as the engagement partner."""
+    audit = BY_LABEL[str(event.data["audit"])]
+    ctx = _partner_context(audit, event.at)
+    work_item = await _assurance_work_item(audit)
+    item = await assurance_item(ctx.tenant, work_item)
+    await update_profile(
+        ctx,
+        work_item,
+        item.version,
+        {
+            "ebp_plan_kind": str(event.data["plan"]),
+            "limited_scope_103a3c": bool(event.data["limited"]),
+        },
+    )
+
+
+async def _independence_confirmed(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """The engagement partner confirms their own independence (G2) before moving the phase."""
+    audit = BY_LABEL[str(event.data["audit"])]
+    ctx = _partner_context(audit, event.at)
+    await answer_independence(ctx, engagement_id_of(audit), confirm=True, note=None)
+
+
+async def _phase_recorded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """Record mode: the engagement partner records the next phase (SPEC-330 AC-9 to AC-12)."""
+    audit = BY_LABEL[str(event.data["audit"])]
+    ctx = _partner_context(audit, event.at)
+    await record_phase(ctx, await _assurance_work_item(audit), str(event.data["to"]))
+
+
+async def _phase_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Seed only (security review, DEC-310): a gate phase whose SPEC-314 facts (EQR concurrence,
+    rep letter, release) the slice does not model. The derived event is written as the owner in
+    the event's actor transaction with its audit row, like the other bootstrap writes; its
+    insert trigger still binds the actor to the session, refuses a stale or backward move and
+    moves the projection. No product path moves a phase without its gate met
+    (`assurance.phase.advance_by_gate` computes it). A release keeps its own date."""
+    audit = BY_LABEL[str(event.data["audit"])]
+    engagement = engagement_id_of(audit)
+    on = event.data.get("on")
+    at = datetime.combine(date.fromisoformat(str(on)), event.at.timetz()) if on else event.at
+
+    async def write() -> tuple[str, str, str]:
+        found = await conn.fetchrow(
+            "SELECT work_item_id, phase FROM assurance_work_items "
+            "WHERE tenant_id = $1 AND engagement_id = $2",
+            TENANT,
+            engagement,
+        )
+        if found is None:
+            raise LookupError(f"no assurance work item on {audit.label}")
+        await conn.execute(
+            "INSERT INTO assurance_phase_events (tenant_id, engagement_id, work_item_id, "
+            "from_phase, to_phase, mode, gate_ref, actor_kind, actor_user_id) "
+            "VALUES ($1, $2, $3, $4, $5, 'derived', $6, 'human', $7)",
+            TENANT,
+            engagement,
+            found["work_item_id"],
+            found["phase"],
+            str(event.data["to"]),
+            str(event.data["gate"]),
+            user_id_of(_SEATS[audit.ep]),
+        )
+        return "assurance.phase_derived", "engagement", str(engagement)
+
+    await _bootstrap(conn, replace(event, at=at), write)
+
+
+async def _engagement_archived(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Juniper and Meridian archived outside Accrued: no record-mode archive service exists before
+    A-01-T23, so the archive is written as the owner with its audit row (the phase stays
+    Released, DEC-263)."""
+    audit = BY_LABEL[str(event.data["audit"])]
+    engagement = engagement_id_of(audit)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "UPDATE engagements SET status = 'archived' WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            engagement,
+        )
+        await conn.execute(
+            "UPDATE work_items SET status = 'archived' "
+            "WHERE tenant_id = $1 AND engagement_id = $2 AND kind = 'assurance'",
+            TENANT,
+            engagement,
+        )
+        return "engagement.archived", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
@@ -1300,6 +1425,12 @@ HANDLERS: Final[dict[str, Handler]] = {
     "identity.portal_user_added": _portal_user_added,
     "requests.pbc_list_created": _pbc_list_created,
     "identity.firm_setting_set": _firm_setting_set,
+    # A-01-T07: profile facts, the partner's independence, phase moves, then the archive.
+    "assurance.profile_set": _profile_set,
+    "engagements.independence_confirmed": _independence_confirmed,
+    "assurance.phase_recorded": _phase_recorded,
+    "assurance.phase_advanced": _phase_advanced,
+    "engagements.engagement_archived": _engagement_archived,
     # P-06-T08 (`--slice binders`): client people, tax and close engagements, then the binders.
     "identity.client_person_added": _client_person_added,
     "engagements.tax_engagement_created": _tax_engagement_created,
@@ -1376,7 +1507,7 @@ async def load(
         raise LoadRefused("--slice portal on staging needs portal_base_domain for its host")
     scenario = build(at, holdouts, ("audit_core", *slices))
     replayed = skipped = 0
-    conn = await asyncpg.connect(dsn)
+    conn = await connect_db(dsn)
     try:
         synthetic = await conn.fetchval("SELECT synthetic FROM firms WHERE tenant_id = $1", TENANT)
         if synthetic is False:

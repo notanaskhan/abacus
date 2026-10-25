@@ -41,6 +41,7 @@ from abacus.kernel.uow import (
     Target,
     TargetEvent,
     UnitOfWork,
+    audit_acted_since,
     audit_of_targets,
     audit_total_of_targets,
     event_sha256,
@@ -66,8 +67,10 @@ from abacus.modules.identity.api import (
     resolve_scope,
     void_grant,
 )
+from abacus.modules.requests.client_undo import FIRM_ITEM_ACTS, FirmAlreadyActed, NothingToUndo
 from abacus.modules.requests.events import (
     BinderClosed,
+    BinderMarkDoneUndone,
     BinderMarkedDone,
     BinderPublished,
     BinderUnpublished,
@@ -92,6 +95,12 @@ from abacus.modules.requests.repository import (
     upload_counts,
 )
 from abacus.modules.requests.roll_forward import copy_binder_items
+from abacus.modules.requests.source_documents import (
+    LatestUploadView,
+    OwedByView,
+    RowFacts,
+    row_facts,
+)
 
 # DEC-24: the Undo window of a publish, and how long its grant stays consumable after it.
 UNDO_WINDOW: Final = timedelta(seconds=10)
@@ -229,6 +238,11 @@ class RequestRowView:
     source_tag: str | None
     incorporation_state: str
     upload_count: int
+    # C5 v1.1 (A-01-T10, DEC-313): firm-only; `contract.for_viewer` drops them for a client.
+    owed_by: OwedByView | None = None
+    latest_upload: LatestUploadView | None = None
+    match_confidence: int | None = None
+    linked_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -277,6 +291,13 @@ class ActivityPage:
     next_cursor: str | None
     total: int
     total_capped: bool
+
+
+@dataclass(frozen=True)
+class MarkDoneUndoneView:
+    binder_id: UUID
+    mark_done: str  # tonal (requests open) or ready
+    undone_at: datetime
 
 
 @dataclass(frozen=True)
@@ -503,7 +524,8 @@ async def binder_requests(
             session, ctx, binder.id, category, after, page_size
         )
         uploads = await upload_counts(session, [r.id for r in rows])
-    page = list(rows[:page_size])
+        page = list(rows[:page_size])
+        facts = await row_facts(session, ctx.tenant, page) if not ctx.client else {}
     following = None
     if len(rows) > page_size and page:
         last = page[-1]
@@ -516,7 +538,10 @@ async def binder_requests(
     today = await clock.today(ctx.tenant)
     del ref
     return RequestPage(
-        [_row(i, binder.default_due_on, today, uploads.get(i.id, 0)) for i in page],
+        [
+            _row(i, binder.default_due_on, today, uploads.get(i.id, 0), facts.get(i.id))
+            for i in page
+        ],
         following,
         total[0],
         total[1],
@@ -524,7 +549,13 @@ async def binder_requests(
     )
 
 
-def _row(item: RequestItem, default_due: date | None, today: date, uploads: int) -> RequestRowView:
+def _row(
+    item: RequestItem,
+    default_due: date | None,
+    today: date,
+    uploads: int,
+    facts: RowFacts | None = None,
+) -> RequestRowView:
     due = item.due_on or default_due
     return RequestRowView(
         id=item.id,
@@ -540,6 +571,10 @@ def _row(item: RequestItem, default_due: date | None, today: date, uploads: int)
         source_tag=item.source_tag,
         incorporation_state=item.incorporation_state,
         upload_count=uploads,
+        owed_by=facts.owed_by if facts else None,
+        latest_upload=facts.latest_upload if facts else None,
+        match_confidence=facts.match_confidence if facts else None,
+        linked_count=facts.linked_count if facts else None,
     )
 
 
@@ -1054,6 +1089,66 @@ async def mark_done(ctx: AuthContext, binder_id: UUID) -> MarkedDoneView:
     return MarkedDoneView(binder_id, "complete", now, open_count)
 
 
+async def firm_acted_since(
+    session: AsyncSession, items: Sequence[RequestItem], since: datetime
+) -> bool:
+    """Whether the firm sent, waived or returned a request of the binder after `since` (DEC-24:
+    a client's Undo of Mark as Done closes then): the requests' own stamps, and the audit trail
+    for every such act, however many other events there are (DEC-334)."""
+    if any(i.sent_at is not None and i.sent_at > since for i in items):
+        return True
+    if any(i.na_at is not None and i.na_at > since for i in items):
+        return True
+    return await audit_acted_since(
+        session, [("request_item", i.id) for i in items], sorted(FIRM_ITEM_ACTS), since
+    )
+
+
+async def undo_mark_done(ctx: AuthContext, binder_id: UUID) -> MarkDoneUndoneView:
+    """R-01-T08: the client's Undo of Mark as Done, a compensating event (DEC-24, DEC-334): the
+    `binder.marked_done` event stays, `binder.mark_done_undone` is appended and the binder is
+    Published again with its mark-done stamps cleared (BND-02's "Marked done by …" goes). Open
+    until the firm sends, waives or returns a request of the binder (409 `firm_already_acted`);
+    the marker's own (403 for another person); once (409 `nothing_to_undo`)."""
+    _human(ctx, "binder.mark_done")
+    async with uow(ctx.tenant) as tx:
+        binder, _ref, _resource = await _locked(tx, ctx, binder_id, "binder.mark_done")
+        if binder.status == "published" and binder.marked_done_at is None:
+            raise NothingToUndo(facts={"binder_id": str(binder.id)})
+        if binder.status != "complete" or binder.marked_done_at is None:
+            raise FirmAlreadyActed(facts={"binder_id": str(binder.id)})
+        if binder.marked_done_by != ctx.user_id:
+            raise Forbidden("binder.mark_done", "role")
+        # Every request row of the binder, locked: a firm act in flight on one of them (each
+        # takes its request's lock) commits first and is then seen here, or waits for this Undo.
+        items = await binder_items(tx.session, binder.id, lock=True)
+        if await firm_acted_since(tx.session, items, binder.marked_done_at):
+            raise FirmAlreadyActed(facts={"binder_id": str(binder.id)})
+        now = await clock.now(ctx.tenant)
+        await set_binder(
+            tx.session,
+            binder.id,
+            allowed_from=("complete",),
+            status="published",
+            marked_done_at=None,
+            marked_done_by=None,
+        )
+        await touch_client_activity(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            binder_id=binder.id,
+            work_item_id=binder.work_item_id,
+            status="published",
+            at=now,
+        )
+        tx.record(
+            "binder.mark_done_undone", target=Target("binder", binder.id), scope=_scope(binder)
+        )
+        tx.emit(BinderMarkDoneUndone(binder_id=binder.id, engagement_id=binder.engagement_id))
+        open_count = sum(1 for i in items if i.client_visible and i.status not in DONE)
+    return MarkDoneUndoneView(binder.id, "tonal" if open_count else "ready", now)
+
+
 # --- Close on C1 --------------------------------------------------------------------------------
 
 # A terminal status of the work (C1) -> the close rule code recorded on the binder (OQ-2). Kinds
@@ -1118,3 +1213,30 @@ SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {
     "work_item.status_changed": close_on_status_changed,
     "engagement.status_changed": close_on_status_changed,
 }
+
+
+# --- R-01-T09: the binder a portal drop lands in -----------------------------------------------
+
+
+@dataclass(frozen=True)
+class DropBinder:
+    binder_id: UUID
+    engagement_id: UUID
+    resource: Resource  # the engagement, with the binder's client facts
+
+
+async def drop_binder(ctx: AuthContext, binder_id: UUID, action: str) -> DropBinder:
+    """The published binder a client drops into, authorised for `action` with its client facts
+    (a client admin in scope; a contributor with a request of it assigned). A binder out of the
+    caller's scope, a draft, a forged id or a binder no longer open answers 404 (INV-4)."""
+    binder, _ref, resource = await _readable(ctx, binder_id, action)
+    if binder.status != "published":
+        raise NotFound("binder")
+    return DropBinder(binder.id, binder.engagement_id, resource)
+
+
+async def drop_binder_open(tenant: TenantContext, binder_id: UUID) -> UUID | None:
+    """For the system sort: the binder's engagement while it is published, else None."""
+    async with tenant_session(tenant) as session:
+        binder = await get_binder(session, binder_id)
+    return binder.engagement_id if binder is not None and binder.status == "published" else None

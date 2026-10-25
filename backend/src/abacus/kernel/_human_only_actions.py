@@ -9,9 +9,11 @@ from typing import Final
 HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
     {
         "assurance.phase_recorded",
+        "contact.unlocked",
         "engagement.acceptance_recorded",
         "engagement.accepted",
         "engagement.letter_recorded",
+        "eqr.eligibility_approved",
         "evidence.accepted",
         "firm.ai_client_data_opted_in",
         "firm_export.approved",
@@ -24,6 +26,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "legal_hold.lifted",
         "legal_hold.placed",
         "materiality.decided",
+        "portal_mfa.reset",
         "procedure.concluded",
         "report.approved",
         "report.released",
@@ -36,5 +39,6 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "sample.approved",
         "sign_off.recorded",
         "statement.approved",
+        "team.approved",
     }
 )

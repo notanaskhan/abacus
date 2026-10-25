@@ -4,7 +4,7 @@ to `AUD-03.md`.
 
 `$auditId` is the assurance work item (P-04). Behind `audits.cockpit`: off, every route here
 answers 404; on, 501 `not_implemented` until the task that implements it (profile and phase
-are live since A-01-T05; index A-01-T08; cockpit A-01-T09; source documents A-01-T10; release
+are live since A-01-T05; the index, cockpit and source documents since A-01-T08 to T10; release
 and archive records A-01-T23). Firm routes resolve the work item through `engagements.api`:
 outside the tenant or behind a wall it answers 404, and no response carries a count of hidden
 rows (INV-3, DEC-43). No `/v1/audits` route serves a client principal (INV-4): the index refuses
@@ -37,7 +37,7 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.assurance import phase
+from abacus.modules.assurance import cockpit, index, phase
 from abacus.modules.assurance.sections import Band, Grammar, Segment, TagClassification
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import (
@@ -47,7 +47,11 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.requests.api import RequestLatestUploadOut, RequestOwedByOut
+from abacus.modules.requests.api import (
+    RequestLatestUploadOut,
+    RequestOwedByOut,
+    source_documents,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -468,19 +472,44 @@ async def audits_index_route(
     cursor: Annotated[str | None, Query(max_length=512)] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> AuditIndexPage:
-    """AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08)."""
-    await _stub(ctx, "engagement.read_metadata")
+    """AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311)."""
+    await _allowed(ctx, "engagement.read_metadata", None)
+    await _flag_on(ctx)
+    filters = index.IndexFilters(
+        segment=segment,
+        type=type_,
+        phase=phase.value if phase is not None else None,
+        partner=partner,
+        office=office,
+        due=due,
+        period=period,
+        q=q,
+    )
+    page, summary = await index.audits_index(ctx, filters, cursor=cursor, limit=limit)
+    return AuditIndexPage(
+        items=[AuditIndexRowOut.model_validate(r, from_attributes=True) for r in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+        total_capped=page.total_capped,
+        counts=page.counts,
+        facets=page.facets,
+        summary=AuditIndexSummaryOut.model_validate(summary, from_attributes=True),
+    )
 
 
 @audits_router.get(
     "/{work_item_id}/cockpit",
-    action="engagement.read",
+    action="engagement.read_metadata",
     response_model=AuditCockpitOut,
     errors=(501,),
 )
 async def audit_cockpit_route(work_item_id: UUID, ctx: Ctx) -> AuditCockpitOut:
-    """AUD-02's host projection (A-01-T09)."""
-    await _stub(ctx, "engagement.read", work_item_id)
+    """AUD-02's host projection (A-01-T09, DEC-312): the bar and overview are metadata; the
+    bands, dock and actions also need `engagement.read`."""
+    await _allowed(ctx, "engagement.read_metadata", work_item_id)
+    await _flag_on(ctx)
+    view = await cockpit.audit_cockpit(ctx, work_item_id)
+    return AuditCockpitOut.model_validate(view, from_attributes=True)
 
 
 @audits_router.patch(
@@ -584,5 +613,9 @@ async def audit_source_documents_route(
     q: Annotated[str | None, Query(max_length=100)] = None,
     sort: Annotated[SourceSort, Query()] = "missing_first",
 ) -> SourceDocumentsOut:
-    """AUD-02's canvas and AUD-03 (A-01-T10)."""
-    await _stub(ctx, "request_item.read", work_item_id)
+    """AUD-02's canvas and AUD-03 (A-01-T10, DEC-313): the work item's asked PBC requests by
+    category, with the C5 v1.1 row facts (firm only: client principals were refused)."""
+    await _allowed(ctx, "request_item.read", work_item_id)
+    await _flag_on(ctx)
+    found = await source_documents(ctx, work_item_id, binder_id=binder, q=q, sort=sort)
+    return SourceDocumentsOut.model_validate(found, from_attributes=True)

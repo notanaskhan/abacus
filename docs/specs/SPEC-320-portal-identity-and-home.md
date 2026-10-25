@@ -72,7 +72,7 @@ Today the portal uses the hosted OIDC client sign-in (`ClientAccept.tsx`) and a 
 
 ### Story 6: firm-side recovery (P-08-T21; epic Stories 7.1 to 7.3)
 - **AC-18** Unlock clears the lock and audits `portal.sign_in.unlocked` naming the person; a walled staff member gets 404 (INV-3).
-- **AC-19** MFA reset removes the factor, backup codes and trusted devices, emails the client in the firm's name and sends the next sign-in to setup; audited as `portal.mfa.reset`.
+- **AC-19** MFA reset ends this firm's trusted devices and portal sessions, so the next sign-in here asks for the second step again, and emails the client in the firm's name; audited as `portal_mfa.reset`. It never removes the person's factor or backup codes, which are one across firms (DEC-250): the person resets their own factor (POR-12) or platform support does, and the answer is the same whatever other firms the person belongs to (amended by DEC-329, S8 wave A security review).
 - **AC-20** The per-firm sign-in pause answers 503 `sign_in_paused` for `start` and `verify` within 10 seconds; existing sessions are unaffected.
 
 ## 6. Behaviour and flows

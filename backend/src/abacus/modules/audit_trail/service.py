@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Final
 from uuid import UUID
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import AuditFilter, AuditRow, audit_facets, audit_page
 from abacus.modules.audit_trail.targets import readable
 from abacus.modules.identity.api import AuthContext, Resource, authorise, names_of
@@ -103,3 +103,15 @@ async def facets(ctx: AuthContext) -> tuple[list[str], list[str]]:
     await authorise(ctx, "audit.read", Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
         return await audit_facets(session)
+
+
+async def events_for_target(
+    tenant: TenantContext, kind: str, target_id: UUID, before_seq: int | None, limit: int
+) -> list[AuditRow]:
+    """G-01-T09 (AC8.6): one target's events, newest first, for a log its owner shows (the wall
+    log). The owner authorised the read and decided the reader may see the target; G-02
+    generalises this into ADM-07."""
+    async with tenant_session(tenant) as session:
+        return await audit_page(
+            session, AuditFilter(target_type=kind, target_id=str(target_id)), before_seq, limit
+        )

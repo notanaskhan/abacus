@@ -20,8 +20,8 @@ from abacus.kernel.uow import MissingAuditEvent, OutboxEvent, Ref, Target, uow
 from abacus.modules.identity.api import (
     AuthContext,
     engagement_resource,
+    hidden_clients,
     member_facts,
-    walled_from,
 )
 from abacus.modules.notifications.catalogue import CATALOGUE
 from abacus.modules.notifications.email import queue_emails, start_queued
@@ -94,7 +94,7 @@ async def _reauthorised(
         return []
     if client is None:
         return recipients
-    return [user for user in recipients if client not in await walled_from(ctx, user)]
+    return [user for user in recipients if not await hidden_clients(ctx, user, [client])]
 
 
 async def notify(event: OutboxEvent) -> None:

@@ -10,7 +10,13 @@ from abacus.modules.identity.api import (
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_tag
-from abacus.modules.requests.binders import SUBSCRIPTIONS, register_binder_close_rule
+from abacus.modules.requests.binders import (
+    SUBSCRIPTIONS,
+    DropBinder,
+    drop_binder,
+    drop_binder_open,
+    register_binder_close_rule,
+)
 from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.comments import register_comment_scope_check
 from abacus.modules.requests.contract import (
@@ -35,6 +41,19 @@ from abacus.modules.requests.lifecycle import (
     request_item_scope,
 )
 from abacus.modules.requests.pbc_contract import pbc_firm_router, pbc_portal_router
+from abacus.modules.requests.portal_documents import (
+    PortalBinder,
+    PortalBinderRef,
+    PortalCategory,
+    PortalItem,
+    PortalLink,
+    portal_binder_ref,
+    portal_binder_refs,
+    portal_binder_view,
+    portal_item_binder,
+    portal_item_view,
+    prior_year_link,
+)
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
@@ -50,8 +69,11 @@ from abacus.modules.requests.service import (
     RequestItemSummary,
     RequestItemView,
     ReviewTarget,
+    ScreeningSubject,
     add_request_item,
     apply_drafted_guidance,
+    drop_items,
+    drop_target,
     fulfil_by_rule,
     fulfil_by_upload,
     fulfilled_items,
@@ -67,8 +89,17 @@ from abacus.modules.requests.service import (
     reopen_after_undo,
     request_items_for,
     review_targets,
+    screening_subject,
     upload_item_of,
     withdraw_upload,
+)
+from abacus.modules.requests.source_documents import (
+    SourceDocuments,
+    UploadFacts,
+    pbc_counts,
+    pbc_counts_of,
+    register_upload_facts,
+    source_documents,
 )
 
 # P-07-T25 (C5): CLI-04 records, ends and counts a contact's delegated requests through this.
@@ -90,7 +121,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     binders_router,  # C5 v1 stub (P-06-T01)
     items_router,
     portal_router,
-    pbc_portal_router,  # C5 portal-pbc stub (R-01-T01): undo an Ignore, undo Mark as Done
+    pbc_portal_router,  # C5 portal-pbc (R-01-T08): undo an Ignore, undo Mark as Done
     pbc_firm_router,  # C5 portal-pbc stub (R-01-T01): void a rule fulfilment
 )
 
@@ -108,6 +139,7 @@ __all__ = [
     "WORKFLOWS",
     "BinderProgress",
     "ClientHome",
+    "DropBinder",
     "DueDatesChanged",
     "FollowUpCandidate",
     "FulfilledVersion",
@@ -116,6 +148,11 @@ __all__ = [
     "ItemNotFulfillable",
     "NewRequestItem",
     "OverdueItem",
+    "PortalBinder",
+    "PortalBinderRef",
+    "PortalCategory",
+    "PortalItem",
+    "PortalLink",
     "RequestItemClassified",
     "RequestItemCreated",
     "RequestItemDocumentKindChanged",
@@ -125,11 +162,18 @@ __all__ = [
     "RequestLatestUploadOut",
     "RequestOwedByOut",
     "ReviewTarget",
+    "ScreeningSubject",
+    "SourceDocuments",
+    "UploadFacts",
     "add_request_item",
     "apply_drafted_guidance",
     "classify",
     "client_home",
     "document_kind",
+    "drop_binder",
+    "drop_binder_open",
+    "drop_items",
+    "drop_target",
     "firm_router",
     "follow_up_candidates",
     "fulfil_by_rule",
@@ -143,6 +187,14 @@ __all__ = [
     "methodology_router",
     "move_after_review",
     "overdue_for",
+    "pbc_counts",
+    "pbc_counts_of",
+    "portal_binder_ref",
+    "portal_binder_refs",
+    "portal_binder_view",
+    "portal_item_binder",
+    "portal_item_view",
+    "prior_year_link",
     "read_item",
     "read_item_versions",
     "register_available_datasets",
@@ -150,10 +202,13 @@ __all__ = [
     "register_binder_tag",
     "register_comment_scope_check",
     "register_live_facts",
+    "register_upload_facts",
     "reopen_after_undo",
     "request_items_for",
     "review_targets",
     "router",
+    "screening_subject",
+    "source_documents",
     "upload_item_of",
     "withdraw_upload",
 ]

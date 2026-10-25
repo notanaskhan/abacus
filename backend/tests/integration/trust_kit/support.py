@@ -55,6 +55,17 @@ class Seeder:
         finally:
             await conn.close()
 
+    async def run_untriggered(self, sql: str, *args: object) -> None:
+        """A row no route makes in this shape (a withdrawal of a version that isn't a detached-key
+        client upload, P-03-T12): one transaction with its triggers off."""
+        conn = await asyncpg.connect(self._dsn)
+        try:
+            async with conn.transaction():
+                await conn.execute("SET LOCAL session_replication_role = replica")
+                await conn.execute(sql, *args)
+        finally:
+            await conn.close()
+
     async def rows(self, sql: str, *args: object) -> list[asyncpg.Record]:
         conn = await asyncpg.connect(self._dsn)
         try:

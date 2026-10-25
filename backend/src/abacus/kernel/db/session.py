@@ -27,7 +27,8 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, create_async_engine
 
-from abacus.kernel.config import settings
+from abacus.kernel.config import LOCAL_STACK, settings
+from abacus.kernel.db_tls import database_tls
 
 # `support`: a platform staff member in a break-glass session (SPEC-012), read-only.
 ActorKind = Literal["human", "agent", "system", "support"]
@@ -48,19 +49,25 @@ _engine: AsyncEngine | None = None
 
 
 def _create_engine(url: str, **server_settings: str) -> AsyncEngine:
+    # G-09: TLS verifies the server's certificate whenever it is in use (`kernel.db.tls`).
+    config = settings()
+    tls = database_tls(
+        url, local=config.environment in LOCAL_STACK, ca_file=config.database_ca_file
+    )
     return create_async_engine(
-        url,
+        tls.url,
         # Error messages never carry bound values (ledger data, identifiers): they can travel to
         # logs and to workflow failure records (TASK-010b security S3).
         hide_parameters=True,
         pool_pre_ping=True,
         pool_reset_on_return="rollback",
         connect_args={
+            "ssl": tls.ssl,
             "server_settings": {
                 "application_name": "abacus",
-                "statement_timeout": str(settings().database_statement_timeout_ms),
+                "statement_timeout": str(config.database_statement_timeout_ms),
                 **server_settings,
-            }
+            },
         },
     )
 

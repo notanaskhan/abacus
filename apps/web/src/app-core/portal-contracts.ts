@@ -3,7 +3,7 @@
 // rest are still drafts copied field for field from the backend's contract models, which the
 // P-08-T02 contract tests hold (backend/src/abacus/modules/identity/portal_contract.py,
 // backend/src/abacus/modules/portal/contract.py `PortalBrandingOut`): branding moves to the
-// generated type with P-08-T05's follow-up, links/renew when P-08-T21 serves it (docs/screens/POR-01.md, Open gaps). In app-core so the portal domain, the portal
+// generated type with P-08-T05's follow-up (links/renew is generated since P-08-T21). In app-core so the portal domain, the portal
 // entry and the fixtures share them.
 
 import type { MePortalOut } from "@abacus/api-client";
@@ -33,13 +33,8 @@ export type {
   PortalSignInVerifyOut,
 } from "@abacus/api-client";
 
-export interface PortalLinkRenewIn {
-  link_token: string;
-}
-
-export interface PortalLinkRenewOut {
-  accepted: true;
-}
+// Generated since P-08-T21 serves `POST /v1/portal/links/renew`.
+export type { PortalLinkRenewIn, PortalLinkRenewOut } from "@abacus/api-client";
 
 /** What a sign-in page has already done when it opens: an email in the field, a reminder link's
  * token from the fragment, a code typed. A person's own clicks do the same through the same

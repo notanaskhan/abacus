@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID
 
@@ -21,17 +22,25 @@ from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import EngagementMemberAdded
 from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.member_hooks import member_added
+from abacus.modules.identity.offshore import assert_assignable
 from abacus.modules.identity.repository import (
+    MemberDetail,
     display_names,
     engagement_role,
     insert_engagement_member,
+    member_details_of,
     remove_team_member_row,
+    roles_ever_held,
+    set_member_columns,
     set_team_role,
     team_candidate_ids,
 )
 
-StaffRole = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
-MANAGER_MAY_HANDLE: Final = frozenset({"senior", "staff", "reviewer"})
+# P-07-T30: `specialist` joins the team roles; the EQR (`eqr_reviewer`) is never one of them and
+# is set only through `replace_eqr` (EQR never on the team, DEC-327).
+StaffRole = Literal["engagement_partner", "manager", "senior", "staff", "reviewer", "specialist"]
+MANAGER_MAY_HANDLE: Final = frozenset({"senior", "staff", "reviewer", "specialist"})
+EQR_ROLE: Final = "eqr_reviewer"
 MemberRemoved = Callable[[UnitOfWork, UUID, UUID, UUID], Awaitable[None]]
 _member_removed: MemberRemoved | None = None
 
@@ -86,6 +95,7 @@ async def add_member(
     await _within_limits(ctx, engagement_id, {role}, "engagement.member_add")
     if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
         raise NotFound("person")  # walled, a client user, another firm's, or already a member
+    await assert_assignable(ctx.tenant, user_id, client_id)  # G-01-T09: offshore needs consent
     await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
     tx.record(
         "engagement_member.added",
@@ -138,3 +148,129 @@ async def remove_member(
         after=Ref(user_id=user_id),
     )
     await revoke_invitations_by(tx, user_id, engagement_id)  # DEC-277
+
+
+async def remove_walled_member(
+    tx: UnitOfWork, engagement_id: UUID, user_id: UUID, on_behalf_of: UUID
+) -> bool:
+    """G-01-T09 (AC8.5): the `wall.created` consumer ends a walled person's membership of one
+    of the client's engagements, as the system for the wall's creator. Access is already denied
+    by the wall; this ends the assignment. False (nothing changed) when they aren't a staff
+    member there or are its last partner (the engagement keeps one; the wall still holds)."""
+    if _member_removed is None:
+        raise ServiceUnavailable("review assignments can't be released")
+    outcome = await remove_team_member_row(tx.session, engagement_id, user_id)
+    if outcome != "ok":
+        return False
+    await _member_removed(tx, engagement_id, user_id, on_behalf_of)
+    tx.record(
+        "engagement_member.removed",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=user_id),
+    )
+    await revoke_invitations_by(tx, user_id, engagement_id)  # DEC-277
+    return True
+
+
+# --- ENG-05 (P-07-T30): details, hours, the portal flag and the EQR ------------------------------
+
+
+async def member_details(tenant: TenantContext, engagement_id: UUID) -> list[MemberDetail]:
+    """After the caller's `authorise` of a read on the engagement."""
+    return await member_details_of(tenant, engagement_id)
+
+
+async def set_member_hours(
+    tx: UnitOfWork, engagement_id: UUID, user_id: UUID, hours: Decimal | None
+) -> None:
+    """After `authorise(engagement.member_add)`; 404 for someone not on the firm team."""
+    if not await set_member_columns(tx.session, engagement_id, user_id, {"budget_hours": hours}):
+        raise NotFound("team_member")
+    tx.record(
+        "engagement_member.hours_changed",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=user_id),
+    )
+
+
+async def set_member_portal(
+    tx: UnitOfWork, engagement_id: UUID, user_id: UUID, shown: bool
+) -> None:
+    """After `authorise(engagement.update)`: POR-02's team card shows this person or not."""
+    if not await set_member_columns(
+        tx.session, engagement_id, user_id, {"shown_on_portal": shown}
+    ):
+        raise NotFound("team_member")
+    tx.record(
+        "team.portal_visibility_changed",
+        target=Target("engagement", engagement_id),
+        after=Ref(user_id=user_id),
+    )
+
+
+async def replace_eqr(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, client_id: UUID, user_id: UUID
+) -> None:
+    """After `authorise(eqr.assign)` and the engagements module's eligibility checks: the
+    engagement's EQR becomes `user_id` (any earlier EQR leaves the engagement, its review
+    assignments released). The candidate must be an active staff member of the firm, not on the
+    engagement and not walled from its client (404 otherwise, as for team candidates)."""
+    if _member_removed is None:
+        raise ServiceUnavailable("review assignments can't be released")
+    if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
+        raise NotFound("person")
+    for row in await member_details_of(ctx.tenant, engagement_id):
+        if row.role != EQR_ROLE:
+            continue
+        if await remove_team_member_row(tx.session, engagement_id, row.user_id) != "ok":
+            raise NotFound("team_member")
+        await _member_removed(tx, engagement_id, row.user_id, ctx.user_id)
+        tx.record(
+            "engagement_member.removed",
+            target=Target("engagement", engagement_id),
+            after=Ref(user_id=row.user_id),
+        )
+        await revoke_invitations_by(tx, row.user_id, engagement_id)  # DEC-277
+    await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, EQR_ROLE)
+    tx.record(
+        "eqr.assigned", target=Target("engagement", engagement_id), after=Ref(user_id=user_id)
+    )
+    tx.emit(EngagementMemberAdded(engagement_id=engagement_id, user_id=user_id))
+    await member_added(tx, engagement_id, user_id)  # asked to confirm independence
+
+
+Standing = Literal["partner", "team", "eqr", "client", "none"]
+
+
+async def team_standing(tenant: TenantContext, engagement_id: UUID, user_id: UUID) -> Standing:
+    """Where a person stands on an engagement, for ENG-05's rules (never an authorisation):
+    its engagement partner, on the team in another role, its EQR, a client user, or not on it."""
+    role = await engagement_role(tenant, user_id, engagement_id)
+    if role is None:
+        return "none"
+    standing: dict[str, Standing] = {
+        "client_admin": "client",
+        "client_contributor": "client",
+        EQR_ROLE: "eqr",
+        "engagement_partner": "partner",
+    }
+    return standing.get(role, "team")
+
+
+@dataclass(frozen=True)
+class Served:
+    """The engagements a person has ever been engagement partner on, and those they ever led or
+    reviewed as EQR, from the insert-only membership history (0155), so a later role change or
+    removal never erases a cooling-off (P-07-T30 security review)."""
+
+    as_partner: frozenset[UUID]
+    as_partner_or_eqr: frozenset[UUID]
+
+
+async def engagements_served(tenant: TenantContext, user_id: UUID) -> Served:
+    by_kind: dict[str, set[UUID]] = {"engagement_partner": set(), EQR_ROLE: set()}
+    for engagement_id, held_as in await roles_ever_held(tenant, user_id):
+        by_kind.get(held_as, set()).add(engagement_id)
+    partner = frozenset(by_kind["engagement_partner"])
+    eqr = frozenset(by_kind[EQR_ROLE])
+    return Served(partner, partner | eqr)

@@ -173,6 +173,22 @@ def _check_raw_connection(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+def _check_tool_connection_tls(src: SourceFile) -> Iterator[Finding]:
+    """TLS-001 (G-09; P-08-T21 security review): a tooling connection names its TLS decision."""
+    for call in _calls(src.tree):
+        func = call.func
+        if (
+            isinstance(func, ast.Attribute)
+            and func.attr in {"connect", "create_pool"}
+            and _terminal_name(func.value) == "asyncpg"
+            and not any(k.arg == "ssl" for k in call.keywords)
+        ):
+            yield Finding(
+                call.lineno,
+                f"asyncpg.{func.attr}() without ssl=; use abacus_tools.db_connect.connect",
+            )
+
+
 def _is_built_string(node: ast.expr) -> bool:
     if isinstance(node, ast.JoinedStr):
         return True
@@ -638,6 +654,8 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
     # P-08-T18 (DEC-139): the invitation preview, under `PRE_SESSION`.
     | {"/v1/invitations/preview"}
+    # P-08-T21 (DEC-139): a recipient's link renewal, always 202, under `PRE_SESSION`.
+    | {"/v1/portal/links/renew"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"
@@ -786,6 +804,9 @@ def _check_context_construction(src: SourceFile) -> Iterator[Finding]:
 _ISSUERS: dict[str, frozenset[str]] = {
     "src/abacus/modules/connections/service.py": frozenset({"system_context_for_run", "_ISSUER"}),
     "src/abacus/modules/agents/service.py": frozenset({"agent_context_for_run"}),
+    # R-01-T09 (DEC-323): the portal drop sort acts for the dropper on one drop, proven by the
+    # drop's own inbox row read under the tenant's row-level security.
+    "src/abacus/modules/evidence/drops.py": frozenset({"system_context_for_run"}),
 }
 
 
@@ -920,6 +941,14 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # R-01-T07 (DEC-333): the portal read model's lookups by id for rows the caller already
+        # read through `visible_items` and authorised `portal_documents.read` on: a binder's
+        # requests' live fulfilments, the contacts its requests are delegated to (only their
+        # organisations are named), and those versions' accept history and latest checks.
+        ("src/abacus/modules/requests/repository.py", "live_links"),
+        ("src/abacus/modules/requests/repository.py", "binder_delegated_contacts"),
+        ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
+        ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),
         # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's
         # client passed `visible_clients(contact.read)`, and ended in the revoking unit of work
         # after `authorise(client_access.revoke)`; keyed by contact or grant, not listed.
@@ -939,6 +968,14 @@ LIST_EXEMPT = frozenset(
         # SPEC-318 (TASK-461): one run's results and their decisions, read after
         # `authorise(agent_run.read)` on the run's engagement.
         ("src/abacus/modules/agents/repository.py", "screening_results_of_run"),
+        # P-06-T20 (DEC-324): the screening aggregate's inputs, keyed by one request item's live
+        # versions, read by the system composer or after `authorise(upload_review.read)` on the
+        # item's engagement; the citations its flags carry, keyed by those reviews.
+        ("src/abacus/modules/agents/repository.py", "review_runs_of_versions"),
+        ("src/abacus/modules/agents/repository.py", "shown_flags_of_reviews"),
+        ("src/abacus/modules/agents/repository.py", "version_results_of"),
+        ("src/abacus/modules/agents/repository.py", "items_screened_with"),
+        ("src/abacus/modules/evidence/repository.py", "verified_citations_of"),
         ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
@@ -1062,6 +1099,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "reason_codes"),
         ("src/abacus/modules/identity/repository.py", "active_memberships"),
         ("src/abacus/modules/identity/repository.py", "engagement_members_of"),
+        # P-07-T30: the same team with ENG-05's extras, for a caller that authorised the read.
+        ("src/abacus/modules/identity/repository.py", "member_details_of"),
+        # P-07-T30 security review: one person's roles ever held, for EQR cooling-off.
+        ("src/abacus/modules/identity/repository.py", "roles_ever_held"),
         ("src/abacus/modules/identity/repository.py", "display_names"),
         # SPEC-024 (TASK-041): names and emails for staff the caller already read under RLS.
         ("src/abacus/modules/identity/repository.py", "user_contacts"),
@@ -1160,6 +1201,21 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/ledger/mapping_repository.py", "newest_edits"),
         # SPEC-317 (TASK-460): fieldwork's progress for the dashboard, after authorising on it.
         ("src/abacus/modules/fieldwork/repository.py", "engagement_progress_rows"),
+        # P-03-T12: the moved and broken detector's reads (the system) and an owner's
+        # `mark_sources_superseded` in its own unit of work; the events a run writes.
+        ("src/abacus/modules/evidence/repository.py", "earlier_versions"),
+        ("src/abacus/modules/evidence/repository.py", "citations_on"),
+        ("src/abacus/modules/evidence/repository.py", "insert_citation_events"),
+        # R-01-T09: the drop sort's candidates in one binder (each re-checked for the dropper
+        # with `member_could`) and the dropper's own files in one batch.
+        ("src/abacus/modules/requests/repository.py", "drop_item_rows"),
+        ("src/abacus/modules/evidence/repository.py", "drops_of_batch"),
+        # P-04-T16: the human-gate projector's reads (the system, per engagement or for the
+        # rebuild); `GET /v1/human-gates` filters the projection through `visible()`.
+        ("src/abacus/modules/agents/repository.py", "latest_screenings_for_gates"),
+        ("src/abacus/modules/agents/repository.py", "latest_upload_reviews_for_gates"),
+        ("src/abacus/modules/agents/repository.py", "latest_matches_for_gates"),
+        ("src/abacus/modules/agents/repository.py", "undecided_drafts_for_gates"),
     }
 )
 
@@ -1825,6 +1881,15 @@ RULES: list[Rule | TreeRule] = [
         ),
     ),
     Rule(
+        id="TLS-001",
+        description="A tooling database connection passes ssl= (verify-full whenever TLS is used)",
+        adr="ADR-014",
+        check=_check_tool_connection_tls,
+        include=("src/abacus_tools/*",),
+        # Local-only: the throwaway compose or test-container stack, never a hosted database.
+        exclude=("src/abacus_tools/stack.py", "src/abacus_tools/local/seed_dev.py"),
+    ),
+    Rule(
         id="DB-001",
         description="No engines or raw connections; use tenant_session(ctx)",
         adr="ADR-014",
@@ -1833,6 +1898,8 @@ RULES: list[Rule | TreeRule] = [
         # the local-stack smoke tests; the tenancy and schema tests (owner, app and admin roles).
         exclude=(
             "src/abacus/kernel/db/*",
+            # G-09: the tools' one connection helper, with the app's TLS decision.
+            "src/abacus_tools/db_connect.py",
             "src/abacus_tools/quality/schema_check.py",
             # SPEC-012: the access review runs as the owner role (the only one that may read it).
             "src/abacus_tools/access_review.py",
@@ -1869,6 +1936,9 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T13: the human-only CHECKs and insert-only rules, as the app role and the owner
             "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/test_seed_dev.py",
+            # A-02-T04: 0149's round trip on a private database; seeds as the superuser and
+            # proves the app role's refusals with the tenant set, as tenant_session sets it.
+            "tests/integration/test_tb_of_record_schema.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2008,6 +2078,8 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T13: the actor GUCs the human-only CHECKs bind, set as a unit of work sets them
             "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
+            # A-02-T04: the app role's refusals on 0149's tables, with the tenant set by hand.
+            "tests/integration/test_tb_of_record_schema.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),

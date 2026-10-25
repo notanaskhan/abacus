@@ -75,6 +75,8 @@ PRE_SESSION_PATHS: Final = frozenset(
     | {"/v1/portal/auth/mfa", "/v1/portal/auth/mfa/setup", "/v1/portal/auth/mfa/setup/verify"}
     # P-08-T18 (DEC-139, P-08 §4.3): POR-01 d's invitation preview, one 404 for every failure.
     | {"/v1/invitations/preview"}
+    # P-08-T21 (DEC-139, P-08 §4.3): a recipient renews a portal email's link, always 202.
+    | {"/v1/portal/links/renew"}
 )
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may
@@ -118,8 +120,8 @@ _RESPONSES: dict[int | str, dict[str, object]] = {
 # (NotImplementedYet).
 _OPTIONAL_RESPONSES: dict[int, dict[str, object]] = {
     409: {"model": ErrorOut, "description": "Conflict with the resource's state"},
-    # P-08-T10 (SPEC-320 §6): the portal sign-in's answers.
-    410: {"model": ErrorOut, "description": "Gone: the sign-in code expired or was used"},
+    # P-08-T10 (SPEC-320 §6): the portal sign-in's answers; Q-02-T38: a firm export's window.
+    410: {"model": ErrorOut, "description": "Gone: the code, link or window expired or was used"},
     # R-01-T01 (DEC-58 c): a portal drop over the size limit or of a type the portal refuses.
     413: {"model": ErrorOut, "description": "The file is too large"},
     415: {"model": ErrorOut, "description": "The file type is not accepted"},

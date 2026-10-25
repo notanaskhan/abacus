@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from temporalio import activity
 
+from abacus.modules.evidence.drops import sort_drop
+from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
 from abacus.modules.evidence.words import pending_words, words_upload
 from abacus.modules.evidence.workflow_types import BackfillInput, UploadInput
@@ -36,6 +38,18 @@ async def words_activity(given: UploadInput) -> int:
     return await words_upload(given)
 
 
+@activity.defn(name="upload.pii_scan")
+async def pii_scan_activity(given: UploadInput) -> int:
+    """P-03-T13: PII detection over the word layer."""
+    return await pii_scan_upload(given)
+
+
+@activity.defn(name="upload.portal_drop_sort")
+async def portal_drop_sort_activity(given: UploadInput) -> str:
+    """R-01-T09: a portal drop's code-rule sort."""
+    return await sort_drop(given)
+
+
 @activity.defn(name="trust_layer.pending_words")
 async def pending_words_activity(given: BackfillInput) -> list[UploadInput]:
     """P-03-T05: the backfill's next batch."""
@@ -47,5 +61,7 @@ ACTIVITIES = (
     check_activity,
     preview_activity,
     words_activity,
+    pii_scan_activity,
+    portal_drop_sort_activity,
     pending_words_activity,
 )

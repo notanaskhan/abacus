@@ -1,5 +1,6 @@
 """C5 section `portal-pbc` stub (R-01-T01; docs/contracts/portal-pbc.md): every route exists with
-its one matrix action and answers 404 with its flag off and 501 with it on; the read action is a
+its one matrix action and answers 404 with its flag off and 501 with it on until its task lands
+(`IMPLEMENTED`: the documents reads, R-01-T07, and the undos, R-01-T08); the read action is a
 client action that grants no firm role and denies the agent and system; the void is human only;
 every client-facing write takes an `Idempotency-Key`; every model field is classified; the three
 flags are boolean and off by default. The consumers' own tests are R-01-T02's, in this
@@ -14,6 +15,7 @@ from types import ModuleType
 from typing import cast
 
 import pytest
+from fastapi import Request
 from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
@@ -96,11 +98,29 @@ def _models(module: ModuleType) -> list[type[BaseModel]]:
 MODELS = _models(portal_pbc) + _models(requests_pbc) + _models(drops_contract)
 
 
+# Live since their tasks landed: 404 with the flag off as before, and no longer 501 with it on.
+IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("get", "/v1/portal/binders"),  # R-01-T07
+        ("get", "/v1/portal/binders/{binder_id}"),  # R-01-T07
+        ("get", "/v1/portal/request-items/{item_id}"),  # R-01-T07
+        ("post", "/v1/portal/request-items/{item_id}/ignore/undo"),  # R-01-T08
+        ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"),  # R-01-T08
+    }
+)
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_each_route_declares_its_one_action_and_the_stub_answers(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)][0]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == ((method, path) not in IMPLEMENTED)
+
+
+def test_every_implemented_route_is_one_of_the_family() -> None:
+    assert set(ROUTES) >= IMPLEMENTED
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(CONFLICTS))
@@ -186,7 +206,9 @@ async def test_flag_off_is_404_and_flag_on_is_501(
         await stub(ctx, flag)
 
 
-async def test_the_drop_is_404_off_and_501_on(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_the_drop_is_404_off_and_live_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live since R-01-T09 (tests/integration/backfill/test_r01t09_portal_drops.py): off, the
+    route answers 404 before reading the body; on, it is served (no longer a 501 stub)."""
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -196,17 +218,18 @@ async def test_the_drop_is_404_off_and_501_on(monkeypatch: pytest.MonkeyPatch) -
         assert asked is PORTAL_DROP_SORT
         return False
 
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
     module = drops_contract
-    stub = cast(Callable[[AuthContext], Awaitable[object]], vars(module)["_stub"])
+    assert "_stub" not in vars(module)
     monkeypatch.setattr(module, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await stub(ctx)
-    monkeypatch.setattr(module, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await stub(ctx)
+        await module.drop_file_route(
+            uuid.uuid4(),
+            cast(Request, None),
+            ctx,
+            filename="a.pdf",
+            batch_id=uuid.uuid4(),
+            idempotency_key="k",
+        )
 
 
 @pytest.mark.parametrize("flag", [PORTAL_DOCUMENTS_V2, PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM])

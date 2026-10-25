@@ -40,6 +40,8 @@ class Engagement(Base):
     # P-07-T15 (0124): bumped by a trigger on any change; the wizard's label (P-07-T16).
     version: Mapped[int] = mapped_column(server_default=FetchedValue())
     period_label: Mapped[str | None] = mapped_column(server_default=FetchedValue())
+    # TASK-1198 (0155): the reason code while on hold, cleared on resume.
+    hold_reason: Mapped[str | None] = mapped_column(server_default=FetchedValue())
 
 
 class MethodologyTemplate(Base):

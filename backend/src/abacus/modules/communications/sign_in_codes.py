@@ -52,3 +52,33 @@ async def deliver_sign_in_code(event: OutboxEvent) -> None:
     _log.info(
         "portal_sign_in.code_sent", challenge_id=challenge_id, message_id=message_id, sent=sent
     )
+
+
+MFA_RESET_TEMPLATE_KEY: Final = "portal.mfa_reset_notice"
+
+
+async def deliver_mfa_reset_notice(event: OutboxEvent) -> None:
+    """P-08-T21 (Story 7.2): the firm reset the person's second step; tell them, in the firm's
+    name, from the C16 template `portal.mfa_reset_notice` (imported per environment; without it
+    nothing is sent and the miss is logged). Filled only with the firm's name."""
+    user_id = UUID(str(event.payload["user_id"]))
+    version = await current_version(MFA_RESET_TEMPLATE_KEY)
+    if version is None:
+        _log.warning("portal_mfa.no_reset_template", tenant_id=event.tenant_id)
+        return
+    address = (await contact_emails([user_id])).get(user_id)
+    if address is None:
+        _log.warning("portal_mfa.no_address", tenant_id=event.tenant_id)
+        return
+    firm = await firm_name(event.tenant_id)
+    rendered = render(version, {k: {"firm_name": firm}.get(k, "") for k in version.variables})
+    message_id = uuid4()
+    sent = await send_email(
+        tenant_id=event.tenant_id,
+        message_id=message_id,
+        to=address,
+        subject=rendered.subject,
+        body=rendered.body_text,
+        sender_name=firm,
+    )
+    _log.info("portal_mfa.reset_notice_sent", message_id=message_id, sent=sent)

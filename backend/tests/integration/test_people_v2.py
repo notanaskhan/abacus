@@ -338,9 +338,22 @@ async def test_ac4_1_the_person_drawer(seed: Seeder) -> None:
     assert found.recent_sign_ins[0].at > found.recent_sign_ins[1].at
     assert all(s.mfa and s.method == "workos" for s in found.recent_sign_ins)
     assert found.row.last_sign_in_at == found.recent_sign_ins[0].at
-    # A partner reads the drawer; walls only show to someone who may list them.
-    daniel_view = await people.staff_user(firm.people["Daniel Reyes"], lena.user_id)
-    assert daniel_view.wall_ids == []
+    # A partner reads the drawer; since walls v2 partners may list walls (G-01-T09, DEC-318),
+    # so Daniel sees Lena's wall, until he is walled from Ashford himself (DEC-43).
+    daniel = firm.people["Daniel Reyes"]
+    assert (await people.staff_user(daniel, lena.user_id)).wall_ids == [wall]
+    await seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, $3, $4)",
+        firm.tenant,
+        daniel.user_id,
+        client,
+        grace.user_id,
+    )
+    assert (await people.staff_user(daniel, lena.user_id)).wall_ids == []
+    # Someone who may not list walls (no firm role, not a partner) can't read the drawer.
+    with pytest.raises(NotFound):
+        await people.staff_user(firm.people["Hannah Leclerc"], lena.user_id)
     with pytest.raises(NotFound):
         await people.staff_user(grace, uuid.uuid4())
 

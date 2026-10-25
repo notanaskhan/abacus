@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Literal
 from uuid import UUID
 
 from abacus.kernel.classification import classified
@@ -49,3 +49,35 @@ class AgentDigest(DomainEvent):
     overdue: Annotated[int, classified("internal")]
     sent: Annotated[int, classified("internal")]
     drafted: Annotated[int, classified("internal")]
+
+
+class UploadReviewRecorded(DomainEvent):
+    """The upload reviewer recorded its review of a version (SPEC-030; P-06-T20): the request
+    batches it fulfils recompose their screening (code only, nothing else follows)."""
+
+    event_type: ClassVar[str] = "upload_review.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+
+
+class ProposalRecorded(DomainEvent):
+    """An agent recorded a proposal a person decides on (P-04-T16; C13): a screening result, an
+    upload review, an inbox match or a guidance draft. The human-gate projector reads the owner's
+    records, never this payload, for what waits on whom."""
+
+    event_type: ClassVar[str] = "proposal.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    source: Annotated[
+        Literal["screening_result", "upload_review", "inbox_match", "guidance_draft"],
+        classified("internal"),
+    ]
+
+
+class GuidanceDraftDecided(DomainEvent):
+    """A person approved or discarded guidance drafts (SPEC-035; P-04-T16 closes their gates)."""
+
+    event_type: ClassVar[str] = "guidance_draft.decided"
+
+    engagement_id: Annotated[UUID, classified("internal")]

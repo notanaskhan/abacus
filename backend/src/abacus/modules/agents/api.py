@@ -19,6 +19,7 @@ from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_respon
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
+from abacus.modules.agents.gates import register_gate_sources
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
@@ -122,6 +123,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 )
 # P-06-T14: a sent follow-up's email leaves when the relay delivers its grant-held event.
 SUBSCRIPTIONS = {**SCREENING_SUBSCRIPTIONS, FollowUpSent.event_type: on_follow_up_sent}
+
+# P-04-T16 (C13): the agent's proposals are `proposal` gates until a person decides.
+register_gate_sources()
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)

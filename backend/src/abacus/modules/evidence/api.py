@@ -1,6 +1,8 @@
 """Public interface of the evidence module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.uow import Handler
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.citations.matching import (
@@ -15,6 +17,11 @@ from abacus.modules.evidence.citations.matching import (
     quote_in,
 )
 from abacus.modules.evidence.citations.matching import normalised as normalised_text
+from abacus.modules.evidence.citations.moved import (
+    mark_sources_superseded,
+    on_version_created,
+    on_version_withdrawn,
+)
 from abacus.modules.evidence.citations.registry import Anchor as CitationAnchor
 from abacus.modules.evidence.citations.registry import (
     CitationClaim,
@@ -25,13 +32,17 @@ from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.contract import withdrawal_router
+from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
+    EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.firm_export_contract import router as firm_export_router
+from abacus.modules.evidence.gate_facts import decided_among, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -47,6 +58,12 @@ from abacus.modules.evidence.match_material import (
 )
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
+from abacus.modules.evidence.portal_files import (
+    PortalFile,
+    SentBack,
+    client_pre_checks,
+    portal_files,
+)
 from abacus.modules.evidence.processing import (
     SUBSCRIPTIONS as UPLOAD_SUBSCRIPTIONS,
 )
@@ -83,11 +100,16 @@ from abacus.modules.evidence.render_gl import (
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
 from abacus.modules.evidence.retention import RECORD_TYPES, extend_retention_for, retain_until_for
-
-# The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
 from abacus.modules.evidence.routes import firm_router, router
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.evidence.screening_facts import (
+    ScreeningFacts,
+    screening_facts,
+    verified_citation_ids,
+)
 from abacus.modules.evidence.service import (
     EngagementArchived,
     EvidenceVersionRef,
@@ -119,6 +141,7 @@ from abacus.modules.evidence.storage import (
     check_ready,
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
+from abacus.modules.evidence.upload_facts import upload_facts
 from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATHS, upload
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
@@ -141,6 +164,7 @@ from abacus.modules.evidence.workflows import (
     UploadProcessing,
 )
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
+from abacus.modules.requests.api import register_upload_facts
 
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
@@ -151,6 +175,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
     legal_hold_router,  # Q-02-T29: legal holds
+    firm_export_router,  # Q-02-T38: the firm-export contract stub (Q-02-T43 implements it)
 )
 
 # Q-02-T29: the legal-hold workflows and their activities beside upload processing; a new version
@@ -163,7 +188,19 @@ ACTIVITIES: tuple[object, ...] = (
     *HOLD_ACTIVITIES,
     *WITHDRAWAL_ACTIVITIES,
 )
-SUBSCRIPTIONS = {
+
+
+def in_turn(first: Handler, then: Handler) -> Handler:
+    """Two of this module's subscribers on one event, in order (one handler per module)."""
+
+    async def both(event: OutboxEvent) -> None:
+        await first(event)
+        await then(event)
+
+    return both
+
+
+_SUBSCRIPTIONS: dict[str, Handler] = {
     **{
         event: (
             with_hold_inheritance(handler)
@@ -175,9 +212,21 @@ SUBSCRIPTIONS = {
     **HOLD_SUBSCRIPTIONS,
     **WITHDRAWAL_SUBSCRIPTIONS,
 }
+# P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
+SUBSCRIPTIONS = {
+    **_SUBSCRIPTIONS,
+    EvidenceVersionCreated.event_type: in_turn(
+        _SUBSCRIPTIONS[EvidenceVersionCreated.event_type], on_version_created
+    ),
+    EvidenceVersionWithdrawn.event_type: in_turn(
+        _SUBSCRIPTIONS[EvidenceVersionWithdrawn.event_type], on_version_withdrawn
+    ),
+}
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
+register_upload_facts(upload_facts)
 
 __all__ = [
     "ACTIVITIES",
@@ -212,6 +261,7 @@ __all__ = [
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
     "EvidenceVersionView",
+    "EvidenceVersionWithdrawn",
     "EvidenceWithdrawalPurge",
     "GlBalanceRow",
     "GlHeader",
@@ -224,12 +274,15 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "PortalFile",
     "Proposal",
     "Provenance",
     "RecordClass",
     "RecordedCitation",
     "ReviewMaterial",
     "ScreeningDecision",
+    "ScreeningFacts",
+    "SentBack",
     "StoredObject",
     "StoredRecord",
     "TrialBalance",
@@ -248,17 +301,22 @@ __all__ = [
     "check_upload_content",
     "citation_cell_reason",
     "citation_cell_text",
+    "client_pre_checks",
     "column_letters",
+    "decided_among",
     "decisions_on_screenings",
+    "drop_batch",
     "engagement_snapshots",
     "evidence_versions_for",
     "extend_retention_for",
     "firm_router",
     "holds_covering",
     "is_version_withdrawn",
+    "mark_sources_superseded",
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "portal_files",
     "process_upload",
     "put_record",
     "quote_in",
@@ -274,13 +332,16 @@ __all__ = [
     "retain_until_for",
     "review_material",
     "router",
+    "screening_facts",
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",
     "suggest_by_name",
     "undo_review_decision",
     "upload",
+    "verified_citation_ids",
     "version_view",
+    "waiting_among",
     "withdrawn_among",
     "worth_matching",
 ]

@@ -175,3 +175,55 @@ async def principal_outcome(
     except Forbidden:
         return "deny"
     return "allow"
+
+
+# --- Q-02-T37: the fresh-MFA overlay (Q-02 AC-42) ---------------------------------------------
+
+Freshness = Literal["fresh", "stale", "none"]
+_AGES: dict[Freshness, timedelta | None] = {
+    "fresh": timedelta(minutes=1),
+    "stale": authz.MFA_RECENT + timedelta(minutes=1),
+    "none": None,
+}
+
+
+def without_conditions(rule: authz.Rule) -> authz.Rule:
+    """The rule with its F-03-T24 and P-04-T15 conditions cleared, so a case isolates the MFA
+    attribute (the conditions have their own generated cases)."""
+    return replace(
+        rule,
+        level_in=frozenset(),
+        function_in=frozenset(),
+        not_offshore=False,
+        attest_client=None,
+        gates_met=(),
+        scope_only=False,
+        not_preparer_of_target=False,
+        reserved_role=False,
+    )
+
+
+async def mfa_outcome(
+    monkeypatch: pytest.MonkeyPatch, action: str, role: str, freshness: Freshness
+) -> Outcome:
+    """`authorise` for a role the row allows, every other layer satisfied, with the second factor
+    verified a minute ago (`fresh`), just over `MFA_RECENT` ago (`stale`) or never (`none`).
+    `firm_partner` is the derived cell (a partner-level member at firm level, DEC-132)."""
+    monkeypatch.setitem(authz.RULES, action, without_conditions(authz.RULES[action]))
+    if role == authz.FIRM_PARTNER:
+        ctx, _ = arrange(monkeypatch, "staff")
+        resource = Resource.firm(ctx.tenant_id)
+
+        async def partner(*_: object) -> bool:
+            return True
+
+        monkeypatch.setattr(authz, "_partner_level", partner)
+    else:
+        ctx, resource = arrange(monkeypatch, role)
+    age = _AGES[freshness]
+    ctx = replace(ctx, mfa_at=None if age is None else datetime.now(UTC) - age)
+    try:
+        await authorise(ctx, action, resource, reason=REASON)
+    except Forbidden:
+        return "deny"
+    return "allow"

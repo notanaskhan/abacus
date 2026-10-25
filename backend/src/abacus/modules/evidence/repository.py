@@ -8,7 +8,26 @@ from datetime import date, datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, exists, func, insert, or_, select, text, update
+from sqlalchemy import (
+    ARRAY,
+    Boolean,
+    ColumnElement,
+    Integer,
+    LargeBinary,
+    Numeric,
+    Text,
+    and_,
+    column,
+    exists,
+    func,
+    insert,
+    or_,
+    select,
+    table,
+    text,
+    update,
+)
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -1163,4 +1182,268 @@ async def verified_citations_into(
         (await session.execute(stmt.order_by(Citation.created_at, Citation.id).limit(200)))
         .scalars()
         .all()
+    )
+
+
+async def verified_citations_of(
+    session: AsyncSession, cited_from_type: str, cited_from_ids: Sequence[UUID]
+) -> Sequence[tuple[UUID, UUID, str | None]]:
+    """P-06-T20: the verified citations written for these anchors (id, anchor, ref), whose
+    source the client has not withdrawn, in order. LIST_EXEMPT: keyed by anchors the caller
+    composed from (the screening aggregate, a system caller) or authorised on."""
+    if not cited_from_ids:
+        return []
+    rows = await session.execute(
+        select(Citation.id, Citation.cited_from_id, Citation.cited_from_ref)
+        .where(
+            Citation.cited_from_type == cited_from_type,
+            Citation.cited_from_id.in_(list(cited_from_ids)),
+            Citation.verified.is_(True),
+            live_citation_source(),
+        )
+        .order_by(Citation.cited_from_id, Citation.n, Citation.id)
+    )
+    return [(r.id, r.cited_from_id, r.cited_from_ref) for r in rows.all()]
+
+
+# --- The portal PBC read model (R-01-T07) --------------------------------------------------------
+
+
+async def ever_accepted(session: AsyncSession, version_ids: Sequence[UUID]) -> frozenset[UUID]:
+    """Which of these versions a person ever accepted (an `accept` row, undone or not, or a
+    retained key): never withdrawable again (ADR-162 §8; DEC-298). LIST_EXEMPT: by id, for a
+    caller that read them."""
+    if not version_ids:
+        return frozenset()
+    accepted = await session.execute(
+        select(ReviewDecision.evidence_version_id).where(
+            ReviewDecision.evidence_version_id.in_(version_ids),
+            ReviewDecision.decision == "accept",
+        )
+    )
+    retained = await session.execute(
+        select(EvidenceObjectKey.evidence_version_id).where(
+            EvidenceObjectKey.evidence_version_id.in_(version_ids),
+            EvidenceObjectKey.retained_at.is_not(None),
+        )
+    )
+    return frozenset(accepted.scalars().all()) | frozenset(retained.scalars().all())
+
+
+async def client_problem_codes(session: AsyncSession, version_id: UUID) -> list[str]:
+    """The client-audience problem checks of the version's latest run (SPEC-029; DEC-58 e), by
+    code, for a caller that read the version (LIST_EXEMPT)."""
+    rows = (
+        await session.execute(
+            select(
+                UploadCheck.check_code,
+                UploadCheck.checker_version,
+                UploadCheck.document_kind,
+                UploadCheck.outcome,
+                UploadCheck.audience,
+                UploadCheck.created_at,
+            ).where(UploadCheck.evidence_version_id == version_id)
+        )
+    ).all()
+    if not rows:
+        return []
+    newest = max(rows, key=lambda r: r.created_at)
+    return sorted(
+        {
+            r.check_code
+            for r in rows
+            if (r.checker_version, r.document_kind)
+            == (newest.checker_version, newest.document_kind)
+            and r.outcome == "problem"
+            and r.audience == "client"
+        }
+    )
+
+
+# --- moved and broken detection, relink (P-03-T12) ---------------------------------------------
+
+
+async def earlier_versions(
+    session: AsyncSession, item_id: UUID, version_no: int
+) -> Sequence[UUID]:
+    """The item's versions before `version_no` (withdrawn ones included: their citations are
+    broken, not moved, and the caller tells them apart). LIST_EXEMPT: the system detector."""
+    return (
+        (
+            await session.execute(
+                select(EvidenceVersion.id).where(
+                    EvidenceVersion.evidence_item_id == item_id,
+                    EvidenceVersion.version_no < version_no,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def newest_live_successor(
+    session: AsyncSession, item_id: UUID, version_no: int
+) -> EvidenceVersion | None:
+    """The item's newest version after `version_no` that the client did not withdraw."""
+    return (
+        await session.execute(
+            select(EvidenceVersion)
+            .where(
+                EvidenceVersion.evidence_item_id == item_id,
+                EvidenceVersion.version_no > version_no,
+                not_withdrawn(),
+            )
+            .order_by(EvidenceVersion.version_no.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def citations_on(
+    session: AsyncSession,
+    source_type: str,
+    source_ids: Sequence[UUID],
+    *,
+    source_version: str | None = None,
+) -> Sequence[Citation]:
+    """Every citation whose source is one of these (LIST_EXEMPT: the system detector, and an
+    owner's `mark_sources_superseded` in its own unit of work)."""
+    if not source_ids:
+        return []
+    stmt = select(Citation).where(
+        Citation.source_type == source_type, Citation.source_id.in_(list(source_ids))
+    )
+    if source_version is not None:
+        stmt = stmt.where(Citation.source_version == source_version)
+    return (await session.execute(stmt.order_by(Citation.id))).scalars().all()
+
+
+async def insert_citation_events(
+    session: AsyncSession, rows: Sequence[dict[str, object]]
+) -> list[UUID]:
+    """The citations that got a new event; a `moved` or `broken` event a run already wrote for
+    the same cause is left alone (`citation_events_once_per_cause`, 0152)."""
+    if not rows:
+        return []
+    added = await session.execute(
+        pg_insert(CitationEvent)
+        .values(list(rows))
+        .on_conflict_do_nothing()
+        .returning(CitationEvent.citation_id)
+    )
+    return list(added.scalars().all())
+
+
+async def lock_citation(session: AsyncSession, citation_id: UUID) -> None:
+    """Serialise relinks of one citation for the rest of the transaction (citations are
+    insert-only: no row lock)."""
+    await session.execute(_LOCK_ITEM, {"space": _CITATION_LOCK_SPACE, "item": str(citation_id)})
+
+
+_CITATION_LOCK_SPACE = 9_005
+
+
+# --- PII scan (P-03-T13) -------------------------------------------------------------------------
+
+# `pii_regions` with its sealed value: the mapped model leaves `value_sealed` out on purpose (only
+# the reveal service reads it), so the detector's insert names the table's columns here.
+_PII_REGION_ROWS = table(
+    "pii_regions",
+    column("id", PgUUID(as_uuid=True)),
+    column("tenant_id", PgUUID(as_uuid=True)),
+    column("evidence_version_id", PgUUID(as_uuid=True)),
+    column("inbox_file_id", PgUUID(as_uuid=True)),
+    column("derivation_id", PgUUID(as_uuid=True)),
+    column("page_no", Integer()),
+    column("bbox", ARRAY(Numeric(10, 2))),
+    column("kind", Text()),
+    column("value_sealed", LargeBinary()),
+    column("last4", Text()),
+    column("label_anchored", Boolean()),
+    column("detector_version", Text()),
+)
+
+
+async def insert_pii_regions(session: AsyncSession, rows: Sequence[dict[str, object]]) -> None:
+    if rows:
+        await session.execute(insert(_PII_REGION_ROWS).values(list(rows)))
+
+
+async def scan_run_for(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None,
+    inbox_file_id: UUID | None,
+    detector_version: str,
+) -> PiiScanRun | None:
+    """The source's scan run by this detector version (none derived), if any."""
+    return (
+        await session.execute(
+            select(PiiScanRun).where(
+                PiiScanRun.evidence_version_id == evidence_version_id
+                if evidence_version_id is not None
+                else PiiScanRun.inbox_file_id == inbox_file_id,
+                PiiScanRun.derivation_id.is_(None),
+                PiiScanRun.detector_version == detector_version,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_scan_run(session: AsyncSession, **values: object) -> bool:
+    """Whether this run was the first (a concurrent one that got there first wins)."""
+    found = await session.execute(
+        pg_insert(PiiScanRun).values(**values).on_conflict_do_nothing().returning(PiiScanRun.id)
+    )
+    return found.scalar_one_or_none() is not None
+
+
+# --- portal drops (R-01-T09) ---------------------------------------------------------------------
+
+
+async def drop_by_key(
+    session: AsyncSession, batch_id: UUID, key: str, dropped_by: UUID
+) -> InboxFile | None:
+    """The drop this person's (batch, idempotency key) already made, if any."""
+    return (
+        await session.execute(
+            select(InboxFile).where(
+                InboxFile.channel == "portal_drop",
+                InboxFile.drop_batch_id == batch_id,
+                InboxFile.drop_key == key,
+                InboxFile.uploaded_by == dropped_by,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def drops_of_batch(
+    session: AsyncSession, batch_id: UUID, dropped_by: UUID
+) -> Sequence[InboxFile]:
+    """One person's own files in one drop batch, in order (LIST_EXEMPT: the dropper's own rows,
+    re-authorised on the binder after reading)."""
+    return (
+        (
+            await session.execute(
+                select(InboxFile)
+                .where(
+                    InboxFile.channel == "portal_drop",
+                    InboxFile.drop_batch_id == batch_id,
+                    InboxFile.uploaded_by == dropped_by,
+                )
+                .order_by(InboxFile.created_at, InboxFile.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def set_sort_outcome(session: AsyncSession, file_id: UUID, outcome: str) -> None:
+    """A drop's sort outcome, once (from NULL; the 0153 trigger refuses any other change)."""
+    await session.execute(
+        update(InboxFile)
+        .where(InboxFile.id == file_id, InboxFile.sort_outcome.is_(None))
+        .values(sort_outcome=outcome)
     )

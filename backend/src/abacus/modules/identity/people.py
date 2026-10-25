@@ -29,8 +29,8 @@ from sqlalchemy import RowMapping, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
-from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.listing import (
     Position,
     clamp_limit,
@@ -49,16 +49,21 @@ from abacus.modules.identity.events import (
     StaffInvitationIssued,
 )
 from abacus.modules.identity.invitations import revoke_invitations_by
+from abacus.modules.identity.offshore import hidden_clients
 from abacus.modules.identity.repository import (
     memberships_elsewhere,
     pending_staff_invitation_for,
     set_staff_invitation_status,
     set_staff_token_hash,
     user_contacts,
-    walled_clients,
 )
 from abacus.modules.identity.settings_registry import active_wall_count, seat_total
-from abacus.modules.identity.slots import firm_offices, member_teams, set_member_teams
+from abacus.modules.identity.slots import (
+    firm_offices,
+    member_teams,
+    service_line_teams,
+    set_member_teams,
+)
 
 Template = Literal[
     "partner",
@@ -102,6 +107,7 @@ _TEMPLATE_OF_FIRM_ROLE: Final[dict[str | None, Template]] = {
 }
 _REASON_INDEX: Final = {"manual": 1, "access_ended": 2, "scim_deprovisioned": 3}
 _ATTRIBUTES: Final = ("title", "office_id", "service_lines", "access_ends_on", "offshore")
+SERVICE_LINES: Final = ("audit", "tax", "cas", "advisory")
 _LIST = "firm_staff"
 
 
@@ -168,6 +174,13 @@ class LastAdministrator(DomainConflict):
 # shared `stale_version` summary.
 class StalePerson(DomainConflict):
     code = "stale_version"
+
+
+class OwnOffshore(DomainForbidden):
+    """Offshore restricts the person (DEC-52): nobody clears their own flag; another firm admin
+    must (G-01-T09 security review; a wall's `own_wall` rule)."""
+
+    code = "own_offshore"
 
 
 # --- shapes ------------------------------------------------------------------------------------
@@ -520,20 +533,23 @@ async def staff_page(ctx: AuthContext, f: StaffFilters, *, legacy: bool = False)
 
 
 async def _visible_walls(ctx: AuthContext, user_id: UUID) -> list[UUID]:
-    """The person's walls, for a reader who may list walls, less any on a client the reader is
-    walled from (DEC-43: a reader never learns of those)."""
+    """The person's walls, for a reader who may list walls, less any on a client hidden from the
+    reader (DEC-43: a reader never learns of those)."""
     if "wall.list" not in await allowed_actions(ctx, Resource.firm(ctx.tenant_id), ("wall.list",)):
         return []
-    hidden = await walled_clients(ctx.tenant, ctx.user_id)
     async with tenant_session(ctx.tenant) as session:
-        walls = await session.execute(
-            text(
-                "SELECT id, client_id FROM ethical_walls WHERE user_id = :u "
-                "AND status = 'active' ORDER BY created_at, id"
-            ),
-            {"u": user_id},
-        )
-        return [w.id for w in walls if w.client_id not in hidden]
+        walls = (
+            await session.execute(
+                text(
+                    "SELECT id, client_id FROM ethical_walls WHERE user_id = :u "
+                    "AND status = 'active' ORDER BY created_at, id"
+                ),
+                {"u": user_id},
+            )
+        ).all()
+    # Walled from, or offshore without consent for, the client: never learnt (DEC-43, DEC-52).
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [w.client_id for w in walls])
+    return [w.id for w in walls if w.client_id not in hidden]
 
 
 async def staff_user(ctx: AuthContext, user_id: UUID) -> UserDetail:
@@ -606,6 +622,8 @@ async def update_person(
         if level_of(template, member["level"]) == "seasonal" and merged["access_ends_on"] is None:
             raise AccessEndsRequired
         await _check_office(ctx, cast(UUID | None, merged["office_id"]))
+        if member["offshore"] and not merged["offshore"] and user_id == ctx.user_id:
+            raise OwnOffshore
         if merged["offshore"] and not member["offshore"]:
             # No offshore-disclosure consent provider is registered until T-01 (fail closed,
             # DEC-52): any assignment conflicts.
@@ -618,6 +636,13 @@ async def update_person(
             teams = list(cast(list[UUID], changes["team_ids"] or []))
             if not await set_member_teams(tx, ctx.tenant_id, user_id, teams):
                 raise PersonInvalid(facts={"field": "team_ids"})
+        if {"service_lines", "team_ids"} & set(changes):
+            lines = await reconcile_service_lines(tx, user_id)
+            if "service_lines" in changes and set(lines) != set(
+                cast(list[str], merged["service_lines"])
+            ):
+                # AC7.4: a line a service-line team manages follows the person's teams.
+                raise PersonInvalid(facts={"field": "service_lines"})
         changed = sorted(set(changes) & {*_ATTRIBUTES, "team_ids"})
         tx.record(
             "membership.attributes_changed",
@@ -973,9 +998,115 @@ async def set_member_profile(
     )
     if not await set_member_teams(tx, tenant_id, user_id, profile.team_ids):
         raise PersonInvalid(facts={"field": "team_ids"})
+    if set(await reconcile_service_lines(tx, user_id)) != set(profile.service_lines):
+        raise PersonInvalid(facts={"field": "service_lines"})  # AC7.4
     tx.record(
         "membership.profile_set",
         target=Target("user", user_id),
         after=Ref(template=TEMPLATES.index(profile.role_template) + 1),
     )
     tx.emit(AccessChanged(user_id=user_id))
+
+
+async def reconcile_service_lines(tx: UnitOfWork, user_id: UUID) -> list[str]:
+    """AC7.4 (G-01-T08): a staff member's service lines agree with their service-line teams, in
+    the caller's unit of work. A line some service-line team of the firm manages is held exactly
+    when one of the person's teams holds it; any other line is left as set. Returns the lines."""
+    current = await tx.session.scalar(
+        text("SELECT service_lines FROM memberships WHERE user_id = :u AND kind = 'staff'"),
+        {"u": user_id},
+    )
+    lines = [str(line) for line in cast(list[str], current or [])]
+    managed, held = await service_line_teams(tx, user_id)
+    if not managed:
+        return lines
+    wanted = {line for line in lines if line not in managed} | set(held)
+    ordered = [line for line in SERVICE_LINES if line in wanted]
+    if set(ordered) != set(lines):
+        # A change of lines is a change of access (`in_scope`): versioned, audited, and the
+        # person's sessions and caches told (G-01-T09 review).
+        version = await tx.session.scalar(
+            text(
+                "UPDATE memberships SET service_lines = :lines, version = version + 1 "
+                "WHERE user_id = :u AND kind = 'staff' RETURNING version"
+            ),
+            {"lines": ordered, "u": user_id},
+        )
+        tx.record(
+            "membership.attributes_changed",
+            target=Target("user", user_id),
+            after=Ref(version=int(version or 0), service_lines=1),
+        )
+        tx.emit(AccessChanged(user_id=user_id))
+    return ordered
+
+
+# --- G-01-T08: what offices, teams and groups read and set through identity ---------------------
+
+
+async def staff_seats_by_office(tenant: TenantContext) -> dict[UUID, int]:
+    """ADM-03a's derived seats: active staff members per office (DEC-30: a count, never a
+    boundary)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT office_id, count(*) FROM memberships WHERE kind = 'staff' "
+                "AND status = 'active' AND office_id IS NOT NULL GROUP BY office_id"
+            )
+        )
+        return {office: int(n) for office, n in rows.all()}
+
+
+async def active_staff_among(session: AsyncSession, user_ids: Sequence[UUID]) -> set[UUID]:
+    """Which of these people are the firm's active staff (a lead, a roster, in the caller's
+    session)."""
+    if not user_ids:
+        return set()
+    rows = await session.execute(
+        text(
+            "SELECT user_id FROM memberships WHERE kind = 'staff' AND status = 'active' "
+            "AND user_id = ANY(:ids)"
+        ),
+        {"ids": list(user_ids)},
+    )
+    return set(rows.scalars())
+
+
+@dataclass(frozen=True)
+class SeasonalAccessEnds:
+    access_ends_on: date
+    members: int
+
+
+async def set_seasonal_access_ends(ctx: AuthContext, on: date) -> SeasonalAccessEnds:
+    """AC7.3: one date for every active seasonal member, in one unit of work with one audit row
+    each (firm admin, fresh MFA)."""
+    await _manage(ctx)
+    async with uow(ctx.tenant) as tx:
+        rows = await tx.session.execute(
+            text(
+                "UPDATE memberships SET access_ends_on = :on, version = version + 1 "
+                "WHERE kind = 'staff' AND status = 'active' AND level = 'seasonal' "
+                "RETURNING user_id, version"
+            ),
+            {"on": on},
+        )
+        changed = sorted(rows.all(), key=lambda r: str(r[0]))
+        for user, version in changed:
+            tx.record(
+                "membership.attributes_changed",
+                target=Target("user", user),
+                after=Ref(version=int(version), access_ends_on=1),
+            )
+    return SeasonalAccessEnds(on, len(changed))
+
+
+async def staff_holding_line(session: AsyncSession, line: str) -> list[UUID]:
+    """Staff whose service lines include `line` (a team taking the line re-derives theirs)."""
+    rows = await session.execute(
+        text(
+            "SELECT user_id FROM memberships WHERE kind = 'staff' AND :line = ANY(service_lines)"
+        ),
+        {"line": line},
+    )
+    return list(rows.scalars())

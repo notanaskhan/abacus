@@ -1085,11 +1085,24 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
-        "ethical_walls": frozenset({"status", "removed_by", "removed_at"}),  # TASK-016
+        "ethical_walls": frozenset(
+            {"status", "removed_by", "removed_at"}  # TASK-016
+            | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): walls v2
+        ),
+        # G-01-T08 (0150): offices and teams are edited in place, versioned (never deleted).
+        "offices": frozenset(
+            {"name", "time_zone", "code", "is_hq", "address_line1", "address_line2", "city"}
+            | {"region_code", "postal_code", "lead_user_id", "default_reviewer_pool_team_id"}
+            | {"version"}
+        ),
+        "teams": frozenset(
+            {"name", "kind", "service_line", "office_id", "lead_user_id", "version"}
+        ),
         "engagements": frozenset(
             {"status", "methodology_version_id"}  # SPEC-008: pinned once
             | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
             | {"period_label"}  # P-07-T15 (0124)
+            | {"hold_reason"}  # TASK-1198 (0155)
         ),
         "request_items": frozenset(
             {"status", "client_visible", "client_assignee_user_id"}  # SPEC-015, SPEC-016
@@ -1154,6 +1167,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "entity_relationships": frozenset({"effective_to"}),  # P-07-T07 (0103)
         "approval_grants": frozenset({"used_at", "consumer_ref", "voided_at"}),  # P-04-T10
         "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46 (0104)
+        "secure_links": frozenset({"token_sha256", "revoked_at"}),  # P-08-T21 (0156)
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
             | {"email", "party_kind", "version"}  # P-07-T25 (0146)
@@ -1226,6 +1240,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "inbox_files": frozenset(  # SPEC-023
             {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
+            | {"sort_outcome"}  # R-01-T09 (0153): a portal drop's sort, once
         ),
         "budgets": frozenset(  # SPEC-007
             {"monthly_soft_usd", "monthly_hard_usd", "updated_by", "updated_at"}
@@ -1236,6 +1251,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "accepted_by", "accepted_at", "expires_at"}
             | {"terms_accepted_at"}  # P-08-T18 (0140)
             | {"used_at", "grant_ids"}  # P-07-T25 (0146)
+            | {"renewal_count"}  # P-08-T21 (0156): a recipient's renewal
         ),
         "support_sessions": frozenset(  # SPEC-012
             {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
@@ -1280,6 +1296,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "evidence_withdrawals": frozenset(  # P-06-T19 (0144): the purge's stamps
             {"erased_at", "erase_blocked_at", "block_reason"}
         ),
+        # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
+        "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1287,6 +1305,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     )
     assert sc.APP_INSERT_COLUMNS["ethical_walls"] == frozenset(  # TASK-016
         {"id", "tenant_id", "user_id", "client_id", "created_by"}
+        | {"reason_code", "reason_text", "approver_user_id"}  # G-01-T09 (0151)
     )
     assert sc.APP_INSERT_COLUMNS["sync_runs"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "connection_id", "engagement_id"}
@@ -1295,6 +1314,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["ledger_snapshots"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
+        | {"label"}  # A-02-T04 (0149); `source_kind` is generated
     )
     assert sc.APP_INSERT_COLUMNS["trial_balance_lines"] == frozenset(
         {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit", "credit"}
@@ -1314,7 +1334,20 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
         | {"confidence", "rationale", "citations", "unverified"}
+        # P-06-T20 (0154): the request-batch aggregate; the insert guard requires the system
+        # actor and sets the author (never the app's, SPEC-011 AC-14).
+        | {"subject_kind", "request_item_id", "batch_no", "verdict"}
+        | {"source_result_ids", "source_review_ids", "evidence_version_ids", "checks"}
+        | {"file_flags", "supersedes_id"}
     )
+    assert sc.APP_INSERT_COLUMNS["screening_feedback"] == frozenset(
+        {"id", "tenant_id", "engagement_id", "screening_result_id", "user_id", "thumb"}
+        | {"reason_code", "note_sealed"}
+    )
+    assert sc.APP_INSERT_COLUMNS["screening_rerun_requests"] == frozenset(
+        {"tenant_id", "engagement_id", "request_item_id", "requested_by", "files"}
+    )  # P-06-T20 security review (DEC-324): a person's rerun, rate-limited per item
+    assert {"screening_feedback", "screening_rerun_requests"} <= sc.INSERT_ONLY_TABLES
     assert sc.APP_INSERT_COLUMNS["usage_records"] == frozenset(
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
@@ -1325,6 +1358,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
     assert "agent_runs" not in sc.INSERT_ONLY_TABLES
+    # P-07-T30 (0155): the EP's team approvals and the quality owner's EQR approvals.
+    assert {"team_approvals", "eqr_eligibility_approvals"} <= sc.INSERT_ONLY_TABLES
     assert sc.APP_INSERT_COLUMNS["engagements"] == frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name"}
         | {"fiscal_period_start", "fiscal_period_end", "created_by"}
@@ -1425,6 +1460,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "gl_snapshots": LEDGER_FUNCTION,  # SPEC-034 (TASK-069)
         "gl_account_balances": LEDGER_FUNCTION,
         "gl_entries": LEDGER_FUNCTION,
+        "trial_balance_versions": LEDGER_FUNCTION,  # 0149 (A-02-T04; ED-037)
     }
     assert _evidence_problems(evidence) == []
 
@@ -1826,6 +1862,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_mfa_begin_session"}  # 0140
         | {"portal_session_mark_device", "client_invitations_revoke_by"}  # 0140 (DEC-277)
         | {"portal_sign_in_unlock", "portal_sign_in_locked"}  # 0146 (P-07-T25)
+        | {"portal_host_tenant", "portal_link_claim", "portal_link_find"}  # 0156 (P-08-T21)
+        | {"portal_invitation_find", "portal_mfa_reset"}  # 0156
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112

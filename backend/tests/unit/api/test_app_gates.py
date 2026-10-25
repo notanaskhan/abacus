@@ -217,6 +217,24 @@ NOT_CREATING = {
     "/v1/portal/room/suggest",
     # P-08-T18 (SPEC-320 AC-12): the invitation preview reads; nothing is created.
     "/v1/invitations/preview",
+    # P-07-T29 (team, acceptance, independence and conflict stubs): these move a record or
+    # answer an existing request (a completed check or condition, a send to the partner, a
+    # confirmation or decline, a reminder, a replaced EQR, a cleared result), so 200.
+    "/v1/engagements/{engagement_id}/acceptance/manual-checks/{section_code}/complete",
+    "/v1/engagements/{engagement_id}/acceptance/send-to-partner",
+    "/v1/engagements/{engagement_id}/acceptance/conditions/{condition_id}/complete",
+    "/v1/engagements/{engagement_id}/independence/confirm",
+    "/v1/engagements/{engagement_id}/independence/decline",
+    "/v1/engagements/{engagement_id}/independence/reminders",
+    "/v1/engagements/{engagement_id}/eqr",
+    "/v1/conflict-checks/{check_id}/results/{result_id}/clear",
+    # TASK-1198 (ENG-02 status menu): holding and resuming move an engagement, so 200.
+    "/v1/engagements/{engagement_id}/hold",
+    "/v1/engagements/{engagement_id}/resume",
+    # Q-02-T38 (compliance-kernel v1.1 stub): a decision on an existing export, and a link.
+    "/v1/firm/data-exports/{export_id}/approve",
+    "/v1/firm/data-exports/{export_id}/decline",
+    "/v1/firm/data-exports/{export_id}/link",
 }
 
 
@@ -248,6 +266,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # R-01-T01: a portal drop is stored and sorted later, so 202 (polled by its batch).
         "/v1/portal/binders/{binder_id}/drops",
         "/v1/portal/auth/resend",
+        # P-08-T21: a link renewal answers 202 for any token (the email goes out later).
+        "/v1/portal/links/renew",
+        # Q-02-T38: a firm-export request waits for its approver, then builds, so 202.
+        "/v1/firm/data-exports",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -286,6 +308,20 @@ def test_ac20_creating_routes_answer_201() -> None:
         # P-07-T17 (contacts stub): a contact, and an invitation with its pending grants.
         "/v1/clients/{client_id}/contacts",
         "/v1/contacts/{contact_id}/invitations",
+        # P-07-T29: a flag, a manual check, a risk-partner review, the decision, a breach and
+        # its events, a conclusion, a team approval, an EQR eligibility approval, a conflict
+        # check and a screening record (each an insert-only row).
+        "/v1/engagements/{engagement_id}/acceptance/flags",
+        "/v1/engagements/{engagement_id}/acceptance/manual-checks/{section_code}/request",
+        "/v1/engagements/{engagement_id}/acceptance/risk-partner-review",
+        "/v1/engagements/{engagement_id}/acceptance/decision",
+        "/v1/engagements/{engagement_id}/independence/breaches",
+        "/v1/engagements/{engagement_id}/independence/breaches/{breach_id}/events",
+        "/v1/engagements/{engagement_id}/independence/conclude",
+        "/v1/engagements/{engagement_id}/team/approve",
+        "/v1/engagements/{engagement_id}/eqr/eligibility/approve",
+        "/v1/conflict-checks",
+        "/v1/screening-records",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded
@@ -369,6 +405,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/versions",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/annotations",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks",  # SPEC-310
+        # A-02-T03 (C9 v1 stub): an issue linked to a check that does not tie.
+        "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/checks/{check_id}/issue-link",
         # TASK-323: a password-protected upload saved again without its password
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock",
         "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/statement/approve",

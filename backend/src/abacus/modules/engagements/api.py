@@ -1,6 +1,11 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.modules.engagements.acceptance_contract import (
+    acceptance_router,
+    independence_router,
+    team_roles_router,
+)
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
@@ -9,6 +14,8 @@ from abacus.modules.engagements.contacts import (
     EngagementContact,
     attest_of,
     client_contact_names,
+    client_contact_organisations,
+    client_contact_organisations_of_users,
     client_entity_scope,
     client_scope,
     contact_portal_user,
@@ -31,7 +38,7 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
-from abacus.modules.engagements.index_facts import work_item_index
+from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -78,6 +85,7 @@ from abacus.modules.engagements.service import (
 from abacus.modules.engagements.setup import (
     EngagementNotOpen,
     StoredFile,
+    answer_independence,
     attach_acceptance_file,
     attach_letter_file,
     attest_column,
@@ -119,10 +127,13 @@ from abacus.modules.engagements.work_items import (
     assurance_item,
     assurance_item_id,
     create_work_item,
+    end_wall_assignments,
+    holds_tax_return,
     lock_assurance_item,
     lock_engagement,
     portal_work_items,
     set_assurance_profile,
+    wall_assignment_count,
 )
 from abacus.modules.engagements.workbook import (
     AccountRule,
@@ -147,6 +158,7 @@ from abacus.modules.identity.api import (
     register_member_added,
     register_mfa_requirement,
     register_scope_resolver,
+    register_wall_assignments,
     register_work_item_functions,
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
@@ -161,7 +173,8 @@ from abacus.modules.organisations.api import (
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
 # SPEC-036 (TASK-076): the AI gateway asks whether AI is off for an engagement.
-register_client_data_facts(excluded=ai_excluded)
+# P-06-T20 security review (DEC-324): tax-return work reaches no model without consent.
+register_client_data_facts(excluded=ai_excluded, tax_return=holds_tax_return)
 # SPEC-014: which engagements count for firm-level reads by engagement role (not archived).
 register_active_engagements(active_engagements)
 # P-07-T08: `register_open_requests` is re-exported for requests, keeping the plan's graph
@@ -185,6 +198,8 @@ register_independence(confirmed_subquery, confirmed_for)
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
 # F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
 register_work_item_functions(functions_on)
+# G-01-T09 (AC8.5): a wall's preview counts, and its consumer ends, the person's assignments.
+register_wall_assignments(wall_assignment_count, end_wall_assignments)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
@@ -215,6 +230,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     engagements_v2_router,
     engagement_types_router,
     engagement_drafts_router,
+    # The team, acceptance and independence contract, v1 (P-07-T29).
+    acceptance_router,
+    independence_router,
+    team_roles_router,
     router,
     work_items_router,
     methodology_router,
@@ -257,8 +276,10 @@ __all__ = [
     "VersionNotLatest",
     "WorkItemExists",
     "WorkItemProvider",
+    "answer_independence",
     "area_for",
     "assign_work_item",
+    "assurance_index",
     "assurance_item",
     "assurance_item_id",
     "attach_acceptance_file",
@@ -266,6 +287,8 @@ __all__ = [
     "audit_engagements",
     "check_facts",
     "client_contact_names",
+    "client_contact_organisations",
+    "client_contact_organisations_of_users",
     "contact_portal_user",
     "create_work_item",
     "designate_contact",
@@ -284,6 +307,7 @@ __all__ = [
     "independence_cleared",
     "is_archived",
     "judgments_of",
+    "letters_sent",
     "lock_assurance_item",
     "lock_engagement",
     "lock_ref",

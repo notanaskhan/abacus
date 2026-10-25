@@ -11,6 +11,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.AcceptanceMissing
+  acceptance_not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.AcceptanceNotReady
+    summary: 'A manual check is still open (`facts.sections`): complete it before sending to the partner.'
   access_ends_required:
     status: 422
     raised_by:
@@ -67,6 +72,10 @@ codes:
     raised_by:
     - abacus.modules.agents.review_start.ReviewUnavailable
     summary: No real model route is enabled for the reviewer here (TASK-059 D3).
+  already_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.walls.AlreadyApproved
   already_connected:
     status: 409
     raised_by:
@@ -109,6 +118,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.trial_balance.AnnotationInvalid
+  approver_not_partner:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.walls.ApproverNotPartner
+    summary: The named approver must be an active partner-level member other than the walled person and
+      the wall's creator, who can see the client (not walled from it, not offshore without its consent).
   archive_locked:
     status: 409
     raised_by:
@@ -217,6 +232,11 @@ codes:
     raised_by:
     - abacus.modules.identity.people.DeactivationReasonInvalid
     summary: A person deactivates with `manual`; the other reasons are the system's.
+  decision_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.DecisionLocked
+    summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409
     raised_by:
@@ -297,6 +317,34 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  eqr_approval_required:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrApprovalRequired
+    summary: 'The candidate''s competence is not shown by their history here: the quality owner approves
+      their eligibility first.'
+  eqr_approver_is_ep:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrApproverIsEp
+    summary: The EQR's eligibility is approved by the quality owner, never the engagement partner.
+  eqr_approver_on_engagement:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrApproverOnEngagement
+    summary: The EQR's eligibility is approved by a quality owner with no role on this engagement.
+  eqr_not_eligible:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrNotEligible
+    summary: 'The candidate fails an eligibility check (each failing check is a fact): pick an eligible
+      reviewer.'
+  eqr_on_team:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.team_errors.EqrOnTeam
+    summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
+      the EQR off the team roles.'
   evidence_accepted:
     status: 409
     raised_by:
@@ -322,6 +370,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.findings.FindingInvalid
+  firm_already_acted:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_undo.FirmAlreadyActed
+    summary: 'The firm has acted on the request or the binder since: the client''s Undo is closed.'
   firm_role_held:
     status: 409
     raised_by:
@@ -394,6 +447,11 @@ codes:
     raised_by:
     - abacus.kernel.uow.idempotency.IdempotencyKeyReused
     summary: This key already answered a different request.
+  ignore_notes_exhausted:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_undo.IgnoreNotesExhausted
+    summary: 'The request''s thread already holds its ignore notes: Ignore without one, or comment.'
   illegal_transition:
     status: 409
     raised_by:
@@ -421,6 +479,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.IndependenceConclusionMissing
+  independence_preconditions_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
+    summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
+      clear, an SKE designee or NAS evaluations on an attest client).
   integrity_failed:
     status: 409
     raised_by:
@@ -639,6 +703,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.unlock.NotLocked
     summary: The file isn't a password-protected PDF.
+  not_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.citations.moved.NotMoved
+    summary: Only a moved citation is relinked, onto a successor that is still there.
   not_note_raiser:
     status: 409
     raised_by:
@@ -654,6 +723,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_self:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.NotSelf
+    summary: Only the person themself confirms or declines their own independence.
   not_staff:
     status: 409
     raised_by:
@@ -692,11 +766,25 @@ codes:
     raised_by:
     - abacus.modules.agents.draft_start.NothingToPublish
     summary: No approved drafted guidance on this version yet.
+  nothing_to_undo:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.client_undo.NothingToUndo
+    summary: The act was already undone (a second Undo), or never happened.
   notify_not_member:
     status: 422
     raised_by:
     - abacus.modules.evidence.holds.NotifyNotMember
     summary: Everyone on the notify list must be a current member of the firm's staff.
+  office_code_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.org_structure.OfficeCodeTaken
+    summary: 'Office codes are unique per firm (AC7.2): ADM-03''s `?expand=` key and CCH''s mapping.'
+  office_name_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.org_structure.OfficeNameTaken
   office_not_in_firm:
     status: 422
     raised_by:
@@ -708,6 +796,24 @@ codes:
     - abacus.modules.identity.people.OffshoreAssignmentConflict
     summary: Offshore can't be turned on while the person is assigned to clients without an offshore
       consent (AC4.6); the facts carry the assignment count.
+  offshore_consent_required:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.offshore.OffshoreConsentRequired
+    summary: An offshore member can't be assigned to a client without a valid offshore-disclosure consent
+      (AC9.3).
+  one_hq:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.org_structure.OneHq
+    summary: A firm has one headquarters office (AC7.2); clear the current one first.
+  org_structure_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.org_structure.OrgStructureInvalid
+    summary: 'A value the office or team refuses: an unknown time zone, a lead or member who isn''t the
+      firm''s active staff, a reviewer pool that isn''t the firm''s team, a service-line team without
+      its line (facts name the field).'
   out_of_scope:
     status: 409
     raised_by:
@@ -724,9 +830,8 @@ codes:
   own_wall:
     status: 409
     raised_by:
-    - abacus.modules.identity.service.OwnWall
-    summary: 'A firm admin can''t lift a wall on themself: another firm admin must (ADR-026: walls are
-      absolute; TASK-016 security review).'
+    - abacus.modules.identity.walls.OwnWall
+    summary: 'A partner can''t lift a wall on themself: another partner must (ADR-026; DEC-73).'
   parameters_invalid:
     status: 422
     raised_by:
@@ -751,6 +856,12 @@ codes:
     - abacus.modules.assurance.phase.PhaseFollowsGate
     summary: 'The target phase''s gate is computed by a registered provider: it derives from `gate.met`
       and cannot be recorded.'
+  phase_gate_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.phase.PhaseGateUnmet
+    summary: The gate a gate move names is not met (computed, never the caller's say), or does not open
+      the target phase.
   phase_invalid:
     status: 422
     raised_by:
@@ -813,6 +924,11 @@ codes:
     - abacus.modules.engagements.roll_forward.ProposalChanged
     - abacus.modules.evidence.service.ProposalChanged
     summary: 'The template''s latest version changed since the proposal: ask for it again.'
+  rationale_required:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.RationaleRequired
+    summary: A decision needs a rationale; Accept with conditions needs a condition (`facts.field`).
   read_not_confirmed:
     status: 422
     raised_by:
@@ -823,6 +939,16 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.ReasonRequired
     summary: Unpublishing a binder needs a reason.
+  relationship_partner:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.walls.RelationshipPartner
+    summary: 'The person leads the client''s relationship: reassign it first (AC8.3).'
+  relink_unverified:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.citations.moved.RelinkUnverified
+    summary: 'The cited text is not on the successor: the popover offers "Open source" instead.'
   request_already_sent:
     status: 409
     raised_by:
@@ -870,6 +996,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotesOpen
     summary: A reviewer signs (L2 and above) only when the target's notes are cleared.
+  review_required:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance_contract.ReviewRequired
+    summary: A High-risk record needs a completed risk-partner review before the decision.
   reviewer_is_preparer:
     status: 409
     raised_by:
@@ -905,6 +1036,11 @@ codes:
     - abacus.modules.identity.contact_access.ScopeOutsideClient
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
+  screening_running:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.screening_card.ScreeningRunning
+    summary: 'A screening of this request''s files is still running: wait for it, then rerun.'
   seats_full:
     status: 409
     raised_by:
@@ -966,10 +1102,12 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.people.StalePerson
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
-    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
+    - abacus.modules.organisations.org_structure.StaleOrgStructure
+    summary: 'The team changed since it was read: read it again and approve what is there now.'
   statement_already_approved:
     status: 409
     raised_by:
@@ -1017,6 +1155,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.roll_forward.TeamMemberUnavailable
     summary: Someone confirmed has since left the firm or been walled from the client.
+  team_name_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.org_structure.TeamNameTaken
   template_invalid:
     status: 422
     raised_by:
@@ -1156,7 +1298,7 @@ codes:
   wall_exists:
     status: 409
     raised_by:
-    - abacus.modules.identity.service.WallExists
+    - abacus.modules.identity.walls.WallExists
     summary: The person is already walled off from this client.
   work_item_exists:
     status: 409

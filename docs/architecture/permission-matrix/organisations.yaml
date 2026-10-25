@@ -46,6 +46,14 @@ actions:
   # `client_access.revoke`, `contact.unlock`). Agent and system denied (INV-1); no client role.
   contact.read:             {firm_admin: allow, firm_partner: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny}
   contact.manage:           {firm_admin: allow, firm_partner: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}
+  # --- Conflict checks and screening, v1 (P-07-T29 stub; P-07 §4.3, §4.4; DEC-326) ---
+  # CLI-06 and CLI-08 c. Firm-level: the firm admin and partners (`firm_partner`); the manager
+  # cell waits for a derived firm-level grant (DEC-141's pattern). Clearing a hit is a person's
+  # (human-only). The search itself runs as a system principal over metadata (P-07-T36), which
+  # is not this route action. Agent and system denied; no client role.
+  conflict.run:             {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  conflict.clear:           {firm_partner: allow, agent: deny, system: deny}   # human-only
+  screening.record:         {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
   # --- Firm-settings family contract, v1 (G-01-T02 stub): offices, teams and groups ---
   # Filters and review pools, never an access boundary (DEC-30). G-01 section 4.3 names
   # `office.*` and `team.*`; one pair covers both so no rule names an office

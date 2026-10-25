@@ -29,3 +29,11 @@ class MessageComplained(DomainEvent):
 
     event_type: ClassVar[str] = "message.complained"
     message_id: Annotated[UUID, classified("internal")]
+
+
+class PortalLinkRenewRequested(DomainEvent):
+    """A recipient renewed a portal email's link (P-08-T21; SPEC-320 AC-14): the new link's token
+    is issued at delivery and sent to the address the old one went to. Identifiers only."""
+
+    event_type: ClassVar[str] = "portal.link_renew_requested"
+    secure_link_id: Annotated[UUID, classified("internal")]

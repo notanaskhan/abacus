@@ -14,6 +14,12 @@
   resolutions) denied to an agent, a system run and a support session; and the target
   conditions `not_preparer_of_target` and `reserved_role`, allow and deny, for every role their
   row allows.
+- `tests/security/test_fresh_mfa_generated.py` (Q-02-T37; Q-02 AC-42): for each action in
+  `docs/architecture/fresh-mfa-actions.yaml`, the matrix carries `mfa_recent: required`, a role
+  the row allows is refused without a second factor verified in the last 15 minutes (never, or
+  just over) and allowed with one, and the routes that declare it (each refuses to answer unless
+  its declared action was authorised, `AbacusRoute`) still declare it. Removing the condition,
+  the listing or a route's declaration shows in this file's diff and fails.
 - `tests/security/test_route_introspection.py` (Q-02-T15): one case per (method, path) that
   `create_app()` serves through `AbacusRouter`, with the action it declares, and the routes that
   answer without a token. Each case checks one matrix action (or route marker), a response model
@@ -45,6 +51,8 @@ ISOLATION = ROOT / "tests" / "security" / "test_tenant_isolation.py"
 MATRIX = ROOT / "tests" / "security" / "test_permission_matrix_generated.py"
 INTROSPECTION = ROOT / "tests" / "security" / "test_route_introspection.py"
 RESOLUTION = ROOT / "tests" / "security" / "test_resolution_actions_generated.py"
+FRESH_MFA = ROOT / "tests" / "security" / "test_fresh_mfa_generated.py"
+FRESH_MFA_REGISTER = ROOT.parent / "docs" / "architecture" / "fresh-mfa-actions.yaml"
 # P-04-T15: the entities whose every non-read action is a person's resolution, the issue
 # resolutions, and the evidence decisions. An action the agent holds by task scope (it proposes:
 # `proposal.create`, `suggestion.create`, `checkpoint.propose`) is the agent's, not a resolution.
@@ -243,6 +251,84 @@ def _row(*values: str) -> str:
     return "    (\n" + "".join(f"        {_q(v)},\n" for v in values) + "    ),\n"
 
 
+def fresh_mfa_listed() -> list[tuple[str, str]]:
+    """(action, group) for each action the fresh-MFA register lists, in its order."""
+    import yaml
+
+    data = cast(dict[str, object], yaml.safe_load(FRESH_MFA_REGISTER.read_text(encoding="utf-8")))
+    entries = cast(list[dict[str, str]], data["actions"])
+    return [(entry["action"], entry["group"]) for entry in entries]
+
+
+def fresh_mfa_role(rule: Rule) -> str:
+    """A role the row allows once its conditions are cleared (the MFA case isolates the
+    attribute); the derived `firm_partner` cell when only it allows; "" when none does."""
+    for role in HUMAN_ROLES:
+        if rule.decisions.get(role) == "allow" and not (rule.scope_only and role in CLIENT_ROLES):
+            return role
+    return FIRM_PARTNER if rule.decisions.get(FIRM_PARTNER) == "allow" else ""
+
+
+FIRM_PARTNER = "firm_partner"  # the derived cell (DEC-132), as `identity.authz` spells it
+
+
+def render_fresh_mfa() -> str:
+    from abacus.api import create_app  # tooling may import product
+    from abacus.modules.identity.api import RULES
+
+    listed = fresh_mfa_listed()
+    actions = {action for action, _ in listed}
+    cases = "".join(
+        _row(action, group, fresh_mfa_role(RULES[action]) if action in RULES else "")
+        for action, group in listed
+    )
+    guarded, _ = served(create_app())
+    routes = "".join(_row(*row) for row in guarded if row[2] in actions)
+    return (
+        _HEADER.replace("(Q-02-T13)", "(Q-02-T37)")
+        + '"""The fresh-MFA overlay (Q-02 AC-42; Q-02-T37): every action in\n'
+        + "`docs/architecture/fresh-mfa-actions.yaml` carries `mfa_recent: required`; a role\n"
+        + "its row allows is refused without a second factor verified in the last 15 minutes\n"
+        + "and allowed with one; and every route declaring a listed action still declares it\n"
+        + "(a route answers only after its declared action was authorised, `AbacusRoute`). An\n"
+        + "action no route declares yet is enforced wherever its service calls `authorise`.\n"
+        + '"""\n\n'
+        + "from __future__ import annotations\n\n"
+        + "import pytest\n\n"
+        + "from abacus.modules.identity.api import RULES\n"
+        + "from abacus_tools.codegen.security_tests import served\n\n"
+        + "from .matrix_harness import Freshness, mfa_outcome\n"
+        + "from .route_checks import app\n\n"
+        + f"CASES: tuple[tuple[str, str, str], ...] = (\n{cases})\n"
+        + f"ROUTES: tuple[tuple[str, str, str], ...] = (\n{routes})\n"
+        + "LISTED = frozenset(action for action, _, _ in CASES)\n\n\n"
+        + '@pytest.mark.parametrize(("action", "group", "role"), CASES)\n'
+        + "def test_ac42_the_listed_action_needs_a_fresh_second_factor(\n"
+        + "    action: str, group: str, role: str\n"
+        + ") -> None:\n"
+        + '    assert action in RULES, f"{action} ({group}) is not in the permission matrix"\n'
+        + '    assert RULES[action].mfa_recent, f"{action} lacks mfa_recent: required"\n'
+        + '    assert role, f"{action}: no human role may, so nothing shows the MFA rule"\n'
+        + "\n\n"
+        + '@pytest.mark.parametrize(("action", "group", "role"), CASES)\n'
+        + "@pytest.mark.parametrize(\n"
+        + '    ("freshness", "want"), [("fresh", "allow"), ("stale", "deny"), ("none", "deny")]\n'
+        + ")\n"
+        + "async def test_ac42_authorise_refuses_without_a_fresh_second_factor(\n"
+        + "    monkeypatch: pytest.MonkeyPatch,\n"
+        + "    action: str,\n"
+        + "    group: str,\n"
+        + "    role: str,\n"
+        + "    freshness: Freshness,\n"
+        + "    want: str,\n"
+        + ") -> None:\n"
+        + "    assert await mfa_outcome(monkeypatch, action, role, freshness) == want\n\n\n"
+        + "def test_ac42_the_routes_declaring_a_listed_action_are_unchanged() -> None:\n"
+        + "    guarded, _ = served(app())\n"
+        + "    assert [row for row in guarded if row[2] in LISTED] == list(ROUTES)\n"
+    )
+
+
 def render_introspection() -> str:
     from abacus.api import create_app  # tooling may import product
 
@@ -290,6 +376,7 @@ def main(argv: list[str] | None = None) -> int:
         (MATRIX, render_matrix()),
         (INTROSPECTION, render_introspection()),
         (RESOLUTION, render_resolution()),
+        (FRESH_MFA, render_fresh_mfa()),
     )
     if args.check:
         stale = [p for p, body in targets if not p.exists() or p.read_text() != body]

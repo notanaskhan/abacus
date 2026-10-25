@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, acceptance, acceptanceFile, acceptInvitation, acceptStaffInvitation, accounts, acknowledgeStep, acknowledgeSupportSession, activity, addDocument, addPicks, addRepresentation, addRisk, addTeamMember, addToInbox, adjustments, adopt, adoptTbVersion, adoptTrialBalance, agent, agentProposal, agentRunTrace, aiClientData, aiExclusion, annotateTb, announceUploadIntent, annualIndependence, applyMethodology, approve, approveAdjustment, approveDrafts, approvePlan, approveReport, approveRisk, approveStatement, approveSupportSession, approveTemplateDrafts, approveWall, assess, assessments, assign, assignInboxFile, assignToClient, auditArchiveRecord, auditCockpit, auditEvents, auditFacets, auditPhase, auditProfile, auditReleaseRecord, auditsIndex, auditSourceDocuments, autonomy, bands, binderActivity, binderClientPreview, binderLive, binderRequests, boardSummary, browserError, callback, changeContactAccess, changeFirmRole, changeTeamRole, check, checkpoint, checkpointApprove, checkpointCreate, checkpointHistory, checkpointReject, checkpointRename, checkpointRestore, cite, clearNote, clearReviewNote, clientAnswer, clientContacts, clientDone, clientOverview, clientRelationships, clientRespond, clientResponses, clientView, clientWithdraw, communicated, complete, completionState, concludeSeverity, conclusion, concurEqr, confirmAnnualIndependence, connection, content, createBinder, createCitation, createContact, createEngagement, createEngagementDraft, createEngagementFromDraft, createOffice, createRequestItem, createTeam, createWall, createWorkpaper, deactivatePerson, decideMateriality, decisionCard, decisionCardAnalysisRequest, decisionCardDecide, decisionCardList, decisionCardNotify, decisionCardReassess, defaultDueDate, defineCheck, delegateRequestItem, deleteRequestItem, discard, discardDrafts, discardEngagementDraft, discardTemplateDrafts, dismissDraft, dismissFollowUp, dismissOnboarding, draftedGuidance, draftFollowUps, draftGuidance, drafts, draftScreeningReturn, draftSelectionFollowUps, draftTemplateGuidance, dropFile, dueDates, duplicateBinder, editCheck, editFollowUp, editMapping, emergencyApprove, endSupportSession, engagementDashboard, engagementGates, engagementGraph, engagementIndex, engagementRecord, engagementTypes, exportRunTrace, fieldEdit, fieldProvenance, fieldReference, fieldTick, fieldworkSettings, fieldworkWaiting, findings, findingsSummary, firmAgents, firmClients, firmMembers, fixInstructions, fixInstructionsBulk, flow, getBinder, getBudget, getCitation, getClient, getContact, getDocument, getDropBatch, getEngagement, getEngagementDraft, getFollowUp, getPortalBinder, getPortalBranding, getPortalHome, getPortalLogo, getPortalRequest, getPortalRoom, getRetrieval, getVersion, glImport, glImportFormats, goingConcern, groupingSetVersions, guidanceDrafts, humanGateList, ignoreRequestItem, import_, importEmailTemplate, importGroupingSet, importRetentionDefaults, importRetentionFloors, importTemplate, inbox, inboxMatches, inboxPreview, inboxPreviewPage, incidentPropagationLog, incorporateRequestItem, independence, inviteClient, inviteContact, inviteStaff, issue, issueCreate, issueExplain, issueList, issueNotApplicable, issueReopen, issueResolve, issueSendToClient, issueUpdate, issueVerify, itemComments, items, itemVersions, latestGlImport, latestLedgerImport, leadsheets, ledgerImport, ledgerImportFormats, letter, letterFile, letterPolicy, listAgentRuns, listBinders, listCitations, listClients, listContacts, listDocuments, listEngagements, listEvidenceVersions, listLegalHolds, listNotifications, listPortalBinders, listRequestItems, listRetentionPolicies, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, listWorkItems, lockArchive, log, mapping, markBinderDone, markDone, materiality, materialityVersions, me, mentionCandidates, metering, misstatement, myCapabilities, myConfirmations, notes, notificationFeed, notificationPreferences, offices, offshore, onboarding, type Options, overdueWaiting, pauseAgent, pauseFirmAgents, person, placeLegalHold, portalMfa, portalMfaSetup, portalMfaSetupVerify, portalRefresh, portalResend, portalSignOut, portalStart, portalVerify, postItemComment, postVersionComment, prepareMapping, previewFollowUp, previewImport, previewInvitation, procedure, procedures, propagateIncident, proposal, proposalApprove, proposalFollowUp, proposalReject, proposalRouteTo, proposalUndo, proposeAdjustment, proposeSeverity, providers, publishBinder, publishDrafted, publishGroupingSet, publishRetentionDefaults, publishRetentionFloors, putBudget, raiseFinding, raiseNote, raiseReviewNote, readAll, readComments, readNotification, reasonCodes, recordEngagementLetter, recordIncident, recordReport, redactComment, refresh, reject, release, releaseLegalHold, releaseReport, relinkCitation, removeClientContact, removeRepresentation, removeTeamMember, removeWall, reopenReviewNote, repLetter, representations, requestItemActivity, requestMatch, requestReview, requestScreening, requestSelectionSupport, requestSupport, requestSupportSession, rerunScreening, resendClientInvitation, resendInvitation, resendStaffInvitation, resetContactMfa, respondNote, respondReviewNote, result, resumeAgent, resumeFirmAgents, returnRequestItemToClient, revealPii, revealTin, reviewFlags, reviewMapping, reviewMatrix, reviewNote, reviewNoteClear, reviewNoteList, reviewNoteRaise, reviewNoteRespond, reviewNotes, reviewNoteWithdraw, reviewQueue, reviewWaiting, reviseRisk, revoke, revokeClientInvitation, revokeInvitation, revokeStaff, revokeStaffInvitation, revokeSupportSession, risks, roleTemplates, saveRetentionPolicy, screeningCard, screeningFeedback, search, searchClients, searchFindings, searchRequestItems, select, selfJoin, sendBack, sendDraft, sendFollowUp, sendFollowUps, sendRequestItem, serviceLines, session, setAccounts, setAiClientData, setAiExclusion, setAutonomy, setBinderFollowUpOverride, setBinderRecipients, setCells, setClientVisibility, setDefaultDueDate, setDocumentKind, setDraftedGuidance, setFieldworkSettings, setGuidance, setLetterPolicy, setMateriality, setNotificationPreferences, setParameters, setPreferences, setSeasonalAccessEnds, setSecurityRole, setServiceLine, setTeamMembers, setTier, setTimeZone, settingsOverview, settingsSection, setup, setupFile, signIn, signOff, signOffBulk, signOffEligibility, signOffEqr, signOffLadder, signOffManager, signOffPartner, signOffPrepare, signOffReview, signOut, signPrepared, signReady, signReviewed, signReviewedItems, signup, staff, start, startAcceptanceFromDraft, startMapping, startProcedure, startRetrieval, statement, statementPreview, statements, suggestionAdopt, suggestionDismiss, suggestRoomRequest, take, tbCandidates, tbSignOffEqr, tbSignOffManager, tbSignOffPartner, tbSignOffPrepare, tbSignOffReview, team, teamCandidates, teams, templateDrafts, tieOutChecks, timeZone, trialBalance, trialBalances, uncorrected, undoDecision, undoFollowUp, undoIgnore, undoMarkDone, undoPublishBinder, undoSendRequestItem, unlockContact, unlockContactPortal, unlockUpload, unlockVersion, unpublishBinder, updateClient, updateContact, updateEngagementDraft, updateOffice, updatePerson, updatePortalPreferences, updateRequestItem, updateSettingsSection, updateTeam, upload, uploadChecks, uploadPreview, uploadPreviewPage, uploadReview, validateEngagementDraft, versionComments, versionPreview, versionPreviewPage, viewerManifest, viewerPage, viewerRegions, viewerSearch, voidFulfilment, waiveRequestItem, wallEvents, wallPreview, withdrawDocument, withdrawEvidenceVersion, workItems, workpaper, workpaperDetail, workpaperFile, workpapers, yourPart } from '../sdk.gen';
-import type { AcceptanceData, AcceptanceError, AcceptanceFileData, AcceptanceFileError, AcceptanceFileResponse, AcceptanceResponse, AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcceptStaffInvitationData, AcceptStaffInvitationError, AcceptStaffInvitationResponse, AccountsData, AccountsError, AccountsResponse, AcknowledgeStepData, AcknowledgeStepError, AcknowledgeStepResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, ActivityData, ActivityError, ActivityResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddPicksData, AddPicksError, AddPicksResponse, AddRepresentationData, AddRepresentationError, AddRepresentationResponse, AddRiskData, AddRiskError, AddRiskResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, AddToInboxData, AddToInboxError, AddToInboxResponse, AdjustmentsData, AdjustmentsError, AdjustmentsResponse, AdoptData, AdoptError, AdoptResponse, AdoptTbVersionData, AdoptTbVersionError, AdoptTbVersionResponse, AdoptTrialBalanceData, AdoptTrialBalanceError, AdoptTrialBalanceResponse, AgentData, AgentError, AgentProposalData, AgentProposalError, AgentProposalResponse, AgentResponse, AgentRunTraceData, AgentRunTraceError, AgentRunTraceResponse, AiClientDataData, AiClientDataError, AiClientDataResponse, AiExclusionData, AiExclusionError, AiExclusionResponse, AnnotateTbData, AnnotateTbError, AnnotateTbResponse, AnnounceUploadIntentData, AnnounceUploadIntentError, AnnounceUploadIntentResponse, AnnualIndependenceData, AnnualIndependenceError, AnnualIndependenceResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveAdjustmentData, ApproveAdjustmentError, ApproveAdjustmentResponse, ApproveData, ApproveDraftsData, ApproveDraftsError, ApproveDraftsResponse, ApproveError, ApprovePlanData, ApprovePlanError, ApprovePlanResponse, ApproveReportData, ApproveReportError, ApproveReportResponse, ApproveResponse, ApproveRiskData, ApproveRiskError, ApproveRiskResponse, ApproveStatementData, ApproveStatementError, ApproveStatementResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, ApproveTemplateDraftsData, ApproveTemplateDraftsError, ApproveTemplateDraftsResponse, ApproveWallData, ApproveWallError, ApproveWallResponse, AssessData, AssessError, AssessmentsData, AssessmentsError, AssessmentsResponse, AssessResponse, AssignData, AssignError, AssignInboxFileData, AssignInboxFileError, AssignInboxFileResponse, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, AuditArchiveRecordData, AuditArchiveRecordError, AuditArchiveRecordResponse, AuditCockpitData, AuditCockpitError, AuditCockpitResponse, AuditEventsData, AuditEventsError, AuditEventsResponse, AuditFacetsData, AuditFacetsError, AuditFacetsResponse, AuditPhaseData, AuditPhaseError, AuditPhaseResponse, AuditProfileData, AuditProfileError, AuditProfileResponse, AuditReleaseRecordData, AuditReleaseRecordError, AuditReleaseRecordResponse, AuditsIndexData, AuditsIndexError, AuditsIndexResponse, AuditSourceDocumentsData, AuditSourceDocumentsError, AuditSourceDocumentsResponse, AutonomyData, AutonomyError, AutonomyResponse, BandsData, BandsError, BandsResponse, BinderActivityData, BinderActivityError, BinderActivityResponse, BinderClientPreviewData, BinderClientPreviewError, BinderClientPreviewResponse, BinderLiveData, BinderLiveError, BinderLiveResponse, BinderRequestsData, BinderRequestsError, BinderRequestsResponse, BoardSummaryData, BoardSummaryError, BoardSummaryResponse, BrowserErrorData, BrowserErrorError, BrowserErrorResponse, CallbackData, CallbackError, ChangeContactAccessData, ChangeContactAccessError, ChangeContactAccessResponse, ChangeFirmRoleData, ChangeFirmRoleError, ChangeFirmRoleResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckpointApproveData, CheckpointApproveError, CheckpointApproveResponse, CheckpointCreateData, CheckpointCreateError, CheckpointCreateResponse, CheckpointData, CheckpointError, CheckpointHistoryData, CheckpointHistoryError, CheckpointHistoryResponse, CheckpointRejectData, CheckpointRejectError, CheckpointRejectResponse, CheckpointRenameData, CheckpointRenameError, CheckpointRenameResponse, CheckpointResponse, CheckpointRestoreData, CheckpointRestoreError, CheckpointRestoreResponse, CheckResponse, CiteData, CiteError, CiteResponse, ClearNoteData, ClearNoteError, ClearNoteResponse, ClearReviewNoteData, ClearReviewNoteError, ClearReviewNoteResponse, ClientAnswerData, ClientAnswerError, ClientAnswerResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, ClientDoneData, ClientDoneError, ClientDoneResponse, ClientOverviewData, ClientOverviewError, ClientOverviewResponse, ClientRelationshipsData, ClientRelationshipsError, ClientRelationshipsResponse, ClientRespondData, ClientRespondError, ClientRespondResponse, ClientResponsesData, ClientResponsesError, ClientResponsesResponse, ClientViewData, ClientViewError, ClientViewResponse, ClientWithdrawData, ClientWithdrawError, ClientWithdrawResponse, CommunicatedData, CommunicatedError, CommunicatedResponse, CompleteData, CompleteError, CompleteResponse, CompletionStateData, CompletionStateError, CompletionStateResponse, ConcludeSeverityData, ConcludeSeverityError, ConcludeSeverityResponse, ConclusionData, ConclusionError, ConclusionResponse, ConcurEqrData, ConcurEqrError, ConcurEqrResponse, ConfirmAnnualIndependenceData, ConfirmAnnualIndependenceError, ConfirmAnnualIndependenceResponse, ConnectionData, ConnectionError, ConnectionResponse, ContentData, ContentError, ContentResponse, CreateBinderData, CreateBinderError, CreateBinderResponse, CreateCitationData, CreateCitationError, CreateCitationResponse, CreateContactData, CreateContactError, CreateContactResponse, CreateEngagementData, CreateEngagementDraftData, CreateEngagementDraftError, CreateEngagementDraftResponse, CreateEngagementError, CreateEngagementFromDraftData, CreateEngagementFromDraftError, CreateEngagementFromDraftResponse, CreateEngagementResponse, CreateOfficeData, CreateOfficeError, CreateOfficeResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateTeamData, CreateTeamError, CreateTeamResponse, CreateWallData, CreateWallError, CreateWallResponse, CreateWorkpaperData, CreateWorkpaperError, CreateWorkpaperResponse, DeactivatePersonData, DeactivatePersonError, DeactivatePersonResponse, DecideMaterialityData, DecideMaterialityError, DecideMaterialityResponse, DecisionCardAnalysisRequestData, DecisionCardAnalysisRequestError, DecisionCardAnalysisRequestResponse, DecisionCardData, DecisionCardDecideData, DecisionCardDecideError, DecisionCardDecideResponse, DecisionCardError, DecisionCardListData, DecisionCardListError, DecisionCardListResponse, DecisionCardNotifyData, DecisionCardNotifyError, DecisionCardNotifyResponse, DecisionCardReassessData, DecisionCardReassessError, DecisionCardReassessResponse, DecisionCardResponse, DefaultDueDateData, DefaultDueDateError, DefaultDueDateResponse, DefineCheckData, DefineCheckError, DefineCheckResponse, DelegateRequestItemData, DelegateRequestItemError, DelegateRequestItemResponse, DeleteRequestItemData, DeleteRequestItemError, DeleteRequestItemResponse, DiscardData, DiscardDraftsData, DiscardDraftsError, DiscardDraftsResponse, DiscardEngagementDraftData, DiscardEngagementDraftError, DiscardEngagementDraftResponse, DiscardError, DiscardResponse, DiscardTemplateDraftsData, DiscardTemplateDraftsError, DiscardTemplateDraftsResponse, DismissDraftData, DismissDraftError, DismissDraftResponse, DismissFollowUpData, DismissFollowUpError, DismissFollowUpResponse, DismissOnboardingData, DismissOnboardingError, DismissOnboardingResponse, DraftedGuidanceData, DraftedGuidanceError, DraftedGuidanceResponse, DraftFollowUpsData, DraftFollowUpsError, DraftFollowUpsResponse, DraftGuidanceData, DraftGuidanceError, DraftGuidanceResponse, DraftScreeningReturnData, DraftScreeningReturnError, DraftScreeningReturnResponse, DraftsData, DraftSelectionFollowUpsData, DraftSelectionFollowUpsError, DraftSelectionFollowUpsResponse, DraftsError, DraftsResponse, DraftTemplateGuidanceData, DraftTemplateGuidanceError, DraftTemplateGuidanceResponse, DropFileData, DropFileError, DropFileResponse, DueDatesData, DueDatesError, DueDatesResponse, DuplicateBinderData, DuplicateBinderError, DuplicateBinderResponse, EditCheckData, EditCheckError, EditCheckResponse, EditFollowUpData, EditFollowUpError, EditFollowUpResponse, EditMappingData, EditMappingError, EditMappingResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementDashboardData, EngagementDashboardError, EngagementDashboardResponse, EngagementGatesData, EngagementGatesError, EngagementGatesResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, EngagementIndexData, EngagementIndexError, EngagementIndexResponse, EngagementRecordData, EngagementRecordError, EngagementRecordResponse, EngagementTypesData, EngagementTypesError, EngagementTypesResponse, ExportRunTraceData, ExportRunTraceError, ExportRunTraceResponse, FieldEditData, FieldEditError, FieldEditResponse, FieldProvenanceData, FieldProvenanceError, FieldProvenanceResponse, FieldReferenceData, FieldReferenceError, FieldReferenceResponse, FieldTickData, FieldTickError, FieldTickResponse, FieldworkSettingsData, FieldworkSettingsError, FieldworkSettingsResponse, FieldworkWaitingData, FieldworkWaitingError, FieldworkWaitingResponse, FindingsData, FindingsError, FindingsResponse, FindingsSummaryData, FindingsSummaryError, FindingsSummaryResponse, FirmAgentsData, FirmAgentsError, FirmAgentsResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, FixInstructionsBulkData, FixInstructionsBulkError, FixInstructionsBulkResponse, FixInstructionsData, FixInstructionsError, FixInstructionsResponse, FlowData, FlowError, FlowResponse, GetBinderData, GetBinderError, GetBinderResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetCitationData, GetCitationError, GetCitationResponse, GetClientData, GetClientError, GetClientResponse, GetContactData, GetContactError, GetContactResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetDropBatchData, GetDropBatchError, GetDropBatchResponse, GetEngagementData, GetEngagementDraftData, GetEngagementDraftError, GetEngagementDraftResponse, GetEngagementError, GetEngagementResponse, GetFollowUpData, GetFollowUpError, GetFollowUpResponse, GetPortalBinderData, GetPortalBinderError, GetPortalBinderResponse, GetPortalBrandingData, GetPortalBrandingError, GetPortalBrandingResponse, GetPortalHomeData, GetPortalHomeError, GetPortalHomeResponse, GetPortalLogoData, GetPortalLogoError, GetPortalLogoResponse, GetPortalRequestData, GetPortalRequestError, GetPortalRequestResponse, GetPortalRoomData, GetPortalRoomError, GetPortalRoomResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetVersionData, GetVersionError, GetVersionResponse, GlImportData, GlImportError, GlImportFormatsData, GlImportFormatsError, GlImportFormatsResponse, GlImportResponse, GoingConcernData, GoingConcernError, GoingConcernResponse, GroupingSetVersionsData, GroupingSetVersionsError, GroupingSetVersionsResponse, GuidanceDraftsData, GuidanceDraftsError, GuidanceDraftsResponse, HumanGateListData, HumanGateListError, HumanGateListResponse, IgnoreRequestItemData, IgnoreRequestItemError, IgnoreRequestItemResponse, ImportData, ImportEmailTemplateData, ImportEmailTemplateError, ImportEmailTemplateResponse, ImportError, ImportGroupingSetData, ImportGroupingSetError, ImportGroupingSetResponse, ImportResponse, ImportRetentionDefaultsData, ImportRetentionDefaultsError, ImportRetentionDefaultsResponse, ImportRetentionFloorsData, ImportRetentionFloorsError, ImportRetentionFloorsResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InboxData, InboxError, InboxMatchesData, InboxMatchesError, InboxMatchesResponse, InboxPreviewData, InboxPreviewError, InboxPreviewPageData, InboxPreviewPageError, InboxPreviewPageResponse, InboxPreviewResponse, InboxResponse, IncidentPropagationLogData, IncidentPropagationLogError, IncidentPropagationLogResponse, IncorporateRequestItemData, IncorporateRequestItemError, IncorporateRequestItemResponse, IndependenceData, IndependenceError, IndependenceResponse, InviteClientData, InviteClientError, InviteClientResponse, InviteContactData, InviteContactError, InviteContactResponse, InviteStaffData, InviteStaffError, InviteStaffResponse, IssueCreateData, IssueCreateError, IssueCreateResponse, IssueData, IssueError, IssueExplainData, IssueExplainError, IssueExplainResponse, IssueListData, IssueListError, IssueListResponse, IssueNotApplicableData, IssueNotApplicableError, IssueNotApplicableResponse, IssueReopenData, IssueReopenError, IssueReopenResponse, IssueResolveData, IssueResolveError, IssueResolveResponse, IssueResponse, IssueSendToClientData, IssueSendToClientError, IssueSendToClientResponse, IssueUpdateData, IssueUpdateError, IssueUpdateResponse, IssueVerifyData, IssueVerifyError, IssueVerifyResponse, ItemCommentsData, ItemCommentsError, ItemCommentsResponse, ItemsData, ItemsError, ItemsResponse, ItemVersionsData, ItemVersionsError, ItemVersionsResponse, LatestGlImportData, LatestGlImportError, LatestGlImportResponse, LatestLedgerImportData, LatestLedgerImportError, LatestLedgerImportResponse, LeadsheetsData, LeadsheetsError, LeadsheetsResponse, LedgerImportData, LedgerImportError, LedgerImportFormatsData, LedgerImportFormatsError, LedgerImportFormatsResponse, LedgerImportResponse, LetterData, LetterError, LetterFileData, LetterFileError, LetterFileResponse, LetterPolicyData, LetterPolicyError, LetterPolicyResponse, LetterResponse, ListAgentRunsData, ListAgentRunsError, ListAgentRunsResponse, ListBindersData, ListBindersError, ListBindersResponse, ListCitationsData, ListCitationsError, ListCitationsResponse, ListClientsData, ListClientsError, ListClientsResponse, ListContactsData, ListContactsError, ListContactsResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListLegalHoldsData, ListLegalHoldsError, ListLegalHoldsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListPortalBindersData, ListPortalBindersError, ListPortalBindersResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListRetentionPoliciesData, ListRetentionPoliciesError, ListRetentionPoliciesResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, ListWorkItemsData, ListWorkItemsError, ListWorkItemsResponse, LockArchiveData, LockArchiveError, LockArchiveResponse, LogData, LogError, LogResponse, MappingData, MappingError, MappingResponse, MarkBinderDoneData, MarkBinderDoneError, MarkBinderDoneResponse, MarkDoneData, MarkDoneError, MarkDoneResponse, MaterialityData, MaterialityError, MaterialityResponse, MaterialityVersionsData, MaterialityVersionsError, MaterialityVersionsResponse, MeData, MeError, MentionCandidatesData, MentionCandidatesError, MentionCandidatesResponse, MeResponse, MeteringData, MeteringError, MeteringResponse, MisstatementData, MisstatementError, MisstatementResponse, MyCapabilitiesData, MyCapabilitiesError, MyCapabilitiesResponse, MyConfirmationsData, MyConfirmationsError, MyConfirmationsResponse, NotesData, NotesError, NotesResponse, NotificationFeedData, NotificationFeedError, NotificationFeedResponse, NotificationPreferencesData, NotificationPreferencesError, NotificationPreferencesResponse, OfficesData, OfficesError, OfficesResponse, OffshoreData, OffshoreError, OffshoreResponse, OnboardingData, OnboardingError, OnboardingResponse, OverdueWaitingData, OverdueWaitingError, OverdueWaitingResponse, PauseAgentData, PauseAgentError, PauseAgentResponse, PauseFirmAgentsData, PauseFirmAgentsError, PauseFirmAgentsResponse, PersonData, PersonError, PersonResponse, PlaceLegalHoldData, PlaceLegalHoldError, PlaceLegalHoldResponse, PortalMfaData, PortalMfaError, PortalMfaResponse, PortalMfaSetupData, PortalMfaSetupError, PortalMfaSetupResponse, PortalMfaSetupVerifyData, PortalMfaSetupVerifyError, PortalMfaSetupVerifyResponse, PortalRefreshData, PortalRefreshError, PortalRefreshResponse, PortalResendData, PortalResendError, PortalResendResponse, PortalSignOutData, PortalSignOutError, PortalSignOutResponse, PortalStartData, PortalStartError, PortalStartResponse, PortalVerifyData, PortalVerifyError, PortalVerifyResponse, PostItemCommentData, PostItemCommentError, PostItemCommentResponse, PostVersionCommentData, PostVersionCommentError, PostVersionCommentResponse, PrepareMappingData, PrepareMappingError, PrepareMappingResponse, PreviewFollowUpData, PreviewFollowUpError, PreviewFollowUpResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, PreviewInvitationData, PreviewInvitationError, PreviewInvitationResponse, ProcedureData, ProcedureError, ProcedureResponse, ProceduresData, ProceduresError, ProceduresResponse, PropagateIncidentData, PropagateIncidentError, PropagateIncidentResponse, ProposalApproveData, ProposalApproveError, ProposalApproveResponse, ProposalData, ProposalError, ProposalFollowUpData, ProposalFollowUpError, ProposalFollowUpResponse, ProposalRejectData, ProposalRejectError, ProposalRejectResponse, ProposalResponse, ProposalRouteToData, ProposalRouteToError, ProposalRouteToResponse, ProposalUndoData, ProposalUndoError, ProposalUndoResponse, ProposeAdjustmentData, ProposeAdjustmentError, ProposeAdjustmentResponse, ProposeSeverityData, ProposeSeverityError, ProposeSeverityResponse, ProvidersData, ProvidersError, ProvidersResponse, PublishBinderData, PublishBinderError, PublishBinderResponse, PublishDraftedData, PublishDraftedError, PublishDraftedResponse, PublishGroupingSetData, PublishGroupingSetError, PublishGroupingSetResponse, PublishRetentionDefaultsData, PublishRetentionDefaultsError, PublishRetentionDefaultsResponse, PublishRetentionFloorsData, PublishRetentionFloorsError, PublishRetentionFloorsResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, RaiseFindingData, RaiseFindingError, RaiseFindingResponse, RaiseNoteData, RaiseNoteError, RaiseNoteResponse, RaiseReviewNoteData, RaiseReviewNoteError, RaiseReviewNoteResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadCommentsData, ReadCommentsError, ReadCommentsResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RecordEngagementLetterData, RecordEngagementLetterError, RecordEngagementLetterResponse, RecordIncidentData, RecordIncidentError, RecordIncidentResponse, RecordReportData, RecordReportError, RecordReportResponse, RedactCommentData, RedactCommentError, RedactCommentResponse, RefreshData, RefreshError, RefreshResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseLegalHoldData, ReleaseLegalHoldError, ReleaseLegalHoldResponse, ReleaseReportData, ReleaseReportError, ReleaseReportResponse, ReleaseResponse, RelinkCitationData, RelinkCitationError, RelinkCitationResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveRepresentationData, RemoveRepresentationError, RemoveRepresentationResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReopenReviewNoteData, ReopenReviewNoteError, ReopenReviewNoteResponse, RepLetterData, RepLetterError, RepLetterResponse, RepresentationsData, RepresentationsError, RepresentationsResponse, RequestItemActivityData, RequestItemActivityError, RequestItemActivityResponse, RequestMatchData, RequestMatchError, RequestMatchResponse, RequestReviewData, RequestReviewError, RequestReviewResponse, RequestScreeningData, RequestScreeningError, RequestScreeningResponse, RequestSelectionSupportData, RequestSelectionSupportError, RequestSelectionSupportResponse, RequestSupportData, RequestSupportError, RequestSupportResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, RerunScreeningData, RerunScreeningError, RerunScreeningResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ResendInvitationData, ResendInvitationError, ResendInvitationResponse, ResendStaffInvitationData, ResendStaffInvitationError, ResendStaffInvitationResponse, ResetContactMfaData, ResetContactMfaError, ResetContactMfaResponse, RespondNoteData, RespondNoteError, RespondNoteResponse, RespondReviewNoteData, RespondReviewNoteError, RespondReviewNoteResponse, ResultData, ResultError, ResultResponse, ResumeAgentData, ResumeAgentError, ResumeAgentResponse, ResumeFirmAgentsData, ResumeFirmAgentsError, ResumeFirmAgentsResponse, ReturnRequestItemToClientData, ReturnRequestItemToClientError, ReturnRequestItemToClientResponse, RevealPiiData, RevealPiiError, RevealPiiResponse, RevealTinData, RevealTinError, RevealTinResponse, ReviewFlagsData, ReviewFlagsError, ReviewFlagsResponse, ReviewMappingData, ReviewMappingError, ReviewMappingResponse, ReviewMatrixData, ReviewMatrixError, ReviewMatrixResponse, ReviewNoteClearData, ReviewNoteClearError, ReviewNoteClearResponse, ReviewNoteData, ReviewNoteError, ReviewNoteListData, ReviewNoteListError, ReviewNoteListResponse, ReviewNoteRaiseData, ReviewNoteRaiseError, ReviewNoteRaiseResponse, ReviewNoteRespondData, ReviewNoteRespondError, ReviewNoteRespondResponse, ReviewNoteResponse, ReviewNotesData, ReviewNotesError, ReviewNotesResponse, ReviewNoteWithdrawData, ReviewNoteWithdrawError, ReviewNoteWithdrawResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, ReviewWaitingData, ReviewWaitingError, ReviewWaitingResponse, ReviseRiskData, ReviseRiskError, ReviseRiskResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeInvitationData, RevokeInvitationError, RevokeInvitationResponse, RevokeResponse, RevokeStaffData, RevokeStaffError, RevokeStaffInvitationData, RevokeStaffInvitationError, RevokeStaffInvitationResponse, RevokeStaffResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, RisksData, RisksError, RisksResponse, RoleTemplatesData, RoleTemplatesError, RoleTemplatesResponse, SaveRetentionPolicyData, SaveRetentionPolicyError, SaveRetentionPolicyResponse, ScreeningCardData, ScreeningCardError, ScreeningCardResponse, ScreeningFeedbackData, ScreeningFeedbackError, ScreeningFeedbackResponse, SearchClientsData, SearchClientsError, SearchClientsResponse, SearchData, SearchError, SearchFindingsData, SearchFindingsError, SearchFindingsResponse, SearchRequestItemsData, SearchRequestItemsError, SearchRequestItemsResponse, SearchResponse, SelectData, SelectError, SelectResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SendDraftData, SendDraftError, SendDraftResponse, SendFollowUpData, SendFollowUpError, SendFollowUpResponse, SendFollowUpsData, SendFollowUpsError, SendFollowUpsResponse, SendRequestItemData, SendRequestItemError, SendRequestItemResponse, ServiceLinesData, ServiceLinesError, ServiceLinesResponse, SessionData, SessionError, SessionResponse, SetAccountsData, SetAccountsError, SetAccountsResponse, SetAiClientDataData, SetAiClientDataError, SetAiClientDataResponse, SetAiExclusionData, SetAiExclusionError, SetAiExclusionResponse, SetAutonomyData, SetAutonomyError, SetAutonomyResponse, SetBinderFollowUpOverrideData, SetBinderFollowUpOverrideError, SetBinderFollowUpOverrideResponse, SetBinderRecipientsData, SetBinderRecipientsError, SetBinderRecipientsResponse, SetCellsData, SetCellsError, SetCellsResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, SetDefaultDueDateData, SetDefaultDueDateError, SetDefaultDueDateResponse, SetDocumentKindData, SetDocumentKindError, SetDocumentKindResponse, SetDraftedGuidanceData, SetDraftedGuidanceError, SetDraftedGuidanceResponse, SetFieldworkSettingsData, SetFieldworkSettingsError, SetFieldworkSettingsResponse, SetGuidanceData, SetGuidanceError, SetGuidanceResponse, SetLetterPolicyData, SetLetterPolicyError, SetLetterPolicyResponse, SetMaterialityData, SetMaterialityError, SetMaterialityResponse, SetNotificationPreferencesData, SetNotificationPreferencesError, SetNotificationPreferencesResponse, SetParametersData, SetParametersError, SetParametersResponse, SetPreferencesData, SetPreferencesError, SetPreferencesResponse, SetSeasonalAccessEndsData, SetSeasonalAccessEndsError, SetSeasonalAccessEndsResponse, SetSecurityRoleData, SetSecurityRoleError, SetSecurityRoleResponse, SetServiceLineData, SetServiceLineError, SetServiceLineResponse, SetTeamMembersData, SetTeamMembersError, SetTeamMembersResponse, SetTierData, SetTierError, SetTierResponse, SetTimeZoneData, SetTimeZoneError, SetTimeZoneResponse, SettingsOverviewData, SettingsOverviewError, SettingsOverviewResponse, SettingsSectionData, SettingsSectionError, SettingsSectionResponse, SetupData, SetupError, SetupFileData, SetupFileError, SetupFileResponse, SetupResponse, SignInData, SignInError, SignOffBulkData, SignOffBulkError, SignOffBulkResponse, SignOffData, SignOffEligibilityData, SignOffEligibilityError, SignOffEligibilityResponse, SignOffEqrData, SignOffEqrError, SignOffEqrResponse, SignOffError, SignOffLadderData, SignOffLadderError, SignOffLadderResponse, SignOffManagerData, SignOffManagerError, SignOffManagerResponse, SignOffPartnerData, SignOffPartnerError, SignOffPartnerResponse, SignOffPrepareData, SignOffPrepareError, SignOffPrepareResponse, SignOffResponse, SignOffReviewData, SignOffReviewError, SignOffReviewResponse, SignOutData, SignOutError, SignOutResponse, SignPreparedData, SignPreparedError, SignPreparedResponse, SignReadyData, SignReadyError, SignReadyResponse, SignReviewedData, SignReviewedError, SignReviewedItemsData, SignReviewedItemsError, SignReviewedItemsResponse, SignReviewedResponse, SignupData, SignupError, SignupResponse, StaffData, StaffError, StaffResponse, StartAcceptanceFromDraftData, StartAcceptanceFromDraftError, StartAcceptanceFromDraftResponse, StartData, StartError, StartMappingData, StartMappingError, StartMappingResponse, StartProcedureData, StartProcedureError, StartProcedureResponse, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, StatementData, StatementError, StatementPreviewData, StatementPreviewError, StatementPreviewResponse, StatementResponse, StatementsData, StatementsError, StatementsResponse, SuggestionAdoptData, SuggestionAdoptError, SuggestionAdoptResponse, SuggestionDismissData, SuggestionDismissError, SuggestionDismissResponse, SuggestRoomRequestData, SuggestRoomRequestError, SuggestRoomRequestResponse, TakeData, TakeError, TakeResponse, TbCandidatesData, TbCandidatesError, TbCandidatesResponse, TbSignOffEqrData, TbSignOffEqrError, TbSignOffEqrResponse, TbSignOffManagerData, TbSignOffManagerError, TbSignOffManagerResponse, TbSignOffPartnerData, TbSignOffPartnerError, TbSignOffPartnerResponse, TbSignOffPrepareData, TbSignOffPrepareError, TbSignOffPrepareResponse, TbSignOffReviewData, TbSignOffReviewError, TbSignOffReviewResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, TeamsData, TeamsError, TeamsResponse, TemplateDraftsData, TemplateDraftsError, TemplateDraftsResponse, TieOutChecksData, TieOutChecksError, TieOutChecksResponse, TimeZoneData, TimeZoneError, TimeZoneResponse, TrialBalanceData, TrialBalanceError, TrialBalanceResponse, TrialBalancesData, TrialBalancesError, TrialBalancesResponse, UncorrectedData, UncorrectedError, UncorrectedResponse, UndoDecisionData, UndoDecisionError, UndoDecisionResponse, UndoFollowUpData, UndoFollowUpError, UndoFollowUpResponse, UndoIgnoreData, UndoIgnoreError, UndoIgnoreResponse, UndoMarkDoneData, UndoMarkDoneError, UndoMarkDoneResponse, UndoPublishBinderData, UndoPublishBinderError, UndoPublishBinderResponse, UndoSendRequestItemData, UndoSendRequestItemError, UndoSendRequestItemResponse, UnlockContactData, UnlockContactError, UnlockContactPortalData, UnlockContactPortalError, UnlockContactPortalResponse, UnlockContactResponse, UnlockUploadData, UnlockUploadError, UnlockUploadResponse, UnlockVersionData, UnlockVersionError, UnlockVersionResponse, UnpublishBinderData, UnpublishBinderError, UnpublishBinderResponse, UpdateClientData, UpdateClientError, UpdateClientResponse, UpdateContactData, UpdateContactError, UpdateContactResponse, UpdateEngagementDraftData, UpdateEngagementDraftError, UpdateEngagementDraftResponse, UpdateOfficeData, UpdateOfficeError, UpdateOfficeResponse, UpdatePersonData, UpdatePersonError, UpdatePersonResponse, UpdatePortalPreferencesData, UpdatePortalPreferencesError, UpdatePortalPreferencesResponse, UpdateRequestItemData, UpdateRequestItemError, UpdateRequestItemResponse, UpdateSettingsSectionData, UpdateSettingsSectionError, UpdateSettingsSectionResponse, UpdateTeamData, UpdateTeamError, UpdateTeamResponse, UploadChecksData, UploadChecksError, UploadChecksResponse, UploadData, UploadError, UploadPreviewData, UploadPreviewError, UploadPreviewPageData, UploadPreviewPageError, UploadPreviewPageResponse, UploadPreviewResponse, UploadResponse, UploadReviewData, UploadReviewError, UploadReviewResponse, ValidateEngagementDraftData, ValidateEngagementDraftError, ValidateEngagementDraftResponse, VersionCommentsData, VersionCommentsError, VersionCommentsResponse, VersionPreviewData, VersionPreviewError, VersionPreviewPageData, VersionPreviewPageError, VersionPreviewPageResponse, VersionPreviewResponse, ViewerManifestData, ViewerManifestError, ViewerManifestResponse, ViewerPageData, ViewerPageError, ViewerPageResponse, ViewerRegionsData, ViewerRegionsError, ViewerRegionsResponse, ViewerSearchData, ViewerSearchError, ViewerSearchResponse, VoidFulfilmentData, VoidFulfilmentError, VoidFulfilmentResponse, WaiveRequestItemData, WaiveRequestItemError, WaiveRequestItemResponse, WallEventsData, WallEventsError, WallEventsResponse, WallPreviewData, WallPreviewError, WallPreviewResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse, WithdrawEvidenceVersionData, WithdrawEvidenceVersionError, WithdrawEvidenceVersionResponse, WorkItemsData, WorkItemsError, WorkItemsResponse, WorkpaperData, WorkpaperDetailData, WorkpaperDetailError, WorkpaperDetailResponse, WorkpaperError, WorkpaperFileData, WorkpaperFileError, WorkpaperFileResponse, WorkpaperResponse, WorkpapersData, WorkpapersError, WorkpapersResponse, YourPartData, YourPartError, YourPartResponse } from '../types.gen';
+import { accept, acceptance, acceptanceFile, acceptInvitation, acceptStaffInvitation, accounts, acknowledgeStep, acknowledgeSupportSession, activity, addAcceptanceFlag, addBreachEvent, addDocument, addPicks, addRepresentation, addRisk, addTeamMember, addToInbox, adjustments, adopt, adoptTbVersion, adoptTrialBalance, agent, agentProposal, agentRunTrace, aiClientData, aiExclusion, annotateTb, announceUploadIntent, annualIndependence, applyMethodology, approve, approveAdjustment, approveDrafts, approveEqrEligibility, approveFirmExport, approvePlan, approveReport, approveRisk, approveStatement, approveSupportSession, approveTeam, approveTemplateDrafts, approveWall, assess, assessments, assign, assignEqr, assignInboxFile, assignToClient, auditArchiveRecord, auditCockpit, auditEvents, auditFacets, auditPhase, auditProfile, auditReleaseRecord, auditsIndex, auditSourceDocuments, autonomy, bands, binderActivity, binderClientPreview, binderLive, binderRequests, boardSummary, browserError, callback, changeContactAccess, changeFirmRole, changeTeamRole, check, checkpoint, checkpointApprove, checkpointCreate, checkpointHistory, checkpointReject, checkpointRename, checkpointRestore, cite, clearConflictResult, clearNote, clearReviewNote, clientAnswer, clientContacts, clientDone, clientOverview, clientRelationships, clientRespond, clientResponses, clientView, clientWithdraw, communicated, complete, completeCondition, completeManualCheck, completionState, concludeIndependence, concludeSeverity, conclusion, concurEqr, confirmAnnualIndependence, confirmIndependence, connection, content, createBinder, createCitation, createContact, createEngagement, createEngagementDraft, createEngagementFromDraft, createOffice, createRequestItem, createTeam, createWall, createWorkpaper, deactivatePerson, decideAcceptance, decideMateriality, decisionCard, decisionCardAnalysisRequest, decisionCardDecide, decisionCardList, decisionCardNotify, decisionCardReassess, declineFirmExport, declineIndependence, defaultDueDate, defineCheck, delegateRequestItem, deleteRequestItem, discard, discardDrafts, discardEngagementDraft, discardTemplateDrafts, dismissDraft, dismissFollowUp, dismissOnboarding, draftedGuidance, draftFollowUps, draftGuidance, drafts, draftScreeningReturn, draftSelectionFollowUps, draftTemplateGuidance, dropFile, dueDates, duplicateBinder, editCheck, editFollowUp, editMapping, emergencyApprove, endSupportSession, engagementDashboard, engagementGates, engagementGraph, engagementIndex, engagementRecord, engagementTypes, eqrCandidates, exportRunTrace, fieldEdit, fieldProvenance, fieldReference, fieldTick, fieldworkSettings, fieldworkWaiting, findings, findingsSummary, firmAgents, firmClients, firmMembers, fixInstructions, fixInstructionsBulk, flow, getAcceptance, getBinder, getBudget, getCitation, getClient, getConflictCheck, getContact, getDocument, getDropBatch, getEngagement, getEngagementDraft, getFollowUp, getIndependence, getNas, getPortalBinder, getPortalBranding, getPortalHome, getPortalLogo, getPortalRequest, getPortalRoom, getRetrieval, getRotation, getTeamApproval, getVersion, glImport, glImportFormats, goingConcern, groupingSetVersions, guidanceDrafts, holdEngagement, humanGateList, ignoreRequestItem, import_, importEmailTemplate, importGroupingSet, importRetentionDefaults, importRetentionFloors, importTemplate, inbox, inboxMatches, inboxPreview, inboxPreviewPage, incidentPropagationLog, incorporateRequestItem, independence, inviteClient, inviteContact, inviteStaff, issue, issueCreate, issueExplain, issueList, issueNotApplicable, issueReopen, issueResolve, issueSendToClient, issueUpdate, issueVerify, itemComments, items, itemVersions, latestGlImport, latestLedgerImport, leadsheets, ledgerImport, ledgerImportFormats, letter, letterFile, letterPolicy, linkFirmExport, listAgentRuns, listBinders, listCitations, listClients, listContacts, listDocuments, listEngagements, listEvidenceVersions, listFirmExports, listLegalHolds, listNotifications, listPortalBinders, listRequestItems, listRetentionPolicies, listScreeningResults, listSupportSessions, listTemplates, listUploads, listWalls, listWorkItems, lockArchive, log, logBreach, mapping, markBinderDone, markDone, materiality, materialityVersions, me, mentionCandidates, metering, misstatement, myCapabilities, myConfirmations, notes, notificationFeed, notificationPreferences, offices, offshore, onboarding, type Options, overdueWaiting, pauseAgent, pauseFirmAgents, person, placeLegalHold, portalLinkRenew, portalMfa, portalMfaSetup, portalMfaSetupVerify, portalRefresh, portalResend, portalSignOut, portalStart, portalVerify, postItemComment, postVersionComment, prepareMapping, previewFollowUp, previewImport, previewInvitation, procedure, procedures, propagateIncident, proposal, proposalApprove, proposalFollowUp, proposalReject, proposalRouteTo, proposalUndo, proposeAdjustment, proposeSeverity, providers, publishBinder, publishDrafted, publishGroupingSet, publishRetentionDefaults, publishRetentionFloors, putAcceptanceAnswers, putBudget, putNas, putPortalVisibility, raiseFinding, raiseNote, raiseReviewNote, readAll, readComments, readNotification, reasonCodes, recordEngagementLetter, recordIncident, recordReport, recordScreening, redactComment, refresh, reject, release, releaseLegalHold, releaseReport, relinkCitation, removeClientContact, removeRepresentation, removeTeamMember, removeWall, reopenReviewNote, repLetter, representations, requestFirmExport, requestItemActivity, requestManualCheck, requestMatch, requestReview, requestRiskPartnerReview, requestScreening, requestSelectionSupport, requestSupport, requestSupportSession, rerunScreening, resendClientInvitation, resendInvitation, resendStaffInvitation, resetContactMfa, respondNote, respondReviewNote, result, resumeAgent, resumeEngagement, resumeFirmAgents, returnRequestItemToClient, revealPii, revealTin, reviewFlags, reviewMapping, reviewMatrix, reviewNote, reviewNoteClear, reviewNoteList, reviewNoteRaise, reviewNoteRespond, reviewNotes, reviewNoteWithdraw, reviewQueue, reviewWaiting, reviseRisk, revoke, revokeClientInvitation, revokeInvitation, revokeStaff, revokeStaffInvitation, revokeSupportSession, risks, roleTemplates, runConflictCheck, saveRetentionPolicy, screeningCard, screeningFeedback, search, searchClients, searchFindings, searchRequestItems, select, selfJoin, sendBack, sendDraft, sendFollowUp, sendFollowUps, sendReminders, sendRequestItem, sendToPartner, serviceLines, session, setAccounts, setAiClientData, setAiExclusion, setAutonomy, setBinderFollowUpOverride, setBinderRecipients, setCells, setClientVisibility, setDefaultDueDate, setDocumentKind, setDraftedGuidance, setFieldworkSettings, setGuidance, setLetterPolicy, setMateriality, setNotificationPreferences, setParameters, setPreferences, setSeasonalAccessEnds, setSecurityRole, setServiceLine, setTeamMembers, setTier, setTimeZone, settingsOverview, settingsSection, setup, setupFile, signIn, signOff, signOffBulk, signOffEligibility, signOffEqr, signOffLadder, signOffManager, signOffPartner, signOffPrepare, signOffReview, signOut, signPrepared, signReady, signReviewed, signReviewedItems, signup, staff, start, startAcceptanceFromDraft, startMapping, startProcedure, startRetrieval, statement, statementPreview, statements, suggestionAdopt, suggestionDismiss, suggestRoomRequest, take, tbCandidates, tbExport, tbLayerView, tbLeadsheetArea, tbSignOffEqr, tbSignOffManager, tbSignOffPartner, tbSignOffPrepare, tbSignOffReview, team, teamCandidates, teams, templateDrafts, tieIssueLink, tieOutChecks, timeZone, trialBalance, trialBalances, uncorrected, undoDecision, undoFollowUp, undoIgnore, undoMarkDone, undoPublishBinder, undoSendRequestItem, unlockContact, unlockContactPortal, unlockUpload, unlockVersion, unpublishBinder, updateClient, updateContact, updateEngagementDraft, updateOffice, updatePerson, updatePortalPreferences, updateRequestItem, updateSettingsSection, updateTeam, upload, uploadChecks, uploadPreview, uploadPreviewPage, uploadReview, validateEngagementDraft, versionComments, versionPreview, versionPreviewPage, viewerManifest, viewerPage, viewerRegions, viewerSearch, voidFulfilment, waiveRequestItem, wallEvents, wallPreview, withdrawDocument, withdrawEvidenceVersion, workItems, workpaper, workpaperDetail, workpaperFile, workpapers, yourPart } from '../sdk.gen';
+import type { AcceptanceData, AcceptanceError, AcceptanceFileData, AcceptanceFileError, AcceptanceFileResponse, AcceptanceResponse, AcceptData, AcceptError, AcceptInvitationData, AcceptInvitationError, AcceptInvitationResponse, AcceptResponse, AcceptStaffInvitationData, AcceptStaffInvitationError, AcceptStaffInvitationResponse, AccountsData, AccountsError, AccountsResponse, AcknowledgeStepData, AcknowledgeStepError, AcknowledgeStepResponse, AcknowledgeSupportSessionData, AcknowledgeSupportSessionError, AcknowledgeSupportSessionResponse, ActivityData, ActivityError, ActivityResponse, AddAcceptanceFlagData, AddAcceptanceFlagError, AddAcceptanceFlagResponse, AddBreachEventData, AddBreachEventError, AddBreachEventResponse, AddDocumentData, AddDocumentError, AddDocumentResponse, AddPicksData, AddPicksError, AddPicksResponse, AddRepresentationData, AddRepresentationError, AddRepresentationResponse, AddRiskData, AddRiskError, AddRiskResponse, AddTeamMemberData, AddTeamMemberError, AddTeamMemberResponse, AddToInboxData, AddToInboxError, AddToInboxResponse, AdjustmentsData, AdjustmentsError, AdjustmentsResponse, AdoptData, AdoptError, AdoptResponse, AdoptTbVersionData, AdoptTbVersionError, AdoptTbVersionResponse, AdoptTrialBalanceData, AdoptTrialBalanceError, AdoptTrialBalanceResponse, AgentData, AgentError, AgentProposalData, AgentProposalError, AgentProposalResponse, AgentResponse, AgentRunTraceData, AgentRunTraceError, AgentRunTraceResponse, AiClientDataData, AiClientDataError, AiClientDataResponse, AiExclusionData, AiExclusionError, AiExclusionResponse, AnnotateTbData, AnnotateTbError, AnnotateTbResponse, AnnounceUploadIntentData, AnnounceUploadIntentError, AnnounceUploadIntentResponse, AnnualIndependenceData, AnnualIndependenceError, AnnualIndependenceResponse, ApplyMethodologyData, ApplyMethodologyError, ApplyMethodologyResponse, ApproveAdjustmentData, ApproveAdjustmentError, ApproveAdjustmentResponse, ApproveData, ApproveDraftsData, ApproveDraftsError, ApproveDraftsResponse, ApproveEqrEligibilityData, ApproveEqrEligibilityError, ApproveEqrEligibilityResponse, ApproveError, ApproveFirmExportData, ApproveFirmExportError, ApproveFirmExportResponse, ApprovePlanData, ApprovePlanError, ApprovePlanResponse, ApproveReportData, ApproveReportError, ApproveReportResponse, ApproveResponse, ApproveRiskData, ApproveRiskError, ApproveRiskResponse, ApproveStatementData, ApproveStatementError, ApproveStatementResponse, ApproveSupportSessionData, ApproveSupportSessionError, ApproveSupportSessionResponse, ApproveTeamData, ApproveTeamError, ApproveTeamResponse, ApproveTemplateDraftsData, ApproveTemplateDraftsError, ApproveTemplateDraftsResponse, ApproveWallData, ApproveWallError, ApproveWallResponse, AssessData, AssessError, AssessmentsData, AssessmentsError, AssessmentsResponse, AssessResponse, AssignData, AssignEqrData, AssignEqrError, AssignEqrResponse, AssignError, AssignInboxFileData, AssignInboxFileError, AssignInboxFileResponse, AssignResponse, AssignToClientData, AssignToClientError, AssignToClientResponse, AuditArchiveRecordData, AuditArchiveRecordError, AuditArchiveRecordResponse, AuditCockpitData, AuditCockpitError, AuditCockpitResponse, AuditEventsData, AuditEventsError, AuditEventsResponse, AuditFacetsData, AuditFacetsError, AuditFacetsResponse, AuditPhaseData, AuditPhaseError, AuditPhaseResponse, AuditProfileData, AuditProfileError, AuditProfileResponse, AuditReleaseRecordData, AuditReleaseRecordError, AuditReleaseRecordResponse, AuditsIndexData, AuditsIndexError, AuditsIndexResponse, AuditSourceDocumentsData, AuditSourceDocumentsError, AuditSourceDocumentsResponse, AutonomyData, AutonomyError, AutonomyResponse, BandsData, BandsError, BandsResponse, BinderActivityData, BinderActivityError, BinderActivityResponse, BinderClientPreviewData, BinderClientPreviewError, BinderClientPreviewResponse, BinderLiveData, BinderLiveError, BinderLiveResponse, BinderRequestsData, BinderRequestsError, BinderRequestsResponse, BoardSummaryData, BoardSummaryError, BoardSummaryResponse, BrowserErrorData, BrowserErrorError, BrowserErrorResponse, CallbackData, CallbackError, ChangeContactAccessData, ChangeContactAccessError, ChangeContactAccessResponse, ChangeFirmRoleData, ChangeFirmRoleError, ChangeFirmRoleResponse, ChangeTeamRoleData, ChangeTeamRoleError, ChangeTeamRoleResponse, CheckData, CheckError, CheckpointApproveData, CheckpointApproveError, CheckpointApproveResponse, CheckpointCreateData, CheckpointCreateError, CheckpointCreateResponse, CheckpointData, CheckpointError, CheckpointHistoryData, CheckpointHistoryError, CheckpointHistoryResponse, CheckpointRejectData, CheckpointRejectError, CheckpointRejectResponse, CheckpointRenameData, CheckpointRenameError, CheckpointRenameResponse, CheckpointResponse, CheckpointRestoreData, CheckpointRestoreError, CheckpointRestoreResponse, CheckResponse, CiteData, CiteError, CiteResponse, ClearConflictResultData, ClearConflictResultError, ClearConflictResultResponse, ClearNoteData, ClearNoteError, ClearNoteResponse, ClearReviewNoteData, ClearReviewNoteError, ClearReviewNoteResponse, ClientAnswerData, ClientAnswerError, ClientAnswerResponse, ClientContactsData, ClientContactsError, ClientContactsResponse, ClientDoneData, ClientDoneError, ClientDoneResponse, ClientOverviewData, ClientOverviewError, ClientOverviewResponse, ClientRelationshipsData, ClientRelationshipsError, ClientRelationshipsResponse, ClientRespondData, ClientRespondError, ClientRespondResponse, ClientResponsesData, ClientResponsesError, ClientResponsesResponse, ClientViewData, ClientViewError, ClientViewResponse, ClientWithdrawData, ClientWithdrawError, ClientWithdrawResponse, CommunicatedData, CommunicatedError, CommunicatedResponse, CompleteConditionData, CompleteConditionError, CompleteConditionResponse, CompleteData, CompleteError, CompleteManualCheckData, CompleteManualCheckError, CompleteManualCheckResponse, CompleteResponse, CompletionStateData, CompletionStateError, CompletionStateResponse, ConcludeIndependenceData, ConcludeIndependenceError, ConcludeIndependenceResponse, ConcludeSeverityData, ConcludeSeverityError, ConcludeSeverityResponse, ConclusionData, ConclusionError, ConclusionResponse, ConcurEqrData, ConcurEqrError, ConcurEqrResponse, ConfirmAnnualIndependenceData, ConfirmAnnualIndependenceError, ConfirmAnnualIndependenceResponse, ConfirmIndependenceData, ConfirmIndependenceError, ConfirmIndependenceResponse, ConnectionData, ConnectionError, ConnectionResponse, ContentData, ContentError, ContentResponse, CreateBinderData, CreateBinderError, CreateBinderResponse, CreateCitationData, CreateCitationError, CreateCitationResponse, CreateContactData, CreateContactError, CreateContactResponse, CreateEngagementData, CreateEngagementDraftData, CreateEngagementDraftError, CreateEngagementDraftResponse, CreateEngagementError, CreateEngagementFromDraftData, CreateEngagementFromDraftError, CreateEngagementFromDraftResponse, CreateEngagementResponse, CreateOfficeData, CreateOfficeError, CreateOfficeResponse, CreateRequestItemData, CreateRequestItemError, CreateRequestItemResponse, CreateTeamData, CreateTeamError, CreateTeamResponse, CreateWallData, CreateWallError, CreateWallResponse, CreateWorkpaperData, CreateWorkpaperError, CreateWorkpaperResponse, DeactivatePersonData, DeactivatePersonError, DeactivatePersonResponse, DecideAcceptanceData, DecideAcceptanceError, DecideAcceptanceResponse, DecideMaterialityData, DecideMaterialityError, DecideMaterialityResponse, DecisionCardAnalysisRequestData, DecisionCardAnalysisRequestError, DecisionCardAnalysisRequestResponse, DecisionCardData, DecisionCardDecideData, DecisionCardDecideError, DecisionCardDecideResponse, DecisionCardError, DecisionCardListData, DecisionCardListError, DecisionCardListResponse, DecisionCardNotifyData, DecisionCardNotifyError, DecisionCardNotifyResponse, DecisionCardReassessData, DecisionCardReassessError, DecisionCardReassessResponse, DecisionCardResponse, DeclineFirmExportData, DeclineFirmExportError, DeclineFirmExportResponse, DeclineIndependenceData, DeclineIndependenceError, DeclineIndependenceResponse, DefaultDueDateData, DefaultDueDateError, DefaultDueDateResponse, DefineCheckData, DefineCheckError, DefineCheckResponse, DelegateRequestItemData, DelegateRequestItemError, DelegateRequestItemResponse, DeleteRequestItemData, DeleteRequestItemError, DeleteRequestItemResponse, DiscardData, DiscardDraftsData, DiscardDraftsError, DiscardDraftsResponse, DiscardEngagementDraftData, DiscardEngagementDraftError, DiscardEngagementDraftResponse, DiscardError, DiscardResponse, DiscardTemplateDraftsData, DiscardTemplateDraftsError, DiscardTemplateDraftsResponse, DismissDraftData, DismissDraftError, DismissDraftResponse, DismissFollowUpData, DismissFollowUpError, DismissFollowUpResponse, DismissOnboardingData, DismissOnboardingError, DismissOnboardingResponse, DraftedGuidanceData, DraftedGuidanceError, DraftedGuidanceResponse, DraftFollowUpsData, DraftFollowUpsError, DraftFollowUpsResponse, DraftGuidanceData, DraftGuidanceError, DraftGuidanceResponse, DraftScreeningReturnData, DraftScreeningReturnError, DraftScreeningReturnResponse, DraftsData, DraftSelectionFollowUpsData, DraftSelectionFollowUpsError, DraftSelectionFollowUpsResponse, DraftsError, DraftsResponse, DraftTemplateGuidanceData, DraftTemplateGuidanceError, DraftTemplateGuidanceResponse, DropFileData, DropFileError, DropFileResponse, DueDatesData, DueDatesError, DueDatesResponse, DuplicateBinderData, DuplicateBinderError, DuplicateBinderResponse, EditCheckData, EditCheckError, EditCheckResponse, EditFollowUpData, EditFollowUpError, EditFollowUpResponse, EditMappingData, EditMappingError, EditMappingResponse, EmergencyApproveData, EmergencyApproveError, EmergencyApproveResponse, EndSupportSessionData, EndSupportSessionError, EndSupportSessionResponse, EngagementDashboardData, EngagementDashboardError, EngagementDashboardResponse, EngagementGatesData, EngagementGatesError, EngagementGatesResponse, EngagementGraphData, EngagementGraphError, EngagementGraphResponse, EngagementIndexData, EngagementIndexError, EngagementIndexResponse, EngagementRecordData, EngagementRecordError, EngagementRecordResponse, EngagementTypesData, EngagementTypesError, EngagementTypesResponse, EqrCandidatesData, EqrCandidatesError, EqrCandidatesResponse, ExportRunTraceData, ExportRunTraceError, ExportRunTraceResponse, FieldEditData, FieldEditError, FieldEditResponse, FieldProvenanceData, FieldProvenanceError, FieldProvenanceResponse, FieldReferenceData, FieldReferenceError, FieldReferenceResponse, FieldTickData, FieldTickError, FieldTickResponse, FieldworkSettingsData, FieldworkSettingsError, FieldworkSettingsResponse, FieldworkWaitingData, FieldworkWaitingError, FieldworkWaitingResponse, FindingsData, FindingsError, FindingsResponse, FindingsSummaryData, FindingsSummaryError, FindingsSummaryResponse, FirmAgentsData, FirmAgentsError, FirmAgentsResponse, FirmClientsData, FirmClientsError, FirmClientsResponse, FirmMembersData, FirmMembersError, FirmMembersResponse, FixInstructionsBulkData, FixInstructionsBulkError, FixInstructionsBulkResponse, FixInstructionsData, FixInstructionsError, FixInstructionsResponse, FlowData, FlowError, FlowResponse, GetAcceptanceData, GetAcceptanceError, GetAcceptanceResponse, GetBinderData, GetBinderError, GetBinderResponse, GetBudgetData, GetBudgetError, GetBudgetResponse, GetCitationData, GetCitationError, GetCitationResponse, GetClientData, GetClientError, GetClientResponse, GetConflictCheckData, GetConflictCheckError, GetConflictCheckResponse, GetContactData, GetContactError, GetContactResponse, GetDocumentData, GetDocumentError, GetDocumentResponse, GetDropBatchData, GetDropBatchError, GetDropBatchResponse, GetEngagementData, GetEngagementDraftData, GetEngagementDraftError, GetEngagementDraftResponse, GetEngagementError, GetEngagementResponse, GetFollowUpData, GetFollowUpError, GetFollowUpResponse, GetIndependenceData, GetIndependenceError, GetIndependenceResponse, GetNasData, GetNasError, GetNasResponse, GetPortalBinderData, GetPortalBinderError, GetPortalBinderResponse, GetPortalBrandingData, GetPortalBrandingError, GetPortalBrandingResponse, GetPortalHomeData, GetPortalHomeError, GetPortalHomeResponse, GetPortalLogoData, GetPortalLogoError, GetPortalLogoResponse, GetPortalRequestData, GetPortalRequestError, GetPortalRequestResponse, GetPortalRoomData, GetPortalRoomError, GetPortalRoomResponse, GetRetrievalData, GetRetrievalError, GetRetrievalResponse, GetRotationData, GetRotationError, GetRotationResponse, GetTeamApprovalData, GetTeamApprovalError, GetTeamApprovalResponse, GetVersionData, GetVersionError, GetVersionResponse, GlImportData, GlImportError, GlImportFormatsData, GlImportFormatsError, GlImportFormatsResponse, GlImportResponse, GoingConcernData, GoingConcernError, GoingConcernResponse, GroupingSetVersionsData, GroupingSetVersionsError, GroupingSetVersionsResponse, GuidanceDraftsData, GuidanceDraftsError, GuidanceDraftsResponse, HoldEngagementData, HoldEngagementError, HoldEngagementResponse, HumanGateListData, HumanGateListError, HumanGateListResponse, IgnoreRequestItemData, IgnoreRequestItemError, IgnoreRequestItemResponse, ImportData, ImportEmailTemplateData, ImportEmailTemplateError, ImportEmailTemplateResponse, ImportError, ImportGroupingSetData, ImportGroupingSetError, ImportGroupingSetResponse, ImportResponse, ImportRetentionDefaultsData, ImportRetentionDefaultsError, ImportRetentionDefaultsResponse, ImportRetentionFloorsData, ImportRetentionFloorsError, ImportRetentionFloorsResponse, ImportTemplateData, ImportTemplateError, ImportTemplateResponse, InboxData, InboxError, InboxMatchesData, InboxMatchesError, InboxMatchesResponse, InboxPreviewData, InboxPreviewError, InboxPreviewPageData, InboxPreviewPageError, InboxPreviewPageResponse, InboxPreviewResponse, InboxResponse, IncidentPropagationLogData, IncidentPropagationLogError, IncidentPropagationLogResponse, IncorporateRequestItemData, IncorporateRequestItemError, IncorporateRequestItemResponse, IndependenceData, IndependenceError, IndependenceResponse, InviteClientData, InviteClientError, InviteClientResponse, InviteContactData, InviteContactError, InviteContactResponse, InviteStaffData, InviteStaffError, InviteStaffResponse, IssueCreateData, IssueCreateError, IssueCreateResponse, IssueData, IssueError, IssueExplainData, IssueExplainError, IssueExplainResponse, IssueListData, IssueListError, IssueListResponse, IssueNotApplicableData, IssueNotApplicableError, IssueNotApplicableResponse, IssueReopenData, IssueReopenError, IssueReopenResponse, IssueResolveData, IssueResolveError, IssueResolveResponse, IssueResponse, IssueSendToClientData, IssueSendToClientError, IssueSendToClientResponse, IssueUpdateData, IssueUpdateError, IssueUpdateResponse, IssueVerifyData, IssueVerifyError, IssueVerifyResponse, ItemCommentsData, ItemCommentsError, ItemCommentsResponse, ItemsData, ItemsError, ItemsResponse, ItemVersionsData, ItemVersionsError, ItemVersionsResponse, LatestGlImportData, LatestGlImportError, LatestGlImportResponse, LatestLedgerImportData, LatestLedgerImportError, LatestLedgerImportResponse, LeadsheetsData, LeadsheetsError, LeadsheetsResponse, LedgerImportData, LedgerImportError, LedgerImportFormatsData, LedgerImportFormatsError, LedgerImportFormatsResponse, LedgerImportResponse, LetterData, LetterError, LetterFileData, LetterFileError, LetterFileResponse, LetterPolicyData, LetterPolicyError, LetterPolicyResponse, LetterResponse, LinkFirmExportData, LinkFirmExportError, LinkFirmExportResponse, ListAgentRunsData, ListAgentRunsError, ListAgentRunsResponse, ListBindersData, ListBindersError, ListBindersResponse, ListCitationsData, ListCitationsError, ListCitationsResponse, ListClientsData, ListClientsError, ListClientsResponse, ListContactsData, ListContactsError, ListContactsResponse, ListDocumentsData, ListDocumentsError, ListDocumentsResponse, ListEngagementsData, ListEngagementsError, ListEngagementsResponse, ListEvidenceVersionsData, ListEvidenceVersionsError, ListEvidenceVersionsResponse, ListFirmExportsData, ListFirmExportsError, ListFirmExportsResponse, ListLegalHoldsData, ListLegalHoldsError, ListLegalHoldsResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListPortalBindersData, ListPortalBindersError, ListPortalBindersResponse, ListRequestItemsData, ListRequestItemsError, ListRequestItemsResponse, ListRetentionPoliciesData, ListRetentionPoliciesError, ListRetentionPoliciesResponse, ListScreeningResultsData, ListScreeningResultsError, ListScreeningResultsResponse, ListSupportSessionsData, ListSupportSessionsError, ListSupportSessionsResponse, ListTemplatesData, ListTemplatesError, ListTemplatesResponse, ListUploadsData, ListUploadsError, ListUploadsResponse, ListWallsData, ListWallsError, ListWallsResponse, ListWorkItemsData, ListWorkItemsError, ListWorkItemsResponse, LockArchiveData, LockArchiveError, LockArchiveResponse, LogBreachData, LogBreachError, LogBreachResponse, LogData, LogError, LogResponse, MappingData, MappingError, MappingResponse, MarkBinderDoneData, MarkBinderDoneError, MarkBinderDoneResponse, MarkDoneData, MarkDoneError, MarkDoneResponse, MaterialityData, MaterialityError, MaterialityResponse, MaterialityVersionsData, MaterialityVersionsError, MaterialityVersionsResponse, MeData, MeError, MentionCandidatesData, MentionCandidatesError, MentionCandidatesResponse, MeResponse, MeteringData, MeteringError, MeteringResponse, MisstatementData, MisstatementError, MisstatementResponse, MyCapabilitiesData, MyCapabilitiesError, MyCapabilitiesResponse, MyConfirmationsData, MyConfirmationsError, MyConfirmationsResponse, NotesData, NotesError, NotesResponse, NotificationFeedData, NotificationFeedError, NotificationFeedResponse, NotificationPreferencesData, NotificationPreferencesError, NotificationPreferencesResponse, OfficesData, OfficesError, OfficesResponse, OffshoreData, OffshoreError, OffshoreResponse, OnboardingData, OnboardingError, OnboardingResponse, OverdueWaitingData, OverdueWaitingError, OverdueWaitingResponse, PauseAgentData, PauseAgentError, PauseAgentResponse, PauseFirmAgentsData, PauseFirmAgentsError, PauseFirmAgentsResponse, PersonData, PersonError, PersonResponse, PlaceLegalHoldData, PlaceLegalHoldError, PlaceLegalHoldResponse, PortalLinkRenewData, PortalLinkRenewError, PortalLinkRenewResponse, PortalMfaData, PortalMfaError, PortalMfaResponse, PortalMfaSetupData, PortalMfaSetupError, PortalMfaSetupResponse, PortalMfaSetupVerifyData, PortalMfaSetupVerifyError, PortalMfaSetupVerifyResponse, PortalRefreshData, PortalRefreshError, PortalRefreshResponse, PortalResendData, PortalResendError, PortalResendResponse, PortalSignOutData, PortalSignOutError, PortalSignOutResponse, PortalStartData, PortalStartError, PortalStartResponse, PortalVerifyData, PortalVerifyError, PortalVerifyResponse, PostItemCommentData, PostItemCommentError, PostItemCommentResponse, PostVersionCommentData, PostVersionCommentError, PostVersionCommentResponse, PrepareMappingData, PrepareMappingError, PrepareMappingResponse, PreviewFollowUpData, PreviewFollowUpError, PreviewFollowUpResponse, PreviewImportData, PreviewImportError, PreviewImportResponse, PreviewInvitationData, PreviewInvitationError, PreviewInvitationResponse, ProcedureData, ProcedureError, ProcedureResponse, ProceduresData, ProceduresError, ProceduresResponse, PropagateIncidentData, PropagateIncidentError, PropagateIncidentResponse, ProposalApproveData, ProposalApproveError, ProposalApproveResponse, ProposalData, ProposalError, ProposalFollowUpData, ProposalFollowUpError, ProposalFollowUpResponse, ProposalRejectData, ProposalRejectError, ProposalRejectResponse, ProposalResponse, ProposalRouteToData, ProposalRouteToError, ProposalRouteToResponse, ProposalUndoData, ProposalUndoError, ProposalUndoResponse, ProposeAdjustmentData, ProposeAdjustmentError, ProposeAdjustmentResponse, ProposeSeverityData, ProposeSeverityError, ProposeSeverityResponse, ProvidersData, ProvidersError, ProvidersResponse, PublishBinderData, PublishBinderError, PublishBinderResponse, PublishDraftedData, PublishDraftedError, PublishDraftedResponse, PublishGroupingSetData, PublishGroupingSetError, PublishGroupingSetResponse, PublishRetentionDefaultsData, PublishRetentionDefaultsError, PublishRetentionDefaultsResponse, PublishRetentionFloorsData, PublishRetentionFloorsError, PublishRetentionFloorsResponse, PutAcceptanceAnswersData, PutAcceptanceAnswersError, PutAcceptanceAnswersResponse, PutBudgetData, PutBudgetError, PutBudgetResponse, PutNasData, PutNasError, PutNasResponse, PutPortalVisibilityData, PutPortalVisibilityError, PutPortalVisibilityResponse, RaiseFindingData, RaiseFindingError, RaiseFindingResponse, RaiseNoteData, RaiseNoteError, RaiseNoteResponse, RaiseReviewNoteData, RaiseReviewNoteError, RaiseReviewNoteResponse, ReadAllData, ReadAllError, ReadAllResponse, ReadCommentsData, ReadCommentsError, ReadCommentsResponse, ReadNotificationData, ReadNotificationError, ReadNotificationResponse, ReasonCodesData, ReasonCodesError, ReasonCodesResponse, RecordEngagementLetterData, RecordEngagementLetterError, RecordEngagementLetterResponse, RecordIncidentData, RecordIncidentError, RecordIncidentResponse, RecordReportData, RecordReportError, RecordReportResponse, RecordScreeningData, RecordScreeningError, RecordScreeningResponse, RedactCommentData, RedactCommentError, RedactCommentResponse, RefreshData, RefreshError, RefreshResponse, RejectData, RejectError, RejectResponse, ReleaseData, ReleaseError, ReleaseLegalHoldData, ReleaseLegalHoldError, ReleaseLegalHoldResponse, ReleaseReportData, ReleaseReportError, ReleaseReportResponse, ReleaseResponse, RelinkCitationData, RelinkCitationError, RelinkCitationResponse, RemoveClientContactData, RemoveClientContactError, RemoveClientContactResponse, RemoveRepresentationData, RemoveRepresentationError, RemoveRepresentationResponse, RemoveTeamMemberData, RemoveTeamMemberError, RemoveTeamMemberResponse, RemoveWallData, RemoveWallError, RemoveWallResponse, ReopenReviewNoteData, ReopenReviewNoteError, ReopenReviewNoteResponse, RepLetterData, RepLetterError, RepLetterResponse, RepresentationsData, RepresentationsError, RepresentationsResponse, RequestFirmExportData, RequestFirmExportError, RequestFirmExportResponse, RequestItemActivityData, RequestItemActivityError, RequestItemActivityResponse, RequestManualCheckData, RequestManualCheckError, RequestManualCheckResponse, RequestMatchData, RequestMatchError, RequestMatchResponse, RequestReviewData, RequestReviewError, RequestReviewResponse, RequestRiskPartnerReviewData, RequestRiskPartnerReviewError, RequestRiskPartnerReviewResponse, RequestScreeningData, RequestScreeningError, RequestScreeningResponse, RequestSelectionSupportData, RequestSelectionSupportError, RequestSelectionSupportResponse, RequestSupportData, RequestSupportError, RequestSupportResponse, RequestSupportSessionData, RequestSupportSessionError, RequestSupportSessionResponse, RerunScreeningData, RerunScreeningError, RerunScreeningResponse, ResendClientInvitationData, ResendClientInvitationError, ResendClientInvitationResponse, ResendInvitationData, ResendInvitationError, ResendInvitationResponse, ResendStaffInvitationData, ResendStaffInvitationError, ResendStaffInvitationResponse, ResetContactMfaData, ResetContactMfaError, ResetContactMfaResponse, RespondNoteData, RespondNoteError, RespondNoteResponse, RespondReviewNoteData, RespondReviewNoteError, RespondReviewNoteResponse, ResultData, ResultError, ResultResponse, ResumeAgentData, ResumeAgentError, ResumeAgentResponse, ResumeEngagementData, ResumeEngagementError, ResumeEngagementResponse, ResumeFirmAgentsData, ResumeFirmAgentsError, ResumeFirmAgentsResponse, ReturnRequestItemToClientData, ReturnRequestItemToClientError, ReturnRequestItemToClientResponse, RevealPiiData, RevealPiiError, RevealPiiResponse, RevealTinData, RevealTinError, RevealTinResponse, ReviewFlagsData, ReviewFlagsError, ReviewFlagsResponse, ReviewMappingData, ReviewMappingError, ReviewMappingResponse, ReviewMatrixData, ReviewMatrixError, ReviewMatrixResponse, ReviewNoteClearData, ReviewNoteClearError, ReviewNoteClearResponse, ReviewNoteData, ReviewNoteError, ReviewNoteListData, ReviewNoteListError, ReviewNoteListResponse, ReviewNoteRaiseData, ReviewNoteRaiseError, ReviewNoteRaiseResponse, ReviewNoteRespondData, ReviewNoteRespondError, ReviewNoteRespondResponse, ReviewNoteResponse, ReviewNotesData, ReviewNotesError, ReviewNotesResponse, ReviewNoteWithdrawData, ReviewNoteWithdrawError, ReviewNoteWithdrawResponse, ReviewQueueData, ReviewQueueError, ReviewQueueResponse, ReviewWaitingData, ReviewWaitingError, ReviewWaitingResponse, ReviseRiskData, ReviseRiskError, ReviseRiskResponse, RevokeClientInvitationData, RevokeClientInvitationError, RevokeClientInvitationResponse, RevokeData, RevokeError, RevokeInvitationData, RevokeInvitationError, RevokeInvitationResponse, RevokeResponse, RevokeStaffData, RevokeStaffError, RevokeStaffInvitationData, RevokeStaffInvitationError, RevokeStaffInvitationResponse, RevokeStaffResponse, RevokeSupportSessionData, RevokeSupportSessionError, RevokeSupportSessionResponse, RisksData, RisksError, RisksResponse, RoleTemplatesData, RoleTemplatesError, RoleTemplatesResponse, RunConflictCheckData, RunConflictCheckError, RunConflictCheckResponse, SaveRetentionPolicyData, SaveRetentionPolicyError, SaveRetentionPolicyResponse, ScreeningCardData, ScreeningCardError, ScreeningCardResponse, ScreeningFeedbackData, ScreeningFeedbackError, ScreeningFeedbackResponse, SearchClientsData, SearchClientsError, SearchClientsResponse, SearchData, SearchError, SearchFindingsData, SearchFindingsError, SearchFindingsResponse, SearchRequestItemsData, SearchRequestItemsError, SearchRequestItemsResponse, SearchResponse, SelectData, SelectError, SelectResponse, SelfJoinData, SelfJoinError, SelfJoinResponse, SendBackData, SendBackError, SendBackResponse, SendDraftData, SendDraftError, SendDraftResponse, SendFollowUpData, SendFollowUpError, SendFollowUpResponse, SendFollowUpsData, SendFollowUpsError, SendFollowUpsResponse, SendRemindersData, SendRemindersError, SendRemindersResponse, SendRequestItemData, SendRequestItemError, SendRequestItemResponse, SendToPartnerData, SendToPartnerError, SendToPartnerResponse, ServiceLinesData, ServiceLinesError, ServiceLinesResponse, SessionData, SessionError, SessionResponse, SetAccountsData, SetAccountsError, SetAccountsResponse, SetAiClientDataData, SetAiClientDataError, SetAiClientDataResponse, SetAiExclusionData, SetAiExclusionError, SetAiExclusionResponse, SetAutonomyData, SetAutonomyError, SetAutonomyResponse, SetBinderFollowUpOverrideData, SetBinderFollowUpOverrideError, SetBinderFollowUpOverrideResponse, SetBinderRecipientsData, SetBinderRecipientsError, SetBinderRecipientsResponse, SetCellsData, SetCellsError, SetCellsResponse, SetClientVisibilityData, SetClientVisibilityError, SetClientVisibilityResponse, SetDefaultDueDateData, SetDefaultDueDateError, SetDefaultDueDateResponse, SetDocumentKindData, SetDocumentKindError, SetDocumentKindResponse, SetDraftedGuidanceData, SetDraftedGuidanceError, SetDraftedGuidanceResponse, SetFieldworkSettingsData, SetFieldworkSettingsError, SetFieldworkSettingsResponse, SetGuidanceData, SetGuidanceError, SetGuidanceResponse, SetLetterPolicyData, SetLetterPolicyError, SetLetterPolicyResponse, SetMaterialityData, SetMaterialityError, SetMaterialityResponse, SetNotificationPreferencesData, SetNotificationPreferencesError, SetNotificationPreferencesResponse, SetParametersData, SetParametersError, SetParametersResponse, SetPreferencesData, SetPreferencesError, SetPreferencesResponse, SetSeasonalAccessEndsData, SetSeasonalAccessEndsError, SetSeasonalAccessEndsResponse, SetSecurityRoleData, SetSecurityRoleError, SetSecurityRoleResponse, SetServiceLineData, SetServiceLineError, SetServiceLineResponse, SetTeamMembersData, SetTeamMembersError, SetTeamMembersResponse, SetTierData, SetTierError, SetTierResponse, SetTimeZoneData, SetTimeZoneError, SetTimeZoneResponse, SettingsOverviewData, SettingsOverviewError, SettingsOverviewResponse, SettingsSectionData, SettingsSectionError, SettingsSectionResponse, SetupData, SetupError, SetupFileData, SetupFileError, SetupFileResponse, SetupResponse, SignInData, SignInError, SignOffBulkData, SignOffBulkError, SignOffBulkResponse, SignOffData, SignOffEligibilityData, SignOffEligibilityError, SignOffEligibilityResponse, SignOffEqrData, SignOffEqrError, SignOffEqrResponse, SignOffError, SignOffLadderData, SignOffLadderError, SignOffLadderResponse, SignOffManagerData, SignOffManagerError, SignOffManagerResponse, SignOffPartnerData, SignOffPartnerError, SignOffPartnerResponse, SignOffPrepareData, SignOffPrepareError, SignOffPrepareResponse, SignOffResponse, SignOffReviewData, SignOffReviewError, SignOffReviewResponse, SignOutData, SignOutError, SignOutResponse, SignPreparedData, SignPreparedError, SignPreparedResponse, SignReadyData, SignReadyError, SignReadyResponse, SignReviewedData, SignReviewedError, SignReviewedItemsData, SignReviewedItemsError, SignReviewedItemsResponse, SignReviewedResponse, SignupData, SignupError, SignupResponse, StaffData, StaffError, StaffResponse, StartAcceptanceFromDraftData, StartAcceptanceFromDraftError, StartAcceptanceFromDraftResponse, StartData, StartError, StartMappingData, StartMappingError, StartMappingResponse, StartProcedureData, StartProcedureError, StartProcedureResponse, StartResponse, StartRetrievalData, StartRetrievalError, StartRetrievalResponse, StatementData, StatementError, StatementPreviewData, StatementPreviewError, StatementPreviewResponse, StatementResponse, StatementsData, StatementsError, StatementsResponse, SuggestionAdoptData, SuggestionAdoptError, SuggestionAdoptResponse, SuggestionDismissData, SuggestionDismissError, SuggestionDismissResponse, SuggestRoomRequestData, SuggestRoomRequestError, SuggestRoomRequestResponse, TakeData, TakeError, TakeResponse, TbCandidatesData, TbCandidatesError, TbCandidatesResponse, TbExportData, TbExportError, TbExportResponse, TbLayerViewData, TbLayerViewError, TbLayerViewResponse, TbLeadsheetAreaData, TbLeadsheetAreaError, TbLeadsheetAreaResponse, TbSignOffEqrData, TbSignOffEqrError, TbSignOffEqrResponse, TbSignOffManagerData, TbSignOffManagerError, TbSignOffManagerResponse, TbSignOffPartnerData, TbSignOffPartnerError, TbSignOffPartnerResponse, TbSignOffPrepareData, TbSignOffPrepareError, TbSignOffPrepareResponse, TbSignOffReviewData, TbSignOffReviewError, TbSignOffReviewResponse, TeamCandidatesData, TeamCandidatesError, TeamCandidatesResponse, TeamData, TeamError, TeamResponse, TeamsData, TeamsError, TeamsResponse, TemplateDraftsData, TemplateDraftsError, TemplateDraftsResponse, TieIssueLinkData, TieIssueLinkError, TieIssueLinkResponse, TieOutChecksData, TieOutChecksError, TieOutChecksResponse, TimeZoneData, TimeZoneError, TimeZoneResponse, TrialBalanceData, TrialBalanceError, TrialBalanceResponse, TrialBalancesData, TrialBalancesError, TrialBalancesResponse, UncorrectedData, UncorrectedError, UncorrectedResponse, UndoDecisionData, UndoDecisionError, UndoDecisionResponse, UndoFollowUpData, UndoFollowUpError, UndoFollowUpResponse, UndoIgnoreData, UndoIgnoreError, UndoIgnoreResponse, UndoMarkDoneData, UndoMarkDoneError, UndoMarkDoneResponse, UndoPublishBinderData, UndoPublishBinderError, UndoPublishBinderResponse, UndoSendRequestItemData, UndoSendRequestItemError, UndoSendRequestItemResponse, UnlockContactData, UnlockContactError, UnlockContactPortalData, UnlockContactPortalError, UnlockContactPortalResponse, UnlockContactResponse, UnlockUploadData, UnlockUploadError, UnlockUploadResponse, UnlockVersionData, UnlockVersionError, UnlockVersionResponse, UnpublishBinderData, UnpublishBinderError, UnpublishBinderResponse, UpdateClientData, UpdateClientError, UpdateClientResponse, UpdateContactData, UpdateContactError, UpdateContactResponse, UpdateEngagementDraftData, UpdateEngagementDraftError, UpdateEngagementDraftResponse, UpdateOfficeData, UpdateOfficeError, UpdateOfficeResponse, UpdatePersonData, UpdatePersonError, UpdatePersonResponse, UpdatePortalPreferencesData, UpdatePortalPreferencesError, UpdatePortalPreferencesResponse, UpdateRequestItemData, UpdateRequestItemError, UpdateRequestItemResponse, UpdateSettingsSectionData, UpdateSettingsSectionError, UpdateSettingsSectionResponse, UpdateTeamData, UpdateTeamError, UpdateTeamResponse, UploadChecksData, UploadChecksError, UploadChecksResponse, UploadData, UploadError, UploadPreviewData, UploadPreviewError, UploadPreviewPageData, UploadPreviewPageError, UploadPreviewPageResponse, UploadPreviewResponse, UploadResponse, UploadReviewData, UploadReviewError, UploadReviewResponse, ValidateEngagementDraftData, ValidateEngagementDraftError, ValidateEngagementDraftResponse, VersionCommentsData, VersionCommentsError, VersionCommentsResponse, VersionPreviewData, VersionPreviewError, VersionPreviewPageData, VersionPreviewPageError, VersionPreviewPageResponse, VersionPreviewResponse, ViewerManifestData, ViewerManifestError, ViewerManifestResponse, ViewerPageData, ViewerPageError, ViewerPageResponse, ViewerRegionsData, ViewerRegionsError, ViewerRegionsResponse, ViewerSearchData, ViewerSearchError, ViewerSearchResponse, VoidFulfilmentData, VoidFulfilmentError, VoidFulfilmentResponse, WaiveRequestItemData, WaiveRequestItemError, WaiveRequestItemResponse, WallEventsData, WallEventsError, WallEventsResponse, WallPreviewData, WallPreviewError, WallPreviewResponse, WithdrawDocumentData, WithdrawDocumentError, WithdrawDocumentResponse, WithdrawEvidenceVersionData, WithdrawEvidenceVersionError, WithdrawEvidenceVersionResponse, WorkItemsData, WorkItemsError, WorkItemsResponse, WorkpaperData, WorkpaperDetailData, WorkpaperDetailError, WorkpaperDetailResponse, WorkpaperError, WorkpaperFileData, WorkpaperFileError, WorkpaperFileResponse, WorkpaperResponse, WorkpapersData, WorkpapersError, WorkpapersResponse, YourPartData, YourPartError, YourPartResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -79,7 +79,7 @@ export const auditsIndexQueryKey = (options?: Options<AuditsIndexData>) => creat
 /**
  * Audits Index Route
  *
- * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).
+ * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311).
  */
 export const auditsIndexOptions = (options?: Options<AuditsIndexData>) => queryOptions<AuditsIndexResponse, AuditsIndexError, AuditsIndexResponse, ReturnType<typeof auditsIndexQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -128,7 +128,7 @@ export const auditsIndexInfiniteQueryKey = (options?: Options<AuditsIndexData>):
 /**
  * Audits Index Route
  *
- * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08).
+ * AUD-01: rows grouped by phase in tile order, then by report due (A-01-T08, DEC-311).
  */
 export const auditsIndexInfiniteOptions = (options?: Options<AuditsIndexData>) => {
     const opts = infiniteQueryOptions<AuditsIndexResponse, AuditsIndexError, InfiniteData<AuditsIndexResponse>, QueryKey<Options<AuditsIndexData>>, string | null | Pick<QueryKey<Options<AuditsIndexData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -179,7 +179,8 @@ export const auditCockpitQueryKey = (options: Options<AuditCockpitData>) => crea
 /**
  * Audit Cockpit Route
  *
- * AUD-02's host projection (A-01-T09).
+ * AUD-02's host projection (A-01-T09, DEC-312): the bar and overview are metadata; the
+ * bands, dock and actions also need `engagement.read`.
  */
 export const auditCockpitOptions = (options: Options<AuditCockpitData>) => queryOptions<AuditCockpitResponse, AuditCockpitError, AuditCockpitResponse, ReturnType<typeof auditCockpitQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -256,7 +257,8 @@ export const auditSourceDocumentsQueryKey = (options: Options<AuditSourceDocumen
 /**
  * Audit Source Documents Route
  *
- * AUD-02's canvas and AUD-03 (A-01-T10).
+ * AUD-02's canvas and AUD-03 (A-01-T10, DEC-313): the work item's asked PBC requests by
+ * category, with the C5 v1.1 row facts (firm only: client principals were refused).
  */
 export const auditSourceDocumentsOptions = (options: Options<AuditSourceDocumentsData>) => queryOptions<AuditSourceDocumentsResponse, AuditSourceDocumentsError, AuditSourceDocumentsResponse, ReturnType<typeof auditSourceDocumentsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -967,7 +969,7 @@ export const getCitationOptions = (options: Options<GetCitationData>) => queryOp
  * Relink Citation Route
  *
  * AC6.2: a person re-verifies a moved citation on its successor. 409 `not_moved`; 422
- * `relink_unverified`.
+ * `relink_unverified` (P-03-T12).
  */
 export const relinkCitationMutation = (options?: Partial<Options<RelinkCitationData>>): UseMutationOptions<RelinkCitationResponse, RelinkCitationError, Options<RelinkCitationData>> => {
     const mutationOptions: UseMutationOptions<RelinkCitationResponse, RelinkCitationError, Options<RelinkCitationData>> = {
@@ -1175,8 +1177,11 @@ export const createContactMutation = (options?: Partial<Options<CreateContactDat
 /**
  * Reset Contact Mfa Route
  *
- * Remove the factor, the backup codes and the trusted devices; email the client in the
- * firm's name. Needs fresh MFA. Audited as `portal.mfa.reset`.
+ * End the person's trusted devices and portal sessions in this firm, so the next sign-in
+ * here asks for the second step again; email the client in the firm's name. Security admin
+ * with fresh MFA. Audited `portal_mfa.reset`. The factor and backup codes are the person's
+ * and never deleted here (the person re-enrols, POR-12, or platform support resets them); the
+ * answer is the same whatever other firms the person belongs to (DEC-329).
  */
 export const resetContactMfaMutation = (options?: Partial<Options<ResetContactMfaData>>): UseMutationOptions<ResetContactMfaResponse, ResetContactMfaError, Options<ResetContactMfaData>> => {
     const mutationOptions: UseMutationOptions<ResetContactMfaResponse, ResetContactMfaError, Options<ResetContactMfaData>> = {
@@ -1195,8 +1200,9 @@ export const resetContactMfaMutation = (options?: Partial<Options<ResetContactMf
 /**
  * Unlock Contact Portal Route
  *
- * Clear a sign-in or two-step lock. Audited as `portal.sign_in.unlocked` naming the person
- * (INV-5); a walled client answers 404 (INV-3).
+ * Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person
+ * (INV-5); a walled client, or a contact of another client, answers 404 (INV-3). Only the
+ * firm's sign-in lock: the same answer whatever else the person holds (DEC-329).
  */
 export const unlockContactPortalMutation = (options?: Partial<Options<UnlockContactPortalData>>): UseMutationOptions<UnlockContactPortalResponse, UnlockContactPortalError, Options<UnlockContactPortalData>> => {
     const mutationOptions: UseMutationOptions<UnlockContactPortalResponse, UnlockContactPortalError, Options<UnlockContactPortalData>> = {
@@ -1279,6 +1285,64 @@ export const clientRelationshipsInfiniteOptions = (options: Options<ClientRelati
         queryKey: clientRelationshipsInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Run Conflict Check Route
+ *
+ * AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`.
+ */
+export const runConflictCheckMutation = (options?: Partial<Options<RunConflictCheckData>>): UseMutationOptions<RunConflictCheckResponse, RunConflictCheckError, Options<RunConflictCheckData>> => {
+    const mutationOptions: UseMutationOptions<RunConflictCheckResponse, RunConflictCheckError, Options<RunConflictCheckData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await runConflictCheck({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getConflictCheckQueryKey = (options: Options<GetConflictCheckData>) => createQueryKey('getConflictCheck', options);
+
+/**
+ * Get Conflict Check Route
+ *
+ * The check and its results, walled matches redacted for this reader.
+ */
+export const getConflictCheckOptions = (options: Options<GetConflictCheckData>) => queryOptions<GetConflictCheckResponse, GetConflictCheckError, GetConflictCheckResponse, ReturnType<typeof getConflictCheckQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getConflictCheck({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getConflictCheckQueryKey(options)
+});
+
+/**
+ * Clear Conflict Result Route
+ *
+ * Human-only (AC-25): an insert-only event; `conflict.cleared`.
+ */
+export const clearConflictResultMutation = (options?: Partial<Options<ClearConflictResultData>>): UseMutationOptions<ClearConflictResultResponse, ClearConflictResultError, Options<ClearConflictResultData>> => {
+    const mutationOptions: UseMutationOptions<ClearConflictResultResponse, ClearConflictResultError, Options<ClearConflictResultData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await clearConflictResult({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
 };
 
 /**
@@ -1827,6 +1891,26 @@ export const getEngagementOptions = (options: Options<GetEngagementData>) => que
     queryKey: getEngagementQueryKey(options)
 });
 
+export const getAcceptanceQueryKey = (options: Options<GetAcceptanceData>) => createQueryKey('getAcceptance', options);
+
+/**
+ * Get Acceptance Route
+ *
+ * CLI-07: the record, answers, checks, flags, decision and conditions.
+ */
+export const getAcceptanceOptions = (options: Options<GetAcceptanceData>) => queryOptions<GetAcceptanceResponse, GetAcceptanceError, GetAcceptanceResponse, ReturnType<typeof getAcceptanceQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAcceptance({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAcceptanceQueryKey(options)
+});
+
 /**
  * Acceptance Route
  *
@@ -1847,6 +1931,65 @@ export const acceptanceMutation = (options?: Partial<Options<AcceptanceData>>): 
 };
 
 /**
+ * Put Acceptance Answers Route
+ *
+ * `acceptance.answers_updated`; 409 `stale_version`, 409 `decision_locked`.
+ */
+export const putAcceptanceAnswersMutation = (options?: Partial<Options<PutAcceptanceAnswersData>>): UseMutationOptions<PutAcceptanceAnswersResponse, PutAcceptanceAnswersError, Options<PutAcceptanceAnswersData>> => {
+    const mutationOptions: UseMutationOptions<PutAcceptanceAnswersResponse, PutAcceptanceAnswersError, Options<PutAcceptanceAnswersData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putAcceptanceAnswers({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Complete Condition Route
+ *
+ * AC-9: an insert-only completion event by a person; `acceptance.condition_completed`.
+ */
+export const completeConditionMutation = (options?: Partial<Options<CompleteConditionData>>): UseMutationOptions<CompleteConditionResponse, CompleteConditionError, Options<CompleteConditionData>> => {
+    const mutationOptions: UseMutationOptions<CompleteConditionResponse, CompleteConditionError, Options<CompleteConditionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await completeCondition({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Decide Acceptance Route
+ *
+ * Human-only (INV-1), fresh MFA: one insert-only decision, `acceptance.decided`, Prospect →
+ * Accepted or Declined (AC-6 to AC-8); 409 `review_required`, `decision_locked`; 422
+ * `rationale_required`.
+ */
+export const decideAcceptanceMutation = (options?: Partial<Options<DecideAcceptanceData>>): UseMutationOptions<DecideAcceptanceResponse, DecideAcceptanceError, Options<DecideAcceptanceData>> => {
+    const mutationOptions: UseMutationOptions<DecideAcceptanceResponse, DecideAcceptanceError, Options<DecideAcceptanceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await decideAcceptance({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
  * Acceptance File Route
  *
  * The acceptance or continuance documentation, attached to the latest record.
@@ -1855,6 +1998,101 @@ export const acceptanceFileMutation = (options?: Partial<Options<AcceptanceFileD
     const mutationOptions: UseMutationOptions<AcceptanceFileResponse, AcceptanceFileError, Options<AcceptanceFileData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await acceptanceFile({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Add Acceptance Flag Route
+ *
+ * AC-2: an insert-only flag authored by the caller; `acceptance.flag_added`.
+ */
+export const addAcceptanceFlagMutation = (options?: Partial<Options<AddAcceptanceFlagData>>): UseMutationOptions<AddAcceptanceFlagResponse, AddAcceptanceFlagError, Options<AddAcceptanceFlagData>> => {
+    const mutationOptions: UseMutationOptions<AddAcceptanceFlagResponse, AddAcceptanceFlagError, Options<AddAcceptanceFlagData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await addAcceptanceFlag({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Complete Manual Check Route
+ *
+ * By the person it was requested of (client service included); `…manual_check_completed`.
+ */
+export const completeManualCheckMutation = (options?: Partial<Options<CompleteManualCheckData>>): UseMutationOptions<CompleteManualCheckResponse, CompleteManualCheckError, Options<CompleteManualCheckData>> => {
+    const mutationOptions: UseMutationOptions<CompleteManualCheckResponse, CompleteManualCheckError, Options<CompleteManualCheckData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await completeManualCheck({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Request Manual Check Route
+ *
+ * `acceptance.manual_check_requested`.
+ */
+export const requestManualCheckMutation = (options?: Partial<Options<RequestManualCheckData>>): UseMutationOptions<RequestManualCheckResponse, RequestManualCheckError, Options<RequestManualCheckData>> => {
+    const mutationOptions: UseMutationOptions<RequestManualCheckResponse, RequestManualCheckError, Options<RequestManualCheckData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestManualCheck({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Request Risk Partner Review Route
+ *
+ * AC-4: another partner, picked by the EP; `acceptance.review_requested`.
+ */
+export const requestRiskPartnerReviewMutation = (options?: Partial<Options<RequestRiskPartnerReviewData>>): UseMutationOptions<RequestRiskPartnerReviewResponse, RequestRiskPartnerReviewError, Options<RequestRiskPartnerReviewData>> => {
+    const mutationOptions: UseMutationOptions<RequestRiskPartnerReviewResponse, RequestRiskPartnerReviewError, Options<RequestRiskPartnerReviewData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestRiskPartnerReview({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Send To Partner Route
+ *
+ * AC-1, AC-3: Draft → Awaiting partner; 409 `acceptance_not_ready` (open checks as facts).
+ */
+export const sendToPartnerMutation = (options?: Partial<Options<SendToPartnerData>>): UseMutationOptions<SendToPartnerResponse, SendToPartnerError, Options<SendToPartnerData>> => {
+    const mutationOptions: UseMutationOptions<SendToPartnerResponse, SendToPartnerError, Options<SendToPartnerData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sendToPartner({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -2658,6 +2896,65 @@ export const engagementDashboardOptions = (options: Options<EngagementDashboardD
     queryKey: engagementDashboardQueryKey(options)
 });
 
+/**
+ * Assign Eqr Route
+ *
+ * Replaces the EQR; 409 `eqr_on_team`, 409 `eqr_not_eligible`; `eqr.assigned`.
+ */
+export const assignEqrMutation = (options?: Partial<Options<AssignEqrData>>): UseMutationOptions<AssignEqrResponse, AssignEqrError, Options<AssignEqrData>> => {
+    const mutationOptions: UseMutationOptions<AssignEqrResponse, AssignEqrError, Options<AssignEqrData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await assignEqr({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const eqrCandidatesQueryKey = (options: Options<EqrCandidatesData>) => createQueryKey('eqrCandidates', options);
+
+/**
+ * Eqr Candidates Route
+ *
+ * ENG-05 c: eligibility per candidate (not on the team, cooling-off, competence,
+ * independence, capacity).
+ */
+export const eqrCandidatesOptions = (options: Options<EqrCandidatesData>) => queryOptions<EqrCandidatesResponse, EqrCandidatesError, EqrCandidatesResponse, ReturnType<typeof eqrCandidatesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await eqrCandidates({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: eqrCandidatesQueryKey(options)
+});
+
+/**
+ * Approve Eqr Eligibility Route
+ *
+ * Human-only, the quality owner: 409 `eqr_approver_is_ep`; `eqr.eligibility_approved`.
+ */
+export const approveEqrEligibilityMutation = (options?: Partial<Options<ApproveEqrEligibilityData>>): UseMutationOptions<ApproveEqrEligibilityResponse, ApproveEqrEligibilityError, Options<ApproveEqrEligibilityData>> => {
+    const mutationOptions: UseMutationOptions<ApproveEqrEligibilityResponse, ApproveEqrEligibilityError, Options<ApproveEqrEligibilityData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approveEqrEligibility({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const listEvidenceVersionsQueryKey = (options: Options<ListEvidenceVersionsData>) => createQueryKey('listEvidenceVersions', options);
 
 /**
@@ -3222,6 +3519,27 @@ export const discardDraftsMutation = (options?: Partial<Options<DiscardDraftsDat
     return mutationOptions;
 };
 
+/**
+ * Hold Engagement Route
+ *
+ * A person, with fresh MFA: Active → On hold with a reason; `engagement.held` audited and
+ * `engagement.status_changed` emitted in one unit of work. 409 `illegal_transition` from any
+ * other state (archived included).
+ */
+export const holdEngagementMutation = (options?: Partial<Options<HoldEngagementData>>): UseMutationOptions<HoldEngagementResponse, HoldEngagementError, Options<HoldEngagementData>> => {
+    const mutationOptions: UseMutationOptions<HoldEngagementResponse, HoldEngagementError, Options<HoldEngagementData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await holdEngagement({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const inboxQueryKey = (options: Options<InboxData>) => createQueryKey('inbox', options);
 
 /**
@@ -3377,6 +3695,26 @@ export const inboxPreviewPageOptions = (options: Options<InboxPreviewPageData>) 
     queryKey: inboxPreviewPageQueryKey(options)
 });
 
+export const getIndependenceQueryKey = (options: Options<GetIndependenceData>) => createQueryKey('getIndependence', options);
+
+/**
+ * Get Independence Route
+ *
+ * CLI-08 a: the summary and the banner reasons.
+ */
+export const getIndependenceOptions = (options: Options<GetIndependenceData>) => queryOptions<GetIndependenceResponse, GetIndependenceError, GetIndependenceResponse, ReturnType<typeof getIndependenceQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getIndependence({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getIndependenceQueryKey(options)
+});
+
 /**
  * Independence Route
  *
@@ -3395,6 +3733,182 @@ export const independenceMutation = (options?: Partial<Options<IndependenceData>
     };
     return mutationOptions;
 };
+
+/**
+ * Log Breach Route
+ *
+ * AC-28: `independence_breach.logged`.
+ */
+export const logBreachMutation = (options?: Partial<Options<LogBreachData>>): UseMutationOptions<LogBreachResponse, LogBreachError, Options<LogBreachData>> => {
+    const mutationOptions: UseMutationOptions<LogBreachResponse, LogBreachError, Options<LogBreachData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await logBreach({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Add Breach Event Route
+ *
+ * AC-28: insert-only; `independence_breach.updated`.
+ */
+export const addBreachEventMutation = (options?: Partial<Options<AddBreachEventData>>): UseMutationOptions<AddBreachEventResponse, AddBreachEventError, Options<AddBreachEventData>> => {
+    const mutationOptions: UseMutationOptions<AddBreachEventResponse, AddBreachEventError, Options<AddBreachEventData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await addBreachEvent({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Conclude Independence Route
+ *
+ * Human-only, fresh MFA (AC-18 to AC-20); 409 `independence_preconditions_unmet`.
+ */
+export const concludeIndependenceMutation = (options?: Partial<Options<ConcludeIndependenceData>>): UseMutationOptions<ConcludeIndependenceResponse, ConcludeIndependenceError, Options<ConcludeIndependenceData>> => {
+    const mutationOptions: UseMutationOptions<ConcludeIndependenceResponse, ConcludeIndependenceError, Options<ConcludeIndependenceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await concludeIndependence({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Confirm Independence Route
+ *
+ * Human-only, self only (AC-17); `independence.confirmed`.
+ */
+export const confirmIndependenceMutation = (options?: Partial<Options<ConfirmIndependenceData>>): UseMutationOptions<ConfirmIndependenceResponse, ConfirmIndependenceError, Options<ConfirmIndependenceData>> => {
+    const mutationOptions: UseMutationOptions<ConfirmIndependenceResponse, ConfirmIndependenceError, Options<ConfirmIndependenceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await confirmIndependence({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Decline Independence Route
+ *
+ * Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).
+ */
+export const declineIndependenceMutation = (options?: Partial<Options<DeclineIndependenceData>>): UseMutationOptions<DeclineIndependenceResponse, DeclineIndependenceError, Options<DeclineIndependenceData>> => {
+    const mutationOptions: UseMutationOptions<DeclineIndependenceResponse, DeclineIndependenceError, Options<DeclineIndependenceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await declineIndependence({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getNasQueryKey = (options: Options<GetNasData>) => createQueryKey('getNas', options);
+
+/**
+ * Get Nas Route
+ *
+ * CLI-08 b; a non-attest client answers `attest_client: false` and no rows (AC-22).
+ */
+export const getNasOptions = (options: Options<GetNasData>) => queryOptions<GetNasResponse, GetNasError, GetNasResponse, ReturnType<typeof getNasQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getNas({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getNasQueryKey(options)
+});
+
+/**
+ * Put Nas Route
+ *
+ * AC-21, AC-22: an insert-only event; the evaluation decision is the EP's; refused without
+ * an SKE designee on an attest client; `nas.evaluated`.
+ */
+export const putNasMutation = (options?: Partial<Options<PutNasData>>): UseMutationOptions<PutNasResponse, PutNasError, Options<PutNasData>> => {
+    const mutationOptions: UseMutationOptions<PutNasResponse, PutNasError, Options<PutNasData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putNas({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Send Reminders Route
+ *
+ * Sent by the person clicking (no schedule); `independence.reminded` per member and the
+ * `independence.requested` notification again. Live with ENG-05 (P-07-T30) behind
+ * `engagements.v2`; 422 for a member whose confirmation is not requested or declined.
+ */
+export const sendRemindersMutation = (options?: Partial<Options<SendRemindersData>>): UseMutationOptions<SendRemindersResponse, SendRemindersError, Options<SendRemindersData>> => {
+    const mutationOptions: UseMutationOptions<SendRemindersResponse, SendRemindersError, Options<SendRemindersData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sendReminders({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getRotationQueryKey = (options: Options<GetRotationData>) => createQueryKey('getRotation', options);
+
+/**
+ * Get Rotation Route
+ *
+ * CLI-08 d (AC-27).
+ */
+export const getRotationOptions = (options: Options<GetRotationData>) => queryOptions<GetRotationResponse, GetRotationError, GetRotationResponse, ReturnType<typeof getRotationQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRotation({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRotationQueryKey(options)
+});
 
 /**
  * Letter Route
@@ -4824,7 +5338,8 @@ export const screeningCardQueryKey = (options: Options<ScreeningCardData>) => cr
 /**
  * Screening Card Route
  *
- * SHL-20 a-e. 404 with `screening.card` off; 501 until P-06-T20.
+ * SHL-20 a-e: the request batch's screening, composed by code. 404 with `screening.card`
+ * off.
  */
 export const screeningCardOptions = (options: Options<ScreeningCardData>) => queryOptions<ScreeningCardResponse, ScreeningCardError, ScreeningCardResponse, ReturnType<typeof screeningCardQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -5157,6 +5672,25 @@ export const waiveRequestItemMutation = (options?: Partial<Options<WaiveRequestI
     const mutationOptions: UseMutationOptions<WaiveRequestItemResponse, WaiveRequestItemError, Options<WaiveRequestItemData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await waiveRequestItem({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Resume Engagement Route
+ *
+ * On hold → Active; `engagement.resumed`. 409 `illegal_transition` unless on hold.
+ */
+export const resumeEngagementMutation = (options?: Partial<Options<ResumeEngagementData>>): UseMutationOptions<ResumeEngagementResponse, ResumeEngagementError, Options<ResumeEngagementData>> => {
+    const mutationOptions: UseMutationOptions<ResumeEngagementResponse, ResumeEngagementError, Options<ResumeEngagementData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resumeEngagement({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -5602,6 +6136,8 @@ export const teamQueryKey = (options: Options<TeamData>) => createQueryKey('team
 
 /**
  * Team Route
+ *
+ * SPEC-017; P-07-T30 adds ENG-05's hours, portal flag, joined date and independence.
  */
 export const teamOptions = (options: Options<TeamData>) => queryOptions<TeamResponse, TeamError, TeamResponse, ReturnType<typeof teamQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -5623,6 +6159,46 @@ export const addTeamMemberMutation = (options?: Partial<Options<AddTeamMemberDat
     const mutationOptions: UseMutationOptions<AddTeamMemberResponse, AddTeamMemberError, Options<AddTeamMemberData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await addTeamMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getTeamApprovalQueryKey = (options: Options<GetTeamApprovalData>) => createQueryKey('getTeamApproval', options);
+
+/**
+ * Get Team Approval Route
+ *
+ * ENG-05's footer facts.
+ */
+export const getTeamApprovalOptions = (options: Options<GetTeamApprovalData>) => queryOptions<GetTeamApprovalResponse, GetTeamApprovalError, GetTeamApprovalResponse, ReturnType<typeof getTeamApprovalQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getTeamApproval({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getTeamApprovalQueryKey(options)
+});
+
+/**
+ * Approve Team Route
+ *
+ * Human-only, fresh MFA: the EP approves the team they saw (an insert-only row);
+ * `team.approved`; 409 `stale_version` when it changed since.
+ */
+export const approveTeamMutation = (options?: Partial<Options<ApproveTeamData>>): UseMutationOptions<ApproveTeamResponse, ApproveTeamError, Options<ApproveTeamData>> => {
+    const mutationOptions: UseMutationOptions<ApproveTeamResponse, ApproveTeamError, Options<ApproveTeamData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approveTeam({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -5675,6 +6251,25 @@ export const changeTeamRoleMutation = (options?: Partial<Options<ChangeTeamRoleD
     const mutationOptions: UseMutationOptions<ChangeTeamRoleResponse, ChangeTeamRoleError, Options<ChangeTeamRoleData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await changeTeamRole({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Put Portal Visibility Route
+ *
+ * POR-02's team card; `team.portal_visibility_changed`.
+ */
+export const putPortalVisibilityMutation = (options?: Partial<Options<PutPortalVisibilityData>>): UseMutationOptions<PutPortalVisibilityResponse, PutPortalVisibilityError, Options<PutPortalVisibilityData>> => {
+    const mutationOptions: UseMutationOptions<PutPortalVisibilityResponse, PutPortalVisibilityError, Options<PutPortalVisibilityData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putPortalVisibility({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -5841,6 +6436,68 @@ export const editCheckMutation = (options?: Partial<Options<EditCheckData>>): Us
     return mutationOptions;
 };
 
+/**
+ * Tie Issue Link Route
+ *
+ * AUD-06 c: link an issue raised through C3 to a check that does not tie (A-02-T17);
+ * 409 `tie_out_check_stale` on a stale `seen_version`, audited `tie_out_check.issue_linked`.
+ */
+export const tieIssueLinkMutation = (options?: Partial<Options<TieIssueLinkData>>): UseMutationOptions<TieIssueLinkResponse, TieIssueLinkError, Options<TieIssueLinkData>> => {
+    const mutationOptions: UseMutationOptions<TieIssueLinkResponse, TieIssueLinkError, Options<TieIssueLinkData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await tieIssueLink({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const tbExportQueryKey = (options: Options<TbExportData>) => createQueryKey('tbExport', options);
+
+/**
+ * Tb Export Route
+ *
+ * Open in Excel (A-02-T22): a deterministic XLSX of the layer with ticks, citations and a
+ * provenance footer, audited `trial_balance.exported`; formula-like text is neutralised.
+ */
+export const tbExportOptions = (options: Options<TbExportData>) => queryOptions<TbExportResponse, TbExportError, TbExportResponse, ReturnType<typeof tbExportQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await tbExport({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: tbExportQueryKey(options)
+});
+
+export const tbLayerViewQueryKey = (options: Options<TbLayerViewData>) => createQueryKey('tbLayerView', options);
+
+/**
+ * Tb Layer View Route
+ *
+ * AUD-06's view at one layer (A-02-T10); AJE, RJE and Final answer 409 `layer_unavailable`
+ * until an adjustment source is registered, and an unbalanced layer 409 `layer_unbalanced`.
+ */
+export const tbLayerViewOptions = (options: Options<TbLayerViewData>) => queryOptions<TbLayerViewResponse, TbLayerViewError, TbLayerViewResponse, ReturnType<typeof tbLayerViewQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await tbLayerView({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: tbLayerViewQueryKey(options)
+});
+
 export const leadsheetsQueryKey = (options: Options<LeadsheetsData>) => createQueryKey('leadsheets', options);
 
 /**
@@ -5859,6 +6516,26 @@ export const leadsheetsOptions = (options: Options<LeadsheetsData>) => queryOpti
         return data;
     },
     queryKey: leadsheetsQueryKey(options)
+});
+
+export const tbLeadsheetAreaQueryKey = (options: Options<TbLeadsheetAreaData>) => createQueryKey('tbLeadsheetArea', options);
+
+/**
+ * Tb Leadsheet Area Route
+ *
+ * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10).
+ */
+export const tbLeadsheetAreaOptions = (options: Options<TbLeadsheetAreaData>) => queryOptions<TbLeadsheetAreaResponse, TbLeadsheetAreaError, TbLeadsheetAreaResponse, ReturnType<typeof tbLeadsheetAreaQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await tbLeadsheetArea({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: tbLeadsheetAreaQueryKey(options)
 });
 
 export const mappingQueryKey = (options: Options<MappingData>) => createQueryKey('mapping', options);
@@ -6800,6 +7477,107 @@ export const myConfirmationsOptions = (options?: Options<MyConfirmationsData>) =
     queryKey: myConfirmationsQueryKey(options)
 });
 
+export const listFirmExportsQueryKey = (options?: Options<ListFirmExportsData>) => createQueryKey('listFirmExports', options);
+
+/**
+ * List Firm Exports Route
+ *
+ * ADM-06 a and c: the export card and the history tray.
+ */
+export const listFirmExportsOptions = (options?: Options<ListFirmExportsData>) => queryOptions<ListFirmExportsResponse, ListFirmExportsError, ListFirmExportsResponse, ReturnType<typeof listFirmExportsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listFirmExports({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listFirmExportsQueryKey(options)
+});
+
+/**
+ * Request Firm Export Route
+ *
+ * ADM-06 b and g: `awaiting_approval`; 422 `approver_invalid` when the approver is the
+ * requester or holds no partner-level membership. Audited `firm_export.requested`.
+ */
+export const requestFirmExportMutation = (options?: Partial<Options<RequestFirmExportData>>): UseMutationOptions<RequestFirmExportResponse, RequestFirmExportError, Options<RequestFirmExportData>> => {
+    const mutationOptions: UseMutationOptions<RequestFirmExportResponse, RequestFirmExportError, Options<RequestFirmExportData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await requestFirmExport({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Approve Firm Export Route
+ *
+ * ADM-06 f: the named approver starts the build (`building`). 409 `approver_must_differ` for
+ * the requester, `export_not_awaiting_approval` once decided. Audited `firm_export.approved`.
+ */
+export const approveFirmExportMutation = (options?: Partial<Options<ApproveFirmExportData>>): UseMutationOptions<ApproveFirmExportResponse, ApproveFirmExportError, Options<ApproveFirmExportData>> => {
+    const mutationOptions: UseMutationOptions<ApproveFirmExportResponse, ApproveFirmExportError, Options<ApproveFirmExportData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await approveFirmExport({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Decline Firm Export Route
+ *
+ * The named approver declines (`declined`); the same 409s as approve. Audited
+ * `firm_export.declined`.
+ */
+export const declineFirmExportMutation = (options?: Partial<Options<DeclineFirmExportData>>): UseMutationOptions<DeclineFirmExportResponse, DeclineFirmExportError, Options<DeclineFirmExportData>> => {
+    const mutationOptions: UseMutationOptions<DeclineFirmExportResponse, DeclineFirmExportError, Options<DeclineFirmExportData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await declineFirmExport({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Link Firm Export Route
+ *
+ * A 15-minute link for the requester or the approver while the archive is `ready` or
+ * `downloaded` (409 `export_not_ready` before); 410 `export_expired` after the 7 days. Audited
+ * `firm_export.downloaded`.
+ */
+export const linkFirmExportMutation = (options?: Partial<Options<LinkFirmExportData>>): UseMutationOptions<LinkFirmExportResponse, LinkFirmExportError, Options<LinkFirmExportData>> => {
+    const mutationOptions: UseMutationOptions<LinkFirmExportResponse, LinkFirmExportError, Options<LinkFirmExportData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await linkFirmExport({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const draftedGuidanceQueryKey = (options?: Options<DraftedGuidanceData>) => createQueryKey('draftedGuidance', options);
 
 /**
@@ -6874,6 +7652,8 @@ export const setFieldworkSettingsMutation = (options?: Partial<Options<SetFieldw
 
 /**
  * Set Seasonal Access Ends Route
+ *
+ * Fresh MFA; one audit row per seasonal member.
  */
 export const setSeasonalAccessEndsMutation = (options?: Partial<Options<SetSeasonalAccessEndsData>>): UseMutationOptions<SetSeasonalAccessEndsResponse, SetSeasonalAccessEndsError, Options<SetSeasonalAccessEndsData>> => {
     const mutationOptions: UseMutationOptions<SetSeasonalAccessEndsResponse, SetSeasonalAccessEndsError, Options<SetSeasonalAccessEndsData>> = {
@@ -6966,6 +7746,8 @@ export const officesQueryKey = (options?: Options<OfficesData>) => createQueryKe
 
 /**
  * Offices Route
+ *
+ * ADM-03a: the HQ first, then by name, with derived seats and registered facts.
  */
 export const officesOptions = (options?: Options<OfficesData>) => queryOptions<OfficesResponse, OfficesError, OfficesResponse, ReturnType<typeof officesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7020,6 +7802,9 @@ export const offshoreQueryKey = (options?: Options<OffshoreData>) => createQuery
 
 /**
  * Offshore Route
+ *
+ * ADM-03d: the offshore members and the clients a valid offshore-disclosure consent covers
+ * (0 until T-01 registers the provider; DEC-52). The two policy toggles are always on.
  */
 export const offshoreOptions = (options?: Options<OffshoreData>) => queryOptions<OffshoreResponse, OffshoreError, OffshoreResponse, ReturnType<typeof offshoreQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7857,6 +8642,8 @@ export const humanGateListQueryKey = (options?: Options<HumanGateListData>) => c
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+ * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * are never listed or counted.
  */
 export const humanGateListOptions = (options?: Options<HumanGateListData>) => queryOptions<HumanGateListResponse, HumanGateListError, HumanGateListResponse, ReturnType<typeof humanGateListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7877,6 +8664,8 @@ export const humanGateListInfiniteQueryKey = (options?: Options<HumanGateListDat
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
+ * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * are never listed or counted.
  */
 export const humanGateListInfiniteOptions = (options?: Options<HumanGateListData>) => {
     const opts = infiniteQueryOptions<HumanGateListResponse, HumanGateListError, InfiniteData<HumanGateListResponse>, QueryKey<Options<HumanGateListData>>, string | null | Pick<QueryKey<Options<HumanGateListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -9081,7 +9870,8 @@ export const portalSignOutMutation = (options?: Partial<Options<PortalSignOutDat
 /**
  * Portal Start Route
  *
- * Always 202 with the same shape, for any email on any host.
+ * Always 202 with the same shape, for any email on any host; 404 `link_expired` for a link
+ * that can't be used; 503 `sign_in_paused`.
  */
 export const portalStartMutation = (options?: Partial<Options<PortalStartData>>): UseMutationOptions<PortalStartResponse, PortalStartError, Options<PortalStartData>> => {
     const mutationOptions: UseMutationOptions<PortalStartResponse, PortalStartError, Options<PortalStartData>> = {
@@ -9157,7 +9947,9 @@ export const getPortalBinderOptions = (options: Options<GetPortalBinderData>) =>
 /**
  * Drop File Route
  *
- * One dropped file (POR-03 b → c, d). Sorted by code against the dropper's visible items.
+ * One dropped file (POR-03 b → c, d). Sorted by code against the dropper's visible items
+ * (R-01-T09). Over the limit or outside the allowlist: 413 `file_too_large` or 415
+ * `type_not_allowed`, the one upload policy's refusals in this contract's words (DEC-323).
  */
 export const dropFileMutation = (options?: Partial<Options<DropFileData>>): UseMutationOptions<DropFileResponse, DropFileError, Options<DropFileData>> => {
     const mutationOptions: UseMutationOptions<DropFileResponse, DropFileError, Options<DropFileData>> = {
@@ -9196,7 +9988,7 @@ export const markBinderDoneMutation = (options?: Partial<Options<MarkBinderDoneD
  * Undo Mark Done Route
  *
  * The client's Undo of Mark as Done (POR-03 e), until the firm returns a request or sends a
- * new one (409 `firm_already_acted`).
+ * new one (409 `firm_already_acted`, DEC-334).
  */
 export const undoMarkDoneMutation = (options?: Partial<Options<UndoMarkDoneData>>): UseMutationOptions<UndoMarkDoneResponse, UndoMarkDoneError, Options<UndoMarkDoneData>> => {
     const mutationOptions: UseMutationOptions<UndoMarkDoneResponse, UndoMarkDoneError, Options<UndoMarkDoneData>> = {
@@ -9259,7 +10051,7 @@ export const getDropBatchQueryKey = (options: Options<GetDropBatchData>) => crea
 /**
  * Get Drop Batch Route
  *
- * The dropper's poll of one drop batch; anyone else's batch answers 404.
+ * The dropper's poll of one drop batch; anyone else's batch answers 404 (R-01-T09).
  */
 export const getDropBatchOptions = (options: Options<GetDropBatchData>) => queryOptions<GetDropBatchResponse, GetDropBatchError, GetDropBatchResponse, ReturnType<typeof getDropBatchQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -9294,6 +10086,23 @@ export const getPortalHomeOptions = (options?: Options<GetPortalHomeData>) => qu
     },
     queryKey: getPortalHomeQueryKey(options)
 });
+
+/**
+ * Portal Link Renew Route
+ */
+export const portalLinkRenewMutation = (options?: Partial<Options<PortalLinkRenewData>>): UseMutationOptions<PortalLinkRenewResponse, PortalLinkRenewError, Options<PortalLinkRenewData>> => {
+    const mutationOptions: UseMutationOptions<PortalLinkRenewResponse, PortalLinkRenewError, Options<PortalLinkRenewData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await portalLinkRenew({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 /**
  * Update Portal Preferences Route
@@ -9358,7 +10167,8 @@ export const ignoreRequestItemMutation = (options?: Partial<Options<IgnoreReques
  * Undo Ignore Route
  *
  * The client's Undo of an Ignore (POR-03 f, POR-04 b): a compensating event, allowed until
- * the firm acts on the request (409 `firm_already_acted`, DEC-24).
+ * the firm acts on the request (409 `firm_already_acted`, DEC-24, DEC-334). A retry with the
+ * same key is authorised again, then answers what the first answered.
  */
 export const undoIgnoreMutation = (options?: Partial<Options<UndoIgnoreData>>): UseMutationOptions<UndoIgnoreResponse, UndoIgnoreError, Options<UndoIgnoreData>> => {
     const mutationOptions: UseMutationOptions<UndoIgnoreResponse, UndoIgnoreError, Options<UndoIgnoreData>> = {
@@ -9734,6 +10544,25 @@ export const reviewNoteWithdrawMutation = (options?: Partial<Options<ReviewNoteW
 };
 
 /**
+ * Record Screening Route
+ *
+ * AC-26: insert-only; `screening.recorded`.
+ */
+export const recordScreeningMutation = (options?: Partial<Options<RecordScreeningData>>): UseMutationOptions<RecordScreeningResponse, RecordScreeningError, Options<RecordScreeningData>> => {
+    const mutationOptions: UseMutationOptions<RecordScreeningResponse, RecordScreeningError, Options<RecordScreeningData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await recordScreening({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
  * Screening Feedback Route
  *
  * SHL-20 f: a person's thumbs up or down on a card, insert-only.
@@ -10046,6 +10875,9 @@ export const listWallsOptions = (options?: Options<ListWallsData>) => queryOptio
 
 /**
  * Create Wall Route
+ *
+ * Firm admin or partner, fresh MFA; active at once (DEC-73). 409 `relationship_partner`,
+ * `wall_exists`; 422 `approver_not_partner`.
  */
 export const createWallMutation = (options?: Partial<Options<CreateWallData>>): UseMutationOptions<CreateWallResponse, CreateWallError, Options<CreateWallData>> => {
     const mutationOptions: UseMutationOptions<CreateWallResponse, CreateWallError, Options<CreateWallData>> = {
@@ -10065,6 +10897,9 @@ export const wallPreviewQueryKey = (options: Options<WallPreviewData>) => create
 
 /**
  * Wall Preview Route
+ *
+ * AC8.1, AC8.3: what saving would refuse and the assignments it would end; a client the
+ * caller can't see answers 404 (DEC-43).
  */
 export const wallPreviewOptions = (options: Options<WallPreviewData>) => queryOptions<WallPreviewResponse, WallPreviewError, WallPreviewResponse, ReturnType<typeof wallPreviewQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10102,6 +10937,8 @@ export const wallEventsQueryKey = (options: Options<WallEventsData>) => createQu
 
 /**
  * Wall Events Route
+ *
+ * ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA).
  */
 export const wallEventsOptions = (options: Options<WallEventsData>) => queryOptions<WallEventsResponse, WallEventsError, WallEventsResponse, ReturnType<typeof wallEventsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -10120,6 +10957,8 @@ export const wallEventsInfiniteQueryKey = (options: Options<WallEventsData>): Qu
 
 /**
  * Wall Events Route
+ *
+ * ADM-03g: the wall's log, newest first, from the audit trail (fresh MFA).
  */
 export const wallEventsInfiniteOptions = (options: Options<WallEventsData>) => {
     const opts = infiniteQueryOptions<WallEventsResponse, WallEventsError, InfiniteData<WallEventsResponse>, QueryKey<Options<WallEventsData>>, string | null | Pick<QueryKey<Options<WallEventsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -10149,7 +10988,8 @@ export const wallEventsInfiniteOptions = (options: Options<WallEventsData>) => {
 /**
  * Remove Wall Route
  *
- * Walls are never deleted: removing one returns it, marked removed.
+ * A partner, fresh MFA, never on their own wall (409 `own_wall`). Walls are never deleted:
+ * lifting one returns it, marked removed.
  */
 export const removeWallMutation = (options?: Partial<Options<RemoveWallData>>): UseMutationOptions<RemoveWallResponse, RemoveWallError, Options<RemoveWallData>> => {
     const mutationOptions: UseMutationOptions<RemoveWallResponse, RemoveWallError, Options<RemoveWallData>> = {

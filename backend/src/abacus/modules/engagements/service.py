@@ -9,7 +9,8 @@ import hashlib
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Literal, cast
+from decimal import Decimal
+from typing import TYPE_CHECKING, Final, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import ColumnElement, Select, select
@@ -41,6 +42,7 @@ from abacus.modules.engagements.repository import (
     set_methodology_version,
     version_rows,
 )
+from abacus.modules.engagements.team_errors import EqrOnTeam
 
 if TYPE_CHECKING:
     from abacus.modules.engagements.roll_forward import RollForward
@@ -71,11 +73,13 @@ from abacus.modules.identity.api import (
     contacts,
     create_invitation,
     engagement_team,
+    hidden_clients,
     remove_client,
     remove_member,
     resend_invitation,
     revoke_invitation,
-    walled_from,
+    set_member_hours,
+    team_standing,
 )
 from abacus.modules.organisations.api import (
     ClientChoice,
@@ -252,16 +256,15 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
         if new.client_id is None or new.client_entity_id is None:
             raise DomainInvalid("a roll-forward is for an existing client entity")
         await check_prior(ctx, roll, new.client_entity_id, new.type)
-    if new.client_id is not None and new.client_id in await walled_from(ctx.tenant, ctx.user_id):
+    if new.client_id is not None and await hidden_clients(
+        ctx.tenant, ctx.user_id, [new.client_id]
+    ):
         # Refused before anything is written; `authorise` below is the authoritative check.
         raise Forbidden("engagement.create", "wall")
     if new.client_id is None and not new.confirm_new:
-        walled = await walled_from(ctx.tenant, ctx.user_id)
-        matches = [
-            c
-            for c in await find_clients(ctx.tenant, new.client_name, exact=True)
-            if c.id not in walled
-        ]
+        found = await find_clients(ctx.tenant, new.client_name, exact=True)
+        walled = await hidden_clients(ctx.tenant, ctx.user_id, [c.id for c in found])
+        matches = [c for c in found if c.id not in walled]
         if matches:
             raise PossibleDuplicate(new.client_name)
     async with uow(ctx.tenant) as tx:
@@ -688,22 +691,46 @@ async def team_candidates(ctx: AuthContext, engagement_id: UUID) -> list[Candida
     return await candidates(ctx.tenant, engagement_id, ref.client_id)
 
 
+class _Keep:
+    """`change_team_role`'s "leave the hours as they are"."""
+
+
+KEEP_HOURS: Final = _Keep()
+
+
 async def add_to_team(
-    ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: StaffRole
+    ctx: AuthContext,
+    engagement_id: UUID,
+    user_id: UUID,
+    role: StaffRole,
+    budget_hours: Decimal | None = None,
 ) -> None:
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.member_add", ref.resource())
         await add_member(tx, ctx, engagement_id, ref.client_id, user_id, role)
+        if budget_hours is not None:  # P-07-T30: ENG-05's hours
+            await set_member_hours(tx, engagement_id, user_id, budget_hours)
 
 
 async def change_team_role(
-    ctx: AuthContext, engagement_id: UUID, user_id: UUID, role: StaffRole
+    ctx: AuthContext,
+    engagement_id: UUID,
+    user_id: UUID,
+    role: StaffRole | None,
+    budget_hours: Decimal | _Keep | None = KEEP_HOURS,
 ) -> None:
+    """A role change, an hours change, or both. The EQR is never given a team role (409
+    `eqr_on_team`, P-07-T30): replace them through `POST …/eqr` instead."""
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.member_add", ref.resource())
-        await change_role(tx, ctx, engagement_id, user_id, role)
+        if await team_standing(ctx.tenant, engagement_id, user_id) == "eqr":
+            raise EqrOnTeam(facts={"user_id": str(user_id)})
+        if role is not None:
+            await change_role(tx, ctx, engagement_id, user_id, role)
+        if not isinstance(budget_hours, _Keep):
+            await set_member_hours(tx, engagement_id, user_id, budget_hours)
 
 
 async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID) -> None:
@@ -714,20 +741,25 @@ async def remove_from_team(ctx: AuthContext, engagement_id: UUID, user_id: UUID)
 
 
 async def firm_clients(ctx: AuthContext) -> list[FirmName]:
-    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker."""
+    """SPEC-019 Q4: the firm's clients (entities left out), for the wall picker, minus any the
+    person is walled from or, offshore, has no consent for (G-01-T09 review: partners hold
+    `wall.create` now; DEC-43, DEC-52)."""
     await authorise(ctx, "wall.create", Resource.firm(ctx.tenant_id))
-    names = await firm_names(ctx.tenant)
-    return sorted((n for n in names if n.id == n.client_id), key=lambda n: n.name.casefold())
+    names = [n for n in await firm_names(ctx.tenant) if n.id == n.client_id]
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [n.client_id for n in names])
+    return sorted((n for n in names if n.client_id not in hidden), key=lambda n: n.name.casefold())
 
 
 # --- Clients you already have (SPEC-025 AC-1; TASK-043) ----------------------------------------
 
 
 async def search_clients(ctx: AuthContext, text_: str) -> list[ClientChoice]:
-    """The firm's clients matching a name, minus any the person is walled off from."""
+    """The firm's clients matching a name, minus any the person is walled off from (or, offshore,
+    has no consent for: DEC-52)."""
     await authorise(ctx, "client.read", Resource.firm(ctx.tenant_id))
-    walled = await walled_from(ctx.tenant, ctx.user_id)
-    return [c for c in await find_clients(ctx.tenant, text_) if c.id not in walled]
+    found = await find_clients(ctx.tenant, text_)
+    hidden = await hidden_clients(ctx.tenant, ctx.user_id, [c.id for c in found])
+    return [c for c in found if c.id not in hidden]
 
 
 @dataclass(frozen=True)

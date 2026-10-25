@@ -45,6 +45,7 @@ from testcontainers.community.postgres import PostgresContainer
 
 from abacus.kernel.db.migration import tenant_table
 from abacus.modules import MODULES
+from abacus_tools.db_connect import connect as connect_db
 
 BACKEND = Path(__file__).resolve().parents[3]
 REPO = BACKEND.parent
@@ -146,6 +147,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "gl_account_balances": "ledger_immutable",
     "gl_entries": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
+    "trial_balance_versions": "ledger_immutable",  # 0149 (A-02-T04; ED-037)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -277,6 +279,10 @@ DEFINER_FUNCTIONS = frozenset(
     | {"portal_session_mark_device", "client_invitations_revoke_by"}  # DEC-277
     # 0146 (P-07-T25): CLI-04's unlock and the list's locked state, in the session's firm only.
     | {"portal_sign_in_unlock", "portal_sign_in_locked"}
+    # 0156 (P-08-T21): the sign-in pause's host lookup, secure links before sign-in, a recipient's
+    # invitation renewal, and firm-side MFA reset and unlock for the session's firm's clients.
+    | {"portal_host_tenant", "portal_link_claim", "portal_link_find"}
+    | {"portal_invitation_find", "portal_mfa_reset"}
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}
@@ -333,7 +339,7 @@ def _dsn(url: str) -> str:
 
 
 async def _run_sql(dsn: str, *scripts: Path) -> None:
-    conn = await asyncpg.connect(dsn)
+    conn = await connect_db(dsn)
     try:
         for script in scripts:
             await conn.execute(script.read_text())
@@ -748,7 +754,7 @@ async def _definer_problems(conn: asyncpg.Connection) -> list[str]:
 
 
 async def _inspect(owner_dsn: str) -> list[str]:
-    conn = await asyncpg.connect(owner_dsn)
+    conn = await connect_db(owner_dsn)
     problems: list[str] = []
     try:
         canonical = await _canonical_policy(conn)

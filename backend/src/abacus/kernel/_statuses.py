@@ -215,6 +215,21 @@ class TieOutTallyStatus(StrEnum):
     RECONCILED = "reconciled"
 
 
+class TrialBalanceLabelStatus(StrEnum):
+    STANDARD = "standard"
+    INTERIM = "interim"
+    PRIOR = "prior"
+    BUDGET = "budget"
+    PRELIMINARY = "preliminary"
+
+
+class TrialBalanceLayerStatus(StrEnum):
+    UNADJUSTED = "unadjusted"
+    AJE = "aje"
+    RJE = "rje"
+    FINAL = "final"
+
+
 class RequestStatus(StrEnum):
     DRAFT = "draft"
     REQUESTED = "requested"
@@ -779,6 +794,19 @@ STORED: dict[str, tuple[str, ...]] = {
         "pending",
         "ties_once_posted",
         "reconciled",
+    ),
+    "trial_balance_label": (
+        "standard",
+        "interim",
+        "prior",
+        "budget",
+        "preliminary",
+    ),
+    "trial_balance_layer": (
+        "unadjusted",
+        "aje",
+        "rje",
+        "final",
     ),
     "request": (
         "draft",

@@ -46,6 +46,11 @@ ENGAGEMENT_AGENT_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_ACCEPTANCE_V2 = Flag(
+    name="engagements.acceptance_v2",
+    kind="boolean",
+    default="false",
+)
 ENGAGEMENTS_V2 = Flag(
     name="engagements.v2",
     kind="boolean",
@@ -108,6 +113,11 @@ LEDGER_GL_IMPORT = Flag(
 )
 LEDGER_IMPORT = Flag(
     name="ledger.import",
+    kind="boolean",
+    default="false",
+)
+LEDGER_TB_WORKPAPER = Flag(
+    name="ledger.tb_workpaper",
     kind="boolean",
     default="false",
 )
@@ -194,6 +204,7 @@ FLAGS: dict[str, Flag] = {
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
     "contacts.v2": CONTACTS_V2,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagements.acceptance_v2": ENGAGEMENTS_ACCEPTANCE_V2,
     "engagements.v2": ENGAGEMENTS_V2,
     "engagements.work_items_api": ENGAGEMENTS_WORK_ITEMS_API,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
@@ -207,6 +218,7 @@ FLAGS: dict[str, Flag] = {
     "guidance.drafting": GUIDANCE_DRAFTING,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
+    "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
     "matching.enabled": MATCHING_ENABLED,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,

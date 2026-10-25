@@ -270,7 +270,20 @@ async def test_walled_lenas_lists_omit_ashford_and_keep_granite(
 # --- Offshore: never reveals a TIN (§4.4/§4.5; DEC-52) -------------------------------------------
 
 
-@pytest.mark.parametrize(("offshore", "layer"), [(True, "condition"), (False, None)])
+@pytest.mark.parametrize(
+    ("offshore", "layer"),
+    [
+        pytest.param(
+            True,
+            "condition",
+            marks=pytest.mark.xfail(
+                strict=True,
+                reason="#395 TASK-1207: offshore is a wall until T-01 (DEC-319)",
+            ),
+        ),
+        (False, None),
+    ],
+)
 async def test_offshore_membership_decides_tin_reveal(
     firm: _Firm, monkeypatch: pytest.MonkeyPatch, offshore: bool, layer: str | None
 ) -> None:

@@ -28,6 +28,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.document_citations import sheet_lines, verify
+from abacus.modules.agents.events import ProposalRecorded
 from abacus.modules.agents.handoff import (
     DocumentCitation,
     MatchOutput,
@@ -308,6 +309,7 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
                 none_fit=int(output.none_fit),
             ),
         )
+        tx.emit(ProposalRecorded(engagement_id=agent.engagement, source="inbox_match"))
     return MatchOutcome(
         run.id,
         "completed",

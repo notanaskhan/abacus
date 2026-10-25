@@ -379,7 +379,29 @@ async def test_review_a_gate_met_derives_one_step_at_a_time(
     ]
 
 
+async def _released(world: World) -> None:
+    """SPEC-314's release row (G8 met), seeded: a report record and the release that cites it."""
+    report = await world.seed.value(
+        "INSERT INTO completion_records (tenant_id, engagement_id, kind, choice, recorded_by, "
+        "actor_kind) VALUES ($1, $2, 'going_concern', 'no_substantial_doubt', $3, 'human') "
+        "RETURNING id",
+        world.tenant,
+        world.engagement,
+        world.partner.user_id,
+    )
+    await world.seed.run(
+        "INSERT INTO releases (tenant_id, engagement_id, report_record_id, report_date, "
+        "documentation_due, gates, released_by, actor_kind) VALUES ($1, $2, $3, '2026-07-29', "
+        "'2026-09-27', '{}'::jsonb, $4, 'human')",
+        world.tenant,
+        world.engagement,
+        report,
+        world.partner.user_id,
+    )
+
+
 async def test_review_a_partner_release_writes_its_phase_event(world: World) -> None:
+    await _released(world)  # security review (DEC-312): the gate is met, computed
     async with uow(world.partner.tenant) as tx:
         await phase.advance_by_gate(
             tx, world.partner.tenant, world.engagement, "released", "G8", world.partner.user_id
@@ -395,6 +417,41 @@ async def test_review_a_partner_release_writes_its_phase_event(world: World) -> 
         "G8",
     )
     assert event["actor_user_id"] == world.partner.user_id
+
+
+async def test_review_a_gate_move_is_refused_while_its_gate_is_unmet(world: World) -> None:
+    """Security review (DEC-312): the caller cannot assert a gate; G8 is computed."""
+    with pytest.raises(phase.PhaseGateUnmet):
+        async with uow(world.partner.tenant) as tx:
+            await phase.advance_by_gate(
+                tx, world.partner.tenant, world.engagement, "released", "G8", world.partner.user_id
+            )
+    with pytest.raises(phase.PhaseGateUnmet):  # G7 does not open Released
+        async with uow(world.partner.tenant) as tx:
+            await phase.advance_by_gate(
+                tx, world.partner.tenant, world.engagement, "released", "G7", world.partner.user_id
+            )
+    assert (await world.phase_row())["phase"] == "planning"
+    assert await world.events() == []
+
+
+async def test_review_a_system_context_cannot_jump_planning_to_released(world: World) -> None:
+    await _released(world)  # even with G8 met, a gate move is a person's own act
+    system = TenantContext(world.tenant, "system", "assurance.phase_derive")
+    with pytest.raises(Forbidden):
+        async with uow(system) as tx:
+            await phase.advance_by_gate(tx, system, world.engagement, "released", "G8", None)
+    with pytest.raises(Forbidden):  # nor a person naming someone else as the actor
+        async with uow(world.partner.tenant) as tx:
+            await phase.advance_by_gate(
+                tx, world.partner.tenant, world.engagement, "released", "G8", world.staff.user_id
+            )
+    assert (await world.phase_row())["phase"] == "planning"
+
+
+def test_review_advance_by_gate_is_not_public() -> None:
+    assert "advance_by_gate" not in assurance_api.__all__
+    assert not hasattr(assurance_api, "advance_by_gate")
 
 
 async def test_review_the_sealed_reason_reopens_from_the_event(world: World) -> None:

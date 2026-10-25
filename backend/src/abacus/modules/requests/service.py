@@ -12,7 +12,13 @@ from uuid import UUID, uuid4
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology, version_detail
+from abacus.modules.engagements.api import (
+    get_ref,
+    lock_ref,
+    pin_methodology,
+    version_detail,
+    work_item_index,
+)
 from abacus.modules.identity.api import (
     Actor,
     AuthContext,
@@ -50,7 +56,9 @@ from abacus.modules.requests.guidance import (
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
     default_due_on,
+    drop_item_rows,
     fulfilling_versions,
+    get_binder,
     get_request_item,
     insert_fulfilment,
     insert_request_item,
@@ -65,6 +73,7 @@ from abacus.modules.requests.repository import (
     overdue_items,
     request_list_for,
     revert_to_requested,
+    screening_subject_row,
     search_items,
     set_classification,
     set_client_fields,
@@ -796,6 +805,37 @@ async def latest_version_of(tenant: TenantContext, item_id: UUID) -> UUID | None
         return await newest_fulfilment(session, item_id)
 
 
+@dataclass(frozen=True)
+class ScreeningSubject:
+    """What a request batch's screening is composed against (P-06-T20): the request, the period
+    it expects, and its binder's work-item kind (the TRI gate reads it)."""
+
+    id: UUID
+    engagement_id: UUID
+    title: str
+    period_start: date | None
+    period_end: date | None
+    work_item_kind: str | None
+
+
+async def screening_subject(tenant: TenantContext, item_id: UUID) -> ScreeningSubject | None:
+    """For a system caller composing the item's screening, or a caller that authorised on its
+    engagement; None outside the tenant or for a deleted draft."""
+    async with tenant_session(tenant) as session:
+        row = await screening_subject_row(session, item_id, work_item_index())
+    if row is None or row[0].deleted_at is not None:
+        return None
+    item, kind = row
+    return ScreeningSubject(
+        item.id,
+        item.engagement_id,
+        item.title or item.description,
+        item.period_start,
+        item.period_end,
+        kind,
+    )
+
+
 async def read_item_versions(tenant: TenantContext, item_id: UUID) -> list[UUID]:
     """Every version fulfilling the item, oldest first, for a caller that authorised on it."""
     async with tenant_session(tenant) as session:
@@ -1118,3 +1158,30 @@ async def search_request_items(ctx: AuthContext, q: str) -> list[RequestItem]:
         return []
     async with tenant_session(ctx.tenant) as session:
         return list(await search_items(session, ctx, text[:100], SEARCH_LIMIT))
+
+
+# --- R-01-T09: where a portal drop may land ---------------------------------------------------
+
+
+async def drop_items(tenant: TenantContext, binder_id: UUID) -> Sequence[RequestItemView]:
+    """The system sort's candidates in one binder: client-visible, open to evidence (never a
+    draft), not delegated. The caller still checks each against the dropper (`member_could`)."""
+    async with tenant_session(tenant) as session:
+        rows = await drop_item_rows(session, binder_id)
+    return [_view(item) for item in rows]
+
+
+async def drop_target(tx: UnitOfWork, binder_id: UUID, item_id: UUID) -> RequestItemRef | None:
+    """Inside the rule link's unit of work (R-01-T09 security review): the request, row-locked,
+    while it is still a place the drop may land: its binder published, the request client-visible,
+    open, never a draft and not delegated. None otherwise."""
+    item = await item_ref(tx, item_id, lock=True)
+    binder = await get_binder(tx.session, binder_id)
+    if (
+        binder is None
+        or binder.status != "published"
+        or binder.engagement_id != item.engagement_id
+    ):
+        return None
+    still = {row.id for row in await drop_item_rows(tx.session, binder_id)}
+    return item if item_id in still else None

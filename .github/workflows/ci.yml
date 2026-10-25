@@ -69,7 +69,9 @@ jobs:
     name: stage 2 unit tests (${{ matrix.shard }}/2)
     needs: [changes]
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # S8 wave A grew the suite past 15 minutes per shard (#395 cancelled at 91-93%, no failures);
+    # pytest-xdist workers (DEC-335) bring it back down.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:

@@ -127,6 +127,11 @@ def _ctx() -> AuthContext:
     )
 
 
+# Live with the flag on (no longer 501): P-04-T16 serves the human gates from the projection
+# (tests/integration/backfill/test_p04t16_human_gate_projector.py).
+LIVE = frozenset({"human_gate_list_route"})
+
+
 _ENDPOINTS: list[tuple[ModuleType, Callable[..., Awaitable[object]]]] = [
     (module, cast(Callable[..., Awaitable[object]], route.endpoint))
     for module, routers in (
@@ -176,6 +181,8 @@ async def test_c3_flag_off_is_404_and_flag_on_is_501(
     with pytest.raises(NotFound):
         await handler(**args)
     assert seen == [REVIEW_GRAMMAR_API]
+    if handler.__name__ in LIVE:
+        return  # served with the flag on; its integration tests cover the answers
     monkeypatch.setattr(module, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
         await handler(**args)

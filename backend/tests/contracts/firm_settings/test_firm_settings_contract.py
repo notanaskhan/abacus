@@ -81,8 +81,22 @@ def _props(schema: str) -> dict[str, Json]:
 
 
 # Live since G-01-T04 (DEC-170): the overview and the sections; since G-01-T05 (DEC-286): the
-# person, its writes and the role templates.
+# person, its writes and the role templates; since G-01-T08 (DEC-317): offices, teams and the
+# Seasonal group's date; since G-01-T09 (DEC-318, DEC-319): the wall preview, approval and log,
+# and the offshore group.
 LIVE = {
+    ("get", "/v1/walls/preview"),
+    ("post", "/v1/walls/{wall_id}/approve"),
+    ("get", "/v1/walls/{wall_id}/events"),
+    ("get", "/v1/firm/offshore"),
+    ("get", "/v1/firm/offices"),
+    ("post", "/v1/firm/offices"),
+    ("patch", "/v1/firm/offices/{office_id}"),
+    ("get", "/v1/firm/teams"),
+    ("post", "/v1/firm/teams"),
+    ("patch", "/v1/firm/teams/{team_id}"),
+    ("put", "/v1/firm/teams/{team_id}/members"),
+    ("put", "/v1/firm/groups/seasonal/access-ends"),
     ("get", "/v1/firm/settings/overview"),
     ("get", "/v1/firm/settings/{section}"),
     ("patch", "/v1/firm/settings/{section}"),
@@ -103,7 +117,8 @@ def test_g01t02_each_route_declares_its_action_and_is_a_stub(method: str, path: 
     assert ("501" in responses) == ((method, path) not in LIVE)
 
 
-@pytest.mark.parametrize("module", [settings_contract, org_settings])
+# Organisations' half has no stub left since G-01-T08; its routes keep the flag (`_gate`).
+@pytest.mark.parametrize("module", [settings_contract])
 async def test_g01t02_flag_off_is_404_and_on_is_501(
     monkeypatch: pytest.MonkeyPatch, module: object
 ) -> None:
@@ -128,6 +143,23 @@ async def test_g01t02_flag_off_is_404_and_on_is_501(
     with pytest.raises(NotImplementedYet):
         await gate(ctx)
     assert seen == [FIRM_SETTINGS_V2, FIRM_SETTINGS_V2]
+
+
+async def test_g01t08_offices_and_teams_answer_404_with_the_flag_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = uuid.uuid4()
+    ctx = AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
+    )
+
+    async def off(_tenant: object, flag: Flag) -> bool:
+        assert flag == FIRM_SETTINGS_V2
+        return False
+
+    monkeypatch.setattr(org_settings, "flag_enabled", off)
+    with pytest.raises(NotFound):
+        await org_settings._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the route gate
 
 
 @pytest.mark.parametrize("schema", MODELS)

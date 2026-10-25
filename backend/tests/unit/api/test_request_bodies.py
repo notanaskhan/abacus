@@ -17,15 +17,9 @@ from abacus.api.export_openapi import document
 Json = dict[str, object]
 METHODS: Final = {"get", "post", "put", "patch", "delete"}
 
-# ED-034: the letter-policy route takes its output model as its body, which ignores extra fields.
-HELD: Final = {
-    ("put", "/v1/firm/letter-policy"): pytest.mark.xfail(
-        strict=True,
-        reason="ED-034: PUT /v1/firm/letter-policy reads LetterPolicyOut, which has no "
-        'extra="forbid"; needs a LetterPolicyIn and make regenerate; '
-        "TASK-1177 (#393: assessed on the S7 batch's main)",
-    ),
-}
+# Bodies held as strict xfails with a cited defect. ED-034 (`PUT /v1/firm/letter-policy` read its
+# output model) was fixed with `LetterPolicyIn` (TASK-1202); keep the mechanism for the next one.
+HELD: Final[dict[tuple[str, str], pytest.MarkDecorator]] = {}
 
 
 DOCUMENT: Final = cast(Json, json.loads(document()))
