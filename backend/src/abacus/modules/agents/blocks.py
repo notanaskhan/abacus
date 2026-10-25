@@ -24,13 +24,14 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Set
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Annotated, Final, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
-from abacus.ai_gateway import sanitise_text
+from abacus.ai_gateway import CheckFailure, register_output_check, sanitise_text
 from abacus.kernel._statuses import STORED
 from abacus.kernel.classification import classified
 
@@ -304,8 +305,36 @@ __all__ = [
     "AgentBlocks",
     "AgentPart",
     "BlocksRejected",
+    "BlocksTurn",
     "Fact",
+    "check_blocks",
     "fact_value",
     "lint_text",
     "validate_blocks",
 ]
+
+
+# --- The gateway output check (P-09-T04) -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class BlocksTurn:
+    """A converse() final turn as the check sees it: the payload and what it may reference."""
+
+    payload: object
+    facts: Mapping[str, Fact]
+    citations: Set[UUID]
+
+
+def check_blocks(output: object) -> CheckFailure | None:
+    """The AgentBlocks output check: None when the turn may be shown."""
+    if not isinstance(output, BlocksTurn):
+        return CheckFailure("shape", "turn")
+    try:
+        validate_blocks(output.payload, output.facts, output.citations)
+    except BlocksRejected as rejected:
+        return CheckFailure(rejected.code, rejected.where)
+    return None
+
+
+register_output_check("agent_blocks", check_blocks)
