@@ -30,10 +30,11 @@ from dataclasses import dataclass
 from typing import Final, Literal, NoReturn, cast
 from uuid import UUID
 
+from abacus.ai_gateway.admission import NotAdmitted
 from abacus.kernel import provider_terms
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import Route, settings
-from abacus.kernel.controls import control_active
+from abacus.kernel.controls import control_state
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
@@ -215,7 +216,12 @@ async def enforce_boundary(
     route, for every firm (SPEC-036 AC-6). Every provider call passes here just before it leaves,
     so with AI paused none does once the controls cache (10 s) has caught up."""
     excluded = _excluded
-    if await control_active("ai_pause", tenant.tenant_id):
+    paused = await control_state("ai_pause", tenant.tenant_id)
+    if paused == "unknown":
+        # The switches can't be read: no call leaves (fail closed), but this is an outage, not
+        # a pause, so the run waits and retries instead of ending (DEC-338, security review).
+        raise NotAdmitted("controls_unavailable", 10)
+    if paused == "on":
         reason: Reason | None = "ai_paused"
     elif (
         engagement_id is not None

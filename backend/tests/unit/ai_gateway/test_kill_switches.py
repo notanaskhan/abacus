@@ -41,13 +41,18 @@ def audited(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return found
 
 
-def _paused_for(tenant: UUID | None, monkeypatch: pytest.MonkeyPatch) -> None:
-    async def control_active(
+def _paused_for(
+    tenant: UUID | None, monkeypatch: pytest.MonkeyPatch, *, unknown: bool = False
+) -> None:
+    async def control_state(
         control: str, tenant_id: UUID | None = None, *, route: str | None = None
-    ) -> bool:
-        return control == "ai_pause" and (tenant is None or tenant_id == tenant)
+    ) -> str:
+        if unknown:
+            return "unknown"
+        hit = control == "ai_pause" and (tenant is None or tenant_id == tenant)
+        return "on" if hit else "off"
 
-    monkeypatch.setattr(boundary, "control_active", control_active)
+    monkeypatch.setattr(boundary, "control_state", control_state)
 
 
 @pytest.mark.parametrize("route", ["fake", "direct", "bedrock"])
@@ -72,6 +77,18 @@ async def test_ai_pause_for_one_firm_leaves_another_alone(
     assert (
         await enforce_boundary(TenantContext(uuid.uuid4(), "system", "test"), "fake", "p") is None
     )
+
+
+async def test_unreadable_switches_make_the_call_wait_not_end(
+    audited: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Security review: an outage reading the switches is not a pause. No call leaves, but the
+    run waits and retries (`NotAdmitted`) instead of ending as `ai_paused`, and nothing is
+    audited as a refusal."""
+    _paused_for(None, monkeypatch, unknown=True)
+    with pytest.raises(gateway.NotAdmitted) as waiting:
+        await enforce_boundary(TenantContext(uuid.uuid4(), "system", "test"), "bedrock", "p")
+    assert waiting.value.reason == "controls_unavailable" and audited == []
 
 
 def test_ai_paused_is_appended_to_the_audited_reasons() -> None:

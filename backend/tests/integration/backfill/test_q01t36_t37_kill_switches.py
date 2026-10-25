@@ -134,3 +134,23 @@ async def test_t36_the_operator_command_sets_a_firm_control_and_audits_it(
     assert ("platform_control.changed", "operator:ana") in {
         (r["action"], r["actor_id"]) for r in actions
     }
+
+
+async def test_t37_ending_access_and_reads_sent_as_posts_still_work_in_read_only_mode(
+    net: Net, seed: Seeder, clean_controls: None
+) -> None:
+    """Security review (DEC-338): revoking a person, a staff invitation or a support session,
+    and knowledge search (a read with a body), are never answered `read_only`."""
+    tenant, admin = await _member(seed)
+    await _switch(seed, "read_only", tenant, True)
+    await _switch(seed, "read_only", None, True)
+    for path, body in (
+        (f"/v1/firm/staff/{uuid.uuid4()}/revoke", {}),
+        (f"/v1/firm/staff/invitations/{uuid.uuid4()}/revoke", {}),
+        (f"/v1/support-sessions/{uuid.uuid4()}/revoke", {}),
+        ("/v1/knowledge/search", {"query": "lease terms", "k": 3}),
+    ):
+        answered = await net.call("POST", path, admin, body=body)
+        assert answered.json() != {"detail": "read_only"}, path
+    refused = await net.call("PUT", PREFERENCES, admin, body={"default_office_id": None})
+    assert refused.json() == {"detail": "read_only"}

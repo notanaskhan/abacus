@@ -26,3 +26,4 @@ Q-01 F8: stop AI or email for one firm or for everyone within seconds, without a
 
 ## Progress log
 - 2026-10-25: built with T37 (TASK-1212). Unit 14 passed; integration 4 passed. Within 10 seconds holds through the controls cache (`CACHE_SECONDS`); `ai_pause` and `read_only` fail closed when the state can't be read.
+- 2026-10-25: security review fix round. `kernel.controls.control_state` tells an unreadable state from a pause; the boundary answers `NotAdmitted("controls_unavailable")` for it, so an outage never ends runs as `ai_paused`. Knowledge search maps a refused or deferred embedding to 503. Unit: 45 passed with the controls and boundary files.

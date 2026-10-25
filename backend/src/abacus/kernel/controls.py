@@ -74,20 +74,46 @@ async def _active_rows() -> tuple[Active | None, bool, float]:
     return rows, True, 0.0
 
 
-async def control_active(
+class ReadOnlyMode(Exception):
+    """`read_only` is on for the platform or this firm: 503 `read_only` (Q-01-T37)."""
+
+
+ControlState = Literal["on", "off", "unknown"]
+
+
+async def control_state(
     control: ControlName, tenant_id: UUID | None = None, *, route: str | None = None
-) -> bool:
-    """Whether `control` is on for everyone, or for the firm `tenant_id`; `model_route_block`
-    also needs the matching `route`."""
+) -> ControlState:
+    """`on` or `off` as last read, or `unknown` when the state can't be read and this control
+    has no value it may trust (where `control_active` would fail closed). A caller that must not
+    mistake an outage for a switch (the AI pause ends runs for good) tells the two apart."""
     rows, current, age = await _active_rows()
     stale = not current and control in _FAIL_CLOSED_AFTER_STALE and age > STALE_LIMIT_SECONDS
     if rows is None or stale or (not current and control in _FAIL_CLOSED):
-        closed = control in _FAIL_CLOSED or control in _FAIL_CLOSED_AFTER_STALE
-        _log.warning("platform_control.unknown", control=control, counted_active=closed)
-        return closed
+        _log.warning("platform_control.unknown", control=control)
+        return "unknown"
     for name, scope, tenant, keyed in rows:
         if name != control or (control == "model_route_block" and keyed != route):
             continue
         if scope == "platform" or (tenant_id is not None and tenant == tenant_id):
-            return True
-    return False
+            return "on"
+    return "off"
+
+
+async def control_active(
+    control: ControlName, tenant_id: UUID | None = None, *, route: str | None = None
+) -> bool:
+    """Whether `control` is on for everyone, or for the firm `tenant_id`; `model_route_block`
+    also needs the matching `route`. Unknown counts as on for `ai_pause`, `read_only` and (after
+    its stale limit) `portal_sign_in`, as off for the others."""
+    state = await control_state(control, tenant_id, route=route)
+    if state == "unknown":
+        return control in _FAIL_CLOSED or control in _FAIL_CLOSED_AFTER_STALE
+    return state == "on"
+
+
+async def ensure_writable(tenant_id: UUID | None = None) -> None:
+    """Q-01-T37: refuse a write while `read_only` is on for the platform or this firm (and,
+    failing closed, while the state can't be read)."""
+    if await control_active("read_only", tenant_id):
+        raise ReadOnlyMode(str(tenant_id))

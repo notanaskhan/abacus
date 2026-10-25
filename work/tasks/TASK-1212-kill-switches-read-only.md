@@ -24,3 +24,4 @@ In read-only mode every mutating route answers 503 `read_only` while reads and s
 
 ## Progress log
 - 2026-10-25: built. Found ED-046 (`PUT /v1/me/preferences` answered 500 on every call: its audit `Ref` held text) and fixed it here, since the read-only test drives that route. Integration 4 passed; `tests/unit/api/test_app_gates.py` passes.
+- 2026-10-25: security review fix round (no high findings). Firm read-only now refuses invitation acceptance (`ensure_writable` in the three accept services; `ReadOnlyMode` → 503 `read_only`); support-session approve/revoke/acknowledge, person and staff-invitation revoke and knowledge search stay writable; known limits recorded in DEC-338. Integration file: 5 passed.

@@ -27,7 +27,7 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from abacus.kernel.classification import classified
-from abacus.kernel.controls import control_active
+from abacus.kernel.controls import control_active, ensure_writable
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.modules.identity.authz import recording_checks
@@ -137,9 +137,18 @@ _log = get_logger(__name__)
 # 503 `read_only`, except sign-in and sign-out (pre-session routes and the two sign-outs), staff
 # and support-session routes, and browser error reports (operational).
 _READS: Final = frozenset({"GET", "HEAD", "OPTIONS"})
-_WRITABLE_ACTIONS: Final = frozenset({STAFF, PRE_SESSION})
+# A firm's own support-session controls and the routes that only take access away stay
+# writable: an incident must never stop anyone ending access (security review, DEC-338).
+_WRITABLE_ACTIONS: Final = frozenset({STAFF, PRE_SESSION, "support_session.manage"})
 _WRITABLE_PATHS: Final = frozenset(
-    {"/v1/auth/sign-out", "/v1/portal/auth/sign-out", "/v1/telemetry/errors"}
+    {
+        "/v1/auth/sign-out",
+        "/v1/portal/auth/sign-out",
+        "/v1/telemetry/errors",
+        "/v1/knowledge/search",  # a read, sent as a POST for its body
+        "/v1/firm/staff/{user_id}/revoke",
+        "/v1/firm/staff/invitations/{invitation_id}/revoke",
+    }
 )
 READ_ONLY: Final = "read_only"
 
@@ -275,8 +284,8 @@ async def firm_writable(
 ) -> None:
     """The firm-scoped half of read-only mode, once the request's firm is known (the platform
     half runs before the handler, in `AbacusRoute`)."""
-    if request.method not in _READS and await control_active(READ_ONLY, ctx.tenant_id):
-        raise HTTPException(503, READ_ONLY)
+    if request.method not in _READS:
+        await ensure_writable(ctx.tenant_id)
 
 
 async def current_staff(authorization: Annotated[str | None, Header()] = None) -> Staff:
