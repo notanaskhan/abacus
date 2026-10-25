@@ -98,7 +98,6 @@ CASES: tuple[Case, ...] = (
         "audit_events_target",
         "target_id",
         {"target_type": "'request_list'", "target_id": f"{SCOPED}::text"},
-        gap=AUDIT_TARGET,
     ),
     Case(
         "GET /v1/binders/{binder_id}/requests",
@@ -108,8 +107,6 @@ CASES: tuple[Case, ...] = (
         "request_items_by_list",
         "request_list_id",
         {"request_list_id": SCOPED, "status": "'requested'", "client_visible": "true"},
-        gap="No index on request_items (tenant_id, request_list_id, created_at, id) WHERE "
-        "deleted_at IS NULL (TASK-1245; needs a migration)",
     ),
     Case(
         "GET /v1/citations",
@@ -200,7 +197,6 @@ CASES: tuple[Case, ...] = (
         "audit_events_target",
         "target_id",
         {"target_type": "'request_item'", "target_id": f"{SCOPED}::text"},
-        gap=AUDIT_TARGET,
     ),
     Case(
         "GET /v1/firm/staff",
@@ -214,8 +210,6 @@ CASES: tuple[Case, ...] = (
             "firm_role": "NULL",
             "service_lines": "'{}'::text[]",
         },
-        gap="No index on memberships (tenant_id, kind, created_at, user_id); the roster is read "
-        "whole and paged in Python (TASK-1245; needs a migration or paging in SQL)",
     ),
     Case(
         "GET /v1/human-gates",
@@ -268,9 +262,6 @@ CASES: tuple[Case, ...] = (
             "published_at": "timestamptz '2026-01-01' + g * interval '1 minute'",
             "created_from": "'blank'",
         },
-        gap="No index on request_lists (tenant_id, status, published_at); the portal's binders "
-        "are found through request_items, which has no request_list_id index either "
-        "(TASK-1245; needs a migration)",
     ),
     Case(
         "GET /v1/review-notes (stub)",
@@ -288,7 +279,6 @@ CASES: tuple[Case, ...] = (
         "audit_events_target",
         "target_id",
         {"target_type": "'wall'", "target_id": f"{SCOPED}::text"},
-        gap=AUDIT_TARGET,
     ),
     Case(
         "GET /v1/work-items",
