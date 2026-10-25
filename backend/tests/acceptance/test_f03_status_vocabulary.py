@@ -486,6 +486,8 @@ LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 # Words a sentence-case label may capitalise after its first: acronyms and the one hyphenated
 # compound the table spells with capitals.
 CAPITALISED_BY_SOURCE = {"TB-linked"}
+# AUD-06 g spells the interim chip "TB: Interim · 8/31/2026" (A-02-T02; copy verbatim, DEC-15).
+CAPITALISED_BY_SOURCE |= {"Interim"}
 
 # ---------------------------------------------------------------------------------------------
 # The handoff's lib/status.js: every word, per object. 21 objects, 144 words.
@@ -630,6 +632,9 @@ NO_YAML_ENTRY = {
     "RetrievalOut.status": "failed_validation",
     "SupportSessionOut.status": "ended",
     "WallOut.status": "removed",
+    # Q-02-T38 (#395): the firm-export stub's codes; their words are G-02's screen copy, registered
+    # when G-02-T11 adds the ADM-06 card (docs/contracts/compliance-kernel.md).
+    "FirmExportOut.status": "awaiting_approval, building",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
 OUTSIDE_ITS_OBJECT = {
