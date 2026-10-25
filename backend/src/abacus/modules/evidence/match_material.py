@@ -8,8 +8,10 @@ rules (TASK-064), best first, at most 60 (SPEC-033 Q4). Code computes; the match
 A client's portal drop (R-01-T09; SPEC-322 AC-25; DEC-322) reaches the matcher only after its
 PII scan has run, and then only as its masked projection: each scanned page's words with every
 detected region replaced by its token; a page no scan covers, and every sheet, is left out (fail
-closed). Until the scan has run there is no material at all. Firm inbox files still give the
-extraction's text: masking every agent's material is P-03-T15's.
+closed). Until the scan has run there is no material at all. A firm inbox file gives the
+extraction's text, except to a matcher acting for an offshore member (`masked=True`; DEC-52,
+TASK-1207 review), which gets the masked projection under the same rule. Masking every agent's
+material is P-03-T15's.
 """
 
 from __future__ import annotations
@@ -21,48 +23,16 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.inbox import inbox_context
+from abacus.modules.evidence.masked_text import masked_pages
 from abacus.modules.evidence.matching import Reason, facts_of, score_all, should_match
 from abacus.modules.evidence.models import InboxFile, UploadExtraction
-from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.processing import document_text, excerpt_of
-from abacus.modules.evidence.projection import projection_of
-from abacus.modules.evidence.repository import (
-    get_inbox_file,
-    newest_extraction,
-    pages_of,
-    scan_run_for,
-)
-from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
+from abacus.modules.evidence.repository import get_inbox_file, newest_extraction
 from abacus.modules.identity.api import member_context
 from abacus.modules.requests.api import request_items_for
 
 MAX_CANDIDATES: Final = 60
 PORTAL_DROP: Final = "portal_drop"
-
-
-async def masked_pages(tenant: TenantContext, inbox_file_id: UUID) -> dict[int, str] | None:
-    """The file's scanned pages as masked text, or None when no PII scan has run on it."""
-    async with tenant_session(tenant) as session:
-        run = await scan_run_for(
-            session,
-            evidence_version_id=None,
-            inbox_file_id=inbox_file_id,
-            detector_version=DETECTOR_VERSION,
-        )
-        if run is None:
-            return None
-        pages = await pages_of(
-            session, inbox_file_id=inbox_file_id, extractor_version=WORDS_VERSION
-        )
-        projection = await projection_of(session, inbox_file_id=inbox_file_id)
-    out: dict[int, str] = {}
-    for page in pages:
-        if not page.has_text_layer or not projection.readable(page.page_no):
-            continue
-        layer = await read_page_layer(tenant.tenant_id, page)
-        words = projection.words(layer.words, page.page_no) or []
-        out[page.page_no] = " ".join(w.text for w in words)
-    return out
 
 
 @dataclass(frozen=True)
@@ -136,23 +106,29 @@ async def worth_matching(tenant: TenantContext, inbox_file_id: UUID) -> bool:
     found = await _file_and_extraction(tenant, inbox_file_id)
     if found is None or found[1].status != "extracted":
         return False
-    if found[0].channel == PORTAL_DROP and await masked_pages(tenant, inbox_file_id) is None:
+    if (
+        found[0].channel == PORTAL_DROP
+        and await masked_pages(tenant, inbox_file_id=inbox_file_id) is None
+    ):
         return False  # a drop not scanned for PII yet (DEC-322)
     candidates, worth = await _candidates(tenant, *found)
     return bool(candidates) and worth
 
 
-async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMaterial | None:
-    """None without the file or its extraction."""
+async def match_material(
+    tenant: TenantContext, inbox_file_id: UUID, *, masked: bool = False
+) -> MatchMaterial | None:
+    """None without the file or its extraction. A portal drop, or any file when `masked` (the
+    run acts for an offshore member), gives only its masked text, and nothing before its scan."""
     found = await _file_and_extraction(tenant, inbox_file_id)
     if found is None:
         return None
     file, row = found
-    if file.channel == PORTAL_DROP:
-        masked = await masked_pages(tenant, inbox_file_id)
-        if masked is None:
+    if masked or file.channel == PORTAL_DROP:
+        text = await masked_pages(tenant, inbox_file_id=inbox_file_id)
+        if text is None:
             return None  # not scanned yet: nothing for an agent (fail closed)
-        pages, sheets = masked, {}
+        pages, sheets = text, {}
     else:
         pages, sheets = await document_text(tenant.tenant_id, row)
     candidates, worth = await _candidates(tenant, file, row)

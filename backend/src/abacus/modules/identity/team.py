@@ -22,7 +22,7 @@ from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import EngagementMemberAdded
 from abacus.modules.identity.invitations import revoke_invitations_by
 from abacus.modules.identity.member_hooks import member_added
-from abacus.modules.identity.offshore import assert_assignable
+from abacus.modules.identity.offshore import assert_assignable, offshore_consented
 from abacus.modules.identity.repository import (
     MemberDetail,
     display_names,
@@ -77,8 +77,11 @@ async def candidates(
     tenant: TenantContext, engagement_id: UUID, client_id: UUID
 ) -> list[Candidate]:
     """After the caller's `authorise(engagement.member_add)`."""
+    consented = await offshore_consented(tenant, client_id)
     async with tenant_session(tenant) as session:
-        ids = await team_candidate_ids(session, engagement_id, client_id)
+        ids = await team_candidate_ids(
+            session, engagement_id, client_id, offshore_consented=consented
+        )
     names = await display_names(ids)
     found = [Candidate(user_id, names.get(user_id, "")) for user_id in ids]
     return sorted(found, key=lambda c: (c.display_name.casefold(), str(c.user_id)))
@@ -93,9 +96,16 @@ async def add_member(
     role: StaffRole,
 ) -> None:
     await _within_limits(ctx, engagement_id, {role}, "engagement.member_add")
-    if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
+    # G-01-T09: walled 404, offshore without consent 409, before the candidate check (which
+    # leaves both out) so the 409 is seen (TASK-1207 review).
+    await assert_assignable(ctx.tenant, user_id, client_id)
+    if user_id not in await team_candidate_ids(
+        tx.session,
+        engagement_id,
+        client_id,
+        offshore_consented=await offshore_consented(ctx.tenant, client_id),
+    ):
         raise NotFound("person")  # walled, a client user, another firm's, or already a member
-    await assert_assignable(ctx.tenant, user_id, client_id)  # G-01-T09: offshore needs consent
     await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
     tx.record(
         "engagement_member.added",
@@ -217,7 +227,13 @@ async def replace_eqr(
     engagement and not walled from its client (404 otherwise, as for team candidates)."""
     if _member_removed is None:
         raise ServiceUnavailable("review assignments can't be released")
-    if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
+    await assert_assignable(ctx.tenant, user_id, client_id)  # walled 404; offshore 409
+    if user_id not in await team_candidate_ids(
+        tx.session,
+        engagement_id,
+        client_id,
+        offshore_consented=await offshore_consented(ctx.tenant, client_id),
+    ):
         raise NotFound("person")
     for row in await member_details_of(ctx.tenant, engagement_id):
         if row.role != EQR_ROLE:

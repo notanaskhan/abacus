@@ -54,6 +54,7 @@ from abacus.modules.evidence.events import (
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
+from abacus.modules.evidence.masked_text import masked_pages
 from abacus.modules.evidence.models import UploadExtraction
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.previews import RENDERER_VERSION, render_isolated
@@ -533,9 +534,13 @@ def _excerpt(
     return tuple(shown_pages), tuple(shown_sheets), truncated
 
 
-async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMaterial | None:
+async def review_material(
+    tenant: TenantContext, version_id: UUID, *, masked: bool = False
+) -> ReviewMaterial | None:
     """For an agent run authorised on the version's engagement; None without an extraction, or
-    for a version the client withdrew (P-06-T19: agents never read it)."""
+    for a version the client withdrew (P-06-T19: agents never read it). `masked` (the run acts
+    for an offshore member; DEC-52, TASK-1207 review): only the scanned pages' masked text, no
+    sheets, and None before the PII scan has run (fail closed)."""
     async with tenant_session(tenant) as session:
         if await is_withdrawn(session, version_id):
             return None
@@ -545,7 +550,13 @@ async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMate
         return None
     items = await items_of_version(tenant, version_id)
     item = next((i for i in items), None)
-    pages, sheets = await document_text(tenant.tenant_id, row)
+    if masked:
+        text = await masked_pages(tenant, evidence_version_id=version_id)
+        if text is None:
+            return None
+        pages, sheets = text, {}
+    else:
+        pages, sheets = await document_text(tenant.tenant_id, row)
     excerpt_pages, excerpt_tables, truncated = _excerpt(pages, sheets)
     return ReviewMaterial(
         row.engagement_id,

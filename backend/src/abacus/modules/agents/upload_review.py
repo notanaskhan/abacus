@@ -59,7 +59,14 @@ from abacus.modules.agents.tri_gate import model_blocked
 from abacus.modules.agents.v2_citations import document_claims, record_agent_citations
 from abacus.modules.engagements.api import check_facts, get_ref, lock_ref
 from abacus.modules.evidence.api import ReviewMaterial, is_version_withdrawn, review_material
-from abacus.modules.identity.api import AgentContext, Forbidden, authorise, is_active_member
+from abacus.modules.identity.api import (
+    AgentContext,
+    Forbidden,
+    acts_for_offshore,
+    authorise,
+    is_active_member,
+    is_offshore,
+)
 from abacus.modules.requests.api import items_of_version
 
 REVIEWER = "evidence.upload_reviewer"
@@ -111,7 +118,9 @@ async def create_review_run(
     items = await items_of_version(reader, evidence_version_id)
     if await model_blocked(reader, [i.id for i in items]):
         return None  # P-06-T20: tax-return information, no consent registered: no model call
-    material = await review_material(reader, evidence_version_id)
+    # DEC-52 (TASK-1207 review): for an offshore member, only the masked text, after its scan.
+    masked = await is_offshore(reader, requested_by)
+    material = await review_material(reader, evidence_version_id, masked=masked)
     if material is None or material.extraction_status != "extracted":
         return None  # SPEC-030 AC-4: an unreadable or unextracted upload isn't reviewed
     run_id: UUID | None = None
@@ -208,6 +217,13 @@ def _citation(c: VerifiedDocumentCitation) -> dict[str, object]:
     return found
 
 
+async def review_material_for(agent: AgentContext, version_id: UUID) -> ReviewMaterial | None:
+    """What the reviewer reads, for a run authorised on the version's engagement: the
+    extraction's text, or only its masked projection when the run acts for an offshore member
+    (DEC-52, TASK-1207 review; None before the PII scan: the run can't proceed)."""
+    return await review_material(agent.tenant, version_id, masked=await acts_for_offshore(agent))
+
+
 async def _review(agent: AgentContext) -> ReviewOutcome:
     run = await _run(agent)
     if run.evidence_version_id is None:
@@ -215,7 +231,7 @@ async def _review(agent: AgentContext) -> ReviewOutcome:
     reviewer = spec(run.agent_id)
     engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "evidence.read", engagement.resource())
-    material = await review_material(agent.tenant, run.evidence_version_id)
+    material = await review_material_for(agent, run.evidence_version_id)
     facts = await check_facts(agent.tenant, agent.engagement)
     if material is None or facts is None:
         raise NotFound("upload_extraction")

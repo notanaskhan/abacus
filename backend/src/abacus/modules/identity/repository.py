@@ -1073,18 +1073,21 @@ async def client_contacts(session: AsyncSession, engagement_id: UUID) -> Sequenc
 
 
 async def team_candidate_ids(
-    session: AsyncSession, engagement_id: UUID, client_id: UUID
+    session: AsyncSession, engagement_id: UUID, client_id: UUID, *, offshore_consented: bool
 ) -> list[UUID]:
-    """Active staff of the firm, not on the team, not walled from the engagement's client."""
+    """Active staff of the firm, not on the team, not walled from the engagement's client, and
+    not offshore unless an offshore-disclosure consent covers the client (`offshore_consented`,
+    from `offshore.offshore_consented`; DEC-52, TASK-1207 review)."""
     rows = await session.execute(
         text(
             "SELECT m.user_id FROM memberships m WHERE m.kind = 'staff' AND m.status = 'active' "
+            "AND (:offshore_ok OR NOT m.offshore) "
             "AND NOT EXISTS (SELECT 1 FROM engagement_members em WHERE em.engagement_id = :e "
             "AND em.user_id = m.user_id) AND NOT EXISTS (SELECT 1 FROM ethical_walls w "
             "WHERE w.user_id = m.user_id AND w.client_id = :c AND w.status = 'active') "
             "ORDER BY m.user_id"
         ),
-        {"e": engagement_id, "c": client_id},
+        {"e": engagement_id, "c": client_id, "offshore_ok": offshore_consented},
     )
     return [cast(UUID, row[0]) for row in rows.all()]
 

@@ -131,8 +131,9 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
                 continue
             found.append(f"{action}: offshore {mine}, onshore {theirs}")
     assert found == []
-    assert refused  # not vacuous: the onshore manager may reveal where Remy may not
-    assert refused <= NOT_OFFSHORE
+    # Not vacuous: every `not_offshore` action is reached and refused at the condition, where the
+    # onshore manager is allowed it (security review: both reveals, independence confirmed).
+    assert refused == NOT_OFFSHORE == {"tin.reveal", "pii.reveal"}
     engagement = resources[1]
     mine_allowed = await allowed_actions(remy, engagement)
     assert "engagement.read" in mine_allowed

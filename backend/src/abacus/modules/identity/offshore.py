@@ -24,7 +24,7 @@ from abacus.kernel.classification import flags_of, mask
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.modules.identity.authz import Resource, authorise
+from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext
 from abacus.modules.identity.repository import member_facts, walled_clients
 from abacus.modules.identity.slots import OFFSHORE_DISCLOSURE, consent_given, consented_count
@@ -68,9 +68,7 @@ async def assert_assignable(tenant: TenantContext, user_id: UUID, client_id: UUI
     `offshore_consent_required` (AC9.3, fail closed)."""
     if client_id in await walled_clients(tenant, user_id):
         raise NotFound("person")
-    if await is_offshore(tenant, user_id) and not await consent_given(
-        tenant, client_id, OFFSHORE_DISCLOSURE, system_now()
-    ):
+    if await is_offshore(tenant, user_id) and not await offshore_consented(tenant, client_id):
         raise OffshoreConsentRequired(facts={"user_id": str(user_id)})
 
 
@@ -82,34 +80,66 @@ def _person(ctx: Actor) -> UUID:
     return ctx.on_behalf_of
 
 
+async def acts_for_offshore(ctx: Actor) -> bool:
+    """Whether the person acting is an offshore member here: the user, the person an agent's run
+    was started by, or the person a system run acts for. A support session isn't a member."""
+    if isinstance(ctx, AuthContext) and ctx.is_support:
+        return False
+    return await is_offshore(ctx.tenant, _person(ctx))
+
+
+async def refuse_unmasked_read(ctx: Actor, action: str) -> None:
+    """DEC-52 (TASK-1207 security review): an offshore member reads a client's documents only
+    through masked renditions. A route that serves one unmasked (the original file, a legacy
+    preview with its raw text, a legacy page image, an inbox preview) calls this after its own
+    `authorise`, so a wall or an unknown record still answers 404 first; offshore is then refused
+    at the condition layer (403), before anything is read or logged as read."""
+    if await acts_for_offshore(ctx):
+        raise Forbidden(action, "condition")
+
+
+async def offshore_consented(tenant: TenantContext, client_id: UUID) -> bool:
+    """Whether a valid offshore-disclosure consent covers the client now (none until T-01
+    registers its provider: fail closed). Offshore members may join its teams only then."""
+    return await consent_given(tenant, client_id, OFFSHORE_DISCLOSURE, system_now())
+
+
 def _optional(annotation: object) -> bool:
     return type(None) in get_args(annotation)
 
 
-def _masked[M: BaseModel](model: M) -> M:
+def _masked_value(value: object) -> object:
+    if isinstance(value, BaseModel):
+        return mask_tins(value)
+    if isinstance(value, list):
+        return [_masked_value(v) for v in cast(list[object], value)]
+    if isinstance(value, dict):
+        return {k: _masked_value(v) for k, v in cast(dict[object, object], value).items()}
+    return value
+
+
+def mask_tins[M: BaseModel](model: M) -> M:
+    """`model` with every field tagged `pii_kind=tin` masked (`•••-••-1234`) or, where the field
+    allows it, null; nested models, lists and dict values included. The one central mask."""
     changes: dict[str, object] = {}
     for name, field in type(model).model_fields.items():
-        value = getattr(model, name)
-        flags = flags_of(field)
-        if flags.pii_kind == "tin" and value is not None:
+        value: object = getattr(model, name)
+        if flags_of(field).pii_kind == "tin" and value is not None:
             # Null where the field allows it (its shape may not fit a mask), else the mask.
             changes[name] = None if _optional(field.annotation) else mask(str(value), "tin")
-        elif isinstance(value, BaseModel):
-            changes[name] = _masked(value)
-        elif isinstance(value, list):
-            items = cast(list[object], value)
-            changes[name] = [_masked(v) if isinstance(v, BaseModel) else v for v in items]
+        elif isinstance(value, BaseModel | list | dict):
+            changes[name] = _masked_value(cast(object, value))
     return model.model_copy(update=changes) if changes else model
 
 
 async def mask_tins_for[M: BaseModel](ctx: Actor, model: M) -> M:
     """AC9.4: a response for an offshore principal (or what acts for one) carries every field
-    tagged `pii_kind=tin` masked or null, nested models included; anyone else gets it as is."""
-    if isinstance(ctx, AuthContext) and ctx.is_support:
+    tagged `pii_kind=tin` masked or null, nested models, lists and dicts included; anyone else
+    gets it as is. Every route returning a TIN-tagged model calls it, or is a `not_offshore`
+    action (`tests/contracts/test_offshore_tin_masking.py`)."""
+    if not await acts_for_offshore(ctx):
         return model
-    if not await is_offshore(ctx.tenant, _person(ctx)):
-        return model
-    return _masked(model)
+    return mask_tins(model)
 
 
 async def hidden_clients(

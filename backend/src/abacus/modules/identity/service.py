@@ -22,6 +22,7 @@ from abacus.modules.identity.authz import Forbidden, Resource, authorise
 from abacus.modules.identity.context import AuthContext, NoActiveTenant, TenantNotHeld
 from abacus.modules.identity.events import EngagementMemberAdded, EngagementMemberSelfJoined
 from abacus.modules.identity.member_hooks import member_added
+from abacus.modules.identity.offshore import assert_assignable, offshore_consented
 from abacus.modules.identity.repository import (
     EngagementRole,
     MembershipRecord,
@@ -137,11 +138,15 @@ class TeamMember:
     role: EngagementRole
 
 
-async def add_creator_as_partner(tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID) -> None:
+async def add_creator_as_partner(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, client_id: UUID
+) -> None:
     """The creator of an engagement becomes its engagement partner (AC-4; TASK-008 Q2), inside the
     creating unit of work, after `engagement.create` was authorised. The only way to add a member
     until `engagement.member_add` has its own route; who and which role are not the caller's to
-    choose."""
+    choose. An offshore creator needs the client's offshore-disclosure consent (409
+    `offshore_consent_required`; DEC-52, TASK-1207 review), as anyone joining a team."""
+    await assert_assignable(ctx.tenant, ctx.user_id, client_id)
     await insert_engagement_member(
         tx.session, ctx.tenant_id, engagement_id, ctx.user_id, CREATOR_ROLE
     )
@@ -157,8 +162,11 @@ async def available_staff(tenant: TenantContext, client_id: UUID) -> frozenset[U
     """Active staff of the firm not walled from the client (SPEC-025, TASK-048: who of last year's
     team can be proposed), for a caller that authorised `roll_forward.read`. A fresh engagement ID
     has no members, so `team_candidate_ids` excludes nobody for being on a team."""
+    consented = await offshore_consented(tenant, client_id)
     async with tenant_session(tenant) as session:
-        return frozenset(await team_candidate_ids(session, uuid4(), client_id))
+        return frozenset(
+            await team_candidate_ids(session, uuid4(), client_id, offshore_consented=consented)
+        )
 
 
 async def add_rolled_forward_member(
@@ -173,8 +181,15 @@ async def add_rolled_forward_member(
     being created, inside the creating unit of work, after `engagement.create` and
     `roll_forward.read` were authorised. `team.add_member` can't run here: its check of the
     caller's own role reads outside this transaction, where the creator isn't partner yet. The
-    person is re-checked: active staff, not walled from the client, not already on the team."""
-    if user_id not in await team_candidate_ids(tx.session, engagement_id, client_id):
+    person is re-checked: active staff, not walled from the client, not already on the team, and
+    not offshore without the client's consent (409; TASK-1207 review)."""
+    await assert_assignable(ctx.tenant, user_id, client_id)
+    if user_id not in await team_candidate_ids(
+        tx.session,
+        engagement_id,
+        client_id,
+        offshore_consented=await offshore_consented(ctx.tenant, client_id),
+    ):
         raise NotFound("person")  # left, walled, a client user, or already a member
     await insert_engagement_member(tx.session, ctx.tenant_id, engagement_id, user_id, role)
     tx.record(
@@ -195,10 +210,14 @@ class AlreadyMember(DomainConflict):
 SELF_JOIN_ROLE: EngagementRole = "reviewer"
 
 
-async def add_self_joined_admin(tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID) -> None:
+async def add_self_joined_admin(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, client_id: UUID
+) -> None:
     """ADR-024: a firm admin joins to see content, as `reviewer` (content reads, no decisions;
     TASK-028 D1), inside the caller's unit of work after `authorise(engagement.self_join)`. The
-    `notify: engagement_team` obligation is met by the event emitted here (SPEC-013 AC-8)."""
+    `notify: engagement_team` obligation is met by the event emitted here (SPEC-013 AC-8). An
+    offshore admin needs the client's consent (409; TASK-1207 review)."""
+    await assert_assignable(ctx.tenant, ctx.user_id, client_id)
     if await engagement_role(ctx.tenant, ctx.user_id, engagement_id) is not None:
         raise AlreadyMember(str(engagement_id))
     await insert_engagement_member(

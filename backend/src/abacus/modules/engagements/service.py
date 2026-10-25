@@ -295,7 +295,7 @@ async def create_engagement(ctx: AuthContext, new: NewEngagement) -> EngagementM
             ref = await lock_ref(tx, engagement_id)
             await authorise(ctx, "engagement.create", ref.resource())
         tx.record("engagement.created", target=Target("engagement", engagement_id))
-        await add_creator_as_partner(tx, ctx, engagement_id)
+        await add_creator_as_partner(tx, ctx, engagement_id, client.client_id)
         if roll is not None:
             await apply_roll_forward(tx, ctx, engagement_id, client.client_id, roll)
         tx.emit(EngagementCreated(engagement_id=engagement_id))
@@ -308,7 +308,7 @@ async def self_join(ctx: AuthContext, engagement_id: UUID) -> EngagementMetadata
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "engagement.self_join", ref.resource())
-        await add_self_joined_admin(tx, ctx, engagement_id)
+        await add_self_joined_admin(tx, ctx, engagement_id, ref.client_id)
     return await _metadata(ctx, engagement_id)
 
 

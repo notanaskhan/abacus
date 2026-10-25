@@ -136,3 +136,43 @@ The four strict xfails: marks removed, assertions unchanged; all pass.
   F-03-T31, signup, P-01-T14): 778 passed, 6 xfailed (none TASK-1207). `test_tenancy_escape` ran in
   the security suite. ruff, pyright, banned patterns, validate_docs, error_codes (regenerated) and
   `make check-fast` (after `pnpm -C packages/api-client build:types`) pass.
+- 2026-10-25: security review of the narrowing (1 high, 1 medium-high, 1 medium, 3 low); all six
+  fixed in one commit, each with a test written first and seen failing (item 5's strict
+  `refused == NOT_OFFSHORE` already held: `seed.member` confirms independence, so `pii.reveal`
+  reaches the condition; it is now pinned).
+  1. HIGH, raw evidence: `identity.api.refuse_unmasked_read` (one helper, 403 at the condition,
+     after the route's `authorise`) in `download`, `upload_preview(_page)`, `version_preview(_page)`
+     and `inbox_preview(_page)`. Masked renditions exist only in the P-03 viewer, which stays open;
+     the legacy routes refuse. Test: `backfill/test_offshore_evidence_reads.py` (each of the seven
+     routes: onshore 200 with its read logged, offshore 403 with nothing read, walled offshore 404).
+  2. MEDIUM-HIGH, agents: `evidence/masked_text.masked_pages` now takes either source;
+     `review_material` and `match_material` take `masked=`; the reviewer, matcher and entry
+     assessor pass it from the run's initiator (`acts_for_offshore`), and their `create_*_run`
+     from `requested_by`. Masking chosen (as the portal drop); no scan, no material, no run. Test:
+     `trust_kit/test_offshore_agent_material.py` (both agents; checked failing with masking off).
+  3. MEDIUM, assignment: `assert_assignable` in `add_creator_as_partner`,
+     `add_rolled_forward_member`, `add_self_joined_admin` (both now take the client) and
+     `replace_eqr`, before the candidate check (also moved there in `add_member`) so the answer is
+     409; `team_candidate_ids` takes `offshore_consented` and leaves offshore members out without it.
+     Tests: `test_offshore.py::test_review3_*` (create by an offshore partner and admin, consented
+     create, roll-forward availability and refusal, self-join).
+  4. LOW: `set_member_profile` raises `offshore_assignment_conflict`. Test:
+     `test_review4_provisioning_cant_turn_offshore_on_over_assignments`.
+  5. LOW: `refused == NOT_OFFSHORE == {tin.reveal, pii.reveal}`; the PII reveal route authorises
+     `pii.reveal` before its 501 (`viewer.authorise_reveal`), so offshore gets 403 (route test in
+     item 1's file).
+  6. LOW: `mask_tins` (central; dicts handled) and `tests/contracts/test_offshore_tin_masking.py`
+     (every TIN-tagged response calls `mask_tins_for` or is `not_offshore`; the dict case failed
+     first).
+  DEC-319 updated.
+  Checks (targeted only): offshore, TRI and offshore, walls and need-to-know, walls v2/api/
+  enforcement/runs, TIN reveal, C4 contract, the TIN-masking contract, clients contract, the new
+  evidence-reads file, evidence, evidence storage, trust kit (viewer, PII scan, agent material),
+  uploads and processing, detached keys, withdrawal, screening aggregate, portal drops,
+  independence gate, the gateway PII and tax-return agent tests, unit agents/evidence/identity/
+  engagements, people v2, engagements, team roles, offices and teams, scenario people, the identity
+  backfills, `test_schema_check_db`, `test_tenancy_escape`: 16,508 passed, 4 xfailed, 0 failed in
+  one session; its 318 setup errors ("fixture 'net' not found", from mixing the trust-kit and
+  backfill conftests in one session) were the backfill and gateway files, which rerun on their own
+  pass: 319 passed, 4 xfailed. ruff, pyright, banned patterns, validate_docs, error_codes and
+  `make check-fast` pass.
