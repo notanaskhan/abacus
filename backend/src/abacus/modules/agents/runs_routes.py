@@ -90,6 +90,8 @@ class RunTraceOut(BaseModel):
     records_read: Annotated[list[RecordsReadOut], classified("internal")]
     output_counts: Annotated[list[OutputCountOut], classified("internal")]
     model_text: Annotated[str | None, classified("confidential")]
+    # DEC-87: "metadata" drops the content (model text, record references, narration).
+    projection: Annotated[Literal["content", "metadata"], classified("internal")]
 
 
 class RunViewOut(BaseModel):
@@ -100,6 +102,7 @@ class RunViewOut(BaseModel):
     run: Annotated[AgentRunOut, classified("internal")]
     run_record_sha256: Annotated[str, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    projection: Annotated[Literal["content", "metadata"], classified("internal")]
 
 
 class RunWriteOut(BaseModel):
@@ -185,6 +188,7 @@ def _trace(trace: Trace) -> RunTraceOut:
         ],
         output_counts=[OutputCountOut(kind=k, count=n) for k, n in trace.output_counts],
         model_text=trace.model_text,
+        projection=trace.projection,
     )
 
 
@@ -204,6 +208,7 @@ async def agent_run_route(run_id: UUID, ctx: Ctx) -> RunViewOut:
         run=_run(view.run),
         run_record_sha256=view.run_record_sha256,
         allowed_actions=view.allowed_actions,
+        projection=view.projection,
     )
 
 

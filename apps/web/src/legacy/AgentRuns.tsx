@@ -262,6 +262,9 @@ export function TraceDrawer({
             <dt className="text-ink-3">Training</dt>
             <dd>{t.training}</dd>
           </dl>
+          {t.projection === "metadata" && (
+            <p className="text-[13px] text-ink-2">You can see what ran, not the client content.</p>
+          )}
           <Segmented
             size="small"
             label="Trace views"

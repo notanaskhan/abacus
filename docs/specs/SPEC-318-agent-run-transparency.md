@@ -73,6 +73,11 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - The drawer polls every 1.5 s while the run is active and the tab is visible. It shows "· live", narrates what the agent did, and stops polling when the run ends.
   - The run list refreshes while any run is active.
 
+- **AC-9 Content and metadata (DEC-87, TASK-5002).**
+  - Security and firm admins without an engagement role may open runs and traces as metadata: no model text, no record references, no narration.
+  - The drawer says "You can see what ran, not the client content."
+  - The engagement's people, and practice and quality oversight in scope, see the content (`run_content.read`).
+
 ## 3. Out of scope
 - Live streaming, cancelling and retrying runs.
 - Firm-wide run views.

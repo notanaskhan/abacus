@@ -35757,6 +35757,15 @@
             "title": "Output Counts",
             "type": "array"
           },
+          "projection": {
+            "cls": "internal",
+            "enum": [
+              "content",
+              "metadata"
+            ],
+            "title": "Projection",
+            "type": "string"
+          },
           "records_read": {
             "cls": "internal",
             "items": {
@@ -35814,7 +35823,8 @@
           "rows",
           "records_read",
           "output_counts",
-          "model_text"
+          "model_text",
+          "projection"
         ],
         "title": "RunTraceOut",
         "type": "object"
@@ -35830,6 +35840,15 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "projection": {
+            "cls": "internal",
+            "enum": [
+              "content",
+              "metadata"
+            ],
+            "title": "Projection",
+            "type": "string"
+          },
           "run": {
             "$ref": "#/components/schemas/AgentRunOut",
             "cls": "internal"
@@ -35843,7 +35862,8 @@
         "required": [
           "run",
           "run_record_sha256",
-          "allowed_actions"
+          "allowed_actions",
+          "projection"
         ],
         "title": "RunViewOut",
         "type": "object"

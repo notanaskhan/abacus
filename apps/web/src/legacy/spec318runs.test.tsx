@@ -58,6 +58,7 @@ const TRACE: RunTraceOut = {
   records_read: [{ source: "evidence_version", count: 1 }],
   output_counts: [{ kind: "citations", count: 2 }],
   model_text: "The invoice total matches the ledger.",
+  projection: "content",
 };
 
 afterEach(() => {
@@ -202,6 +203,19 @@ describe("SPEC-318 agent runs", () => {
       { timeout: 4000 },
     );
     expect(api.calls.some((c) => c.path.endsWith("/items"))).toBe(true);
+  });
+
+  it("shows metadata only to security and firm admins (dec-87)", async () => {
+    mockApi({
+      [`GET /v1/engagements/${E}/agent-runs`]: () => json([RUN]),
+      [`GET /v1/agent-runs/r-1/trace`]: () =>
+        json({ ...TRACE, model_text: null, projection: "metadata" }),
+    });
+    renderOne(() => <AgentRuns engagementId={E} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
+    expect(await screen.findByText("You can see what ran, not the client content.")).toBeTruthy();
+    expect(screen.getByText("Model call")).toBeTruthy();
+    expect(screen.queryByText("The invoice total matches the ledger.")).toBeNull();
   });
 
   it("asks for a fresh sign-in when the export needs recent MFA (ac6)", async () => {

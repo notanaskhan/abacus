@@ -94,7 +94,9 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "agent_run.read": {
         "firm_admin": "allow",
+        "security_admin": "allow",
         "practice_leader": "allow",
+        "quality_partner": "in_scope",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -1561,6 +1563,17 @@ ACTIONS: dict[str, dict[str, str]] = {
     "roll_forward.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+    },
+    "run_content.read": {
+        "practice_leader": "in_scope",
+        "quality_partner": "in_scope",
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "staff": "allow",
+        "reviewer": "allow",
+        "agent": "deny",
+        "independence": "required",
     },
     "run_trace.export": {
         "engagement_partner": "allow",

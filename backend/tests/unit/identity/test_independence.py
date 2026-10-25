@@ -224,6 +224,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review_note.withdraw",  # P-04-T07 (TASK-413)
         "risk.approve",  # SPEC-300 (TASK-301)
         "risk.assess",
+        "run_content.read",  # DEC-87 (TASK-5002)
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
         "screening.feedback",  # P-06-T15 (SHL-20 f)
