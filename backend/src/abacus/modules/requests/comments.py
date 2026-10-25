@@ -161,6 +161,53 @@ async def insert_ignore_note(
     return comment_id
 
 
+async def check_return_comment(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, body: str
+) -> None:
+    """TASK-1252: a screening return's sender will post its shared comment, so they must be
+    allowed `comment.share` on the request (checked at the send, in their own request), and the
+    body must be a comment's (`clean_text`: not empty, at most 4000 characters, 422)."""
+    ref = await get_ref(ctx, engagement_id)
+    item = await read_item(ctx.tenant, engagement_id, item_id)
+    await authorise(ctx, "comment.share", _resource(ref, item))
+    clean_text(body, MAX_BODY)
+
+
+async def insert_return_comment(
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    item_id: UUID,
+    *,
+    comment_id: UUID,
+    author_user_id: UUID,
+    body: str,
+) -> bool:
+    """TASK-1252: a screening return's shared comment, the body its sender sent, posted when the
+    follow-up is delivered (after the Undo window). Its sender was authorised `comment.share` at
+    the send and its text scope-checked there. One per follow-up: the caller derives
+    `comment_id` from it, so a redelivery writes nothing (False). The caller audits it."""
+    if await get_comment(tx.session, comment_id) is not None:
+        return False
+    text = clean_text(body, MAX_BODY)  # as checked at the send
+    fingerprint = hashlib.sha256(text.encode()).hexdigest()
+    sealed = await seal(tenant_id, text.encode(), fingerprint)
+    await insert_comment(
+        tx.session,
+        id=comment_id,
+        tenant_id=tenant_id,
+        engagement_id=engagement_id,
+        request_item_id=item_id,
+        evidence_version_id=None,
+        author_user_id=author_user_id,
+        author_side="firm",
+        visibility="shared",
+        body_sealed=sealed,
+        body_fingerprint=fingerprint,
+    )
+    return True
+
+
 def _resource(ref: EngagementRef, item: RequestItemRef) -> Resource:
     return Resource.engagement(
         ref.tenant_id, ref.id, archived=ref.archived, client_id=ref.client_id, item=item.facts

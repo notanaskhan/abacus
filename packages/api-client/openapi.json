@@ -18499,6 +18499,15 @@
             "title": "Recipient User Id",
             "type": "string"
           },
+          "returning": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FollowUpReturnOut"
+            },
+            "title": "Returning",
+            "type": "array"
+          },
           "sent_at": {
             "anyOf": [
               {
@@ -18669,6 +18678,28 @@
           "body"
         ],
         "title": "FollowUpPreviewOut",
+        "type": "object"
+      },
+      "FollowUpReturnOut": {
+        "description": "A file a screening return sends back, with its reason (TASK-1252).",
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "reason_code"
+        ],
+        "title": "FollowUpReturnOut",
         "type": "object"
       },
       "FollowUpSendManyIn": {
@@ -77782,7 +77813,7 @@
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/follow-ups": {
       "post": {
-        "description": "SHL-20 b: a template-composed draft from the firm's Return template, with the files it\nreturns. Its edit and send are `PATCH /v1/follow-ups/{id}` and `POST \u2026/send` (P-06-T14);\nfor this kind, send also returns the files and posts the shared comment (P-06-T22).",
+        "description": "SHL-20 b: a template-composed draft from the firm's Return template, with the files it\nreturns. Its edit and send are `PATCH /v1/follow-ups/{id}` and `POST \u2026/send` (P-06-T14);\nfor this kind, send also returns the files, and delivery posts the shared comment\n(TASK-1252, DEC-368).",
         "operationId": "draft_screening_return",
         "parameters": [
           {
@@ -77908,16 +77939,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Screening Return Route",

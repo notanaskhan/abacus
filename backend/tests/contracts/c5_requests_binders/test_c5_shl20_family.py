@@ -1,9 +1,10 @@
-"""C5 v1.2, the SHL-20 family (P-06-T14 live, P-06-T15 stub, P-06-T20 live; contract §12; DEC-221,
-DEC-324): every route exists with its one matrix action; the follow-ups v2 routes answer 404 with
-`binders.engine` off and are live with it on; the screening routes answer 404 with `screening.card`
-off; the card, its rerun and feedback are live (P-06-T20) and the screening-return draft answers
-501 until P-06-T22; client-visible sends take an Idempotency-Key; the person's acts deny the
-agent; the card carries C2's screening glyph and never a confidence. The change is additive: the
+"""C5 v1.2, the SHL-20 family (P-06-T14 live, P-06-T15 stub, P-06-T20 and TASK-1252 live;
+contract §12; DEC-221, DEC-324, DEC-368): every route exists with its one matrix action; the
+follow-ups v2 routes answer 404 with `binders.engine` off and are live with it on; the screening
+routes answer 404 with `screening.card` off; the card, its rerun and feedback are live
+(P-06-T20), and so is the screening-return draft (TASK-1252); client-visible sends take an
+Idempotency-Key; the person's acts deny the agent; the card carries C2's screening glyph and
+never a confidence. The change is additive: the
 v1 and v1.1 routes and models the A-01 and R-01 consumer tests read are unchanged."""
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from pydantic import ValidationError
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import SCREENING_CARD
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.agents import screening_contract
 from abacus.modules.agents.screening_contract import ScreeningFeedbackIn, ScreeningReturnDraftIn
 from abacus.modules.identity.api import AuthContext
@@ -42,20 +43,19 @@ LIVE: dict[tuple[str, str], str] = {
     ("get", f"{ITEMS}/screening"): "upload_review.read",
     ("post", f"{ITEMS}/screening/rerun"): "screening.request",
     ("post", "/v1/screenings/{screening_result_id}/feedback"): "screening.feedback",
-}
-STUBBED: dict[tuple[str, str], str] = {
-    ("post", f"{ITEMS}/follow-ups"): "follow_up.draft",  # P-06-T22
+    # TASK-1252 (DEC-368): the screening-return draft.
+    ("post", f"{ITEMS}/follow-ups"): "follow_up.draft",
 }
 IDEMPOTENT = {"/v1/follow-ups/{follow_up_id}/send", "/v1/follow-ups/send"}
 
 
-@pytest.mark.parametrize(("method", "path"), sorted(LIVE | STUBBED))
+@pytest.mark.parametrize(("method", "path"), sorted(LIVE))
 def test_each_route_declares_its_one_action_and_its_answers(method: str, path: str) -> None:
     op = PATHS[path][method]
-    assert op["x-abacus-action"] == (LIVE | STUBBED)[(method, path)]
+    assert op["x-abacus-action"] == LIVE[(method, path)]
     responses = cast(Json, op["responses"])
     assert "404" in responses
-    assert ("501" in responses) == ((method, path) in STUBBED)
+    assert "501" not in responses  # nothing in the family is a stub any more
 
 
 @pytest.mark.parametrize("path", sorted(IDEMPOTENT))
@@ -110,7 +110,7 @@ def test_a_screening_return_names_at_least_one_file() -> None:
         ScreeningReturnDraftIn(kind="screening_return", returning=[])
 
 
-async def test_screening_card_flag_off_is_404_and_on_is_501(
+async def test_screening_card_flag_off_is_404_and_on_drafts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     user = uuid.uuid4()
@@ -126,13 +126,23 @@ async def test_screening_card_flag_off_is_404_and_on_is_501(
     async def on(_tenant: object, _flag: object) -> bool:
         return True
 
+    drafted: list[object] = []
+
+    async def draft(*args: object) -> object:
+        drafted.append(args)
+        raise NotFound("request_item")  # the service's own answer; the gate let it through
+
+    monkeypatch.setattr(screening_contract, "draft_return", draft)
+    body = ScreeningReturnDraftIn(kind="screening_return", returning=[uuid.uuid4()])
+    route = screening_contract.draft_screening_return_route
     monkeypatch.setattr(screening_contract, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await screening_contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
-    assert seen == [SCREENING_CARD]
+        await route(uuid.uuid4(), uuid.uuid4(), body, ctx)
+    assert seen == [SCREENING_CARD] and drafted == []
     monkeypatch.setattr(screening_contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await screening_contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
+    with pytest.raises(NotFound):
+        await route(uuid.uuid4(), uuid.uuid4(), body, ctx)
+    assert len(drafted) == 1
 
 
 def test_the_card_names_its_request_and_expected_period() -> None:

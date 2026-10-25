@@ -542,7 +542,8 @@ async def follow_up_history(
     session: AsyncSession, item_ids: Sequence[UUID]
 ) -> Sequence[tuple[UUID, date, int, datetime]]:
     """Each item's reminders that weren't dismissed: (item, due date then, sequence, when), for the
-    agent's cadence on the engagement it serves (LIST_EXEMPT)."""
+    agent's cadence on the engagement it serves (LIST_EXEMPT). A screening return is not a
+    reminder (TASK-1252)."""
     if not item_ids:
         return []
     rows = await session.execute(
@@ -553,7 +554,11 @@ async def follow_up_history(
             FollowUpSchedule.created_at,
         )
         .join(FollowUpSchedule, FollowUpSchedule.id == FollowUpItem.follow_up_id)
-        .where(FollowUpItem.request_item_id.in_(item_ids), FollowUpSchedule.status != "dismissed")
+        .where(
+            FollowUpItem.request_item_id.in_(item_ids),
+            FollowUpSchedule.status != "dismissed",
+            FollowUpSchedule.kind != "screening_return",
+        )
     )
     return [(i, d, n, at) for i, d, n, at in rows.all()]
 
@@ -745,6 +750,68 @@ async def insert_chase_draft(
         ).scalar_one_or_none()
         added += inserted is not None
     return follow_up_id, added
+
+
+async def insert_return_draft(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    engagement_id: UUID,
+    binder_id: UUID,
+    recipient_user_id: UUID,
+    request_item_id: UUID,
+    due_on: date,
+    template_key: str,
+    body_fingerprint: str,
+) -> UUID:
+    """TASK-1252: a screening-return draft naming one request (its files go in
+    `follow_up_returns`). Never joined to another draft: each return names its own files."""
+    follow_up_id = (
+        await session.execute(
+            insert(FollowUpSchedule)
+            .values(
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                recipient_user_id=recipient_user_id,
+                status="drafted",
+                agent_run_id=None,
+                kind="screening_return",
+                drafted_by_kind="agent",
+                binder_id=binder_id,
+                template_key=template_key,
+                body_fingerprint=body_fingerprint,
+            )
+            .returning(FollowUpSchedule.id)
+        )
+    ).scalar_one()
+    await session.execute(
+        insert(FollowUpItem).values(
+            tenant_id=tenant_id,
+            follow_up_id=follow_up_id,
+            request_item_id=request_item_id,
+            due_on=due_on,
+            sequence=1,
+        )
+    )
+    return follow_up_id
+
+
+async def follow_up_return_rows(
+    session: AsyncSession, follow_up_id: UUID
+) -> Sequence[FollowUpReturn]:
+    """One screening return's files, as drafted, for a caller that authorised the follow-up
+    (LIST_EXEMPT)."""
+    return (
+        (
+            await session.execute(
+                select(FollowUpReturn)
+                .where(FollowUpReturn.follow_up_id == follow_up_id)
+                .order_by(FollowUpReturn.created_at, FollowUpReturn.evidence_version_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
 
 
 async def get_follow_up(

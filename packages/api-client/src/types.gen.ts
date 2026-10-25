@@ -8684,6 +8684,10 @@ export type FollowUpOut = {
      */
     recipient_user_id: string;
     /**
+     * Returning
+     */
+    returning?: Array<FollowUpReturnOut>;
+    /**
      * Sent At
      */
     sent_at: string | null;
@@ -8756,6 +8760,22 @@ export type FollowUpPreviewOut = {
      * Subject
      */
     subject: string;
+};
+
+/**
+ * FollowUpReturnOut
+ *
+ * A file a screening return sends back, with its reason (TASK-1252).
+ */
+export type FollowUpReturnOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
 };
 
 /**
@@ -36309,10 +36329,6 @@ export type DraftScreeningReturnErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftScreeningReturnError = DraftScreeningReturnErrors[keyof DraftScreeningReturnErrors];

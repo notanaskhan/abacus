@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -440,6 +440,12 @@ class Superseded(DomainConflict):
     code = "superseded"
 
 
+class ReturnSpansRequests(DomainConflict):
+    """A screening return names a file that also answers another request: review it there."""
+
+    code = "file_answers_other_requests"
+
+
 class ProposalChanged(DomainConflict):
     """The agent's proposal changed since the reviewer saw it: look again (AC-10)."""
 
@@ -580,9 +586,13 @@ async def reason_codes_for(
     return [ReasonCode(*row) for row in rows]
 
 
-async def _reviewable(tx: UnitOfWork, engagement_id: UUID, version_id: UUID) -> list[ReviewTarget]:
+async def _reviewable(
+    tx: UnitOfWork, engagement_id: UUID, version_id: UUID, *, newest: bool = True
+) -> list[ReviewTarget]:
     """The version's items, locked, if it belongs to this engagement, is undecided, and is the
-    newest evidence of every item it fulfils; else `NotFound`, `AlreadyDecided` or `Superseded`."""
+    newest evidence of every item it fulfils; else `NotFound`, `AlreadyDecided` or `Superseded`.
+    A screening return's send-back (`newest=False`) may name an older file: returning never
+    takes an older file over a newer one."""
     version = await get_version(tx.session, version_id)
     if version is None or version.engagement_id != engagement_id:
         raise NotFound("evidence_version")
@@ -591,7 +601,7 @@ async def _reviewable(tx: UnitOfWork, engagement_id: UUID, version_id: UUID) -> 
         raise NotFound("review_queue_entry")
     if await decision_for(tx.session, version_id) is not None:
         raise AlreadyDecided
-    if not all(t.newest for t in targets):
+    if newest and not all(t.newest for t in targets):
         raise Superseded
     return targets
 
@@ -674,6 +684,73 @@ def _corrects(decision: str, proposal: Proposal | None) -> bool:
     return proposal.action == "ready_for_review"
 
 
+async def _write_decision(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    version_id: UUID,
+    decision_id: UUID,
+    decision: Decision,
+    reason_code: str | None,
+    note: str | None,
+    targets: list[ReviewTarget],
+    proposal: Proposal | None,
+) -> tuple[bool, list[UUID], str]:
+    """The decision row, its items' move, the assignment cleared, audited and announced, inside
+    the caller's unit of work, for a person the caller has authorised. Returns (corrects the
+    agent's proposal, the items, where they moved)."""
+    corrects = _corrects(decision, proposal)
+    item_ids = [t.request_item_id for t in targets]
+    latest = await latest_decision_row(tx.session, version_id)
+    assignment = await assignment_for(tx.session, engagement_id, version_id)
+    await insert_decision(
+        tx.session,
+        values={
+            "id": decision_id,
+            "tenant_id": ctx.tenant_id,
+            "engagement_id": engagement_id,
+            "evidence_version_id": version_id,
+            "request_item_id": item_ids[0],
+            "decision": decision,
+            "reason_code": reason_code,
+            "note": note,
+            "screening_result_id": proposal.screening_result_id if proposal else None,
+            "corrects_proposal": corrects,
+            # The session's actor: the database checks the row against it (0015).
+            "actor_kind": ctx.tenant.actor_kind,
+            "actor_id": ctx.tenant.actor_id,
+            # P-01-T13: after an undone decision, the next odd number (0117).
+            "decision_seq": (latest.decision_seq if latest is not None else 0) + 1,
+            # What this changes, so an Undo puts it back (P-01-T13).
+            "prior_assignee_user_id": (
+                assignment.assignee_user_id if assignment is not None else None
+            ),
+            "prior_item_statuses": {str(t.request_item_id): t.status for t in targets},
+        },
+    )
+    to = _ITEM_AFTER[decision]
+    for item_id in item_ids:
+        await move_after_review(tx, item_id, to)
+    if assignment is not None:
+        await clear_assignment(tx.session, engagement_id, version_id, ctx.user_id)
+    refs = (
+        Ref(
+            evidence_version_id=version_id,
+            screening_result_id=proposal.screening_result_id,
+        )
+        if proposal is not None
+        else Ref(evidence_version_id=version_id)
+    )
+    tx.record(
+        "review_decision.created",
+        target=Target("review_decision", decision_id),
+        after=refs,
+    )
+    # P-04-T16: the gates on this version's proposals close.
+    tx.emit(ReviewDecisionRecorded(engagement_id=engagement_id, evidence_version_id=version_id))
+    return corrects, item_ids, to
+
+
 async def decide(
     ctx: AuthContext,
     engagement_id: UUID,
@@ -710,56 +787,17 @@ async def decide(
             proposal = await _proposals[1](tx.session, version_id)
             if (proposal.screening_result_id if proposal else None) != seen_proposal:
                 raise ProposalChanged
-            corrects = _corrects(decision, proposal)
-            item_ids = [t.request_item_id for t in targets]
-            latest = await latest_decision_row(tx.session, version_id)
-            assignment = await assignment_for(tx.session, engagement_id, version_id)
-            await insert_decision(
-                tx.session,
-                values={
-                    "id": decision_id,
-                    "tenant_id": ctx.tenant_id,
-                    "engagement_id": engagement_id,
-                    "evidence_version_id": version_id,
-                    "request_item_id": item_ids[0],
-                    "decision": decision,
-                    "reason_code": reason_code,
-                    "note": note,
-                    "screening_result_id": proposal.screening_result_id if proposal else None,
-                    "corrects_proposal": corrects,
-                    # The session's actor: the database checks the row against it (0015).
-                    "actor_kind": ctx.tenant.actor_kind,
-                    "actor_id": ctx.tenant.actor_id,
-                    # P-01-T13: after an undone decision, the next odd number (0117).
-                    "decision_seq": (latest.decision_seq if latest is not None else 0) + 1,
-                    # What this changes, so an Undo puts it back (P-01-T13).
-                    "prior_assignee_user_id": (
-                        assignment.assignee_user_id if assignment is not None else None
-                    ),
-                    "prior_item_statuses": {str(t.request_item_id): t.status for t in targets},
-                },
-            )
-            to = _ITEM_AFTER[decision]
-            for item_id in item_ids:
-                await move_after_review(tx, item_id, to)
-            if assignment is not None:
-                await clear_assignment(tx.session, engagement_id, version_id, ctx.user_id)
-            refs = (
-                Ref(
-                    evidence_version_id=version_id,
-                    screening_result_id=proposal.screening_result_id,
-                )
-                if proposal is not None
-                else Ref(evidence_version_id=version_id)
-            )
-            tx.record(
-                "review_decision.created",
-                target=Target("review_decision", decision_id),
-                after=refs,
-            )
-            # P-04-T16: the gates on this version's proposals close.
-            tx.emit(
-                ReviewDecisionRecorded(engagement_id=engagement_id, evidence_version_id=version_id)
+            corrects, item_ids, to = await _write_decision(
+                tx,
+                ctx,
+                engagement_id,
+                version_id,
+                decision_id,
+                decision,
+                reason_code,
+                note,
+                targets,
+                proposal,
             )
     except IntegrityError as exc:
         constraint = getattr(exc.orig, "constraint_name", None)
@@ -894,6 +932,82 @@ async def undo_review_decision(
         item_ids,
         restored[0] if restored else "uploaded",
     )
+
+
+async def return_files(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    request_item_id: UUID,
+    returns: Sequence[tuple[UUID, str]],
+) -> list[UUID]:
+    """A screening return's send-backs, inside its send's unit of work (TASK-1252; C5 §12): one
+    `send_back` per file with its registered reason, the request `returned`. The same person's
+    decision as the evidence routes': only a person serving a request, with `evidence.reject`
+    (its independence) on the engagement. Each file must answer this request and no other (409
+    `file_answers_other_requests`: its send-back would return those too), undecided
+    (`already_decided`), else `NotFound`; older files may be returned with the newest, but the
+    request's newest file must be among them (409 `superseded`: a newer upload waits for a
+    review, so the request is not the client's to answer again). Returns the decisions, in
+    order."""
+    _live_human(ctx, "evidence.reject")
+    ref = await lock_ref(tx, engagement_id)
+    await authorise(ctx, "evidence.reject", ref.resource())
+    if _proposals is None:
+        raise ServiceUnavailable("no proposal source registered")
+    newest = False
+    for version_id, _reason in returns:
+        targets = await _reviewable(tx, engagement_id, version_id, newest=False)
+        if [t.request_item_id for t in targets] != [request_item_id]:
+            if request_item_id not in {t.request_item_id for t in targets}:
+                raise NotFound("evidence_version")
+            raise ReturnSpansRequests(facts={"evidence_version_id": str(version_id)})
+        newest = newest or targets[0].newest
+    if not newest:
+        raise Superseded
+    made: list[UUID] = []
+    for version_id, reason_code in returns:
+        # Read again: each send-back moves the request, and its Undo puts back what it saw.
+        targets = await _reviewable(tx, engagement_id, version_id, newest=False)
+        proposal = await _proposals[1](tx.session, version_id)
+        decision_id = uuid4()
+        try:
+            await _write_decision(
+                tx,
+                ctx,
+                engagement_id,
+                version_id,
+                decision_id,
+                "send_back",
+                reason_code,
+                None,
+                targets,
+                proposal,
+            )
+        except IntegrityError as exc:
+            constraint = getattr(exc.orig, "constraint_name", None)
+            if constraint in _ONE_DECISION:
+                raise AlreadyDecided from None
+            if getattr(exc.orig, "sqlstate", None) == _CHECK_VIOLATION and constraint is None:
+                raise InvalidReason from None
+            raise
+        made.append(decision_id)
+    _log.info("review.files_returned", request_item_id=request_item_id, files=len(made))
+    return made
+
+
+async def undo_returned_files(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, version_ids: Sequence[UUID]
+) -> None:
+    """Undo a screening return's send-backs inside its Undo's unit of work (TASK-1252), last
+    first, so the request goes back to the status it had before the first: each file's effective
+    decision must be a `send_back`, else 409 `undo_window_closed`; `undo_review_decision`'s
+    rules apply (the person who decided, within 10 s)."""
+    for version_id in reversed(list(version_ids)):
+        current = await decision_for(tx.session, version_id)
+        if current is None or current.decision != "send_back":
+            raise UndoWindowClosed
+        await undo_review_decision(tx, ctx, engagement_id, current.id)
 
 
 async def undo_decision(ctx: AuthContext, engagement_id: UUID, decision_id: UUID) -> UndoneView:

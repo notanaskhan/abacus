@@ -1051,6 +1051,8 @@ LIST_EXEMPT = frozenset(
         # `visible()` (identifiers only), and those binders' recipient histories.
         ("src/abacus/modules/agents/repository.py", "waiting_pairs"),
         ("src/abacus/modules/agents/repository.py", "follow_up_item_rows"),
+        # TASK-1252: one screening return's files, for a caller that authorised the follow-up.
+        ("src/abacus/modules/agents/repository.py", "follow_up_return_rows"),
         ("src/abacus/modules/requests/repository.py", "binders_recipient_rows"),
         # Recipients' addresses and the engagement's client admins (one engagement, read for a
         # reminder after `follow_up.send` or by the agent); the items whose due date was set.
