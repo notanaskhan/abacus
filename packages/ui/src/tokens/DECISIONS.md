@@ -533,3 +533,16 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-25 | Opened lit     | a, c, d open with box 5 pinned and b with box 1a pinned, so the board shows the cross-highlight; Escape or a second click clears it                        |
 | 2026-10-25 | Empty tabs     | Worksheets and 2-Year Comparison draw nothing: the handoff draws only Leadsheets, and no copy is invented                                                  |
 | 2026-10-25 | Page images    | As T3: the gallery's synthetic page images stand in for the K-1 and 1099 renders, so TPL-03a to e carry a parity deviation                                 |
+
+### T9 QueueDetailLayout and the C-17 Issue kit (F-05-T55)
+
+| Date       | Item            | Decision                                                                                                                                                 |
+| ---------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-25 | Presets         | On the C-09 presets of the same names (`issues-individual`, `close-review`, `issues-entity`); panes 706, 700, 700 tall under their headers                |
+| 2026-10-25 | Queue variants  | `tree` (individual), `severity` (close), `radio` (entity); counts are the server's strings; ↑ ↓ move the selection                                       |
+| 2026-10-25 | Agent-fixable   | The tree row's trailing glyph is Settings 13 ink-3 with the name "The agent can fix this" (the kit's choice over the atom; plan F-05 T9 note)              |
+| 2026-10-25 | Why surfaced    | The 15px olive `StatusDisc` done, never Sparkles                                                                                                          |
+| 2026-10-25 | Agent text      | What it blocks (figures at 500), Why This Was Surfaced, the explanation and the run line render through `AgentText`                                       |
+| 2026-10-25 | Human verbs     | Resolve, Mark as Resolved and Mark Not Applicable are a person's: `IssueFooter` draws nothing for an agent actor; the agent is assignable (first in the menu) |
+| 2026-10-25 | Agent working   | Amber "Agent working…" pill with a 10px spinner, the run row (AgentText, a 3px bar, the 15px spinner); the footer reads "Waiting on the agent", disabled  |
+| 2026-10-25 | Frame data      | The T9 handoff's issues (as T3's frame), with the seed's Ridgeline parties where the board draws kit names (DEC-354); TPL-09 draws the seed's issue lists  |

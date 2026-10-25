@@ -388,3 +388,6 @@ export * from "./viewer";
 
 // C-02 Workpaper kit, SourceDocGroup and SourceDocRow (F-05-T50).
 export * from "./workpaper";
+
+// C-17 Issue kit (F-05-T55).
+export * from "./issues";

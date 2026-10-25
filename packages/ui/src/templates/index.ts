@@ -99,3 +99,10 @@ export {
   TriadTree,
   type TriadTreeProps,
 } from "./evidence-triad";
+// T9 QueueDetailLayout (F-05-T55): queue, detail and evidence under three presets.
+export {
+  QUEUE_PRESETS,
+  QueueDetailLayout,
+  type QueueDetailLayoutProps,
+  type QueuePreset,
+} from "./queue-detail";

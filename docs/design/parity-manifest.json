@@ -807,6 +807,45 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T54: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the Schedule K-1 and the Halvard 1099 in Arimo with typed values and the DRAFT watermark; the server's masked page renders replace them in the product. The Worksheets and 2-Year Comparison tabs draw nothing (the handoff draws only Leadsheets)"
+    },
+    "t9-queue-detail.t9a": {
+      "selector": "[data-artboard=\"t9a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9a.png",
+      "sha256": "536df13098cb859445ffdbb35ab627fe374c9ac4b6722d63508b535a3773293a",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the composite 1099; the server's masked page renders replace them in the product"
+    },
+    "t9-queue-detail.t9b": {
+      "selector": "[data-artboard=\"t9b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9b.png",
+      "sha256": "324513083d7967bb104c6811401cc77de4460ba3f349aaf1588cb75d1c03b5fe",
+      "crop": "window",
+      "tier": "B"
+    },
+    "t9-queue-detail.t9c": {
+      "selector": "[data-artboard=\"t9c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9c.png",
+      "sha256": "155ac70611dbd05625b0044973e2f88af32102a45d70f4fb8395c0d8cff0682c",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55 (DEC-354): the Ridgeline transfer and the 704(b) and Section 752 partner name the blueprint seed's Pell Street Ventures LLC and Pell Street II LLC where the board draws kit names"
+    },
+    "t9-queue-detail.t9d": {
+      "selector": "[data-artboard=\"t9d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9d.png",
+      "sha256": "da0440e82c6953c70fdc60dba16d99864f08e897d5d6b5db563025025f4d2ade",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55: the viewer draws the gallery's synthetic grey-rule page images (viewer-pages.ts) where the handoff renders the composite 1099"
+    },
+    "t9-queue-detail.t9e": {
+      "selector": "[data-artboard=\"t9e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T9 Queue - detail - evidence/screenshots/T9e.png",
+      "sha256": "e626c049dc13cec8b226b4634f4520167299d66209c4464664275cacd6408749",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T55 (DEC-354): the Ridgeline transfer and the 704(b) partner name the blueprint seed's Pell Street Ventures LLC and Pell Street II LLC where the board draws kit names; the run's progress bar holds at 46%"
     }
   }
 }

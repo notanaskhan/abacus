@@ -523,6 +523,38 @@ test.describe("tier D: T3 evidence triad", () => {
   }
 });
 
+// T9 QueueDetailLayout (F-05-T55): the three presets' panes. Individual 546 · 433 · 377 (706
+// tall, queue card 262), close-review 790 · 576 (700 tall, queue 310), entity 470 · 896 (700 tall).
+test.describe("tier D: T9 queue · detail · evidence", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  for (const [id, expected] of [
+    ["t9a", { panes: [546, 433, 377], height: 706, queue: 262 }],
+    ["t9b", { panes: [790, 576], height: 700, queue: 310 }],
+    ["t9c", { panes: [470, 896], height: 700, queue: 470 }],
+  ] as const) {
+    test(`${id}: panes ${JSON.stringify(expected)}`, async ({ page }) => {
+      const got = await specimen(page, "t9-queue-detail", `[data-artboard="${id}"]`).evaluate(
+        (el) => {
+          const panes = [...el.querySelectorAll("[data-split-pane]")].map((p) =>
+            Math.round(p.getBoundingClientRect().width),
+          );
+          const first = el.querySelector("[data-split-pane]");
+          const queue = el.querySelector('[data-queue-part="queue"]');
+          return {
+            panes,
+            height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+            queue: queue === null ? null : Math.round(queue.getBoundingClientRect().width),
+          };
+        },
+      );
+      expect(got).toEqual(expected);
+    });
+  }
+});
+
 // TPL-03 (F-05-T54): the Feld 1040 review at 452 × 3 (a, c, d, e) and 214 · 571 · 571 (b), with
 // the K-1 matrix rows 41 tall.
 test.describe("tier D: TPL-03 Feld 1040 review", () => {
