@@ -33,7 +33,7 @@ from abacus.modules.evidence.citations.registry import Verdict as CitationVerdic
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops import drop_batch
-from abacus.modules.evidence.drops_contract import drops_router
+from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
     EvidenceVersionWithdrawn,
@@ -171,6 +171,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     firm_router,
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
     drops_router,  # C5 portal-pbc stub (R-01-T01): a portal drop
+    void_router,  # C5 portal-pbc (TASK-1248): a person voids a wrong rule link
     trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets

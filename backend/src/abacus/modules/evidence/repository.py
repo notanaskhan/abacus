@@ -589,6 +589,26 @@ async def decide_inbox_file(session: AsyncSession, file_id: UUID, **values: obje
     )
 
 
+async def return_to_waiting(session: AsyncSession, version_id: UUID) -> UUID | None:
+    """R-01 Story 2.2: the inbox file a voided rule link assigned to `version_id` waits for a
+    person again (status, assignment and decision cleared; `sort_outcome` keeps what the sort
+    did). None when no file was assigned to it."""
+    return (
+        await session.execute(
+            update(InboxFile)
+            .where(InboxFile.assigned_version_id == version_id, InboxFile.status == "assigned")
+            .values(
+                status="waiting",
+                assigned_item_id=None,
+                assigned_version_id=None,
+                decided_by=None,
+                decided_at=None,
+            )
+            .returning(InboxFile.id)
+        )
+    ).scalar_one_or_none()
+
+
 async def get_inbox_file(session: AsyncSession, file_id: UUID) -> InboxFile | None:
     return (
         await session.execute(select(InboxFile).where(InboxFile.id == file_id))

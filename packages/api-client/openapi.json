@@ -64565,7 +64565,7 @@
     },
     "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void": {
       "post": {
-        "description": "Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment;\na human or accepted link answers 409 `not_voidable`.",
+        "description": "Staff correct a wrong rule link (BND-02, AUD-03). Only an unaccepted `rule` fulfilment; a\nhuman, agent, voided or accepted link answers 409 `not_voidable`. A person only: the agent is\ndenied `fulfilment.confirm` (INV-1). A retry with the same key is authorised again, then\nanswers what the first answered.",
         "operationId": "void_fulfilment",
         "parameters": [
           {
@@ -64702,16 +64702,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Void Fulfilment Route",

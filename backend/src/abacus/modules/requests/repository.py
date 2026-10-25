@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any, Literal, cast
 from uuid import UUID, uuid4
@@ -213,13 +214,74 @@ async def set_client_fields(
 
 
 def live_fulfilment() -> ColumnElement[bool]:
-    """A fulfilment whose version the client has not withdrawn (P-06-T19; ADR-162 §4): every
-    read of fulfilments applies it, so a withdrawn upload is as if it never arrived."""
-    return ~(
-        select(FulfilmentWithdrawal.fulfilment_id)
-        .where(FulfilmentWithdrawal.fulfilment_id == Fulfilment.id)
-        .exists()
+    """A fulfilment whose version the client has not withdrawn (P-06-T19; ADR-162 §4), and that
+    no person voided as a wrong rule link (R-01 Story 2.2): every read of fulfilments applies it,
+    so a withdrawn upload or a voided link is as if it never arrived."""
+    return and_(
+        Fulfilment.voided_at.is_(None),
+        ~(
+            select(FulfilmentWithdrawal.fulfilment_id)
+            .where(FulfilmentWithdrawal.fulfilment_id == Fulfilment.id)
+            .exists()
+        ),
     )
+
+
+@dataclass(frozen=True)
+class VoidedLink:
+    fulfilment_id: UUID
+    request_item_id: UUID
+    evidence_version_id: UUID
+    voided_at: datetime
+
+
+async def void_rule_link(
+    session: AsyncSession, fulfilment_id: UUID, engagement_id: UUID, voided_by: UUID
+) -> VoidedLink | None:
+    """Stamp a live, unvoided `rule` fulfilment of the engagement void (`wrong_request`); None
+    when there is no such link. The database refuses a void of an accepted version and any other
+    change (`fulfilments_void_only`, 0159)."""
+    row = (
+        await session.execute(
+            update(Fulfilment)
+            .where(
+                Fulfilment.id == fulfilment_id,
+                Fulfilment.engagement_id == engagement_id,
+                Fulfilment.created_by_kind == "rule",
+                live_fulfilment(),
+            )
+            .values(
+                voided_at=func.clock_timestamp(), voided_by=voided_by, void_reason="wrong_request"
+            )
+            .returning(
+                Fulfilment.request_item_id, Fulfilment.evidence_version_id, Fulfilment.voided_at
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        return None
+    return VoidedLink(
+        fulfilment_id,
+        row.request_item_id,
+        row.evidence_version_id,
+        cast(datetime, row.voided_at),  # set by this statement
+    )
+
+
+async def rule_link_version(
+    session: AsyncSession, fulfilment_id: UUID, engagement_id: UUID
+) -> UUID | None:
+    """The version a live `rule` fulfilment of the engagement links, if it is one."""
+    return (
+        await session.execute(
+            select(Fulfilment.evidence_version_id).where(
+                Fulfilment.id == fulfilment_id,
+                Fulfilment.engagement_id == engagement_id,
+                Fulfilment.created_by_kind == "rule",
+                live_fulfilment(),
+            )
+        )
+    ).scalar_one_or_none()
 
 
 async def fulfilling_versions(session: AsyncSession, item_id: UUID) -> Sequence[UUID]:

@@ -165,6 +165,10 @@ class Fulfilment(Base):
     created_by_kind: Mapped[str]
     created_by_id: Mapped[str]
     created_at: Mapped[datetime]
+    # R-01 Story 2.2 (0159): a person's void of a wrong rule link; never restored.
+    voided_at: Mapped[datetime | None] = mapped_column(server_default=FetchedValue())
+    voided_by: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    void_reason: Mapped[str | None] = mapped_column(server_default=FetchedValue())
 
 
 class FulfilmentWithdrawal(Base):

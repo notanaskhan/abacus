@@ -437,3 +437,176 @@ async def test_sec7_a_staff_drop_is_recorded_on_the_clients_behalf(firm: Firm) -
         firm.statement_item,
     )
     assert [s["source"] for s in sources] == ["firm_upload_for_client"]
+
+
+# --- The staff void of a wrong rule link (R-01 Story 2.2; TASK-1248) ---------------------------
+
+
+async def _rule_linked(firm: Firm) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
+    """A dropped statement the rule linked to its request: (file, fulfilment, version)."""
+    dropped = await firm.drop(STATEMENT, "estimated-payment-q4.pdf", batch=uuid.uuid4())
+    file_id = uuid.UUID(dropped.json()["file_id"])
+    assert await firm.sorted(file_id) == "rule_linked"
+    [link] = await firm.seed.rows(
+        "SELECT id, evidence_version_id FROM fulfilments WHERE request_item_id = $1 "
+        "AND created_by_kind = 'rule'",
+        firm.statement_item,
+    )
+    return file_id, link["id"], link["evidence_version_id"]
+
+
+async def _void(
+    firm: Firm, fulfilment_id: uuid.UUID, *, key: str | None = None, who: Person | None = None
+) -> httpx.Response:
+    return await firm.net.http.post(
+        f"/v1/engagements/{firm.site.engagement_id}/fulfilments/{fulfilment_id}/void",
+        json={"reason": "wrong_request"},
+        headers={
+            **firm.net.headers(who or firm.manager),
+            "Idempotency-Key": key or str(uuid.uuid4()),
+        },
+    )
+
+
+async def test_story_2_2_a_person_voids_a_wrong_rule_link(firm: Firm) -> None:
+    file_id, fulfilment_id, version = await _rule_linked(firm)
+    key = str(uuid.uuid4())
+    response = await _void(firm, fulfilment_id, key=key)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert (body["fulfilment_id"], body["request_item_id"], body["request_status"]) == (
+        str(fulfilment_id),
+        str(firm.statement_item),
+        "requested",
+    )
+    [row] = await firm.seed.rows(
+        "SELECT voided_at, voided_by, void_reason FROM fulfilments WHERE id = $1", fulfilment_id
+    )
+    assert row["voided_at"] is not None and row["void_reason"] == "wrong_request"
+    assert row["voided_by"] == firm.manager.user_id
+    [inbox] = await firm.seed.rows(
+        "SELECT status, assigned_item_id, assigned_version_id, decided_at, sort_outcome "
+        "FROM inbox_files WHERE id = $1",
+        file_id,
+    )
+    assert (inbox["status"], inbox["assigned_item_id"], inbox["assigned_version_id"]) == (
+        "waiting",
+        None,
+        None,
+    )
+    assert inbox["decided_at"] is None and inbox["sort_outcome"] == "rule_linked"
+    status = await firm.seed.value(
+        "SELECT status FROM request_items WHERE id = $1", firm.statement_item
+    )
+    assert status == "requested"
+    audit = await firm.seed.rows(
+        "SELECT actor_kind, actor_id FROM audit_events WHERE tenant_id = $1 "
+        "AND action = 'fulfilment.voided'",
+        firm.tenant_id,
+    )
+    assert [(a["actor_kind"], a["actor_id"]) for a in audit] == [
+        ("human", str(firm.manager.user_id))
+    ]
+    events = await firm.seed.rows(
+        "SELECT payload FROM outbox WHERE tenant_id = $1 AND event_type = 'fulfilment.voided'",
+        firm.tenant_id,
+    )
+    assert len(events) == 1 and json.loads(events[0]["payload"])["evidence_version_id"] == str(
+        version
+    )
+    replay = await _void(firm, fulfilment_id, key=key)
+    assert replay.status_code == 200 and replay.json() == body
+    # The request no longer reads the link: the poll says the file waits for a person.
+    links = await firm.seed.value(
+        "SELECT count(*) FROM fulfilments WHERE request_item_id = $1 AND voided_at IS NULL",
+        firm.statement_item,
+    )
+    assert links == 0
+
+
+async def test_story_2_2_only_an_unaccepted_rule_link_is_voidable(firm: Firm) -> None:
+    _, fulfilment_id, version = await _rule_linked(firm)
+    assert (await _void(firm, fulfilment_id)).status_code == 200
+    again = await _void(firm, fulfilment_id)
+    assert again.status_code == 409 and again.json() == {
+        "detail": "not_voidable",
+        "facts": {"fulfilment_id": str(fulfilment_id)},
+    }
+    # A link a person made is theirs to change, never a void's.
+    human = cast(
+        uuid.UUID,
+        await firm.seed.value(
+            "INSERT INTO fulfilments (tenant_id, engagement_id, request_item_id, "
+            "evidence_version_id, created_by_kind, created_by_id) VALUES ($1, $2, $3, $4, "
+            "'human', $5) RETURNING id",
+            firm.tenant_id,
+            firm.site.engagement_id,
+            firm.other_item,
+            version,
+            str(firm.manager.user_id),
+        ),
+    )
+    assert (await _void(firm, human)).json()["detail"] == "not_voidable"
+
+
+async def test_story_2_2_an_accepted_rule_link_is_not_voidable(firm: Firm) -> None:
+    _, fulfilment_id, version = await _rule_linked(firm)
+    await firm.seed.run_untriggered(
+        "INSERT INTO review_decisions (tenant_id, engagement_id, evidence_version_id, "
+        "request_item_id, decision, corrects_proposal, actor_kind, actor_id) VALUES "
+        "($1, $2, $3, $4, 'accept', false, 'human', $5)",
+        firm.tenant_id,
+        firm.site.engagement_id,
+        version,
+        firm.statement_item,
+        str(firm.manager.user_id),
+    )
+    refused = await _void(firm, fulfilment_id)
+    assert refused.status_code == 409 and refused.json()["detail"] == "not_voidable"
+    assert (
+        await firm.seed.value("SELECT voided_at FROM fulfilments WHERE id = $1", fulfilment_id)
+        is None
+    )
+
+
+async def test_story_2_2_a_client_or_another_firm_cannot_void(firm: Firm, seed: Seeder) -> None:
+    _, fulfilment_id, _ = await _rule_linked(firm)
+    assert (await _void(firm, fulfilment_id, who=firm.claire)).status_code in (403, 404)
+    other_tenant = await seed.firm()
+    outsider = await seed.person(other_tenant, "firm_admin")
+    assert (await _void(firm, fulfilment_id, who=outsider)).status_code in (403, 404)
+    assert (
+        await firm.seed.value("SELECT voided_at FROM fulfilments WHERE id = $1", fulfilment_id)
+        is None
+    )
+
+
+async def test_story_2_2_the_database_refuses_any_other_change_to_a_fulfilment(
+    firm: Firm,
+) -> None:
+    _, fulfilment_id, _ = await _rule_linked(firm)
+    with pytest.raises(Exception, match="fulfilment"):
+        await firm.seed.run(
+            "UPDATE fulfilments SET request_item_id = $2 WHERE id = $1",
+            fulfilment_id,
+            firm.other_item,
+        )
+    with pytest.raises(Exception, match="fulfilment"):  # a void not made by the acting person
+        await firm.seed.run(
+            "UPDATE fulfilments SET voided_at = now(), voided_by = $2, "
+            "void_reason = 'wrong_request' WHERE id = $1",
+            fulfilment_id,
+            firm.manager.user_id,
+        )
+
+
+async def test_story_2_2_the_void_is_off_with_its_flag(net: Net, seed: Seeder) -> None:
+    tenant_id = await seed.firm()
+    owner = await seed.person(tenant_id, "firm_admin")
+    site = await seed.site(tenant_id, owner.user_id, "Flagless")
+    response = await net.http.post(
+        f"/v1/engagements/{site.engagement_id}/fulfilments/{uuid.uuid4()}/void",
+        json={"reason": "wrong_request"},
+        headers={**net.headers(owner), "Idempotency-Key": str(uuid.uuid4())},
+    )
+    assert response.status_code == 404
