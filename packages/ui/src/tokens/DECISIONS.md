@@ -546,3 +546,16 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-25 | Human verbs     | Resolve, Mark as Resolved and Mark Not Applicable are a person's: `IssueFooter` draws nothing for an agent actor; the agent is assignable (first in the menu) |
 | 2026-10-25 | Agent working   | Amber "Agent working…" pill with a 10px spinner, the run row (AgentText, a 3px bar, the 15px spinner); the footer reads "Waiting on the agent", disabled  |
 | 2026-10-25 | Frame data      | The T9 handoff's issues (as T3's frame), with the seed's Ridgeline parties where the board draws kit names (DEC-354); TPL-09 draws the seed's issue lists  |
+
+### T8 InboxLayout and the C-15/C-18 File kit (F-05-T56)
+
+| Date       | Item          | Decision                                                                                                                                                  |
+| ---------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-25 | Frame         | Filter bar 50 with −10 below in the AppShell tabs slot; the C-09 `inbox` preset (392 · flex); panes 752 tall in the 860 window                             |
+| 2026-10-25 | Dots          | `InboxDot` owns the four states (16 ring 1.5 ink-4, 16 amber, 15 olive ✓, 15 ink-4 ✕) with the words Not filed, Waiting to be filed, Filed, Ignored      |
+| 2026-10-25 | Rows          | Separated by a hairline inset, never borders; the subject is 13.5/500 on every row (no bold for unread); an ignored row is ink-3 at 400                       |
+| 2026-10-25 | Thread        | A parent row toggles its replies (aria-expanded) and selects itself; children indent 34; the chevron is decorative, so no control nests in the row        |
+| 2026-10-25 | Client chip   | "Match client…" in amber ink when the sender matches no client; the menu lists the firm's clients                                                         |
+| 2026-10-25 | Agent note    | The filing note renders through `AgentText` with the sparkles glyph and offers only Review (INV-1); File…, Move… and Ignore live in the pane header       |
+| 2026-10-25 | Default chips | Received (Past 30 Days) and Channel (Email · Portal) read their defaults as the placeholder, so they stay white until changed; a set chip turns amber      |
+| 2026-10-25 | Thumbnails    | 126 × 150 radius 6 on the gallery's synthetic page images; the state dot sits over the top-right corner (10 for waiting, 15 for filed)                      |

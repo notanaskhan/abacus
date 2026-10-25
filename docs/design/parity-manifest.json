@@ -846,6 +846,46 @@
       "crop": "window",
       "tier": "B",
       "deviation": "F-05-T55 (DEC-354): the Ridgeline transfer and the 704(b) partner name the blueprint seed's Pell Street Ventures LLC and Pell Street II LLC where the board draws kit names; the run's progress bar holds at 46%"
+    },
+    "t8-inbox.t8a": {
+      "selector": "[data-artboard=\"t8a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8a.png",
+      "sha256": "4da546b7bf6855fe0bbb147e927db96b39482b94fbee23d93b7aa25c0e84ce85",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8b": {
+      "selector": "[data-artboard=\"t8b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8b.png",
+      "sha256": "19750c3673058bc399a21c3f0f0cb264622b345577f720d529297daf1b957491",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8c": {
+      "selector": "[data-artboard=\"t8c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8c.png",
+      "sha256": "3f4e0a2c9590646409051949e341ee7a27635538395523adf4ffeefc0e438510",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8d": {
+      "selector": "[data-artboard=\"t8d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8d.png",
+      "sha256": "d027d236213a50383026720e94c74a4daa5c5439950aeed9d8b29e343e8c9036",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
+    },
+    "t8-inbox.t8e": {
+      "selector": "[data-artboard=\"t8e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8e.png",
+      "sha256": "ebf224567edd1da0bef5c19625e0aad02639097157489f1593bef29bbf6e0470",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T56 (DEC-354): attachment thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders the pages; client names are the seed's full names, and the Copperleaf and Northwind contacts are the seed's Ben Ashby and Dana Kowalski where the board draws kit names"
     }
   }
 }

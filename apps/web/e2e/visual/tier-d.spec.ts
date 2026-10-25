@@ -523,6 +523,29 @@ test.describe("tier D: T3 evidence triad", () => {
   }
 });
 
+// T8 InboxLayout (F-05-T56): filter bar 50 (−10), rail 392 beside the reading pane, panes 752 tall;
+// rail rows at least 52.
+test.describe("tier D: T8 inbox master-detail", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  test("t8a: rail 392, panes 752 tall, rows ≥ 52", async ({ page }) => {
+    const got = await specimen(page, "t8-inbox", '[data-artboard="t8a"]').evaluate((el) => {
+      const first = el.querySelector("[data-split-pane]");
+      const rows = [...el.querySelectorAll("[data-inbox-row]")].map((r) =>
+        Math.round(r.getBoundingClientRect().height),
+      );
+      return {
+        rail: first === null ? null : Math.round(first.getBoundingClientRect().width),
+        height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+        shortRows: rows.filter((h) => h < 52).length,
+      };
+    });
+    expect(got).toEqual({ rail: 392, height: 752, shortRows: 0 });
+  });
+});
+
 // T9 QueueDetailLayout (F-05-T55): the three presets' panes. Individual 546 · 433 · 377 (706
 // tall, queue card 262), close-review 790 · 576 (700 tall, queue 310), entity 470 · 896 (700 tall).
 test.describe("tier D: T9 queue · detail · evidence", () => {

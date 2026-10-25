@@ -391,3 +391,6 @@ export * from "./workpaper";
 
 // C-17 Issue kit (F-05-T55).
 export * from "./issues";
+
+// C-15 / C-18 File kit, inbox visuals (F-05-T56).
+export * from "./inbox";

@@ -106,3 +106,5 @@ export {
   type QueueDetailLayoutProps,
   type QueuePreset,
 } from "./queue-detail";
+// T8 InboxLayout (F-05-T56): the filter bar, the 392 rail and the reading pane.
+export { InboxLayout, type InboxLayoutProps } from "./inbox-layout";
