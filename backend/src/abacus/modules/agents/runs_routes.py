@@ -12,6 +12,7 @@ from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel.classification import classified
+from abacus.modules.agents.blocks import AgentBlocks
 from abacus.modules.agents.runs import (
     RunItems,
     RunSummary,
@@ -140,6 +141,9 @@ class RunItemOut(BaseModel):
     actor: Annotated[str | None, classified("internal")]
     ref_type: Annotated[str | None, classified("internal")]
     ref_id: Annotated[UUID | None, classified("internal")]
+    # AgentBlocks v1 (P-09-T03): agent-authored content, validated on the server; render only
+    # through the client's AgentBlocks. Null on pre-v2 runs.
+    blocks: Annotated[AgentBlocks | None, classified("confidential")] = None
 
 
 class RunItemsOut(BaseModel):

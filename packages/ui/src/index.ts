@@ -414,3 +414,13 @@ export * from "./issues";
 
 // C-15 / C-18 File kit, inbox visuals (F-05-T56).
 export * from "./inbox";
+export {
+  AgentBlocks,
+  type AgentBlocksPayload,
+  type AgentBlocksProps,
+  AgentProse,
+  type BlockFact,
+  type BlockPart,
+  type BlockSegment,
+  factText,
+} from "./agent/blocks";

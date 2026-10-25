@@ -761,6 +761,22 @@ export type AdoptedOut = {
 };
 
 /**
+ * AgentBlocks
+ *
+ * AgentBlocks v1: an ordered list of parts.
+ */
+export type AgentBlocks = {
+    /**
+     * Parts
+     */
+    parts: Array<ParagraphPart | TablePart | KvPart | MetricPart | FilePart | BadgePart | CiteListPart | OptionsPart | EntityRefPart>;
+    /**
+     * Version
+     */
+    version?: 1;
+};
+
+/**
  * AgentOut
  */
 export type AgentOut = {
@@ -2010,6 +2026,24 @@ export type AutonomyOut = {
      * Set At
      */
     set_at: string | null;
+};
+
+/**
+ * BadgePart
+ */
+export type BadgePart = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Kind
+     */
+    kind: 'badge';
+    /**
+     * Object
+     */
+    object: string;
 };
 
 /**
@@ -3653,6 +3687,38 @@ export type CitationV2Out = {
      * Verified
      */
     verified: boolean;
+};
+
+/**
+ * CiteListPart
+ */
+export type CiteListPart = {
+    /**
+     * Cites
+     */
+    cites: Array<CiteSeg>;
+    /**
+     * Kind
+     */
+    kind: 'cite_list';
+};
+
+/**
+ * CiteSeg
+ */
+export type CiteSeg = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    /**
+     * Kind
+     */
+    kind: 'cite';
+    /**
+     * N
+     */
+    n: number;
 };
 
 /**
@@ -7116,6 +7182,26 @@ export type EntityChoiceOut = {
 };
 
 /**
+ * EntityRefPart
+ *
+ * A record by type and id; its label is rendered by code, never by the model.
+ */
+export type EntityRefPart = {
+    /**
+     * Kind
+     */
+    kind: 'entity_ref';
+    /**
+     * Record Id
+     */
+    record_id: string;
+    /**
+     * Record Type
+     */
+    record_type: string;
+};
+
+/**
  * EntryCitationOut
  */
 export type EntryCitationOut = {
@@ -7487,6 +7573,20 @@ export type FacetsOut = {
 };
 
 /**
+ * FactSeg
+ */
+export type FactSeg = {
+    /**
+     * Fact Id
+     */
+    fact_id: string;
+    /**
+     * Kind
+     */
+    kind: 'fact';
+};
+
+/**
  * FieldEditIn
  *
  * `PUT …/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`
@@ -7847,6 +7947,28 @@ export type FileMatchOut = {
      * Status
      */
     status: string;
+};
+
+/**
+ * FilePart
+ */
+export type FilePart = {
+    /**
+     * Artifact Id
+     */
+    artifact_id: string;
+    /**
+     * Kind
+     */
+    kind: 'file';
+    /**
+     * Meta
+     */
+    meta?: string | null;
+    /**
+     * Name
+     */
+    name: string;
 };
 
 /**
@@ -10929,6 +11051,34 @@ export type KnowledgeSearchIn = {
 };
 
 /**
+ * KvPart
+ */
+export type KvPart = {
+    /**
+     * Kind
+     */
+    kind: 'kv';
+    /**
+     * Rows
+     */
+    rows: Array<KvRow>;
+};
+
+/**
+ * KvRow
+ */
+export type KvRow = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: Array<TextSeg | CiteSeg | FactSeg>;
+};
+
+/**
  * LadderLevelOut
  */
 export type LadderLevelOut = {
@@ -12482,6 +12632,24 @@ export type MethodologyVersionOut = {
 };
 
 /**
+ * MetricPart
+ */
+export type MetricPart = {
+    /**
+     * Fact Id
+     */
+    fact_id: string;
+    /**
+     * Kind
+     */
+    kind: 'metric';
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * MisstatementIn
  */
 export type MisstatementIn = {
@@ -13061,6 +13229,42 @@ export type OpenConfirmationOut = {
 };
 
 /**
+ * OptionRow
+ */
+export type OptionRow = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Recommended
+     */
+    recommended?: boolean;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * OptionsPart
+ */
+export type OptionsPart = {
+    /**
+     * Kind
+     */
+    kind: 'options';
+    /**
+     * Options
+     */
+    options: Array<OptionRow>;
+};
+
+/**
  * OutputCountOut
  */
 export type OutputCountOut = {
@@ -13105,6 +13309,20 @@ export type PageLineOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ParagraphPart
+ */
+export type ParagraphPart = {
+    /**
+     * Kind
+     */
+    kind: 'p';
+    /**
+     * Segments
+     */
+    segments: Array<TextSeg | CiteSeg | FactSeg>;
 };
 
 /**
@@ -16974,6 +17192,7 @@ export type RunItemOut = {
      * At
      */
     at: string;
+    blocks?: AgentBlocks | null;
     /**
      * Code
      */
@@ -19177,6 +19396,24 @@ export type SupportSessionOut = {
 };
 
 /**
+ * TablePart
+ */
+export type TablePart = {
+    /**
+     * Head
+     */
+    head: Array<string>;
+    /**
+     * Kind
+     */
+    kind: 'table';
+    /**
+     * Rows
+     */
+    rows: Array<Array<TextSeg | CiteSeg | FactSeg>>;
+};
+
+/**
  * TakenOut
  */
 export type TakenOut = {
@@ -19996,6 +20233,20 @@ export type TemplateVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * TextSeg
+ */
+export type TextSeg = {
+    /**
+     * Kind
+     */
+    kind: 'text';
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**

@@ -85,6 +85,14 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - The v1 activity list stays below the thread. A viewer refused `agent_run.read` sees only that list.
   - The dock decides nothing. Approve and decline wait for P-10's C6 v2 actions (P-09-T14).
 
+- **AC-11 AgentBlocks v1 (TASK-5004; P-09-T03, T06).**
+  - The server's `agents/blocks.py` validates agent-authored output against a closed union of nine parts: p, table, kv, metric, file, badge, cite_list, options, entity_ref. Unknown kinds and extra fields are refused.
+  - The copy lint refuses free numbers, markup, links `sanitise_text` would remove, "!", claims of a human act, and "memory", "trained", "learned" or "confidence".
+  - Facts must be in the run's registry, citations in the run's set, and badges must be stored statuses.
+  - The client's `AgentBlocks` and `AgentProse` (`packages/ui/src/agent`) render nodes only, with facts through format.ts and cites as CiteMarker. An unknown part renders a neutral row.
+  - `RunItemOut.blocks` carries a validated payload. It is null on pre-v2 runs.
+  - ESLint L4 now also covers `model_text`.
+
 ## 3. Out of scope
 - Live streaming, cancelling and retrying runs.
 - Firm-wide run views.
