@@ -126,3 +126,13 @@ The four strict xfails: marks removed, assertions unchanged; all pass.
   `origin/s8a-batch`, b4c39ccf). Offshore wall removed from `authorise`, every `visible*` and
   `hidden_clients`; the condition layer, assignment guard, masking and `own_offshore` kept. Four
   xfails pass unmarked; G-01-T09's offshore tests moved to the narrowed rule (listed above).
+- 2026-10-25: checks. `pytest tests/unit tests/contracts tests/security tests/acceptance`: 31489
+  passed, 2 failed, 24 xfailed. The two failures (`test_f03_status_vocabulary.py`: the TB label
+  isn't sentence case; no YAML entry for `FirmExportOut.status` `awaiting_approval`/`building`) fail
+  the same way on the untouched base b4c39ccf: they are #395's, not this task's. Targeted
+  integration (walls api/enforcement/runs/schema/v2, offshore, TIN reveal, F-03 personas, people v2,
+  offices/teams, team roles, org v2, schema check, and the backfills staff people, team management,
+  firm-level reads, contacts access, client invitations, P-07-T14, T26, T30, independence gate,
+  F-03-T31, signup, P-01-T14): 778 passed, 6 xfailed (none TASK-1207). `test_tenancy_escape` ran in
+  the security suite. ruff, pyright, banned patterns, validate_docs, error_codes (regenerated) and
+  `make check-fast` (after `pnpm -C packages/api-client build:types`) pass.
