@@ -1,6 +1,7 @@
 """C5 section `portal-pbc` stub (R-01-T01; docs/contracts/portal-pbc.md): every route exists with
 its one matrix action and answers 404 with its flag off and 501 with it on until its task lands
-(`IMPLEMENTED`: the documents reads, R-01-T07, and the undos, R-01-T08); the read action is a
+(`IMPLEMENTED`: the documents reads, R-01-T07, the undos, R-01-T08, the drop, R-01-T09, and the
+void, TASK-1248); the read action is a
 client action that grants no firm role and denies the agent and system; the void is human only;
 every client-facing write takes an `Idempotency-Key`; every model field is classified; the three
 flags are boolean and off by default. The consumers' own tests are R-01-T02's, in this
@@ -79,9 +80,7 @@ STUBS: list[tuple[ModuleType, Flag]] = [
     (portal_pbc, PORTAL_DOCUMENTS_V2),
     (portal_pbc, PORTAL_THIRD_PARTY_ROOM),
     (portal_pbc, PORTAL_DROP_SORT),
-    (requests_pbc, PORTAL_DOCUMENTS_V2),
-    (requests_pbc, PORTAL_DROP_SORT),
-]
+]  # requests' routes are all live (the undos, R-01-T08; the void moved to evidence, TASK-1248)
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:
@@ -106,6 +105,7 @@ IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
         ("get", "/v1/portal/request-items/{item_id}"),  # R-01-T07
         ("post", "/v1/portal/request-items/{item_id}/ignore/undo"),  # R-01-T08
         ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"),  # R-01-T08
+        ("post", "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void"),  # TASK-1248
     }
 )
 
@@ -228,6 +228,32 @@ async def test_the_drop_is_404_off_and_live_on(monkeypatch: pytest.MonkeyPatch) 
             ctx,
             filename="a.pdf",
             batch_id=uuid.uuid4(),
+            idempotency_key="k",
+        )
+
+
+async def test_the_void_is_404_off_and_live_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live since TASK-1248 (served by evidence; tests/integration/backfill/
+    test_r01t09_portal_drops.py): off, the route answers 404 before anything else; requests keeps
+    no stub at all."""
+    user = uuid.uuid4()
+    ctx = AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
+    )
+
+    async def off(_tenant: object, asked: object) -> bool:
+        assert asked is PORTAL_DROP_SORT
+        return False
+
+    assert "_stub" not in vars(requests_pbc)
+    assert "_stub" not in vars(drops_contract)
+    monkeypatch.setattr(drops_contract, "flag_enabled", off)
+    with pytest.raises(NotFound):
+        await drops_contract.void_fulfilment_route(
+            uuid.uuid4(),
+            uuid.uuid4(),
+            drops_contract.FulfilmentVoidIn(reason="wrong_request"),
+            ctx,
             idempotency_key="k",
         )
 

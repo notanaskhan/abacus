@@ -7,6 +7,7 @@ nominal."""
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -80,6 +81,9 @@ def test_ac_a_row_that_lost_its_host_fails_the_check_too(
             row["egress_hosts"] = []
     staged.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
     assert sp.main(["--check"]) == 1
-    # The refusal names the host as its own word, never as part of a longer name.
-    named = {w.strip("':,") for w in capsys.readouterr().err.split()}
-    assert "api.workos.com" in named
+    # The refusal names the host on a line of its own (whole lines compared, not a substring).
+    lines = capsys.readouterr().err.splitlines()
+    expected = re.compile(
+        r"sub-processors\.yaml: egress host api\.workos\.com \([^)]+\) has no register row"
+    )
+    assert any(expected.fullmatch(line) for line in lines), lines

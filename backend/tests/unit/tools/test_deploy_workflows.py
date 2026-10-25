@@ -18,6 +18,7 @@ from .workflow_shape import (
     load,
     runs,
     step,
+    steps,
     text,
     triggers,
     uses,
@@ -121,6 +122,9 @@ def test_staging_runs_the_sequence_in_order() -> None:
     )
     assert "staging-verified.json" in str(step(staging["record"], "Record the release")["run"])
     assert "--project=deploy-smoke" in str(step(staging["smoke"], "Deploy smoke")["run"])
+    # The smoke never checks out the dispatched SHA (CodeQL: untrusted checkout, cache poisoning).
+    checkout = next(s for s in steps(staging["smoke"]) if "checkout" in str(s.get("uses", "")))
+    assert "ref" not in cast(Mapping, checkout.get("with", {}))
 
 
 # --- deploy-production.yml and rollback.yml (Q-01-T34) -----------------------------------------

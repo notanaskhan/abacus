@@ -774,7 +774,7 @@ export function IssueComposer({
       />
       <IconButton
         icon="arrow-up"
-        label="Send fix instructions"
+        label="Give the agent fix instructions"
         variant="dark"
         disabled={empty}
         onClick={() => {
