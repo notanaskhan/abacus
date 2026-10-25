@@ -24,6 +24,7 @@ import {
   type RequestItem,
   type UploadInFlight,
   rowView,
+  satisfied,
 } from "./types";
 
 // C-16 Request kit, portal variant (F-05-T36): the parts. RequestSection, RequestRow (client side),
@@ -485,6 +486,90 @@ export function RequestSection({
   );
 }
 
+/** The audit variant's folder band (`bento-audit-client`; POR-03 i): a nested header with the
+ * folder glyph, the band's name and "1 of 4", over its disc rows. */
+export function BandSection({
+  title,
+  done,
+  total,
+  children,
+}: {
+  title: string;
+  done: number;
+  total: number;
+  children: ReactNode;
+}): JSX.Element {
+  return (
+    <section
+      role="group"
+      aria-label={title}
+      data-part="band"
+      className="flex-none overflow-hidden rounded-pane bg-card shadow-e1"
+    >
+      <div className="flex min-h-[44px] items-center gap-[10px] bg-nested px-[14px] text-section">
+        <Icon name="folder" size={15} className="text-ink-2" />
+        <span className="min-w-0 flex-1">{title}</span>
+        <span className="text-meta text-ink-3">{`${String(done)} of ${String(total)}`}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** One request in a band: the 18px disc (olive ✓ done, ring to do), the title, the receipt or
+ * the due line, and "Upload…" on an open request. */
+export function BandRow({
+  item,
+  readOnly = false,
+  onUpload,
+  revealIndex,
+}: {
+  item: RequestItem;
+  readOnly?: boolean;
+  onUpload?: (id: string) => void;
+  revealIndex?: number;
+}): JSX.Element {
+  const done = satisfied(item);
+  const line = done ? (item.upText ?? null) : (item.due ?? null);
+  return (
+    <div
+      data-request={item.id}
+      data-status={item.st}
+      {...(done ? {} : { "data-open-request": "" })}
+      {...(revealIndex === undefined
+        ? {}
+        : { style: { animationDelay: `${String(revealIndex * REVEAL_STAGGER_MS)}ms` } })}
+      className={cn(
+        "flex min-h-[52px] items-center gap-[12px] bg-card px-[14px] py-[10px] hairline-t",
+        revealIndex !== undefined && "motion-reveal",
+      )}
+    >
+      <StatusDisc state={done ? "done" : "todo"} size={17} />
+      <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+        <span className="text-body">{item.title}</span>
+        {line !== null && (
+          <span className={cn("text-dense", done ? "font-medium text-green-ink" : "text-ink-3")}>
+            {line}
+          </span>
+        )}
+      </span>
+      {!done && !readOnly && item.st === "req" && (
+        <button
+          type="button"
+          aria-label={`Upload… ${item.title}`}
+          onClick={() => onUpload?.(item.id)}
+          className={cn(
+            "h-[30px] flex-none rounded-pill px-[10px] text-body font-medium hover:bg-nav-fill",
+            PRESS,
+          )}
+        >
+          Upload…
+        </button>
+      )}
+    </div>
+  );
+}
+
 export interface RequestRowProps {
   item: RequestItem;
   /** The firm's name for the accepted and firm-provided lines. */
@@ -508,7 +593,12 @@ export interface RequestRowProps {
   withdraw?: boolean;
   /** A closed binder: no Upload…, Ignore, Undo or Withdraw. */
   readOnly?: boolean;
+  /** The row's place in a sort reveal (POR-03 motion): it rises in 135ms after the one before. */
+  revealIndex?: number;
 }
+
+/** The gap between two rows of a sort reveal (POR-03 motion, `client-upload.png`). */
+export const REVEAL_STAGGER_MS = 135;
 
 /** One request, client side (C-16 spec 6): the document glyph, the title and its lines, and at the
  * end Trash2 on the client's own upload or Ignore on an open request. */
@@ -525,6 +615,7 @@ export function RequestRow({
   viewer,
   withdraw = false,
   readOnly = false,
+  revealIndex,
 }: RequestRowProps): JSX.Element {
   const shown = rowView(item, firm);
   const view = readOnly
@@ -554,8 +645,12 @@ export function RequestRow({
       data-request={item.id}
       data-status={item.st}
       {...(open ? { "data-open-request": "" } : {})}
+      {...(revealIndex === undefined
+        ? {}
+        : { style: { animationDelay: `${String(revealIndex * REVEAL_STAGGER_MS)}ms` } })}
       className={cn(
         "flex items-start gap-[12px] bg-card px-[14px] py-[12px] transition-colors duration-200 hairline-t last:rounded-b-pane hover:bg-band-hd",
+        revealIndex !== undefined && "motion-reveal",
         hover && "bg-band-hd",
         // An open menu paints over the sections after this one (they are not clipped, so it can).
         menu !== null && "relative z-(--z-menu)",
@@ -769,9 +864,12 @@ export function RequestRow({
 export function MarkAsDone({
   view,
   onClick,
+  wide = false,
 }: {
   view: DoneButtonView;
   onClick: () => void;
+  /** The 390 sticky bar's full-width 44 button (POR-03 M). */
+  wide?: boolean;
 }): JSX.Element {
   return (
     <button
@@ -782,6 +880,7 @@ export function MarkAsDone({
       onClick={onClick}
       className={cn(
         "inline-flex h-[30px] flex-none items-center gap-[6px] rounded-pill pr-[13px] pl-[11px] text-body font-medium whitespace-nowrap transition-[background-color,color,box-shadow] duration-[260ms] ease-in-out",
+        wide && "h-[44px] w-full justify-center text-btn-lg",
         view.ready ? "bg-green text-on-dark shadow-lift" : "bg-chip text-ink-2",
         PRESS,
       )}
@@ -863,9 +962,12 @@ const STACK = [
 export function DragStack({
   count,
   names = [],
+  badge,
 }: {
   count: number;
   names?: readonly string[];
+  /** The badge's words ("3 files", POR-03 motion); the count alone when left out. */
+  badge?: string;
 }): JSX.Element {
   return (
     <>
@@ -889,7 +991,7 @@ export function DragStack({
             </span>
           ))}
           <span className="absolute top-[14px] right-[22px] inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-pill bg-espresso px-[6px] text-meta font-medium text-on-dark">
-            {count}
+            {badge ?? count}
           </span>
         </div>
       </div>

@@ -6,6 +6,8 @@ import { StatusDisc } from "../components/status";
 import { Icon } from "../icons";
 import { Pane } from "../layout/pane";
 import {
+  BandRow,
+  BandSection,
   CategoryRail,
   DoneBanner,
   DragStack,
@@ -60,8 +62,20 @@ export interface RequestBinderProps {
   marked?: boolean;
   /** Files that matched no request: "Brightwater Hale will sort this". */
   unsorted?: readonly string[];
-  /** Hold the drop target on (T7c, TPL-07b), with this many files and their names. */
-  drag?: { count: number; names?: readonly string[] };
+  /** Hold the drop target on (T7c, TPL-07b), with this many files, their names and the badge's
+   * words ("3 files"). */
+  drag?: { count: number; names?: readonly string[]; badge?: string };
+  /** The rows rise one after another, 135ms apart (POR-03 motion, after a drop sorts). The screen
+   * leaves it off under reduced motion. */
+  reveal?: boolean;
+  /** The audit variant (`bento-audit-client`; POR-03 i): each section is a folder band of disc
+   * rows with "n of m", and nothing is ignored or withdrawn from it. */
+  bands?: boolean;
+  /** A line over the well ("Some requests go to Keystone, … directly."). */
+  note?: string;
+  /** The file input's accepted types (the portal's upload policy, DEC-58 c). On a phone the
+   * native picker then offers the camera too (POR-03 M). */
+  accept?: string;
   /** Hold one row's Ignore menu open (TPL-07f). */
   openIgnore?: string;
   /** Files chosen or dropped, with the request they were chosen for (null: sort them). */
@@ -140,6 +154,7 @@ export function useRequestBinder(props: RequestBinderProps): RequestBinder {
       ref={fileInput}
       type="file"
       multiple
+      {...(props.accept === undefined ? {} : { accept: props.accept })}
       hidden
       aria-hidden="true"
       tabIndex={-1}
@@ -325,6 +340,8 @@ export function RequestDocuments({
     .map((s) => ({ section: s, rows: shown.filter((r) => r.sec === s.key) }))
     .filter((g) => g.rows.length > 0);
   const unsorted = props.unsorted ?? [];
+  // A sort reveal numbers the rows in reading order.
+  const order = new Map(groups.flatMap((g) => g.rows).map((r, i) => [r.id, i]));
 
   const onDone = (): void => {
     if (view.ready && !binder.done) {
@@ -395,52 +412,81 @@ export function RequestDocuments({
         {binder.done && (
           <DoneBanner today={props.today} firm={props.firm} onUndo={binder.undoDone} />
         )}
-        {groups.map(({ section, rows }) => (
-          <RequestSection key={section.key} title={section.title} icon={section.icon}>
-            {rows.map((r) => (
-              <RequestRow
-                key={r.id}
-                item={r}
-                firm={props.firm}
-                today={props.today}
-                {...(props.viewer === undefined ? {} : { viewer: props.viewer })}
-                ignoreOpen={props.openIgnore === r.id}
-                withdraw={props.withdraw === true}
-                readOnly={props.readOnly === true}
-                onUpload={(id) => {
-                  binder.choose(id);
-                }}
-                onIgnore={(id, reason, note) => {
-                  binder.update(id, (x) => ({
-                    ...x,
-                    st: "na",
-                    reason,
-                    ...(note === "" ? {} : { naNote: note }),
-                  }));
-                  props.onIgnore?.(id, reason, note);
-                }}
-                onUndoIgnore={(id) => {
-                  binder.update(id, (x) => ({
-                    ...withoutKeys(x, ["reason", "naNote"]),
-                    st: "req",
-                  }));
-                  props.onUndoIgnore?.(id);
-                }}
-                onRemove={(id) => {
-                  binder.update(id, (x) => ({
-                    ...withoutKeys(x, ["file", "files", "on", "upText", "matched"]),
-                    st: "req",
-                  }));
-                  props.onRemove?.(id);
-                }}
-                onReply={(id, text) => {
-                  binder.update(id, (x) => ({ ...x, replied: props.today }));
-                  props.onReply?.(id, text);
-                }}
-              />
-            ))}
-          </RequestSection>
-        ))}
+        {props.note !== undefined && (
+          <p className="px-[4px] text-dense text-ink-3">{props.note}</p>
+        )}
+        {props.bands === true &&
+          groups.map(({ section, rows }) => {
+            const all = items.filter((r) => r.sec === section.key && r.extra !== true);
+            return (
+              <BandSection
+                key={section.key}
+                title={section.title}
+                done={all.filter(satisfied).length}
+                total={all.length}
+              >
+                {rows.map((r) => (
+                  <BandRow
+                    key={r.id}
+                    item={r}
+                    readOnly={props.readOnly === true}
+                    onUpload={(id) => {
+                      binder.choose(id);
+                    }}
+                    {...(props.reveal === true ? { revealIndex: order.get(r.id) ?? 0 } : {})}
+                  />
+                ))}
+              </BandSection>
+            );
+          })}
+        {props.bands !== true &&
+          groups.map(({ section, rows }) => (
+            <RequestSection key={section.key} title={section.title} icon={section.icon}>
+              {rows.map((r) => (
+                <RequestRow
+                  key={r.id}
+                  item={r}
+                  firm={props.firm}
+                  today={props.today}
+                  {...(props.viewer === undefined ? {} : { viewer: props.viewer })}
+                  ignoreOpen={props.openIgnore === r.id}
+                  withdraw={props.withdraw === true}
+                  readOnly={props.readOnly === true}
+                  {...(props.reveal === true ? { revealIndex: order.get(r.id) ?? 0 } : {})}
+                  onUpload={(id) => {
+                    binder.choose(id);
+                  }}
+                  onIgnore={(id, reason, note) => {
+                    binder.update(id, (x) => ({
+                      ...x,
+                      st: "na",
+                      reason,
+                      ...(note === "" ? {} : { naNote: note }),
+                    }));
+                    props.onIgnore?.(id, reason, note);
+                  }}
+                  onUndoIgnore={(id) => {
+                    binder.update(id, (x) => ({
+                      ...withoutKeys(x, ["reason", "naNote"]),
+                      st: "req",
+                    }));
+                    props.onUndoIgnore?.(id);
+                  }}
+                  onRemove={(id) => {
+                    binder.update(id, (x) => ({
+                      ...withoutKeys(x, ["file", "files", "on", "upText", "matched"]),
+                      st: "req",
+                    }));
+                    props.onRemove?.(id);
+                  }}
+                  onReply={(id, text) => {
+                    binder.update(id, (x) => ({ ...x, replied: props.today }));
+                    props.onReply?.(id, text);
+                  }}
+                />
+              ))}
+            </RequestSection>
+          ))}
         {unsorted.length > 0 && binder.filter !== "fu" && (
           <RequestSection title={`${props.firm} will sort this`} icon="inbox">
             <p className="px-[14px] pb-[12px] text-dense leading-[1.5] text-ink-2">
@@ -466,6 +512,7 @@ export function RequestDocuments({
           <DragStack
             count={props.drag?.count ?? 1}
             {...(props.drag?.names === undefined ? {} : { names: props.drag.names })}
+            {...(props.drag?.badge === undefined ? {} : { badge: props.drag.badge })}
           />
         </div>
       )}

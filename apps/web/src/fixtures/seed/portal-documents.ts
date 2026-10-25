@@ -410,9 +410,18 @@ export function danaBinder(): PortalBinderOut {
       code: "census_payroll",
       label: "Census & Payroll",
       rows: [
-        // "You uploaded Sep 2": the handoff names no file, so the row is done with no file
-        // until R-01-T11 seeds the upload (POR-03.md, Open gaps).
-        danaRow("census", "Employee census file — 2025", "done"),
+        // "You uploaded Sep 2" (R-01-T10): the band grammar draws the receipt, never the file's
+        // name, so the file is named for its request.
+        danaRow("census", "Employee census file — 2025", "done", {
+          files: [
+            {
+              id: id("file:northwind-census-2025"),
+              name: "Employee census file — 2025.xlsx",
+              receipt: { kind: "uploaded", on: "2026-09-02" },
+              withdrawable: false,
+            },
+          ],
+        }),
         danaRow("w3", "W-3 for 2025", "to_do", { due_on: "2026-09-18" }),
         danaRow("opt-out", "Opt-out elections — auto-enrolled employees", "to_do"),
         danaRow("pay-rates", "Pay rate authorizations", "to_do"),

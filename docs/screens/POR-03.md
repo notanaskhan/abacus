@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-03 Documents - Feld 2025 Binder/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | R-01 · contract R-01-T03; contract stub R-01-T01 (C5 section `portal-pbc`); consumer tests R-01-T02; fixtures R-01-T05; part 1 (a, c, e, f, g, h, rail, filter, ignore, Mark as Done, Withdraw) R-01-T06; read model R-01-T07; ignore note and undo R-01-T08; drop sort R-01-T09 (N); part 2 (b, motion, c from polling, c2, d, i, M, live swap) R-01-T10; scenario slice R-01-T11; live swap and legacy retirement R-01-T18; parity and accessibility R-01-T31; "Upload something else" and c2 live R-01-T33 |
-| Manifest status | planned (`routes/manifest/por.ts`): a, c, e, f, g and h render in the gallery on fixtures (R-01-T06, TASK-1045); the entry turns fixture when R-01-T10 mounts the screen at the portal's `/documents` and wires POR-02's "Go to Documents →" (link-contract rule 1) |
+| Manifest status | planned in `routes/manifest/por.ts` (see Part 2 notes): all twelve artboards render in the gallery on fixtures (R-01-T06, TASK-1045; R-01-T10, TASK-1220), and R-01-T10 mounts the screen at the portal's `/documents` with POR-02's "Go to Documents →" and "Open binder" wired through the portal entry (DEC-347) |
 
 Code to come (R-01 §5.2): `src/screens/POR-03/{index.tsx, scenarios.ts, copy.ts, POR-03.test.tsx}`, `src/domain/portal/{documents.ts, drops.ts, messages.ts}`, `src/routes/portal/documents.tsx`, `src/fixtures/handlers/portal-documents.ts`, `src/fixtures/seed/portal-documents.ts`.
 
@@ -22,17 +22,17 @@ Fixture scenarios (R-01-T05, `fixtures/scenarios/POR-03.ts`, data in `fixtures/s
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
 | a | claire-feld (Claire Feld, taxpayer, Feld household) | Mon Sep 14, 2026, 9:24 AM CT | E0 | Feld 2025 Binder published: 21 requests, 19 done (received, uploaded or firm-provided), 2 requested (1095-C, estimated payments); two upload intents at 64% and 38%; filter `requested` shows the 7 groups with activity | fixture (T06) |
-| motion | claire-feld | same | E0 | A three-file drop in flight: packet of 3 chips and the "3 files" badge → espresso ring → rows reveal 135 ms apart → c and d. `?static=1` and `prefers-reduced-motion` freeze at the sorted frame | fixture (T10) |
-| b | claire-feld | same | E0 | Three files dragged over the list (drag over the documents pane or the DropZone): list on `--nested` with the 2 px espresso inset ring | fixture (T10) |
-| c | claire-feld | same | E0 | Drop batch sorted: the two estimated-payment files are `rule_linked` to their request (receipt kind `rule_linked_pending`), Other Activity ticks, the 1095-C stays requested, Mark as Done tonal | fixture (T06 static; T10 from drop polling) |
-| c2 | claire-feld | **Mon Sep 14, 2026, 9:12 AM** (README clock, the time of the email) | E0 | INB-02 filed Claire's 9:12 AM email to the 1095-C (channel `email`, receipt kind `emailed`): no Withdraw, Health & Medical ticks, Mark as Done olive | fixture only until N-01 files email (T10; live T33) |
-| d | claire-feld | Mon Sep 14, 2026, 9:24 AM CT | E0 | `Scan_0914.pdf` had no decisive match (drop outcome `waiting`): the card "Brightwater Hale will sort this" | fixture (T10) |
+| motion | claire-feld | same | E0 | A three-file drop in flight: packet of 3 chips and the "3 files" badge → espresso ring → rows reveal 135 ms apart → c and d. `?static=1` and `prefers-reduced-motion` freeze at the sorted frame | fixture (T10, built) |
+| b | claire-feld | same | E0 | Three files dragged over the list (drag over the documents pane or the DropZone): list on `--nested` with the 2 px espresso inset ring | fixture (T10, built) |
+| c | claire-feld | same | E0 | Drop batch sorted: the two estimated-payment files are `rule_linked` to their request (receipt kind `rule_linked_pending`), Other Activity ticks, the 1095-C stays requested, Mark as Done tonal | fixture (T06 static; T10 from drop polling, built) |
+| c2 | claire-feld | **Mon Sep 14, 2026, 9:12 AM** (README clock, the time of the email) | E0 | INB-02 filed Claire's 9:12 AM email to the 1095-C (channel `email`, receipt kind `emailed`): no Withdraw, Health & Medical ticks, Mark as Done olive | fixture only until N-01 files email (T10, built; live T33) |
+| d | claire-feld | Mon Sep 14, 2026, 9:24 AM CT | E0 | `Scan_0914.pdf` had no decisive match (drop outcome `waiting`): the card "Brightwater Hale will sort this" | fixture (T10, built) |
 | e | claire-feld | same | E0 | Binder `complete` with `marked_done_by_contact` Claire Feld at Sep 14: the green-tint banner with Undo | fixture (T06) |
 | f | claire-feld | same | E0 | Ignore pill on the 1095-C pressed: O1 popover with the three reasons and the optional note | fixture (T06) |
 | g | claire-feld | same | holdout | Alternate path, not the seeded day: Claire uploaded the 2024 1095-C in the portal and Kevin Osei returned it with reason `wrong_year` and a client-visible note | fixture (T06) |
 | h | claire-feld | same | E0 | Filter `requested` matches nothing (no requested item is client-visible) | fixture (T06) |
-| i | dana-kowalski (Dana Kowalski, plan administrator, Northwind Robotics 401(k) Plan) | same | E0 | Northwind "PY2025 Audit requests" binder (24 requests): only Dana's own client-visible requests, in folder bands with 18 px discs; delegations to Keystone, Harborline, PayGrid and Summit name only the organisations | fixture (T10) |
-| M | claire-feld | same | E0 | Viewport 390 × 844: the binder of a in T7-M, "2 to do" pill, sticky Mark as Done above the tab bar | fixture (T10) |
+| i | dana-kowalski (Dana Kowalski, plan administrator, Northwind Robotics 401(k) Plan) | same | E0 | Northwind "PY2025 Audit requests" binder (24 requests): only Dana's own client-visible requests, in folder bands with 18 px discs; delegations to Keystone, Harborline, PayGrid and Summit name only the organisations | fixture (T10, built) |
+| M | claire-feld | same | E0 | Viewport 390 × 844: the binder of a in T7-M, "2 to do" pill, sticky Mark as Done above the tab bar | fixture (T10, built) |
 
 Personas: `claire-feld` and `dana-kowalski` exist in the TS seed (P-08-T08); none is added for this screen.
 
@@ -194,6 +194,13 @@ Each becomes a test in `POR-03.test.tsx` ("POR-03 avoid: …"): gradients in pro
 | — | c2's clock is 9:12 AM (the time of the email), kept by the fixture | README clock | R-01 §2.1 |
 | — | c2 and "Upload something else" are fixture-only until N-01 files email and ships the intake route (S15–S16) | Upstream order | R-01 §2.2 |
 
+### Part 2 notes (R-01-T10)
+- **Mounted at `/documents`** in the portal entry, with `?binder=` and T7-M below 768 px (DEC-346); POR-02's "Go to Documents →" (a request target of POR-03) and "Open binder" open it, and the PortalToolbar's Home and Documents route. The link checker's rule 1 cannot see the portal's tree (manifest paths resolve in the firm's route tree, and a POR path there fails rule 2), so the manifest entry stays `planned` with a null path until the checker learns the portal tree (DEC-347; R-01-T31).
+- **Drop polling:** a drop posts each file to `POST /v1/portal/binders/{id}/drops` in one `X-Drop-Batch`, then polls the batch the server names (`GET /v1/portal/drops/{batch}`, every second until `settled`) and reads the binder again once. `rule_linked` files show on their request with "Suggested — … will confirm"; `waiting` and `duplicate_flagged` files show in "Brightwater Hale will sort this"; the outcome is announced in a polite live region ("2 files matched a request. 1 file sent to Brightwater Hale to sort."). A 413 or 415 at the door lists the file under the drop zone with the words in `domain/portal/messages.ts` (`refused.file_too_large`, `refused.type_not_allowed`; no handoff frame; ink, never red).
+- **Motion:** the packet (three chips, "3 files") hangs over the ringed list for 900 ms, then the rows rise 135 ms apart (`motion-reveal`, the kit's `reveal`); under `prefers-reduced-motion` or `?static=1` the screen opens on the sorted frame with no animation class. The motion frame's rail upload sizes (1.9 MB, 2.7 MB, 1.5 MB) are not drawn: the seed's sizes are a's.
+- **i:** the kit's `bands` (folder band, "n of m", 17 px discs: the largest StatusDisc size, the handoff's 18 waits for the kit), the other-parties note from `other_parties`, "Due Sep 18" from `due_on`, the rail lists the bands with "n open". Band rows draw the folder glyph, not per-band icons: the projection carries none (parity mask, R-01-T31). The census row's receipt "You uploaded Sep 2" comes from a seeded file the band grammar does not name.
+- **M:** `RequestMobile` with the native file input accepting DEC-58 c's types (the phone offers the camera for images; POR-19 is R-03's), Mark as Done full width in the sticky footer above the tab bar.
+
 ### Part 1 notes (R-01-T06)
 - Built on the C-16 Request kit (`useRequestBinder`, `RequestDocuments`, `CategoryRail`, `DropZone`, `UploadList`) with three portal opt-ins added to the kit: `withdraw` (the DF-15 "Withdraw" menu and line), `suggested` on a row (DEC-58 a's "Suggested — Brightwater Hale will confirm" in place of "Matched to this request") and `readOnly` (a closed binder). The kit's defaults, and so the TPL-07 specimen, are unchanged.
 - The rail is the screen's own composition of the kit's parts, so the binder picker lists every binder the person can see ("2024 Binder (closed)" opens read-only).
@@ -213,6 +220,6 @@ Each becomes a test in `POR-03.test.tsx` ("POR-03 avoid: …"): gradients in pro
 Tier B for T7 and T7-M is F-05's (F-05-T49).
 
 ## Open gaps
-- No handoff string exists for the upload refusals (`file_too_large`, `type_not_allowed`), the stale Undo (`firm_already_acted`) or the binder load error. The keys are reserved in `domain/portal/messages.ts`; R-01-T09 and R-01-T08 write the fixed words inside the copy bans and record them here.
+- No handoff string exists for the upload refusals (`file_too_large`, `type_not_allowed`), the stale Undo (`firm_already_acted`) or the binder load error. R-01-T10 wrote the refusals ("‹name› is larger than 50 MB. Send a smaller copy or split it into parts." · "‹name› can't be uploaded here. Send a PDF, a photo, a spreadsheet, a Word document or a CSV."); the stale Undo's words remain R-01-T08's.
 - The DropZone copy lists HEIC only once renditions exist (R-01 §11 R7, OQ-3); until then POR-04's line reads as designed and the firm side shows "Preview not available yet" for HEIC.
 - The ignore note label names the preparer ("Add a note for Kevin (optional)"); the binder's client-facing contact is the source of the name (R-01-T07 projects it).

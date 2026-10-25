@@ -543,3 +543,46 @@ describe("POR-02 artboards (part 2, P-08-T23)", () => {
     expect(within(bar).getByRole("button", { name: "More" })).toBeTruthy();
   });
 });
+
+describe("POR-02 → POR-03 (R-01-T10 mounts Documents)", () => {
+  it('"Go to Documents →", "Open binder" and the nav open Documents through the portal entry', async () => {
+    const went: string[] = [];
+    restore = installFixtureMode(scenarios.a);
+    renderRoutes([
+      {
+        path: "/",
+        component: () => (
+          <PortalHome
+            scopeId={null}
+            onNavigate={(area) => {
+              went.push(area);
+            }}
+          />
+        ),
+      },
+    ]);
+    const go = await within(await screen.findByRole("list", { name: "To do" })).findByRole(
+      "button",
+      { name: "Go to Documents →" },
+    );
+    fireEvent.click(go);
+    fireEvent.click(screen.getByRole("button", { name: "Open binder" }));
+    const nav = screen.getByRole("navigation", { name: "Portal" });
+    fireEvent.click(within(nav).getByRole("button", { name: "Documents" }));
+    expect(went).toEqual(["Documents", "Documents", "Documents"]);
+  });
+
+  it("the overdue close upload (d) opens POR-11, still planned: no live link", async () => {
+    const went: string[] = [];
+    restore = installFixtureMode(scenarios.d);
+    renderRoutes([
+      {
+        path: "/",
+        component: () => <PortalHome scopeId={null} onNavigate={(a) => went.push(a)} />,
+      },
+    ]);
+    const list = await screen.findByRole("list", { name: "To do" });
+    expect(within(list).queryByRole("button", { name: "Go to Documents →" })).toBeNull();
+    expect(within(list).getByText("Go to Documents →")).toBeTruthy();
+  });
+});

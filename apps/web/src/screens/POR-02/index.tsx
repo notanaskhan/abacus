@@ -67,8 +67,13 @@ export interface POR02Props {
   onScope?: (scopeId: string) => void;
   /** T7-M at 390 (the portal entry decides from the viewport). */
   mobile?: boolean;
+  /** A nav item, a to-do's link or "Open binder" was chosen (the portal entry routes it). */
+  onNavigate?: (area: string) => void;
   frame?: boolean;
 }
+
+/** Targets built in the portal, by the area that opens them (R-01-T10 mounted POR-03). */
+const LIVE_TARGETS: Readonly<Partial<Record<string, string>>> = { "POR-03": "Documents" };
 
 const TZ = DEFAULT_TZ;
 
@@ -194,9 +199,26 @@ function shownTodos(home: PortalHomeOut, day: (iso: string) => string): ShownTod
   });
 }
 
-function TodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.Element {
+/** The area a to-do opens when its target is built, with the person's way there. */
+function liveArea(todo: PortalHomeTodoOut, onNavigate: Navigate): string | undefined {
+  if (onNavigate === undefined || todo.state === "none") return undefined;
+  return LIVE_TARGETS[todo.target?.screen ?? ""];
+}
+
+type Navigate = ((area: string) => void) | undefined;
+
+function TodoCard({
+  shown,
+  now,
+  onNavigate,
+}: {
+  shown: ShownTodo;
+  now: Date;
+  onNavigate: Navigate;
+}): JSX.Element {
   const { todo, words } = shown;
-  const link = todo.state === "none" ? undefined : goLink(todo);
+  const area = liveArea(todo, onNavigate);
+  const link = todo.state === "none" ? undefined : (COPY.todo.go[todo.kind] ?? undefined);
   const overdue = todo.state === "overdue" && todo.due_date != null;
   return (
     <li
@@ -221,7 +243,16 @@ function TodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.Element 
         </span>
       )}
       {words.sub !== null && <span className="text-cell text-ink-2">{words.sub}</span>}
-      {link !== undefined && (
+      {link !== undefined && area !== undefined && (
+        <button
+          type="button"
+          onClick={() => onNavigate?.(area)}
+          className="mt-auto self-start text-cell font-medium text-ink hover:underline"
+        >
+          {link}
+        </button>
+      )}
+      {link !== undefined && area === undefined && PLANNED_VISIBLE && (
         <span className="mt-auto text-cell font-medium text-ink" title={COPY.planned}>
           {link}
         </span>
@@ -231,9 +262,18 @@ function TodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.Element 
 }
 
 /** T7-M's to-do card: 76 high, full width, glyph, title, line and a chevron when it leads on. */
-function MobileTodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.Element {
+function MobileTodoCard({
+  shown,
+  now,
+  onNavigate,
+}: {
+  shown: ShownTodo;
+  now: Date;
+  onNavigate: Navigate;
+}): JSX.Element {
   const { todo, words } = shown;
-  const link = todo.state === "none" ? undefined : goLink(todo);
+  const area = liveArea(todo, onNavigate);
+  const link = area !== undefined ? COPY.todo.go[todo.kind] : goLink(todo);
   const overdue = todo.state === "overdue" && todo.due_date != null;
   return (
     <li
@@ -254,7 +294,17 @@ function MobileTodoCard({ shown, now }: { shown: ShownTodo; now: Date }): JSX.El
         )}
         {words.sub !== null && <span className="text-cell text-ink-2">{words.sub}</span>}
       </span>
-      {link !== undefined && (
+      {link !== undefined && area !== undefined && (
+        <button
+          type="button"
+          aria-label={link}
+          onClick={() => onNavigate?.(area)}
+          className="inline-flex size-[44px] flex-none items-center justify-center text-ink-3"
+        >
+          <Icon name="chevron-right" size={14} />
+        </button>
+      )}
+      {link !== undefined && area === undefined && (
         <Icon name="chevron-right" size={14} className="flex-none text-ink-3" />
       )}
     </li>
@@ -554,11 +604,13 @@ function Main({
   scopeId,
   firstName,
   mobile,
+  onNavigate,
 }: {
   home: PortalHomeOut;
   scopeId: string;
   firstName: string;
   mobile: boolean;
+  onNavigate: Navigate;
 }): JSX.Element {
   const now = useNow();
   const brand = usePortalBrand();
@@ -605,7 +657,7 @@ function Main({
       ) : mobile ? (
         <ul aria-label={COPY.todo.label} className="flex flex-col gap-[10px]">
           {todos.map((t) => (
-            <MobileTodoCard key={t.todo.kind} shown={t} now={now} />
+            <MobileTodoCard key={t.todo.kind} shown={t} now={now} onNavigate={onNavigate} />
           ))}
         </ul>
       ) : (
@@ -617,7 +669,7 @@ function Main({
           }}
         >
           {todos.map((t) => (
-            <TodoCard key={t.todo.kind} shown={t} now={now} />
+            <TodoCard key={t.todo.kind} shown={t} now={now} onNavigate={onNavigate} />
           ))}
         </ul>
       )}
@@ -633,10 +685,22 @@ function Main({
         >
           <div className="flex items-center">
             <h2 className="flex-1 text-section font-medium">{COPY.binder.title}</h2>
-            {PLANNED_VISIBLE && (
-              <Button variant="secondary" size="sm" disabled title={COPY.planned}>
+            {onNavigate !== undefined ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  onNavigate("Documents");
+                }}
+              >
                 {COPY.binder.open}
               </Button>
+            ) : (
+              PLANNED_VISIBLE && (
+                <Button variant="secondary" size="sm" disabled title={COPY.planned}>
+                  {COPY.binder.open}
+                </Button>
+              )
             )}
           </div>
           <ProgressBar
@@ -762,6 +826,7 @@ export function POR02({
   scopeId,
   onScope,
   mobile = false,
+  onNavigate,
   frame = false,
 }: POR02Props): JSX.Element | null {
   const [picked, setPicked] = useState<string | null>(scopeId);
@@ -804,7 +869,13 @@ export function POR02({
         <Loading />
       )
     ) : (
-      <Main home={data} scopeId={chosen} firstName={firstName} mobile={mobile} />
+      <Main
+        home={data}
+        scopeId={chosen}
+        firstName={firstName}
+        mobile={mobile}
+        onNavigate={onNavigate}
+      />
     );
   if (mobile) {
     return (
@@ -817,6 +888,7 @@ export function POR02({
           userMenu={userMenu}
           frame={frame}
           {...(frame ? { height: 844 } : {})}
+          {...(onNavigate === undefined ? {} : { onNavigate })}
         >
           {body}
         </PortalLayout>
@@ -833,6 +905,7 @@ export function POR02({
         userMenu={userMenu}
         frame={frame}
         {...(frame ? { height: 860 } : {})}
+        {...(onNavigate === undefined ? {} : { onNavigate })}
         rail={<Rail home={data} />}
       >
         <Pane header={false}>{body}</Pane>

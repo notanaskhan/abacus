@@ -34,10 +34,17 @@ const SignIn = lazy(async () => ({
 const Shell = lazy(async () => ({
   default: (await import("../../portal/PortalShell")).PortalShell,
 }));
-// POR-02 (P-08-T15): Home is its own chunk; the other areas keep the shell's planned state.
+// POR-02 (P-08-T15) and POR-03 (R-01-T10): Home and Documents are their own chunks; the other
+// areas keep the shell's planned state.
 const Home = lazy(async () => ({
   default: (await import("../../screens/POR-02")).POR02,
 }));
+const Documents = lazy(async () => ({
+  default: (await import("../../screens/POR-03")).POR03,
+}));
+
+/** The portal's built areas by nav label; the others stay the shell's planned page. */
+export const AREA_PATHS: Readonly<Record<string, string>> = { Home: "/", Documents: "/documents" };
 
 function Root(): JSX.Element {
   return (
@@ -121,7 +128,34 @@ function Area({ area }: { area: string }): JSX.Element | null {
     };
   }, [signedIn]);
   if (!signedIn) return null;
-  return area === "Home" ? <HomePage /> : <Shell area={area} />;
+  if (area === "Home") return <HomePage />;
+  if (area === "Documents") return <DocumentsPage />;
+  return <Shell area={area} />;
+}
+
+/** A nav item, to-do link or "Open binder": built areas by path, the rest stay put. */
+function useAreaNavigate(): (area: string) => void {
+  const { history } = useRouter();
+  return (area) => {
+    const path = AREA_PATHS[area];
+    if (path !== undefined) history.push(path);
+  };
+}
+
+/** POR-03 with `?binder=` (R-01-T10; docs/screens/POR-03.md): the newest binder by default. */
+function DocumentsPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  const [binder] = useState(
+    () => new URLSearchParams(window.location.search).get("binder") ?? undefined,
+  );
+  return (
+    <Documents
+      {...(binder === undefined ? {} : { binderId: binder })}
+      mobile={mobile}
+      onNavigate={navigateTo}
+    />
+  );
 }
 
 /** The portal's 390 layout (T7-M, DEC-45) below 768 px wide (DEC-346). */
@@ -152,11 +186,13 @@ function useMobileViewport(): boolean {
 function HomePage(): JSX.Element {
   const { history } = useRouter();
   const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
   const [scope] = useState(() => new URLSearchParams(window.location.search).get("scope"));
   return (
     <Home
       scopeId={scope}
       mobile={mobile}
+      onNavigate={navigateTo}
       onScope={(id) => {
         history.replace(`/?scope=${encodeURIComponent(id)}`);
       }}
