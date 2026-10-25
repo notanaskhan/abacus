@@ -47,6 +47,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     ItemFacts,
     Resource,
+    ScopeFacts,
     allowed_actions,
     authorise,
     engagement_role_of,
@@ -225,11 +226,13 @@ async def list_binders(ctx: AuthContext, scope_id: UUID | None) -> PortalBinderL
         raise NotFound("portal_scope")
     facts = [await scope_facts(ctx.tenant, g.scope_kind, g.scope_id) for g in grants]
     items: list[PortalBinderRefOut] = []
+    checked = False
     for ref in await portal_binder_refs(ctx):
         try:
             engagement = await _authorised(ctx, ref)
         except NotFound:
             continue
+        checked = True
         if scope_id is not None and not any(
             f is not None
             and (
@@ -252,7 +255,27 @@ async def list_binders(ctx: AuthContext, scope_id: UUID | None) -> PortalBinderL
                 read_only=closed or engagement.archived,
             )
         )
+    if not checked:
+        await _scope_readable(ctx, [f for f in facts if f is not None])
     return PortalBinderListOut(items=items, total=len(items))
+
+
+async def _scope_readable(ctx: AuthContext, facts: list[ScopeFacts]) -> None:
+    """No binder was listed, so none was authorised: the picker still answers only for a scope
+    the caller may read the documents of (`portal_documents.read`), else 404 as with no grant
+    (a client with nothing published gets an empty picker, never the route guard's 500)."""
+    for f in facts:
+        try:
+            if f.engagement_id is not None:
+                engagement = await get_ref(ctx, f.engagement_id)
+                resource = replace(engagement.resource(), work_item_id=f.work_item_id)
+            else:
+                resource = Resource.client(ctx.tenant_id, f.client_id)
+            await authorise(ctx, READ, resource)
+            return
+        except (Forbidden, NotFound):
+            continue
+    raise NotFound("portal_scope")
 
 
 async def _seen(ctx: AuthContext, engagement: EngagementRef, binder: PortalBinder) -> _Seen:
