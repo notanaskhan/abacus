@@ -78,6 +78,13 @@ Shadow runs are never shown (SPEC-036). Firm-level runs (no engagement) wait for
   - The drawer says "You can see what ran, not the client content."
   - The engagement's people, and practice and quality oversight in scope, see the content (`run_content.read`).
 
+- **AC-10 Agent dock, first slice (SHL-13; TASK-5003).**
+  - The audit cockpit's Agent tab shows the engagement's runs as tool cards, oldest first: "Execute › ‹what it does›", the state, and the agent, time and initiator.
+  - Expanding a card follows the run live and shows what it read, what it proposed, and what came after: narration, decisions, failure.
+  - "Open trace" opens the WB-09 drawer.
+  - The v1 activity list stays below the thread. A viewer refused `agent_run.read` sees only that list.
+  - The dock decides nothing. Approve and decline wait for P-10's C6 v2 actions (P-09-T14).
+
 ## 3. Out of scope
 - Live streaming, cancelling and retrying runs.
 - Firm-wide run views.
