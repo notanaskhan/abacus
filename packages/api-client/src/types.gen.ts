@@ -4339,7 +4339,9 @@ export type ContactIn = {
 /**
  * ContactMfaResetOut
  *
- * After a reset the next sign-in goes to two-step setup (POR-01, the setup state).
+ * What a firm's reset ended: the person's trusted devices and portal sessions in this firm,
+ * so the next sign-in here asks for the second step again. Never the person's factor, which
+ * is theirs across firms (DEC-329), and nothing about other firms.
  */
 export type ContactMfaResetOut = {
     /**
@@ -4351,13 +4353,13 @@ export type ContactMfaResetOut = {
      */
     contact_id: string;
     /**
-     * Mfa Enrolled
-     */
-    mfa_enrolled: boolean;
-    /**
      * Reset At
      */
     reset_at: string;
+    /**
+     * Sessions Ended
+     */
+    sessions_ended: number;
     /**
      * Trusted Devices Revoked
      */
@@ -22243,10 +22245,6 @@ export type ResetContactMfaErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -22302,10 +22300,6 @@ export type UnlockContactPortalErrors = {
      * Not found
      */
     404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -22742,10 +22736,6 @@ export type UnlockContactErrors = {
      * Not found
      */
     404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
     /**
      * Invalid request
      */

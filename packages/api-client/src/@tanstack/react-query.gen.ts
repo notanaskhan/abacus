@@ -1175,11 +1175,11 @@ export const createContactMutation = (options?: Partial<Options<CreateContactDat
 /**
  * Reset Contact Mfa Route
  *
- * Remove the factor, the backup codes and the trusted devices and end the portal sessions;
- * email the client in the firm's name. Security admin with fresh MFA. Audited
- * `portal_mfa.reset`; the next sign-in goes to two-step setup. 409 `factor_shared` when the
- * person belongs to another firm too: the factor stays, this firm's devices and sessions end,
- * audited `portal_mfa.reset_refused`.
+ * End the person's trusted devices and portal sessions in this firm, so the next sign-in
+ * here asks for the second step again; email the client in the firm's name. Security admin
+ * with fresh MFA. Audited `portal_mfa.reset`. The factor and backup codes are the person's
+ * and never deleted here (the person re-enrols, POR-12, or platform support resets them); the
+ * answer is the same whatever other firms the person belongs to (DEC-329).
  */
 export const resetContactMfaMutation = (options?: Partial<Options<ResetContactMfaData>>): UseMutationOptions<ResetContactMfaResponse, ResetContactMfaError, Options<ResetContactMfaData>> => {
     const mutationOptions: UseMutationOptions<ResetContactMfaResponse, ResetContactMfaError, Options<ResetContactMfaData>> = {
@@ -1199,9 +1199,8 @@ export const resetContactMfaMutation = (options?: Partial<Options<ResetContactMf
  * Unlock Contact Portal Route
  *
  * Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person
- * (INV-5); a walled client, or a contact of another client, answers 404 (INV-3); 409
- * `factor_shared` when the person's locked factor is theirs in another firm too (the firm's
- * sign-in lock is still cleared).
+ * (INV-5); a walled client, or a contact of another client, answers 404 (INV-3). Only the
+ * firm's sign-in lock: the same answer whatever else the person holds (DEC-329).
  */
 export const unlockContactPortalMutation = (options?: Partial<Options<UnlockContactPortalData>>): UseMutationOptions<UnlockContactPortalResponse, UnlockContactPortalError, Options<UnlockContactPortalData>> => {
     const mutationOptions: UseMutationOptions<UnlockContactPortalResponse, UnlockContactPortalError, Options<UnlockContactPortalData>> = {

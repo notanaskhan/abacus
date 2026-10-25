@@ -532,7 +532,6 @@ async def change_contact_access_route(
     "/{contact_id}/unlock",
     action="contact.unlock",
     response_model=ContactUnlockedOut,
-    errors=(409,),
 )
 async def unlock_contact_route(contact_id: UUID, ctx: Ctx) -> ContactUnlockedOut:
     """Human-only: clears a portal lock (P-08 state); `contact.unlocked` audited."""
@@ -555,15 +554,13 @@ async def _portal_gate(ctx: AuthContext) -> None:
     "/{client_id}/contacts/{contact_id}/portal-unlock",
     action="contact.unlock",
     response_model=ContactPortalStatusOut,
-    errors=(409,),
 )
 async def unlock_contact_portal_route(
     client_id: UUID, contact_id: UUID, ctx: Ctx
 ) -> ContactPortalStatusOut:
     """Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person
-    (INV-5); a walled client, or a contact of another client, answers 404 (INV-3); 409
-    `factor_shared` when the person's locked factor is theirs in another firm too (the firm's
-    sign-in lock is still cleared)."""
+    (INV-5); a walled client, or a contact of another client, answers 404 (INV-3). Only the
+    firm's sign-in lock: the same answer whatever else the person holds (DEC-329)."""
     await _portal_gate(ctx)
     done = await service.portal_unlock(ctx, client_id, contact_id)
     return ContactPortalStatusOut(
@@ -578,16 +575,15 @@ async def unlock_contact_portal_route(
     "/{client_id}/contacts/{contact_id}/mfa-reset",
     action="contact.mfa_reset",
     response_model=ContactMfaResetOut,
-    errors=(409,),
 )
 async def reset_contact_mfa_route(
     client_id: UUID, contact_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ContactMfaResetOut:
-    """Remove the factor, the backup codes and the trusted devices and end the portal sessions;
-    email the client in the firm's name. Security admin with fresh MFA. Audited
-    `portal_mfa.reset`; the next sign-in goes to two-step setup. 409 `factor_shared` when the
-    person belongs to another firm too: the factor stays, this firm's devices and sessions end,
-    audited `portal_mfa.reset_refused`."""
+    """End the person's trusted devices and portal sessions in this firm, so the next sign-in
+    here asks for the second step again; email the client in the firm's name. Security admin
+    with fresh MFA. Audited `portal_mfa.reset`. The factor and backup codes are the person's
+    and never deleted here (the person re-enrols, POR-12, or platform support resets them); the
+    answer is the same whatever other firms the person belongs to (DEC-329)."""
     await _portal_gate(ctx)
     await service.check_mfa_reset(ctx, client_id, contact_id)  # before the replay lookup
 
@@ -596,8 +592,8 @@ async def reset_contact_mfa_route(
         out = ContactMfaResetOut(
             client_id=client_id,
             contact_id=done.contact_id,
-            mfa_enrolled=done.mfa_enrolled,
             trusted_devices_revoked=done.trusted_devices_revoked,
+            sessions_ended=done.sessions_ended,
             reset_at=done.reset_at,
         )
         return 200, out.model_dump(mode="json")

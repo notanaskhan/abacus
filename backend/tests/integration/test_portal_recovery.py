@@ -61,7 +61,6 @@ from abacus.modules.identity.portal_session import (
     verify_code,
 )
 from abacus.modules.organisations import contacts as contacts_service
-from abacus.modules.organisations.contacts import FactorShared
 from abacus.modules.portal.branding import activate_portal_host, add_portal_host
 from abacus_tools.harness.mailbox import LocalMailboxReader
 
@@ -474,57 +473,6 @@ async def _second_step(p: Portal) -> SecondStepRequired:
     return asked.value
 
 
-async def test_ac19_the_reset_removes_the_factor_codes_and_devices_and_the_next_sign_in_sets_up(
-    seed: Seeder, tmp_path: Path
-) -> None:
-    await _templates()
-    tess = await _portal(seed)
-    secret, session = await _enrol(tess)
-    step = await _second_step(tess)
-    assert step.state == "mfa_required"
-    trusted = await second_step(
-        tess.host, step.mfa_token, totp=totp_at(secret, time.time()), trust_device=True
-    )
-    assert trusted.device_cookie is not None
-    felix = await _staff(seed, tess)
-
-    done = await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
-    assert done.trusted_devices_revoked == 1 and done.mfa_enrolled is False
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
-        )
-        == 0
-    )
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM mfa_backup_codes WHERE user_id = $1", tess.person.user_id
-        )
-        == 0
-    )
-    assert (
-        await seed.value(
-            "SELECT revoked_reason FROM trusted_devices WHERE user_id = $1", tess.person.user_id
-        )
-        == "mfa_reset"
-    )
-    # Its sessions in the firm ended; the MFA floor still holds: the next sign-in enrols again.
-    assert await portal_context(session, tess.host) is None
-    assert (await _second_step(tess)).state == "mfa_setup_required"
-    actions = await _actions(seed, tess.tenant)
-    assert actions.count("portal_mfa.reset") == 1
-    rows = await seed.rows(
-        "SELECT actor_id FROM audit_events WHERE tenant_id = $1 AND action = 'portal_mfa.reset'",
-        tess.tenant,
-    )
-    assert rows[0]["actor_id"] == str(felix.user_id)  # INV-5: names the person
-    notices = await _outbox(seed, tess.tenant, "portal_mfa.reset_notice_requested")
-    await deliver_mfa_reset_notice(notices[0])
-    mail = LocalMailboxReader(tmp_path / "mailbox").messages()
-    assert [m.to for m in mail] == [tess.email]
-    assert mail[0].body == f"Firm {tess.tenant.hex[:8]} reset your two-step verification."
-
-
 async def test_ac18_ac19_unlock_and_reset_deny_the_agent_and_system_principals(
     seed: Seeder,
 ) -> None:
@@ -545,27 +493,64 @@ async def test_ac18_ac19_unlock_and_reset_deny_the_agent_and_system_principals(
     assert "portal_mfa.reset" not in await _actions(seed, tess.tenant)
 
 
-async def test_ac18_unlock_clears_the_sign_in_and_second_step_locks_naming_the_person(
-    seed: Seeder,
-) -> None:
+async def test_ac18_a_contact_of_another_client_or_a_walled_one_answers_404(seed: Seeder) -> None:
     tess = await _portal(seed)
-    secret, _ = await _enrol(tess)
+    felix = await _staff(seed, tess)
+    with pytest.raises(NotFound):
+        await contacts_service.mfa_reset(felix, uuid.uuid4(), tess.contact_id)
+    with pytest.raises(NotFound):
+        await contacts_service.portal_unlock(felix, uuid.uuid4(), tess.contact_id)
+
+
+async def _reset_and_unlock_answers(
+    seed: Seeder, tmp_path: Path, *, other_firm: bool
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Reset and unlock for an enrolled, locked person, in one firm or two; the answers with
+    the volatile values (ids, times) taken out."""
+    tess = await _portal(seed)
+    secret, session = await _enrol(tess)
     step = await _second_step(tess)
-    for _ in range(3):
-        with pytest.raises((MfaMismatch, MfaLocked, MfaExpired)):
-            await second_step(tess.host, step.mfa_token, totp="000000")
-    locked = await seed.value(
-        "SELECT mfa_locked_until > now() FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+    await second_step(
+        tess.host, step.mfa_token, totp=totp_at(secret, time.time()), trust_device=True
     )
-    assert locked is True
-    grace = await _staff(seed, tess, "firm_admin")
-    await contacts_service.portal_unlock(grace, tess.client_id, tess.contact_id)
+    if other_firm:
+        await _second_firm(seed, tess)
+    felix = await _staff(seed, tess)
+    reset = await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
+    # The factor and its backup codes are the person's: a firm never deletes them.
     assert (
         await seed.value(
-            "SELECT mfa_locked_until FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
         )
-        is None
+        == 1
     )
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM mfa_backup_codes WHERE user_id = $1", tess.person.user_id
+        )
+        == 8
+    )
+    # This firm's devices and sessions ended: the second step is asked again here.
+    assert await portal_context(session, tess.host) is None
+    assert (
+        await seed.value(
+            "SELECT revoked_reason FROM trusted_devices WHERE user_id = $1 AND tenant_id = $2",
+            tess.person.user_id,
+            tess.tenant,
+        )
+        == "mfa_reset"
+    )
+    assert (await _second_step(tess)).state == "mfa_required"
+    actions = await _actions(seed, tess.tenant)
+    assert actions.count("portal_mfa.reset") == 1
+    # Unlock after three wrong second-step codes: the firm's sign-in lock clears, the
+    # person's factor lock is left and nothing says so.
+    locked = await _second_step(tess)
+    for _ in range(3):
+        with pytest.raises((MfaMismatch, MfaLocked, MfaExpired)):
+            await second_step(tess.host, locked.mfa_token, totp="000000")
+    grace = await _staff(seed, tess, "firm_admin")
+    unlocked = await contacts_service.portal_unlock(grace, tess.client_id, tess.contact_id)
     assert (
         await seed.value(
             "SELECT count(*) FROM sign_in_locks "
@@ -574,23 +559,76 @@ async def test_ac18_unlock_clears_the_sign_in_and_second_step_locks_naming_the_p
         )
         == 0
     )
-    fresh = await _second_step(tess)
-    done = await second_step(tess.host, fresh.mfa_token, totp=totp_at(secret, time.time()))
-    assert done.tokens.access_token
+    assert await seed.value(
+        "SELECT mfa_locked_until > now() FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+    )
+    notices = await _outbox(seed, tess.tenant, "portal_mfa.reset_notice_requested")
+    assert len(notices) == 1
     rows = await seed.rows(
-        "SELECT actor_id FROM audit_events WHERE tenant_id = $1 AND action = 'contact.unlocked'",
+        "SELECT action, after_ref FROM audit_events WHERE tenant_id = $1 "
+        "AND action IN ('portal_mfa.reset', 'contact.unlocked') ORDER BY occurred_at",
         tess.tenant,
     )
-    assert [r["actor_id"] for r in rows] == [str(grace.user_id)]
+    trail = [(r["action"], r["after_ref"]) for r in rows]
+    for action, _ in trail:
+        assert "refused" not in str(action)
+    reset_out: dict[str, object] = {
+        "devices": reset.trusted_devices_revoked,
+        "sessions": reset.sessions_ended,
+        "trail": [str(a) for a, _ in trail],
+    }
+    unlock_out: dict[str, object] = {"state": unlocked.portal_state}
+    return reset_out, unlock_out
 
 
-async def test_ac18_a_contact_of_another_client_or_a_walled_one_answers_404(seed: Seeder) -> None:
+async def test_review_a_firm_reset_and_unlock_answer_alike_in_one_firm_or_two(
+    seed: Seeder, tmp_path: Path
+) -> None:
+    """Main-session review of b0d47dd9: no answer may say the person is in another firm."""
+    alone = await _reset_and_unlock_answers(seed, tmp_path, other_firm=False)
+    shared = await _reset_and_unlock_answers(seed, tmp_path, other_firm=True)
+    assert alone == shared
+    assert alone[0]["devices"] == 1 and cast(int, alone[0]["sessions"]) >= 1
+
+
+async def test_ac19_the_reset_names_the_person_and_emails_the_client(
+    seed: Seeder, tmp_path: Path
+) -> None:
+    await _templates()
     tess = await _portal(seed)
+    await _enrol(tess)
     felix = await _staff(seed, tess)
-    with pytest.raises(NotFound):
-        await contacts_service.mfa_reset(felix, uuid.uuid4(), tess.contact_id)
-    with pytest.raises(NotFound):
-        await contacts_service.portal_unlock(felix, uuid.uuid4(), tess.contact_id)
+    await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
+    rows = await seed.rows(
+        "SELECT actor_id FROM audit_events WHERE tenant_id = $1 AND action = 'portal_mfa.reset'",
+        tess.tenant,
+    )
+    assert [r["actor_id"] for r in rows] == [str(felix.user_id)]  # INV-5: names the person
+    notices = await _outbox(seed, tess.tenant, "portal_mfa.reset_notice_requested")
+    await deliver_mfa_reset_notice(notices[0])
+    mail = LocalMailboxReader(tmp_path / "mailbox").messages()
+    assert [m.to for m in mail] == [tess.email]
+    assert mail[0].body == f"Firm {tess.tenant.hex[:8]} reset your two-step verification."
+
+
+async def test_review_a_person_whose_membership_here_ended_is_not_reset(seed: Seeder) -> None:
+    tess = await _portal(seed)
+    await _enrol(tess)
+    felix = await _staff(seed, tess)
+    await seed.run(
+        "UPDATE memberships SET status = 'revoked', revoked_at = now() "
+        "WHERE tenant_id = $1 AND user_id = $2",
+        tess.tenant,
+        tess.person.user_id,
+    )
+    done = await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
+    assert (done.trusted_devices_revoked, done.sessions_ended) == (0, 0)
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+        )
+        == 1
+    )
 
 
 # --- AC-20: the pause ---------------------------------------------------------------------------
@@ -670,85 +708,6 @@ async def _second_firm(seed: Seeder, p: Portal) -> uuid.UUID:
         p.person.user_id,
     )
     return other
-
-
-async def test_review_a_reset_never_reaches_a_factor_another_firm_shares(seed: Seeder) -> None:
-    tess = await _portal(seed)
-    secret, session = await _enrol(tess)
-    step = await _second_step(tess)
-    await second_step(
-        tess.host, step.mfa_token, totp=totp_at(secret, time.time()), trust_device=True
-    )
-    await _second_firm(seed, tess)
-    felix = await _staff(seed, tess)
-    with pytest.raises(FactorShared) as refused:
-        await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
-    assert refused.value.facts["trusted_devices_revoked"] == 1
-    # The factor and its backup codes are the person's across firms: untouched.
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
-        )
-        == 1
-    )
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM mfa_backup_codes WHERE user_id = $1", tess.person.user_id
-        )
-        == 8
-    )
-    # This firm's own devices and sessions went; the refusal is audited, nothing is emailed.
-    assert await portal_context(session, tess.host) is None
-    actions = await _actions(seed, tess.tenant)
-    assert "portal_mfa.reset_refused" in actions and "portal_mfa.reset" not in actions
-    assert await _outbox(seed, tess.tenant, "portal_mfa.reset_notice_requested") == []
-    assert (await _second_step(tess)).state == "mfa_required"  # still enrolled
-
-
-async def test_review_an_unlock_leaves_a_shared_factor_locked(seed: Seeder) -> None:
-    tess = await _portal(seed)
-    await _enrol(tess)
-    step = await _second_step(tess)
-    for _ in range(3):
-        with pytest.raises((MfaMismatch, MfaLocked, MfaExpired)):
-            await second_step(tess.host, step.mfa_token, totp="000000")
-    await _second_firm(seed, tess)
-    grace = await _staff(seed, tess, "firm_admin")
-    with pytest.raises(FactorShared):
-        await contacts_service.portal_unlock(grace, tess.client_id, tess.contact_id)
-    assert await seed.value(
-        "SELECT mfa_locked_until > now() FROM mfa_factors WHERE user_id = $1", tess.person.user_id
-    )
-    # The firm's own sign-in lock is cleared, and both are audited.
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM sign_in_locks "
-            "WHERE host_tenant_id = $1 AND locked_until > now()",
-            tess.tenant,
-        )
-        == 0
-    )
-    actions = await _actions(seed, tess.tenant)
-    assert "contact.unlocked" in actions and "portal_mfa.unlock_refused" in actions
-
-
-async def test_review_a_person_whose_membership_here_ended_is_not_reset(seed: Seeder) -> None:
-    tess = await _portal(seed)
-    await _enrol(tess)
-    felix = await _staff(seed, tess)
-    await seed.run(
-        "UPDATE memberships SET status = 'revoked', revoked_at = now() "
-        "WHERE tenant_id = $1 AND user_id = $2",
-        tess.tenant,
-        tess.person.user_id,
-    )
-    await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
-    assert (
-        await seed.value(
-            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
-        )
-        == 1
-    )
 
 
 async def _renewals(seed: Seeder, tenant: uuid.UUID) -> int:

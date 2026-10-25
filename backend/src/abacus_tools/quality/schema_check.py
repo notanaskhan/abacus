@@ -281,7 +281,7 @@ DEFINER_FUNCTIONS = frozenset(
     # 0156 (P-08-T21): the sign-in pause's host lookup, secure links before sign-in, a recipient's
     # invitation renewal, and firm-side MFA reset and unlock for the session's firm's clients.
     | {"portal_host_tenant", "portal_link_claim", "portal_link_find"}
-    | {"portal_invitation_find", "portal_mfa_reset", "portal_mfa_unlock"}
+    | {"portal_invitation_find", "portal_mfa_reset"}
     # 0112 (Q-02-T23): staff-imported, two-person-published retention sets; the policy trigger.
     | {"retention_set_import", "retention_set_publish", "retention_floors_published"}
     | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}

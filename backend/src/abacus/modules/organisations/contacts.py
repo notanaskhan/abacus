@@ -34,7 +34,7 @@ from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.listing import Position, decode_cursor, encode_cursor, query_hash
-from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import (
     AuthContext,
     ContactGrant,
@@ -57,7 +57,6 @@ from abacus.modules.identity.api import (
     invitations_of_contacts,
     invite_contact,
     locked_addresses,
-    remove_provider_factor,
     resend_contact_invitation,
     reset_portal_mfa,
     revoke_contact,
@@ -65,7 +64,6 @@ from abacus.modules.identity.api import (
     scope_facts,
     sign_in_addresses,
     unlock_contact_sign_in,
-    unlock_portal_mfa,
     visible_clients,
 )
 from abacus.modules.identity.api import GrantScopeOutsideClient as ScopeOutsideClient
@@ -97,14 +95,6 @@ _PORTAL_ORDER: Final = {"active": 0, "invited": 1, "locked": 2, "not_invited": 3
 # error catalogue keeps the engagement's summary for the shared code.
 class GateUnmet(DomainConflict):
     code = "gate_unmet"
-
-
-class FactorShared(DomainConflict):
-    """P-08-T21 (DEC-329): the person's second factor is theirs in another firm too, so this
-    firm can't reset or unlock it (this firm's devices and sessions still end). Platform support,
-    or the person re-enrolling from their own account (POR-12), can."""
-
-    code = "factor_shared"
 
 
 class ContactBound(DomainConflict):
@@ -725,10 +715,6 @@ async def unlock(ctx: AuthContext, contact_id: UUID) -> tuple[UUID, str, datetim
         await unlock_contact_sign_in(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
-        factor = await unlock_portal_mfa(tx, ctx, contact.user_id)  # P-08-T21: second step too
-        _refused_if_shared(tx, contact, factor)
-    if factor == "shared":
-        raise FactorShared(facts={"contact_id": str(contact.id)})
     return contact.id, contact.portal_state, await clock.now(ctx.tenant)
 
 
@@ -744,8 +730,8 @@ class PortalUnlocked:
 @dataclass(frozen=True)
 class MfaResetView:
     contact_id: UUID
-    mfa_enrolled: bool
     trusted_devices_revoked: int
+    sessions_ended: int
     reset_at: datetime
 
 
@@ -768,9 +754,9 @@ async def _client_contact(
 
 
 async def portal_unlock(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> PortalUnlocked:
-    """Story 7.1: the firm's sign-in lock on where the contact signs in (DEC-303) and the second-
-    step lock on their factor, cleared in one unit of work; `contact.unlocked` names the person
-    who unlocked (INV-5)."""
+    """Story 7.1: the firm's sign-in lock on where the contact signs in (DEC-303), cleared;
+    `contact.unlocked` names the person who unlocked (INV-5). The person's factor lock, theirs
+    across firms, is never touched or reported (DEC-329); it lapses on its own after 15 minutes."""
     contact = await _client_contact(ctx, "contact.unlock", client_id, contact_id)
     address = (await sign_in_addresses(ctx.tenant, [(contact.id, contact.user_id)])).get(
         contact.id
@@ -779,22 +765,7 @@ async def portal_unlock(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> 
         await unlock_contact_sign_in(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
-        factor = await unlock_portal_mfa(tx, ctx, contact.user_id)
-        _refused_if_shared(tx, contact, factor)
-    if factor == "shared":
-        raise FactorShared(facts={"contact_id": str(contact.id)})
     return PortalUnlocked(contact.id, contact.portal_state)
-
-
-def _refused_if_shared(tx: UnitOfWork, contact: Contact, factor: str) -> None:
-    """The sign-in lock is the firm's and was cleared; the factor's lock is the person's across
-    firms and stays (DEC-329): audited as a refusal beside `contact.unlocked`."""
-    if factor == "shared":
-        tx.record(
-            "portal_mfa.unlock_refused",
-            target=Target("client", contact.client_id),
-            after=Ref(contact_id=contact.id),
-        )
 
 
 async def check_mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> None:
@@ -803,24 +774,16 @@ async def check_mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -
 
 
 async def mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> MfaResetView:
-    """Story 7.2: the contact's person's factor, backup codes, trusted devices and portal
-    sessions here, removed in one unit of work with `portal_mfa.reset`; the notice email and the
-    provider's copy of the factor follow."""
+    """Story 7.2: the contact's person's trusted devices and portal sessions here, ended in one
+    unit of work with `portal_mfa.reset`; the notice email follows. Never the factor (DEC-329)."""
     contact = await _client_contact(ctx, "contact.mfa_reset", client_id, contact_id)
     async with uow(ctx.tenant) as tx:
         done = await reset_portal_mfa(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, user_id=contact.user_id
         )
-    if done.shared:
-        raise FactorShared(
-            facts={
-                "contact_id": str(contact.id),
-                "trusted_devices_revoked": done.devices_revoked,
-                "sessions_ended": done.sessions_ended,
-            }
-        )
-    await remove_provider_factor(done.factor_ref)
-    return MfaResetView(contact.id, False, done.devices_revoked, await clock.now(ctx.tenant))
+    return MfaResetView(
+        contact.id, done.devices_revoked, done.sessions_ended, await clock.now(ctx.tenant)
+    )
 
 
 async def contact_portal_facts(

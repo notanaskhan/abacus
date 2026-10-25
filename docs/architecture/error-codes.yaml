@@ -308,13 +308,6 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
-  factor_shared:
-    status: 409
-    raised_by:
-    - abacus.modules.organisations.contacts.FactorShared
-    summary: 'P-08-T21 (DEC-329): the person''s second factor is theirs in another firm too, so this
-      firm can''t reset or unlock it (this firm''s devices and sessions still end). Platform support,
-      or the person re-enrolling from their own account (POR-12), can.'
   fieldwork_unavailable:
     status: 409
     raised_by:

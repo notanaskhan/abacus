@@ -9311,7 +9311,7 @@
         "type": "object"
       },
       "ContactMfaResetOut": {
-        "description": "After a reset the next sign-in goes to two-step setup (POR-01, the setup state).",
+        "description": "What a firm's reset ended: the person's trusted devices and portal sessions in this firm,\nso the next sign-in here asks for the second step again. Never the person's factor, which\nis theirs across firms (DEC-329), and nothing about other firms.",
         "properties": {
           "client_id": {
             "cls": "internal",
@@ -9325,16 +9325,17 @@
             "title": "Contact Id",
             "type": "string"
           },
-          "mfa_enrolled": {
-            "cls": "internal",
-            "title": "Mfa Enrolled",
-            "type": "boolean"
-          },
           "reset_at": {
             "cls": "internal",
             "format": "date-time",
             "title": "Reset At",
             "type": "string"
+          },
+          "sessions_ended": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Sessions Ended",
+            "type": "integer"
           },
           "trusted_devices_revoked": {
             "cls": "internal",
@@ -9346,8 +9347,8 @@
         "required": [
           "client_id",
           "contact_id",
-          "mfa_enrolled",
           "trusted_devices_revoked",
+          "sessions_ended",
           "reset_at"
         ],
         "title": "ContactMfaResetOut",
@@ -47195,7 +47196,7 @@
     },
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset": {
       "post": {
-        "description": "Remove the factor, the backup codes and the trusted devices and end the portal sessions;\nemail the client in the firm's name. Security admin with fresh MFA. Audited\n`portal_mfa.reset`; the next sign-in goes to two-step setup. 409 `factor_shared` when the\nperson belongs to another firm too: the factor stays, this firm's devices and sessions end,\naudited `portal_mfa.reset_refused`.",
+        "description": "End the person's trusted devices and portal sessions in this firm, so the next sign-in\nhere asks for the second step again; email the client in the firm's name. Security admin\nwith fresh MFA. Audited `portal_mfa.reset`. The factor and backup codes are the person's\nand never deleted here (the person re-enrols, POR-12, or platform support resets them); the\nanswer is the same whatever other firms the person belongs to (DEC-329).",
         "operationId": "reset_contact_mfa",
         "parameters": [
           {
@@ -47303,16 +47304,6 @@
             },
             "description": "Not found"
           },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -47333,7 +47324,7 @@
     },
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock": {
       "post": {
-        "description": "Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person\n(INV-5); a walled client, or a contact of another client, answers 404 (INV-3); 409\n`factor_shared` when the person's locked factor is theirs in another firm too (the firm's\nsign-in lock is still cleared).",
+        "description": "Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person\n(INV-5); a walled client, or a contact of another client, answers 404 (INV-3). Only the\nfirm's sign-in lock: the same answer whatever else the person holds (DEC-329).",
         "operationId": "unlock_contact_portal",
         "parameters": [
           {
@@ -47429,16 +47420,6 @@
               }
             },
             "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -48390,16 +48371,6 @@
               }
             },
             "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {

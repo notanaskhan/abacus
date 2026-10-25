@@ -14,15 +14,13 @@
   host; the renewal's checks and insert then run in that firm's tenant session),
   `portal_invitation_find` (the same for an invitation token), and `portal_host_tenant` (the
   host's firm, for the sign-in pause; never returned to the visitor).
-- Firm-side recovery definers, in the session's firm only (`app.tenant_id`) and only for a
-  person with an active client membership there (anyone else: nothing happens). The factor is
-  the person's, one across firms (DEC-250), so it is touched only when they belong to no other
-  firm (the caller reads their other memberships through the identity role, and their live
-  sessions and trusted devices elsewhere count too): `portal_mfa_reset` removes the factor and
-  backup codes then, and otherwise reports `shared`; either way it revokes their trusted
-  devices in this firm (`mfa_reset`) and ends their portal sessions here, which are the firm's
-  own. `portal_mfa_unlock` clears the factor's
-  second-step lock, or reports `shared` while another firm's membership exists.
+- Firm-side recovery, in the session's firm only (`app.tenant_id`) and only for a person with
+  an active client membership there (anyone else: nothing happens): `portal_mfa_reset` revokes
+  their trusted devices in this firm (`mfa_reset`) and ends their portal sessions here, so the
+  next sign-in here asks for the second step again. It never touches the factor or the backup
+  codes: those are the person's, one across firms (DEC-250), reset only by the person
+  (POR-12) or platform support, and the answer is the same whatever other firms exist
+  (DEC-329). Unlock clears only the firm's sign-in lock (0146's `portal_sign_in_unlock`).
 - `abacus_human_only_actions()`: origin's 28 entries (0135) plus `portal_mfa.reset` and
   `contact.unlocked`; the downgrade restores the 28.
 - `client_invitations.renewal_count` becomes updatable by the app (a recipient's renewal, at most
@@ -53,8 +51,7 @@ _FUNCTIONS = (
     "portal_link_claim(text, text, text)",
     "portal_link_find(text, text)",
     "portal_invitation_find(text, text)",
-    "portal_mfa_reset(uuid, boolean)",
-    "portal_mfa_unlock(uuid, boolean)",
+    "portal_mfa_reset(uuid)",
 )
 _CONTROLS = "'ai_pause', 'model_route_block', 'email_pause', 'read_only'"
 _CONTROLS_V1 = f"{_CONTROLS}, 'portal_sign_in_disabled'"
@@ -250,18 +247,16 @@ def upgrade() -> None:
         $$
         """
     )
-    # Story 7.2 (DEC-329): the factor is the person's, one across firms (DEC-250), so it is
-    # removed only when they belong to no other firm; this firm's devices and sessions are its own.
+    # Story 7.2 (DEC-329): this firm's devices and sessions, never the person's factor.
     op.execute(
         """
-        CREATE FUNCTION portal_mfa_reset(p_user_id uuid, p_shared boolean)
+        CREATE FUNCTION portal_mfa_reset(p_user_id uuid)
         RETURNS TABLE (kind text, ref text)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp
         SET statement_timeout = '5s' AS $$
         #variable_conflict use_column
         DECLARE
             v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
-            v_shared boolean;
         BEGIN
             IF v_tenant IS NULL THEN
                 RAISE EXCEPTION 'no tenant';
@@ -271,25 +266,8 @@ def upgrade() -> None:
                               AND m.kind = 'client' AND m.status = 'active') THEN
                 RETURN;  -- not an active client of this firm: nothing happens
             END IF;
-            -- Other firms' memberships are out of sight here (forced RLS): the caller reads them
-            -- through the identity role (`p_shared`), and live portal sessions and devices in
-            -- other firms count too, so a wrong `false` can't strip a shared factor.
-            v_shared := coalesce(p_shared, true)
-                OR EXISTS (SELECT 1 FROM public.auth_sessions s
-                            WHERE s.user_id = p_user_id AND s.surface = 'portal'
-                              AND s.tenant_id <> v_tenant AND s.ended_at IS NULL)
-                OR EXISTS (SELECT 1 FROM public.trusted_devices d
-                            WHERE d.user_id = p_user_id AND d.tenant_id <> v_tenant
-                              AND d.revoked_at IS NULL);
             RETURN QUERY
-            WITH factor AS (
-                DELETE FROM public.mfa_factors f WHERE f.user_id = p_user_id AND NOT v_shared
-                RETURNING f.factor_ref, f.enrolled_at
-            ), codes AS (
-                DELETE FROM public.mfa_backup_codes b
-                 WHERE b.user_id = p_user_id AND NOT v_shared
-                RETURNING b.id
-            ), devices AS (
+            WITH devices AS (
                 UPDATE public.trusted_devices d SET revoked_at = clock_timestamp(),
                     revoked_reason = 'mfa_reset'
                  WHERE d.user_id = p_user_id AND d.tenant_id = v_tenant AND d.revoked_at IS NULL
@@ -301,54 +279,8 @@ def upgrade() -> None:
                    AND s.surface = 'portal' AND s.ended_at IS NULL
                 RETURNING s.id
             )
-            SELECT CASE WHEN factor.enrolled_at IS NULL THEN 'pending_factor' ELSE 'factor' END,
-                   factor.factor_ref FROM factor
-            UNION ALL SELECT 'backup_code', codes.id::text FROM codes
-            UNION ALL SELECT 'device', devices.id::text FROM devices
-            UNION ALL SELECT 'session', ended.id::text FROM ended
-            UNION ALL SELECT 'shared', '' WHERE v_shared;
-        END $$
-        """
-    )
-    # Story 7.1: 'cleared' (a lock was cleared), 'none' (no lock, or not a client here) or
-    # 'shared' (the factor is locked and belongs to someone in another firm too: left alone).
-    op.execute(
-        """
-        CREATE FUNCTION portal_mfa_unlock(p_user_id uuid, p_shared boolean) RETURNS text
-        LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp
-        SET statement_timeout = '5s' AS $$
-        DECLARE
-            v_tenant uuid := NULLIF(current_setting('app.tenant_id', true), '')::uuid;
-            v_shared boolean;
-        BEGIN
-            IF v_tenant IS NULL THEN
-                RAISE EXCEPTION 'no tenant';
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM public.memberships m
-                            WHERE m.tenant_id = v_tenant AND m.user_id = p_user_id
-                              AND m.kind = 'client' AND m.status = 'active') THEN
-                RETURN 'none';  -- not an active client of this firm: nothing happens
-            END IF;
-            -- Other firms' memberships are out of sight here (forced RLS): the caller reads them
-            -- through the identity role (`p_shared`), and live portal sessions and devices in
-            -- other firms count too, so a wrong `false` can't strip a shared factor.
-            v_shared := coalesce(p_shared, true)
-                OR EXISTS (SELECT 1 FROM public.auth_sessions s
-                            WHERE s.user_id = p_user_id AND s.surface = 'portal'
-                              AND s.tenant_id <> v_tenant AND s.ended_at IS NULL)
-                OR EXISTS (SELECT 1 FROM public.trusted_devices d
-                            WHERE d.user_id = p_user_id AND d.tenant_id <> v_tenant
-                              AND d.revoked_at IS NULL);
-            IF v_shared THEN
-                RETURN CASE WHEN EXISTS (SELECT 1 FROM public.mfa_factors f
-                                          WHERE f.user_id = p_user_id
-                                            AND f.mfa_locked_until > clock_timestamp())
-                            THEN 'shared' ELSE 'none' END;
-            END IF;
-            UPDATE public.mfa_factors SET mfa_attempts = 0, mfa_window_until = NULL,
-                mfa_locked_until = NULL
-             WHERE user_id = p_user_id AND mfa_locked_until > clock_timestamp();
-            RETURN CASE WHEN FOUND THEN 'cleared' ELSE 'none' END;
+            SELECT 'device'::text, devices.id::text FROM devices
+            UNION ALL SELECT 'session', ended.id::text FROM ended;
         END $$
         """
     )

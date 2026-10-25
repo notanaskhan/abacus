@@ -163,11 +163,9 @@ from abacus.modules.identity.portal_idp import (
 from abacus.modules.identity.portal_mfa import revoke_portal_access
 from abacus.modules.identity.portal_recovery import (
     MfaReset,
-    remove_provider_factor,
     renew_invitation,
     renew_invitation_by_id,
     reset_portal_mfa,
-    unlock_portal_mfa,
 )
 from abacus.modules.identity.portal_session import (
     IssuedCode,
@@ -549,7 +547,6 @@ __all__ = [
     "register_work_item_functions",
     "remove_client",
     "remove_member",
-    "remove_provider_factor",
     "renew_invitation",
     "renew_invitation_by_id",
     "resend_contact_invitation",
@@ -580,7 +577,6 @@ __all__ = [
     "token_verifier",
     "totp_at",
     "unlock_contact_sign_in",
-    "unlock_portal_mfa",
     "visible",
     "visible_clients",
     "visible_items",

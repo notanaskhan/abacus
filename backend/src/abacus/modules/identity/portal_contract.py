@@ -87,14 +87,17 @@ class ContactPortalStatusOut(BaseModel):
 
 
 class ContactMfaResetOut(BaseModel):
-    """After a reset the next sign-in goes to two-step setup (POR-01, the setup state)."""
+    """What a firm's reset ended: the person's trusted devices and portal sessions in this firm,
+    so the next sign-in here asks for the second step again. Never the person's factor, which
+    is theirs across firms (DEC-329), and nothing about other firms.
+    """
 
     model_config = ConfigDict(frozen=True)
 
     client_id: Annotated[UUID, classified("internal")]
     contact_id: Annotated[UUID, classified("internal")]
-    mfa_enrolled: Annotated[bool, classified("internal")]
     trusted_devices_revoked: Annotated[int, Field(ge=0), classified("internal")]
+    sessions_ended: Annotated[int, Field(ge=0), classified("internal")]
     reset_at: Annotated[datetime, classified("internal")]
 
 
