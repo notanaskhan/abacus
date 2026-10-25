@@ -770,7 +770,7 @@ export function IssueComposer({
             onSend(value.trim());
           }
         }}
-        className="min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-ink-3"
+        className="min-w-0 flex-1 self-stretch bg-transparent text-body outline-none placeholder:text-ink-3"
       />
       <IconButton
         icon="arrow-up"
