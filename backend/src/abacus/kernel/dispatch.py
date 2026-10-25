@@ -28,6 +28,7 @@ from typing import Final, Literal
 
 from temporalio.client import (
     Schedule,
+    ScheduleActionExecutionStartWorkflow,
     ScheduleActionStartWorkflow,
     ScheduleAlreadyRunningError,
     ScheduleIntervalSpec,
@@ -37,8 +38,10 @@ from temporalio.client import (
     ScheduleState,
     ScheduleUpdate,
     ScheduleUpdateInput,
+    WorkflowExecutionStatus,
 )
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+from temporalio.service import RPCError, RPCStatusCode
 
 from abacus.kernel.config import settings
 from abacus.kernel.logging import get_logger
@@ -141,12 +144,14 @@ OVERLAP: Final = ScheduleOverlapPolicy.SKIP
 @dataclass(frozen=True)
 class PlatformSchedule:
     """A platform job a module runs on a Schedule: `id` names both the Schedule and the runs it
-    starts (Temporal suffixes each run's id with its time). The workflow takes no argument."""
+    starts (Temporal suffixes each run's id with its time). `arg` is the workflow's one argument
+    (None: it takes none)."""
 
     id: str
     workflow: type
     every: timedelta
     note: str
+    arg: object = None
 
 
 def _schedule_of(job: PlatformSchedule, *, state: ScheduleState) -> Schedule:
@@ -154,6 +159,7 @@ def _schedule_of(job: PlatformSchedule, *, state: ScheduleState) -> Schedule:
     return Schedule(
         action=ScheduleActionStartWorkflow(
             job.workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
+            args=[] if job.arg is None else [job.arg],
             id=job.id,
             task_queue=queue_for(work_class),
         ),
@@ -202,6 +208,49 @@ async def delete(schedule_id: str) -> None:
 
 
 @dataclass(frozen=True)
+class ScheduledRun:
+    """One of a Schedule's recent runs: its result as plain data (a dataclass result arrives as
+    a dict), or None when it has not completed (running, failed, timed out or terminated)."""
+
+    workflow_id: str
+    completed: bool
+    result: object
+
+
+async def schedule_results(
+    schedule_id: str, *, exclude_run_id: str | None = None, limit: int = 2
+) -> list[ScheduledRun]:
+    """The Schedule's most recent runs, newest first, leaving out the run `exclude_run_id` (the
+    caller's own; by run id, as two runs started in one second share a workflow id). Empty when
+    the Schedule does not exist. Reads only; starts nothing."""
+    client = await temporal_client()
+    try:
+        described = await client.get_schedule_handle(schedule_id).describe()
+    except RPCError as exc:
+        if exc.status == RPCStatusCode.NOT_FOUND:
+            return []
+        raise
+    found: list[ScheduledRun] = []
+    for recent in sorted(described.info.recent_actions, key=lambda a: a.started_at, reverse=True):
+        action = recent.action
+        if not isinstance(action, ScheduleActionExecutionStartWorkflow):
+            continue
+        if action.first_execution_run_id == exclude_run_id:
+            continue
+        handle = client.get_workflow_handle(
+            action.workflow_id, run_id=action.first_execution_run_id
+        )
+        status = (await handle.describe()).status
+        if status == WorkflowExecutionStatus.COMPLETED:
+            found.append(ScheduledRun(action.workflow_id, True, await handle.result()))
+        else:
+            found.append(ScheduledRun(action.workflow_id, False, None))
+        if len(found) == limit:
+            break
+    return found
+
+
+@dataclass(frozen=True)
 class ScheduleFacts:
     """What an operator sees of a Schedule: no payload, no history."""
 
@@ -240,6 +289,7 @@ __all__ = [
     "WORK_CLASSES",
     "PlatformSchedule",
     "ScheduleFacts",
+    "ScheduledRun",
     "WorkClass",
     "delete",
     "describe_schedule",
@@ -248,6 +298,7 @@ __all__ = [
     "queue_for",
     "register_work_classes",
     "schedule",
+    "schedule_results",
     "signal_with_start",
     "unpause",
     "work_class_of",

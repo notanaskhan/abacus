@@ -26,7 +26,7 @@ import json
 import sys
 from dataclasses import asdict
 from importlib import import_module
-from typing import Final
+from typing import Final, cast
 
 from abacus.kernel import dispatch
 from abacus.kernel.dispatch import PlatformSchedule
@@ -41,10 +41,14 @@ class Refused(Exception):
 
 
 def declared() -> tuple[PlatformSchedule, ...]:
-    """Every module's `SCHEDULES`, in MODULES order (P-39). Ids are unique."""
+    """Every module's Schedules, in MODULES order (P-39): its `schedules()` when it has one
+    (they depend on settings, as the canary's does), else its `SCHEDULES`. Ids are unique."""
     found: list[PlatformSchedule] = []
     for name in MODULES:
-        found.extend(getattr(import_module(f"abacus.modules.{name}.api"), "SCHEDULES", ()))
+        api = import_module(f"abacus.modules.{name}.api")
+        current = getattr(api, "schedules", None)
+        declared_here = current() if callable(current) else getattr(api, "SCHEDULES", ())
+        found.extend(cast("tuple[PlatformSchedule, ...]", declared_here))
     ids = [job.id for job in found]
     if len(ids) != len(set(ids)):
         raise RuntimeError(f"a Schedule id is declared twice: {sorted(ids)}")

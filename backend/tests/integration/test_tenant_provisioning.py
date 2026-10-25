@@ -31,6 +31,7 @@ from abacus.kernel.temporal import configure_temporal_client, data_converter
 from abacus.modules.platform.api import (
     ACTIVITIES,
     WORKFLOWS,
+    CanaryWorkflow,
     IncidentPropagationWorkflow,
     InMemoryTenantKeyOps,
     ProvisionTenantResult,
@@ -117,6 +118,7 @@ async def worker(temporal: Client, key_ops: InMemoryTenantKeyOps) -> AsyncIterat
         TenantKeyWorkflow: "keyops",
         IncidentPropagationWorkflow: "time_sensitive",  # Q-02-T33's register (platform's own)
         SpendAnomalyWorkflow: "background",  # Q-01-T26: on its Schedule, not a worker loop
+        CanaryWorkflow: "time_sensitive",  # Q-01-T30: every 15 minutes on its Schedule
     } == WORKFLOWS
     activities = cast("list[Callable[..., object]]", list(ACTIVITIES))
     # Two pools, as in production: the general one and the keyops one (P-65).

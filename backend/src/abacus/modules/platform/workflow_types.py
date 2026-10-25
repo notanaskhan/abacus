@@ -99,3 +99,43 @@ class IncidentPropagationResult:
 
     written: tuple[IncidentStepResult, ...]
     failed_tenant_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class CanaryInput:
+    """Q-01-T30: whose canary (the synthetic firm the Schedule names)."""
+
+    tenant_id: str
+
+
+@dataclass(frozen=True)
+class CanaryPlan:
+    """The canary run's firm, the staff member it acts as and the engagement it writes in."""
+
+    tenant_id: str
+    user_id: str
+    engagement_id: str
+
+
+@dataclass(frozen=True)
+class CanaryOutcome:
+    """How the steps went, before the report: the first failed step and its code, or a pass."""
+
+    tenant_id: str
+    passed: bool
+    failed_step: str | None
+    code: str | None
+    route: str | None  # the screener's route (`fake`, `bedrock`), when the step ran
+
+
+@dataclass(frozen=True)
+class CanaryResult:
+    """A canary run's result, as the next run reads it (two consecutive failures page). Codes,
+    step names and the route only: never a name, a value or document text."""
+
+    tenant_id: str
+    passed: bool
+    failed_step: str | None
+    code: str | None
+    route: str | None
+    paged: bool

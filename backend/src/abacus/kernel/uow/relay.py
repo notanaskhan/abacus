@@ -32,7 +32,7 @@ import json
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -240,3 +240,27 @@ async def run_relay(
             wait = min(interval * 2 ** min(failures, 6), 60.0)
             with suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), wait)
+
+
+_EVENT_STATE = text(
+    "SELECT published_at IS NOT NULL FROM outbox WHERE tenant_id = :tenant "
+    "AND event_type = :event_type AND payload ->> :field = :value ORDER BY seq DESC LIMIT 1"
+)
+
+
+async def event_state(
+    tenant_id: UUID, event_type: str, *, field: str, value: str
+) -> Literal["absent", "pending", "published"]:
+    """Q-01-T30 (the canary): whether the newest `event_type` event of one firm whose payload
+    `field` is `value` has been published. Reads one row through the relay role (the app role
+    may only insert into the outbox); returns no payload."""
+    async with relay_engine().connect() as conn:
+        found = (
+            await conn.execute(
+                _EVENT_STATE,
+                {"tenant": tenant_id, "event_type": event_type, "field": field, "value": value},
+            )
+        ).scalar_one_or_none()
+    if found is None:
+        return "absent"
+    return "published" if found else "pending"

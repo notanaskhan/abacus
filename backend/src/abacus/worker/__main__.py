@@ -60,6 +60,8 @@ from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules import MODULES as ALL_MODULES
 from abacus.modules.agents import api as agents
 from abacus.modules.evidence.api import check_ready
+from abacus.modules.platform.api import configure_canary_probe
+from abacus.worker.canary_probe import ServiceProbe
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
 # The modules with worker parts (subscriptions, workflows, activities), in MODULES order (P-39;
@@ -112,6 +114,8 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     check_provider_limits()
     if settings().environment == "local":
         configure_provider(agents.install_fake_responses(FakeModel()))
+    # Q-01-T30: the canary's steps run through the product's services, composed here.
+    configure_canary_probe(ServiceProbe())
     client = await temporal_client()
     workers = [_worker(client, queue_for(c), c) for c in classes]
     # The legacy queue (any class's work) drains only beside the interactive pool, so a batch-only

@@ -142,7 +142,12 @@ from abacus.modules.evidence.storage import (
 )
 from abacus.modules.evidence.trust_contract import router as trust_router
 from abacus.modules.evidence.upload_facts import upload_facts
-from abacus.modules.evidence.uploads import UPLOAD_EDGE_BYTES, UPLOAD_ROUTE_PATHS, upload
+from abacus.modules.evidence.uploads import (
+    UPLOAD_EDGE_BYTES,
+    UPLOAD_ROUTE_PATHS,
+    upload,
+    upload_preview,
+)
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
@@ -339,6 +344,7 @@ __all__ = [
     "suggest_by_name",
     "undo_review_decision",
     "upload",
+    "upload_preview",
     "verified_citation_ids",
     "version_view",
     "waiting_among",

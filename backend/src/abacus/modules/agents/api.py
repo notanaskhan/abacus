@@ -32,6 +32,12 @@ from abacus.modules.agents.proposal_slots import (
     register_proposal_adapter,
     register_suggestion_target,
 )
+from abacus.modules.agents.review_start import (
+    CitationStates,
+    ReviewUnavailable,
+    request_review,
+    review_citation_states,
+)
 from abacus.modules.agents.routes import (
     graph_router,
     knowledge_router,
@@ -72,6 +78,7 @@ from abacus.modules.agents.upload_review import (
     create_review_run,
     review,
 )
+from abacus.modules.agents.upload_review import model_available as upload_review_available
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
     AgentInput,
@@ -150,6 +157,7 @@ __all__ = [
     "AgentRunNotRunning",
     "AgentSpec",
     "Citation",
+    "CitationStates",
     "DraftOutcome",
     "EngagementAgent",
     "EngagementGraph",
@@ -169,6 +177,7 @@ __all__ = [
     "MatchRunInput",
     "NextTickInput",
     "ReviewOutcome",
+    "ReviewUnavailable",
     "RunInput",
     "RunOutcome",
     "ScreeningInput",
@@ -200,7 +209,9 @@ __all__ = [
     "match",
     "register_proposal_adapter",
     "register_suggestion_target",
+    "request_review",
     "review",
+    "review_citation_states",
     "router",
     "run_outcome",
     "screen",
@@ -211,6 +222,7 @@ __all__ = [
     "start_agents",
     "start_screening",
     "template_drafts_router",
+    "upload_review_available",
     "verify_citations",
     "workflow_id",
 ]
