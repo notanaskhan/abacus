@@ -49,3 +49,13 @@ class AgentDigest(DomainEvent):
     overdue: Annotated[int, classified("internal")]
     sent: Annotated[int, classified("internal")]
     drafted: Annotated[int, classified("internal")]
+
+
+class UploadReviewRecorded(DomainEvent):
+    """The upload reviewer recorded its review of a version (SPEC-030; P-06-T20): the request
+    batches it fulfils recompose their screening (code only, nothing else follows)."""
+
+    event_type: ClassVar[str] = "upload_review.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]

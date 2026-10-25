@@ -1,7 +1,8 @@
-"""C5 v1.2, the SHL-20 family (P-06-T14 live, P-06-T15 stub; contract §12; DEC-221): every route
-exists with its one matrix action; the follow-ups v2 routes answer 404 with `binders.engine` off
-and are live with it on; the screening routes answer 404 with `screening.card` off and 501 with it
-on until P-06-T20/T22; client-visible sends take an Idempotency-Key; the person's acts deny the
+"""C5 v1.2, the SHL-20 family (P-06-T14 live, P-06-T15 stub, P-06-T20 live; contract §12; DEC-221,
+DEC-324): every route exists with its one matrix action; the follow-ups v2 routes answer 404 with
+`binders.engine` off and are live with it on; the screening routes answer 404 with `screening.card`
+off; the card, its rerun and feedback are live (P-06-T20) and the screening-return draft answers
+501 until P-06-T22; client-visible sends take an Idempotency-Key; the person's acts deny the
 agent; the card carries C2's screening glyph and never a confidence. The change is additive: the
 v1 and v1.1 routes and models the A-01 and R-01 consumer tests read are unchanged."""
 
@@ -37,12 +38,13 @@ LIVE: dict[tuple[str, str], str] = {
     ("post", "/v1/follow-ups/send"): "follow_up.send",
     ("post", "/v1/follow-ups/{follow_up_id}/undo"): "follow_up.send",
     ("post", "/v1/follow-ups/{follow_up_id}/dismiss"): "follow_up.send",
-}
-STUBBED: dict[tuple[str, str], str] = {
+    # P-06-T20 (DEC-324): the card, its rerun and feedback.
     ("get", f"{ITEMS}/screening"): "upload_review.read",
     ("post", f"{ITEMS}/screening/rerun"): "screening.request",
     ("post", "/v1/screenings/{screening_result_id}/feedback"): "screening.feedback",
-    ("post", f"{ITEMS}/follow-ups"): "follow_up.draft",
+}
+STUBBED: dict[tuple[str, str], str] = {
+    ("post", f"{ITEMS}/follow-ups"): "follow_up.draft",  # P-06-T22
 }
 IDEMPOTENT = {"/v1/follow-ups/{follow_up_id}/send", "/v1/follow-ups/send"}
 

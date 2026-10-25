@@ -939,6 +939,14 @@ LIST_EXEMPT = frozenset(
         # SPEC-318 (TASK-461): one run's results and their decisions, read after
         # `authorise(agent_run.read)` on the run's engagement.
         ("src/abacus/modules/agents/repository.py", "screening_results_of_run"),
+        # P-06-T20 (DEC-324): the screening aggregate's inputs, keyed by one request item's live
+        # versions, read by the system composer or after `authorise(upload_review.read)` on the
+        # item's engagement; the citations its flags carry, keyed by those reviews.
+        ("src/abacus/modules/agents/repository.py", "review_runs_of_versions"),
+        ("src/abacus/modules/agents/repository.py", "shown_flags_of_reviews"),
+        ("src/abacus/modules/agents/repository.py", "version_results_of"),
+        ("src/abacus/modules/agents/repository.py", "items_screened_with"),
+        ("src/abacus/modules/evidence/repository.py", "verified_citations_of"),
         ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.

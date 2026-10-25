@@ -32882,10 +32882,6 @@ export type ScreeningCardErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ScreeningCardError = ScreeningCardErrors[keyof ScreeningCardErrors];
@@ -32946,10 +32942,6 @@ export type RerunScreeningErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RerunScreeningError = RerunScreeningErrors[keyof RerunScreeningErrors];
@@ -46790,10 +46782,6 @@ export type ScreeningFeedbackErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ScreeningFeedbackError = ScreeningFeedbackErrors[keyof ScreeningFeedbackErrors];

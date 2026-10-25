@@ -28,6 +28,7 @@ from abacus.modules.evidence.contract import withdrawal_router
 from abacus.modules.evidence.drops_contract import drops_router
 from abacus.modules.evidence.events import (
     EvidenceVersionCreated,
+    EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
     UploadChecksRecorded,
@@ -83,11 +84,16 @@ from abacus.modules.evidence.render_gl import (
 )
 from abacus.modules.evidence.render_gl import GlEntryRow as GlRenderEntry
 from abacus.modules.evidence.retention import RECORD_TYPES, extend_retention_for, retain_until_for
-
-# The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.retention_routes import platform_router as retention_platform_router
 from abacus.modules.evidence.retention_routes import router as retention_router
 from abacus.modules.evidence.routes import firm_router, router
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.evidence.screening_facts import (
+    ScreeningFacts,
+    screening_facts,
+    verified_citation_ids,
+)
 from abacus.modules.evidence.service import (
     EngagementArchived,
     EvidenceVersionRef,
@@ -212,6 +218,7 @@ __all__ = [
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
     "EvidenceVersionView",
+    "EvidenceVersionWithdrawn",
     "EvidenceWithdrawalPurge",
     "GlBalanceRow",
     "GlHeader",
@@ -230,6 +237,7 @@ __all__ = [
     "RecordedCitation",
     "ReviewMaterial",
     "ScreeningDecision",
+    "ScreeningFacts",
     "StoredObject",
     "StoredRecord",
     "TrialBalance",
@@ -274,12 +282,14 @@ __all__ = [
     "retain_until_for",
     "review_material",
     "router",
+    "screening_facts",
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",
     "suggest_by_name",
     "undo_review_decision",
     "upload",
+    "verified_citation_ids",
     "version_view",
     "withdrawn_among",
     "worth_matching",

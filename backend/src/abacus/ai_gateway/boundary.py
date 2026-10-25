@@ -14,6 +14,12 @@ its reason, counted, and raised as `DataBoundaryRefused`, never retried or rerou
 One more reason applies on every route, for every firm: `pii_in_context` (ADR-167 §2), when the
 assembled context holds an unmasked TIN form (`ai_gateway.pii`). It is audited with the context
 part's name as well, never the value.
+
+`tax_return_information` (P-06-T20 security review; DEC-324): for a firm that isn't synthetic, on
+every real route, a call attributed to an engagement holding a `tax_return` work item is refused.
+Tax-return information (§7216) may reach a model only with the client's consent, and C19 will
+register that consent. Until then, none exists, so this fails closed for every agent. Engagements
+registers the fact, uncached; unregistered means refused.
 """
 
 from __future__ import annotations
@@ -38,7 +44,16 @@ FirmCheck = Callable[[TenantContext], Awaitable[bool]]
 EngagementCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
 StageCheck = Callable[[TenantContext, str], Awaitable[str | None]]
 AgentCheck = Callable[[str], bool]
-Reason = Literal["route", "terms", "firm", "agent", "engagement", "stage", "pii_in_context"]
+Reason = Literal[
+    "route",
+    "terms",
+    "firm",
+    "agent",
+    "engagement",
+    "stage",
+    "pii_in_context",
+    "tax_return_information",
+]
 # Audited by index: append only, so the indices already recorded keep their meaning.
 REASONS: Final[tuple[Reason, ...]] = (
     "route",
@@ -48,6 +63,7 @@ REASONS: Final[tuple[Reason, ...]] = (
     "engagement",
     "stage",
     "pii_in_context",
+    "tax_return_information",  # P-06-T20 security review (DEC-324)
 )
 CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
@@ -56,6 +72,7 @@ _opted_in: FirmCheck | None = None
 _excluded: EngagementCheck | None = None
 _stage: StageCheck | None = None
 _cleared: AgentCheck | None = None
+_tax_return: EngagementCheck | None = None
 _cache: dict[object, tuple[bool, float]] = {}
 _facts: dict[tuple[object, ...], tuple[object, float]] = {}
 _log = get_logger(__name__)
@@ -93,9 +110,13 @@ def register_client_data_facts(
     excluded: EngagementCheck | None = None,
     stage: StageCheck | None = None,
     cleared: AgentCheck | None = None,
+    tax_return: EngagementCheck | None = None,
 ) -> None:
-    """SPEC-036: identity (opt-in), engagements (exclusion) and agents (stage, clearance)."""
-    global _opted_in, _excluded, _stage, _cleared
+    """SPEC-036: identity (opt-in), engagements (exclusion; whether an engagement holds
+    tax-return information, DEC-324) and agents (stage, clearance)."""
+    global _opted_in, _excluded, _stage, _cleared, _tax_return
+    if tax_return is not None:
+        _tax_return = tax_return
     if opted_in is not None:
         _opted_in = opted_in
     if excluded is not None:
@@ -163,6 +184,13 @@ async def _client_data_refusal(
     return None
 
 
+async def _holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """Fail closed: without the registered fact, every engagement may hold it. Not cached, so
+    a work item added a moment ago counts at once."""
+    held = _tax_return
+    return True if held is None else await held(tenant, engagement_id)
+
+
 async def enforce_boundary(
     tenant: TenantContext,
     route: Route,
@@ -188,6 +216,8 @@ async def enforce_boundary(
         return None
     elif await _synthetic(tenant):
         return Basis("synthetic")
+    elif engagement_id is not None and await _holds_tax_return(tenant, engagement_id):
+        reason = "tax_return_information"
     else:
         reason = await _client_data_refusal(tenant, route, agent_id, engagement_id)
     if reason is None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from typing import cast
@@ -30,6 +31,8 @@ from abacus.modules.agents.models import (
     InboxMatchRun,
     KnowledgeChunk,
     KnowledgeDocument,
+    ScreeningFeedback,
+    ScreeningRerunRequest,
     ScreeningResult,
     TemplateGuidanceDecision,
     TemplateGuidanceDraft,
@@ -41,6 +44,11 @@ from abacus.modules.identity.api import AuthContext, visible
 # Engagement runs only: these reads filter on an engagement (a firm-level run's is null, and
 # matches nothing).
 _RUN_ENGAGEMENT = cast("QueryableAttribute[UUID]", AgentRun.engagement_id)
+
+
+def _version_rows() -> ColumnElement[bool]:
+    """P-06-T20 (0154): a per-run proposal on one version, never a request batch's aggregate."""
+    return ScreeningResult.subject_kind == "version"
 
 
 def _shown_run(run_id: QueryableAttribute[UUID]) -> ColumnElement[bool]:
@@ -177,7 +185,9 @@ async def try_lock_run(session: AsyncSession, run_id: UUID) -> bool:
 async def result_for_run(session: AsyncSession, run_id: UUID) -> UUID | None:
     return (
         await session.execute(
-            select(ScreeningResult.id).where(ScreeningResult.agent_run_id == run_id)
+            select(ScreeningResult.id).where(
+                ScreeningResult.agent_run_id == run_id, _version_rows()
+            )
         )
     ).scalar_one_or_none()
 
@@ -197,6 +207,7 @@ async def latest_result_for_version(
             select(ScreeningResult)
             .where(
                 ScreeningResult.evidence_version_id == evidence_version_id,
+                _version_rows(),
                 _shown_run(ScreeningResult.agent_run_id),
             )
             .order_by(ScreeningResult.created_at.desc(), ScreeningResult.id.desc())
@@ -217,6 +228,7 @@ async def latest_results(
                 .where(
                     ScreeningResult.engagement_id == engagement_id,
                     visible(ctx, "evidence.read", ScreeningResult.engagement_id),
+                    _version_rows(),
                     _shown_run(ScreeningResult.agent_run_id),
                 )
                 .ext(distinct_on(ScreeningResult.evidence_version_id))
@@ -1180,9 +1192,227 @@ async def screening_results_of_run(
     return (
         (
             await session.execute(
-                select(ScreeningResult).where(ScreeningResult.agent_run_id == run_id)
+                select(ScreeningResult).where(
+                    ScreeningResult.agent_run_id == run_id, _version_rows()
+                )
             )
         )
         .scalars()
         .all()
     )
+
+
+# --- The screening aggregate (P-06-T20; DEC-48, DEC-324) -----------------------------------------
+# The composer reads in a system context, keyed by the item's live versions; the card's reads
+# follow `authorise(upload_review.read)` on the engagement and apply `visible()` to the head.
+
+
+def _batch_rows() -> ColumnElement[bool]:
+    return ScreeningResult.subject_kind == "request_batch"
+
+
+@dataclass(frozen=True)
+class ReviewRunFacts:
+    """An upload reviewer run on a version and, when it completed, its review."""
+
+    run_id: UUID
+    evidence_version_id: UUID
+    status: str
+    started_at: datetime
+    finished_at: datetime | None
+    review_id: UUID | None
+    prompt_ref: str | None
+
+
+async def review_runs_of_versions(
+    session: AsyncSession, agent_id: str, version_ids: Sequence[UUID]
+) -> list[ReviewRunFacts]:
+    """LIST_EXEMPT: every non-shadow run of the reviewer on these versions (the composer's and
+    the card's, after authorising on their engagement), oldest first."""
+    if not version_ids:
+        return []
+    rows = await session.execute(
+        select(
+            AgentRun.id,
+            AgentRun.evidence_version_id,
+            AgentRun.status,
+            AgentRun.started_at,
+            AgentRun.finished_at,
+            UploadReview.id.label("review_id"),
+            UploadReview.prompt_ref,
+        )
+        .outerjoin(
+            UploadReview,
+            (UploadReview.agent_run_id == AgentRun.id)
+            & (UploadReview.tenant_id == AgentRun.tenant_id),
+        )
+        .where(
+            AgentRun.agent_id == agent_id,
+            AgentRun.evidence_version_id.in_(list(version_ids)),
+            AgentRun.shadow.is_(False),
+        )
+        .order_by(AgentRun.started_at, AgentRun.id)
+    )
+    return [
+        ReviewRunFacts(
+            r.id,
+            cast(UUID, r.evidence_version_id),
+            r.status,
+            r.started_at,
+            r.finished_at,
+            r.review_id,
+            r.prompt_ref,
+        )
+        for r in rows.all()
+    ]
+
+
+async def shown_flags_of_reviews(
+    session: AsyncSession, review_ids: Sequence[UUID]
+) -> list[tuple[UUID, int, str]]:
+    """LIST_EXEMPT: the shown flags (review, position, category) of reviews the composer chose.
+    Shown means a code-verified quote and enough confidence (SPEC-030 Q3; INV-2)."""
+    if not review_ids:
+        return []
+    rows = await session.execute(
+        select(UploadReviewFlag.review_id, UploadReviewFlag.position, UploadReviewFlag.category)
+        .where(UploadReviewFlag.review_id.in_(list(review_ids)), UploadReviewFlag.shown.is_(True))
+        .order_by(UploadReviewFlag.review_id, UploadReviewFlag.position)
+    )
+    return [(r.review_id, r.position, r.category) for r in rows.all()]
+
+
+async def version_results_of(
+    session: AsyncSession, version_ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """LIST_EXEMPT: the newest shown per-version screening result of each version."""
+    if not version_ids:
+        return {}
+    rows = await session.execute(
+        select(ScreeningResult.evidence_version_id, ScreeningResult.id)
+        .where(
+            ScreeningResult.evidence_version_id.in_(list(version_ids)),
+            _version_rows(),
+            _shown_run(ScreeningResult.agent_run_id),
+        )
+        .ext(distinct_on(ScreeningResult.evidence_version_id))
+        .order_by(
+            ScreeningResult.evidence_version_id,
+            ScreeningResult.created_at.desc(),
+            ScreeningResult.id.desc(),
+        )
+    )
+    return {r.evidence_version_id: r.id for r in rows.all()}
+
+
+async def aggregate_head(session: AsyncSession, item_id: UUID) -> ScreeningResult | None:
+    """The item's newest aggregate (the head of its chain), for the system composer."""
+    return (
+        await session.execute(
+            select(ScreeningResult)
+            .where(ScreeningResult.request_item_id == item_id, _batch_rows())
+            .order_by(ScreeningResult.batch_no.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def aggregate_head_for(
+    session: AsyncSession, ctx: AuthContext, item_id: UUID
+) -> ScreeningResult | None:
+    """The item's newest aggregate, if the caller may read its engagement's reviews."""
+    return (
+        await session.execute(
+            select(ScreeningResult)
+            .where(
+                ScreeningResult.request_item_id == item_id,
+                _batch_rows(),
+                visible(ctx, "upload_review.read", ScreeningResult.engagement_id),
+            )
+            .order_by(ScreeningResult.batch_no.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def aggregate_for(
+    session: AsyncSession, ctx: AuthContext, result_id: UUID
+) -> ScreeningResult | None:
+    """One aggregate by id, if the caller may read its engagement's reviews (else None: 404)."""
+    return (
+        await session.execute(
+            select(ScreeningResult).where(
+                ScreeningResult.id == result_id,
+                _batch_rows(),
+                visible(ctx, "upload_review.read", ScreeningResult.engagement_id),
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def insert_aggregate(session: AsyncSession, *, values: dict[str, object]) -> UUID:
+    result_id = uuid4()
+    await session.execute(
+        insert(ScreeningResult).values(id=result_id, subject_kind="request_batch", **values)
+    )
+    return result_id
+
+
+async def insert_feedback(session: AsyncSession, *, values: dict[str, object]) -> None:
+    await session.execute(insert(ScreeningFeedback).values(**values))
+
+
+async def latest_feedback(
+    session: AsyncSession, result_id: UUID, user_id: UUID
+) -> ScreeningFeedback | None:
+    """The person's newest feedback on one aggregate (their own row)."""
+    return (
+        await session.execute(
+            select(ScreeningFeedback)
+            .where(
+                ScreeningFeedback.screening_result_id == result_id,
+                ScreeningFeedback.user_id == user_id,
+            )
+            .order_by(ScreeningFeedback.created_at.desc(), ScreeningFeedback.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def items_screened_with(session: AsyncSession, version_id: UUID) -> list[UUID]:
+    """LIST_EXEMPT: the items whose aggregates composed this version (a withdrawal recomposes
+    them; the system composer's read)."""
+    rows = await session.execute(
+        select(ScreeningResult.request_item_id)
+        .where(
+            _batch_rows(),
+            func.array_position(ScreeningResult.evidence_version_ids, version_id).is_not(None),
+        )
+        .distinct()
+    )
+    return [cast(UUID, r) for r in rows.scalars().all()]
+
+
+async def lock_item_rerun(session: AsyncSession, item_id: UUID) -> None:
+    """Serialise reruns of one item until this transaction ends (the running check, the rate
+    limit and the dispatch happen under it)."""
+    key = func.hashtextextended(f"screening_rerun:{item_id}", 0)
+    await session.execute(select(func.pg_advisory_xact_lock(key)))
+
+
+async def rerun_since(session: AsyncSession, item_id: UUID, seconds: int) -> bool:
+    """Whether a person asked for a rerun of the item in the last `seconds` (system time)."""
+    found = await session.execute(
+        select(ScreeningRerunRequest.id)
+        .where(
+            ScreeningRerunRequest.request_item_id == item_id,
+            ScreeningRerunRequest.created_at
+            > func.clock_timestamp() - func.make_interval(0, 0, 0, 0, 0, 0, seconds),
+        )
+        .limit(1)
+    )
+    return found.scalar_one_or_none() is not None
+
+
+async def insert_rerun(session: AsyncSession, *, values: dict[str, object]) -> None:
+    await session.execute(insert(ScreeningRerunRequest).values(**values))

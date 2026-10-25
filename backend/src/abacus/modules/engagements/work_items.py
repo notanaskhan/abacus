@@ -563,3 +563,15 @@ async def list_work_items(
         total=total,
         counts=counts,
     )
+
+
+async def holds_tax_return(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """For the gateway (P-06-T20 security review; DEC-324): whether the engagement holds a
+    `tax_return` work item, whose content is tax-return information (§7216)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(WorkItem.id)
+            .where(WorkItem.engagement_id == engagement_id, WorkItem.kind == "tax_return")
+            .limit(1)
+        )
+    return found is not None

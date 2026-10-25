@@ -70423,7 +70423,7 @@
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/screening": {
       "get": {
-        "description": "SHL-20 a-e. 404 with `screening.card` off; 501 until P-06-T20.",
+        "description": "SHL-20 a-e: the request batch's screening, composed by code. 404 with `screening.card`\noff.",
         "operationId": "screening_card",
         "parameters": [
           {
@@ -70529,16 +70529,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Screening Card Route",
@@ -70666,16 +70656,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Rerun Screening Route",
@@ -101067,16 +101047,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Screening Feedback Route",

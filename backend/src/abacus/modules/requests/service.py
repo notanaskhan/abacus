@@ -12,7 +12,13 @@ from uuid import UUID, uuid4
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import get_ref, lock_ref, pin_methodology, version_detail
+from abacus.modules.engagements.api import (
+    get_ref,
+    lock_ref,
+    pin_methodology,
+    version_detail,
+    work_item_index,
+)
 from abacus.modules.identity.api import (
     Actor,
     AuthContext,
@@ -65,6 +71,7 @@ from abacus.modules.requests.repository import (
     overdue_items,
     request_list_for,
     revert_to_requested,
+    screening_subject_row,
     search_items,
     set_classification,
     set_client_fields,
@@ -794,6 +801,37 @@ async def latest_version_of(tenant: TenantContext, item_id: UUID) -> UUID | None
     """The version that last fulfilled the item (TASK-055 D5), for a system caller."""
     async with tenant_session(tenant) as session:
         return await newest_fulfilment(session, item_id)
+
+
+@dataclass(frozen=True)
+class ScreeningSubject:
+    """What a request batch's screening is composed against (P-06-T20): the request, the period
+    it expects, and its binder's work-item kind (the TRI gate reads it)."""
+
+    id: UUID
+    engagement_id: UUID
+    title: str
+    period_start: date | None
+    period_end: date | None
+    work_item_kind: str | None
+
+
+async def screening_subject(tenant: TenantContext, item_id: UUID) -> ScreeningSubject | None:
+    """For a system caller composing the item's screening, or a caller that authorised on its
+    engagement; None outside the tenant or for a deleted draft."""
+    async with tenant_session(tenant) as session:
+        row = await screening_subject_row(session, item_id, work_item_index())
+    if row is None or row[0].deleted_at is not None:
+        return None
+    item, kind = row
+    return ScreeningSubject(
+        item.id,
+        item.engagement_id,
+        item.title or item.description,
+        item.period_start,
+        item.period_end,
+        kind,
+    )
 
 
 async def read_item_versions(tenant: TenantContext, item_id: UUID) -> list[UUID]:
