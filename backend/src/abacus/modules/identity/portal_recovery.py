@@ -6,12 +6,15 @@ The callers (organisations' contact routes) authorise `contact.unlock` or `conta
 the contact's client first (walls answer 404) and pass the bound person. Both act only on a
 client of the session's firm (the definers refuse anyone else) and are human-only (INV-1).
 
-**MFA reset.** The person's factor and backup codes are removed (the factor is the person's,
-one across firms, DEC-250, so their next sign-in in any firm enrols again: two-step setup), their
-trusted devices in this firm revoked as `mfa_reset` and their portal sessions here ended, in the
-caller's unit of work with `portal_mfa.reset`; the notice email follows through the outbox. The
-factor is removed at the identity provider after the commit, best effort: the row that names it is
-already gone, so it can never be used again.
+**MFA reset.** Only for a person with an active client membership here. The factor is the
+person's, one across firms (DEC-250): when they belong to no other firm it and the backup codes
+are removed (their next sign-in enrols again), their trusted devices in this firm revoked as
+`mfa_reset` and their portal sessions here ended, in the caller's unit of work with
+`portal_mfa.reset`; the notice email follows through the outbox, and the factor is removed at the
+identity provider after the commit, best effort. When they belong to another firm too
+(`shared`, read through the identity role) only this firm's devices and sessions go, the refusal
+is audited `portal_mfa.reset_refused` and the caller answers 409 `factor_shared` (DEC-329).
+Unlock likewise clears the factor's lock only when it isn't shared.
 
 **Invitation renewal.** An expired, never-accepted invitation found by its token on its own
 firm's host is renewed at most twice (`renewal_count`): a fresh 14 days, the old token void, the
@@ -21,6 +24,7 @@ new one issued at delivery to the address it was sent to. Revoked or accepted on
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -36,6 +40,7 @@ from abacus.modules.identity.events import ClientInvitationIssued, PortalMfaRese
 from abacus.modules.identity.invitations import INVITATION_DAYS
 from abacus.modules.identity.portal_idp import PortalIdpUnavailable, portal_idp
 from abacus.modules.identity.repository import (
+    active_memberships,
     count_invitation_renewal,
     extend_invitation,
     get_invitation,
@@ -52,6 +57,15 @@ class MfaReset:
     devices_revoked: int
     sessions_ended: int
     factor_ref: str | None  # for the provider, after the commit; never returned to a caller
+    # The person belongs to another firm too: the factor and backup codes are theirs across
+    # firms, so they were left alone (only this firm's devices and sessions went).
+    shared: bool = False
+
+
+async def _in_another_firm(ctx: AuthContext, user_id: UUID) -> bool:
+    """Whether the person holds an active membership of any other firm (read through the
+    identity role, which sees every firm's memberships; the definers can't)."""
+    return any(m.tenant_id != ctx.tenant_id for m in await active_memberships(user_id))
 
 
 async def reset_portal_mfa(
@@ -63,26 +77,30 @@ async def reset_portal_mfa(
     kinds: list[tuple[str, str]] = []
     if user_id is not None:
         rows = await tx.session.execute(
-            text("SELECT kind, ref FROM portal_mfa_reset(:user)"), {"user": user_id}
+            text("SELECT kind, ref FROM portal_mfa_reset(:user, :shared)"),
+            {"user": user_id, "shared": await _in_another_firm(ctx, user_id)},
         )
         kinds = [(str(r.kind), str(r.ref)) for r in rows]
+    shared = any(kind == "shared" for kind, _ in kinds)
     factor = next((ref for kind, ref in kinds if kind in ("factor", "pending_factor")), None)
     done = MfaReset(
         had_factor=any(kind == "factor" for kind, _ in kinds),
         devices_revoked=sum(kind == "device" for kind, _ in kinds),
         sessions_ended=sum(kind == "session" for kind, _ in kinds),
         factor_ref=factor,
+        shared=shared,
     )
-    tx.record(
-        "portal_mfa.reset",
-        target=Target("client", client_id),
-        after=Ref(
-            contact_id=contact_id,
-            factor=int(done.had_factor),
-            devices=done.devices_revoked,
-            sessions=done.sessions_ended,
-        ),
+    after = Ref(
+        contact_id=contact_id,
+        factor=int(done.had_factor),
+        devices=done.devices_revoked,
+        sessions=done.sessions_ended,
     )
+    if shared:
+        # Refused (409 `factor_shared`): the factor is the person's in another firm too.
+        tx.record("portal_mfa.reset_refused", target=Target("client", client_id), after=after)
+        return done
+    tx.record("portal_mfa.reset", target=Target("client", client_id), after=after)
     if user_id is not None:
         tx.emit(PortalMfaResetNoticeRequested(user_id=user_id))
     return done
@@ -99,19 +117,28 @@ async def remove_provider_factor(factor_ref: str | None) -> None:
         _log.warning("portal_mfa.provider_factor_kept")
 
 
-async def unlock_portal_mfa(tx: UnitOfWork, ctx: AuthContext, user_id: UUID | None) -> bool:
+UnlockOutcome = Literal["cleared", "none", "shared"]
+
+
+async def unlock_portal_mfa(
+    tx: UnitOfWork, ctx: AuthContext, user_id: UUID | None
+) -> UnlockOutcome:
     """Story 7.1, beside the sign-in lock: the second-step lock on the person's factor (set by
-    their third wrong TOTP or backup code). Whether there was one."""
+    their third wrong TOTP or backup code). `shared` when the factor is locked and the person
+    belongs to another firm too: it is left locked (the caller answers 409 `factor_shared`)."""
     _human(ctx, "contact.unlock")
     if user_id is None:
-        return False
-    found = await tx.session.execute(text("SELECT portal_mfa_unlock(:user)"), {"user": user_id})
-    return bool(found.scalar_one())
+        return "none"
+    found = await tx.session.execute(
+        text("SELECT portal_mfa_unlock(:user, :shared)"),
+        {"user": user_id, "shared": await _in_another_firm(ctx, user_id)},
+    )
+    return cast(UnlockOutcome, str(found.scalar_one()))
 
 
 async def renew_invitation(host: str, token_sha256: str) -> bool:
-    """AC-14: a recipient renews an expired, never-accepted invitation, at most twice. False for
-    anything else (no oracle: the route answers 202 either way)."""
+    """AC-14: a recipient renews an expired, never-accepted invitation by its token, on its own
+    firm's host. False for anything else (no oracle: the route answers 202 either way)."""
     async with platform_transaction("portal:links") as conn:
         found = (
             await conn.execute(
@@ -121,7 +148,13 @@ async def renew_invitation(host: str, token_sha256: str) -> bool:
         ).first()
     if found is None:
         return False
-    tenant_id, invitation_id = UUID(str(found.tenant_id)), UUID(str(found.invitation_id))
+    return await renew_invitation_by_id(UUID(str(found.tenant_id)), UUID(str(found.invitation_id)))
+
+
+async def renew_invitation_by_id(tenant_id: UUID, invitation_id: UUID) -> bool:
+    """The invitation's own rules decide (a portal email's `invitation` link defers here): only
+    an expired, pending invitation, at most twice (`renewal_count`): a fresh 14 days, the old
+    token void, the new one issued at delivery to the invitation's address."""
     ctx = TenantContext(tenant_id, "system", f"invitation:{invitation_id}")
     try:
         async with uow(ctx) as tx:

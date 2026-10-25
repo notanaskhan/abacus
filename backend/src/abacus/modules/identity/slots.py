@@ -246,3 +246,23 @@ def register_link_claim(claim: LinkClaim) -> None:
 async def claim_link(host: str, token: str, email: str) -> LinkOutcome:
     """Fails closed: with no claim registered every link is `bad`."""
     return "bad" if not _LINK_CLAIM else await _LINK_CLAIM[0](host, token, email)
+
+
+# P-08-T21 (security review): a contact's secure links die with their access or their address.
+ContactLinksRevoker = Callable[["UnitOfWork", Sequence[UUID]], Awaitable[int]]
+_LINKS_REVOKER: list[ContactLinksRevoker] = []
+
+
+def register_contact_links_revoker(revoker: ContactLinksRevoker) -> None:
+    """communications: revoke every live secure link of these contacts in the caller's unit of
+    work; how many."""
+    if _LINKS_REVOKER and not _same(_LINKS_REVOKER[0], revoker):
+        raise ValueError("the contact links revoker is already registered")
+    _LINKS_REVOKER[:] = [revoker]
+
+
+async def revoke_contact_links(tx: UnitOfWork, contact_ids: Sequence[UUID]) -> int:
+    """Called where a contact's access ends or their address changes (organisations)."""
+    if not _LINKS_REVOKER or not contact_ids:
+        return 0
+    return await _LINKS_REVOKER[0](tx, contact_ids)

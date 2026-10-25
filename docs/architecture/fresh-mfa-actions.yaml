@@ -59,4 +59,7 @@ actions:
   # P-08-T21 (Story 7.2, SPEC-320 AC-19): resetting a client's lost second factor
   - action: contact.mfa_reset
     group: portal_access
+  # Security-role changes (P-08-T21 security review): who holds security_admin (the QI)
+  - action: security_role.assign
+    group: access_control
   # Incident decisions: G-02's `incident.decide` joins this list with its route.

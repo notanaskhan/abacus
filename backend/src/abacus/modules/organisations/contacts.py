@@ -31,10 +31,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.listing import Position, decode_cursor, encode_cursor, query_hash
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.api import (
     AuthContext,
     ContactGrant,
@@ -61,6 +61,7 @@ from abacus.modules.identity.api import (
     resend_contact_invitation,
     reset_portal_mfa,
     revoke_contact,
+    revoke_contact_links,
     scope_facts,
     sign_in_addresses,
     unlock_contact_sign_in,
@@ -96,6 +97,14 @@ _PORTAL_ORDER: Final = {"active": 0, "invited": 1, "locked": 2, "not_invited": 3
 # error catalogue keeps the engagement's summary for the shared code.
 class GateUnmet(DomainConflict):
     code = "gate_unmet"
+
+
+class FactorShared(DomainConflict):
+    """P-08-T21 (DEC-329): the person's second factor is theirs in another firm too, so this
+    firm can't reset or unlock it (this firm's devices and sessions still end). Platform support,
+    or the person re-enrolling from their own account (POR-12), can."""
+
+    code = "factor_shared"
 
 
 class ContactBound(DomainConflict):
@@ -542,6 +551,7 @@ async def update_contact(
             closed = await close_contact_invitations(tx, ctx, contact_id)
             if closed:
                 await contact_delegations_provider().end(tx, closed)
+            await revoke_contact_links(tx, [contact_id])  # P-08-T21: its links went there too
             if contact.portal_state == "invited":
                 await set_portal_state(tx.session, contact_id, "not_invited")
         tx.record(
@@ -649,6 +659,7 @@ async def revoke(ctx: AuthContext, invitation_id: UUID) -> RevokedView:
         done = await revoke_contact(tx, ctx, contact.client_id, invitation_id)
         ended = await contact_delegations_provider().end(tx, [g.id for g in done.revoked])
         await set_portal_state(tx.session, contact.id, "not_invited")
+        await revoke_contact_links(tx, [contact.id])  # P-08-T21: no link outlives the access
     kept = list(dict.fromkeys([*(item for _, item in _delegated(done.revoked)), *ended]))
     return RevokedView(
         invitation_id,
@@ -714,7 +725,10 @@ async def unlock(ctx: AuthContext, contact_id: UUID) -> tuple[UUID, str, datetim
         await unlock_contact_sign_in(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
-        await unlock_portal_mfa(tx, ctx, contact.user_id)  # P-08-T21: the second step's too
+        factor = await unlock_portal_mfa(tx, ctx, contact.user_id)  # P-08-T21: second step too
+        _refused_if_shared(tx, contact, factor)
+    if factor == "shared":
+        raise FactorShared(facts={"contact_id": str(contact.id)})
     return contact.id, contact.portal_state, await clock.now(ctx.tenant)
 
 
@@ -765,8 +779,22 @@ async def portal_unlock(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> 
         await unlock_contact_sign_in(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, email=address
         )
-        await unlock_portal_mfa(tx, ctx, contact.user_id)
+        factor = await unlock_portal_mfa(tx, ctx, contact.user_id)
+        _refused_if_shared(tx, contact, factor)
+    if factor == "shared":
+        raise FactorShared(facts={"contact_id": str(contact.id)})
     return PortalUnlocked(contact.id, contact.portal_state)
+
+
+def _refused_if_shared(tx: UnitOfWork, contact: Contact, factor: str) -> None:
+    """The sign-in lock is the firm's and was cleared; the factor's lock is the person's across
+    firms and stays (DEC-329): audited as a refusal beside `contact.unlocked`."""
+    if factor == "shared":
+        tx.record(
+            "portal_mfa.unlock_refused",
+            target=Target("client", contact.client_id),
+            after=Ref(contact_id=contact.id),
+        )
 
 
 async def check_mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> None:
@@ -783,5 +811,27 @@ async def mfa_reset(ctx: AuthContext, client_id: UUID, contact_id: UUID) -> MfaR
         done = await reset_portal_mfa(
             tx, ctx, client_id=contact.client_id, contact_id=contact.id, user_id=contact.user_id
         )
+    if done.shared:
+        raise FactorShared(
+            facts={
+                "contact_id": str(contact.id),
+                "trusted_devices_revoked": done.devices_revoked,
+                "sessions_ended": done.sessions_ended,
+            }
+        )
     await remove_provider_factor(done.factor_ref)
     return MfaResetView(contact.id, False, done.devices_revoked, await clock.now(ctx.tenant))
+
+
+async def contact_portal_facts(
+    tenant: TenantContext, contact_id: UUID
+) -> tuple[str, UUID | None, str | None] | None:
+    """P-08-T21: a contact's portal state, person and sign-in address (DEC-303: the person's
+    identity email, else the live invitation's), for communications' link renewal; None for a
+    contact the firm doesn't have."""
+    async with tenant_session(tenant) as session:
+        contact = await get_contact(session, contact_id)
+    if contact is None:
+        return None
+    address = (await sign_in_addresses(tenant, [(contact.id, contact.user_id)])).get(contact.id)
+    return contact.portal_state, contact.user_id, address

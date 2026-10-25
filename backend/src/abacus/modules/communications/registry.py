@@ -40,6 +40,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "secure_links": frozenset(
         {"id", "tenant_id", "contact_id", "purpose", "target_kind", "target_id"}
         | {"recipient_email", "host", "token_sha256", "issued_by", "expires_at"}
+        | {"renewed_from_id", "chain_started_at", "chain_length"}  # a renewal, in the firm
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

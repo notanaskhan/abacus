@@ -1828,7 +1828,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"portal_mfa_begin_session"}  # 0140
         | {"portal_session_mark_device", "client_invitations_revoke_by"}  # 0140 (DEC-277)
         | {"portal_sign_in_unlock", "portal_sign_in_locked"}  # 0146 (P-07-T25)
-        | {"portal_host_tenant", "portal_link_claim", "portal_link_renew"}  # 0156 (P-08-T21)
+        | {"portal_host_tenant", "portal_link_claim", "portal_link_find"}  # 0156 (P-08-T21)
         | {"portal_invitation_find", "portal_mfa_reset", "portal_mfa_unlock"}  # 0156
         | {"retention_set_import", "retention_set_publish", "retention_floors_published"}  # 0112
         | {"retention_apply_defaults", "retention_floor_of", "retention_policy_guard"}  # 0112

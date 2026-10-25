@@ -36,7 +36,10 @@ from abacus.modules.communications.api import (
     issue_secure_link,
     resolve_secure_link,
 )
-from abacus.modules.communications.secure_links import deliver_renewed_link
+from abacus.modules.communications.secure_links import (
+    deliver_renewed_link,
+    revoke_links_on_access_revoked,
+)
 from abacus.modules.communications.sign_in_codes import deliver_mfa_reset_notice
 from abacus.modules.communications.templates import import_platform_version
 from abacus.modules.identity import portal_mfa, portal_session
@@ -58,6 +61,7 @@ from abacus.modules.identity.portal_session import (
     verify_code,
 )
 from abacus.modules.organisations import contacts as contacts_service
+from abacus.modules.organisations.contacts import FactorShared
 from abacus.modules.portal.branding import activate_portal_host, add_portal_host
 from abacus_tools.harness.mailbox import LocalMailboxReader
 
@@ -310,11 +314,6 @@ async def test_ac14_an_expired_reminder_renews_to_the_same_address_with_one_answ
         host=tess.host,
     )
     await _expire(seed, issued.link_id)
-    # The contact's address changes after the email went out: the renewal still goes only to
-    # the address the old link was sent to.
-    await seed.run(
-        "UPDATE contacts SET email = 'changed@example.test' WHERE id = $1", tess.contact_id
-    )
 
     async def renew(token: str, host: str = tess.host) -> httpx.Response:
         return await client.post(
@@ -656,3 +655,292 @@ async def test_ac20_the_pause_lands_within_10_seconds_and_sessions_carry_on(
     )
     now[0] += controls.CACHE_SECONDS
     assert (await start()).status_code == 202
+
+
+# --- Security review (DEC-329): the shared factor, link revocation and the renewal caps --------
+
+
+async def _second_firm(seed: Seeder, p: Portal) -> uuid.UUID:
+    """The same person, an active client of another firm too."""
+    other = await seed.firm()
+    await seed.run(
+        "INSERT INTO memberships (tenant_id, user_id, firm_role, status, kind) "
+        "VALUES ($1, $2, NULL, 'active', 'client')",
+        other,
+        p.person.user_id,
+    )
+    return other
+
+
+async def test_review_a_reset_never_reaches_a_factor_another_firm_shares(seed: Seeder) -> None:
+    tess = await _portal(seed)
+    secret, session = await _enrol(tess)
+    step = await _second_step(tess)
+    await second_step(
+        tess.host, step.mfa_token, totp=totp_at(secret, time.time()), trust_device=True
+    )
+    await _second_firm(seed, tess)
+    felix = await _staff(seed, tess)
+    with pytest.raises(FactorShared) as refused:
+        await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
+    assert refused.value.facts["trusted_devices_revoked"] == 1
+    # The factor and its backup codes are the person's across firms: untouched.
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+        )
+        == 1
+    )
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM mfa_backup_codes WHERE user_id = $1", tess.person.user_id
+        )
+        == 8
+    )
+    # This firm's own devices and sessions went; the refusal is audited, nothing is emailed.
+    assert await portal_context(session, tess.host) is None
+    actions = await _actions(seed, tess.tenant)
+    assert "portal_mfa.reset_refused" in actions and "portal_mfa.reset" not in actions
+    assert await _outbox(seed, tess.tenant, "portal_mfa.reset_notice_requested") == []
+    assert (await _second_step(tess)).state == "mfa_required"  # still enrolled
+
+
+async def test_review_an_unlock_leaves_a_shared_factor_locked(seed: Seeder) -> None:
+    tess = await _portal(seed)
+    await _enrol(tess)
+    step = await _second_step(tess)
+    for _ in range(3):
+        with pytest.raises((MfaMismatch, MfaLocked, MfaExpired)):
+            await second_step(tess.host, step.mfa_token, totp="000000")
+    await _second_firm(seed, tess)
+    grace = await _staff(seed, tess, "firm_admin")
+    with pytest.raises(FactorShared):
+        await contacts_service.portal_unlock(grace, tess.client_id, tess.contact_id)
+    assert await seed.value(
+        "SELECT mfa_locked_until > now() FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+    )
+    # The firm's own sign-in lock is cleared, and both are audited.
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM sign_in_locks "
+            "WHERE host_tenant_id = $1 AND locked_until > now()",
+            tess.tenant,
+        )
+        == 0
+    )
+    actions = await _actions(seed, tess.tenant)
+    assert "contact.unlocked" in actions and "portal_mfa.unlock_refused" in actions
+
+
+async def test_review_a_person_whose_membership_here_ended_is_not_reset(seed: Seeder) -> None:
+    tess = await _portal(seed)
+    await _enrol(tess)
+    felix = await _staff(seed, tess)
+    await seed.run(
+        "UPDATE memberships SET status = 'revoked', revoked_at = now() "
+        "WHERE tenant_id = $1 AND user_id = $2",
+        tess.tenant,
+        tess.person.user_id,
+    )
+    await contacts_service.mfa_reset(felix, tess.client_id, tess.contact_id)
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM mfa_factors WHERE user_id = $1", tess.person.user_id
+        )
+        == 1
+    )
+
+
+async def _renewals(seed: Seeder, tenant: uuid.UUID) -> int:
+    return len(await _outbox(seed, tenant, "portal.link_renew_requested"))
+
+
+async def test_review_links_die_with_access_and_never_renew_after(
+    seed: Seeder, client: httpx.AsyncClient
+) -> None:
+    tess = await _portal(seed)
+    issued = await issue_secure_link(
+        tess.tenant,
+        contact_id=tess.contact_id,
+        purpose="reminder",
+        recipient_email=tess.email,
+        host=tess.host,
+    )
+    await revoke_links_on_access_revoked(
+        OutboxEvent(
+            event_id=uuid.uuid4(),
+            tenant_id=tess.tenant,
+            event_type="client_access.revoked",
+            payload={"grant_id": str(uuid.uuid4()), "user_id": str(tess.person.user_id)},
+        )
+    )
+    assert await seed.value(
+        "SELECT revoked_at IS NOT NULL FROM secure_links WHERE id = $1", issued.link_id
+    )
+    await client.post(
+        "/v1/portal/links/renew", json={"link_token": issued.token}, headers={"host": tess.host}
+    )
+    assert await _renewals(seed, tess.tenant) == 0
+    assert "secure_link.revoked" in await _actions(seed, tess.tenant)
+
+
+async def test_review_a_renewal_needs_an_active_contact_at_the_same_address(
+    seed: Seeder, client: httpx.AsyncClient
+) -> None:
+    tess = await _portal(seed)
+
+    async def renew() -> None:
+        link = await issue_secure_link(
+            tess.tenant,
+            contact_id=tess.contact_id,
+            purpose="reminder",
+            recipient_email=tess.email,
+            host=tess.host,
+        )
+        await client.post(
+            "/v1/portal/links/renew", json={"link_token": link.token}, headers={"host": tess.host}
+        )
+
+    # The person's sign-in address changed since the email went out: nothing is sent.
+    await seed.run(
+        "UPDATE users SET email = 'moved@example.test' WHERE id = $1", tess.person.user_id
+    )
+    await renew()
+    assert await _renewals(seed, tess.tenant) == 0
+    await seed.run("UPDATE users SET email = $2 WHERE id = $1", tess.person.user_id, tess.email)
+    # A contact who no longer signs in gets nothing either.
+    await seed.run(
+        "UPDATE contacts SET portal_state = 'not_invited' WHERE id = $1", tess.contact_id
+    )
+    await renew()
+    assert await _renewals(seed, tess.tenant) == 0
+    await seed.run("UPDATE contacts SET portal_state = 'active' WHERE id = $1", tess.contact_id)
+    await renew()
+    assert await _renewals(seed, tess.tenant) == 1
+
+
+async def test_review_a_contact_gets_at_most_3_renewals_an_hour_across_all_links(
+    seed: Seeder, client: httpx.AsyncClient
+) -> None:
+    tess = await _portal(seed)
+    answers: list[httpx.Response] = []
+    for _ in range(5):
+        link = await issue_secure_link(
+            tess.tenant,
+            contact_id=tess.contact_id,
+            purpose="reminder",
+            recipient_email=tess.email,
+            host=tess.host,
+        )
+        answers.append(
+            await client.post(
+                "/v1/portal/links/renew",
+                json={"link_token": link.token},
+                headers={"host": tess.host},
+            )
+        )
+    assert {(a.status_code, a.content) for a in answers} == {(202, b'{"accepted":true}')}
+    assert await _renewals(seed, tess.tenant) == 3
+    # ... and at most 10 a day: older renewals still count against the day.
+    await seed.run(
+        "UPDATE secure_links SET issued_at = now() - interval '2 hours' "
+        "WHERE contact_id = $1 AND renewed_from_id IS NOT NULL",
+        tess.contact_id,
+    )
+    await seed.run(
+        "INSERT INTO secure_links (tenant_id, contact_id, purpose, recipient_email, issued_at, "
+        "expires_at, renewed_from_id, chain_length) SELECT tenant_id, contact_id, purpose, "
+        "recipient_email, now() - interval '3 hours', now() + interval '1 day', id, 1 "
+        "FROM secure_links, generate_series(1, 7) "
+        "WHERE id = (SELECT id FROM secure_links WHERE contact_id = $1 "
+        "AND renewed_from_id IS NULL LIMIT 1)",
+        tess.contact_id,
+    )
+    link = await issue_secure_link(
+        tess.tenant,
+        contact_id=tess.contact_id,
+        purpose="reminder",
+        recipient_email=tess.email,
+        host=tess.host,
+    )
+    await client.post(
+        "/v1/portal/links/renew", json={"link_token": link.token}, headers={"host": tess.host}
+    )
+    assert await _renewals(seed, tess.tenant) == 3
+
+
+async def test_review_a_renewal_chain_ends_after_5_renewals_or_60_days(seed: Seeder) -> None:
+    tess = await _portal(seed)
+    link = await issue_secure_link(
+        tess.tenant,
+        contact_id=tess.contact_id,
+        purpose="reminder",
+        recipient_email=tess.email,
+        host=tess.host,
+    )
+    await seed.run("UPDATE secure_links SET chain_length = 5 WHERE id = $1", link.link_id)
+    await secure_links.renew_link(tess.host, link.token)
+    aged = await issue_secure_link(
+        tess.tenant,
+        contact_id=tess.contact_id,
+        purpose="reminder",
+        recipient_email=tess.email,
+        host=tess.host,
+    )
+    await seed.run(
+        "UPDATE secure_links SET chain_started_at = now() - interval '61 days', "
+        "issued_at = now() - interval '61 days' WHERE id = $1",
+        aged.link_id,
+    )
+    await secure_links.renew_link(tess.host, aged.token)
+    assert await _renewals(seed, tess.tenant) == 0
+    fine = await issue_secure_link(
+        tess.tenant,
+        contact_id=tess.contact_id,
+        purpose="reminder",
+        recipient_email=tess.email,
+        host=tess.host,
+    )
+    await secure_links.renew_link(tess.host, fine.token)
+    rows = await seed.rows(
+        "SELECT chain_length, chain_started_at = (SELECT chain_started_at FROM secure_links "
+        "WHERE id = $1) AS same_chain FROM secure_links WHERE renewed_from_id = $1",
+        fine.link_id,
+    )
+    assert [(r["chain_length"], r["same_chain"]) for r in rows] == [(1, True)]
+
+
+async def test_review_an_invitation_link_defers_to_the_invitation(seed: Seeder) -> None:
+    tess = await _portal(seed)
+    engagement = cast(
+        uuid.UUID,
+        await seed.value("SELECT id FROM engagements WHERE tenant_id = $1 LIMIT 1", tess.tenant),
+    )
+    inviter = await seed.person(tess.tenant)
+    invitation = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO client_invitations (tenant_id, engagement_id, email, role, invited_by, "
+            "expires_at, status) VALUES ($1, $2, $3, 'client_contributor', $4, "
+            "now() - interval '1 day', 'pending') RETURNING id",
+            tess.tenant,
+            engagement,
+            tess.email,
+            inviter.user_id,
+        ),
+    )
+    link = await issue_secure_link(
+        tess.tenant,
+        contact_id=tess.contact_id,
+        purpose="invitation",
+        recipient_email=tess.email,
+        host=tess.host,
+        target_kind="client_invitation",
+        target_id=invitation,
+    )
+    await secure_links.renew_link(tess.host, link.token)
+    assert await _renewals(seed, tess.tenant) == 0  # no secure-link renewal
+    assert (
+        await seed.value("SELECT renewal_count FROM client_invitations WHERE id = $1", invitation)
+        == 1
+    )

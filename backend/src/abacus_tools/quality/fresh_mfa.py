@@ -25,6 +25,7 @@ REGISTER = REPO / "docs" / "architecture" / "fresh-mfa-actions.yaml"
 GROUPS: Final = frozenset(
     {"wall", "ai_policy", "export", "legal_hold", "independence", "data_boundary", "reveal"}
     | {"portal_access"}  # P-07-T25 (DEC-303), P-08-T21: a client's portal unlock and MFA reset
+    | {"access_control"}  # P-08-T21 security review: security-role changes
 )
 
 

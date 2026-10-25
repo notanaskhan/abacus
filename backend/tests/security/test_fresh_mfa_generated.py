@@ -38,6 +38,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("pii.reveal", "reveal", "engagement_partner"),
     ("contact.unlock", "portal_access", "firm_admin"),
     ("contact.mfa_reset", "portal_access", "security_admin"),
+    ("security_role.assign", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/clients", "wall.create"),
@@ -64,6 +65,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/engagements/{engagement_id}/acceptance", "acceptance.record"),
     ("PUT", "/v1/firm/ai-client-data", "firm.ai_client_data"),
     ("PUT", "/v1/firm/autonomy", "autonomy_policy.update"),
+    ("PUT", "/v1/firm/staff/{user_id}/security-role", "security_role.assign"),
     ("PUT", "/v1/retention/policies", "retention_policy.update"),
 )
 LISTED = frozenset(action for action, _, _ in CASES)

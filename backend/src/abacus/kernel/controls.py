@@ -5,9 +5,10 @@ Controls are rows operators set through `set_platform_control` (the `abacus_ops`
 app reads them only through the definer `platform_control_state()`, here, with an in-process
 cache of `CACHE_SECONDS` (10), so a change takes effect within that window and no request reads
 the table itself. It never writes and never raises: when the state can't be read after the
-window, `ai_pause` and `read_only` count as active (fail closed) and the others keep their last
-known value, or count as inactive when there is none; each such decision is logged by control
-name only.
+window, `ai_pause` and `read_only` count as active (fail closed); `portal_sign_in` keeps its
+last known value for at most 60 seconds after it was read and then counts as active (the sign-in
+pause must not lapse, P-08-T21 security review); the others keep their last known value, or
+count as inactive when there is none. Each such decision is logged by control name only.
 
 Readers today: P-08-T21's portal sign-in pause (`portal_sign_in`, per firm). The other controls
 get their enforcement points with Q-01-T36 and T37.
@@ -29,6 +30,10 @@ ControlName = Literal[
 ]
 CACHE_SECONDS: Final = 10.0
 _FAIL_CLOSED: Final = frozenset({"ai_pause", "read_only"})
+# P-08-T21 (security review): these trust a last-known value only this long after it was read,
+# then count as active (a pause must not lapse because its row can't be read).
+STALE_LIMIT_SECONDS: Final = 60.0
+_FAIL_CLOSED_AFTER_STALE: Final = frozenset({"portal_sign_in"})
 # (control, scope, tenant_id, route) of every active row.
 Active = frozenset[tuple[str, str, UUID | None, str | None]]
 _state: list[tuple[float, Active]] = []
@@ -50,19 +55,21 @@ async def _read() -> Active:
     return frozenset((r.control, r.scope, r.tenant_id, r.route) for r in rows)
 
 
-async def _active_rows() -> tuple[Active | None, bool]:
-    """The active rows and whether they are current: from the cache inside its window, else read
-    now; after a failed read, the last rows known (or None) and False."""
+async def _active_rows() -> tuple[Active | None, bool, float]:
+    """The active rows, whether they are current, and their age: from the cache inside its
+    window, else read now; after a failed read, the last rows known (or None) and False."""
     now = _clock()
     if _state and now - _state[0][0] < CACHE_SECONDS:
-        return _state[0][1], True
+        return _state[0][1], True, now - _state[0][0]
     try:
         rows = await _read()
     except Exception as exc:
         _log.warning("platform_control.read_failed", error=type(exc).__name__)
-        return (_state[0][1] if _state else None), False
+        if not _state:
+            return None, False, float("inf")
+        return _state[0][1], False, now - _state[0][0]
     _state[:] = [(now, rows)]
-    return rows, True
+    return rows, True, 0.0
 
 
 async def control_active(
@@ -70,9 +77,10 @@ async def control_active(
 ) -> bool:
     """Whether `control` is on for everyone, or for the firm `tenant_id`; `model_route_block`
     also needs the matching `route`."""
-    rows, current = await _active_rows()
-    if rows is None or (not current and control in _FAIL_CLOSED):
-        closed = control in _FAIL_CLOSED
+    rows, current, age = await _active_rows()
+    stale = not current and control in _FAIL_CLOSED_AFTER_STALE and age > STALE_LIMIT_SECONDS
+    if rows is None or stale or (not current and control in _FAIL_CLOSED):
+        closed = control in _FAIL_CLOSED or control in _FAIL_CLOSED_AFTER_STALE
         _log.warning("platform_control.unknown", control=control, counted_active=closed)
         return closed
     for name, scope, tenant, keyed in rows:

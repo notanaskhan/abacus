@@ -40,6 +40,8 @@ from abacus.modules.communications.secure_links import (
     deliver_renewed_link,
     issue_secure_link,
     resolve_secure_link,
+    revoke_links_of,
+    revoke_links_on_access_revoked,
 )
 from abacus.modules.communications.service import Draft, MessageView, OutOfScope, send
 from abacus.modules.communications.ses_identities import (
@@ -69,10 +71,12 @@ from abacus.modules.communications.transport import LocalMailbox, Transport, con
 from abacus.modules.communications.workflows import DrainSesEventsWorkflow
 from abacus.modules.identity.api import (
     AbacusRouter,
+    ClientAccessRevoked,
     ClientInvitationIssued,
     PortalMfaResetNoticeRequested,
     PortalSignInCodeRequested,
     StaffInvitationIssued,
+    register_contact_links_revoker,
     register_link_claim,
 )
 from abacus.modules.requests.api import register_comment_scope_check
@@ -84,9 +88,12 @@ SUBSCRIPTIONS = {
     PortalSignInCodeRequested.event_type: deliver_sign_in_code,  # P-08-T10
     PortalLinkRenewRequested.event_type: deliver_renewed_link,  # P-08-T21
     PortalMfaResetNoticeRequested.event_type: deliver_mfa_reset_notice,  # P-08-T21
+    ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
 }
 # P-08-T21: identity's sign-in start uses a portal email's link through this.
 register_link_claim(claim)
+# P-08-T21: organisations revokes a contact's links where their access or address changes.
+register_contact_links_revoker(revoke_links_of)
 # SPEC-032 (TASK-062 D1): a firm comment is checked before it's shared with the client.
 register_comment_scope_check(comment_scope_kinds)
 # Q-01-T46: the every-minute drain of SES delivery events.

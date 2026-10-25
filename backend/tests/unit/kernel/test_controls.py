@@ -71,17 +71,38 @@ async def test_a_change_lands_within_the_cache_window(
     assert controls.CACHE_SECONDS == 10.0
 
 
-async def test_an_unreadable_state_fails_closed_only_for_ai_and_writes(
+async def test_an_unreadable_state_fails_closed_for_ai_writes_and_the_sign_in_pause(
     monkeypatch: pytest.MonkeyPatch, fresh: list[float]
 ) -> None:
+    """P-08-T21 security review: a sign-in pause that can't be read counts as on."""
+
     async def broken() -> Active:
         raise OSError("database unavailable")
 
     monkeypatch.setattr(controls, "_read", broken)
     assert await control_active("ai_pause", FIRM)
     assert await control_active("read_only", FIRM)
-    assert not await control_active("portal_sign_in", FIRM)
+    assert await control_active("portal_sign_in", FIRM)
     assert not await control_active("email_pause", FIRM)
+
+
+async def test_a_stale_sign_in_state_is_trusted_for_60_seconds_then_refused(
+    monkeypatch: pytest.MonkeyPatch, fresh: list[float]
+) -> None:
+    _rows(monkeypatch)  # read once: not paused
+    assert not await control_active("portal_sign_in", FIRM)
+
+    async def broken() -> Active:
+        raise OSError("database unavailable")
+
+    monkeypatch.setattr(controls, "_read", broken)
+    fresh[0] += controls.STALE_LIMIT_SECONDS
+    assert not await control_active("portal_sign_in", FIRM)  # 60 s old: still trusted
+    assert not await control_active("email_pause", FIRM)
+    fresh[0] += 1
+    assert await control_active("portal_sign_in", FIRM)  # older: counts as paused
+    assert not await control_active("email_pause", FIRM)  # others keep the last known value
+    assert controls.STALE_LIMIT_SECONDS == 60.0
 
 
 async def test_an_unreadable_state_keeps_the_last_known_value(

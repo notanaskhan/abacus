@@ -165,6 +165,7 @@ from abacus.modules.identity.portal_recovery import (
     MfaReset,
     remove_provider_factor,
     renew_invitation,
+    renew_invitation_by_id,
     reset_portal_mfa,
     unlock_portal_mfa,
 )
@@ -263,6 +264,7 @@ from abacus.modules.identity.slots import (
     register_consent_check,
     register_contact_activation,
     register_contact_delegations,
+    register_contact_links_revoker,
     register_engagement_resource,
     register_invitation_parties,
     register_link_claim,
@@ -270,6 +272,7 @@ from abacus.modules.identity.slots import (
     register_office_list,
     register_scope_resolver,
     resolve_scope,
+    revoke_contact_links,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
 from abacus.modules.identity.support import Staff, staff_from_token
@@ -526,6 +529,7 @@ __all__ = [
     "register_consent_check",
     "register_contact_activation",
     "register_contact_delegations",
+    "register_contact_links_revoker",
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
@@ -547,6 +551,7 @@ __all__ = [
     "remove_member",
     "remove_provider_factor",
     "renew_invitation",
+    "renew_invitation_by_id",
     "resend_contact_invitation",
     "resend_invitation",
     "reset_portal_mfa",
@@ -554,6 +559,7 @@ __all__ = [
     "resolve_scope",
     "revoke_client_access",
     "revoke_contact",
+    "revoke_contact_links",
     "revoke_invitation",
     "role_codes",
     "router",

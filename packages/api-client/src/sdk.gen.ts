@@ -594,7 +594,9 @@ export const createContact = <ThrowOnError extends boolean = false>(options: Opt
  *
  * Remove the factor, the backup codes and the trusted devices and end the portal sessions;
  * email the client in the firm's name. Security admin with fresh MFA. Audited
- * `portal_mfa.reset`; the next sign-in goes to two-step setup.
+ * `portal_mfa.reset`; the next sign-in goes to two-step setup. 409 `factor_shared` when the
+ * person belongs to another firm too: the factor stays, this firm's devices and sessions end,
+ * audited `portal_mfa.reset_refused`.
  */
 export const resetContactMfa = <ThrowOnError extends boolean = false>(options: Options<ResetContactMfaData, ThrowOnError>): RequestResult<ResetContactMfaResponses, ResetContactMfaErrors, ThrowOnError> => (options.client ?? client).post<ResetContactMfaResponses, ResetContactMfaErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -606,7 +608,9 @@ export const resetContactMfa = <ThrowOnError extends boolean = false>(options: O
  * Unlock Contact Portal Route
  *
  * Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person
- * (INV-5); a walled client, or a contact of another client, answers 404 (INV-3).
+ * (INV-5); a walled client, or a contact of another client, answers 404 (INV-3); 409
+ * `factor_shared` when the person's locked factor is theirs in another firm too (the firm's
+ * sign-in lock is still cleared).
  */
 export const unlockContactPortal = <ThrowOnError extends boolean = false>(options: Options<UnlockContactPortalData, ThrowOnError>): RequestResult<UnlockContactPortalResponses, UnlockContactPortalErrors, ThrowOnError> => (options.client ?? client).post<UnlockContactPortalResponses, UnlockContactPortalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -20,6 +20,7 @@ import asyncpg
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
+from abacus_tools.db_connect import connect as connect_db
 
 
 def _dsn(url: str) -> str:
@@ -35,7 +36,7 @@ def new_code() -> str:
 
 async def issue(url: str, note: str, days: int) -> str:
     code = new_code()
-    connection = await asyncpg.connect(_dsn(url))
+    connection = await connect_db(_dsn(url))
     try:
         await connection.execute(
             "INSERT INTO signup_codes (code_hash, note, expires_at) VALUES ($1, $2, $3)",
@@ -49,7 +50,7 @@ async def issue(url: str, note: str, days: int) -> str:
 
 
 async def listing(url: str) -> list[asyncpg.Record]:
-    connection = await asyncpg.connect(_dsn(url))
+    connection = await connect_db(_dsn(url))
     try:
         return await connection.fetch(
             "SELECT note, created_at, expires_at, used_at, used_tenant_id "

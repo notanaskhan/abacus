@@ -47195,7 +47195,7 @@
     },
     "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset": {
       "post": {
-        "description": "Remove the factor, the backup codes and the trusted devices and end the portal sessions;\nemail the client in the firm's name. Security admin with fresh MFA. Audited\n`portal_mfa.reset`; the next sign-in goes to two-step setup.",
+        "description": "Remove the factor, the backup codes and the trusted devices and end the portal sessions;\nemail the client in the firm's name. Security admin with fresh MFA. Audited\n`portal_mfa.reset`; the next sign-in goes to two-step setup. 409 `factor_shared` when the\nperson belongs to another firm too: the factor stays, this firm's devices and sessions end,\naudited `portal_mfa.reset_refused`.",
         "operationId": "reset_contact_mfa",
         "parameters": [
           {
@@ -47303,6 +47303,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -47323,7 +47333,7 @@
     },
     "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock": {
       "post": {
-        "description": "Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person\n(INV-5); a walled client, or a contact of another client, answers 404 (INV-3).",
+        "description": "Clear a sign-in or two-step lock (fresh MFA). Audited `contact.unlocked` naming the person\n(INV-5); a walled client, or a contact of another client, answers 404 (INV-3); 409\n`factor_shared` when the person's locked factor is theirs in another firm too (the firm's\nsign-in lock is still cleared).",
         "operationId": "unlock_contact_portal",
         "parameters": [
           {
@@ -47419,6 +47429,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -48370,6 +48390,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
