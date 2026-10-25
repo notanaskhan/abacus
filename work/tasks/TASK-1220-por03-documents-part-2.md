@@ -1,8 +1,8 @@
 ---
 id: TASK-1220
 title: POR-03 frontend part 2 — b, motion, c from drop polling, c2, d, i, M, the portal mount (R-01-T10)
-spec: docs/screens/POR-03.md
-acceptance_criteria: [R-01-T10]
+spec: SPEC-323
+acceptance_criteria: [AC-1, AC-5]
 risk_zone: green
 status: done
 epic: R-01

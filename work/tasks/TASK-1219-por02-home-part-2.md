@@ -1,8 +1,8 @@
 ---
 id: TASK-1219
 title: POR-02 frontend part 2 — d, e (scope switcher and role chips), g and h fixture-only, M at 390 (P-08-T23)
-spec: docs/screens/POR-02.md
-acceptance_criteria: [P-08-T23]
+spec: SPEC-320
+acceptance_criteria: [AC-15, AC-16]
 risk_zone: green
 status: done
 epic: P-08
