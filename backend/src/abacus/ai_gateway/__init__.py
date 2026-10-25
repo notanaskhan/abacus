@@ -84,6 +84,12 @@ from abacus.ai_gateway.embeddings import (
     embedder,
     embedding_route,
 )
+from abacus.ai_gateway.output_checks import (
+    CheckFailure,
+    Settled,
+    register_output_check,
+    settle,
+)
 from abacus.ai_gateway.pii import PARTS as PII_PARTS
 from abacus.ai_gateway.pii import part_with_tin
 from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt, registry
@@ -859,6 +865,7 @@ __all__ = [
     "BudgetExceeded",
     "BudgetExhausted",
     "CallTooLarge",
+    "CheckFailure",
     "ContextBuilder",
     "ContextTooLarge",
     "DataBoundaryRefused",
@@ -880,6 +887,7 @@ __all__ = [
     "Prompt",
     "ProviderError",
     "Route",
+    "Settled",
     "Tier",
     "UnknownPrompt",
     "attempts_for",
@@ -899,7 +907,9 @@ __all__ = [
     "model_id",
     "prompt",
     "register_client_data_facts",
+    "register_output_check",
     "register_synthetic_tenants",
     "registry",
     "sanitise_text",
+    "settle",
 ]
