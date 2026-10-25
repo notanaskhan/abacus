@@ -77,6 +77,7 @@ TABLES: tuple[str, ...] = (
     "evidence_items",
     "evidence_object_keys",
     "evidence_pages",
+    "evidence_version_voids",
     "evidence_versions",
     "evidence_withdrawals",
     "feature_flag_states",
