@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Final, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
@@ -102,6 +102,11 @@ class CardView:
     screened_at: datetime | None
     my_feedback: FeedbackView | None
     allowed_actions: tuple[str, ...]
+    # The request the batch answers and the period it expects (SHL-20's request line and the
+    # code-worded period check; P-06-T22, DEC-351).
+    request_title: str
+    period_start: date | None
+    period_end: date | None
 
 
 @dataclass(frozen=True)
@@ -144,7 +149,8 @@ async def screening_card(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -
     await _gate(ctx)
     engagement = await get_ref(ctx, engagement_id)
     await authorise(ctx, "upload_review.read", engagement.resource())
-    await _subject(ctx, engagement_id, item_id)
+    subject = await _subject(ctx, engagement_id, item_id)
+    request = (subject.title, subject.period_start, subject.period_end)
     current = await _current(ctx, item_id)
     async with tenant_session(ctx.tenant) as session:
         head = await aggregate_head_for(session, ctx, item_id)
@@ -174,6 +180,7 @@ async def screening_card(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -
             None,
             None,
             tuple(sorted(allowed)),
+            *request,
         )
     composed = [UUID(str(v)) for v in head.evidence_version_ids or []]
     facts = await screening_facts(ctx.tenant, composed)
@@ -232,6 +239,7 @@ async def screening_card(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -
         if mine is not None
         else None,
         tuple(sorted(allowed)),
+        *request,
     )
 
 

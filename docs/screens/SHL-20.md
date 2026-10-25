@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-20 Evidence screening/` (README.md, spec.md; no revision) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-06 · contract P-06-T03 (TASK-404); C-34 kit, a–f, O3 sheet, ReturnDialog preselect, View, feedback P-06-T22; aggregate P-06-T20; stub P-06-T15; follow-ups P-06-T14; evals P-06-T21; data P-06-T08; parity P-06-T26 |
-| Manifest status | planned (`routes/manifest/shl.ts`) |
+| Manifest status | fixture (`routes/manifest/shl.ts`; P-06-T22) |
 
 Code to come (P-06 §5.2): `packages/ui/src/components/screening/ScreeningCard.tsx` (C-34: flagged · passed · not screened · running, with a gallery specimen), `src/domain/screening/{queries.ts, ScreeningCardHost.tsx, FeedbackMenu.tsx}`, `src/domain/requests/{FollowUpSheet.tsx, ReturnDialog.tsx}`, `src/screens/SHL-20/{index.tsx, scenarios.ts, copy.ts, SHL-20.test.tsx}`.
 

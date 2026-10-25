@@ -41,7 +41,8 @@ export const shlScreens = {
   "SHL-17": { name: "To-do drawer", status: "planned", path: null },
   "SHL-18": { name: "Comments and @mentions", status: "planned", path: null },
   "SHL-19": { name: "Agent review package", status: "planned", path: null },
-  "SHL-20": { name: "Evidence screening", status: "planned", path: null },
+  // P-06-T22: a–f on fixtures, the C-34 card in local state over its host (BND-02 here).
+  "SHL-20": { name: "Evidence screening", status: "fixture", path: null },
   "SHL-21": { name: "Link requests", status: "planned", path: null },
   "SHL-22": { name: "Template update", status: "planned", path: null },
   "SHL-23": { name: "Today brief panel", status: "planned", path: null, entry: true },

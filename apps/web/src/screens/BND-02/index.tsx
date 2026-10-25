@@ -22,6 +22,7 @@ import {
   RecordCockpit,
   RecordHeader,
   RequestSection,
+  ScreeningCard,
   SheetModal,
   Tabsbar,
   Toggle,
@@ -35,15 +36,19 @@ import {
   registryWord,
   toast,
 } from "@abacus/ui";
+import { acceptMutation } from "@abacus/api-client/query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { useOverlays } from "../../app-core/overlay-host";
+import { useOpenSourceViewer, useOverlays } from "../../app-core/overlay-host";
 import { useSession } from "../../app-core/session";
 import {
   BinderRequestRow,
   CategoryList,
   type FollowUpSelection,
   FollowUpSheet,
+  ReturnDialog,
+  type ReturnTarget,
   allows,
   categoryIcon,
   isSatisfied,
@@ -57,6 +62,7 @@ import {
   useRequestDetail,
   useStaffNames,
 } from "../../domain/requests";
+import { ScreeningCardHost } from "../../domain/screening";
 import { COPY } from "./copy";
 
 // BND-02 · Binder builder & tracker (P-06-T12; docs/screens/BND-02.md). T2 with the Request dock
@@ -69,7 +75,11 @@ import { COPY } from "./copy";
 //   a  Feld, published, 5 of 7    b  the TY2026 Draft    c  Complete, marked done by Claire Feld
 //   d  Thornbury, 3 overdue       e  Paul Thornbury's Ignore    f  the K-1 hidden from the client
 //
-// g and the R2 rows (Linked (n), the screening glyph, the dock ScreeningCard) are P-06-T22's.
+//   g  (R2) the estimates uploaded and screened: the dock's ScreeningCard, Accept and Return…
+//
+// R2 on every state (P-06-T22): Linked (n) on each row, the screening glyph on client uploads,
+// and the dock's C-34 ScreeningCard under "Uploaded Document" (the firm-provided K-1 reads Not
+// screened). Accept and Return… stay with the person; screening never decides (INV-1).
 
 const DAY_MS = 86_400_000;
 
@@ -492,6 +502,16 @@ export function BND02({
                       ? COPY.row.visibleOn(row.title)
                       : COPY.row.visibleOff(row.title),
                     menuLabel: COPY.row.menu(row.title),
+                    linked: COPY.row.linked(row.linked_count ?? null),
+                    screening:
+                      row.screening == null
+                        ? null
+                        : COPY.row.screeningTooltip(
+                            registryWord("evidence_screening", row.screening).label,
+                          ),
+                  }}
+                  onScreening={() => {
+                    onRequest(row.id);
                   }}
                 />
               );
@@ -760,6 +780,34 @@ function RequestDock({
 }): JSX.Element {
   const now = useNow();
   const detail = useRequestDetail(binder.engagement_id, row.id);
+  const openViewer = useOpenSourceViewer();
+  const queryClient = useQueryClient();
+  const accept = useMutation({ ...acceptMutation() });
+  const [returning, setReturning] = useState<ReturnTarget | null>(null);
+  const refresh = (): void => {
+    void queryClient.invalidateQueries({
+      predicate: (q) => {
+        const id = (q.queryKey[0] as { _id?: string } | undefined)?._id ?? "";
+        return id === "binderRequests" || id === "getBinder" || id === "screeningCard";
+      },
+    });
+  };
+  const review = row.status === "uploaded" && row.kind === "client_upload";
+  const acceptAll = async (): Promise<void> => {
+    try {
+      for (const upload of detail.uploads) {
+        await accept.mutateAsync({
+          path: { engagement_id: binder.engagement_id, version_id: upload.evidence_version_id },
+          body: {},
+        });
+      }
+      toast.show({ kind: "success", text: COPY.toasts.accepted });
+    } catch {
+      toast.show({ kind: "error", text: COPY.toasts.failed });
+    } finally {
+      refresh();
+    }
+  };
   const sent = detail.activity.find((e) => e.event_type === "request_item.sent");
   const sender = sent?.actor_user_id == null ? undefined : names.get(sent.actor_user_id);
   const first = detail.uploads[0];
@@ -854,6 +902,19 @@ function RequestDock({
               first.uploaded_by_name,
               date(first.uploaded_at, { now, tz, withYear: true }),
             )}
+            {row.kind === "firm_provided" ? (
+              <ScreeningCard
+                verdict="not_screened"
+                checks={[]}
+                notScreened={COPY.dock.notScreened}
+                className="w-auto rounded-none shadow-none hairline-t"
+              />
+            ) : row.screening != null ? (
+              <ScreeningCardHost
+                subject={{ engagementId: binder.engagement_id, itemId: row.id }}
+                className="w-auto rounded-none shadow-none hairline-t"
+              />
+            ) : null}
           </>
         )}
       </div>
@@ -879,9 +940,39 @@ function RequestDock({
           <Button variant="secondary" disabled={onRemind === undefined} onClick={onRemind}>
             {COPY.dock.remind}
           </Button>
+        ) : review ? (
+          <>
+            <Button variant="primary" disabled={accept.isPending} onClick={() => void acceptAll()}>
+              {COPY.dock.accept}
+            </Button>
+            <Button
+              variant="secondary"
+              opensDialog
+              onClick={() => {
+                if (first === undefined) return;
+                setReturning({
+                  engagementId: binder.engagement_id,
+                  versionId: first.evidence_version_id,
+                  versionIds: detail.uploads.map((u) => u.evidence_version_id),
+                  fileName: row.title,
+                });
+              }}
+            >
+              {COPY.dock.return}
+            </Button>
+          </>
         ) : first !== undefined ? (
           <>
-            <Button variant="secondary" disabled title={COPY.dock.openViewerHint}>
+            <Button
+              variant="secondary"
+              title={COPY.dock.openViewerHint}
+              onClick={() => {
+                openViewer({
+                  evidenceVersionId: first.evidence_version_id,
+                  engagementId: binder.engagement_id,
+                });
+              }}
+            >
               {COPY.dock.openViewer}
             </Button>
             {row.kind === "firm_provided" && (
@@ -892,6 +983,13 @@ function RequestDock({
           </>
         ) : null}
       </div>
+      <ReturnDialog
+        target={returning}
+        onClose={() => {
+          setReturning(null);
+        }}
+        onReturned={refresh}
+      />
     </div>
   );
 }

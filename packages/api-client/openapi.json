@@ -35769,6 +35769,32 @@
             ],
             "cls": "internal"
           },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period Start"
+          },
           "provenance": {
             "$ref": "#/components/schemas/ScreeningProvenanceOut",
             "cls": "internal"
@@ -35777,6 +35803,11 @@
             "cls": "internal",
             "format": "uuid",
             "title": "Request Item Id",
+            "type": "string"
+          },
+          "request_title": {
+            "cls": "confidential",
+            "title": "Request Title",
             "type": "string"
           },
           "running": {
@@ -35814,7 +35845,10 @@
           "file_flags",
           "provenance",
           "my_feedback",
-          "allowed_actions"
+          "allowed_actions",
+          "request_title",
+          "period_start",
+          "period_end"
         ],
         "title": "ScreeningCardOut",
         "type": "object"

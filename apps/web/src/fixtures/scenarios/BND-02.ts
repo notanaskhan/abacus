@@ -1,5 +1,5 @@
-// BND-02 binder builder and tracker: one fixture scenario per artboard P-06-T12 builds (a–f; g and
-// the R2 rows are P-06-T22's). All six stand at E0, Mon Sep 14, 2026, 9:24 AM CT, seen by Kevin
+// BND-02 binder builder and tracker: one fixture scenario per artboard (a–f P-06-T12; g and the
+// R2 rows P-06-T22). All six stand at E0, Mon Sep 14, 2026, 9:24 AM CT, seen by Kevin
 // Osei, the Feld preparer (DV-4: e's README viewer is a client; this is a firm screen). Data:
 // fixtures/seed/binder-detail.ts. The binder record, rows and preview routes are P-06-T07's; the
 // live poll, uploads and the row writes answer here in the C5 shapes until P-06-T10 lands.
@@ -11,10 +11,12 @@
 //   d  Thornbury, 6 of 15, 3 past Aug 31; the Lakeview 1099-R selected
 //   e  Thornbury with Paul Thornbury's Ignore on the IRA confirmations (selected)
 //   f  Feld with the K-1 hidden from the client (selected)
+//   g  (R2) 9:31 AM: Claire's estimated-payment confirmations uploaded, screened Passed (selected)
 //
 // They live under fixtures/ (dev and test only); src/screens/BND-02/scenarios.ts re-exports them.
 
 import type {
+  DecisionOut,
   ListPageActivityEventOut,
   ListPageBinderRequestRowOut,
   RequestItemDeletedOut,
@@ -30,7 +32,8 @@ import {
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type FollowUpSpec, followUpHandlers } from "../handlers/follow-ups";
-import { type BinderFixture, binderSet } from "../seed/binder-detail";
+import { type BinderFixture, ESTIMATES_UPLOADED_AT, binderSet } from "../seed/binder-detail";
+import { ESTIMATES_PERIOD, SEND_BACK_REASONS, binderRowCard } from "../seed/screening";
 import { stableId } from "../seed/prng";
 
 const E0 = seedScenario();
@@ -97,6 +100,32 @@ function handlers(start: BinderFixture): Record<string, FixtureHandler> {
   const item = (request: FixtureRequest) => data.rows.find((r) => r.id === request.params.item_id);
   const patchRow = (id: string, patch: Partial<BinderFixture["rows"][number]>): void => {
     data = { ...data, rows: data.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) };
+  };
+  /** A person's decision on one uploaded version: the request follows once (P-06 §3.5). */
+  const decide = (
+    request: FixtureRequest,
+    decision: "accept" | "send_back",
+    status: "received" | "returned",
+  ): Response => {
+    const version = request.params.version_id ?? "";
+    const rowId = Object.entries(data.uploads).find(([, files]) =>
+      files.some((f) => f.evidence_version_id === version),
+    )?.[0];
+    if (rowId === undefined) return json(NOT_FOUND, 404);
+    patchRow(rowId, { status });
+    const body: DecisionOut = {
+      id: stableId(`decision:${version}:${decision}`),
+      decision,
+      evidence_version_id: version,
+      reason_code:
+        decision === "accept"
+          ? null
+          : ((request.body as { reason_code?: string } | null)?.reason_code ?? null),
+      item_status: status,
+      request_item_ids: [rowId],
+      corrects_proposal: false,
+    };
+    return json(body, 201);
   };
   const thorn = data.binder.engagement_id === BINDERS.thornburyEngagement.id;
   const draft = data.binder.work_item_id === BINDERS.feldDraftWorkItem.id;
@@ -182,6 +211,28 @@ function handlers(start: BinderFixture): Record<string, FixtureHandler> {
       });
       return json({ id: row.id, status: "requested" });
     },
+    // R2 (P-06-T22): the dock's ScreeningCard, Accept and Return… on an upload.
+    "GET /v1/engagements/{engagement_id}/request-items/{item_id}/screening": (r) => {
+      const row = item(r);
+      if (row === undefined) return json(NOT_FOUND, 404);
+      const files = data.uploads[row.id] ?? [];
+      const estimates = data.keys[row.id] === "est";
+      return json(
+        binderRowCard(
+          row,
+          files.length,
+          files[0]?.uploaded_at ?? ESTIMATES_UPLOADED_AT,
+          estimates ? ESTIMATES_PERIOD : null,
+        ),
+      );
+    },
+    "GET /v1/engagements/{engagement_id}/review-reason-codes/{applies_to}": () =>
+      json(SEND_BACK_REASONS),
+    "POST /v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/accept": (r) =>
+      decide(r, "accept", "received"),
+    "POST /v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/send-back": (
+      r,
+    ) => decide(r, "send_back", "returned"),
     "DELETE /v1/engagements/{engagement_id}/request-items/{item_id}": (r) => {
       const row = item(r);
       if (row === undefined) return json(NOT_FOUND, 404);
@@ -210,6 +261,11 @@ export const scenarios = defineScenarios({
   d: at("d", BINDERS.thornbury),
   e: at("e", BINDERS.thornburyIgnored),
   f: at("f", BINDERS.feldHidden),
+  // g (R2; revision wins: 9:31 AM): the estimates uploaded by Claire through the portal.
+  g: {
+    ...at("g", BINDERS.feldUploaded),
+    clock: "2026-09-14T09:31:00-05:00",
+  },
 });
 
 export type Bnd02State = keyof typeof scenarios;
@@ -225,4 +281,5 @@ export const OPENS: Readonly<Record<Bnd02State, { binderId: string; request: str
     request: rowId(BINDERS.thornburyIgnored, "t12"),
   },
   f: { binderId: BINDERS.feldHidden.binder.id, request: rowId(BINDERS.feldHidden, "k1") },
+  g: { binderId: BINDERS.feldUploaded.binder.id, request: rowId(BINDERS.feldUploaded, "est") },
 };

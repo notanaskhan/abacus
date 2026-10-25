@@ -133,3 +133,11 @@ async def test_screening_card_flag_off_is_404_and_on_is_501(
     monkeypatch.setattr(screening_contract, "flag_enabled", on)
     with pytest.raises(NotImplementedYet):
         await screening_contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
+
+
+def test_the_card_names_its_request_and_expected_period() -> None:
+    """P-06-T22 (DEC-351): SHL-20's request line and the code-worded period check read these."""
+    card = cast(dict[str, Json], SCHEMAS["ScreeningCardOut"]["properties"])
+    assert {"request_title", "period_start", "period_end"} <= set(card)
+    required = cast(list[str], SCHEMAS["ScreeningCardOut"].get("required", []))
+    assert "request_title" in required

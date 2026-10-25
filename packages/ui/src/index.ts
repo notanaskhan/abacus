@@ -388,3 +388,14 @@ export * from "./viewer";
 
 // C-02 Workpaper kit, SourceDocGroup and SourceDocRow (F-05-T50).
 export * from "./workpaper";
+// C-34 ScreeningCard (P-06-T22): evidence screening of an upload against its request.
+export {
+  SCREENING_LABELS,
+  type ScreeningAction,
+  ScreeningCard,
+  type ScreeningCardProps,
+  type ScreeningCheck,
+  type ScreeningCheckVerdict,
+  type ScreeningFlaggedFile,
+  type ScreeningVerdict,
+} from "./components/screening/ScreeningCard";

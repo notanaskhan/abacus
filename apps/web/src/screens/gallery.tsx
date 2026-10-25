@@ -98,6 +98,12 @@ import {
   type Shl08State,
   scenarios as shl08Scenarios,
 } from "./SHL-08/scenarios";
+import { SHL20 } from "./SHL-20/artboard";
+import {
+  STATES as SHL20_STATES,
+  type Shl20State,
+  scenarios as shl20Scenarios,
+} from "./SHL-20/scenarios";
 import { RequestComposer } from "./SHL-14";
 import {
   OPENS as SHL14_OPENS,
@@ -682,3 +688,23 @@ function Shl08Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-08", { title: "Source viewer · drawer and pane", Component: Shl08Artboard });
+
+// SHL-20 (P-06-T22): the C-34 screening card on the Granite Peak SURL upload, a–f.
+function Shl20Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl20State = SHL20_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl20Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <SHL20 key={state} state={state} /> : null;
+}
+
+registerScreen("SHL-20", { title: "Evidence screening", Component: Shl20Artboard });
