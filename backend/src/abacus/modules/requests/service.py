@@ -901,6 +901,30 @@ def _record_classified(
         tx.emit(RequestItemClassified(request_item_id=item_id, engagement_id=engagement_id))
 
 
+async def reclassify_described(tx: UnitOfWork, item: RequestItem, description: str) -> None:
+    """SPEC-022 §12: a changed description is classified again by the rules, unless a person
+    overrode the tier or the firm's methodology set it (§4's order; TASK-1232)."""
+    if item.tier_source in ("override", "methodology"):
+        return
+    found = classify(description, item.audit_area)
+    if (found.tier, found.dataset, found.source, found.rule_id) == (
+        item.retrievability_tier,
+        item.dataset,
+        item.tier_source,
+        item.tier_rule,
+    ):
+        return
+    await set_classification(
+        tx.session,
+        item.id,
+        tier=found.tier,
+        dataset=found.dataset,
+        source=found.source,
+        rule=found.rule_id,
+    )
+    _record_classified(tx, item.id, item.engagement_id, found, "request_item.classified")
+
+
 async def set_tier(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, tier: str | None
 ) -> RequestItemView:

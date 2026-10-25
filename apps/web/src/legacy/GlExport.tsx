@@ -92,6 +92,12 @@ export function GlExport({ engagementId }: { engagementId: string }): JSX.Elemen
           {status.text}
         </p>
       )}
+      {latest.isError && (
+        // SPEC-034 AC-9: the error state, said in words (the picker stays usable).
+        <p role="alert" className={TONES.danger}>
+          Couldn&apos;t load your last upload. Try again in a moment.
+        </p>
+      )}
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 font-medium">Which accounting system do you use?</legend>
         <div className="flex flex-wrap gap-2">

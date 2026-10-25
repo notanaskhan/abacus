@@ -95,6 +95,7 @@ from abacus.modules.requests.repository import (
     set_item_fields,
     stamp_sent,
 )
+from abacus.modules.requests.service import reclassify_described
 
 TERMINAL: Final = frozenset({"received", "not_applicable"})
 NA_REASONS: Final = ("not_applicable_this_year", "already_sent", "dont_have", "firm_waived")
@@ -267,6 +268,8 @@ async def update_item(
         if not changed:
             return
         await set_item_fields(tx.session, item.id, changed)
+        if "description" in changed:
+            await reclassify_described(tx, item, str(changed["description"]))
         tx.record(
             "request_item.updated",
             target=Target("request_item", item.id),
