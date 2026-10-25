@@ -55,6 +55,7 @@ from abacus.modules.requests.guidance import (
 )
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
+    client_home_items,
     default_due_on,
     drop_item_rows,
     fulfilling_versions,
@@ -1025,14 +1026,20 @@ class YourPart:
 async def your_part(ctx: AuthContext, engagement_id: UUID) -> YourPart:
     """AC-6: the items left for this client user (open or needing revision, assigned to them, or
     unassigned for client admins), how many block fieldwork, and the estimated minutes. Firm
-    roles have no part here."""
+    roles have no part here. Authorised first, so an engagement the caller's grants don't cover
+    answers 404 like every other uncovered scope (DEC-43; ED-054), never an unchecked 500."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise_items(ctx, "request_item.read", ref.resource())
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
     if role not in ("client_admin", "client_contributor"):
         return YourPart(0, 0, 0)
-    items = await request_items_for(ctx, engagement_id)
+    # The portal home's own rows (P-08-T13): only a published or done binder's requests, so a
+    # draft binder counts nowhere for the client and the two tie (DEC-210; ED-054).
+    async with tenant_session(ctx.tenant) as session:
+        rows = await client_home_items(session, ctx, engagement_id)
     mine = [
         i
-        for i in items
+        for i, _, _ in rows
         if i.client_visible
         and i.status in OPEN_FOR_CLIENT
         and (
