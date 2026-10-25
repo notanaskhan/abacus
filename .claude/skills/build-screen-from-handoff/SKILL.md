@@ -5,13 +5,15 @@ description: Build or revise one Accrued screen by screen ID (for example AUD-03
 
 # Build a screen from the handoff
 
-## Paths that arrive later
-If one of these is missing when this skill needs it, stop and report which one and the task that creates it.
-- apps/web/src/routes/manifest/<module>.ts and apps/web/scripts/seed-manifest.mjs (arrive with F-04-T14, S3)
-- docs/product/status-vocabulary.yaml (arrives with F-03-T04, S0). docs/product/decision-log.md arrives with F-02-T01 (S0); until then search docs/plan/09-decisions-adrs.md only, and create the log when you record a decision
-- docs/design/HANDOFF_VERSION (arrives with F-05-T16, S1); kit and template specimens in packages/ui (F-05, S0–S10)
-- routes/<surface>/<area>.tsx route files (arrive with F-03-T17, S1); apps/web/src/fixtures/contracts/ (P-08-T02, S4)
-- e2e/screens/<ID>.spec.ts parity harness (arrives with P-08-T26, S9; the visual-parity harness itself with F-05)
+## Paths this skill relies on
+All on `main` as of 2026-10-25 (F-05-T25 check). If one is missing when this skill needs it, stop and report which one.
+- apps/web/src/routes/manifest/<module>.ts and apps/web/scripts/seed-manifest.mjs (F-04-T14)
+- docs/product/status-vocabulary.yaml (F-03-T04) and docs/product/decision-log.md (F-02-T01; its "Register facts" table says which rows never default)
+- docs/design/HANDOFF_VERSION (F-05-T16); kit and template specimens in packages/ui (F-05)
+- routes/<surface>/<area>.tsx route files (F-03-T17); apps/web/src/fixtures/contracts/ (P-08-T02)
+- apps/web/e2e/screens/<ID>.spec.ts parity harness (P-08-T26) and the visual-parity harness (F-05)
+- No text mirror of the handoff is committed while the repository is public (F-05 §8, F-01 row: the mirror lands only once the repository is private): read it from
+  $ACCRUED_HANDOFF_DIR and check its version against docs/design/HANDOFF_VERSION
 
 Input: SCREEN_ID. Env: $ACCRUED_HANDOFF_DIR, $ACCRUED_BLUEPRINT_DIR (from .claude/settings.local.json).
 The handoff is read-only and stays outside git. Copy into the repo only text you quote in the contract and copy files.

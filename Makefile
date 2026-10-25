@@ -249,10 +249,12 @@ loadtest:
 
 # The Brightwater Hale scenario (F-04-T13): `make seed-demo SNAPSHOT=E0 HOLDOUT=fairhaven_ebp`.
 # Loopback only; a second run writes nothing. NO_SETTLE=1 where no outbox relay runs.
+# SLICE adds opt-in slices to audit_core, e.g. `make seed-demo SLICE=compliance` (Q-02-T39).
 SNAPSHOT ?= E0
 HOLDOUT ?=
+SLICE ?=
 LOADER = abacus_tools.synthetic.scenarios.brightwater_hale.loader
-LOADER_ARGS = --snapshot $(SNAPSHOT) $(foreach h,$(HOLDOUT),--holdout $(h)) $(if $(NO_SETTLE),--no-settle)
+LOADER_ARGS = --snapshot $(SNAPSHOT) $(foreach h,$(HOLDOUT),--holdout $(h)) $(foreach s,$(SLICE),--slice $(s)) $(if $(NO_SETTLE),--no-settle)
 seed-demo: db-guard
 	cd backend && $(LOCAL_ENV) uv run python -m $(LOADER) $(LOADER_ARGS)
 

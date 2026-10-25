@@ -58,7 +58,7 @@ Criteria from chapter 01 §1.2.2 (M7) and Q-02 §10 items 1, 3, 5 and 6. The dos
 | M7-06 | Firm opt-in (SPEC-036) recorded per firm before its first agent run; exclusion and agent stages live | builder | Fri Apr 16, 2027 | Q-02-T07, Q-02-T08; tests from Q-02-T09 | open |
 | M7-07 | MSA and DPA ready to sign, with the sub-processor list generated from the register | counsel, builder | Fri Apr 16, 2027 | Vault reference; F-09 tracker | open |
 | M7-08 | Cyber and technology E&O insurance bound | builder | Fri Apr 16, 2027 | Certificate in the vault; F-09 tracker | open |
-| M7-09 | WISP approved by the Qualified Individual (Q-02-T40) | builder | Fri Apr 9, 2027 | WISP; approval dated | open |
+| M7-09 | WISP approved by the Qualified Individual (Q-02-T40) | builder | Fri Apr 9, 2027 | [`wisp.md`](wisp.md) (v1 draft 2026-10-25); approval dated in its §10 | in progress |
 | M7-10 | MFA enforced for staff, and for portal owners and signers (Q-02-T37) | builder | Fri Apr 16, 2027 | `make mfa-report` output | open |
 | M7-11 | Restore drill within the quarter; the Q1 drill includes `make audit-chain-verify` on the restored copy | builder | Fri Mar 26, 2027 | Drill record (Q-03-T053) | open |
 | M7-12 | Compliance kernel complete: hash chain, access events, actor kinds, retention floors, legal holds, dual-approval firm export, incident register with the FTC clock | builder | Fri Apr 16, 2027 | `docs/contracts/compliance-kernel.md`; Q-02-T14 to Q-02-T50 | open |

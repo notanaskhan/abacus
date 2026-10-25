@@ -1,0 +1,25 @@
+# Q-02-T39 (ADR-078): the loaded-state golden for the `compliance` slice at E0, Mon Sep 14, 2026,
+# 9:24 AM CT. Transcribed from the handoff (FIL-02 a and b, ADM-06 a and d) and the epic
+# (Q-02 §5, AC-38), not from the code. Read by tests/integration/test_scenario_compliance.py.
+golden: brightwater_hale/compliance_e0
+at: "2026-09-14T09:24:00-05:00"
+incident:
+  title: "Credential-stuffing attempts against client portal sign-in"
+  canon_ref: "INC-2026-005"  # the register mints its own (DEC-290); TASK-1242 holds the gap
+  discovered_on: "2026-09-10"
+  clock_day: 4
+  clock_days: 30
+  ftc_notify_by: "2026-10-10"
+  notification_event: false
+  source: "ADM-06 a and d: 'Day 4 of 30 · notify by Oct 10 if ≥ 500'; Q-02 AC-38"
+holds:
+  active: 2
+  rows:
+    - {client: "Wren & Avery Collins", tax_year: 2023, placed_by: "Victor Hammond"}
+    - {client: "Meridian Tool & Die, Inc.", tax_year: 2024, placed_by: "Neil Ashcroft"}
+  source: "FIL-02 b: Collins CP2000 TY2023 (Victor Hammond), Meridian IL-1120 TY2024 (Neil Ashcroft), both Active"
+policies:
+  count: 8
+  firm_years: "7"
+  locked: [audit_documentation]
+  source: "FIL-02 a: 'Policies 8', every firm policy 7 years, Audit documentation 'Locked · WORM'"

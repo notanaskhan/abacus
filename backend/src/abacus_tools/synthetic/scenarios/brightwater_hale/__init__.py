@@ -4,6 +4,7 @@ one timeline, built deterministically and replayed through the service APIs by t
 
 from abacus_tools.synthetic.scenarios.brightwater_hale import (
     binders,  # registers "binders" (P-06-T08)
+    compliance,  # registers "compliance" (Q-02-T39)
     firm_people,  # registers "people" (G-01-T06)
     portal,  # registers "portal" (P-08-T14)
     shell,  # registers "shell" (P-01-T07)
@@ -21,6 +22,7 @@ __all__ = [
     "Scenario",
     "binders",
     "build",
+    "compliance",
     "firm_people",
     "portal",
     "shell",
