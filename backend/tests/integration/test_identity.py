@@ -708,7 +708,9 @@ async def test_ac3_me_lists_active_memberships_only(
     assert body["active_tenant_id"] == str(active)
 
 
-@pytest.mark.parametrize("header", [None, "not-a-uuid", str(uuid.uuid4())])
+@pytest.mark.parametrize(
+    "header", [None, "not-a-uuid", str(uuid.uuid4())], ids=["absent", "not_a_uuid", "uuid"]
+)
 async def test_ac1_me_never_needs_or_uses_the_tenant_header(
     client: httpx.AsyncClient, idp: FakeIdentityProvider, seed: Seeder, header: str | None
 ) -> None:

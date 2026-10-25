@@ -99,6 +99,7 @@ def test_ac16_the_default_timeout_is_sixty_seconds() -> None:
     assert fields["timeout_seconds"].default == 60
 
 
+@pytest.mark.serial  # a wall-clock budget (DEC-335)
 async def test_ac16_a_provider_call_past_its_timeout_raises_provider_error_and_is_recorded(
     seed: Seeder, world: World
 ) -> None:

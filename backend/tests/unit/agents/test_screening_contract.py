@@ -142,7 +142,14 @@ def test_ac14_requested_by_absent_or_null_is_none() -> None:
         {"evidence_version_id": 7},
         {"evidence_version_id": str(VERSION), "requested_by": "not-a-uuid"},
     ],
-    ids=lambda p: "-".join(f"{k}={v}" for k, v in p.items()) or "empty",
+    # The ids name the module's fresh UUIDs, not their values: every pytest-xdist worker must
+    # collect the same test names (DEC-335).
+    ids=lambda p: (
+        "-".join(
+            f"{k}={'<uuid>' if v in (str(VERSION), str(PERSON)) else v}" for k, v in p.items()
+        )
+        or "empty"
+    ),
 )
 def test_ac14_a_missing_or_malformed_identifier_raises(payload: dict[str, object]) -> None:
     with pytest.raises((KeyError, ValueError, TypeError, AttributeError)):

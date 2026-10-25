@@ -7,8 +7,10 @@ Prints the test files of shard `<shard>` (1-based) of `<shards>`, one per line. 
 a file missing from the timings (a new file) still runs, weighted as the median file. Greedy
 longest-first, deterministic: the same files and timings always give the same split.
 
-Timings: `tests/durations.json`, seconds per file, from the durations report of a full run:
-pytest --durations=0 --durations-min=0 > report.txt, then
+Timings: `tests/durations.json`, seconds per file, from the durations report of a full run in
+one process (`-n 0`: under pytest-xdist workers contend for the cores and each worker's session
+fixtures, its containers among them, are charged to the first file it runs; DEC-335):
+pytest -n 0 --durations=0 --durations-min=0 > report.txt, then
 python -m abacus_tools.ci.shard --record report.txt
 """
 
