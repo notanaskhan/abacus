@@ -4,12 +4,12 @@ title: "F-02-T06 · M1 orphan ADR drafts: ADR-125 (P-26) e-signature, P-17 write
 spec: SPEC-046
 acceptance_criteria: [AC-18, AC-19, AC-20, AC-21, AC-22]
 risk_zone: red
-status: todo
+status: in-review
 epic: F-02
 plan_key: F-02-T06
 branch: task-120-m1-orphan-adrs
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-25
 ---
 
 > Solo edition. Write the plan below first (amber and red), then build. If scope must change, stop and add it to Questions. Append to the Progress log before ending a session.
@@ -70,8 +70,7 @@ cd backend && uv run python -m abacus_tools.quality.validate_docs
 
 ## Progress log
 Append-only. Newest at the bottom.
-
-- (none yet)
+- `2026-10-25` — S8b (branch s8b-docs-compliance). The three drafts were already on main as `proposed` since 2026-10-20 (SU-13, a725d76b): P-26 = ADR-149, P-17 = ADR-150, P-29 = ADR-151. Checked against SPEC-046: AC-18 met (ADR-149 Decision: record mode, then DocuSign embedded with ID Verification behind `EnvelopeProvider`, KBA for the 8879 family, SMS refused, handwritten after three failures, human-only send, policies as data). AC-19 was missing the counsel request and the record-mode fallback: added as a Decision bullet in ADR-149 (still proposed). AC-20 met (ADR-150). AC-21 was missing the per-firm wording, the mini-freezes, the deadline weeks and "no year-one exception": ADR-151's Decision now carries chapter 01 §1.2.4's terms (still proposed). AC-22: `backlog.md` now reads accept-by Fri 27 Nov (P-17), Fri 4 Dec (P-26) and the Dec 14-18 bundle (P-29); it had Nov 6, Oct 30 and Nov 27. `validate_docs` green. Acceptance is the decider's; none is marked accepted here.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
@@ -85,8 +84,8 @@ Append-only. Newest at the bottom.
 - [ ] None.
 
 ## Handoff
-- **Current state:** Not started.
-- **Exact next step:** Read the Objective, then step 1.
+- **Current state:** three ADRs proposed on main; S8b filled AC-19, AC-21 and AC-22 gaps.
+- **Exact next step:** accept ADR-150 by Fri 27 Nov, ADR-149 by Fri 4 Dec (counsel through F-09, else record mode only), ADR-151 in the Dec 14-18 bundle.
 - **Uncommitted or partial work:** None.
 - **Known failing checks:** None.
 - **Open issues:** None.

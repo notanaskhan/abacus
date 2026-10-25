@@ -26,7 +26,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-14 | Retention, holds, destruction | red | Q-02 | ADR-179 | drafted 2026-10-25 with Q-02-T05; acceptance by both deciders with counsel's floor input recorded (Q-02-T31) due Fri 27 Nov | DEC-71, DEC-72 | proposed |
 | P-15 | Real time via SSE, plus presence | amber | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-23 | to draft (re-dated) |
 | P-16 | Client-ledger writes (W1) and GRC request sync (W5) | red | C-01 | next free | Fri 27 Nov; re-dated 2026-10-22: drafted with C-01's first task, owner ayushkbhatia | DEC-69 | to draft (re-dated) |
-| P-17 | `integrations` module and the write-capability framework | red | F-02 | ADR-150 | Fri 6 Nov | DEC-46 | proposed |
+| P-17 | `integrations` module and the write-capability framework | red | F-02 | ADR-150 | drafted 2026-10-20 (M1 draft by Fri 30 Oct); accept by Fri 27 Nov | DEC-46 | proposed |
 | P-18 | Tax-engine integration; never transmit | red | F-09 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with F-09's first task, owner ayushkbhatia | DEC-49 | to draft (re-dated) |
 | P-19 | Deterministic document generation | amber | P-11 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-11's first task, owner ayushkbhatia | DEC-44 | to draft (re-dated) |
 | P-20 | Office add-ins | amber | — | next free | Q2 2027 | DEC-95 | to draft |
@@ -35,10 +35,10 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-23 | Workbench sessions | red | P-10 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-40 | to draft (re-dated) |
 | P-24 | Structured agent output | red | F-06 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with F-06's first task, owner ayushkbhatia | DEC-41 | to draft (re-dated) |
 | P-25 | Model-drafted text to clients | red | Q-03 | next free | Fri 11 Dec | DEC-79 | to draft |
-| P-26 | E-signature | red | F-02 | ADR-149 | Fri 30 Oct (vendor clock) | DEC-25 | proposed (acceptance: ayushkbhatia) |
+| P-26 | E-signature | red | F-02 | ADR-149 | drafted 2026-10-20 (M1 draft by Fri 30 Oct); accept by Fri 4 Dec (DocuSign go/no-go; counsel review through F-09, else record mode only) | DEC-25 | proposed (acceptance: ayushkbhatia) |
 | P-27 | Payments and billing boundary | amber | F-09 | next free | Fri 11 Dec | DEC-89 | to draft |
 | P-28 | Entitlements, agent-minutes, two-layer budgets | amber | F-03 | ADR-148 | Fri 13 Nov | DEC-51, DEC-55 | accepted |
-| P-29 | Busy-season change policy | amber | F-02 | ADR-151 | Fri 27 Nov | DEC-68 | proposed (acceptance: ayushkbhatia) |
+| P-29 | Busy-season change policy | amber | F-02 | ADR-151 | drafted 2026-10-20 (M1 draft by Fri 30 Oct); accept in the Dec 14-18 bundle | DEC-68 | proposed (acceptance: ayushkbhatia) |
 | P-30 | Peer benchmark network | red | — | next free | Deferred | DEC-99 | to draft |
 | P-31 | Client withdrawal of unaccepted uploads | red | P-06 | ADR-162 (plan alias ADR-137, which is the module map) | Fri 13 Nov; drafted and accepted 2026-10-22 with P-06-T28 | DEC-58 | accepted |
 | P-32 | OCR and document understanding | amber | P-11 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-11's first task, owner ayushkbhatia | DEC-42 | to draft (re-dated) |

@@ -22,6 +22,7 @@ risk_zone: red
 - **Send is human-only.** Envelope policies are data, not code.
 - **Consent.** The ESIGN/ERSD consent is stored.
 - **Native ceremony.** A native T16 ceremony with its own KBA vendor waits until 2028.
+- **Counsel review is requested through F-09's engagement** (ESIGN and ERSD consent, Pub 1345 KBA). Accept-by is the DocuSign go/no-go, Fri 2026-12-04. If counsel has not answered by then, DEC-25 falls back to **record mode only** (Option C) until counsel does; the fallback never defaults into a ceremony.
 
 ## Options considered
 ### Option A: record mode, then DocuSign embedded + ID Verification — chosen
