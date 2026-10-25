@@ -61,6 +61,17 @@ const SCREEN_SYNTAX = [
       "JSXOpeningElement[name.name!='AgentText'] > JSXAttribute > JSXExpressionContainer MemberExpression[property.name=/^(rationale|quote)$/]",
     message: "Model text goes only to <AgentText text={…} /> (ADR-065).",
   },
+  {
+    // P-09-T06 (L4): the trace's model text renders only through the agent components. `blocks`
+    // and `segments` name other things in other domains, so AgentBlocks payloads are typed instead.
+    selector: "JSXElement > JSXExpressionContainer MemberExpression[property.name=/^model_text$/]",
+    message: "Render agent output through AgentText, AgentProse or AgentBlocks (ADR-065, P-09).",
+  },
+  {
+    selector:
+      "JSXOpeningElement[name.name!=/^(AgentText|AgentProse|AgentBlocks)$/] > JSXAttribute > JSXExpressionContainer MemberExpression[property.name=/^model_text$/]",
+    message: "Agent output goes only to AgentText, AgentProse or AgentBlocks (ADR-065, P-09).",
+  },
 ];
 
 // F-05-T15 / F-05-T23: no native select and no boxed Input outside the legacy screens, which M2

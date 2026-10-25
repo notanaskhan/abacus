@@ -1621,6 +1621,76 @@
         "title": "AdoptedOut",
         "type": "object"
       },
+      "AgentBlocks": {
+        "additionalProperties": false,
+        "description": "AgentBlocks v1: an ordered list of parts.",
+        "properties": {
+          "parts": {
+            "cls": "confidential",
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "badge": "#/components/schemas/BadgePart",
+                  "cite_list": "#/components/schemas/CiteListPart",
+                  "entity_ref": "#/components/schemas/EntityRefPart",
+                  "file": "#/components/schemas/FilePart",
+                  "kv": "#/components/schemas/KvPart",
+                  "metric": "#/components/schemas/MetricPart",
+                  "options": "#/components/schemas/OptionsPart",
+                  "p": "#/components/schemas/ParagraphPart",
+                  "table": "#/components/schemas/TablePart"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ParagraphPart"
+                },
+                {
+                  "$ref": "#/components/schemas/TablePart"
+                },
+                {
+                  "$ref": "#/components/schemas/KvPart"
+                },
+                {
+                  "$ref": "#/components/schemas/MetricPart"
+                },
+                {
+                  "$ref": "#/components/schemas/FilePart"
+                },
+                {
+                  "$ref": "#/components/schemas/BadgePart"
+                },
+                {
+                  "$ref": "#/components/schemas/CiteListPart"
+                },
+                {
+                  "$ref": "#/components/schemas/OptionsPart"
+                },
+                {
+                  "$ref": "#/components/schemas/EntityRefPart"
+                }
+              ]
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Parts",
+            "type": "array"
+          },
+          "version": {
+            "cls": "internal",
+            "const": 1,
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "parts"
+        ],
+        "title": "AgentBlocks",
+        "type": "object"
+      },
       "AgentOut": {
         "properties": {
           "enabled": {
@@ -4177,6 +4247,36 @@
           "set_at"
         ],
         "title": "AutonomyOut",
+        "type": "object"
+      },
+      "BadgePart": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "badge",
+            "title": "Kind",
+            "type": "string"
+          },
+          "object": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "object",
+          "code"
+        ],
+        "title": "BadgePart",
         "type": "object"
       },
       "BandIO": {
@@ -7793,6 +7893,64 @@
           "allowed_actions"
         ],
         "title": "CitationV2Out",
+        "type": "object"
+      },
+      "CiteListPart": {
+        "additionalProperties": false,
+        "properties": {
+          "cites": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CiteSeg"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Cites",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "cite_list",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "cites"
+        ],
+        "title": "CiteListPart",
+        "type": "object"
+      },
+      "CiteSeg": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Citation Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "cite",
+            "title": "Kind",
+            "type": "string"
+          },
+          "n": {
+            "cls": "internal",
+            "maximum": 999.0,
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "citation_id",
+          "n"
+        ],
+        "title": "CiteSeg",
         "type": "object"
       },
       "CitedSourceOut": {
@@ -15285,6 +15443,37 @@
         "title": "EntityChoiceOut",
         "type": "object"
       },
+      "EntityRefPart": {
+        "additionalProperties": false,
+        "description": "A record by type and id; its label is rendered by code, never by the model.",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "entity_ref",
+            "title": "Kind",
+            "type": "string"
+          },
+          "record_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Record Id",
+            "type": "string"
+          },
+          "record_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "title": "Record Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "record_type",
+          "record_id"
+        ],
+        "title": "EntityRefPart",
+        "type": "object"
+      },
       "EntryCitationOut": {
         "properties": {
           "amount_matches": {
@@ -16016,6 +16205,29 @@
           "target_types"
         ],
         "title": "FacetsOut",
+        "type": "object"
+      },
+      "FactSeg": {
+        "additionalProperties": false,
+        "properties": {
+          "fact_id": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "title": "Fact Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "fact",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "fact_id"
+        ],
+        "title": "FactSeg",
         "type": "object"
       },
       "FieldEditIn": {
@@ -16750,6 +16962,50 @@
           "proposals"
         ],
         "title": "FileMatchOut",
+        "type": "object"
+      },
+      "FilePart": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "file",
+            "title": "Kind",
+            "type": "string"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Meta"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "artifact_id",
+          "name"
+        ],
+        "title": "FilePart",
         "type": "object"
       },
       "FindingHitOut": {
@@ -23100,6 +23356,79 @@
         "title": "KnowledgeSearchIn",
         "type": "object"
       },
+      "KvPart": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "kv",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/KvRow"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "KvPart",
+        "type": "object"
+      },
+      "KvRow": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "cite": "#/components/schemas/CiteSeg",
+                  "fact": "#/components/schemas/FactSeg",
+                  "text": "#/components/schemas/TextSeg"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/TextSeg"
+                },
+                {
+                  "$ref": "#/components/schemas/CiteSeg"
+                },
+                {
+                  "$ref": "#/components/schemas/FactSeg"
+                }
+              ]
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Value",
+            "type": "array"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "KvRow",
+        "type": "object"
+      },
       "LadderLevelOut": {
         "properties": {
           "expected_signer_name": {
@@ -26345,6 +26674,37 @@
         "title": "MethodologyVersionOut",
         "type": "object"
       },
+      "MetricPart": {
+        "additionalProperties": false,
+        "properties": {
+          "fact_id": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "title": "Fact Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "metric",
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "fact_id"
+        ],
+        "title": "MetricPart",
+        "type": "object"
+      },
       "MisstatementIn": {
         "additionalProperties": false,
         "properties": {
@@ -27491,6 +27851,76 @@
         "title": "OpenConfirmationOut",
         "type": "object"
       },
+      "OptionRow": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "recommended": {
+            "cls": "internal",
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title"
+        ],
+        "title": "OptionRow",
+        "type": "object"
+      },
+      "OptionsPart": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "options",
+            "title": "Kind",
+            "type": "string"
+          },
+          "options": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/OptionRow"
+            },
+            "maxItems": 9,
+            "minItems": 2,
+            "title": "Options",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "options"
+        ],
+        "title": "OptionsPart",
+        "type": "object"
+      },
       "OutputCountOut": {
         "properties": {
           "count": {
@@ -27566,6 +27996,51 @@
           "box"
         ],
         "title": "PageLineOut",
+        "type": "object"
+      },
+      "ParagraphPart": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "p",
+            "title": "Kind",
+            "type": "string"
+          },
+          "segments": {
+            "cls": "confidential",
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "cite": "#/components/schemas/CiteSeg",
+                  "fact": "#/components/schemas/FactSeg",
+                  "text": "#/components/schemas/TextSeg"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/TextSeg"
+                },
+                {
+                  "$ref": "#/components/schemas/CiteSeg"
+                },
+                {
+                  "$ref": "#/components/schemas/FactSeg"
+                }
+              ]
+            },
+            "maxItems": 40,
+            "minItems": 1,
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "segments"
+        ],
+        "title": "ParagraphPart",
         "type": "object"
       },
       "PassedEntryOut": {
@@ -35642,6 +36117,17 @@
             "title": "At",
             "type": "string"
           },
+          "blocks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentBlocks"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
           "code": {
             "cls": "internal",
             "title": "Code",
@@ -40252,6 +40738,66 @@
         "title": "SupportSessionOut",
         "type": "object"
       },
+      "TablePart": {
+        "additionalProperties": false,
+        "properties": {
+          "head": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Head",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "table",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "items": {
+                "discriminator": {
+                  "mapping": {
+                    "cite": "#/components/schemas/CiteSeg",
+                    "fact": "#/components/schemas/FactSeg",
+                    "text": "#/components/schemas/TextSeg"
+                  },
+                  "propertyName": "kind"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/TextSeg"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CiteSeg"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FactSeg"
+                  }
+                ]
+              },
+              "maxItems": 8,
+              "minItems": 1,
+              "type": "array"
+            },
+            "maxItems": 50,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "head",
+          "rows"
+        ],
+        "title": "TablePart",
+        "type": "object"
+      },
       "TakenOut": {
         "properties": {
           "assignee_user_id": {
@@ -42029,6 +42575,30 @@
           "created_at"
         ],
         "title": "TemplateVersionOut",
+        "type": "object"
+      },
+      "TextSeg": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "text",
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "TextSeg",
         "type": "object"
       },
       "ThreadReadIn": {

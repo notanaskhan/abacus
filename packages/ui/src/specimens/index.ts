@@ -1,3 +1,4 @@
+import { AgentBlocksSpecimen } from "./agent-blocks";
 import type { ComponentType } from "react";
 import {
   ButtonSpecimen,
@@ -353,6 +354,8 @@ export const SPECIMENS: readonly Specimen[] = [
     title: "Statement grammar",
     Component: StatementGridSpecimen,
   },
+  // P-09-T06: AgentBlocks v1 and AgentProse
+  { id: "p-09-agent-blocks", kit: "P-09", title: "AgentBlocks", Component: AgentBlocksSpecimen },
   // E1 MatchProvider, E2 popover host and the C-07 Cite kit (F-05-T41)
   { id: "c-07-cite-marker", kit: "C-07", title: "CiteMarker", Component: CiteMarkerSpecimen },
   {

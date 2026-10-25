@@ -1,6 +1,15 @@
 import type { AgentRunOut, RunItemOut } from "@abacus/api-client";
 import { listAgentRunsOptions } from "@abacus/api-client/query";
-import { Button, count, EmptyState, Skeleton, StatusPill, useFormat } from "@abacus/ui";
+import {
+  AgentBlocks,
+  type AgentBlocksPayload,
+  Button,
+  count,
+  EmptyState,
+  Skeleton,
+  StatusPill,
+  useFormat,
+} from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { narrate } from "./narrate";
@@ -40,6 +49,8 @@ function CardBody({ run }: { run: AgentRunOut }): JSX.Element {
   const card = feed.items.find((i) => i.kind === "tool_card");
   const proposed = proposedWords(card?.detail ?? null);
   const lines = feed.items.filter((i) => i.kind !== "tool_card");
+  // Runtime v2 items carry server-validated AgentBlocks (P-09-T03); pre-v2 items carry none.
+  const authored = feed.items.filter((i) => i.blocks != null);
   return (
     <dl className="grid grid-cols-[72px_1fr] gap-x-2 gap-y-1 pt-[6px] text-dense">
       <dt className="text-ink-3">Read</dt>
@@ -60,6 +71,11 @@ function CardBody({ run }: { run: AgentRunOut }): JSX.Element {
           </dd>
         </>
       )}
+      {authored.map((i) => (
+        <dd key={i.seq} className="col-span-2">
+          <AgentBlocks blocks={i.blocks as AgentBlocksPayload} facts={{}} />
+        </dd>
+      ))}
     </dl>
   );
 }

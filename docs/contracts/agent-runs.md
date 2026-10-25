@@ -95,6 +95,7 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
     - `decision`: a person's decision.
     - `failure`: the failure code.
   - `actor`, `ref_type`, `ref_id`.
+  - `blocks`: AgentBlocks v1 (TASK-5004), validated by `agents/blocks.validate_blocks`. It is null on pre-v2 runs. The run's fact registry travels with runtime v2 (P-10); until then the client shows a dash for any fact.
 
   Items are built when read from the run's own records, so nothing is back-filled. Seqs are numbered by time. The client polls every 1.5 s while the run is queued or running and the tab is visible.
 - **TraceExportIn:** `format`, which takes only `json` in v0.
