@@ -15,9 +15,16 @@ Solo edition (2026-10-20, SU-06). One builder works through Claude Code with no 
 - **Generated files:** `packages/api-client/openapi.json` and `packages/api-client/src/**` (`make generate`), `_matrix.py`, `_flags.py`, `_provider_terms.py`, `_human_only_actions.py`, `_specs.py`, `_eval_suites.py`, `docs/operations/sub-processors.md` (their `abacus_tools.codegen` module or `make regenerate`), `backend/tests/durations.json`, workflow replay histories. Regenerate instead; resolve a conflict in one by regenerating, never by picking a side.
 - **Applied migrations:** a file in `backend/migrations/versions/` that is already on `origin/main`. Add a new migration instead; keep one Alembic head. A migration that exists only on your branch can still be edited.
 
+## Only raised
+
+- **Mutation floors:** `backend/mutation-thresholds.yaml` (Q-03-T027; QD-4; ADR-079; DEC-365). The edit hook rebuilds the file as an Edit, MultiEdit or Write would leave it and refuses a floor that is lower than on disk or on `origin/main`, a removed scope, or a file it cannot parse; the shell hook refuses any shell write to it. CI refuses the same: `python -m abacus_tools.quality.mutation_floors` in `make check-fast` (against `origin/main` when the checkout has it) and in `mutation-floors.yml` (against the pull request's base). Raising a floor or adding a scope is a normal change; AY approves. The mutation scope is protected with the floors: the edit hook refuses an agent edit to `[tool.mutmut]` in `backend/pyproject.toml` or `SCOPES` in `abacus_tools/quality/mutation.py`, and the guard refuses any narrowing against the base; `mutation-floors.yml` runs the base commit's guard.
+- **Supply-chain findings register:** `docs/quality/supply-chain-findings.yaml` (Q-03-T029; DEC-366) is written by a person, never an agent; on a pull request the scanners' ignores come from the base's copy and a loosened register fails `security findings SLA`.
+
+The hooks are a guardrail against agent mistakes, not a security boundary: CI is the enforcement.
+
 ## Shell commands the hook refuses
 
-Force pushes; `git commit --no-verify`; recursive deletion of root, home or the project; `sudo`; `chmod 777`; `terraform destroy`, `import` and `state`; `psql`, `pg_dump` and `pg_restore` against a non-local host; AWS production profiles; direct calls to model provider APIs (use `ai_gateway`); `alembic downgrade` against staging or production; `git checkout --ours/--theirs` on a generated file.
+Force pushes; `git commit --no-verify`; recursive deletion of root, home or the project; `sudo`; `chmod 777`; `terraform destroy`, `import` and `state`; `psql`, `pg_dump` and `pg_restore` against a non-local host; AWS production profiles; direct calls to model provider APIs (use `ai_gateway`); `alembic downgrade` against staging or production; `git checkout --ours/--theirs` on a generated file; any write to `backend/mutation-thresholds.yaml`.
 
 ## Still binding, as rules rather than locks
 

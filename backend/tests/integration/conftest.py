@@ -6,25 +6,79 @@ testcontainers once per test session. Credentials are fixed local values.
 
 from __future__ import annotations
 
+import json
 import os
 import socket
 import time
 import urllib.request
 from collections.abc import Callable, Iterator
+from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
 import pytest
 import yaml
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, configure_identity_engine, configure_relay_engine
+from abacus_tools.quality import slow_statements
 from abacus_tools.quality.schema_check import provisioned_database
 
 REPO = Path(__file__).resolve().parents[3]
+
+# Q-03-T028: every statement the app's engines run over ABACUS_SLOW_STATEMENT_MS (100 ms) in these
+# suites is listed at the end of the run and, on GitHub Actions, annotated on the PR. A warning
+# only; the statement's text is kept, never its parameters.
+_SLOW = slow_statements.Recorder()
+_SLOW_KEY = "slow_statements"
+
+
+@event.listens_for(Engine, "before_cursor_execute")
+def _statement_starts(*args: object) -> None:
+    _SLOW.before(args[1])  # (conn, cursor, statement, parameters, context, executemany)
+
+
+@event.listens_for(Engine, "after_cursor_execute")
+def _statement_ends(*args: object) -> None:
+    _SLOW.after(args[1], str(args[2]))
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_logstart(nodeid: str, location: object) -> None:
+    _SLOW.test = nodeid
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    workeroutput = getattr(session.config, "workeroutput", None)
+    if isinstance(workeroutput, dict):  # a pytest-xdist worker hands its records over
+        cast(dict[str, object], workeroutput)[_SLOW_KEY] = json.dumps(_SLOW.dump())
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_testnodedown(node: object, error: object) -> None:
+    output = cast(dict[str, object], getattr(node, "workeroutput", {}) or {})
+    raw = output.get(_SLOW_KEY)
+    if isinstance(raw, str):
+        _SLOW.found.extend(slow_statements.load(json.loads(raw)))
+
+
+def pytest_terminal_summary(
+    terminalreporter: pytest.TerminalReporter, exitstatus: int, config: pytest.Config
+) -> None:
+    lines = slow_statements.report(
+        _SLOW.found, _SLOW.limit_ms, github=os.environ.get("GITHUB_ACTIONS") == "true"
+    )
+    if lines:
+        terminalreporter.section("slow statements")
+        for line in lines:
+            terminalreporter.write_line(line)
+
+
 S3_ACCESS = "abacus"
 S3_SECRET = "abacuslocal"
 
@@ -126,7 +180,9 @@ def migrated_db() -> Iterator[MigratedDatabase]:
     `configure_engine(app_url)` is called here so `tenant_session` targets it; tests running on
     their own event loops may call it again to get a fresh pool.
     """
-    with provisioned_database() as database:
+    with ExitStack() as stack:
+        with _SLOW.pause():  # migrations are not a test's statements (Q-03-T028)
+            database = stack.enter_context(provisioned_database())
         # A test that disposes the engines (`dispose_engine()` resets all three) and reaches one
         # it didn't configure again would fall back to the settings, whose local defaults name
         # the dev database on 55432: present on a laptop, absent on CI, so the result depended

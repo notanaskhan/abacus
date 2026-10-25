@@ -1,0 +1,73 @@
+# Nightly incremental mutation run (Q-03-T026; ADR-079; DEC-365; Q-03 C1). Every red file changed
+# on main in the last 24 hours is mutated with mutmut 3.8.0 (allowlisted; run through
+# `uv run --with`, never in the lock) inside a 60-minute budget, and the survivors per module are
+# published as the job summary and an artifact. `abacus_tools.quality.mutation` plans the files,
+# narrows `[tool.mutmut] only_mutate` on this runner's copy and summarises mutmut's results. Floors
+# are enforced by the weekly full run, not here: a night's files are a fraction of a scope.
+# Third-party actions are pinned to full commit SHAs; the token is read-only; no secrets are used.
+name: mutation-nightly
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # daily, 1:17 CT (2:17 in daylight time)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-nightly
+  cancel-in-progress: false
+
+jobs:
+  incremental:
+    name: mutation nightly (red files changed in 24 h)
+    runs-on: ubuntu-24.04
+    # The 60-minute mutmut budget plus setup and the summary.
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # the plan reads the last 24 hours of history
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install the backend (no build)
+        run: cd backend && uv sync --frozen
+      - name: Plan the red files changed in 24 hours
+        id: plan
+        working-directory: backend
+        run: |
+          uv run python -m abacus_tools.quality.mutation plan nightly --since-hours 24 \
+            --out "$RUNNER_TEMP/mutation-plan.json"
+          echo "files=$(jq '.files | length' "$RUNNER_TEMP/mutation-plan.json")" >> "$GITHUB_OUTPUT"
+      - name: Mutate inside the 60-minute budget
+        if: steps.plan.outputs.files != '0'
+        working-directory: backend
+        run: |
+          uv run python -m abacus_tools.quality.mutation narrow "$RUNNER_TEMP/mutation-plan.json"
+          uv run python -m abacus_tools.quality.mutation prepare
+          # Over budget, timeout stops mutmut (exit 124) and this step fails: the summary still
+          # publishes what ran, and the failure is the over-budget signal T026 tracks.
+          timeout --signal=INT 60m uv run --with mutmut==3.8.0 mutmut run
+      - name: Survivors per module
+        if: always() && steps.plan.outputs.files != '0'
+        working-directory: backend
+        run: |
+          OUT="$RUNNER_TEMP/mutation-report"
+          mkdir -p "$OUT"
+          uv run python -m abacus_tools.quality.mutation summarise --mutants mutants \
+            --json "$OUT/mutation-survivors.json" --markdown "$OUT/mutation-survivors.md" \
+            --title "Nightly mutation survivors per module"
+          cat "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Nothing to mutate
+        if: steps.plan.outputs.files == '0'
+        run: echo "No red file changed in the last 24 hours; nothing to mutate." >> "$GITHUB_STEP_SUMMARY"
+      - if: always() && steps.plan.outputs.files != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-nightly
+          path: ${{ runner.temp }}/mutation-report
+          retention-days: 30

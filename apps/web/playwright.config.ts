@@ -52,7 +52,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["**/visual/**", ...JOURNEY_FILES],
+      testIgnore: ["**/visual/**", "**/parity/**", ...JOURNEY_FILES],
       use: { ...devices["Desktop Chrome"] },
     },
     {
@@ -62,6 +62,25 @@ export default defineConfig({
       testDir: "./e2e/visual",
       snapshotDir: "./.visual",
       snapshotPathTemplate: "{snapshotDir}/{testFileName}/{arg}{ext}",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: `http://localhost:${String(visualPort)}`,
+        viewport: { width: 1440, height: 900 },
+        deviceScaleFactor: 2,
+        colorScheme: "light",
+        reducedMotion: "reduce",
+        locale: "en-US",
+        timezoneId: "America/Chicago",
+      },
+    },
+    {
+      // The local screen parity report (F-04-T33): every artboard of each fixture or live screen
+      // against its cropped handoff PNG, rendered as the visual project renders; it reads the
+      // baselines `pnpm visual:baselines` fetched for parity.spec.ts. `pnpm parity:screens`.
+      name: "parity-screens",
+      testDir: "./e2e/parity",
+      snapshotDir: "./.visual",
+      snapshotPathTemplate: "{snapshotDir}/parity.spec.ts/{arg}{ext}",
       use: {
         ...devices["Desktop Chrome"],
         baseURL: `http://localhost:${String(visualPort)}`,

@@ -75,6 +75,7 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.scope_guards
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
+	cd backend && uv run python -m abacus_tools.quality.mutation_floors
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies

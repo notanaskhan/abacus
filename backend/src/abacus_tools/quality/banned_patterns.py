@@ -1937,6 +1937,8 @@ RULES: list[Rule | TreeRule] = [
             # P-04-T13: the human-only CHECKs and insert-only rules, as the app role and the owner
             "tests/integration/test_p04t13_review_schema_independent.py",
             "tests/integration/test_seed_dev.py",
+            # Q-03-T028: loads the plan tests' synthetic fixture as the superuser, rolled back.
+            "tests/integration/test_q03t028_plan_tests.py",
             # A-02-T04: 0149's round trip on a private database; seeds as the superuser and
             # proves the app role's refusals with the tenant set, as tenant_session sets it.
             "tests/integration/test_tb_of_record_schema.py",
@@ -1973,8 +1975,12 @@ RULES: list[Rule | TreeRule] = [
         description="No SQL built from f-strings, %, + or .format()",
         adr="ADR-014",
         check=_check_built_sql,
-        # DDL can't bind identifiers; migration helpers validate table names first.
-        exclude=("src/abacus/kernel/db/migration.py",),
+        # DDL can't bind identifiers; migration helpers validate table names first. The plan tests
+        # (Q-03-T028) build the fixture's INSERT and EXPLAIN from catalog names and fixed probes.
+        exclude=(
+            "src/abacus/kernel/db/migration.py",
+            "tests/integration/test_q03t028_plan_tests.py",
+        ),
     ),
     Rule(
         id="BOUND-001",
@@ -2081,6 +2087,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             # A-02-T04: the app role's refusals on 0149's tables, with the tenant set by hand.
             "tests/integration/test_tb_of_record_schema.py",
+            # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
+            # tenant_session sets it, so row-level security adds the tenant predicate.
+            "tests/integration/test_q03t028_plan_tests.py",
             "tests/unit/kernel/test_migration_helpers.py",
             "tests/unit/quality/test_banned_patterns.py",
         ),

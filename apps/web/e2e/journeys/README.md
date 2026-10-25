@@ -9,6 +9,8 @@ URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 
 - `J02-client-onboarding.spec.ts`: J02-audit-core (F-04-T26).
 - `J12-client-portal.spec.ts`: J12-core (F-04-T26).
+- `J04-fs-audit.spec.ts`: J04-fs-audit's PBC slice at the Sep 24 snapshot (F-04-T32; M6).
+- `J01-firm-onboarding.spec.ts`: J01-core skeleton (F-04-T32; M8).
 
 A step whose screen is still planned is `test.fixme` with an `owner` annotation: the epic, the task
 and its sprint end date. CI (F-04-T28): pull requests run the `fixture` project when the SPA, the

@@ -1,0 +1,112 @@
+# Weekly full mutation run (Q-03-T026; ADR-079; DEC-365; Q-03 C1). Sundays, over every red scope
+# (identity/authz, kernel/db, kernel/uow, kernel/crypto, evidence, ai_gateway, audit_trail and
+# every */compute/ package), in four shards balanced by line count, each inside 4 hours. mutmut
+# 3.8.0 (allowlisted) runs through `uv run --with`, never from the lock. The `floors` job merges
+# the shards' results, publishes the survivors per module and fails when a scope is under its
+# floor in the protected backend/mutation-thresholds.yaml (all 0 until Q-03-T051 sets the S11
+# baselines). Third-party actions are pinned to full commit SHAs; the token is read-only; no
+# secrets are used.
+name: mutation-weekly
+
+on:
+  schedule:
+    - cron: "0 6 * * 0" # Sundays, midnight CT (1:00 in daylight time)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-weekly
+  cancel-in-progress: false
+
+jobs:
+  shard:
+    name: mutation weekly (${{ matrix.shard }}/4)
+    runs-on: ubuntu-24.04
+    # The 4-hour budget per shard plus setup; GitHub's own job limit is 6 hours.
+    timeout-minutes: 250
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install the backend (no build)
+        run: cd backend && uv sync --frozen
+      - name: Plan the shard
+        working-directory: backend
+        run: |
+          uv run python -m abacus_tools.quality.mutation plan weekly \
+            --shard ${{ matrix.shard }} --shards 4 --out "$RUNNER_TEMP/mutation-plan.json"
+          uv run python -m abacus_tools.quality.mutation narrow "$RUNNER_TEMP/mutation-plan.json"
+          uv run python -m abacus_tools.quality.mutation prepare
+      - name: Mutate inside the 4-hour budget
+        working-directory: backend
+        # Over budget, timeout stops mutmut (exit 124) and the shard fails: its partial results
+        # are still uploaded below, and the failure is the over-budget signal T026 tracks.
+        run: timeout --signal=INT 230m uv run --with mutmut==3.8.0 mutmut run
+      - name: Keep the results (mutmut's .meta files, with their source paths)
+        if: always()
+        working-directory: backend
+        run: |
+          # A marker at the root keeps upload-artifact from trimming the common prefix off the
+          # paths, which name each result's source file.
+          mkdir -p "$RUNNER_TEMP/mutation-meta"
+          echo "shard ${{ matrix.shard }}" > "$RUNNER_TEMP/mutation-meta/shard-${{ matrix.shard }}.txt"
+          if [ -d mutants ]; then
+            rsync -a --include='*/' --include='*.meta' --exclude='*' --prune-empty-dirs \
+              mutants/ "$RUNNER_TEMP/mutation-meta/"
+          fi
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-meta-${{ matrix.shard }}
+          path: ${{ runner.temp }}/mutation-meta
+          if-no-files-found: warn
+          retention-days: 7
+
+  floors:
+    name: mutation weekly survivors and floors
+    needs: [shard]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install the backend (no build)
+        run: cd backend && uv sync --frozen
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: mutation-meta-*
+          merge-multiple: true
+          path: backend/mutants
+      - name: Survivors per module, against the floors
+        working-directory: backend
+        run: |
+          OUT="$RUNNER_TEMP/mutation-report"
+          mkdir -p "$OUT"
+          status=0
+          uv run python -m abacus_tools.quality.mutation summarise --mutants mutants \
+            --json "$OUT/mutation-survivors.json" --markdown "$OUT/mutation-survivors.md" \
+            --title "Weekly mutation survivors per module" --enforce-floors || status=$?
+          cat "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-weekly
+          path: ${{ runner.temp }}/mutation-report
+          retention-days: 90

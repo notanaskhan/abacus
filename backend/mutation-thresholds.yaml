@@ -1,0 +1,25 @@
+# PROTECTED (Q-03-T027; QD-4, inferred name; ADR-079; DEC-365): mutation floors per red scope.
+#
+# A floor is the lowest mutation score (killed and timed-out mutants over every mutant that ran,
+# in percent) the scope's weekly full run may report. Floors are only ever raised: a change that
+# lowers one, or removes a scope, is refused by the edit hook (.claude/hooks/_protected.py) and by
+# CI (`python -m abacus_tools.quality.mutation_floors`, in `make check-fast` against origin/main
+# and in mutation-floors.yml against the pull request's base). Raising a floor or adding a scope
+# is a normal change; AY approves (Q-03 §6.2).
+#
+# Every scope starts at 0 until T051 measures the baselines in S11 (Fri Apr 2, 2027) and sets each
+# floor at its baseline; M8 targets 85 for identity/authz and the compute packages, 75 for the
+# others (Q-03-T051). Scope names are abacus_tools.quality.mutation's SCOPES.
+#
+# Format (the hook parses it without PyYAML): `floors:` then one `  <scope>: <integer 0-100>` per
+# line; comments and blank lines anywhere.
+schema: 1
+floors:
+  identity/authz: 0
+  kernel/db: 0
+  kernel/uow: 0
+  kernel/crypto: 0
+  evidence: 0
+  ai_gateway: 0
+  audit_trail: 0
+  compute: 0
