@@ -108,6 +108,10 @@ export interface RequestLineWords {
   ignoreReason: string | null;
   visibleLabel: string;
   menuLabel: string;
+  /** R2: "Linked (1)", the count's accessible name; its click opens SHL-21 (planned, DV-6). */
+  linked: string;
+  /** R2: "Evidence screening · Passed · 2 checks" on a client upload, or null for no glyph. */
+  screening: string | null;
 }
 
 export interface BinderRequestRowProps {
@@ -121,6 +125,41 @@ export interface BinderRequestRowProps {
   onVisible: (visible: boolean) => void;
   canChangeVisibility: boolean;
   menu: MenuItem[][];
+  /** The screening glyph opens the dock's ScreeningCard (SHL-20). */
+  onScreening?: () => void;
+}
+
+/** The 12px screening glyph (R2): olive ✓ Passed · amber triangle Flagged · ring Not screened. */
+function ScreeningGlyph({
+  status,
+  label,
+  onOpen,
+}: {
+  status: NonNullable<BinderRequestRowOut["screening"]>;
+  label: string;
+  onOpen: (() => void) | undefined;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      data-screening-glyph={status}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen?.();
+      }}
+      className="inline-flex size-[18px] items-center justify-center rounded-pill hover:bg-nested"
+    >
+      {status === "passed" ? (
+        <StatusDisc state="done" size={13} />
+      ) : status === "flagged" ? (
+        <Icon name="triangle-alert" size={12} className="text-amber" />
+      ) : (
+        <StatusDisc state="todo" size={13} />
+      )}
+    </button>
+  );
 }
 
 /** One request, firm side (BND-02; C-16 drawn inline). */
@@ -134,6 +173,7 @@ export function BinderRequestRow({
   onVisible,
   canChangeVisibility,
   menu,
+  onScreening,
 }: BinderRequestRowProps): JSX.Element {
   const satisfied = row.status === "received";
   const ignored = row.client_ignored_at != null;
@@ -170,6 +210,9 @@ export function BinderRequestRow({
         )}
         <span className="flex flex-wrap items-center gap-[8px]">
           {status}
+          {row.screening != null && words.screening !== null && (
+            <ScreeningGlyph status={row.screening} label={words.screening} onOpen={onScreening} />
+          )}
           {words.tag !== null && <Tag>{words.tag}</Tag>}
         </span>
         {ignored && words.ignoreReason !== null && (
@@ -182,6 +225,19 @@ export function BinderRequestRow({
         )}
       </div>
       <div className="flex flex-none items-center gap-[10px]">
+        <span
+          data-linked={row.linked_count ?? 0}
+          aria-label={words.linked}
+          title={words.linked}
+          className="inline-flex items-center gap-[3px] text-cell tabular-nums"
+        >
+          <Icon name="link-2" size={12} className="text-ink-3" />
+          {row.linked_count == null || row.linked_count === 0 ? (
+            <span className="text-ink-4">—</span>
+          ) : (
+            <span className="text-ink-3">{row.linked_count}</span>
+          )}
+        </span>
         <button
           type="button"
           aria-pressed={row.client_visible}

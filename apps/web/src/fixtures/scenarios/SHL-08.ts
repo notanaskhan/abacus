@@ -8,12 +8,14 @@
 //   b  dock pane: Harborline page 2 of 3, TOTAL INVESTMENTS 16,500,000.00 lit
 //   c  masked PII: Claire's W-2, box a •••-••-6081, box 1 268,400.00 lit
 //   d  password-locked: the Halvard consolidated 1099
-//   e  loading: the K-1's manifest never answers (three skeleton pages, "Processing…")
+//   e  loading: the K-1's manifest answers `processing` (three skeleton pages, "Processing…";
+//      AC3.4, DEC-350)
 //   f  multi-source stepped: source 2 of 3, the Ridgeline 2025 K-1 statement p. 3
 //   h  auto-highlight: Harborline, every cited region outlined, 2,915,330.00 hovered
 //
 // OPENS names the version, match and stack each artboard opens with.
 
+import type { CitationV2Out } from "@abacus/api-client";
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
 import { trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
@@ -31,7 +33,9 @@ import {
   K1_FIGURES,
   K1_PROCESSING,
   K1_STACK,
+  K1_STATES,
   LINE_2A,
+  NORTHWIND_TB_TIE,
   type SeededCitation,
   TB_TOTAL_INVESTMENTS,
   TOTAL_INVESTMENTS_CITATION,
@@ -55,17 +59,27 @@ export interface Shl08Opens {
   index: number;
   /** A region hovered in the artboard (h). */
   hovered?: string;
+  /** The cited record the viewer opened from (P-03-T14): its stack and its linked figures. */
+  anchor?: { type: string; id: string; ref: string };
+  /** The linked-figure card's figure name. */
+  figure?: string;
 }
+
+const LINE_2A_ANCHOR = { type: "tax_form_line", id: LINE_2A, ref: "line_2a" } as const;
 
 const k1 = (c: (typeof K1_STACK)[number], n: number): SeededCitation => ({
   anchor: { type: "tax_form_line", id: LINE_2A, ref: "line_2a", section: null },
   out: { ...c, n },
 });
 
+// The stack's first member is box 18A as the linked-figure card names it (K1_FIGURES[2] is the
+// same citation, by id, with its figure title).
+const FELD_STACK = [K1_FIGURES[2] ?? K1_STACK[0], ...K1_STACK.slice(1)] as CitationV2Out[];
+
 const FELD_CITATIONS: SeededCitation[] = [
-  ...K1_STACK.map((c) => k1(c, c.n)),
+  ...FELD_STACK.map((c) => k1(c, c.n)),
   // The linked-figure rows the drawer reads with `host_ref` and `source_version_id`.
-  ...K1_FIGURES.slice(0, 2).map((c) => ({
+  ...[...K1_FIGURES.slice(0, 2), K1_STATES].map((c) => ({
     anchor: { type: "tax_form_line", id: LINE_2A, ref: "k1_figures", section: null },
     out: c,
   })),
@@ -94,6 +108,8 @@ export const OPENS: Record<Shl08State, Shl08Opens> = {
     matchId: K1_STACK[0]?.match_id ?? null,
     stack: K1_STACK_IDS,
     index: 0,
+    anchor: LINE_2A_ANCHOR,
+    figure: "Form 1040 line 2a",
   },
   b: {
     host: "dock",
@@ -101,6 +117,7 @@ export const OPENS: Record<Shl08State, Shl08Opens> = {
     matchId: TOTAL_INVESTMENTS_CITATION.match_id,
     stack: [TOTAL_INVESTMENTS_CITATION.id],
     index: 0,
+    anchor: { type: "tb_row", id: TB_TOTAL_INVESTMENTS, ref: "end_of_year" },
   },
   c: {
     host: "drawer",
@@ -117,6 +134,8 @@ export const OPENS: Record<Shl08State, Shl08Opens> = {
     matchId: K1_STACK[1]?.match_id ?? null,
     stack: K1_STACK_IDS,
     index: 1,
+    anchor: LINE_2A_ANCHOR,
+    figure: "Form 1040 line 2a",
   },
   h: {
     host: "drawer",
@@ -140,7 +159,7 @@ function scenario(
     clock,
     handlers: {
       ...E0.handlers,
-      ...trustHandlers({ citations, documents: DOCUMENTS, loading: [K1_PROCESSING] }),
+      ...trustHandlers({ citations, documents: DOCUMENTS }),
     },
   };
 }
@@ -154,3 +173,39 @@ export const scenarios = defineScenarios({
   f: scenario("f", "samuel-ito", CLOCK_VIEWER, FELD_CITATIONS),
   h: scenario("h", "hannah-leclerc", CLOCK_AFTERNOON, NORTHWIND_CITATIONS),
 });
+
+/** One row of the AUD-06 trial balance under SHL-08b (context only): its End of Year figure and the
+ * anchor whose citation the dock viewer re-targets to; the net-assets lines cite nothing here. */
+export interface Shl08TbRow {
+  label: string;
+  value: string;
+  anchor: { type: string; id: string; ref: string } | null;
+}
+
+const TB_LABEL: Record<number, string> = { 8: "Total investments at fair value" };
+
+/** The Northwind trial balance rows SHL-08b draws beside the dock (spec frame B; the subtotal is
+ * the trust statement's, not a trial-balance line). */
+export const NORTHWIND_TB_ROWS: readonly Shl08TbRow[] = [
+  ...HARBORLINE_CITATIONS.flatMap((c, i) =>
+    i === 6
+      ? []
+      : [
+          {
+            label: TB_LABEL[i] ?? c.loc.split(" · ")[1] ?? "",
+            value: c.value_text ?? "",
+            anchor: {
+              type: "tb_row",
+              id: i === 8 ? TB_TOTAL_INVESTMENTS : c.id,
+              ref: "end_of_year",
+            },
+          },
+        ],
+  ),
+  {
+    label: "Notes receivable from participants",
+    value: NORTHWIND_TB_TIE.notesReceivable,
+    anchor: null,
+  },
+  { label: "Net assets (unadjusted)", value: NORTHWIND_TB_TIE.netAssetsUnadjusted, anchor: null },
+];

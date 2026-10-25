@@ -25,6 +25,8 @@ export const shlScreens = {
   // the area tree, reached only by redirect); a–f are the hosted provider's pages.
   "SHL-06": { name: "Firm sign-in", status: "live", path: null, entry: true },
   "SHL-07": { name: "Citation popover", status: "planned", path: null },
+  // P-03-T14 built a, b, e, f, h (`?ov=viewer:…` and the dock pane); it turns `fixture` with
+  // P-03-T19, whose d state wires the designed SHL-08 → SHL-14 "Ask …" link (link rule 1).
   "SHL-08": { name: "Source viewer · drawer and pane", status: "planned", path: null },
   "SHL-09": { name: "Field provenance popover", status: "planned", path: null },
   "SHL-10": { name: "Approve agent output", status: "planned", path: null },
@@ -39,7 +41,8 @@ export const shlScreens = {
   "SHL-17": { name: "To-do drawer", status: "planned", path: null },
   "SHL-18": { name: "Comments and @mentions", status: "planned", path: null },
   "SHL-19": { name: "Agent review package", status: "planned", path: null },
-  "SHL-20": { name: "Evidence screening", status: "planned", path: null },
+  // P-06-T22: a–f on fixtures, the C-34 card in local state over its host (BND-02 here).
+  "SHL-20": { name: "Evidence screening", status: "fixture", path: null },
   "SHL-21": { name: "Link requests", status: "planned", path: null },
   "SHL-22": { name: "Template update", status: "planned", path: null },
   "SHL-23": { name: "Today brief panel", status: "planned", path: null, entry: true },

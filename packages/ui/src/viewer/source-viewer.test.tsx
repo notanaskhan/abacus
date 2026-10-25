@@ -5,7 +5,7 @@ import { installDomShims } from "../test-dom";
 import { MatchScope } from "../tracing/match";
 import { createMatchStore } from "../tracing/match-store";
 import type { CitationPayload } from "../tracing/types";
-import { SourceViewer, VIEWER_ZOOM, pageSrcAllowed } from "./source-viewer";
+import { LIT_AT, SourceViewer, VIEWER_ZOOM, litScrollTop, pageSrcAllowed } from "./source-viewer";
 
 // F-05-T47 (builder tests): "Pages render only server page images (no pdf.js, no SheetJS, no raw
 // file), regions stay invisible until lit, and Download is absent from the bar." Plus zoom, paging,
@@ -204,5 +204,112 @@ describe("the specimen", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+// P-03-T14 (SHL-08): what the EvidenceViewer asks of the shell: the lit region scrolled to 30% from
+// the well's top, auto-highlight outlines, the multi-source stack edges, three skeletons, and a
+// page whose image is still loading drawn blank with its regions.
+describe("SHL-08 slots", () => {
+  const cited = {
+    ...HARBORLINE_FILE,
+    regions: HARBORLINE_FILE.regions.map((r) => ({ ...r, cited: true })),
+  };
+
+  it("scrollToLit brings the lit region to 30% from the well's top and moves the page count", () => {
+    const region = HARBORLINE_FILE.regions[0];
+    if (region === undefined) throw new Error("no region");
+    const store = createMatchStore<CitationPayload>();
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const top = this.hasAttribute("data-viewer-well")
+          ? 100
+          : this.getAttribute("data-match") === region.match
+            ? 900
+            : 0;
+        return { top, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: top } as DOMRect;
+      });
+    const height = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(600);
+    try {
+      const { container } = render(
+        <MatchScope store={store}>
+          <SourceViewer file={HARBORLINE_FILE} scrollToLit />
+        </MatchScope>,
+      );
+      act(() => {
+        store.light(region.match, null);
+      });
+      const well = container.querySelector<HTMLElement>("[data-viewer-well]");
+      expect(well?.scrollTop).toBe(900 - 100 - LIT_AT * 600);
+      expect(screen.getByRole("toolbar", { name: "Viewer" }).textContent).toContain("2 / 3");
+    } finally {
+      rect.mockRestore();
+      height.mockRestore();
+    }
+  });
+
+  it("litScrollTop never goes above the top", () => {
+    expect(litScrollTop(0, 0, 1000, 100)).toBe(0);
+    expect(litScrollTop(50, 0, 1000, 400)).toBe(150);
+  });
+
+  it("outlineCited outlines cited regions until lit; off, nothing is outlined", () => {
+    const store = createMatchStore<CitationPayload>();
+    const { container, rerender } = render(
+      <MatchScope store={store}>
+        <SourceViewer file={cited} outlineCited />
+      </MatchScope>,
+    );
+    const count = container.querySelectorAll('[data-match-kind="region"]').length;
+    expect(container.querySelectorAll("[data-outlined]")).toHaveLength(count);
+    const first = cited.regions[0];
+    if (first === undefined) throw new Error("no region");
+    act(() => {
+      store.light(first.match, null);
+    });
+    expect(container.querySelectorAll("[data-outlined]").length).toBe(count - first.rects.length);
+    rerender(
+      <MatchScope store={store}>
+        <SourceViewer file={cited} />
+      </MatchScope>,
+    );
+    expect(container.querySelectorAll("[data-outlined]")).toHaveLength(0);
+  });
+
+  it("stack draws its edges under the page holding the match, with the band level with it", () => {
+    const first = cited.regions[0];
+    if (first === undefined) throw new Error("no region");
+    const { container } = render(
+      <SourceViewer file={cited} stack={{ match: first.match, edges: 2 }} />,
+    );
+    const stack = container.querySelector("[data-stack]");
+    expect(stack?.getAttribute("data-stack")).toBe("2");
+    expect(stack?.querySelector(`[data-page="${String(first.page)}"]`)).not.toBeNull();
+    expect(container.querySelectorAll("[data-stack-edge]")).toHaveLength(2);
+  });
+
+  it("three skeletons when asked, and a pending page draws blank with its regions", () => {
+    const { container, unmount } = render(
+      <SourceViewer file={HARBORLINE_FILE} loading skeletons={3} />,
+    );
+    expect(container.querySelector("[data-viewer-well]")?.children).toHaveLength(3);
+    unmount();
+    const pending = {
+      ...HARBORLINE_FILE,
+      pages: HARBORLINE_FILE.pages.map((p) => ({ ...p, src: "" })),
+    };
+    const next = render(<SourceViewer file={pending} />);
+    expect(next.container.querySelectorAll("img")).toHaveLength(0);
+    expect(next.container.querySelectorAll('[data-match-kind="region"]').length).toBeGreaterThan(
+      0,
+    );
+    expect(next.container.textContent).not.toContain("Can't preview");
+  });
+
+  it("header={false} drops the name header but keeps the toolbar", () => {
+    render(<SourceViewer file={HARBORLINE_FILE} header={false} />);
+    expect(screen.queryByRole("heading", { name: HARBORLINE_FILE.name })).toBeNull();
+    expect(screen.getByRole("toolbar", { name: "Viewer" })).toBeTruthy();
   });
 });

@@ -140,3 +140,57 @@ export const layerOfKey: LayerOf = (key) => registry.get(key)?.layer;
 export function clearOverlayRegistry(): void {
   registry.clear();
 }
+
+// ---- SHL-08: the source viewer drawer ----------------------------------------------------------
+
+/** The `?ov=` key of the SHL-08 source viewer drawer (P-03 §5.1). */
+export const VIEWER_OVERLAY = "viewer";
+
+/** What opens the source viewer: a version, the match lit on open, and (optionally) the anchor the
+ * viewer was opened from, so the linked-figure card and the "Source n of m" stack survive a reload,
+ * and the engagement that Download's audited content route needs (DEC-349). */
+export interface SourceViewerTarget {
+  evidenceVersionId: string;
+  matchId?: string | null;
+  /** The cited record: its stack is the anchor's citations, its figures cite into this version. */
+  anchor?: { type: string; id: string; ref: string } | null;
+  /** The figure's name in the card title: "Form 1040 line 2a". */
+  figure?: string | null;
+  /** The version's engagement: Download is offered only with it. */
+  engagementId?: string | null;
+}
+
+/** `?ov=viewer:<v>[:<match>[:<type>:<id>:<ref>[:<figure>[:<engagement>]]]]` as args; empty
+ * arguments hold the places of the ones left out. */
+export function sourceViewerArgs(target: SourceViewerTarget): string[] {
+  const anchor = target.anchor ?? null;
+  const args = [
+    target.evidenceVersionId,
+    target.matchId ?? "",
+    anchor?.type ?? "",
+    anchor?.id ?? "",
+    anchor?.ref ?? "",
+    target.figure ?? "",
+    target.engagementId ?? "",
+  ];
+  while (args.length > 1 && args[args.length - 1] === "") args.pop();
+  return args;
+}
+
+/** The target a `viewer` ref names, or undefined when it names no version. */
+export function sourceViewerTarget(args: readonly string[]): SourceViewerTarget | undefined {
+  const [version, match, type, id, ref, figure, engagement] = args;
+  const text = (v: string | undefined): string | null => (v === undefined || v === "" ? null : v);
+  if (version === undefined || version === "") return undefined;
+  const anchor =
+    type !== undefined && id !== undefined && ref !== undefined && type !== "" && id !== ""
+      ? { type, id, ref }
+      : null;
+  return {
+    evidenceVersionId: version,
+    matchId: text(match),
+    anchor,
+    figure: text(figure),
+    engagementId: text(engagement),
+  };
+}

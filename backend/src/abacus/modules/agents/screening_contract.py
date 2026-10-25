@@ -14,7 +14,7 @@ regions (INV-2). The agent screens; a person returns, sends and gives feedback (
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
@@ -120,6 +120,11 @@ class ScreeningCardOut(BaseModel):
     provenance: Annotated[ScreeningProvenanceOut, classified("internal")]
     my_feedback: Annotated[ScreeningFeedbackOut | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # The request line ("<title> · expected period <start> to <end>") and the period check's
+    # code-worded answer (P-06-T22, DEC-351; additive).
+    request_title: Annotated[str, classified("confidential")]
+    period_start: Annotated[date | None, classified("internal")]
+    period_end: Annotated[date | None, classified("internal")]
 
 
 class ScreeningRerunOut(BaseModel):

@@ -17124,11 +17124,23 @@ export type ScreeningCardOut = {
      */
     files_total: number;
     my_feedback: ScreeningFeedbackOut | null;
+    /**
+     * Period End
+     */
+    period_end: string | null;
+    /**
+     * Period Start
+     */
+    period_start: string | null;
     provenance: ScreeningProvenanceOut;
     /**
      * Request Item Id
      */
     request_item_id: string;
+    /**
+     * Request Title
+     */
+    request_title: string;
     /**
      * Running
      */

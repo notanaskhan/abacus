@@ -63,7 +63,12 @@ describe("SHL-08 scenarios", () => {
         query: { host_ref: `tax_form_line:${LINE_2A}`, source_version_id: OPENS.a.versionId },
       })
     ).data?.items;
-    expect(figures?.map((c) => c.value_text)).toEqual(["1,550", "307,900", "4,600"]);
+    expect(figures?.map((c) => c.value_text)).toEqual([
+      "1,550",
+      "307,900",
+      "4,600",
+      "IL / CO / NY",
+    ]);
     const stack = (
       await listCitations({
         query: { anchor_type: "tax_form_line", anchor_id: LINE_2A, anchor_ref: "line_2a" },
@@ -103,17 +108,13 @@ describe("SHL-08 scenarios", () => {
     ]);
   });
 
-  it("e: the manifest never answers (loading)", async () => {
-    const { versionId } = open("e");
-    const settled = await Promise.race([
-      viewerManifest({ path: { version_id: versionId } }).then(() => "answered"),
-      new Promise((resolve) =>
-        setTimeout(() => {
-          resolve("pending");
-        }, 50),
-      ),
+  it("e: the draft K-1's manifest answers processing, with no pages yet (AC3.4)", async () => {
+    const manifest = await manifestOf("e");
+    expect([manifest?.status, manifest?.file_name, manifest?.pages]).toEqual([
+      "processing",
+      "Ridgeline_2025_K1_JonahFeld_DRAFT.pdf",
+      [],
     ]);
-    expect(settled).toBe("pending");
   });
 
   it("f: source 2 of 3 is the K-1 statement, p. 3", async () => {

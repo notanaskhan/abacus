@@ -39,6 +39,7 @@ import {
 import { PortalLayoutSpecimen } from "./portal";
 import { T15Specimen, Tpl15Specimen } from "./auth";
 import { RequestRowsSpecimen, T7Specimen, Tpl07Specimen } from "./requests";
+import { ScreeningCardSpecimen } from "./screening";
 import { NestedSplitSpecimen, SplitNarrowSpecimen, SplitPresetsSpecimen } from "./split";
 import { ToastKindsSpecimen, ToastLiveSpecimen } from "./toasts";
 import { Overview } from "./overview";
@@ -244,6 +245,13 @@ export const SPECIMENS: readonly Specimen[] = [
     kit: "C-31",
     title: "AgentFilledMarker",
     Component: AgentFilledSpecimen,
+  },
+  // C-34 ScreeningCard (P-06-T22): flagged, passed, running and not screened
+  {
+    id: "c-34-screening-card",
+    kit: "C-34",
+    title: "ScreeningCard",
+    Component: ScreeningCardSpecimen,
   },
   // Templates (F-05-T28): T1 Index list, artboards T1a to T1e
   { id: "t1-index-list", kit: "T1", title: "Index list", Component: IndexListSpecimen },

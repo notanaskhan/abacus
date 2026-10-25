@@ -1,113 +1,129 @@
-// SHL-08's fixture artboards (gallery only; P-03-T07): each scenario drawn on the E5 SourceViewer
-// shell (F-05-T47) from the C4 reads, so `/components/screens/SHL-08?st=a–f,h` renders from its
-// fixtures. Interim until P-03-T14 builds the EvidenceViewer on its two hosts (drawer and dock),
-// with the linked-figure card, the stacked edges, "Also cited" and the auto-highlight toggle.
-// Data only through the generated client; page images are the server's masked PNGs (here the
-// synthetic ones), read as blobs, never a client file.
+// SHL-08's fixture artboards (P-03-T07, T14): each scenario on the EvidenceViewer's own host, so
+// `/components/screens/SHL-08?st=a–f,h` renders from its fixtures through the generated client.
+// a, c–f and h are the O2 drawer held open; b is the T2 dock "Viewer" pane beside the AUD-06 trial
+// balance (context only), where clicking a row re-targets the pane to that row's citation.
 
-import { viewerPage } from "@abacus/api-client";
-import { viewerManifestOptions, viewerRegionsOptions } from "@abacus/api-client/query";
-import {
-  MatchScope,
-  type MatchId,
-  SourceViewer,
-  type ViewerFile,
-  contractMatchId,
-  useMatchStore,
-} from "@abacus/ui";
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { type JSX, useEffect, useMemo, useState } from "react";
-import { OPENS, type Shl08State } from "./scenarios";
+import { MATCH_ROW, Segmented, cn } from "@abacus/ui";
+import { type JSX, useState } from "react";
+import { COPY } from "./copy";
+import { NORTHWIND_TB_ROWS, OPENS, type Shl08State, type Shl08TbRow } from "./scenarios";
+import type { EvidenceViewerTarget } from "./EvidenceViewer";
+import { ViewerDrawer } from "./ViewerDrawer";
+import { ViewerPane } from "./ViewerPane";
 
-function usePageUrls(versionId: string, pages: readonly number[]): Record<number, string> {
-  const blobs = useQueries({
-    queries: pages.map((n) => ({
-      queryKey: ["shl08-page", versionId, n],
-      gcTime: 0,
-      queryFn: async () =>
-        (
-          await viewerPage({
-            path: { version_id: versionId, page_no: n },
-            parseAs: "blob",
-            throwOnError: true,
-          })
-        ).data,
-    })),
-  });
-  const [urls, setUrls] = useState<Record<number, string>>({});
-  const ready = blobs.map((b) => b.data);
-  useEffect(() => {
-    const made: Record<number, string> = {};
-    ready.forEach((blob, i) => {
-      const n = pages[i];
-      if (blob instanceof Blob && n !== undefined) made[n] = URL.createObjectURL(blob);
-    });
-    setUrls(made);
-    return () => {
-      for (const url of Object.values(made)) URL.revokeObjectURL(url);
-    };
-  }, [ready.filter((b) => b !== undefined).length, versionId]);
-  return urls;
+function targetOf(state: Shl08State): EvidenceViewerTarget {
+  const o = OPENS[state];
+  return {
+    versionId: o.versionId,
+    matchId: o.matchId,
+    anchor: o.anchor ?? null,
+    figure: o.figure ?? null,
+    hovered: o.hovered ?? null,
+  };
 }
 
-function Viewer({ state }: { state: Shl08State }): JSX.Element {
-  const opens = OPENS[state];
-  const store = useMatchStore();
-  const manifest = useQuery(viewerManifestOptions({ path: { version_id: opens.versionId } }));
-  const regions = useQuery(viewerRegionsOptions({ path: { version_id: opens.versionId } }));
-  const pageNos = useMemo(() => (manifest.data?.pages ?? []).map((p) => p.n), [manifest.data]);
-  const urls = usePageUrls(opens.versionId, pageNos);
-  const file: ViewerFile = {
-    name: manifest.data?.file_name ?? "",
-    pages: (manifest.data?.pages ?? []).map((p) => ({
-      n: p.n,
-      width_pt: p.width_pt,
-      height_pt: p.height_pt,
-      rotation: p.rotation,
-      src: urls[p.n] ?? "",
-    })),
-    regions: (regions.data?.items ?? [])
-      .filter((r) => r.page !== null)
-      .map((r) => ({
-        match: contractMatchId({ match_id: r.match_id, rects: r.rects }),
-        page: r.page ?? 1,
-        rects: r.rects,
-        label: r.label,
-      })),
-    masks: (manifest.data?.pii_masks ?? []).map((m) => ({
-      id: m.id,
-      page: m.page,
-      rect: m.rect,
-      kind: m.kind,
-      display: m.display,
-    })),
-  };
-  const lit = opens.matchId ?? opens.hovered ?? null;
-  useEffect(() => {
-    if (lit === null || regions.data === undefined) return;
-    store.light(lit as MatchId, null);
-  }, [lit, regions.data, store]);
+function TrialBalance({
+  selected,
+  onSelect,
+}: {
+  selected: Shl08TbRow;
+  onSelect: (row: Shl08TbRow) => void;
+}): JSX.Element {
   return (
-    <div data-screen="SHL-08" data-state={state} className="flex h-full w-[480px] flex-col">
-      <SourceViewer
-        file={file}
-        variant={opens.host === "dock" ? "evidence" : "full"}
-        status={manifest.data?.status ?? "processing"}
-        loading={manifest.data === undefined}
-        reveal={{
-          allowed: manifest.data?.allowed_actions.includes("pii.reveal") ?? false,
-          onReveal: () => undefined, // the logged reveal is P-03-T16 and T20
-        }}
-      />
+    <section
+      aria-label={COPY.tb.title}
+      className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-pane bg-card shadow-e2"
+    >
+      <h2 className="flex h-[46px] flex-none items-center justify-center text-pane font-medium hairline-b">
+        {COPY.tb.title}
+      </h2>
+      <table className="w-full text-body">
+        <thead>
+          <tr className="h-[34px] text-th text-ink-2 hairline-b">
+            <th className="px-[16px] text-left font-normal">{COPY.tb.description}</th>
+            <th className="px-[16px] text-right font-normal">{COPY.tb.endOfYear}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {NORTHWIND_TB_ROWS.map((row) => {
+            const on = row === selected;
+            return (
+              <tr
+                key={row.label}
+                {...(on ? { "data-selected": "" } : {})}
+                className={cn("h-[36px] hairline-b", on && "bg-sel-bg", MATCH_ROW)}
+              >
+                <td className="px-[16px]">
+                  {row.anchor === null ? (
+                    <span className="font-medium">{row.label}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => {
+                        onSelect(row);
+                      }}
+                      className="text-left"
+                    >
+                      {row.label}
+                    </button>
+                  )}
+                </td>
+                <td className="px-[16px] text-right tabular-nums">{row.value}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+/** SHL-08b: the trial balance and the dock, Viewer on, re-targeted by a row click. */
+function DockFrame(): JSX.Element {
+  const opens = OPENS.b;
+  const first =
+    NORTHWIND_TB_ROWS.find((r) => r.anchor?.id === opens.anchor?.id) ?? NORTHWIND_TB_ROWS[0];
+  const [row, setRow] = useState<Shl08TbRow | undefined>(first);
+  const target: EvidenceViewerTarget =
+    row === first
+      ? targetOf("b")
+      : { versionId: opens.versionId, matchId: null, anchor: row?.anchor ?? null };
+  return (
+    <div
+      data-screen="SHL-08"
+      data-state="b"
+      className="flex h-[860px] gap-[10px] bg-shell p-[12px]"
+    >
+      {row !== undefined && <TrialBalance selected={row} onSelect={setRow} />}
+      <aside
+        aria-label={COPY.dock.label}
+        className="flex w-[330px] flex-none flex-col overflow-hidden rounded-pane bg-card shadow-e2"
+      >
+        <div className="flex h-[46px] flex-none items-center justify-center">
+          <Segmented
+            size="small"
+            label={COPY.dock.label}
+            options={[COPY.dock.agent, COPY.dock.viewer, COPY.dock.notes]}
+            active={COPY.dock.viewer}
+          />
+        </div>
+        <ViewerPane target={target} />
+      </aside>
     </div>
   );
 }
 
 /** One SHL-08 artboard on its scenario. */
 export function SHL08({ state }: { state: Shl08State }): JSX.Element {
+  if (state === "b") return <DockFrame />;
   return (
-    <MatchScope>
-      <Viewer state={state} />
-    </MatchScope>
+    <div
+      data-screen="SHL-08"
+      data-state={state}
+      className="flex h-[880px] justify-end bg-shell p-[10px]"
+    >
+      <ViewerDrawer target={targetOf(state)} open onOpenChange={() => undefined} />
+    </div>
   );
 }

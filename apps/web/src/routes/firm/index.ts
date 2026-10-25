@@ -6,6 +6,8 @@ import { engagementRoutes } from "./engagements";
 import { homeRoutes } from "./home";
 import { knowledgeRoutes } from "./knowledge";
 import { settingsRoutes } from "./settings";
+// SHL-08 (P-03-T14): registers the `?ov=viewer` drawer for every firm route.
+import "./viewer";
 
 // The firm's areas, once, in the bar's order (chapter 04 §2.2; F-03-T17). An area without
 // screens yet has no routes; its file arrives with its first epic.
