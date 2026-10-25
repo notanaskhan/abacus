@@ -90,7 +90,7 @@ Brightwater Hale (synthetic) only: the AUD-01 a index foots 7 + 9 + 6 + 2 + 3 = 
 ## 10. Registration slots (`assurance.api`)
 | Slot | Signature | Rule |
 |---|---|---|
-| `register_audit_section` | `(key, band, order, route, state_provider, *, title="", link="planned")` (title and link additive, DEC-312) | the provider answers `SectionState(state, grammar, sub_line, blocked_on_user_id)` or `None` (row left out); no provider → refused; a taken key refuses a different registration |
+| `register_audit_section` | `(key, band, order, route, state_provider, *, title="", link="planned", required_action=None, action_scope="engagement")` (additive, DEC-312: the cockpit checks `required_action` for the reader, on the engagement or the firm, before asking the provider) | the provider answers `SectionState(state, grammar, sub_line, blocked_on_user_id)` or `None` (row left out); no provider → refused; a taken key refuses a different registration |
 | `register_index_tag` | `(name, provider, classification)` | `metadata` tags reach metadata-only roles; `content` tags do not (ADR-024) |
 | `register_audit_segment` | `(family, entitlement)` | A-01 registers `fs`, `ebp`, `review`; X-01 `soc`, X-03 `ia` with their entitlements |
 | `register_run_summary` | `(provider)`: `(tenant, work_item_ids) -> {work_item_id: RunSummary}` | P-10's C6 v1 engagement runs; none registered, or a failing provider, means no "Processing" and no "Started …" (DV-11, DEC-312) |

@@ -63,6 +63,9 @@ SectionStateProvider = Callable[[TenantContext, UUID], Awaitable[SectionState | 
 
 
 LinkStatus = Literal["live", "planned"]
+# Where a section's required action is checked: on the work item's engagement, or on the firm
+# (a firm-level read such as `methodology.read`).
+ActionScope = Literal["engagement", "firm"]
 
 
 @dataclass(frozen=True)
@@ -75,6 +78,10 @@ class AuditSection:
     # A-01-T09 (DEC-312, additive): the rail's words and whether the target screen is built.
     title: str = ""
     link: LinkStatus = "planned"
+    # Security review (DEC-312): a provider reads with the tenant's context, so it cannot check
+    # the reader's own rights; the cockpit checks this action for the reader before asking it.
+    required_action: str | None = None
+    action_scope: ActionScope = "engagement"
 
     @property
     def label(self) -> str:
@@ -127,16 +134,21 @@ def register_audit_section(
     *,
     title: str = "",
     link: LinkStatus = "planned",
+    required_action: str | None = None,
+    action_scope: ActionScope = "engagement",
 ) -> None:
     if state_provider is None:
         raise ValueError(f"audit section {key!r} needs a state provider")
     if band not in BANDS:
         raise ValueError(f"band {band!r} is unknown")
-    section = AuditSection(key, band, order, route, state_provider, title, link)
+    section = AuditSection(
+        key, band, order, route, state_provider, title, link, required_action, action_scope
+    )
     known = _SECTIONS.get(key)
     if known is not None and (
         (known.band, known.order, known.route, known.title, known.link)
         != (band, order, route, title, link)
+        or (known.required_action, known.action_scope) != (required_action, action_scope)
         or not _same(known.state_provider, state_provider)
     ):
         raise ValueError(f"audit section {key!r} is already registered")

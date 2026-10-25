@@ -120,7 +120,7 @@ def assurance_index() -> Subquery:
     `name` (the engagement's entity: "Northwind Robotics 401(k) Plan"), `type`, `status` (the
     engagement's), `period_label`, `period_end`, `methodology_version_id`, `phase`, `phase_source`,
     `phase_changed_at`, `ebp_plan_kind`, `limited_scope_103a3c`, `is_group_audit`,
-    `standards_set_id`, `office_id`, `office_name`, `due_on`, `archived_at` and
+    `standards_set_id`, `office_id`, `office_name`, `due_on`, `work_item_status`, `archived_at` and
     `archive_locked_at`, for engaged work only. Reads under the caller's session (RLS); the
     joining list applies `visible()` on `engagement_id` (LIST-001)."""
     return (
@@ -148,6 +148,7 @@ def assurance_index() -> Subquery:
                 "office_name"
             ),
             WorkItem.due_on.label("due_on"),
+            WorkItem.status.label("work_item_status"),
             WorkItem.archived_at.label("archived_at"),
             WorkItem.archive_locked_at.label("archive_locked_at"),
         )

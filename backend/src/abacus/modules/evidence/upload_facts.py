@@ -27,6 +27,7 @@ from sqlalchemy import select
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence import inbox
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion, InboxFile
+from abacus.modules.evidence.repository import not_withdrawn
 from abacus.modules.evidence.uploads import SOURCE
 from abacus.modules.requests.api import UploadFacts
 
@@ -61,14 +62,15 @@ async def upload_facts(
                     EvidenceItem.title,
                 )
                 .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
-                .where(EvidenceVersion.id.in_(versions))
+                # DEC-298: a withdrawn version is as if it never arrived.
+                .where(EvidenceVersion.id.in_(versions), not_withdrawn())
             )
         ).all()
         files = (
             await session.execute(
-                select(
-                    InboxFile.id, InboxFile.assigned_version_id, InboxFile.assigned_item_id
-                ).where(InboxFile.assigned_version_id.in_(versions))
+                select(InboxFile.id, InboxFile.assigned_version_id, InboxFile.assigned_item_id)
+                .join(EvidenceVersion, EvidenceVersion.id == InboxFile.assigned_version_id)
+                .where(InboxFile.assigned_version_id.in_(versions), not_withdrawn())
             )
         ).all()
     picks = await inbox.match_picks(tenant, [f[0] for f in files]) if files else {}

@@ -11,7 +11,7 @@ from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
-from abacus.modules.assurance.phase import advance_by_gate, record_phase, update_profile
+from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.sections import (
@@ -76,7 +76,6 @@ __all__ = [
     "IndexTag",
     "RunSummary",
     "SectionState",
-    "advance_by_gate",
     "completion_router",
     "record_phase",
     "register_audit_section",

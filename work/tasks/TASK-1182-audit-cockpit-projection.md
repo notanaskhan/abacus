@@ -23,6 +23,7 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: built. The cockpit route now declares `engagement.read_metadata` (routing guard: a route checks its declared action, so `engagement.read` could not give metadata roles their bar and card); `make regenerate` run. A-01's six Overview rows and three tags register through the slots (`providers.py`); `register_audit_section` gained additive `title`/`link`; `register_run_summary` is the guarded C6 v1 slot (none registered). Northwind at E0: "11 of 24 received", "MO · TW · HL · MD · AC"; Methodology and Standards set hidden (nothing pinned or named). A test-registered Trial Balance renders, a `None` or raising provider hides its row.
+- 2026-10-25: security review fixes (failing tests first): `advance_by_gate` internal, person's own context, gate computed (409 `phase_gate_unmet`); cockpit refuses client, agent and system itself; sections declare a required action (Methodology: `methodology.read` on the firm); archived work item read-only; G2 pending-member behaviour pinned with `g2_blocks_view` on and off (DEC-312). The existing release test now seeds its release (G8 met) instead of asserting the gate.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

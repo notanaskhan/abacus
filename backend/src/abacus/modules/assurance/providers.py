@@ -220,7 +220,19 @@ def register() -> None:
         ("activity", "Activity", "AUD-29", "planned", activity_row),
     )
     for order, (key, title, route, link, provider) in enumerate(overview):
-        register_audit_section(key, "overview", order, route, provider, title=title, link=link)
+        # The pinned methodology's name is firm content: shown only to a reader of it.
+        needs = "methodology.read" if key == "methodology" else None
+        register_audit_section(
+            key,
+            "overview",
+            order,
+            route,
+            provider,
+            title=title,
+            link=link,
+            required_action=needs,
+            action_scope="firm" if needs else "engagement",
+        )
     register_index_tag("letter_sent", letter_sent_tags, "metadata")
     register_index_tag("eqr", eqr_tags, "metadata")
     register_index_tag("no_report", no_report_tags, "metadata")

@@ -57,7 +57,13 @@ from abacus.modules.assurance.sections import (
     run_summaries,
 )
 from abacus.modules.engagements.api import assurance_index
-from abacus.modules.identity.api import AuthContext, engagement_team_query, names_of, visible
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    engagement_team_query,
+    names_of,
+    visible,
+)
 from abacus.modules.platform.api import entitlement
 from abacus.modules.requests.api import pbc_counts
 
@@ -155,6 +161,11 @@ def initials(name: str) -> str:
     return "".join(part[0] for part in name.split() if part[:1].isalpha())[:3].upper()
 
 
+def like_escaped(text: str) -> str:
+    """`q` as a literal substring: LIKE's wildcards and its escape character escaped."""
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def tile_of(phase: ColumnElement[str]) -> ColumnElement[str]:
     """The tile a phase counts under: an archived row groups under Released (DEC-263)."""
     return case((phase.in_(("archiving", "archived")), literal("released")), else_=phase)
@@ -207,7 +218,10 @@ async def audits_index(
     ctx: AuthContext, f: IndexFilters, *, cursor: str | None, limit: int | None
 ) -> tuple[ListPage[IndexRow], Summary]:
     """AUD-01's rows, tiles, segments, facets and caption over one `visible()` base. The route has
-    refused client principals, agents and the system (INV-4)."""
+    refused client principals, agents and the system (INV-4); so does this read model itself,
+    since client principals hold `engagement.read_metadata` cells (security review, DEC-311)."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(READ, "role")
     size = clamp_limit(limit)
     digest = query_hash(filters=asdict(f))  # `q` is hashed, never logged
     after = (
@@ -242,9 +256,12 @@ async def audits_index(
         if f.period is not None:
             clauses.append(a.c.period_label == f.period)
         if f.q and f.q.strip():
-            needle = f"%{f.q.strip().lower()}%"
+            needle = f"%{like_escaped(f.q.strip().lower())}%"
             clauses.append(
-                or_(func.lower(a.c.name).like(needle), func.lower(a.c.client_name).like(needle))
+                or_(
+                    func.lower(a.c.name).like(needle, escape="\\"),
+                    func.lower(a.c.client_name).like(needle, escape="\\"),
+                )
             )
         return clauses
 
@@ -347,7 +364,10 @@ async def audits_index(
             leads.setdefault(m.engagement_id, {}).setdefault(m.role, initials(names[m.user_id]))
     ids = [r.work_item_id for r in page]
     pbc = await pbc_counts(ctx, ids)
-    runs = await run_summaries(ctx.tenant, ids)
+    # The run badge is content (a run's progress): only rows the reader may read in content.
+    runs = await run_summaries(
+        ctx.tenant, [r.work_item_id for r in page if r.engagement_id in readable]
+    )
     tags = await _tags(ctx, page, readable)
     items = [
         _row(r, now, leads.get(r.engagement_id, {}), pbc.get(r.work_item_id), runs, tags)
@@ -423,6 +443,7 @@ def _row(
         or r.archive_locked_at is not None
         or r.phase == "archived"
         or r.status == "archived"
+        or r.work_item_status == "archived"
     )
     phase = "released" if r.phase in ("archiving", "archived") else r.phase
     released_on = (

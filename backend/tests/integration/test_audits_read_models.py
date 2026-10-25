@@ -12,18 +12,22 @@ import hashlib
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from typing import cast
 
 import pytest
+from sqlalchemy import text
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance import api as assurance_api
 from abacus.modules.assurance import cockpit, index, sections
 from abacus.modules.assurance.sections import IndexTag, SectionState
 from abacus.modules.evidence import inbox
-from abacus.modules.identity.api import AuthContext, Forbidden
+from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
+from abacus.modules.identity.authz import recording_checks
 from abacus.modules.requests import binders
 from abacus.modules.requests.api import pbc_counts, source_documents
 from abacus.modules.requests.contract import BinderRequestRowOut, for_viewer
@@ -434,3 +438,265 @@ async def test_ac27_pbc_counts_need_a_published_binder(world: World) -> None:
     assert counts == {world.open_item: (1, 4)}  # the other item has no binder: "—"
     await world.seed.run("UPDATE request_lists SET status = 'draft' WHERE id = $1", world.binder)
     assert await pbc_counts(world.admin, [world.open_item]) == {}
+
+
+# --- Security review (DEC-311 to DEC-313) --------------------------------------------------------
+
+
+async def _badge(
+    tenant: TenantContext, ids: Sequence[uuid.UUID]
+) -> Mapping[uuid.UUID, sections.RunSummary]:
+    del tenant
+    return {
+        i: sections.RunSummary(i, 1, datetime.now(UTC), i, "Marcus Delaney", 1, 14, "partner")
+        for i in ids
+    }
+
+
+async def test_review_the_run_badge_reaches_content_readers_only(world: World) -> None:
+    sections.register_run_summary(_badge)
+    try:
+        admin, _ = await index.audits_index(
+            world.admin, index.IndexFilters(), cursor=None, limit=50
+        )
+        partner, _ = await index.audits_index(
+            world.partner, index.IndexFilters(), cursor=None, limit=50
+        )
+    finally:
+        sections._run_summary.clear()  # pyright: ignore[reportPrivateUsage] -- test cleanup of a slot
+    assert all(r.run_badge is None for r in admin.items)  # metadata only: no run progress
+    assert all(r.run_badge is not None for r in partner.items)
+
+
+async def _plain(tenant: TenantContext, work_item_id: uuid.UUID) -> SectionState | None:
+    del tenant, work_item_id
+    return SectionState(None, "link", sub_line="firm content")
+
+
+async def test_review_a_providers_required_action_is_checked_for_the_reader(world: World) -> None:
+    staff = await world.seed.person(world.tenant)
+    engagement = cast(
+        uuid.UUID,
+        await world.seed.value(
+            "SELECT engagement_id FROM work_items WHERE id = $1", world.open_item
+        ),
+    )
+    await world.seed.member(engagement, staff, "staff")
+    sections.register_audit_section(
+        "firm_row",
+        "overview",
+        90,
+        "KNW-03",
+        _plain,
+        required_action="methodology.read",
+        action_scope="firm",
+    )
+    try:
+        as_staff = await cockpit.audit_cockpit(staff.context(), world.open_item)
+        as_partner = await cockpit.audit_cockpit(world.partner, world.open_item)
+    finally:
+        sections._SECTIONS.pop("firm_row", None)  # pyright: ignore[reportPrivateUsage] -- test cleanup of a slot
+
+    def keys(view: cockpit.Cockpit) -> list[str]:
+        return [r.key for b in view.bands if b.key == "overview" for r in b.rows]
+
+    assert as_staff.bands and "firm_row" not in keys(as_staff)  # staff hold no methodology.read
+    assert "firm_row" in keys(as_partner)
+
+
+async def test_review_a_withdrawn_upload_shows_no_label_or_match(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-298: a client's withdrawn (detached-key) upload is as if it never arrived, so its
+    label and the matcher's pick for it are never shown."""
+    engagement = await world.seed.value(
+        "SELECT engagement_id FROM evidence_versions WHERE id = $1", world.version
+    )
+    item = await world.seed.value(
+        "INSERT INTO evidence_items (tenant_id, engagement_id, title, created_by_kind, "
+        "created_by_id) VALUES ($1, $2, 'Withdrawn statement.pdf', 'human', 'seed') RETURNING id",
+        world.tenant,
+        engagement,
+    )
+    version = uuid.uuid4()
+    fingerprint = hashlib.sha256(version.bytes).hexdigest()
+    await world.seed.run(
+        "INSERT INTO evidence_versions (id, tenant_id, engagement_id, evidence_item_id, "
+        "version_no, fingerprint, storage_key, storage_version_id, size_bytes, media_type, "
+        "source, method, storage_mode) VALUES ($1, $2, $3, $4, 1, $5, $6, 'v1', 10, "
+        "'application/pdf', 'client_upload', 'uploaded', 'detached_key')",
+        version,
+        world.tenant,
+        engagement,
+        item,
+        fingerprint,
+        f"tenants/{world.tenant}/v/{version}",
+    )
+    await world.seed.run(
+        "INSERT INTO evidence_object_keys (tenant_id, evidence_version_id, key_id, wrapped_key) "
+        "VALUES ($1, $2, 'test-key', $3)",
+        world.tenant,
+        version,
+        b"0" * 32,
+    )
+    await world.seed.run(
+        "INSERT INTO fulfilments (tenant_id, engagement_id, request_item_id, "
+        "evidence_version_id, created_by_kind, created_by_id, created_at) "
+        "VALUES ($1, $2, $3, $4, 'human', 'seed', clock_timestamp() + interval '1 minute')",
+        world.tenant,
+        engagement,
+        world.uploaded,
+        version,
+    )
+    inbox_file = await world.seed.value(
+        "INSERT INTO inbox_files (tenant_id, engagement_id, file_name, media_type, "
+        "size_bytes, fingerprint, storage_key, storage_version_id, uploaded_by, "
+        "uploaded_by_staff, status, assigned_item_id, assigned_version_id, decided_by, "
+        "decided_at) VALUES ($1, $2, 'withdrawn.pdf', 'application/pdf', 10, $3, $4, 'v1', $5, "
+        "true, 'assigned', $6, $7, $5, clock_timestamp()) RETURNING id",
+        world.tenant,
+        engagement,
+        fingerprint,
+        f"tenants/{world.tenant}/v/{version}",
+        world.partner.user_id,
+        world.uploaded,
+        version,
+    )
+
+    async def picks(
+        tenant: TenantContext, files: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[tuple[uuid.UUID, int]]]:
+        del tenant
+        return {f: [(world.uploaded, 88)] for f in files if f == inbox_file}
+
+    monkeypatch.setattr(inbox, "_picks", picks)
+    before = await binders.binder_requests(world.partner, world.binder, None, None)
+    row = next(r for r in before.items if r.id == world.uploaded)
+    assert row.latest_upload is not None and row.latest_upload.evidence_version_id == version
+    assert row.match_confidence == 88
+    await world.seed.as_actor(  # a withdrawal is the session's own person's (ADR-162)
+        world.tenant,
+        ("human", str(world.partner.user_id)),
+        "INSERT INTO evidence_withdrawals (tenant_id, evidence_version_id, engagement_id, "
+        "request_item_id, withdrawn_by_user_id, withdrawn_at, erase_after) VALUES ($1, $2, $3, "
+        "$4, $5, clock_timestamp(), clock_timestamp() + interval '30 days')",
+        world.tenant,
+        version,
+        engagement,
+        world.uploaded,
+        world.partner.user_id,
+    )
+    page = await binders.binder_requests(world.partner, world.binder, None, None)
+    up = next(r for r in page.items if r.id == world.uploaded)
+    assert (up.latest_upload, up.match_confidence) == (None, None)
+
+
+async def test_review_an_archived_work_item_is_read_only(world: World) -> None:
+    await world.seed.run(
+        "UPDATE work_items SET status = 'archived' WHERE id = $1", world.open_item
+    )
+    view = await cockpit.audit_cockpit(world.partner, world.open_item)
+    assert (view.read_only_reason, view.allowed_actions) == ("archived", [])
+    page, _ = await index.audits_index(world.partner, index.IndexFilters(), cursor=None, limit=50)
+    row = next(r for r in page.items if r.work_item_id == world.open_item)
+    assert row.archive is not None and row.archive.state == "archived"
+
+
+@pytest.mark.parametrize("q", ["%", "_", "\\"])
+async def test_review_the_search_treats_wildcards_as_text(world: World, q: str) -> None:
+    page, _ = await index.audits_index(world.admin, index.IndexFilters(q=q), cursor=None, limit=50)
+    assert page.total == 0  # "Open plan" and "Walled plan" hold none of them
+
+
+# --- Security review: G2 on the cockpit's content checks (ADR-164) -----------------------------
+
+
+async def _pending_manager_on_an_ebp_audit(world: World) -> tuple[AuthContext, uuid.UUID]:
+    """An active EBP audit (its client becomes an attest client, DEC-128) with a manager asked to
+    confirm independence who has not."""
+    entity = await world.seed.entity(world.tenant, "Attest plan")
+    client = await world.seed.value("SELECT client_id FROM client_entities WHERE id = $1", entity)
+    engagement = cast(
+        uuid.UUID,
+        await world.seed.value(
+            "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
+            "fiscal_period_start, fiscal_period_end, created_by, type, status) VALUES ($1, $2, "
+            "$3, 'Attest plan PY2025', '2025-01-01', '2025-12-31', $4, 'ebp_audit', 'prospect') "
+            "RETURNING id",
+            world.tenant,
+            client,
+            entity,
+            world.partner.user_id,
+        ),
+    )
+    await world.seed.open(world.tenant, engagement)
+    async with uow(world.partner.tenant) as tx:  # the attest trigger reads under the tenant
+        await tx.session.execute(
+            text("UPDATE engagements SET status = 'active' WHERE id = :id"), {"id": engagement}
+        )
+        tx.record("engagement.probed", target=Target("engagement", engagement))
+    await world.seed.member(engagement, world.partner_person, "engagement_partner")
+    manager = await world.seed.person(world.tenant)
+    await world.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'manager')",
+        world.tenant,
+        engagement,
+        manager.user_id,
+    )
+    await world.seed.run(
+        "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, status) "
+        "VALUES ($1, $2, $3, 'requested') ON CONFLICT DO NOTHING",
+        world.tenant,
+        engagement,
+        manager.user_id,
+    )
+    return manager.context(), await _assurance_item(world.seed, engagement)
+
+
+async def test_review_g2_off_a_pending_manager_reads_content_but_records_nothing(
+    world: World,
+) -> None:
+    manager, item = await _pending_manager_on_an_ebp_audit(world)
+    view = await cockpit.audit_cockpit(manager, item)
+    assert view.bands and view.dock_tabs == ["agent", "viewer"]  # reads are not gated
+    assert "assurance.record_phase" not in view.allowed_actions  # a decision is (ADR-164)
+    page, _ = await index.audits_index(manager, index.IndexFilters(), cursor=None, limit=50)
+    assert [r.work_item_id for r in page.items] == [item]
+
+
+async def test_review_g2_blocks_view_on_gates_the_documents_not_the_cockpit_host(
+    world: World,
+) -> None:
+    """`g2_blocks_view` gates reads marked `independence: required` (ADR-164 item 3):
+    `evidence.read` is, `engagement.read` and `engagement.read_metadata` are not. So with it on a
+    pending manager still gets the cockpit's bar, bands and dock (no document content), the
+    viewer's `evidence.read` is refused, and no decision is offered until they confirm."""
+    manager, item = await _pending_manager_on_an_ebp_audit(world)
+    await world.seed.run(
+        "INSERT INTO firm_setting_values (tenant_id, key, value, set_by) "
+        "VALUES ($1, 'g2_blocks_view', true, $2)",
+        world.tenant,
+        world.partner.user_id,
+    )
+    view = await cockpit.audit_cockpit(manager, item)
+    assert view.bands and view.dock_tabs == ["agent", "viewer"]
+    assert "assurance.record_phase" not in view.allowed_actions
+    engagement = cast(
+        uuid.UUID,
+        await world.seed.value("SELECT engagement_id FROM work_items WHERE id = $1", item),
+    )
+    on = Resource.engagement(world.tenant, engagement, archived=False)
+    with recording_checks(), pytest.raises(Forbidden) as denied:
+        await authorise(manager, "evidence.read", on)
+    assert denied.value.layer == "independence"
+    page, _ = await index.audits_index(manager, index.IndexFilters(), cursor=None, limit=50)
+    assert [r.work_item_id for r in page.items] == [item]
+    await world.seed.run(
+        "UPDATE independence_confirmations SET status = 'confirmed', answered_at = now(), "
+        "statement_version = 'v1' WHERE engagement_id = $1 AND user_id = $2",
+        engagement,
+        manager.user_id,
+    )
+    view = await cockpit.audit_cockpit(manager, item)
+    assert "assurance.record_phase" in view.allowed_actions

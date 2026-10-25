@@ -61,7 +61,7 @@ import subprocess
 import sys
 from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Final, cast
 from urllib.parse import urlsplit
@@ -75,7 +75,7 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
-from abacus.modules.assurance.api import advance_by_gate, record_phase, update_profile
+from abacus.modules.assurance.api import record_phase, update_profile
 from abacus.modules.engagements.api import answer_independence, assurance_item, assurance_item_id
 from abacus.modules.identity.api import (
     AuthContext,
@@ -1340,26 +1340,42 @@ async def _phase_recorded(_: asyncpg.Connection, __: Scenario, event: Event) -> 
     await record_phase(ctx, await _assurance_work_item(audit), str(event.data["to"]))
 
 
-async def _phase_advanced(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
-    """A gate phase (SPEC-314 computes G6 to G9): one derived event naming the gate and the
-    partner, until A-01-T23's external release record. A release keeps its own date."""
+async def _phase_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Seed only (security review, DEC-310): a gate phase whose SPEC-314 facts (EQR concurrence,
+    rep letter, release) the slice does not model. The derived event is written as the owner in
+    the event's actor transaction with its audit row, like the other bootstrap writes; its
+    insert trigger still binds the actor to the session, refuses a stale or backward move and
+    moves the projection. No product path moves a phase without its gate met
+    (`assurance.phase.advance_by_gate` computes it). A release keeps its own date."""
     audit = BY_LABEL[str(event.data["audit"])]
-    user = user_id_of(_SEATS[audit.ep])
-    tenant = TenantContext(TENANT, "human", str(user))
+    engagement = engagement_id_of(audit)
     on = event.data.get("on")
     at = datetime.combine(date.fromisoformat(str(on)), event.at.timetz()) if on else event.at
-    with frozen(at):
-        async with uow(tenant) as tx:
-            moved = await advance_by_gate(
-                tx,
-                tenant,
-                engagement_id_of(audit),
-                str(event.data["to"]),
-                str(event.data["gate"]),
-                user,
-            )
-            if moved is None:
-                raise LookupError(f"{audit.label} did not move to {event.data['to']}")
+
+    async def write() -> tuple[str, str, str]:
+        found = await conn.fetchrow(
+            "SELECT work_item_id, phase FROM assurance_work_items "
+            "WHERE tenant_id = $1 AND engagement_id = $2",
+            TENANT,
+            engagement,
+        )
+        if found is None:
+            raise LookupError(f"no assurance work item on {audit.label}")
+        await conn.execute(
+            "INSERT INTO assurance_phase_events (tenant_id, engagement_id, work_item_id, "
+            "from_phase, to_phase, mode, gate_ref, actor_kind, actor_user_id) "
+            "VALUES ($1, $2, $3, $4, $5, 'derived', $6, 'human', $7)",
+            TENANT,
+            engagement,
+            found["work_item_id"],
+            found["phase"],
+            str(event.data["to"]),
+            str(event.data["gate"]),
+            user_id_of(_SEATS[audit.ep]),
+        )
+        return "assurance.phase_derived", "engagement", str(engagement)
+
+    await _bootstrap(conn, replace(event, at=at), write)
 
 
 async def _engagement_archived(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:

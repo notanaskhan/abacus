@@ -18,7 +18,7 @@ no actions.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Final
@@ -31,13 +31,20 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.modules.assurance.sections import (
     BANDS,
+    AuditSection,
     Band,
     SectionState,
     registered_sections,
     run_summaries,
 )
 from abacus.modules.engagements.api import assurance_index, assurance_item, get_ref
-from abacus.modules.identity.api import AuthContext, allowed_actions, authorise
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    Resource,
+    allowed_actions,
+    authorise,
+)
 
 READ: Final = "engagement.read_metadata"
 CONTENT: Final = "engagement.read"
@@ -110,7 +117,20 @@ async def _state(key: str, provider_call: Awaitable[SectionState | None]) -> Sec
     return found if isinstance(found, SectionState) else None
 
 
+def _scoped(sections: Sequence[AuditSection], action: str, scope: str) -> bool:
+    return any(s.required_action == action and s.action_scope == scope for s in sections)
+
+
+def refuse_non_firm(ctx: AuthContext, action: str) -> None:
+    """INV-4 and the security review (DEC-312): a client principal holds
+    `engagement.read_metadata` cells (SPEC-020), so the read models refuse client principals,
+    agents and the system themselves, not only their routes."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+
+
 async def audit_cockpit(ctx: AuthContext, work_item_id: UUID) -> Cockpit:
+    refuse_non_firm(ctx, READ)
     item = await assurance_item(ctx.tenant, work_item_id)
     ref = await get_ref(ctx, item.engagement_id)
     resource = ref.resource()
@@ -125,6 +145,7 @@ async def audit_cockpit(ctx: AuthContext, work_item_id: UUID) -> Cockpit:
     archived = (
         ref.archived
         or row.status == "archived"
+        or row.work_item_status == "archived"
         or row.archived_at is not None
         or row.archive_locked_at is not None
     )
@@ -132,7 +153,21 @@ async def audit_cockpit(ctx: AuthContext, work_item_id: UUID) -> Cockpit:
     bands: list[BandView] = []
     if content:
         rows: dict[Band, list[SectionRow]] = {}
-        for section in registered_sections():
+        sections = registered_sections()
+        needed = {s.required_action for s in sections if s.required_action}
+        on_engagement = await allowed_actions(
+            ctx, resource, sorted(a for a in needed if _scoped(sections, a, "engagement"))
+        )
+        on_firm = await allowed_actions(
+            ctx,
+            Resource.firm(ctx.tenant_id),
+            sorted(a for a in needed if _scoped(sections, a, "firm")),
+        )
+        for section in sections:
+            if section.required_action is not None and section.required_action not in (
+                on_firm if section.action_scope == "firm" else on_engagement
+            ):
+                continue  # the reader may not see what the provider would read
             state = await _state(section.key, section.state_provider(ctx.tenant, work_item_id))
             if state is None:
                 continue

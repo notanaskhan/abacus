@@ -25,6 +25,7 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: built (partial: the release and archive records wait for A-01-T23). The loader no longer writes `phase`; 75 new timeline events move the 20 audits past Planning through `answer_independence`, `record_phase` and `advance_by_gate` as the engagement partner, and set the 14 EBP profiles through `update_profile`. Releases before the firm's setup keep their own date as business time (Bayside's archive clock reads 13 days at E0). Juniper and Meridian are created Delivered and archived by a bootstrap write after their moves (archived engagements are read-only to the phase service). Scenario version `bh-2026.10.3` with its new hash (the full unit run caught the pinned hash); `make fixtures SNAPSHOT=E0` re-exported (version and hash only). `tests/integration/test_scenario_assurance.py` 7 passed (AC-16 to AC-24 on the E0 load). Not done: an audits read in the fixture export (needs the AUD-01 fixture's designed rows and the live rows reconciled in `exported.test.ts`; A-01-T11).
+- 2026-10-25: security review fix: `advance_by_gate` is no longer public, so the gate phases are a seed-only bootstrap write of the derived event (trigger-checked) with its audit row (DEC-310).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

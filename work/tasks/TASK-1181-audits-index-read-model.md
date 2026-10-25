@@ -25,6 +25,7 @@ updated: 2026-10-25
 
 ## Progress log
 - 2026-10-25: built. `GET /v1/audits` live behind `audits.cockpit` (`assurance/index.py`, `engagements.api.assurance_index`, `organisations.api.entity_name_column`). E0 as Grace (firm admin): 27 = 7 + 9 + 6 + 2 + 3, caption 14 · 6 · 4 · 3, segments 6 · 14 · 7; Fairhaven PBC null; Bayside "Archive in 13 days"; a walled reader's totals foot without the row. Note: Hannah (manager) sees only her own engagements under `engagement.read_metadata`; the spec's "Hannah sees 27" assumes a firm-wide reader. Tests: `test_audits_read_models.py`, `test_scenario_assurance.py`, `tests/unit/assurance/test_audit_providers.py`.
+- 2026-10-25: security review fixes (failing tests first): the read model refuses client, agent and system itself; run badge for content readers only; `q` escapes LIKE wildcards; an archived work item reads Archived (DEC-311).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
