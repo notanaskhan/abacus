@@ -289,7 +289,8 @@ async def relink(ctx: AuthContext, citation_id: UUID) -> UUID:
             and row.source_type == VERSION_SOURCE
             and await is_withdrawn(session, row.source_id)
         )
-    if row is None or row.engagement_id is None or withdrawn:
+    # SPEC-036 AC-5: a shadow run's citation is not there to relink.
+    if row is None or row.engagement_id is None or withdrawn or row.shadow:
         raise NotFound("citation")
     engagement = await get_ref(ctx, row.engagement_id)
     # On the citing host: its engagement and, where it has one, its work item (walls, the
@@ -350,6 +351,7 @@ async def relink(ctx: AuthContext, citation_id: UUID) -> UUID:
                 "verification_reason": None,
                 "verifier_version": row.verifier_version,
                 "supersedes_id": row.id,
+                "shadow": row.shadow,  # a shadow run's citation stays hidden once moved
                 "created_by_kind": "human",
                 "created_by_user_id": ctx.user_id,
             },

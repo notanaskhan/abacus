@@ -307,6 +307,7 @@ async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
                 anchor_id=match_id,
                 ref=f"R{rank}",
                 claims=document_claims(citations, inbox_file_id=inbox_file_id),
+                shadow=locked.shadow,
             )
         await finish_run(
             tx.session,

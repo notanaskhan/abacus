@@ -37,7 +37,12 @@ from importlib import import_module
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from abacus.ai_gateway import FakeModel, check_provider_limits, configure_provider
+from abacus.ai_gateway import (
+    FakeModel,
+    check_provider_limits,
+    configure_provider,
+    hold_boundary_facts_for,
+)
 from abacus.ai_gateway.budgets import run_anomaly_job
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
@@ -109,6 +114,9 @@ async def build_workers(classes: Sequence[WorkClass] = WORK_CLASSES) -> list[Wor
     payload_codec()
     await check_ready()
     check_provider_limits()
+    # SPEC-036 Q5 (DEC-337): the worker makes the model calls, so it reads a firm's opt-in,
+    # exclusions and stages fresh each time; an opt-out in the API holds here at once.
+    hold_boundary_facts_for(0)
     if settings().environment == "local":
         configure_provider(agents.install_fake_responses(FakeModel()))
     client = await temporal_client()

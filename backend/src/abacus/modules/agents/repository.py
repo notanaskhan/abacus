@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import ColumnElement, func, insert, select, update
+from sqlalchemy import ColumnElement, func, insert, or_, select, update
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,8 +52,12 @@ def _version_rows() -> ColumnElement[bool]:
 
 
 def _shown_run(run_id: QueryableAttribute[UUID]) -> ColumnElement[bool]:
-    """SPEC-036 AC-5 (TASK-076): output of a run started in shadow is never shown to the firm."""
-    return run_id.not_in(select(AgentRun.id).where(AgentRun.shadow.is_(True)))
+    """SPEC-036 AC-5 (TASK-076): output of a run started in shadow is never shown to the firm.
+    A row with no run (a screening aggregate, composed from shown rows) is shown: spelled out,
+    because `NULL NOT IN (...)` is null whenever the firm has any shadow run (TASK-1210)."""
+    return or_(
+        run_id.is_(None), run_id.not_in(select(AgentRun.id).where(AgentRun.shadow.is_(True)))
+    )
 
 
 async def insert_run(
@@ -1047,8 +1051,14 @@ async def pending_guidance_drafts(
 
 
 async def get_guidance_draft(session: AsyncSession, draft_id: UUID) -> GuidanceDraftRow | None:
+    """The draft to decide, unless a shadow run wrote it (SPEC-036 AC-5: never shown, so never
+    approved by id either)."""
     return (
-        await session.execute(select(GuidanceDraftRow).where(GuidanceDraftRow.id == draft_id))
+        await session.execute(
+            select(GuidanceDraftRow).where(
+                GuidanceDraftRow.id == draft_id, _shown_run(GuidanceDraftRow.agent_run_id)
+            )
+        )
     ).scalar_one_or_none()
 
 
@@ -1098,9 +1108,13 @@ async def template_drafts(
 async def get_template_draft(
     session: AsyncSession, draft_id: UUID
 ) -> TemplateGuidanceDraft | None:
+    """The draft to decide, unless a shadow run wrote it (SPEC-036 AC-5)."""
     return (
         await session.execute(
-            select(TemplateGuidanceDraft).where(TemplateGuidanceDraft.id == draft_id)
+            select(TemplateGuidanceDraft).where(
+                TemplateGuidanceDraft.id == draft_id,
+                _shown_run(TemplateGuidanceDraft.agent_run_id),
+            )
         )
     ).scalar_one_or_none()
 
@@ -1426,10 +1440,11 @@ async def insert_rerun(session: AsyncSession, *, values: dict[str, object]) -> N
 async def latest_screenings_for_gates(
     session: AsyncSession, engagement_id: UUID | None
 ) -> Sequence[tuple[UUID, UUID, UUID]]:
-    """(result, engagement, version): the newest shown result of each version."""
+    """(result, engagement, version): the newest shown per-version result of each version (a
+    request batch's aggregate is no version's proposal)."""
     stmt = select(
         ScreeningResult.id, ScreeningResult.engagement_id, ScreeningResult.evidence_version_id
-    ).where(_shown_run(ScreeningResult.agent_run_id))
+    ).where(_shown_run(ScreeningResult.agent_run_id), _version_rows())
     if engagement_id is not None:
         stmt = stmt.where(ScreeningResult.engagement_id == engagement_id)
     rows = await session.execute(

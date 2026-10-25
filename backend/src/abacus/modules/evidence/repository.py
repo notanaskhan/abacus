@@ -170,6 +170,12 @@ def not_withdrawn() -> ColumnElement[bool]:
     )
 
 
+def shown_citation() -> ColumnElement[bool]:
+    """A citation anyone may read: not from a shadow run (SPEC-036 AC-5; 0158) and its source
+    not withdrawn (`live_citation_source`)."""
+    return and_(Citation.shadow.is_(False), live_citation_source())
+
+
 def live_citation_source() -> ColumnElement[bool]:
     """P-06-T19: a citation whose source is not a withdrawn version: its quote, value and box
     never reach anyone once the client withdrew the file (ADR-162 §4)."""
@@ -1174,7 +1180,7 @@ async def verified_citations_into(
         visible(
             ctx, "evidence.read", cast(ColumnElement[UUID], Citation.engagement_id.expression)
         ),
-        live_citation_source(),
+        shown_citation(),
     )
     if match_ids is not None:
         stmt = stmt.where(Citation.match_id.in_(list(match_ids)))
@@ -1199,7 +1205,7 @@ async def verified_citations_of(
             Citation.cited_from_type == cited_from_type,
             Citation.cited_from_id.in_(list(cited_from_ids)),
             Citation.verified.is_(True),
-            live_citation_source(),
+            shown_citation(),
         )
         .order_by(Citation.cited_from_id, Citation.n, Citation.id)
     )

@@ -67,6 +67,12 @@ REASONS: Final[tuple[Reason, ...]] = (
 )
 CLIENT_DATA_ROUTES: Final[frozenset[Route]] = frozenset({"bedrock"})  # ADR-113
 _CACHE_SECONDS: Final = 60.0
+# How long this process keeps a firm's facts (opted in, excluded, stage). The API keeps them
+# `_CACHE_SECONDS` and drops a firm's in the request that changes them (its one model call, a
+# knowledge-search embedding, is refused for a real firm whatever the facts); a worker, which
+# makes the agents' model calls, keeps none (`hold_facts_for(0)`; DEC-337), so no stale grant
+# outlives a change made in another process.
+_fact_seconds: float = _CACHE_SECONDS
 _check: SyntheticCheck | None = None
 _opted_in: FirmCheck | None = None
 _excluded: EngagementCheck | None = None
@@ -149,7 +155,8 @@ async def _cached[T](key: tuple[object, ...], ask: Callable[[], Awaitable[T]]) -
     if found is not None and found[1] > now:
         return cast(T, found[0])  # stored by this function for `key`
     answer = await ask()
-    _facts[key] = (answer, now + _CACHE_SECONDS)
+    if _fact_seconds > 0:
+        _facts[key] = (answer, now + _fact_seconds)
     return answer
 
 
@@ -260,6 +267,15 @@ async def refuse_pii_in_context(
 ) -> NoReturn:
     """ADR-167 §2: the context holds an unmasked TIN form. Every route, every firm."""
     await _refuse(tenant, route, prompt, "pii_in_context", part=(part, part_index))
+
+
+def hold_facts_for(seconds: float) -> None:
+    """How long this process caches firm facts; 0 reads them fresh for every call (DEC-337)."""
+    global _fact_seconds
+    if seconds < 0:
+        raise ValueError("seconds must not be negative")
+    _fact_seconds = seconds
+    _facts.clear()
 
 
 def clear_cache(tenant_id: UUID | None = None) -> None:

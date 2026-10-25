@@ -188,6 +188,47 @@ async def test_q5_clearing_a_firm_forgets_its_facts(world: _World) -> None:
         await enforce_boundary(tenant, "bedrock", PROMPT, agent_id=AGENT, engagement_id=engagement)
 
 
+async def test_dec337_a_process_holding_no_facts_sees_an_opt_out_at_once(
+    world: _World,
+) -> None:
+    """The worker (`hold_facts_for(0)`) reads a firm's facts fresh for each call, so an opt-out
+    made in the API refuses its next call without any cache clear in this process."""
+    tenant = _tenant()
+    engagement = uuid.uuid4()
+    boundary.hold_facts_for(0)
+    try:
+        await enforce_boundary(tenant, "bedrock", PROMPT, agent_id=AGENT, engagement_id=engagement)
+        world.opted_in = False
+        with pytest.raises(DataBoundaryRefused):
+            await enforce_boundary(
+                tenant, "bedrock", PROMPT, agent_id=AGENT, engagement_id=engagement
+            )
+        world.opted_in = True
+        world.excluded = True
+        with pytest.raises(DataBoundaryRefused):
+            await enforce_boundary(
+                tenant, "bedrock", PROMPT, agent_id=AGENT, engagement_id=engagement
+            )
+    finally:
+        boundary.hold_facts_for(60.0)  # the API's hold, `_CACHE_SECONDS`
+
+
+def test_dec337_a_negative_hold_is_refused() -> None:
+    with pytest.raises(ValueError, match="negative"):
+        boundary.hold_facts_for(-1)
+
+
+def test_dec337_the_worker_holds_no_boundary_facts() -> None:
+    """The worker boots with `hold_boundary_facts_for(0)` before it serves any pool."""
+    import inspect
+
+    from abacus.worker import __main__ as worker
+
+    source = inspect.getsource(worker.build_workers)
+    assert "hold_boundary_facts_for(0)" in source
+    assert source.index("hold_boundary_facts_for(0)") < source.index("_worker(client")
+
+
 async def test_ac2_a_real_firm_never_fails_over_to_direct(world: _World) -> None:
     """ADR-113: its calls try client-data routes only, so a Bedrock outage queues the call."""
     from abacus.ai_gateway import barred_routes

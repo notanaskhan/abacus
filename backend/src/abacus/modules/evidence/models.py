@@ -361,6 +361,8 @@ class Citation(Base):
     created_by_user_id: Mapped[UUID | None]
     created_by_run_id: Mapped[UUID | None]
     on_behalf_of_user_id: Mapped[UUID | None]
+    # SPEC-036 AC-5 (0158): written by a shadow run, or succeeds one that was; never shown.
+    shadow: Mapped[bool] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
