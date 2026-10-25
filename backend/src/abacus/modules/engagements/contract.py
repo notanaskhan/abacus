@@ -37,6 +37,7 @@ from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.engagements import drafts as draft_model
 from abacus.modules.engagements import index as index_model
 from abacus.modules.engagements import record as record_model
+from abacus.modules.engagements import transitions
 from abacus.modules.engagements.service import EngagementType
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -727,6 +728,62 @@ async def engagement_gates_route(engagement_id: UUID, ctx: Ctx) -> list[Engageme
     """`[{gate, met, blockers}]` for the registered providers (C1 v1.1)."""
     await _gate(ctx)
     return _gates_out(await record_model.engagement_gates_v2(ctx, engagement_id))
+
+
+# --- ENG-02 status menu: Active ⇄ On hold (TASK-1198; DEC-328) ----------------------------------
+
+# `transitions.HOLD_REASONS`, as the API's enum (a test holds the two equal).
+HoldReason = Literal[
+    "client_unresponsive", "fees_outstanding", "scope_change", "independence_review", "other"
+]
+
+
+class EngagementHoldIn(BaseModel):
+    """ "On hold…" names a reason code, never free text (§3.1.3)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason: Annotated[HoldReason, classified("internal")]
+
+
+class EngagementStatusOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    status: Annotated[EngagementStatus, classified("internal")]  # C2
+    hold_reason: Annotated[HoldReason | None, classified("internal")] = None
+
+
+@engagements_v2_router.post(
+    "/{engagement_id}/hold",
+    action="engagement.hold",
+    response_model=EngagementStatusOut,
+    errors=(409,),
+)
+async def hold_engagement_route(
+    engagement_id: UUID, body: EngagementHoldIn, ctx: Ctx
+) -> EngagementStatusOut:
+    """A person, with fresh MFA: Active → On hold with a reason; `engagement.held` audited and
+    `engagement.status_changed` emitted in one unit of work. 409 `illegal_transition` from any
+    other state (archived included)."""
+    await _gate(ctx)
+    await transitions.hold(ctx, engagement_id, body.reason)
+    return EngagementStatusOut(
+        engagement_id=engagement_id, status=EngagementStatus.ON_HOLD, hold_reason=body.reason
+    )
+
+
+@engagements_v2_router.post(
+    "/{engagement_id}/resume",
+    action="engagement.hold",
+    response_model=EngagementStatusOut,
+    errors=(409,),
+)
+async def resume_engagement_route(engagement_id: UUID, ctx: Ctx) -> EngagementStatusOut:
+    """On hold → Active; `engagement.resumed`. 409 `illegal_transition` unless on hold."""
+    await _gate(ctx)
+    await transitions.resume(ctx, engagement_id)
+    return EngagementStatusOut(engagement_id=engagement_id, status=EngagementStatus.ACTIVE)
 
 
 @engagements_v2_router.put(

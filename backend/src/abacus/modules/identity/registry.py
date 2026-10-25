@@ -13,6 +13,7 @@ TABLES: frozenset[str] = frozenset(
         "users",
         "memberships",
         "engagement_members",
+        "engagement_member_events",  # P-07-T30 (0155): the membership history, insert-only
         "ethical_walls",
         "support_sessions",  # SPEC-012
         "client_invitations",
@@ -42,10 +43,17 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset({"firm_policy_overrides", "client_access_events"})
+INSERT_ONLY: frozenset[str] = frozenset(
+    {"firm_policy_overrides", "client_access_events"}
+    | {"engagement_member_events"}  # P-07-T30 (0155)
+)
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "engagement_members": frozenset({"tenant_id", "engagement_id", "user_id", "role"}),
+    # P-07-T30 (0155): written by the `engagement_member_history` trigger as the caller.
+    "engagement_member_events": frozenset(
+        {"tenant_id", "engagement_id", "user_id", "role", "event"}
+    ),
     "ethical_walls": frozenset(
         {"id", "tenant_id", "user_id", "client_id", "created_by"}
         | {"reason_code", "reason_text", "approver_user_id"}  # G-01-T09 (0151): walls v2
@@ -102,6 +110,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "removed_by", "removed_at"}
         | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): set once each
     ),
+    # P-07-T30 (0155): ENG-05's hours and POR-02's team card; roles stay behind the definers.
+    "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
     "memberships": frozenset(
         {"default_office_filter_id"}  # P-01-T04: the person's own, via /v1/me
         # G-01-T05 (0142): a person's template and attributes; firm roles stay behind definers.

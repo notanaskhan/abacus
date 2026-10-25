@@ -1102,6 +1102,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "methodology_version_id"}  # SPEC-008: pinned once
             | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)
             | {"period_label"}  # P-07-T15 (0124)
+            | {"hold_reason"}  # TASK-1198 (0155)
         ),
         "request_items": frozenset(
             {"status", "client_visible", "client_assignee_user_id"}  # SPEC-015, SPEC-016
@@ -1292,6 +1293,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "evidence_withdrawals": frozenset(  # P-06-T19 (0144): the purge's stamps
             {"erased_at", "erase_blocked_at", "block_reason"}
         ),
+        # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
+        "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1352,6 +1355,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
     assert "agent_runs" not in sc.INSERT_ONLY_TABLES
+    # P-07-T30 (0155): the EP's team approvals and the quality owner's EQR approvals.
+    assert {"team_approvals", "eqr_eligibility_approvals"} <= sc.INSERT_ONLY_TABLES
     assert sc.APP_INSERT_COLUMNS["engagements"] == frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name"}
         | {"fiscal_period_start", "fiscal_period_end", "created_by"}

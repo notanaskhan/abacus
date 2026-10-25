@@ -7,6 +7,10 @@ from abacus.modules.identity.api import (
     register_office_list,
     register_settings_area,
 )
+from abacus.modules.organisations.conflicts_contract import (
+    conflict_checks_router,
+    screening_records_router,
+)
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
     contact_invitations_router,
@@ -88,6 +92,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     client_contacts_router,  # contacts and portal access, v1 stub (P-07-T17)
     contacts_router,
     contact_invitations_router,
+    conflict_checks_router,  # conflict checks and screening, v1 stub (P-07-T29)
+    screening_records_router,
     org_settings_router,  # firm-settings family v1: offices and teams (G-01-T02 stub)
 )
 

@@ -1070,6 +1070,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "reason_codes"),
         ("src/abacus/modules/identity/repository.py", "active_memberships"),
         ("src/abacus/modules/identity/repository.py", "engagement_members_of"),
+        # P-07-T30: the same team with ENG-05's extras, for a caller that authorised the read.
+        ("src/abacus/modules/identity/repository.py", "member_details_of"),
+        # P-07-T30 security review: one person's roles ever held, for EQR cooling-off.
+        ("src/abacus/modules/identity/repository.py", "roles_ever_held"),
         ("src/abacus/modules/identity/repository.py", "display_names"),
         # SPEC-024 (TASK-041): names and emails for staff the caller already read under RLS.
         ("src/abacus/modules/identity/repository.py", "user_contacts"),

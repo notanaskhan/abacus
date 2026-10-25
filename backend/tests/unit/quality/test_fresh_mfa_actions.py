@@ -16,6 +16,7 @@ REGISTER = Path(__file__).resolve().parents[4] / "docs" / "architecture" / "fres
 GROUPS = frozenset(
     {"wall", "ai_policy", "export", "legal_hold", "independence", "data_boundary", "reveal"}
     | {"portal_access"}  # P-07-T25 (DEC-303): clearing a client's portal sign-in lock
+    | {"team"}  # P-07-T30 (DEC-327): the engagement partner's team approval
 )
 
 

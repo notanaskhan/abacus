@@ -18,3 +18,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: engagements.acceptance_v2
+    description: 'The acceptance, independence and conflicts family (P-07-T29 stub; P-07-T35, T36 and T41 live): GET /v1/engagements/{id}/acceptance and its prepare, review and decision routes, GET /v1/engagements/{id}/independence with rotation, confirm, decline, reminders, NAS, breaches and conclude, POST /v1/conflict-checks with read and clear, POST /v1/screening-records, and the CLI-06 conflicts, CLI-07 and CLI-08 v2 screens. When off, those routes answer 404 and the screens show the flag-off ViewState. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Renewal is due in the S9 protected bundle; retired with the legacy acceptance adapter (P-07-T59).'
+    owner: notanaskhan
+    created: 2026-10-25
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

@@ -44,6 +44,7 @@ from abacus.modules.identity.api import (
     assert_assignable,
     authorise,
     is_synthetic_firm,
+    team_standing,
     visible,
     visible_scope,
 )
@@ -388,6 +389,9 @@ async def assign_work_item(
     ctx: AuthContext, work_item_id: UUID, user_id: UUID, function: str
 ) -> None:
     """Assign `user_id` the `function` on the work item, in one unit of work with its audit event.
+    The assignee must be a staff member of the engagement's team and not walled from its client:
+    otherwise 404, the same answer for both so a wall is never revealed (P-07-T30, ED-042). The
+    `eqr` function goes to the engagement's EQR only, and the EQR takes no other (422).
     Refused 409 `gate_unmet` (`gate` G2, `user_id`) when the engagement's client is an attest
     client and that person is not cleared on the engagement (`setup.g2_blocks`); a non-attest
     client's engagement is never gated. An unknown function is 422; an unknown or walled work
@@ -403,11 +407,17 @@ async def assign_work_item(
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "work_item.assign", ref.resource())
+        standing = await team_standing(ctx.tenant, engagement_id, user_id)
+        if standing in ("none", "client"):
+            raise NotFound("team_member")
         client_id = await client_of(ctx.tenant, engagement_id)
         if client_id is None:
             raise NotFound
         # G-01-T09 (AC9.3): walled people aren't assignable (404); offshore without consent 409.
         await assert_assignable(ctx.tenant, user_id, client_id)
+        # The `eqr` function is the EQR's, and the EQR's only function (security review, DEC-327).
+        if (standing == "eqr") != (function == "eqr"):
+            raise DomainInvalid(facts={"field": "function"})
         if await g2_blocks(ctx.tenant, engagement_id, user_id):
             raise GateUnmet(facts={"gate": "G2", "user_id": str(user_id)})
         await tx.session.execute(
