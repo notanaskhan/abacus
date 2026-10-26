@@ -14,10 +14,19 @@ from abacus.modules.audit_trail.explorer import (
     get_event,
     list_events,
 )
+from abacus.modules.audit_trail.jobs import ACTIVITIES, SCHEDULES, WORKFLOWS
 from abacus.modules.audit_trail.labels import backfill as backfill_labels
 from abacus.modules.audit_trail.labels import index_batch as index_labels
 from abacus.modules.audit_trail.routes import router
 from abacus.modules.audit_trail.service import events_for_target
+from abacus.modules.audit_trail.workflows import (
+    CHECKPOINT_ID,
+    PARTITIONS_ID,
+    VERIFY_ID,
+    AuditChainVerifyWorkflow,
+    AuditCheckpointWorkflow,
+    AuditPartitionsWorkflow,
+)
 from abacus.modules.identity.api import AbacusRouter, register_target_events
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -38,9 +47,20 @@ register_target_events(events_for_target)
 # G-02-T08: importing the live reads registers them on the contract's router.
 LIVE_READS = audit_log_routes.router
 
+# Q-02-T20, T21: partitions, checkpoints and the nightly verify on Schedules (the daily anchor is
+# evidence's).
 __all__ = [
+    "ACTIVITIES",
+    "CHECKPOINT_ID",
     "LIVE_READS",
+    "PARTITIONS_ID",
     "ROUTERS",
+    "SCHEDULES",
+    "VERIFY_ID",
+    "WORKFLOWS",
+    "AuditChainVerifyWorkflow",
+    "AuditCheckpointWorkflow",
+    "AuditPartitionsWorkflow",
     "CatalogueEntry",
     "Checkpoint",
     "EventFilter",

@@ -10,13 +10,14 @@ from abacus.modules.identity.api import (
 from abacus.modules.organisations.conflicts import (
     check_clear_for,
     clear_conflict_result,
+    run_conflict_check,
     standing_conflict_results,
 )
 from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
 )
-from abacus.modules.organisations.contacts import contact_portal_facts
+from abacus.modules.organisations.contacts import RoleAsked, contact_portal_facts, create_contact
 from abacus.modules.organisations.contacts_contract import (
     client_contacts_router,
     contact_invitations_router,
@@ -170,6 +171,7 @@ __all__ = [
     "NewRelationship",
     "OverviewItem",
     "OverviewSection",
+    "RoleAsked",
     "SectionRows",
     "SubjectNames",
     "TinConflict",
@@ -196,6 +198,7 @@ __all__ = [
     "contact_portal_facts",
     "contacts_of_user",
     "create_client",
+    "create_contact",
     "dedupe_candidates",
     "entity_name_column",
     "find_clients",
@@ -210,6 +213,7 @@ __all__ = [
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
+    "run_conflict_check",
     "same_name_client",
     "seal_tin",
     "set_client_record",

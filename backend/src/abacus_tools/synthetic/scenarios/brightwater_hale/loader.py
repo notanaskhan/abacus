@@ -82,7 +82,25 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.assurance.api import record_phase, update_profile
-from abacus.modules.engagements.api import answer_independence, assurance_item, assurance_item_id
+from abacus.modules.engagements.api import (
+    NewCondition,
+    acceptance_record,
+    add_flag,
+    add_to_team,
+    answer_independence,
+    approve_team,
+    assign_eqr,
+    assurance_item,
+    assurance_item_id,
+    change_team_role,
+    create_draft,
+    decide_acceptance,
+    remove_from_team,
+    send_to_partner,
+    start_acceptance,
+    team_approval,
+    update_answers,
+)
 from abacus.modules.evidence.api import (
     HoldScope,
     PolicyChange,
@@ -98,7 +116,15 @@ from abacus.modules.identity.api import (
     set_demo_clock,
     set_member_profile,
 )
-from abacus.modules.organisations.api import NewClient, client_with_entity, create_client
+from abacus.modules.organisations.api import (
+    NewClient,
+    RoleAsked,
+    clear_conflict_result,
+    client_with_entity,
+    create_client,
+    create_contact,
+    run_conflict_check,
+)
 from abacus.modules.platform.api import IncidentFacts, record_incident
 from abacus.modules.portal.api import (
     BrandingSlots,
@@ -110,6 +136,18 @@ from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
+from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
+    CONTACTS,
+    DRAFTS,
+    THORNBURY_ANSWERS,
+    THORNBURY_FLAGS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
+    NEEDS as ACCEPTANCE_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
+    SLICE as ACCEPTANCE_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import (
     BY_LABEL,
     PBC_LISTS,
@@ -1135,6 +1173,7 @@ async def _binder_created(conn: asyncpg.Connection, _: Scenario, event: Event) -
 SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PORTAL_SLICE: PORTAL_NEEDS,
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
+    ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
 }
 
 
@@ -1446,6 +1485,8 @@ async def _engagement_archived(conn: asyncpg.Connection, _: Scenario, event: Eve
 
 
 # The services' own literals, restated: the loader reads them from the slice's event data.
+StaffRole = Literal["engagement_partner", "manager", "senior", "staff", "reviewer", "specialist"]
+Option = Literal["accept", "accept_with_conditions", "decline"]
 ServiceLine = Literal["audit", "tax", "cas", "advisory", "any"]
 Anchor = Literal[
     "upload",
@@ -1532,6 +1573,254 @@ async def _incident_recorded(conn: asyncpg.Connection, _: Scenario, event: Event
     await record_incident(await _staff_context(conn, event), facts)
 
 
+# --- the acceptance slice (P-07-T40; DEC-412) ---------------------------------------------------
+# Each act goes through the owning service as the person the handoff names, signed in with a
+# fresh second factor (`_staff_context`). The questionnaire templates have no service (firm
+# content waiting for its admin screen), so they are bootstrapped like `_portal_user_added`.
+
+
+async def _questionnaire_template_added(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    data = event.data
+    family = str(data["family"])
+    template = UUID(stable_id(f"questionnaire-template:{family}"))
+    sections = [
+        {"code": code, "title": title}
+        for code, title in cast(list[tuple[str, str]], data["sections"])
+    ]
+    by = user_id_of(_SEATS[event.actor])
+    tenant = tenant_of(event)  # the tenant `_bootstrap` sets and audits (security review)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO acceptance_questionnaire_templates (id, tenant_id, name, family, "
+            "created_by) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            template,
+            tenant,
+            str(data["name"]),
+            family,
+            by,
+        )
+        await conn.execute(
+            "INSERT INTO acceptance_questionnaire_template_versions (id, tenant_id, template_id, "
+            "version_no, sections, created_by) VALUES ($1, $2, $3, 1, $4::jsonb, $5) "
+            "ON CONFLICT DO NOTHING",
+            UUID(stable_id(f"questionnaire-version:{family}:1")),
+            tenant,
+            template,
+            json.dumps(sections),
+            by,
+        )
+        return "acceptance_template.created", "acceptance_template", str(template)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _contact_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    contact = CONTACTS[int(cast(int, event.data["index"]))]
+    client = await _client_id(conn, contact.client)
+    roles = (
+        [RoleAsked(contact.role, "client", client, contact.title)]
+        if contact.role is not None
+        else []
+    )
+    await create_contact(
+        await _staff_context(conn, event),
+        client,
+        name=contact.name,
+        party_kind=contact.party_kind,
+        email=contact.email,
+        phone=None,
+        roles=roles,
+    )
+
+
+def _a(event: Event) -> UUID:
+    return engagement_id_of(BY_LABEL[str(event.data["audit"])])
+
+
+def _member(event: Event, key: str = "member") -> UUID:
+    return user_id_of(_SEATS[str(event.data[key])])
+
+
+async def _member_hours_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    hours = Decimal(str(event.data["hours"]))
+    await change_team_role(
+        await _staff_context(conn, event), _a(event), _member(event), None, hours
+    )
+
+
+async def _member_removed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await remove_from_team(await _staff_context(conn, event), _a(event), _member(event))
+
+
+async def _eqr_assigned(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await assign_eqr(await _staff_context(conn, event), _a(event), _member(event, "eqr"))
+
+
+async def _team_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    seen = await team_approval(ctx, _a(event))
+    await approve_team(ctx, _a(event), seen.member_set_hash)
+
+
+async def _member_proposed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await add_to_team(
+        await _staff_context(conn, event),
+        _a(event),
+        _member(event),
+        cast(StaffRole, event.data["role"]),
+        Decimal(str(event.data["hours"])),
+    )
+
+
+async def _member_independence_confirmed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """A team member, or the EQR, confirms their own independence (CLI-08a)."""
+    await answer_independence(
+        await _staff_context(conn, event), _a(event), confirm=True, note=None
+    )
+
+
+async def _draft_of(conn: asyncpg.Connection, event: Event) -> tuple[UUID, UUID | None]:
+    """The scenario draft the event names (by its creator and name) and its prospect."""
+    _, payload = DRAFTS[str(event.data["draft"])]
+    row = await conn.fetchrow(
+        "SELECT id, prospect_engagement_id FROM engagement_drafts WHERE tenant_id = $1 "
+        "AND created_by = $2 AND payload->>'name' = $3 AND discarded_at IS NULL "
+        "ORDER BY saved_at DESC LIMIT 1",
+        TENANT,
+        user_id_of(_SEATS[_draft_owner(event)]),
+        str(payload["name"]),
+    )
+    if row is None:
+        raise LookupError(f"no draft {event.data['draft']!r}")
+    return row["id"], row["prospect_engagement_id"]
+
+
+def _draft_owner(event: Event) -> str:
+    """Who created the scenario draft (only they can read it or start its acceptance)."""
+    _, payload = DRAFTS[str(event.data["draft"])]
+    return str(payload["owner"])
+
+
+async def _draft_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    client_name, payload = DRAFTS[str(event.data["draft"])]
+    client = await _client_id(conn, client_name)
+    prior_label = payload.get("prior_audit")
+    if prior_label is not None:
+        prior = engagement_id_of(BY_LABEL[str(prior_label)])
+        entity = await conn.fetchval(
+            "SELECT client_entity_id FROM engagements WHERE tenant_id = $1 AND id = $2",
+            TENANT,
+            prior,
+        )
+    else:
+        prior, entity = None, await _entity_id(conn, client, client_name)
+    team = [
+        {"user_id": str(user_id_of(_SEATS[i])), "role": role}
+        for i, role in cast(list[tuple[str, str]], payload["team"])
+    ]
+    body: dict[str, object] = {
+        "name": payload["name"],
+        "fiscal_period_start": payload["fiscal_period_start"],
+        "fiscal_period_end": payload["fiscal_period_end"],
+        "team": team,
+    }
+    if prior is not None:
+        body["prior_engagement_id"] = str(prior)
+    await create_draft(
+        await _staff_context(conn, event),
+        client_id=client,
+        client_entity_id=entity,
+        type_code=str(payload["type_code"]),
+        step="team_independence",
+        payload=body,
+    )
+
+
+async def _conflict_check_run(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A check over the subject; each hit on the cleared name is assessed not adverse."""
+    data = event.data
+    ctx = await _staff_context(conn, event)
+    if data["subject"] == "client":
+        subject = await _client_id(conn, str(event.client))
+    else:
+        subject = (await _draft_of(conn, event))[0]
+    names = [str(n) for n in cast(list[str], data["names"])]
+    check = await run_conflict_check(
+        ctx,
+        subject_kind="client" if data["subject"] == "client" else "engagement_draft",
+        subject_id=subject,
+        names=names,
+    )
+    cleared = str(data["clear"])
+    for result in check.results:
+        if result.redacted or result.matched_name is None:
+            continue
+        if result.matched_name.casefold() == cleared.casefold():
+            await clear_conflict_result(
+                ctx, check.id, result.id, assessment="not_adverse", reason=str(data["reason"])
+            )
+
+
+async def _acceptance_started(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    draft = (await _draft_of(conn, event))[0]
+    await start_acceptance(await _staff_context(conn, event), draft)
+
+
+async def _prospect(conn: asyncpg.Connection, event: Event) -> UUID:
+    _, prospect = await _draft_of(conn, event)
+    if prospect is None:
+        raise LookupError(f"draft {event.data['draft']!r} has no prospect yet")
+    return prospect
+
+
+async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """CLI-07b: the preparer's answers, risk rating and three flags (sources wait for the intake
+    documents; the fee section is answered, not a manual check: DEC-412)."""
+    ctx = await _staff_context(conn, event)
+    engagement = await _prospect(conn, event)
+    rating = str(event.data["risk_rating"])
+    for n, (section, summary) in enumerate(THORNBURY_ANSWERS):
+        await update_answers(
+            ctx,
+            engagement,
+            section,
+            seen_version=0,
+            values={"summary": summary},
+            complete=True,
+            risk_rating=rating if n == 0 else None,
+        )
+    for severity, title, body in THORNBURY_FLAGS:
+        await add_flag(ctx, engagement, severity=severity, title=title, body=body, sources=())
+
+
+async def _acceptance_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    engagement = await _prospect(conn, event)
+    record = await acceptance_record(ctx, engagement)
+    await send_to_partner(ctx, engagement, record.version)
+
+
+async def _acceptance_decided(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    data = event.data
+    ctx = await _staff_context(conn, event)
+    engagement = await _prospect(conn, event)
+    record = await acceptance_record(ctx, engagement)
+    owner = _member(event, "assignee")
+    await decide_acceptance(
+        ctx,
+        engagement,
+        option=cast(Option, data["option"]),
+        rationale=str(data["rationale"]),
+        conditions=[NewCondition(str(t), owner) for t in cast(list[str], data["conditions"])],
+        seen_version=record.version,
+    )
+
+
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
@@ -1576,6 +1865,22 @@ HANDLERS: Final[dict[str, Handler]] = {
     "evidence.retention_policy_set": _retention_policy_set,
     "evidence.legal_hold_placed": _legal_hold_placed,
     "platform.incident_recorded": _incident_recorded,
+    # P-07-T40 (`--slice acceptance`): templates, Calloway's custodian, the Northwind team's
+    # history, the conflict searches, independence, contacts, then Thornbury and Meridian.
+    "engagements.questionnaire_template_added": _questionnaire_template_added,
+    "organisations.contact_created": _contact_created,
+    "engagements.member_hours_set": _member_hours_set,
+    "engagements.member_removed": _member_removed,
+    "engagements.eqr_assigned": _eqr_assigned,
+    "engagements.team_approved": _team_approved,
+    "engagements.draft_created": _draft_created,
+    "organisations.conflict_check_run": _conflict_check_run,
+    "engagements.member_independence_confirmed": _member_independence_confirmed,
+    "engagements.acceptance_started": _acceptance_started,
+    "engagements.acceptance_prepared": _acceptance_prepared,
+    "engagements.acceptance_sent": _acceptance_sent,
+    "engagements.acceptance_decided": _acceptance_decided,
+    "engagements.member_proposed": _member_proposed,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

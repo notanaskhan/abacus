@@ -46,3 +46,6 @@ updated: 2026-10-23
 
 ## Progress log
 - 2026-10-23: the tests above pass.
+- 2026-10-26 (S10 code gap, branch `s10-q02-schedules`): `AuditPartitions` on a 30-day Schedule
+  (`audit_trail/jobs.py`) runs `ensure_partitions` for this month and the next two. Tests at the
+  end of the run.

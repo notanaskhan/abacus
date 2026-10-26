@@ -27,11 +27,22 @@ from abacus_tools import schedules
 
 IDS = (
     "access_end:platform",  # G-01-T13: the seasonal access-end sweep, hourly
+    "audit_anchor:platform",  # Q-02-T21: the daily anchor to the records bucket
+    "audit_chain_verify:platform",  # Q-02-T21: the nightly chain verify (batch)
+    "audit_checkpoint:platform",  # Q-02-T21: the checkpoint every 5 minutes
+    "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
     "notification_purge:platform",
     "ses_events:platform",
     "spend_anomaly:platform",
 )
-BACKGROUND = ("access_end:platform", "notification_purge:platform", "spend_anomaly:platform")
+BACKGROUND = (
+    "access_end:platform",
+    "audit_anchor:platform",
+    "audit_checkpoint:platform",
+    "audit_partitions:platform",
+    "notification_purge:platform",
+    "spend_anomaly:platform",
+)
 _passes: list[str] = []
 
 
@@ -83,6 +94,15 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["ses_events:platform"]["task_queue"] == queue_for("time_sensitive")
     assert facts["access_end:platform"]["workflow_type"] == "AccessEndSweep"
     assert facts["access_end:platform"]["every_seconds"] == (3600,)
+    assert facts["audit_checkpoint:platform"]["workflow_type"] == "AuditCheckpoint"
+    assert facts["audit_checkpoint:platform"]["every_seconds"] == (300,)
+    assert facts["audit_chain_verify:platform"]["workflow_type"] == "AuditChainVerify"
+    assert facts["audit_chain_verify:platform"]["every_seconds"] == (86400,)
+    assert facts["audit_chain_verify:platform"]["task_queue"] == queue_for("batch")
+    assert facts["audit_anchor:platform"]["workflow_type"] == "AuditAnchor"
+    assert facts["audit_anchor:platform"]["every_seconds"] == (86400,)
+    assert facts["audit_partitions:platform"]["workflow_type"] == "AuditPartitions"
+    assert facts["audit_partitions:platform"]["every_seconds"] == (30 * 86400,)
     for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
     for fact in facts.values():
