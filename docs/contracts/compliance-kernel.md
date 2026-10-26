@@ -77,7 +77,7 @@ The internal interfaces the rest of the product builds on. "Sprint" is when the 
 | Fresh MFA list | `docs/architecture/fresh-mfa-actions.yaml` | every epic adding a listed action; P-08 (S7: portal floor) | built (lint); staff `amr` refusal and `make mfa-report` not built | A listed action without `mfa_recent: required` fails CI; a stale factor answers 401 `mfa_required` |
 | Run records | `agents.api.run_record(run_id)`; C6 v1 stub (ADR-169) | A-01 (S11), G-02 (S12), A-07 (S27+), P-09 (S31) | not built (Q-02-T41, T45) | Until built, consumers read C6 v0 (`docs/contracts/agent-runs.md`); walled runs answer 404 |
 
-**Leaf version rule.** A change that adds a column to `audit_events` bumps the chain's leaf version in the same PR (epic R7); the canonicaliser lists every column it covers.
+**Leaf version rule.** A change that adds a column to `audit_events` bumps the chain's leaf version in the same PR (epic R7); the canonicaliser lists every column it covers. Leaf version 2 (G-02-T06, migration 0172, 2026-10-26) adds `ip`, `user_agent_family`, `device_label`, `session_id`, `auth_method`, `mfa_at`, `client_id` and `office_id`; checkpoints sealed at version 1 keep verifying with version 1's columns.
 
 ## 9. Changelog
 - v1.2 (2026-10-25, Q-02-T04, TASK-1239): §8 kernel slots; spec link to SPEC-341.

@@ -5,14 +5,14 @@ actions:
   # --- Firm administration ---
   firm.manage_users:        {firm_admin: allow, mfa_recent: required}
   firm.manage_settings:     {firm_admin: allow, mfa_recent: required}
-  support_session.read:     {firm_admin: allow}   # SPEC-012
-  support_session.manage:   {firm_admin: allow, mfa_recent: required}   # SPEC-012 Q1
+  support_session.read:     {firm_admin: allow, security_admin: allow}   # SPEC-012; G-02-T02 (DEC-72): + security_admin
+  support_session.manage:   {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # SPEC-012 Q1; G-02-T02 (DEC-72): + security_admin
   autonomy_policy.update:   {firm_admin: allow, mfa_recent: required}
   firm.read_settings:       {firm_admin: allow, practice_leader: allow, security_admin: allow, firm_partner: allow}   # SPEC-024 (TASK-042 D1): autonomy and the checklist, read without fresh MFA; P-01-T04 (DEC-132): partners read settings (SHL-03c)
   wall.create:              {firm_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # G-01-T09 (DEC-73): firm admins and partners wall at once
   wall.remove:              {firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # G-01-T09 (DEC-73): lifting is a partner's, never on themself (own_wall)
   wall.list:                {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # SPEC-002 Q2 (named wall.read there); G-01-T09: security admins and partners read the register
-  firm_agents.pause:        {firm_admin: allow, mfa_recent: required}   # every agent in the firm
+  firm_agents.pause:        {firm_admin: allow, security_admin: allow, quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # every agent in the firm; G-02-T02 (DEC-415 Q13, ADR-157): + security_admin and the QM owner
   demo_clock.set:           {firm_admin: allow, agent: deny, mfa_recent: required}   # F-04-T07 (ADR-143): synthetic firms outside production only, in the service; support stays read-only (SPEC-012)
   # F-03-T26 (ADR-146): client access grants. On an engagement for its scopes; on the firm (firm
   # admin) for client-wide ones.
@@ -47,3 +47,10 @@ actions:
     client_service: allow
     agent: deny
     system: deny
+  # --- Firm governance v1, the security center (G-02-T02; SPEC-349 §9, G-02 §4.4) ---
+  # `level_in(partner)` is the derived `firm_partner` (DEC-132). Every write is a live person's
+  # (INV-1): the agent and the system are denied.
+  security.read:            {firm_admin: allow, security_admin: allow, quality_partner: allow, practice_leader: allow, firm_partner: allow, agent: deny, system: deny}   # ADM-06 overview, sessions, posture
+  security.manage:          {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # sign-in and portal policies, SSO-exempt account, safeguards (splits from firm.manage_settings)
+  session.end:              {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # sign a session out of this firm only (auth_session_tenant_revocations, G-02-T14)
+  staff.unlock:             {security_admin: allow, firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # clear a staff sign-in lock where WorkOS allows (SPEC-349 Q7)

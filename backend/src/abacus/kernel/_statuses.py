@@ -613,6 +613,34 @@ class LegalHoldStatus(StrEnum):
     RELEASED = "released"
 
 
+class AiPolicyVersionStatus(StrEnum):
+    DRAFT = "draft"
+    AWAITING_APPROVAL = "awaiting_approval"
+    PUBLISHED = "published"
+    DECLINED = "declined"
+    WITHDRAWN = "withdrawn"
+    # derived, never stored: superseded
+
+
+class SecurityIncidentStatus(StrEnum):
+    INVESTIGATING = "investigating"
+    CLOSED = "closed"
+
+
+class FirmExportStatus(StrEnum):
+    AWAITING_APPROVAL = "awaiting_approval"
+    READY = "ready"
+    DOWNLOADED = "downloaded"
+    EXPIRED = "expired"
+
+
+class SupportSessionStatus(StrEnum):
+    REQUESTED = "requested"
+    ACTIVE = "active"
+    DECLINED = "declined"
+    REVOKED = "revoked"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1127,6 +1155,29 @@ STORED: dict[str, tuple[str, ...]] = {
         "active",
         "releasing",
         "released",
+    ),
+    "ai_policy_version": (
+        "draft",
+        "awaiting_approval",
+        "published",
+        "declined",
+        "withdrawn",
+    ),
+    "security_incident": (
+        "investigating",
+        "closed",
+    ),
+    "firm_export": (
+        "awaiting_approval",
+        "ready",
+        "downloaded",
+        "expired",
+    ),
+    "support_session": (
+        "requested",
+        "active",
+        "declined",
+        "revoked",
     ),
 }
 CHECKS: dict[str, str] = {

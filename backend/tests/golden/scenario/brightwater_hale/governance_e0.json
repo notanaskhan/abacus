@@ -1,0 +1,22 @@
+{
+  "golden": "brightwater_hale/governance_e0",
+  "note": "G-02-T07 (ADR-078): the governance figures at E0, Mon Sep 14, 2026, 9:24 AM CT, transcribed from the ADM-04, ADM-06 and ADM-07 handoff specs and G-02 sections 3 and 5.4, not from the code. Read by apps/web/src/fixtures/governance.foot.test.ts and backend/tests/golden/scenario/test_governance_golden.py.",
+  "at": "2026-09-14T09:24:00-05:00",
+  "incidents": [
+    {"ref": "INC-2026-005", "title": "Credential-stuffing attempts against client portal sign-in", "discovered_on": "2026-09-10", "discovered_at": "2026-09-10T02:14:00-05:00", "consumers": "0 confirmed", "clock_day": 4, "clock_days": 30, "ftc_notify_by": "2026-10-10", "state": "investigating"},
+    {"ref": "INC-2026-004", "title": "Phishing email to docs@brightwaterhale.com (no click)", "discovered_on": "2026-09-08", "consumers": "0", "notification_event": false, "state": "closed"},
+    {"ref": "INC-2026-003", "title": "Lost laptop, full-disk encrypted (Chicago)", "discovered_on": "2026-07-21", "consumers": "0 (encrypted)", "notification_event": false, "state": "closed"}
+  ],
+  "audit_log": {"total": 18406, "via_agent_shown": 4, "via_agent_total": 1962, "policy_events": 0, "rows": 14},
+  "copperleaf": {"amounts": ["11860.00", "700.00", "2140.00", "5320.00"], "total": "20020.00", "not_included": {"amount": "14900.00", "routed_to": "Priya Raman"}},
+  "mfa": {"e0": {"enrolled": 46, "seats": 46}, "jan_11_2026": {"enrolled": 41, "seats": 46, "without": 5}},
+  "sso": {"enforced_on": "2026-01-12", "enforced_by": "Felix Andersen", "provider": "Microsoft Entra ID"},
+  "ai_policy_versions": [
+    {"version": 1, "published_on": "2026-01-05", "published_by": "Margaret Okonkwo", "approved_by": "Daniel Reyes"},
+    {"version": 2, "published_on": "2026-01-09", "published_by": "Margaret Okonkwo", "approved_by": "Daniel Reyes"},
+    {"version": 3, "published_on": "2026-01-14", "published_by": "Margaret Okonkwo", "approved_by": "Daniel Reyes"}
+  ],
+  "exports_gb": {"2026-09-01": 386, "2026-08-01": 371, "2026-07-01": 359},
+  "support_session": {"on": "2026-08-17", "from": "10:12 AM", "to": "11:40 AM", "engineer": "Jordan Pryce", "scope": "integration settings only", "state": "closed"},
+  "wisp": {"name": "BH WISP v4", "approved_by": "Margaret Okonkwo", "approved_on": "2026-01-15", "controls_evidenced": 18, "controls_total": 20}
+}

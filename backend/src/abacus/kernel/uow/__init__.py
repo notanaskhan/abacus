@@ -29,6 +29,7 @@ from sqlalchemy import BigInteger, DateTime, Select, Text, column, select, table
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
+from abacus.kernel import request_context
 from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
 from abacus.kernel.telemetry import current_trace_id, current_traceparent
@@ -186,20 +187,61 @@ class UnitOfWork:
             )
         self._events.append(event)
 
+    async def _request_context(self, ctx: TenantContext) -> dict[str, object]:
+        """G-02-T06 (SPEC-349 AC-9): the request a person or a support engineer acted through.
+        Agent, system and policy events carry none (and the database refuses them)."""
+        found = request_context.current()
+        keys = ("ip", "ua_family", "device", "session", "auth_method", "mfa_at")
+        empty: dict[str, object] = {key: None for key in keys}
+        if found is None or ctx.actor_kind not in request_context.PERSON_KINDS:
+            return empty
+        session_id, mfa_at = found.session_id, found.mfa_at
+        resolver = request_context.session_resolver()
+        if (
+            session_id is None
+            and ctx.actor_kind == "human"
+            and found.session_cookie_sha256 is not None
+            and resolver is not None
+        ):
+            try:
+                actor = UUID(ctx.actor_id)
+            except ValueError:
+                actor = None
+            resolved = (
+                await resolver(self._connection, found.session_cookie_sha256, actor)
+                if actor is not None
+                else None
+            )
+            if resolved is not None:
+                session_id = resolved.session_id
+                mfa_at = mfa_at or resolved.mfa_at
+        return {
+            "ip": found.ip,
+            "ua_family": found.user_agent_family,
+            "device": found.device_label,
+            "session": session_id,
+            "auth_method": "support" if ctx.actor_kind == "support" else found.auth_method,
+            "mfa_at": mfa_at,
+        }
+
     async def _write(self, ctx: TenantContext) -> None:
         # Every row can be followed to its trace (ADR-007; TASK-013).
         trace_id = current_trace_id()
         if self._audit:
+            context = await self._request_context(ctx)
             await self._connection.execute(
                 text(
                     "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
                     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, "
-                    "work_item_id, on_behalf_of_user_id) VALUES (:tenant, :kind, :actor, "
+                    "work_item_id, on_behalf_of_user_id, ip, user_agent_family, device_label, "
+                    "session_id, auth_method, mfa_at) VALUES (:tenant, :kind, :actor, "
                     ":action, :target_type, :target_id, CAST(:before AS jsonb), "
-                    "CAST(:after AS jsonb), :trace_id, :engagement, :work_item, :on_behalf_of)"
+                    "CAST(:after AS jsonb), :trace_id, :engagement, :work_item, :on_behalf_of, "
+                    "CAST(:ip AS inet), :ua_family, :device, :session, :auth_method, :mfa_at)"
                 ),
                 [
                     {
+                        **context,
                         "tenant": ctx.tenant_id,
                         "kind": ctx.actor_kind,
                         "actor": ctx.actor_id,

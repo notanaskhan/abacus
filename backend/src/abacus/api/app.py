@@ -26,6 +26,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from abacus.api.middleware import BodyLimit, TrustedHosts
 from abacus.api.public_routes import PUBLIC_ROUTES
+from abacus.api.request_context import RequestContextCapture
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.controls import ReadOnlyMode
@@ -193,8 +194,10 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None]:
 
 def _add_edge_middleware(app: FastAPI) -> None:
     """Innermost first (the last one added is outermost): proxy headers are corrected for the
-    trusted load balancer, then the Host is checked, then the body is bounded."""
+    trusted load balancer, then the Host is checked, then the body is bounded, then the request's
+    audit context is bound (G-02-T06), from the corrected client address."""
     s = settings()
+    app.add_middleware(RequestContextCapture)
     app.add_middleware(
         BodyLimit,
         upload_bytes=MAX_CONTENT_BYTES,

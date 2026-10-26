@@ -107,6 +107,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Trusted device | A browser a portal user chose to trust after two-step verification ("Trust this device for 30 days", POR-01 c): a `__Host-` cookie bound to the user and the tenant, stored as a hash. Lasts 30 days or fewer by firm policy, never more; revoked when access changes or the second factor is reset. | `trusted_devices` (`token_hash`, `expires_at`, `revoked_at`) | — |
 | MFA backup code | One of 8 single-use codes shown once at two-step setup (POR-01 c′, DF-17), stored hashed and marked used on first use; global to the user like the factor itself (ADR-002). UI "Use a backup code". | `mfa_backup_codes` (`code_hash`, `used_at`) | — |
 | Two-step verification | UI term for portal MFA: a code from an authenticator app after the sign-in code, required for owners, signers and approvers (DEC-34 floor) and for every client user when the firm extends it. | `mfa` (`portal_security_policies`, `register_mfa_requirement`) | — |
+| Security policy | A firm's staff sign-in rules (G-02, ADM-06): Require SSO with its enforcement facts, the IdP-MFA attestation, session and idle limits that may only be shorter than the platform's, the one SSO-exempt account and "Allow support session requests". UI "Security". | `security_policies`, actions `security.read` / `security.manage` | — |
+| SSO-exempt account | The firm's one emergency staff login that may sign in without SSO when the IdP is down; holds a hardware-key factor and records when it was last tested. UI "Break-glass account" on ADM-06; never the support engineer's break-glass session (`support_sessions`, SPEC-012). | `sso_exempt_account` (`security_policies.sso_exempt_user_id`) | `break_glass` (in code, for this) |
 
 ## New terms: organisations
 
@@ -388,6 +390,8 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | TRI | Tax return information. Data-class tag, plus `phi` and `pii_kind`. Gated by `consent_7216`. | `tri` | — |
 | Access event | One read of client data (who, what, for whom), in the insert-only, partitioned read log kept apart from audit events (R-30). | `access_events`, `kernel.access.record_reads` | — |
 | Audit checkpoint | A sealed range of a firm's audit events with its Merkle root and chain hash; an anchor publishes one to the records bucket. | `audit_checkpoints`, `audit_anchors` | — |
+| Audit request context | The IP, user-agent family, device label ("Chrome · macOS"), staff session, sign-in method and MFA time a person's request carried, captured on that request's audit events (G-02-T06, DEC-60). Null for agent and system events. IP and device label are personal data (Confidential). | `audit_events.ip`, `.user_agent_family`, `.device_label`, `.session_id`, `.auth_method`, `.mfa_at`; `kernel.request_context` | — |
+| Audit event label | A rebuildable search projection of one audit event: actor and target labels and keywords, never Restricted text. UI "Audit log" search (ADM-07). | `audit_event_labels` | — |
 
 ## New terms: agents
 

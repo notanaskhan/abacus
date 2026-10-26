@@ -16,6 +16,7 @@ import pytest
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.request_context import RequestContext, bound
 from abacus.kernel.uow import Target, uow
 from abacus.kernel.uow.chain import seal_checkpoint, verify_anchor, verify_chain
 from abacus_tools.quality import schema_check
@@ -24,7 +25,8 @@ from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
 ACTOR = ("system", "chain-probe")
-# Every leaf column (chain.LEAF_V1_COLUMNS), in the order the statements below name them.
+# Every leaf column (chain.LEAF_V2_COLUMNS since G-02-T06, migration 0172), in the order the
+# statements below name them; `ip` travels as its host text.
 _COLUMNS = (
     "id",
     "tenant_id",
@@ -43,17 +45,29 @@ _COLUMNS = (
     "work_item_id",
     "on_behalf_of_user_id",
     "policy_ref",
+    "ip",
+    "user_agent_family",
+    "device_label",
+    "session_id",
+    "auth_method",
+    "mfa_at",
+    "client_id",
+    "office_id",
 )
 _SELECT_EVENTS = (
     "SELECT id, tenant_id, seq, occurred_at, effective_at, actor_kind, actor_id, action, "
     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, work_item_id, "
-    "on_behalf_of_user_id, policy_ref FROM audit_events WHERE tenant_id = $1 ORDER BY seq"
+    "on_behalf_of_user_id, policy_ref, host(ip) AS ip, user_agent_family, device_label, "
+    "session_id, auth_method, mfa_at, client_id, office_id FROM audit_events "
+    "WHERE tenant_id = $1 ORDER BY seq"
 )
 _RESTORE_EVENT = (
     "INSERT INTO audit_events (id, tenant_id, seq, occurred_at, effective_at, actor_kind, "
     "actor_id, action, target_type, target_id, before_ref, after_ref, trace_id, engagement_id, "
-    "work_item_id, on_behalf_of_user_id, policy_ref) OVERRIDING SYSTEM VALUE VALUES ($1, $2, $3, "
-    "$4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)"
+    "work_item_id, on_behalf_of_user_id, policy_ref, ip, user_agent_family, device_label, "
+    "session_id, auth_method, mfa_at, client_id, office_id) OVERRIDING SYSTEM VALUE VALUES ($1, "
+    "$2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, CAST($18 AS inet), "
+    "$19, $20, $21, $22, $23, $24, $25)"
 )
 
 
@@ -196,8 +210,23 @@ async def test_q02t27_a_restored_snapshot_verifies_clean(
 ) -> None:
     tenant = await seed.firm()
     await _sealed(tenant, 3)
+    # G-02-T06: a person's event with its request context, sealed at leaf version 2, so the
+    # restore must carry the new columns for the chain to verify.
+    person = await seed.person(tenant)
+    context = RequestContext(
+        ip="198.51.100.57",
+        user_agent_family="Chrome",
+        device_label="Chrome · macOS",
+        session_id=uuid.uuid4(),
+        auth_method="sso",
+    )
+    with bound(context):
+        async with uow(TenantContext(tenant, "human", str(person.user_id))) as tx:
+            tx.record("chain_probe.recorded", target=Target("chain_probe", uuid.uuid4()))
+    assert await seal_checkpoint(tenant, settle_seconds=0) is not None
     assert await verify_chain(tenant) == []
     events = await seed.rows(_SELECT_EVENTS, tenant)
+    assert any(e["ip"] == "198.51.100.57" for e in events)
     checkpoints = await seed.rows(
         "SELECT * FROM audit_checkpoints WHERE tenant_id = $1 ORDER BY checkpoint_no", tenant
     )

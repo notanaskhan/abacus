@@ -90,6 +90,9 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "actor_kind", "actor_id", "action", "target_type", "target_id"}
         | {"before_ref", "after_ref", "trace_id"}
         | {"engagement_id", "work_item_id", "on_behalf_of_user_id", "policy_ref"}  # Q-02-T16
+        # 0172 (G-02-T06): request context and the explorer's dimensions
+        | {"ip", "user_agent_family", "device_label", "session_id", "auth_method", "mfa_at"}
+        | {"client_id", "office_id"}
     ),
     "outbox": frozenset(
         {"id", "tenant_id", "event_type", "payload", "trace_context"}
@@ -291,6 +294,7 @@ DEFINER_FUNCTIONS = frozenset(
     | {"record_incident_propagation", "incident_propagation_log"}
     # 0144 (P-06-T18, ADR-162): the withdrawal purge's crypto-erase of one version's key.
     | {"evidence_key_destroy"}
+    | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).

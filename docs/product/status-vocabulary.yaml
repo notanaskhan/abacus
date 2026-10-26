@@ -737,6 +737,40 @@ objects:
       releasing: {label: "Releasing", variant: state, terminal: false, derived: false}   # lifted; S3 holds coming off where no other hold covers the object
       released:  {label: "Released", variant: muted, terminal: true, derived: false}
 
+  # ---- Firm governance v1 (G-02-T02; DF-31; SPEC-349). Pills are set by the screen contracts
+  # (G-02-T03), so every variant is null here; none is invented. ----
+  ai_policy_version:
+    source: "DF-31; G-02 section 0.1 (ADM-04 a, d, g, j; ADR-186)"
+    codes:
+      draft:             {label: "Draft", variant: null, terminal: false, derived: false}   # the firm's one editable draft
+      awaiting_approval: {label: "Awaiting approval", variant: null, terminal: false, derived: false}   # "Awaiting approval · {name}" on ADM-04
+      published:         {label: "Published", variant: null, terminal: false, derived: false}
+      declined:          {label: "Declined", variant: null, terminal: true, derived: false}
+      withdrawn:         {label: "Withdrawn", variant: null, terminal: true, derived: false}
+      superseded:        {label: "Superseded", variant: null, terminal: true, derived: true}   # a later published version is effective; never stored
+
+  security_incident:
+    source: "DF-31 incident; G-02 section 3.7 (ADM-06 a, d)"
+    codes:
+      investigating: {label: "Investigating", variant: null, terminal: false, derived: false}
+      closed:        {label: "Closed", variant: null, terminal: true, derived: false}
+
+  firm_export:
+    source: "DF-31 export; G-02 section 3.8 (ADM-06 c, f, g); codes of Q-02's firm-export contract"
+    codes:
+      awaiting_approval: {label: "Waiting for approval", variant: null, terminal: false, derived: false}   # "Waiting for approval · {name}"
+      ready:             {label: "Ready", variant: null, terminal: false, derived: false}
+      downloaded:        {label: "Downloaded", variant: null, terminal: false, derived: false}
+      expired:           {label: "Expired", variant: null, terminal: true, derived: false}
+
+  support_session:
+    source: "DF-31 support session; G-02 section 3.9 (ADM-06 support card); codes of support_sessions (SPEC-012)"
+    codes:
+      requested: {label: "Awaiting firm approval", variant: null, terminal: false, derived: false}
+      active:    {label: "Granted until {time}", variant: null, terminal: false, derived: false}
+      declined:  {label: "Declined", variant: null, terminal: true, derived: false}   # stored from G-02-T14 (DEC-72)
+      revoked:   {label: "Revoked", variant: null, terminal: true, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

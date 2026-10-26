@@ -45,6 +45,14 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("contact.unlock", "portal_access", "firm_admin"),
     ("contact.mfa_reset", "portal_access", "security_admin"),
     ("security_role.assign", "access_control", "firm_admin"),
+    ("incident.decide", "incident", "security_admin"),
+    ("ai_policy.publish", "ai_policy", "quality_partner"),
+    ("ai_policy.approve", "ai_policy", "firm_partner"),
+    ("audit_event.export", "export", "security_admin"),
+    ("firm_export.schedule", "export", "security_admin"),
+    ("security.manage", "access_control", "security_admin"),
+    ("session.end", "access_control", "security_admin"),
+    ("staff.unlock", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (
@@ -57,6 +65,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/members", "wall.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
+    ("POST", "/v1/audit-events/exports", "audit_event.export"),
+    ("POST", "/v1/audit-events/exports/{export_id}/link", "audit_event.export"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),

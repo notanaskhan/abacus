@@ -3110,6 +3110,74 @@
         "title": "AttestBody",
         "type": "object"
       },
+      "AuditActorOut": {
+        "description": "The actor grammar's facts (INV-5): `person` and `support` name `person`; `via_agent` names\n`on_behalf_of` (and the agent by id only); `policy` names `policy_ref`; `system` names\nnothing.",
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Id"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "person",
+              "via_agent",
+              "policy",
+              "system",
+              "support"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "on_behalf_of": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "person": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "policy_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Policy Ref"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "AuditActorOut",
+        "type": "object"
+      },
       "AuditArchiveOut": {
         "description": "The Archive cell: \"Archive in 13 days\" (clock from the release date + 60, on `kernel.clock`)\nor \"Archived\" with the firm-tool reference of an external archive (DV-4).",
         "properties": {
@@ -3151,6 +3219,42 @@
           "state"
         ],
         "title": "AuditArchiveOut",
+        "type": "object"
+      },
+      "AuditAuthorityOut": {
+        "description": "Why the actor could do it: a code and identifier facts (\"within BH AJE thresholds v2,\napproval limit Senior\"), composed by the SPA.",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Facts",
+            "type": "object"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "AuditAuthorityOut",
         "type": "object"
       },
       "AuditBandOut": {
@@ -3347,6 +3451,714 @@
         ],
         "title": "AuditEngagementStatus",
         "type": "string"
+      },
+      "AuditEventDetail": {
+        "description": "The O2 480 drawer (ADM-07 c): the row plus authority, time to the second, request\ncontext, content hash, values and source. The footer reads \"Immutable. Corrections are new\nevents.\".",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/AuditActorOut",
+            "cls": "internal"
+          },
+          "authority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditAuthorityOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "category": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "change",
+              "access",
+              "run",
+              "sign_in",
+              "communication",
+              "export"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "content_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "detail_facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Detail Facts",
+            "type": "object"
+          },
+          "device_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Device Label"
+          },
+          "effective_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Effective At",
+            "type": "string"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ip"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
+          },
+          "link_kind": {
+            "cls": "internal",
+            "default": "none",
+            "enum": [
+              "run",
+              "none"
+            ],
+            "title": "Link Kind",
+            "type": "string"
+          },
+          "mark": {
+            "cls": "internal",
+            "enum": [
+              "ok",
+              "no",
+              "pl"
+            ],
+            "title": "Mark",
+            "type": "string"
+          },
+          "occurred_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Id"
+          },
+          "seq": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditSessionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditSourceOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "target": {
+            "$ref": "#/components/schemas/AuditTargetOut",
+            "cls": "internal"
+          },
+          "user_agent_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "User Agent Family"
+          },
+          "values": {
+            "$ref": "#/components/schemas/AuditValuesOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "seq",
+          "effective_at",
+          "action",
+          "category",
+          "mark",
+          "actor",
+          "target",
+          "occurred_at",
+          "content_hash",
+          "values"
+        ],
+        "title": "AuditEventDetail",
+        "type": "object"
+      },
+      "AuditEventPageOut": {
+        "description": "The P-36 envelope. `counts` holds `all`, `person`, `via_agent`, `policy` and `system`\nover the other filters (capped like `total`); walled events are in none of them.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AuditEventPageOut",
+        "type": "object"
+      },
+      "AuditEventRow": {
+        "description": "One row of the feed (ADM-07 a, b): newest first, its own date over its time.",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/AuditActorOut",
+            "cls": "internal"
+          },
+          "category": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "change",
+              "access",
+              "run",
+              "sign_in",
+              "communication",
+              "export"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "detail_facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Detail Facts",
+            "type": "object"
+          },
+          "effective_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Effective At",
+            "type": "string"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ip"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
+          },
+          "link_kind": {
+            "cls": "internal",
+            "default": "none",
+            "enum": [
+              "run",
+              "none"
+            ],
+            "title": "Link Kind",
+            "type": "string"
+          },
+          "mark": {
+            "cls": "internal",
+            "enum": [
+              "ok",
+              "no",
+              "pl"
+            ],
+            "title": "Mark",
+            "type": "string"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Id"
+          },
+          "seq": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "target": {
+            "$ref": "#/components/schemas/AuditTargetOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "seq",
+          "effective_at",
+          "action",
+          "category",
+          "mark",
+          "actor",
+          "target"
+        ],
+        "title": "AuditEventRow",
+        "type": "object"
+      },
+      "AuditExport": {
+        "description": "An export job (ADM-07 e, g): CSV plus `manifest.json` and `manifest.sig` (format\n`accrued.audit-log-export` v1).",
+        "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expires At"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "File Name"
+          },
+          "filter": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Filter",
+            "type": "object"
+          },
+          "from_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "From Date",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "include_values": {
+            "cls": "internal",
+            "title": "Include Values",
+            "type": "boolean"
+          },
+          "manifest_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Manifest Sha256"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by": {
+            "$ref": "#/components/schemas/AuditPersonOut",
+            "cls": "internal"
+          },
+          "row_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Row Count"
+          },
+          "seq_from": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seq From"
+          },
+          "seq_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seq To"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "requested",
+              "building",
+              "ready",
+              "downloaded",
+              "expired",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "to_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "To Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "from_date",
+          "to_date",
+          "include_values",
+          "requested_by",
+          "requested_at"
+        ],
+        "title": "AuditExport",
+        "type": "object"
+      },
+      "AuditExportFilterIn": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Action"
+          },
+          "actor_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "person",
+                  "via_agent",
+                  "policy",
+                  "system",
+                  "support"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Actor Kind"
+          },
+          "object_type": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Object Type"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          }
+        },
+        "title": "AuditExportFilterIn",
+        "type": "object"
+      },
+      "AuditExportLinkOut": {
+        "description": "A 15-minute presigned link; Restricted (it opens the firm's log) and never logged.",
+        "properties": {
+          "expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "url": {
+            "cls": "restricted",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "expires_at",
+          "manifest_sha256"
+        ],
+        "title": "AuditExportLinkOut",
+        "type": "object"
+      },
+      "AuditExportRequestIn": {
+        "additionalProperties": false,
+        "description": "ADM-07 e: a date range in the firm's time zone, at most 92 days (422 otherwise).",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/AuditExportFilterIn",
+            "cls": "internal",
+            "default": {}
+          },
+          "from_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "From Date",
+            "type": "string"
+          },
+          "include_values": {
+            "cls": "internal",
+            "default": false,
+            "title": "Include Values",
+            "type": "boolean"
+          },
+          "to_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "To Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_date",
+          "to_date"
+        ],
+        "title": "AuditExportRequestIn",
+        "type": "object"
       },
       "AuditIndexPage": {
         "description": "The P-36 envelope: `counts` per `audit_engagement` phase code **minus the active tile**\n(the tiles keep their own counts when one is pressed); `facets.segment` the segments with\ntheir counts (only registered segments the firm is entitled to); `facets.type`, `partner`,\n`office`, `period`. The tiles sum to `total`. No hidden-by-wall field.",
@@ -3825,6 +4637,53 @@
         "title": "AuditPbcOut",
         "type": "object"
       },
+      "AuditPersonOut": {
+        "description": "A person named on an event; the id links to the ADM-02 user drawer.",
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Level"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name"
+        ],
+        "title": "AuditPersonOut",
+        "type": "object"
+      },
       "AuditPhaseIn": {
         "additionalProperties": false,
         "description": "A record-mode forward move by a named person (409 `phase_backward`, `phase_skip`,\n`phase_follows_gate`).",
@@ -4224,6 +5083,235 @@
         ],
         "title": "AuditSectionStatus",
         "type": "string"
+      },
+      "AuditSessionOut": {
+        "description": "The drawer's Session line (\"SSO \u00b7 MFA 9:01 AM\").",
+        "properties": {
+          "auth_method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sso",
+                  "email_code",
+                  "passkey",
+                  "totp",
+                  "support",
+                  "service"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Auth Method"
+          },
+          "mfa_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mfa At"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Session Id"
+          }
+        },
+        "title": "AuditSessionOut",
+        "type": "object"
+      },
+      "AuditSourceOut": {
+        "description": "The run behind an event (\"Proposed by Raj Malhotra via Agent \u00b7 Close run 2 \u00b7 started 9:06\nAM\"); `run_id` links to WB-09, a planned link until P-09.",
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Id"
+          },
+          "initiator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run No"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Started At"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "AuditSourceOut",
+        "type": "object"
+      },
+      "AuditTargetOut": {
+        "description": "The object chip: type and id always; a label when its owner's labeler names it.",
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "id": {
+            "cls": "internal",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "AuditTargetOut",
+        "type": "object"
+      },
+      "AuditValuesOut": {
+        "description": "`resolved` with rows; `withheld` with a reason (\"Values are visible to partners in\nscope.\"); `unavailable` when the owner cannot resolve them (\"Values not available\").",
+        "properties": {
+          "not_included": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/NotIncludedRow"
+            },
+            "title": "Not Included",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "need_to_know",
+                  "walled",
+                  "not_enabled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ValueRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "resolved",
+              "withheld",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "AuditValuesOut",
+        "type": "object"
       },
       "AuthRedirectOut": {
         "description": "What the sign-in routes answer: a redirect. The browser follows `Location`.",
@@ -29943,6 +31031,51 @@
         "title": "NextSendOut",
         "type": "object"
       },
+      "NotIncludedRow": {
+        "description": "An item left out of the change (\"Accrued expenses 14,900.00 \u00b7 Review required \u2192 Priya\nRaman\").",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+\\.\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "item_label": {
+            "cls": "confidential",
+            "title": "Item Label",
+            "type": "string"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "routed_to": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "item_label",
+          "reason_code"
+        ],
+        "title": "NotIncludedRow",
+        "type": "object"
+      },
       "NoteAnchorIn": {
         "additionalProperties": false,
         "properties": {
@@ -48520,6 +49653,70 @@
         "title": "ValidationErrorOut",
         "type": "object"
       },
+      "ValueRow": {
+        "description": "One changed item, as the viewer may see it. A Restricted value is only ever masked\n(`\u2022\u2022\u2022-\u2022\u2022-2208`, `masked: true`). Amounts are decimal strings, never floats.",
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "After"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+\\.\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Before"
+          },
+          "field": {
+            "cls": "internal",
+            "title": "Field",
+            "type": "string"
+          },
+          "item_label": {
+            "cls": "confidential",
+            "title": "Item Label",
+            "type": "string"
+          },
+          "masked": {
+            "cls": "internal",
+            "default": false,
+            "title": "Masked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "item_label",
+          "field"
+        ],
+        "title": "ValueRow",
+        "type": "object"
+      },
       "VersionBody": {
         "additionalProperties": false,
         "properties": {
@@ -51338,6 +52535,821 @@
           "agents"
         ],
         "x-abacus-action": "agent_run.read"
+      }
+    },
+    "/v1/audit-events": {
+      "get": {
+        "description": "ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on\n`effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's\n(DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).",
+        "operationId": "list_audit_events",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor_kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "person",
+                    "via_agent",
+                    "policy",
+                    "system",
+                    "support"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "object_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Object Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ip",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "ipv4",
+                  "type": "string"
+                },
+                {
+                  "format": "ipv6",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ip"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since_seq",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since Seq"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 1024,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Audit Events Route",
+        "tags": [
+          "audit log"
+        ],
+        "x-abacus-action": "audit_event.read"
+      }
+    },
+    "/v1/audit-events/exports": {
+      "post": {
+        "description": "ADM-07 e: one person with a fresh second factor (DEC-415 Q8); 202 `requested`. Audited\n`audit_export.requested`; values only as the requester may see them on screen.",
+        "operationId": "request_audit_export",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditExportRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditExport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Request Audit Export Route",
+        "tags": [
+          "audit log"
+        ],
+        "x-abacus-action": "audit_event.export"
+      }
+    },
+    "/v1/audit-events/exports/{export_id}": {
+      "get": {
+        "description": "ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh\nsecond factor (L5); the request and the link do.",
+        "operationId": "audit_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditExport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Export Route",
+        "tags": [
+          "audit log"
+        ],
+        "x-abacus-action": "audit_export.read"
+      }
+    },
+    "/v1/audit-events/exports/{export_id}/link": {
+      "post": {
+        "description": "ADM-07 g: a 15-minute link for the requester while `ready` or `downloaded` (409\n`export_not_ready` before), 410 `export_expired` after 7 days. Audited\n`audit_export.downloaded`.",
+        "operationId": "link_audit_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditExportLinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gone: the code, link or window expired or was used"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Link Audit Export Route",
+        "tags": [
+          "audit log"
+        ],
+        "x-abacus-action": "audit_event.export"
+      }
+    },
+    "/v1/audit-events/{seq}": {
+      "get": {
+        "description": "ADM-07 c: one event; a walled or invisible one answers 404 (DEC-43).",
+        "operationId": "audit_event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seq",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Seq",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Event Route",
+        "tags": [
+          "audit log"
+        ],
+        "x-abacus-action": "audit_event.read"
       }
     },
     "/v1/audits": {

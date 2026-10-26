@@ -1,9 +1,12 @@
 """The audit hash chain (Q-02-T21; AC-26; P-43). PROTECTED.
 
 Each firm's audit events are sealed in checkpoints:
-- `leaf` hashes one event's canonical form. Leaf version 1 covers every `audit_events` column,
-  `occurred_at` and `effective_at` included, as sorted-key JSON. Timestamps are ISO 8601 in UTC
-  with microseconds.
+- `leaf` hashes one event's canonical form. Leaf version 1 covers every `audit_events` column
+  of Q-02, `occurred_at` and `effective_at` included, as sorted-key JSON. Timestamps are ISO 8601
+  in UTC with microseconds. Leaf version 2 (G-02-T06, migration 0172) adds the request context
+  and the explorer's dimensions; `ip` is read as `host(ip)`, the address with no mask (0172 holds
+  every `ip` to one host), and an address object canonicalises to the same text. New
+  checkpoints seal at version 2; a version 1 checkpoint keeps verifying with version 1's columns.
 - `merkle_root` folds a checkpoint's leaves pairwise, carrying an odd last leaf up a level.
 - `chain_hash` is SHA-256(previous chain hash ‖ root ‖ seq_from ‖ seq_to ‖ count). The first
   checkpoint chains from 32 zero bytes.
@@ -15,8 +18,8 @@ match (a changed, removed or added event, or a broken link). `verify_anchor` che
 (checkpoint, chain hash) pair against the recomputed chain.
 
 Checkpoints are an operational ledger the chain itself proves, written without an audit event,
-as `kernel/slots.py` is. A test fails if `audit_events` gains a column that `LEAF_V1_COLUMNS`
-doesn't list: the canonical form must then move to leaf version 2 (Q-02 R7).
+as `kernel/slots.py` is. A test fails if `audit_events` gains a column that the current leaf
+version doesn't list: the canonical form must then move to the next version (Q-02 R7).
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from ipaddress import IPv4Address, IPv4Interface, IPv6Address, IPv6Interface
 from typing import Any, Final, cast
 from uuid import UUID
 
@@ -35,7 +39,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from abacus.kernel.db import TenantContext, tenant_connection
 from abacus.kernel.metrics import meter
 
-LEAF_VERSION: Final = 1
+LEAF_VERSION: Final = 2
 LEAF_V1_COLUMNS: Final = (
     "id",
     "tenant_id",
@@ -55,6 +59,18 @@ LEAF_V1_COLUMNS: Final = (
     "on_behalf_of_user_id",
     "policy_ref",
 )
+LEAF_V2_COLUMNS: Final = (
+    *LEAF_V1_COLUMNS,
+    "ip",
+    "user_agent_family",
+    "device_label",
+    "session_id",
+    "auth_method",
+    "mfa_at",
+    "client_id",
+    "office_id",
+)
+LEAF_COLUMNS: Final[dict[int, tuple[str, ...]]] = {1: LEAF_V1_COLUMNS, 2: LEAF_V2_COLUMNS}
 SETTLE_SECONDS: Final = 120
 MAX_EVENTS: Final = 50_000  # per checkpoint; a backlog seals over several runs
 _GENESIS: Final = bytes(32)
@@ -66,7 +82,9 @@ _mismatches = meter(__name__).create_counter(
 def _canonical(value: object) -> object:
     if isinstance(value, datetime):
         return value.astimezone(UTC).isoformat(timespec="microseconds")
-    if isinstance(value, UUID):
+    if isinstance(value, IPv4Interface | IPv6Interface):
+        return str(value.ip)  # an `inet` read without `host()`: the address, never "/32"
+    if isinstance(value, UUID | IPv4Address | IPv6Address):
         return str(value)
     if isinstance(value, str) and value.startswith(("{", "[")):
         try:
@@ -76,8 +94,9 @@ def _canonical(value: object) -> object:
     return value
 
 
-def leaf(row: Mapping[str, object]) -> bytes:
-    body = {column: _canonical(row.get(column)) for column in LEAF_V1_COLUMNS}
+def leaf(row: Mapping[str, object], version: int = 1) -> bytes:
+    """The event's leaf at `version` (1 unless a checkpoint says otherwise)."""
+    body = {column: _canonical(row.get(column)) for column in LEAF_COLUMNS[version]}
     encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(encoded.encode()).digest()
 
@@ -128,14 +147,16 @@ _ALL = text(
 _NEW_EVENTS = text(
     "SELECT id, tenant_id, seq, occurred_at, effective_at, actor_kind, actor_id, action, "
     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, work_item_id, "
-    "on_behalf_of_user_id, policy_ref FROM audit_events "
+    "on_behalf_of_user_id, policy_ref, host(ip) AS ip, user_agent_family, device_label, "
+    "session_id, auth_method, mfa_at, client_id, office_id FROM audit_events "
     "WHERE seq > :after AND occurred_at <= clock_timestamp() - make_interval(secs => :settle) "
     "ORDER BY seq LIMIT :limit"
 )
 _RANGE = text(
     "SELECT id, tenant_id, seq, occurred_at, effective_at, actor_kind, actor_id, action, "
     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, work_item_id, "
-    "on_behalf_of_user_id, policy_ref FROM audit_events "
+    "on_behalf_of_user_id, policy_ref, host(ip) AS ip, user_agent_family, device_label, "
+    "session_id, auth_method, mfa_at, client_id, office_id FROM audit_events "
     "WHERE seq BETWEEN :lo AND :hi ORDER BY seq"
 )
 _SEAL = text(
@@ -196,7 +217,7 @@ async def seal_checkpoint(
         )
         if not rows:
             return None
-        root = merkle_root([leaf(r) for r in rows])
+        root = merkle_root([leaf(r, LEAF_VERSION) for r in rows])
         lo, hi = int(str(rows[0]["seq"])), int(str(rows[-1]["seq"]))
         previous = last.chain_hash if last is not None else None
         sealed = Checkpoint(
@@ -237,13 +258,13 @@ async def verify_chain(tenant_id: UUID) -> list[int]:
             rows = _rows(await conn.execute(_RANGE, {"lo": c.seq_from, "hi": c.seq_to}))
             expected_prev = previous.chain_hash if previous is not None else None
             ok = (
-                c.leaf_version == LEAF_VERSION
+                c.leaf_version in LEAF_COLUMNS
                 and len(rows) == c.event_count
                 and c.prev_chain_hash == expected_prev
                 and (previous is None or c.seq_from > previous.seq_to)
             )
             if ok:
-                root = merkle_root([leaf(r) for r in rows])
+                root = merkle_root([leaf(r, c.leaf_version) for r in rows])
                 ok = root == c.merkle_root and c.chain_hash == chain_hash(
                     expected_prev, root, c.seq_from, c.seq_to, c.event_count
                 )
@@ -270,7 +291,9 @@ async def verify_anchor(tenant_id: UUID, checkpoint_no: int, anchored: bytes) ->
 
 
 __all__ = [
+    "LEAF_COLUMNS",
     "LEAF_V1_COLUMNS",
+    "LEAF_V2_COLUMNS",
     "LEAF_VERSION",
     "SETTLE_SECONDS",
     "Checkpoint",

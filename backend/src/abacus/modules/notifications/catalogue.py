@@ -314,6 +314,18 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("seasonal_access_ending", "system", "UserMinus"),  # G-01-T13
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
+    # G-02-T02 (G-02 section 4.8): firm governance v1. Email text is database rows (C16), loaded
+    # as content (G-02-T07); their owners add facts and pending resolvers with their tasks.
+    NotificationKind(
+        "ai_policy_approval_requested", "approval", "ShieldCheck", email_default=True
+    ),
+    NotificationKind("ai_policy_published", "system", "ShieldCheck"),
+    NotificationKind("incident_decision_requested", "approval", "ShieldAlert", email_default=True),
+    NotificationKind(
+        "incident_deadline_approaching", "deadline", "ShieldAlert", email_default=True
+    ),
+    NotificationKind("audit_export_ready", "system", "Download"),
+    NotificationKind("security_policy_changed", "system", "Lock"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

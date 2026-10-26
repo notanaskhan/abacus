@@ -56,3 +56,23 @@ actions:
   # --- Follow-ups ---
   follow_up.draft:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: task_scope}   # P-06-T14: + client_service (Grace drafts BND-01 b reminders); a draft is not client data (SPEC-027 AC-8), the send is
   follow_up.send:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, independence: required}   # P-06-T14 (DEC-74): a person sends, Undo and dismiss too; the agent only drafts; as request_item.send
+  # --- Firm governance v1, the AI policy (G-02-T02; ADR-186, SPEC-349 §9) ---
+  ai_policy.read:
+    firm_admin: allow
+    practice_leader: allow
+    quality_partner: allow
+    security_admin: allow
+    firm_partner: allow
+    engagement_partner: allow
+    manager: allow
+    senior: allow
+    staff: allow
+    reviewer: allow
+    eqr_reviewer: allow
+    specialist: allow
+    client_service: allow
+    agent: deny
+    system: deny
+  ai_policy.draft:          {quality_partner: allow, security_admin: allow, agent: deny, system: deny}   # security_admin: the client_data section only (service, ADR-186 item 4)
+  ai_policy.publish:        {quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # request publication of a version; withdraw it
+  ai_policy.approve:        {firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # a partner other than the requester (409 approver_must_differ, ADR-186)
