@@ -1373,7 +1373,6 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "practice_leader": "allow",
         "quality_partner": "allow",
-        "firm_partner": "allow",
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",

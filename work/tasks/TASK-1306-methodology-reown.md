@@ -38,3 +38,4 @@ published (`legacy_import`).
 ## Progress log
 - 2026-10-26: built; import-linter and banned patterns clean; tests in the end-of-batch pass.
 - 2026-10-26: targeted pass green (contracts, backfill, migration up/down/up with the schema check, unit, security); gates clean. The schema check needed the five tables' insert columns in the methodology registry (moved from engagements, plus 0180's new ones).
+- 2026-10-26: security review M2: approver columns bound to the transaction actor by trigger; event `actor_user_id` by CHECK; `updated_at` out of the app's update grant.

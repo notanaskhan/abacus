@@ -26,9 +26,10 @@ two contract documents; the generated client.
   `methodology_import`, `knowledge_item`, `parse_flag`.
 - Contracts `docs/contracts/knowledge-catalog.md`, `methodology-programs.md`, register rows;
   `make regenerate`, `make generate`.
-- Tests `tests/contracts/knowledge/test_k01_stubs.py`.
+- Tests `tests/contracts/k01_knowledge/test_k01_stubs.py`.
 - Rollback: revert; every flag stays off.
 
 ## Progress log
 - 2026-10-26: built with K-01-T02 on one branch; tests run in the end-of-batch targeted pass.
 - 2026-10-26: targeted pass green (tests/contracts/knowledge); gates clean.
+- 2026-10-26: security review: `firm_partner` held out of `methodology.manage` (M1); stubs authorise their action before the flag (L).

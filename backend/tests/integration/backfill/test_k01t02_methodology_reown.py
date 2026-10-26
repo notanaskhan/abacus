@@ -130,3 +130,30 @@ async def test_ac_the_versions_and_their_events_stay_insert_only(net: Net, state
     with pytest.raises(DBAPIError, match=r"permission denied|insert-only"):
         async with tenant_session(me) as session:
             await session.execute(text(statement))
+
+
+async def test_who_approved_is_the_transaction_actor_never_an_attested_column(net: Net) -> None:
+    """Security review M2 (ADR-005): an agent cannot write `approved_actor_kind = 'human'`, and a
+    person cannot name someone else as the approver; a person names themself."""
+    seed = net.seed
+    tenant = await seed.firm()
+    admin = await seed.person(tenant, "firm_admin")
+    other = await seed.person(tenant, "quality_partner")
+    version = await _import(net, admin, f"Probe {uuid.uuid4().hex[:6]}", "Bank statements")
+    approve = (
+        "UPDATE methodology_version_states SET approved_by = :who, approved_actor_kind = 'human', "
+        "approved_at = now(), approval_basis = 'approved' WHERE version_id = :version"
+    )
+    agent = TenantContext(tenant, "agent", "agent:requests.guidance_drafter:run", admin.user_id)
+    person = TenantContext(tenant, "human", str(admin.user_id))
+    for ctx, who in ((agent, admin.user_id), (person, other.user_id)):
+        with pytest.raises(DBAPIError, match=r"approved by the person acting"):
+            async with tenant_session(ctx) as session:
+                await session.execute(text(approve), {"who": who, "version": version})
+    async with tenant_session(person) as session:  # naming oneself is allowed
+        await session.execute(text(approve), {"who": admin.user_id, "version": version})
+        found = await session.scalar(
+            text("SELECT approved_by FROM methodology_version_states WHERE version_id = :v"),
+            {"v": version},
+        )
+        assert found == admin.user_id

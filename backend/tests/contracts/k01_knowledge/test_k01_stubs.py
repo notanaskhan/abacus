@@ -24,7 +24,7 @@ from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.methodology import contract
 
@@ -149,6 +149,12 @@ async def test_k01t01_client_404_flag_off_404_flag_on_501(
 
         return flag_enabled
 
+    asked: list[str] = []
+
+    async def authorise(_ctx: object, action: str, _resource: object) -> None:
+        asked.append(action)
+
+    monkeypatch.setattr(contract, "authorise", authorise)
     params = inspect.signature(endpoint).parameters
     monkeypatch.setattr(contract, "flag_enabled", flags(True))
     with pytest.raises(NotFound):
@@ -158,9 +164,29 @@ async def test_k01t01_client_404_flag_off_404_flag_on_501(
     with pytest.raises(NotFound):
         await endpoint(**{n: (_ctx() if n == "ctx" else None) for n in params})
     assert seen == [flag]
+    assert asked == [ROUTES[next(k for k in ROUTES if k[1] == path and ROUTES[k][1] == flag)][0]]
     monkeypatch.setattr(contract, "flag_enabled", flags(True))
     with pytest.raises(NotImplementedYet):
         await endpoint(**{n: (_ctx() if n == "ctx" else None) for n in params})
+
+
+async def test_k01t01_a_refused_principal_is_403_before_the_flag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[Flag] = []
+
+    async def flag_enabled(_tenant: object, asked: Flag) -> bool:
+        seen.append(asked)
+        return True
+
+    async def authorise(_ctx: object, action: str, _resource: object) -> None:
+        raise Forbidden(action, "role")
+
+    monkeypatch.setattr(contract, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(contract, "authorise", authorise)
+    with pytest.raises(Forbidden):
+        await contract.knowledge_items_route(_ctx())
+    assert seen == []
 
 
 def test_inv1_approving_and_locking_are_a_persons_acts_with_a_fresh_factor() -> None:

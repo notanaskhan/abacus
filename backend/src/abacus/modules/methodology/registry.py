@@ -63,6 +63,6 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "methodology_version_states": frozenset(
         {"status", "effective_from", "effective_to", "approved_by", "approved_at"}
         | {"approved_actor_kind", "approval_basis", "standards_set_id", "quality_management_ref"}
-        | {"engagement_types", "default_for_new_engagements", "row_version", "updated_at"}
+        | {"engagement_types", "default_for_new_engagements", "row_version"}
     ),
 }

@@ -56,7 +56,7 @@ Brightwater Hale (synthetic). `GET /v1/knowledge/items?category=methodology`:
 ```
 
 ## 9. Consumer contract tests
-`backend/tests/contracts/knowledge/test_k01_stubs.py`: routes, actions, flag gates, client 404, classification.
+`backend/tests/contracts/k01_knowledge/test_k01_stubs.py`: routes, actions, flag gates, client 404, classification.
 
 ## 10. Versioning
 | Version | Frozen on | Overlap ends | Notes |

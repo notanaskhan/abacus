@@ -53,8 +53,33 @@ _STATE_UPDATES = (
     "engagement_types",
     "default_for_new_engagements",
     "row_version",
-    "updated_at",
 )
+
+
+_APPROVER = """
+    CREATE FUNCTION methodology_version_states_approver() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    BEGIN
+        IF TG_OP = 'UPDATE' THEN
+            NEW.updated_at := abacus_now();
+        END IF;
+        IF (TG_OP = 'INSERT' AND (NEW.approved_by IS NOT NULL
+                                  OR NEW.approved_actor_kind IS NOT NULL))
+           OR (TG_OP = 'UPDATE' AND (NEW.approved_by IS DISTINCT FROM OLD.approved_by
+                                     OR NEW.approved_actor_kind
+                                        IS DISTINCT FROM OLD.approved_actor_kind)) THEN
+            IF NEW.approved_actor_kind IS DISTINCT FROM current_setting('app.actor_kind', true)
+               OR NEW.approved_by::text IS DISTINCT FROM current_setting('app.actor_id', true)
+            THEN
+                RAISE EXCEPTION 'a version is approved by the person acting, as themself'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+        END IF;
+        RETURN NEW;
+    END $$
+"""
 
 
 def upgrade() -> None:
@@ -164,7 +189,10 @@ def upgrade() -> None:
             on_behalf_of_user_id uuid NULL,
             at timestamptz NOT NULL DEFAULT abacus_now(),
             facts jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(facts) = 'object'),
-            FOREIGN KEY (tenant_id, version_id) REFERENCES methodology_versions (tenant_id, id)
+            FOREIGN KEY (tenant_id, version_id) REFERENCES methodology_versions (tenant_id, id),
+            CONSTRAINT methodology_version_events_own_actor CHECK (
+                actor_user_id IS NULL
+                OR actor_user_id::text = current_setting('app.actor_id', true))
         )
         """
     )
@@ -195,12 +223,19 @@ def upgrade() -> None:
     for table in _LEGACY:
         op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
 
+    # Who approved is the transaction's actor, never a column the app attests (ADR-005).
+    op.execute(_APPROVER)
+    op.execute(
+        "CREATE TRIGGER methodology_version_states_approver BEFORE INSERT OR UPDATE "
+        "ON methodology_version_states FOR EACH ROW "
+        "EXECUTE FUNCTION methodology_version_states_approver()"
+    )
     tenant_table(op, "methodology_version_states")
     op.execute("REVOKE UPDATE, DELETE ON methodology_version_states FROM abacus_app")
     insert_columns(
         op,
         "methodology_version_states",
-        ("tenant_id", "version_id", "template_id", *_STATE_UPDATES[:-1]),
+        ("tenant_id", "version_id", "template_id", *_STATE_UPDATES),
     )
     op.execute(
         f"GRANT UPDATE ({', '.join(_STATE_UPDATES)}) ON methodology_version_states TO abacus_app"
@@ -234,6 +269,7 @@ def downgrade() -> None:
     op.execute("DROP TABLE methodology_version_events")
     op.execute("DROP FUNCTION methodology_version_events_immutable()")
     op.execute("DROP TABLE methodology_version_states")
+    op.execute("DROP FUNCTION methodology_version_states_approver()")
     op.execute("ALTER TABLE engagements DROP CONSTRAINT engagements_standards_set_fkey")
     op.execute("DROP TABLE standards_sets")
     op.execute(

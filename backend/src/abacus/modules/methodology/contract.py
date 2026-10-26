@@ -40,7 +40,13 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 # KNW-01's categories; each is a registered catalog provider's (K-01-T03: methodology versions
@@ -77,11 +83,13 @@ ContentHash = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 StepKey = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9_.-]{0,79}$")]
 
 
-async def _stub(ctx: AuthContext, flag: Flag) -> NoReturn:
-    """A client principal never reaches knowledge (INV-4): 404. Then the route's flag, then 501;
-    the live routes authorise their action on the firm."""
+async def _stub(ctx: AuthContext, flag: Flag, action: str) -> NoReturn:
+    """A client principal never reaches knowledge (INV-4): 404. Then the route's action at the
+    firm (the agent, the system and anyone else refused: 403, before the flag is read), then the
+    flag, then 501."""
     if ctx.client:
         raise NotFound("knowledge")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
     raise NotImplementedYet
@@ -176,7 +184,7 @@ async def knowledge_items_route(
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[KnowledgeItemOut]:
     """KNW-01: catalog cards with category and status facets and match ranges."""
-    await _stub(ctx, KNOWLEDGE_CATALOG)
+    await _stub(ctx, KNOWLEDGE_CATALOG, "knowledge.read")
 
 
 @knowledge_router.get(
@@ -187,7 +195,7 @@ async def knowledge_items_route(
 )
 async def knowledge_review_queue_route(ctx: Ctx) -> ListPage[ReviewQueueItemOut]:
     """KNW-01: versions awaiting the viewer's approval, or the viewer's own drafts."""
-    await _stub(ctx, KNOWLEDGE_CATALOG)
+    await _stub(ctx, KNOWLEDGE_CATALOG, "knowledge.read")
 
 
 @knowledge_router.get(
@@ -202,7 +210,7 @@ async def knowledge_change_log_route(
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[ChangeLogEntryOut]:
     """KNW-01: lifecycle events across providers (methodology version events first)."""
-    await _stub(ctx, KNOWLEDGE_CATALOG)
+    await _stub(ctx, KNOWLEDGE_CATALOG, "knowledge.read")
 
 
 # --- Methodology lifecycle (KNW-02 e, f) --------------------------------------------------------
@@ -263,7 +271,7 @@ async def submit_version_route(
     version_id: VersionId, body: SubmitVersionIn, ctx: Ctx
 ) -> VersionStateOut:
     """KNW-02: Draft to Needs review."""
-    await _stub(ctx, METHODOLOGY_LIFECYCLE)
+    await _stub(ctx, METHODOLOGY_LIFECYCLE, "methodology.manage")
 
 
 @methodology_lifecycle_router.post(
@@ -276,7 +284,7 @@ async def approve_version_route(
     version_id: VersionId, body: ApproveVersionIn, ctx: Ctx
 ) -> VersionStateOut:
     """KNW-02 e: a quality partner approves with an effective date (human-only, fresh MFA)."""
-    await _stub(ctx, METHODOLOGY_LIFECYCLE)
+    await _stub(ctx, METHODOLOGY_LIFECYCLE, "methodology.approve")
 
 
 @methodology_lifecycle_router.post(
@@ -288,7 +296,7 @@ async def approve_version_route(
 )
 async def create_draft_route(version_id: VersionId, ctx: Ctx) -> VersionStateOut:
     """KNW-03 c: a new draft vN+1 from a published version."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
 
 
 @methodology_lifecycle_router.post(
@@ -301,7 +309,7 @@ async def discard_draft_route(
     version_id: VersionId, body: SubmitVersionIn, ctx: Ctx
 ) -> VersionStateOut:
     """KNW-03: discard a draft (published versions are never discarded)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
 
 
 # --- Programs and steps (KNW-03) -----------------------------------------------------------------
@@ -416,7 +424,7 @@ IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
 )
 async def program_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> ProgramOut:
     """KNW-03 a: a program with its version context, counts and rail rows."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
 
 
 @programs_router.get(
@@ -427,7 +435,7 @@ async def program_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> Progra
 )
 async def program_steps_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> list[StepOut]:
     """KNW-03 a, b: the program's steps in order."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
 
 
 @programs_router.get(
@@ -439,7 +447,7 @@ async def resolve_step_route(
     version: Annotated[UUID, Query()],
 ) -> StepResolveOut:
     """C4: a `methodology_step` citation target to its program and step number."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
 
 
 @programs_router.patch(
@@ -456,7 +464,7 @@ async def edit_step_route(
     if_match: IfMatch,
 ) -> StepOut:
     """KNW-03 c: edit a draft step (409 `version_frozen` on a published version)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
 
 
 @programs_router.post(
@@ -473,7 +481,7 @@ async def add_step_route(
     ctx: Ctx,
 ) -> StepOut:
     """KNW-03 c: + Step in a draft."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
 
 
 @programs_router.delete(
@@ -486,7 +494,7 @@ async def remove_step_route(
     version_id: VersionId, step_id: Annotated[UUID, Path()], ctx: Ctx, if_match: IfMatch
 ) -> StepRemovedOut:
     """KNW-03 c: remove a non-mandatory draft step (409 `mandatory_locked`)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.manage")
 
 
 @programs_router.post(
@@ -503,7 +511,7 @@ async def mandatory_step_route(
     if_match: IfMatch,
 ) -> StepOut:
     """KNW-03 d: a quality partner locks or unlocks a step (human-only, fresh MFA)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.approve")
 
 
 @programs_router.get(
@@ -514,4 +522,4 @@ async def mandatory_step_route(
 )
 async def export_version_route(version_id: VersionId, ctx: Ctx) -> bytes:
     """KNW-03: the deterministic program workbook (an audit event per export)."""
-    await _stub(ctx, METHODOLOGY_PROGRAMS)
+    await _stub(ctx, METHODOLOGY_PROGRAMS, "methodology.read")

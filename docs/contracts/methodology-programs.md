@@ -32,7 +32,7 @@ A methodology version is a firm's audit program: programs, steps with stable anc
 | Mandatory lock | `POST /v1/methodology/versions/{id}/steps/{step_id}/mandatory` (If-Match) | **`methodology.approve`** | `methodology.programs` | K-01-T14 |
 | Export | `GET /v1/methodology/versions/{id}/export.xlsx` | `methodology.read` | `methodology.programs` | K-01-T12 |
 
-Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `methodology.read` firm admin, practice leader, quality partner, engagement partner, manager, platform support (content), agent `task_scope`; `methodology.manage` firm admin, practice leader, quality partner, `firm_partner` (`level_in(partner)`, DEC-132), fresh MFA, agent and system deny; `methodology.approve` quality partner only, fresh MFA, agent and system deny; `methodology.parse` agent `task_scope` only. The plan's widening of `methodology.read` to senior, staff and reviewer waits for the draft/published split (DEC-406).
+Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `methodology.read` firm admin, practice leader, quality partner, engagement partner, manager, platform support (content), agent `task_scope`; `methodology.manage` firm admin, practice leader, quality partner, fresh MFA, agent and system deny (the plan's `level_in(partner)` waits for K-01-T06, DEC-406); `methodology.approve` quality partner only, fresh MFA, agent and system deny; `methodology.parse` agent `task_scope` only. The plan's widening of `methodology.read` to senior, staff and reviewer waits for the draft/published split (DEC-406).
 
 ## 3. Models
 `backend/src/abacus/modules/methodology/contract.py`; every field internal.
@@ -68,7 +68,7 @@ Audit (K-01 §4.5): `methodology_version.imported`, `.draft_created`, `.submitte
 ```
 
 ## 9. Consumer contract tests
-`backend/tests/contracts/knowledge/test_k01_stubs.py` (routes, actions, flags, the human-only rows); `backend/tests/integration/backfill/test_k01t02_methodology_reown.py` and `backend/tests/integration/test_k01t02_methodology_migration.py` (the lifecycle rows).
+`backend/tests/contracts/k01_knowledge/test_k01_stubs.py` (routes, actions, flags, the human-only rows); `backend/tests/integration/backfill/test_k01t02_methodology_reown.py` and `backend/tests/integration/test_k01t02_methodology_migration.py` (the lifecycle rows).
 
 ## 10. Versioning
 | Version | Frozen on | Overlap ends | Notes |
