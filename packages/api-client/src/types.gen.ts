@@ -4382,7 +4382,7 @@ export type CommentOut = {
     /**
      * Author User Id
      */
-    author_user_id: string;
+    author_user_id: string | null;
     /**
      * Corrected By
      */

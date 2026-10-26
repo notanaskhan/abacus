@@ -953,6 +953,8 @@ LIST_EXEMPT = frozenset(
         # R-01-T13 (DEC-387): one request's open delegations' grants and their active holders,
         # the facts `delegated_only` is judged on (keyed by one request and its grant ids).
         ("src/abacus/modules/requests/repository.py", "open_delegation_grants"),
+        ("src/abacus/modules/requests/repository.py", "live_item_engagements"),
+        ("src/abacus/modules/identity/repository.py", "delegate_grant_holders"),
         ("src/abacus/modules/identity/repository.py", "delegate_holders"),
         ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
         ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),

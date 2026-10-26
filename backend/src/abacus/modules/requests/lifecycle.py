@@ -44,7 +44,6 @@ from abacus.modules.engagements.api import (
     client_of,
     contact_portal_user,
     get_ref,
-    holds_tax_return,
     lock_ref,
 )
 from abacus.modules.identity.api import (
@@ -55,7 +54,6 @@ from abacus.modules.identity.api import (
     ScopeFacts,
     allowed_actions,
     authorise,
-    consent_given,
     grant_client_access,
     issue_grant,
     void_grant,
@@ -79,6 +77,7 @@ from abacus.modules.requests.client_undo import (
     IgnoreNotesExhausted,
     NothingToUndo,
 )
+from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.events import RequestItemIgnoreUndone, RequestItemSent
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
@@ -91,13 +90,14 @@ from abacus.modules.requests.repository import (
     insert_delegation,
     insert_upload_intent,
     is_delegated,
+    live_item_engagements,
     live_upload_intents,
     newest_response,
     open_delegations,
     set_item_fields,
     stamp_sent,
 )
-from abacus.modules.requests.service import reclassify_described
+from abacus.modules.requests.service import item_ref, reclassify_described
 
 TERMINAL: Final = frozenset({"received", "not_applicable"})
 NA_REASONS: Final = ("not_applicable_this_year", "already_sent", "dont_have", "firm_waived")
@@ -624,20 +624,6 @@ class ConsentRequired(DomainConflict):
     code = "consent_required"
 
 
-THIRD_PARTY_DISCLOSURE: Final = "third_party_disclosure"
-
-
-async def third_party_consented(tenant: TenantContext, engagement_id: UUID) -> bool:
-    """Whether the engagement's requests may go to a third party: always outside tax work; on an
-    engagement holding a `tax_return` work item, only under the client's consent (DEC-388)."""
-    if not await holds_tax_return(tenant, engagement_id):
-        return True
-    client = await client_of(tenant, engagement_id)
-    return client is not None and await consent_given(
-        tenant, client, THIRD_PARTY_DISCLOSURE, await clock.now(tenant)
-    )
-
-
 async def _consented(tenant: TenantContext, engagement_id: UUID) -> None:
     if not await third_party_consented(tenant, engagement_id):
         raise ConsentRequired(facts={"engagement_id": str(engagement_id)})
@@ -767,12 +753,15 @@ async def announce_upload(ctx: AuthContext, item_id: UUID, files_expected: int) 
         if item is None or item.deleted_at is not None:
             raise NotFound("request_item")
         ref = await lock_ref(tx, item.engagement_id)
+        # The item's facts with its delegates (R-01-T13, security review M1): a third party
+        # announces an upload on a request delegated to them, under the consent gate (DEC-389).
+        facts = (await item_ref(tx, item.id)).facts
         resource = Resource.engagement(
             ref.tenant_id,
             ref.id,
             archived=ref.archived,
             client_id=ref.client_id,
-            item=_facts(item),
+            item=facts,
         )
         try:
             await authorise(ctx, "evidence.upload", resource)
@@ -876,6 +865,21 @@ async def item_activity(
         else None
     )
     return ActivityPage([activity_view(e) for e in page], following, total[0], total[1])
+
+
+async def request_item_scopes(
+    tenant: TenantContext, item_ids: Sequence[UUID]
+) -> dict[UUID, ScopeFacts]:
+    """Many `request_item` grants' scopes at once (security review L2): one read of the requests,
+    one client lookup per engagement."""
+    async with tenant_session(tenant) as session:
+        engagements = await live_item_engagements(session, item_ids)
+    clients = {e: await client_of(tenant, e) for e in set(engagements.values())}
+    return {
+        item: ScopeFacts(client, engagement_id=engagement)
+        for item, engagement in engagements.items()
+        if (client := clients.get(engagement)) is not None
+    }
 
 
 async def request_item_scope(tenant: TenantContext, item_id: UUID) -> ScopeFacts | None:

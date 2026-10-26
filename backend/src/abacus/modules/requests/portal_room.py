@@ -19,9 +19,11 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.identity.api import (
     AuthContext,
-    delegation_holders,
+    delegation_holders_by_grant,
     drafted_guidance_to_clients,
+    engagement_role_of,
 )
+from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.portal_documents import (
     PortalBinderRef,
     PortalCategory,
@@ -54,10 +56,20 @@ async def room_items(ctx: AuthContext, item_ids: Sequence[UUID]) -> list[RoomIte
     """The requests among `item_ids` delegated to the caller now, oldest delegation first."""
     async with tenant_session(ctx.tenant) as session:
         rows = await delegated_rows(session, item_ids)
+        # §7216 (DEC-389): an engagement whose requests may not reach a third party has none.
+        consented = {
+            e: await third_party_consented(ctx.tenant, e)
+            for e in {r.item.engagement_id for r in rows}
+        }
+        rows = [r for r in rows if consented[r.item.engagement_id]]
+        by_grant = await delegation_holders_by_grant(
+            ctx.tenant, [(r.item.id, r.grant_id) for r in rows]
+        )
         mine: dict[UUID, DelegatedRow] = {}
         holders: dict[UUID, set[UUID]] = {}
         for row in rows:
-            under = await delegation_holders(ctx.tenant, row.item.id, [row.grant_id])
+            holder = by_grant.get(row.grant_id)
+            under: set[UUID] = set() if holder is None else {holder}
             holders.setdefault(row.item.id, set()).update(under)
             if ctx.user_id in under:
                 mine[row.item.id] = row  # the newest of the caller's delegations of it
@@ -115,8 +127,11 @@ async def delegate_upload(
         item = await get_request_item(session, item_id)
         if item is None or item.deleted_at is not None:
             return None
-        if uploader not in await delegated_to(tenant, session, item.id):
+        if uploader not in await delegated_to(tenant, session, item.id, item.engagement_id):
             return None
+    # A client person who also holds a delegation is the client there (DEC-390): no notice.
+    if await engagement_role_of(tenant, item.engagement_id, uploader) is not None:
+        return None
     return DelegateUpload(item.engagement_id, item.firm_owner_user_id)
 
 

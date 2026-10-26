@@ -1320,6 +1320,21 @@ async def end_delegations(
     return [(cast(UUID, r[0]), cast(UUID, r[1])) for r in rows.all()]
 
 
+async def live_item_engagements(
+    session: AsyncSession, item_ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """R-01-T13 (security review L2): each live request's engagement, keyed by the ids a grant
+    names (LIST_EXEMPT: the scope resolver for identity's own grants)."""
+    if not item_ids:
+        return {}
+    rows = await session.execute(
+        select(RequestItem.id, RequestItem.engagement_id).where(
+            RequestItem.id.in_(list(item_ids)), RequestItem.deleted_at.is_(None)
+        )
+    )
+    return dict(rows.tuples().all())
+
+
 async def open_delegation_grants(session: AsyncSession, item_id: UUID) -> list[UUID]:
     """R-01-T13: the grants under the request's open delegations (a pending one included; the
     holders are identity's to read)."""

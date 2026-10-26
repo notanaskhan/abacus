@@ -462,7 +462,8 @@ class CommentOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
     request_item_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID | None, classified("internal")] = None
-    author_user_id: Annotated[UUID, classified("internal")]
+    # Null for a client person shown to a third party (R-01-T13, security review M2).
+    author_user_id: Annotated[UUID | None, classified("internal")]
     author_name: Annotated[str, classified("confidential")]
     author_side: Annotated[Literal["firm", "client"], classified("internal")]
     visibility: Annotated[Literal["internal", "shared"], classified("internal")]

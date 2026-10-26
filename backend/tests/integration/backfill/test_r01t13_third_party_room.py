@@ -18,9 +18,11 @@ never delegated without the client's `third_party_disclosure` consent (none exis
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import re
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import cast
@@ -28,19 +30,26 @@ from typing import cast
 import httpx
 import pytest
 
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import TenantContext
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.storage import s3_client
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.communications.api import SUBSCRIPTIONS, configure_transport
 from abacus.modules.communications.templates import import_platform_version
+from abacus.modules.evidence import storage
 from abacus.modules.evidence.uploads import authorise_upload
+from abacus.modules.evidence.withdrawals import check_withdraw
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.portal.notices import on_evidence_uploaded
+from abacus.modules.portal.rooms import read_room
 from abacus.modules.requests.client_responses import list_done
 from abacus.modules.requests.client_responses import responses as client_responses
 from abacus.modules.requests.comments import post_comment, thread
-from abacus.modules.requests.lifecycle import ConsentRequired, delegate_item
+from abacus.modules.requests.lifecycle import ConsentRequired, announce_upload, delegate_item
 from abacus.modules.requests.service import request_items_for
+from abacus_tools.synthetic.documents import letter_pdf
 
 from . import test_p07t26_contacts_g2_independent as t26
 from .support import Net, Person, Seeder
@@ -571,3 +580,246 @@ async def test_adr_p12_the_room_leaves_out_a_tax_engagement_delegated_before_its
     access, _ = await _signed_in(room)
     await _tax_return(room)
     assert (await _get(room, access, "/v1/portal/room")).status_code == 404
+
+
+# ================================================================================================
+# Security review (2026-10-26): H1 consent at every route, M1 the upload intent, M2 the thread,
+# L1 role mixing. DEC-389, DEC-390.
+# ================================================================================================
+
+
+async def _delegation_counts(room: Room) -> int:
+    return cast(
+        int,
+        await room.seed.value(
+            "SELECT count(*) FROM request_delegations WHERE contact_id = $1 "
+            "AND revoked_at IS NULL",
+            room.sam,
+        ),
+    )
+
+
+async def test_h1_a_tax_return_added_later_makes_every_route_refuse_the_delegate(
+    room: Room,
+) -> None:
+    """ADR P-12 at the one point every `delegated_only` check reads: once the engagement holds a
+    tax return without the consent, the upload, the thread, a comment and a withdrawal are all
+    refused; the delegations stay recorded (DEC-389), nothing is deleted."""
+    _, user = await _signed_in(room)
+    sam = _sam(room, user)
+    eid = room.base.site.engagement_id
+    version = await _upload(room, room.bridge, "Keystone_Bridge_Letter.pdf", user)
+    await authorise_upload(sam, eid, room.bridge)  # allowed before the tax return
+    await _tax_return(room)
+    with pytest.raises(Forbidden):
+        await authorise_upload(sam, eid, room.bridge)
+    with pytest.raises(Forbidden):
+        await thread(sam, eid, room.bridge, None)
+    with pytest.raises(Forbidden):
+        await post_comment(sam, eid, room.bridge, None, text="Uploading it on the 22nd.")
+    with pytest.raises(Forbidden):
+        await check_withdraw(sam, eid, version)
+    with pytest.raises((Forbidden, NotFound)):
+        await announce_upload(sam, room.bridge, 1)
+    assert await _delegation_counts(room) == 9
+
+
+async def _seeded_delegate(room: Room) -> AuthContext:
+    """A delegate made the way main made them before the gate: an active `delegate` grant and an
+    open delegation written directly, never consent-checked."""
+    who = await room.seed.person(room.base.tenant)
+    await room.seed.run(
+        "UPDATE memberships SET kind = 'client' WHERE tenant_id = $1 AND user_id = $2",
+        room.base.tenant,
+        who.user_id,
+    )
+    grant = await room.seed.value(
+        "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id, "
+        "contact_id) VALUES ($1, $2, 'delegate', 'request_item', $3, $4) RETURNING id",
+        room.base.tenant,
+        who.user_id,
+        room.bridge,
+        room.sam,
+    )
+    await room.seed.run(
+        "INSERT INTO request_delegations (tenant_id, request_item_id, contact_id, grant_id, "
+        "granted_by) VALUES ($1, $2, $3, $4, $5)",
+        room.base.tenant,
+        room.bridge,
+        room.sam,
+        grant,
+        room.marcus.user_id,
+    )
+    return _sam(room, who.user_id)
+
+
+async def test_h1_a_delegation_made_before_the_gate_on_a_tax_engagement_is_inert(
+    room: Room,
+) -> None:
+    await _tax_return(room)
+    ctx = await _seeded_delegate(room)
+    eid = room.base.site.engagement_id
+    with pytest.raises(NotFound):
+        await read_room(ctx)
+    with pytest.raises(Forbidden):
+        await authorise_upload(ctx, eid, room.bridge)
+    with pytest.raises(Forbidden):
+        await thread(ctx, eid, room.bridge, None)
+    with pytest.raises(Forbidden):
+        await post_comment(ctx, eid, room.bridge, None, text="Hello")
+    open_rows = await room.seed.value(
+        "SELECT count(*) FROM request_delegations WHERE request_item_id = $1 "
+        "AND revoked_at IS NULL",
+        room.bridge,
+    )
+    assert open_rows == 1  # recorded, inert until the consent exists
+
+
+# --- M1: the upload intent, then the upload, over HTTP with the compose S3 image --------------
+
+BUCKET = "r01t13-room-uploads"
+MASTER = b"r01t13-room-uploads-master-key-0123456789ab"
+
+
+@pytest.fixture
+def stored(s3_settings: dict[str, str]) -> Iterator[None]:
+    raw = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    with contextlib.suppress(Exception):  # created by an earlier case of this module
+        raw.create_bucket(Bucket=BUCKET, ObjectLockEnabledForBucket=True)
+    reset_key_service()
+    storage.reset_storage()
+    configure_key_service(LocalKeyService(MASTER))
+    storage.configure_storage(raw, BUCKET)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+
+
+async def test_m1_sam_announces_and_uploads_the_bridge_letter_over_http(
+    room: Room, stored: None
+) -> None:
+    access, _ = await _signed_in(room)
+    http = room.base.net.http
+    eid = room.base.site.engagement_id
+    intent = await http.post(
+        f"/v1/portal/request-items/{room.bridge}/upload-intents",
+        json={"files_expected": 1},
+        headers=_portal(room, access),
+    )
+    assert intent.status_code == 201, intent.text
+    uploaded = await http.post(
+        f"/v1/engagements/{eid}/request-items/{room.bridge}/uploads",
+        params={"filename": "Keystone_Bridge_Letter.pdf"},
+        content=letter_pdf(),
+        headers={**_portal(room, access), "Content-Type": "application/octet-stream"},
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    body = cast(Json, (await _get(room, access, "/v1/portal/room")).json())
+    rows = {
+        cast(str, r["id"]): r
+        for b in cast(list[Json], body["bands"])
+        for r in cast(list[Json], b["rows"])
+    }
+    assert rows[str(room.bridge)]["state"] == "in_review"
+    assert body["uploaded_count"] == 1
+    # Another request of the engagement: neither the intent nor the upload.
+    other = room.client_items[0]
+    refused = await http.post(
+        f"/v1/portal/request-items/{other}/upload-intents",
+        json={"files_expected": 1},
+        headers=_portal(room, access),
+    )
+    assert refused.status_code == 404
+    refused = await http.post(
+        f"/v1/engagements/{eid}/request-items/{other}/uploads",
+        params={"filename": "Census.pdf"},
+        content=letter_pdf(),
+        headers={**_portal(room, access), "Content-Type": "application/octet-stream"},
+    )
+    assert refused.status_code in (403, 404)
+
+
+# --- M2: a delegate's thread names the firm only ---------------------------------------------
+
+
+async def test_m2_the_thread_names_firm_people_only_and_drops_client_mentions(
+    room: Room,
+) -> None:
+    _, user = await _signed_in(room)
+    sam = _sam(room, user)
+    eid = room.base.site.engagement_id
+    dana = await room.seed.client_contact(room.base.site)
+    await room.seed.run(
+        "UPDATE users SET display_name = 'Dana Kowalski' WHERE id = $1", dana.user_id
+    )
+    marcus = _staff(room.marcus)
+    await post_comment(
+        marcus,
+        eid,
+        room.bridge,
+        None,
+        text="Dana, Keystone will send the letter.",
+        share=True,
+        mentions=[dana.user_id],
+    )
+    await post_comment(_sam(room, dana.user_id), eid, room.bridge, None, text="Thanks.")
+    await post_comment(sam, eid, room.bridge, None, text="I'll upload it by Sep 22.")
+    seen = await thread(sam, eid, room.bridge, None)
+    by_text = {c.text: c for c in seen}
+    firm = by_text["Dana, Keystone will send the letter."]
+    assert (firm.author_user_id, firm.author_name) == (room.marcus.user_id, "Marcus Delaney")
+    assert firm.mentions == []  # a client person is never named to a third party
+    client = by_text["Thanks."]
+    assert client.author_user_id is None
+    client_name = await room.seed.value(
+        "SELECT name FROM clients WHERE id = $1", room.base.site.client_id
+    )
+    assert client.author_name == client_name
+    own = by_text["I'll upload it by Sep 22."]
+    assert own.author_user_id == user
+    assert "Dana" not in " ".join(c.author_name for c in seen)
+
+
+# --- L1: a client person who also holds a delegation is the client there (DEC-390) ------------
+
+
+async def test_l1_a_client_role_wins_and_its_upload_makes_no_third_party_notice(
+    room: Room,
+) -> None:
+    dana = await room.seed.client_contact(room.base.site)
+    grant = await room.seed.value(
+        "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+        "VALUES ($1, $2, 'delegate', 'request_item', $3) RETURNING id",
+        room.base.tenant,
+        dana.user_id,
+        room.bridge,
+    )
+    await room.seed.run(
+        "INSERT INTO request_delegations (tenant_id, request_item_id, contact_id, grant_id, "
+        "granted_by) VALUES ($1, $2, $3, $4, $5)",
+        room.base.tenant,
+        room.bridge,
+        room.sam,
+        grant,
+        room.marcus.user_id,
+    )
+    version = await _upload(room, room.bridge, "Bridge.pdf", dana.user_id)
+    await on_evidence_uploaded(
+        OutboxEvent(
+            uuid.uuid4(),
+            room.base.tenant,
+            "evidence.uploaded",
+            {
+                "engagement_id": str(room.base.site.engagement_id),
+                "request_item_id": str(room.bridge),
+                "evidence_version_id": str(version),
+                "uploaded_by": str(dana.user_id),
+            },
+        )
+    )
+    assert await _t_outbox(room.base, "third_party.uploaded") == []

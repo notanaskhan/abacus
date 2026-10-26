@@ -6,6 +6,7 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     register_contact_delegations,
     register_scope_resolver,
+    register_scopes_resolver,
 )
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
@@ -23,6 +24,7 @@ from abacus.modules.requests.comments import (
     insert_return_comment,
     register_comment_scope_check,
 )
+from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.contract import (
     RequestLatestUploadOut,
     RequestOwedByOut,
@@ -48,7 +50,7 @@ from abacus.modules.requests.lifecycle import (
     record_contact_delegations,
     register_live_facts,
     request_item_scope,
-    third_party_consented,
+    request_item_scopes,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
 from abacus.modules.requests.portal_documents import (
@@ -147,6 +149,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 register_open_requests(open_requests_by_engagement)
 # P-06-T10: a delegate's `request_item` grant resolves to its request's engagement and client.
 register_scope_resolver("request_item", request_item_scope)
+# R-01-T13 (security review L2): many at once, for the third-party role's lookup.
+register_scopes_resolver("request_item", request_item_scopes)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 

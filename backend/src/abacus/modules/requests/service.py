@@ -41,6 +41,7 @@ from abacus.modules.requests.classification import (
     classify,
     document_kind,
 )
+from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.events import (
     DueDatesChanged,
     RequestItemClassified,
@@ -364,12 +365,17 @@ class RequestItemRef:
 
 
 async def delegated_to(
-    tenant: TenantContext, session: AsyncSession, item_id: UUID
+    tenant: TenantContext, session: AsyncSession, item_id: UUID, engagement_id: UUID
 ) -> frozenset[UUID]:
     """The people the request is delegated to now: holders of the active grants under its open
-    delegations (R-01-T13; `delegated_only`)."""
+    delegations (R-01-T13; `delegated_only`). Nobody while the engagement's requests may not
+    reach a third party (§7216, ADR P-12): every `delegated_only` route reads this one fact, so
+    upload, withdraw, the thread and comments fail closed together, and a delegation made before
+    the gate stays recorded but inert until the consent exists (DEC-389)."""
     grants = await open_delegation_grants(session, item_id)
-    return await delegation_holders(tenant, item_id, grants) if grants else frozenset()
+    if not grants or not await third_party_consented(tenant, engagement_id):
+        return frozenset()
+    return await delegation_holders(tenant, item_id, grants)
 
 
 async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False) -> RequestItemRef:
@@ -385,7 +391,10 @@ async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False)
         item.client_visible,
         item.client_assignee_user_id,
         delegated_to=await delegated_to(
-            TenantContext(item.tenant_id, "system", "requests:delegates"), tx.session, item.id
+            TenantContext(item.tenant_id, "system", "requests:delegates"),
+            tx.session,
+            item.id,
+            item.engagement_id,
         ),
     )
 
@@ -758,7 +767,7 @@ async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -
         item = await get_request_item(session, item_id)
         if item is None or item.engagement_id != engagement_id:
             raise NotFound("request_item")
-        delegates = await delegated_to(tenant, session, item.id)
+        delegates = await delegated_to(tenant, session, item.id, item.engagement_id)
     return RequestItemRef(
         item.id,
         item.engagement_id,

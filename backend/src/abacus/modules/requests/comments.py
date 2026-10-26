@@ -21,7 +21,7 @@ from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import EngagementRef, get_ref
+from abacus.modules.engagements.api import EngagementRef, engagement_label, get_ref
 from abacus.modules.identity.api import (
     AuthContext,
     Resource,
@@ -109,7 +109,8 @@ class CommentView:
     id: UUID
     request_item_id: UUID
     evidence_version_id: UUID | None
-    author_user_id: UUID
+    # None for a client person shown to a third party (R-01-T13, security review M2).
+    author_user_id: UUID | None
     author_name: str
     author_side: str
     visibility: str
@@ -374,6 +375,21 @@ async def post_comment(
     )
 
 
+def _author(
+    author: UUID,
+    names: dict[UUID, str],
+    me: UUID,
+    firm: set[UUID],
+    shown_as: str,
+    delegate: bool,
+) -> tuple[UUID | None, str]:
+    """The author as the reader may see them: by name, or for a third party anyone but the firm's
+    people and themself as the client, with no id."""
+    if not delegate or author == me or author in firm:
+        return author, names.get(author, "")
+    return None, shown_as
+
+
 async def thread(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID | None
 ) -> list[CommentView]:
@@ -388,6 +404,18 @@ async def thread(
         mentions = await list_mentions(session, ctx, [c.id for c, _ in rows], delegate=delegate)
     people = {c.author_user_id for c, _ in rows} | {r.redacted_by for _, r in rows if r}
     names = await names_of(sorted(people, key=str))
+    if delegate:
+        # INV-4 (security review M2): a third party learns the firm's people and nobody else's.
+        # A client person or another third party is shown as the client, with no id; a mention
+        # names a firm member or nobody.
+        firm = {u for u, _ in await team_of(ctx.tenant_id, engagement_id)} | {
+            c.author_user_id for c, _ in rows if c.author_side == "firm"
+        }
+        label = await engagement_label(ctx.tenant, engagement_id)
+        shown_as = label.client_name if label is not None else ""
+        mentions = {k: [u for u in v if u in firm] for k, v in mentions.items()}
+    else:
+        firm, shown_as = set[UUID](), ""
     corrected: dict[UUID, list[UUID]] = {}
     for c, _ in rows:
         if c.corrects_comment_id is not None:
@@ -402,8 +430,7 @@ async def thread(
                 c.id,
                 c.request_item_id,
                 c.evidence_version_id,
-                c.author_user_id,
-                names.get(c.author_user_id, ""),
+                *_author(c.author_user_id, names, ctx.user_id, firm, shown_as, delegate),
                 c.author_side,
                 c.visibility,
                 text,

@@ -40,13 +40,14 @@ from abacus.modules.identity.events import AccessChanged, ClientAccessGranted, C
 from abacus.modules.identity.repository import (
     GrantRow,
     active_grants,
+    delegate_grant_holders,
     delegate_holders,
     get_grant,
     insert_grant,
     insert_grant_event,
     set_grant_status,
 )
-from abacus.modules.identity.slots import ScopeFacts, resolve_scope
+from abacus.modules.identity.slots import ScopeFacts, resolve_scope, resolve_scopes
 
 GrantRole = Literal[
     "owner",
@@ -176,17 +177,35 @@ DELEGATE_ROLES: Final = frozenset({"third_party", "delegate"})
 
 async def third_party_on(tenant: TenantContext, user_id: UUID, engagement_id: UUID) -> bool:
     """Whether the person holds an active, unexpired delegate's grant on a request of the
-    engagement (its scope resolved by the owner of `request_item`; unresolved, no)."""
-    for grant in await active_grants(tenant, user_id):
-        if grant.role not in DELEGATE_ROLES or grant.scope_kind != "request_item":
-            continue
-        facts = await resolve_scope(tenant, "request_item", grant.scope_id)
-        if facts is not None and facts.engagement_id == engagement_id:
-            return True
-    return False
+    engagement (the scopes resolved by the owner of `request_item` in one call; unresolved, no).
+    Read only for a client person with no role on the engagement: a client role wins (DEC-390)."""
+    items = [
+        g.scope_id
+        for g in await active_grants(tenant, user_id)
+        if g.role in DELEGATE_ROLES and g.scope_kind == "request_item"
+    ]
+    if not items:
+        return False
+    found = await resolve_scopes(tenant, "request_item", items)
+    return any(f.engagement_id == engagement_id for f in found.values())
 
 
 register_third_party(third_party_on)
+
+
+async def delegation_holders_by_grant(
+    tenant: TenantContext, grants: Sequence[tuple[UUID, UUID]]
+) -> dict[UUID, UUID]:
+    """Many (request item, grant) pairs at once (the room, security review L2): each grant whose
+    holder `delegated_only` would name, -> that holder; only an active delegate grant on that
+    very request counts."""
+    held = await delegate_grant_holders(tenant, [g for _, g in grants])
+    out: dict[UUID, UUID] = {}
+    for item_id, grant_id in grants:
+        found = held.get(grant_id)
+        if found is not None and found[1] == item_id:
+            out[grant_id] = found[0]
+    return out
 
 
 async def delegation_holders(

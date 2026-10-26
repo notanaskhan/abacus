@@ -133,3 +133,15 @@ cells deny without delegate facts, so reverting identity is safe in any order.
   a third party passed the check of lists that read no rows through `visible_items` (who marked
   the list done, a client name). Fixed: only the conditions a list filters by pass it; a new case
   (`test_inv4_no_list_of_the_engagement_answers_to_sam`) fails without the fix.
+- 2026-10-26: security review fix round (changes requested). Tests first in
+  `test_r01t13_third_party_room.py` (5 new cases, each failing before its fix):
+  H1 the consent gate moved into `service.delegated_to` (`requests/consent.py`), so upload, intent,
+  withdraw, thread, comment and the notice refuse together; existing delegations stay recorded and
+  inert (DEC-389). M1 `announce_upload` authorises with `item_ref` facts (delegates and the gate);
+  an HTTP case runs the intent and the upload through the compose S3 image. M2 a delegate's thread
+  names firm people and themself only (others as the client, `author_user_id` null, a contract
+  loosening; `make generate`), mentions keep firm members. L1 the client role wins (DEC-390); the
+  notice skips an uploader with a role on the engagement. L2 the third-party role's scope lookups
+  and the room's holder lookups are batched (`register_scopes_resolver`,
+  `delegation_holders_by_grant`). `lifecycle.view` (the firm's request projection) stays closed to
+  delegates: it builds facts without delegates on purpose.

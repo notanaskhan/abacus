@@ -9406,10 +9406,17 @@
             "type": "string"
           },
           "author_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Author User Id",
-            "type": "string"
+            "title": "Author User Id"
           },
           "corrected_by": {
             "cls": "internal",
