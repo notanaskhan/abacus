@@ -1300,7 +1300,8 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # SPEC-002 AC-5, DEC-121: the audit explorer hides events about engagements the reader may not
     # see; each owner registers which engagement its targets belong to (kernel.audit_owners),
     # so this reads the registry and depends only on identity and engagements; nothing imports it.
-    "audit_trail": frozenset({"identity", "engagements"}),
+    # G-02-T02 (SPEC-349): + platform, whose labeler and value-resolver slots it reads (G-02-T09).
+    "audit_trail": frozenset({"identity", "engagements", "platform"}),
     "organisations": _BASE,
     "ledger": frozenset(),
     "methodology": _BASE,

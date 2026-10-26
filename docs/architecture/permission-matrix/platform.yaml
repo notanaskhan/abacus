@@ -6,3 +6,5 @@ actions:
   budget.manage:            {firm_admin: allow, mfa_recent: required}     # SPEC-007 Q3
   # Q-02-T30 row; the create route lands with Q-02-T33 (G-02 adds incident.read and .decide).
   incident.manage:          {security_admin: allow, agent: deny, system: deny}
+  incident.read:            {security_admin: allow, firm_admin: allow, firm_partner: allow, agent: deny, system: deny}   # G-02-T02: ADM-06 register and drawer
+  incident.decide:          {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # G-02-T02: close as not reportable or start notification; one partner and the QI, distinct (409 decider_must_differ)

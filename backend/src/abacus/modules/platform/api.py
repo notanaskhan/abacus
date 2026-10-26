@@ -4,6 +4,19 @@ from abacus.kernel.controls import ControlName, control_active
 from abacus.kernel.dispatch import PlatformSchedule
 from abacus.kernel.uow import Handler
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.platform.audit_slots import (
+    AuditEventRef,
+    AuditLabel,
+    AuditLabeler,
+    AuditValueResolver,
+    AuditValueRow,
+    AuditValues,
+    audit_labels,
+    audit_values,
+    register_audit_labeler,
+    register_audit_value_resolver,
+    registered_audit_types,
+)
 from abacus.modules.platform.canary import (
     CANARY_ACTIVITIES,
     CanaryFlag,
@@ -33,6 +46,7 @@ from abacus.modules.platform.entitlements import (
     require_entitlement,
 )
 from abacus.modules.platform.events import TenantProvisioned
+from abacus.modules.platform.governance_errors import DeciderMustDiffer
 from abacus.modules.platform.incident_activities import INCIDENT_ACTIVITIES
 from abacus.modules.platform.incident_routes import platform_router as incident_platform_router
 from abacus.modules.platform.incident_routes import router as incident_router
@@ -159,6 +173,12 @@ __all__ = [
     "SPEND_ANOMALY_ID",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AuditEventRef",
+    "AuditLabel",
+    "AuditLabeler",
+    "AuditValueResolver",
+    "AuditValueRow",
+    "AuditValues",
     "BudgetInvalid",
     "CanaryFlag",
     "CanaryInput",
@@ -171,6 +191,7 @@ __all__ = [
     "CanaryStepFailed",
     "CanaryWorkflow",
     "ControlName",
+    "DeciderMustDiffer",
     "Entitlement",
     "EntitlementRequired",
     "Heartbeat",
@@ -196,6 +217,8 @@ __all__ = [
     "TenantKeyWorkflow",
     "TenantProvisioned",
     "TenantProvisioningWorkflow",
+    "audit_labels",
+    "audit_values",
     "canary_boundary",
     "canary_probe",
     "canary_workflow_id",
@@ -217,7 +240,10 @@ __all__ = [
     "propagation_log",
     "provisioning_workflow_id",
     "record_incident",
+    "register_audit_labeler",
+    "register_audit_value_resolver",
     "register_search_projection",
+    "registered_audit_types",
     "require_entitlement",
     "router",
     "schedules",

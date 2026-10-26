@@ -123,6 +123,12 @@ from abacus.modules.identity.firm_settings import (
     set_letter_policy,
     tenant_demo_time,
 )
+from abacus.modules.identity.governance_errors import (
+    SecurityPolicyLoosened,
+    SsoNotVerified,
+    SupersededByAiPolicy,
+    SupportRequestsDisabled,
+)
 from abacus.modules.identity.grants import GrantNotYetDue, consume_grant, issue_grant, void_grant
 from abacus.modules.identity.invitations import (
     ContactView,
@@ -475,11 +481,15 @@ __all__ = [
     "ScopeFacts",
     "ScopeKind",
     "SeasonalAccessEnds",
+    "SecurityPolicyLoosened",
     "SettingKey",
     "SignInPaused",
+    "SsoNotVerified",
     "Staff",
     "StaffInvitationIssued",
     "StaffRole",
+    "SupersededByAiPolicy",
+    "SupportRequestsDisabled",
     "SystemContext",
     "TargetFacts",
     "TeamMember",

@@ -110,3 +110,4 @@ actions:
   firm_export.approve:      {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
   firm_export.download:     {security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required, not_offshore: required}   # TASK-1207 (DEC-52)
   firm_export.read:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  firm_export.schedule:     {security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # G-02-T02 (DEC-72): the monthly schedule; a partner approves it once through firm_export.approve

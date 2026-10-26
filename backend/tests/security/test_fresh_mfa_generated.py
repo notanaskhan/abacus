@@ -43,6 +43,14 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("contact.unlock", "portal_access", "firm_admin"),
     ("contact.mfa_reset", "portal_access", "security_admin"),
     ("security_role.assign", "access_control", "firm_admin"),
+    ("incident.decide", "incident", "security_admin"),
+    ("ai_policy.publish", "ai_policy", "quality_partner"),
+    ("ai_policy.approve", "ai_policy", "firm_partner"),
+    ("audit_event.export", "export", "security_admin"),
+    ("firm_export.schedule", "export", "security_admin"),
+    ("security.manage", "access_control", "security_admin"),
+    ("session.end", "access_control", "security_admin"),
+    ("staff.unlock", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (

@@ -4,4 +4,5 @@
 actions:
   audit.read:               {firm_admin: allow, practice_leader: allow, quality_partner: allow}   # SPEC-304 (TASK-305): the firm's audit log explorer; identifiers only (ADR-007)
   # --- Audit trail and export ---
-  audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, firm_admin: allow, platform_support: allow, platform_support_content: allow}
+  audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, practice_leader: in_scope, firm_admin: allow, security_admin: allow, platform_support: allow, platform_support_content: allow, agent: deny, system: deny}   # G-02-T02 (SPEC-349 §9, DEC-60): + security_admin (metadata), practice_leader in scope; values only with the target's content read (G-02-T09)
+  audit_event.export:       {security_admin: allow, quality_partner: in_scope, practice_leader: in_scope, agent: deny, system: deny, mfa_recent: required}   # G-02-T02: ADM-07 export, one person with fresh MFA (DEC-415 Q8); audited request and download

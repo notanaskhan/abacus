@@ -71,4 +71,20 @@ actions:
   # Security-role changes (P-08-T21 security review): who holds security_admin (the QI)
   - action: security_role.assign
     group: access_control
-  # Incident decisions: G-02's `incident.decide` joins this list with its route.
+  # G-02-T02 (SPEC-349 §9): firm governance v1
+  - action: incident.decide
+    group: incident
+  - action: ai_policy.publish
+    group: ai_policy
+  - action: ai_policy.approve
+    group: ai_policy
+  - action: audit_event.export
+    group: export
+  - action: firm_export.schedule
+    group: export
+  - action: security.manage
+    group: access_control
+  - action: session.end
+    group: access_control
+  - action: staff.unlock
+    group: access_control

@@ -118,6 +118,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.trial_balance.AnnotationInvalid
+  approver_must_differ:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.ai_policy_errors.ApproverMustDiffer
+    summary: The partner who approves a policy version is not the person who requested it (AC-37, DEC-50).
   approver_not_partner:
     status: 422
     raised_by:
@@ -232,6 +237,11 @@ codes:
     raised_by:
     - abacus.modules.identity.people.DeactivationReasonInvalid
     summary: A person deactivates with `manual`; the other reasons are the system's.
+  decider_must_differ:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.governance_errors.DeciderMustDiffer
+    summary: An incident decision needs two different people, one partner and the QI (AC-22).
   decision_locked:
     status: 409
     raised_by:
@@ -896,6 +906,13 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.PolicyLocked
     summary: A locked policy can't be shortened; unlock it first (and say why in the basis).
+  policy_loosening_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.ai_policy_errors.AiPolicyLoosened
+    - abacus.modules.identity.governance_errors.SecurityPolicyLoosened
+    summary: A firm may only make its sign-in, session and portal limits stricter than the platform's
+      (AC-17, AC-19); `facts.field` names the field.
   portal_host_invalid:
     status: 422
     raised_by:
@@ -1108,6 +1125,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.SnapshotEntityMismatch
+  sso_not_verified:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.governance_errors.SsoNotVerified
+    summary: Require SSO needs a verified SSO sign-in by an admin of this firm first (AC-15).
   staff_invitation_invalid:
     status: 422
     raised_by:
@@ -1145,6 +1167,18 @@ codes:
     raised_by:
     - abacus.modules.evidence.service.Superseded
     summary: 'A newer version of the same item has arrived: decide that one.'
+  superseded_by_ai_policy:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.governance_errors.SupersededByAiPolicy
+    summary: 'The firm is on the versioned AI policy (`ai_policy.v1`): the autonomy level is changed
+      by publishing a policy version, not by `PUT /v1/firm/autonomy` (ADR-186 item 7).'
+  support_requests_disabled:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.governance_errors.SupportRequestsDisabled
+    summary: The firm turned "Allow support session requests" off; active sessions keep their expiry
+      (AC-28).
   support_session_conflict:
     status: 409
     raised_by:

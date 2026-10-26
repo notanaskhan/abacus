@@ -51,3 +51,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: ai_policy.v1
+    description: 'The versioned AI policy (G-02, ADR-186; ADM-04): /v1/firm/ai-policy* routes and the policy-backed autonomy level. On for a firm, the legacy PUT /v1/firm/autonomy answers 409 superseded_by_ai_policy. Off: the policy routes answer 404 and the legacy autonomy route is unchanged. On: 501 not_implemented until G-02-T23 and T24 land. Renewed or retired in G-02-T27.'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
