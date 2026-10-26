@@ -98,3 +98,4 @@ Append-only. Newest at the bottom.
 - **Uncommitted or partial work:** None.
 - **Known failing checks:** None.
 - **Open issues:** None.
+- 2026-10-26 (S10 code gap, branch `s10-f03-t06-examples`): docs/contracts/work-items.md §9 carries the Copperleaf, Northwind, Bluestem and Meridian E0 examples, captured through the API from a throwaway E0 + binders load. The 501-stub half of the row is superseded by F-03-T31 (live).
