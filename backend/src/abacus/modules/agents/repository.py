@@ -19,6 +19,7 @@ from abacus.kernel.clock import system_now
 from abacus.modules.agents.models import (
     AgentActivity,
     AgentRun,
+    AgentRunRecord,
     AgentStage,
     EngagementAgentState,
     EntryAssessmentRow,
@@ -1703,3 +1704,85 @@ async def run_activity(
         .scalars()
         .all()
     )
+
+
+# --- Run records (Q-02-T41; ADR-169 §3) -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class RunCitationRow:
+    """One stored citation of a run's output, with the output it belongs to."""
+
+    source: str  # the output table: screening_result, upload_review_flag, ...
+    record_type: str  # the record the citation points into
+    record_id: UUID | None
+    citation: dict[str, object]
+
+
+@dataclass(frozen=True)
+class RunOutputRows:
+    counts: dict[str, int]  # output rows by kind
+    read: list[tuple[str, UUID]]  # records the run's outputs name as read
+    citations: list[RunCitationRow]
+
+
+_RUN_OUTPUTS = text(
+    """
+    SELECT 'screening_result' AS kind, s.evidence_version_id AS read_id,
+           'evidence_version' AS read_type, s.citations
+      FROM screening_results s
+     WHERE s.agent_run_id = :run AND s.subject_kind = 'version'
+    UNION ALL
+    SELECT 'upload_review', r.evidence_version_id, 'evidence_version', '[]'::jsonb
+      FROM upload_reviews r WHERE r.agent_run_id = :run
+    UNION ALL
+    SELECT 'upload_review_flag', r.evidence_version_id, 'evidence_version', f.citations
+      FROM upload_reviews r
+      JOIN upload_review_flags f ON f.tenant_id = r.tenant_id AND f.review_id = r.id
+     WHERE r.agent_run_id = :run
+    UNION ALL
+    SELECT 'inbox_match', m.inbox_file_id, 'inbox_file', '[]'::jsonb
+      FROM inbox_match_runs m WHERE m.agent_run_id = :run
+    UNION ALL
+    SELECT 'inbox_match_proposal', m.inbox_file_id, 'inbox_file', p.citations
+      FROM inbox_match_runs m
+      JOIN inbox_match_proposals p ON p.tenant_id = m.tenant_id AND p.match_id = m.id
+     WHERE m.agent_run_id = :run
+    UNION ALL
+    SELECT 'guidance_draft', g.request_item_id, 'request_item', '[]'::jsonb
+      FROM guidance_drafts g WHERE g.agent_run_id = :run
+    UNION ALL
+    SELECT 'template_guidance_draft', t.methodology_version_id, 'template_version', '[]'::jsonb
+      FROM template_guidance_drafts t WHERE t.agent_run_id = :run
+    UNION ALL
+    SELECT 'entry_assessment', e.selected_item_id, 'selected_item', e.citations
+      FROM entry_assessments e WHERE e.agent_run_id = :run
+    """
+)
+
+
+async def run_outputs(session: AsyncSession, run_id: UUID) -> RunOutputRows:
+    """LIST_EXEMPT: one run's specialist output rows (their kinds, the records they name and
+    their citations), read by the run's own workflow in a system context to build its record."""
+    counts: dict[str, int] = {}
+    read: list[tuple[str, UUID]] = []
+    citations: list[RunCitationRow] = []
+    for kind, read_id, read_type, cited in (
+        await session.execute(_RUN_OUTPUTS, {"run": run_id})
+    ).all():
+        counts[kind] = counts.get(kind, 0) + 1
+        if read_id is not None and (read_type, read_id) not in read:
+            read.append((read_type, read_id))
+        for c in cast("list[dict[str, object]]", cited or []):
+            citations.append(RunCitationRow(kind, read_type, read_id, c))
+    return RunOutputRows(counts, read, citations)
+
+
+async def get_run_record(session: AsyncSession, run_id: UUID) -> AgentRunRecord | None:
+    return (
+        await session.execute(select(AgentRunRecord).where(AgentRunRecord.run_id == run_id))
+    ).scalar_one_or_none()
+
+
+async def insert_run_record(session: AsyncSession, values: dict[str, object]) -> None:
+    await session.execute(insert(AgentRunRecord).values(**values))

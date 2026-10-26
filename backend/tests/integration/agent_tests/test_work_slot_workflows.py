@@ -739,7 +739,11 @@ async def test_ac6_a_screening_proceeds_when_a_slot_frees_and_completes(
     names = await _activities(handle)
     assert names[0] == "screening.create_run"
     assert names.count("screening.acquire_slot") >= 2
-    assert names[-2:] == ["screening.screen", "screening.release_slot"]
+    assert names[-3:] == [
+        "screening.screen",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
     assert await _timers(handle) >= 1
     assert await _ledger_drains(seed, world.tenant_id)
 
@@ -761,7 +765,11 @@ async def test_ac14_a_screening_waiting_past_the_max_wait_fails_capacity_timeout
     actions = await seed.actions(world.tenant_id)
     assert "agent_run.queued" in actions
     assert actions.count("agent_run.failed") == 1
-    assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
+    assert (await _activities(handle))[-3:] == [
+        "screening.fail_run",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
     assert await _ledger_drains(seed, world.tenant_id)
 
 
@@ -776,6 +784,7 @@ async def test_ac6_the_screening_slot_is_released_on_success(
         "screening.create_run",
         "screening.acquire_slot",
         "screening.screen",
+        "agents.persist_run_record",  # Q-02-T41: the run record, once the run has ended
         "screening.release_slot",
     ]
     assert await _timers(handle) == 0
@@ -797,7 +806,11 @@ async def test_ac6_the_screening_slot_is_released_when_the_run_fails(
     )
     outcome = await handle.result()
     assert (outcome.status, outcome.code) == ("failed", "forbidden")
-    assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
+    assert (await _activities(handle))[-3:] == [
+        "screening.fail_run",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
     assert await _ledger_drains(seed, world.tenant_id)
 
 
@@ -830,7 +843,11 @@ async def test_ac6_the_screening_slot_is_released_when_the_workflow_is_cancelled
         assert isinstance(raised.value.cause, CancelledError)
         assert await _agent_row(seed, world.tenant_id) == ("failed", "cancelled", None)
         assert await _ledger_drains(seed, world.tenant_id)
-        assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
+        assert (await _activities(handle))[-3:] == [
+            "screening.fail_run",
+            "agents.persist_run_record",
+            "screening.release_slot",
+        ]
     finally:
         gate.release.set()
         configure_provider(None)
@@ -864,7 +881,11 @@ async def test_ac14_a_screening_cancelled_while_queued_ends_cancelled_with_queue
         await seed.value("SELECT count(*) FROM work_waiters WHERE tenant_id = $1", world.tenant_id)
         == 0
     )
-    assert (await _activities(handle))[-2:] == ["screening.fail_run", "screening.release_slot"]
+    assert (await _activities(handle))[-3:] == [
+        "screening.fail_run",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
 
 
 @pytest.mark.usefixtures("worker")

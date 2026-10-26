@@ -184,6 +184,12 @@ async def _run(ctx: AuthContext, run_id: UUID, action: str) -> AgentRun:
     return run
 
 
+async def authorised_run(ctx: AuthContext, run_id: UUID) -> AgentRun:
+    """The run, authorised `agent_run.read` on its engagement, for the run record read
+    (Q-02-T41): unknown, shadow and firm-level runs answer 404, as every C6 read does."""
+    return await _run(ctx, run_id, "agent_run.read")
+
+
 async def projection_for(ctx: AuthContext, engagement_id: UUID) -> Projection:
     """Content when the matrix grants `run_content.read` on the engagement, else metadata."""
     ref = await get_ref(ctx, engagement_id)

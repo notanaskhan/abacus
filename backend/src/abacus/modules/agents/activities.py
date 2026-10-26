@@ -36,6 +36,7 @@ from abacus.modules.agents.guidance_draft import (
 )
 from abacus.modules.agents.inbox_match import create_match_run, match
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
+from abacus.modules.agents.run_records import persist_run_record
 from abacus.modules.agents.service import (
     TERMINAL,
     AgentRunNotRunning,
@@ -518,6 +519,20 @@ async def assess_activity(input: EntryAssessRunInput) -> ScreeningOutcome:
         raise _as_application_error(exc, retryable=True) from None
 
 
+# --- Run records (Q-02-T41; ADR-169 §3) ------------------------------------------------------
+
+
+@activity.defn(name="agents.persist_run_record")
+async def persist_run_record_activity(input: RunInput) -> None:
+    """Write the ended run's record (repeat-safe; nothing while the run is still running)."""
+    try:
+        await persist_run_record(UUID(input.tenant_id), UUID(input.run_id))
+    except NotFound as exc:
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:  # database errors included: class name only
+        raise _as_application_error(exc, retryable=True) from None
+
+
 # --- Knowledge embedding (SPEC-009; TASK-024 design §7) ----------------------------------------
 
 
@@ -545,6 +560,7 @@ ACTIVITIES = (
     release_slot_activity,
     screen_activity,
     fail_run_activity,
+    persist_run_record_activity,  # Q-02-T41 (TASK-1287)
     embed_batch_activity,
     fail_knowledge_activity,
     engagement_agent_handle,  # SPEC-027 (TASK-050)

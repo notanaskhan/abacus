@@ -339,6 +339,11 @@ class Settings(BaseSettings):
     # from this pepper, so the same TIN is found on file without opening an envelope. Local and
     # test runs use a fixed public one when it is unset; anywhere else sealing fails closed.
     tin_fingerprint_pepper: Annotated[SecretStr | None, classified("restricted")] = None
+    # Q-02-T41 security review (DEC-396): a run record's quote and sheet fingerprints are HMACs
+    # under a per-firm key derived from this pepper, so a short quoted value (a TIN, an amount)
+    # can't be recovered by hashing guesses. Local and test runs use a fixed public one when it
+    # is unset; anywhere else a record isn't persisted until it is set.
+    run_record_fingerprint_pepper: Annotated[SecretStr | None, classified("restricted")] = None
     # F-04-T22 (F-04.22, SPEC-307 AC-5): a synthetic firm's mail goes only to this sink domain.
     # Unset, local, test and evaluation runs use the scenario's `.test` sink; any other
     # environment then refuses every synthetic send. Staging sets its SES receipt-rule domain,

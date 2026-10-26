@@ -36,6 +36,7 @@ TABLES: frozenset[str] = frozenset(
         "proposals",
         "proposal_rows",
         "proposal_decisions",
+        "agent_run_records",  # Q-02-T41 (0171, ADR-169 §3): one per ended specialist run
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -59,10 +60,18 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "suggestion_decisions",  # P-04-T05
         "proposal_rows",
         "proposal_decisions",
+        "agent_run_records",  # Q-02-T41: written once at completion, never rewritten
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # Run records (Q-02-T41, migration 0171): everything but `persisted_at`.
+    "agent_run_records": frozenset(
+        {"run_id", "tenant_id", "engagement_id", "work_item_id", "capability", "spec_version"}
+        | {"stage", "prompt_ref", "prompt_sha256", "model", "route", "region", "terms_version"}
+        | {"boundary_basis", "input_hashes", "records_read", "citations", "outcome"}
+        | {"initiator_user_id", "started_at", "completed_at", "record_sha256"}
+    ),
     # Follow-ups v2 (P-06-T14, migration 0121).
     "follow_up_schedules": frozenset(
         {"tenant_id", "engagement_id", "recipient_user_id", "status", "note", "agent_run_id"}
