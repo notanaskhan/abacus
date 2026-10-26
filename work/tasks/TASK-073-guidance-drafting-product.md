@@ -111,3 +111,4 @@ SPEC-035 AC-1, AC-2, AC-4, AC-5, AC-6, AC-8 for request items. Template items, p
 
 ## Handoff
 Done. Next: TASK-074 (drafting on methodology template items: runs without an engagement, a firm-level budget).
+- 2026-10-26: ADR-078 back-fill suite on `s10-q03-backfill` (TASK-1309, Q-03-T040): every covered AC passes; no defect found.

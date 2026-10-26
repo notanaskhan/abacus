@@ -5,13 +5,17 @@ import { AUDIT_MESSAGES } from "./messages";
 
 // The audit bar (A-01-T06; AUD-02 and AUD-03, 59 px): "All Audits" chip, the centred title with the
 // methodology chip, and the right cluster. "Started 9:24 AM" renders only for a C6 engagement run
-// (DV-11). The Auto mode toggle renders only when the firm holds `engagement_run.auto_mode`, which
-// the projection says by a non-null `auto_mode` (A-01 Story 2.1; P-10-T39 provides it); without
-// it the right cluster is the run time and the layout chip alone.
+// (DV-11). The Auto mode toggle renders only when the person holds `engagement_run.auto_mode`
+// (A-01 Story 2.1; P-10-T39 provides it): a screen that reads `/v1/me` passes `autoMode` (null
+// without the capability, else the switch's value; AUD-02 f, A-01-T31), otherwise the projection's
+// non-null `auto_mode` says so. Without it the right cluster is the run time and the layout chip.
 
 export interface AuditBarOptions {
   onBack?: () => void;
   onChip?: () => void;
+  /** The switch's value from the caller's `/v1/me` read: null hides it. Undefined falls back to the
+   * projection's `auto_mode`. */
+  autoMode?: boolean | null;
   onAutoMode?: (on: boolean) => void;
   /** The layout chip: shows or hides the dock. */
   onLayout?: () => void;
@@ -37,10 +41,11 @@ export function auditBarProps(
     ...(bar.methodology_label == null ? {} : { chip: bar.methodology_label }),
     ...(options.onChip === undefined ? {} : { onChip: options.onChip }),
   };
-  if (bar.auto_mode != null) {
+  const autoMode = options.autoMode === undefined ? bar.auto_mode : options.autoMode;
+  if (autoMode != null) {
     return {
       ...base,
-      autoMode: bar.auto_mode,
+      autoMode,
       ...(meta === undefined ? {} : { meta }),
       ...(options.onAutoMode === undefined ? {} : { onAutoMode: options.onAutoMode }),
     };

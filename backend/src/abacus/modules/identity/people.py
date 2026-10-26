@@ -883,6 +883,15 @@ async def apply_invitation_terms(
 # --- role templates and the grid (AC5.1 to AC5.3) -----------------------------------------------
 
 
+def _never_held(action: str, role: str) -> bool:
+    """The matrix gives this role no decision but `deny` for the action (a template's extra role,
+    such as the derived `firm_manager`, that never holds it)."""
+    from abacus.modules.identity.authz.matrix import RULES
+
+    rule = RULES.get(action)
+    return rule is not None and rule.decisions.get(role, "deny") == "deny"
+
+
 def _source(actions: list[str]) -> Literal["matrix", "policy"]:
     from abacus.modules.identity.authz.matrix import RULES
 
@@ -892,7 +901,8 @@ def _source(actions: list[str]) -> Literal["matrix", "policy"]:
 async def role_templates(ctx: AuthContext) -> RoleTemplates:
     """Eight templates with their member counts, the sixteen-row grid and the locked agent row.
     Cells are the declared policy, narrowed by the firm's stricter-only overrides: a `deny`
-    override on a row's action for every role a template may hold makes its cell `deny`."""
+    override on a row's action for every role a template may hold that the matrix lets hold it
+    makes its cell `deny`."""
     await _read_or_404(ctx)
     rows = [r for r in await _all_rows(ctx) if r.status == "active"]
     templates = [
@@ -909,7 +919,8 @@ async def role_templates(ctx: AuthContext) -> RoleTemplates:
         for t in TEMPLATES:
             roles = cast(list[str], generated.TEMPLATES[t]["roles"])
             if cells[t] != "deny" and any(
-                all((a, role) in denied for role in roles) for a in row_actions
+                all((a, role) in denied or _never_held(a, role) for role in roles)
+                for a in row_actions
             ):
                 cells[t] = "deny"
         grid.append(

@@ -112,3 +112,4 @@ SPEC-035 AC-2, AC-3, AC-7.
 
 ## Handoff
 Done. Waiting on the founder's scores in `labels-to-score.csv` to write the judge's calibration record (D1). Next: TASK-073 (product, review, client display, templates).
+- 2026-10-26: ADR-078 back-fill suite on `s10-q03-backfill` (TASK-1308, Q-03-T039): every covered AC passes; no defect found.
