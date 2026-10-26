@@ -138,6 +138,8 @@ Additive changes go in place. Breaking changes ship as v2 with one sprint of ove
 |---|---|---|---|
 | v1 | 2026-10-23 (P-01-T12; recorded early, before S5's Dec 28) | | 2026-10-22: stub (P-01-T01); the feed went live in P-01-T06 the same day. During the overlap the v2 list is served at `/v1/notifications/feed`, beside the v1 `GET /v1/notifications`. It moves to `GET /v1/notifications` when the v1 consumer is gone |
 
+v1.1 (R-01-T16, 2026-10-26) is additive and lives in `email-templates.md` and `portal-settings.md`: the firm-editable template slot, `send_templated`, the POR-20 and ADM-10 routes. Nothing in this document's models changes.
+
 ## 11. Open points
 - **Templates are content.** `notification.<kind>` versions come from the staff import (`POST /v1/platform/email-templates/import`), never from code. A kind without a published template gets a `failed` delivery and no email. `notification.mention` must be imported on each environment before `notifications.email` is turned on for a firm.
 - **Feed path during the overlap.** The plan puts the v2 list on `GET /v1/notifications` with a `tab` parameter. To avoid a breaking change to v1's shape, the stub serves it beside v1 for one sprint, per the contract rules. Recorded here and in TASK-398.
