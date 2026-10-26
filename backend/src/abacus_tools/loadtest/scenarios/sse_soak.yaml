@@ -1,0 +1,24 @@
+# SSE soak (Q-03-T043; chapter 10 section 10.11.3): x1's ~60 concurrent clients held for 2 hours.
+# The API serves no event stream yet (P-15, RB-28), so this soak runs the polling fallback the
+# chapter names: 60 clients polling the notification feed every 5 seconds, which is the load a
+# stream drop hands to the API. When P-15 serves its stream route, a `streams:` entry with
+# `count: 60` and `hold_seconds: 7200` joins this file (time to first event, target 2000 ms) and
+# the deploy that drops every stream is run mid-soak (runbook). Must show: memory flat (OTel),
+# the polling fallback within 5 s. Read-only.
+name: sse_soak
+description: Two hours of x1 stream-level clients on the polling fallback.
+duration_seconds: 7200
+users: 60
+think_ms: 5000
+ramp_seconds: 60
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 1}
+  - {subject: scenario-ana-cruz, weight: 2}
+  - {subject: scenario-marcus-delaney, weight: 2}
+groups:
+  - name: poll_notifications
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: /v1/notifications}

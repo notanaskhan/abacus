@@ -1,0 +1,34 @@
+# Failure under load (Q-03-T043; chapter 10 section 10.11.3; a game day): the Monday mix for 30
+# minutes while the operator kills one API task and then fails the database over (Multi-AZ) on
+# the perf stack, by hand from the runbook, never from this profile. Must show: recovery within
+# SLO and no lost outbox events (read from OTel and the outbox after the run). Requests that fail
+# during the failover count against the ceiling like any other: the report shows which groups
+# took them and for how long, and the game-day record says whether recovery met the SLO.
+name: failure_under_load
+description: The Monday mix through an API task kill and a database failover (game day).
+duration_seconds: 1800
+users: 30
+think_ms: 1000
+ramp_seconds: 60
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 2}
+  - {subject: scenario-marcus-delaney, weight: 3}
+  - {subject: scenario-ana-cruz, weight: 4}
+groups:
+  - name: home_waiting_on_you
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}
+  - name: lists_with_counts
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements?limit=25"}
+  - name: record_reads
+    weight: 3
+    p95_ms: 300
+    steps:
+      - {path: "/v1/engagements/{engagement_id}"}
+      - {path: "/v1/engagements/{engagement_id}/request-items"}

@@ -4,8 +4,7 @@ import type { GuidanceDraftOut, RequestItemOut } from "@abacus/api-client";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes, signInForTest } from "../testing/support";
-import { sourceLabel } from "./ClientGuidance";
-import { GuidanceDrafts } from "./GuidanceDrafts";
+import { GuidanceDrafts, sourceLabel } from "./GuidanceDrafts";
 
 const E = "e1";
 const BASE = `/v1/engagements/${E}`;

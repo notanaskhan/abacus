@@ -7,6 +7,7 @@ Local Terraform modules only (git, URL or bucket sources are refused by check_de
 | `github-oidc` | `bootstrap` | built |
 | `previews` | `envs/shared` | built (Q-01-T49) |
 | `cloudfront-portal` | `envs/staging` (`portal_edge.tf`) | built (Q-01-T56) |
+| `s3-exports` | `envs/staging`, `envs/production` (`exports.tf`) | written, not applied (DEC-454) |
 | `waf` | `envs/staging` (`portal_edge.tf`) | built (Q-01-T56, portal WebACL) |
 | everything else | — | skeleton README only |
 
