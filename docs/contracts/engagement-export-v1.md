@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contract "Engagement export" in `docs/contracts/README.md` |
 | Version | v1 (format `accrued.binder-export` 1.0) |
-| Status | stub (A-01-T17, 2026-10-26) |
+| Status | create, undo, history and status live (A-01-T18, 2026-10-26); package built by A-01-T19; download a stub until A-01-T22 |
 | Provider epic | A-01 (T17 stub; T18 create, undo, reads; T19 package; T22 download) |
 | Consumers | AUD-02, AUD-03 export sheet (A-01-T24); Q-04 rollback path; G-02 and Q-02 firm export (one package per engagement); A-07 archive seal manifest base (P-43); A-04, A-05, A-06 workpaper sections; requests (index rows) and agents (screening) section providers |
 | Freeze sprint | S11 (Fri Apr 2, 2027) |
@@ -24,7 +24,7 @@ Consumers can rely on one open package format for an audit engagement's PBC bind
 | Undo (10-s window) | `POST /v1/exports/{export_id}/undo` | `export.create` | as create | denied |
 | Download (`Range`) | `GET /v1/exports/{export_id}/download` | `export.download` | engagement partner, manager; fresh MFA, independence, not offshore; and the requester or an `export.create` holder on the engagement (service) | denied |
 
-Platform support holds no export cell (SPEC-012: support roles are read-only); client principals reach none (INV-4). Flag off: 404. Flag on: 501 `not_implemented` until A-01-T18 (create, undo, reads) and T22 (download).
+Platform support holds no export cell (SPEC-012: support roles are read-only); client principals reach none (INV-4). Flag off: 404. Create, undo and the reads are live (A-01-T18; DEC-435); download answers 501 `not_implemented` until A-01-T22.
 
 Module interface: `evidence.api.register_export_section(name, provider, *, section_version="1.0")` with `SectionRequest` and `SectionFile`; core names `index`, `fulfilments`, `review_decisions`, `screening`, `citations`; reserved `readme`, `manifest`, `checksums`, `evidence`, `audit_trail` (SPEC-344 §6). `SectionRequest` names the requester (`requested_by_user_id`, `membership_id`): a provider reads as that person (`visible()`, walls, independence) and never emits a Restricted value unmasked (DEC-379); it names each binder once, and every binder id has been checked against the work item at create.
 
@@ -50,12 +50,13 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 |---|---|---|
 | 404 | `{"detail": "not_found"}` | flag off; outside the tenant or behind a wall |
 | 403 | `{"detail": "forbidden"}` | role, independence, `offshore`, or stale MFA (`mfa_required`) |
-| 409 | `{"detail": "undo_window_closed"}` | Undo after `not_before` |
+| 409 | `{"detail": "undo_window_closed"}` | Undo after `not_before`, or by anyone but the requester |
+| 409 | `{"detail": "effect_started"}` | Undo once the build consumed the grant |
 | 409 | `{"detail": "export_not_ready"}` | download before `ready` |
 | 410 | `{"detail": "export_expired"}` | download after 7 days or once voided |
 | 422 | `{"detail": "export_kind_unsupported"}` | a work item that is not an audit (fail closed until C19) |
 | 422 | `{"detail": "binder_not_in_work_item"}` | a scope binder id that is not one of the work item's PBC binders (DEC-379) |
-| 501 | `{"detail": "not_implemented"}` | flag on, until the implementing task |
+| 501 | `{"detail": "not_implemented"}` | download, until A-01-T22 |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |
@@ -68,6 +69,10 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 | `engagement_export.expired` / `voided` | 7 days, withdrawn content | export id, reason |
 
 Outbox: `engagement_export.requested`, `.ready`, `.failed`, `.expired`, `.undone` (identifiers only); notifications consumes `ready` and `failed`.
+
+The build also records `engagement_export.started` (the grant consumed, status `packaging`) and `engagement_export.snapshotted` (`as_of_seq`, file and request counts) as the system on behalf of the requester (DEC-436).
+
+**Build (A-01-T19; DEC-436):** `EngagementExportWorkflow` (`engagement_export:<tenant>:<export_id>`, batch) starts from `engagement_export.requested`, sleeps out the window, consumes the grant, snapshots the selection at one audit sequence into `engagement_export_contents`, builds the ZIP with `generated_at` = the export's `not_before` (so a rebuild of the same export is byte-identical), and stores it sealed in 64 MiB segments under `exports/<tenant>/<export_id>/segment-NNNN` in the exports bucket (`exports_bucket`). `audit_trail/events.jsonl` needs the audit trail's reader registered through `evidence.api.register_export_audit_trail`; without it a build that includes the trail fails `export_section_missing`.
 
 ## 8. Example payloads
 Northwind's binder after Ana Cruz's acceptance, requested by Hannah Leclerc on Mon Sep 14, 2026 at 9:39 AM CT, ready at 9:40 AM (Brightwater Hale, synthetic):

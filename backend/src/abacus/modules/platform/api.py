@@ -85,6 +85,10 @@ from abacus.modules.platform.provisioning import (
     WORKFLOWS as PROVISIONING_WORKFLOWS,
 )
 from abacus.modules.platform.routes import router
+from abacus.modules.platform.security_center_contract import (
+    incident_reads_router,
+    safeguards_router,
+)
 from abacus.modules.platform.service import BudgetInvalid
 from abacus.modules.platform.slots import (
     SearchDocument,
@@ -130,6 +134,8 @@ from abacus.modules.platform.workflows import (
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     incident_router,  # Q-02-T33: the firm's incident register
+    incident_reads_router,  # security-center v1 (G-02-T11 stub; G-02-T18 implements it)
+    safeguards_router,  # security-center v1 (G-02-T11 stub; G-02-T20 implements it)
     incident_platform_router,  # Q-02-T33 (RB-27): staff propagation
 )
 

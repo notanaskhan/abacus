@@ -13,6 +13,13 @@ class SsoNotVerified(DomainConflict):
     code = "sso_not_verified"
 
 
+class SsoExemptNeedsHardwareKey(DomainConflict):
+    """The one SSO-exempt (break-glass) account must hold a hardware-key factor (AC-18; G-02-T11,
+    DEC-434). Raised by G-02-T14."""
+
+    code = "sso_exempt_needs_hardware_key"
+
+
 class SupportRequestsDisabled(DomainConflict):
     """The firm turned "Allow support session requests" off; active sessions keep their expiry
     (AC-28)."""

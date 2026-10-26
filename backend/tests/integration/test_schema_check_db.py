@@ -1481,6 +1481,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "gl_account_balances": LEDGER_FUNCTION,
         "gl_entries": LEDGER_FUNCTION,
         "trial_balance_versions": LEDGER_FUNCTION,  # 0149 (A-02-T04; ED-037)
+        "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+        "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
     }
     assert _evidence_problems(evidence) == []
 

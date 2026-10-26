@@ -117,6 +117,7 @@ from abacus.modules.requests.service import (
 from abacus.modules.requests.source_documents import (
     SourceDocuments,
     UploadFacts,
+    pbc_binders,
     pbc_counts,
     pbc_counts_of,
     register_upload_facts,
@@ -218,6 +219,7 @@ __all__ = [
     "methodology_router",
     "move_after_review",
     "overdue_for",
+    "pbc_binders",
     "pbc_counts",
     "pbc_counts_of",
     "portal_binder_ref",
