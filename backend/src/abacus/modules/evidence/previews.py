@@ -43,6 +43,9 @@ RENDERER_VERSION: Final = "v1"
 MASKED_RENDERER_VERSION: Final = "v3"
 MASK_VERSION: Final = "m2"
 MASK_PAD: Final = 2  # pixels around each detected box (P-03 §4.4)
+# Review R4: the two parsers can disagree on a glyph's width (a dash the font can't map), so each
+# box is widened by this share of its height on each side, and a tenth of it above and below.
+MASK_SPREAD: Final = 0.6
 MAX_PAGES: Final = 50
 PAGE_WIDTH: Final = 1240
 MAX_SIDE: Final = 2400
@@ -186,8 +189,15 @@ def burn(
     scale_y = clean.height / max(height_pt, 1e-6)
     fill = background(clean)
     draw = ImageDraw.Draw(clean)
-    for box in boxes:
-        left, upper, right, lower = pixel_box(box, scale_x, scale_y, clean.width, clean.height)
+    for x0, top, x1, bottom in boxes:
+        tall = abs(bottom - top)
+        spread = (
+            min(x0, x1) - MASK_SPREAD * tall,
+            min(top, bottom) - 0.1 * tall,
+            max(x0, x1) + MASK_SPREAD * tall,
+            max(top, bottom) + 0.1 * tall,
+        )
+        left, upper, right, lower = pixel_box(spread, scale_x, scale_y, clean.width, clean.height)
         if right >= left and lower >= upper:
             draw.rectangle((left, upper, right, lower), fill=fill)
     return clean

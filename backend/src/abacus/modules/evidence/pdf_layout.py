@@ -12,13 +12,14 @@ renderer have to agree on both what is on a page and where it is:
   back to PDF user space and on to render space.
 - **Fail closed:** a page is unscannable (no word layer, so `not_scannable`) when the mapping
   can't be reconciled with PDFium's own text positions (a word PDFium has no text under, or text
-  PDFium draws that no word covers), when a run of nine digits is set sideways, upside down or
-  mirrored (`sideways_number`: read out of order, no detector sees it), when it draws text as
-  outlines (`outlined_text`), or when its words pass the extractor's cap.
-- **Images (review N1):** image pixels can't be read before OCR (P-11). A page with an image
-  covering `IMAGE_FLOOR` of it or more keeps its words (its text is still masked for everyone)
-  but is marked as holding unscanned image content (`image_content`), so the page is never served
-  to a reader who may not read unmasked content. Agents never receive page images.
+  PDFium draws that no word covers), or when its words pass the extractor's cap.
+- **Unread content (reviews N1, R1 to R3):** what a scan can't read before OCR (P-11) is a picture
+  big enough to hold a number (`image_content`), vector shapes the size of glyphs (`drawn_glyphs`:
+  text drawn as outlines), and any digit set sideways, upside down or mirrored (`upright`: read
+  out of order). A page showing any of them keeps its upright words (still detected and masked
+  for everyone; sideways words are left out of the layer) but is marked `unread`, so it is never
+  served to a reader who may not read unmasked content. Broad on purpose: an offshore reader
+  loses a page rather than see a number no scan read.
 """
 
 from __future__ import annotations
@@ -35,20 +36,18 @@ if TYPE_CHECKING:
 
 Box = tuple[float, float, float, float]  # x0, top, x1, bottom: render space, points
 
-# DEC-369 (review N1): an image is unscanned content (a pasted SSN card, a W-2 photo, a cheque, a
-# logo) when it covers a quarter of a percent of the page or more and is big enough to hold a
-# nine-digit number at a legible 6 pt (30 pt along, 6 pt across); tinier marks are left alone.
-IMAGE_FLOOR: Final = 0.0025
-IMAGE_LONG: Final = 30.0
-IMAGE_SHORT: Final = 6.0
-# DEC-369 (review N1 regression check): outlined text is a row of `GLYPH_ROW` or more glyph-sized
-# curved paths on one baseline, or one curved path of `GLYPH_CURVES`+ Bézier segments shaped like
-# a line of text. Logos, rounded boxes and charts are neither.
-GLYPH_ROW: Final = 9
-GLYPH_CURVES: Final = 20
-GLYPH_MIN: Final = 4.0  # points: the shortest and tallest a glyph may be
+# DEC-369 (reviews N1, R1): an image is unread content when it could hold a nine-digit number at
+# the smallest size a person might read (about 4 pt): 20 pt along and 4 pt across, whatever its
+# share of the page. Only hairlines and specks are left.
+IMAGE_LONG: Final = 20.0
+IMAGE_SHORT: Final = 4.0
+# DEC-369 (review R2): text drawn as outlines is `GLYPHS` or more glyph-sized vector objects
+# (straight or curved; 4 to 40 pt), anywhere on the page, or one object glyph-tall, four times as
+# wide and of `GLYPH_SEGMENTS` or more segments (a line of glyphs in one path).
+GLYPHS: Final = 9
+GLYPH_SEGMENTS: Final = 20
+GLYPH_MIN: Final = 4.0  # points: the smallest and largest a glyph may be
 GLYPH_MAX: Final = 40.0
-TIN_DIGITS: Final = 9
 SLACK: Final = 2.0  # points: rounding between the two parsers
 
 
@@ -179,51 +178,24 @@ def render_space(
     )
 
 
-def sideways_number(chars: Sequence[dict[str, object]]) -> bool:
-    """A run of `TIN_DIGITS` digits (single spaces or hyphens between them allowed) among the
-    characters not set upright (a text matrix without a positive diagonal and no shear): text
-    read out of order, where no detector can be trusted (fail closed). Sideways labels, margin
-    notes with a few digits and a diagonal DRAFT watermark don't qualify (review N1 check)."""
-    groups: dict[tuple[float, float, float, float], list[tuple[float, float, str]]] = {}
-    for char in chars:
-        text = str(char.get("text") or "")
-        matrix = char.get("matrix")
-        values = cast(Sequence[float], matrix) if isinstance(matrix, tuple | list) else ()
-        if len(values) < 4:
-            if any(c.isdigit() for c in text):
-                return True  # a digit we can't place: fail closed
-            continue
-        a, b, c, d = (float(v) for v in values[:4])
-        if a > 0 and d > 0 and abs(b) <= 0.01 * a and abs(c) <= 0.01 * d:
-            continue
-        x = (float(cast(float, char.get("x0") or 0)) + float(cast(float, char.get("x1") or 0))) / 2
-        y = (
-            -(
-                float(cast(float, char.get("top") or 0))
-                + float(cast(float, char.get("bottom") or 0))
-            )
-            / 2
-        )
-        norm = max((a * a + b * b) ** 0.5, 1e-6)
-        along = (x * a + y * b) / norm
-        across = (-x * b + y * a) / norm
-        key = (round(a / norm, 2), round(b / norm, 2), round(c, 1), round(across / 2))
-        groups.setdefault(key, []).append((along, across, text))
-    for found in groups.values():
-        found.sort()
-        line = "".join(t if (t.isdigit() or t in " -") else "|" for _, _, t in found)
-        digits = 0
-        gap = 0
-        for ch in line:
-            if ch.isdigit():
-                digits, gap = digits + 1, 0
-            elif ch in " -" and digits and gap == 0:
-                gap = 1
-            else:
-                digits, gap = 0, 0
-            if digits >= TIN_DIGITS:
-                return True
-    return False
+def upright(char: dict[str, object]) -> bool:
+    """A character set upright and unmirrored in the content (a text matrix with a positive
+    diagonal and no shear). Anything else is read out of order (review R3)."""
+    matrix = char.get("matrix")
+    values = cast(Sequence[float], matrix) if isinstance(matrix, tuple | list) else ()
+    if len(values) < 4:
+        return False
+    a, b, c, d = (float(v) for v in values[:4])
+    return a > 0 and d > 0 and abs(b) <= 0.01 * a and abs(c) <= 0.01 * d
+
+
+def sideways_digits(chars: Sequence[dict[str, object]]) -> bool:
+    """Any digit not set upright (review R3, broadened): its number can't be read in order, so
+    the page holds unread content."""
+    return any(
+        any(c.isdigit() for c in str(char.get("text") or "")) and not upright(char)
+        for char in chars
+    )
 
 
 def _overlap(a: Box, b: Box, slack: float = SLACK) -> bool:
@@ -275,91 +247,70 @@ def _clipped(space: RenderSpace, bounds: tuple[float, float, float, float]) -> B
 
 
 def image_content(pdfium_page: PdfPage, space: RenderSpace) -> bool:
-    """An image covering `IMAGE_FLOOR` of the page or more and big enough to hold a legible
-    number (`IMAGE_LONG` by `IMAGE_SHORT`; review N1). An image inside a form
-    XObject counts as its top-level object's whole box (bounds inside a form aren't in page
-    space), which can only overcount."""
+    """An image big enough to hold a legible number (`IMAGE_LONG` by `IMAGE_SHORT`; reviews N1,
+    R1). An image inside a form XObject counts as its top-level object's whole box (bounds
+    inside a form aren't in page space), which can only overcount."""
     raw = _raw()
-    area = space.width * space.height
     top: PdfObject | None = None
     for obj in pdfium_page.get_objects(max_depth=15):
         if obj.level == 0:
             top = obj
         if obj.type == raw.FPDF_PAGEOBJ_IMAGE and top is not None:
             box = _clipped(space, top.get_bounds())
-            if box is None or area <= 0:
+            if box is None:
                 continue
             wide, tall = box[2] - box[0], box[3] - box[1]
-            legible = max(wide, tall) >= IMAGE_LONG and min(wide, tall) >= IMAGE_SHORT
-            if legible and wide * tall / area >= IMAGE_FLOOR:
+            if max(wide, tall) >= IMAGE_LONG and min(wide, tall) >= IMAGE_SHORT:
                 return True
     return False
 
 
-def _beziers(obj: PdfObject, raw: _Raw) -> int:
-    found = 0
-    for n in range(max(0, raw.FPDFPath_CountSegments(obj.raw))):
-        segment = raw.FPDFPath_GetPathSegment(obj.raw, n)
-        if segment and raw.FPDFPathSegment_GetType(segment) == raw.FPDF_SEGMENT_BEZIERTO:
-            found += 1
-    return found
+def _segments(obj: PdfObject, raw: _Raw) -> int:
+    return max(0, raw.FPDFPath_CountSegments(obj.raw))
 
 
-def _glyph_sized(box: Box) -> bool:
-    return GLYPH_MIN <= box[3] - box[1] <= GLYPH_MAX
-
-
-def outlined_text(pdfium_page: PdfPage, space: RenderSpace) -> bool:
-    """Text drawn as curves, which no word layer holds (review H2, N1): `GLYPH_ROW` or more
-    glyph-sized curved paths of similar height on one baseline with glyph-sized gaps, or one
-    top-level curved object (a path, or a form holding paths) of `GLYPH_CURVES` or more Bézier
-    segments, glyph-tall and at least four times as wide (a line of outlined glyphs)."""
+def drawn_glyphs(pdfium_page: PdfPage, space: RenderSpace) -> bool:
+    """Vector shapes that could be text drawn as outlines (review R2, broadened): `GLYPHS` or more
+    top-level objects holding paths, each glyph-sized (no side over `GLYPH_MAX`, one side at
+    least `GLYPH_MIN`; straight or curved, overlapping or not), anywhere on the page; or one such
+    object glyph-tall, at least four times as wide, of `GLYPH_SEGMENTS` or more segments. A form
+    XObject holding `GLYPHS` or more paths counts too (its inner bounds aren't in page space)."""
     raw = _raw()
-    curved: dict[int, tuple[Box, int]] = {}  # top-level index -> (box, Bézier segments)
+    pathed: dict[int, tuple[Box, int, int]] = {}  # top-level index -> (box, paths, segments)
     index = -1
     top: PdfObject | None = None
     for obj in pdfium_page.get_objects(max_depth=15):
         if obj.level == 0:
             index, top = index + 1, obj
         if obj.type == raw.FPDF_PAGEOBJ_PATH and top is not None:
-            count = _beziers(obj, raw)
-            if count:
-                box = _clipped(space, top.get_bounds())
-                if box is not None:
-                    seen = curved.get(index)
-                    curved[index] = (box, count + (seen[1] if seen else 0))
-    for box, count in curved.values():
-        tall, wide = box[3] - box[1], box[2] - box[0]
-        if count >= GLYPH_CURVES and _glyph_sized(box) and wide >= 4 * tall:
+            box = _clipped(space, top.get_bounds())
+            if box is None:
+                continue
+            seen = pathed.get(index)
+            paths, segments = (seen[1], seen[2]) if seen else (0, 0)
+            pathed[index] = (box, paths + 1, segments + _segments(obj, raw))
+    glyphs = 0
+    for box, paths, segments in pathed.values():
+        wide, tall = box[2] - box[0], box[3] - box[1]
+        if paths >= GLYPHS:
+            return True  # a form of many paths, or many subpaths drawn as one object
+        if max(wide, tall) <= GLYPH_MAX and max(wide, tall) >= GLYPH_MIN:
+            glyphs += 1
+        elif GLYPH_MIN <= tall <= GLYPH_MAX and wide >= 4 * tall and segments >= GLYPH_SEGMENTS:
             return True
-    glyphs = sorted(
-        (b for b, _ in curved.values() if _glyph_sized(b) and b[2] - b[0] <= 1.5 * (b[3] - b[1])),
-        key=lambda b: (round(b[3] / 3), b[0]),
-    )
-    run: list[Box] = []
-    for box in glyphs:
-        if run:
-            last = run[-1]
-            height = last[3] - last[1]
-            same_line = abs(box[3] - last[3]) <= 3
-            similar = 1 / 1.5 <= (box[3] - box[1]) / max(height, 1e-6) <= 1.5
-            close = 0 <= box[0] - last[2] <= 1.5 * height
-            if not (same_line and similar and close):
-                run = []
-        run.append(box)
-        if len(run) >= GLYPH_ROW:
+        if glyphs >= GLYPHS:
             return True
     return False
 
 
 __all__ = [
-    "IMAGE_FLOOR",
     "RenderSpace",
+    "drawn_glyphs",
     "flattened",
     "image_content",
-    "outlined_text",
     "reconciled",
     "render_space",
-    "sideways_number",
+    "sideways_digits",
     "text_boxes",
+    "upright",
 ]

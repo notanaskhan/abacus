@@ -501,3 +501,30 @@ async def test_review_l4_page_lines_are_left_out_when_a_region_word_is_not_a_tok
     punctuated = ((("SSN (000-00-6081), EIN 00-1230287.", box),),)
     [[(text, _)]] = await masked_page_lines(firm.tenant_id, punctuated, projection, layer)
     assert "6081" in text and "000-00" not in text and "1230287" not in text
+
+
+async def test_review_r5_a_tin_split_by_a_page_break_is_masked_on_both_pages(
+    seed: Seeder,
+) -> None:
+    """The scan carries a fragment ending one page over to the next page's leading digits."""
+    firm = await make_firm(seed)
+    content = positioned_pdf(
+        [
+            [(72.0, 40.0, "Social security number 900-70-")],
+            [(72.0, 760.0, "1234 continued")],
+        ]
+    )
+    version = await _version(firm, content)
+    rows = await seed.rows(
+        "SELECT page_no, kind, last4 FROM pii_regions WHERE evidence_version_id = $1 "
+        "ORDER BY page_no",
+        version,
+    )
+    assert [(r["page_no"], r["kind"], r["last4"]) for r in rows] == [
+        (1, "ssn", None),
+        (2, "ssn", None),
+    ]
+    material = await review_material(firm.system, version)
+    assert material is not None
+    text = " ".join(material.pages.values())
+    assert "900-70" not in text and "1234" not in text and not has_tin(text)

@@ -137,6 +137,27 @@ unmasked TIN pattern, and agent quotes of masked text still verify."
     - the H2 "mostly an image" test is replaced by N1's (stricter flag);
     - `test_viewer` seeds the current renderer version;
     - the stored-rendition assertion uses the version constants.
+- 2026-10-26 (security review round 3, recorded in DEC-369): every rule is now the broader one.
+  - **R1:** an image of 20 by 4 pt or more marks the page `unread`, with no area floor.
+  - **R2:** 9 or more glyph-sized vector objects, straight or curved, anywhere on the page mark
+    it `unread`.
+  - **R3:** any sideways digit marks the page `unread`; sideways words are left out of the layer.
+  - **R4:** digit pieces take more separator kinds, and masks spread by 0.6 of their height.
+  - **R5:** fragments after a label are masked, carried over a page break.
+  - Outlined and sideways content now marks the page `unread` instead of dropping its words, so
+    onshore text masking is kept.
+  - r3 variants through the pipeline (`scratchpad/r3fix/run.py`):
+    - every upright separator variant is at or below the label-only baseline;
+    - every sideways, outlined (pitch 8, 11 and 12) and image-strip variant (down to 60 x 5.5 pt)
+      is refused to offshore readers;
+    - both EIN splits and both pages of the page-break case are at or below baseline.
+  - Tests:
+    - `test_pdf_layout.py` (R1 to R5 regressions, updated semantics);
+    - `test_masked_renditions.py::test_review_r5_...` (page break through the real scan);
+    - `test_pii_detector.py` is unchanged and passes.
+  - Existing tests changed to the new semantics:
+    - outlined text, sideways digits and the vector logo now assert `unread` with the words kept;
+    - the N2 pixel checks are `<=` the label-only baseline, because masks spread over neighbours.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

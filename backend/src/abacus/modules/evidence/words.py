@@ -49,13 +49,15 @@ from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.pdf_layout import (
+    RenderSpace,
+    drawn_glyphs,
     flattened,
     image_content,
-    outlined_text,
     reconciled,
     render_space,
-    sideways_number,
+    sideways_digits,
     text_boxes,
+    upright,
 )
 from abacus.modules.evidence.repository import (
     get_inbox_file,
@@ -104,9 +106,9 @@ class PageWords:
     height: float
     rotation: int  # the page's /Rotate: 0, 90, 180 or 270
     words: tuple[Word, ...]
-    # Review N1: an image covering `pdf_layout.IMAGE_FLOOR` of the page or more, which no scan can
-    # read before OCR: the page's text is masked, its pictures are not.
-    images: bool = False
+    # Reviews N1, R1 to R3: the page shows content no scan reads before OCR (a picture, glyph-sized
+    # vector shapes, a sideways digit): its upright text is masked, the rest is not.
+    unread: bool = False
 
 
 @dataclass(frozen=True)
@@ -145,26 +147,11 @@ def _unscannable(number: int, width: float, height: float, rotation: int) -> Pag
     return PageWords(number, _clamped(width), _clamped(height), rotation, ())
 
 
-def _page_words(number: int, page: PlumberPage, shown: PdfPage) -> PageWords:
-    """One page's words in render space (`pdf_layout`; DEC-369): what PDFium draws, where it
-    draws it. Unscannable when the two parsers can't be reconciled, when the page reads as a
-    scan or drawn text, or when its words pass `MAX_PAGE_WORDS` (security review H1, H2, L2)."""
-    rendered = render_space(shown)
-    width = _pt(getattr(rendered, "width", float("nan")))
-    height = _pt(getattr(rendered, "height", float("nan")))
-    rotation = rendered.rotation if rendered is not None else 0
-    space = (
-        render_space(shown, page)
-        if rendered is not None and _side(width) and _side(height)
-        else None
-    )
-    if space is None:
-        # A hostile or broken page box (zero, negative, tiny, past PDF's limit) or geometry the
-        # parsers disagree on: recorded without a text layer, with sides the table can hold.
-        return _unscannable(number, width, height, rotation)
-    if sideways_number(cast(list[dict[str, object]], page.chars)):
-        return _unscannable(number, width, height, rotation)  # a number read out of order
-    found = cast(list[dict[str, object]], page.extract_words(keep_blank_chars=False))
+def _placed(
+    found: list[dict[str, object]], space: RenderSpace, width: float, height: float
+) -> list[Word] | None:
+    """pdfplumber's words in render space, those outside the visible page dropped; None past
+    `MAX_PAGE_WORDS` (L2: never part-scanned)."""
     words: list[Word] = []
     for raw in found:
         text = _clean(raw.get("text"))
@@ -182,14 +169,61 @@ def _page_words(number: int, page: PlumberPage, shown: PdfPage) -> PageWords:
             continue
         words.append(Word(text, x0, top, x1, bottom))
         if len(words) >= MAX_PAGE_WORDS:
-            return _unscannable(number, width, height, rotation)  # L2: never part-scanned
+            return None
+    return words
+
+
+def _is_upright(obj: dict[str, object]) -> bool:
+    return obj.get("object_type") != "char" or upright(obj)
+
+
+def _page_words(number: int, page: PlumberPage, shown: PdfPage) -> PageWords:
+    """One page's words in render space (`pdf_layout`; DEC-369): what PDFium draws, where it
+    draws it. Unscannable when the two parsers can't be reconciled or the words pass
+    `MAX_PAGE_WORDS` (H1, H2, L2). Only upright words are kept; a page with a picture, glyph-sized
+    vector shapes or a sideways digit is marked `unread` (N1, R1 to R3)."""
+    rendered = render_space(shown)
+    width = _pt(getattr(rendered, "width", float("nan")))
+    height = _pt(getattr(rendered, "height", float("nan")))
+    rotation = rendered.rotation if rendered is not None else 0
+    space = (
+        render_space(shown, page)
+        if rendered is not None and _side(width) and _side(height)
+        else None
+    )
+    if space is None:
+        # A hostile or broken page box (zero, negative, tiny, past PDF's limit) or geometry the
+        # parsers disagree on: recorded without a text layer, with sides the table can hold.
+        return _unscannable(number, width, height, rotation)
+    every = _placed(
+        cast(list[dict[str, object]], page.extract_words(keep_blank_chars=False)),
+        space,
+        width,
+        height,
+    )
+    if every is None:
+        return _unscannable(number, width, height, rotation)
     drawn = text_boxes(shown, space)
-    if not reconciled([(w.x0, w.top, w.x1, w.bottom) for w in words], drawn):
+    if not reconciled([(w.x0, w.top, w.x1, w.bottom) for w in every], drawn):
         return _unscannable(number, width, height, rotation)
-    if outlined_text(shown, space):
-        return _unscannable(number, width, height, rotation)
-    images = image_content(shown, space)  # review N1: text masked, the page unscanned for images
-    return PageWords(number, width, height, rotation, tuple(words), images)
+    chars = cast(list[dict[str, object]], page.chars)
+    sideways = not all(_is_upright(c) for c in chars)
+    words = every
+    if sideways:
+        # Words set sideways, upside down or mirrored are read out of order: left out of the
+        # layer, so no agent or search ever reads them (review R3).
+        upright_only = page.filter(_is_upright)
+        kept = _placed(
+            cast(list[dict[str, object]], upright_only.extract_words(keep_blank_chars=False)),
+            space,
+            width,
+            height,
+        )
+        if kept is None:
+            return _unscannable(number, width, height, rotation)
+        words = kept
+    unread = sideways_digits(chars) or image_content(shown, space) or drawn_glyphs(shown, space)
+    return PageWords(number, width, height, rotation, tuple(words), unread)
 
 
 def _reason(exc: BaseException) -> str:
@@ -261,7 +295,7 @@ def layer_document(page: PageWords) -> bytes:
         "w": page.width,
         "h": page.height,
         "rotation": page.rotation,
-        "images": page.images,
+        "unread": page.unread,
         "words": [
             {"text": w.text, "x0": w.x0, "top": w.top, "x1": w.x1, "bottom": w.bottom}
             for w in page.words
@@ -289,7 +323,7 @@ def parse_layer(raw: bytes) -> PageWords:
         float(cast(float, body["h"])),
         int(cast(int, body["rotation"])),
         words,
-        bool(body.get("images", False)),
+        bool(body.get("unread", False)),
     )
 
 
