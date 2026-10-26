@@ -8,8 +8,7 @@ import { useParam } from "../params";
 
 // Audits (A-01 §5.1): `/audits` → AUD-01 and `/audits/$auditId` → AUD-02 (`$auditId` is the
 // assurance work item), behind `audits.cockpit`. While the flag is off the area shows F-05's
-// flag-off state, never a 404 (the legacy board stays reachable from the engagement until
-// A-01-T21). AUD-01 keeps its filters in the URL; AUD-02 its rail row, dock tab and document
+// flag-off state, never a 404 (A-01-T21 retired the legacy board; its paths only redirect here). AUD-01 keeps its filters in the URL; AUD-02 its rail row, dock tab and document
 // (`?section=`, `?dock=`, `?doc=`); AUD-03 (`/audits/$auditId/source-documents`, A-01-T15) its
 // selected request, sort and search (`?item=`, `?sort=`, `?q=`).
 

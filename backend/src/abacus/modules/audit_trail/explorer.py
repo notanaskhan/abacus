@@ -17,9 +17,12 @@ and `counts` never include an omitted row and nothing says rows were left out (D
   Engagement roles never do. A firm-level reader walled from any client sees, of these, only
   the kinds that can name no client (`targets.FIRM_LEVEL`), and of those only events whose
   references name no client it is walled from and no client-side identifier it cannot place
-  (`FIRM_SAFE_REFS`; security review M1: `legal_hold.placed` carries its client in `after_ref`,
-  and `audit_events.client_id` is not filled by writers yet). Unplaced history fails closed.
-- A stored `client_id` the reader is walled from hides the event whatever else holds.
+  (`FIRM_SAFE_REFS`; security review M1: `legal_hold.placed` carries its client in `after_ref`).
+  Unplaced history fails closed. The rule stays although the unit of work now stores a client
+  (DEC-458): rows written before it, and events nothing places, keep a null `client_id`.
+- A stored `client_id` the reader is walled from hides the event whatever else holds, for every
+  reader and every kind (DEC-458: the unit of work fills it from the event's engagement, or a
+  client target, at insert).
 
 **What a row carries:** the actor grammar (`person`, `via_agent` with the person it acted for,
 `policy`, `system`, `support`); the catalogue's category and marker, `ok` only for a person or a
@@ -287,6 +290,9 @@ async def _conditions(
     if end is not None:
         found.append(t.effective_at < end)
     if where.office_id is not None:
+        # The event's own office (DEC-458: the work item's, the engagement's, else the client's
+        # primary office, stored at insert). The actor-office fallback for firm-level events
+        # (DEC-415 Q9) waits for an identity reader of an office's people: not applied.
         found.append(t.office_id == where.office_id)
     if where.ip is not None:
         # DEC-420: only a request-context reader may filter on what only they can see.

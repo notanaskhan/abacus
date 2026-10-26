@@ -77,6 +77,7 @@ from abacus.modules.requests.client_undo import (
     IgnoreNotesExhausted,
     NothingToUndo,
 )
+from abacus.modules.requests.closed_binders import refuse_closed_item_in
 from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.events import RequestItemIgnoreUndone, RequestItemSent
 from abacus.modules.requests.models import RequestItem
@@ -443,6 +444,7 @@ async def ignore_item(ctx: AuthContext, item_id: UUID, reason: str, note: str | 
             raise NotFound("request_item") from None  # INV-4: not theirs, so not there
         if await is_delegated(tx.session, item.id):
             raise NotFound("request_item")  # it went to its third party directly (INV-4)
+        await refuse_closed_item_in(tx.session, ctx, item.id)  # ED-118: read-only (DEC-461)
         if item.status not in ("requested", "returned"):
             raise RequestClosed(facts={"status": item.status})
         if (
@@ -530,6 +532,7 @@ async def undo_ignore(ctx: AuthContext, item_id: UUID) -> datetime:
             raise NotFound("request_item") from None  # INV-4: not theirs, so not there
         if await is_delegated(tx.session, item.id):
             raise NotFound("request_item")  # delegated since: the client's no longer (INV-4)
+        await refuse_closed_item_in(tx.session, ctx, item.id)  # ED-118: read-only (DEC-461)
         response = await newest_response(tx.session, item.id)
         if response is None or response.kind != "not_applicable":
             raise NothingToUndo(facts={"request_item_id": str(item.id)})
@@ -767,6 +770,7 @@ async def announce_upload(ctx: AuthContext, item_id: UUID, files_expected: int) 
             await authorise(ctx, "evidence.upload", resource)
         except Forbidden:
             raise NotFound("request_item") from None
+        await refuse_closed_item_in(tx.session, ctx, item.id)  # ED-118: read-only (DEC-461)
         expires = await insert_upload_intent(
             tx.session,
             tenant_id=ctx.tenant_id,

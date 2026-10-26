@@ -96,6 +96,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "audit_anchor:platform",  # Q-02-T21
         "audit_chain_verify:platform",  # Q-02-T21
         "audit_checkpoint:platform",  # Q-02-T20, T21
+        "audit_labels:platform",  # G-02-T10 (DEC-453)
         "audit_partitions:platform",  # Q-02-T20
         "notification_purge:platform",
         "ses_events:platform",

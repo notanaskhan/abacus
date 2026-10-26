@@ -106,6 +106,8 @@ _TEMPLATE_OF_FIRM_ROLE: Final[dict[str | None, Template]] = {
     "security_admin": "it_security",
 }
 _REASON_INDEX: Final = {"manual": 1, "access_ended": 2, "scim_deprovisioned": 3}
+# The deactivation reason codes by the index their audit event carries (G-02-T09 gap, DEC-459).
+DEACTIVATION_REASONS: Final = {index: code for code, index in _REASON_INDEX.items()}
 _ATTRIBUTES: Final = ("title", "office_id", "service_lines", "access_ends_on", "offshore")
 SERVICE_LINES: Final = ("audit", "tax", "cas", "advisory")
 _LIST = "firm_staff"

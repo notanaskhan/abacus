@@ -1,6 +1,7 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.kernel.uow.placement import register_engagement_placer
 from abacus.modules.engagements.acceptance import (
     NewCondition,
     acceptance_record,
@@ -16,6 +17,7 @@ from abacus.modules.engagements.acceptance_contract import (
     independence_router,
     team_roles_router,
 )
+from abacus.modules.engagements.audit_placement import place_engagements
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.conditions import (
@@ -214,6 +216,8 @@ from abacus.modules.organisations.api import (
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
+# G-02-T08 gap (DEC-458): the unit of work places engagement-scoped audit events.
+register_engagement_placer(place_engagements)
 # SPEC-036 (TASK-076): the AI gateway asks whether AI is off for an engagement.
 # P-06-T20 security review (DEC-324): tax-return work reaches no model without consent.
 register_client_data_facts(excluded=ai_excluded, tax_return=holds_tax_return)

@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import IO, TYPE_CHECKING, Final
+from typing import IO, TYPE_CHECKING, Final, TypedDict
 from uuid import UUID
 
 from abacus.kernel.config import settings
@@ -34,19 +34,27 @@ class ExportsUnavailable(ServiceUnavailable):
     """No exports bucket is configured: nothing is written anywhere else instead."""
 
 
+class _Owned(TypedDict, total=False):
+    ExpectedBucketOwner: str
+
+
 @dataclass(frozen=True)
 class _Exports:
     client: S3Client
     bucket: str
+    owner: str | None = None  # `exports_bucket_owner`: sent as ExpectedBucketOwner (DEC-454)
+
+    def owned(self) -> _Owned:
+        return {} if self.owner is None else {"ExpectedBucketOwner": self.owner}
 
 
 _exports: _Exports | None = None
 
 
-def configure_exports(client: S3Client, bucket: str) -> None:
+def configure_exports(client: S3Client, bucket: str, owner: str | None = None) -> None:
     """Tests and local runs: point the exports store at a client and bucket."""
     global _exports
-    _exports = _Exports(client, bucket)
+    _exports = _Exports(client, bucket, owner)
 
 
 def reset_exports() -> None:
@@ -60,7 +68,7 @@ def _from_settings() -> _Exports:
     bucket = settings().exports_bucket
     if bucket is None:
         raise ExportsUnavailable
-    return _Exports(s3_client(), bucket)
+    return _Exports(s3_client(), bucket, settings().exports_bucket_owner)
 
 
 def _target() -> _Exports:
@@ -98,6 +106,7 @@ async def put_segments(
             Key=segment_key(tenant_id, export_id, n),
             Body=sealed,
             ContentType="application/octet-stream",
+            **target.owned(),
         )
         n += 1
         if len(chunk) < segment_bytes:
@@ -117,15 +126,21 @@ async def _drop_from(target: _Exports, tenant_id: UUID, export_id: UUID, n: int)
                 Bucket=target.bucket,
                 Prefix=prefix,
                 ContinuationToken=token,
+                **target.owned(),
             )
         else:
             listed = await asyncio.to_thread(
-                target.client.list_objects_v2, Bucket=target.bucket, Prefix=prefix
+                target.client.list_objects_v2,
+                Bucket=target.bucket,
+                Prefix=prefix,
+                **target.owned(),
             )
         keys = [o.get("Key", "") for o in listed.get("Contents", [])]
         for key in keys:
             if key and key not in keep:
-                await asyncio.to_thread(target.client.delete_object, Bucket=target.bucket, Key=key)
+                await asyncio.to_thread(
+                    target.client.delete_object, Bucket=target.bucket, Key=key, **target.owned()
+                )
         token = listed.get("NextContinuationToken", "")
         if not listed.get("IsTruncated") or not token:
             return
@@ -135,7 +150,10 @@ async def get_segment(tenant_id: UUID, export_id: UUID, n: int) -> bytes:
     """One segment, opened: for the download (A-01-T22) and the tests."""
     target = _target()
     response = await asyncio.to_thread(
-        target.client.get_object, Bucket=target.bucket, Key=segment_key(tenant_id, export_id, n)
+        target.client.get_object,
+        Bucket=target.bucket,
+        Key=segment_key(tenant_id, export_id, n),
+        **target.owned(),
     )
     sealed = await asyncio.to_thread(response["Body"].read)
     return await open_sealed(tenant_id, sealed, _binding(export_id, n))

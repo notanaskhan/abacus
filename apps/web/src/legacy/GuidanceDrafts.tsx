@@ -12,6 +12,30 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 
+const KIND: Record<string, string> = {
+  bank_statement: "bank statements",
+  ar_aging: "AR agings",
+  ap_aging: "AP agings",
+  schedule: "schedules",
+};
+
+/** Who wrote a request's guidance, for the firm (SPEC-031 AC-3; SPEC-035 drafted text). Moved here
+ * from the retired ClientGuidance.tsx by R-01-T18. */
+export function sourceLabel(item: RequestItemOut, approver?: string): string | null {
+  switch (item.guidance_source) {
+    case "drafted": // SPEC-035 (TASK-073): approved drafter text, labelled for the firm
+      return `Drafted via Agent, approved by ${approver ?? "your team"}`;
+    case "kind_default":
+      return `Default for ${KIND[item.document_kind ?? ""] ?? "this kind of document"}`;
+    case "template":
+      return "From the template";
+    case "firm":
+      return "Written by your team";
+    default:
+      return null;
+  }
+}
+
 // SPEC-035 (TASK-073): drafts of why a request is asked and what good looks like, for the firm to
 // review. Nothing reaches an item until a person approves it (ADR-005); drafts are shown through
 // AgentText with the AI tag (ADR-065).
