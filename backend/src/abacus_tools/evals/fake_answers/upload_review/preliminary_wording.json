@@ -1,0 +1,21 @@
+{
+  "case": "preliminary_wording",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "7c7e7cb10b4cec7e3552ccaa8f3ea1ec03cc59c7d2c17942dd49c203056a295d",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "draft",
+        "confidence": 0.9,
+        "rationale": "The statement says its figures may still change before close.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "Preliminary statement - figures subject to change before close."
+          }
+        ]
+      }
+    ]
+  }
+}

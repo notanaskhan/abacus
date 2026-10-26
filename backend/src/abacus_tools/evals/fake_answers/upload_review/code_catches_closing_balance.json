@@ -1,0 +1,21 @@
+{
+  "case": "code_catches_closing_balance",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "b6b1eb18e0a3cb187877872568467835cfe9c1145f6784ac4d7a5b6c6b43801a",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "altered",
+        "confidence": 0.8,
+        "rationale": "The second page states a closing balance that differs from page one's ending balance.",
+        "citations": [
+          {
+            "page": 2,
+            "quote": "Closing balance as of December 31,"
+          }
+        ]
+      }
+    ]
+  }
+}

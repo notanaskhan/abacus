@@ -1,0 +1,9 @@
+{
+  "case": "clean_estimated_payment",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "cdd021c3b93bfdd5bcf98551c3973d8ed8aca5d9e305e3892cad0d70f562ce0a",
+  "response": {
+    "no_concerns": true,
+    "flags": []
+  }
+}

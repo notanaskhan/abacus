@@ -1,0 +1,21 @@
+{
+  "case": "draft_watermark",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "7b026860965a8880a423d173697f2aec9a44c37aada63451900d737c0536d1e0",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "draft",
+        "confidence": 0.95,
+        "rationale": "The statement is marked as a draft not for distribution.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "DRAFT - NOT FOR DISTRIBUTION"
+          }
+        ]
+      }
+    ]
+  }
+}

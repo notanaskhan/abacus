@@ -14,7 +14,13 @@ from abacus.modules.agents.api import ASSESSOR, DRAFTER, MATCHER, REVIEWER, spec
 from abacus_tools.evals import entry_assessment, guidance_drafting, matching
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
-from abacus_tools.evals.upload_review import evaluate, load_suite, validate
+from abacus_tools.evals.upload_review import (
+    evaluate,
+    fake_answers,
+    fake_reviewer,
+    load_suite,
+    validate,
+)
 from abacus_tools.stack import Stack, run_with_stack
 
 DEFAULT_OUT = Path(__file__).resolve().parents[3] / ".evals"
@@ -31,7 +37,10 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(
-            cast(Tier | None, args.tier), cast(str, args.route), cast(Path, args.out)
+            cast(Tier | None, args.tier),
+            cast(str, args.route),
+            cast(Path, args.out),
+            cast(Subset, args.subset),
         )
     if args.agent == DRAFTER:  # SPEC-035 (TASK-072): its own runner
         return draft_main(
@@ -58,21 +67,25 @@ def main(argv: list[str]) -> int:
     return 0 if summary.status == "passed" else 1
 
 
-def review_main(tier: Tier | None, route: str, out: Path) -> int:
-    """The upload reviewer's suite, on a throwaway stack; real routes only (TASK-058 D5)."""
-    if route == "fake":
-        print("the upload reviewer has no fake answers: run it with --route direct")
-        return 2
+def review_main(tier: Tier | None, route: str, out: Path, subset: Subset = "full") -> int:
+    """The upload reviewer's suite, on a throwaway stack (TASK-058 D4). P-06-T21: `--route fake`
+    answers from the recorded answers (`upload_review.fake_answers`), never a model."""
     guard()
-    guard_real(cast(EvalRoute, route))
+    if route != "fake":
+        guard_real(cast(EvalRoute, route))
     chosen: Tier = tier or spec(REVIEWER).tier
     suite = load_suite()
     validate(suite)
+    answers = fake_answers() if route == "fake" else {}
     results: list[dict[str, object]] = []
 
     async def record(stack: Stack) -> None:
         world = await prepare(stack)
-        results.append(await evaluate(stack, world, suite, chosen, route, out))
+        if route == "fake":
+            with fake_reviewer(answers):
+                results.append(await evaluate(stack, world, suite, chosen, route, out, subset))
+        else:
+            results.append(await evaluate(stack, world, suite, chosen, route, out, subset))
 
     run_with_stack(record)
     return 0 if results and results[0]["status"] == "passed" else 1

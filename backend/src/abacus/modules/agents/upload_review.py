@@ -28,6 +28,7 @@ from abacus.ai_gateway import (
     GatewayCall,
     GatewayRefused,
     call,
+    fake_responds,
     sanitise_text,
 )
 from abacus.ai_gateway.routes import route_enabled
@@ -98,10 +99,15 @@ class ReviewOutcome:
 
 
 def model_available() -> bool:
-    """A real route the reviewer may use is enabled (TASK-059 D3): the fake model has no
-    reviewer answers, so without one nothing is started (the local stack, unless a developer
-    turns on the real model for the synthetic Dev firm)."""
-    return any(route_enabled(r) for r in spec(REVIEWER).routes)  # real routes only
+    """A real route the reviewer may use is enabled (TASK-059 D3): the local stack's fake model
+    has no reviewer answers, so without one nothing is started there (unless a developer turns on
+    the real model for the synthetic Dev firm). P-06-T21: or the fake route is enabled and the
+    fake model has a reviewer responder, which only the evaluation's fake run installs (its
+    recorded answers)."""
+    reviewer = spec(REVIEWER)
+    if any(route_enabled(r) for r in reviewer.routes):  # real routes
+        return True
+    return route_enabled("fake") and fake_responds(reviewer.prompt)
 
 
 async def create_review_run(
