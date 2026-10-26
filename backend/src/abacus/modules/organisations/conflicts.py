@@ -631,3 +631,47 @@ async def record_screening(
         recorded_by=ctx.user_id,
         recorded_at=cast(datetime, row["recorded_at"]),
     )
+
+
+# --- the independence conclusion's precondition (P-07-T41; SPEC-332 AC-19) ----------------------
+
+_STANDING_FOR_CLIENT = text(
+    """
+    SELECT r.id, r.matched_client_id
+      FROM conflict_results r
+      JOIN conflict_checks c ON c.id = r.check_id
+      LEFT JOIN LATERAL (
+          SELECT assessment FROM conflict_result_events
+           WHERE result_id = r.id ORDER BY cleared_at DESC, id DESC LIMIT 1
+      ) e ON true
+     WHERE (
+            (c.subject_kind = 'client' AND c.subject_id = :client)
+         OR (c.subject_kind = 'client_entity'
+             AND c.subject_id IN (SELECT id FROM client_entities WHERE client_id = :client))
+         OR c.id = ANY(CAST(:checks AS uuid[]))
+           )
+       AND r.matched_client_id <> :client
+       AND COALESCE(
+               e.assessment,
+               CASE WHEN r.match_kind = 'counterparty' THEN 'counterparty_review'
+                    ELSE 'pending' END
+           ) IN ('pending', 'counterparty_review', 'conflict')
+     ORDER BY r.id
+    """
+)
+
+
+async def standing_conflict_results(
+    tenant: TenantContext, client_id: UUID, check_ids: Sequence[UUID] = ()
+) -> list[tuple[UUID, UUID]]:
+    """The conflict results still standing (pending, counterparty review or conflict) on the
+    checks run for the client or its entities, and on any checks named (an intake's, linked to
+    the engagement), leaving out matches on the client itself: `(result id, matched client)`.
+    Identifiers only, for a caller that authorised reading the client's engagement; walls do not
+    narrow the search (it is a precondition), so a caller showing it to a person drops or
+    collapses results on clients that person is walled from (DEC-428, DEC-429)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _STANDING_FOR_CLIENT, {"client": client_id, "checks": list(check_ids)}
+        )
+        return [(cast(UUID, r.id), cast(UUID, r.matched_client_id)) for r in rows.all()]

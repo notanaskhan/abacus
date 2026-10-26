@@ -2503,7 +2503,8 @@ export const logBreach = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Add Breach Event Route
  *
- * AC-28: insert-only; `independence_breach.updated`.
+ * AC-28: insert-only, each kind once (409 `illegal_transition`);
+ * `independence_breach.updated`.
  */
 export const addBreachEvent = <ThrowOnError extends boolean = false>(options: Options<AddBreachEventData, ThrowOnError>): RequestResult<AddBreachEventResponses, AddBreachEventErrors, ThrowOnError> => (options.client ?? client).post<AddBreachEventResponses, AddBreachEventErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2533,7 +2534,7 @@ export const concludeIndependence = <ThrowOnError extends boolean = false>(optio
 /**
  * Confirm Independence Route
  *
- * Human-only, self only (AC-17); `independence.confirmed`.
+ * Human-only, self only (AC-17): the three statements; `independence.confirmed`.
  */
 export const confirmIndependence = <ThrowOnError extends boolean = false>(options: Options<ConfirmIndependenceData, ThrowOnError>): RequestResult<ConfirmIndependenceResponses, ConfirmIndependenceErrors, ThrowOnError> => (options.client ?? client).post<ConfirmIndependenceResponses, ConfirmIndependenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2548,7 +2549,8 @@ export const confirmIndependence = <ThrowOnError extends boolean = false>(option
 /**
  * Decline Independence Route
  *
- * Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).
+ * Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`
+ * (the EP's notification registers with P-07-T47).
  */
 export const declineIndependence = <ThrowOnError extends boolean = false>(options: Options<DeclineIndependenceData, ThrowOnError>): RequestResult<DeclineIndependenceResponses, DeclineIndependenceErrors, ThrowOnError> => (options.client ?? client).post<DeclineIndependenceResponses, DeclineIndependenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

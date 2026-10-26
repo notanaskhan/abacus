@@ -53,6 +53,14 @@ import {
   type Cli02State,
   scenarios as cli02Scenarios,
 } from "./CLI-02/scenarios";
+import { AcceptancePage } from "./CLI-07";
+import {
+  type Cli07State,
+  NOTES as CLI07_NOTES,
+  OPENS as CLI07_OPENS,
+  STATES as CLI07_STATES,
+  scenarios as cli07Scenarios,
+} from "./CLI-07/scenarios";
 import { AuditsIndex } from "./AUD-01";
 import {
   STATES as AUD01_STATES,
@@ -859,6 +867,47 @@ function Eng05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ENG-05", { title: "Team & roles", Component: Eng05Artboard });
+
+// CLI-07 (P-07-T46): acceptance and continuance, a–g, each on its engagement.
+function Cli07Frame({ state }: { state: Cli07State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/clients" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AcceptancePage
+        clientId={CLI07_OPENS[state].clientId}
+        engagementId={CLI07_OPENS[state].engagementId}
+        toolbar={bar.toolbar}
+        frame
+        note={CLI07_NOTES[state]}
+      />
+    </div>
+  );
+}
+
+function Cli07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Cli07State = CLI07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cli07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Cli07Frame key={state} state={state} /> : null;
+}
+
+registerScreen("CLI-07", { title: "Acceptance & continuance", Component: Cli07Artboard });
 
 // SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
 function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

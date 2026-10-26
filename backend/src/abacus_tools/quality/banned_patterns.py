@@ -2376,6 +2376,21 @@ RULES: list[Rule | TreeRule] = [
         ),
     ),
     Rule(
+        id="INDEP-001",
+        description="Only the independence service and its route reach the conclusion",
+        adr="ADR-005",
+        check=_check_named(
+            "conclude_independence", "only the engagement partner concludes independence (INV-1)"
+        ),
+        # P-07-T41 (SPEC-332 AC-20): the definition, its route, and the module's interface.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/engagements/independence.py",
+            "src/abacus/modules/engagements/acceptance_contract.py",
+            "src/abacus/modules/engagements/api.py",
+        ),
+    ),
+    Rule(
         id="EVAL-001",
         description="Only the evaluation runner switches the gateway into evaluation mode",
         adr="ADR-019",

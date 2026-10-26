@@ -36,10 +36,16 @@ export const cliScreens = {
     status: "planned",
     path: null,
   },
+  // P-07-T46 built a, b, d, e and f live over the acceptance routes (P-07-T35) and c and g on
+  // fixtures, at /clients/$clientId/acceptance/$engagementId behind `engagements.acceptance_v2`.
+  // Live: no to.<ID>() is needed while every designed target (ENG-04, CLI-02, CLI-08, INS-05,
+  // BND-04) is planned; the back chip and "Open ‹client›" reach CLI-02 through routes/firm
+  // (DEC-195, DEC-431).
   "CLI-07": {
     name: "Acceptance & continuance · Estate of Walter Thornbury",
-    status: "planned",
-    path: null,
+    status: "live",
+    path: "/clients/$clientId/acceptance/$engagementId",
+    navArea: "Clients",
   },
   "CLI-08": {
     name: "Independence & conflicts · PY2025 EBP Audit · Northwind Robotics 401(k) Plan",

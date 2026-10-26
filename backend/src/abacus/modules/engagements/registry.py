@@ -35,6 +35,12 @@ TABLES: frozenset[str] = frozenset(
         "acceptance_conditions",
         "acceptance_condition_events",
         "risk_partner_reviews",
+        # P-07-T41 (0175): independence in-app (CLI-08)
+        "independence_conclusions",
+        "nas_evaluations",
+        "nas_evaluation_events",
+        "independence_breaches",
+        "independence_breach_events",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -55,6 +61,12 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "acceptance_conditions",
         "acceptance_condition_events",
         "risk_partner_reviews",
+        # P-07-T41 (0175): a person's conclusion, evaluations and the breach log
+        "independence_conclusions",
+        "nas_evaluations",
+        "nas_evaluation_events",
+        "independence_breaches",
+        "independence_breach_events",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -91,6 +103,24 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "risk_partner_reviews": frozenset(
         {"tenant_id", "record_id", "event", "partner_id", "actor_id"}
+    ),
+    # P-07-T41 (0175): independence in-app (CLI-08)
+    "independence_conclusions": frozenset(
+        {"id", "tenant_id", "engagement_id", "option", "safeguards_sealed", "concluded_by"}
+        | {"mfa_verified_at", "supersedes_id"}
+    ),
+    "nas_evaluations": frozenset(
+        {"id", "tenant_id", "engagement_id", "service_code", "created_by"}
+    ),
+    "nas_evaluation_events": frozenset(
+        {"id", "tenant_id", "nas_id", "provided", "status", "evaluation_sealed"}
+        | {"safeguards_sealed", "ske_contact_id", "recorded_by"}
+    ),
+    "independence_breaches": frozenset(
+        {"id", "tenant_id", "engagement_id", "description_sealed", "user_id", "logged_by"}
+    ),
+    "independence_breach_events": frozenset(
+        {"id", "tenant_id", "breach_id", "kind", "note_sealed", "recorded_by"}
     ),
     "team_approvals": frozenset(  # P-07-T30 (0155)
         {"tenant_id", "engagement_id", "approved_by", "member_set_hash"}
@@ -152,6 +182,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
     "independence_confirmations": frozenset(
         {"status", "statement_version", "note", "answered_at"}
+        # P-07-T41 (0175): the statements ticked, sealed notes and reminders
+        | {"statements", "interests_note", "decline_note", "reminder_count", "last_reminded_at"}
     ),
     "work_items": frozenset({"name", "status", "due_on", "archived_at", "archive_locked_at"}),
     # F-03-T05 (0068) granted phase and auto_mode; A-01-T05 (0134) adds the EBP profile facts and

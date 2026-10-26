@@ -31319,6 +31319,18 @@
       "MemberConfirmationOut": {
         "description": "A member's own confirmation for this engagement; a decline's note is the EP's to read.",
         "properties": {
+          "annual_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Annual Confirmed"
+          },
           "answered_at": {
             "anyOf": [
               {
@@ -78443,16 +78455,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Independence Route",
@@ -78685,16 +78687,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Log Breach Route",
@@ -78706,7 +78698,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/breaches/{breach_id}/events": {
       "post": {
-        "description": "AC-28: insert-only; `independence_breach.updated`.",
+        "description": "AC-28: insert-only, each kind once (409 `illegal_transition`);\n`independence_breach.updated`.",
         "operationId": "add_breach_event",
         "parameters": [
           {
@@ -78832,16 +78824,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Add Breach Event Route",
@@ -78969,16 +78951,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Conclude Independence Route",
@@ -78990,7 +78962,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/confirm": {
       "post": {
-        "description": "Human-only, self only (AC-17); `independence.confirmed`.",
+        "description": "Human-only, self only (AC-17): the three statements; `independence.confirmed`.",
         "operationId": "confirm_independence",
         "parameters": [
           {
@@ -79106,16 +79078,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirm Independence Route",
@@ -79127,7 +79089,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/decline": {
       "post": {
-        "description": "Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).",
+        "description": "Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`\n(the EP's notification registers with P-07-T47).",
         "operationId": "decline_independence",
         "parameters": [
           {
@@ -79243,16 +79205,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decline Independence Route",
@@ -79360,16 +79312,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Nas Route",
@@ -79507,16 +79449,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Nas Route",
@@ -79741,16 +79673,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Rotation Route",

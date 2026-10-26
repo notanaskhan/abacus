@@ -4321,7 +4321,8 @@ export const logBreachMutation = (options?: Partial<Options<LogBreachData>>): Us
 /**
  * Add Breach Event Route
  *
- * AC-28: insert-only; `independence_breach.updated`.
+ * AC-28: insert-only, each kind once (409 `illegal_transition`);
+ * `independence_breach.updated`.
  */
 export const addBreachEventMutation = (options?: Partial<Options<AddBreachEventData>>): UseMutationOptions<AddBreachEventResponse, AddBreachEventError, Options<AddBreachEventData>> => {
     const mutationOptions: UseMutationOptions<AddBreachEventResponse, AddBreachEventError, Options<AddBreachEventData>> = {
@@ -4359,7 +4360,7 @@ export const concludeIndependenceMutation = (options?: Partial<Options<ConcludeI
 /**
  * Confirm Independence Route
  *
- * Human-only, self only (AC-17); `independence.confirmed`.
+ * Human-only, self only (AC-17): the three statements; `independence.confirmed`.
  */
 export const confirmIndependenceMutation = (options?: Partial<Options<ConfirmIndependenceData>>): UseMutationOptions<ConfirmIndependenceResponse, ConfirmIndependenceError, Options<ConfirmIndependenceData>> => {
     const mutationOptions: UseMutationOptions<ConfirmIndependenceResponse, ConfirmIndependenceError, Options<ConfirmIndependenceData>> = {
@@ -4378,7 +4379,8 @@ export const confirmIndependenceMutation = (options?: Partial<Options<ConfirmInd
 /**
  * Decline Independence Route
  *
- * Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).
+ * Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`
+ * (the EP's notification registers with P-07-T47).
  */
 export const declineIndependenceMutation = (options?: Partial<Options<DeclineIndependenceData>>): UseMutationOptions<DeclineIndependenceResponse, DeclineIndependenceError, Options<DeclineIndependenceData>> => {
     const mutationOptions: UseMutationOptions<DeclineIndependenceResponse, DeclineIndependenceError, Options<DeclineIndependenceData>> = {
