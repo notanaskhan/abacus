@@ -46,10 +46,6 @@ from .support import Net, Person, Seeder, Site
 pytestmark = pytest.mark.asyncio
 
 Json = dict[str, object]
-LIVE: Final = (
-    "independence v2 is a 501 stub until P-07-T41; recorded in "
-    "work/tasks/TASK-1325-independence-live.md (TASK-1325)"
-)
 STATEMENTS: Final = ["no_financial_interest", "no_family_in_key_position", "not_a_participant"]
 
 
@@ -288,7 +284,6 @@ async def _ready(nw: Northwind) -> None:
 # ================================================================================================
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac17_four_of_five_then_ana_confirms_only_her_own(nw: Northwind) -> None:
     before = await nw.summary(nw.hannah)
     assert before["attest_client"] is True
@@ -322,7 +317,6 @@ async def test_ac17_four_of_five_then_ana_confirms_only_her_own(nw: Northwind) -
     assert {str(r["status"]) for r in others} == {"confirmed"}
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac17_the_three_statements_are_required(nw: Northwind) -> None:
     refused = await nw.call(
         "POST",
@@ -334,7 +328,6 @@ async def test_ac17_the_three_statements_are_required(nw: Northwind) -> None:
     assert _members(await nw.summary())[str(nw.ana.user_id)]["confirmation"] == "requested"
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac17_someone_without_a_role_here_cannot_confirm(nw: Northwind) -> None:
     for who in (nw.grace, nw.rita):
         refused = await nw.confirm(who)
@@ -343,7 +336,6 @@ async def test_ac17_someone_without_a_role_here_cannot_confirm(nw: Northwind) ->
     assert (await nw.summary())["confirmed"] == 4
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac17_a_decline_needs_a_note_sealed_and_keeps_the_member_blocked(
     nw: Northwind,
 ) -> None:
@@ -371,7 +363,6 @@ async def test_ac17_a_decline_needs_a_note_sealed_and_keeps_the_member_blocked(
     assert "member_declined" in facts
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac17_a_reminder_is_sent_by_the_person_clicking_and_counted(nw: Northwind) -> None:
     sent = _json(
         await nw.call(
@@ -394,7 +385,6 @@ async def test_ac17_a_reminder_is_sent_by_the_person_clicking_and_counted(nw: No
 # ================================================================================================
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac19_the_conclusion_names_every_missing_precondition(nw: Northwind) -> None:
     facts = _refusal(await nw.conclude(), 409, "independence_preconditions_unmet")
     assert {"member_not_confirmed", "ske_designee_missing", "nas_not_evaluated"} <= set(facts)
@@ -403,7 +393,6 @@ async def test_ac19_the_conclusion_names_every_missing_precondition(nw: Northwin
     assert (await nw.gate("G2"))["met"] is False
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac19_a_conflict_hit_not_cleared_blocks_the_conclusion(nw: Northwind) -> None:
     await _ready(nw)
     await nw.seed.run(
@@ -440,7 +429,6 @@ async def test_ac19_a_conflict_hit_not_cleared_blocks_the_conclusion(nw: Northwi
     _json(await nw.conclude(), 201)
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac18_margaret_concludes_independent_and_g2_reports_met(nw: Northwind) -> None:
     await _ready(nw)
     assert (await nw.gate("G2"))["met"] is False
@@ -460,7 +448,6 @@ async def test_ac18_margaret_concludes_independent_and_g2_reports_met(nw: Northw
     assert outbox == 1
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac18_safeguards_are_required_and_not_independent_leaves_g2_unmet(
     nw: Northwind,
 ) -> None:
@@ -487,7 +474,6 @@ async def test_ac18_safeguards_are_required_and_not_independent_leaves_g2_unmet(
         )
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac18_only_margaret_with_fresh_mfa_concludes(nw: Northwind) -> None:
     await _ready(nw)
     for who in (nw.hannah, nw.thomas, nw.ana, nw.grace, nw.rita):
@@ -515,7 +501,6 @@ async def test_ac20_the_matrix_denies_the_agent_and_system_confirming_or_conclud
     assert {r for r, d in conclude.decisions.items() if d != "deny"} == {"engagement_partner"}
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac20_an_agent_or_system_context_is_refused_by_the_service(nw: Northwind) -> None:
     from abacus.modules.engagements import api as engagements_api
 
@@ -548,7 +533,6 @@ async def test_ac20_an_agent_or_system_context_is_refused_by_the_service(nw: Nor
     assert (await nw.summary())["conclusion"] is None
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac20_the_database_refuses_a_conclusion_written_by_a_non_human(
     nw: Northwind,
 ) -> None:
@@ -570,7 +554,6 @@ async def test_ac20_the_database_refuses_a_conclusion_written_by_a_non_human(
     assert "action: independence.confirmed" in register
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac20_only_the_independence_module_may_call_the_conclusion(
     tmp_path: Path,
 ) -> None:
@@ -591,7 +574,6 @@ async def test_ac20_only_the_independence_module_may_call_the_conclusion(
 # ================================================================================================
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac21_the_tax_service_is_a_nas_row_the_engagement_partner_decides(
     nw: Northwind,
 ) -> None:
@@ -629,7 +611,6 @@ async def test_ac21_the_tax_service_is_a_nas_row_the_engagement_partner_decides(
     assert staff.status_code == 403, staff.text
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac22_without_an_ske_designee_nas_and_the_conclusion_are_refused(
     nw: Northwind,
 ) -> None:
@@ -650,7 +631,6 @@ async def test_ac22_without_an_ske_designee_nas_and_the_conclusion_are_refused(
     assert "ske_designee_missing" in _reasons(await nw.summary())
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac22_a_non_attest_client_needs_no_ske_designee_or_nas(net: Net) -> None:
     nw = await _world(net, attest=False)
     summary = await nw.summary()
@@ -667,7 +647,6 @@ async def test_ac22_a_non_attest_client_needs_no_ske_designee_or_nas(net: Net) -
 # ================================================================================================
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac27_years_served_derive_from_the_prior_engagement_chain(nw: Northwind) -> None:
     # Margaret led the six prior years' audits too; Hannah joined for the last two.
     child = nw.eid
@@ -722,7 +701,6 @@ async def test_ac27_years_served_derive_from_the_prior_engagement_chain(nw: Nort
 # ================================================================================================
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_ac28_the_banner_stays_until_three_events_and_the_log_is_insert_only(
     nw: Northwind,
 ) -> None:
@@ -755,9 +733,12 @@ async def test_ac28_the_banner_stays_until_three_events_and_the_log_is_insert_on
     assert "breach_open" not in _reasons(await nw.summary())
     assert await nw.audit("independence_breach.logged") == [("human", str(nw.hannah.user_id))]
     assert len(await nw.audit("independence_breach.updated")) == 3
-    for table in ("independence_breaches", "independence_breach_events"):
+    for delete in (
+        "DELETE FROM independence_breaches WHERE tenant_id = $1",
+        "DELETE FROM independence_breach_events WHERE tenant_id = $1",
+    ):
         with pytest.raises(asyncpg.PostgresError):
-            await nw.seed.run(f"DELETE FROM {table} WHERE tenant_id = $1", nw.tenant)  # noqa: S608
+            await nw.seed.run(delete, nw.tenant)
 
 
 # ================================================================================================
@@ -765,7 +746,6 @@ async def test_ac28_the_banner_stays_until_three_events_and_the_log_is_insert_on
 # ================================================================================================
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE)
 async def test_inv3_a_walled_member_and_another_firm_get_404(nw: Northwind, net: Net) -> None:
     _json(
         await nw.call(

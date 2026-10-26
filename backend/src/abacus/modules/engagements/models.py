@@ -6,6 +6,7 @@ from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import FetchedValue
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -86,6 +87,12 @@ class IndependenceConfirmation(Base):
     before_act_1: Mapped[bool] = mapped_column(server_default=FetchedValue())
     requested_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
     answered_at: Mapped[datetime | None]
+    # P-07-T41 (0175): the statements ticked, sealed notes, reminders.
+    statements: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    interests_note: Mapped[bytes | None]
+    decline_note: Mapped[bytes | None]
+    reminder_count: Mapped[int] = mapped_column(server_default=FetchedValue())
+    last_reminded_at: Mapped[datetime | None]
 
 
 class EngagementLetter(Base):

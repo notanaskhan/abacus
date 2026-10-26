@@ -42,3 +42,6 @@ insert-only, rotation derivation, G2 provider and attest-only scope.
 ## Progress log
 - 2026-10-26: written from the sources above before T41. On the stub: 1 passes (the matrix rows),
   the rest are strict xfails citing TASK-1325.
+- 2026-10-26 (with T41, TASK-1325): the 19 markers removed; all 21 tests pass. One non-assertion
+  edit: the breach-log delete probe lost a `# noqa: S608` (SUPPRESS-001) and became two literal
+  statements.

@@ -51,7 +51,15 @@ def _world(
             return None
         return SimpleNamespace(accepted=getattr(acceptance, "decision", None) == "accepted")
 
+    async def no_rows(*_: object) -> None:
+        return None  # P-07-T41: no conclusion row, so G2 reads SPEC-025's row
+
+    async def no_breaches(*_: object) -> list[object]:
+        return []
+
     monkeypatch.setattr(subject, "latest_acceptance", latest)
+    monkeypatch.setattr(subject, "latest_conclusion", no_rows)
+    monkeypatch.setattr(subject, "open_breach_ids", no_breaches)
     monkeypatch.setattr(subject, "g1_decision", g1)
     monkeypatch.setattr(subject, "get_letter", get_letter)
     monkeypatch.setattr(subject, "letter_policy", policy)

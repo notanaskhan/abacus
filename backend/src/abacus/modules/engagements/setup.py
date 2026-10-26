@@ -28,6 +28,7 @@ from abacus.modules.engagements.acceptance_tables import records as acceptance_r
 from abacus.modules.engagements.contacts import attest_of
 from abacus.modules.engagements.events import IndependenceRequested
 from abacus.modules.engagements.gate_policy import required_gates
+from abacus.modules.engagements.independence_tables import g2_met
 from abacus.modules.engagements.models import Engagement, EngagementAcceptance, EngagementLetter
 from abacus.modules.engagements.repository import (
     answer_confirmation,
@@ -105,6 +106,7 @@ def _blocked(
     *,
     gates: frozenset[str],
     needs_letter: bool,
+    g2: bool | None = None,
 ) -> EngagementNotOpen | None:
     """The first gate the engagement's type requires that is not met (F-03-T13: the per-type gate
     policy, so a tax or non-attest CAS engagement opens on G1 and G3 without G2)."""
@@ -113,7 +115,9 @@ def _blocked(
             return AcceptanceMissing("acceptance", facts={"gate": "G1"})
         if acceptance.decision != "accepted":
             return AcceptanceDeclined("acceptance", facts={"gate": "G1"})
-    if "G2" in gates and (acceptance is None or acceptance.independence_concluded_at is None):
+    if g2 is None:  # SPEC-025's conclusion alone (the rule's pure form)
+        g2 = acceptance is not None and acceptance.independence_concluded_at is not None
+    if "G2" in gates and not g2:  # P-07-T41: callers pass `g2_met` (DEC-428)
         return IndependenceConclusionMissing("independence", facts={"gate": "G2"})
     if (
         "G3" in gates
@@ -135,8 +139,11 @@ async def require_open(tenant: TenantContext, engagement_id: UUID) -> None:
             raise NotFound("engagement")
         acceptance = await latest_acceptance(session, engagement_id)
         letter = await get_letter(session, engagement_id)
+        g2 = await g2_met(session, engagement_id)
     gates = frozenset(required_gates(engagement_type))
-    blocked = _blocked(acceptance, letter, gates=gates, needs_letter=await letter_policy(tenant))
+    blocked = _blocked(
+        acceptance, letter, gates=gates, needs_letter=await letter_policy(tenant), g2=g2
+    )
     if blocked is not None:
         raise blocked
 
@@ -516,6 +523,7 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
             raise NotFound("engagement")
         acceptance = await latest_acceptance(session, engagement_id)
         letter = await get_letter(session, engagement_id)
+        g2 = await g2_met(session, engagement_id)
         rows = await confirmations_of(session, engagement_id)
         client = (await client_names(session, [engagement.client_entity_id])).get(
             engagement.client_entity_id
@@ -530,6 +538,7 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         letter,
         gates=frozenset(required_gates(engagement.type)),
         needs_letter=needs_letter,
+        g2=g2,
     )
     team = [Member(m.display_name, m.role) for m in await engagement_team(ctx, engagement_id)]
     admins: list[str] = []
@@ -549,7 +558,7 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         methodology_applied=engagement.methodology_version_id is not None,
         acceptance_decision=acceptance.decision if acceptance else None,
         acceptance_at=acceptance.created_at if acceptance else None,
-        concluded=acceptance is not None and acceptance.independence_concluded_at is not None,
+        concluded=g2,
         letter_status=letter.status if letter else None,
         letter_required=needs_letter,
         confirmations=[Confirmation(names.get(r.user_id, ""), r.status) for r in rows],

@@ -14,6 +14,11 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.gate_policy import required_gates
+from abacus.modules.engagements.independence_tables import (
+    POSITIVE,
+    latest_conclusion,
+    open_breach_ids,
+)
 from abacus.modules.engagements.repository import get_letter, latest_acceptance
 from abacus.modules.engagements.slots import GateFact, gate_fact, register_gate_provider
 from abacus.modules.identity.api import letter_policy
@@ -33,9 +38,18 @@ async def _acceptance(tenant: TenantContext, engagement_id: UUID) -> GateFact:
 
 
 async def _independence(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    """G2: the engagement partner's newest conclusion is positive and no breach is open
+    (P-07-T41, DEC-428); SPEC-025's conclusion where no conclusion row exists."""
     async with tenant_session(tenant) as session:
-        acceptance = await latest_acceptance(session, engagement_id)
-    if acceptance is None or acceptance.independence_concluded_at is None:
+        if await open_breach_ids(session, engagement_id):
+            return GateFact(met=False, blockers=("independence_breach",))
+        concluded = await latest_conclusion(session, engagement_id)
+        if concluded is not None:
+            met = concluded.option in POSITIVE
+        else:
+            legacy = await latest_acceptance(session, engagement_id)
+            met = legacy is not None and legacy.independence_concluded_at is not None
+    if not met:
         return GateFact(met=False, blockers=("independence_conclusion",))
     return GateFact(met=True)
 
