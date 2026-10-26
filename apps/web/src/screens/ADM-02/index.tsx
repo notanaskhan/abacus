@@ -328,7 +328,7 @@ export function ADM02({ search, onSearch, onNavigate, onBack }: ADM02Props): JSX
       groups={GROUPS.map((g) => ({
         ...g,
         sections: g.sections.filter(
-          (s) => s.id === "general" || s.id === "people" || PLANNED_VISIBLE,
+          (s) => s.id === "general" || s.id === "people" || s.id === "offices" || PLANNED_VISIBLE,
         ),
       })).filter((g) => g.sections.length > 0)}
       active="people"
