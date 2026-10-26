@@ -35,3 +35,4 @@ each injected violation (F-04.31).
 
 ## Progress log
 - 2026-10-26: built (build-first).
+- 2026-10-26: `tests/unit/tools/test_harness_invariants.py` (16) passes; the CLI read the local Brightwater Hale firm's events with 0 violations.
