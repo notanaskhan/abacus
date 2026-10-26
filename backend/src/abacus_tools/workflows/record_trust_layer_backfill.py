@@ -9,7 +9,9 @@ activities replaced by stubs (replay never runs activities): a batch of two uplo
 and an inbox file, each given a word layer; the batch isn't full, so the run ends
 (`trust-layer-backfill-<version>-done.json`). With `skipped`, the version's step fails for good
 and the run passes it and gives the inbox file its layer (`...-skipped.json`). Refuses to
-overwrite an existing file.
+overwrite an existing file. From v2 (P-03-T15, `patched("masks")`) the batch comes from
+`trust_layer.pending_masks` and each upload gets the word layer, the PII scan and the masked
+rendition (`trust-layer-backfill-v2-done.json`).
 """
 
 from __future__ import annotations
@@ -47,6 +49,24 @@ async def _pending_stub(given: BackfillInput) -> list[UploadInput]:
     ]
 
 
+@activity.defn(name="trust_layer.pending_masks")
+async def _pending_masks_stub(given: BackfillInput) -> list[UploadInput]:
+    return [
+        UploadInput(_TENANT, UPLOAD_VERSION, _VERSION_ID),
+        UploadInput(_TENANT, UPLOAD_INBOX, _INBOX_ID),
+    ]
+
+
+@activity.defn(name="upload.pii_scan")
+async def _pii_scan_stub(given: UploadInput) -> int:
+    return 1
+
+
+@activity.defn(name="upload.masked_preview")
+async def _masked_preview_stub(given: UploadInput) -> str:
+    return "pages"
+
+
 @activity.defn(name="upload.words")
 async def _words_stub(given: UploadInput) -> int:
     return 1
@@ -69,7 +89,13 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str = "done") 
         client,
         task_queue=_TASK_QUEUE,
         workflows=[TrustLayerBackfill],
-        activities=[_pending_stub, _words_failing_stub if outcome == "skipped" else _words_stub],
+        activities=[
+            _pending_stub,
+            _pending_masks_stub,
+            _words_failing_stub if outcome == "skipped" else _words_stub,
+            _pii_scan_stub,
+            _masked_preview_stub,
+        ],
     ):
         handle = await client.start_workflow(
             TrustLayerBackfill.run,

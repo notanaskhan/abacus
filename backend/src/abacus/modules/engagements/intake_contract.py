@@ -1,0 +1,457 @@
+"""The intake and import contract, v1: CLI-06 single intake and bulk import (P-07-T37 stub;
+ADR-139, P-36). Contract: `docs/contracts/intake-import.md`; spec: SPEC-332; DEC-374.
+
+Behind `clients.v2` (CLI-06's flag): off, every route here answers 404; on, 501
+`not_implemented` until P-07-T42 (dedupe, intake drafts and commit) and P-07-T52 (client
+imports) implement them.
+
+- **Dedupe** takes the name in the body, never the URL, and answers scored candidates.
+- **Intake drafts** hold identifiers and typed values only (no TIN, no free text beyond names);
+  autosaved with `seen_version`; the owner's only. **Commit** is one unit of work (client or a
+  new entity of an existing client, relationships, contacts, Prospect engagements with their
+  work items, the conflict check linked, and with `start_acceptance` an acceptance record) and
+  requires an `Idempotency-Key`.
+- **Client imports**: the file is the raw request body (SPEC-008 D3's upload, as evidence's;
+  no multipart), its source and name as query parameters; rows are scored and a person decides
+  each one below the auto-match threshold; **run** (202) requires an `Idempotency-Key`. A row's
+  TIN is its kind and last four, and an offshore reader gets even that masked (`mask_tins_for`,
+  AC9.4).
+
+Every route refuses a client principal, an agent and the system, authorises its action
+firm-level, and only then reads its flag (DEC-326's order). No model has a hidden-by-wall field
+or a count of walled clients (DEC-43).
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from typing import Annotated, Literal, NoReturn
+from uuid import UUID
+
+from fastapi import Depends, Header, Query, Request
+from pydantic import BaseModel, ConfigDict, Field
+
+from abacus.kernel._flags import CLIENTS_V2
+from abacus.kernel._statuses import EngagementStatus
+from abacus.kernel.classification import classified
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import flag_enabled
+from abacus.kernel.text import SingleLineText
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Forbidden,
+    Resource,
+    authorise,
+    current_context,
+    mask_tins_for,
+)
+from abacus.modules.organisations.api import MaskedTinOut
+
+Ctx = Annotated[AuthContext, Depends(current_context)]
+IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
+
+Name = Annotated[SingleLineText, Field(min_length=1, max_length=200)]
+Code = Annotated[str, Field(pattern=r"^[a-z0-9_]{1,64}$")]
+ClientKind = Literal["household", "business", "plan_sponsor", "nonprofit", "trust_family"]
+IntakeStep = Literal["entity", "relationships", "contacts", "services", "conflicts", "review"]
+IntakeMode = Literal["new_client", "existing_client"]
+ImportSource = Literal["cch_axcess_tax_export", "csv"]
+ImportStage = Literal["uploaded", "mapped", "reviewing", "importing", "done", "failed"]
+RowDecision = Literal["new", "merge", "keep_both", "skip"]
+MatchBasis = Literal["name", "ein"]
+
+
+# --- dedupe -------------------------------------------------------------------------------------
+
+
+class DedupeIn(BaseModel):
+    """The name is in the body so it never reaches a URL or an access log."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    name: Annotated[Name, classified("confidential")]
+    kind: Annotated[ClientKind | None, classified("internal")] = None
+
+
+class DedupeCandidateOut(BaseModel):
+    """A client the person may see (walled clients are never candidates), with its score."""
+
+    model_config = ConfigDict(frozen=True)
+
+    client_id: Annotated[UUID, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    entity_name: Annotated[str | None, classified("confidential")] = None
+    score: Annotated[float, Field(ge=0, le=1), classified("internal")]
+    basis: Annotated[MatchBasis, classified("internal")]
+
+
+class DedupeOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    candidates: Annotated[list[DedupeCandidateOut], classified("confidential")] = []
+
+
+# --- intake drafts and commit -------------------------------------------------------------------
+
+
+class IntakeEntityIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    mode: Annotated[IntakeMode, classified("internal")]
+    client_id: Annotated[UUID | None, classified("internal")] = None  # existing_client
+    client_display_name: Annotated[Name | None, classified("confidential")] = None  # new_client
+    entity_name: Annotated[Name | None, classified("confidential")] = None
+    entity_type: Annotated[Code | None, classified("internal")] = None
+    date_of_death: Annotated[date | None, classified("confidential")] = None
+
+
+class IntakeRelationshipIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[Code, classified("internal")]  # `entity_relationships.kind`
+    related_entity_id: Annotated[UUID, classified("internal")]
+
+
+class IntakeContactIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    display_name: Annotated[Name, classified("confidential")]
+    email: Annotated[
+        str | None,
+        Field(max_length=254, pattern=r"^[^@\s]+@[^@\s]+$"),
+        classified("confidential"),
+    ] = None
+    roles: Annotated[list[Code], Field(max_length=10), classified("internal")] = []
+
+
+class IntakeServiceIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    type_code: Annotated[Code, classified("internal")]  # an ENG-03 catalogue code
+    fiscal_period_start: Annotated[date | None, classified("confidential")] = None
+    fiscal_period_end: Annotated[date | None, classified("confidential")] = None
+
+
+class ClientIntakeDraftPayload(BaseModel):
+    """Identifiers and typed values only: no TIN (entered on the entity, sealed, after commit),
+    no free text beyond names (P-07 §4.2 M8)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    entity: Annotated[IntakeEntityIn | None, classified("confidential")] = None
+    relationships: Annotated[
+        list[IntakeRelationshipIn], Field(max_length=20), classified("internal")
+    ] = []
+    contacts: Annotated[
+        list[IntakeContactIn], Field(max_length=20), classified("confidential")
+    ] = []
+    services: Annotated[list[IntakeServiceIn], Field(max_length=10), classified("internal")] = []
+    engagement_partner_user_id: Annotated[UUID | None, classified("internal")] = None
+    conflict_check_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class ClientIntakeDraftIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    step: Annotated[IntakeStep, classified("internal")] = "entity"
+    payload: Annotated[ClientIntakeDraftPayload | None, classified("confidential")] = None
+
+
+class ClientIntakeDraftPatchIn(BaseModel):
+    """Autosave: absent fields are unchanged; `seen_version` behind answers 409
+    `stale_version`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=0), classified("internal")]
+    step: Annotated[IntakeStep | None, classified("internal")] = None
+    payload: Annotated[ClientIntakeDraftPayload | None, classified("confidential")] = None
+
+
+class ClientIntakeDraftOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    created_by: Annotated[UUID, classified("internal")]
+    step: Annotated[IntakeStep, classified("internal")]
+    payload: Annotated[ClientIntakeDraftPayload, classified("confidential")]
+    committed_client_id: Annotated[UUID | None, classified("internal")] = None
+    version: Annotated[int, classified("internal")]
+    saved_at: Annotated[datetime, classified("internal")]
+    allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+class ClientIntakeDraftDiscardedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    draft_id: Annotated[UUID, classified("internal")]
+    discarded_at: Annotated[datetime, classified("internal")]
+
+
+class IntakeValidateIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    step: Annotated[IntakeStep, classified("internal")]
+
+
+class IntakeProblemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    field: Annotated[str, classified("internal")]  # a payload field code
+    code: Annotated[str, classified("internal")]  # e.g. `required`, `date_of_death_required`
+
+
+class IntakeValidationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    draft_id: Annotated[UUID, classified("internal")]
+    step: Annotated[IntakeStep, classified("internal")]
+    valid: Annotated[bool, classified("internal")]
+    problems: Annotated[list[IntakeProblemOut], classified("internal")] = []
+
+
+class IntakeCommitIn(BaseModel):
+    """ "Create & start acceptance" (`start_acceptance`) or "Create"."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    start_acceptance: Annotated[bool, classified("internal")] = False
+
+
+class IntakeCommittedOut(BaseModel):
+    """One unit of work; a replay with the same `Idempotency-Key` answers the same body."""
+
+    model_config = ConfigDict(frozen=True)
+
+    draft_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    engagement_ids: Annotated[list[UUID], classified("internal")] = []
+    engagement_status: Annotated[EngagementStatus, classified("internal")]  # `prospect`
+    work_item_ids: Annotated[list[UUID], classified("internal")] = []
+    conflict_check_id: Annotated[UUID | None, classified("internal")] = None
+    acceptance_record_id: Annotated[UUID | None, classified("internal")] = None
+
+
+# --- client imports -----------------------------------------------------------------------------
+
+
+class ClientImportCountsOut(BaseModel):
+    """CLI-06 g: "204 matched · 8 to review · 0 new"; after the run, imported and skipped."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[int, classified("internal")]
+    matched: Annotated[int, classified("internal")]
+    to_review: Annotated[int, classified("internal")]
+    new: Annotated[int, classified("internal")]
+    skipped: Annotated[int, classified("internal")] = 0
+    imported: Annotated[int, classified("internal")] = 0
+    failed: Annotated[int, classified("internal")] = 0
+
+
+class ClientImportOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    source: Annotated[ImportSource, classified("internal")]
+    stage: Annotated[ImportStage, classified("internal")]  # not a registry status (DEC-374)
+    file_name: Annotated[str, classified("confidential")]
+    mapping: Annotated[dict[str, str], classified("internal")] = {}  # column → field code
+    counts: Annotated[ClientImportCountsOut, classified("internal")]
+    started_by: Annotated[UUID, classified("internal")]
+    started_at: Annotated[datetime, classified("internal")]
+    completed_at: Annotated[datetime | None, classified("internal")] = None
+    allowed_actions: Annotated[list[str], classified("internal")] = []
+
+
+class ClientImportRowOut(BaseModel):
+    """One parsed row: cells are inert text (ADR-052); a TIN sealed at parse and shown only in
+    the masked shape (kind, presence, last four)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    row_no: Annotated[int, classified("internal")]
+    display_name: Annotated[str, classified("confidential")]
+    entity_type: Annotated[str | None, classified("internal")] = None
+    tin: Annotated[MaskedTinOut | None, classified("restricted", pii_kind="tin")] = None
+    best_match_client_id: Annotated[UUID | None, classified("internal")] = None
+    best_match_name: Annotated[str | None, classified("confidential")] = None
+    score: Annotated[float | None, classified("internal")] = None
+    decision: Annotated[RowDecision | None, classified("internal")] = None
+    decided_by: Annotated[UUID | None, classified("internal")] = None
+    error_code: Annotated[str | None, classified("internal")] = None
+
+
+class ClientImportRowsOut(BaseModel):
+    """The list envelope's shape (P-36): rows, a cursor and the total."""
+
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[ClientImportRowOut], classified("confidential")] = []
+    next_cursor: Annotated[str | None, classified("internal")] = None
+    total: Annotated[int, classified("internal")]
+
+
+class RowDecisionIn(BaseModel):
+    """A person's decision on a row; `merge` names the client it merges into."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    decision: Annotated[RowDecision, classified("internal")]
+    merge_client_id: Annotated[UUID | None, classified("internal")] = None
+
+
+# --- routes -------------------------------------------------------------------------------------
+
+
+async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+    """DEC-326's order: refuse a client principal, an agent and the system, authorise firm-level,
+    then read the flag; 501 until the implementing task."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, CLIENTS_V2):
+        raise NotFound(CLIENTS_V2.name)
+    raise NotImplementedYet
+
+
+dedupe_router = AbacusRouter(prefix="/v1/clients", tags=["intake"])
+client_intake_drafts_router = AbacusRouter(prefix="/v1/client-intake-drafts", tags=["intake"])
+client_imports_router = AbacusRouter(prefix="/v1/client-imports", tags=["intake"])
+
+INTAKE = "client.intake"
+IMPORT = "client_import.run"
+
+
+@dedupe_router.post("/dedupe", action="client.create", response_model=DedupeOut, errors=(501,))
+async def dedupe_route(body: DedupeIn, ctx: Ctx) -> DedupeOut:
+    """CLI-06 b: "96% match · Walter Thornbury" (P-07-T42)."""
+    await _stub(ctx, "client.create")
+
+
+@client_intake_drafts_router.post(
+    "", action=INTAKE, response_model=ClientIntakeDraftOut, status_code=201, errors=(501,)
+)
+async def create_intake_draft_route(body: ClientIntakeDraftIn, ctx: Ctx) -> ClientIntakeDraftOut:
+    await _stub(ctx, INTAKE)
+
+
+@client_intake_drafts_router.get(
+    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftOut, errors=(501,)
+)
+async def get_intake_draft_route(draft_id: UUID, ctx: Ctx) -> ClientIntakeDraftOut:
+    """The owner's draft only (another person's answers 404)."""
+    await _stub(ctx, INTAKE)
+
+
+@client_intake_drafts_router.patch(
+    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftOut, errors=(409, 501)
+)
+async def update_intake_draft_route(
+    draft_id: UUID, body: ClientIntakeDraftPatchIn, ctx: Ctx
+) -> ClientIntakeDraftOut:
+    """Autosave; 409 `stale_version`."""
+    await _stub(ctx, INTAKE)
+
+
+@client_intake_drafts_router.delete(
+    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftDiscardedOut, errors=(501,)
+)
+async def discard_intake_draft_route(draft_id: UUID, ctx: Ctx) -> ClientIntakeDraftDiscardedOut:
+    await _stub(ctx, INTAKE)
+
+
+@client_intake_drafts_router.post(
+    "/{draft_id}/validate", action=INTAKE, response_model=IntakeValidationOut, errors=(501,)
+)
+async def validate_intake_draft_route(
+    draft_id: UUID, body: IntakeValidateIn, ctx: Ctx
+) -> IntakeValidationOut:
+    """CLI-06 i: "Required for Form 706 due date" is `date_of_death_required`."""
+    await _stub(ctx, INTAKE)
+
+
+@client_intake_drafts_router.post(
+    "/{draft_id}/commit",
+    action=INTAKE,
+    response_model=IntakeCommittedOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def commit_intake_draft_route(
+    draft_id: UUID, body: IntakeCommitIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> IntakeCommittedOut:
+    """Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without
+    a cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same."""
+    await _stub(ctx, INTAKE)
+
+
+@client_imports_router.post(
+    "", action=IMPORT, response_model=ClientImportOut, status_code=201, errors=(501,)
+)
+async def upload_client_import_route(
+    request: Request,
+    ctx: Ctx,
+    source: Annotated[ImportSource, Query()],
+    filename: Annotated[str, Query(min_length=1, max_length=255)],
+) -> ClientImportOut:
+    """The file is the raw request body (SPEC-008 D3); refused before it is read while the
+    route is a stub."""
+    await _stub(ctx, IMPORT)
+
+
+@client_imports_router.get(
+    "/{import_id}", action=IMPORT, response_model=ClientImportOut, errors=(501,)
+)
+async def get_client_import_route(import_id: UUID, ctx: Ctx) -> ClientImportOut:
+    await _stub(ctx, IMPORT)
+
+
+@client_imports_router.get(
+    "/{import_id}/rows", action=IMPORT, response_model=ClientImportRowsOut, errors=(501,)
+)
+async def client_import_rows_route(
+    import_id: UUID,
+    ctx: Ctx,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=200)] = None,
+    review: bool = False,
+) -> ClientImportRowsOut:
+    """CLI-06 g's table; `review` keeps only the rows waiting for a person. TINs masked for an
+    offshore reader (AC9.4)."""
+    rows: ClientImportRowsOut = await _stub(ctx, IMPORT)
+    return await mask_tins_for(ctx, rows)
+
+
+@client_imports_router.put(
+    "/{import_id}/rows/{row_id}/decision",
+    action=IMPORT,
+    response_model=ClientImportRowOut,
+    errors=(409, 501),
+)
+async def decide_import_row_route(
+    import_id: UUID, row_id: UUID, body: RowDecisionIn, ctx: Ctx
+) -> ClientImportRowOut:
+    """A person's decision on a row (never a merge below 90% without one); 409
+    `import_already_run`. TINs masked for an offshore reader (AC9.4)."""
+    row: ClientImportRowOut = await _stub(ctx, IMPORT)
+    return await mask_tins_for(ctx, row)
+
+
+@client_imports_router.post(
+    "/{import_id}/run",
+    action=IMPORT,
+    response_model=ClientImportOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def run_client_import_route(
+    import_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ClientImportOut:
+    """Starts `ClientImportWorkflow` (P-07-T52); every row applied idempotently; a replayed key
+    answers the same; 409 `import_already_run`."""
+    await _stub(ctx, IMPORT)

@@ -17,3 +17,10 @@ actions:
   portal_home.read:         {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-02, GET /v1/portal/home
   portal_preferences.update: {client_admin: allow, client_contributor: allow, agent: deny, system: deny}   # POR-02 b, the person's own per-scope preferences
   portal_documents.read:    {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-03, POR-04, POR-14; GET /v1/portal/binders, binders/{id}, request-items/{id}, room, drops/{batch}; POST room/suggest
+  # --- C16 v1.1: portal settings and preview (R-01-T16 stub; R-01 §4.3; ADM-10) ---
+  # The plan's `portal.settings.read` and `portal.settings.manage` are spelt `portal_settings.*`
+  # (DEC-139: one dot). `portal.preview`'s target is checked by the service under `visible()` (a
+  # contact the viewer cannot read answers 404, DEC-20); the matrix has no such condition.
+  portal_settings.read:     {firm_admin: allow, practice_leader: allow, agent: deny, system: deny}   # ADM-10 a, the follow-up policy and next send
+  portal_settings.manage:   {firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # draft, publish and logo (as firm.manage_settings)
+  portal.preview:           {firm_admin: allow, agent: deny, system: deny}   # ADM-10 a, c, g: POR-02 in preview mode, read-only

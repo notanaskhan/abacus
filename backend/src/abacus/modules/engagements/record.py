@@ -34,11 +34,11 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.gate_policy import required_gates
 from abacus.modules.engagements.index import PARTNER_ROLES, LetterSummary, letter_summary
 from abacus.modules.engagements.models import (
     Engagement,
-    EngagementAcceptance,
     EngagementLetter,
     WorkItem,
 )
@@ -126,6 +126,7 @@ class GateView:
 async def gate_views(ctx: AuthContext, engagement: Engagement) -> list[GateView]:
     """The type's gates from their providers; G1 and G3 carry when they were met."""
     async with tenant_session(ctx.tenant) as session:
+        decided = await g1_decision(session, engagement.id)
         acceptance = await latest_acceptance(session, engagement.id)
         letter = await get_letter(session, engagement.id)
     views: list[GateView] = []
@@ -133,13 +134,14 @@ async def gate_views(ctx: AuthContext, engagement: Engagement) -> list[GateView]
         fact = await gate_fact(ctx.tenant, engagement.id, gate)
         if fact.met:
             met_at = None
-            if gate == "G1" and acceptance is not None:
-                met_at = acceptance.created_at
+            met_by = None
+            if gate == "G1" and decided is not None:
+                met_at, met_by = decided.decided_at, decided.decided_by
             elif gate == "G2" and acceptance is not None:
                 met_at = acceptance.independence_concluded_at
             elif gate == "G3" and letter is not None:
                 met_at = letter.recorded_at
-            met_by = letter.recorded_by_user_id if gate == "G3" and letter else None
+                met_by = letter.recorded_by_user_id
             views.append(GateView(gate, True, met_at=met_at, met_by_user_id=met_by))
         else:
             views.append(
@@ -330,14 +332,12 @@ async def record_letter_v2(
         await authorise(ctx, "letter.record", ref.resource())
         if given.mode == "not_required_this_year":
             raise LetterExceptionsOff(facts={"engagement_id": str(engagement_id)})
-        acceptance: EngagementAcceptance | None = await latest_acceptance(
-            tx.session, engagement_id
-        )
-        if acceptance is None or acceptance.decision != "accepted":
+        acceptance = await g1_decision(tx.session, engagement_id)
+        if acceptance is None or not acceptance.accepted:
             raise GateUnmet(facts={"gate": "G1", "engagement_id": str(engagement_id)})
         if given.client_signed_on is None or given.firm_signed_on is None:
             raise GateUnmet(facts={"gate": "G3", "engagement_id": str(engagement_id)})
-        decided_on = acceptance.created_at.date()
+        decided_on = acceptance.decided_at.date()
         if min(given.client_signed_on, given.firm_signed_on) < decided_on:
             raise LetterBeforeAcceptance(facts={"engagement_id": str(engagement_id)})
         previous = await get_letter(tx.session, engagement_id)
@@ -390,4 +390,4 @@ async def record_letter_v2(
         stored = await get_letter(session, engagement_id)
     if stored is None:  # written in the unit of work just committed
         raise NotFound("engagement_letter")
-    return RecordedLetter(engagement_id, stored, acceptance.created_at, status)
+    return RecordedLetter(engagement_id, stored, acceptance.decided_at, status)

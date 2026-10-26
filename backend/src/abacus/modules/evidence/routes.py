@@ -517,6 +517,7 @@ async def upload_preview_route(
     "/request-items/{item_id}/uploads/{version_id}/preview/pages/{page_no}",
     action="evidence.read",
     response_model=bytes,
+    errors=(409,),
 )
 async def upload_preview_page_route(
     engagement_id: UUID,
@@ -543,6 +544,7 @@ async def version_preview_route(engagement_id: UUID, version_id: UUID, ctx: Ctx)
     "/evidence-versions/{version_id}/preview/pages/{page_no}",
     action="evidence.read",
     response_model=bytes,
+    errors=(409,),
 )
 async def version_preview_page_route(
     engagement_id: UUID,
@@ -560,7 +562,10 @@ async def inbox_preview_route(engagement_id: UUID, file_id: UUID, ctx: Ctx) -> P
 
 
 @router.get(
-    "/inbox/{file_id}/preview/pages/{page_no}", action="evidence.upload", response_model=bytes
+    "/inbox/{file_id}/preview/pages/{page_no}",
+    action="evidence.upload",
+    response_model=bytes,
+    errors=(409,),
 )
 async def inbox_preview_page_route(
     engagement_id: UUID,

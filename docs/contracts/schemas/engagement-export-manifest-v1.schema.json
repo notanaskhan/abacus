@@ -1,0 +1,448 @@
+{
+  "$defs": {
+    "ManifestClient": {
+      "additionalProperties": false,
+      "properties": {
+        "client_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "display_name": {
+          "cls": "confidential",
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "client_id",
+        "display_name"
+      ],
+      "title": "ManifestClient",
+      "type": "object"
+    },
+    "ManifestCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "file_count": {
+          "cls": "internal",
+          "minimum": 0,
+          "title": "File Count",
+          "type": "integer"
+        },
+        "request_count": {
+          "cls": "internal",
+          "minimum": 0,
+          "title": "Request Count",
+          "type": "integer"
+        },
+        "requests_without_file": {
+          "cls": "internal",
+          "minimum": 0,
+          "title": "Requests Without File",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "request_count",
+        "file_count",
+        "requests_without_file"
+      ],
+      "title": "ManifestCounts",
+      "type": "object"
+    },
+    "ManifestEngagement": {
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "cls": "confidential",
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "engagement_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "Engagement Id",
+          "type": "string"
+        },
+        "period_end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "cls": "internal",
+          "title": "Period End"
+        },
+        "work_item_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "Work Item Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "engagement_id",
+        "work_item_id",
+        "display_name",
+        "period_end"
+      ],
+      "title": "ManifestEngagement",
+      "type": "object"
+    },
+    "ManifestEvidence": {
+      "additionalProperties": false,
+      "description": "Where an evidence file came from. Its `sha256` equals the version's stored fingerprint\n(the builder refuses `integrity_mismatch` otherwise).",
+      "properties": {
+        "binder_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "Binder Id",
+          "type": "string"
+        },
+        "evidence_version_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "Evidence Version Id",
+          "type": "string"
+        },
+        "media_type": {
+          "cls": "internal",
+          "maxLength": 127,
+          "minLength": 3,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "request_item_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "Request Item Id",
+          "type": "string"
+        },
+        "review_state": {
+          "cls": "internal",
+          "enum": [
+            "accepted",
+            "needs_review"
+          ],
+          "title": "Review State",
+          "type": "string"
+        },
+        "version_no": {
+          "cls": "internal",
+          "minimum": 1,
+          "title": "Version No",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "evidence_version_id",
+        "request_item_id",
+        "binder_id",
+        "version_no",
+        "review_state",
+        "media_type"
+      ],
+      "title": "ManifestEvidence",
+      "type": "object"
+    },
+    "ManifestFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "cls": "internal",
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ManifestEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "cls": "internal",
+          "default": null
+        },
+        "path": {
+          "cls": "confidential",
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "cls": "internal",
+          "enum": [
+            "readme",
+            "index",
+            "evidence",
+            "provenance",
+            "audit_trail",
+            "section"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9_]{1,39}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "cls": "internal",
+          "default": null,
+          "title": "Section"
+        },
+        "sha256": {
+          "cls": "internal",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "role"
+      ],
+      "title": "ManifestFile",
+      "type": "object"
+    },
+    "ManifestPerson": {
+      "additionalProperties": false,
+      "description": "A named person: the requester (INV-5).",
+      "properties": {
+        "display_name": {
+          "cls": "confidential",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "user_id": {
+          "cls": "internal",
+          "format": "uuid",
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "user_id",
+        "display_name"
+      ],
+      "title": "ManifestPerson",
+      "type": "object"
+    },
+    "ManifestScope": {
+      "additionalProperties": false,
+      "description": "What the person chose on the export sheet (`engagement_exports.scope`).",
+      "properties": {
+        "binder_ids": {
+          "cls": "internal",
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Binder Ids",
+          "type": "array"
+        },
+        "include_audit_trail": {
+          "cls": "internal",
+          "title": "Include Audit Trail",
+          "type": "boolean"
+        },
+        "include_unaccepted": {
+          "cls": "internal",
+          "title": "Include Unaccepted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "binder_ids",
+        "include_unaccepted",
+        "include_audit_trail"
+      ],
+      "title": "ManifestScope",
+      "type": "object"
+    },
+    "ManifestSection": {
+      "additionalProperties": false,
+      "description": "A registered export section that contributed files (`register_export_section`).",
+      "properties": {
+        "file_count": {
+          "cls": "internal",
+          "minimum": 0,
+          "title": "File Count",
+          "type": "integer"
+        },
+        "name": {
+          "cls": "internal",
+          "pattern": "^[a-z][a-z0-9_]{1,39}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "section_version": {
+          "cls": "internal",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "title": "Section Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "section_version",
+        "file_count"
+      ],
+      "title": "ManifestSection",
+      "type": "object"
+    }
+  },
+  "$id": "urn:accrued:engagement-export:manifest:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "`manifest.json`, format `accrued.binder-export` version 1.0 (SPEC-344 §5).",
+  "properties": {
+    "as_of_seq": {
+      "cls": "internal",
+      "minimum": 0,
+      "title": "As Of Seq",
+      "type": "integer"
+    },
+    "client": {
+      "$ref": "#/$defs/ManifestClient",
+      "cls": "confidential"
+    },
+    "counts": {
+      "$ref": "#/$defs/ManifestCounts",
+      "cls": "internal"
+    },
+    "engagement": {
+      "$ref": "#/$defs/ManifestEngagement",
+      "cls": "confidential"
+    },
+    "export_id": {
+      "cls": "internal",
+      "format": "uuid",
+      "title": "Export Id",
+      "type": "string"
+    },
+    "files": {
+      "cls": "confidential",
+      "items": {
+        "$ref": "#/$defs/ManifestFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "firm_name": {
+      "cls": "confidential",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Firm Name",
+      "type": "string"
+    },
+    "format": {
+      "cls": "public",
+      "const": "accrued.binder-export",
+      "title": "Format",
+      "type": "string"
+    },
+    "format_version": {
+      "cls": "public",
+      "const": "1.0",
+      "title": "Format Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "cls": "internal",
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "index_columns": {
+      "cls": "public",
+      "items": {
+        "type": "string"
+      },
+      "title": "Index Columns",
+      "type": "array"
+    },
+    "kind": {
+      "cls": "internal",
+      "enum": [
+        "binder",
+        "final_binder"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "requested_at": {
+      "cls": "internal",
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+    },
+    "requested_by": {
+      "$ref": "#/$defs/ManifestPerson",
+      "cls": "confidential"
+    },
+    "scope": {
+      "$ref": "#/$defs/ManifestScope",
+      "cls": "internal"
+    },
+    "sections": {
+      "cls": "internal",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ManifestSection"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "tenant_id": {
+      "cls": "internal",
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "format",
+    "format_version",
+    "export_id",
+    "kind",
+    "generated_at",
+    "as_of_seq",
+    "tenant_id",
+    "firm_name",
+    "client",
+    "engagement",
+    "requested_by",
+    "requested_at",
+    "scope",
+    "counts",
+    "index_columns",
+    "files"
+  ],
+  "title": "EngagementExportManifest",
+  "type": "object"
+}

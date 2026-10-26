@@ -17,10 +17,16 @@ from abacus.modules.portal.branding import (
 from abacus.modules.portal.contract import router
 from abacus.modules.portal.documents_routes import documents_router
 from abacus.modules.portal.pbc_contract import pbc_router
+from abacus.modules.portal.settings_contract import settings_router
 
 # The routers the API mounts, in order (P-39; F-03-T07). C5 portal-pbc: the documents reads
 # (R-01-T07), then the stubs still waiting for their tasks (R-01-T01).
-ROUTERS: tuple[AbacusRouter, ...] = (router, documents_router, pbc_router)
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    documents_router,
+    pbc_router,
+    settings_router,  # C16 v1.1 stub (R-01-T16): portal settings and preview
+)
 
 # G-01-T04 (AC1.9): the display name and the footer are the portal's; settings write them here.
 register_branding_settings()

@@ -38,7 +38,14 @@ actions:
   # P-07 OQ-2 (DEC-143): Prospect-only engagements from intake and from an ENG-03 draft
   # ("Start acceptance"); accepting and staffing stay `engagement.create`. The manager path
   # lands with the live routes the DEC-132 way, as on `client.update`.
-  client.intake:            {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  # P-07-T37 (DEC-374): CLI-06's dedupe (`POST /v1/clients/dedupe`); creating a client is the
+  # intake commit's (`client.intake`). Firm admin and partners and managers, derived (DEC-373).
+  client.create:            {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
+  # P-07-T37 (DEC-374): bulk import, CLI-06 g. Rows carry a masked TIN (kind and last four),
+  # masked further for an offshore reader through `mask_tins_for` (AC9.4).
+  client_import.run:        {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
+  # P-07-T36 (DEC-373): the manager path lands as the derived `firm_manager`.
+  client.intake:            {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
   # --- Contacts and portal-access contract, v1 (P-07-T17 stub; P-07 §4.3, §4.4; DEC-226) ---
   # CLI-04. Reading a client's contacts is metadata for every role that reads the client's
   # engagements' client contacts; managing them is the firm admin, partners and the engagement
@@ -46,14 +53,14 @@ actions:
   # `client_access.revoke`, `contact.unlock`). Agent and system denied (INV-1); no client role.
   contact.read:             {firm_admin: allow, firm_partner: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, agent: deny, system: deny}
   contact.manage:           {firm_admin: allow, firm_partner: allow, engagement_partner: allow, manager: allow, client_service: allow, agent: deny, system: deny}
-  # --- Conflict checks and screening, v1 (P-07-T29 stub; P-07 §4.3, §4.4; DEC-326) ---
-  # CLI-06 and CLI-08 c. Firm-level: the firm admin and partners (`firm_partner`); the manager
-  # cell waits for a derived firm-level grant (DEC-141's pattern). Clearing a hit is a person's
-  # (human-only). The search itself runs as a system principal over metadata (P-07-T36), which
-  # is not this route action. Agent and system denied; no client role.
-  conflict.run:             {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
-  conflict.clear:           {firm_partner: allow, agent: deny, system: deny}   # human-only
-  screening.record:         {firm_admin: allow, firm_partner: allow, agent: deny, system: deny}
+  # --- Conflict checks and screening, v1 (P-07-T29 stub, P-07-T36 live; P-07 §4.3, §4.4) ---
+  # CLI-06 and CLI-08 c. Firm-level: the firm admin, partners (`firm_partner`) and managers
+  # (`firm_manager`, DEC-373). Clearing a hit is a partner's or manager's (human-only). The
+  # search itself runs as a system principal over metadata, which is not this route action.
+  # Agent and system denied; no client role.
+  conflict.run:             {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
+  conflict.clear:           {firm_partner: allow, firm_manager: allow, agent: deny, system: deny}   # human-only
+  screening.record:         {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
   # --- Firm-settings family contract, v1 (G-01-T02 stub): offices, teams and groups ---
   # Filters and review pools, never an access boundary (DEC-30). G-01 section 4.3 names
   # `office.*` and `team.*`; one pair covers both so no rule names an office

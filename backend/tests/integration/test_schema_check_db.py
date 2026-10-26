@@ -1085,6 +1085,15 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
+        # P-07-T35 (0163): acceptance records, answers and manual checks; a guard trigger
+        # refuses any change once a record is decided (DEC-372).
+        "acceptance_records": frozenset(
+            {"status", "risk_rating", "sent_to_partner_at", "sent_to_partner_by", "version"}
+        ),
+        "acceptance_answers": frozenset(
+            {"answers_sealed", "state", "version", "updated_by", "updated_at"}
+        ),
+        "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
         # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
         "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(

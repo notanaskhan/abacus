@@ -20,12 +20,36 @@ TABLES: frozenset[str] = frozenset(
         "tin_reveals",  # P-07-T10 (0123): every logged TIN reveal, by a person
         "contact_roles",  # P-07-T25 (0146): roles per entity, replaced as a set
         "contact_group_members",  # P-07-T25 (0146)
+        # P-07-T36 (0164): conflict checks and screening, insert-only
+        "conflict_checks",
+        "conflict_results",
+        "conflict_result_events",
+        "screening_records",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset({"tin_reveals", "team_rosters"})  # rosters: 0150
+INSERT_ONLY: frozenset[str] = frozenset(
+    {"tin_reveals", "team_rosters"}  # rosters: 0150
+    | {"conflict_checks", "conflict_results", "conflict_result_events", "screening_records"}
+)
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # P-07-T36 (0164): names and reasons sealed; matched names never stored
+    "conflict_checks": frozenset(
+        {"id", "tenant_id", "subject_kind", "subject_id", "names_sealed", "names_count"}
+        | {"status", "run_by"}
+    ),
+    "conflict_results": frozenset(
+        {"tenant_id", "check_id", "name_index", "matched_ref_type", "matched_ref_id"}
+        | {"matched_client_id", "match_kind", "score", "counterparty_role"}
+    ),
+    "conflict_result_events": frozenset(
+        {"id", "tenant_id", "result_id", "assessment", "reason_sealed", "cleared_by"}
+    ),
+    "screening_records": frozenset(
+        {"id", "tenant_id", "subject_kind", "subject_id", "list", "result"}
+        | {"evidence_version_id", "note_sealed", "recorded_by"}
+    ),
     "clients": frozenset({"id", "tenant_id", "name"}),
     "client_entities": frozenset({"id", "tenant_id", "client_id", "name"}),
     "offices": frozenset(

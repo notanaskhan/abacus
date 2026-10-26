@@ -12,7 +12,8 @@
 //   (wrapped: a blocked store just means the default).
 // - Download is only ever a ⋯ menu item, on the audited attachment route; no bar carries it, and
 //   no raw file, pdf.js or SheetJS reaches the browser (AC3.7). Masks render as their tokens; the
-//   viewer never unmasks anything itself (offshore readers get masked evidence only).
+//   viewer never unmasks anything itself. When the manifest gives the `text` view (DEC-369: an
+//   offshore reader, until OCR) the body is the masked text instead of any page image.
 
 import { type CitationV2Out, content } from "@abacus/api-client";
 import { listCitationsOptions } from "@abacus/api-client/query";
@@ -25,6 +26,7 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useEffect, useMemo, useState } from "react";
+import { MaskedTextView } from "../../app-core/masked-text";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { COPY } from "./copy";
 import { LinkedFigures } from "./LinkedFigures";
@@ -239,6 +241,10 @@ export function EvidenceViewerBody({
   viewer,
 }: EvidenceViewerBodyProps): JSX.Element {
   const { data, stack, match } = viewer;
+  if (data.view === "text") {
+    // DEC-369: no page images for this reader; the server's masked text instead.
+    return <MaskedTextView text={data.text} width={PAGE_WIDTH[host]} />;
+  }
   const anchor = target.anchor ?? null;
   const card =
     host === "drawer" && anchor !== null ? (

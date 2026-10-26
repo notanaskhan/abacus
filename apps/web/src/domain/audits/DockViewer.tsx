@@ -1,5 +1,9 @@
 import { viewerPage } from "@abacus/api-client";
-import { viewerManifestOptions, viewerRegionsOptions } from "@abacus/api-client/query";
+import {
+  viewerManifestOptions,
+  viewerRegionsOptions,
+  viewerTextOptions,
+} from "@abacus/api-client/query";
 import {
   EmptyState,
   MatchScope,
@@ -10,10 +14,12 @@ import {
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { type JSX, useEffect, useMemo, useState } from "react";
 import { AUDIT_MESSAGES } from "./messages";
+import { MaskedTextView } from "../../app-core/masked-text";
 
 // The cockpit dock's Viewer tab (A-01-T12; AUD-02, DV-2): SHL-08's evidence variant on the C4
 // reads (`?doc=<evidenceVersionId>`), the server's masked page images read as blobs, never a
-// client file. P-03-T14's EvidenceViewer replaces the body when it lands; the host stays.
+// client file. P-03-T14's EvidenceViewer replaces the body when it lands; the host stays. A reader
+// the manifest gives the `text` view (DEC-369) gets the masked text instead of page images.
 
 function usePageUrls(versionId: string, pages: readonly number[]): Record<number, string> {
   const blobs = useQueries({
@@ -51,14 +57,28 @@ function Viewer({ versionId }: { versionId: string }): JSX.Element {
     ...viewerManifestOptions({ path: { version_id: versionId } }),
     retry: false,
   });
+  // DEC-369: the server decides the view; a text view never asks for a page image or a region.
+  const textView = manifest.data?.view === "text";
   const regions = useQuery({
     ...viewerRegionsOptions({ path: { version_id: versionId } }),
     retry: false,
+    enabled: manifest.data !== undefined && !textView,
   });
-  const pageNos = useMemo(() => (manifest.data?.pages ?? []).map((p) => p.n), [manifest.data]);
+  const text = useQuery({
+    ...viewerTextOptions({ path: { version_id: versionId } }),
+    retry: false,
+    enabled: textView && manifest.data?.status === "ready",
+  });
+  const pageNos = useMemo(
+    () => (textView ? [] : (manifest.data?.pages ?? []).map((p) => p.n)),
+    [manifest.data, textView],
+  );
   const urls = usePageUrls(versionId, pageNos);
   if (manifest.isError) {
     return <EmptyState icon="file" title={AUDIT_MESSAGES.viewer.unavailable} />;
+  }
+  if (textView) {
+    return <MaskedTextView text={text.data} width={296} />;
   }
   const file: ViewerFile = {
     name: manifest.data?.file_name ?? "",

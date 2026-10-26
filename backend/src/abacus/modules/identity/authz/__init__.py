@@ -364,11 +364,19 @@ async def _engagement_roles_in_firm(ctx: AuthContext) -> frozenset[str]:
 
 
 FIRM_PARTNER = "firm_partner"
+# P-07-T36 (DEC-373): a manager-level staff member at firm level, as `firm_partner` is for
+# partners (DEC-132): the manager cells DEC-141, DEC-143 and DEC-326 left for a derived grant.
+FIRM_MANAGER = "firm_manager"
 
 
 async def _partner_level(ctx: AuthContext) -> bool:
     member = await member_facts(ctx.tenant, ctx.user_id)
     return member is not None and not member.client and member.level == "partner"
+
+
+async def _manager_level(ctx: AuthContext) -> bool:
+    member = await member_facts(ctx.tenant, ctx.user_id)
+    return member is not None and not member.client and member.level == "manager"
 
 
 async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
@@ -389,6 +397,13 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
         and await _partner_level(ctx)
     ):
         roles.add(FIRM_PARTNER)  # P-01-T04 (DEC-132): derived from the membership level
+    if (
+        resource.engagement_id is None
+        and FIRM_MANAGER in rule.decisions
+        and not ctx.is_support
+        and await _manager_level(ctx)
+    ):
+        roles.add(FIRM_MANAGER)  # P-07-T36 (DEC-373): derived from the membership level
     if resource.engagement_id is not None:
         role = await _engagement_role_once(ctx, resource.engagement_id)
         if role is not None:

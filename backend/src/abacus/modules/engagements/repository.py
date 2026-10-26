@@ -39,7 +39,11 @@ async def insert_engagement(
     created_by: UUID,
     type: str = "fs_audit",
     prior_engagement_id: UUID | None = None,
+    prospect: bool = False,
 ) -> None:
+    """`prospect`: created Prospect, awaiting acceptance (intake, "Start acceptance"; DEC-372).
+    The app never inserts a status (the column default is `active`); it moves the new row to
+    `prospect` in the same transaction, so no other session ever sees it otherwise."""
     await session.execute(
         insert(Engagement).values(
             type=type,
@@ -54,6 +58,10 @@ async def insert_engagement(
             created_by=created_by,
         )
     )
+    if prospect:
+        await session.execute(
+            update(Engagement).where(Engagement.id == engagement_id).values(status="prospect")
+        )
 
 
 async def prior_candidates(

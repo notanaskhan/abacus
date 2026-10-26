@@ -75,6 +75,12 @@ actions:
     verb: decide  # P-08-T21 (DEC-329, 0156): a firm person clears a client's portal lock
   - action: fulfilment.voided
     verb: decide  # a person voids a wrong rule link (R-01 Story 2.2; TASK-1248, 0159)
+  - action: acceptance.decided
+    verb: decide  # P-07-T35 (DEC-372, 0163): the engagement partner decides acceptance (SPEC-332 AC-6)
+  - action: acceptance.review_completed
+    verb: decide  # P-07-T35 (DEC-372, 0163): the named risk partner completes the review (AC-4)
+  - action: conflict.cleared
+    verb: decide  # P-07-T36 (DEC-373, 0164): a partner or manager assesses a conflict hit (SPEC-332 AC-25)
   - action: independence.annual_confirmed
     verb: confirm  # G-01-T13 (DEC-91, DEC-383, 0168): a person confirms their own annual independence
   - action: independence.annual_declined
