@@ -18,11 +18,11 @@ Raw traces keep ADR-032's ~30 days; a record outlives them for the engagement's 
   initiator, spec version, stage (its shadow flag), start and finish, failure code and terminal
   state (ADR-169 §2's legacy map) the record repeats (security review, DEC-396).
 
-Numbered 0171 on a branch based on 0160 (`down_revision = "0160"`); the merge re-points the chain.
+Numbered 0171 on a branch based on 0160; re-pointed at the S9 batch merge to follow 0168.
 The downgrade refuses while any record exists.
 
 Revision ID: 0171
-Revises: 0160
+Revises: 0168
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0171"
-down_revision = "0160"
+down_revision = "0168"
 branch_labels = None
 depends_on = None
 
