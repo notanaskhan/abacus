@@ -10,12 +10,14 @@ import { useParam } from "../params";
 // assurance work item), behind `audits.cockpit`. While the flag is off the area shows F-05's
 // flag-off state, never a 404 (the legacy board stays reachable from the engagement until
 // A-01-T21). AUD-01 keeps its filters in the URL; AUD-02 its rail row, dock tab and document
-// (`?section=`, `?dock=`, `?doc=`).
+// (`?section=`, `?dock=`, `?doc=`); AUD-03 (`/audits/$auditId/source-documents`, A-01-T15) its
+// selected request, sort and search (`?item=`, `?sort=`, `?q=`).
 
 const AuditsIndex = lazyScreen(
   async () => (await import("../../screens/AUD-01")).AuditsSearchPage,
 );
 const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AUD02);
+const SourceDocuments = lazyScreen(async () => (await import("../../screens/AUD-03")).AUD03);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -121,4 +123,65 @@ export const auditRoute = createRoute({
   },
 });
 
-export const auditRoutes = [auditsRoute, auditRoute] as const;
+interface SourceDocumentsSearch {
+  item?: string;
+  sort?: "missing_first" | "received_first";
+  q?: string;
+}
+
+export const sourceDocumentsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/source-documents",
+  validateSearch: (search: Record<string, unknown>): SourceDocumentsSearch => ({
+    ...(typeof search.item === "string" && search.item !== "" ? { item: search.item } : {}),
+    ...(search.sort === "missing_first" || search.sort === "received_first"
+      ? { sort: search.sort }
+      : {}),
+    ...(typeof search.q === "string" && search.q !== "" ? { q: search.q } : {}),
+  }),
+  component: function SourceDocumentsPage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const navigate = useNavigate();
+    const search: SourceDocumentsSearch = useSearch({ strict: false });
+    const overlays = useOverlays();
+    const go = (next: SourceDocumentsSearch): void => {
+      void navigate({ to: ".", search: next, replace: true });
+    };
+    return gated(
+      <SourceDocuments
+        auditId={auditId}
+        item={search.item ?? null}
+        onItem={(item) => {
+          go({
+            ...(search.sort === undefined ? {} : { sort: search.sort }),
+            ...(search.q === undefined ? {} : { q: search.q }),
+            ...(item === null ? {} : { item }),
+          });
+        }}
+        sort={search.sort ?? "missing_first"}
+        onSort={(sort) => {
+          go({ ...search, sort });
+        }}
+        q={search.q ?? ""}
+        onQuery={(q) => {
+          go({
+            ...(search.item === undefined ? {} : { item: search.item }),
+            ...(search.sort === undefined ? {} : { sort: search.sort }),
+            ...(q === "" ? {} : { q }),
+          });
+        }}
+        onBack={() => {
+          void navigate({ to: "/audits" });
+        }}
+        onSection={(section) => {
+          void navigate({ to: "/audits/$auditId", params: { auditId }, search: { section } });
+        }}
+        onAdd={(binderId) => {
+          overlays.open("request", "new", binderId);
+        }}
+      />,
+    );
+  },
+});
+
+export const auditRoutes = [auditsRoute, auditRoute, sourceDocumentsRoute] as const;

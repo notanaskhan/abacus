@@ -1,6 +1,8 @@
+import { workItemsOptions } from "@abacus/api-client/query";
+import { useQuery } from "@tanstack/react-query";
 import { createRoute, useNavigate } from "@tanstack/react-router";
-import type { JSX } from "react";
-import { FeatureGate } from "../../app-core/flags";
+import { type JSX, useEffect } from "react";
+import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
@@ -133,11 +135,38 @@ const itemRoute = createRoute({
     return <screens.ItemDetail engagementId={engagementId} itemId={itemId} />;
   },
 });
-const boardRoute = createRoute({
+/** The engagement's assurance work item: `undefined` while loading, `null` when it has none. */
+function useEngagementAudit(engagementId: string, enabled: boolean): string | null | undefined {
+  const items = useQuery({
+    ...workItemsOptions({ path: { engagement_id: engagementId } }),
+    enabled,
+    retry: false,
+  });
+  if (!enabled || items.isError) return null;
+  if (items.data === undefined) return undefined;
+  return items.data.find((w) => w.kind === "assurance")?.id ?? null;
+}
+
+// A-01-T16 (chapter 04 §2.2): with `audits.cockpit` on, an engagement's requests are AUD-03 on
+// its assurance work item; the legacy board answers only while the flag is off or for an
+// engagement with no assurance work item (until A-01-T21 retires it).
+export const boardRoute = createRoute({
   getParentRoute: () => engagementRoute,
   path: "/requests",
   component: function BoardPage(): JSX.Element {
     const engagementId = useParam("engagementId");
+    const navigate = useNavigate();
+    const cockpit = useFlag("audits.cockpit") === true;
+    const auditId = useEngagementAudit(engagementId, cockpit);
+    useEffect(() => {
+      if (typeof auditId !== "string") return;
+      void navigate({
+        to: "/audits/$auditId/source-documents",
+        params: { auditId },
+        replace: true,
+      });
+    }, [auditId, navigate]);
+    if (cockpit && auditId !== null) return <></>;
     return (
       <screens.Board
         engagementId={engagementId}
