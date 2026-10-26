@@ -2428,6 +2428,12 @@ export const STATUS_REGISTRY = {
       "variant": "amber",
       "terminal": false,
       "derived": false
+    },
+    "conflict": {
+      "label": "Conflict",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
     }
   },
   "nas_evaluation": {

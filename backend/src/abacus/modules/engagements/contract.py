@@ -20,16 +20,16 @@ The ENG-03 "Coming soon" tile is static frontend copy.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import ENGAGEMENTS_V2
+from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
 from abacus.kernel._statuses import EngagementStatus, LetterRecordStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
@@ -39,7 +39,13 @@ from abacus.modules.engagements import index as index_model
 from abacus.modules.engagements import record as record_model
 from abacus.modules.engagements import transitions
 from abacus.modules.engagements.service import EngagementType
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -516,6 +522,13 @@ async def _gate(ctx: AuthContext) -> None:
         raise NotFound("engagements.v2")
 
 
+async def _intake_gate(ctx: AuthContext) -> None:
+    """DEC-326's order for the acceptance half: authorise `client.intake`, then its flag."""
+    await authorise(ctx, "client.intake", Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
+        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
+
+
 def _letter_out(s: index_model.LetterSummary) -> EngagementLetterSummaryOut:
     return EngagementLetterSummaryOut(
         status=LetterRecordStatus(s.status),
@@ -650,12 +663,6 @@ def _draft_out(d: draft_model.DraftView) -> EngagementDraftOut:
 
 def _payload_in(p: EngagementDraftPayload | None) -> dict[str, object]:
     return {} if p is None else p.model_dump(mode="json", exclude_none=True)
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_V2):
-        raise NotFound("engagements.v2")
-    raise NotImplementedYet
 
 
 # Listed before the live `router` in `api.ROUTERS`, so `/index` wins over `/{engagement_id}`.
@@ -954,11 +961,21 @@ async def validate_engagement_draft_route(
     action="client.intake",
     response_model=AcceptanceStartedOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def start_acceptance_from_draft_route(draft_id: UUID, ctx: Ctx) -> AcceptanceStartedOut:
-    """Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted."""
-    await _stub(ctx)
+    """Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted
+    (P-07-T35, DEC-372). Behind `engagements.v2` and `engagements.acceptance_v2`; 409
+    `acceptance_template_missing`, 422 `draft_incomplete`."""
+    await _gate(ctx)
+    await _intake_gate(ctx)
+    started = await draft_model.start_acceptance(ctx, draft_id)
+    return AcceptanceStartedOut(
+        draft_id=started.draft_id,
+        engagement_id=started.engagement_id,
+        acceptance_record_id=started.acceptance_record_id,
+        engagement_status=EngagementStatus(started.engagement_status),
+    )
 
 
 @engagement_drafts_router.post(

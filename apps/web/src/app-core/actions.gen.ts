@@ -2,6 +2,7 @@
 // Regenerate: python -m abacus_tools.codegen.permission_matrix
 
 export const ACTIONS = [
+  "acceptance.complete_review",
   "acceptance.decide",
   "acceptance.prepare",
   "acceptance.read",
@@ -37,6 +38,7 @@ export const ACTIONS = [
   "citation.create",
   "citation.read",
   "citation.relink",
+  "client.create",
   "client.intake",
   "client.read",
   "client.update",
@@ -45,6 +47,7 @@ export const ACTIONS = [
   "client_contact.invite",
   "client_contact.read",
   "client_contact.remove",
+  "client_import.run",
   "client_item.respond",
   "client_list.mark_done",
   "comment.create",

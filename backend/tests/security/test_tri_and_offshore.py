@@ -49,6 +49,9 @@ TIN_ROUTES = {
     ("GET", "/v1/clients/{client_id}"): "masked",
     ("PATCH", "/v1/clients/{client_id}"): "masked",
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal"): "refused",
+    # P-07-T37 (DEC-374): the client-import stub's rows carry only the masked TIN shape.
+    ("GET", "/v1/client-imports/{import_id}/rows"): "masked",
+    ("PUT", "/v1/client-imports/{import_id}/rows/{row_id}/decision"): "masked",
 }
 
 

@@ -53,6 +53,8 @@ actions:
     group: independence
   - action: independence.conclude  # P-07-T29: the independence conclusion (CLI-08)
     group: independence
+  - action: acceptance.complete_review  # P-07-T35 review (DEC-375): the risk-partner review
+    group: independence
   # The engagement partner's team approval (P-07-T30 security review, DEC-327)
   - action: team.approve
     group: team

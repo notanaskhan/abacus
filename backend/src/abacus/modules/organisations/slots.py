@@ -130,3 +130,35 @@ def register_office_facts(name: str, provider: OfficeFacts) -> None:
 
 def office_fact_providers() -> dict[str, OfficeFacts]:
     return dict(_OFFICE_FACTS)
+
+
+# --- conflict-check subjects and screening evidence (P-07-T36 review, DEC-375) -----------------
+# A conflict check or screening record about a draft names another module's row; its owner says
+# whether the caller may see it. Evidence on a screening record is the evidence module's, which
+# reaches organisations through engagements (module direction). Unregistered: fail closed.
+
+SubjectCheck = Callable[[AuthContext, UUID], Awaitable[bool]]
+_SUBJECTS: dict[str, SubjectCheck] = {}
+_EVIDENCE: list[SubjectCheck] = []
+
+
+def register_conflict_subject(kind: str, check: SubjectCheck) -> None:
+    current = _SUBJECTS.get(kind)
+    if current is not None and not _same(current, check):
+        raise RuntimeError(f"conflict subject {kind!r} is already registered")
+    _SUBJECTS[kind] = check
+
+
+def register_screening_evidence(check: SubjectCheck) -> None:
+    if _EVIDENCE and not _same(_EVIDENCE[0], check):
+        raise RuntimeError("screening evidence is already registered")
+    _EVIDENCE[:] = [check]
+
+
+async def subject_visible(ctx: AuthContext, kind: str, subject_id: UUID) -> bool:
+    check = _SUBJECTS.get(kind)
+    return check is not None and await check(ctx, subject_id)
+
+
+async def evidence_visible(ctx: AuthContext, version_id: UUID) -> bool:
+    return bool(_EVIDENCE) and await _EVIDENCE[0](ctx, version_id)

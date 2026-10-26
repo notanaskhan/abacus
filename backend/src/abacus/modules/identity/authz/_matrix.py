@@ -9,6 +9,7 @@ ROLES: tuple[str, ...] = (
     "quality_partner",
     "security_admin",
     "firm_partner",
+    "firm_manager",
     "engagement_partner",
     "manager",
     "senior",
@@ -26,6 +27,12 @@ ROLES: tuple[str, ...] = (
 )
 
 ACTIONS: dict[str, dict[str, str]] = {
+    "acceptance.complete_review": {
+        "firm_partner": "allow",
+        "mfa_recent": "required",
+        "agent": "deny",
+        "system": "deny",
+    },
     "acceptance.decide": {
         "engagement_partner": "allow",
         "mfa_recent": "required",
@@ -284,9 +291,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "client.create": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "firm_manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "client.intake": {
         "firm_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -348,6 +363,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "client_service": "allow",
         "client_admin": "allow",
+    },
+    "client_import.run": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "firm_manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "client_item.respond": {
         "client_admin": "client_visible_only",
@@ -412,12 +434,14 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "conflict.clear": {
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },
     "conflict.run": {
         "firm_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -1680,6 +1704,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "screening.record": {
         "firm_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },

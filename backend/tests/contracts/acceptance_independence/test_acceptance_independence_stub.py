@@ -45,6 +45,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{ACC}/send-to-partner"): "acceptance.prepare",
     ("post", f"{ACC}/conditions/{{condition_id}}/complete"): "acceptance.prepare",
     ("post", f"{ACC}/risk-partner-review"): "acceptance.request_review",
+    ("post", f"{ACC}/risk-partner-review/complete"): "acceptance.complete_review",
     ("post", f"{ACC}/decision"): "acceptance.decide",
     ("get", IND): "independence.read",
     ("get", f"{IND}/rotation"): "independence.read",
@@ -67,9 +68,12 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{CHECK}/{{check_id}}/results/{{result_id}}/clear"): "conflict.clear",
     ("post", "/v1/screening-records"): "screening.record",
 }
-# ENG-05's team rows and the confirmation requests are live since P-07-T30 (TASK-1197); the rest
-# wait for P-07-T35, T36 and T41.
+# ENG-05's team rows and the confirmation requests are live since P-07-T30 (TASK-1197); CLI-07's
+# acceptance routes since P-07-T35 (TASK-1258); conflicts and screening since P-07-T36
+# (TASK-1259); independence v2 waits for P-07-T41.
 LIVE: set[tuple[str, str]] = {
+    *((m, p) for (m, p) in ROUTES if p.startswith(ACC)),
+    *((m, p) for (m, p) in ROUTES if p.startswith((CHECK, "/v1/screening-records"))),
     ("get", f"{E}/team/approval"),
     ("post", f"{E}/team/approve"),
     ("put", f"{E}/team/{{user_id}}/portal-visibility"),
@@ -81,6 +85,7 @@ LIVE: set[tuple[str, str]] = {
 STUBBED = set(ROUTES) - LIVE
 HUMAN_ONLY = {
     "acceptance.decide",
+    "acceptance.complete_review",
     "independence.confirm",
     "independence.conclude",
     "conflict.clear",
@@ -89,6 +94,7 @@ HUMAN_ONLY = {
 }
 NEW_ACTIONS = {
     "acceptance.read",
+    "acceptance.complete_review",
     "acceptance.prepare",
     "acceptance.request_review",
     "acceptance.decide",
@@ -283,7 +289,7 @@ async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.Monk
     with pytest.raises(NotFound):
         await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(NotFound):
-        await conflicts_contract._stub(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- the gate
+        await conflicts_contract._gate(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- the gate
     assert seen == [
         "acceptance.read",
         ENGAGEMENTS_ACCEPTANCE_V2,
@@ -297,8 +303,7 @@ async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.Monk
     with pytest.raises(NotImplementedYet):
         await acceptance_contract._acceptance_stub(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- live
-    with pytest.raises(NotImplementedYet):
-        await conflicts_contract._stub(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- the gate
+    await conflicts_contract._gate(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- live
 
 
 @pytest.mark.parametrize("flag_on", [False, True])
@@ -321,7 +326,7 @@ async def test_agent_system_and_client_are_refused_whatever_the_flag(
     with pytest.raises(Forbidden):
         await acceptance_contract._team_gate(ctx, "engagement.read_metadata", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(Forbidden):
-        await conflicts_contract._stub(ctx, "conflict.clear")  # pyright: ignore[reportPrivateUsage] -- the gate
+        await conflicts_contract._gate(ctx, "conflict.clear")  # pyright: ignore[reportPrivateUsage] -- the gate
     assert flags == []
 
 
