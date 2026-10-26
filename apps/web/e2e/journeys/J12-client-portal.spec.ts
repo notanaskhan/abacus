@@ -63,19 +63,93 @@ test.describe("J12-core", () => {
     },
   );
 
-  test.fixme(
-    "J12 4: Claire opens the Feld 2025 Binder's documents (POR-03a)",
-    owner("R-01 · R-01-T06 POR-03 frontend part 1 · S7, Fri Feb 5, 2027"),
-    async ({ journey }) => {
-      await journey.as("claire-feld", "/documents", { clock: DEMO_INSTANT });
-    },
-  );
+  // R-01-T21: steps 4, 5 and 15 at 1400 and on the 390 preset. Like 2–3, a signed-in portal step
+  // runs on fixtures until the portal BFF answers on the other projects (P-08-T10).
+  for (const width of [1400, 390] as const) {
+    const at = width === 390 ? " · 390" : "";
 
-  test.fixme(
-    "J12 5: Claire uploads a file to an open request and it is received (POR-03b, POR-04a)",
-    owner("R-01 · R-01-T10 POR-03 drop and R-01-T12 POR-04 request sheet · S9, Fri Mar 5, 2027"),
-    async ({ journey }) => {
-      await journey.as("claire-feld", "/documents", { clock: DEMO_INSTANT });
-    },
-  );
+    test(
+      `J12 4: Claire opens the Feld 2025 Binder's documents and ignores one with a note (POR-03a, f)${at}`,
+      owner("R-01 · R-01-T21 Playwright (POR-03) · S10, Fri Mar 19, 2027"),
+      async ({ journey }) => {
+        test.fixme(journey.project !== "fixture", "the portal sign-in BFF is P-08-T10's (S6)");
+        await journey.page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+        await journey.as("claire-feld", "/documents", { clock: DEMO_INSTANT });
+        const page = journey.page;
+        await journey.step("J12 step 4: Claire's documents (POR-03a)", async () => {
+          await expect(
+            page.getByText("Form 1095-C From Mercer Hill Health").first(),
+          ).toBeVisible();
+          await expect(page.getByText(/accrued/i)).toHaveCount(0);
+        });
+        if (width === 390) return;
+        await page.getByRole("button", { name: /^Ignore Form 1095-C/ }).click();
+        const menu = page.getByRole("menu", { name: "Ignore" });
+        await menu.getByRole("textbox").fill("No 1095-C this year.");
+        await menu.getByRole("menuitem", { name: "Already sent another way" }).click();
+        await journey.step("J12 step 4: the 1095-C ignored, with Undo (POR-03f)", async () => {
+          const row = page.locator("[data-request]", {
+            hasText: "Form 1095-C From Mercer Hill Health",
+          });
+          await expect(row.getByRole("button", { name: "Undo" })).toBeVisible();
+        });
+      },
+    );
+
+    test(
+      `J12 5: Claire opens the 1095-C request, reads why, and comments (POR-04a)${at}`,
+      owner("R-01 · R-01-T21 Playwright (POR-04) · S10, Fri Mar 19, 2027"),
+      async ({ journey }) => {
+        test.fixme(journey.project !== "fixture", "the portal sign-in BFF is P-08-T10's (S6)");
+        await journey.page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+        await journey.as("claire-feld", "/documents", { clock: DEMO_INSTANT });
+        const page = journey.page;
+        await page
+          .getByRole("button", { name: "Form 1095-C From Mercer Hill Health" })
+          .first()
+          .click();
+        const sheet = page.getByRole("dialog");
+        await journey.step(
+          "J12 step 5: the 1095-C sheet (POR-04a)",
+          async () => {
+            await expect(sheet.getByText("Why we need it")).toBeVisible();
+            await expect(sheet.getByText("To do · requested Feb 3")).toBeVisible();
+            await expect(sheet.getByText(/accrued/i)).toHaveCount(0);
+          },
+          { include: "[role='dialog']" },
+        );
+        const composer = sheet.getByPlaceholder("Write a comment…");
+        await composer.fill("I'll download it tonight.");
+        await composer.press("Enter");
+        await journey.step(
+          "J12 step 5: the comment joins the shared thread",
+          async () => {
+            await expect(sheet.getByText("I'll download it tonight.")).toBeVisible();
+          },
+          { include: "[role='dialog']" },
+        );
+      },
+    );
+
+    test(
+      `J12 15: Sam Ortiz sees only Keystone's nine requests in his room (POR-14a)${at}`,
+      owner("R-01 · R-01-T21 Playwright (POR-14) · S10, Fri Mar 19, 2027"),
+      async ({ journey }) => {
+        test.fixme(journey.project !== "fixture", "the portal sign-in BFF is P-08-T10's (S6)");
+        await journey.page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+        await journey.as("sam-ortiz", "/requests", { clock: DEMO_INSTANT });
+        const page = journey.page;
+        await journey.step(
+          "J12 step 15: Sam's room, 4 of 9 (POR-14a)",
+          async () => {
+            await expect(page.getByText("4 of 9 uploaded").first()).toBeVisible();
+            await expect(page.getByText("Sam Ortiz · Keystone").first()).toBeVisible();
+            await expect(page.getByText(/accrued/i)).toHaveCount(0);
+          },
+          // INV-4: the third party never sees the client's own documents or home.
+          { outOfScope: ["Form 1095-C From Mercer Hill Health", "Upload 2 documents"] },
+        );
+      },
+    );
+  }
 });
