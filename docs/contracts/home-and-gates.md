@@ -46,7 +46,7 @@ From `docs/product/status-vocabulary.yaml`:
 - `human_gate`: `open` ("Open"), `done` ("Done"), `voided` ("Voided"), and the derived per-viewer `snoozed` ("Snoozed until {date}").
 - `due_risk` (derived, never stored): `overdue` ("Overdue"), `due_soon` ("{date} · {n} days", red-tint, 0 to 7 days), `approaching` ("{date} · {n} days", 8 to 14 days), `later` ("{date}").
 
-**Band rule (DF-25).** `decision` → Decisions · `sign_off_request` → Sign-offs · `proposal` → Agent outputs · `send`, `final_approval`, `export`, `release` → Approvals & sends. Countersignatures are `send`. Band order is fixed; empty bands other than Decisions and Sign-offs are hidden. **Badge rule:** only the Approvals option of the Home segmented control carries a count, and it is the counts endpoint's `total`.
+**Band rule (DF-25).** `decision` → Decisions · `sign_off_request` → Sign-offs · `proposal` → Agent outputs · `send`, `final_approval`, `export`, `release` (and `evidence_review`, DEC-403, with I-01-T04) → Approvals & sends. Countersignatures are `send`. Band order is fixed; empty bands other than Decisions and Sign-offs are hidden. **Badge rule:** only the Approvals option of the Home segmented control carries a count, and it is the counts endpoint's `total`.
 
 ## 5. Human-only actions
 Home writes nothing. Snooze and reassign (I-01-T07) deny the agent, the system and support at the matrix, and `human_gate_reassignments.actor_kind = 'human'` is a CHECK bound to the transaction's actor (I-01-T04). Deciding, signing and approving stay the owners' (C3).
@@ -97,4 +97,4 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 ## 11. Open points
 - DEC-404 records the stub's choices (one `home.read` cell per firm role, the slot's fail-closed answer, the `due_risk` thresholds).
-- OQ-2 (an `evidence_review` class) stays open for DF-25; until then SPEC-004 review assignments map to Approvals & sends.
+- OQ-2 is decided (DEC-403): an `evidence_review` class for SPEC-004 review assignments and uploads awaiting review, band Approvals & sends, added to the kind set additively with I-01-T04. The four bands are unchanged.
