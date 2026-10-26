@@ -5,6 +5,9 @@ from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import register_evidence_readable
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
+from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
+from abacus.modules.evidence.anchor_job import SCHEDULES
+from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.citations.matching import (
     cell_reason as citation_cell_reason,
@@ -221,6 +224,8 @@ from abacus.modules.evidence.workflow_types import (
 )
 from abacus.modules.evidence.workflow_types import ExportFailure as ExportBuildFailure
 from abacus.modules.evidence.workflows import (
+    ANCHOR_ID,
+    AuditAnchorWorkflow,
     EngagementExportWorkflow,
     EvidenceWithdrawalPurge,
     LegalHoldApply,
@@ -254,16 +259,19 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # as the kernel's hold check (fail closed without it).
 # P-06-T19 (ADR-162 §7): the withdrawal purge, started by `evidence_version.withdrawn`.
 # A-01-T19: the engagement export, started by `engagement_export.requested`.
+# Q-02-T21: the daily audit-chain anchor to the records bucket, on its Schedule.
 WORKFLOWS: dict[type, str] = {
     **UPLOAD_WORKFLOWS,
     **HOLD_WORKFLOWS,
     **WITHDRAWAL_WORKFLOWS,
+    **ANCHOR_WORKFLOWS,
     **EXPORT_WORKFLOWS,
 }
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
     *HOLD_ACTIVITIES,
     *WITHDRAWAL_ACTIVITIES,
+    *ANCHOR_ACTIVITIES,
     *EXPORT_ACTIVITIES,
 )
 
@@ -309,6 +317,7 @@ register_upload_facts(upload_facts)
 
 __all__ = [
     "ACTIVITIES",
+    "ANCHOR_ID",
     "CODE_COLUMN",
     "CREDIT_COLUMN",
     "DEBIT_COLUMN",
@@ -319,6 +328,7 @@ __all__ = [
     "NAME_COLUMN",
     "RECORD_TYPES",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",
@@ -329,6 +339,7 @@ __all__ = [
     "WORDS_VERSION",
     "WORKFLOWS",
     "XLSX_MEDIA_TYPE",
+    "AuditAnchorWorkflow",
     "BackfillInput",
     "Candidate",
     "CitationAnchor",

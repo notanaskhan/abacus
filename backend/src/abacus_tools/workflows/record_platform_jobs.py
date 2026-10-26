@@ -3,14 +3,17 @@ fixture rules.
 
 Run: python -m abacus_tools.workflows.record_platform_jobs <output-directory>
 
-Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow`, `DrainSesEventsWorkflow` and
-`AccessEndSweepWorkflow` against throwaway containers with their activities replaced by stubs
-(replay never runs activities):
+Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow`, `DrainSesEventsWorkflow`,
+`AccessEndSweepWorkflow` and the audit trail's four jobs against throwaway containers, with their
+activities replaced by stubs (replay never runs activities):
 - `spend-anomaly-v1-flagged.json`: one pass that flagged one engagement;
 - `notification-purge-v1-purged.json`: one pass that purged three notifications;
 - `ses-drain-v1-drained.json`: one drain that recorded two delivery events (Q-01-T46's workflow,
   first started by its Schedule in Q-01-T26);
-- `access-end-v1-swept.json`: one access-end pass that ended five members (G-01-T13).
+- `access-end-v1-swept.json`: one access-end pass that ended five members (G-01-T13);
+- `audit-partitions-v1-ensured.json`, `audit-checkpoint-v1-sealed.json`,
+  `audit-chain-verify-v1-verified.json`, `audit-anchor-v1-anchored.json`: one pass of each
+  (Q-02-T20, T21).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -25,7 +28,16 @@ from temporalio.client import Client, WorkflowHandle, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
+from abacus.modules.audit_trail.api import (
+    CHECKPOINT_ID,
+    PARTITIONS_ID,
+    VERIFY_ID,
+    AuditChainVerifyWorkflow,
+    AuditCheckpointWorkflow,
+    AuditPartitionsWorkflow,
+)
 from abacus.modules.communications.api import SES_EVENTS_ID, DrainSesEventsWorkflow
+from abacus.modules.evidence.api import ANCHOR_ID, AuditAnchorWorkflow
 from abacus.modules.identity.api import ACCESS_END_ID, AccessEndSweepWorkflow
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
 from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
@@ -38,6 +50,10 @@ _FILES = (
     "notification-purge-v1-purged.json",
     "ses-drain-v1-drained.json",
     "access-end-v1-swept.json",
+    "audit-partitions-v1-ensured.json",
+    "audit-checkpoint-v1-sealed.json",
+    "audit-chain-verify-v1-verified.json",
+    "audit-anchor-v1-anchored.json",
 )
 
 
@@ -61,6 +77,26 @@ async def _sweep() -> int:
     return 5
 
 
+@activity.defn(name="audit_trail.ensure_partitions")
+async def _partitions() -> int:
+    return 3
+
+
+@activity.defn(name="audit_trail.seal_checkpoints")
+async def _seal() -> int:
+    return 2
+
+
+@activity.defn(name="audit_trail.verify_chains")
+async def _verify() -> int:
+    return 4
+
+
+@activity.defn(name="evidence.anchor_chains")
+async def _anchor() -> int:
+    return 2
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -81,14 +117,22 @@ async def _record(out: Path, stack: Stack) -> None:
             NotificationPurgeWorkflow,
             DrainSesEventsWorkflow,
             AccessEndSweepWorkflow,
+            AuditPartitionsWorkflow,
+            AuditCheckpointWorkflow,
+            AuditChainVerifyWorkflow,
+            AuditAnchorWorkflow,
         ],
-        activities=[_flag, _purge, _drain, _sweep],
+        activities=[_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor],
     ):
         runs = (
             (SpendAnomalyWorkflow, SPEND_ANOMALY_ID, _FILES[0]),
             (NotificationPurgeWorkflow, NOTIFICATION_PURGE_ID, _FILES[1]),
             (DrainSesEventsWorkflow, SES_EVENTS_ID, _FILES[2]),
             (AccessEndSweepWorkflow, ACCESS_END_ID, _FILES[3]),
+            (AuditPartitionsWorkflow, PARTITIONS_ID, _FILES[4]),
+            (AuditCheckpointWorkflow, CHECKPOINT_ID, _FILES[5]),
+            (AuditChainVerifyWorkflow, VERIFY_ID, _FILES[6]),
+            (AuditAnchorWorkflow, ANCHOR_ID, _FILES[7]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():
