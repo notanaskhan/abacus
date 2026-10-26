@@ -1,8 +1,8 @@
 ---
 id: TASK-1307
 title: AUD-02 f, the Auto mode switch and confirm in fixture mode (A-01-T31)
-spec: docs/screens/AUD-02.md
-acceptance_criteria: [A-01-T31]
+spec: SPEC-330
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: A-01
