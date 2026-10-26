@@ -100,14 +100,17 @@ Decided in DEC-377 (flags, status codes per route, the reconnect request's idemp
 
 - **Framework v1** (migration 0194; `integrations.api`): `integration_catalog` is global content
   the app reads through `integration_catalog_rows()` and an operator loads from a reviewed document
-  with `python -m abacus_tools.integration_catalog load --document … --operator … [--dry-run]`
-  (`integration_catalog_load(rows, operator)`, `abacus_ops` only; adds and changes with a revision
-  bump, never deletes; a dry run prints the same plan and writes nothing). Scopes are `read` only
+  through `integration_catalog_load(rows, operator)` (`abacus_ops` only; adds and changes with a
+  revision bump, never deletes). The CLI `python -m abacus_tools.integration_catalog load
+  --document … --operator … [--dry-run]` is local and dev only: it is not an allowlisted ops
+  command until the hosted path (the reviewed document through the ops-request PR, digest-checked,
+  the operator from the request) lands with the catalogue-content task (DEC-438, review M3). Scopes are `read` only
   by CHECK and by the document's schema. `register_adapter` is fail-closed (grammar, category,
   hosts and scopes, no write-shaped method, one adapter per key and per provider);
   `listing_of(row)` is `available` only for a registered adapter matching the row's category and
   provider (AC-49). `firm_integrations` (one live install per app) and `integration_secrets`
-  (sealed with the tenant key, the install's id as associated data; delete is the crypto-erase).
+  (sealed with the tenant key, the install's id as associated data; deleting the row removes the
+  only sealed copy, as `connection_secrets` (DEC-379); a per-install key is follow-up).
   No catalogue content is committed: the document is reviewed content, loaded per environment.
 - **Entity-scoped connections** (migration 0195): provider by key grammar; `category`,
   `external_account_ref`, masked `display_label`, `connected_by_user_id`/`connected_at`,

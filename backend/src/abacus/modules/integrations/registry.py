@@ -17,7 +17,7 @@ TABLES: frozenset[str] = frozenset(
 INSERT_ONLY: frozenset[str] = frozenset()
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "firm_integrations": frozenset({"tenant_id", "catalog_key", "status", "mode", "created_by"}),
-    # Sealed once, deleted to crypto-erase, never updated.
+    # Sealed once, never updated; deleting the row removes the only sealed copy.
     "integration_secrets": frozenset({"tenant_id", "firm_integration_id", "sealed", "key_id"}),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {

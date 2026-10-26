@@ -3,7 +3,9 @@
 An install's credentials are sealed with the tenant's key, with the install's row id
 (`firm_integrations.id`, the owner) as associated data: a blob copied onto another install, or
 into another firm, does not open. The plaintext is never logged, stored elsewhere or returned by
-a route (Restricted, ADR-031). Erasing deletes the only copy: a crypto-erase. Sealing and erasing
+a route (Restricted, ADR-031). Erasing deletes the row, the only sealed copy, under the tenant
+key (as `connection_secrets`, DEC-379): the tenant key is not destroyed, so this is not a key
+destruction; a per-install data key that can be destroyed is follow-up work. Sealing and erasing
 run in the caller's unit of work (after its `authorise`) and are audited by target id only.
 """
 
@@ -67,7 +69,7 @@ async def open_secret(tenant: TenantContext, firm_integration_id: UUID) -> bytes
 
 
 async def erase_secret(tx: UnitOfWork, firm_integration_id: UUID) -> bool:
-    """Crypto-erase: delete the only sealed copy. True when one was there."""
+    """Delete the only sealed copy (a row delete under the tenant key). True when one was."""
     gone = await tx.session.scalar(
         delete(IntegrationSecret)
         .where(IntegrationSecret.firm_integration_id == firm_integration_id)

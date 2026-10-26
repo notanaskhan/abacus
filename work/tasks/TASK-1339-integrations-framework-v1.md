@@ -24,7 +24,7 @@ the owner id as associated data, and a dry-run load reports adds and changes wit
     `integration_catalog_load(rows jsonb, operator text)` definer for `abacus_ops` only (adds,
     changes with a revision bump, never deletes). Scopes are `read` only (CHECK).
   - `firm_integrations` (tenant; one live install per app); `integration_secrets` (tenant,
-    restricted; no UPDATE; DELETE is the crypto-erase).
+    restricted; no UPDATE; DELETE removes the only sealed copy).
 - Module `integrations`: `adapters.py` (fail-closed registry: grammar, category, hosts and scopes
   via `ReadConnectorEntry`, no write-shaped public method, one adapter per key and provider),
   `catalog.py` (read through the definer in `tenant_session`; `listing_of` gives `available`
@@ -32,8 +32,8 @@ the owner id as associated data, and a dry-run load reports adds and changes wit
   (`CatalogDocument`, pure `plan_load`), `secrets.py` (seal with `binding(owner id)`, open,
   erase; audited `integration_secret.stored|erased` on target `firm_integration`), `models.py`,
   `registry.py`, `api.py`.
-- Ops command `abacus_tools/integration_catalog.py load --document --operator [--dry-run]`;
-  allowlisted in `release.OPS_COMMANDS` and `ops-task.yml`.
+- CLI `abacus_tools/integration_catalog.py load --document --operator [--dry-run]`, local and
+  dev only (security review M3: not an allowlisted ops command yet).
 - schema_check: `NON_TENANT_TABLES`, `GLOBAL_TABLES`, `DEFINER_FUNCTIONS`, `OPS_ONLY_FUNCTIONS`;
   `test_schema_check_db.py` expected definers; audit target `firm_integration` firm-level.
 - Tests: `tests/unit/integrations/test_framework.py`, `tests/integration/test_integrations_schema.py`.
@@ -54,6 +54,11 @@ the owner id as associated data, and a dry-run load reports adds and changes wit
   contracts: 73 passed. Gates: ruff format/check, pyright, lint-imports, banned_patterns,
   error_codes, validate_docs, scope_guards, fresh_mfa, secrets_scan, check-heads,
   check-generated; tsc, eslint, prettier on touched files. Playwright not run.
+- 2026-10-26: security review fix round (DEC-438, DEC-439 notes): M1 adapter allowlist, M2 consent
+  links bound to one client entity (0195 amended in place), M3 the catalogue load is local and
+  dev only (removed from the ops allowlist), L5 load checks the plan, L4 erase wording. Targeted
+  tests: 79 passed (unit framework, release and deploy workflows, the two schema files, the
+  update-column contract test); gates clean.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

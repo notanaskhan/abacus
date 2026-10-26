@@ -298,6 +298,41 @@ _CONSENT = (
 )
 
 
+_LINK = (
+    "INSERT INTO connection_consent_links (consent_id, tenant_id, client_entity_id, "
+    "connection_id) VALUES ($1, $2, $3, $4) RETURNING consent_id"
+)
+
+
+def test_m2_a_consent_never_links_to_another_entitys_connection(db: sc.Database) -> None:
+    """Security review M2: a consent given for entity A cannot be linked to a connection on
+    entity B of the same client, whichever entity the link names (the link is insert-only)."""
+    firm = asyncio.run(_firm(db))
+    client = asyncio.run(
+        _sql(db, "SELECT client_id FROM client_entities WHERE id = $1", firm.entity_id)
+    )
+    other = cast(
+        uuid.UUID,
+        asyncio.run(
+            _sql(
+                db,
+                "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, 'B') "
+                "RETURNING id",
+                firm.tenant_id,
+                client,
+            )
+        ),
+    )
+    ip = hashlib.sha256(b"192.0.2.11").hexdigest()
+    consent = asyncio.run(
+        _as_app(db, firm, _CONSENT, firm.tenant_id, firm.entity_id, firm.user_id, ip)
+    )
+    elsewhere = asyncio.run(_as_app(db, firm, _CONNECT, firm.tenant_id, other, "american_express"))
+    for entity in (firm.entity_id, other):
+        with pytest.raises(asyncpg.ForeignKeyViolationError):
+            asyncio.run(_as_app(db, firm, _LINK, consent, firm.tenant_id, entity, elsewhere))
+
+
 def test_a_consent_is_written_once_and_never_changed(db: sc.Database) -> None:
     firm = asyncio.run(_firm(db))
     ip = hashlib.sha256(b"192.0.2.10").hexdigest()
@@ -307,11 +342,10 @@ def test_a_consent_is_written_once_and_never_changed(db: sc.Database) -> None:
     connection = asyncio.run(
         _as_app(db, firm, _CONNECT, firm.tenant_id, firm.entity_id, "american_express")
     )
-    link = "INSERT INTO connection_consent_links (consent_id, tenant_id, connection_id) "
-    link += "VALUES ($1, $2, $3) RETURNING consent_id"
-    assert asyncio.run(_as_app(db, firm, link, consent, firm.tenant_id, connection)) == consent
+    args = (consent, firm.tenant_id, firm.entity_id, connection)
+    assert asyncio.run(_as_app(db, firm, _LINK, *args)) == consent
     with pytest.raises(asyncpg.UniqueViolationError):  # one link per consent
-        asyncio.run(_as_app(db, firm, link, consent, firm.tenant_id, connection))
+        asyncio.run(_as_app(db, firm, _LINK, *args))
     for statement in (
         "UPDATE connection_consents SET consent_version = 2 WHERE id = $1",
         "DELETE FROM connection_consents WHERE id = $1",

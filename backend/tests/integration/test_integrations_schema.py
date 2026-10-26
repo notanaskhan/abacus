@@ -5,7 +5,7 @@ The row's acceptance: an unregistered adapter is never listed as available (the 
 covers the registry; here the rows come from the real definer), secrets are sealed with the
 tenant key and the owner id as associated data, and a dry-run load reports adds and changes
 without writing. Also: the app holds no privilege on the catalogue and cannot run the load; a
-second live install of one app is refused; deleting a secret is a crypto-erase.
+second live install of one app is refused; deleting a secret removes its only sealed copy.
 """
 
 from __future__ import annotations
@@ -184,6 +184,7 @@ async def test_ac50_a_dry_run_reports_adds_and_changes_and_writes_nothing(db: sc
     # The real load makes exactly the planned changes, and bumps the changed row's revision.
     real = await ops.load(_ops(db), second, OPERATOR, dry_run=False)
     assert sorted(real.written) == [("netsuite", "added"), ("quickbooks_online", "changed")]
+    assert real.matches_plan and dry.matches_plan and loaded.matches_plan
     after = {str(r["key"]): r for r in await ops.current_rows(_ops(db))}
     assert after["quickbooks_online"]["revision"] == 2
     assert after["quickbooks_online"]["listing_status"] == "coming_soon"

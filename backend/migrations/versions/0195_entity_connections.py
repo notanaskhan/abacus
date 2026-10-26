@@ -19,7 +19,8 @@ ADR-045, P-38; DEC-439). Written expand-only; the downgrade is for a local datab
 - `connection_consents` (insert-only, ADR-004): what the client agreed to before the provider's
   sheet: the catalogue key and consent version, the will and won't lists and the authorization
   text as shown, the person and a SHA-256 of their IP. Never updated: the connection a consent
-  produced is recorded in `connection_consent_links` (insert-only, one per consent).
+  produced is recorded in `connection_consent_links` (insert-only, one per consent, on the
+  consent's own client entity: both its keys carry `client_entity_id`).
 - `reconnect_requests`: the firm asking the client to reconnect; one open request per connection
   (`fulfilled_at IS NULL`); the app may set `fulfilled_at` only.
 
@@ -139,6 +140,7 @@ def upgrade() -> None:
             ip_sha256 text NOT NULL CHECK (ip_sha256 ~ '^[0-9a-f]{64}$'),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
+            UNIQUE (tenant_id, client_entity_id, id),
             FOREIGN KEY (tenant_id, client_entity_id) REFERENCES client_entities (tenant_id, id),
             FOREIGN KEY (tenant_id, client_entity_id, connection_id)
                 REFERENCES connections (tenant_id, client_entity_id, id)
@@ -150,10 +152,14 @@ def upgrade() -> None:
         CREATE TABLE connection_consent_links (
             consent_id uuid PRIMARY KEY,
             tenant_id uuid NOT NULL,
+            client_entity_id uuid NOT NULL,
             connection_id uuid NOT NULL,
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-            FOREIGN KEY (tenant_id, consent_id) REFERENCES connection_consents (tenant_id, id),
-            FOREIGN KEY (tenant_id, connection_id) REFERENCES connections (tenant_id, id)
+            -- The consent and the connection belong to the same client entity (review M2).
+            FOREIGN KEY (tenant_id, client_entity_id, consent_id)
+                REFERENCES connection_consents (tenant_id, client_entity_id, id),
+            FOREIGN KEY (tenant_id, client_entity_id, connection_id)
+                REFERENCES connections (tenant_id, client_entity_id, id)
         )
         """
     )
@@ -176,7 +182,11 @@ def upgrade() -> None:
             "ip_sha256",
         ),
     )
-    insert_columns(op, "connection_consent_links", ("consent_id", "tenant_id", "connection_id"))
+    insert_columns(
+        op,
+        "connection_consent_links",
+        ("consent_id", "tenant_id", "client_entity_id", "connection_id"),
+    )
     op.execute(
         """
         CREATE FUNCTION connection_consents_immutable() RETURNS trigger

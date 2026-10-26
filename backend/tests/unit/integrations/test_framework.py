@@ -10,8 +10,9 @@ catalogue's honest listing and the load plan, without a database.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from datetime import UTC, datetime
+from typing import cast
 
 import pytest
 from pydantic import ValidationError
@@ -20,6 +21,7 @@ from abacus.modules.integrations.api import (
     AdapterRefused,
     CatalogDocument,
     CatalogRow,
+    LoadPlan,
     listed,
     listing_of,
     plan_load,
@@ -28,27 +30,87 @@ from abacus.modules.integrations.api import (
     registered_keys,
     unregister_adapter,
 )
+from abacus_tools.integration_catalog import LoadResult
+from abacus_tools.release import OPS_COMMANDS
 
 
-@dataclass(frozen=True)
 class Reader:
-    key: str = "probe_ledger"
-    category: str = "ledger"
-    connector_provider: str | None = "probe_ledger"
-    hosts: tuple[str, ...] = ("api.probe.example",)
-    scopes: tuple[str, ...] = ("ledger.read",)
+    """A read-only adapter: the port's members, its machinery private."""
+
+    def __init__(
+        self,
+        key: str = "probe_ledger",
+        category: str = "ledger",
+        connector_provider: str | None = "probe_ledger",
+        hosts: tuple[str, ...] = ("api.probe.example",),
+        scopes: tuple[str, ...] = ("ledger.read",),
+    ) -> None:
+        self.key = key
+        self.category = category
+        self.connector_provider = connector_provider
+        self._hosts = hosts
+        self._scopes = scopes
 
     def read_scopes(self) -> tuple[str, ...]:
-        return self.scopes
+        return self._scopes
 
     def egress_hosts(self) -> tuple[str, ...]:
-        return self.hosts
+        return self._hosts
 
 
-@dataclass(frozen=True)
-class Poster(Reader):
-    def post_journal_entry(self) -> None:  # a write: never registrable
+class DeclaredReader(Reader):
+    """Declares its own read methods; they are allowed."""
+
+    read_methods = ("read_trial_balance", "list_accounts")
+
+    def read_trial_balance(self) -> None:
         return None
+
+    def list_accounts(self) -> None:
+        return None
+
+
+class _Http:
+    def get(self) -> None:
+        return None
+
+    def post(self) -> None:
+        return None
+
+
+class WithClient(Reader):
+    """A public HTTP client: its `.post` would be reachable, so the adapter is refused."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.client = _Http()
+
+
+# Write-capable names a word blocklist would miss (security review M1): each, added as a public
+# method, makes the adapter unregistrable.
+UNDECLARED = (
+    "apply_payment",
+    "make_payment",
+    "record_bill",
+    "commit",
+    "save",
+    "set_status",
+    "approve_invoice",
+    "mark_paid",
+    "request",
+    "execute",
+    "call",
+    "post_journal_entry",
+)
+
+
+def _noop(_self: object) -> None:
+    return None
+
+
+def _with_method(name: str) -> Reader:
+    cls = type(f"With_{name}", (Reader,), {name: _noop})
+    return cast(Reader, cls())
 
 
 ROW = CatalogRow(
@@ -106,10 +168,33 @@ def test_ac49_unregistering_takes_it_off_at_once() -> None:
     assert listing_of(ROW) == "coming_soon"
 
 
+@pytest.mark.parametrize("name", UNDECLARED)
+def test_m1_any_undeclared_public_method_is_refused(name: str) -> None:
+    with pytest.raises(AdapterRefused):
+        register_adapter(_with_method(name))
+    assert registered_adapter("probe_ledger") is None
+
+
+def test_m1_a_public_client_attribute_is_refused() -> None:
+    with pytest.raises(AdapterRefused):
+        register_adapter(WithClient())
+    assert registered_adapter("probe_ledger") is None
+
+
+def test_m1_declared_read_methods_are_allowed_and_nothing_else() -> None:
+    register_adapter(DeclaredReader())
+    assert registered_adapter("probe_ledger") is not None
+    unregister_adapter("probe_ledger")
+    # A declared name outside the read grammar, or one the adapter doesn't have, is refused.
+    for declared in (("post_entries",), ("read_missing",), "read_trial_balance"):
+        bad = type("Bad", (DeclaredReader,), {"read_methods": declared})()
+        with pytest.raises(AdapterRefused):
+            register_adapter(bad)
+
+
 @pytest.mark.parametrize(
     "adapter",
     [
-        Poster(),
         Reader(key="Bad-Key"),
         Reader(category="crm"),
         Reader(hosts=("https://api.probe.example",)),
@@ -117,7 +202,7 @@ def test_ac49_unregistering_takes_it_off_at_once() -> None:
         Reader(scopes=()),
         Reader(connector_provider="Bad Provider"),
     ],
-    ids=["write-shaped", "key", "category", "host", "no-host", "no-scope", "provider"],
+    ids=["key", "category", "host", "no-host", "no-scope", "provider"],
 )
 def test_registration_fails_closed(adapter: Reader) -> None:
     with pytest.raises(AdapterRefused):
@@ -216,3 +301,15 @@ def test_ac50_the_plan_names_adds_and_changes_and_leaves_the_rest() -> None:
     assert plan.unchanged == ("probe_ledger",)
     assert plan.writes
     assert not plan_load([r.as_row() for r in document.rows], document).writes
+
+
+def test_l5_a_load_that_differs_from_its_plan_is_a_mismatch() -> None:
+    plan = LoadPlan(added=("shopify",), changed=(("square", ("listing_status",)),), unchanged=())
+    assert LoadResult(plan, (("shopify", "added"), ("square", "changed"))).matches_plan
+    assert not LoadResult(plan, (("shopify", "added"),)).matches_plan
+    assert not LoadResult(plan, (("shopify", "changed"), ("square", "changed"))).matches_plan
+    assert LoadResult(plan, (), dry_run=True).matches_plan
+
+
+def test_m3_the_catalogue_load_is_not_an_allowlisted_ops_command() -> None:
+    assert not any(c.startswith("abacus_tools.integration_catalog") for c in OPS_COMMANDS)

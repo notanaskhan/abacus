@@ -13,7 +13,9 @@ ADR-040, ADR-035; DEC-438).
 - `firm_integrations` (tenant): a firm's install of a catalogue app (T-01's CCH bridge, W-01's
   firm and personal apps); at most one live install per app (`status <> 'disconnected'`).
 - `integration_secrets` (tenant, restricted): an install's credentials, sealed with the tenant's
-  key with the install's id as associated data (ADR-035); never updated, deleted to crypto-erase.
+  key with the install's id as associated data (ADR-035); never updated. Deleting the row
+  removes the only sealed copy (as `connection_secrets`, DEC-379); the tenant key is not
+  destroyed, so it is a row delete, not a key destruction. A per-install data key is follow-up.
 
 Connectors only read (ADR-040): the catalogue's `scopes` carry `read` only (CHECK), and there is
 no write column anywhere.
@@ -206,7 +208,7 @@ def upgrade() -> None:
         """
     )
     tenant_table(op, "integration_secrets")
-    # Never updated; deleting the row is the crypto-erase (the sealed blob is the only copy).
+    # Never updated; deleting the row removes the only sealed copy (not a key destruction).
     op.execute("REVOKE UPDATE ON integration_secrets FROM abacus_app")
     insert_columns(
         op, "integration_secrets", ("tenant_id", "firm_integration_id", "sealed", "key_id")

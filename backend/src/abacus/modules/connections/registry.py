@@ -58,7 +58,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "connection_id", "client_entity_id", "catalog_key", "consent_version"}
         | {"will", "wont", "authorization_text", "authorised_by_user_id", "ip_sha256"}
     ),
-    "connection_consent_links": frozenset({"consent_id", "tenant_id", "connection_id"}),
+    "connection_consent_links": frozenset(
+        {"consent_id", "tenant_id", "client_entity_id", "connection_id"}
+    ),
     "reconnect_requests": frozenset(
         {"tenant_id", "connection_id", "requested_by_user_id", "engagement_id"}
     ),

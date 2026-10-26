@@ -49,6 +49,11 @@ connection for one entity is refused, and a bank feed beside the ledger is allow
   contracts: 73 passed. Gates: ruff format/check, pyright, lint-imports, banned_patterns,
   error_codes, validate_docs, scope_guards, fresh_mfa, secrets_scan, check-heads,
   check-generated; tsc, eslint, prettier on touched files. Playwright not run.
+- 2026-10-26: security review fix round (DEC-438, DEC-439 notes): M1 adapter allowlist, M2 consent
+  links bound to one client entity (0195 amended in place), M3 the catalogue load is local and
+  dev only (removed from the ops allowlist), L5 load checks the plan, L4 erase wording. Targeted
+  tests: 79 passed (unit framework, release and deploy workflows, the two schema files, the
+  update-column contract test); gates clean.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

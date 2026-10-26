@@ -185,6 +185,7 @@ class ConnectionConsentLink(Base):
 
     consent_id: Mapped[UUID] = mapped_column(primary_key=True)
     tenant_id: Mapped[UUID]
+    client_entity_id: Mapped[UUID]  # the consent's and the connection's entity (review M2)
     connection_id: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
