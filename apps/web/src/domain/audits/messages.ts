@@ -21,6 +21,19 @@ export const AUDIT_MESSAGES = {
   viewer: {
     none: "Select a document to view it here",
     unavailable: "This document can't be shown here",
+    /** The E5 kit's revealed-value note ("Revealed by Samuel Ito · 9:31 AM · logged to the audit
+     * trail", F-05-T47). */
+    revealed: (person: string, at: string) =>
+      `Revealed by ${person} · ${at} · logged to the audit trail`,
+    /** Not drawn (DEC-421): the toast rules' wording for a refused reveal. */
+    revealFailed: "Couldn’t reveal the value",
+    /** The shell's step-up words (shell/mfa.tsx `ConfirmItsYou`). */
+    stepUp: {
+      title: "Confirm it's you",
+      body: "This action needs a recent sign-in. Sign in again, then try once more. If it still isn't allowed, your role doesn't permit it.",
+      cancel: "Cancel",
+      signIn: "Sign in again",
+    },
   },
   /** The v1 Agent tab (DV-2; SPEC-027 words). */
   agent: {

@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-03 Source documents - PBC with viewer/` (README.md, spec.md, revision.md R2; revision wins, DEC-15) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | A-01 · contract A-01-T01 (this file); stub A-01-T02; consumer tests A-01-T03 (C5 v1.1 additive fields); cockpit L3 A-01-T06; C5 v1.1 fields and Source Documents aggregate A-01-T10 (N); screen A-01-T15; remind and third-party wiring, live swap and redirect A-01-T16; legacy retirement A-01-T21; parity A-01-T28 |
-| Manifest status | planned (`routes/manifest/aud.ts`); turns `fixture` with A-01-T15, `live` with A-01-T16 |
+| Manifest status | planned with path `/audits/$auditId/source-documents` (`routes/manifest/aud.ts`): A-01-T15 built a–g on fixtures and A-01-T16 wired the live P-06 routes, but it stays `planned` for AUD-02's reason (DEC-195: "+ Add" is SHL-14, an overlay with no `to.<ID>()` builder). DEC-421, DEC-422 |
 
-Code to come (A-01 §5.2): `src/screens/AUD-03/{index.tsx, scenarios.ts, copy.ts, AUD-03.test.tsx}` on `domain/audits` (rail, audit bar) and `domain/requests` (ReturnDialog, FollowUpSheet, ScreeningCardHost from P-06-T22), `src/domain/evidence/` (logic moved from the legacy screens, A-01-T21).
+Code (A-01 §5.2): `src/screens/AUD-03/{index.tsx, scenarios.ts, copy.ts, AUD-03.test.tsx}`; fixtures `src/fixtures/{seed/aud03,scenarios/AUD-03}.ts`; the viewer's lit match, slot and logged reveal in `domain/audits/{DockViewer,reveal}.tsx`; delegation in `domain/requests/delegate.ts`. Originally planned: on `domain/audits` (rail, audit bar) and `domain/requests` (ReturnDialog, FollowUpSheet, ScreeningCardHost from P-06-T22), `src/domain/evidence/` (logic moved from the legacy screens, A-01-T21).
 
 ## States
 
@@ -153,13 +153,23 @@ Each becomes a test in `AUD-03.test.tsx` ("AUD-03 avoid: …"): gradients in pro
 | DV-8 | "Remind…" opens P-06's FollowUpSheet with a template-composed body; a person sends | ADR-111; DEC-74 | A-01 §2.4 |
 | DV-9 | The export entry in the header "···" and the export sheet are composed from kits | No artboard | A-01 §2.4 |
 | — | The Agent check chip "Agent check: period ✓ · signed ✓ · entity ✓" of the original b is replaced by the C-34 ScreeningCard | revision item 3 | revision.md |
+| DV-13 | The 490 viewer is the cockpit dock widened to `--ev-w`, under its 46 Agent · Viewer header (the artboard draws no header) | One cockpit host for AUD-02 and AUD-03 | DEC-421 |
+| DV-14 | Rows are composed in the screen from kit parts; the bands are the compact SourceDocGroup (no olive count in f); the 12 px glyph is the 13 px disc | C-02 has no Linked cell, glyph, Overdue/Returned pill or menu (a `ui-kit-component` task) | DEC-421 |
+| DV-15 | The ScreeningCard's answers are worded by code; b's two verbatim sentences are not shown; c's reason is the flag's verified citation | DEC-351 | DEC-421 |
+| DV-16 | c's pill reads the status word "Uploaded – needs review", not "Match 62% · needs review"; the 62% is in the sub-line and the strip | Status words come from the vocabulary | DEC-421 |
+| DV-17 | The Return dialog lists the platform's send-back catalogue, not the artboard's five labels | Content belongs to the catalogue | DEC-421 |
+| DV-18 | "Request from third party…" is a dialog over the client contacts with SHL-14's words; the strip and "Request from third party…" follow capabilities (disabled for staff) | No artboard for the picker; C5 grants delegation to senior and above | DEC-422 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | locked by Fri Apr 30, 2027 (A-01-T28); SHL-20's card is parity-checked inside b and c |
+| a–g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (Playwright not run in the S9 wave: chromium mismatch) | locked by Fri Apr 30, 2027 (A-01-T28); SHL-20's card is parity-checked inside b and c |
 | host | D | — | audit bar 59, rail 330, canvas 536, viewer 490, rows 52, group bands 32, evbar 44, pills 19, radius 12 |
 
 ## Open gaps
 - spec.md lists the BrokerWindow row as selected in a and its "Received" grammar; the C5 v1.1 row carries `match_confidence` for the "matched 96%" sub-line (A-01-T10 populates it).
 - The original b chip "Agent check: period ✓ · signed ✓ · entity ✓" names three checks; DEC-48 stores two named checks plus file flags, so the ScreeningCard shows two (revision item 3 agrees).
+- (A-01-T15) "Source Documents ›" on AUD-02 still opens AUD-02's own canvas; routing it to AUD-03 with the same row is left to the AUD-02 owner (A-01 Story 2.3).
+- (A-01-T15) The "Sample-driven · 0" band is drawn from a `counted: false` group; the live aggregate does not return one until A-03, so live it is absent.
+- (A-01-T15) The live aggregate returns no `screening` verdict and no row `allowed_actions` yet (A-01-T10 populates `match_confidence` only); the glyph appears live once it does, and the strip follows capabilities.
+- (A-01-T16) The staging fixture-to-live swap and the M6 journey step are not done from a local worktree.
