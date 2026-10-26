@@ -134548,7 +134548,7 @@
         "x-abacus-action": "export.read"
       },
       "post": {
-        "description": "AUD-02/03 \"Export binder\u2026\" (A-01-T18): `queued` with a 10-second Undo window; 422\n`export_kind_unsupported` for a non-audit work item, `binder_not_in_work_item` for a binder\noutside it; audited `engagement_export.requested`.",
+        "description": "AUD-02/03 \"Export binder\u2026\" (A-01-T18): `queued` with a 10-second Undo window; 422\n`export_kind_unsupported` for a non-audit work item, `binder_not_in_work_item` for a binder\noutside it, `export_section_missing` for the audit trail while it has no reader; audited\n`engagement_export.requested`.",
         "operationId": "create_export",
         "parameters": [
           {

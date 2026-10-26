@@ -24,7 +24,7 @@ from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, te
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow import Target, uow
-from abacus.modules.evidence import export_activities, exports
+from abacus.modules.evidence import export_activities, export_sections, exports
 from abacus.modules.evidence.export_models import EngagementExport
 from abacus.modules.identity.api import AuthContext, Forbidden
 
@@ -45,7 +45,12 @@ async def engines(
     async def on(_tenant: object, _flag: object) -> bool:
         return True
 
+    async def no_events(*_args: object, **_kwargs: object) -> list[object]:
+        return []
+
     monkeypatch.setattr(exports, "flag_enabled", on)  # `audits.binder_export` on
+    # The audit trail's reader (registered by the composition root once G-02-T08 lands).
+    monkeypatch.setattr(export_sections, "_audit_trail", no_events)
     yield
     await dispose_engine()
     settings.cache_clear()
@@ -295,6 +300,21 @@ async def test_ac8_a_binder_outside_the_work_item_is_422(world: World) -> None:
     assert await world.seed.count("engagement_exports", world.tenant) == 0
 
 
+async def test_ac8_the_audit_trail_without_its_reader_is_422_before_any_grant(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Fail fast (security review M3): no grant, no row, rather than a build that must fail."""
+    monkeypatch.setattr(export_sections, "_audit_trail", None)
+    with pytest.raises(exports.ExportSectionUnavailable):
+        await _create(world, world.partner.context())
+    assert await world.seed.count("engagement_exports", world.tenant) == 0
+    grants = await world.seed.value(
+        "SELECT count(*) FROM approval_grants WHERE tenant_id = $1 AND action = 'export.create'",
+        world.tenant,
+    )
+    assert grants == 0
+
+
 # --- refusals ------------------------------------------------------------------------------------
 
 
@@ -344,6 +364,89 @@ async def test_the_database_refuses_a_non_human_requester(world: World) -> None:
                     not_before=row.not_before,
                 )
             )
+
+
+async def test_the_database_refuses_a_request_in_another_persons_name(world: World) -> None:
+    """The requester is the person acting (security review L2): the manager cannot insert an
+    export naming the partner."""
+    view = await _create(world, world.partner.context())
+    row = await _row(world, view.id)
+    with pytest.raises(DBAPIError, match="requested by the person acting"):
+        async with uow(world.manager.context().tenant) as tx:
+            await tx.session.execute(
+                insert(EngagementExport).values(
+                    id=uuid.uuid4(),
+                    tenant_id=world.tenant,
+                    engagement_id=world.engagement,
+                    work_item_id=world.work_item,
+                    client_id=row.client_id,
+                    kind="binder",
+                    scope=row.scope,
+                    format_version="1.0",
+                    requested_by=world.partner.user_id,
+                    requested_by_kind="human",
+                    mfa_at=row.mfa_at,
+                    grant_id=row.grant_id,
+                    not_before=row.not_before,
+                )
+            )
+            tx.record("engagement_export.requested", target=Target(exports.SUBJECT, view.id))
+
+
+async def _as_system(world: World, sql: str, **values: object) -> None:
+    """One committed change as the app role, as the workflow's activities make them."""
+    async with uow(TenantContext(world.tenant, "system", "test")) as tx:
+        await tx.session.execute(text(sql), values)
+        tx.record(
+            "engagement_export.started",
+            target=Target(exports.SUBJECT, cast(uuid.UUID, values["id"])),
+        )
+
+
+_DIGEST = "a" * 64
+
+
+async def test_the_database_writes_each_stamp_once(world: World) -> None:
+    """Security review M2: while packaging only the first write of `as_of_seq`; once ready, no
+    digest, size, prefix or expiry can change (status unchanged or not)."""
+    view = await _create(world, world.partner.context())
+    await _as_system(
+        world, "UPDATE engagement_exports SET status = 'packaging' WHERE id = :id", id=view.id
+    )
+    await _as_system(
+        world, "UPDATE engagement_exports SET as_of_seq = 7 WHERE id = :id", id=view.id
+    )
+    with pytest.raises(DBAPIError, match="written once"):
+        await _as_system(
+            world, "UPDATE engagement_exports SET as_of_seq = 9 WHERE id = :id", id=view.id
+        )
+    await _as_system(
+        world,
+        "UPDATE engagement_exports SET status = 'ready', bundle_sha256 = :d, "
+        "manifest_sha256 = :d, bytes = 10, file_count = 1, request_count = 1, "
+        "segment_count = 1, object_prefix = 'exports/x/', ready_at = now(), "
+        "expires_at = now() + interval '7 days' WHERE id = :id",
+        id=view.id,
+        d=_DIGEST,
+    )
+    for change in (
+        "UPDATE engagement_exports SET bundle_sha256 = repeat('b', 64) WHERE id = :id",
+        "UPDATE engagement_exports SET manifest_sha256 = repeat('b', 64) WHERE id = :id",
+        "UPDATE engagement_exports SET expires_at = expires_at + interval '1 day' WHERE id = :id",
+        "UPDATE engagement_exports SET object_prefix = 'exports/elsewhere/' WHERE id = :id",
+        "UPDATE engagement_exports SET bytes = 11 WHERE id = :id",
+    ):
+        with pytest.raises(DBAPIError, match="written once"):
+            await _as_system(world, change, id=view.id)
+    with pytest.raises(DBAPIError, match="written once"):  # nor on the way to expired
+        await _as_system(
+            world,
+            "UPDATE engagement_exports SET status = 'expired', void_reason = 'expired', "
+            "bundle_sha256 = repeat('c', 64) WHERE id = :id",
+            id=view.id,
+        )
+    row = await _row(world, view.id)
+    assert (row.status, row.as_of_seq, row.bundle_sha256) == ("ready", 7, _DIGEST)
 
 
 async def test_the_app_role_changes_only_the_status_and_its_stamps(world: World) -> None:

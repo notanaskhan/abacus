@@ -413,6 +413,12 @@ codes:
     raised_by:
     - abacus.modules.evidence.exports.ExportKindUnsupported
     summary: Only an audit work item exports a binder (fail closed until C19 and a tax-export review).
+  export_section_missing:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.exports.ExportSectionUnavailable
+    summary: 'The scope asks for a section no provider can write yet (the audit trail until its reader
+      is registered): refused at create, before any grant, rather than failing after the window.'
   fieldwork_unavailable:
     status: 409
     raised_by:

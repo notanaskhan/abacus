@@ -13205,7 +13205,8 @@ export const listExportsInfiniteOptions = (options: Options<ListExportsData>) =>
  *
  * AUD-02/03 "Export binder…" (A-01-T18): `queued` with a 10-second Undo window; 422
  * `export_kind_unsupported` for a non-audit work item, `binder_not_in_work_item` for a binder
- * outside it; audited `engagement_export.requested`.
+ * outside it, `export_section_missing` for the audit trail while it has no reader; audited
+ * `engagement_export.requested`.
  */
 export const createExportMutation = (options?: Partial<Options<CreateExportData>>): UseMutationOptions<CreateExportResponse, CreateExportError, Options<CreateExportData>> => {
     const mutationOptions: UseMutationOptions<CreateExportResponse, CreateExportError, Options<CreateExportData>> = {

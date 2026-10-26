@@ -10,7 +10,8 @@ shapes are fixed here so the consumers' tests and fixture mode run against them:
   fresh MFA, independence, not offshore; `Idempotency-Key`): 202 `queued` with `not_before` ten
   seconds on, a single-use approval grant behind it (P-35). A retried key returns the same export.
   422 `export_kind_unsupported` for a work item that is not an audit (fail closed until C19);
-  422 `binder_not_in_work_item` for a binder id that is not one of the work item's (DEC-379).
+  422 `binder_not_in_work_item` for a binder id that is not one of the work item's (DEC-379);
+  422 `export_section_missing` for the audit trail while no reader is registered (DEC-433).
 - `POST /v1/exports/{export_id}/undo` (`export.create`): inside the window, `undone`; after it,
   409 `undo_window_closed`.
 - `GET /v1/work-items/{work_item_id}/exports` and `GET /v1/exports/{export_id}` (`export.read`):
@@ -182,7 +183,8 @@ async def create_export_route(
 ) -> EngagementExportOut:
     """AUD-02/03 "Export binder…" (A-01-T18): `queued` with a 10-second Undo window; 422
     `export_kind_unsupported` for a non-audit work item, `binder_not_in_work_item` for a binder
-    outside it; audited `engagement_export.requested`."""
+    outside it, `export_section_missing` for the audit trail while it has no reader; audited
+    `engagement_export.requested`."""
     view = await exports.create(
         ctx,
         work_item_id,

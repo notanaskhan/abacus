@@ -12,7 +12,8 @@ Every route authorises first, so a wall answers 404 before the flag or any read 
 then the `audits.binder_export` flag. A work item with no assurance row (a tax return, any
 non-audit item) is 422 `export_kind_unsupported` (fail closed until C19); a scope binder id that
 is not one of the work item's asked PBC binders, as the requester reads them, is 422
-`binder_not_in_work_item` (DEC-379 M4).
+`binder_not_in_work_item` (DEC-379 M4); a scope with the audit trail while no audit-trail reader
+is registered is 422 `export_section_missing` (DEC-433), before any grant.
 """
 
 from __future__ import annotations
@@ -51,6 +52,7 @@ from abacus.modules.evidence.export_events import (
 )
 from abacus.modules.evidence.export_manifest import FORMAT_VERSION
 from abacus.modules.evidence.export_models import EngagementExport
+from abacus.modules.evidence.export_sections import audit_trail_registered
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -85,6 +87,13 @@ class BinderNotInWorkItem(DomainInvalid):
     item has none to export."""
 
     code = "binder_not_in_work_item"
+
+
+class ExportSectionUnavailable(DomainInvalid):
+    """The scope asks for a section no provider can write yet (the audit trail until its reader
+    is registered): refused at create, before any grant, rather than failing after the window."""
+
+    code = "export_section_missing"
 
 
 class ExportUndoClosed(DomainConflict):
@@ -219,6 +228,8 @@ async def create(
     asked = list(dict.fromkeys(binder_ids)) or binders
     if not asked or any(b not in binders for b in asked):
         raise BinderNotInWorkItem
+    if include_audit_trail and not audit_trail_registered():
+        raise ExportSectionUnavailable
     scope = ExportScope(tuple(asked), include_unaccepted, include_audit_trail)
 
     async def run() -> tuple[int, dict[str, object]]:

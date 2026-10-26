@@ -127,8 +127,35 @@ def upgrade() -> None:
         CREATE FUNCTION engagement_exports_guard() RETURNS trigger
         LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
         BEGIN
+            -- A stamp is written once: none already set may change, in any status.
+            IF (OLD.as_of_seq IS NOT NULL AND NEW.as_of_seq IS DISTINCT FROM OLD.as_of_seq)
+                OR (OLD.bundle_sha256 IS NOT NULL
+                    AND NEW.bundle_sha256 IS DISTINCT FROM OLD.bundle_sha256)
+                OR (OLD.manifest_sha256 IS NOT NULL
+                    AND NEW.manifest_sha256 IS DISTINCT FROM OLD.manifest_sha256)
+                OR (OLD.bytes IS NOT NULL AND NEW.bytes IS DISTINCT FROM OLD.bytes)
+                OR (OLD.file_count IS NOT NULL AND NEW.file_count IS DISTINCT FROM OLD.file_count)
+                OR (OLD.request_count IS NOT NULL
+                    AND NEW.request_count IS DISTINCT FROM OLD.request_count)
+                OR (OLD.segment_count IS NOT NULL
+                    AND NEW.segment_count IS DISTINCT FROM OLD.segment_count)
+                OR (OLD.object_prefix IS NOT NULL
+                    AND NEW.object_prefix IS DISTINCT FROM OLD.object_prefix)
+                OR (OLD.ready_at IS NOT NULL AND NEW.ready_at IS DISTINCT FROM OLD.ready_at)
+                OR (OLD.expires_at IS NOT NULL AND NEW.expires_at IS DISTINCT FROM OLD.expires_at)
+                OR (OLD.failure_code IS NOT NULL
+                    AND NEW.failure_code IS DISTINCT FROM OLD.failure_code)
+                OR (OLD.void_reason IS NOT NULL
+                    AND NEW.void_reason IS DISTINCT FROM OLD.void_reason)
+                OR (OLD.undone_at IS NOT NULL AND NEW.undone_at IS DISTINCT FROM OLD.undone_at)
+                OR (OLD.undone_by IS NOT NULL AND NEW.undone_by IS DISTINCT FROM OLD.undone_by)
+            THEN
+                RAISE EXCEPTION 'an export stamp is written once'
+                    USING ERRCODE = 'check_violation';
+            END IF;
             IF NEW.status = OLD.status THEN
-                IF NEW.status NOT IN ('packaging', 'ready') THEN
+                -- Only the snapshot's first write of as_of_seq while packaging.
+                IF NEW.status <> 'packaging' THEN
                     RAISE EXCEPTION 'a % export takes no change', OLD.status
                         USING ERRCODE = 'check_violation';
                 END IF;
@@ -163,6 +190,26 @@ def upgrade() -> None:
     op.execute(
         "CREATE TRIGGER engagement_exports_guard BEFORE UPDATE ON engagement_exports "
         "FOR EACH ROW EXECUTE FUNCTION engagement_exports_guard()"
+    )
+    # The requester is the person acting (INV-1): a human actor may request for no one else.
+    op.execute(
+        """
+        CREATE FUNCTION engagement_exports_requester() RETURNS trigger
+        LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+                OR current_setting('app.actor_id', true) IS DISTINCT FROM NEW.requested_by::text
+            THEN
+                RAISE EXCEPTION 'an export is requested by the person acting'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER engagement_exports_requester BEFORE INSERT ON engagement_exports "
+        "FOR EACH ROW EXECUTE FUNCTION engagement_exports_requester()"
     )
     op.execute(
         """
@@ -233,4 +280,5 @@ def downgrade() -> None:
         op.execute(f"DROP TABLE {table}")
     op.execute("DROP FUNCTION engagement_export_rows_immutable()")
     op.execute("DROP TABLE engagement_exports")
+    op.execute("DROP FUNCTION engagement_exports_requester()")
     op.execute("DROP FUNCTION engagement_exports_guard()")

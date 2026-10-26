@@ -56,6 +56,7 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 | 410 | `{"detail": "export_expired"}` | download after 7 days or once voided |
 | 422 | `{"detail": "export_kind_unsupported"}` | a work item that is not an audit (fail closed until C19) |
 | 422 | `{"detail": "binder_not_in_work_item"}` | a scope binder id that is not one of the work item's PBC binders (DEC-379) |
+| 422 | `{"detail": "export_section_missing"}` | `include_audit_trail` while no audit-trail reader is registered (DEC-433): refused before any grant |
 | 501 | `{"detail": "not_implemented"}` | download, until A-01-T22 |
 
 ## 7. Audit and outbox events
