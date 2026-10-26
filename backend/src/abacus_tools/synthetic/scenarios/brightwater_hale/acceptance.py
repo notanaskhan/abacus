@@ -12,16 +12,19 @@ from the CLI-06, CLI-07 and CLI-08 handoff specs and the ENG-05 and CLI-04 fixtu
   the counterparty the conflict searches find. Delegations and invited / active states need
   `invite` and an accepted invitation: not seeded (DEC-412).
 - **Northwind team and EQR** (ENG-05): budget hours, Thomas Whitcombe moved from the team to
-  EQR after Celia Marsh's eligibility approval (Jun 1), Margaret Okonkwo's team approval
-  (Jun 1), then Kira Ross proposed by Hannah Leclerc (Sep 11).
-- **Independence** (CLI-08a): TW, HL and MD confirm (Aug 3 and 4); MO's confirmation comes from
-  audit_core; Ana Cruz stays pending, so the five read "4 of 5". NAS and rotation have no
-  service yet (P-07-T41 stubs): not seeded (DEC-412).
+  EQR (Jun 1; his EBP audits as partner pass the competence check, so no eligibility approval is
+  needed, and Celia Marsh does not hold `quality_partner` to give one), Margaret Okonkwo's team
+  approval (Jun 1), then Kira Ross proposed by Hannah Leclerc (Sep 11).
+- **Independence** (CLI-08a): MO, TW, HL and MD confirm (Aug 3 and 4); Ana Cruz stays pending,
+  so the five read "4 of 5". NAS and rotation have no service yet (P-07-T41 stubs): not seeded
+  (DEC-412).
 - **Conflict checks**: CLI-08c's seven names over Northwind, Harborline cleared "Not adverse"
-  by Hannah Leclerc; CLI-06h's "Harborline Trust Company" over the Thornbury draft, cleared by
-  Samuel Ito.
-- **Acceptance records** (CLI-07): Thornbury's new-engagement record prepared by Samuel Ito
-  (three human-authored flags, Moderate, Grace Holloway's manual fee check), sent to Daniel
+  by Hannah Leclerc; CLI-06h's "Harborline Trust Company" over the Thornbury client, run and
+  cleared by Samuel Ito (a check on a draft is its creator's alone, and Grace may not clear).
+- **Acceptance records** (CLI-07): Thornbury's new-engagement record, started by Grace Holloway
+  from her intake (CLI-06; a manager may not create engagements, so the record's starter reads
+  as its preparer), answered and flagged by Samuel Ito (three human-authored flags, Moderate,
+  Grace Holloway's manual fee check), sent to Daniel
   Reyes, who accepts with conditions at Sep 14, 9:46 AM (after E0); Meridian's FY2026 continuance
   opened by Margaret Okonkwo on the archived FY2025 audit.
 
@@ -156,8 +159,10 @@ HOURS: Final[tuple[tuple[str, str], ...]] = (
     ("MD", "61.0"),
     ("AC", "40.0"),
 )
-# CLI-08a: who confirms, and the canon date (MO's comes from audit_core; AC stays pending).
+# CLI-08a: who confirms, and the canon date (A1 is in planning, so audit_core confirms nobody;
+# AC stays pending).
 CONFIRMATIONS: Final[tuple[tuple[str, str], ...]] = (
+    ("MO", "2026-08-03"),
     ("TW", "2026-08-04"),
     ("HL", "2026-08-03"),
     ("MD", "2026-08-03"),
@@ -183,6 +188,7 @@ THORNBURY_DRAFT: Final[dict[str, object]] = {
     "fiscal_period_start": "2026-01-01",
     "fiscal_period_end": "2027-01-31",
     "team": [("DR", "engagement_partner"), ("SI", "manager")],
+    "owner": "GH",  # CLI-06: Grace runs the intake (`engagement.create` is not a manager's)
 }
 THORNBURY_ANSWERS: Final[tuple[tuple[str, str], ...]] = (
     (
@@ -202,6 +208,11 @@ THORNBURY_ANSWERS: Final[tuple[tuple[str, str], ...]] = (
         "prior_year_history",
         "Walter Thornbury's TY2024 Form 1040 filed on time; no open notices; TY2025 Form 1040 in "
         "Gathering (BN / YK)",
+    ),
+    (
+        "fees_collectability",
+        "CCH Axcess Practice shows no unpaid invoices on the Walter Thornbury account; the estate "
+        "has no billing account there yet, so Grace Holloway confirmed it manually (Sep 11)",
     ),
     (
         "competence_capacity",
@@ -236,10 +247,6 @@ THORNBURY_FLAGS: Final[tuple[tuple[str, str, str], ...]] = (
         "(Circular 230 §10.29). The engagement letter should say so.",
     ),
 )
-FEE_CHECK_NOTE: Final = (
-    "CCH Axcess Practice shows no unpaid invoices on the Walter Thornbury account; the estate "
-    "has no billing account there yet, so Grace Holloway confirmed it manually (Sep 11)"
-)
 THORNBURY_CONDITIONS: Final = (
     "Letters of office on file before the letter is signed.",
     "Letter names the client as the estate, acting through the executor.",
@@ -256,6 +263,7 @@ MERIDIAN_DRAFT: Final[dict[str, object]] = {
     "fiscal_period_end": "2026-12-31",
     "team": [("MO", "engagement_partner")],
     "prior_audit": "A20",
+    "owner": "MO",
 }
 
 
@@ -300,7 +308,7 @@ def acceptance_events() -> list[Event]:
             client=CALLOWAY,
         )
     )
-    # ENG-05 history (Jun 1): hours, the EQR's eligibility, the EQR, the team approval.
+    # ENG-05 history (Jun 1): hours, the EQR, the team approval.
     events += [
         event(
             f"team-hours:A1:{initials}",
@@ -319,14 +327,6 @@ def acceptance_events() -> list[Event]:
             "engagements.member_removed",
             "HL",
             {"audit": "A1", "member": "TW", "canon_on": "2026-06-01"},
-            client=NORTHWIND,
-        ),
-        event(
-            "eqr-eligibility:A1:TW",
-            _replayed(next(n)),
-            "engagements.eqr_eligibility_approved",
-            "CM",
-            {"audit": "A1", "candidate": "TW", "canon_on": "2026-06-01"},
             client=NORTHWIND,
         ),
         event(
@@ -401,7 +401,7 @@ def acceptance_events() -> list[Event]:
             "draft:thornbury",
             _at(8, 14, 0),
             "engagements.draft_created",
-            "SI",
+            "GH",
             {"draft": "thornbury"},
             client=THORNBURY,
         ),
@@ -411,8 +411,7 @@ def acceptance_events() -> list[Event]:
             "organisations.conflict_check_run",
             "SI",
             {
-                "subject": "engagement_draft",
-                "draft": "thornbury",
+                "subject": "client",
                 "names": [HARBORLINE],
                 "clear": HARBORLINE,
                 "reason": INTAKE_CLEARANCE,
@@ -423,7 +422,7 @@ def acceptance_events() -> list[Event]:
             "acceptance-started:thornbury",
             _at(8, 14, 12),
             "engagements.acceptance_started",
-            "SI",
+            "GH",
             {"draft": "thornbury"},
             client=THORNBURY,
         ),
@@ -432,15 +431,7 @@ def acceptance_events() -> list[Event]:
             _at(11, 15, 30),
             "engagements.acceptance_prepared",
             "SI",
-            {"draft": "thornbury", "fee_check_of": "GH", "risk_rating": "moderate"},
-            client=THORNBURY,
-        ),
-        event(
-            "acceptance-fee-check:thornbury",
-            _at(11, 15, 45),
-            "engagements.acceptance_check_completed",
-            "GH",
-            {"draft": "thornbury", "section": "fees_collectability", "note": FEE_CHECK_NOTE},
+            {"draft": "thornbury", "risk_rating": "moderate"},
             client=THORNBURY,
         ),
         event(

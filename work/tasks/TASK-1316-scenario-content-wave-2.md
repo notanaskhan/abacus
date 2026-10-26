@@ -38,3 +38,12 @@ CLI-07, CLI-08 and ENG-05 read live.
 
 ## Progress log
 - 2026-10-26: built (build-first; the load test at the end of the run).
+- 2026-10-26: `tests/integration/test_scenario_acceptance.py` passes (load at 2026-09-24, read
+  back, second load writes nothing). The load found four service rules the build had not met,
+  each fixed in the slice and recorded in DEC-412: no EQR eligibility approval (TW passes the
+  competence check; Celia Marsh holds no `quality_partner`); Grace starts the Thornbury intake (a
+  manager may not hold `engagement.create`); CLI-06h's search runs on the Thornbury client (a
+  draft's checks are its creator's alone); the fee section is answered rather than a manual check
+  asked of Grace (no service gives her `client_service` on an engagement). MO's confirmation is
+  the slice's, since A1 is in planning and audit_core confirms nobody. Loader, compliance and
+  people slice tests still pass; import contracts kept.

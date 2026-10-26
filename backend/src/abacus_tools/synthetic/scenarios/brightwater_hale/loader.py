@@ -88,17 +88,14 @@ from abacus.modules.engagements.api import (
     add_flag,
     add_to_team,
     answer_independence,
-    approve_eqr_eligibility,
     approve_team,
     assign_eqr,
     assurance_item,
     assurance_item_id,
     change_team_role,
-    complete_manual_check,
     create_draft,
     decide_acceptance,
     remove_from_team,
-    request_manual_check,
     send_to_partner,
     start_acceptance,
     team_approval,
@@ -1657,11 +1654,6 @@ async def _member_removed(conn: asyncpg.Connection, _: Scenario, event: Event) -
     await remove_from_team(await _staff_context(conn, event), _a(event), _member(event))
 
 
-async def _eqr_eligibility_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    ctx = await _staff_context(conn, event)
-    await approve_eqr_eligibility(ctx, _a(event), _member(event, "candidate"))
-
-
 async def _eqr_assigned(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     await assign_eqr(await _staff_context(conn, event), _a(event), _member(event, "eqr"))
 
@@ -1708,10 +1700,9 @@ async def _draft_of(conn: asyncpg.Connection, event: Event) -> tuple[UUID, UUID 
 
 
 def _draft_owner(event: Event) -> str:
+    """Who created the scenario draft (only they can read it or start its acceptance)."""
     _, payload = DRAFTS[str(event.data["draft"])]
-    team = cast(list[tuple[str, str]], payload["team"])
-    # The preparer starts it: the manager where there is one, else the partner (DEC-412).
-    return next((i for i, r in team if r == "manager"), team[0][0])
+    return str(payload["owner"])
 
 
 async def _draft_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -1787,8 +1778,8 @@ async def _prospect(conn: asyncpg.Connection, event: Event) -> UUID:
 
 
 async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """CLI-07b: the preparer's answers, risk rating and three flags, and the fee check asked of
-    Grace Holloway (sources wait for the intake documents, DEC-412)."""
+    """CLI-07b: the preparer's answers, risk rating and three flags (sources wait for the intake
+    documents; the fee section is answered, not a manual check: DEC-412)."""
     ctx = await _staff_context(conn, event)
     engagement = await _prospect(conn, event)
     rating = str(event.data["risk_rating"])
@@ -1804,18 +1795,6 @@ async def _acceptance_prepared(conn: asyncpg.Connection, _: Scenario, event: Eve
         )
     for severity, title, body in THORNBURY_FLAGS:
         await add_flag(ctx, engagement, severity=severity, title=title, body=body, sources=())
-    await request_manual_check(
-        ctx, engagement, "fees_collectability", _member(event, "fee_check_of")
-    )
-
-
-async def _acceptance_check_completed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    await complete_manual_check(
-        await _staff_context(conn, event),
-        await _prospect(conn, event),
-        str(event.data["section"]),
-        str(event.data["note"]),
-    )
 
 
 async def _acceptance_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -1891,7 +1870,6 @@ HANDLERS: Final[dict[str, Handler]] = {
     "organisations.contact_created": _contact_created,
     "engagements.member_hours_set": _member_hours_set,
     "engagements.member_removed": _member_removed,
-    "engagements.eqr_eligibility_approved": _eqr_eligibility_approved,
     "engagements.eqr_assigned": _eqr_assigned,
     "engagements.team_approved": _team_approved,
     "engagements.draft_created": _draft_created,
@@ -1899,7 +1877,6 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.member_independence_confirmed": _member_independence_confirmed,
     "engagements.acceptance_started": _acceptance_started,
     "engagements.acceptance_prepared": _acceptance_prepared,
-    "engagements.acceptance_check_completed": _acceptance_check_completed,
     "engagements.acceptance_sent": _acceptance_sent,
     "engagements.acceptance_decided": _acceptance_decided,
     "engagements.member_proposed": _member_proposed,
