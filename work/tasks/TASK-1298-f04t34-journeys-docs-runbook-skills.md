@@ -1,8 +1,8 @@
 ---
 id: TASK-1298
 title: e2e-journeys.md (ADR-077), the demo-tenant runbook, and the fixture-scenario and journey-step skills
-spec: none (F-04 §2 docs row; ADR-077)
-acceptance_criteria: [F-04-T34]
+spec: SPEC-307
+acceptance_criteria: [AC-2, AC-5]
 risk_zone: red
 status: in-review
 epic: F-04
@@ -13,7 +13,7 @@ updated: 2026-10-26
 ---
 
 ## Objective
-"Doc, runbook and skills are merged" (F-04-T34). `docs/architecture/e2e-journeys.md` and the
+"Doc, runbook and skills are merged" (F-04-T34; the runbook applies SPEC-307 AC-2 snapshots and slices and AC-5 the sink rule). `docs/architecture/e2e-journeys.md` and the
 `fixture-scenario` and `journey-e2e` skills existed; the demo-tenant runbook and the
 `journey-step` skill did not. Bring the registry up to what is built and put the S9 deploy steps
 where an operator will find them.
@@ -47,4 +47,4 @@ where an operator will find them.
   the procedure they will follow and has not been rehearsed (`last_rehearsed: never`).
 
 ## Progress log
-- 2026-10-26: written. Docs-only; `validate_docs` in the gates run.
+- 2026-10-26: written. Docs-only; `validate_docs` clean in the gates run. The skills were written in place (the hooks did not refuse `.claude/skills/`).

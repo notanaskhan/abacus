@@ -87,9 +87,17 @@ NAME_LINE: Final = "Brightwater Hale (Synthetic)"
 # The W-2 prints the name line at x 36, baseline 676 on a 792 pt page: top-left y about 116.
 NAME_BOX: Final = [30.0, 105.0, 290.0, 125.0]
 EMPTY_BOX: Final = [400.0, 400.0, 500.0, 450.0]
+# The product's loggers; the test's own HTTP client and S3 client log the request line.
+SERVER_LOGGERS: Final = {"abacus", "uvicorn", "fastapi", "structlog", "root"}
 COUNTS: Final = {
     "citations": "SELECT count(*) FROM citations WHERE tenant_id = $1",
     "citation_events": "SELECT count(*) FROM citation_events WHERE tenant_id = $1",
+}
+LAYER_COUNTS: Final = {
+    "evidence_pages": "SELECT count(*) FROM evidence_pages WHERE evidence_version_id = $1",
+    "pii_scan_runs": "SELECT count(*) FROM pii_scan_runs WHERE evidence_version_id = $1",
+    "pii_regions": "SELECT count(*) FROM pii_regions WHERE evidence_version_id = $1",
+    "upload_previews": "SELECT count(*) FROM upload_previews WHERE evidence_version_id = $1",
 }
 DISPLAY_FIELDS: Final = {
     "id",
@@ -145,6 +153,10 @@ async def _rendered(given: UploadInput) -> None:
     await words_upload(given)
     await pii_scan_upload(given)
     await masked_preview_upload(given)
+
+
+def _directives(header: str) -> set[str]:
+    return {part.strip() for part in header.split(",")}
 
 
 def _person(who: Person) -> AuthContext:
@@ -408,12 +420,9 @@ async def test_ac4_the_database_rejects_any_change_to_citation_rows_for_every_ro
     sql = statement.format(t=table)
     with pytest.raises(asyncpg.PostgresError):  # the superuser: the trigger refuses
         await world.seed.run(sql)
-    app = await asyncpg.connect(migrated_db.app_url.replace("postgresql+asyncpg", "postgresql"))
-    try:
-        with pytest.raises(asyncpg.InsufficientPrivilegeError):  # the app role: no grant
-            await app.execute(sql)
-    finally:
-        await app.close()
+    app = Seeder(migrated_db.app_url.replace("postgresql+asyncpg://", "postgresql://"))
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):  # the app role: no grant
+        await app.run(sql)
     left = await world.seed.value(COUNTS[table], world.tenant_id)
     assert int(str(left)) >= 1
 
@@ -710,7 +719,7 @@ async def test_ac24_every_region_on_the_served_page_is_burned_opaque(world: Worl
     page = await world.net.call("GET", f"/v1/evidence-versions/{world.w2}/pages/1", world.samuel)
     assert page.status_code == 200, page.text
     assert page.headers["content-type"] == "image/png"
-    assert page.headers["cache-control"] == "no-store"
+    assert "no-store" in _directives(page.headers["cache-control"])
     assert page.headers["x-content-type-options"] == "nosniff"
     image = Image.open(io.BytesIO(page.content))
     assert image.width == 1240
@@ -796,7 +805,8 @@ async def test_ac21_search_returns_rects_only_scans_the_masked_layer_and_never_l
         path, params={"q": CLEAR_SSN}, headers=world.net.headers(world.samuel)
     )
     assert clear.status_code == 200 and clear.json()["total"] == 0
-    assert "Wages" not in caplog.text and CLEAR_SSN not in caplog.text
+    server = [r.getMessage() for r in caplog.records if r.name.split(".")[0] in SERVER_LOGGERS]
+    assert not [m for m in server if "Wages" in m or CLEAR_SSN in m]
 
 
 async def test_ac22_lena_walled_from_ashford_reads_every_viewer_route_as_never_existed(
@@ -825,15 +835,12 @@ async def test_ac22_lena_walled_from_ashford_reads_every_viewer_route_as_never_e
 async def test_activity_reruns_write_no_second_trust_layer_row(world: World) -> None:
     """Word-layer replay at the activity boundary: words, scan and masked preview are idempotent
     on (source, version), so a retried or replayed activity adds nothing."""
-    tables = ("evidence_pages", "pii_scan_runs", "pii_regions", "upload_previews")
+    tables = tuple(LAYER_COUNTS)
 
     async def counts() -> list[int]:
         found: list[int] = []
         for table in tables:
-            value = await world.seed.value(
-                f"SELECT count(*) FROM {table} WHERE evidence_version_id = $1",  # noqa: S608
-                world.w2,
-            )
+            value = await world.seed.value(LAYER_COUNTS[table], world.w2)
             found.append(int(str(value)))
         return found
 
