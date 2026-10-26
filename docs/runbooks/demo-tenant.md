@@ -37,11 +37,10 @@ secrets, account ids or hosts: those are vault references.
    `TenantProvisioningWorkflow` (`abacus_tools.tenants provision`, an allowlisted ops command).
 2. The portal base domain and the synthetic mail sink are set for staging (the loader refuses the
    `portal` slice without the domain; synthetic mail goes only to the sink, F-04.22).
-3. **Gap, open (ED-088):** `ops-task.yml` and `abacus_tools.release.OPS_COMMANDS` allowlist only
-   the `tenants`, `platform_control` and `schedules` commands. Neither the scenario loader
-   (`make seed-staging`) nor `abacus_tools.trust_layer_backfill` can run through the ops task
-   today. Until the platform-ops contract (section 3.5) adds them, sections 2, 3 and 5 below cannot
-   be run as written; do not work around it from a laptop.
+3. **Gap, partly closed (ED-088):** `abacus_tools.trust_layer_backfill <tenant-id>` is now an
+   allowlisted ops command (platform-ops contract section 3.5), so the S9 backfill (section 5)
+   runs through `ops-task.yml`. The scenario loader (`make seed-staging`) is still not allowlisted:
+   sections 2 and 3 below cannot run as written until it is; do not work around it from a laptop.
 
 ## 2. First load (F-04-T24)
 1. Take the deploy lock for staging with purpose `demo-tenant-load`.
