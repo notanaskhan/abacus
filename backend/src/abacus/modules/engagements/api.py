@@ -49,6 +49,10 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
+from abacus.modules.engagements.independence import (
+    conclude_independence,
+    confirm_independence,
+)
 from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
 from abacus.modules.engagements.intake import commit_intake as commit_client_intake
 from abacus.modules.engagements.intake import draft_visible as intake_draft_visible
@@ -327,6 +331,8 @@ __all__ = [
     "client_contact_organisations",
     "client_contact_organisations_of_users",
     "commit_client_intake",
+    "conclude_independence",
+    "confirm_independence",
     "contact_portal_user",
     "create_work_item",
     "decide_acceptance",

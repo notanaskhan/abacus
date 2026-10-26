@@ -14832,6 +14832,10 @@ export type MePortalScopeOut = {
  */
 export type MemberConfirmationOut = {
     /**
+     * Annual Confirmed
+     */
+    annual_confirmed?: boolean | null;
+    /**
      * Answered At
      */
     answered_at?: string | null;
@@ -36610,10 +36614,6 @@ export type GetIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetIndependenceError = GetIndependenceErrors[keyof GetIndependenceErrors];
@@ -36718,10 +36718,6 @@ export type LogBreachErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LogBreachError = LogBreachErrors[keyof LogBreachErrors];
@@ -36782,10 +36778,6 @@ export type AddBreachEventErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddBreachEventError = AddBreachEventErrors[keyof AddBreachEventErrors];
@@ -36842,10 +36834,6 @@ export type ConcludeIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConcludeIndependenceError = ConcludeIndependenceErrors[keyof ConcludeIndependenceErrors];
@@ -36902,10 +36890,6 @@ export type ConfirmIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConfirmIndependenceError = ConfirmIndependenceErrors[keyof ConfirmIndependenceErrors];
@@ -36962,10 +36946,6 @@ export type DeclineIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeclineIndependenceError = DeclineIndependenceErrors[keyof DeclineIndependenceErrors];
@@ -37018,10 +36998,6 @@ export type GetNasErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetNasError = GetNasErrors[keyof GetNasErrors];
@@ -37082,10 +37058,6 @@ export type PutNasErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutNasError = PutNasErrors[keyof PutNasErrors];
@@ -37190,10 +37162,6 @@ export type GetRotationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetRotationError = GetRotationErrors[keyof GetRotationErrors];
@@ -44961,10 +44929,6 @@ export type TbLayerViewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLayerViewError = TbLayerViewErrors[keyof TbLayerViewErrors];
@@ -45102,10 +45066,6 @@ export type TbLeadsheetAreaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLeadsheetAreaError = TbLeadsheetAreaErrors[keyof TbLeadsheetAreaErrors];

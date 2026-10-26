@@ -7,7 +7,11 @@ from abacus.modules.identity.api import (
     register_office_list,
     register_settings_area,
 )
-from abacus.modules.organisations.conflicts import check_clear_for, clear_conflict_result
+from abacus.modules.organisations.conflicts import (
+    check_clear_for,
+    clear_conflict_result,
+    standing_conflict_results,
+)
 from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
@@ -210,4 +214,5 @@ __all__ = [
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",
+    "standing_conflict_results",
 ]
