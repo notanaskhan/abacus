@@ -72,4 +72,18 @@ export const COPY = {
     empty: "No activity yet.",
   },
   comments: { empty: "No comments yet." },
+  // The close variant (d, P-06-T24), verbatim from spec.md state 4 with R2 item 3 (the "Visible to
+  // client" toggle reads as the Visibility row, Client).
+  close: {
+    documentRequest: "Document Request",
+    uploadCard: "Uploaded Document",
+    keys: {
+      requestedBy: "Requested by",
+      status: "Status",
+      file: "File",
+      uploadedBy: "Uploaded by",
+    },
+    markIncorporated: "Mark incorporated",
+    return: "Return…",
+  },
 } as const;

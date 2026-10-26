@@ -17,7 +17,13 @@ export const admScreens = {
     status: "planned",
     path: "/settings/people",
   },
-  "ADM-03": { name: "Offices, teams, walls & offshore", status: "planned", path: null },
+  // G-01-T14: built behind `firm_settings.v2`; planned until walked on staging, as ADM-02 is
+  // (DEC-195): ADM-01 → ADM-03 is wired in routes/firm (settings.tsx).
+  "ADM-03": {
+    name: "Offices, teams, walls & offshore",
+    status: "planned",
+    path: "/settings/offices",
+  },
   "ADM-04": { name: "AI policy & approval gates", status: "planned", path: null },
   "ADM-05": { name: "Consent registry (§7216)", status: "planned", path: null },
   "ADM-06": { name: "Security center & data residency", status: "planned", path: null },

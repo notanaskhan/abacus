@@ -1085,11 +1085,25 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
+        # P-07-T35 (0163): acceptance records, answers and manual checks; a guard trigger
+        # refuses any change once a record is decided (DEC-372).
+        "acceptance_records": frozenset(
+            {"status", "risk_rating", "sent_to_partner_at", "sent_to_partner_by", "version"}
+        ),
+        "acceptance_answers": frozenset(
+            {"answers_sealed", "state", "version", "updated_by", "updated_at"}
+        ),
+        "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
         # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
         "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(
             {"status", "removed_by", "removed_at"}  # TASK-016
             | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): walls v2
+        ),
+        # G-01-T12 (0167): a line's policy, edited in place against its version (never deleted).
+        "service_line_policies": frozenset(
+            {"enabled", "lead_user_id", "content_visible_to", "cross_line_access", "version"}
+            | {"updated_by", "updated_at"}
         ),
         # G-01-T08 (0150): offices and teams are edited in place, versioned (never deleted).
         "offices": frozenset(

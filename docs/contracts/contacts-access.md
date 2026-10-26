@@ -64,6 +64,7 @@ Every write denies `agent` and `system` at the matrix (INV-1, P-07 §4.4); the l
 | 422 | `{"detail": "invitation_invalid", "facts": {…}}` | grants across more than one engagement, or a contact with no address (DEC-300) |
 | 409 | `{"detail": "contact_bound"}` | changing the address of a contact that already signs in (its address is the person's own; DEC-303) |
 | 409 | `{"detail": "illegal_transition"}` | inviting an active contact (use Change scope), or changing the scope of one never invited |
+| 409 | `{"detail": "consent_required", "facts": {"engagement_id": "…"}}` | an invitation or change of scope that delegates a request of an engagement holding a `tax_return` work item, without the client's C19 `third_party_disclosure` consent (ADR P-12; R-01-T13, DEC-388): nothing is written |
 | 422 | `{"detail": "scope_outside_client", "facts": {…}}` | a grant scope or delegated request that is not the contact's client's |
 
 ## 7. Audit and outbox events

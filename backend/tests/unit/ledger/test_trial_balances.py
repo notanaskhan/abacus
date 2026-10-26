@@ -9,21 +9,27 @@ from uuid import uuid4
 
 import pytest
 
+from abacus.kernel.db import TenantContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.ledger import trial_balances as tb_module
 from abacus.modules.ledger.trial_balances import (
     UNASSIGNED,
     AdjustmentEntry,
+    AreaRule,
     EntryLine,
     EntrySet,
+    LayerUnavailable,
     apply_entries,
+    area_of_rules,
     build_lines,
     compare_lines,
     final_totals,
     layer_available,
+    layer_totals,
     leadsheets,
     pct,
     totals,
+    trial_balance_view,
 )
 
 CY_SNAP, PY_SNAP = uuid4(), uuid4()
@@ -148,3 +154,49 @@ def test_ac1_only_people_adopt_or_annotate() -> None:
     assert "agent" not in allowed("trial_balance.annotate")
     assert "agent" not in allowed("trial_balance.read")
     assert all(RULES[a].independence for a in ("trial_balance.read", "trial_balance.adopt"))
+
+
+async def test_ac14_aje_rje_and_final_answer_layer_unavailable_without_a_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A-02-T07: refused before anything is read, so never a Final equal to Unadjusted."""
+    monkeypatch.setattr(tb_module, "_ADJUSTMENT_SOURCES", [])
+    tenant = TenantContext(uuid4(), "human", str(uuid4()))
+    for layer in ("aje", "rje", "final"):
+        with pytest.raises(LayerUnavailable) as refused:
+            await trial_balance_view(tenant, uuid4(), uuid4(), None, layer)
+        assert refused.value.code == "layer_unavailable"
+
+
+def test_a02_t07_an_annotated_area_wins_over_the_methodology_rule() -> None:
+    rules = [AreaRule("Cash", "1000", "1099"), AreaRule("Liabilities", "2000", "2999")]
+    lines = build_lines(CY, PY, {"1000": ("Treasury", None), "2000": (None, "L-1")}, rules)  # type: ignore[arg-type]  # SimpleNamespace rows
+    by = {line.account_code: line for line in lines}
+    assert by["1000"].area == "Treasury"  # the annotation
+    assert (by["2000"].area, by["2000"].wp_ref) == (
+        "Liabilities",
+        "L-1",
+    )  # the rule, the note's ref
+    assert by["4000"].area is None  # no rule holds it
+    assert area_of_rules("1050", rules) == "Cash" and area_of_rules("3000", rules) is None
+
+
+def test_ac17_layer_totals_put_each_adjustment_on_its_own_side() -> None:
+    lines = apply_entries(
+        build_lines(CY, PY, {}),  # type: ignore[arg-type]  # SimpleNamespace rows
+        [
+            AdjustmentEntry(
+                "RJE-1",
+                "rje",
+                (
+                    EntryLine("2000", D("500.00"), D("0.00")),
+                    EntryLine("2100", D("0.00"), D("500.00")),
+                ),
+            )
+        ],
+    )
+    assert layer_totals(lines, "rje") == totals(D("500.00"), D("500.00"))
+    assert layer_totals(lines, "aje") == totals(D("0.00"), D("0.00"))
+    assert layer_totals(lines, "unadjusted") == totals(D("168600.00"), D("168600.00"))
+    with pytest.raises(LayerUnavailable):
+        layer_totals(lines, "budget")

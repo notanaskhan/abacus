@@ -92,6 +92,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
     assert job.arg == CanaryInput(str(canary_firm))
     assert platform.WORKFLOWS[CanaryWorkflow] == "time_sensitive"
     assert set(jobs) == {
+        "access_end:platform",  # G-01-T13: seasonal access end, hourly (DEC-383)
         "notification_purge:platform",
         "ses_events:platform",
         "spend_anomaly:platform",

@@ -4,8 +4,9 @@ history, and a change to what it schedules is detected as non-determinism.
 Offline: `Replayer` needs no Temporal server and no codec. The history was recorded by
 `abacus_tools.workflows.record_upload_processing` with a stub activity; it is never re-recorded.
 TASK-055 and TASK-056 add steps behind `workflow.patched(...)` and must keep it replaying; so do
-P-03-T05's `words` step (v4), P-03-T13's `pii_scan` step (v5) and R-01-T09's
-`portal_drop_sort` step (v6).
+P-03-T05's `words` step (v4), P-03-T13's `pii_scan` step (v5), R-01-T09's
+`portal_drop_sort` step (v6) and P-03-T15's `masked_preview` step (v7), which replaces the
+unmasked preview for new runs.
 """
 
 from __future__ import annotations
@@ -46,6 +47,10 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v5-pii-scan",
         # v6 (R-01-T09): `patched("portal_drop_sort")`, an inbox file's code-rule sort.
         "upload-processing-v6-portal-drop-sort",
+        # P-03-T15: a masked rendition that fails for good never fails the run.
+        "upload-processing-v7-masked-preview-failed",
+        # v7 (P-03-T15): `patched("masked_preview")`, the masked rendition after the scan.
+        "upload-processing-v7-masked-preview",
     ]
 
 
@@ -74,8 +79,29 @@ def test_r01t09_v6_sorts_a_drop_last_and_earlier_histories_never_do() -> None:
     text = (HISTORIES / "upload-processing-v6-portal-drop-sort.json").read_text(encoding="utf-8")
     assert text.index("upload.pii_scan") < text.index("upload.portal_drop_sort")
     assert text.count("EVENT_TYPE_MARKER_RECORDED") == 5
-    for path in ALL[:-1]:
+    for path in ALL[:7]:  # v1 to v5: every history before v6
         assert "upload.portal_drop_sort" not in path.read_text(encoding="utf-8")
+
+
+def test_p03t15_v7_masks_after_the_scan_and_never_renders_unmasked() -> None:
+    text = (HISTORIES / "upload-processing-v7-masked-preview.json").read_text(encoding="utf-8")
+    assert text.index("upload.pii_scan") < text.index("upload.masked_preview")
+    assert '"upload.preview"' not in text  # no unmasked rendition is ever made
+    # checks, previews, masked_preview, words, pii_scan, portal_drop_sort
+    assert text.count("EVENT_TYPE_MARKER_RECORDED") == 6
+    failed = (HISTORIES / "upload-processing-v7-masked-preview-failed.json").read_text(
+        encoding="utf-8"
+    )
+    assert "EVENT_TYPE_ACTIVITY_TASK_FAILED" in failed
+    assert "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED" in failed
+
+
+def test_p03t15_v1_to_v6_never_mask_and_still_preview() -> None:
+    for path in ALL[:8]:
+        text = path.read_text(encoding="utf-8")
+        assert "upload.masked_preview" not in text
+        if path.stem >= "upload-processing-v3":
+            assert '"upload.preview"' in text
 
 
 def test_p03t13_v1_to_v4_never_scan_for_pii() -> None:

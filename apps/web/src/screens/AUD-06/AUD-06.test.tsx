@@ -297,12 +297,12 @@ describe("AUD-06 scenarios (A-02-T05)", () => {
 describe("AUD-06 frames render each artboard's persona, clock and figures", () => {
   const FIGURE: Readonly<Record<string, [string, string]>> = {
     a: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "$14,895,000.00"],
-    b: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "agent tick"],
-    c: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "off $1,560.00"],
+    b: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "$14,895,000.00"],
+    c: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "off 1,560.00"],
     d: ["Hannah Leclerc · Oct 6, 2026 2:30 PM", "$16,861,000.00"],
     e: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "18.4%"],
     f: ["Hannah Leclerc · Sep 14, 2026 2:30 PM", "?ov=signoff:trial_balance:"],
-    g: ["Caleb Dunn · Sep 14, 2026 4:05 PM", "86,000,000"],
+    g: ["Caleb Dunn · Sep 14, 2026 4:05 PM", "3,400,000"],
     h: ["Hannah Leclerc · Nov 9, 2026 10:15 AM", "$26,410,000.00"],
   };
   for (const state of ARTBOARDS) {
@@ -321,6 +321,17 @@ describe("AUD-06 frames render each artboard's persona, clock and figures", () =
         expect(document.querySelector("[data-screen='AUD-06']")?.textContent).toContain(figure);
       });
       expect(screen.queryByText(/\$\d[\d,]*\.\d{3}/u)).toBeNull();
+      if (state === "b") {
+        // The agent's draft: six outlined agent ticks on each amount column, never initials.
+        const agent = document.querySelectorAll("[data-tick='agent']");
+        expect(agent.length).toBe(12);
+        expect(document.querySelectorAll("[data-tick='chip']")).toHaveLength(0);
+      }
+      if (state === "g") {
+        expect(document.querySelector("[data-total='total_assets']")?.textContent).toContain(
+          "29,400,000",
+        );
+      }
     });
   }
 });

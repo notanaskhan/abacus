@@ -23,7 +23,20 @@ export {
   useBinderActions,
   useBinders,
 } from "./documents";
-export { DOCUMENT_WORDS, SIGN_IN_WORDS, failureWords } from "./messages";
+export { DOCUMENT_WORDS, ROOM_WORDS, SHEET_WORDS, SIGN_IN_WORDS, failureWords } from "./messages";
+export {
+  type QuestionAnswer,
+  type SheetDecision,
+  type SheetQuestion,
+  noteRecipient,
+  postComment,
+  uploadFiles,
+  useRequestSheet,
+  useSheetActions,
+  useThread,
+  withdrawFile,
+  withdrawableFile,
+} from "./sheet";
 export { DROP_POLL_MS, type DropOutcome, dropOutcome, useDropBatch } from "./drops";
 export { type PortalToolbarData, portalToolbarData, usePortalToolbar } from "./shell";
 export {
@@ -41,3 +54,13 @@ export {
   signIn,
   useBranding,
 } from "./sign-in";
+export {
+  type DecisionSlot,
+  type QuestionSlot,
+  RequestSheet,
+  type RequestSheetProps,
+  type RequestSlot,
+  type SheetSlot,
+} from "./RequestSheet";
+export { openRows, roomRows, suggestFor, useRoom, useRoomActions } from "./room";
+export { ScopedRequestRoom, type ScopedRequestRoomProps } from "./ScopedRequestRoom";

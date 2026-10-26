@@ -457,24 +457,34 @@ async def set_team_members(ctx: AuthContext, team_id: UUID, member_ids: list[UUI
     """The whole roster; each change audited, and service lines follow (AC7.4)."""
     await authorise(ctx, MANAGE, Resource.firm(ctx.tenant_id))
     _human(ctx)
-    async with uow(ctx.tenant) as tx:
-        row = await tx.session.get(Team, team_id)
-        if row is None:
-            raise NotFound("team")
-        if row.kind == "service_line":
-            await _lines_authority(ctx)
-        wanted = list(dict.fromkeys(member_ids))
-        if set(wanted) - await active_staff_among(tx.session, wanted):
-            raise OrgStructureInvalid(facts={"field": "member_ids"})
-        added, removed = await set_roster(tx, ctx.tenant_id, team_id, wanted)
-        if added or removed:
+    try:
+        async with uow(ctx.tenant) as tx:
+            row = await tx.session.get(Team, team_id)
+            if row is None:
+                raise NotFound("team")
+            if row.kind == "service_line":
+                await _lines_authority(ctx)
+            wanted = list(dict.fromkeys(member_ids))
+            if set(wanted) - await active_staff_among(tx.session, wanted):
+                raise OrgStructureInvalid(facts={"field": "member_ids"})
+            added, removed = await set_roster(tx, ctx.tenant_id, team_id, wanted)
+            if not (added or removed):
+                # The same roster again changes nothing and records nothing (ED-070): a unit of
+                # work without an audit event may not commit, and here there is nothing to commit.
+                raise _RosterUnchanged
             await tx.session.execute(
                 update(Team)
                 .where(Team.id == team_id)
                 .values(version=Team.version + 1)
                 .execution_options(synchronize_session=False)
             )
+    except _RosterUnchanged:
+        pass
     return await team(ctx, team_id)
+
+
+class _RosterUnchanged(Exception):
+    """Nothing to write: the unit of work rolls back."""
 
 
 async def set_seasonal_group_date(ctx: AuthContext, on: date) -> SeasonalAccessEnds:

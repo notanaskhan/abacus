@@ -1,12 +1,18 @@
 // P-03-T07: SHL-08 has a scenario for every artboard P-03 builds (a–f, h), each answering the C4
 // viewer and citation reads through the generated client in the OpenAPI shapes.
-import { listCitations, viewerManifest, viewerPage, viewerRegions } from "@abacus/api-client";
+import {
+  listCitations,
+  viewerManifest,
+  viewerPage,
+  viewerRegions,
+  viewerText,
+} from "@abacus/api-client";
 import { client } from "@abacus/api-client/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { validateResponse } from "../schema-check";
 import { ALSO_CITED, LINE_2A } from "../seed/trust";
-import { OPENS, type Shl08State, scenarios } from "./SHL-08";
+import { OPENS, type Shl08State, scenarios, textOnly } from "./SHL-08";
 
 let restore: (() => void) | null = null;
 let saved: ReturnType<typeof client.getConfig>;
@@ -131,5 +137,23 @@ describe("SHL-08 scenarios", () => {
     });
     expect(response?.headers.get("Content-Type")).toBe("image/png");
     expect(response?.headers.get("Cache-Control")).toContain("no-store");
+  });
+});
+
+describe("SHL-08 text view (DEC-369)", () => {
+  it("an offshore reader's manifest says text, a page image is refused, the text is masked", async () => {
+    restore?.();
+    restore = installFixtureMode(textOnly("c"));
+    const versionId = OPENS.c.versionId;
+    const { data } = await viewerManifest({ path: { version_id: versionId } });
+    expect(data?.view).toBe("text");
+    await expect(
+      viewerPage({ path: { version_id: versionId, page_no: 1 }, parseAs: "blob" }),
+    ).rejects.toBeDefined();
+    const text = await viewerText({ path: { version_id: versionId } });
+    expect(validateResponse("GET", "/v1/evidence-versions/{version_id}/text", text.data)).toEqual(
+      [],
+    );
+    expect(text.data?.items[0]?.text).toContain("•••-••-6081");
   });
 });

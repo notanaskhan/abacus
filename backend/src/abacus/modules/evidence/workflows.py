@@ -4,7 +4,8 @@ Orchestration only: activities by name, identifiers in, identifiers out. One run
 (`upload:<tenant>:<kind>:<id>`). TASK-055 (checks) and TASK-056 (previews) add steps behind
 `workflow.patched(...)`; every history in `tests/workflows/histories/` must still replay.
 P-03-T05 adds v4 `words` (the word layer) and the `trust_layer_backfill` workflow; P-03-T13
-adds v5 `pii_scan`; R-01-T09 v6 `portal_drop_sort`. The legal-hold
+adds v5 `pii_scan`; R-01-T09 v6 `portal_drop_sort`; P-03-T15 v7 `masked_preview`, which
+replaces the unmasked v3 preview for new runs, and the backfill's v2 `masks`. The legal-hold
 workflows (Q-02-T29) follow the upload workflow, with their own v1 histories.
 Extraction never fails the run on a bad file: the activity records `unreadable` instead.
 """
@@ -59,8 +60,9 @@ class UploadProcessing:
                 start_to_close_timeout=_TIMEOUT,
                 retry_policy=_RETRY,
             )
-        # v3 (TASK-056): previews, for versions and inbox files alike.
-        if workflow.patched("previews"):
+        # v3 (TASK-056): previews, for versions and inbox files alike. From v7 (P-03-T15) a run
+        # never makes an unmasked rendition: the masked one below replaces it.
+        if workflow.patched("previews") and not workflow.patched("masked_preview"):
             await workflow.execute_activity(
                 "upload.preview",
                 given,
@@ -96,6 +98,20 @@ class UploadProcessing:
                 )
             except ActivityError:
                 workflow.logger.warning("upload.pii_scan_failed", extra={"kind": given.kind})
+        # v7 (P-03-T15): the masked rendition, after the scan it masks from. One that can't be
+        # made never undoes the steps before it; the backfill makes it later. Until then no page
+        # is served (409 `preview_outdated` or 404), never an unmasked one.
+        if workflow.patched("masked_preview"):
+            try:
+                await workflow.execute_activity(
+                    "upload.masked_preview",
+                    given,
+                    result_type=str,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.masked_preview_failed", extra={"kind": given.kind})
         # v6 (R-01-T09): a portal drop is sorted by the code rule, after its extraction. Any other
         # inbox file answers `not_a_drop`; a sort that fails for good leaves the file waiting for
         # a person in the inbox, as it would be unsorted.
@@ -235,31 +251,41 @@ class LegalHoldRelease:
 @workflow.defn(name="trust_layer_backfill")
 class TrustLayerBackfill:
     """P-03 §4.5 (P-03-T05): one tenant's uploads that have no word layer get one, by the same
-    activity as new uploads (idempotent). Batches of `BACKFILL_BATCH` by id cursor, so a file
-    that yields no layer is passed, never retried forever, and one whose step fails after its
-    retries is counted (`failed`) and passed too, so the backfill never wedges on it. Continues as
-    new while a batch is full. Started by an operator command
+    activity as new uploads (idempotent). From v2 (P-03-T15) the uploads without a masked
+    rendition get the layer, the scan and the rendition. Batches of `BACKFILL_BATCH` by id
+    cursor, so a file that yields no layer is passed, never retried forever, and one whose step
+    fails after its retries is counted (`failed`) and passed too, so the backfill never wedges
+    on it. Continues as new while a batch is full. Started by an operator command
     (`abacus_tools.trust_layer_backfill`)."""
 
     @workflow.run
     async def run(self, given: BackfillInput) -> int:
+        # v2 (P-03-T15): uploads without a masked rendition get the word layer, the PII scan and
+        # the masked rendition, in that order (each idempotent, so a done step costs a read).
+        masks = workflow.patched("masks")
         batch = await workflow.execute_activity(
-            "trust_layer.pending_words",
+            "trust_layer.pending_masks" if masks else "trust_layer.pending_words",
             given,
             result_type=list[UploadInput],
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_RETRY,
         )
+        steps = (
+            (("upload.words", int), ("upload.pii_scan", int), ("upload.masked_preview", str))
+            if masks
+            else (("upload.words", int),)
+        )
         failed = 0
         for upload in batch:
             try:
-                await workflow.execute_activity(
-                    "upload.words",
-                    upload,
-                    result_type=int,
-                    start_to_close_timeout=_TIMEOUT,
-                    retry_policy=_RETRY,
-                )
+                for name, result in steps:
+                    await workflow.execute_activity(
+                        name,
+                        upload,
+                        result_type=result,
+                        start_to_close_timeout=_TIMEOUT,
+                        retry_policy=_RETRY,
+                    )
             except ActivityError:
                 failed += 1
                 workflow.logger.warning(

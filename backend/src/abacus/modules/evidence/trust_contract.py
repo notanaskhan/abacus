@@ -5,7 +5,7 @@ family sits behind its own flag. Off, its routes answer 404; on, 501 `not_implem
 service lands:
 - `evidence.citations_v2`: citations; the two reads are served (P-03-T08), relink too (P-03-T12);
 - `evidence.viewer_v1`: the viewer; served (P-03-T09);
-- `evidence.pii_reveal`: reveal; P-03-T12;
+- `evidence.pii_reveal`: reveal; served (P-03-T16);
 - `evidence.viewer_unlock`: unlock; P-03-T14.
 `POST /v1/citations` is reserved: 501 until its first anchor consumer.
 
@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Path, Query, Response
@@ -43,15 +43,16 @@ from abacus.modules.evidence.citations.display import (
     citation_list,
 )
 from abacus.modules.evidence.citations.moved import relink
+from abacus.modules.evidence.reveals import reveal_pii
 from abacus.modules.evidence.routes import (
     _png_response,  # pyright: ignore[reportPrivateUsage] -- the module's own PNG answer
 )
 from abacus.modules.evidence.viewer import (
-    authorise_reveal,
     viewer_manifest,
     viewer_page,
     viewer_regions,
     viewer_search,
+    viewer_text,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -298,6 +299,34 @@ class ViewerManifestOut(BaseModel):
     pii_masks: Annotated[list[PiiMaskOut], classified("confidential")]
     derivation_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # Ayush, 2026-10-26 (DEC-369): `text` for a reader who may not read unmasked content (an
+    # offshore member): no page images, the masked text projection (`…/text`) instead.
+    view: Annotated[Literal["images", "text"], classified("internal")] = "images"
+
+
+class ViewerTextPageOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    page: Annotated[int, Field(ge=1), classified("internal")]
+    text: Annotated[str, classified("restricted")]  # masked words, then the TIN scrub
+    unread: Annotated[bool, classified("internal")]  # content on the page no scan read
+
+
+class ViewerTextSheetOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    name: Annotated[str, classified("confidential")]
+    rows: Annotated[list[list[str]], classified("restricted")]  # masked cells
+    # Review M-A: for a reader who may not read unmasked content, the name only.
+    withheld: Annotated[bool, classified("internal")] = False
+
+
+class ViewerTextOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[ViewerTextPageOut], classified("restricted")]
+    sheets: Annotated[list[ViewerTextSheetOut], classified("restricted")]
+    truncated: Annotated[bool, classified("internal")]
 
 
 class ViewerRegionOut(BaseModel):
@@ -362,9 +391,28 @@ async def viewer_page_route(
     ctx: Ctx,
 ) -> Response:
     """AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made
-    before masking. The read leaves an access event first (Q-02-T20)."""
+    before masking. The read leaves an access event first (Q-02-T20). Never served to a reader who
+    may not read unmasked content: 403 (Ayush, 2026-10-26; DEC-369), whose view is `…/text`."""
     await _gate(ctx, EVIDENCE_VIEWER_V1)
     return _png_response(await viewer_page(ctx, version_id, page_no))
+
+
+@router.get(
+    "/evidence-versions/{version_id}/text",
+    action="evidence.read",
+    response_model=ViewerTextOut,
+    errors=(409, 501),
+)
+async def viewer_text_route(version_id: VersionId, ctx: Ctx, response: Response) -> ViewerTextOut:
+    """Ayush, 2026-10-26 (DEC-369): the masked text projection, page by page, the view a reader
+    who may not read unmasked content gets instead of page images until OCR (P-11): detected
+    values as tokens, the kernel TIN scrub applied, `unread` on pages with content no scan read,
+    a workbook's cells masked; 409 `preview_outdated` before the PII scan. `no-store`; logged as
+    a content read."""
+    await _gate(ctx, EVIDENCE_VIEWER_V1)
+    found = await viewer_text(ctx, version_id)
+    response.headers["Cache-Control"] = "no-store"
+    return ViewerTextOut.model_validate(asdict(found))
 
 
 @router.get(
@@ -445,15 +493,29 @@ class EvidenceUnlockOut(BaseModel):
     action="pii.reveal",
     response_model=PiiRevealOut,
     status_code=201,
-    errors=(501,),
+    errors=(429, 501),
 )
-async def reveal_pii_route(version_id: VersionId, body: PiiRevealIn, ctx: Ctx) -> PiiRevealOut:
-    """AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.
-    Authorised before the stub answers (TASK-1207 review): an offshore member is refused at the
-    condition layer (`not_offshore`) now, not only once the reveal is built."""
+async def reveal_pii_route(
+    version_id: VersionId, body: PiiRevealIn, ctx: Ctx, response: Response
+) -> PiiRevealOut:
+    """AC4.4 to AC4.7 (P-03-T16): the value once, `expires_in` 30, `Cache-Control: no-store`.
+    403 for an offshore member, a role without `pii.reveal`, an agent, the system, a support
+    session or a client principal, before anything is read; 403 with `facts.reason`
+    `mfa_required` when only MFA is stale (the shell steps up); 404 for an invisible version or a
+    region not on it; 429 `reveal_rate_limited` past 20 an hour. One `pii_reveals` row, one
+    `pii.revealed` audit event and one access event, never the value (DEC-60)."""
     await _gate(ctx, EVIDENCE_PII_REVEAL)
-    await authorise_reveal(ctx, version_id)
-    raise NotImplementedYet
+    revealed = await reveal_pii(ctx, version_id, body.region_id, body.context_ref)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return PiiRevealOut(
+        mask_id=revealed.mask_id,
+        value=revealed.value,
+        kind=cast(PiiKind, revealed.kind),  # pii_kind is the column's enum
+        expires_in=revealed.expires_in,
+        revealed_by=revealed.revealed_by,
+        revealed_at=revealed.revealed_at,
+    )
 
 
 @router.post(

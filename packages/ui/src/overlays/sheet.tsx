@@ -21,6 +21,9 @@ import { Layer } from "./layer";
 
 const SHEET_BOX =
   "fixed inset-x-0 top-[52px] bottom-0 mx-auto flex w-[500px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-t-window bg-shell shadow-modal";
+/** At a phone's width (390, R-01-T12): the whole width from 44 below the top, the same frame. */
+const SHEET_FULL_BOX =
+  "fixed inset-x-0 top-[44px] bottom-0 flex w-full flex-col overflow-hidden rounded-t-window bg-shell shadow-modal";
 
 export interface SheetModalProps {
   open: boolean;
@@ -40,6 +43,8 @@ export interface SheetModalProps {
   children: ReactNode;
   /** Hold the sheet open in place for a specimen: no layer, no scrim, no trap. */
   forceState?: "open";
+  /** The phone layout: the sheet takes the whole width from 44 below the top (POR-04 at 390). */
+  fullScreen?: boolean;
 }
 
 function SheetFrame({
@@ -103,14 +108,16 @@ export function SheetModal({
   dirty,
   children,
   forceState,
+  fullScreen = false,
 }: SheetModalProps): JSX.Element {
   const frame = { title, description, action, meta, footer };
+  const box = fullScreen ? SHEET_FULL_BOX : SHEET_BOX;
   if (forceState === "open") {
     return (
       <div
         role="group"
         aria-label={title}
-        className={cn(SHEET_BOX, "relative inset-x-auto top-auto bottom-auto h-full")}
+        className={cn(box, "relative inset-x-auto top-auto bottom-auto h-full")}
       >
         <FrameMode live={false}>
           <SheetFrame {...frame} onClose={() => undefined}>
@@ -128,7 +135,7 @@ export function SheetModal({
       dirty={dirty ?? false}
       title={title}
       scrim="agent"
-      className={SHEET_BOX}
+      className={box}
       motion="data-[state=open]:motion-sheet-in data-[state=closed]:motion-sheet-out"
       initialFocus="field"
       trigger={trigger}

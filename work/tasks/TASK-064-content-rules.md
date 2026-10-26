@@ -93,6 +93,7 @@ SPEC-033 AC-1, AC-2, AC-6, AC-9 (for the code suggestions).
 ## Progress log
 - `2026-10-13` — Design written for founder review after SPEC-033 merged (#114).
 - `2026-10-13` — Built (D1–D3): content facts and scoring with reasons; shared gap helpers; suggestion source and rank in the assignment audit; the Inbox panel's reasons and "From the file's contents". Unit (10,112) and web (305) tests and gates pass. Local smoke on a Dev engagement: "scan0042.pdf" (a statement) was suggested to bank statement requests on kind, year end and holder; an aging named "bank.xlsx" went to the AR aging request.
+- `2026-10-26` — Back-filled by Q-03-T033: `backend/tests/integration/backfill/test_q03t033_matcher.py` (AC-1, AC-2, AC-6); see TASK-1284.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

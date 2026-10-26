@@ -41,10 +41,13 @@ from abacus.modules.evidence.api import (
     UploadInput,
     add_to_inbox,
     match_material,
+    pii_scan_upload,
     process_upload,
     suggest_by_name,
+    words_upload,
 )
 from abacus.modules.requests.api import NewRequestItem, add_request_item, request_items_for
+from abacus_tools.evals.regions import check_reports, region_counts, resolved_share
 from abacus_tools.evals.taxonomy import ADVERSARIAL_CATEGORIES, FAILURE_CATEGORIES
 from abacus_tools.evals.upload_review import ADMISSION_TRIES, MAX_ERRORED, contained
 from abacus_tools.evals.upload_review import (
@@ -160,6 +163,8 @@ class MatchSuite(BaseModel):
     version: Annotated[int, Field(ge=1)]
     covers: frozenset[str]
     thresholds: tuple[Threshold, ...]
+    # Metrics reported with every run and never gating (P-03-T17: `citation_region_resolved`).
+    reports: tuple[str, ...] = ()
     dangerous_error: str
     cost_per_file_usd: Annotated[Decimal, Field(gt=0)]
     repeats: Annotated[int, Field(ge=1, le=20)]
@@ -185,6 +190,9 @@ class Seen:
     latency_ms: int | None = None
     error: str | None = None
     rationales: tuple[str, ...] = ()
+    # P-03-T17 (report-only): verified document_text citations, and those with a region.
+    regions_cited: int = 0
+    regions_resolved: int = 0
 
 
 def load_suite(path: Path = SUITE) -> MatchSuite:
@@ -204,6 +212,7 @@ def validate(suite: MatchSuite) -> None:
     problems.extend(f"no case covers {c!r}" for c in sorted(suite.covers - covered))
     named = {t.metric for t in suite.thresholds}
     problems.extend(f"unknown metric {m!r}" for m in sorted(named - set(METRICS)))
+    problems.extend(check_reports(suite.reports, METRICS, named))
     if suite.dangerous_error not in named:
         problems.append(f"the dangerous error {suite.dangerous_error!r} has no threshold")
     if not any(c.key for c in suite.cases):
@@ -293,6 +302,13 @@ def matcher_top1(attempts: Attempts) -> float:
     )
 
 
+def citation_region_resolved(attempts: Attempts) -> float:
+    """Report-only (P-03-T17): verified document_text citations that carry a region."""
+    return resolved_share(
+        (s.regions_cited, s.regions_resolved) for _, s in attempts if s.stage == "matched"
+    )
+
+
 METRICS: Final[dict[str, Callable[[Attempts], float]]] = {
     "top1": _layer("pipeline"),
     "top3": top3,
@@ -301,6 +317,7 @@ METRICS: Final[dict[str, Callable[[Attempts], float]]] = {
     "citation_verification": citation_verification,
     "adversarial_containment": adversarial_containment,
     "skip_rate": skip_rate,
+    "citation_region_resolved": citation_region_resolved,
     "top1_file_name": _layer("file_name"),
     "top1_content": _layer("content"),
     "top1_matcher": matcher_top1,
@@ -381,7 +398,11 @@ async def attempt(
         ctx = world.context()
         content = unique_bytes(case.name, _documents(fx.year_end, fx.entity)[case.document]())
         added = await add_to_inbox(ctx, world.engagement, file_name=case.name, content=content)
-        await process_upload(UploadInput(str(world.tenant), UPLOAD_INBOX, str(added.id)))
+        given = UploadInput(str(world.tenant), UPLOAD_INBOX, str(added.id))
+        await process_upload(given)
+        # P-03-T15: the matcher reads only masked material, built after the PII scan.
+        await words_upload(given)
+        await pii_scan_upload(given)
         items = await request_items_for(ctx, world.engagement)
         by_name = _keys([s.request_item_id for s in suggest_by_name(case.name, items)], fx.keys)
         material = await match_material(ctx.tenant, added.id)
@@ -411,6 +432,7 @@ async def attempt(
             raise RuntimeError("not admitted after waiting")
         latency = round((time.monotonic() - started) * 1000)
         rows, cost = await _matched(stack.superuser, run_id)
+        cited, resolved = await region_counts(stack.superuser, run_id)
         if outcome.status != "completed":
             return Seen(
                 case.id,
@@ -461,6 +483,8 @@ async def attempt(
                 for r in rows
             )
             or tuple(said),
+            regions_cited=cited,
+            regions_resolved=resolved,
         )
     except Exception as exc:
         cost = Decimal(0)

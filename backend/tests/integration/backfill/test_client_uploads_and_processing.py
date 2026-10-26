@@ -39,10 +39,20 @@ from abacus.kernel.storage import s3_client
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.api import UPLOAD_VERSION, UploadInput, check_upload_content
 from abacus.modules.evidence.api import process_upload as extract_upload
-from abacus.modules.evidence.processing import preview_upload
+from abacus.modules.evidence.masked_previews import masked_preview_upload
+from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.words import words_upload
 from abacus_tools.synthetic.documents import aging_schedule_xlsx, bank_statement_pdf, scanned_pdf
 
 from .support import Net, Person, Seeder, Site
+
+
+async def preview_upload(given: UploadInput) -> str:
+    """The rendition steps of a v7 run (P-03-T15): word layer, PII scan, masked rendition."""
+    await words_upload(given)
+    await pii_scan_upload(given)
+    return await masked_preview_upload(given)
+
 
 BUCKET: Final = "backfill-client-uploads"
 MASTER: Final = b"backfill-client-uploads-master-key-012345"

@@ -63,6 +63,7 @@ from abacus_tools.evals.cases import MUTATION_CATEGORIES, MUTATIONS
 from abacus_tools.evals.graders import GRADERS
 from abacus_tools.evals.metrics import METRICS, Attempt
 from abacus_tools.evals.observation import Observation
+from abacus_tools.evals.regions import region_counts
 from abacus_tools.evals.report import ESCALATED, Report, milestone
 from abacus_tools.evals.suite import Case, Suite, load, validate
 from abacus_tools.evals.summary import Summary, sign
@@ -306,6 +307,7 @@ async def _attempt(
             )
         action, kind, citations = await _result(stack.superuser, run_id)
         cost, models = await _spent(stack.superuser, run_id)
+        cited, resolved = await region_counts(stack.superuser, run_id)
         if outcome.status != "completed" or kind != "agent":
             raise RuntimeError(f"screening ended {outcome.status} by {kind}")
         if models != {model_id(tier, route)}:
@@ -326,6 +328,8 @@ async def _attempt(
             cost_usd=cost,
             budget_usd=budget,
             latency_ms=latency,
+            regions_cited=cited,
+            regions_resolved=resolved,
         )
     except Exception as exc:
         # What a failed attempt spent still counts; unreadable, it counts as its whole budget.

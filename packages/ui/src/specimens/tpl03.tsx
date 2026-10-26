@@ -85,7 +85,7 @@ const PAGES = [1, 2, 3].map((n) => ({
 
 const whole = (v: string): string => amount(v, "whole").text;
 
-const K1_VIEW: ViewerFile = {
+export const K1_VIEW: ViewerFile = {
   name: K1_FILE,
   pages: PAGES,
   regions: [

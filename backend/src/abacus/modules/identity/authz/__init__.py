@@ -29,7 +29,10 @@ agent's scope. A firm's policy overrides (`firm_policy_overrides`) narrow a cell
 any of this, and never widen one (`overrides.py`). The client
 conditions (SPEC-020, TASK-035 D2) need the item's facts on the resource (`ItemFacts`):
 `client_visible_only` allows a client-visible item, `assigned_only` a client-visible item
-assigned to the person. Without the facts they deny. `visible_items` is their list-query twin.
+assigned to the person, `delegated_only` (R-01-T13, DEC-387) a client-visible item one of whose
+open delegations the person holds the grant of. Without the facts they deny. `visible_items` is
+their list-query twin for the first two; `delegated_only` reaches no list (a third party reads
+through the room, which authorises item by item).
 
 Ethical walls (ADR-026, SPEC-002) come before roles: a person walled off from a client is denied
 every engagement of it, whatever their roles, and agents and system runs with them. The walled
@@ -38,6 +41,17 @@ Offshore is not a wall (DEC-52, F-03 section 4.4; narrowed by TASK-1207, DEC-319
 member works on clients like anyone else with the same role, and is refused only the actions that
 carry the `not_offshore` condition (`tin.reveal`, `pii.reveal`), at the condition layer (403).
 Client access (`access_expired`) arrives with client users.
+
+Service-line need-to-know (G-01-T12; DEC-380, ADR-183 proposed): a firm may open a line's
+content to the line's members ("Content visible to · Service line"). The reach is a derived
+reader role, `service_line_reader`, holding the `staff` engagement role's cell for plain reads
+only (no fresh MFA, reason, notify or condition), so it never grants a write, a sign-off or client
+contact. It applies to a person on a staff membership with no engagement role on the engagement,
+not offshore, not on level `admin`, holding no firm admin or security admin role (ADR-024: admins
+stay metadata-only), whose `service_lines` include the engagement's line, when the firm opened
+that line (never Audit) and the engagement's client is known not to be an attest client. Walls
+come first, as for every role. Unregistered lookups grant nothing (fail closed); `visible()`
+applies the same reach in SQL.
 
 A successful `authorise` (and every `visible` filter built) is recorded for the request being
 served, so a route that returns a success without one fails closed (`routing.AbacusRoute`). The
@@ -54,14 +68,15 @@ from datetime import timedelta
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Select, and_, false, func, or_, select, true
+from sqlalchemy import ColumnElement, Select, and_, any_, false, func, or_, select, true
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
+from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, conditions_hold
-from abacus.modules.identity.authz.matrix import G2_BLOCKS_VIEW, RULES, Rule
+from abacus.modules.identity.authz.matrix import G2_BLOCKS_VIEW, RULES, Decision, Rule
 from abacus.modules.identity.authz.overrides import apply_override
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
 from abacus.modules.identity.repository import (
@@ -76,8 +91,11 @@ from abacus.modules.identity.repository import (
     engagement_roles_in_firm,
     ethical_walls,
     firm_policy,
+    firm_policy_overrides,
     firm_setting_values,
     member_facts,
+    memberships,
+    service_line_policies,
     walled_clients,
 )
 
@@ -102,7 +120,9 @@ Layer = Literal[
 EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
 BoolColumn = ColumnElement[bool] | QueryableAttribute[bool]
 UserColumn = ColumnElement[UUID] | ColumnElement[UUID | None] | QueryableAttribute[UUID | None]
-_CLIENT_CONDITIONS = frozenset({"client_visible_only", "assigned_only"})
+_CLIENT_CONDITIONS = frozenset({"client_visible_only", "assigned_only", "delegated_only"})
+# The client conditions `visible_items` turns into SQL; `delegated_only` reaches no list.
+_LISTED_CONDITIONS = frozenset({"client_visible_only", "assigned_only"})
 # The engagements module tells identity how to find an engagement's client (TASK-016 Q1):
 # identity owns walls, engagements owns the engagement-to-client fact, and identity never imports
 # engagements. `column` turns an engagement-ID column into its client-ID subquery (for
@@ -205,6 +225,9 @@ class ItemFacts:
 
     client_visible: bool
     client_assignee: UUID | None
+    # R-01-T13 (DEC-387): the people holding an active grant under one of the item's open
+    # delegations, for `delegated_only`; None when the owner did not read them (deny).
+    delegated_to: frozenset[UUID] | None = None
 
 
 @dataclass(frozen=True)
@@ -349,11 +372,19 @@ async def _engagement_roles_in_firm(ctx: AuthContext) -> frozenset[str]:
 
 
 FIRM_PARTNER = "firm_partner"
+# P-07-T36 (DEC-373): a manager-level staff member at firm level, as `firm_partner` is for
+# partners (DEC-132): the manager cells DEC-141, DEC-143 and DEC-326 left for a derived grant.
+FIRM_MANAGER = "firm_manager"
 
 
 async def _partner_level(ctx: AuthContext) -> bool:
     member = await member_facts(ctx.tenant, ctx.user_id)
     return member is not None and not member.client and member.level == "partner"
+
+
+async def _manager_level(ctx: AuthContext) -> bool:
+    member = await member_facts(ctx.tenant, ctx.user_id)
+    return member is not None and not member.client and member.level == "manager"
 
 
 async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
@@ -374,10 +405,19 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
         and await _partner_level(ctx)
     ):
         roles.add(FIRM_PARTNER)  # P-01-T04 (DEC-132): derived from the membership level
+    if (
+        resource.engagement_id is None
+        and FIRM_MANAGER in rule.decisions
+        and not ctx.is_support
+        and await _manager_level(ctx)
+    ):
+        roles.add(FIRM_MANAGER)  # P-07-T36 (DEC-373): derived from the membership level
     if resource.engagement_id is not None:
         role = await _engagement_role_once(ctx, resource.engagement_id)
         if role is not None:
             roles.add(role)
+        elif await _line_reader(ctx, rule, resource.engagement_id):
+            roles.add(SERVICE_LINE_READER)  # G-01-T12 (DEC-380): no team role here
     elif (
         rule.reads
         and not rule.scope_only
@@ -389,7 +429,76 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
         # SPEC-014: a firm-level read counts the person's engagement roles on the firm's active
         # engagements; skipped when the firm role already allows it (TASK-029 D2).
         roles |= await _engagement_roles_in_firm(ctx)
+        # The service-line reader never counts at firm level (DEC-383, ADR-183 condition 2):
+        # not every firm-level read filters its rows with `visible()`.
     return roles
+
+
+# G-01-T12 (DEC-380; ADR-183 proposed): the derived service-line reader and the role whose cell
+# it takes. Firm and security admins stay metadata-only (ADR-024). `SERVICE_LINE_REACH` is the
+# decision itself (a constant, like `WALL_SAFE`; authorisation is never flagged): False is G-01
+# AC10.4's fallback, every line "Engagement team only" whatever a firm stored.
+SERVICE_LINE_REACH = True
+SERVICE_LINE_READER = "service_line_reader"
+_LINE_READER_CELL = "staff"
+_METADATA_ONLY_FIRM_ROLES = frozenset({"firm_admin", "security_admin"})
+
+
+def _line_reader_cell(rule: Rule) -> Decision | None:
+    """The reader's cell: the `staff` engagement role's allow, for a plain read only."""
+    if (
+        not rule.reads
+        or rule.mfa_recent
+        or rule.requires_reason
+        or rule.notify
+        or has_conditions(rule)
+    ):
+        return None
+    return "allow" if rule.decisions.get(_LINE_READER_CELL) == "allow" else None
+
+
+def _cell(rule: Rule, role: str) -> Decision | None:
+    if role == SERVICE_LINE_READER:
+        return _line_reader_cell(rule)
+    return rule.decisions.get(role)
+
+
+# DEC-383 (ADR-183 condition 3): set while an agent's action is checked against its initiator,
+# so an agent run never inherits the initiator's service line.
+_delegating: ContextVar[bool] = ContextVar("abacus_authz_delegating", default=False)
+
+
+def _may_read_lines(ctx: AuthContext, rule: Rule) -> bool:
+    return (
+        SERVICE_LINE_REACH
+        and not _delegating.get()
+        and _line_reader_cell(rule) is not None
+        and not ctx.is_support
+        and not ctx.client
+        and ctx.firm_role not in _METADATA_ONLY_FIRM_ROLES
+    )
+
+
+async def _line_reader(ctx: AuthContext, rule: Rule, engagement_id: UUID) -> bool:
+    """Whether the person, holding no role on the engagement, reads `rule` on it through an
+    open service line. Every unknown fact refuses."""
+    if not _may_read_lines(ctx, rule):
+        return False
+    policy = await _firm_policy(ctx)
+    if not policy.line_reach:
+        return False
+    member = await member_facts(ctx.tenant, ctx.user_id)
+    if member is None or member.client or member.offshore or member.level == "admin":
+        return False
+    open_lines = policy.line_reach & member.service_lines
+    if not open_lines:
+        return False
+    line_of, attest_of = LOOKUPS.service_line, LOOKUPS.attest
+    if line_of is None or attest_of is None:
+        return False
+    if await line_of(ctx.tenant, engagement_id) not in open_lines:
+        return False
+    return await attest_of(ctx.tenant, engagement_id) is False
 
 
 async def authorise(
@@ -415,7 +524,13 @@ async def authorise(
     policy = await _firm_policy(ctx)
     by_role = {
         role: _on_item(
-            apply_override(rule.decisions.get(role), policy.overrides.get((action, role))),
+            apply_override(
+                _cell(rule, role),
+                # The reader is narrowed by whatever narrows the role whose cell it takes.
+                policy.overrides.get(
+                    (action, _LINE_READER_CELL if role == SERVICE_LINE_READER else role)
+                ),
+            ),
             ctx,
             resource,
         )
@@ -484,12 +599,19 @@ async def authorise(
     if isinstance(ctx, AgentContext):
         reach = AGENT_ONLY_REACH if resource.engagement_id is not None else AGENT_FIRM_REACH
         delegated = action if _human_held(rule) else reach
+        # The person the run acts for may have reached their access end since the run started:
+        # the same check a request makes (DEC-383), whether or not the sweep has run.
+        if await access_has_ended(ctx.initiator.tenant, ctx.initiator.user_id):
+            raise _deny(ctx, action, "delegation")
+        token = _delegating.set(True)
         try:
             await authorise(ctx.initiator, delegated, resource, reason=reason)
         except Forbidden as denied:
             # An attribute the initiator fails (an archived engagement) is the agent's too.
             layer: Layer = "attribute" if denied.layer == "attribute" else "delegation"
             raise _deny(ctx, action, layer) from None
+        finally:
+            _delegating.reset(token)
     # 4. Attributes.
     if resource.archived and not rule.reads:
         raise _deny(ctx, action, "attribute")
@@ -546,12 +668,29 @@ _probe_roles: ContextVar[dict[tuple[UUID, UUID], str | None] | None] = ContextVa
 )
 
 
+THIRD_PARTY = "third_party"
+# The roles a client person acts in, for the client conditions (`scope_only`): the two engagement
+# client roles and, on the requests delegated to them, a third party (R-01-T13, DEC-387).
+CLIENT_ACTOR_ROLES: frozenset[str] = CLIENT_ROLES | {THIRD_PARTY}
+
+
 async def _engagement_role_once(ctx: AuthContext, engagement_id: UUID) -> str | None:
     cache = _probe_roles.get()
     key = (ctx.user_id, engagement_id)
     if cache is not None and key in cache:
         return cache[key]
     role = await engagement_role(ctx.tenant, ctx.user_id, engagement_id)
+    if (
+        role is None
+        and ctx.client
+        and not ctx.is_support
+        and LOOKUPS.third_party is not None
+        and await LOOKUPS.third_party(ctx.tenant, ctx.user_id, engagement_id)
+    ):
+        # R-01-T13 (DEC-387): a client person with no role on the engagement who holds a
+        # third party's `request_item` grant on one of its requests. Its cells are all
+        # `delegated_only`, so it reaches only the items whose facts name the person.
+        role = THIRD_PARTY
     if cache is not None:
         cache[key] = role
     return role
@@ -619,7 +758,7 @@ async def _condition_facts(
     scope_covered: bool | None = None
     preparer: bool | None = None
     reserved_holder: bool | None = None
-    client_actor = bool(roles & CLIENT_ROLES)
+    client_actor = bool(roles & CLIENT_ACTOR_ROLES)
     if isinstance(ctx, AuthContext):
         if rule.level_in or rule.not_offshore:
             member = member or await member_facts(ctx.tenant, ctx.user_id)
@@ -684,6 +823,10 @@ def _on_item(decision: str | None, ctx: Actor, resource: Resource) -> str | None
     if item is None or not item.client_visible or not isinstance(ctx, AuthContext):
         return None
     if decision == "assigned_only" and item.client_assignee != ctx.user_id:
+        return None
+    if decision == "delegated_only" and (
+        item.delegated_to is None or ctx.user_id not in item.delegated_to
+    ):
         return None
     return "allow"
 
@@ -912,9 +1055,12 @@ def _visible_by_role(
             return false()
         if ctx.engagement_id is None:
             return false()  # a firm-level agent lists no engagement's rows
-        return and_(
-            engagement_id == ctx.engagement_id, visible(ctx.initiator, action, engagement_id)
-        )
+        token = _delegating.set(True)  # the initiator's line never reaches the agent (DEC-383)
+        try:
+            initiator = visible(ctx.initiator, action, engagement_id)
+        finally:
+            _delegating.reset(token)
+        return and_(engagement_id == ctx.engagement_id, initiator)
     if isinstance(ctx, SystemContext):
         if rule.decisions.get("system") != "allow":
             return false()
@@ -927,6 +1073,9 @@ def _visible_by_role(
     allowed = [role for role, decision in rule.decisions.items() if decision == "allow"]
     staff = [role for role in allowed if role in ENGAGEMENT_ROLES]
     client = [role for role in allowed if role in CLIENT_ROLES]
+    # G-01-T12 (DEC-380): the service-line reach, on attest-free engagements only, so G2 never
+    # applies to it.
+    line = _line_reach(ctx, action, rule, engagement_id)
     if rule.independence and not ctx.is_support:
         # G2 v2 (ADR-164): a staff engagement role reaches a marked read unless the person isn't
         # cleared and the firm's `g2_blocks_view` applies to the row's attest-client engagement.
@@ -936,10 +1085,67 @@ def _visible_by_role(
             confirmed = _independence[0](engagement_id, ctx.user_id)
             cleared = or_(confirmed, ~_g2_blocks_reads(ctx, engagement_id))
             reach.append(and_(_member_of(ctx, engagement_id, staff), cleared))
+        if line is not None:
+            reach.append(line)
         return or_(*reach) if reach else false()
     if not staff and not client:
-        return false()
-    return _member_of(ctx, engagement_id, staff + client)
+        return line if line is not None else false()
+    member = _member_of(ctx, engagement_id, staff + client)
+    return or_(member, line) if line is not None else member
+
+
+def _line_reach(
+    ctx: AuthContext, action: str, rule: Rule, engagement_id: EngagementColumn
+) -> ColumnElement[bool] | None:
+    """`_line_reader` in SQL: rows whose engagement's line the firm opened and the person holds,
+    on a client known not to be an attest client, where the person holds no team role (a team
+    role decides, ADR-183 rule 6; DEC-383) and the firm has not narrowed `staff`'s cell for this
+    action (`firm_policy_overrides`, as `authorise` applies it); None when it can't apply."""
+    line_of, attest_of = LOOKUPS.service_line_column, LOOKUPS.attest_column
+    if not _may_read_lines(ctx, rule) or line_of is None or attest_of is None:
+        return None
+    line = line_of(engagement_id)
+    opened = select(service_line_policies.c.service_line).where(
+        service_line_policies.c.tenant_id == ctx.tenant_id,
+        service_line_policies.c.enabled.is_(True),
+        service_line_policies.c.content_visible_to == "service_line",
+        service_line_policies.c.service_line != "audit",
+    )
+    held = (
+        select(memberships.c.user_id)
+        .where(
+            memberships.c.tenant_id == ctx.tenant_id,
+            memberships.c.user_id == ctx.user_id,
+            memberships.c.kind == "staff",
+            memberships.c.status == "active",
+            memberships.c.offshore.is_(False),
+            or_(memberships.c.level.is_(None), memberships.c.level != "admin"),
+            line == any_(memberships.c.service_lines),
+        )
+        .correlate_except(memberships)
+        .exists()
+    )
+    on_team = select(engagement_members.c.engagement_id).where(
+        engagement_members.c.tenant_id == ctx.tenant_id,
+        engagement_members.c.user_id == ctx.user_id,
+    )
+    narrowed = (
+        select(firm_policy_overrides.c.action)
+        .where(
+            firm_policy_overrides.c.tenant_id == ctx.tenant_id,
+            firm_policy_overrides.c.action == action,
+            firm_policy_overrides.c.role == _LINE_READER_CELL,
+        )
+        .exists()
+    )
+    # An unknown client or line compares as NULL, which admits nothing.
+    return and_(
+        line.in_(opened.scalar_subquery()),
+        held,
+        attest_of(engagement_id).is_(False),
+        ~engagement_id.in_(on_team),
+        ~narrowed,
+    )
 
 
 def _member_of(
@@ -964,6 +1170,41 @@ def _member_of(
     return or_(*reach) if reach else false()
 
 
+async def authorise_own(ctx: Actor, action: str) -> None:
+    """A firm action a person takes on their own row only (G-01-T13: `independence.annual_confirm`,
+    DEC-91), so the relationship is their active staff membership here, not a role on a
+    resource: a staff member with no firm role and no engagement holds it too. Allowed for a live
+    signed-in person (never support, a client user, an agent or the platform: INV-1) whose
+    membership here is an active staff one, when the matrix allows the cell their firm role (or,
+    without one, their partner level or the `staff` role) takes, narrowed by the firm's
+    overrides, with fresh MFA and a reason where the action asks. Records the check."""
+    rule = _rule(action)
+    if (
+        not isinstance(ctx, AuthContext)
+        or ctx.is_support
+        or ctx.client
+        or ctx.tenant.actor_kind != "human"
+    ):
+        raise _deny(ctx, action, "relationship")
+    member = await member_facts(ctx.tenant, ctx.user_id)
+    if member is None or member.client:
+        raise _deny(ctx, action, "relationship")
+    if ctx.firm_role is not None:
+        role = ctx.firm_role
+    elif member.level == "partner":
+        role = FIRM_PARTNER
+    else:
+        role = _LINE_READER_CELL  # `staff`: every staff member's own cell
+    policy = await _firm_policy(ctx)
+    decision = apply_override(rule.decisions.get(role), policy.overrides.get((action, role)))
+    if decision != "allow" or has_conditions(rule):
+        raise _deny(ctx, action, "role")
+    if rule.mfa_recent and (ctx.mfa_at is None or system_now() - ctx.mfa_at > MFA_RECENT):
+        raise _deny(ctx, action, "attribute")
+    _record(action)
+    _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
+
+
 async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
     """For a list of an engagement's request items (a read): allowed outright, or by a client
     condition, in which case `visible_items` then filters the rows (SPEC-020; TASK-035 D2)."""
@@ -976,7 +1217,9 @@ async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
         if denied.layer != "role" or not isinstance(ctx, AuthContext):
             raise
         roles = await _roles(ctx, resource, rule)
-        if not any(rule.decisions.get(role) in _CLIENT_CONDITIONS for role in roles):
+        # Only the conditions `visible_items` filters by: `delegated_only` reaches no list, so a
+        # third party never passes a list's check (R-01-T13; it reads through the room).
+        if not any(rule.decisions.get(role) in _LISTED_CONDITIONS for role in roles):
             raise
         _record(action)
 
@@ -997,7 +1240,7 @@ def visible_items(
     rule = _rule(action)
     reach: list[ColumnElement[bool]] = []
     for role, decision in rule.decisions.items():
-        if decision not in _CLIENT_CONDITIONS or role not in CLIENT_ROLES:
+        if decision not in _LISTED_CONDITIONS or role not in CLIENT_ROLES:
             continue
         member_of = client_grant_engagements(ctx.tenant_id, ctx.user_id, [role])
         rows = (
@@ -1013,6 +1256,7 @@ def visible_items(
 
 __all__ = [
     "MFA_RECENT",
+    "SERVICE_LINE_READER",
     "WALL_SAFE",
     "Forbidden",
     "ItemFacts",
@@ -1020,6 +1264,7 @@ __all__ = [
     "UnknownAction",
     "authorise",
     "authorise_items",
+    "authorise_own",
     "policy_agent_may_hold",
     "recording_checks",
     "register_active_engagements",
