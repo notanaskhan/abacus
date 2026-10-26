@@ -280,20 +280,38 @@ class ValueFinding:
     variable: str
 
 
+# The re-review: dash-like characters (hyphens, en and em dashes, minus, slashes) read as "-".
+_DASHES: Final = str.maketrans(
+    dict.fromkeys("\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u2043/\uff0f\\", "-")
+)
+# A link a mail client would make clickable: a scheme, `www.`, or an address (the re-review M).
+_VALUE_LINK: Final = re.compile(r"(?i)\b(?:https?|ftp)://|\bwww\.|[^\s@]+@[^\s@]+\.[a-z]{2,}")
+
+
+def folded(text: str) -> str:
+    """NFKC-folded (full-width digits, ligatures), accents and other combining marks dropped,
+    format characters (zero-width spaces and joiners, direction marks) removed."""
+    decomposed = unicodedata.normalize("NFKD", unicodedata.normalize("NFKC", text))
+    kept = "".join(ch for ch in decomposed if unicodedata.category(ch) not in ("Cf", "Mn"))
+    return unicodedata.normalize("NFC", kept)
+
+
 def normalised(text: str) -> str:
-    """What the shape rules read (security review L2): NFKC-folded (full-width digits, ligatures)
-    with format characters (zero-width spaces and joiners, direction marks) removed, so a value
-    can't slip a TIN or the platform's name past a rule."""
-    folded = unicodedata.normalize("NFKC", text)
-    return "".join(ch for ch in folded if unicodedata.category(ch) != "Cf")
+    """What the shape rules read (security review L2 and its re-review): `folded`, with
+    dash-like characters and slashes read as "-", so a value can't slip a TIN or the platform's
+    name past a rule. Links are looked for in the `folded` text, where `://` is still itself."""
+    return folded(text).translate(_DASHES)
 
 
 def lint_values(values: Mapping[str, str]) -> list[ValueFinding]:
-    """The amount, TIN-shape and account-number rules over every filled value (each line of a
-    block variable). Deterministic; run at preview (shown as findings) and at send (refused as
-    `template_lint_failed`). A masked last four ("••4436") counts as an account number."""
+    """The amount, TIN-shape, account-number and link rules over every filled value (each line of
+    a block variable); `portal_link` is the platform's secure link, never linted. Deterministic;
+    run at preview (shown as findings) and at send (refused as `template_lint_failed`). A
+    masked last four ("••4436") counts as an account number."""
     found: list[ValueFinding] = []
     for name in sorted(values):
+        if name == "portal_link":
+            continue
         value = normalised(values[name])
         if _TIN_VALUE.search(value):
             found.append(ValueFinding("tin_shape", name))
@@ -301,6 +319,8 @@ def lint_values(values: Mapping[str, str]) -> list[ValueFinding]:
             found.append(ValueFinding("account_number", name))
         if _AMOUNT_VALUE.search(_TIN_VALUE.sub(" ", value)):
             found.append(ValueFinding("amount", name))
+        if _VALUE_LINK.search(folded(values[name])):
+            found.append(ValueFinding("foreign_link", name))  # a bare domain is defanged instead
     return found
 
 

@@ -85,3 +85,5 @@ this task builds the list, read, draft save and discard, publish, the block rend
 - 2026-10-27: security review fix round (H, M1-M4, L1-L4): recipient binding, DB-held editable keys and
   publisher, messages_sender_guard, portal-only links and foreign_link, recipient-bound message ids,
   header-line and folding rules, rotating label runs. Targeted pass and gates green.
+- 2026-10-27: re-review fixes (value links and defanging, audience against relation, value line breaks,
+  dash and mark folding, random label-run start, staff-only publish). Targeted pass and gates green.

@@ -9,6 +9,7 @@ with the checkpoint numbers, never the rows. The daily anchor is evidence's job 
 from __future__ import annotations
 
 import contextlib
+import secrets
 from datetime import timedelta
 from uuid import UUID
 
@@ -97,13 +98,14 @@ LABEL_BATCHES_PER_RUN = 5
 LABEL_RUN_BUDGET = timedelta(minutes=3)
 
 
-def label_run_order(firms: list[UUID], run_minute: int) -> list[UUID]:
-    """Every firm once, starting at a different one each minute, so with a whole-run budget the
-    same firms are never the ones left out (security review L4)."""
+def label_run_order(firms: list[UUID], start: int) -> list[UUID]:
+    """Every firm once, from `start` round the sorted list. The run picks `start` at random, so
+    with a whole-run budget no firm is left out run after run (security review L4; the re-review
+    replaced a minute-based start, which a firm count dividing 60 could starve)."""
     if not firms:
         return []
     ordered = sorted(firms, key=str)
-    start = run_minute % len(ordered)
+    start = start % len(ordered)
     return ordered[start:] + ordered[:start]
 
 
@@ -116,7 +118,7 @@ async def index_labels_activity() -> int:
     started = system_now()
     written = 0
     firms = await firm_tenant_ids()
-    for tenant in label_run_order(list(firms), int(started.timestamp() // 60)):
+    for tenant in label_run_order(list(firms), secrets.randbelow(max(len(firms), 1))):
         if system_now() - started > LABEL_RUN_BUDGET:
             _log.info("audit_labels.budget_spent", written=written)
             break

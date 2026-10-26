@@ -174,3 +174,55 @@ def test_ac9_the_shapes_are_read_after_folding(text: str, code: str) -> None:
     bad = TemplateContent("S", "", (Block("p", "paragraph", text),), None, None)
     assert f"{code}:p" in {f.fact() for f in lint_template(bad, REMINDER)}
     assert code in {f.code for f in lint_values({"work_item": text})} or code == "platform_name"
+
+
+# --- the re-review: links in client-written values, separators, folding ------------------------
+
+
+@pytest.mark.parametrize(
+    "title", ["Pay at https://evil-pay.com", "See www.evil-pay.com", "Write to pay@evil-pay.com"]
+)
+def test_ac9_a_value_with_a_link_or_address_is_refused(title: str) -> None:
+    assert ("foreign_link", "work_item") in {
+        (f.code, f.variable) for f in lint_values({"work_item": title})
+    }
+
+
+def test_ac9_a_bare_domain_in_a_value_is_defanged_and_a_file_name_is_not() -> None:
+    assert lint_values({"work_item": "W-2.pdf", "document_title": "Brokerage 1099.pdf"}) == []
+    rendered = render_email(
+        CONTENT,
+        {**VALUES, "work_item": "pay at evil-pay.com", "open_items": "W-2.pdf\nK-1 report.xlsx"},
+        allowed=ALLOWED,
+        block_variables=BLOCKS,
+    )
+    for part in (rendered.subject, rendered.html, rendered.text):
+        assert "evil-pay.com" not in part
+    assert "evil-pay[.]com" in rendered.subject and "W-2.pdf" in rendered.text
+    assert "K-1 report.xlsx" in rendered.text
+
+
+@pytest.mark.parametrize("bad", ["\x00", "\x85", "\u2028", "\u2029"])
+def test_ac9_a_value_with_any_line_break_or_nul_is_refused(bad: str) -> None:
+    with pytest.raises(TemplateInvalid):
+        render_email(
+            CONTENT,
+            {**VALUES, "client_first_name": f"Claire{bad}Bcc"},
+            allowed=ALLOWED,
+            block_variables=BLOCKS,
+        )
+
+
+@pytest.mark.parametrize(
+    ("text", "code"),
+    [
+        ("SSN 912\u201334\u20135678", "tin_shape"),  # en dashes
+        ("SSN 912\u201434\u20145678", "tin_shape"),  # em dashes
+        ("SSN 912\u221234\u22125678", "tin_shape"),  # minus signs
+        ("SSN 912/34/5678", "tin_shape"),
+        ("Powered by Accru\u0301ed", "platform_name"),  # a combining accent
+    ],
+)
+def test_ac9_dash_variants_and_combining_marks_are_folded(text: str, code: str) -> None:
+    bad = TemplateContent("S", "", (Block("p", "paragraph", text),), None, None)
+    assert f"{code}:p" in {f.fact() for f in lint_template(bad, REMINDER)}

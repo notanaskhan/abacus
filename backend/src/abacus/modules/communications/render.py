@@ -38,6 +38,16 @@ _BRACE: Final = re.compile(r"[{}]")
 _LINK_CHARS: Final = re.compile(r"[^\s\"'<>\\]{1,2000}")
 _LOCAL_LINKS: Final = ("local", "test")  # plain http to localhost only here (review M3)
 LINK_VARIABLE: Final = "portal_link"
+_BREAKS: Final = re.compile("[\r\x00\x85\u2028\u2029]")
+_BARE_DOMAIN: Final = re.compile(
+    r"(?i)\b[a-z0-9](?:[a-z0-9-]{0,62})(?:\.[a-z0-9-]{1,63})*\.[a-z]{2,24}\b"
+)
+# What a client's file or document title ends with: never a domain to defang.
+_FILE_EXTENSIONS: Final = frozenset(
+    {"pdf", "doc", "docx", "xls", "xlsx", "csv", "txt", "rtf", "jpg", "jpeg", "png", "gif"}
+    | {"heic", "heif", "tif", "tiff", "zip", "xml", "json", "msg", "eml", "ppt", "pptx", "qbo"}
+    | {"ofx", "qfx", "numbers", "pages", "key", "odt", "ods", "html", "htm"}
+)
 _BUTTON_BEFORE: Final = frozenset({"note", "footer"})
 _FONT: Final = "font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"
 
@@ -147,7 +157,7 @@ def _check_values(
         if block.kind != "item_list" and set(used_variables(block.text)) & block_variables:
             raise TemplateInvalid
     for name, value in values.items():
-        if "\r" in value:
+        if _BREAKS.search(value):  # the re-review: NUL, CR, NEL and the Unicode separators
             raise TemplateInvalid
         if name in block_variables:
             if any(not line.strip() for line in value.split("\n")):
@@ -180,8 +190,22 @@ def portal_link_allowed(link: str) -> bool:
     )
 
 
+def defang(value: str) -> str:
+    """A bare domain in a client-written value is shown with its dots broken ("evil-pay[.]com"),
+    so no mail client makes it a link (the re-review M); a file name ("W-2.pdf") is left alone.
+    Schemes, `www.` and addresses never get this far: `lint_values` refuses them."""
+
+    def broken(match: re.Match[str]) -> str:
+        found = match.group(0)
+        if found.rsplit(".", 1)[-1].lower() in _FILE_EXTENSIONS:
+            return found
+        return found.replace(".", "[.]")
+
+    return _BARE_DOMAIN.sub(broken, value)
+
+
 def _fill(text: str, values: Mapping[str, str]) -> str:
-    return _PLACEHOLDER.sub(lambda m: values[m.group(1)], text)
+    return _PLACEHOLDER.sub(lambda m: defang(values[m.group(1)]), text)
 
 
 def _escape(text: str) -> str:

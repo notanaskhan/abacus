@@ -124,6 +124,24 @@ def _ctx(who: Person, firm_role: str | None) -> AuthContext:
     )
 
 
+async def _client_user(
+    seed: Seeder, tenant: uuid.UUID, who: Person, engagement: uuid.UUID
+) -> None:
+    """A client user with an engagement-scope `owner` grant: a `client` recipient."""
+    await seed.run(
+        "UPDATE memberships SET kind = 'client' WHERE tenant_id = $1 AND user_id = $2",
+        tenant,
+        who.user_id,
+    )
+    await seed.run(
+        "INSERT INTO client_access_grants (tenant_id, user_id, role, scope_kind, scope_id) "
+        "VALUES ($1, $2, 'owner', 'engagement', $3)",
+        tenant,
+        who.user_id,
+        engagement,
+    )
+
+
 async def _firm(seed: Seeder, *, editor: bool = True) -> Firm:
     tenant = await seed.firm()
     admin, manager, staff, recipient = [await seed.person(tenant) for _ in range(4)]
@@ -135,7 +153,7 @@ async def _firm(seed: Seeder, *, editor: bool = True) -> Firm:
     entity = await seed.entity(tenant)
     engagement = await seed.engagement(tenant, entity, admin.user_id)
     await seed.member(engagement, manager, "manager")
-    await seed.member(engagement, recipient, "staff")  # someone the engagement concerns (H)
+    await _client_user(seed, tenant, recipient, engagement)  # the engagement's client (H)
     if editor:
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
@@ -429,12 +447,15 @@ async def test_ac10_a_person_without_message_send_on_the_engagement_is_refused(
 async def test_h_a_recipient_the_engagement_does_not_concern_is_refused(
     firm: Firm, seed: Seeder, recorder: Recorder
 ) -> None:
-    """Another firm's user, and a member of this firm who is not on the engagement nor holds a
-    client grant covering it, are both refused 404 before anything is recorded or sent."""
+    """Another firm's user, a member of this firm who is not on the engagement nor holds a client
+    grant covering it, and a team member for a key whose audience is the client and third
+    parties are each refused 404 before anything is recorded or sent (H and its re-review)."""
     await _publish(firm, "Reminder")
     stranger = await seed.person(await seed.firm())
     outsider = await seed.person(firm.tenant)
-    for n, who in enumerate((stranger, outsider), start=10):
+    teammate = await seed.person(firm.tenant)  # on the team, but a Reminder is a client's email
+    await seed.member(firm.engagement, teammate, "staff")
+    for n, who in enumerate((stranger, outsider, teammate), start=10):
         with pytest.raises(NotFound):
             await send_templated(
                 firm.manager,
@@ -536,7 +557,7 @@ async def test_m4_the_same_key_for_another_recipient_is_another_message(
 ) -> None:
     await _publish(firm, "Reminder")
     second = await seed.person(firm.tenant)
-    await seed.member(firm.engagement, second, "staff")
+    await _client_user(seed, firm.tenant, second, firm.engagement)
     first = await _send(firm)
     other = await send_templated(
         firm.manager,

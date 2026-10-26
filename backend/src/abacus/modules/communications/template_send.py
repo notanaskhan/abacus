@@ -14,8 +14,9 @@ The stored body is the text part with the secure link removed, so the token is n
 The message id is derived from the firm, the key, the recipient, the engagement and the
 idempotency key: a retry answers what the first call recorded and sends nothing again, after
 authorising on the stored message's engagement. A recipient must be someone the engagement
-concerns (its team, or a client grant covering it), read under the firm's row-level security,
-else 404 (security review H). The system's Reminder is checked as its publisher could send it
+concerns (its team, or a client grant covering it), and only for a key whose audience matches
+how they relate to it, read under the firm's row-level security, else 404 (security review H).
+The system's Reminder is checked as its publisher could send it
 (security review M2), and the database refuses any other non-person templated message. The
 client-mail gate (`firm_not_client_facing`) arrives with R-01-T27, the policy's mode with T24.
 """
@@ -61,9 +62,9 @@ from abacus.modules.identity.api import (
     authorise,
     contact_emails,
     firm_name,
-    may_receive_about,
     member_context,
     member_could,
+    recipient_relations,
 )
 
 _NAMESPACE: Final = uuid.UUID("6f1d6c2e-8d0c-4f0e-9b5a-0c16e7a1a019")
@@ -230,8 +231,12 @@ async def send(
         else:
             await _authorise_send(ctx, ref)
         # Security review H: only someone the engagement concerns may be written to about it.
+        # The re-review: and only for a key whose audience matches how they relate to it (a
+        # third party never gets `deliverable_ready`).
         if recipient.kind == "user":
-            if not await may_receive_about(tenant, recipient.id, ref.id):
+            relations = await recipient_relations(tenant, recipient.id, ref.id)
+            audience = set(registration.audience) if registration is not None else set(relations)
+            if not relations & audience:
                 raise NotFound("recipient")
             address = await _address(recipient)
         version = await template_store.resolve(tx.session, tenant.tenant_id, key)

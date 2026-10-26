@@ -10,7 +10,8 @@ from abacus.modules.audit_trail.jobs import label_run_order
 
 def test_dec453_every_firm_once_from_a_rotating_start() -> None:
     firms = [uuid.uuid4() for _ in range(5)]
-    orders = [label_run_order(firms, minute) for minute in range(5)]
+    orders = [label_run_order(firms, start) for start in range(5)]
     assert all(sorted(o, key=str) == sorted(firms, key=str) for o in orders)
-    assert len({o[0] for o in orders}) == 5  # each firm goes first once in five minutes
+    assert len({o[0] for o in orders}) == 5  # every start is a different first firm
+    assert label_run_order(firms, 7) == label_run_order(firms, 2)
     assert label_run_order([], 7) == []

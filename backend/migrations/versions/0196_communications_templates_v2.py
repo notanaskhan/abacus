@@ -290,6 +290,15 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'email_template_publish: a person publishes'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            -- The re-review: an active staff member of this firm, never a client user.
+            IF NOT EXISTS (
+                SELECT 1 FROM public.memberships m
+                 WHERE m.tenant_id = v_tenant AND m.user_id = v_actor::uuid
+                   AND m.kind = 'staff' AND m.status = 'active'
+            ) THEN
+                RAISE EXCEPTION 'email_template_publish: an active staff member publishes'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             IF p_source = 'handoff_seed' AND NOT EXISTS (
                 SELECT 1 FROM public.firms f WHERE f.tenant_id = v_tenant AND f.synthetic
             ) THEN
