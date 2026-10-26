@@ -37,3 +37,4 @@ in any test" (ADR-111 until ADR P-25's conditions hold).
 ## Progress log
 - 2026-10-26: suite written (no product change); run in the end-of-batch targeted pass.
 - 2026-10-26: targeted run green (26 passed across both suites, first run); no defect, no spec drift found; no xfail.
+- 2026-10-26: security review M fixed: the ADR-111 test also reads the portal binder list, binder and request (all 200) and finds no drafted text.

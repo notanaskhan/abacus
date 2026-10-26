@@ -257,6 +257,25 @@ async def test_adr111_a_real_firm_never_shows_model_drafted_guidance_to_a_client
         real.rachel,
     )
     assert WHY not in response.text and GOOD not in response.text
+    # The portal's own reads resolve guidance separately (security review M): the binder list,
+    # the binder and the request, with the binder published and the portal's documents on.
+    binder = await real.seed.value(
+        "SELECT request_list_id FROM request_items WHERE id = $1", real.site.item_id
+    )
+    await real.seed.run("UPDATE request_lists SET status = 'published' WHERE id = $1", binder)
+    await real.seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'portal.documents_v2', 'true', 'q03t040', 'TASK-1309')",
+        real.tenant_id,
+    )
+    for path in (
+        "/v1/portal/binders",
+        f"/v1/portal/binders/{binder}",
+        f"/v1/portal/request-items/{real.site.item_id}",
+    ):
+        portal = await real.net.call("GET", path, real.rachel)
+        assert portal.status_code == 200, (path, portal.text)
+        assert WHY not in portal.text and GOOD not in portal.text, path
     assert _shown(await real.item(real.priya))  # the firm still sees its own approved text
 
 
