@@ -12,6 +12,7 @@ version 2.
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from ipaddress import IPv4Address, IPv4Interface
@@ -38,6 +39,20 @@ from abacus_tools.quality.schema_check import migrate, provisioned_database
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
+
+
+def _parent_of_0172() -> str:
+    """0172's `down_revision`, read from the migration, so the test holds wherever the chain puts
+    0172 (it follows 0160 on its branch and 0171 once the S9 batch merges)."""
+    from pathlib import Path
+
+    [script] = Path(__file__).resolve().parents[2].glob("migrations/versions/0172_*.py")
+    found = re.search(r'^down_revision = "(\d{4})"$', script.read_text(), flags=re.M)
+    assert found is not None
+    return found.group(1)
+
+
+PARENT_0172 = _parent_of_0172()
 
 IP: Final = "198.51.100.57"
 
@@ -157,7 +172,7 @@ def test_h1_m1_a_v1_chain_survives_0172_grows_to_v2_and_pins_the_downgrade(
     private_db: sc.Database,
 ) -> None:
     seed = Seeder(private_db.superuser_dsn)
-    migrate(private_db.owner_url, "0160", down=True)
+    migrate(private_db.owner_url, PARENT_0172, down=True)
 
     async def before() -> uuid.UUID:
         tenant = await seed.firm()
@@ -190,7 +205,7 @@ def test_h1_m1_a_v1_chain_survives_0172_grows_to_v2_and_pins_the_downgrade(
     asyncio.run(after_upgrade())
     # M1: an event carries request context, so the downgrade refuses and changes nothing.
     with pytest.raises(DBAPIError, match="request context"):
-        migrate(private_db.owner_url, "0160", down=True)
+        migrate(private_db.owner_url, PARENT_0172, down=True)
 
     async def mixed_chain() -> None:
         configure_engine(private_db.app_url)
@@ -206,7 +221,7 @@ def test_h1_m1_a_v1_chain_survives_0172_grows_to_v2_and_pins_the_downgrade(
 
     asyncio.run(mixed_chain())
     with pytest.raises(DBAPIError, match="leaf version 2"):
-        migrate(private_db.owner_url, "0160", down=True)
+        migrate(private_db.owner_url, PARENT_0172, down=True)
     versions = asyncio.run(
         seed.rows(
             "SELECT leaf_version FROM audit_checkpoints WHERE tenant_id = $1 "

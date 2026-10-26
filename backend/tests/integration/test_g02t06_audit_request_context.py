@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import re
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, datetime, timedelta
@@ -29,6 +30,20 @@ from abacus_tools.quality.schema_check import migrate, provisioned_database
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
+
+
+def _parent_of_0172() -> str:
+    """0172's `down_revision`, read from the migration, so the test holds wherever the chain puts
+    0172 (it follows 0160 on its branch and 0171 once the S9 batch merges)."""
+    from pathlib import Path
+
+    [script] = Path(__file__).resolve().parents[2].glob("migrations/versions/0172_*.py")
+    found = re.search(r'^down_revision = "(\d{4})"$', script.read_text(), flags=re.M)
+    assert found is not None
+    return found.group(1)
+
+
+PARENT_0172 = _parent_of_0172()
 
 CHROME_MAC = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -192,14 +207,14 @@ def test_migration_0172_goes_up_down_and_up(private_db: sc.Database) -> None:
         return int(str(await Seeder(private_db.superuser_dsn).value(columns)))
 
     assert asyncio.run(count()) == 8
-    migrate(private_db.owner_url, "0160", down=True)
+    migrate(private_db.owner_url, PARENT_0172, down=True)
     assert asyncio.run(count()) == 0
     migrate(private_db.owner_url, "head")
     assert asyncio.run(count()) == 8
     # M3: a failure in the autocommit block leaves alembic at 0160 with the transactional part
     # applied; running the upgrade again finishes it.
     seed = Seeder(private_db.superuser_dsn)
-    asyncio.run(seed.run("UPDATE alembic_version SET version_num = '0160'"))
+    asyncio.run(seed.run("UPDATE alembic_version SET version_num = $1", PARENT_0172))
     asyncio.run(seed.run("DROP INDEX audit_events_ip"))
     migrate(private_db.owner_url, "head")
     assert asyncio.run(count()) == 8
