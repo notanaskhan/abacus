@@ -19,12 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { nowMs } from "../app-core/clock";
 import { defineScenarios, installFixtureMode, json } from "../app-core/fixture-mode";
 import { seedHandlers } from "./handlers";
-import {
-  installSeedFixtures,
-  installSeedFromSearch,
-  resolveOpens,
-  screenScenarioFromSearch,
-} from "./install";
+import { installSeedFixtures, installSeedFromSearch } from "./install";
 import { validateResponse } from "./schema-check";
 import { seedScenario } from "./scenario";
 import { getSeed } from "./seed";
@@ -226,7 +221,7 @@ describe("handlers", () => {
   });
 });
 
-describe("journey switches: ?flags= and ?scenario= (P-07-T22, P-06-T25)", () => {
+describe("journey switches: ?flags= and ?screen= (P-07-T22, P-06-T25)", () => {
   it("?flags= turns the named flags on in the persona's capabilities", async () => {
     restore = installSeedFromSearch("?as=grace-holloway&flags=clients.v2,engagements.v2");
     const flags = (await myCapabilities()).data?.flags ?? {};
@@ -240,31 +235,9 @@ describe("journey switches: ?flags= and ?scenario= (P-07-T22, P-06-T25)", () => 
     expect(caps.data?.flags["clients.v2"]).toBeUndefined();
   });
 
-  it("?scenario= lays the screen's scenario over the seed, its persona and what it opens", async () => {
-    const screen = await screenScenarioFromSearch("?scenario=BND-02:b");
-    expect(screen?.scenario.persona).toBe("kevin-osei");
-    expect(screen?.opens.binderId).toMatch(/^[0-9a-f-]{36}$/);
-    restore = installSeedFromSearch("?scenario=BND-02:b", screen?.scenario);
+  it("?screen= serves the screen's scenario as its persona, with ?flags= over it", async () => {
+    restore = installSeedFromSearch("?screen=BND-02&st=b&flags=binders.engine");
     expect((await me()).data?.display_name).toBe("Kevin Osei");
-  });
-
-  it("refuses a screen or state it has no scenario for", async () => {
-    await expect(screenScenarioFromSearch("?scenario=XYZ-99:a")).rejects.toThrow();
-    await expect(screenScenarioFromSearch("?scenario=BND-02:zz")).rejects.toThrow();
-  });
-
-  it("resolves _key_ tokens in the path and the query, and leaves unknown ones", () => {
-    const opens = { binderId: "b1", requestId: "r1" };
-    expect(resolveOpens("/binders/_binderId_", opens)).toBe("/binders/b1");
-    expect(resolveOpens("/binders/_binderId_?as=kevin-osei", opens)).toBe(
-      "/binders/b1?as=kevin-osei",
-    );
-    expect(resolveOpens("/binders/_binderId_?ov=request%3A_requestId_%3A_binderId_", opens)).toBe(
-      "/binders/b1?ov=request%3Ar1%3Ab1",
-    );
-    expect(resolveOpens("/binders/_binderId_?request=_requestId_&as=x", opens)).toBe(
-      "/binders/b1?request=r1&as=x",
-    );
-    expect(resolveOpens("/binders/_other_", opens)).toBe("/binders/_other_");
+    expect((await myCapabilities()).data?.flags["binders.engine"]).toBe(true);
   });
 });

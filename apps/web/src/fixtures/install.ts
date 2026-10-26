@@ -3,13 +3,14 @@
 // VITE_FIXTURES flag, so a production build holds none of it.
 
 import {
-  installFixtureMode,
-  json,
   type FixtureHandler,
   type Scenario,
+  installFixtureMode,
+  json,
 } from "../app-core/fixture-mode";
 import { sessionHandlers } from "./handlers";
 import { seedScenario } from "./scenario";
+import { screenScenario, withIds, withOpens } from "./screen-scenarios";
 import { getSeed } from "./seed";
 import { capabilitiesFor } from "./seed/shell";
 
@@ -23,71 +24,6 @@ export interface SeedInstall {
   /** Comma-separated flags the firm reads as on (`?flags=clients.v2,engagements.v2`): a journey
    * walks a screen built on fixtures whose flag E0 leaves off (P-07-T22). */
   flags?: string | undefined;
-  /** A screen's scenario laid over the seed (`?scenario=BND-02:b`): its handlers answer first,
-   * and its persona and clock stand unless `as` and `clock` say otherwise. */
-  screen?: Scenario | undefined;
-}
-
-// The screens' fixture scenarios, loaded on demand (`?scenario=`), never their tests.
-const SCREEN_SCENARIOS = import.meta.glob<{
-  scenarios?: Record<string, Scenario>;
-  OPENS?: Record<string, unknown>;
-}>(["./scenarios/*.ts", "!./scenarios/*.test.ts"]);
-
-export interface ScreenScenario {
-  scenario: Scenario;
-  /** What the state opens (its `OPENS` entry), flattened to `key → id` (`binderId`, `itemId`;
-   * `id` where the entry is a bare id). */
-  opens: Record<string, string>;
-}
-
-function flatten(value: unknown, key: string, out: Record<string, string>): void {
-  if (typeof value === "string") out[key] = value;
-  else if (typeof value === "object" && value !== null) {
-    for (const [k, v] of Object.entries(value)) flatten(v, k, out);
-  }
-}
-
-/** The screen scenario `?scenario=<SCREEN>:<state>` names (e.g. `BND-02:b`), or undefined. */
-export async function screenScenarioFromSearch(
-  search: string,
-): Promise<ScreenScenario | undefined> {
-  const named = new URLSearchParams(search).get("scenario");
-  if (named === null) return undefined;
-  const [screen = "", state = ""] = named.split(":");
-  const load = SCREEN_SCENARIOS[`./scenarios/${screen}.ts`];
-  if (load === undefined) throw new Error(`no fixture scenarios for ${screen}`);
-  const module = await load();
-  const found = module.scenarios?.[state];
-  if (found === undefined) throw new Error(`no scenario ${state} on ${screen}`);
-  const opens: Record<string, string> = {};
-  flatten(module.OPENS?.[state], "id", opens);
-  return { scenario: found, opens };
-}
-
-/** A path or query with `_<key>_` segments or values (`/binders/_binderId_?ov=request:new:_binderId_`)
- * resolved from what the scenario opens, so a journey names the record a scenario holds without
- * knowing its id. */
-export function resolveOpens(url: string, opens: Readonly<Record<string, string>>): string {
-  // Bounded by `/`, `=`, `?`, `&`, `:` or its escape `%3A` (`?ov=request:_requestId_:_binderId_`).
-  const tokens = /(\/|=|:|%3A)_([A-Za-z]+)_(?=[/?&:]|%3A|$)/g;
-  return url.replace(tokens, (token, lead: string, key: string) => {
-    const id = opens[key];
-    return id === undefined ? token : `${lead}${id}`;
-  });
-}
-
-/** The screen's handlers first (they match first), then the seed's it does not answer. */
-function overlay(
-  screen: Scenario | undefined,
-  seed: Record<string, FixtureHandler>,
-): Record<string, FixtureHandler> {
-  if (screen === undefined) return seed;
-  const out = { ...screen.handlers };
-  for (const [route, handler] of Object.entries(seed)) {
-    if (!(route in out)) out[route] = handler;
-  }
-  return out;
 }
 
 const CAPABILITIES = "GET /v1/me/capabilities";
@@ -107,21 +43,23 @@ function withFlags(handler: FixtureHandler | undefined, flags: readonly string[]
   };
 }
 
-/** Route the generated client to the seed. Returns a function that restores real fetch. */
-export function installSeedFixtures(options: SeedInstall = {}): () => void {
-  const scenario = seedScenario();
-  const screen = options.screen;
+/** Route the generated client to the seed (or to `base`, a screen's own scenario built on it).
+ * Returns a function that restores real fetch. */
+export function installSeedFixtures(
+  options: SeedInstall = {},
+  base: Scenario = seedScenario(),
+): () => void {
+  const scenario = base;
   const clock =
     options.clock !== undefined && !Number.isNaN(Date.parse(options.clock))
       ? options.clock
-      : (screen?.clock ?? scenario.clock);
-  const persona = options.persona ?? screen?.persona;
+      : scenario.clock;
   const latencyMs = Number(options.latency);
   const flags = (options.flags ?? "")
     .split(",")
     .map((flag) => flag.trim())
     .filter((flag) => flag !== "");
-  const handlers = { ...overlay(screen, scenario.handlers), ...sessionHandlers() };
+  const handlers = { ...scenario.handlers, ...sessionHandlers() };
   return installFixtureMode(
     {
       ...scenario,
@@ -133,22 +71,30 @@ export function installSeedFixtures(options: SeedInstall = {}): () => void {
       ...(clock === undefined ? {} : { clock }),
     },
     {
-      ...(persona === undefined ? {} : { persona }),
+      ...(options.persona === undefined ? {} : { persona: options.persona }),
       ...(Number.isFinite(latencyMs) && latencyMs > 0 ? { latencyMs } : {}),
     },
   );
 }
 
-/** The same, from a URL query string
- * (`?as=lena-park&clock=2026-09-14T09:41:00-05:00&latency=250&flags=clients.v2`), over the
- * screen scenario `?scenario=` named (`screenScenarioFromSearch`). */
-export function installSeedFromSearch(search: string, screen?: Scenario): () => void {
+/** The same, from a URL query string (`?as=lena-park&clock=2026-09-14T09:41:00-05:00&latency=250`,
+ * `&flags=clients.v2`). `?screen=ADM-03&st=b` serves that screen's scenario instead (G-01-T16;
+ * screen-scenarios.ts) and, in a browser, opens the state's search when the URL has none of its
+ * own and resolves `_key_` ids to the records the state opens. */
+export function installSeedFromSearch(search: string): () => void {
   const params = new URLSearchParams(search);
-  return installSeedFixtures({
-    screen,
+  const options = {
     persona: params.get("as") ?? undefined,
     clock: params.get("clock") ?? undefined,
     latency: params.get("latency") ?? undefined,
     flags: params.get("flags") ?? undefined,
-  });
+  };
+  const screen = screenScenario(search);
+  if (screen === null) return installSeedFixtures(options);
+  if (typeof window !== "undefined" && window.location.search === search) {
+    const { pathname, hash } = window.location;
+    const next = withIds(withOpens(pathname, search, hash, screen.opens), screen.ids);
+    if (next !== `${pathname}${search}${hash}`) window.history.replaceState(null, "", next);
+  }
+  return installSeedFixtures(options, screen.scenario);
 }

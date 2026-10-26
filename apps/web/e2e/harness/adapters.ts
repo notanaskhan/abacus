@@ -24,8 +24,9 @@ export interface OpenOptions {
   /** Flags the firm reads as on, in the fixture project only (`?flags=`): a step walks a screen
    * built on fixtures whose flag E0 leaves off. The other projects read the firm's own flags. */
   flags?: readonly string[];
-  /** A screen scenario laid over the seed, in the fixture project only (`?scenario=BND-02:b`):
-   * a step walks a screen whose routes only its own scenarios answer yet. */
+  /** A screen's own fixture scenario, in the fixture project only (`BND-02:b` becomes
+   * `?screen=BND-02&st=b`, G-01-T16): a step walks a screen whose routes only its scenarios
+   * answer yet. */
   scenario?: string;
 }
 
@@ -47,6 +48,13 @@ export function harnessProject(): HarnessProject {
   throw new Error(
     `project "${test.info().project.name}" is not a harness project (fixture, fullstack, staging, canary)`,
   );
+}
+
+/** `BND-02:b` as the firm entry's `?screen=BND-02&st=b`; nothing when no scenario is named. */
+function screenParams(scenario: string | undefined): Record<string, string> {
+  if (scenario === undefined) return {};
+  const [screen = "", st = "a"] = scenario.split(":");
+  return { screen, st };
 }
 
 function withQuery(path: string, params: Record<string, string>): string {
@@ -113,7 +121,7 @@ const fixture: PersonaAdapter = {
         as: persona.slug,
         clock,
         ...(flags.length === 0 ? {} : { flags: flags.join(",") }),
-        ...(options.scenario === undefined ? {} : { scenario: options.scenario }),
+        ...screenParams(options.scenario),
       }),
     );
   },

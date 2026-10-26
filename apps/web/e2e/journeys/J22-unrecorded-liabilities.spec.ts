@@ -2,7 +2,7 @@
 // The agent drafted it in the BH-FS-430 procedure session; Cole Hart approves and sends it to Luis
 // Ferrante (SHL-14f). After the uploads are screened, two files are flagged and Cole sends the
 // drafted follow-up, a person's click (SHL-20b). Each step runs axe and INV-1 to INV-5. In the
-// fixture project step 3 walks SHL-14's own scenario laid over the seed (`?scenario=`); step 4 and
+// fixture project step 3 walks SHL-14's own scenario (`?screen=`, G-01-T16); step 4 and
 // the other projects wait for `binders.engine` on in E0 and the BND-02 and SHL-20 live swaps.
 import { expect, test } from "../harness";
 

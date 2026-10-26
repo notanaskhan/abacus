@@ -1,0 +1,43 @@
+# PBC import burst with tenant fairness (Q-03-T043; chapter 10 section 10.11.3; ADR-071/072): one
+# firm (Brightwater Hale, Hannah Leclerc) imports 300 request items into Northwind's 401(k) audit
+# while another firm (load firm 1, `make seed-staging PROFILE=x1` or `fleet --profile x1` locally)
+# keeps working. Must show: the other firm's interactive p95 stays at target; the `other_firm_*`
+# groups carry the targets that decide it. The burst firm's own reads are measured too. Clients'
+# uploads against the new requests join when the upload body lands (deadline_surge's note).
+name: pbc_import_fairness
+description: One firm's 300-item import burst while a second firm's interactive reads hold target.
+duration_seconds: 900
+users: 16
+think_ms: 500
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [burst_firm_import]}
+  - {subject: scenario-ana-cruz, weight: 2, groups: [burst_firm_reads]}
+  - {subject: fleet-001-staff-02, weight: 1, groups: [other_firm_reads, other_firm_home]}
+  - {subject: fleet-001-staff-03, weight: 2, groups: [other_firm_reads, other_firm_home]}
+  - {subject: fleet-001-staff-04, weight: 2, groups: [other_firm_reads, other_firm_home]}
+  - {subject: fleet-001-staff-05, weight: 3, groups: [other_firm_reads, other_firm_home]}
+groups:
+  - name: burst_firm_import
+    weight: 1
+    steps:
+      - method: POST
+        path: "/v1/engagements/{engagement_id}/request-items/import?sheet=Requests&description=0&area=1&tier=2"
+        body: pbc_import_300
+        expect: [201]
+  - name: burst_firm_reads
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{engagement_id}/request-items"}
+  - name: other_firm_reads
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{fleet_engagement_id}"}
+      - {path: "/v1/engagements/{fleet_engagement_id}/request-items"}
+  - name: other_firm_home
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}

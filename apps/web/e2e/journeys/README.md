@@ -12,13 +12,18 @@ URL in `ABACUS_STAGING_URL` / `ABACUS_CANARY_URL`; they skip while it is unset).
 - `J03-ebp-audit.spec.ts`, `J06-individual-1040.spec.ts`, `J10-month-end-close.spec.ts`, `J16-daily-practice.spec.ts`, `J22-unrecorded-liabilities.spec.ts`: the P-06 steps (P-06-T25).
 - `J12-client-portal.spec.ts`: J12-core (F-04-T26).
 - `J04-fs-audit.spec.ts`: J04-fs-audit's PBC slice at the Sep 24 snapshot (F-04-T32; M6).
-- `J01-firm-onboarding.spec.ts`: J01-core skeleton (F-04-T32; M8).
+- `J01-firm-onboarding.spec.ts`: J01-core skeleton (F-04-T32; M8); step 3 and 3f live in fixture mode (G-01-T16).
+- `J14-firm-admin.spec.ts`: j14 1, 2 and 2b, Lena Park's seasonal seat and wall (G-01-T16).
+- `J16-daily-practice.spec.ts`: j16 2, Firm settings from the firm pill (G-01-T16).
 
-In the fixture project, `journey.as(persona, path, { flags, scenario })` can do two things before a screen's live swap:
+A step on a screen behind a flag E0 leaves off may open the real route on the screen's own fixture scenario with `?screen=<ID>&st=<state>` (fixture project only; DEC-457).
+
+In the fixture project, `journey.as(persona, path, { flags, scenario })` adds two switches:
+
 - `flags` turns on flags E0 leaves off (`?flags=`).
-- `scenario` lays a screen's own fixture scenario over the seed (`?scenario=BND-02:b`).
+- `scenario` is the `?screen=` choice above, written `BND-02:b`.
 
-A `_key_` segment or query value in the path (`/binders/_binderId_?ov=request:new:_binderId_`) is replaced by the id the scenario's `OPENS` names.
+A `_key_` segment or query value in the path (`/binders/_binderId_?ov=request:new:_binderId_`) resolves to the id the state opens (`ids` in `screen-scenarios.ts`).
 
 A step whose screen is still planned is `test.fixme` with an `owner` annotation: the epic, the task
 and its sprint end date. CI (F-04-T28): pull requests run the `fixture` project when the SPA, the

@@ -5,6 +5,7 @@
 // list. Nothing on this screen accepts, returns or sends by itself.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
+import { useSearch } from "@tanstack/react-router";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type { JSX } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -16,7 +17,7 @@ import {
   never,
 } from "../../app-core/fixture-mode";
 import { WHITFIELD_ACCOUNT_VALUE, WHITFIELD_HOLDINGS } from "../../fixtures/seed/aud03";
-import { boardRoute } from "../../routes/firm/engagements";
+import { boardRoute, itemRoute } from "../../routes/firm/engagements";
 import { renderRoutes } from "../../testing/support";
 import { SourceDocumentsPage } from ".";
 import {
@@ -484,6 +485,77 @@ describe("AUD-03 acceptance", () => {
       { at: `/engagements/${ENGAGEMENT_ID}/requests` },
     );
     await screen.findByText("AUD-03 opened");
+  });
+});
+
+// A-01-T21 retired the legacy Board and ItemDetail. SPEC-330 §8 maps every SPEC-021, SPEC-022
+// and SPEC-023 assertion to its AUD-03 (or SHL-20) test; these are the ones AUD-03 lacked.
+describe("A-01-T21 legacy evidence assertions, superseded", () => {
+  it("SPEC-021 (item route): the legacy /engagements/$id/items/$itemId opens AUD-03 on that request", async () => {
+    install(scenarioFor("a"));
+    renderRoutes(
+      [
+        {
+          path: "/engagements/$engagementId/items/$itemId",
+          component: itemRoute.options.component as () => JSX.Element,
+        },
+        {
+          path: "/audits/$auditId/source-documents",
+          component: function Opened(): JSX.Element {
+            const search: { item?: string } = useSearch({ strict: false });
+            return <p>AUD-03 opened on {search.item ?? "nothing"}</p>;
+          },
+        },
+      ],
+      { at: `/engagements/${ENGAGEMENT_ID}/items/item-7` },
+    );
+    await screen.findByText("AUD-03 opened on item-7");
+  });
+
+  it("SPEC-022 ac5: the search narrows the rows by title, says when nothing matches, and the counts stay", async () => {
+    show("a");
+    await ready();
+    const search = screen.getByLabelText("Search");
+    fireEvent.change(search, { target: { value: "W-3" } });
+    await waitFor(() => {
+      expect(rows().length).toBeLessThan(24);
+    });
+    expect(rows().length).toBeGreaterThan(0);
+    expect(rowOf("W-3 Form")).toBeTruthy();
+    expect(screen.getByText("11 of 24 received")).toBeTruthy();
+    fireEvent.change(search, { target: { value: "no such document" } });
+    expect(await screen.findByText("No documents match ‘no such document’.")).toBeTruthy();
+    expect(rows()).toHaveLength(0);
+  });
+
+  it("SPEC-022 (flag off): with audits.cockpit off the legacy requests path shows the flag-off state, never a board", async () => {
+    const base = scenarioFor("a");
+    const caps = base.handlers["GET /v1/me/capabilities"];
+    install({
+      ...base,
+      handlers: {
+        ...base.handlers,
+        "GET /v1/me/capabilities": async (request) => {
+          const body = (await (caps?.(request) ?? json({}))).json() as Promise<
+            Record<string, unknown>
+          >;
+          return json({ ...(await body), flags: {} });
+        },
+      },
+    });
+    renderRoutes(
+      [
+        {
+          path: "/engagements/$engagementId/requests",
+          component: boardRoute.options.component as () => JSX.Element,
+        },
+      ],
+      { at: `/engagements/${ENGAGEMENT_ID}/requests` },
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-flag-off='audits.cockpit']")).not.toBeNull();
+    });
+    expect(screen.queryByRole("list", { name: "Request items" })).toBeNull();
   });
 });
 

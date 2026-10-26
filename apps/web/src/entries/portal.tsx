@@ -17,12 +17,8 @@ import { createPortalRouter } from "../routes/portal/index";
 configurePortalClient();
 
 if (import.meta.env.VITE_FIXTURES === "1") {
-  const { installPortalFixtures, portalScenarioFromSearch } =
-    await import("../fixtures/install-portal");
-  installPortalFixtures(
-    window.location.search,
-    await portalScenarioFromSearch(window.location.search),
-  );
+  const { installPortalFixtures } = await import("../fixtures/install-portal");
+  installPortalFixtures(window.location.search);
 }
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
