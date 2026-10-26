@@ -57,7 +57,7 @@ C2 `engagement` (`prospect`) on commit. The import's `stage` and a row's `decisi
 | 404 | `{"detail": "not found"}` | `clients.v2` off; another person's draft; a walled or unknown client, draft or import |
 | 422 | validation | a missing `Idempotency-Key` on commit or run; more than the bounds |
 | 501 | `{"detail": "not_implemented"}` | the import routes, the flag on, before P-07-T52 |
-| 409 | `stale_version` · `possible_duplicate` · `entity_exists` · `gate_unmet` (`gate: conflict_check`) · `acceptance_template_missing` | commit and autosave (P-07-T42) |
+| 409 | `stale_version` · `possible_duplicate` · `entity_exists` · `gate_unmet` (`gate: conflict_check`) · `acceptance_template_missing` | commit and autosave (P-07-T42). A commit that loses a race with another commit of the same draft answers the winner's stored result (as a later commit does) or `stale_version` when the draft is not committed, never 500 (ED-116, DEC-461) |
 | 422 | `draft_incomplete` (`facts.step`) · `tin_kind_not_allowed` · `idempotency_key_reused` · `invalid` (`field: engagement_partner_user_id`) | commit; create and autosave for the TIN guard (P-07-T42) |
 | 409 | `import_already_run` | a decision or a second run after the run, once live (P-07-T52) |
 | 422 | `import_row_invalid` | a row decision the row does not allow, once live (P-07-T52) |

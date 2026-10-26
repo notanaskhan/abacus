@@ -24,6 +24,7 @@ from abacus.modules.identity.api import (
     authorise_items,
     names_of,
 )
+from abacus.modules.requests.closed_binders import refuse_closed_item_in
 from abacus.modules.requests.repository import (
     client_responses,
     insert_client_response,
@@ -102,6 +103,7 @@ async def respond(
             ref.tenant_id, ref.id, archived=ref.archived, client_id=ref.client_id, item=item.facts
         )
         await authorise(ctx, "client_item.respond", resource)
+        await refuse_closed_item_in(tx.session, ctx, item_id)  # ED-118: read-only (DEC-461)
         await insert_client_response(
             tx.session,
             tenant_id=ctx.tenant_id,

@@ -1,0 +1,48 @@
+# Deadline-day surge (Q-03-T043; chapter 10 section 10.11.3; Mar 15, Apr 15, Sep 15, Oct 15):
+# portal sign-ins and client reads at the peak while the firm works its requests. Must show: the
+# portal and request targets hold under the sign-in burst. What this profile cannot yet carry is
+# written down, not faked: uploads at the peak rate need an upload body and the scanner fake on
+# the perf stack (the upload-to-preview p95 of 60 s is read from OTel there), and 8879 envelope
+# sends and K-1 releases arrive with N-02 and T-02 (Q-03-T131's tax surge content). The sign-in
+# start writes one challenge per call for an address with no account; no email is sent.
+name: deadline_surge
+description: Portal sign-in burst and client reads at the deadline peak while staff work requests.
+duration_seconds: 1800
+users: 60
+think_ms: 500
+ramp_seconds: 120
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-dana-kowalski, weight: 6, groups: [portal_sign_in, portal_branding, portal_shell]}
+  - {subject: scenario-hannah-leclerc, weight: 1, groups: [staff_requests, staff_home]}
+  - {subject: scenario-ana-cruz, weight: 2, groups: [staff_requests, staff_home]}
+groups:
+  - name: portal_sign_in
+    weight: 3
+    steps:  # padded to the 0.5 s floor by design: no p95 target
+      - method: POST
+        path: /v1/portal/auth/start
+        auth: false
+        json_body: {email: load.surge@sink.brightwaterhale.test}
+        expect: [202]
+  - name: portal_branding
+    weight: 3
+    p95_ms: 300
+    steps:
+      - {path: /v1/portal/branding, auth: false}
+  - name: portal_shell
+    weight: 2
+    p95_ms: 300
+    steps:
+      - {path: /v1/me}
+  - name: staff_requests
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{engagement_id}/request-items"}
+      - {path: "/v1/engagements/{engagement_id}/request-items/client-responses"}
+  - name: staff_home
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}

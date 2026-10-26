@@ -1192,6 +1192,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "approval_grants": frozenset({"used_at", "consumer_ref", "voided_at"}),  # P-04-T10
         "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46 (0104)
         "secure_links": frozenset({"token_sha256", "revoked_at"}),  # P-08-T21 (0156)
+        # R-01-T19 (0196): a draft's content and who saved it last.
+        "email_template_drafts": frozenset(
+            {"base_version_id", "sealed", "cta_target", "draft_version", "updated_by"}
+            | {"updated_at"}
+        ),
         "contacts": frozenset(
             {"display_name", "phone", "title", "organisation_name", "user_id", "portal_state"}
             | {"email", "party_kind", "version"}  # P-07-T25 (0146)
@@ -1937,6 +1942,9 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"refresh_attest_client"}  # 0082 (F-03-T25, DEC-128)
         | {"platform_control_state", "set_platform_control", "provision_firm"}  # 0086 (Q-01-T19)
         | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
+        | {"email_template_firm_row", "email_template_resolve"}  # 0196 (R-01-T19)
+        | {"email_template_version_at", "email_template_publish"}  # 0196 (R-01-T19)
+        | {"email_template_firm_id", "messages_sender_guard"}  # 0196 (R-01-T19)
         # 0101 (P-01-T09): the staff session BFF.
         | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}

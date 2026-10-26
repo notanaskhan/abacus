@@ -108,7 +108,7 @@ These have no row-level security. The app holds **no** privilege on them and rea
 | `auth_login_states`, `auth_sessions`, `auth_session_cookies` | identity | `auth_state_*`, `auth_session_*` (0101) |
 | `platform_controls`, `platform_control_changes`, `firm_provisioning_requests` | platform | `platform_control_state` (app); `set_platform_control`, `provision_firm` (`abacus_ops` only) |
 | `plans` | platform | none yet (operator-set) |
-| `email_templates`, `email_template_versions` | communications | `email_template_import`, `email_template_current` |
+| `email_templates`, `email_template_versions` | communications | `email_template_import`, `email_template_current`; firm rows (0196, R-01-T19) through `email_template_firm_row`, `email_template_firm_id`, `email_template_resolve`, `email_template_version_at`, `email_template_publish`, which take the firm from the session |
 | `review_reason_codes` | evidence | `review_decision_reason_check`, `review_reason_codes_list` |
 | `work_slots`, `work_waiters`, `work_grants`, `provider_capacity` | kernel.slots, ai_gateway | `work_slot_*`, `capacity_*` |
 | `eval_runs`, `eval_case_results` | abacus_tools.evals | `eval_eligible` |

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/documents` in the portal entry (DEC-59: origin root of `<slug>.<neutral-portal-domain>`); `?binder=<binder id>` (default the newest binder the contact can see), `?filter=requested\|all\|uploaded_by_me\|needs_follow_up` (default `requested`), `?category=<category code>`; `?period=` for a close binder belongs to POR-11 (C-01). Same path P-08-T07 mounted the legacy `ClientEngagement.tsx` on: behind `portal.documents_v2` until R-01-T18 swaps it. Artboards: `/components/screens/POR-03?st=a…i`, `?st=c2`, `?st=motion` (`&static=1` freezes it) and `?st=M` |
+| Route and params | `/documents` in the portal entry (DEC-59: origin root of `<slug>.<neutral-portal-domain>`); `?binder=<binder id>` (default the newest binder the contact can see), `?filter=requested\|all\|uploaded_by_me\|needs_follow_up` (default `requested`), `?category=<category code>`; `?period=` for a close binder belongs to POR-11 (C-01). Same path P-08-T07 mounted the legacy `ClientEngagement.tsx` on; R-01-T18 removed that page (DEC-443). Artboards: `/components/screens/POR-03?st=a…i`, `?st=c2`, `?st=motion` (`&static=1` freezes it) and `?st=M` |
 | Template and host frame | T7 split (F-05 `PortalLayout variant="split"`: rail 336 + documents 1030) with `PortalToolbar` (Documents active); T7-M (`variant="mobile"`, `MobileTabBar`) at 390; finalises specimen TPL-07 · `Wave 1 - Client Portal.dc.html#por03` |
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-03 Documents - Feld 2025 Binder/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 |
@@ -47,7 +47,7 @@ Non-artboard states (data conditions, never an `st` prop):
 | Third party | Sam Ortiz opens `/documents` | `404`; the SPA lands on POR-14 (`/requests`) |
 | Upload refused | `413 file_too_large` / `415 type_not_allowed` | the upload row reads the fixed words in `domain/portal/messages.ts` (R-01-T09 writes them; see Open gaps) |
 | Undo refused | `409 firm_already_acted` | Undo absent from `allowed_actions`; a stale click reads the fixed message from `messages.ts` |
-| Flag off | `portal.documents_v2` false | legacy `ClientEngagement.tsx` (P-08-T07) |
+| Flag off | `portal.documents_v2` false | the routes answer 404, which the screen shows as its load error; the legacy `ClientEngagement.tsx` was removed by R-01-T18 and the flag's retirement follows (DEC-443) |
 | Drop sort off | `portal.drop_sort` false for the firm | every dropped file takes the d path |
 
 ## API

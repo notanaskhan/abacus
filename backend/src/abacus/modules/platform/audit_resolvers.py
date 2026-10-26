@@ -9,10 +9,13 @@ which may read `identity.api`, registers for it:
   approved it). Display names only; the wall's client is named by its owner's labeler when one
   is registered, never here.
 
-The other v1 target types register from their owners as they land: `ai_policy` (G-02-T23/T24),
-`security_policy` and `support_session` (G-02-T14), `membership`, `evidence_version`,
-`request_item` and `pii_reveal` (their modules, through `platform.api`). Until then their values
-read `unavailable` ("Values not available").
+- `user` (membership events, G-02-T09 gap, DEC-459) and `support_session`: identity's own
+  readers (`identity.api.membership_audit_facts`, `support_session_audit_facts`) say what the
+  event pins; the item is the person's display name for a membership.
+
+`evidence_version`, `pii_reveal` and `request_item` register from their owners (evidence,
+requests) through `platform.api`. `ai_policy` and `security_policy` wait for G-02-T14/T15; until
+then their values read `unavailable` ("Values not available").
 """
 
 from __future__ import annotations
@@ -20,7 +23,13 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from uuid import UUID
 
-from abacus.modules.identity.api import AuthContext, names_of
+from abacus.modules.identity.api import (
+    AuditFact,
+    AuthContext,
+    membership_audit_facts,
+    names_of,
+    support_session_audit_facts,
+)
 from abacus.modules.platform.audit_slots import (
     AuditEventRef,
     AuditLabel,
@@ -75,6 +84,40 @@ async def wall_values(_viewer: AuthContext, event: AuditEventRef) -> AuditValues
     return AuditValues("resolved", rows=rows) if rows else AuditValues("unavailable")
 
 
+def _answer(facts: Sequence[AuditFact], item: str = "") -> AuditValues:
+    rows = tuple(
+        AuditValueRow(
+            field=f.field,
+            item_label=item,
+            before=f.before,
+            after=f.after,
+            classification=f.classification,
+        )
+        for f in facts
+    )
+    return AuditValues("resolved", rows=rows) if rows else AuditValues("unavailable")
+
+
+async def membership_values(viewer: AuthContext, event: AuditEventRef) -> AuditValues:
+    """A membership event on a `user` target: what its references pin (DEC-459)."""
+    user = _uuid(event.target_id)
+    if user is None or not event.action.startswith("membership."):
+        return AuditValues("unavailable")
+    facts = await membership_audit_facts(viewer.tenant, event.action, user, event.after_ref)
+    names = await names_of([user]) if facts else {}
+    return _answer(facts, names.get(user, ""))
+
+
+async def support_session_values(viewer: AuthContext, event: AuditEventRef) -> AuditValues:
+    """A support session's request, approval or close (DEC-459)."""
+    session = _uuid(event.target_id)
+    if session is None:
+        return AuditValues("unavailable")
+    return _answer(await support_session_audit_facts(viewer.tenant, event.action, session))
+
+
 def register() -> None:
     register_audit_labeler("user", label_users)
     register_audit_value_resolver("ethical_wall", wall_values)
+    register_audit_value_resolver("user", membership_values)
+    register_audit_value_resolver("support_session", support_session_values)

@@ -18,6 +18,8 @@ TABLES: frozenset[str] = frozenset(
         "email_suppressions",
         # P-08-T21 (0156): portal emails' secure links; only the token's hash is kept.
         "secure_links",
+        # R-01-T19 (0196): a firm's unpublished template edit, sealed with the firm's key.
+        "email_template_drafts",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -32,6 +34,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "messages": frozenset(
         {"id", "tenant_id", "engagement_id", "channel", "recipient_ref", "body", "status"}
         | {"violations", "created_by"}
+        | {"template_version_id", "kind"}  # R-01-T19 (0196)
     ),
     "message_deliveries": frozenset(
         {"tenant_id", "message_id", "provider_event_id", "event", "bounce_kind", "occurred_at"}
@@ -42,10 +45,19 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"recipient_email", "host", "token_sha256", "issued_by", "expires_at"}
         | {"renewed_from_id", "chain_started_at", "chain_length"}  # a renewal, in the firm
     ),
+    # R-01-T19 (0196): one draft per firm and template; deleted on discard and publish.
+    "email_template_drafts": frozenset(
+        {"tenant_id", "template_id", "base_version_id", "sealed", "cta_target"}
+        | {"draft_version", "updated_by"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46: lifting only
     # P-08-T21: a renewed link's token at delivery, and revocation.
     "secure_links": frozenset({"token_sha256", "revoked_at"}),
+    # R-01-T19 (0196): a draft save replaces the content and who saved it.
+    "email_template_drafts": frozenset(
+        {"base_version_id", "sealed", "cta_target", "draft_version", "updated_by", "updated_at"}
+    ),
 }
