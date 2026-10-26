@@ -11,6 +11,21 @@ AGENTS_CLIENT_DATA_OPTIN = Flag(
     kind="boolean",
     default="false",
 )
+AI_POLICY_V1 = Flag(
+    name="ai_policy.v1",
+    kind="boolean",
+    default="false",
+)
+AUDIT_LOG_EXPLORER = Flag(
+    name="audit_log.explorer",
+    kind="boolean",
+    default="false",
+)
+AUDIT_LOG_VALUES = Flag(
+    name="audit_log.values",
+    kind="boolean",
+    default="false",
+)
 AUDITS_BINDER_EXPORT = Flag(
     name="audits.binder_export",
     kind="boolean",
@@ -219,6 +234,11 @@ SCREENING_CARD = Flag(
     kind="boolean",
     default="false",
 )
+SECURITY_CENTER_V1 = Flag(
+    name="security_center.v1",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -232,6 +252,9 @@ UPLOADS_PROCESSING = Flag(
 
 FLAGS: dict[str, Flag] = {
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
+    "ai_policy.v1": AI_POLICY_V1,
+    "audit_log.explorer": AUDIT_LOG_EXPLORER,
+    "audit_log.values": AUDIT_LOG_VALUES,
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
     "binders.engine": BINDERS_ENGINE,
@@ -273,6 +296,7 @@ FLAGS: dict[str, Flag] = {
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "screening.card": SCREENING_CARD,
+    "security_center.v1": SECURITY_CENTER_V1,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
 }
