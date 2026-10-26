@@ -6,20 +6,26 @@ import {
 } from "@abacus/api-client/query";
 import {
   EmptyState,
+  type MatchId,
   MatchScope,
   SourceViewer,
   type ViewerFile,
   contractMatchId,
+  useMatchStore,
 } from "@abacus/ui";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { type JSX, useEffect, useMemo, useState } from "react";
+import { type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
 import { AUDIT_MESSAGES } from "./messages";
+import { RevealStepUp, useLoggedReveal } from "./reveal";
 import { MaskedTextView } from "../../app-core/masked-text";
 
 // The cockpit dock's Viewer tab (A-01-T12; AUD-02, DV-2): SHL-08's evidence variant on the C4
 // reads (`?doc=<evidenceVersionId>`), the server's masked page images read as blobs, never a
 // client file. P-03-T14's EvidenceViewer replaces the body when it lands; the host stays. A reader
 // the manifest gives the `text` view (DEC-369) gets the masked text instead of page images.
+// AUD-03 (A-01-T15) widens it to the 490 viewer: a slot above the well (the decision strip and
+// the ScreeningCard), a verified citation's region lit on open (INV-2) and the logged reveal
+// (P-03-T16; "Reveal (logged)" only when the manifest grants `pii.reveal`).
 
 function usePageUrls(versionId: string, pages: readonly number[]): Record<number, string> {
   const blobs = useQueries({
@@ -52,7 +58,30 @@ function usePageUrls(versionId: string, pages: readonly number[]): Record<number
   return urls;
 }
 
-function Viewer({ versionId }: { versionId: string }): JSX.Element {
+export interface DockViewerOptions {
+  /** Drawn above the well (AUD-03: the Accept / Return strip and the ScreeningCard). */
+  above?: ReactNode;
+  /** A verified citation's match to light on open (AUD-03 b). */
+  lit?: string | null;
+  /** The page's width at 100% (the kit's default in the 330 dock; AUD-03's 490 viewer is wider). */
+  pageWidth?: number;
+}
+
+function Lit({ match, ready }: { match: string; ready: boolean }): null {
+  const store = useMatchStore();
+  useEffect(() => {
+    if (ready) store.light(match as MatchId, null);
+  }, [match, ready, store]);
+  return null;
+}
+
+function Viewer({
+  versionId,
+  above,
+  lit,
+  pageWidth,
+}: { versionId: string } & DockViewerOptions): JSX.Element {
+  const reveal = useLoggedReveal(versionId);
   const manifest = useQuery({
     ...viewerManifestOptions({ path: { version_id: versionId } }),
     retry: false,
@@ -78,7 +107,12 @@ function Viewer({ versionId }: { versionId: string }): JSX.Element {
     return <EmptyState icon="file" title={AUDIT_MESSAGES.viewer.unavailable} />;
   }
   if (textView) {
-    return <MaskedTextView text={text.data} width={296} />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        {above}
+        <MaskedTextView text={text.data} width={pageWidth ?? 296} />
+      </div>
+    );
   }
   const file: ViewerFile = {
     name: manifest.data?.file_name ?? "",
@@ -106,28 +140,38 @@ function Viewer({ versionId }: { versionId: string }): JSX.Element {
     })),
   };
   return (
-    <SourceViewer
-      file={file}
-      variant="evidence"
-      status={manifest.data?.status ?? "processing"}
-      loading={manifest.data === undefined}
-      reveal={{
-        allowed: manifest.data?.allowed_actions.includes("pii.reveal") ?? false,
-        onReveal: () => undefined, // the logged reveal is P-03-T16's
-      }}
-    />
+    <>
+      {lit != null && <Lit match={lit} ready={file.regions.length > 0} />}
+      <SourceViewer
+        file={file}
+        variant="evidence"
+        status={manifest.data?.status ?? "processing"}
+        loading={manifest.data === undefined}
+        {...(pageWidth === undefined ? {} : { pageWidth })}
+        {...(above === undefined ? {} : { aboveWell: above })}
+        reveal={{
+          allowed: manifest.data?.allowed_actions.includes("pii.reveal") ?? false,
+          onReveal: reveal.onReveal,
+          revealed: reveal.revealed,
+        }}
+      />
+      <RevealStepUp open={reveal.stepUp} onOpenChange={reveal.setStepUp} />
+    </>
   );
 }
 
 /** The Viewer tab's body: the open document, or a prompt to pick one. */
-export function DockViewer({ versionId }: { versionId: string | null }): JSX.Element {
+export function DockViewer({
+  versionId,
+  ...options
+}: { versionId: string | null } & DockViewerOptions): JSX.Element {
   if (versionId === null) {
     return <EmptyState icon="file" title={AUDIT_MESSAGES.viewer.none} />;
   }
   return (
     <div data-audit-viewer={versionId} className="flex min-h-0 flex-1 flex-col">
       <MatchScope>
-        <Viewer key={versionId} versionId={versionId} />
+        <Viewer key={versionId} versionId={versionId} {...options} />
       </MatchScope>
     </div>
   );

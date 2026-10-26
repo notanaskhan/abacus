@@ -513,6 +513,29 @@ const NORTHWIND_PATHS: Readonly<Record<string, string>> = {
     "initial-input/Keystone SOC1 Type2 Oct24-Sep25.pdf",
 };
 
+// The matcher's fulfilment confidence on each answered row, verbatim from the AUD-03 spec's
+// sub-lines ("· matched 99%"); C5 v1.1 `match_confidence` (A-01-T10 populates it live).
+const NORTHWIND_MATCHED: Readonly<Record<string, number>> = {
+  "Plan document & amendments": 99,
+  "Adoption agreement": 98,
+  "Summary plan description": 99,
+  "Certified trust report (full year, signed)": 94,
+  "Summary of net trust assets": 99,
+  "Schedule of Account Balances": 97,
+  "Annual loan balance roll-forward": 98,
+  "Brokerage / SDBA asset detail — BrokerWindow": 96,
+  "Employee Census File": 99,
+  "Contribution Reports — PayGrid": 97,
+  "Quarterly 941 Forms": 99,
+  "SOC 1 Type 2 — Keystone Retirement Services": 99,
+};
+
+// When an upload arrived where the spec dates it: the certified trust report "uploaded Sep 11";
+// every other file came with the initial input on Sep 1.
+const NORTHWIND_UPLOADED_ON: Readonly<Record<string, string>> = {
+  "Certified trust report (full year, signed)": "2026-09-11",
+};
+
 /** The evidence version a row's file is: Harborline's is the seeded viewer document. */
 export function northwindVersionId(title: string): string {
   return title === "Summary of net trust assets"
@@ -562,12 +585,19 @@ export function sourceDocuments(
               : {
                   evidence_version_id: northwindVersionId(r.description),
                   path_label: NORTHWIND_PATHS[r.description] ?? "",
-                  uploaded_on: r.created_at.slice(0, 10),
-                  uploader_kind: "client" as const,
+                  uploaded_on: NORTHWIND_UPLOADED_ON[r.description] ?? r.created_at.slice(0, 10),
+                  // The firm's initial input came in before the requests (AUD-03 a: no
+                  // "uploaded" date); a client or its trustee uploaded the rest.
+                  uploader_kind: (NORTHWIND_PATHS[r.description] ?? "").startsWith(
+                    "initial-input/",
+                  )
+                    ? ("firm" as const)
+                    : ("client" as const),
                 },
-          match_confidence: null,
+          match_confidence: open ? null : (NORTHWIND_MATCHED[r.description] ?? null),
           linked_count: open ? null : 1,
-          screening: null,
+          // AUD-03 R2: every answered file was screened and passed (b's card, Sep 11).
+          screening: open ? null : ("passed" as const),
           returned_reason: null,
           allowed_actions: [],
         };
