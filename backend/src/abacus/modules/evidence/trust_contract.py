@@ -317,6 +317,8 @@ class ViewerTextSheetOut(BaseModel):
 
     name: Annotated[str, classified("confidential")]
     rows: Annotated[list[list[str]], classified("restricted")]  # masked cells
+    # Review M-A: for a reader who may not read unmasked content, the name only.
+    withheld: Annotated[bool, classified("internal")] = False
 
 
 class ViewerTextOut(BaseModel):

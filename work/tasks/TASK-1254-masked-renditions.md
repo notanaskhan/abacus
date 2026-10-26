@@ -180,6 +180,19 @@ unmasked TIN pattern, and agent quotes of masked text still verify."
     - C4 contract: the new route and the classifications.
   - **Deploy note:** offshore readers see text only from deploy on, independent of the backfill.
     A version not yet backfilled answers 409 `preview_outdated` on its text view.
+- 2026-10-26 (final review round, recorded in DEC-369):
+  - **M-A:** offshore readers get withheld sheet names only in the text view.
+  - **M-B:** `across_break` masks an unlabelled TIN split by a page break, on both pages.
+  - **Low:** `viewer_text` uses `masked_pages`.
+  - **Tests:**
+    - integration: withheld sheets offshore and masked cells onshore; the unlabelled page-break
+      ITIN (regions on both pages, text and agent material clean);
+    - unit: `across_break`;
+    - vitest: `masked-text.test.tsx`;
+    - C4 contract: the sheet fields.
+  - **r4 variants with the join:** every case shows no leak except
+    `Ref 912 - 45 - 6789`. That is an unlabelled number that fails every TIN rule, so it is not a
+    TIN by the kernel's rules: the residual DEC-369 already names.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

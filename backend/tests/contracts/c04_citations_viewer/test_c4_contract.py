@@ -205,3 +205,4 @@ def test_dec369_the_text_view_is_restricted_text_and_the_manifest_names_the_view
     page = _props("ViewerTextPageOut")
     assert page["text"]["cls"] == "restricted" and set(page) == {"page", "text", "unread"}
     assert _props("ViewerTextSheetOut")["rows"]["cls"] == "restricted"
+    assert set(_props("ViewerTextSheetOut")) == {"name", "rows", "withheld"}  # review M-A

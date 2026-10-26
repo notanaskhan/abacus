@@ -44555,6 +44555,12 @@
             },
             "title": "Rows",
             "type": "array"
+          },
+          "withheld": {
+            "cls": "internal",
+            "default": false,
+            "title": "Withheld",
+            "type": "boolean"
           }
         },
         "required": [

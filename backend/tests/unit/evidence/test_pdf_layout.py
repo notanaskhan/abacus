@@ -20,7 +20,13 @@ from abacus.kernel.tin_patterns import has_tin, scrub_tins
 from abacus.modules.evidence import words as words_module
 from abacus.modules.evidence.masking import MaskRegion, masked_words
 from abacus.modules.evidence.pdf_layout import reconciled
-from abacus.modules.evidence.pii import detect, detect_on_page, page_dangles
+from abacus.modules.evidence.pii import (
+    PageWordsAt,
+    across_break,
+    detect,
+    detect_on_page,
+    page_dangles,
+)
 from abacus.modules.evidence.previews import PDF, pixel_box, render_masked
 from abacus.modules.evidence.words import extract_words
 from abacus_tools.synthetic.documents import w2_pdf
@@ -413,3 +419,18 @@ def test_r5_a_fragment_after_a_label_is_masked_and_the_next_page_head_too() -> N
         PDF,
     ).pages[0]
     assert len(detect_on_page(1, ein.words, 0, ein.width, ein.height)) == 2  # both pieces
+
+
+def test_mb_an_unlabelled_tin_across_a_page_break_is_joined_and_an_invalid_one_is_not() -> None:
+    def page(content: bytes) -> PageWordsAt:
+        p = extract_words(_pdf(b"", content, (IMAGE,)), PDF).pages[0]
+        return PageWordsAt(p.page, p.words, p.rotation, p.width, p.height)
+
+    end = page(b"BT /F1 12 Tf 72 40 Td (Payee 900-70-) Tj ET")
+    start = page(b"BT /F1 12 Tf 72 760 Td (1234 continued) Tj ET")
+    found = across_break(end, start)
+    assert [(f.kind, f.last4) for f in found] == [("itin", "1234"), ("itin", "1234")]
+    invalid = page(b"BT /F1 12 Tf 72 40 Td (Payee 000-00-) Tj ET")
+    assert across_break(invalid, start) == []  # an unlabelled number must pass its rules
+    amounts = page(b"BT /F1 12 Tf 72 760 Td (12 continued) Tj ET")
+    assert across_break(end, amounts) == []  # never nine digits

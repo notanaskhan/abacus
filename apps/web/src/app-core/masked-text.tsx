@@ -6,14 +6,15 @@
 import type { ViewerTextOut } from "@abacus/api-client";
 import type { JSX } from "react";
 
-/** `unread` is P-03 AC4.8's line; the note, the empty line and loading are new copy, pending the
- * design file (DEC-369). */
+/** `unread` is P-03 AC4.8's line; the note, the empty line, loading and the withheld sheet line
+ * are new copy, pending the design file (DEC-369). */
 export const TEXT_VIEW = {
   note: "Page images aren't shown for your access. This is the document's text with personal data masked.",
   page: (n: number): string => `p. ${String(n)}`,
   unread: "Scanned page · personal data isn't detected automatically yet",
   empty: "No text on this page",
   loading: "Loading text…",
+  sheetWithheld: "This sheet isn't shown for your access.",
 } as const;
 
 export interface MaskedTextViewProps {
@@ -53,6 +54,11 @@ export function MaskedTextView({ text, width }: MaskedTextViewProps): JSX.Elemen
               className="flex flex-col gap-[4px]"
             >
               <h3 className="text-meta text-ink-2">{sheet.name}</h3>
+              {sheet.withheld === true ? (
+                <p data-withheld="" className="text-meta text-ink-3">
+                  {TEXT_VIEW.sheetWithheld}
+                </p>
+              ) : null}
               {sheet.rows.map((row, i) => (
                 <p key={String(i)} className="text-body text-ink">
                   {row.join(" · ")}

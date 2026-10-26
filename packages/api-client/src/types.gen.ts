@@ -21228,6 +21228,10 @@ export type ViewerTextSheetOut = {
      * Rows
      */
     rows: Array<Array<string>>;
+    /**
+     * Withheld
+     */
+    withheld?: boolean;
 };
 
 /**

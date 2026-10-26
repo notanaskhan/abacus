@@ -621,10 +621,43 @@ async def test_onshore_reader_keeps_the_image_view(seed: Seeder) -> None:
     assert (await viewer.viewer_page(firm.person(), version, 1)).startswith(b"\x89PNG")
 
 
-async def test_the_text_view_of_a_workbook_is_masked_cells(seed: Seeder) -> None:
+async def test_the_text_view_of_a_workbook_is_masked_cells_onshore_and_withheld_offshore(
+    seed: Seeder,
+) -> None:
+    """Review M-A: cells are masked by heuristic, so an offshore reader gets each sheet's name
+    only (`withheld`), as agents acting for them get no sheet; onshore gets masked cells."""
     firm = await make_firm(seed)
     sheet = await _version(firm, SHEET, "text/csv")
+    onshore = await viewer.viewer_text(firm.person(), sheet)
+    cells = " ".join(c for s in onshore.sheets for row in s.rows for c in row)
+    assert onshore.items == [] and "Claire Feld" in cells and not has_tin(cells)
+    assert not any(s.withheld for s in onshore.sheets)
     await _offshore(firm)
     found = await viewer.viewer_text(firm.person(), sheet)
-    cells = " ".join(c for s in found.sheets for row in s.rows for c in row)
-    assert found.items == [] and "Claire Feld" in cells and not has_tin(cells)
+    assert [(s.rows, s.withheld) for s in found.sheets] == [([], True)]
+    assert "Claire" not in str(found) and "1234" not in str(found)
+
+
+async def test_review_mb_an_unlabelled_tin_split_by_a_page_break_is_masked(seed: Seeder) -> None:
+    """`Payee 900-70-` ends page 1 and `1234` starts page 2, with no label: the scan joins the
+    two pieces (a valid ITIN) into one value with a region on each page, so neither page's text
+    nor its rendition shows them."""
+    firm = await make_firm(seed)
+    content = positioned_pdf([[(72.0, 40.0, "Payee 900-70-")], [(72.0, 760.0, "1234 continued")]])
+    version = await _version(firm, content)
+    rows = await seed.rows(
+        "SELECT page_no, kind, last4 FROM pii_regions WHERE evidence_version_id = $1 "
+        "ORDER BY page_no",
+        version,
+    )
+    assert [(r["page_no"], r["kind"], r["last4"]) for r in rows] == [
+        (1, "itin", "1234"),
+        (2, "itin", "1234"),
+    ]
+    await _offshore(firm)
+    text = " ".join(p.text for p in (await viewer.viewer_text(firm.person(), version)).items)
+    assert "900-70" not in text and "1234" not in text.replace("•••-••-1234", ""), text
+    material = await review_material(firm.system, version)
+    assert material is not None
+    joined = " ".join(material.pages.values())
+    assert "900-70" not in joined and not has_tin(joined)

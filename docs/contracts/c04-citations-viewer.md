@@ -94,7 +94,7 @@ The manifest carries geometry and mask tokens only, never text. Coordinates are 
 - **`SearchOut`:** `items[]` holds `{page, rects}`, plus `total` and `truncated`, all I. There are at most 200 hits and no text. The query string is never logged.
 - **`TextOut`** (`GET …/text`; DEC-369) is the masked text projection, served `Cache-Control: no-store` and logged as a content read. It is the same text agents read.
   - `items[]` holds `{page, text, unread}`. `text` is **R**: the page's upright words with every detected region replaced by its token, then the kernel TIN scrub. `unread` I marks a page whose content no scan reads: no text layer, a picture, glyph-sized vector shapes or a sideways digit. Such a page still gives its upright masked words.
-  - `sheets[]` holds `{name, rows}`, with cells masked by code (`pii.masked_rows`).
+  - `sheets[]` holds `{name, rows, withheld}`, with cells masked by code (`pii.masked_rows`). For a reader whose view is `text` every sheet is `withheld: true` with no rows (name only), as agents acting for them get no sheet.
   - At most 50 pages; `truncated` I.
   - A PDF with text pages and no PII scan yet answers 409 `preview_outdated`.
 

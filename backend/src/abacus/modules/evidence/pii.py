@@ -525,6 +525,50 @@ def page_dangles(words: Sequence[WordLike], rotation: int, width: float, height:
     return dangles(_upright(words, rotation, width, height))
 
 
+@dataclass(frozen=True)
+class PageWordsAt:
+    """A page's words as the scan holds them, for joining across a page break."""
+
+    page_no: int
+    words: Sequence[WordLike]
+    rotation: int
+    width: float
+    height: float
+
+
+def _turned_found(f: Found, page: PageWordsAt) -> Found:
+    if page.rotation not in (90, 180, 270):
+        return f
+    x0, top, x1, bottom = _turn(f.box, page.rotation, page.width, page.height, back=True)
+    box: Box = (round(x0, 2), round(top, 2), round(x1, 2), round(bottom, 2))
+    return Found(f.page, f.kind, box, f.value, f.last4, f.label_anchored)
+
+
+def across_break(before: PageWordsAt, after: PageWordsAt) -> list[Found]:
+    """A TIN split by a page break with no label (review M-B): the trailing digit run of one
+    page's last line and the leading run of the next page's first line, when together they make
+    nine digits that pass the unlabelled rules (`_classify`), are one value with a region on
+    each page. A labelled split is `dangles`'s and `continued`'s."""
+    first = lines_of(_upright(before.words, before.rotation, before.width, before.height))
+    second = lines_of(_upright(after.words, after.rotation, after.width, after.height))
+    if not first or not second:
+        return []
+    tail, head = _tail(first[-1]), _head(second[0])
+    if not tail or not head:
+        return []
+    above = first[-2] if len(first) > 1 else None
+    families = _anchoring(first[-1], above, tail[0])
+    text = _joined((*tail, *head))
+    classified = _classify(text, families) if text else None
+    if classified is None:
+        return []
+    kind, value = classified
+    return [
+        _turned_found(_found(before.page_no, kind, value, tail, bool(families)), before),
+        _turned_found(_found(after.page_no, kind, value, head, bool(families)), after),
+    ]
+
+
 # --- Spreadsheet cells (P-03-T15; P-03 §4.4 "spreadsheet cells get the same tokens") ----------
 
 _CELL_TOKEN: Final = re.compile(r"\S+")
@@ -671,18 +715,22 @@ async def pii_scan_upload(given: UploadInput) -> int:
     unscannable: list[int] = []
     found: list[Found] = []
     continued = False
+    previous: PageWordsAt | None = None
     for page in pages:
         if not page.has_text_layer:
             unscannable.append(page.page_no)
-            continued = False
+            continued, previous = False, None
             continue
         layer = await read_page_layer(tenant_id, page)
         size = (float(page.width_pt), float(page.height_pt))
         found.extend(
             detect_on_page(page.page_no, layer.words, page.rotation, *size, continued=continued)
         )
+        here = PageWordsAt(page.page_no, layer.words, page.rotation, *size)
+        if previous is not None and not continued:
+            found.extend(across_break(previous, here))  # M-B: an unlabelled split TIN
         # R5: a TIN fragment ending this page may finish at the top of the next.
-        continued = page_dangles(layer.words, page.rotation, *size)
+        continued, previous = page_dangles(layer.words, page.rotation, *size), here
         scanned.append(page.page_no)
         if layer.unread:
             # Reviews N1, R1-R3: its words are scanned, its pictures, shapes and sideways digits
@@ -756,6 +804,8 @@ __all__ = [
     "DETECTOR_VERSION",
     "LABELS",
     "Found",
+    "PageWordsAt",
+    "across_break",
     "detect",
     "detect_on_page",
     "lines_of",

@@ -36,13 +36,13 @@ from abacus.kernel._flags import EVIDENCE_PII_REVEAL
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
-from abacus.kernel.tin_patterns import scrub_tins
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.citations.matching import Box, line_rects, normalised, quote_spans
 from abacus.modules.evidence.extraction import ACTIVE_CONTENT
 from abacus.modules.evidence.masked_previews import PreviewOutdated
+from abacus.modules.evidence.masked_text import masked_pages
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
 from abacus.modules.evidence.pii import DETECTOR_VERSION, masked_rows
@@ -357,6 +357,7 @@ class TextPage:
 class TextSheet:
     name: str
     rows: list[list[str]]
+    withheld: bool = False  # review M-A: the sheet exists but its cells aren't shown
 
 
 @dataclass(frozen=True)
@@ -371,9 +372,10 @@ async def viewer_text(ctx: AuthContext, version_id: UUID) -> ViewerText:
     until OCR, P-11; DEC-369): each page's upright words with every detected region replaced by
     its token and the kernel TIN scrub applied (as agents read it); a page no scan covers has no
     text; `unread` marks a page that shows content no scan read. A workbook's cells are masked
-    by `pii.masked_rows`, as agent material is. At most `MAX_SEARCH_PAGES` pages; a PDF with text
-    pages and no PII scan yet answers 409 `preview_outdated` (fail closed). Logged as a content
-    read before it is answered."""
+    by `pii.masked_rows` as onshore agent material is; to a reader who may not read unmasked
+    content a sheet is `withheld` (its name only), as their agents get no sheet (review M-A). At
+    most `MAX_SEARCH_PAGES` pages; a PDF with text pages and no PII scan yet answers 409
+    `preview_outdated` (fail closed). Logged as a content read before it is answered."""
     version = await visible_version(ctx, version_id)
     async with tenant_session(ctx.tenant) as session:
         layer = await pages_of(
@@ -384,23 +386,26 @@ async def viewer_text(ctx: AuthContext, version_id: UUID) -> ViewerText:
     texts = [p for p in layer if p.has_text_layer]
     if texts and not any(projection.readable(p.page_no) for p in texts):
         raise PreviewOutdated  # not scanned for PII yet: never read raw
-    items: list[TextPage] = []
-    for page in layer[:MAX_SEARCH_PAGES]:
-        words = None
-        if page.has_text_layer and projection.readable(page.page_no):
-            words = projection.words(
-                (await read_page_layer(ctx.tenant_id, page)).words, page.page_no
-            )
-        text = scrub_tins(" ".join(w.text for w in words)) if words else ""
-        items.append(TextPage(page.page_no, text, not projection.complete(page.page_no)))
+    # The same masked text agents read (`masked_text.masked_pages`), so the two never drift.
+    masked = await masked_pages(ctx.tenant, evidence_version_id=version.id) or {}
+    items = [
+        TextPage(p.page_no, masked.get(p.page_no, ""), not projection.complete(p.page_no))
+        for p in layer[:MAX_SEARCH_PAGES]
+    ]
     if not layer and version.media_type != PDF and version.media_type.startswith("image/"):
         items.append(TextPage(1, "", True))  # a picture: nothing a scan read
     sheets: list[TextSheet] = []
     if extracted is not None:
         _pages, raw = await document_text(ctx.tenant_id, extracted)
-        sheets = [
-            TextSheet(name, [list(row) for row in masked_rows(rows)]) for name, rows in raw.items()
-        ]
+        if await may_read_unmasked(ctx):
+            sheets = [
+                TextSheet(name, [list(row) for row in masked_rows(rows)])
+                for name, rows in raw.items()
+            ]
+        else:
+            # Review M-A: cells are masked by heuristic, so a reader who may not read unmasked
+            # content gets a sheet's name only, as agents acting for them get no sheet at all.
+            sheets = [TextSheet(name, [], withheld=True) for name in raw]
     await record_content_read(ctx, version.engagement_id, "evidence_version", version.id)
     return ViewerText(items, sheets, len(layer) > MAX_SEARCH_PAGES)
 
