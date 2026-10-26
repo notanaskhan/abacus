@@ -287,6 +287,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.acceptance.DecisionLocked
+    - abacus.modules.engagements.independence.NasDecided
     summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409
@@ -311,6 +312,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.engagements.drafts.DraftIncomplete
+    - abacus.modules.engagements.intake.IntakeIncomplete
     summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
   drafted_guidance_not_allowed:
     status: 409
@@ -565,9 +567,8 @@ codes:
   independence_preconditions_unmet:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
-    summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
-      clear, an SKE designee or NAS evaluations on an attest client).
+    - abacus.modules.engagements.independence.IndependencePreconditionsUnmet
+    summary: The conclusion (or a NAS evaluation) waits on the blockers counted in `facts`.
   independence_statement_missing:
     status: 409
     raised_by:
@@ -807,6 +808,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.notes.NotRaiser
     summary: 'AC-3: only the person who raised a note clears it.'
+  not_password_protected:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.unlock.NotPasswordProtected
+    summary: The version isn't a password-protected PDF, or it has already been unlocked.
   not_pending_incorporation:
     status: 409
     raised_by:
@@ -1236,6 +1242,7 @@ codes:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson

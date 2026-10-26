@@ -12406,6 +12406,10 @@ export type IntakeServiceIn = {
      */
     fiscal_period_start?: string | null;
     /**
+     * Forms
+     */
+    forms?: Array<string> | null;
+    /**
      * Type Code
      */
     type_code: string;
@@ -15055,6 +15059,10 @@ export type MePortalScopeOut = {
  * A member's own confirmation for this engagement; a decline's note is the EP's to read.
  */
 export type MemberConfirmationOut = {
+    /**
+     * Annual Confirmed
+     */
+    annual_confirmed?: boolean | null;
     /**
      * Answered At
      */
@@ -29953,10 +29961,6 @@ export type CreateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateIntakeDraftError = CreateIntakeDraftErrors[keyof CreateIntakeDraftErrors];
@@ -30009,10 +30013,6 @@ export type DiscardIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardIntakeDraftError = DiscardIntakeDraftErrors[keyof DiscardIntakeDraftErrors];
@@ -30065,10 +30065,6 @@ export type GetIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetIntakeDraftError = GetIntakeDraftErrors[keyof GetIntakeDraftErrors];
@@ -30125,10 +30121,6 @@ export type UpdateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateIntakeDraftError = UpdateIntakeDraftErrors[keyof UpdateIntakeDraftErrors];
@@ -30189,10 +30181,6 @@ export type CommitIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CommitIntakeDraftError = CommitIntakeDraftErrors[keyof CommitIntakeDraftErrors];
@@ -30245,10 +30233,6 @@ export type ValidateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateIntakeDraftError = ValidateIntakeDraftErrors[keyof ValidateIntakeDraftErrors];
@@ -30384,10 +30368,6 @@ export type DedupeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DedupeError = DedupeErrors[keyof DedupeErrors];
@@ -37793,10 +37773,6 @@ export type GetIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetIndependenceError = GetIndependenceErrors[keyof GetIndependenceErrors];
@@ -37901,10 +37877,6 @@ export type LogBreachErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LogBreachError = LogBreachErrors[keyof LogBreachErrors];
@@ -37965,10 +37937,6 @@ export type AddBreachEventErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddBreachEventError = AddBreachEventErrors[keyof AddBreachEventErrors];
@@ -38025,10 +37993,6 @@ export type ConcludeIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConcludeIndependenceError = ConcludeIndependenceErrors[keyof ConcludeIndependenceErrors];
@@ -38085,10 +38049,6 @@ export type ConfirmIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConfirmIndependenceError = ConfirmIndependenceErrors[keyof ConfirmIndependenceErrors];
@@ -38145,10 +38105,6 @@ export type DeclineIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeclineIndependenceError = DeclineIndependenceErrors[keyof DeclineIndependenceErrors];
@@ -38201,10 +38157,6 @@ export type GetNasErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetNasError = GetNasErrors[keyof GetNasErrors];
@@ -38265,10 +38217,6 @@ export type PutNasErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutNasError = PutNasErrors[keyof PutNasErrors];
@@ -38373,10 +38321,6 @@ export type GetRotationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetRotationError = GetRotationErrors[keyof GetRotationErrors];
@@ -43424,6 +43368,10 @@ export type UnlockUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
 };
 
 export type UnlockUploadError = UnlockUploadErrors[keyof UnlockUploadErrors];
@@ -46144,10 +46092,6 @@ export type TbLayerViewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLayerViewError = TbLayerViewErrors[keyof TbLayerViewErrors];
@@ -46285,10 +46229,6 @@ export type TbLeadsheetAreaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLeadsheetAreaError = TbLeadsheetAreaErrors[keyof TbLeadsheetAreaErrors];
@@ -48066,6 +48006,10 @@ export type UnlockVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
     /**
      * Contract stub: not implemented yet
      */

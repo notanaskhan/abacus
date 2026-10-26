@@ -17,7 +17,7 @@
 
 import type { CitationV2Out } from "@abacus/api-client";
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
-import { trustHandlers } from "../handlers/trust";
+import { type TrustFixtures, trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
 import { stableId } from "../seed/prng";
 import {
@@ -63,6 +63,8 @@ export interface Shl08Opens {
   anchor?: { type: string; id: string; ref: string };
   /** The linked-figure card's figure name. */
   figure?: string;
+  /** SHL-08d: who sent the password and the client "Ask …" names (spec frame D). */
+  locked?: { issuer: string; client: string };
 }
 
 const LINE_2A_ANCHOR = { type: "tax_form_line", id: LINE_2A, ref: "line_2a" } as const;
@@ -126,7 +128,14 @@ export const OPENS: Record<Shl08State, Shl08Opens> = {
     stack: [W2_WAGES.id],
     index: 0,
   },
-  d: { host: "drawer", versionId: HALVARD_1099, matchId: null, stack: [], index: 0 },
+  d: {
+    host: "drawer",
+    versionId: HALVARD_1099,
+    matchId: null,
+    stack: [],
+    index: 0,
+    locked: { issuer: "Halvard", client: "Jonah & Claire Feld" },
+  },
   e: { host: "drawer", versionId: K1_PROCESSING, matchId: null, stack: [], index: 0 },
   f: {
     host: "drawer",
@@ -147,11 +156,18 @@ export const OPENS: Record<Shl08State, Shl08Opens> = {
   },
 };
 
+/** The persona's display name, for the reveal's "Revealed by …" (the seed's people). */
+const NAMES: Record<string, string> = {
+  "samuel-ito": "Samuel Ito",
+  "hannah-leclerc": "Hannah Leclerc",
+};
+
 function scenario(
   state: Shl08State,
   persona: string,
   clock: string,
   citations: readonly SeededCitation[],
+  extra: Partial<TrustFixtures> = {},
 ): Scenario {
   return {
     state,
@@ -159,9 +175,23 @@ function scenario(
     clock,
     handlers: {
       ...E0.handlers,
-      ...trustHandlers({ citations, documents: DOCUMENTS }),
+      ...trustHandlers({
+        citations,
+        documents: DOCUMENTS,
+        revealedBy: NAMES[persona] ?? "",
+        ...extra,
+      }),
     },
   };
+}
+
+/** P-03-T20: SHL-08c and d variants the artboards don't draw, for tests and the gallery: the
+ * reveal behind a stale MFA, the unlock flag off ("Ask …" only), and the attempt limit. */
+export function variant(
+  state: "c" | "d",
+  extra: Pick<TrustFixtures, "revealNeedsMfa" | "unlockOff" | "unlockLimited">,
+): Scenario {
+  return scenario(state, "samuel-ito", CLOCK_VIEWER, FELD_CITATIONS, extra);
 }
 
 /** DEC-369 (Ayush, 2026-10-26): `state`'s data as an offshore reader sees it, the server's text

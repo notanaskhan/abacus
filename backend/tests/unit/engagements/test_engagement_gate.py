@@ -16,7 +16,9 @@ def _acceptance(decision: str = "accepted", concluded: bool = True) -> Engagemen
     return cast(
         EngagementAcceptance,
         SimpleNamespace(
-            decision=decision, independence_concluded_at=datetime.now(UTC) if concluded else None
+            decision=decision,
+            independence_concluded_at=datetime.now(UTC) if concluded else None,
+            legacy_g2=True,  # a row from before 0175 (DEC-429)
         ),
     )
 

@@ -700,6 +700,8 @@ export const runClientImport = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Create Intake Draft Route
+ *
+ * 422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4).
  */
 export const createIntakeDraft = <ThrowOnError extends boolean = false>(options: Options<CreateIntakeDraftData, ThrowOnError>): RequestResult<CreateIntakeDraftResponses, CreateIntakeDraftErrors, ThrowOnError> => (options.client ?? client).post<CreateIntakeDraftResponses, CreateIntakeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -734,7 +736,7 @@ export const getIntakeDraft = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Update Intake Draft Route
  *
- * Autosave; 409 `stale_version`.
+ * Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`.
  */
 export const updateIntakeDraft = <ThrowOnError extends boolean = false>(options: Options<UpdateIntakeDraftData, ThrowOnError>): RequestResult<UpdateIntakeDraftResponses, UpdateIntakeDraftErrors, ThrowOnError> => (options.client ?? client).patch<UpdateIntakeDraftResponses, UpdateIntakeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -750,7 +752,8 @@ export const updateIntakeDraft = <ThrowOnError extends boolean = false>(options:
  * Commit Intake Draft Route
  *
  * Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without
- * a cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same.
+ * a cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key
+ * answers the same.
  */
 export const commitIntakeDraft = <ThrowOnError extends boolean = false>(options: Options<CommitIntakeDraftData, ThrowOnError>): RequestResult<CommitIntakeDraftResponses, CommitIntakeDraftErrors, ThrowOnError> => (options.client ?? client).post<CommitIntakeDraftResponses, CommitIntakeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -793,7 +796,7 @@ export const listClients = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Dedupe Route
  *
- * CLI-06 b: "96% match · Walter Thornbury" (P-07-T42).
+ * CLI-06 b: "96% match · Walter Thornbury" (DEC-441); walled clients are never candidates.
  */
 export const dedupe = <ThrowOnError extends boolean = false>(options: Options<DedupeData, ThrowOnError>): RequestResult<DedupeResponses, DedupeErrors, ThrowOnError> => (options.client ?? client).post<DedupeResponses, DedupeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2503,7 +2506,8 @@ export const logBreach = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Add Breach Event Route
  *
- * AC-28: insert-only; `independence_breach.updated`.
+ * AC-28: insert-only, each kind once (409 `illegal_transition`);
+ * `independence_breach.updated`.
  */
 export const addBreachEvent = <ThrowOnError extends boolean = false>(options: Options<AddBreachEventData, ThrowOnError>): RequestResult<AddBreachEventResponses, AddBreachEventErrors, ThrowOnError> => (options.client ?? client).post<AddBreachEventResponses, AddBreachEventErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2533,7 +2537,7 @@ export const concludeIndependence = <ThrowOnError extends boolean = false>(optio
 /**
  * Confirm Independence Route
  *
- * Human-only, self only (AC-17); `independence.confirmed`.
+ * Human-only, self only (AC-17): the three statements; `independence.confirmed`.
  */
 export const confirmIndependence = <ThrowOnError extends boolean = false>(options: Options<ConfirmIndependenceData, ThrowOnError>): RequestResult<ConfirmIndependenceResponses, ConfirmIndependenceErrors, ThrowOnError> => (options.client ?? client).post<ConfirmIndependenceResponses, ConfirmIndependenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2548,7 +2552,8 @@ export const confirmIndependence = <ThrowOnError extends boolean = false>(option
 /**
  * Decline Independence Route
  *
- * Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).
+ * Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`
+ * (the EP's notification registers with P-07-T47).
  */
 export const declineIndependence = <ThrowOnError extends boolean = false>(options: Options<DeclineIndependenceData, ThrowOnError>): RequestResult<DeclineIndependenceResponses, DeclineIndependenceErrors, ThrowOnError> => (options.client ?? client).post<DeclineIndependenceResponses, DeclineIndependenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3680,7 +3685,8 @@ export const statementPreview = <ThrowOnError extends boolean = false>(options: 
  * Unlock Upload Route
  *
  * TASK-323: a password-protected PDF upload, saved again without its password as a new
- * version of the item.
+ * version of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429
+ * `unlock_rate_limited` after five in fifteen minutes.
  */
 export const unlockUpload = <ThrowOnError extends boolean = false>(options: Options<UnlockUploadData, ThrowOnError>): RequestResult<UnlockUploadResponses, UnlockUploadErrors, ThrowOnError> => (options.client ?? client).post<UnlockUploadResponses, UnlockUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4286,7 +4292,8 @@ export const leadsheets = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Tb Leadsheet Area Route
  *
- * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10).
+ * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10); "Unassigned" holds the
+ * accounts no rule or annotation places.
  */
 export const tbLeadsheetArea = <ThrowOnError extends boolean = false>(options: Options<TbLeadsheetAreaData, ThrowOnError>): RequestResult<TbLeadsheetAreaResponses, TbLeadsheetAreaErrors, ThrowOnError> => (options.client ?? client).get<TbLeadsheetAreaResponses, TbLeadsheetAreaErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4667,8 +4674,12 @@ export const viewerText = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Unlock Version Route
  *
- * AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;
- * 429 `unlock_rate_limited` with `retry_after`.
+ * AC5.2 to AC5.5 (P-03-T19): a derivation, never a change to the evidence. `ready` with the
+ * derivation's id, or `wrong_password` with `attempts_left` (200, audited by count only); 409
+ * `not_password_protected` for a version that isn't locked or is unlocked already; 429
+ * `unlock_rate_limited` with `retry_after` after five failures in fifteen minutes; 403 for an
+ * agent, the system, a support session, a client principal or a role without
+ * `evidence.unlock`. The password is never logged, stored, sent to Temporal or echoed.
  */
 export const unlockVersion = <ThrowOnError extends boolean = false>(options: Options<UnlockVersionData, ThrowOnError>): RequestResult<UnlockVersionResponses, UnlockVersionErrors, ThrowOnError> => (options.client ?? client).post<UnlockVersionResponses, UnlockVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

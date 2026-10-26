@@ -1371,6 +1371,8 @@ export const runClientImportMutation = (options?: Partial<Options<RunClientImpor
 
 /**
  * Create Intake Draft Route
+ *
+ * 422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4).
  */
 export const createIntakeDraftMutation = (options?: Partial<Options<CreateIntakeDraftData>>): UseMutationOptions<CreateIntakeDraftResponse, CreateIntakeDraftError, Options<CreateIntakeDraftData>> => {
     const mutationOptions: UseMutationOptions<CreateIntakeDraftResponse, CreateIntakeDraftError, Options<CreateIntakeDraftData>> = {
@@ -1426,7 +1428,7 @@ export const getIntakeDraftOptions = (options: Options<GetIntakeDraftData>) => q
 /**
  * Update Intake Draft Route
  *
- * Autosave; 409 `stale_version`.
+ * Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`.
  */
 export const updateIntakeDraftMutation = (options?: Partial<Options<UpdateIntakeDraftData>>): UseMutationOptions<UpdateIntakeDraftResponse, UpdateIntakeDraftError, Options<UpdateIntakeDraftData>> => {
     const mutationOptions: UseMutationOptions<UpdateIntakeDraftResponse, UpdateIntakeDraftError, Options<UpdateIntakeDraftData>> = {
@@ -1446,7 +1448,8 @@ export const updateIntakeDraftMutation = (options?: Partial<Options<UpdateIntake
  * Commit Intake Draft Route
  *
  * Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without
- * a cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same.
+ * a cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key
+ * answers the same.
  */
 export const commitIntakeDraftMutation = (options?: Partial<Options<CommitIntakeDraftData>>): UseMutationOptions<CommitIntakeDraftResponse, CommitIntakeDraftError, Options<CommitIntakeDraftData>> => {
     const mutationOptions: UseMutationOptions<CommitIntakeDraftResponse, CommitIntakeDraftError, Options<CommitIntakeDraftData>> = {
@@ -1540,7 +1543,7 @@ export const listClientsInfiniteOptions = (options?: Options<ListClientsData>) =
 /**
  * Dedupe Route
  *
- * CLI-06 b: "96% match · Walter Thornbury" (P-07-T42).
+ * CLI-06 b: "96% match · Walter Thornbury" (DEC-441); walled clients are never candidates.
  */
 export const dedupeMutation = (options?: Partial<Options<DedupeData>>): UseMutationOptions<DedupeResponse, DedupeError, Options<DedupeData>> => {
     const mutationOptions: UseMutationOptions<DedupeResponse, DedupeError, Options<DedupeData>> = {
@@ -4321,7 +4324,8 @@ export const logBreachMutation = (options?: Partial<Options<LogBreachData>>): Us
 /**
  * Add Breach Event Route
  *
- * AC-28: insert-only; `independence_breach.updated`.
+ * AC-28: insert-only, each kind once (409 `illegal_transition`);
+ * `independence_breach.updated`.
  */
 export const addBreachEventMutation = (options?: Partial<Options<AddBreachEventData>>): UseMutationOptions<AddBreachEventResponse, AddBreachEventError, Options<AddBreachEventData>> => {
     const mutationOptions: UseMutationOptions<AddBreachEventResponse, AddBreachEventError, Options<AddBreachEventData>> = {
@@ -4359,7 +4363,7 @@ export const concludeIndependenceMutation = (options?: Partial<Options<ConcludeI
 /**
  * Confirm Independence Route
  *
- * Human-only, self only (AC-17); `independence.confirmed`.
+ * Human-only, self only (AC-17): the three statements; `independence.confirmed`.
  */
 export const confirmIndependenceMutation = (options?: Partial<Options<ConfirmIndependenceData>>): UseMutationOptions<ConfirmIndependenceResponse, ConfirmIndependenceError, Options<ConfirmIndependenceData>> => {
     const mutationOptions: UseMutationOptions<ConfirmIndependenceResponse, ConfirmIndependenceError, Options<ConfirmIndependenceData>> = {
@@ -4378,7 +4382,8 @@ export const confirmIndependenceMutation = (options?: Partial<Options<ConfirmInd
 /**
  * Decline Independence Route
  *
- * Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).
+ * Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`
+ * (the EP's notification registers with P-07-T47).
  */
 export const declineIndependenceMutation = (options?: Partial<Options<DeclineIndependenceData>>): UseMutationOptions<DeclineIndependenceResponse, DeclineIndependenceError, Options<DeclineIndependenceData>> => {
     const mutationOptions: UseMutationOptions<DeclineIndependenceResponse, DeclineIndependenceError, Options<DeclineIndependenceData>> = {
@@ -6156,7 +6161,8 @@ export const statementPreviewMutation = (options?: Partial<Options<StatementPrev
  * Unlock Upload Route
  *
  * TASK-323: a password-protected PDF upload, saved again without its password as a new
- * version of the item.
+ * version of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429
+ * `unlock_rate_limited` after five in fifteen minutes.
  */
 export const unlockUploadMutation = (options?: Partial<Options<UnlockUploadData>>): UseMutationOptions<UnlockUploadResponse, UnlockUploadError, Options<UnlockUploadData>> => {
     const mutationOptions: UseMutationOptions<UnlockUploadResponse, UnlockUploadError, Options<UnlockUploadData>> = {
@@ -7089,7 +7095,8 @@ export const tbLeadsheetAreaQueryKey = (options: Options<TbLeadsheetAreaData>) =
 /**
  * Tb Leadsheet Area Route
  *
- * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10).
+ * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10); "Unassigned" holds the
+ * accounts no rule or annotation places.
  */
 export const tbLeadsheetAreaOptions = (options: Options<TbLeadsheetAreaData>) => queryOptions<TbLeadsheetAreaResponse, TbLeadsheetAreaError, TbLeadsheetAreaResponse, ReturnType<typeof tbLeadsheetAreaQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -7700,8 +7707,12 @@ export const viewerTextOptions = (options: Options<ViewerTextData>) => queryOpti
 /**
  * Unlock Version Route
  *
- * AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;
- * 429 `unlock_rate_limited` with `retry_after`.
+ * AC5.2 to AC5.5 (P-03-T19): a derivation, never a change to the evidence. `ready` with the
+ * derivation's id, or `wrong_password` with `attempts_left` (200, audited by count only); 409
+ * `not_password_protected` for a version that isn't locked or is unlocked already; 429
+ * `unlock_rate_limited` with `retry_after` after five failures in fifteen minutes; 403 for an
+ * agent, the system, a support session, a client principal or a role without
+ * `evidence.unlock`. The password is never logged, stored, sent to Temporal or echoed.
  */
 export const unlockVersionMutation = (options?: Partial<Options<UnlockVersionData>>): UseMutationOptions<UnlockVersionResponse, UnlockVersionError, Options<UnlockVersionData>> => {
     const mutationOptions: UseMutationOptions<UnlockVersionResponse, UnlockVersionError, Options<UnlockVersionData>> = {

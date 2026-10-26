@@ -26218,6 +26218,23 @@
             "cls": "confidential",
             "title": "Fiscal Period Start"
           },
+          "forms": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^[a-z0-9_]{1,64}$",
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Forms"
+          },
           "type_code": {
             "cls": "internal",
             "pattern": "^[a-z0-9_]{1,64}$",
@@ -31787,6 +31804,18 @@
       "MemberConfirmationOut": {
         "description": "A member's own confirmation for this engagement; a decline's note is the EP's to read.",
         "properties": {
+          "annual_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Annual Confirmed"
+          },
           "answered_at": {
             "anyOf": [
               {
@@ -63544,6 +63573,7 @@
     },
     "/v1/client-intake-drafts": {
       "post": {
+        "description": "422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4).",
         "operationId": "create_intake_draft",
         "parameters": [
           {
@@ -63639,16 +63669,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Intake Draft Route",
@@ -63755,16 +63775,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Intake Draft Route",
@@ -63870,16 +63880,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Intake Draft Route",
@@ -63889,7 +63889,7 @@
         "x-abacus-action": "client.intake"
       },
       "patch": {
-        "description": "Autosave; 409 `stale_version`.",
+        "description": "Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`.",
         "operationId": "update_intake_draft",
         "parameters": [
           {
@@ -64005,16 +64005,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Intake Draft Route",
@@ -64026,7 +64016,7 @@
     },
     "/v1/client-intake-drafts/{draft_id}/commit": {
       "post": {
-        "description": "Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without\na cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same.",
+        "description": "Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without\na cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key\nanswers the same.",
         "operationId": "commit_intake_draft",
         "parameters": [
           {
@@ -64153,16 +64143,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Commit Intake Draft Route",
@@ -64280,16 +64260,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Intake Draft Route",
@@ -64563,7 +64533,7 @@
     },
     "/v1/clients/dedupe": {
       "post": {
-        "description": "CLI-06 b: \"96% match \u00b7 Walter Thornbury\" (P-07-T42).",
+        "description": "CLI-06 b: \"96% match \u00b7 Walter Thornbury\" (DEC-441); walled clients are never candidates.",
         "operationId": "dedupe",
         "parameters": [
           {
@@ -64659,16 +64629,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Dedupe Route",
@@ -80839,16 +80799,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Independence Route",
@@ -81081,16 +81031,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Log Breach Route",
@@ -81102,7 +81042,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/breaches/{breach_id}/events": {
       "post": {
-        "description": "AC-28: insert-only; `independence_breach.updated`.",
+        "description": "AC-28: insert-only, each kind once (409 `illegal_transition`);\n`independence_breach.updated`.",
         "operationId": "add_breach_event",
         "parameters": [
           {
@@ -81228,16 +81168,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Add Breach Event Route",
@@ -81365,16 +81295,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Conclude Independence Route",
@@ -81386,7 +81306,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/confirm": {
       "post": {
-        "description": "Human-only, self only (AC-17); `independence.confirmed`.",
+        "description": "Human-only, self only (AC-17): the three statements; `independence.confirmed`.",
         "operationId": "confirm_independence",
         "parameters": [
           {
@@ -81502,16 +81422,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirm Independence Route",
@@ -81523,7 +81433,7 @@
     },
     "/v1/engagements/{engagement_id}/independence/decline": {
       "post": {
-        "description": "Self only; the note sealed, the EP notified, the member stays not cleared (DF-06).",
+        "description": "Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`\n(the EP's notification registers with P-07-T47).",
         "operationId": "decline_independence",
         "parameters": [
           {
@@ -81639,16 +81549,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decline Independence Route",
@@ -81756,16 +81656,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Nas Route",
@@ -81903,16 +81793,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Nas Route",
@@ -82137,16 +82017,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Rotation Route",
@@ -93016,7 +92886,7 @@
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock": {
       "post": {
-        "description": "TASK-323: a password-protected PDF upload, saved again without its password as a new\nversion of the item.",
+        "description": "TASK-323: a password-protected PDF upload, saved again without its password as a new\nversion of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429\n`unlock_rate_limited` after five in fifteen minutes.",
         "operationId": "unlock_upload",
         "parameters": [
           {
@@ -93152,6 +93022,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Unlock Upload Route",
@@ -99074,16 +98954,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tb Layer View Route",
@@ -99247,7 +99117,7 @@
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets/{area}": {
       "get": {
-        "description": "AUD-06 e: one audit area's leadsheet, PY \u00b7 CY \u00b7 \u0394 \u00b7 \u0394% (A-02-T10).",
+        "description": "AUD-06 e: one audit area's leadsheet, PY \u00b7 CY \u00b7 \u0394 \u00b7 \u0394% (A-02-T10); \"Unassigned\" holds the\naccounts no rule or annotation places.",
         "operationId": "tb_leadsheet_area",
         "parameters": [
           {
@@ -99400,16 +99270,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tb Leadsheet Area Route",
@@ -103105,7 +102965,7 @@
     },
     "/v1/evidence-versions/{version_id}/unlock": {
       "post": {
-        "description": "AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;\n429 `unlock_rate_limited` with `retry_after`.",
+        "description": "AC5.2 to AC5.5 (P-03-T19): a derivation, never a change to the evidence. `ready` with the\nderivation's id, or `wrong_password` with `attempts_left` (200, audited by count only); 409\n`not_password_protected` for a version that isn't locked or is unlocked already; 429\n`unlock_rate_limited` with `retry_after` after five failures in fifteen minutes; 403 for an\nagent, the system, a support session, a client principal or a role without\n`evidence.unlock`. The password is never logged, stored, sent to Temporal or echoed.",
         "operationId": "unlock_version",
         "parameters": [
           {
@@ -103221,6 +103081,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           },
           "501": {
             "content": {
