@@ -21,10 +21,12 @@ from abacus.modules.audit_trail.routes import router
 from abacus.modules.audit_trail.service import events_for_target
 from abacus.modules.audit_trail.workflows import (
     CHECKPOINT_ID,
+    LABELS_ID,
     PARTITIONS_ID,
     VERIFY_ID,
     AuditChainVerifyWorkflow,
     AuditCheckpointWorkflow,
+    AuditLabelIndexerWorkflow,
     AuditPartitionsWorkflow,
 )
 from abacus.modules.identity.api import AbacusRouter, register_target_events
@@ -42,8 +44,8 @@ register_target_events(events_for_target)
 # answers for it (Q-02 §4.1: `latest_checkpoint`, `verify_chain`).
 # G-02-T08 (SPEC-349 §5): `list_events`, `get_event`, `events_for_work_item` (A-01's binder
 # export reads the last); modules register catalogue entries with `register_activity_kinds`.
-# G-02-T10: the label index (`index_labels`, `backfill_labels`) for operators and, later, its
-# Schedule (DEC-436).
+# G-02-T10: the label index (`index_labels`, `backfill_labels`) for operators, kept current by
+# the `AuditLabelIndexer` Schedule every 60 seconds (DEC-453; a search still catches up first).
 # G-02-T08: importing the live reads registers them on the contract's router.
 LIVE_READS = audit_log_routes.router
 
@@ -52,6 +54,7 @@ LIVE_READS = audit_log_routes.router
 __all__ = [
     "ACTIVITIES",
     "CHECKPOINT_ID",
+    "LABELS_ID",
     "LIVE_READS",
     "PARTITIONS_ID",
     "ROUTERS",
@@ -60,6 +63,7 @@ __all__ = [
     "WORKFLOWS",
     "AuditChainVerifyWorkflow",
     "AuditCheckpointWorkflow",
+    "AuditLabelIndexerWorkflow",
     "AuditPartitionsWorkflow",
     "CatalogueEntry",
     "Checkpoint",

@@ -62,6 +62,7 @@ Verbatim from the handoff spec and revision via `copy.ts`, with the T03 deviatio
 
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
+| Settings navigation rail: Settings home · Offices & teams · AI policy · Consents · Developer · Integrations · Portal · Quality · Monitoring | ADM-01 · ADM-03 · ADM-04 · ADM-05 · ADM-09 · ADM-08 · ADM-10 · ADM-11 · ADM-12 | live where built, as ADM-01's section rows; "not built yet" in dev and fixture builds, hidden in production (ED-113) |
 | "Legal holds ›", retention helper | FIL-02 (Q-05) | planned |
 | WISP "Open ›" | FIL-01 (N-01) | planned |
 | support access | PLT-01 (G-04) | planned |

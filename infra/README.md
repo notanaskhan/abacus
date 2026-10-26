@@ -205,6 +205,19 @@ By hand, once the rules of engagement are signed (vault), in each of `staging` a
 4. Check it from your own session, as the tester would: an assume without the external ID is refused. As the role, `s3:GetObject` on an evidence object and `secretsmanager:GetSecretValue` are both refused.
 5. After the window, set `pentest_review_principal_arn = null` and apply. That removes the role. Record both applies in the console log below.
 
+## Exports bucket (A-01-T18/T19 follow-up, DEC-454)
+
+`infra/envs/staging/exports.tf` and `infra/envs/production/exports.tf`, with `modules/s3-exports`, create `abacus-<env>-exports`: private, TLS-only, SSE-KMS under its own rotating key, versioned, no Object Lock (a policy deny refuses it), a put naming another key refused, current objects expiring after 6 days and their noncurrent copy 1 day later (gone within 7), incomplete multipart uploads after 1 day. The key policy lets the account administer the key but not use it: only the task roles named in `worker_task_role_name` and `api_task_role_name` may, through S3, for this bucket. Two managed policies come with it: `abacus-<env>-exports-worker` (list the `exports/` prefix; put, get and delete `exports/*`; the key through S3) and `abacus-<env>-exports-api` (get `exports/*`; decrypt through S3). The app reads the name from `ABACUS_EXPORTS_BUCKET`; unset, an export build fails closed.
+
+Written in TASK-1361 and **not yet initialised, validated, planned or applied**. It needs nothing else in the root, so the next plan of each environment shows it.
+
+By hand, in `staging` first, then `production`, with no deploy in flight:
+
+1. Run `terraform -chdir=infra/envs/<env> init`, then `validate`, then `plan -out=exports.tfplan`. Expect the bucket and its six companions (ownership, public access block, versioning, encryption, lifecycle, policy), the key and its alias, and the two policies; with `worker_task_role_name` and `api_task_role_name` set, their two attachments too. Nothing else.
+2. Apply it and record the apply in the console log below.
+3. Put the API and worker task role names in the untracked `terraform.tfvars` and apply again: until then nobody can use the bucket's key, so exports fail closed. Until Q-01-T15 renders the task definitions from Terraform, set `ABACUS_EXPORTS_BUCKET=abacus-<env>-exports` and `ABACUS_EXPORTS_BUCKET_OWNER=<the account number, from the vault>` in the API's and the worker's environment the way the other `ABACUS_*` settings are set today.
+4. Check it: an engagement export on the synthetic tenant reaches `ready` and downloads; as the API role, `s3:PutObject` into the bucket is refused; `aws s3api get-bucket-lifecycle-configuration` shows the 6-day rule and the 1-day noncurrent rule.
+
 ## 4. Console log
 
 Every one-time console step, newest last. Operator is the person at the keyboard.
