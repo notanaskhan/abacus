@@ -153,6 +153,8 @@ TABLES: tuple[str, ...] = (
     "methodology_areas",
     "methodology_request_items",
     "methodology_templates",
+    "methodology_version_events",
+    "methodology_version_states",
     "methodology_versions",
     "misstatements",
     "notices",

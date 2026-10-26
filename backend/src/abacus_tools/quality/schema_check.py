@@ -225,6 +225,7 @@ GLOBAL_TABLES = frozenset(
     | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}  # 0133 (P-08-T17)
     | {"incident_propagations"}  # 0143 (Q-02-T33)
+    | {"standards_sets"}  # 0180 (K-01-T02): reference data, K-02's publish path writes it
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(

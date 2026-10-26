@@ -412,6 +412,43 @@ objects:
       done:    {label: "Done", variant: null, disc: check_olive, terminal: true, derived: false}
       overdue: {label: "Overdue", variant: red-tint, terminal: false, derived: true}
 
+  # ---- Knowledge and methodology (K-01-T01; KNW-01 to KNW-03 handoff words) ----
+  methodology_version:   # methodology_version_states.status (migration 0180); KNW-02 shows Published as "Approved · {date} · {person}"
+    source: "K-01 section 4.2; KNW-01, KNW-02 and KNW-03 handoff pills"
+    codes:
+      draft:        {label: "Draft", variant: neutral, terminal: false, derived: false}
+      parsing:      {label: "Parsing…", variant: state, terminal: false, derived: false}
+      needs_review: {label: "Needs review", variant: state, terminal: false, derived: false}
+      published:    {label: "Published", variant: green-tint, terminal: false, derived: false, context_labels: {knw02: "Approved"}}
+      superseded:   {label: "Superseded", variant: soon, terminal: true, derived: false}
+      discarded:    {label: "Discarded", variant: muted, terminal: true, derived: false}   # no handoff pill; a discarded draft leaves the lists
+
+  methodology_import:   # methodology_imports.status (K-01-T18)
+    source: "K-01 section 4.2 (migration C); KNW-02 a and b"
+    codes:
+      awaiting_files: {label: "Awaiting files", variant: neutral, terminal: false, derived: false}
+      scanning:       {label: "Scanning", variant: state, terminal: false, derived: false}
+      parsing:        {label: "Parsing…", variant: state, terminal: false, derived: false}
+      needs_review:   {label: "Needs review", variant: state, terminal: true, derived: false}
+      failed:         {label: "Failed", variant: red-tint, terminal: true, derived: false}
+      cancelled:      {label: "Cancelled", variant: muted, terminal: true, derived: false}
+
+  knowledge_item:   # a KNW-01 catalog card's state, from its provider
+    source: "KNW-01 handoff (Published green-tint · Draft neutral · Superseded soon)"
+    codes:
+      draft:      {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  parse_flag:   # program_steps.parse_flag (K-01-T05); the ⚑ amber flag on KNW-02 rows
+    source: "K-01 section 4.2 (migration B); KNW-02 c"
+    codes:
+      low_confidence:          {label: "Low confidence", variant: amber, terminal: false, derived: false}
+      split_across_pages:      {label: "Split across pages", variant: amber, terminal: false, derived: false}
+      numbering_gap:           {label: "Numbering gap", variant: amber, terminal: false, derived: false}
+      unverified_citation:     {label: "Unverified citation", variant: amber, terminal: false, derived: false}
+      cross_reference_missing: {label: "Cross-reference missing", variant: amber, terminal: false, derived: false}
+
   # ---- Signing, notices, consent ----
   envelope:
     source: "blueprint 3.3.1"

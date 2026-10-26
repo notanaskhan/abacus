@@ -1383,14 +1383,27 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "methodology.approve": {
+        "quality_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "methodology.manage": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "quality_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
         "mfa_recent": "required",
+    },
+    "methodology.parse": {
+        "agent": "task_scope",
     },
     "methodology.read": {
         "firm_admin": "allow",
         "practice_leader": "allow",
+        "quality_partner": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "platform_support": "allow",

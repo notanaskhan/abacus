@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from typing import Final, Literal
 
 from abacus.kernel.db import tenant_session
-from abacus.modules.engagements.repository import setup_counts
+from abacus.modules.engagements.repository import engagement_count
 from abacus.modules.identity.api import AuthContext, acknowledge, firm_facts
+from abacus.modules.methodology.api import templates_in_firm
 
 StepId = Literal["sso", "team", "methodology", "autonomy", "budget", "walls", "engagement"]
 ORDER: Final[tuple[StepId, ...]] = (
@@ -48,7 +49,8 @@ class Onboarding:
 async def onboarding(ctx: AuthContext) -> Onboarding:
     facts = await firm_facts(ctx)  # authorises `firm.read_settings`
     async with tenant_session(ctx.tenant) as session:
-        templates, engagements = await setup_counts(session)
+        engagements = await engagement_count(session)
+    templates = await templates_in_firm(ctx.tenant)
     steps = {
         "sso": Step("sso", facts.sso_skipped_at is not None, "skipped"),
         "team": Step("team", facts.staff > 1 or facts.invitations > 0),

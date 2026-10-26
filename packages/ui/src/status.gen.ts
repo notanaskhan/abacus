@@ -1511,6 +1511,137 @@ export const STATUS_REGISTRY = {
       "derived": true
     }
   },
+  "methodology_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "parsing": {
+      "label": "Parsing…",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "needs_review": {
+      "label": "Needs review",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "knw02": "Approved"
+      }
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "methodology_import": {
+    "awaiting_files": {
+      "label": "Awaiting files",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "scanning": {
+      "label": "Scanning",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "parsing": {
+      "label": "Parsing…",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "needs_review": {
+      "label": "Needs review",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "cancelled": {
+      "label": "Cancelled",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "knowledge_item": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "parse_flag": {
+    "low_confidence": {
+      "label": "Low confidence",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "split_across_pages": {
+      "label": "Split across pages",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "numbering_gap": {
+      "label": "Numbering gap",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "unverified_citation": {
+      "label": "Unverified citation",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "cross_reference_missing": {
+      "label": "Cross-reference missing",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
   "envelope": {
     "draft": {
       "label": "Draft",

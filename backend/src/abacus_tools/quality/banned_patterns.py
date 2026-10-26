@@ -1094,7 +1094,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "support_request_ids"),  # TASK-085
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
-        ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        ("src/abacus/modules/methodology/repository.py", "list_templates"),  # K-01-T02: moved
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
@@ -1154,7 +1154,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
-        ("src/abacus/modules/engagements/repository.py", "version_rows"),
+        ("src/abacus/modules/methodology/repository.py", "version_rows"),  # K-01-T02: moved
         # Knowledge is firm-wide (SPEC-009 §9: `visible()` reduces to the tenant): listed and
         # searched after `authorise` on the firm, embedded by the platform's own workflow.
         ("src/abacus/modules/agents/repository.py", "list_documents"),

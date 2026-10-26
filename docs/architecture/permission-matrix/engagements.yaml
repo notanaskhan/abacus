@@ -2,8 +2,6 @@
 # module's file into identity/authz/_matrix.py by `make regenerate`.
 
 actions:
-  methodology.manage:       {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-008 Q3
-  methodology.read:         {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, agent: task_scope}   # SPEC-008; agent: the guidance drafter on a template, firm-level (TASK-074 D1)
   # --- Engagements ---
   # P-07-T05 (DEC-143): agent and system denied (I-AGENT-NEVER). P-07-T16 (DEC-225): DEC-38's
   # partner cell lands with the live wizard as the derived `firm_partner` (DEC-132); the manager
