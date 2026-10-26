@@ -53,6 +53,7 @@ updated: 2026-10-25
   - The C5 SHL-20 contract test moves the card, rerun and feedback to live. The screening contract and worker pins gain `upload_review.recorded` and `evidence_version.withdrawn`.
   - `make regenerate`: OpenAPI drops 501 from the three routes; the tenant-isolation table list gains `screening_feedback`.
   - Error code `screening_running` written.
+- 2026-10-26: the AC-21 and AC-28 database rules are tested independently in `backfill/test_p06t23_withdrawal_race_and_screening_rows.py` (TASK-1280).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
