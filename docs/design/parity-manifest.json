@@ -847,6 +847,94 @@
       "tier": "B",
       "deviation": "F-05-T55 (DEC-354): the Ridgeline transfer and the 704(b) partner name the blueprint seed's Pell Street Ventures LLC and Pell Street II LLC where the board draws kit names; the run's progress bar holds at 46%"
     },
+    "t5-catalog.t5a": {
+      "selector": "[data-artboard=\"t5a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T5 Catalog grid/screenshots/T5a.png",
+      "sha256": "a243843a1694abbbfc49131a6e7a7df5caceb5bfc15a21f8b82d14159cd8bf5b",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "t5-catalog.t5b": {
+      "selector": "[data-artboard=\"t5b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T5 Catalog grid/screenshots/T5b.png",
+      "sha256": "14662216b862928810911d4ed61e41c139f44e385500dc4638f42a8ecd9c3c5c",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "t5-catalog.t5c": {
+      "selector": "[data-artboard=\"t5c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T5 Catalog grid/screenshots/T5c.png",
+      "sha256": "0537418fe6bba69f7bd9c935d4be50e7bf971d4ba67263484e60cc4e7c4ebe33",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "t5-catalog.t5d": {
+      "selector": "[data-artboard=\"t5d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T5 Catalog grid/screenshots/T5d.png",
+      "sha256": "28f8c5c4437d1fc821ae1af3d1c24f55f4a4e1446ec64ff871cfd8bc01525feb",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "t5-catalog.t5e": {
+      "selector": "[data-artboard=\"t5e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T5 Catalog grid/screenshots/T5e.png",
+      "sha256": "3f357443d05197cc95206208aab93b9d1a73dff882b7f866242795c30ac7d0c7",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "t5-catalog.t5f": {
+      "selector": "[data-artboard=\"t5f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T5 Catalog grid/screenshots/T5f.png",
+      "sha256": "6e5fcd696dc6328eaf12e3a81a0b39f540f9385a36d2871a1570e74211fa2140",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "tpl-05.a": {
+      "selector": "[data-artboard=\"tpl-05a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-05 Catalog grid specimen - Workbench - Agents - Library/screenshots/TPL-05a.png",
+      "sha256": "49386de45baa920f6a373b3988a45c95ef2ff964d1053b1a75885f2a8b6e3bee",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "tpl-05.b": {
+      "selector": "[data-artboard=\"tpl-05b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-05 Catalog grid specimen - Workbench - Agents - Library/screenshots/TPL-05b.png",
+      "sha256": "3f9cae98e7df25103b87fd53e3ae80a1a175cdd436ef288627728ae1d8a42e7d",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "tpl-05.c": {
+      "selector": "[data-artboard=\"tpl-05c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-05 Catalog grid specimen - Workbench - Agents - Library/screenshots/TPL-05c.png",
+      "sha256": "825da2db8fff95a39e4f776cd80993078fb79e9fc4ffce70a28b813eae6c39dc",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "tpl-05.d": {
+      "selector": "[data-artboard=\"tpl-05d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-05 Catalog grid specimen - Workbench - Agents - Library/screenshots/TPL-05d.png",
+      "sha256": "19629131093fa40c3c485e7ec2870b68b63add74227915f2ce4bcf18f7d3fc09",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
+    "tpl-05.e": {
+      "selector": "[data-artboard=\"tpl-05e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-05 Catalog grid specimen - Workbench - Agents - Library/screenshots/TPL-05e.png",
+      "sha256": "aba7ee85b4345ba6ec951490d00c527845ed114f6f2e70b40a926c48c9dabad7",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
+    },
     "t8-inbox.t8a": {
       "selector": "[data-artboard=\"t8a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8a.png",

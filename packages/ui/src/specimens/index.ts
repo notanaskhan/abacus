@@ -108,6 +108,7 @@ import { T3Specimen } from "./t3";
 import { Tpl03Specimen } from "./tpl03";
 import { T9Specimen } from "./t9";
 import { T8Specimen } from "./t8";
+import { T5Specimen, Tpl05Specimen } from "./t5";
 import { FieldRowsSpecimen, GridSpecimen, LeadsheetSpecimen, VirtualGridSpecimen } from "./data-3";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
@@ -281,6 +282,9 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "t3-evidence-triad", kit: "T3", title: "Evidence triad", Component: T3Specimen },
   // T8 InboxLayout and the C-15/C-18 File kit (F-05-T56): T8a to T8e
   { id: "t8-inbox", kit: "T8", title: "Inbox master-detail", Component: T8Specimen },
+  // T5 CatalogLayout with C-11 AgentCard and C-14 ConnectionTile (F-05-T59): T5a to T5f, TPL-05
+  { id: "t5-catalog", kit: "T5", title: "Catalog grid", Component: T5Specimen },
+  { id: "tpl-05", kit: "TPL-05", title: "Catalog grid specimen", Component: Tpl05Specimen },
   // T9 QueueDetailLayout and the C-17 Issue kit (F-05-T55): T9a to T9e
   { id: "t9-queue-detail", kit: "T9", title: "Queue · detail · evidence", Component: T9Specimen },
   // TPL-03 Feld 1040 review specimen (F-05-T54): TPL-03a to TPL-03e

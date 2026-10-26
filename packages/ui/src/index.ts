@@ -424,3 +424,29 @@ export {
   type BlockSegment,
   factText,
 } from "./agent/blocks";
+
+// C-11 AgentCard and IconTile, C-14 ConnectionTile and the shared catalog grammar (F-05-T59).
+export {
+  CatalogBadge,
+  type CatalogBadgeState,
+  CatalogCard,
+  type CatalogCardProps,
+  type CatalogCategory,
+  CatalogGrid,
+  CatalogSkeletonCard,
+  CategoryList,
+  type CategoryListProps,
+} from "./catalog/catalog-kit";
+export {
+  AGENT_TONES,
+  AgentCard,
+  type AgentCardProps,
+  type AgentCardStatus,
+  type AgentTone,
+  IconTile,
+} from "./agent/agent-card";
+export {
+  type ConnectionStatus,
+  ConnectionTile,
+  type ConnectionTileProps,
+} from "./connect/connection-tile";
