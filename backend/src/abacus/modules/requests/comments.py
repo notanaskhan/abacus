@@ -47,7 +47,10 @@ from abacus.modules.requests.service import RequestItemRef, read_item
 
 MAX_BODY: Final = 4000
 MAX_REASON: Final = 500
-CLIENT_ROLES: Final = frozenset({"client_admin", "client_contributor"})
+# A third party (R-01-T13, DEC-387) reads and writes the shared thread of a request delegated to
+# them, as a client does: never an internal comment.
+THIRD_PARTY: Final = "third_party"
+CLIENT_ROLES: Final = frozenset({"client_admin", "client_contributor", THIRD_PARTY})
 
 # Violation kinds of the text, or an empty list (communications registers it, TASK-062 D1).
 ScopeCheck = Callable[[AuthContext, EngagementRef, str], Awaitable[Sequence[str]]]
@@ -226,17 +229,26 @@ async def _thread(
         async with tenant_session(ctx.tenant) as session:
             if version_id not in await fulfilling_versions(session, item_id):
                 raise NotFound("evidence_version")
-    return ref, item, await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
+    role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
+    if role is None and ctx.client and ctx.user_id in item.delegated_to:
+        role = THIRD_PARTY  # allowed only through `delegated_only` on this very request
+    return ref, item, role
 
 
 async def candidates(
-    ctx: AuthContext, engagement_id: UUID, item: RequestItemRef, visibility: str
+    ctx: AuthContext,
+    engagement_id: UUID,
+    item: RequestItemRef,
+    visibility: str,
+    *,
+    third_party: bool = False,
 ) -> dict[UUID, str]:
     """D3: who may be mentioned (and so read the comment), with their side: the engagement's
     firm team; on a shared comment, also the item's client readers (SPEC-020: client admins on a
-    client-visible item, and its assigned contributor)."""
+    client-visible item, and its assigned contributor). A third party (R-01-T13, INV-4) is
+    never shown the client's people: the firm team only."""
     found: dict[UUID, str] = {u: "firm" for u, _ in await team_of(ctx.tenant_id, engagement_id)}
-    if visibility == "shared" and item.client_visible:
+    if visibility == "shared" and item.client_visible and not third_party:
         for admin in await client_admins(ctx.tenant, engagement_id):
             found[admin] = "client"
         assignee = item.client_assignee_user_id
@@ -255,7 +267,7 @@ async def mention_candidates(
     _, item, role = await _thread(ctx, engagement_id, item_id, None, "comment.create")
     if role in CLIENT_ROLES:
         visibility = "shared"
-    found = await candidates(ctx, engagement_id, item, visibility)
+    found = await candidates(ctx, engagement_id, item, visibility, third_party=role == THIRD_PARTY)
     found.pop(ctx.user_id, None)
     names = await names_of(sorted(found, key=str))
     return sorted(
@@ -299,7 +311,9 @@ async def post_comment(
             raise SharingUnavailable
         if await _scope_check(ctx, ref, body):
             raise CommentOutOfScope
-    allowed = await candidates(ctx, engagement_id, item, visibility)
+    allowed = await candidates(
+        ctx, engagement_id, item, visibility, third_party=role == THIRD_PARTY
+    )
     mentioned = sorted({u for u in mentions if u != ctx.user_id}, key=str)
     if any(u not in allowed for u in mentioned):
         raise MentionNotAllowed
@@ -367,10 +381,11 @@ async def thread(
     redacted comment's text is never returned."""
     _, _, role = await _thread(ctx, engagement_id, item_id, version_id, "comment.read")
     async with tenant_session(ctx.tenant) as session:
+        delegate = role == THIRD_PARTY
         rows = await list_thread(
-            session, ctx, item_id, version_id, shared_only=role in CLIENT_ROLES
+            session, ctx, item_id, version_id, shared_only=role in CLIENT_ROLES, delegate=delegate
         )
-        mentions = await list_mentions(session, ctx, [c.id for c, _ in rows])
+        mentions = await list_mentions(session, ctx, [c.id for c, _ in rows], delegate=delegate)
     people = {c.author_user_id for c, _ in rows} | {r.redacted_by for _, r in rows if r}
     names = await names_of(sorted(people, key=str))
     corrected: dict[UUID, list[UUID]] = {}

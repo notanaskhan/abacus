@@ -19,6 +19,7 @@ ROLES: tuple[str, ...] = (
     "client_service",
     "client_admin",
     "client_contributor",
+    "third_party",
     "agent",
     "system",
     "platform_support",
@@ -365,6 +366,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "reviewer": "allow",
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
+        "third_party": "delegated_only",
     },
     "comment.read": {
         "independence": "required",
@@ -377,6 +379,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "reviewer": "allow",
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
+        "third_party": "delegated_only",
         "platform_support_content": "allow",
     },
     "comment.redact": {
@@ -723,6 +726,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "client_admin": "allow",
         "client_contributor": "assigned_only",
+        "third_party": "delegated_only",
         "system": "allow",
     },
     "evidence.void": {
@@ -733,6 +737,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "evidence.withdraw": {
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
+        "third_party": "delegated_only",
         "agent": "deny",
         "system": "deny",
     },
@@ -1260,6 +1265,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "portal_documents.read": {
         "client_admin": "allow",
         "client_contributor": "allow",
+        "third_party": "delegated_only",
         "agent": "deny",
         "system": "deny",
         "scope_only": "required",
@@ -1413,6 +1419,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_service": "allow",
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
+        "third_party": "delegated_only",
         "agent": "task_scope",
         "platform_support": "allow",
         "platform_support_content": "allow",

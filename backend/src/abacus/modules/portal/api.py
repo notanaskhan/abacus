@@ -16,17 +16,26 @@ from abacus.modules.portal.branding import (
 )
 from abacus.modules.portal.contract import router
 from abacus.modules.portal.documents_routes import documents_router
+from abacus.modules.portal.notices import SUBSCRIPTIONS
 from abacus.modules.portal.pbc_contract import pbc_router
+from abacus.modules.portal.rooms_routes import rooms_router
 
 # The routers the API mounts, in order (P-39; F-03-T07). C5 portal-pbc: the documents reads
-# (R-01-T07), then the stubs still waiting for their tasks (R-01-T01).
-ROUTERS: tuple[AbacusRouter, ...] = (router, documents_router, pbc_router)
+# (R-01-T07), the third-party room (R-01-T13), then the drop poll (R-01-T09).
+ROUTERS: tuple[AbacusRouter, ...] = (router, documents_router, rooms_router, pbc_router)
+
+# R-01-T13: the request owner hears of a third party's upload (`third_party.uploaded`).
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
 
 # G-01-T04 (AC1.9): the display name and the footer are the portal's; settings write them here.
 register_branding_settings()
 
 __all__ = [
+    "ACTIVITIES",
     "ROUTERS",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "BrandingSlots",
     "activate_portal_host",
     "add_portal_host",

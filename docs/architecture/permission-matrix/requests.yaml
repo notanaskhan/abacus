@@ -15,6 +15,7 @@ actions:
     client_service: allow     # F-03-T30 (ADR-147): request status and file names, never evidence content
     client_admin: client_visible_only
     client_contributor: assigned_only
+    third_party: delegated_only   # R-01-T13 (DEC-387): POR-14
     agent: task_scope
     platform_support: allow   # SPEC-012
     platform_support_content: allow   # SPEC-012
@@ -63,6 +64,7 @@ actions:
     reviewer: allow
     client_admin: client_visible_only
     client_contributor: assigned_only
+    third_party: delegated_only   # R-01-T13 (DEC-387): POR-14's thread
     platform_support_content: allow   # TASK-062 D4: break-glass content, read-only
   comment.create:
     independence: required
@@ -73,6 +75,7 @@ actions:
     reviewer: allow
     client_admin: client_visible_only
     client_contributor: assigned_only
+    third_party: delegated_only   # R-01-T13 (DEC-387): POR-14's thread
   comment.share:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}
   comment.redact:           {firm_admin: allow, mfa_recent: required}   # ADR-109: a comment posted in error
   # --- Fulfilments ---

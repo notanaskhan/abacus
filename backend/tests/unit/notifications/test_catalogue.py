@@ -41,6 +41,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "wall.created",  # G-01-T09 (C16 `wall_approval_requested`, to the named partner)
         "wall.approved",  # G-01-T09 (C16 `wall_approved`, to the wall's creator)
         "portal.drop_unsorted",  # R-01-T09 (C16 `portal_drop_unsorted`)
+        "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
     }
 
 

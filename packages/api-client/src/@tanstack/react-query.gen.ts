@@ -10285,7 +10285,8 @@ export const getPortalRoomQueryKey = (options?: Options<GetPortalRoomData>) => c
 /**
  * Get Portal Room Route
  *
- * POR-14: the caller's delegated request items, by band.
+ * POR-14: the caller's delegated request items, by band. No delegation, or any request
+ * outside it: 404.
  */
 export const getPortalRoomOptions = (options?: Options<GetPortalRoomData>) => queryOptions<GetPortalRoomResponse, GetPortalRoomError, GetPortalRoomResponse, ReturnType<typeof getPortalRoomQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

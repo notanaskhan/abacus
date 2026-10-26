@@ -947,6 +947,13 @@ LIST_EXEMPT = frozenset(
         # organisations are named), and those versions' accept history and latest checks.
         ("src/abacus/modules/requests/repository.py", "live_links"),
         ("src/abacus/modules/requests/repository.py", "binder_delegated_contacts"),
+        # R-01-T13 (DEC-387): the room's requests, keyed by the caller's own `request_item`
+        # grants and each authorised through `delegated_only` before anything of it is read.
+        ("src/abacus/modules/requests/repository.py", "delegated_rows"),
+        # R-01-T13 (DEC-387): one request's open delegations' grants and their active holders,
+        # the facts `delegated_only` is judged on (keyed by one request and its grant ids).
+        ("src/abacus/modules/requests/repository.py", "open_delegation_grants"),
+        ("src/abacus/modules/identity/repository.py", "delegate_holders"),
         ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
         ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),
         # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's

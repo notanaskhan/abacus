@@ -401,6 +401,27 @@ async def active_grants(tenant: TenantContext, user_id: UUID) -> list[GrantRow]:
     return [_grant(row) for row in rows]
 
 
+_DELEGATE_HOLDERS = text(
+    "SELECT DISTINCT user_id FROM client_access_grants WHERE id IN :ids "
+    "AND status = 'active' AND user_id IS NOT NULL AND role IN ('third_party', 'delegate') "
+    "AND scope_kind = 'request_item' AND scope_id = :item "
+    "AND (expires_at IS NULL OR expires_at > clock_timestamp())"
+).bindparams(bindparam("ids", expanding=True))
+
+
+async def delegate_holders(
+    tenant: TenantContext, item_id: UUID, grant_ids: Sequence[UUID]
+) -> frozenset[UUID]:
+    """R-01-T13: of these grants, the holders of active, unexpired delegate grants on the item."""
+    if not grant_ids:
+        return frozenset()
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _DELEGATE_HOLDERS, {"ids": sorted(set(grant_ids), key=str), "item": item_id}
+        )
+    return frozenset(cast(UUID, r[0]) for r in rows.all())
+
+
 async def get_grant(session: AsyncSession, grant_id: UUID) -> GrantRow | None:
     row = (await session.execute(_GRANT, {"id": grant_id})).first()
     return None if row is None else _grant(row)

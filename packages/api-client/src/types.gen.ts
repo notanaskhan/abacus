@@ -50090,10 +50090,6 @@ export type GetPortalRoomErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetPortalRoomError = GetPortalRoomErrors[keyof GetPortalRoomErrors];
@@ -50141,10 +50137,6 @@ export type SuggestRoomRequestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SuggestRoomRequestError = SuggestRoomRequestErrors[keyof SuggestRoomRequestErrors];

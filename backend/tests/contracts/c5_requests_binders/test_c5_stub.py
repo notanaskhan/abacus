@@ -157,7 +157,11 @@ def test_ac3_human_only_and_client_actions_deny_the_agent(action: str) -> None:
 @pytest.mark.parametrize("action", sorted(CLIENT_ONLY))
 def test_ac3_client_actions_grant_no_firm_role(action: str) -> None:
     granted = {r for r, d in RULES[action].decisions.items() if d != "deny"}
-    assert granted == {"client_admin", "client_contributor"}
+    # R-01-T13 (DEC-387): a third party withdraws its own upload on a request delegated to it.
+    third_party: set[str] = {"third_party"} if action == "evidence.withdraw" else set()
+    assert granted == {"client_admin", "client_contributor"} | third_party
+    if third_party:
+        assert RULES[action].decisions["third_party"] == "delegated_only"
 
 
 def test_ac3_the_ignore_needs_a_reason_and_publish_uses_registered_settings() -> None:

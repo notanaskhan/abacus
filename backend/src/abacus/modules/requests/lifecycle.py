@@ -44,6 +44,7 @@ from abacus.modules.engagements.api import (
     client_of,
     contact_portal_user,
     get_ref,
+    holds_tax_return,
     lock_ref,
 )
 from abacus.modules.identity.api import (
@@ -54,6 +55,7 @@ from abacus.modules.identity.api import (
     ScopeFacts,
     allowed_actions,
     authorise,
+    consent_given,
     grant_client_access,
     issue_grant,
     void_grant,
@@ -614,6 +616,33 @@ class ContactNotPortalUser(DomainConflict):
     code = "contact_not_portal_user"
 
 
+class ConsentRequired(DomainConflict):
+    """§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to a
+    third party only under the client's `third_party_disclosure` consent (C19). Until T-01
+    registers that consent nobody holds it, so such a delegation is refused (fail closed)."""
+
+    code = "consent_required"
+
+
+THIRD_PARTY_DISCLOSURE: Final = "third_party_disclosure"
+
+
+async def third_party_consented(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """Whether the engagement's requests may go to a third party: always outside tax work; on an
+    engagement holding a `tax_return` work item, only under the client's consent (DEC-388)."""
+    if not await holds_tax_return(tenant, engagement_id):
+        return True
+    client = await client_of(tenant, engagement_id)
+    return client is not None and await consent_given(
+        tenant, client, THIRD_PARTY_DISCLOSURE, await clock.now(tenant)
+    )
+
+
+async def _consented(tenant: TenantContext, engagement_id: UUID) -> None:
+    if not await third_party_consented(tenant, engagement_id):
+        raise ConsentRequired(facts={"engagement_id": str(engagement_id)})
+
+
 async def delegate_item(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, contact_id: UUID
 ) -> DelegationView:
@@ -628,6 +657,7 @@ async def delegate_item(
         ref.tenant_id, ref.id, archived=ref.archived, client_id=ref.client_id, item=_facts(item)
     )
     await authorise(ctx, "request_item.delegate", resource)
+    await _consented(ctx.tenant, engagement_id)  # before any grant exists (DEC-388)
     contact = await contact_portal_user(ctx.tenant, engagement_id, contact_id)
     if contact is None:
         raise ContactNotPortalUser
@@ -677,6 +707,11 @@ async def record_contact_delegations(
         item = await get_request_item(tx.session, item_id, lock=True)  # as `delegate_item`
         if item is None or item.deleted_at is not None:
             raise NotFound("request_item")
+        # §7216 (DEC-388): the invitation's unit of work rolls back, so no grant, invitation or
+        # email exists for a tax request without the client's consent.
+        await _consented(
+            TenantContext(item.tenant_id, "system", "requests:delegate"), item.engagement_id
+        )
         await insert_delegation(
             tx.session,
             tenant_id=item.tenant_id,

@@ -41,6 +41,7 @@ from abacus.modules.identity.authz.conditions import (
 )
 from abacus.modules.identity.authz.matrix import RULES, Rule
 from abacus.modules.identity.client_access import (
+    DELEGATE_ROLES,
     FULL_ROLES,
     GrantExists,
     GrantRole,
@@ -48,6 +49,7 @@ from abacus.modules.identity.client_access import (
     GrantScopeInvalid,
     PortalScopes,
     ScopeKind,
+    delegation_holders,
     grant_client_access,
     portal_scopes,
     revoke_client_access,
@@ -387,6 +389,7 @@ __all__ = [
     "ACTION_KEY",
     "ACTIVITIES",
     "CODE_DIGITS",
+    "DELEGATE_ROLES",
     "EQR_ROLE",
     "EQR_ROLES",
     "FULL_ROLES",
@@ -533,6 +536,7 @@ __all__ = [
     "current_signed_in",
     "current_staff",
     "declared_action",
+    "delegation_holders",
     "drafted_guidance_to_clients",
     "earliest_partner",
     "end_assignments_for_wall",

@@ -318,6 +318,8 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
     assert set(YAML_ROLES) - set(HUMAN_ROLES) == {
         "client_admin",
         "client_contributor",
+        # R-01-T13 (DEC-387): a request item's delegate, `delegated_only` cells only.
+        "third_party",
         "agent",
         "system",
         # SPEC-012: break-glass staff, never firm members.

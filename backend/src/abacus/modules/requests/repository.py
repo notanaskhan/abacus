@@ -13,6 +13,7 @@ from sqlalchemy import (
     Subquery,
     and_,
     bindparam,
+    false,
     func,
     insert,
     literal_column,
@@ -682,6 +683,13 @@ async def insert_redaction(session: AsyncSession, **values: object) -> bool:
     return made.scalar_one_or_none() is not None
 
 
+def _delegate_reach(delegate: bool) -> ColumnElement[bool]:
+    """Beside `visible_items`: a third party authorised `comment.read` on this very request
+    through `delegated_only` (R-01-T13), which no list filter reaches through, reads the
+    client-visible request's thread; anyone else nothing more."""
+    return RequestItem.client_visible.is_(True) if delegate else false()
+
+
 async def list_thread(
     session: AsyncSession,
     ctx: AuthContext,
@@ -689,31 +697,40 @@ async def list_thread(
     version_id: UUID | None,
     *,
     shared_only: bool,
+    delegate: bool = False,
 ) -> Sequence[tuple[Comment, CommentRedaction | None]]:
-    """A thread's comments the actor may read, oldest first, each with its redaction."""
+    """A thread's comments the actor may read, oldest first, each with its redaction. A third
+    party's (`delegate`) are the shared ones only, whatever `shared_only` says."""
     query = (
         select(Comment, CommentRedaction)
         .join(RequestItem, RequestItem.id == Comment.request_item_id)
         .outerjoin(CommentRedaction, CommentRedaction.comment_id == Comment.id)
         .where(
             _thread(item_id, version_id),
-            visible_items(
-                ctx,
-                "comment.read",
-                RequestItem.engagement_id,
-                RequestItem.client_visible,
-                RequestItem.client_assignee_user_id,
+            or_(
+                visible_items(
+                    ctx,
+                    "comment.read",
+                    RequestItem.engagement_id,
+                    RequestItem.client_visible,
+                    RequestItem.client_assignee_user_id,
+                ),
+                _delegate_reach(delegate),
             ),
         )
         .order_by(Comment.created_at, Comment.id)
     )
-    if shared_only:
+    if shared_only or delegate:
         query = query.where(Comment.visibility == "shared")
     return list((await session.execute(query)).tuples().all())
 
 
 async def list_mentions(
-    session: AsyncSession, ctx: AuthContext, comment_ids: Sequence[UUID]
+    session: AsyncSession,
+    ctx: AuthContext,
+    comment_ids: Sequence[UUID],
+    *,
+    delegate: bool = False,
 ) -> dict[UUID, list[UUID]]:
     if not comment_ids:
         return {}
@@ -723,12 +740,15 @@ async def list_mentions(
         .join(RequestItem, RequestItem.id == Comment.request_item_id)
         .where(
             CommentMention.comment_id.in_(comment_ids),
-            visible_items(
-                ctx,
-                "comment.read",
-                RequestItem.engagement_id,
-                RequestItem.client_visible,
-                RequestItem.client_assignee_user_id,
+            or_(
+                visible_items(
+                    ctx,
+                    "comment.read",
+                    RequestItem.engagement_id,
+                    RequestItem.client_visible,
+                    RequestItem.client_assignee_user_id,
+                ),
+                _delegate_reach(delegate),
             ),
         )
     )
@@ -1300,6 +1320,19 @@ async def end_delegations(
     return [(cast(UUID, r[0]), cast(UUID, r[1])) for r in rows.all()]
 
 
+async def open_delegation_grants(session: AsyncSession, item_id: UUID) -> list[UUID]:
+    """R-01-T13: the grants under the request's open delegations (a pending one included; the
+    holders are identity's to read)."""
+    rows = await session.execute(
+        text(
+            "SELECT grant_id FROM request_delegations WHERE request_item_id = :item "
+            "AND revoked_at IS NULL AND grant_id IS NOT NULL ORDER BY granted_at, grant_id"
+        ),
+        {"item": item_id},
+    )
+    return [cast(UUID, r[0]) for r in rows.all()]
+
+
 async def open_delegations(
     session: AsyncSession, contact_ids: Sequence[UUID]
 ) -> list[tuple[UUID, UUID, str]]:
@@ -1699,10 +1732,12 @@ async def ignore_note_count(session: AsyncSession, item_id: UUID) -> int:
 
 
 async def portal_comment_counts(
-    session: AsyncSession, ctx: AuthContext, item_ids: Sequence[UUID]
+    session: AsyncSession, ctx: AuthContext, item_ids: Sequence[UUID], *, delegate: bool = False
 ) -> dict[UUID, int]:
     """R-01-T07: per request the client reads, its shared comments: the request's own thread
-    and the threads of its live files (a withdrawn file's thread is as gone as the file)."""
+    and the threads of its live files (a withdrawn file's thread is as gone as the file). For a
+    third party (`delegate`, R-01-T13) the requests are the ones delegated to them, each
+    authorised by the caller through `delegated_only`."""
     if not item_ids:
         return {}
     live_version = (
@@ -1721,17 +1756,81 @@ async def portal_comment_counts(
             Comment.request_item_id.in_(item_ids),
             Comment.visibility == "shared",
             or_(Comment.evidence_version_id.is_(None), live_version),
-            visible_items(
-                ctx,
-                "comment.read",
-                RequestItem.engagement_id,
-                RequestItem.client_visible,
-                RequestItem.client_assignee_user_id,
+            or_(
+                visible_items(
+                    ctx,
+                    "comment.read",
+                    RequestItem.engagement_id,
+                    RequestItem.client_visible,
+                    RequestItem.client_assignee_user_id,
+                ),
+                _delegate_reach(delegate),
             ),
         )
         .group_by(Comment.request_item_id)
     )
     return {item: int(n) for item, n in rows.all()}
+
+
+@dataclass(frozen=True)
+class DelegatedRow:
+    """R-01-T13: one open delegation of a live, client-visible request in a binder a client may
+    read at all, with the grant it was made under."""
+
+    item: RequestItem
+    binder: RequestList
+    grant_id: UUID
+    granted_at: datetime
+    granted_by: UUID
+
+
+async def delegated_rows(session: AsyncSession, item_ids: Sequence[UUID]) -> list[DelegatedRow]:
+    """The open delegations of these requests (the ones a person holds `request_item` grants
+    on; LIST_EXEMPT: keyed by the caller's own grants, each row then authorised through
+    `delegated_only`), oldest first. Never a draft, a deleted or an internal-only request, nor
+    one in a binder no client may read."""
+    if not item_ids:
+        return []
+    found = (
+        (
+            await session.execute(
+                select(RequestItem, RequestList)
+                .join(RequestList, RequestList.id == RequestItem.request_list_id)
+                .where(
+                    RequestItem.id.in_(list(item_ids)),
+                    RequestItem.deleted_at.is_(None),
+                    RequestItem.client_visible.is_(True),
+                    _PORTAL_BINDER,
+                )
+            )
+        )
+        .tuples()
+        .all()
+    )
+    if not found:
+        return []
+    live = {item.id: (item, binder) for item, binder in found}
+    delegations = await session.execute(
+        text(
+            "SELECT request_item_id, grant_id, granted_at, granted_by FROM request_delegations "
+            "WHERE request_item_id = ANY(:items) AND revoked_at IS NULL AND grant_id IS NOT NULL "
+            "ORDER BY granted_at, request_item_id"
+        ),
+        {"items": list(live)},
+    )
+    out: list[DelegatedRow] = []
+    for item_id, grant_id, granted_at, granted_by in delegations.tuples().all():
+        item, binder = live[cast(UUID, item_id)]
+        out.append(
+            DelegatedRow(
+                item,
+                binder,
+                cast(UUID, grant_id),
+                cast(datetime, granted_at),
+                cast(UUID, granted_by),
+            )
+        )
+    return out
 
 
 async def drop_item_rows(session: AsyncSession, binder_id: UUID) -> Sequence[RequestItem]:

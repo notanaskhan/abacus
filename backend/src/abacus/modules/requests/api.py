@@ -42,11 +42,13 @@ from abacus.modules.requests.follow_up_reads import (
     live_files,
 )
 from abacus.modules.requests.lifecycle import (
+    ConsentRequired,
     contact_delegations,
     end_contact_delegations,
     record_contact_delegations,
     register_live_facts,
     request_item_scope,
+    third_party_consented,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
 from abacus.modules.requests.portal_documents import (
@@ -63,6 +65,12 @@ from abacus.modules.requests.portal_documents import (
     prior_year_link,
 )
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
+from abacus.modules.requests.portal_room import (
+    DelegateUpload,
+    RoomItem,
+    delegate_upload,
+    room_items,
+)
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
 from abacus.modules.requests.routes import firm_router, methodology_router, router
@@ -149,6 +157,8 @@ __all__ = [
     "WORKFLOWS",
     "BinderProgress",
     "ClientHome",
+    "ConsentRequired",
+    "DelegateUpload",
     "DropBinder",
     "DueDatesChanged",
     "FollowUpCandidate",
@@ -172,6 +182,7 @@ __all__ = [
     "RequestLatestUploadOut",
     "RequestOwedByOut",
     "ReviewTarget",
+    "RoomItem",
     "ScreeningSubject",
     "SourceDocuments",
     "UploadFacts",
@@ -181,6 +192,7 @@ __all__ = [
     "check_return_comment",
     "classify",
     "client_home",
+    "delegate_upload",
     "document_kind",
     "drop_binder",
     "drop_binder_open",
@@ -221,9 +233,11 @@ __all__ = [
     "reopen_after_undo",
     "request_items_for",
     "review_targets",
+    "room_items",
     "router",
     "screening_subject",
     "source_documents",
+    "third_party_consented",
     "upload_item_of",
     "void_rule_link_in",
     "withdraw_upload",

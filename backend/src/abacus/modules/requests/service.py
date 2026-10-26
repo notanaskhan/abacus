@@ -9,6 +9,8 @@ from datetime import date, datetime
 from typing import Final
 from uuid import UUID, uuid4
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
@@ -26,6 +28,7 @@ from abacus.modules.identity.api import (
     SystemContext,
     authorise,
     authorise_items,
+    delegation_holders,
     drafted_guidance_to_clients,
     engagement_role_of,
     my_engagements,
@@ -70,6 +73,7 @@ from abacus.modules.requests.repository import (
     list_request_items,
     mark_received,
     newest_fulfilment,
+    open_delegation_grants,
     overdue_counts,
     overdue_items,
     request_list_for,
@@ -348,11 +352,24 @@ class RequestItemRef:
     client_visible: bool = True
     client_assignee_user_id: UUID | None = None
     document_kind: str | None = None  # SPEC-031: the bank statement gap
+    # R-01-T13 (DEC-387): who holds the grant of one of its open delegations (a third party).
+    delegated_to: frozenset[UUID] = frozenset()
 
     @property
     def facts(self) -> ItemFacts:
-        """For the client conditions in `authorise` (SPEC-020)."""
-        return ItemFacts(self.client_visible, self.client_assignee_user_id)
+        """For the client conditions in `authorise` (SPEC-020; `delegated_only`, R-01-T13)."""
+        return ItemFacts(
+            self.client_visible, self.client_assignee_user_id, delegated_to=self.delegated_to
+        )
+
+
+async def delegated_to(
+    tenant: TenantContext, session: AsyncSession, item_id: UUID
+) -> frozenset[UUID]:
+    """The people the request is delegated to now: holders of the active grants under its open
+    delegations (R-01-T13; `delegated_only`)."""
+    grants = await open_delegation_grants(session, item_id)
+    return await delegation_holders(tenant, item_id, grants) if grants else frozenset()
 
 
 async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False) -> RequestItemRef:
@@ -367,6 +384,9 @@ async def item_ref(tx: UnitOfWork, request_item_id: UUID, *, lock: bool = False)
         item.status,
         item.client_visible,
         item.client_assignee_user_id,
+        delegated_to=await delegated_to(
+            TenantContext(item.tenant_id, "system", "requests:delegates"), tx.session, item.id
+        ),
     )
 
 
@@ -736,8 +756,9 @@ async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -
     """The item outside a unit of work, for a caller about to authorise on its facts."""
     async with tenant_session(tenant) as session:
         item = await get_request_item(session, item_id)
-    if item is None or item.engagement_id != engagement_id:
-        raise NotFound("request_item")
+        if item is None or item.engagement_id != engagement_id:
+            raise NotFound("request_item")
+        delegates = await delegated_to(tenant, session, item.id)
     return RequestItemRef(
         item.id,
         item.engagement_id,
@@ -745,6 +766,7 @@ async def read_item(tenant: TenantContext, engagement_id: UUID, item_id: UUID) -
         item.client_visible,
         item.client_assignee_user_id,
         item.document_kind,
+        delegated_to=delegates,
     )
 
 
