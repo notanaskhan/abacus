@@ -50,13 +50,7 @@ from abacus.modules.identity.api import RULES, AuthContext, Forbidden
 
 from .support import Net, Person, Seeder
 
-pytestmark = [
-    pytest.mark.asyncio,
-    # DEC-399: committed before P-07-T42; its commit drops only this marker (TASK-1324).
-    pytest.mark.xfail(
-        strict=True, reason="TASK-1324: the intake commit is P-07-T42's (TASK-1326)"
-    ),
-]
+pytestmark = pytest.mark.asyncio
 
 Json = dict[str, object]
 DRAFTS: Final = "/v1/client-intake-drafts"

@@ -25750,6 +25750,23 @@
             "cls": "confidential",
             "title": "Fiscal Period Start"
           },
+          "forms": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^[a-z0-9_]{1,64}$",
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Forms"
+          },
           "type_code": {
             "cls": "internal",
             "pattern": "^[a-z0-9_]{1,64}$",
@@ -61148,6 +61165,7 @@
     },
     "/v1/client-intake-drafts": {
       "post": {
+        "description": "422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4).",
         "operationId": "create_intake_draft",
         "parameters": [
           {
@@ -61243,16 +61261,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Intake Draft Route",
@@ -61359,16 +61367,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Intake Draft Route",
@@ -61474,16 +61472,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Intake Draft Route",
@@ -61493,7 +61481,7 @@
         "x-abacus-action": "client.intake"
       },
       "patch": {
-        "description": "Autosave; 409 `stale_version`.",
+        "description": "Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`.",
         "operationId": "update_intake_draft",
         "parameters": [
           {
@@ -61609,16 +61597,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Intake Draft Route",
@@ -61630,7 +61608,7 @@
     },
     "/v1/client-intake-drafts/{draft_id}/commit": {
       "post": {
-        "description": "Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without\na cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same.",
+        "description": "Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without\na cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key\nanswers the same.",
         "operationId": "commit_intake_draft",
         "parameters": [
           {
@@ -61757,16 +61735,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Commit Intake Draft Route",
@@ -61884,16 +61852,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Validate Intake Draft Route",
@@ -62167,7 +62125,7 @@
     },
     "/v1/clients/dedupe": {
       "post": {
-        "description": "CLI-06 b: \"96% match \u00b7 Walter Thornbury\" (P-07-T42).",
+        "description": "CLI-06 b: \"96% match \u00b7 Walter Thornbury\" (DEC-441); walled clients are never candidates.",
         "operationId": "dedupe",
         "parameters": [
           {
@@ -62263,16 +62221,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Dedupe Route",

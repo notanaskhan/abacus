@@ -700,6 +700,8 @@ export const runClientImport = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Create Intake Draft Route
+ *
+ * 422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4).
  */
 export const createIntakeDraft = <ThrowOnError extends boolean = false>(options: Options<CreateIntakeDraftData, ThrowOnError>): RequestResult<CreateIntakeDraftResponses, CreateIntakeDraftErrors, ThrowOnError> => (options.client ?? client).post<CreateIntakeDraftResponses, CreateIntakeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -734,7 +736,7 @@ export const getIntakeDraft = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Update Intake Draft Route
  *
- * Autosave; 409 `stale_version`.
+ * Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`.
  */
 export const updateIntakeDraft = <ThrowOnError extends boolean = false>(options: Options<UpdateIntakeDraftData, ThrowOnError>): RequestResult<UpdateIntakeDraftResponses, UpdateIntakeDraftErrors, ThrowOnError> => (options.client ?? client).patch<UpdateIntakeDraftResponses, UpdateIntakeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -750,7 +752,8 @@ export const updateIntakeDraft = <ThrowOnError extends boolean = false>(options:
  * Commit Intake Draft Route
  *
  * Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without
- * a cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same.
+ * a cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key
+ * answers the same.
  */
 export const commitIntakeDraft = <ThrowOnError extends boolean = false>(options: Options<CommitIntakeDraftData, ThrowOnError>): RequestResult<CommitIntakeDraftResponses, CommitIntakeDraftErrors, ThrowOnError> => (options.client ?? client).post<CommitIntakeDraftResponses, CommitIntakeDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -793,7 +796,7 @@ export const listClients = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Dedupe Route
  *
- * CLI-06 b: "96% match · Walter Thornbury" (P-07-T42).
+ * CLI-06 b: "96% match · Walter Thornbury" (DEC-441); walled clients are never candidates.
  */
 export const dedupe = <ThrowOnError extends boolean = false>(options: Options<DedupeData, ThrowOnError>): RequestResult<DedupeResponses, DedupeErrors, ThrowOnError> => (options.client ?? client).post<DedupeResponses, DedupeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

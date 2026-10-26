@@ -1371,6 +1371,8 @@ export const runClientImportMutation = (options?: Partial<Options<RunClientImpor
 
 /**
  * Create Intake Draft Route
+ *
+ * 422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4).
  */
 export const createIntakeDraftMutation = (options?: Partial<Options<CreateIntakeDraftData>>): UseMutationOptions<CreateIntakeDraftResponse, CreateIntakeDraftError, Options<CreateIntakeDraftData>> => {
     const mutationOptions: UseMutationOptions<CreateIntakeDraftResponse, CreateIntakeDraftError, Options<CreateIntakeDraftData>> = {
@@ -1426,7 +1428,7 @@ export const getIntakeDraftOptions = (options: Options<GetIntakeDraftData>) => q
 /**
  * Update Intake Draft Route
  *
- * Autosave; 409 `stale_version`.
+ * Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`.
  */
 export const updateIntakeDraftMutation = (options?: Partial<Options<UpdateIntakeDraftData>>): UseMutationOptions<UpdateIntakeDraftResponse, UpdateIntakeDraftError, Options<UpdateIntakeDraftData>> => {
     const mutationOptions: UseMutationOptions<UpdateIntakeDraftResponse, UpdateIntakeDraftError, Options<UpdateIntakeDraftData>> = {
@@ -1446,7 +1448,8 @@ export const updateIntakeDraftMutation = (options?: Partial<Options<UpdateIntake
  * Commit Intake Draft Route
  *
  * Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without
- * a cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same.
+ * a cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key
+ * answers the same.
  */
 export const commitIntakeDraftMutation = (options?: Partial<Options<CommitIntakeDraftData>>): UseMutationOptions<CommitIntakeDraftResponse, CommitIntakeDraftError, Options<CommitIntakeDraftData>> => {
     const mutationOptions: UseMutationOptions<CommitIntakeDraftResponse, CommitIntakeDraftError, Options<CommitIntakeDraftData>> = {
@@ -1540,7 +1543,7 @@ export const listClientsInfiniteOptions = (options?: Options<ListClientsData>) =
 /**
  * Dedupe Route
  *
- * CLI-06 b: "96% match · Walter Thornbury" (P-07-T42).
+ * CLI-06 b: "96% match · Walter Thornbury" (DEC-441); walled clients are never candidates.
  */
 export const dedupeMutation = (options?: Partial<Options<DedupeData>>): UseMutationOptions<DedupeResponse, DedupeError, Options<DedupeData>> => {
     const mutationOptions: UseMutationOptions<DedupeResponse, DedupeError, Options<DedupeData>> = {

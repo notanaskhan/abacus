@@ -12178,6 +12178,10 @@ export type IntakeServiceIn = {
      */
     fiscal_period_start?: string | null;
     /**
+     * Forms
+     */
+    forms?: Array<string> | null;
+    /**
      * Type Code
      */
     type_code: string;
@@ -28794,10 +28798,6 @@ export type CreateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateIntakeDraftError = CreateIntakeDraftErrors[keyof CreateIntakeDraftErrors];
@@ -28850,10 +28850,6 @@ export type DiscardIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardIntakeDraftError = DiscardIntakeDraftErrors[keyof DiscardIntakeDraftErrors];
@@ -28906,10 +28902,6 @@ export type GetIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetIntakeDraftError = GetIntakeDraftErrors[keyof GetIntakeDraftErrors];
@@ -28966,10 +28958,6 @@ export type UpdateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateIntakeDraftError = UpdateIntakeDraftErrors[keyof UpdateIntakeDraftErrors];
@@ -29030,10 +29018,6 @@ export type CommitIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CommitIntakeDraftError = CommitIntakeDraftErrors[keyof CommitIntakeDraftErrors];
@@ -29086,10 +29070,6 @@ export type ValidateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateIntakeDraftError = ValidateIntakeDraftErrors[keyof ValidateIntakeDraftErrors];
@@ -29225,10 +29205,6 @@ export type DedupeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DedupeError = DedupeErrors[keyof DedupeErrors];

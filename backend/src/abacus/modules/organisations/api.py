@@ -23,6 +23,20 @@ from abacus.modules.organisations.contract import (
     client_entities_router,
     clients_router,
 )
+
+# P-07-T42 (DEC-430, DEC-441): what CLI-06's single intake reads and writes here.
+from abacus.modules.organisations.intake import (
+    CONTACT_ROLES,
+    ENTITY_TYPES,
+    RELATIONSHIP_KINDS,
+    CheckOutcome,
+    DedupeMatch,
+    add_intake_contact,
+    add_intake_relationship,
+    conflict_check_outcome,
+    dedupe_candidates,
+    same_name_client,
+)
 from abacus.modules.organisations.live import (
     NewRelationship,
     add_relationship,
@@ -127,7 +141,11 @@ for _section in (
     register_overview_section(_section)
 
 __all__ = [
+    "CONTACT_ROLES",
+    "ENTITY_TYPES",
+    "RELATIONSHIP_KINDS",
     "ROUTERS",
+    "CheckOutcome",
     "ClientChoice",
     "ClientNames",
     "ClientRecord",
@@ -138,6 +156,7 @@ __all__ = [
     "ContactKind",
     "ContactLinked",
     "ContactView",
+    "DedupeMatch",
     "EntityAttributes",
     "EntityChoice",
     "FirmName",
@@ -154,6 +173,8 @@ __all__ = [
     "TinKindNotAllowed",
     "activate_contact",
     "add_contact",
+    "add_intake_contact",
+    "add_intake_relationship",
     "add_relationship",
     "attest_client_ids",
     "attest_client_of",
@@ -165,11 +186,13 @@ __all__ = [
     "client_of_entity",
     "client_record",
     "client_with_entity",
+    "conflict_check_outcome",
     "contact_client",
     "contact_facts",
     "contact_portal_facts",
     "contacts_of_user",
     "create_client",
+    "dedupe_candidates",
     "entity_name_column",
     "find_clients",
     "firm_names",
@@ -182,6 +205,7 @@ __all__ = [
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",
+    "same_name_client",
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",
