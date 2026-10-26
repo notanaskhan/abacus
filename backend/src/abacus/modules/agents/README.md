@@ -54,10 +54,10 @@ Deterministic policies, no model: the platform retrieves and suggests by rule; a
 - **P-4 follow-ups** (`follow_ups.py`; renamed from reminders by F-03-T16):
   - items past their due date and still open or sent back are reminded on the first business-day tick after it, then every 3 business days, at most 3 per due date; a changed due date starts again;
   - one email per contact per tick: the assignee, else the client admins;
-  - Routine sends as the agent through `communications.send_follow_up` (recorded first as a draft, so a failed send waits for a person instead of being emailed again); Advise drafts (`reminders.drafted`);
+  - the agent only drafts, at every autonomy level (TASK-104; DEC-74, P-06-T14): a person reads the draft and sends it. The tick runs as an activity of `EngagementAgent`, which holds no business state, so the change needed no `workflow.patched` marker and the recorded histories replay unchanged (DEC-220). `draft_now` drafts for everything overdue on a person's request;
   - nothing client-facing before the engagement is open.
 - **P-5 digest:** `agent.digest` (in the app) with the overdue count in the feed.
-- **Drafts:** `GET /v1/engagements/{id}/follow-ups` (`follow_up.draft`); `POST …/follow-ups/{id}/send` (optional note) and `/dismiss` (`follow_up.send`).
+- **Drafts:** `GET /v1/engagements/{id}/follow-ups` (`follow_up.draft`); `POST …/follow-ups/{id}/send` (optional note) and `/dismiss` (`follow_up.send`). Since P-06-T14 these SPEC-027 routes send through the same approval-grant hold as follow-ups v2 (`send_overdue`).
 - **Starting every agent:** `python -m abacus_tools.engagement_agents start <tenant-id>` (idempotent).
 
 ## Temporal (TASK-011b)
@@ -172,3 +172,14 @@ The firm's methodology documents, recalled by vector search. Knowledge is firm-w
   - `tri_gate.py` stops the reviewer's run and keeps model output out of the aggregate;
   - the gateway refuses every agent's call (`tax_return_information`).
   - Both hold until C19 registers §7216 consent.
+
+## Follow-ups v2: drafted by the platform, sent by a person (P-06-T14; C5 v1.2 §12; DEC-74, DEC-220)
+`follow_up_drafts.py` (PROTECTED) over `follow_up_routes.py`, behind `binders.engine`.
+- **Draft** (`POST /v1/follow-ups/drafts`, `follow_up.draft`): over binders or requests, one follow-up per client contact per engagement from the firm's published Reminder template (C16, in the database; 409 `follow_up_template_missing` until imported), listing each open client-visible request once and never one already waiting in a draft to that contact. What is open comes from `requests.api` (`follow_up_reads.py`). The composition is the Request Chaser's (`drafted_by_kind = 'agent'`, the C-31 marker); the person who asked is the audit actor.
+- **Edit** (`PATCH /v1/follow-ups/{id}`): a person's edit, sealed with `edit_fingerprint`; a sent one answers 409 `follow_up_already_sent`.
+- **Send** (`POST /v1/follow-ups/{id}/send` or `/v1/follow-ups/send`, `follow_up.send`, `Idempotency-Key`): human only (the matrix denies the agent; `follow_up.sent` is in the database's human-only register), every client- or person-written value scope-checked at draft and again at send (409 `out_of_scope`, nothing written), held by an approval grant until the 10-s Undo window ends (ADR-161). The body sent is frozen in `body_sealed`; the relay's delivery of `follow_up.sent` sends the email through communications. Undo within the window voids the grant and puts the draft back; dismiss closes it.
+- **Screening return** (SHL-20 b; TASK-1252, DEC-368): `POST …/request-items/{id}/follow-ups` drafts one return from the firm's Return template with the files it returns. Its send records one `send_back` per file and moves the request to Returned in the grant's unit of work; its delivery, after the window, posts the shared comment with the email. It is sent alone (409 `follow_up_send_alone` in a bulk send); Undo also undoes the send-backs.
+- No model text reaches a client (DEC-79, ADR-111).
+
+## Withdrawn versions (P-06-T19; ADR-162 §4)
+Agents read `evidence.api.withdrawn_among` / `is_version_withdrawn` and leave a client's withdrawn upload out: the upload reviewer's runs record nothing for it, and the screening card, the screening aggregate, the engagement graph, the run trace, run records and the gate facts skip it.
