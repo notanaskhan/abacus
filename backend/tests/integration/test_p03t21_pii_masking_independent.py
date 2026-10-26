@@ -548,21 +548,7 @@ async def _as(world: World, role: str) -> Person:
     return await seed.person(world.tenant_id, role)  # a firm role, on no engagement
 
 
-@pytest.mark.parametrize(
-    "role",
-    [
-        *(r for r in ALLOWED if r != "eqr_reviewer"),
-        pytest.param(
-            "eqr_reviewer",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="pii.reveal allows eqr_reviewer (C4 s2) but evidence.read does not list "
-                "them, so the version is invisible and the reveal answers 404; recorded in "
-                "work/tasks/TASK-1322-p03-pii-independent-suite.md (ED-106)",
-            ),
-        ),
-    ],
-)
+@pytest.mark.parametrize("role", ALLOWED)  # eqr_reviewer reads evidence since DEC-427 (ED-106)
 async def test_ac26_a_role_the_matrix_allows_reveals_the_1099_recipient_tin(
     world: World, role: str
 ) -> None:
@@ -869,10 +855,8 @@ async def test_ac35_unlock_is_refused_to_a_client_and_to_roles_without_it(
     upload = await world.upload(password_pdf(OPENS_WITH))
     who = await _as(world, role)
     response = await world.unlock(upload.version, OPENS_WITH, who)
-    if role == "eqr_reviewer":  # evidence.read does not name them: invisible or forbidden
-        assert (response.status_code, response.json()) in [(403, FORBIDDEN), (404, NOT_FOUND)]
-    else:
-        assert (response.status_code, response.json()) == (403, FORBIDDEN)
+    # Every one of them sees the version (eqr_reviewer since DEC-427) and lacks the action.
+    assert (response.status_code, response.json()) == (403, FORBIDDEN)
     assert OPENS_WITH not in response.text
     assert await _unlock_audits(world) == []
     assert (
