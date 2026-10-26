@@ -114,7 +114,9 @@ async def test_a_walled_subject_answers_404_and_a_redacted_row_is_only_the_contr
         "match_kind",
         "assessment",
     }
-    assert check["outcome"] == "hits"
+    # DEC-375 (M2): the outcome counts only what the reader may see; the flag says the rest.
+    assert check["outcome"] == "clear"
+    assert check["restricted_match"] is True
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await net.seed.run("UPDATE conflict_results SET score = 1 WHERE tenant_id = $1", tenant)
     with pytest.raises(asyncpg.InsufficientPrivilegeError):

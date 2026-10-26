@@ -65,7 +65,7 @@ actions:
   # P-07-T35 (DEC-372): the risk partner the EP named completes the review (AC-4). They are
   # usually not on the team, so the route authorises on the client, where the derived
   # `firm_partner` applies (walls too); the service admits only the named partner.
-  acceptance.complete_review: {firm_partner: allow, agent: deny, system: deny}
+  acceptance.complete_review: {firm_partner: allow, mfa_recent: required, agent: deny, system: deny}   # human-only; fresh MFA (DEC-375)
   independence.read:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, quality_partner: in_scope, agent: deny, system: deny}
   independence.remind:      {engagement_partner: allow, manager: allow, agent: deny, system: deny}   # sent by the person clicking
   independence.conclude:    {engagement_partner: allow, mfa_recent: required, agent: deny, system: deny}   # human-only

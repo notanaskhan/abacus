@@ -110,6 +110,13 @@ class AcceptanceStale(DomainConflict):
     code = "stale_version"
 
 
+class AcceptanceSent(DomainConflict):
+    """The record was sent to the partner: its answers, risk rating and manual checks are
+    frozen (DEC-375)."""
+
+    code = "acceptance_sent"
+
+
 class AcceptanceTemplateMissing(DomainConflict):
     """The firm has no acceptance questionnaire for the engagement type's family (`facts.family`):
     templates are database content, loaded before acceptance can start."""
@@ -290,6 +297,18 @@ async def _record_for_update(tx: UnitOfWork, engagement_id: UUID) -> RowMapping:
     if row is None:
         raise NotFound("acceptance_record")
     return row
+
+
+# The risk rating's position, for an audit reference (identifiers and integers only, DEC-375).
+RISK_CODES: Final = (None, "low", "moderate", "high")
+
+
+def _draft_record(row: RowMapping) -> None:
+    """DEC-375 (security review H1): answers, the risk rating and manual checks change only
+    while the record is a Draft; the database holds the same (0165)."""
+    _open_record(row)
+    if row["status"] != "draft":
+        raise AcceptanceSent(facts={"record_id": str(row["id"])})
 
 
 def _open_record(row: RowMapping) -> None:
@@ -600,7 +619,7 @@ async def update_answers(
     async with uow(ctx.tenant) as tx:
         _, record = await _writable(tx, ctx, engagement_id, PREPARE)
         await _not_client_service(ctx, engagement_id)
-        _open_record(record)
+        _draft_record(record)
         record_id = cast(UUID, record["id"])
         codes = {c for c, _ in await _sections_of(tx.session, record["template_version_id"])}
         if section_code not in codes:
@@ -653,13 +672,20 @@ async def update_answers(
             )
         )
         extra: dict[str, object] = {}
-        if risk_rating is not None and risk_rating != record["risk_rating"]:
+        before = cast(str | None, record["risk_rating"])
+        if risk_rating is not None and risk_rating != before:
             extra["risk_rating"] = risk_rating
         version = await _bump(tx, record_id, **extra)
+        after = risk_rating if risk_rating is not None else before
         tx.record(
             "acceptance.answers_updated",
             target=Target("engagement", engagement_id),
-            after=Ref(record_id=record_id, version=version),
+            after=Ref(
+                record_id=record_id,
+                version=version,
+                risk_before=RISK_CODES.index(before),
+                risk_after=RISK_CODES.index(after),
+            ),
         )
     return await _section(ctx, engagement_id, section_code)
 
@@ -710,7 +736,7 @@ async def request_manual_check(
     async with uow(ctx.tenant) as tx:
         _, record = await _writable(tx, ctx, engagement_id, PREPARE)
         await _not_client_service(ctx, engagement_id)
-        _open_record(record)
+        _draft_record(record)
         codes = {c for c, _ in await _sections_of(tx.session, record["template_version_id"])}
         if section_code not in codes:
             raise NotFound("acceptance_section")
@@ -757,7 +783,7 @@ async def complete_manual_check(
     """Completed once, only by the person it was asked of (client service included)."""
     async with uow(ctx.tenant) as tx:
         _, record = await _writable(tx, ctx, engagement_id, PREPARE)
-        _open_record(record)
+        _draft_record(record)
         check = (
             (
                 await tx.session.execute(
@@ -992,6 +1018,11 @@ async def decide_acceptance(
     Awaiting-partner record at `seen_version`; one insert-only row (`actor_kind = 'human'`
     CHECK), the record locked, the engagement Prospect → Accepted or Declined (INV-1)."""
     _live_human(ctx, DECIDE)
+    # DEC-375 (M3): the decider is a partner-level member at decision time, whatever role an
+    # engagement's team gave them; the database checks the same (0165).
+    facts_of_decider = await member_facts(ctx.tenant, ctx.user_id)
+    if facts_of_decider is None or facts_of_decider.client or facts_of_decider.level != "partner":
+        raise Forbidden(DECIDE, "role")
     rationale = rationale.strip()
     async with uow(ctx.tenant) as tx:
         _, record = await _writable(tx, ctx, engagement_id, DECIDE)
@@ -1013,7 +1044,8 @@ async def decide_acceptance(
             facts = await member_facts(ctx.tenant, c.assignee_user_id)
             if facts is None or facts.client:
                 raise DomainInvalid(facts={"field": "conditions"})
-        if record["risk_rating"] == "high":
+        # DEC-375 (H1): a record ever rated High keeps needing the review.
+        if record["risk_rating"] == "high" or record["high_risk_seen"]:
             review = await _review(tx.session, record_id)
             if review is None or review.completed_at is None:
                 raise ReviewRequired(facts={"record_id": str(record_id)})

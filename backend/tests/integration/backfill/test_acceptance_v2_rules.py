@@ -13,6 +13,10 @@ from typing import cast
 import asyncpg
 import httpx
 import pytest
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Target, uow
 
 from .support import Net, Person
 
@@ -162,17 +166,7 @@ async def test_the_database_guards_the_record(net: Net) -> None:
     started = (await w.start(await w.draft())).json()
     record = uuid.UUID(cast(str, started["acceptance_record_id"]))
     seed = net.seed
-    # No skipping a state, and no decided record without its decision row.
-    with pytest.raises(asyncpg.CheckViolationError):
-        await seed.run("UPDATE acceptance_records SET status = 'decided' WHERE id = $1", record)
-    await seed.run(
-        "UPDATE acceptance_records SET status = 'awaiting_partner' WHERE id = $1", record
-    )
-    with pytest.raises(asyncpg.CheckViolationError):
-        await seed.run("UPDATE acceptance_records SET status = 'decided' WHERE id = $1", record)
-    with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        await seed.run("DELETE FROM acceptance_records WHERE id = $1", record)
-    # A manual check is completed only by the person it was asked of.
+    # A manual check is completed only by the person it was asked of (while a Draft).
     check = await seed.value(
         "INSERT INTO acceptance_manual_checks (tenant_id, record_id, section_code, requested_of, "
         "requested_by) VALUES ($1, $2, 'scope', $3, $4) RETURNING id",
@@ -196,15 +190,28 @@ async def test_the_database_guards_the_record(net: Net) -> None:
         await seed.run(
             "UPDATE acceptance_manual_checks SET note_sealed = NULL WHERE id = $1", check
         )
-    # Decided: the record and its children are locked.
+    # No skipping a state, and no decided record without its decision row.
+    with pytest.raises(asyncpg.CheckViolationError):
+        await seed.run("UPDATE acceptance_records SET status = 'decided' WHERE id = $1", record)
     await seed.run(
-        "INSERT INTO acceptance_decisions (tenant_id, record_id, option, rationale_sealed, "
-        "decided_by, mfa_verified_at, actor_kind) VALUES ($1, $2, 'accept', '\\x00'::bytea, $3, "
-        "now(), 'human')",
-        w.tenant,
-        record,
-        w.partner.user_id,
+        "UPDATE acceptance_records SET status = 'awaiting_partner' WHERE id = $1", record
     )
+    with pytest.raises(asyncpg.CheckViolationError):
+        await seed.run("UPDATE acceptance_records SET status = 'decided' WHERE id = $1", record)
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await seed.run("DELETE FROM acceptance_records WHERE id = $1", record)
+    # Decided: the record and its children are locked.
+    # As the app writes it: through the unit of work, the acting partner (0165).
+    async with uow(TenantContext(w.tenant, "human", str(w.partner.user_id))) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO acceptance_decisions (tenant_id, record_id, option, "
+                "rationale_sealed, decided_by, mfa_verified_at) VALUES (:tenant, :record, "
+                "'accept', '\\x00'::bytea, :by, now())"
+            ),
+            {"tenant": w.tenant, "record": record, "by": w.partner.user_id},
+        )
+        tx.record("engagement.probed", target=Target("client", w.client_id))
     await seed.run("UPDATE acceptance_records SET status = 'decided' WHERE id = $1", record)
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
         await seed.run("UPDATE acceptance_records SET risk_rating = 'low' WHERE id = $1", record)

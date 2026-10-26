@@ -72,6 +72,7 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_team_query,
     hidden_clients,
+    member_facts,
 )
 from abacus.modules.organisations.api import client_of_entity
 
@@ -283,6 +284,20 @@ async def create_draft(
             "engagement_draft.started", target=Target("engagement_draft", cast(UUID, row["id"]))
         )
     return await _with_gates(ctx, _view(row))
+
+
+async def draft_visible(ctx: AuthContext, draft_id: UUID) -> bool:
+    """For organisations' conflict checks (DEC-375, L4): the draft is the caller's own, live,
+    and its client is not walled off from them."""
+    async with tenant_session(ctx.tenant) as session:
+        try:
+            found = await _own(session, ctx, draft_id)
+        except NotFound:
+            return False
+    owner = found.client_id
+    if found.client_entity_id is not None:
+        owner = await client_of_entity(ctx.tenant, found.client_entity_id)
+    return owner is None or not await hidden_clients(ctx.tenant, ctx.user_id, [owner])
 
 
 async def get_draft(ctx: AuthContext, draft_id: UUID) -> DraftView:
@@ -767,6 +782,13 @@ async def start_acceptance(ctx: AuthContext, draft_id: UUID) -> AcceptanceStarte
         if before is None or before.client_entity_id != d.client_entity_id:
             raise DomainInvalid(facts={"field": "prior_engagement_id"})
     team = cast(list[dict[str, str]], d.payload.get("team") or [])
+    # DEC-375 (M3): the engagement partner named on the draft is a partner-level staff member;
+    # anyone else could otherwise name themself and decide alone.
+    for member in team:
+        if member.get("role") == _PARTNER:
+            facts = await member_facts(ctx.tenant, UUID(member["user_id"]))
+            if facts is None or facts.client or facts.level != "partner":
+                raise DomainInvalid(facts={"field": "team"})
     engagement_id = uuid4()
     async with uow(ctx.tenant) as tx:
         await insert_engagement(

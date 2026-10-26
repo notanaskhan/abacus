@@ -4924,6 +4924,10 @@ export type ConflictCheckOut = {
      */
     outcome: 'pending' | 'clear' | 'hits';
     /**
+     * Restricted Match
+     */
+    restricted_match?: boolean;
+    /**
      * Results
      */
     results?: Array<ConflictResultOut>;

@@ -42,6 +42,7 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
     Forbidden,
+    Resource,
     authorise,
     current_context,
 )
@@ -629,6 +630,19 @@ async def _acceptance_gate(ctx: AuthContext, action: str, engagement_id: UUID) -
         raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
 
 
+async def _review_gate(ctx: AuthContext, engagement_id: UUID) -> None:
+    """The risk partner's completion (DEC-375, L1): refused to a client, an agent and the
+    system, authorised on the engagement's client (the derived `firm_partner`; walls apply),
+    then `engagements.acceptance_v2` (404 off)."""
+    action = "acceptance.complete_review"
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, action, Resource.client(ctx.tenant_id, ref.client_id))
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
+        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
+
+
 def _record_out(view: acceptance_model.RecordView) -> AcceptanceRecordOut:
     return AcceptanceRecordOut.model_validate(view, from_attributes=True)
 
@@ -802,8 +816,7 @@ async def complete_risk_partner_review_route(
 ) -> RiskPartnerReviewOut:
     """AC-4 (TASK-1258): only the named risk partner, authorised on the client (the derived
     `firm_partner`; walls apply); `acceptance.review_completed`."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
-        raise Forbidden("acceptance.complete_review", "role")
+    await _review_gate(ctx, engagement_id)
     review = await acceptance_model.complete_risk_review(ctx, engagement_id)
     return RiskPartnerReviewOut.model_validate(review, from_attributes=True)
 

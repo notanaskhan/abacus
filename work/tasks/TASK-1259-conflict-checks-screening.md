@@ -72,3 +72,11 @@ no name to the walled user." Today `organisations/conflicts_contract.py` answers
   LIVE, `conflict` now a registry assessment); the role partition and `client.intake` matrix
   tests updated for `firm_manager`; the web registry row count (377). Gates green; `make
   generate`, web tsc and the status and SHL-03 vitest suites.
+- 2026-10-26: security review fix round (DEC-375, 0165). M1: clearances and screening
+  records name the acting person (database). M2: walled matches collapse into one restricted
+  row (the first one's id, `trigram`, `pending`) and `restricted_match`; the outcome counts
+  only visible matches (P-07-T38's AC-24 row kept). L3: three statements for all names under
+  one 2-second budget, 503 past it. L4: draft subjects checked by their owner through a
+  fail-closed slot (intake drafts refused until P-07-T42); a screening evidence link must be
+  a version the caller may read (evidence → engagements → organisations slots); no result
+  count in the audit. L5: `firm_manager` only on the manager template.

@@ -10,9 +10,12 @@ AC-23 to AC-26; DEC-373).
   and for each matched entity, every relationship edge to an entity of another client is a
   `relationship` match on that client. One result per matched client and kind (the best score).
   The names are sealed per tenant, bound to the check.
-- **Redaction** happens when a check is read, per reader: a result on a client the reader is
-  walled from carries only its id, `redacted`, the match kind and the assessment. No count of
-  them is given anywhere, and clearing one answers 404, as an unknown result does.
+- **Redaction** happens when a check is read, per reader: every result on a client the reader
+  is walled from collapses into one restricted row (the first one's id, the weakest kind,
+  `pending`) and
+  the check's `restricted_match` flag; the outcome counts only what the reader may see. No count
+  of walled matches is given anywhere, and clearing one answers 404, as an unknown result does
+  (DEC-375).
 - **Clearance** is a person's (never an agent or the platform), with an assessment code and a
   sealed reason, as an insert-only event; the newest event is the result's assessment.
 - **Screening** results are recorded by a person; nothing is looked up.
@@ -26,6 +29,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -33,12 +37,14 @@ from decimal import Decimal
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import RowMapping, text
+import asyncpg
+from sqlalchemy import RowMapping, TextClause, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import NotFound, ServiceUnavailable
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import (
     AuthContext,
@@ -50,6 +56,7 @@ from abacus.modules.identity.api import (
     walled_from,
 )
 from abacus.modules.organisations.service import normalise
+from abacus.modules.organisations.slots import evidence_visible, subject_visible
 
 RUN: Final = "conflict.run"
 CLEAR: Final = "conflict.clear"
@@ -59,6 +66,11 @@ COUNTERPARTY_ROLES: Final = ("custodian", "recordkeeper", "tpa", "payroll_provid
 # Assessments that leave a hit standing; the others clear it.
 _STANDING: Final = frozenset({"pending", "counterparty_review", "conflict"})
 _NON_ALNUM: Final = re.compile(r"[^a-z0-9]+")
+# DEC-375 (M2): however many matches fall on clients the reader is walled from, and of whatever
+# kind or assessment, the reader sees one row: the first such result's id (an unwalled colleague
+# sees that row in full), the weakest kind and `pending`. Nothing tells how many there are or
+# how close they are, and clearing it answers 404 like an unknown result.
+RESTRICTED_KIND: Final = "trigram"
 
 SubjectKind = Literal["client", "client_entity", "engagement_draft", "client_intake_draft"]
 MatchKind = Literal["exact", "trigram", "relationship", "counterparty"]
@@ -112,6 +124,7 @@ class CheckView:
     run_by: UUID
     run_at: datetime
     results: list[ResultView]
+    restricted_match: bool = False
 
 
 @dataclass(frozen=True)
@@ -144,28 +157,32 @@ def _live_human(ctx: AuthContext, action: str) -> None:
 
 _NAMED = text(
     """
-    SELECT 'client' AS ref_type, c.id AS ref_id, c.id AS client_id,
-           similarity(c.normalised_name, :name) AS score
-      FROM clients c
-     WHERE c.normalised_name % :name OR c.normalised_name = :name
+    SELECT w.idx - 1 AS idx, 'client' AS ref_type, c.id AS ref_id, c.id AS client_id,
+           similarity(c.normalised_name, w.name) AS score
+      FROM unnest(CAST(:names AS text[])) WITH ORDINALITY AS w(name, idx)
+      JOIN clients c ON c.normalised_name % w.name OR c.normalised_name = w.name
+     WHERE w.name <> ''
     UNION ALL
-    SELECT 'client_entity', e.id, e.client_id, similarity(e.normalised_name, :name)
-      FROM client_entities e
-     WHERE e.normalised_name % :name OR e.normalised_name = :name
+    SELECT w.idx - 1, 'client_entity', e.id, e.client_id, similarity(e.normalised_name, w.name)
+      FROM unnest(CAST(:names AS text[])) WITH ORDINALITY AS w(name, idx)
+      JOIN client_entities e ON e.normalised_name % w.name OR e.normalised_name = w.name
+     WHERE w.name <> ''
     """
 )
 _CONTACTS = text(
     """
-    SELECT c.id AS ref_id, c.client_id, similarity(c.normalised_name, :person) AS score,
+    SELECT w.idx - 1 AS idx, c.id AS ref_id, c.client_id,
+           similarity(c.normalised_name, w.name) AS score,
            (SELECT min(r.role) FROM contact_roles r
              WHERE r.contact_id = c.id AND r.role = ANY(:roles)) AS counterparty_role
-      FROM contacts c
-     WHERE c.normalised_name % :person OR c.normalised_name = :person
+      FROM unnest(CAST(:names AS text[])) WITH ORDINALITY AS w(name, idx)
+      JOIN contacts c ON c.normalised_name % w.name OR c.normalised_name = w.name
+     WHERE w.name <> ''
     """
 )
 _RELATED = text(
     """
-    SELECT other.id AS ref_id, other.client_id
+    SELECT mine.id AS mine_id, other.id AS ref_id, other.client_id
       FROM entity_relationships r
       JOIN client_entities mine ON mine.id = r.from_entity_id OR mine.id = r.to_entity_id
       JOIN client_entities other
@@ -176,10 +193,45 @@ _RELATED = text(
        AND (r.effective_to IS NULL OR r.effective_to >= current_date)
     """
 )
+# The whole check's time budget (DEC-375, L3): three statements share it, each given what is
+# left; past it, the check is refused (503) rather than answered half-searched.
+SEARCH_BUDGET_MS: Final = 2000
+
+
+class SearchTimedOut(ServiceUnavailable):
+    """The conflict search did not finish inside its budget; run the check again."""
+
+
+async def _bounded(
+    session: AsyncSession, started: float, statement: TextClause, params: dict[str, object]
+) -> list[RowMapping]:
+    left = SEARCH_BUDGET_MS - int((time.monotonic() - started) * 1000)
+    if left <= 0:
+        raise SearchTimedOut
+    await session.execute(
+        text("SELECT set_config('statement_timeout', :ms, true)"), {"ms": f"{left}ms"}
+    )
+    try:
+        return list((await session.execute(statement, params)).mappings().all())
+    except DBAPIError as exc:
+        if isinstance(exc.orig, asyncpg.QueryCanceledError) or "canceling statement" in str(
+            exc.orig
+        ):
+            raise SearchTimedOut from None
+        raise
+
+
+def _score(raw: object) -> tuple[bool, float] | None:
+    score = float(cast(float, raw)) if raw is not None else 0.0
+    exact = score >= 1.0
+    if not exact and score < TRIGRAM_FLOOR:
+        return None
+    return exact, 1.0 if exact else round(score, 4)
 
 
 async def _search(session: AsyncSession, names: Sequence[str]) -> list[Hit]:
-    await session.execute(text("SET LOCAL statement_timeout = '2s'"))
+    """Three bounded statements for every name at once (not three per name)."""
+    started = time.monotonic()
     await session.execute(text("SET LOCAL pg_trgm.similarity_threshold = 0.6"))  # TRIGRAM_FLOOR
     best: dict[tuple[UUID, str], Hit] = {}
 
@@ -189,64 +241,61 @@ async def _search(session: AsyncSession, names: Sequence[str]) -> list[Hit]:
         if current is None or hit.score > current.score:
             best[key] = hit
 
-    for index, name in enumerate(names):
-        wanted, person = normalise(name), _person(name)
-        matched_entities: list[UUID] = []
-        if wanted:
-            for r in (await session.execute(_NAMED, {"name": wanted})).mappings():
-                score = float(r["score"]) if r["score"] is not None else 0.0
-                exact = score >= 1.0
-                if not exact and score < TRIGRAM_FLOOR:
-                    continue
-                if r["ref_type"] == "client_entity":
-                    matched_entities.append(cast(UUID, r["ref_id"]))
-                keep(
-                    Hit(
-                        index,
-                        cast(Literal["client", "client_entity"], r["ref_type"]),
-                        cast(UUID, r["ref_id"]),
-                        cast(UUID, r["client_id"]),
-                        "exact" if exact else "trigram",
-                        1.0 if exact else round(score, 4),
-                    )
-                )
-        if person:
-            rows = await session.execute(
-                _CONTACTS, {"person": person, "roles": list(COUNTERPARTY_ROLES)}
+    entity_name: dict[UUID, int] = {}
+    named = [normalise(n) for n in names]
+    for r in await _bounded(session, started, _NAMED, {"names": named}):
+        scored = _score(r["score"])
+        if scored is None:
+            continue
+        index = int(r["idx"])
+        if r["ref_type"] == "client_entity":
+            entity_name.setdefault(cast(UUID, r["ref_id"]), index)
+        keep(
+            Hit(
+                index,
+                cast(Literal["client", "client_entity"], r["ref_type"]),
+                cast(UUID, r["ref_id"]),
+                cast(UUID, r["client_id"]),
+                "exact" if scored[0] else "trigram",
+                scored[1],
             )
-            for r in rows.mappings():
-                score = float(r["score"]) if r["score"] is not None else 0.0
-                exact = score >= 1.0
-                if not exact and score < TRIGRAM_FLOOR:
-                    continue
-                role = cast(str | None, r["counterparty_role"])
-                kind: MatchKind = (
-                    "counterparty" if role is not None else ("exact" if exact else "trigram")
+        )
+    people = [_person(n) for n in names]
+    contacts = await _bounded(
+        session, started, _CONTACTS, {"names": people, "roles": list(COUNTERPARTY_ROLES)}
+    )
+    for r in contacts:
+        scored = _score(r["score"])
+        if scored is None:
+            continue
+        role = cast(str | None, r["counterparty_role"])
+        kind: MatchKind = (
+            "counterparty" if role is not None else ("exact" if scored[0] else "trigram")
+        )
+        keep(
+            Hit(
+                int(r["idx"]),
+                "contact",
+                cast(UUID, r["ref_id"]),
+                cast(UUID, r["client_id"]),
+                kind,
+                scored[1],
+                role,
+            )
+        )
+    if entity_name:
+        related = await _bounded(session, started, _RELATED, {"entities": list(entity_name)})
+        for r in related:
+            keep(
+                Hit(
+                    entity_name[cast(UUID, r["mine_id"])],
+                    "client_entity",
+                    cast(UUID, r["ref_id"]),
+                    cast(UUID, r["client_id"]),
+                    "relationship",
+                    1.0,
                 )
-                keep(
-                    Hit(
-                        index,
-                        "contact",
-                        cast(UUID, r["ref_id"]),
-                        cast(UUID, r["client_id"]),
-                        kind,
-                        1.0 if exact else round(score, 4),
-                        role,
-                    )
-                )
-        if matched_entities:
-            rows = await session.execute(_RELATED, {"entities": matched_entities})
-            for r in rows.mappings():
-                keep(
-                    Hit(
-                        index,
-                        "client_entity",
-                        cast(UUID, r["ref_id"]),
-                        cast(UUID, r["client_id"]),
-                        "relationship",
-                        1.0,
-                    )
-                )
+            )
     return sorted(best.values(), key=lambda h: (h.name_index, h.kind, str(h.client_id)))
 
 
@@ -271,6 +320,12 @@ async def _subject_client(tenant: TenantContext, kind: str, subject_id: UUID) ->
 
 
 async def _visible_subject(ctx: AuthContext, kind: str, subject_id: UUID) -> None:
+    """A client or client entity the caller is not walled from; a draft its owner module says
+    the caller may see (DEC-375, L4: unregistered kinds fail closed)."""
+    if kind not in ("client", "client_entity"):
+        if not await subject_visible(ctx, kind, subject_id):
+            raise NotFound(kind)
+        return
     client = await _subject_client(ctx.tenant, kind, subject_id)
     if client is not None and await hidden_clients(ctx.tenant, ctx.user_id, [client]):
         raise NotFound(kind)
@@ -331,8 +386,7 @@ async def _view(ctx: AuthContext, session: AsyncSession, check: RowMapping) -> C
         default = "counterparty_review" if r["match_kind"] == "counterparty" else "pending"
         assessment = cast(str, r["latest"] or default)
         if r["matched_client_id"] in walled:
-            results.append(ResultView(r["id"], True, r["match_kind"], assessment))
-            continue
+            continue  # collapsed into the one restricted row below (DEC-375, M2)
         results.append(
             ResultView(
                 id=r["id"],
@@ -349,12 +403,24 @@ async def _view(ctx: AuthContext, session: AsyncSession, check: RowMapping) -> C
                 allowed_actions=[CLEAR] if may_clear else [],
             )
         )
+    # Outcome over the matches this reader may see; walled ones are only the flag and one row.
     standing = any(r.assessment in _STANDING for r in results)
+    restricted = len(visible) < len(rows)
+    if restricted:
+        results.append(
+            ResultView(
+                id=cast(UUID, next(r["id"] for r in rows if r["matched_client_id"] in walled)),
+                redacted=True,
+                match_kind=RESTRICTED_KIND,
+                assessment="pending",
+            )
+        )
     return CheckView(
         id=check["id"],
         subject=SubjectRef(check["subject_kind"], check["subject_id"]),
         names_count=check["names_count"],
         outcome="hits" if standing else "clear",
+        restricted_match=restricted,
         run_by=check["run_by"],
         run_at=check["run_at"],
         results=results,
@@ -439,7 +505,8 @@ async def run_conflict_check(
         tx.record(
             "conflict_check.run",
             target=Target(_AUDIT_TARGET[subject_kind], subject_id),
-            after=Ref(check_id=check_id, names=len(names), results=len(hits)),
+            # DEC-375 (L4): no count of matches, which would include walled ones.
+            after=Ref(check_id=check_id, names=len(names)),
         )
     return await conflict_check(ctx, check_id)
 
@@ -513,6 +580,8 @@ async def record_screening(
     _live_human(ctx, RECORD)
     await authorise(ctx, RECORD, Resource.firm(ctx.tenant_id))
     await _visible_subject(ctx, subject_kind, subject_id)
+    if evidence_version_id is not None and not await evidence_visible(ctx, evidence_version_id):
+        raise NotFound("evidence_version")  # DEC-375 (L4): a file the person may read
     record_id = uuid4()
     async with uow(ctx.tenant) as tx:
         sealed = (

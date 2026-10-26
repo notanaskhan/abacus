@@ -105,3 +105,15 @@ layer, and the record locks." Today every acceptance route in
   `make generate` and the web type-check.
 - 2026-10-26: `tests/unit/api/test_app_gates.py` did not list the new completion route as a
   200 route; fixed in the T37 commit (I did not run `tests/unit/api` before the T35 commit).
+- 2026-10-26: security review (changes requested) and fix round, DEC-375, migration 0165.
+  H1: answers, the risk rating and manual checks frozen once sent (409 `acceptance_sent`, the
+  database too); `high_risk_seen` sticky, the review required whenever it is set; the audit
+  carries the rating's positions before and after. M1: 0165's decision guard (Awaiting
+  partner, the acting person, the engagement's partner-level EP, the review on a High record)
+  and acting-person triggers on flags, condition events and review events; G1 needs the
+  decided record. M3: start acceptance refuses a non-partner EP; the decider must be
+  partner-level (service and database); the engagement-members trigger is a follow-up. L1/L2:
+  the review completion reads the flag after authorising, and needs fresh MFA. L6: kept on
+  api.py (P-07-T38 calls it there; ACCEPT-001 still guards it). Tests:
+  `test_p07_security_review_fixes.py` (11), the rules tests adapted to 0165 (probes through
+  the unit of work), P-07-T38 unchanged and passing.

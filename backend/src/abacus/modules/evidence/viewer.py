@@ -429,3 +429,15 @@ __all__ = [
     "viewer_search",
     "visible_version",
 ]
+
+
+async def readable_version(ctx: AuthContext, version_id: UUID) -> bool:
+    """For a screening record's evidence link (P-07-T36 review, DEC-375): the version exists and
+    the person may read its content. A PDF with active content is still a readable record."""
+    try:
+        await visible_version(ctx, version_id)
+    except ActiveContent:
+        return True
+    except (NotFound, Forbidden):
+        return False
+    return True

@@ -3,6 +3,7 @@
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.engagements.api import register_evidence_readable
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.citations.matching import (
@@ -167,6 +168,7 @@ from abacus.modules.evidence.uploads import (
     upload,
     upload_preview,
 )
+from abacus.modules.evidence.viewer import readable_version
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
@@ -387,3 +389,5 @@ __all__ = [
 
 # SPEC-017 (TASK-032 D2): a removed team member's review assignments go back to the queue.
 register_member_removed(release_member_assignments)
+# P-07-T36 review (DEC-375): a screening record's evidence link must be a file the person reads.
+register_evidence_readable(readable_version)

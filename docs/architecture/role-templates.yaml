@@ -20,7 +20,7 @@
 templates:
   partner:      {levels: [partner], firm_role: null, roles: [firm_partner, engagement_partner, practice_leader, quality_partner]}
   manager:      {levels: [manager], firm_role: null, roles: [firm_manager, manager]}
-  tax_reviewer: {levels: [manager, senior], firm_role: null, roles: [firm_manager, manager, senior]}
+  tax_reviewer: {levels: [manager, senior], firm_role: null, roles: [manager, senior]}
   senior:       {levels: [senior], firm_role: null, roles: [senior]}
   staff:        {levels: [staff, seasonal], firm_role: null, roles: [staff]}
   tax_preparer: {levels: [staff, seasonal], firm_role: null, roles: [staff]}

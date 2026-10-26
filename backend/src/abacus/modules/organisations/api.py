@@ -81,9 +81,11 @@ from abacus.modules.organisations.slots import (
     OverviewSection,
     SectionRows,
     register_client_engagements,
+    register_conflict_subject,
     register_office_facts,
     register_open_requests,
     register_overview_section,
+    register_screening_evidence,
 )
 from abacus.modules.organisations.tin import (
     MaskedTin,
@@ -175,9 +177,11 @@ __all__ = [
     "normalise",
     "office_name_column",
     "register_client_engagements",
+    "register_conflict_subject",
     "register_office_facts",
     "register_open_requests",
     "register_overview_section",
+    "register_screening_evidence",
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",

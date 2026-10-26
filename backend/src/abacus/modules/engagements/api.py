@@ -35,6 +35,7 @@ from abacus.modules.engagements.contract import (
     engagement_types_router,
     engagements_v2_router,
 )
+from abacus.modules.engagements.drafts import draft_visible
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.hold_scope import (
@@ -116,10 +117,12 @@ from abacus.modules.engagements.slots import (
     ProgressSource,
     UnknownWorkItemKind,
     WorkItemProvider,
+    evidence_readable,
     gate_fact,
     gate_registered,
     judgments_of,
     progress_of,
+    register_evidence_readable,
     register_gate_provider,
     register_judgment_source,
     register_progress_source,
@@ -176,8 +179,10 @@ from abacus.modules.organisations.api import (
     OverviewSection,
     activate_contact,
     register_client_engagements,
+    register_conflict_subject,
     register_open_requests,
     register_overview_section,
+    register_screening_evidence,
 )
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
@@ -206,6 +211,9 @@ register_member_added(request_independence)
 register_independence(confirmed_subquery, confirmed_for)
 
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
+# P-07-T36 review (DEC-375, L4): what a conflict check or screening record may name.
+register_conflict_subject("engagement_draft", draft_visible)
+register_screening_evidence(evidence_readable)
 # F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
 register_work_item_functions(functions_on)
 # G-01-T09 (AC8.5): a wall's preview counts, and its consumer ends, the person's assignments.
@@ -336,6 +344,7 @@ __all__ = [
     "progress_of",
     "publish_drafted_version",
     "register_auto_retrieval",
+    "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
     "register_open_requests",

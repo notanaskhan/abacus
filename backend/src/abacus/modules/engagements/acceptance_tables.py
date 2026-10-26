@@ -17,7 +17,7 @@ from sqlalchemy import Column, FetchedValue, MetaData, Table, select
 from sqlalchemy.dialects.postgresql import BYTEA, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.types import Date, DateTime, Integer, SmallInteger, Text
+from sqlalchemy.types import Boolean, Date, DateTime, Integer, SmallInteger, Text
 
 from abacus.modules.engagements.repository import latest_acceptance
 
@@ -76,6 +76,7 @@ records = Table(
     Column("version", Integer, server_default=FetchedValue()),
     _at("created_at"),
     _at("updated_at"),
+    Column("high_risk_seen", Boolean, server_default=FetchedValue()),  # 0165: sticky
 )
 answers = Table(
     "acceptance_answers",
@@ -184,10 +185,17 @@ class G1Decision:
 
 async def g1_decision(session: AsyncSession, engagement_id: UUID) -> G1Decision | None:
     """The engagement's acceptance decision, or None while it has none (DEC-372)."""
-    record = (
-        await session.execute(select(records.c.id).where(records.c.engagement_id == engagement_id))
-    ).scalar_one_or_none()
-    if record is not None:
+    found = (
+        await session.execute(
+            select(records.c.id, records.c.status).where(records.c.engagement_id == engagement_id)
+        )
+    ).one_or_none()
+    if found is not None:
+        # DEC-375 (M1): a decision counts only on a record the database moved to decided or
+        # declined (the guard trigger needs the matching decision row), never a row alone.
+        if found.status not in LOCKED:
+            return None
+        record = found.id
         row = (
             await session.execute(
                 select(decisions.c.option, decisions.c.decided_at, decisions.c.decided_by).where(

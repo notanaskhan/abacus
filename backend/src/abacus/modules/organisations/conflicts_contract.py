@@ -111,6 +111,9 @@ class ConflictCheckOut(BaseModel):
     run_by: Annotated[UUID, classified("internal")]
     run_at: Annotated[datetime, classified("internal")]
     results: Annotated[list[ConflictResultOut], classified("confidential")] = []
+    # DEC-375: a match on a client this reader is walled from, as one flag (and one restricted
+    # row), never a count or a kind.
+    restricted_match: Annotated[bool, classified("internal")] = False
 
 
 class ConflictClearIn(BaseModel):

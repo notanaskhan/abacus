@@ -10610,6 +10610,12 @@
             "title": "Outcome",
             "type": "string"
           },
+          "restricted_match": {
+            "cls": "internal",
+            "default": false,
+            "title": "Restricted Match",
+            "type": "boolean"
+          },
           "results": {
             "cls": "confidential",
             "default": [],
