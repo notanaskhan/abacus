@@ -10,7 +10,7 @@ the unlock (P-03-T19), so no existing rows can collide.
 branches' migrations.
 
 Revision ID: 0173
-Revises: 0172
+Revises: 0177
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0173"
-down_revision = "0172"
+down_revision = "0177"
 branch_labels = None
 depends_on = None
 
