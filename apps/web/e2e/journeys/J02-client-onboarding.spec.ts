@@ -161,15 +161,21 @@ test.describe("J02-audit-core", () => {
   );
 
   // BND-01 is built on fixtures, but E0 does not turn `binders.engine` on for the firm (neither the
-  // fixture capabilities nor `make seed-demo`), so `/binders` shows the flag-off state until the
-  // swap that turns it on.
-  test.fixme(
+  // fixture capabilities nor `make seed-demo`), so live `/binders` shows the flag-off state until the
+  // swap that turns it on. The fixture project walks BND-01's own scenario (P-06-T25).
+  test(
     "J02 6: Grace Holloway finds the new binder in the Binders index (BND-01)",
     owner("P-06 · P-06-T16 BND-01 fixture-to-live swap, binders.engine on · S6, Fri Jan 22, 2027"),
     async ({ journey }) => {
-      await journey.as("grace-holloway", "/binders", { clock: DEMO_INSTANT });
+      test.fixme(journey.project !== "fixture", "binders.engine is off in E0 (P-06-T16)");
+      await journey.as("grace-holloway", "/binders", {
+        clock: DEMO_INSTANT,
+        scenario: "BND-01:a",
+        flags: ["binders.engine"],
+      });
       await journey.step("J02 step 6: the Binders index as Grace Holloway", async (page) => {
         await expect(page.getByRole("heading", { name: "Binders", exact: true })).toBeVisible();
+        await expect(page.getByText("Showing 15 of 241")).toBeVisible();
       });
     },
   );
