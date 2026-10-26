@@ -4,11 +4,8 @@
 // sign-in facts (audit-log.ts) and the ADM-06 handoff spec. Brightwater Hale, synthetic; E0 is
 // Mon Sep 14, 2026, 9:24 AM CT.
 //
-// The interfaces below mirror the Pydantic models field for field
-// (identity/security_center_contract.py, platform/security_center_contract.py,
-// evidence/firm_export_schedule_contract.py). They stand in for the generated client's types
-// until `make generate` runs at integration, when they are swapped for `@abacus/api-client`
-// imports of the same names (TASK-1332).
+// The contract's models are the generated client's types (identity/security_center_contract.py,
+// platform/security_center_contract.py, evidence/firm_export_schedule_contract.py; TASK-1332).
 //
 // Not in the handoff, so not invented: who designated the break-glass account (the handoff names
 // no person: it is "Break-glass account", its seat-holder label in ADM-06 i) and when each
@@ -29,7 +26,6 @@ import {
   INC_2026_005_TIMELINE,
   LAST_SUPPORT_SESSION,
   MARGARET,
-  type PersonRef,
   SIGN_IN_E0,
   SIGN_IN_JAN_11,
   WISP,
@@ -41,253 +37,65 @@ export const SECURITY_E0 = "2026-09-14T14:24:00Z";
 /** ADM-06 e: Sun Jan 11, 2026, 9:24 AM CST (the day before SSO was enforced). */
 export const SECURITY_JAN_11 = "2026-01-11T15:24:00Z";
 
-// --- Local mirrors of the contract's models (swapped for generated types after make generate) --
+// --- The contract's models (the generated client's types; TASK-1332) ---------------------------
 
-export type SecurityPersonOut = PersonRef;
+import type {
+  FirmExportScheduleOut,
+  IncidentDecisionOut,
+  IncidentPendingDecisionOut,
+  IncidentTimelineEntryOut,
+  MfaSummaryOut,
+  PortalSignInFloorOut,
+  PostureOut,
+  ResidencyOut,
+  SafeguardsControlOut,
+  SafeguardsOut,
+  ScheduleApprovalOut,
+  SecurityIncidentDetailOut,
+  SecurityIncidentOut,
+  SecurityIncidentPageOut,
+  SecurityOverviewOut,
+  SecurityPersonOut,
+  SecuritySessionOut,
+  SecuritySessionPageOut,
+  SessionSignedOutOut,
+  SignInPolicyOut,
+  SsoExemptAccountOut,
+  StaffLockOut,
+  SupportAccessOut,
+  WispOut,
+  WispPackOut,
+} from "@abacus/api-client";
 
-export interface SsoExemptAccountOut {
-  person: SecurityPersonOut;
-  factor: "hardware_key";
-  last_tested_at?: string | null;
-}
+type DecisionKind = IncidentDecisionOut["kind"];
 
-export interface SignInPolicyOut {
-  identity_provider?: string | null;
-  sso_verified: boolean;
-  require_sso: boolean;
-  sso_enforced_at?: string | null;
-  sso_enforced_by?: SecurityPersonOut | null;
-  idp_mfa_attested_at?: string | null;
-  idp_mfa_attested_by?: SecurityPersonOut | null;
-  session_absolute_minutes: number;
-  session_idle_minutes: number;
-  platform_max_absolute_minutes?: number;
-  platform_max_idle_minutes?: number;
-  sso_exempt_account?: SsoExemptAccountOut | null;
-  version: number;
-}
-
-export interface MfaSummaryOut {
-  enforced: boolean;
-  locked: boolean;
-  enrolled: number;
-  seats: number;
-  idp_claim_counted?: boolean;
-}
-
-export interface PortalSignInFloorOut {
-  passwordless_email_code: boolean;
-  passwordless_locked: boolean;
-  mfa_floor: boolean;
-  mfa_floor_locked: boolean;
-  failed_code_limit: number;
-  lockout_minutes: number;
-  lockout_locked: boolean;
-  session_minutes: number;
-  platform_max_session_minutes?: number;
-  version: number;
-}
-
-export interface ResidencyOut {
-  region: string;
-  storage_primary_region?: string | null;
-  storage_backup_region?: string | null;
-  ai_inference: "us_only";
-  logs_region: string;
-  encryption_at_rest: "aes_256";
-  encryption_in_transit: "tls_1_3";
-  locked: boolean;
-}
-
-export interface SupportAccessOut {
-  allow_support_requests: boolean;
-  updated_at?: string | null;
-  updated_by?: SecurityPersonOut | null;
-  version: number;
-}
-
-export interface SecurityOverviewOut {
-  sign_in: SignInPolicyOut;
-  mfa: MfaSummaryOut;
-  portal: PortalSignInFloorOut;
-  residency: ResidencyOut;
-  support: SupportAccessOut;
-  actions?: string[];
-}
-
-export interface PostureOut {
-  sso_enforced: boolean;
-  mfa_enrolled: number;
-  mfa_seats: number;
-  residency_region: string;
-  open_incidents: number;
-  pub4557_open: number;
-}
-
-export interface SecuritySessionOut {
-  id: string;
-  person: SecurityPersonOut;
-  started_at: string;
-  last_seen_at: string;
-  mfa_at?: string | null;
-  auth_method?: "sso" | "email_code" | "passkey" | "totp" | null;
-  ip?: string | null;
-  device_label?: string | null;
-  current?: boolean;
-}
-
-export interface SecuritySessionPageOut {
-  items: SecuritySessionOut[];
-  next_cursor?: string | null;
-  total: number;
-  total_capped?: boolean;
-  counts?: Record<string, number>;
-}
-
-export interface SessionSignedOutOut {
-  session_id: string;
-  signed_out_at: string;
-  signed_out_by: SecurityPersonOut;
-}
-
-export interface StaffLockOut {
-  user_id: string;
-  locked: boolean;
-  unlocks_at?: string | null;
-  cleared: boolean;
-}
-
-type DecisionKind = "close_not_reportable" | "start_notification";
-type DeciderSeat = "partner" | "qualified_individual";
-
-export interface IncidentDecisionOut {
-  kind: DecisionKind;
-  decided_by: SecurityPersonOut;
-  seat: DeciderSeat;
-  decided_at: string;
-}
-
-export interface IncidentPendingDecisionOut {
-  kind: DecisionKind;
-  first: IncidentDecisionOut;
-  waiting_for: SecurityPersonOut;
-  waiting_for_seat: DeciderSeat;
-}
-
-export interface SecurityIncidentOut {
-  id: string;
-  ref: string;
-  title: string;
-  event_kind: IncidentOut["event_kind"];
-  discovered_at: string;
-  consumers_affected?: number | null;
-  unencrypted?: boolean | null;
-  notification_event: boolean;
-  ftc_notify_by: string;
-  clock_day: number;
-  clock_days: number;
-  status: "investigating" | "closed";
-  source: "firm" | "accrued";
-  accrued_ref?: string | null;
-  created_at: string;
-  pending_decision?: IncidentPendingDecisionOut | null;
-  decisions?: IncidentDecisionOut[];
-  notification_started_at?: string | null;
-}
-
-export interface IncidentTimelineEntryOut {
-  id: string;
-  occurred_at: string;
-  code: string;
-  facts?: Record<string, string | number | boolean | null>;
-  note?: string | null;
-  source: "firm" | "accrued" | "system";
-  author?: SecurityPersonOut | null;
-  recorded_at: string;
-}
-
-export interface SecurityIncidentDetailOut extends SecurityIncidentOut {
-  timeline?: IncidentTimelineEntryOut[];
-  reminders_on?: string[];
-}
-
-export interface SecurityIncidentPageOut {
-  items: SecurityIncidentOut[];
-  next_cursor?: string | null;
-  total: number;
-  total_capped?: boolean;
-  counts?: Record<string, number>;
-}
-
-type ExportContent =
-  "clients" | "entities" | "files" | "workpapers" | "returns" | "closes" | "audit_log";
-
-export interface ScheduleApprovalOut {
-  seat: "security_admin" | "partner";
-  approved_by: FirmExportOut["requested_by"];
-}
-
-export interface FirmExportScheduleOut {
-  cadence: "monthly";
-  day_of_month: 1;
-  local_time: "02:00";
-  time_zone: string;
-  contents: ExportContent[];
-  status: "pending_approval" | "active" | "paused";
-  approvals?: ScheduleApprovalOut[];
-  next_run_on?: string | null;
-  version: number;
-}
-
-export interface WispOut {
-  name: string;
-  format: "irs_pub_5708";
-  evidence_item_id?: string | null;
-  approved_by?: SecurityPersonOut | null;
-  approved_on?: string | null;
-}
-
-export interface SafeguardsControlOut {
-  control_key: string;
-  title: string;
-  status: "evidenced" | "open";
-  due_on?: string | null;
-  scheduled_on?: string | null;
-  evidence_item_id?: string | null;
-}
-
-export interface SafeguardsOut {
-  qualified_individual?: SecurityPersonOut | null;
-  wisp?: WispOut | null;
-  annual_report_last_on?: string | null;
-  annual_report_next_due_month?: string | null;
-  controls_evidenced: number;
-  controls_total: number;
-  open_controls?: SafeguardsControlOut[];
-  training_completed?: number | null;
-  training_total?: number | null;
-  ptin_attested?: number | null;
-  ptin_total?: number | null;
-  access_review?: {
-    quarter: string;
-    due_on: string;
-    status: "not_started" | "in_progress" | "complete";
-  } | null;
-  updated_at?: string | null;
-  updated_by?: SecurityPersonOut | null;
-  version: number;
-}
-
-export interface WispPackOut {
-  id: string;
-  status: "preparing" | "ready";
-  document_count?: number | null;
-  file_name?: string | null;
-  requested_by: SecurityPersonOut;
-  requested_at: string;
-  download_url?: string | null;
-  expires_at?: string | null;
-}
+export type {
+  FirmExportScheduleOut,
+  IncidentDecisionOut,
+  IncidentPendingDecisionOut,
+  IncidentTimelineEntryOut,
+  MfaSummaryOut,
+  PortalSignInFloorOut,
+  PostureOut,
+  ResidencyOut,
+  SafeguardsControlOut,
+  SafeguardsOut,
+  ScheduleApprovalOut,
+  SecurityIncidentDetailOut,
+  SecurityIncidentOut,
+  SecurityIncidentPageOut,
+  SecurityOverviewOut,
+  SecurityPersonOut,
+  SecuritySessionOut,
+  SecuritySessionPageOut,
+  SessionSignedOutOut,
+  SignInPolicyOut,
+  SsoExemptAccountOut,
+  StaffLockOut,
+  SupportAccessOut,
+  WispOut,
+  WispPackOut,
+};
 
 // --- The seed ------------------------------------------------------------------------------------
 

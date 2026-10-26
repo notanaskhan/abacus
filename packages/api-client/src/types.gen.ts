@@ -426,6 +426,26 @@ export type AcceptedInvitationOut = {
 };
 
 /**
+ * AccessReviewOut
+ *
+ * "Q3 2026 · due Sep 30, 2026 · in progress".
+ */
+export type AccessReviewOut = {
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Quarter
+     */
+    quarter: string;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'in_progress' | 'complete';
+};
+
+/**
  * AccountOut
  */
 export type AccountOut = {
@@ -9903,6 +9923,72 @@ export type FirmExportRequestIn = {
 };
 
 /**
+ * FirmExportScheduleIn
+ *
+ * Set the schedule (`security_admin`); it waits for both approvals again. 409
+ * `stale_version`.
+ */
+export type FirmExportScheduleIn = {
+    /**
+     * Contents
+     */
+    contents: Array<'clients' | 'entities' | 'files' | 'workpapers' | 'returns' | 'closes' | 'audit_log'>;
+    /**
+     * Paused
+     */
+    paused?: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * FirmExportScheduleOut
+ *
+ * ADM-06 a's Data export card: "Monthly · 1st at 2:00 AM CT", contents, next run, and the
+ * approvals ("Two people: Felix Andersen + Margaret Okonkwo"). v1 has one cadence.
+ */
+export type FirmExportScheduleOut = {
+    /**
+     * Approvals
+     */
+    approvals?: Array<ScheduleApprovalOut>;
+    /**
+     * Cadence
+     */
+    cadence: 'monthly';
+    /**
+     * Contents
+     */
+    contents: Array<'clients' | 'entities' | 'files' | 'workpapers' | 'returns' | 'closes' | 'audit_log'>;
+    /**
+     * Day Of Month
+     */
+    day_of_month: 1;
+    /**
+     * Local Time
+     */
+    local_time: '02:00';
+    /**
+     * Next Run On
+     */
+    next_run_on?: string | null;
+    /**
+     * Status
+     */
+    status: 'pending_approval' | 'active' | 'paused';
+    /**
+     * Time Zone
+     */
+    time_zone: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * FirmFactsOut
  *
  * P-01-T04 (SHL-03): what the firm switcher shows for a membership.
@@ -10936,6 +11022,22 @@ export type GoingConcernBody = {
 };
 
 /**
+ * GovernancePersonOut
+ *
+ * A person named on an incident or the safeguards record; the id links to ADM-02.
+ */
+export type GovernancePersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * GrantIn
  *
  * One grant: a role on a scope; a delegate or third party names its request items.
@@ -11744,6 +11846,49 @@ export type InboxFileOut = {
 };
 
 /**
+ * IncidentDecisionIn
+ *
+ * "Close as not reportable…" or "Start notification…". The first decider names the second
+ * (a partner if the QI decides first, the QI if a partner does); the second decides the same
+ * `kind` and leaves `second_decider_user_id` out.
+ */
+export type IncidentDecisionIn = {
+    /**
+     * Kind
+     */
+    kind: 'close_not_reportable' | 'start_notification';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Second Decider User Id
+     */
+    second_decider_user_id?: string | null;
+};
+
+/**
+ * IncidentDecisionOut
+ *
+ * One decider's decision ("Close as not reportable" by Felix Andersen, QI).
+ */
+export type IncidentDecisionOut = {
+    /**
+     * Decided At
+     */
+    decided_at: string;
+    decided_by: GovernancePersonOut;
+    /**
+     * Kind
+     */
+    kind: 'close_not_reportable' | 'start_notification';
+    /**
+     * Seat
+     */
+    seat: 'partner' | 'qualified_individual';
+};
+
+/**
  * IncidentIn
  *
  * What the QI knows when recording; counts and encryption may be unknown yet.
@@ -11845,6 +11990,24 @@ export type IncidentOut = {
 };
 
 /**
+ * IncidentPendingDecisionOut
+ *
+ * One of two decisions recorded: "Waiting for Margaret Okonkwo" (AC-22).
+ */
+export type IncidentPendingDecisionOut = {
+    first: IncidentDecisionOut;
+    /**
+     * Kind
+     */
+    kind: 'close_not_reportable' | 'start_notification';
+    waiting_for: GovernancePersonOut;
+    /**
+     * Waiting For Seat
+     */
+    waiting_for_seat: 'partner' | 'qualified_individual';
+};
+
+/**
  * IncidentPropagationEventOut
  *
  * One staff request (`requested`, `refused` with its reason code) or one run's end
@@ -11929,6 +12092,71 @@ export type IncidentPropagationOut = {
      * Started
      */
     started: Array<string>;
+};
+
+/**
+ * IncidentTimelineEntryIn
+ */
+export type IncidentTimelineEntryIn = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+};
+
+/**
+ * IncidentTimelineEntryOut
+ *
+ * One timeline entry (ADM-06 d), as a code and facts: "1,812 failed sign-ins from
+ * 203.0.113.0/24 blocked" is `sign_ins_blocked` with `failed` and `network`. The SPA composes
+ * the words. Never edited or removed.
+ */
+export type IncidentTimelineEntryOut = {
+    author?: GovernancePersonOut | null;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued' | 'system';
 };
 
 /**
@@ -14950,6 +15178,35 @@ export type MetricPart = {
 };
 
 /**
+ * MfaSummaryOut
+ *
+ * "Enforced · 46 of 46 enrolled" (AC-16). `enforced` and `locked` are always true: no
+ * route turns MFA off (DEC-22).
+ */
+export type MfaSummaryOut = {
+    /**
+     * Enforced
+     */
+    enforced: boolean;
+    /**
+     * Enrolled
+     */
+    enrolled: number;
+    /**
+     * Idp Claim Counted
+     */
+    idp_claim_counted?: boolean;
+    /**
+     * Locked
+     */
+    locked: boolean;
+    /**
+     * Seats
+     */
+    seats: number;
+};
+
+/**
  * MisstatementIn
  */
 export type MisstatementIn = {
@@ -17349,6 +17606,73 @@ export type PortalSettingsVersionOut = {
 };
 
 /**
+ * PortalSignInFloorIn
+ *
+ * Fieldset B's one editable row: the portal session, at most 8 hours (422
+ * `policy_loosening_refused` over it). The floors have no field (DEC-34, DEC-35).
+ */
+export type PortalSignInFloorIn = {
+    /**
+     * Session Minutes
+     */
+    session_minutes: number;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PortalSignInFloorOut
+ *
+ * ADM-06 fieldset B (AC-19): the passwordless code and the MFA floor are on and locked
+ * (DEC-34, DF-17), the lockout is "3 codes · 15 minutes" and locked (DEC-35); only the session
+ * length may change, and only shorter than 8 hours.
+ */
+export type PortalSignInFloorOut = {
+    /**
+     * Failed Code Limit
+     */
+    failed_code_limit: number;
+    /**
+     * Lockout Locked
+     */
+    lockout_locked: boolean;
+    /**
+     * Lockout Minutes
+     */
+    lockout_minutes: number;
+    /**
+     * Mfa Floor
+     */
+    mfa_floor: boolean;
+    /**
+     * Mfa Floor Locked
+     */
+    mfa_floor_locked: boolean;
+    /**
+     * Passwordless Email Code
+     */
+    passwordless_email_code: boolean;
+    /**
+     * Passwordless Locked
+     */
+    passwordless_locked: boolean;
+    /**
+     * Platform Max Session Minutes
+     */
+    platform_max_session_minutes?: number;
+    /**
+     * Session Minutes
+     */
+    session_minutes: number;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * PortalSignInPolicyOut
  */
 export type PortalSignInPolicyOut = {
@@ -17481,6 +17805,39 @@ export type PortalVisibilityOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * PostureOut
+ *
+ * The Posture card's five facts (AC-30); the same read feeds ADM-01's At a glance and the
+ * M9 checklist. Counts agree with the fieldsets by construction.
+ */
+export type PostureOut = {
+    /**
+     * Mfa Enrolled
+     */
+    mfa_enrolled: number;
+    /**
+     * Mfa Seats
+     */
+    mfa_seats: number;
+    /**
+     * Open Incidents
+     */
+    open_incidents: number;
+    /**
+     * Pub4557 Open
+     */
+    pub4557_open: number;
+    /**
+     * Residency Region
+     */
+    residency_region: string;
+    /**
+     * Sso Enforced
+     */
+    sso_enforced: boolean;
 };
 
 /**
@@ -18975,6 +19332,46 @@ export type RequestOwedByOut = {
 export type RequestStatus = 'draft' | 'requested' | 'uploaded' | 'received' | 'returned' | 'not_applicable';
 
 /**
+ * ResidencyOut
+ *
+ * ADM-06 fieldset E (AC-26): from `firms.region` and settings, every row locked.
+ */
+export type ResidencyOut = {
+    /**
+     * Ai Inference
+     */
+    ai_inference: 'us_only';
+    /**
+     * Encryption At Rest
+     */
+    encryption_at_rest: 'aes_256';
+    /**
+     * Encryption In Transit
+     */
+    encryption_in_transit: 'tls_1_3';
+    /**
+     * Locked
+     */
+    locked: boolean;
+    /**
+     * Logs Region
+     */
+    logs_region: string;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Storage Backup Region
+     */
+    storage_backup_region?: string | null;
+    /**
+     * Storage Primary Region
+     */
+    storage_primary_region?: string | null;
+};
+
+/**
  * RespondedOut
  */
 export type RespondedOut = {
@@ -20354,6 +20751,197 @@ export type RunWriteOut = {
 };
 
 /**
+ * SafeguardsControlIn
+ */
+export type SafeguardsControlIn = {
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Evidence Item Id
+     */
+    evidence_item_id?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Scheduled On
+     */
+    scheduled_on?: string | null;
+    /**
+     * Status
+     */
+    status: 'evidenced' | 'open';
+};
+
+/**
+ * SafeguardsControlOut
+ *
+ * One Pub 4557 control's status. `title` is the imported control definition's (platform
+ * content, never committed); "scheduled Oct 6, 2026" is `scheduled_on`, "due Nov 30, 2026"
+ * `due_on`.
+ */
+export type SafeguardsControlOut = {
+    /**
+     * Control Key
+     */
+    control_key: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Evidence Item Id
+     */
+    evidence_item_id?: string | null;
+    /**
+     * Scheduled On
+     */
+    scheduled_on?: string | null;
+    /**
+     * Status
+     */
+    status: 'evidenced' | 'open';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SafeguardsIn
+ *
+ * Fieldset D's Save (the QI only); 409 `stale_version`.
+ */
+export type SafeguardsIn = {
+    /**
+     * Access Review Due On
+     */
+    access_review_due_on?: string | null;
+    /**
+     * Access Review Quarter
+     */
+    access_review_quarter?: string | null;
+    /**
+     * Access Review Status
+     */
+    access_review_status?: 'not_started' | 'in_progress' | 'complete' | null;
+    /**
+     * Annual Report Last On
+     */
+    annual_report_last_on?: string | null;
+    /**
+     * Annual Report Next Due Month
+     */
+    annual_report_next_due_month?: string | null;
+    /**
+     * Ptin Attested
+     */
+    ptin_attested?: number | null;
+    /**
+     * Ptin Total
+     */
+    ptin_total?: number | null;
+    /**
+     * Qualified Individual User Id
+     */
+    qualified_individual_user_id?: string | null;
+    /**
+     * Training Completed
+     */
+    training_completed?: number | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Wisp Approved By User Id
+     */
+    wisp_approved_by_user_id?: string | null;
+    /**
+     * Wisp Approved On
+     */
+    wisp_approved_on?: string | null;
+    /**
+     * Wisp Evidence Item Id
+     */
+    wisp_evidence_item_id?: string | null;
+};
+
+/**
+ * SafeguardsOut
+ *
+ * ADM-06 fieldset D (AC-27): the safeguards record and the Pub 4557 counts, with the open
+ * controls listed.
+ */
+export type SafeguardsOut = {
+    access_review?: AccessReviewOut | null;
+    /**
+     * Annual Report Last On
+     */
+    annual_report_last_on?: string | null;
+    /**
+     * Annual Report Next Due Month
+     */
+    annual_report_next_due_month?: string | null;
+    /**
+     * Controls Evidenced
+     */
+    controls_evidenced: number;
+    /**
+     * Controls Total
+     */
+    controls_total: number;
+    /**
+     * Open Controls
+     */
+    open_controls?: Array<SafeguardsControlOut>;
+    /**
+     * Ptin Attested
+     */
+    ptin_attested?: number | null;
+    /**
+     * Ptin Total
+     */
+    ptin_total?: number | null;
+    qualified_individual?: GovernancePersonOut | null;
+    /**
+     * Training Completed
+     */
+    training_completed?: number | null;
+    /**
+     * Training Total
+     */
+    training_total?: number | null;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
+    updated_by?: GovernancePersonOut | null;
+    /**
+     * Version
+     */
+    version: number;
+    wisp?: WispOut | null;
+};
+
+/**
+ * ScheduleApprovalOut
+ *
+ * One seat's approval; when it was given is the audit log's
+ * (`firm_export_schedule.approved`).
+ */
+export type ScheduleApprovalOut = {
+    approved_by: FirmExportPersonOut;
+    /**
+     * Seat
+     */
+    seat: 'security_admin' | 'partner';
+};
+
+/**
  * ScreenRequestIn
  */
 export type ScreenRequestIn = {
@@ -20712,6 +21300,241 @@ export type SeasonalAccessEndsOut = {
 };
 
 /**
+ * SecurityIncidentDetailOut
+ *
+ * The O2 480 drawer (ADM-06 d): the row plus its timeline, oldest first, and the reminder
+ * dates (days 20, 25 and 29 of the clock, to the QI and the partners).
+ */
+export type SecurityIncidentDetailOut = {
+    /**
+     * Accrued Ref
+     */
+    accrued_ref?: string | null;
+    /**
+     * Clock Day
+     */
+    clock_day: number;
+    /**
+     * Clock Days
+     */
+    clock_days: number;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decisions
+     */
+    decisions?: Array<IncidentDecisionOut>;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Ftc Notify By
+     */
+    ftc_notify_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Notification Event
+     */
+    notification_event: boolean;
+    /**
+     * Notification Started At
+     */
+    notification_started_at?: string | null;
+    pending_decision?: IncidentPendingDecisionOut | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Reminders On
+     */
+    reminders_on?: Array<string>;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued';
+    status: SecurityIncidentStatus;
+    /**
+     * Timeline
+     */
+    timeline?: Array<IncidentTimelineEntryOut>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * SecurityIncidentOut
+ *
+ * A register row (ADM-06 a fieldset C): Q-02's entry with its clock, plus the status and
+ * the two-person decision. "Day 4 of 30 · notify by Oct 10 if ≥ 500" is `clock_day`,
+ * `clock_days` and `ftc_notify_by`; "Not a notification event" a closed entry whose
+ * `notification_event` is false.
+ */
+export type SecurityIncidentOut = {
+    /**
+     * Accrued Ref
+     */
+    accrued_ref?: string | null;
+    /**
+     * Clock Day
+     */
+    clock_day: number;
+    /**
+     * Clock Days
+     */
+    clock_days: number;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Decisions
+     */
+    decisions?: Array<IncidentDecisionOut>;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Ftc Notify By
+     */
+    ftc_notify_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Notification Event
+     */
+    notification_event: boolean;
+    /**
+     * Notification Started At
+     */
+    notification_started_at?: string | null;
+    pending_decision?: IncidentPendingDecisionOut | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued';
+    status: SecurityIncidentStatus;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * SecurityIncidentPageOut
+ *
+ * The P-36 envelope, newest discovery first; `counts` holds `open` and `closed`.
+ */
+export type SecurityIncidentPageOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<SecurityIncidentOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * SecurityIncidentStatus
+ */
+export type SecurityIncidentStatus = 'investigating' | 'closed';
+
+/**
+ * SecurityOverviewOut
+ *
+ * ADM-06 a: identity's fieldsets and cards. Incidents, safeguards, the export card and
+ * retention have their own reads from the modules that own them (DEC-432).
+ */
+export type SecurityOverviewOut = {
+    /**
+     * Actions
+     */
+    actions?: Array<string>;
+    mfa: MfaSummaryOut;
+    portal: PortalSignInFloorOut;
+    residency: ResidencyOut;
+    sign_in: SignInPolicyOut;
+    support: SupportAccessOut;
+};
+
+/**
+ * SecurityPersonOut
+ *
+ * A person named on the security center; the id links to the ADM-02 user drawer.
+ */
+export type SecurityPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * SecurityRoleIn
  */
 export type SecurityRoleIn = {
@@ -20719,6 +21542,84 @@ export type SecurityRoleIn = {
      * Security Admin
      */
     security_admin: boolean;
+};
+
+/**
+ * SecuritySessionOut
+ *
+ * One active session of a current member (AC-20): person, device, IP, started, last seen,
+ * MFA time. The IP and device are personal data.
+ */
+export type SecuritySessionOut = {
+    /**
+     * Auth Method
+     */
+    auth_method?: 'sso' | 'email_code' | 'passkey' | 'totp' | null;
+    /**
+     * Current
+     */
+    current?: boolean;
+    /**
+     * Device Label
+     */
+    device_label?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Ip
+     */
+    ip?: string | null;
+    /**
+     * Last Seen At
+     */
+    last_seen_at: string;
+    /**
+     * Mfa At
+     */
+    mfa_at?: string | null;
+    person: SecurityPersonOut;
+    /**
+     * Started At
+     */
+    started_at: string;
+};
+
+/**
+ * SecuritySessionPageOut
+ *
+ * The P-36 envelope over the sessions drawer, newest last-seen first.
+ */
+export type SecuritySessionPageOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<SecuritySessionOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
 };
 
 /**
@@ -20948,6 +21849,24 @@ export type SessionOut = {
      * Plan
      */
     plan: Array<PlanStepOut>;
+};
+
+/**
+ * SessionSignedOutOut
+ *
+ * "Sign out of Brightwater Hale": the session can no longer act in this firm; its other
+ * firms are unaffected.
+ */
+export type SessionSignedOutOut = {
+    /**
+     * Session Id
+     */
+    session_id: string;
+    /**
+     * Signed Out At
+     */
+    signed_out_at: string;
+    signed_out_by: SecurityPersonOut;
 };
 
 /**
@@ -21251,6 +22170,86 @@ export type SignInOut = {
      * Mfa
      */
     mfa: boolean;
+};
+
+/**
+ * SignInPolicyIn
+ *
+ * Fieldset A's Save. Shorter limits only: over a platform maximum answers 422
+ * `policy_loosening_refused` (`facts.field`). There is no MFA field (DEC-22).
+ */
+export type SignInPolicyIn = {
+    /**
+     * Idp Mfa Attested
+     */
+    idp_mfa_attested?: boolean;
+    /**
+     * Require Sso
+     */
+    require_sso: boolean;
+    /**
+     * Session Absolute Minutes
+     */
+    session_absolute_minutes: number;
+    /**
+     * Session Idle Minutes
+     */
+    session_idle_minutes: number;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SignInPolicyOut
+ *
+ * ADM-06 fieldset A: the firm's staff sign-in (AC-15 to AC-18).
+ */
+export type SignInPolicyOut = {
+    /**
+     * Identity Provider
+     */
+    identity_provider?: string | null;
+    /**
+     * Idp Mfa Attested At
+     */
+    idp_mfa_attested_at?: string | null;
+    idp_mfa_attested_by?: SecurityPersonOut | null;
+    /**
+     * Platform Max Absolute Minutes
+     */
+    platform_max_absolute_minutes?: number;
+    /**
+     * Platform Max Idle Minutes
+     */
+    platform_max_idle_minutes?: number;
+    /**
+     * Require Sso
+     */
+    require_sso: boolean;
+    /**
+     * Session Absolute Minutes
+     */
+    session_absolute_minutes: number;
+    /**
+     * Session Idle Minutes
+     */
+    session_idle_minutes: number;
+    /**
+     * Sso Enforced At
+     */
+    sso_enforced_at?: string | null;
+    sso_enforced_by?: SecurityPersonOut | null;
+    sso_exempt_account?: SsoExemptAccountOut | null;
+    /**
+     * Sso Verified
+     */
+    sso_verified: boolean;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -21795,6 +22794,40 @@ export type SpendOut = {
 };
 
 /**
+ * SsoExemptAccountIn
+ *
+ * Designate the one SSO-exempt account, or clear it with `user_id: null`.
+ */
+export type SsoExemptAccountIn = {
+    /**
+     * User Id
+     */
+    user_id: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SsoExemptAccountOut
+ *
+ * The one break-glass account ("1 · hardware key · last tested Aug 3, 2026"). Who designated
+ * it, and when, is the audit log's (`sso_exempt_account.designated`).
+ */
+export type SsoExemptAccountOut = {
+    /**
+     * Factor
+     */
+    factor: 'hardware_key';
+    /**
+     * Last Tested At
+     */
+    last_tested_at?: string | null;
+    person: SecurityPersonOut;
+};
+
+/**
  * StaffInvitationOut
  */
 export type StaffInvitationOut = {
@@ -21928,6 +22961,32 @@ export type StaffListOut = {
      * Total Capped
      */
     total_capped?: boolean;
+};
+
+/**
+ * StaffLockOut
+ *
+ * A staff sign-in lock after Unlock: `cleared` when the identity provider let it be
+ * cleared; otherwise still `locked` with `unlocks_at` ("Unlocks automatically at 9:39 AM",
+ * DEC-35; SPEC-349 Q7).
+ */
+export type StaffLockOut = {
+    /**
+     * Cleared
+     */
+    cleared: boolean;
+    /**
+     * Locked
+     */
+    locked: boolean;
+    /**
+     * Unlocks At
+     */
+    unlocks_at?: string | null;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -22459,6 +23518,42 @@ export type SummaryOut = {
      * Trivial
      */
     trivial: string | null;
+};
+
+/**
+ * SupportAccessIn
+ */
+export type SupportAccessIn = {
+    /**
+     * Allow Support Requests
+     */
+    allow_support_requests: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SupportAccessOut
+ *
+ * The support card's switch, "Allow support session requests" (AC-28). The sessions
+ * themselves are SPEC-012's `GET /v1/support-sessions`.
+ */
+export type SupportAccessOut = {
+    /**
+     * Allow Support Requests
+     */
+    allow_support_requests: boolean;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
+    updated_by?: SecurityPersonOut | null;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -24900,6 +25995,70 @@ export type WallV2Out = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * WispOut
+ *
+ * "BH WISP v4 (IRS Pub 5708 format) · approved by Margaret Okonkwo Jan 15, 2026"; the
+ * document is an evidence item (FIL-01's drawer).
+ */
+export type WispOut = {
+    approved_by?: GovernancePersonOut | null;
+    /**
+     * Approved On
+     */
+    approved_on?: string | null;
+    /**
+     * Evidence Item Id
+     */
+    evidence_item_id?: string | null;
+    /**
+     * Format
+     */
+    format: 'irs_pub_5708';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * WispPackOut
+ *
+ * "WISP evidence pack prepared · 14 documents": one zip of the linked documents. The link is
+ * Restricted (it opens the firm's security documents) and never logged.
+ */
+export type WispPackOut = {
+    /**
+     * Document Count
+     */
+    document_count?: number | null;
+    /**
+     * Download Url
+     */
+    download_url?: string | null;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * File Name
+     */
+    file_name?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    requested_by: GovernancePersonOut;
+    /**
+     * Status
+     */
+    status: 'preparing' | 'ready';
 };
 
 /**
@@ -47023,10 +48182,6 @@ export type GetExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetExportError = GetExportErrors[keyof GetExportErrors];
@@ -47153,10 +48308,6 @@ export type UndoExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoExportError = UndoExportErrors[keyof UndoExportErrors];
@@ -48163,6 +49314,167 @@ export type RequestFirmExportResponses = {
 };
 
 export type RequestFirmExportResponse = RequestFirmExportResponses[keyof RequestFirmExportResponses];
+
+export type FirmExportScheduleData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports/schedule';
+};
+
+export type FirmExportScheduleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FirmExportScheduleError = FirmExportScheduleErrors[keyof FirmExportScheduleErrors];
+
+export type FirmExportScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportScheduleOut;
+};
+
+export type FirmExportScheduleResponse = FirmExportScheduleResponses[keyof FirmExportScheduleResponses];
+
+export type PutFirmExportScheduleData = {
+    body: FirmExportScheduleIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports/schedule';
+};
+
+export type PutFirmExportScheduleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutFirmExportScheduleError = PutFirmExportScheduleErrors[keyof PutFirmExportScheduleErrors];
+
+export type PutFirmExportScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportScheduleOut;
+};
+
+export type PutFirmExportScheduleResponse = PutFirmExportScheduleResponses[keyof PutFirmExportScheduleResponses];
+
+export type ApproveFirmExportScheduleData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/data-exports/schedule/approve';
+};
+
+export type ApproveFirmExportScheduleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveFirmExportScheduleError = ApproveFirmExportScheduleErrors[keyof ApproveFirmExportScheduleErrors];
+
+export type ApproveFirmExportScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmExportScheduleOut;
+};
+
+export type ApproveFirmExportScheduleResponse = ApproveFirmExportScheduleResponses[keyof ApproveFirmExportScheduleResponses];
 
 export type ApproveFirmExportData = {
     body?: never;
@@ -50127,6 +51439,219 @@ export type RoleTemplatesResponses = {
 
 export type RoleTemplatesResponse = RoleTemplatesResponses[keyof RoleTemplatesResponses];
 
+export type SafeguardsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/safeguards';
+};
+
+export type SafeguardsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SafeguardsError = SafeguardsErrors[keyof SafeguardsErrors];
+
+export type SafeguardsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SafeguardsOut;
+};
+
+export type SafeguardsResponse = SafeguardsResponses[keyof SafeguardsResponses];
+
+export type PutSafeguardsData = {
+    body: SafeguardsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/safeguards';
+};
+
+export type PutSafeguardsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutSafeguardsError = PutSafeguardsErrors[keyof PutSafeguardsErrors];
+
+export type PutSafeguardsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SafeguardsOut;
+};
+
+export type PutSafeguardsResponse = PutSafeguardsResponses[keyof PutSafeguardsResponses];
+
+export type PutSafeguardsControlData = {
+    body: SafeguardsControlIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Control Key
+         */
+        control_key: string;
+    };
+    query?: never;
+    url: '/v1/firm/safeguards/controls/{control_key}';
+};
+
+export type PutSafeguardsControlErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutSafeguardsControlError = PutSafeguardsControlErrors[keyof PutSafeguardsControlErrors];
+
+export type PutSafeguardsControlResponses = {
+    /**
+     * Successful Response
+     */
+    200: SafeguardsControlOut;
+};
+
+export type PutSafeguardsControlResponse = PutSafeguardsControlResponses[keyof PutSafeguardsControlResponses];
+
+export type WispPackData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/safeguards/wisp-pack';
+};
+
+export type WispPackErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WispPackError = WispPackErrors[keyof WispPackErrors];
+
+export type WispPackResponses = {
+    /**
+     * Successful Response
+     */
+    202: WispPackOut;
+};
+
+export type WispPackResponse = WispPackResponses[keyof WispPackResponses];
+
 export type SearchFindingsData = {
     body?: never;
     headers?: {
@@ -50235,6 +51760,121 @@ export type SearchRequestItemsResponses = {
 
 export type SearchRequestItemsResponse = SearchRequestItemsResponses[keyof SearchRequestItemsResponses];
 
+export type SecurityOverviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security';
+};
+
+export type SecurityOverviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SecurityOverviewError = SecurityOverviewErrors[keyof SecurityOverviewErrors];
+
+export type SecurityOverviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: SecurityOverviewOut;
+};
+
+export type SecurityOverviewResponse = SecurityOverviewResponses[keyof SecurityOverviewResponses];
+
+export type ListSecurityIncidentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: SecurityIncidentStatus | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/firm/security/incidents';
+};
+
+export type ListSecurityIncidentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListSecurityIncidentsError = ListSecurityIncidentsErrors[keyof ListSecurityIncidentsErrors];
+
+export type ListSecurityIncidentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SecurityIncidentPageOut;
+};
+
+export type ListSecurityIncidentsResponse = ListSecurityIncidentsResponses[keyof ListSecurityIncidentsResponses];
+
 export type RecordIncidentData = {
     body: IncidentIn;
     headers?: {
@@ -50281,6 +51921,510 @@ export type RecordIncidentResponses = {
 };
 
 export type RecordIncidentResponse = RecordIncidentResponses[keyof RecordIncidentResponses];
+
+export type SecurityIncidentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Incident Id
+         */
+        incident_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/security/incidents/{incident_id}';
+};
+
+export type SecurityIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SecurityIncidentError = SecurityIncidentErrors[keyof SecurityIncidentErrors];
+
+export type SecurityIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    200: SecurityIncidentDetailOut;
+};
+
+export type SecurityIncidentResponse = SecurityIncidentResponses[keyof SecurityIncidentResponses];
+
+export type DecideSecurityIncidentData = {
+    body: IncidentDecisionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Incident Id
+         */
+        incident_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/security/incidents/{incident_id}/decisions';
+};
+
+export type DecideSecurityIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecideSecurityIncidentError = DecideSecurityIncidentErrors[keyof DecideSecurityIncidentErrors];
+
+export type DecideSecurityIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    200: SecurityIncidentOut;
+};
+
+export type DecideSecurityIncidentResponse = DecideSecurityIncidentResponses[keyof DecideSecurityIncidentResponses];
+
+export type AppendIncidentTimelineData = {
+    body: IncidentTimelineEntryIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Incident Id
+         */
+        incident_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/security/incidents/{incident_id}/timeline';
+};
+
+export type AppendIncidentTimelineErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AppendIncidentTimelineError = AppendIncidentTimelineErrors[keyof AppendIncidentTimelineErrors];
+
+export type AppendIncidentTimelineResponses = {
+    /**
+     * Successful Response
+     */
+    201: IncidentTimelineEntryOut;
+};
+
+export type AppendIncidentTimelineResponse = AppendIncidentTimelineResponses[keyof AppendIncidentTimelineResponses];
+
+export type PutPortalSignInPolicyData = {
+    body: PortalSignInFloorIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security/portal-sign-in';
+};
+
+export type PutPortalSignInPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutPortalSignInPolicyError = PutPortalSignInPolicyErrors[keyof PutPortalSignInPolicyErrors];
+
+export type PutPortalSignInPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSignInFloorOut;
+};
+
+export type PutPortalSignInPolicyResponse = PutPortalSignInPolicyResponses[keyof PutPortalSignInPolicyResponses];
+
+export type SecurityPostureData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security/posture';
+};
+
+export type SecurityPostureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SecurityPostureError = SecurityPostureErrors[keyof SecurityPostureErrors];
+
+export type SecurityPostureResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostureOut;
+};
+
+export type SecurityPostureResponse = SecurityPostureResponses[keyof SecurityPostureResponses];
+
+export type ListSecuritySessionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/firm/security/sessions';
+};
+
+export type ListSecuritySessionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListSecuritySessionsError = ListSecuritySessionsErrors[keyof ListSecuritySessionsErrors];
+
+export type ListSecuritySessionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SecuritySessionPageOut;
+};
+
+export type ListSecuritySessionsResponse = ListSecuritySessionsResponses[keyof ListSecuritySessionsResponses];
+
+export type SignOutSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/security/sessions/{session_id}/sign-out';
+};
+
+export type SignOutSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SignOutSessionError = SignOutSessionErrors[keyof SignOutSessionErrors];
+
+export type SignOutSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionSignedOutOut;
+};
+
+export type SignOutSessionResponse = SignOutSessionResponses[keyof SignOutSessionResponses];
+
+export type PutSignInPolicyData = {
+    body: SignInPolicyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security/sign-in';
+};
+
+export type PutSignInPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutSignInPolicyError = PutSignInPolicyErrors[keyof PutSignInPolicyErrors];
+
+export type PutSignInPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignInPolicyOut;
+};
+
+export type PutSignInPolicyResponse = PutSignInPolicyResponses[keyof PutSignInPolicyResponses];
+
+export type PutSsoExemptAccountData = {
+    body: SsoExemptAccountIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/security/sso-exempt-account';
+};
+
+export type PutSsoExemptAccountErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutSsoExemptAccountError = PutSsoExemptAccountErrors[keyof PutSsoExemptAccountErrors];
+
+export type PutSsoExemptAccountResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignInPolicyOut;
+};
+
+export type PutSsoExemptAccountResponse = PutSsoExemptAccountResponses[keyof PutSsoExemptAccountResponses];
 
 export type ListSendingDomainsData = {
     body?: never;
@@ -51330,6 +53474,168 @@ export type SetSecurityRoleResponses = {
 };
 
 export type SetSecurityRoleResponse = SetSecurityRoleResponses[keyof SetSecurityRoleResponses];
+
+export type UnlockStaffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/staff/{user_id}/unlock';
+};
+
+export type UnlockStaffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UnlockStaffError = UnlockStaffErrors[keyof UnlockStaffErrors];
+
+export type UnlockStaffResponses = {
+    /**
+     * Successful Response
+     */
+    200: StaffLockOut;
+};
+
+export type UnlockStaffResponse = UnlockStaffResponses[keyof UnlockStaffResponses];
+
+export type SupportAccessData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/support-access';
+};
+
+export type SupportAccessErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SupportAccessError = SupportAccessErrors[keyof SupportAccessErrors];
+
+export type SupportAccessResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportAccessOut;
+};
+
+export type SupportAccessResponse = SupportAccessResponses[keyof SupportAccessResponses];
+
+export type PutSupportAccessData = {
+    body: SupportAccessIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/support-access';
+};
+
+export type PutSupportAccessErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutSupportAccessError = PutSupportAccessErrors[keyof PutSupportAccessErrors];
+
+export type PutSupportAccessResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportAccessOut;
+};
+
+export type PutSupportAccessResponse = PutSupportAccessResponses[keyof PutSupportAccessResponses];
 
 export type TeamsData = {
     body?: never;
@@ -59955,10 +62261,6 @@ export type ListExportsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListExportsError = ListExportsErrors[keyof ListExportsErrors];
@@ -60019,10 +62321,6 @@ export type CreateExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateExportError = CreateExportErrors[keyof CreateExportErrors];
