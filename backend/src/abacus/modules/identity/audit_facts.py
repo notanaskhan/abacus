@@ -24,7 +24,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -73,7 +73,7 @@ def _text(value: object) -> str | None:
     if isinstance(value, datetime | date):
         return value.isoformat()
     if isinstance(value, list | tuple):
-        return ", ".join(str(v) for v in value)  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
+        return ", ".join(str(v) for v in cast(list[object], value))
     return str(value)
 
 

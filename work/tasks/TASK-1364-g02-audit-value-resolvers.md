@@ -50,3 +50,9 @@ metadata reader and `not_enabled` with the flag off; a mismatched engagement is 
 Revert: the types read "Values not available" again. Flag `audit_log.values` off withholds all.
 
 ## Progress log
+- 2026-10-27: built as planned. `pii_reveal`: writers record reveals on the version
+  (`pii.revealed`), so the evidence_version resolver answers them; a `pii_reveal` resolver
+  gives the same answer for an event on the reveal itself. Membership resolves on `user`
+  targets (`membership.*` actions). Index maps exposed as `people.DEACTIVATION_REASONS` and
+  `staff.FIRM_ROLES_BY_INDEX`. DEC-459. `test_g02t09_audit_value_resolvers.py` (6 tests) green
+  in the targeted pass; gates clean (TYPE-001 caught once on a pyright ignore, fixed with a cast).

@@ -59,3 +59,10 @@ Revert the commit: the columns go back to null for new events; rows already plac
 (they are part of the sealed leaf) and the explorer reads them as before.
 
 ## Progress log
+- 2026-10-27: built as planned, no migration (0199 unused: both columns are already in leaf v2
+  and insertable). The explorer's stored-client wall clause already existed (S9 review); it now
+  has data, and its test shows it hiding a firm-level hold the ref rule alone would show. Office
+  filter: stored office only; actor-office fallback still a gap (no identity reader of an
+  office's people). DEC-458. Targeted pass (17 files, -n 2): 452 passed, 3 failed, none from
+  this change: ED-127 (`agent_stage.changed` uncatalogued and unplaced, two unit tests) and
+  ED-128 (0172 up-down-up fails re-adding 0180's `methodology_templates.family`).
