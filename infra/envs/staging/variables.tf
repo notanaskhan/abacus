@@ -55,3 +55,15 @@ variable "pentest_review_ends_at" {
   type        = string
   default     = null
 }
+
+variable "worker_task_role_name" {
+  description = "Name of the worker ECS task role (Q-01-T15). Null: the exports worker policy is not attached."
+  type        = string
+  default     = null
+}
+
+variable "api_task_role_name" {
+  description = "Name of the API ECS task role (Q-01-T15). Null: the exports API policy is not attached."
+  type        = string
+  default     = null
+}

@@ -70,6 +70,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.requests.api import (
     items_of_version,
     read_item,
+    refuse_closed_item,
     upload_item_of,
     withdraw_upload,
 )
@@ -189,6 +190,7 @@ async def check_withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID
     engagement = await get_ref(ctx, engagement_id)
     item = await read_item(ctx.tenant, engagement_id, target.item_id)
     await authorise(ctx, ACTION, item_resource(item, engagement.resource()))
+    await refuse_closed_item(ctx, target.item_id)  # ED-118: a closed binder is read-only
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
     if role != _ADMIN and target.uploader != str(ctx.user_id):
         raise NotYourUpload

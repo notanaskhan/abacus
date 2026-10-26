@@ -168,6 +168,7 @@ async def draft_selection_follow_ups_route(body: FollowUpDraftsIn, ctx: Ctx) -> 
     once, never one already waiting to that contact. Nothing is sent. 409
     `follow_up_template_missing` when no Reminder template is published."""
     await _engine_on(ctx)
+    await service.check_draft_selection(ctx, body.binder_ids, body.request_item_ids)  # ED-082
     views = await service.draft_for(ctx, body.binder_ids, body.request_item_ids)
     return FollowUpDraftsOut(items=[follow_up_out(v) for v in views])
 

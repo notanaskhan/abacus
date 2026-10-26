@@ -9,6 +9,11 @@ from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_cl
 from abacus.kernel.uow.relay import register_grant_consumer
 from abacus.modules.identity.access_end import sweep_access_ends_activity
 from abacus.modules.identity.annual_independence import has_current_annual_confirmation
+from abacus.modules.identity.audit_facts import (
+    AuditFact,
+    membership_audit_facts,
+    support_session_audit_facts,
+)
 from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
     MFA_RECENT,
@@ -54,11 +59,14 @@ from abacus.modules.identity.client_access import (
     GrantScope,
     GrantScopeInvalid,
     PortalScopes,
+    RecipientRelation,
     ScopeKind,
     delegation_holders,
     delegation_holders_by_grant,
     grant_client_access,
+    may_receive_about,
     portal_scopes,
+    recipient_relations,
     revoke_client_access,
     scope_facts,
     shell_of,
@@ -459,6 +467,7 @@ __all__ = [
     "AlreadyMember",
     "ApproverNotPartner",
     "Assistant",
+    "AuditFact",
     "AuthContext",
     "AutonomyView",
     "Candidate",
@@ -512,6 +521,7 @@ __all__ = [
     "PortalMfaResetNoticeRequested",
     "PortalScopes",
     "PortalSignInCodeRequested",
+    "RecipientRelation",
     "RelationshipPartner",
     "Resource",
     "RevokedContact",
@@ -627,10 +637,12 @@ __all__ = [
     "mask_tins",
     "mask_tins_for",
     "may_read_unmasked",
+    "may_receive_about",
     "member_context",
     "member_could",
     "member_details",
     "member_facts",
+    "membership_audit_facts",
     "mfa_required",
     "my_engagement_roles",
     "my_engagements",
@@ -642,6 +654,7 @@ __all__ = [
     "policy_agent_may_hold",
     "portal_scopes",
     "provision_setting",
+    "recipient_relations",
     "reconcile_service_lines",
     "record_tenant_key",
     "refuse_unmasked_read",
@@ -711,6 +724,7 @@ __all__ = [
     "staff_holding_line",
     "staff_router",
     "staff_seats_by_office",
+    "support_session_audit_facts",
     "system_context_for_run",
     "team_of",
     "team_standing",

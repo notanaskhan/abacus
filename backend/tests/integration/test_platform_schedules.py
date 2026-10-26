@@ -30,6 +30,7 @@ IDS = (
     "audit_anchor:platform",  # Q-02-T21: the daily anchor to the records bucket
     "audit_chain_verify:platform",  # Q-02-T21: the nightly chain verify (batch)
     "audit_checkpoint:platform",  # Q-02-T21: the checkpoint every 5 minutes
+    "audit_labels:platform",  # G-02-T10 (DEC-453): the label index, every 60 seconds
     "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
     "notification_purge:platform",
     "ses_events:platform",
@@ -39,6 +40,7 @@ BACKGROUND = (
     "access_end:platform",
     "audit_anchor:platform",
     "audit_checkpoint:platform",
+    "audit_labels:platform",
     "audit_partitions:platform",
     "notification_purge:platform",
     "spend_anomaly:platform",
@@ -103,6 +105,8 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["audit_anchor:platform"]["every_seconds"] == (86400,)
     assert facts["audit_partitions:platform"]["workflow_type"] == "AuditPartitions"
     assert facts["audit_partitions:platform"]["every_seconds"] == (30 * 86400,)
+    assert facts["audit_labels:platform"]["workflow_type"] == "AuditLabelIndexer"
+    assert facts["audit_labels:platform"]["every_seconds"] == (60,)
     for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
     for fact in facts.values():

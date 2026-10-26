@@ -25,7 +25,7 @@ variable}`), never the text or the value.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path
@@ -33,8 +33,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import COMMUNICATIONS_FIRM_SENDER_DOMAIN, PORTAL_SETTINGS_EDITOR
 from abacus.kernel.classification import classified
+from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.communications import template_service, template_store
+from abacus.modules.communications.render import Block, TemplateContent
+from abacus.modules.communications.template_registry import VARIABLES as TEMPLATE_VARIABLES
 from abacus.modules.communications.template_registry import (
     CtaTarget,
     FollowUpMode,
@@ -43,7 +48,16 @@ from abacus.modules.communications.template_registry import (
     VariableClass,
     VariableKind,
 )
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.communications.template_service import TemplateState, person_of
+from abacus.modules.communications.template_store import StoredDraft, StoredVersion
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    allowed_actions,
+    current_context,
+    names_of,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -92,7 +106,8 @@ class TemplateVersionRefOut(BaseModel):
 
     version: Annotated[int, Field(ge=1), classified("internal")]
     published_at: Annotated[datetime, classified("internal")]
-    published_by: Annotated[TemplatePersonOut, classified("internal")]
+    # None: the platform default (no firm member published it).
+    published_by: Annotated[TemplatePersonOut | None, classified("internal")] = None
 
 
 class TemplateDraftRefOut(BaseModel):
@@ -136,7 +151,8 @@ class EmailTemplateVersionOut(BaseModel):
     cta_target: Annotated[CtaTarget | None, classified("internal")]
     content_sha256: Annotated[Sha256, classified("internal")]
     published_at: Annotated[datetime, classified("internal")]
-    published_by: Annotated[TemplatePersonOut, classified("internal")]
+    # None: the platform default (no firm member published it).
+    published_by: Annotated[TemplatePersonOut | None, classified("internal")] = None
 
 
 class EmailTemplateDraftOut(BaseModel):
@@ -369,12 +385,147 @@ domains_router = AbacusRouter(prefix="/v1/firm/sending-domains", tags=["email te
 policy_router = AbacusRouter(prefix="/v1/firm/follow-up-policy", tags=["email templates"])
 
 
-@templates_router.get(
-    "", action="email_template.read", response_model=EmailTemplateListOut, errors=(501,)
-)
+# --- R-01-T19: list, read, draft and publish -----------------------------------------------------
+
+
+async def _people(ids: set[UUID]) -> dict[UUID, TemplatePersonOut]:
+    names = await names_of(sorted(ids))
+    return {i: TemplatePersonOut(user_id=i, display_name=names.get(i, "")) for i in ids}
+
+
+def _publishers(states: list[TemplateState]) -> set[UUID]:
+    found: set[UUID] = set()
+    for state in states:
+        if state.published is not None:
+            person = person_of(state.published.published_by)
+            if person is not None:
+                found.add(person)
+        if state.draft is not None:
+            found.add(state.draft.updated_by)
+    return found
+
+
+def _block_out(content: TemplateContent) -> list[TemplateBlock]:
+    return [TemplateBlock(id=b.id, kind=b.kind, text=b.text) for b in content.blocks]
+
+
+def _content_in(body: EmailTemplateDraftIn) -> TemplateContent:
+    return TemplateContent(
+        subject=body.subject,
+        preheader=body.preheader,
+        blocks=tuple(Block(b.id, b.kind, b.text) for b in body.blocks),
+        cta_label=body.cta_label,
+        cta_target=body.cta_target,
+    )
+
+
+def _published_by(
+    version: StoredVersion, people: dict[UUID, TemplatePersonOut]
+) -> TemplatePersonOut | None:
+    person = person_of(version.published_by)
+    return people.get(person) if person is not None else None
+
+
+def _row(state: TemplateState, people: dict[UUID, TemplatePersonOut]) -> EmailTemplateRowOut:
+    r = state.registration
+    published = state.published
+    return EmailTemplateRowOut(
+        key=r.key,
+        name=r.name,
+        group="designed" if r.designed else "registered",
+        audience=list(r.audience),
+        used_by_label=r.used_by_label,
+        used_by_screen=r.used_by[0] if r.used_by else None,
+        published=None
+        if published is None
+        else TemplateVersionRefOut(
+            version=published.version,
+            published_at=published.published_at,
+            published_by=_published_by(published, people),
+        ),
+        draft=None
+        if state.draft is None
+        else TemplateDraftRefOut(version=state.next_version, saved_at=state.draft.updated_at),
+    )
+
+
+def _version_out(
+    version: StoredVersion, people: dict[UUID, TemplatePersonOut]
+) -> EmailTemplateVersionOut | None:
+    content = version.content
+    if content is None:
+        return None
+    return EmailTemplateVersionOut(
+        version=version.version,
+        subject=content.subject,
+        preheader=content.preheader,
+        blocks=_block_out(content),
+        cta_label=content.cta_label,
+        cta_target=cast(CtaTarget | None, content.cta_target),
+        content_sha256=version.content_sha256,
+        published_at=version.published_at,
+        published_by=_published_by(version, people),
+    )
+
+
+def _draft_out(
+    state: TemplateState, draft: StoredDraft, people: dict[UUID, TemplatePersonOut]
+) -> EmailTemplateDraftOut:
+    published = state.published
+    based_on_current = published is not None and draft.base_version_id == published.version_id
+    content = draft.content
+    return EmailTemplateDraftOut(
+        expected_version=draft.draft_version,
+        base_version=published.version if based_on_current and published is not None else None,
+        subject=content.subject,
+        preheader=content.preheader,
+        blocks=_block_out(content),
+        cta_label=content.cta_label,
+        cta_target=cast(CtaTarget | None, content.cta_target),
+        saved_at=draft.updated_at,
+        saved_by=people.get(draft.updated_by)
+        or TemplatePersonOut(user_id=draft.updated_by, display_name=""),
+    )
+
+
+async def _template_out(ctx: AuthContext, state: TemplateState) -> EmailTemplateOut:
+    people = await _people(_publishers([state]))
+    r = state.registration
+    actions = await allowed_actions(
+        ctx,
+        Resource.firm(ctx.tenant_id),
+        ("email_template.edit", "email_template.test_send", "email_template.publish"),
+    )
+    if not await flag_enabled(ctx.tenant, PORTAL_SETTINGS_EDITOR):
+        actions = frozenset[str]()  # off: the screens show the published values read-only
+    allowed: list[TemplateAllowedAction] = [
+        a for a in ("edit", "test_send", "publish") if f"email_template.{a}" in actions
+    ]
+    if state.draft is None and "publish" in allowed:
+        allowed.remove("publish")  # nothing to publish
+    return EmailTemplateOut(
+        key=r.key,
+        name=r.name,
+        audience=list(r.audience),
+        firm_editable=r.firm_editable,
+        variables=[
+            TemplateVariableOut(
+                name=v.name, kind=v.kind, classification=v.classification, block=v.block
+            )
+            for v in (TEMPLATE_VARIABLES[name] for name in r.variables)
+        ],
+        published=None if state.published is None else _version_out(state.published, people),
+        draft=None if state.draft is None else _draft_out(state, state.draft, people),
+        allowed_actions=allowed,
+    )
+
+
+@templates_router.get("", action="email_template.read", response_model=EmailTemplateListOut)
 async def list_email_templates_route(ctx: Ctx) -> EmailTemplateListOut:
     """POR-20 list, ADM-10 rows (R-01-T19): the designed six first, registered keys after."""
-    await _stub(ctx)
+    states = await template_service.list_templates(ctx)
+    people = await _people(_publishers(states))
+    return EmailTemplateListOut(items=[_row(state, people) for state in states])
 
 
 @templates_router.post(
@@ -393,37 +544,40 @@ async def import_email_templates_route(
     await _stub(ctx)
 
 
-@templates_router.get(
-    "/{key}", action="email_template.read", response_model=EmailTemplateOut, errors=(501,)
-)
+@templates_router.get("/{key}", action="email_template.read", response_model=EmailTemplateOut)
 async def get_email_template_route(key: TemplateKey, ctx: Ctx) -> EmailTemplateOut:
-    """The editor: published version, draft, whitelisted variables (R-01-T19)."""
-    await _stub(ctx)
+    """The editor: published version, draft, whitelisted variables (R-01-T19). 404 for a key
+    that is not registered firm-editable."""
+    return await _template_out(ctx, await template_service.template_state(ctx, key))
 
 
 @templates_router.put(
     "/{key}/draft",
     action="email_template.edit",
     response_model=EmailTemplateDraftOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def save_email_template_draft_route(
     key: TemplateKey, body: EmailTemplateDraftIn, ctx: Ctx
 ) -> EmailTemplateDraftOut:
-    """POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`. Audited
-    `email_template.draft_saved`."""
-    await _stub(ctx, PORTAL_SETTINGS_EDITOR)
+    """POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`; 422
+    `template_invalid` for a call to action the key does not register, a repeated block id or a
+    stray brace. Audited `email_template.draft_saved`."""
+    await template_service.save_draft(ctx, key, _content_in(body), body.expected_version)
+    state = await template_service.template_state(ctx, key)
+    if state.draft is None:  # pragma: no cover -- saved above
+        raise NotFound("email_template_draft")
+    people = await _people(_publishers([state]))
+    return _draft_out(state, state.draft, people)
 
 
 @templates_router.delete(
-    "/{key}/draft",
-    action="email_template.edit",
-    response_model=EmailTemplateOut,
-    errors=(501,),
+    "/{key}/draft", action="email_template.edit", response_model=EmailTemplateOut
 )
 async def discard_email_template_draft_route(key: TemplateKey, ctx: Ctx) -> EmailTemplateOut:
-    """Discard the draft (R-01-T19). Audited `email_template.draft_discarded`."""
-    await _stub(ctx, PORTAL_SETTINGS_EDITOR)
+    """Discard the draft (R-01-T19); 404 when there is none. Audited
+    `email_template.draft_discarded`."""
+    return await _template_out(ctx, await template_service.discard_draft(ctx, key))
 
 
 @templates_router.post(
@@ -462,15 +616,42 @@ async def test_send_email_template_route(
     action="email_template.publish",
     response_model=EmailTemplateVersionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_email_template_route(
     key: TemplateKey, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EmailTemplateVersionOut:
     """POR-20 l (R-01-T19): version n+1, insert-only, retires n; 409 `stale_version` when the
-    draft moved, 422 `template_lint_failed`. Audited `email_template.published`; outbox
-    `email_template.published {key, version}`."""
-    await _stub(ctx, PORTAL_SETTINGS_EDITOR)
+    draft moved or there is none, 422 `template_lint_failed` (facts `count` and `finding_<n>`
+    = `code:where`, never the text). Audited `email_template.published`; outbox
+    `email_template.published {key, version}`. A retry with the same key answers the stored
+    version, after authorising again."""
+    await template_service.check_publish(ctx, key)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        published = await template_service.publish(ctx, key)
+        # The stored answer holds identifiers only (P-36): the text is read back on a replay.
+        return 201, {"version": published.version}
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="email_templates.publish",
+        key=idempotency_key,
+        body={"key": key},
+        run=run,
+    )
+    version = int(cast(int, stored.body["version"]))
+    async with tenant_session(ctx.tenant) as session:
+        found = await template_store.version_at(session, ctx.tenant_id, key, version)
+    out = None if found is None else _version_out(found, await _people(_publishers_of(found)))
+    if out is None:  # pragma: no cover -- written above, insert-only
+        raise NotFound("email_template_version")
+    return out
+
+
+def _publishers_of(version: StoredVersion) -> set[UUID]:
+    person = person_of(version.published_by)
+    return set() if person is None else {person}
 
 
 @domains_router.get(

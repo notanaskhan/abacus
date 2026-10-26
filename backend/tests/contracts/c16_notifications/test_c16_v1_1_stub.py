@@ -4,8 +4,11 @@ Every route exists with its one matrix action. Writes answer 404 with their flag
 it on; reads and the onboarding import are never flag-gated and answer 501 until built. Client-
 visible effects carry an `Idempotency-Key`; publish, import and the settings writes need a fresh
 second factor; the agent and system hold none of the actions; every field is classified. The
-`register_email_template` slot refuses what the whitelist does not allow, and `send_templated`
-refuses to run until R-01-T19. C16 v1 stays frozen (`test_c16_frozen.py`)."""
+`register_email_template` slot refuses what the whitelist does not allow. R-01-T19 built the list,
+read, draft and publish routes and `send_templated` (their behaviour:
+`tests/integration/test_r01t19_email_template_versions.py`): those routes no longer answer 501,
+and `send_templated` refuses an agent or any system send but the scheduled reminder before it
+reads anything. C16 v1 stays frozen (`test_c16_frozen.py`)."""
 
 from __future__ import annotations
 
@@ -30,7 +33,7 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag
 from abacus.modules.communications import template_registry, templates_contract
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.portal import settings_contract
 
@@ -64,6 +67,14 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag | None]] = {
     ("post", f"{S}/logo"): ("portal_settings.manage", EDITOR),
     ("get", f"{S}/preview"): ("portal.preview", None),
 }
+# R-01-T19: built, so no longer 501.
+BUILT = {
+    ("get", T),
+    ("get", f"{T}/{{key}}"),
+    ("put", f"{T}/{{key}}/draft"),
+    ("delete", f"{T}/{{key}}/draft"),
+    ("post", f"{T}/{{key}}/publish"),
+}
 IDEMPOTENT = {f"{T}/{{key}}/test-send", f"{T}/{{key}}/publish", D, f"{S}/publish"}
 FRESH_MFA = {"email_template.publish", "email_template.import", "sending_domain.manage"} | {
     "portal_settings.manage",
@@ -93,7 +104,11 @@ MODELS: tuple[type[BaseModel], ...] = (
 def test_ac1_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)][0]
-    assert {"404", "501"} <= set(cast(Json, op["responses"]))
+    responses = set(cast(Json, op["responses"]))
+    if (method, path) in BUILT:
+        assert "404" in responses and "501" not in responses
+    else:
+        assert {"404", "501"} <= responses
 
 
 @pytest.mark.parametrize("path", sorted(IDEMPOTENT))
@@ -222,12 +237,18 @@ def test_ac5_the_slot_registers_a_whitelisted_key_once(monkeypatch: pytest.Monke
         register("staff_note", ("staff",), (), (), (), firm_editable=True)
 
 
-async def test_ac5_send_templated_refuses_to_run_until_built() -> None:
+async def test_ac5_send_templated_refuses_an_agent_and_any_other_system_send() -> None:
+    """R-01-T19 built it (the stub raised `NotImplementedYet`): an agent never sends (ADR-005)
+    and the system sends only the scheduled reminder (DEC-74), refused before any read."""
     scope = template_registry.SendScope(engagement_id=uuid.uuid4())
     recipient = template_registry.RecipientRef("contact", uuid.uuid4())
-    with pytest.raises(NotImplementedYet):
+    user = uuid.uuid4()
+    agent = AuthContext(
+        TenantContext(uuid.uuid4(), "agent", str(user)), user, uuid.uuid4(), None, None
+    )
+    with pytest.raises(Forbidden):
         await template_registry.send_templated(
-            _ctx(),
+            agent,
             "reminder",
             recipient,
             {"client_first_name": "Claire"},
@@ -235,9 +256,9 @@ async def test_ac5_send_templated_refuses_to_run_until_built() -> None:
             idempotency_key="k",
         )
     system = template_registry.SystemSendContext(_ctx().tenant, "scheduled_follow_up", 1)
-    with pytest.raises(NotImplementedYet):
+    with pytest.raises(Forbidden):
         await template_registry.send_templated(
-            system, "reminder", recipient, {}, scope=scope, idempotency_key="k"
+            system, "invitation", recipient, {}, scope=scope, idempotency_key="k"
         )
 
 
