@@ -37,7 +37,7 @@ Security review (DEC-429):
   supersedes_id)` foreign key on a new unique key).
 
 Revision ID: 0175
-Revises: 0180
+Revises: 0195
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0175"
-down_revision = "0180"
+down_revision = "0195"
 branch_labels = None
 depends_on = None
 
