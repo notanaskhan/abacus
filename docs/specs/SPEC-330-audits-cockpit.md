@@ -98,3 +98,45 @@ Migration `0134_assurance_profile_phase`: `assurance_work_items` + `ebp_plan_kin
 
 ## 7. Open questions
 Recorded in `docs/product/decision-log.md` DEC-260 to DEC-264 and DEC-310 to DEC-313.
+
+## 8. Legacy evidence assertions superseded (A-01-T21)
+A-01-T21 retired `legacy/Board.tsx`, `legacy/ItemDetail.tsx` and `legacy/AIReviewPanel.tsx` with
+their tests (`Board.test.tsx`, `spec021.test.tsx`, `spec022.test.tsx`, `spec030review.test.tsx`).
+`/engagements/$id/requests` and `/engagements/$id/items/$itemId` now only redirect to AUD-03 on the
+engagement's assurance work item (`?item=` for one request); with `audits.cockpit` off they show
+F-05's flag-off state, and an engagement with no assurance work item opens its record (DEC-442).
+`EvidencePreview.tsx` (SourceHover, InboxAIMatch), `DecisionActions.tsx` (Review), `CheckResults.tsx`
+(POR-04's planned pre-check reuse, R-01 §8) and `InboxPanel.tsx` stay: something live still
+imports them, or a later task reuses them, and their own tests (`spec029*`, `spec023`,
+`spec033*`) keep running unchanged.
+
+Each old assertion maps to the test that now carries it, or is retired with its behaviour
+(DEC-442). "AUD-03 …" and "SHL-20 …" name tests in `screens/AUD-03/AUD-03.test.tsx` and
+`screens/SHL-20/SHL-20.test.tsx`; "T21 …" names the tests A-01-T21 added to AUD-03.
+
+| Old test (file · AC) | Assertion | Now carried by |
+|---|---|---|
+| spec021 · ac1 | every version newest first with how it arrived | AUD-03b / AUD-03f (the upload row names the file, its upload date and the match); the version history is SHL-08's (P-03) |
+| spec021 · ac2 | download with the token; a failed verification explained | retired with ItemDetail: AUD-03's viewer serves page images through C4, no download control is designed (DEC-442) |
+| spec021 · ac3 | citations marked verified; model text as plain text with the AI tag | SHL-20 "the flag reasons are the verified citations, verbatim, as agent text" |
+| spec021 · ac4 | a manager decides the newest version; staff see the state only | AUD-03b (Accept moves the rail) · AUD-03 "staff accept off: the strip shows only Return…" · AUD-03 acceptance "needs a human click" |
+| spec021 · ac5 ac6 | not allowed; empty state without evidence | AUD-03 "not found … 404 with no hint (INV-3)" · AUD-03e "Not received yet" |
+| spec021 · SPEC-024 | Screen now starts screening | SHL-20 "reads the one line, with Screen now and Link to request… held off" and "Rerun asks the server to screen again (a)" |
+| spec021 · route | an item opens on its own page | T21 "SPEC-021 (item route): … opens AUD-03 on that request" |
+| spec022 · ac1 ac3 | retrievability tiers A–E, unavailable A items, unclassified | retired by design: the AUD-03 handoff draws no tier (DEC-442) |
+| spec022 · ac5 | the summary strip | AUD-03 acceptance (R2) "counts stay 24 requests · 11 received · 1 needs review · 12 requested" and the group-count footing test |
+| spec022 · ac5 | filters narrow by text; the URL carries them; no-match state | T21 "SPEC-022 ac5: the search narrows the rows …" · `?q=`, `?sort=`, `?item=` in `routes/firm/audits.tsx` |
+| spec022 · ac2 | tier override and Automatic | retired by design (no tier on AUD-03, DEC-442) |
+| spec022 · board | the legacy board answers with the flag off | T21 "SPEC-022 (flag off): … the flag-off state, never a board" |
+| spec023 · ac2 ac3 ac4 ac6 | the inbox: add files, suggestions with a score, match, removed, refused | `legacy/spec023.test.tsx` unchanged (InboxPanel stays); AUD-03c carries the matcher's held proposal ("match 62%") |
+| Board.test · ac18 | engagement and item with status, source and screening | AUD-03a/b (row status, file, screening glyph) · AUD-03 acceptance (R2) "Linked (n) and the screening glyph" |
+| Board.test · ac18 | hostile rationale, quote, note, citation as text only | SHL-20 "flag reasons … as agent text" (AgentText); `agent-text.test.tsx` |
+| Board.test · ac18 | Screening… while running; nothing without evidence | SHL-20 "c: the spinner line …" · AUD-03 acceptance (R2) "requested rows show — and no glyph" |
+| Board.test · ac18 | loading skeleton; alert with Retry; empty list | AUD-03 "loading" · AUD-03 "error … offers a retry"; the empty audit is DEC-341's `canvas.empty` |
+| Board.test · ac18 | add a request item | SHL-14 over AUD-03 ("+ Add", P-06-T13 tests) |
+| Board.test · ac18 | retrieve the trial balance; queued for capacity; polling | retired with the Board: retrieval moves to A-02's Trial Balance (DEC-442) |
+| Board.test · ac18 | stops polling for screening after two minutes | SHL-20 "c: … polled every 2 s" (the card owns the poll) |
+| Board.test · ac18 | offers nothing that accepts, approves, rejects or waives an agent proposal | AUD-03 avoid "agent-owned decisions" · AUD-03 acceptance "nothing is accepted on load" |
+| Board.test · TASK-105 | counts by status; a request opens beside the list | AUD-03 group counts · AUD-03a (the selected row opens the viewer dock) |
+| Board.test · TASK-110 | a citation opens the source at its cell | SHL-20 "View opens SHL-08 on the flagged file with its region lit" |
+| spec030 · ac6 ac10 | the AI review panel: flags with quotes, Review now, unavailable, data boundary, states | the C-34 screening card on AUD-03: SHL-20 a–f, "View opens SHL-08 …", "Rerun …", "c: …"; the data-boundary wording is the screener's (Q-02) |
