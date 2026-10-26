@@ -2,7 +2,7 @@
 id: TASK-1321
 title: SHL-08 masked PII (c), password-locked (d) and in-document search (P-03-T20)
 spec: SPEC-322
-acceptance_criteria: [AC4.4, AC4.5, AC4.6, AC5.1, AC5.3, AC5.4, AC3.9]
+acceptance_criteria: [AC-26, AC-27, AC-28, AC-31, AC-33, AC-34, AC-21]
 risk_zone: amber
 status: in-review
 epic: P-03
@@ -42,3 +42,5 @@ Revert the commit; the kit props are optional.
   `{versionId, fileName}`, but no host passes one yet (the SHL-14 composer has no prefill entry
   and needs a binder id the viewer doesn't know), so in the artboard it is the handoff's
   tooltip-only link (disabled with its destination as the hint), as "Open in Files" is. DEC-426.
+- 2026-10-26: vitest `src/screens/SHL-08` 39 passed (10 new), `packages/ui` viewer 28 passed;
+  tsc, eslint and prettier clean on touched files. Playwright skipped (chromium mismatch).

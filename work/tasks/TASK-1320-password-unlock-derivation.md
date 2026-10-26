@@ -2,7 +2,7 @@
 id: TASK-1320
 title: Password unlock as a derivation (P-03-T19; C4 §3.5, SPEC-322 F5)
 spec: SPEC-322
-acceptance_criteria: [AC5.1, AC5.2, AC5.3, AC5.4, AC5.5]
+acceptance_criteria: [AC-31, AC-32, AC-33, AC-34, AC-35]
 risk_zone: red
 status: in-review
 epic: P-03
@@ -68,4 +68,11 @@ Flag `evidence.viewer_unlock` off (routes 404). Derived rows are additive; reade
 non-derived rows.
 
 ## Progress log
-- 2026-10-26: plan written; built.
+- 2026-10-26: plan written; built. Targeted pass (one run, `-n 2`): the unlock unit and
+  integration files, the trust-kit PII scan, reveal, viewer, masked-rendition, offshore-material
+  and word-layer files, the C4 contract tests, route introspection and the T18 independent suite:
+  778 passed. Gates clean (ruff, pyright, lint-imports, banned_patterns, error_codes --write,
+  validate_docs, scope_guards, fresh_mfa, secrets_scan, check-generated). No migration needed
+  (0109 has the tables and grants); 0173-0174 unused. Follow-ups: a derived extraction for agent
+  material and the OQ-8 check re-run; human-only audit listing for `evidence_version.unlocked`
+  would need a migration.

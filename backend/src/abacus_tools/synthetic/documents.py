@@ -62,15 +62,20 @@ def _padded(password: str) -> bytes:
 def _standard_security(password: str) -> tuple[bytes, bytes, bytes]:
     """Revision 2 (40-bit RC4), owner password = user password: the O and U entries and the file
     key (ISO 32000-1 algorithms 2, 3 and 4)."""
-    owner = _rc4(hashlib.md5(_padded(password)).digest()[:5], _padded(password))  # noqa: S324 -- the PDF format's own hash
-    key = hashlib.md5(  # noqa: S324 -- the PDF format's own hash
-        _padded(password) + owner + struct.pack("<i", _PERMISSIONS) + _FILE_ID
+    owner = _rc4(
+        hashlib.md5(_padded(password), usedforsecurity=False).digest()[:5], _padded(password)
+    )
+    key = hashlib.md5(
+        _padded(password) + owner + struct.pack("<i", _PERMISSIONS) + _FILE_ID,
+        usedforsecurity=False,
     ).digest()[:5]
     return owner, _rc4(key, _PAD), key
 
 
 def _object_key(key: bytes, number: int) -> bytes:
-    return hashlib.md5(key + struct.pack("<i", number)[:3] + b"\x00\x00").digest()[:10]  # noqa: S324 -- the PDF format's own hash
+    return hashlib.md5(
+        key + struct.pack("<i", number)[:3] + b"\x00\x00", usedforsecurity=False
+    ).digest()[:10]
 
 
 def _pdf(pages: Sequence[bytes], *, encrypt: bool = False, password: str | None = None) -> bytes:

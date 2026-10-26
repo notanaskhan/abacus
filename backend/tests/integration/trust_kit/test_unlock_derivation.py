@@ -38,17 +38,20 @@ from abacus_tools.synthetic.documents import password_pdf, w2_pdf
 from .support import BUCKET, Firm, Seeder, as_version, make_firm
 
 SENTINEL = "Sentinel-Halvard-7781"
-TABLES = (
-    "audit_events",
-    "outbox",
-    "access_events",
-    "evidence_derivations",
-    "evidence_pages",
-    "pii_scan_runs",
-    "pii_regions",
-    "upload_previews",
-    "upload_preview_pages",
-    "evidence_versions",
+# Every row of each table the unlock touches, as text.
+DUMPS = (
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM audit_events t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM outbox t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM access_events t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM evidence_derivations t "
+    "WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM evidence_pages t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM pii_scan_runs t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM pii_regions t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM upload_previews t WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM upload_preview_pages t "
+    "WHERE tenant_id = $1",
+    "SELECT coalesce(string_agg(t::text, ''), '') FROM evidence_versions t WHERE tenant_id = $1",
 )
 
 
@@ -184,14 +187,10 @@ async def test_ac5_4_the_password_is_in_no_log_table_or_storage_object(
         await _unlock(firm.person(), version, "not-the-password")
         await _unlock(firm.person(), version, SENTINEL)
     assert all(SENTINEL not in str(entry) for entry in logs)
-    for table in TABLES:
-        dumped = await seed.value(
-            f"SELECT coalesce(string_agg(t::text, ''), '') FROM {table} t "  # noqa: S608 -- fixed names
-            "WHERE tenant_id = $1",
-            firm.tenant_id,
-        )
-        assert SENTINEL not in str(dumped), table
-        assert SENTINEL.encode().hex() not in str(dumped), table
+    for query in DUMPS:
+        dumped = await seed.value(query, firm.tenant_id)
+        assert SENTINEL not in str(dumped), query
+        assert SENTINEL.encode().hex() not in str(dumped), query
     listing = evidence_storage.list_objects_v2(Bucket=BUCKET)
     for entry in listing.get("Contents", []):
         body = evidence_storage.get_object(Bucket=BUCKET, Key=entry.get("Key", ""))["Body"]

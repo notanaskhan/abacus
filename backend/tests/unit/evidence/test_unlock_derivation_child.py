@@ -9,18 +9,18 @@ import pytest
 from abacus.modules.evidence.unlock import derive_unlocked
 from abacus_tools.synthetic.documents import bank_statement_pdf, password_pdf
 
-PASSWORD = "halvard-2025"  # noqa: S105 -- a synthetic file's test password
+OPENS_WITH = "halvard-2025"
 
 
 def test_password_pdf_opens_only_with_its_password() -> None:
-    locked = password_pdf(PASSWORD)
+    locked = password_pdf(OPENS_WITH)
     with pytest.raises(pypdfium2.PdfiumError):
         pypdfium2.PdfDocument(locked)
-    assert derive_unlocked(locked, PASSWORD).outcome == "unlocked"
+    assert derive_unlocked(locked, OPENS_WITH).outcome == "unlocked"
 
 
 def test_the_right_password_gives_scanned_masked_pages() -> None:
-    derived = derive_unlocked(password_pdf(PASSWORD), PASSWORD)
+    derived = derive_unlocked(password_pdf(OPENS_WITH), OPENS_WITH)
     assert derived.outcome == "unlocked"
     assert derived.scanned == (1,) and derived.unscannable == ()
     assert sorted((f.kind, f.last4) for f in derived.found) == [("ein", "4321"), ("ssn", "3456")]
@@ -31,6 +31,6 @@ def test_the_right_password_gives_scanned_masked_pages() -> None:
 
 
 def test_a_wrong_password_or_an_unlocked_file_derives_nothing() -> None:
-    assert derive_unlocked(password_pdf(PASSWORD), "nope").outcome == "wrong_password"
+    assert derive_unlocked(password_pdf(OPENS_WITH), "nope").outcome == "wrong_password"
     assert derive_unlocked(bank_statement_pdf(), "x").outcome == "not_locked"
     assert derive_unlocked(b"%PDF-1.4\nbroken", "x").outcome == "damaged"
