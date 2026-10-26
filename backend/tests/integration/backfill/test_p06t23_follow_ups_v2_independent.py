@@ -638,15 +638,6 @@ async def test_ac19_the_database_refuses_follow_up_sent_from_the_agent(firm: Fir
     assert await firm.audits("follow_up.sent") == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1280, ED-081 open (DEC-220 'Open', recorded in #390): the human-only guard "
-        "refuses agent and "
-        "policy actors only; a system actor may still write follow_up.sent, though SPEC-319 "
-        "AC-19 and C5 §12 call it human-only in the database"
-    ),
-)
 async def test_ac19_the_database_refuses_follow_up_sent_from_the_system(firm: Firm) -> None:
     with pytest.raises(DBAPIError):
         await _record_sent(firm, "system")
@@ -728,17 +719,12 @@ async def test_dec43_another_firm_gets_404(net: Net, firm: Firm) -> None:
 
 # --- ED-082: a selection with nothing to chase -------------------------------------------------
 
-# POST /v1/follow-ups/drafts authorises only the engagements of the requests it finds, so a
+# POST /v1/follow-ups/drafts authorised only the engagements of the requests it found, so a
 # selection with none (nothing open, a walled or another firm's binder, a client principal) never
-# calls authorise and the route guard answers 500 `authz.unchecked_route`. Nothing leaks; the fix
-# needs requests to say which binders the caller may read (cross-module), so it is held.
+# called authorise and the route guard answered 500 `authz.unchecked_route`. Fixed by Q-03-T038
+# (TASK-1354): requests says which engagements the selection names (`selection_engagements`).
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1280, ED-082 open (shipped in #390): an empty selection answers 500 "
-    "authz.unchecked_route",
-)
 async def test_ac16_a_published_binder_with_nothing_open_drafts_nothing(net: Net) -> None:
     f = await _firm(net)
     await f.request("Already received", status="received")
@@ -749,11 +735,6 @@ async def test_ac16_a_published_binder_with_nothing_open_drafts_nothing(net: Net
     assert await f.audits("follow_up.drafted") == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1280, ED-082 open (shipped in #390): an empty selection answers 500 "
-    "authz.unchecked_route",
-)
 async def test_inv3_a_walled_member_drafting_over_the_binder_gets_404(firm: Firm) -> None:
     await firm.net.wall(firm.admin, firm.staff, firm.site)
     response, items = await firm.draft(firm.staff, {"binder_ids": [str(firm.binder)]})
@@ -761,11 +742,6 @@ async def test_inv3_a_walled_member_drafting_over_the_binder_gets_404(firm: Firm
     assert items == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1280, ED-082 open (shipped in #390): an empty selection answers 500 "
-    "authz.unchecked_route",
-)
 async def test_dec43_another_firm_drafting_over_the_binder_gets_404(net: Net, firm: Firm) -> None:
     stranger = await _firm(net)
     response, items = await stranger.draft(stranger.manager, {"binder_ids": [str(firm.binder)]})
@@ -773,11 +749,6 @@ async def test_dec43_another_firm_drafting_over_the_binder_gets_404(net: Net, fi
     assert items == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1280, ED-082 open (shipped in #390): an empty selection answers 500 "
-    "authz.unchecked_route",
-)
 async def test_ac20_a_client_user_may_not_draft(firm: Firm) -> None:
     response, items = await firm.draft(firm.ada, {"binder_ids": [str(firm.binder)]})
     assert response.status_code in (403, 404), response.text

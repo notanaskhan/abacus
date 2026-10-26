@@ -1,0 +1,42 @@
+# The x1 smoke (Q-03-T043; chapter 10 section 10.11.5): 5 minutes of the product's everyday read
+# mix at x1, run after each staging batch deploy on the perf stack's runner (never against a
+# database a deploy is using; the harness itself refuses any non-loopback target, DEC-397). Its
+# reports feed `abacus_tools.loadtest.trend`, which opens a ticket when a group's p95 rises more
+# than 20% over its 4-week median and posts the trend to the quality report. Read-only.
+name: x1_smoke
+description: Five minutes of the x1 everyday read mix; the post-deploy trend's source.
+duration_seconds: 300
+users: 10
+think_ms: 1000
+ramp_seconds: 30
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [home, record_lists, record_reads]}
+  - {subject: scenario-ana-cruz, weight: 3, groups: [home, record_lists, record_reads]}
+  - {subject: scenario-dana-kowalski, weight: 2, groups: [portal]}
+groups:
+  - name: home
+    weight: 3
+    p95_ms: 500  # a list with counts
+    steps:
+      - {path: /v1/home}
+      - {path: /v1/notifications}
+  - name: record_lists
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements?limit=25"}
+      - {path: "/v1/clients?limit=25"}
+      - {path: "/v1/work-items?limit=25"}
+  - name: record_reads
+    weight: 3
+    p95_ms: 300  # a record projection read
+    steps:
+      - {path: "/v1/engagements/{engagement_id}"}
+      - {path: "/v1/clients/{client_id}"}
+  - name: portal
+    weight: 2
+    p95_ms: 300
+    steps:
+      - {path: /v1/portal/branding, auth: false}
+      - {path: /v1/me}

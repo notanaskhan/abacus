@@ -31,6 +31,7 @@ from abacus.modules.identity.api import (
     names_of,
     team_of,
 )
+from abacus.modules.requests.closed_binders import refuse_closed_item_in
 from abacus.modules.requests.events import CommentMentioned
 from abacus.modules.requests.repository import (
     fulfilling_versions,
@@ -322,6 +323,7 @@ async def post_comment(
     sealed = await seal(ctx.tenant_id, body.encode(), fingerprint)
     comment_id = uuid4()
     async with uow(ctx.tenant) as tx:
+        await refuse_closed_item_in(tx.session, ctx, item_id)  # ED-118: read-only (DEC-461)
         row = await insert_comment(
             tx.session,
             id=comment_id,

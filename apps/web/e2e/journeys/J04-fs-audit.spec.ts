@@ -18,6 +18,9 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
 const SEP_24 = "2026-09-24T09:00:00-05:00";
 const GRANITE_PEAK = "Granite Peak Outdoor Supply, Inc.";
 
+// Node's Buffer at run time (the workspace has no @types/node; node-shim.d.ts declares the type).
+const nodeBuffer = (globalThis as unknown as { Buffer: { from(text: string): Buffer } }).Buffer;
+
 function owner(description: string): { annotation: { type: string; description: string } } {
   return { annotation: { type: "owner", description } };
 }
@@ -55,13 +58,55 @@ test.describe("J04-fs-audit PBC slice", () => {
     },
   );
 
-  test.fixme(
-    "J04 pbc 3: Luis Ferrante uploads the statement against the request (POR-03, POR-04)",
-    owner("R-01 · R-01-T10 POR-03 drop target; R-01-T18 live /documents · S10, Fri Mar 19, 2027"),
-    async ({ journey }) => {
-      await journey.as("luis-ferrante", "/documents", { clock: SEP_24 });
-    },
-  );
+  // R-01-T21: the client steps of the PBC slice on POR-04, at 1400 and on the 390 preset. Granite
+  // Peak's binder exists only in the Sep 24 snapshot (no fixture scenario carries it, and none may
+  // be invented), and the portal persona signs in through the portal BFF (P-08-T10), so the step
+  // runs where both are present.
+  for (const width of [1400, 390] as const) {
+    test(
+      `J04 pbc 3: Luis Ferrante uploads the statement against its request (POR-03, POR-04)${width === 390 ? " · 390" : ""}`,
+      owner("R-01 · R-01-T21 Playwright (POR-04) · S10, Fri Mar 19, 2027"),
+      async ({ journey }) => {
+        test.fixme(
+          journey.project === "fixture",
+          "Granite Peak's binder is the Sep 24 snapshot's, full stack only (no fixture data)",
+        );
+        test.fixme(
+          journey.project === "fullstack",
+          "the fullstack adapter signs in firm personas only; the portal BFF sign-in is P-08-T10's",
+        );
+        await journey.page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+        await journey.as("luis-ferrante", "/documents", { clock: SEP_24 });
+        const page = journey.page;
+        await journey.step("J04 pbc step 3: Granite Peak's documents (POR-03)", async () => {
+          await expect(page.locator("[data-request]").first()).toBeVisible();
+          await expect(page.getByText(/accrued/i)).toHaveCount(0);
+        });
+        await page.locator("[data-request] [data-open-title]").first().click();
+        const sheet = page.getByRole("dialog");
+        await journey.step(
+          "J04 pbc step 3: the request sheet (POR-04a)",
+          async () => {
+            await expect(sheet.getByRole("heading").first()).toBeVisible();
+            await expect(sheet.getByText(/accrued/i)).toHaveCount(0);
+          },
+          { include: "[role='dialog']" },
+        );
+        await sheet.locator("input[type='file']").setInputFiles({
+          name: "Granite_Peak_Bank_Statement_Dec_2026.pdf",
+          mimeType: "application/pdf",
+          buffer: nodeBuffer.from("%PDF-1.7"),
+        });
+        await journey.step(
+          "J04 pbc step 3: the upload is received (POR-04c)",
+          async () => {
+            await expect(sheet.getByText(/^✓ You uploaded/)).toBeVisible();
+          },
+          { include: "[role='dialog']" },
+        );
+      },
+    );
+  }
 
   test.fixme(
     "J04 pbc 4: the upload is scanned and lands as Uploaded – needs review (POR-03c)",

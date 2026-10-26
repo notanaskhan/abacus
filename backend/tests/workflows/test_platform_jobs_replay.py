@@ -13,6 +13,7 @@ from temporalio.worker import Replayer
 from abacus.modules.audit_trail.api import (
     AuditChainVerifyWorkflow,
     AuditCheckpointWorkflow,
+    AuditLabelIndexerWorkflow,
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import DrainSesEventsWorkflow
@@ -32,6 +33,8 @@ AUDIT_JOBS: dict[str, tuple[str, type]] = {
     "audit-checkpoint-v1-sealed": ("audit_checkpoint:platform", AuditCheckpointWorkflow),
     "audit-chain-verify-v1-verified": ("audit_chain_verify:platform", AuditChainVerifyWorkflow),
     "audit-anchor-v1-anchored": ("audit_anchor:platform", AuditAnchorWorkflow),
+    # G-02-T10 (DEC-453): the label index's Schedule.
+    "audit-labels-v1-indexed": ("audit_labels:platform", AuditLabelIndexerWorkflow),
 }
 
 

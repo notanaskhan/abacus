@@ -1,0 +1,34 @@
+# The PBC import burst (Q-03-T044; chapter 10 section 10.11.3): Hannah Leclerc imports a 300-item
+# request list into Northwind's 401(k) audit (A1) through the firm's request-list import
+# (SPEC-018, `POST .../request-items/import`) while the rest of the team keeps reading. The body is
+# generated (`bodies.pbc_import_300`). The first import creates 300 requests; later ones count them
+# as duplicates and create nothing, so a run grows the engagement once. Against a local stack only
+# (`make seed-demo`); the cross-firm fairness half is Q-03-T043's, on the perf stack.
+name: pbc_import_burst
+description: A 300-item PBC import burst on one engagement while its team reads it.
+duration_seconds: 120
+users: 8
+think_ms: 500
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 1, groups: [j04_pbc_import]}
+  - {subject: scenario-marcus-delaney, weight: 2, groups: [j04_pbc_requests, j02_home]}
+  - {subject: scenario-ana-cruz, weight: 3, groups: [j04_pbc_requests, j02_home]}
+groups:
+  - name: j04_pbc_import
+    weight: 1
+    steps:
+      - method: POST
+        path: "/v1/engagements/{engagement_id}/request-items/import?sheet=Requests&description=0&area=1&tier=2"
+        body: pbc_import_300
+        expect: [201]
+  - name: j04_pbc_requests
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{engagement_id}/request-items"}
+  - name: j02_home
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}

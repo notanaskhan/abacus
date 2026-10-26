@@ -70,6 +70,7 @@ Verbatim from the handoff spec and revision, through `copy.ts`. Key strings: hea
 
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
+| Settings navigation rail: Settings home · People · Offices & teams · Security · Developer · Integrations · Portal · Monitoring | ADM-01 · ADM-02 · ADM-03 · ADM-06 · ADM-09 · ADM-08 · ADM-10 · ADM-12 | live where built, as ADM-01's section rows; "not built yet" in dev and fixture builds, hidden in production (ED-113) |
 | "Consent registry ›" | ADM-05 (T-01) | planned |
 | policy names | KNW-04 (K-02) | planned |
 | Override tolerance helper | ADM-11 (Q-05) | planned |

@@ -8394,7 +8394,8 @@ export const getEmailTemplateQueryKey = (options: Options<GetEmailTemplateData>)
 /**
  * Get Email Template Route
  *
- * The editor: published version, draft, whitelisted variables (R-01-T19).
+ * The editor: published version, draft, whitelisted variables (R-01-T19). 404 for a key
+ * that is not registered firm-editable.
  */
 export const getEmailTemplateOptions = (options: Options<GetEmailTemplateData>) => queryOptions<GetEmailTemplateResponse, GetEmailTemplateError, GetEmailTemplateResponse, ReturnType<typeof getEmailTemplateQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8412,7 +8413,8 @@ export const getEmailTemplateOptions = (options: Options<GetEmailTemplateData>) 
 /**
  * Discard Email Template Draft Route
  *
- * Discard the draft (R-01-T19). Audited `email_template.draft_discarded`.
+ * Discard the draft (R-01-T19); 404 when there is none. Audited
+ * `email_template.draft_discarded`.
  */
 export const discardEmailTemplateDraftMutation = (options?: Partial<Options<DiscardEmailTemplateDraftData>>): UseMutationOptions<DiscardEmailTemplateDraftResponse, DiscardEmailTemplateDraftError, Options<DiscardEmailTemplateDraftData>> => {
     const mutationOptions: UseMutationOptions<DiscardEmailTemplateDraftResponse, DiscardEmailTemplateDraftError, Options<DiscardEmailTemplateDraftData>> = {
@@ -8431,8 +8433,9 @@ export const discardEmailTemplateDraftMutation = (options?: Partial<Options<Disc
 /**
  * Save Email Template Draft Route
  *
- * POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`. Audited
- * `email_template.draft_saved`.
+ * POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`; 422
+ * `template_invalid` for a call to action the key does not register, a repeated block id or a
+ * stray brace. Audited `email_template.draft_saved`.
  */
 export const saveEmailTemplateDraftMutation = (options?: Partial<Options<SaveEmailTemplateDraftData>>): UseMutationOptions<SaveEmailTemplateDraftResponse, SaveEmailTemplateDraftError, Options<SaveEmailTemplateDraftData>> => {
     const mutationOptions: UseMutationOptions<SaveEmailTemplateDraftResponse, SaveEmailTemplateDraftError, Options<SaveEmailTemplateDraftData>> = {
@@ -8473,8 +8476,10 @@ export const previewEmailTemplateMutation = (options?: Partial<Options<PreviewEm
  * Publish Email Template Route
  *
  * POR-20 l (R-01-T19): version n+1, insert-only, retires n; 409 `stale_version` when the
- * draft moved, 422 `template_lint_failed`. Audited `email_template.published`; outbox
- * `email_template.published {key, version}`.
+ * draft moved or there is none, 422 `template_lint_failed` (facts `count` and `finding_<n>`
+ * = `code:where`, never the text). Audited `email_template.published`; outbox
+ * `email_template.published {key, version}`. A retry with the same key answers the stored
+ * version, after authorising again.
  */
 export const publishEmailTemplateMutation = (options?: Partial<Options<PublishEmailTemplateData>>): UseMutationOptions<PublishEmailTemplateResponse, PublishEmailTemplateError, Options<PublishEmailTemplateData>> => {
     const mutationOptions: UseMutationOptions<PublishEmailTemplateResponse, PublishEmailTemplateError, Options<PublishEmailTemplateData>> = {

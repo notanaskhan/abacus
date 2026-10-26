@@ -1515,6 +1515,32 @@ async def binder_statuses(
     return {i: str(st) for i, st in rows.all()}
 
 
+async def selection_engagements(
+    session: AsyncSession, ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
+) -> tuple[dict[UUID, UUID], dict[UUID, UUID]]:
+    """Q-03-T038 (ED-082): the engagement of each selected binder and request the caller may
+    read (walls apply; another firm's rows are not there), keyed by the selected id."""
+    binders: dict[UUID, UUID] = {}
+    items: dict[UUID, UUID] = {}
+    if binder_ids:
+        rows = await session.execute(
+            select(RequestList.id, RequestList.engagement_id).where(
+                RequestList.id.in_(list(binder_ids)),
+                visible(ctx, "binder.read", RequestList.engagement_id),
+            )
+        )
+        binders = {i: e for i, e in rows.all()}
+    if item_ids:
+        rows = await session.execute(
+            select(RequestItem.id, RequestItem.engagement_id).where(
+                RequestItem.id.in_(list(item_ids)),
+                visible(ctx, "request_item.read", RequestItem.engagement_id),
+            )
+        )
+        items = {i: e for i, e in rows.all()}
+    return binders, items
+
+
 # --- P-06-T20: what the screening aggregate composes against -------------------------------------
 
 

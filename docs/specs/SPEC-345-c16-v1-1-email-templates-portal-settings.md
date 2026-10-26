@@ -50,11 +50,19 @@ R-01 §8.2 names C16 v1.1 (additive) with two documents, `docs/contracts/email-t
 ### Story 3: Previews never widen access (security review, DEC-379)
 - **AC-8** Given a preview or test send for a real contact, then the contact must be visible to the viewer, every projected item is one the viewer could read themselves (`engagement.read` and the item's read action under `visible()`), dropped items leave no count, and with nothing readable the sample client renders; a firm admin walled off Copperleaf previews Tess Moreno as the sample client. `email_template.test_send` needs fresh MFA and an onshore member.
 
+### Story 4: Versions, drafts and the templated send (R-01-T19, DEC-449)
+- **AC-9** Given a published version and the same values, then the renderer gives byte-identical HTML and text, every value escaped and the one link the button's `{portal_link}`.
+- **AC-10** Given a key with no published version (neither the firm's nor the platform's), then `send_templated` records the message `blocked` `template_missing` and sends nothing; a value outside the key's whitelist or with an amount, TIN or account-number shape is `template_lint_failed`; a retry with the same idempotency key sends nothing again.
+- **AC-11** Given v3 published, when v4 publishes, then v3 stays readable by number and every later send uses v4; a draft saves with `expected_version` (409 `stale_version` on an old one), publish takes fresh MFA, refuses the lint's findings (422 `template_lint_failed`, identifier-only facts) and a draft based on a version no longer in use (409), and a firm's wording is sealed at rest under its key.
+
+### Story 5: The seed (R-01-T22, DEC-451)
+- **AC-12** Given `--slice email_templates`, then Brightwater Hale's six keys load through the editor service at POR-20's versions (the Reminder with a v4 draft), every seeded version passes the publish checks, and no template text sits outside the scenario package.
+
 ## 6. Behaviour and flows
 As R-01 §3.7 to §3.9. The publish of a template or of portal settings writes one insert-only version in one unit of work; a draft carries `expected_version` and a stale save answers 409 `stale_version`.
 
 ## 7. Domain and data changes
-None in the stub. R-01 §4.2's migrations (templates v2, follow-up policies, portal settings, sending domains) land with T19, T24, T26, T27.
+None in the stub. R-01 §4.2's migrations (templates v2, follow-up policies, portal settings, sending domains) land with T19, T24, T26, T27. Templates v2 is migration 0196 (R-01-T19).
 
 ## 8. Interfaces
 `docs/contracts/email-templates.md` and `docs/contracts/portal-settings.md`. Module interface: `communications.api.register_email_template`, `registered_templates`, `send_templated`, `RecipientRef`, `SendActor`, `SendOutcome`, `SendRefusal`, `TEMPLATE_VARIABLES`, `FollowUpPolicyFields`, `NextSendOut`, `scheduled_send_enabled`.
@@ -91,6 +99,8 @@ POR-20 a-l and ADM-10 a-g (`docs/screens/POR-20.md`, `docs/screens/ADM-10.md`).
 |---|---|---|
 | AC-1 to AC-5 | contract | `backend/tests/contracts/c16_notifications/test_c16_v1_1_stub.py` |
 | AC-6, AC-7, AC-8 | contract | `backend/tests/contracts/c16_notifications/test_c16_v1_1_consumers.py` |
+| AC-9 to AC-11 | unit, integration | `backend/tests/unit/communications/test_template_render.py`, `backend/tests/integration/test_r01t19_email_template_versions.py` |
+| AC-12 | unit | `backend/tests/unit/scenarios/test_email_templates_slice.py` |
 
 ## 19. Rollout
 Flags `portal.settings_editor`, `communications.firm_sender_domain`, `follow_ups.scheduled_send`, all off. Rollback: revert; no data.

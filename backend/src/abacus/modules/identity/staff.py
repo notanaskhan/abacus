@@ -72,6 +72,8 @@ _ROLE_INDEX: Final = {
     "quality_partner": 3,
     "security_admin": 4,
 }
+# The firm role codes by the index `membership.role_changed` carries (G-02-T09 gap, DEC-459).
+FIRM_ROLES_BY_INDEX: Final = {index: code for code, index in _ROLE_INDEX.items()}
 _PLATFORM: Final = UUID(int=0)
 # The firm role whose holders invite staff (identity.yaml: `firm.manage_users`).
 _INVITES: Final[dict[str | None, bool]] = {"firm_admin": True}

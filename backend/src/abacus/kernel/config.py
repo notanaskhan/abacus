@@ -253,6 +253,12 @@ class Settings(BaseSettings):
     # (transient copies, 7 days; the bucket's lifecycle rule removes them). Unset: an export
     # build fails closed, never falling back to the evidence bucket.
     exports_bucket: Annotated[str | None, classified("internal")] = None
+    # DEC-454 (security review): the account that must own the exports bucket, sent as
+    # `ExpectedBucketOwner` on every exports call so a renamed or re-created bucket in another
+    # account is refused. Set by the operator per environment, never committed. Unset: not sent.
+    exports_bucket_owner: Annotated[
+        str | None, Field(pattern=r"^\d{12}$"), classified("internal")
+    ] = None
     evidence_retention_days: Annotated[int, classified("internal")] = 2555
     local_master_key: Annotated[SecretStr | None, classified("restricted")] = None
     # The fake connector serves provider-shaped JSON from here (TASK-010; local and test only).

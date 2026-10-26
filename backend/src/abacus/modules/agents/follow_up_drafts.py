@@ -93,6 +93,7 @@ from abacus.modules.requests.api import (
     follow_up_candidates,
     insert_return_comment,
     live_files,
+    selection_engagements,
 )
 
 UNDO_WINDOW: Final = timedelta(seconds=10)
@@ -357,6 +358,21 @@ def _state_actions(
 # --- draft ---------------------------------------------------------------------------------------
 
 
+async def check_draft_selection(
+    ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
+) -> None:
+    """The route's check before `draft_for` (ED-082, Q-03-T038): a binder the caller may not read
+    (walled, another firm's), or a request selection none of which they may, is 404; otherwise
+    `follow_up.draft` on every engagement the selection names, so a selection with nothing to
+    chase answers 201 with no drafts rather than an unchecked route."""
+    _human(ctx, "follow_up.draft")
+    named, complete = await selection_engagements(ctx, binder_ids, item_ids)
+    if not complete or not named:
+        raise NotFound("binder" if binder_ids else "request_item")
+    for engagement_id in sorted(named, key=str):
+        await authorise(ctx, "follow_up.draft", (await get_ref(ctx, engagement_id)).resource())
+
+
 async def draft_for(
     ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
 ) -> list[FollowUpView]:
@@ -368,9 +384,15 @@ async def draft_for(
     drafts are read inside the unit of work and one open draft per contact is a unique index
     (a second request's requests join the first's draft unless it was edited)."""
     _human(ctx, "follow_up.draft")
-    candidates = await follow_up_candidates(ctx, binder_ids, item_ids)
+    # ED-082 (Q-03-T038): authorise on every engagement the selection names that the caller
+    # may read, before reading what is open, so nothing to chase is no drafts after a check.
+    named, _complete = await selection_engagements(ctx, binder_ids, item_ids)
     refs: dict[UUID, EngagementRef] = {}
-    for engagement_id in sorted({c.engagement_id for c in candidates}, key=str):
+    for engagement_id in sorted(named, key=str):
+        refs[engagement_id] = await get_ref(ctx, engagement_id)
+        await authorise(ctx, "follow_up.draft", refs[engagement_id].resource())
+    candidates = await follow_up_candidates(ctx, binder_ids, item_ids)
+    for engagement_id in sorted({c.engagement_id for c in candidates} - set(refs), key=str):
         refs[engagement_id] = await get_ref(ctx, engagement_id)
         await authorise(ctx, "follow_up.draft", refs[engagement_id].resource())
     for item in candidates:
