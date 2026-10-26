@@ -1,4 +1,5 @@
 import { workItemsOptions } from "@abacus/api-client/query";
+import { FlagOffState } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
@@ -22,11 +23,6 @@ const screens = {
   AgentRuns: lazyScreen(async () => (await import("../../legacy/AgentRuns")).AgentRuns),
   AgentActivity: lazyScreen(
     async () => (await import("../../legacy/AgentActivity")).AgentActivity,
-  ),
-  ItemDetail: lazyScreen(async () => (await import("../../legacy/ItemDetail")).ItemDetail),
-  Board: lazyScreen(async () => (await import("../../legacy/Board")).Board),
-  ImportRequestList: lazyScreen(
-    async () => (await import("../../legacy/ImportRequestList")).ImportRequestList,
   ),
   MapView: lazyScreen(async () => (await import("../../legacy/MapView")).MapView),
   People: lazyScreen(async () => (await import("../../legacy/People")).People),
@@ -126,15 +122,6 @@ const overviewRoute = createRoute({
     );
   },
 });
-const itemRoute = createRoute({
-  getParentRoute: () => engagementRoute,
-  path: "/items/$itemId",
-  component: function ItemPage(): JSX.Element {
-    const engagementId = useParam("engagementId");
-    const itemId = useParam("itemId");
-    return <screens.ItemDetail engagementId={engagementId} itemId={itemId} />;
-  },
-});
 /** The engagement's assurance work item: `undefined` while loading, `null` when it has none. */
 function useEngagementAudit(engagementId: string, enabled: boolean): string | null | undefined {
   const items = useQuery({
@@ -147,32 +134,45 @@ function useEngagementAudit(engagementId: string, enabled: boolean): string | nu
   return items.data.find((w) => w.kind === "assurance")?.id ?? null;
 }
 
-// A-01-T16 (chapter 04 §2.2): with `audits.cockpit` on, an engagement's requests are AUD-03 on
-// its assurance work item; the legacy board answers only while the flag is off or for an
-// engagement with no assurance work item (until A-01-T21 retires it).
+// A-01-T16 and A-01-T21 (chapter 04 §2.2): an engagement's requests and one request are AUD-03 on
+// its assurance work item. The legacy Board and ItemDetail screens are retired (A-01-T21,
+// DEC-442), so these two paths only redirect: with `audits.cockpit` off they show F-05's
+// flag-off state, and an engagement with no assurance work item goes to its record.
+function LegacyEvidenceRedirect({ itemId }: { itemId?: string }): JSX.Element {
+  const engagementId = useParam("engagementId");
+  const navigate = useNavigate();
+  const cockpit = useFlag("audits.cockpit") === true;
+  const auditId = useEngagementAudit(engagementId, cockpit);
+  useEffect(() => {
+    if (typeof auditId === "string") {
+      void navigate({
+        to: "/audits/$auditId/source-documents",
+        params: { auditId },
+        search: itemId === undefined ? {} : { item: itemId },
+        replace: true,
+      });
+    } else if (cockpit && auditId === null) {
+      void navigate({ to: "/engagements/$engagementId", params: { engagementId }, replace: true });
+    }
+  }, [auditId, cockpit, engagementId, itemId, navigate]);
+  if (!cockpit) return <FlagOffState flag="audits.cockpit" label="Audits" />;
+  return <></>;
+}
+
 export const boardRoute = createRoute({
   getParentRoute: () => engagementRoute,
   path: "/requests",
   component: function BoardPage(): JSX.Element {
-    const engagementId = useParam("engagementId");
-    const navigate = useNavigate();
-    const cockpit = useFlag("audits.cockpit") === true;
-    const auditId = useEngagementAudit(engagementId, cockpit);
-    useEffect(() => {
-      if (typeof auditId !== "string") return;
-      void navigate({
-        to: "/audits/$auditId/source-documents",
-        params: { auditId },
-        replace: true,
-      });
-    }, [auditId, navigate]);
-    if (cockpit && auditId !== null) return <></>;
-    return (
-      <screens.Board
-        engagementId={engagementId}
-        actions={<screens.ImportRequestList engagementId={engagementId} />}
-      />
-    );
+    return <LegacyEvidenceRedirect />;
+  },
+});
+
+export const itemRoute = createRoute({
+  getParentRoute: () => engagementRoute,
+  path: "/items/$itemId",
+  component: function ItemPage(): JSX.Element {
+    const itemId = useParam("itemId");
+    return <LegacyEvidenceRedirect itemId={itemId} />;
   },
 });
 

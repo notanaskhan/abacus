@@ -7,3 +7,8 @@
 # pentest_review_external_id   = "<from the vault, at least 32 characters>"
 # pentest_review_starts_at     = "2027-02-15T14:00:00Z"
 # pentest_review_ends_at       = "2027-03-05T23:00:00Z"
+
+# Exports bucket task roles (DEC-454; infra/README.md "Exports bucket"). Set once Q-01-T15 creates
+# the ECS task roles; until then the bucket's policies exist unattached.
+# worker_task_role_name = "abacus-production-worker-task"
+# api_task_role_name    = "abacus-production-api-task"
