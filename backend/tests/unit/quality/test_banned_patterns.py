@@ -355,6 +355,14 @@ SKIP_VIOLATIONS: list[str] = [
     'def test_a() -> None:\n    pytest.importorskip("numpy", reason="optional")\n',
     'class TestA:\n    @pytest.mark.skip(reason="flaky")\n    def test_a(self) -> None:\n'
     "        pass\n",
+    # A TASK reference holds only a strict xfail: never a skip, a non-strict or imperative xfail.
+    '@pytest.mark.skip(reason="TASK-1280")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.skipif(True, reason="TASK-1280")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(strict=False, reason="TASK-1280")\ndef test_a() -> None:\n    pass\n',
+    'def test_a() -> None:\n    pytest.xfail("TASK-1280")\n',
+    '@pytest.mark.xfail(reason="TASK-12")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(reason="task-1280")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(reason="SUBTASK-1280")\ndef test_a() -> None:\n    pass\n',
 ]
 
 # Each source is accepted: a reason carrying an issue reference.
@@ -373,6 +381,11 @@ SKIP_ALLOWED: list[str] = [
     'def test_a() -> None:\n    pytest.skip(reason="https://github.com/acme/abacus/issues/12")\n',
     'def test_a() -> None:\n    pytest.xfail("#3")\n',
     'def test_a() -> None:\n    pytest.importorskip("numpy", reason="#5")\n',
+    # a strict xfail (the pyproject default, or strict=True) may cite the task that holds it
+    '@pytest.mark.xfail(reason="ED-082, held by TASK-1280")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(strict=True, reason="TASK-1280")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(True, reason="TASK-1280")\ndef test_a() -> None:\n    pass\n',
+    '@pytest.mark.xfail(strict=False, reason="#9, TASK-1280")\ndef test_a() -> None:\n    pass\n',
     # unrelated decorators and calls
     "@pytest.mark.slow\ndef test_a() -> None:\n    pass\n",
     '@pytest.mark.parametrize("x", [1, 2])\ndef test_a(x: int) -> None:\n    pass\n',

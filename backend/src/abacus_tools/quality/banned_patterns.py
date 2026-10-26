@@ -331,6 +331,10 @@ def _check_provider_host(src: SourceFile) -> Iterator[Finding]:
 
 
 _ISSUE_REF = re.compile(r"#\d+|github\.com/[^/\s]+/[^/\s]+/issues/\d+")
+# A strict xfail may cite the task that holds the defect instead (AGENTS rule 13): it fails the
+# suite the moment the defect is fixed, so the task cannot go stale silently. Skips and the
+# imperative `pytest.xfail()` (never strict) still need an issue.
+_TASK_REF = re.compile(r"\bTASK-\d{3,}\b")
 _SKIP_MARKS = frozenset({"skip", "skipif", "xfail"})
 _SKIP_CALLS = frozenset({"skip", "xfail", "importorskip"})
 
@@ -388,6 +392,24 @@ def _pytest_aliases(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, _ALIASED)
 
 
+def _strict_xfail(call: ast.Call, kind: str) -> bool:
+    """A `pytest.mark.xfail(...)` that stays strict (`xfail_strict = true` in pyproject, unless the
+    mark says `strict=False`)."""
+    if kind != "mark.xfail":
+        return False
+    for kw in call.keywords:
+        if kw.arg == "strict":
+            return not (isinstance(kw.value, ast.Constant) and kw.value.value is False)
+    return True
+
+
+def _linked(call: ast.Call, kind: str) -> bool:
+    reason = _skip_reason(call, kind)
+    if _ISSUE_REF.search(reason):
+        return True
+    return _strict_xfail(call, kind) and bool(_TASK_REF.search(reason))
+
+
 def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
     yield from _pytest_aliases(src)
     called: set[int] = set()
@@ -396,7 +418,7 @@ def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
         if kind is None:
             continue
         called.add(id(call.func))
-        if not _ISSUE_REF.search(_skip_reason(call, kind)):
+        if not _linked(call, kind):
             yield Finding(call.lineno, f"pytest {kind.split('.')[1]} without an issue reference")
     for node in ast.walk(src.tree):
         if not isinstance(node, ast.Attribute) or id(node) in called:
@@ -2065,7 +2087,7 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="SKIP-001",
-        description="skip and xfail carry an issue reference",
+        description="skip and xfail carry an issue reference (a strict xfail may cite a TASK)",
         adr="ADR-079",
         check=_check_unlinked_skip,
     ),
