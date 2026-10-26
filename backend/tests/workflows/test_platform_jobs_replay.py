@@ -10,13 +10,13 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from abacus.modules.audit_trail.workflows import (
+from abacus.modules.audit_trail.api import (
     AuditChainVerifyWorkflow,
     AuditCheckpointWorkflow,
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import DrainSesEventsWorkflow
-from abacus.modules.evidence.workflows import AuditAnchorWorkflow
+from abacus.modules.evidence.api import AuditAnchorWorkflow
 from abacus.modules.identity.api import AccessEndSweepWorkflow
 from abacus.modules.notifications.api import NotificationPurgeWorkflow
 from abacus.modules.platform.api import SpendAnomalyWorkflow

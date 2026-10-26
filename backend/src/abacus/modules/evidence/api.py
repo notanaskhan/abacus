@@ -203,6 +203,8 @@ from abacus.modules.evidence.workflow_types import (
     WithdrawalPurgeInput,
 )
 from abacus.modules.evidence.workflows import (
+    ANCHOR_ID,
+    AuditAnchorWorkflow,
     EvidenceWithdrawalPurge,
     LegalHoldApply,
     LegalHoldRelease,
@@ -286,6 +288,7 @@ register_upload_facts(upload_facts)
 
 __all__ = [
     "ACTIVITIES",
+    "ANCHOR_ID",
     "CODE_COLUMN",
     "CREDIT_COLUMN",
     "DEBIT_COLUMN",
@@ -307,6 +310,7 @@ __all__ = [
     "WORDS_VERSION",
     "WORKFLOWS",
     "XLSX_MEDIA_TYPE",
+    "AuditAnchorWorkflow",
     "BackfillInput",
     "Candidate",
     "CitationAnchor",

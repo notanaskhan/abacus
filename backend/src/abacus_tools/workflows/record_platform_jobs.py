@@ -4,8 +4,8 @@ fixture rules.
 Run: python -m abacus_tools.workflows.record_platform_jobs <output-directory>
 
 Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow`, `DrainSesEventsWorkflow`,
-`AccessEndSweepWorkflow` and the audit trail's four jobs against throwaway containers with their activities replaced by stubs
-(replay never runs activities):
+`AccessEndSweepWorkflow` and the audit trail's four jobs against throwaway containers, with their
+activities replaced by stubs (replay never runs activities):
 - `spend-anomaly-v1-flagged.json`: one pass that flagged one engagement;
 - `notification-purge-v1-purged.json`: one pass that purged three notifications;
 - `ses-drain-v1-drained.json`: one drain that recorded two delivery events (Q-01-T46's workflow,
@@ -28,7 +28,7 @@ from temporalio.client import Client, WorkflowHandle, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.audit_trail.workflows import (
+from abacus.modules.audit_trail.api import (
     CHECKPOINT_ID,
     PARTITIONS_ID,
     VERIFY_ID,
@@ -37,7 +37,7 @@ from abacus.modules.audit_trail.workflows import (
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import SES_EVENTS_ID, DrainSesEventsWorkflow
-from abacus.modules.evidence.workflows import ANCHOR_ID, AuditAnchorWorkflow
+from abacus.modules.evidence.api import ANCHOR_ID, AuditAnchorWorkflow
 from abacus.modules.identity.api import ACCESS_END_ID, AccessEndSweepWorkflow
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
 from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
