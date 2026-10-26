@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
-from abacus.modules.identity.authz._matrix import ACTIONS
+from abacus.modules.identity.api import RULES
 from abacus_tools.harness.invariants import (
     AuditRow,
     agent_denied_actions,
@@ -29,7 +29,7 @@ def _agent(action: str, seq: int = 1) -> AuditRow:
 
 def test_inv1_actions_derive_from_the_generated_matrix() -> None:
     denied = agent_denied_actions()
-    assert denied == {a for a, cells in ACTIONS.items() if cells.get("agent") == "deny"}
+    assert denied == {a for a, r in RULES.items() if r.decisions.get("agent") == "deny"}
     assert "acceptance.decide" in denied
     assert "report.release" in denied
 

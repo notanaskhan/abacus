@@ -36,7 +36,7 @@ from uuid import UUID
 import asyncpg
 
 from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
-from abacus.modules.identity.authz._matrix import ACTIONS
+from abacus.modules.identity.api import RULES, Rule
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.local.db_guard import violations as hosted_settings
 
@@ -68,9 +68,12 @@ class Violation:
         return f"{self.invariant} at seq {self.seq} ({self.action}): {self.detail}"
 
 
-def agent_denied_actions(matrix: Mapping[str, Mapping[str, str]] = ACTIONS) -> frozenset[str]:
-    """The matrix actions whose `agent` cell is `deny` (the generated `_matrix.py`)."""
-    return frozenset(action for action, cells in matrix.items() if cells.get("agent") == "deny")
+def agent_denied_actions(rules: Mapping[str, Rule] = RULES) -> frozenset[str]:
+    """The matrix actions whose `agent` cell is `deny` (the generated `_matrix.py`, as identity
+    parses it)."""
+    return frozenset(
+        action for action, rule in rules.items() if rule.decisions.get("agent") == "deny"
+    )
 
 
 def _past(verb: str) -> frozenset[str]:
