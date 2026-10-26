@@ -49,6 +49,7 @@ from abacus.modules.requests.follow_up_reads import (
     FollowUpCandidate,
     follow_up_candidates,
     live_files,
+    selection_engagements,
 )
 from abacus.modules.requests.lifecycle import (
     ConsentRequired,
@@ -254,6 +255,7 @@ __all__ = [
     "room_items",
     "router",
     "screening_subject",
+    "selection_engagements",
     "source_documents",
     "third_party_consented",
     "upload_item_of",

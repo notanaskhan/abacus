@@ -16393,7 +16393,14 @@
             "type": "string"
           },
           "published_by": {
-            "$ref": "#/components/schemas/TemplatePersonOut",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplatePersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal"
           },
           "subject": {
@@ -16416,8 +16423,7 @@
           "cta_label",
           "cta_target",
           "content_sha256",
-          "published_at",
-          "published_by"
+          "published_at"
         ],
         "title": "EmailTemplateVersionOut",
         "type": "object"
@@ -51950,7 +51956,14 @@
             "type": "string"
           },
           "published_by": {
-            "$ref": "#/components/schemas/TemplatePersonOut",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplatePersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal"
           },
           "version": {
@@ -51962,8 +51975,7 @@
         },
         "required": [
           "version",
-          "published_at",
-          "published_by"
+          "published_at"
         ],
         "title": "TemplateVersionRefOut",
         "type": "object"
@@ -106963,16 +106975,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Email Templates Route",
@@ -107101,7 +107103,7 @@
     },
     "/v1/firm/email-templates/{key}": {
       "get": {
-        "description": "The editor: published version, draft, whitelisted variables (R-01-T19).",
+        "description": "The editor: published version, draft, whitelisted variables (R-01-T19). 404 for a key\nthat is not registered firm-editable.",
         "operationId": "get_email_template",
         "parameters": [
           {
@@ -107197,16 +107199,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Email Template Route",
@@ -107218,7 +107210,7 @@
     },
     "/v1/firm/email-templates/{key}/draft": {
       "delete": {
-        "description": "Discard the draft (R-01-T19). Audited `email_template.draft_discarded`.",
+        "description": "Discard the draft (R-01-T19); 404 when there is none. Audited\n`email_template.draft_discarded`.",
         "operationId": "discard_email_template_draft",
         "parameters": [
           {
@@ -107314,16 +107306,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Discard Email Template Draft Route",
@@ -107333,7 +107315,7 @@
         "x-abacus-action": "email_template.edit"
       },
       "put": {
-        "description": "POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`. Audited\n`email_template.draft_saved`.",
+        "description": "POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`; 422\n`template_invalid` for a call to action the key does not register, a repeated block id or a\nstray brace. Audited `email_template.draft_saved`.",
         "operationId": "save_email_template_draft",
         "parameters": [
           {
@@ -107449,16 +107431,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Save Email Template Draft Route",
@@ -107597,7 +107569,7 @@
     },
     "/v1/firm/email-templates/{key}/publish": {
       "post": {
-        "description": "POR-20 l (R-01-T19): version n+1, insert-only, retires n; 409 `stale_version` when the\ndraft moved, 422 `template_lint_failed`. Audited `email_template.published`; outbox\n`email_template.published {key, version}`.",
+        "description": "POR-20 l (R-01-T19): version n+1, insert-only, retires n; 409 `stale_version` when the\ndraft moved or there is none, 422 `template_lint_failed` (facts `count` and `finding_<n>`\n= `code:where`, never the text). Audited `email_template.published`; outbox\n`email_template.published {key, version}`. A retry with the same key answers the stored\nversion, after authorising again.",
         "operationId": "publish_email_template",
         "parameters": [
           {
@@ -107714,16 +107686,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Publish Email Template Route",

@@ -60,6 +60,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-30 | Write-capability incident (wrong posting or export; reversal as a new write) | P-16 | Before the first write capability goes live | never | write anomaly | to write |
 | RB-31 | Pause notification email for a firm or every firm (`notifications.email`, the C16 channel's kill switch) | P-01-T17 | R1 | never | none yet (RB-20 points here) | drafted |
 | RB-32 | Client withdrawal: erase failures and legal-hold conflicts (`EvidenceWithdrawalPurge`, ADR-162) | P-06-T27 | R2 | never | none yet | drafted |
+| RB-34 | Audit label indexer failing, lagging or paused (`AuditLabelIndexer`, `audit_labels:platform`; DEC-453) | G-02-T10 | R1 | never | none yet | drafted |
 | RB-35 | A client is locked out of portal sign-in or two-step (unlock, MFA reset, lockout waves) | P-08-T28 | before the portal flags retire | never | none yet (RB-22 points here) | drafted |
 | RB-36 | Pause portal sign-in for a firm (`portal_sign_in` control) | P-08-T28 | before the portal flags retire | never | none yet (RB-22, RB-35 point here) | drafted |
 

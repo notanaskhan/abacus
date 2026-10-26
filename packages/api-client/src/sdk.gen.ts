@@ -5090,7 +5090,8 @@ export const importEmailTemplates = <ThrowOnError extends boolean = false>(optio
 /**
  * Get Email Template Route
  *
- * The editor: published version, draft, whitelisted variables (R-01-T19).
+ * The editor: published version, draft, whitelisted variables (R-01-T19). 404 for a key
+ * that is not registered firm-editable.
  */
 export const getEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<GetEmailTemplateData, ThrowOnError>): RequestResult<GetEmailTemplateResponses, GetEmailTemplateErrors, ThrowOnError> => (options.client ?? client).get<GetEmailTemplateResponses, GetEmailTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5101,7 +5102,8 @@ export const getEmailTemplate = <ThrowOnError extends boolean = false>(options: 
 /**
  * Discard Email Template Draft Route
  *
- * Discard the draft (R-01-T19). Audited `email_template.draft_discarded`.
+ * Discard the draft (R-01-T19); 404 when there is none. Audited
+ * `email_template.draft_discarded`.
  */
 export const discardEmailTemplateDraft = <ThrowOnError extends boolean = false>(options: Options<DiscardEmailTemplateDraftData, ThrowOnError>): RequestResult<DiscardEmailTemplateDraftResponses, DiscardEmailTemplateDraftErrors, ThrowOnError> => (options.client ?? client).delete<DiscardEmailTemplateDraftResponses, DiscardEmailTemplateDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5112,8 +5114,9 @@ export const discardEmailTemplateDraft = <ThrowOnError extends boolean = false>(
 /**
  * Save Email Template Draft Route
  *
- * POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`. Audited
- * `email_template.draft_saved`.
+ * POR-20 b (R-01-T19): 409 `stale_version` on an old `expected_version`; 422
+ * `template_invalid` for a call to action the key does not register, a repeated block id or a
+ * stray brace. Audited `email_template.draft_saved`.
  */
 export const saveEmailTemplateDraft = <ThrowOnError extends boolean = false>(options: Options<SaveEmailTemplateDraftData, ThrowOnError>): RequestResult<SaveEmailTemplateDraftResponses, SaveEmailTemplateDraftErrors, ThrowOnError> => (options.client ?? client).put<SaveEmailTemplateDraftResponses, SaveEmailTemplateDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5146,8 +5149,10 @@ export const previewEmailTemplate = <ThrowOnError extends boolean = false>(optio
  * Publish Email Template Route
  *
  * POR-20 l (R-01-T19): version n+1, insert-only, retires n; 409 `stale_version` when the
- * draft moved, 422 `template_lint_failed`. Audited `email_template.published`; outbox
- * `email_template.published {key, version}`.
+ * draft moved or there is none, 422 `template_lint_failed` (facts `count` and `finding_<n>`
+ * = `code:where`, never the text). Audited `email_template.published`; outbox
+ * `email_template.published {key, version}`. A retry with the same key answers the stored
+ * version, after authorising again.
  */
 export const publishEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<PublishEmailTemplateData, ThrowOnError>): RequestResult<PublishEmailTemplateResponses, PublishEmailTemplateErrors, ThrowOnError> => (options.client ?? client).post<PublishEmailTemplateResponses, PublishEmailTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
