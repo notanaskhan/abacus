@@ -281,12 +281,14 @@ migrate: db-guard
 # backend/.local/loadtest/. Loopback targets only; never a hosted environment or database.
 # Q-03-T044: the journey profiles (`journeys`, `pbc_import_burst`) read the Brightwater Hale ids
 # from `abacus_tools.loadtest.journey_vars` (needs `make seed-demo`); VARS adds more NAME=VALUE.
+# Q-03-T043: DRY_RUN=1 prints the plan and sends nothing (`make loadtest PROFILE=monday_9am DRY_RUN=1`).
 PROFILE ?= smoke
 VARS ?=
 loadtest:
 	cd backend && $(LOCAL_ENV) uv run python -m abacus_tools.loadtest.run --profile $(PROFILE) \
 		--base-url http://127.0.0.1:$(API_PORT) --temporal-target 127.0.0.1:$(ABACUS_TEMPORAL_PORT) \
-		$$(uv run python -m abacus_tools.loadtest.journey_vars) $(foreach v,$(VARS),--var $(v))
+		$$(uv run python -m abacus_tools.loadtest.journey_vars) $(foreach v,$(VARS),--var $(v)) \
+		$(if $(DRY_RUN),--dry-run)
 
 # The Brightwater Hale scenario (F-04-T13): `make seed-demo SNAPSHOT=E0 HOLDOUT=fairhaven_ebp`.
 # Loopback only; a second run writes nothing. NO_SETTLE=1 where no outbox relay runs.

@@ -7,6 +7,10 @@ from a database: Northwind Robotics, Inc. (the client), its 401(k) Plan audit A1
 the engagement the J02 and J04 groups read and the 300-item import lands in; its team is Margaret
 Okonkwo, Hannah Leclerc, Marcus Delaney and Ana Cruz). The J12 sign-in wave types an address on
 the scenario's sink domain, written into the profile (a JSON body takes no `--var`).
+
+Q-03-T043's fairness profile also reads the second firm: load firm 1's first audit
+(`fleet_engagement_id`, from `abacus_tools.synthetic.fleet`; load it with
+`python -m abacus_tools.synthetic.fleet --profile x1`), whose team is seats 2 to 5.
 """
 
 from __future__ import annotations
@@ -14,6 +18,7 @@ from __future__ import annotations
 import sys
 from typing import Final
 
+from abacus_tools.synthetic.fleet import plan
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import build_clients
 
@@ -29,6 +34,7 @@ def journey_vars() -> dict[str, str]:
     return {
         "client_id": client.id,
         "engagement_id": audit.id,
+        "fleet_engagement_id": str(plan("x1")[0].id("engagement", 0)),
     }
 
 

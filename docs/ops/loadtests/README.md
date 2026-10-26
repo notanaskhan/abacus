@@ -24,10 +24,12 @@ public. Load runs on synthetic firms only, so there is no client data to leak, a
 | Journey content: `journeys` (J02, J04-PBC, J12 with persona weights), `pbc_import_burst` (300-item import), `smoke` | built (Q-03-T044) |
 | Firm profiles x1, x25, x100 (`make seed-staging PROFILE=`) | built (Q-03-T044) |
 | Perf stack `infra/envs/perf` and its create and destroy workflow | **not built** (Q-03-T036) |
-| A harness target inside the perf stack's VPC, and the fleet loader on its ops task | **not built** (Q-03-T036, T043) |
-| Chapter 10's remaining scenarios, the post-deploy x1 smoke and its trend ticket | **not built** (Q-03-T043) |
+| Chapter 10 scenarios: `monday_9am`, `deadline_surge`, `pbc_import_fairness`, `sse_soak`, `backfill_business_hours`, `failure_under_load`; the post-deploy `x1_smoke` | built (Q-03-T043) |
+| `--dry-run` (`make loadtest DRY_RUN=1`): the plan, no request | built (Q-03-T043) |
+| The x1 smoke's p95 trend, its ticket and its quality-report row (`abacus_tools.loadtest.trend`) | built (Q-03-T043) |
+| A harness target inside the perf stack's VPC, the fleet loader on its ops task, and the post-deploy job that runs the x1 smoke and the trend | **not built** (Q-03-T036; the deploy workflow step is the builder's) |
 
-So the perf-stack sections (2, 3 and 7) are the procedure Q-03-T036 and T043 must make true.
+So the perf-stack sections (2, 3, 4 and 6) are the procedure Q-03-T036 must make true.
 Each step there names what it waits on. Section 1 can be walked today, on a laptop.
 
 ## 1. Rehearse on your own stack (laptop, x1)
@@ -43,6 +45,10 @@ Use this to check a profile before a window, and as the x1 baseline.
 7. Read the result (section 4). Exit code 0 is a pass, 1 a failed pass rule, 2 a refusal or a misconfiguration (the message says which).
 
 A laptop's numbers are not the gate's numbers: they prove the scenario plays and give a trend.
+
+Before any run, anywhere: `make loadtest PROFILE=<name> DRY_RUN=1` prints the plan (personas and
+their shares, each group's steps with the ids filled, targets, streams, Temporal operations) and
+sends nothing. Use it to check a profile and its ids before a window.
 
 ## 2. Create the perf stack (needs Q-03-T036)
 
@@ -63,11 +69,30 @@ recorded in the vault, never here.
 
 ## 4. Run and read
 
-1. Run the profile from the perf stack's runner (Q-03-T036, T043): the same `abacus_tools.loadtest.run --profile <name>`, with the perf API as its target.
+1. Run the profile from the perf stack's runner (Q-03-T036): the same `abacus_tools.loadtest.run --profile <name>`, with the perf API as its target.
 2. The report is printed and written to `backend/.local/loadtest/<profile>-<UTC stamp>.json` and `.md` (git-ignored). Each endpoint group has: kind (http, sse, temporal), count, errors and their codes, p50, p95, p99 and max in milliseconds, rate per second, and its p95 target.
 3. **Pass rule** (chapter 10 section 10.11.1): every group with a target holds its p95; the error rate across all samples stays under 0.1%; and no SLO alarm fires in the window. A failed rule names the group and the number (`j04_pbc_requests: p95 612 ms over 500 ms`).
 4. **Server side, same window:** open the OpenTelemetry traces and the CloudWatch metrics for the API and worker on the perf stack (`docs/ops/slos.md`, the observability skill), filtered to the run's start and end. Check: p95 server time per route against the client p95 (a large gap is the network or the client, not the app); database connections and slow statements; the outbox relay lag; Temporal schedule-to-start for the `interactive` and `batch` classes; worker memory over an SSE soak. Note what you saw in words and numbers; never paste a trace with data.
-5. **Fairness** (the PBC import burst, Q-03-T043): with more than one firm loaded, one firm's import must not push another firm's interactive p95 past target.
+5. **Fairness** (`pbc_import_fairness`): with load firm 1 seeded beside Brightwater Hale, Hannah Leclerc's 300-item import must not push the `other_firm_*` groups' p95 past 500 ms. Locally: `fleet --profile x1` first (section 1 step 3).
+
+### The chapter 10 scenarios (section 10.11.3)
+
+| Profile | Shape | What a human does during it | Must show |
+|---|---|---|---|
+| `monday_9am` | 46 users arrive over 10 minutes, then an hour of Home, Waiting on you, lists with counts and record reads | nothing | list p95 500 ms, record p95 300 ms |
+| `deadline_surge` | portal sign-in starts and branding at the peak, staff working requests | nothing; uploads, 8879 sends and K-1 releases are not in it yet (the profile header says why) | portal and request targets under the burst |
+| `pbc_import_fairness` | one firm's 300-item import, another firm reading | seed load firm 1 first | the other firm's p95 at target |
+| `sse_soak` | 60 clients for 2 hours on the polling fallback (no stream route until P-15) | when P-15 ships: add the stream entry and run a deploy mid-soak | memory flat in OTel; polling within 5 s |
+| `backfill_business_hours` | the Monday mix plus Temporal visibility reads | start the throttled backfill on the batch class through its ops command, at minute 5 | interactive targets unaffected |
+| `failure_under_load` | the Monday mix for 30 minutes | kill one API task at minute 10, fail the database over at minute 20; note both times | recovery within SLO; no outbox event lost (count the outbox before and after) |
+| `x1_smoke` | 5 minutes of the everyday read mix | nothing | the trend below |
+
+### The x1 smoke after each staging batch deploy
+
+1. After the batch deploy completes (never while one is in flight), run `x1_smoke` from the perf stack's runner and keep its JSON report with the earlier ones (the post-deploy job Q-03-T036 adds keeps them as workflow artifacts; never in git).
+2. Run `python -m abacus_tools.loadtest.trend --history <reports> --out loadtest-trend.json --ticket ticket.md`. Exit 1 means a group's p95 rose more than 20% over its 4-week median: open a ticket with `ticket.md` as its body (results only). Exit 0 is no regression; a group with fewer than two earlier runs reads "no median yet".
+3. Put `loadtest-trend.json` among the weekly quality report's inputs (`quality-report.yml`); the Ops table shows the row "x1 load smoke: p95 per group against its 4-week median".
+4. Acceptance (Q-03-T043): this has run after two consecutive staging batch deploys and the trend is in the quality report.
 
 ## 5. Record the result
 

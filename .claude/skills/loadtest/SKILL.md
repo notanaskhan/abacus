@@ -22,6 +22,8 @@ description: Run, read and record a load test with abacus_tools.loadtest - rehea
 5. Tests: the profile loads in `tests/unit/tools/test_loadtest.py` (every committed profile) and its own assertions in a `test_q03tNNN_*.py` file, run against `httpx.MockTransport`. Never a network call in a test.
 
 ## Run
+- Always first: `make loadtest PROFILE=<name> DRY_RUN=1` (the plan, ids filled, nothing sent).
+- Chapter 10's scenarios and the x1 smoke's trend: runbook section 4 (what a human does during each; `abacus_tools.loadtest.trend` for the +20% ticket and the quality-report row).
 - Laptop rehearsal: `make dev`, `make migrate`, `make seed-demo SLICE=portal`, then `make loadtest PROFILE=smoke`, then `PROFILE=journeys`. Runbook section 1.
 - Perf stack: runbook sections 2 to 6, in order, each step's precondition checked.
 

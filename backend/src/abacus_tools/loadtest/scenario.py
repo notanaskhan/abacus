@@ -101,6 +101,9 @@ class Scenario(_Strict):
     duration_seconds: Annotated[float, Field(gt=0, le=36000)]
     users: Annotated[int, Field(ge=1, le=5000)] = 1
     think_ms: Annotated[float, Field(ge=0, le=60000)] = 0
+    # Q-03-T043: virtual users start evenly over the first `ramp_seconds` (a sign-in wave), not
+    # all at once.
+    ramp_seconds: Annotated[float, Field(ge=0, le=3600)] = 0
     seed: int = 7
     # A local sign-in subject (`abacus_tools.local.seed_dev`); None calls without a token.
     persona: Annotated[str | None, Field(max_length=100)] = None
@@ -119,6 +122,8 @@ class Scenario(_Strict):
             raise ValueError("group, stream and temporal names must be unique")
         if not names:
             raise ValueError("a scenario needs at least one group, stream or temporal operation")
+        if self.ramp_seconds >= self.duration_seconds:
+            raise ValueError("ramp_seconds must end before the run does")
         if self.personas and self.persona is not None:
             raise ValueError("a scenario names one persona or weighted personas, not both")
         known = {g.name for g in self.groups}

@@ -2,7 +2,10 @@
 
 Run: python -m abacus_tools.loadtest.run --profile smoke
          [--scenario PATH] [--base-url URL] [--temporal-target HOST:PORT] [--var NAME=VALUE]
-         [--out DIR]
+         [--out DIR] [--dry-run]
+
+`--dry-run` (Q-03-T043) validates the profile, fills every placeholder and prints what a run
+would do, sending nothing and connecting to nothing, so it is safe anywhere.
 
 Plays a YAML scenario (`scenario.py`, `scenarios/*.yaml`) against a local stack with `httpx` and
 `asyncio` only (no new dependency): virtual users loop over weighted endpoint groups, SSE streams
@@ -132,6 +135,8 @@ async def run(
 
     async def user(n: int) -> None:
         rng = random.Random(scenario.seed + n)
+        if scenario.ramp_seconds:
+            await asyncio.sleep(start_offset(scenario, n))
         mine, chances, headers_of = groups, weights, auth
         if scenario.personas:
             persona = rng.choices(scenario.personas, [p.weight for p in scenario.personas])[0]
@@ -222,6 +227,49 @@ async def run(
     )
 
 
+def start_offset(scenario: Scenario, n: int) -> float:
+    """When virtual user `n` starts: evenly over the ramp (Q-03-T043), 0 without one."""
+    return scenario.ramp_seconds * n / scenario.users
+
+
+def dry_run(scenario: Scenario, variables: Mapping[str, str]) -> str:
+    """What a run would do, without a request (Q-03-T043): every placeholder filled, the personas'
+    shares, each group's share, steps and target, and the streams and Temporal operations."""
+    _paths(scenario, variables)
+    lines = [
+        f"# Dry run: {scenario.name}",
+        "",
+        f"{scenario.duration_seconds:g} s, {scenario.users} users (ramp "
+        f"{scenario.ramp_seconds:g} s), think {scenario.think_ms:g} ms, error ceiling "
+        f"{scenario.max_error_rate:.2%}. No request is sent.",
+        "",
+    ]
+    if scenario.personas:
+        total = sum(p.weight for p in scenario.personas)
+        lines += ["| Persona | Share | Groups |", "|---|---|---|"]
+        for persona in scenario.personas:
+            groups = ", ".join(persona.groups) or "all"
+            lines.append(f"| {persona.subject} | {persona.weight / total:.0%} | {groups} |")
+        lines.append("")
+    total_weight = sum(g.weight for g in scenario.groups) or 1
+    lines += ["| Group | Share | Steps | p95 target |", "|---|---|---|---|"]
+    for group in scenario.groups:
+        steps = "; ".join(f"{s.method} {_fill(s.path, variables)}" for s in group.steps)
+        target = "—" if group.p95_ms is None else f"{group.p95_ms:g} ms"
+        lines.append(f"| {group.name} | {group.weight / total_weight:.0%} | {steps} | {target} |")
+    for stream in scenario.streams:
+        lines.append(
+            f"| {stream.name} (SSE x{stream.count}, {stream.hold_seconds:g} s) | — | "
+            f"GET {_fill(stream.path, variables)} | {stream.p95_first_event_ms or '—'} |"
+        )
+    for op in scenario.temporal:
+        target = op.p95_ms or "—"
+        lines.append(
+            f"| {op.name} (Temporal {op.kind}) | {op.rate_per_second:g}/s | — | {target} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def temporal_caller(client: Client) -> TemporalCall:
     async def call(op: TemporalOp) -> object:
         if op.kind == "count_workflows":
@@ -305,9 +353,17 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("--namespace", default=settings().temporal_namespace)
     parser.add_argument("--var", action="append", default=[], metavar="NAME=VALUE")
     parser.add_argument("--out", type=Path, default=OUT)
+    parser.add_argument(
+        "--dry-run", action="store_true", help="print the plan and send nothing (Q-03-T043)"
+    )
     args = parser.parse_args(list(argv))
     try:
         scenario = load(args.scenario) if args.scenario else profile(args.profile)
+        if args.dry_run:
+            if any("=" not in v for v in args.var):
+                raise ValueError("--var takes NAME=VALUE")
+            print(dry_run(scenario, dict(v.split("=", 1) for v in args.var)), end="")
+            return 0
         starts = any(op.kind == "start_workflow" for op in scenario.temporal)
         check_local(
             args.base_url,
