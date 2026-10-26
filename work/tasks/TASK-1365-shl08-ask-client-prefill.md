@@ -22,3 +22,9 @@ the screen contract `docs/screens/SHL-14.md`. Build the entry only with verbatim
 otherwise keep the control disabled and record why.
 
 ## Progress log
+- 2026-10-27: read the handoff (SHL-08 spec frame D and README links table; SHL-14 spec,
+  revision and README) and `docs/screens/SHL-14.md`. The link's words and destination exist;
+  the prefilled request's words (title, category, client wording) do not, and SHL-14's
+  Attachments row is always empty, so the locked file cannot be attached either. Per the brief,
+  no copy is invented: no prefill entry, the control stays the disabled hint-only link of
+  DEC-426. Recorded as DEC-460 with what would turn it on. No code change.
