@@ -156,6 +156,8 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "tie_out_check_versions": "tie_out_check_versions_immutable",  # 0193 (A-02-T11)
     "connection_consents": "connection_consents_immutable",  # 0195 (A-02-T13)
     "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
+    "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+    "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

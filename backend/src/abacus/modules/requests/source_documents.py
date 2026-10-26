@@ -285,6 +285,24 @@ class SourceDocuments:
     groups: list[SourceDocumentGroup]
 
 
+async def pbc_binders(ctx: AuthContext, work_item_id: UUID) -> list[UUID]:
+    """The work item's asked PBC binders the reader may read, in binder order: the engagement
+    export's scope (A-01-T18; DEC-379: a binder id outside these is refused at create). The
+    caller has authorised on the work item's engagement."""
+    async with tenant_session(ctx.tenant) as session:
+        found = await session.execute(
+            select(RequestList.id)
+            .where(
+                RequestList.work_item_id == work_item_id,
+                RequestList.kind == PBC,
+                RequestList.status.in_(ASKED_BINDERS),
+                visible(ctx, "request_item.read", RequestList.engagement_id),
+            )
+            .order_by(RequestList.part, RequestList.created_at, RequestList.id)
+        )
+        return list(found.scalars().all())
+
+
 def _counted(status: str) -> bool:
     return status not in UNCOUNTED
 

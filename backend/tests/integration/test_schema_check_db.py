@@ -1326,6 +1326,43 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
         "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
+        # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
+        "methodology_version_states": frozenset(
+            {
+                "approval_basis",
+                "approved_actor_kind",
+                "approved_at",
+                "approved_by",
+                "default_for_new_engagements",
+                "effective_from",
+                "effective_to",
+                "engagement_types",
+                "quality_management_ref",
+                "row_version",
+                "standards_set_id",
+                "status",
+            }
+        ),
+        # A-01-T18 (0191): status forward only and its stamps; the guard trigger decides.
+        "engagement_exports": frozenset(
+            {
+                "status",
+                "as_of_seq",
+                "bundle_sha256",
+                "manifest_sha256",
+                "bytes",
+                "file_count",
+                "request_count",
+                "segment_count",
+                "object_prefix",
+                "ready_at",
+                "expires_at",
+                "failure_code",
+                "void_reason",
+                "undone_at",
+                "undone_by",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1500,6 +1537,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "tie_out_check_versions": "tie_out_check_versions_immutable",  # 0193 (A-02-T11)
         "connection_consents": "connection_consents_immutable",  # 0195 (A-02-T13)
         "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
+        "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+        "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
     }
     assert _evidence_problems(evidence) == []
 
