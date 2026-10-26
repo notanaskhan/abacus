@@ -918,8 +918,9 @@ codes:
   preview_outdated:
     status: 409
     raised_by:
-    - abacus.modules.evidence.viewer.PreviewOutdated
-    summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24).'
+    - abacus.modules.evidence.masked_previews.PreviewOutdated
+    summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24) until
+      the backfill re-renders it.'
   prior_mismatch:
     status: 409
     raised_by:

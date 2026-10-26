@@ -5,13 +5,11 @@ and the candidate requests: the uploader's assignable open requests, scored by c
 rules (TASK-064), best first, at most 60 (SPEC-033 Q4). Code computes; the matcher judges
 (ADR-050). For an agent run authorised on the file's engagement.
 
-A client's portal drop (R-01-T09; SPEC-322 AC-25; DEC-322) reaches the matcher only after its
-PII scan has run, and then only as its masked projection: each scanned page's words with every
-detected region replaced by its token; a page no scan covers, and every sheet, is left out (fail
-closed). Until the scan has run there is no material at all. A firm inbox file gives the
-extraction's text, except to a matcher acting for an offshore member (`masked=True`; DEC-52,
-TASK-1207 review), which gets the masked projection under the same rule. Masking every agent's
-material is P-03-T15's.
+Every file reaches the matcher only as its masked projection (P-03-T15; SPEC-322 AC-25, AC-40;
+DEC-322, DEC-369): each PII-scanned page's words with every detected region replaced by its token,
+and each sheet's cells masked by code; a page no scan covers is left out, and a document with page
+text has no material at all until its scan has run (fail closed). The scan then re-announces the
+file (a firm file from `pii`, a portal drop from its sort).
 """
 
 from __future__ import annotations
@@ -23,16 +21,14 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.inbox import inbox_context
-from abacus.modules.evidence.masked_text import masked_pages
 from abacus.modules.evidence.matching import Reason, facts_of, score_all, should_match
 from abacus.modules.evidence.models import InboxFile, UploadExtraction
-from abacus.modules.evidence.processing import document_text, excerpt_of
+from abacus.modules.evidence.processing import excerpt_of, masked_document_text, material_ready
 from abacus.modules.evidence.repository import get_inbox_file, newest_extraction
 from abacus.modules.identity.api import member_context
 from abacus.modules.requests.api import request_items_for
 
 MAX_CANDIDATES: Final = 60
-PORTAL_DROP: Final = "portal_drop"
 
 
 @dataclass(frozen=True)
@@ -106,31 +102,25 @@ async def worth_matching(tenant: TenantContext, inbox_file_id: UUID) -> bool:
     found = await _file_and_extraction(tenant, inbox_file_id)
     if found is None or found[1].status != "extracted":
         return False
-    if (
-        found[0].channel == PORTAL_DROP
-        and await masked_pages(tenant, inbox_file_id=inbox_file_id) is None
-    ):
-        return False  # a drop not scanned for PII yet (DEC-322)
+    async with tenant_session(tenant) as session:
+        ready = await material_ready(session, found[1])
+    if not ready:
+        return False  # not scanned for PII yet: nothing an agent may read (DEC-322, DEC-369)
     candidates, worth = await _candidates(tenant, *found)
     return bool(candidates) and worth
 
 
-async def match_material(
-    tenant: TenantContext, inbox_file_id: UUID, *, masked: bool = False
-) -> MatchMaterial | None:
-    """None without the file or its extraction. A portal drop, or any file when `masked` (the
-    run acts for an offshore member), gives only its masked text, and nothing before its scan."""
+async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMaterial | None:
+    """None without the file or its extraction, or before its PII scan when it has page text:
+    only the masked projection is ever material (P-03-T15)."""
     found = await _file_and_extraction(tenant, inbox_file_id)
     if found is None:
         return None
     file, row = found
-    if masked or file.channel == PORTAL_DROP:
-        text = await masked_pages(tenant, inbox_file_id=inbox_file_id)
-        if text is None:
-            return None  # not scanned yet: nothing for an agent (fail closed)
-        pages, sheets = text, {}
-    else:
-        pages, sheets = await document_text(tenant.tenant_id, row)
+    text = await masked_document_text(tenant, row)
+    if text is None:
+        return None  # not scanned yet: nothing for an agent (fail closed)
+    pages, sheets = text
     candidates, worth = await _candidates(tenant, file, row)
     excerpt_pages, excerpt_tables, truncated = excerpt_of(pages, sheets)
     return MatchMaterial(

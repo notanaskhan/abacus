@@ -39,27 +39,37 @@ from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
-from abacus.kernel.tin_patterns import valid_ein, valid_itin, valid_ssn
+from abacus.kernel.tin_patterns import scrub_tins, valid_ein, valid_itin, valid_ssn
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence.citations.matching import WordLike
+from abacus.modules.evidence.events import InboxFileExtracted, UploadChecksRecorded
+from abacus.modules.evidence.masking import mask_token
+from abacus.modules.evidence.models import EvidenceVersion, InboxFile
+from abacus.modules.evidence.previews import RENDERER_VERSION
 from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_version,
     insert_pii_regions,
     insert_scan_run,
     is_withdrawn,
+    latest_checks,
     newest_extraction,
     pages_of,
+    preview_for,
     scan_run_for,
 )
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.evidence.workflow_types import INBOX, VERSION, UploadInput
+from abacus.modules.requests.api import items_of_version
 
 _log = get_logger(__name__)
+PORTAL_DROP: Final = "portal_drop"
 _CURLY: Final = chr(0x2019)  # a curly apostrophe, as forms print "Payer's"
 
 DETECTOR_VERSION: Final = "d1"
@@ -291,6 +301,76 @@ def detect(page_no: int, words: Sequence[WordLike]) -> list[Found]:
     return found
 
 
+# --- Spreadsheet cells (P-03-T15; P-03 §4.4 "spreadsheet cells get the same tokens") ----------
+
+_CELL_TOKEN: Final = re.compile(r"\S+")
+# A column labelled for bank accounts masks only longer numbers under it: a ledger's four- or
+# five-digit account codes are not bank accounts (DEC-369).
+_COLUMN_ACCOUNT_DIGITS: Final = 6
+
+
+def _cell_families(text: str) -> set[Family]:
+    """The label families a cell's text names (whole words, as `_labels` reads a line)."""
+    words = [w.strip(" :#()") for w in _phrase(text).split()]
+    found: set[Family] = set()
+    for family, phrase in LABELS:
+        parts = phrase.split()
+        for i in range(len(words) - len(parts) + 1):
+            if words[i : i + len(parts)] == parts:
+                found.add(family)
+                break
+    return found
+
+
+def _masked_cell(text: str, families: set[Family], column: set[Family]) -> str:
+    """The cell with each token that is PII by `_classify` (given the anchoring families)
+    replaced by its token; `column` holds the families that come only from a column header."""
+
+    def replace(found: re.Match[str]) -> str:
+        core = _token(found.group(0))
+        classified = _classify(core, families)
+        if classified is None:
+            return found.group(0)
+        kind, value = classified
+        digits = _digits(value)
+        if (
+            kind == "bank_account"
+            and "account" in column
+            and "account" not in (families - column)
+            and len(digits) < _COLUMN_ACCOUNT_DIGITS
+        ):
+            return found.group(0)
+        return mask_token(kind, None if kind == "dob" or len(digits) < 2 else digits[-4:])
+
+    return _CELL_TOKEN.sub(replace, text)
+
+
+def masked_rows(rows: Sequence[Sequence[str]]) -> tuple[tuple[str, ...], ...]:
+    """A sheet's rows as a reader may see them (pure; P-03 §4.4): a cell is anchored by a label in
+    its own text, by the nearest label cell to its left in the row (until a non-label value), or
+    by the nearest label cell above it in its column (a header); anchored cells are masked
+    whatever their validity, unanchored ones only when valid (`_classify`), and every cell then
+    goes through the kernel's TIN scrub as a backstop. The token is the one the page's masks
+    carry (`masking.mask_token`)."""
+    headers: dict[int, set[Family]] = {}
+    out: list[tuple[str, ...]] = []
+    for row in rows:
+        left: set[Family] = set()
+        masked: list[str] = []
+        labels: dict[int, set[Family]] = {}
+        for c, cell in enumerate(row):
+            own = _cell_families(cell)
+            column = headers.get(c, set())
+            masked.append(scrub_tins(_masked_cell(cell, own | left | column, column - own - left)))
+            if own:
+                left, labels[c] = own, own
+            elif cell.strip():
+                left = set()
+        headers.update(labels)
+        out.append(tuple(masked))
+    return tuple(out)
+
+
 # --- The activity's body -----------------------------------------------------------------------
 
 
@@ -301,6 +381,36 @@ def _system(tenant_id: UUID) -> TenantContext:
 def value_context(region_id: UUID) -> str:
     """The sealed value's binding: the region it belongs to (the reveal service opens it)."""
     return f"pii_regions.value_sealed:{region_id}"
+
+
+async def _announce(
+    session: AsyncSession, source: EvidenceVersion | InboxFile, version_id: UUID | None
+) -> bool:
+    """Whether this first scan re-announces the upload to agents (P-03-T15; DEC-369): it has
+    page text (agent material waited for this scan, `processing.material_ready`), it came through
+    a live v7 run (no pre-masking preview, so the backfill never re-announces an old upload), and
+    there is something to announce: a version's recorded checks on a request, or a firm inbox
+    file still waiting (a portal drop's sort announces its own)."""
+    extraction = await newest_extraction(
+        session,
+        evidence_version_id=version_id,
+        inbox_file_id=None if version_id is not None else source.id,
+    )
+    if extraction is None or extraction.status != "extracted" or not extraction.page_count:
+        return False
+    legacy = await preview_for(
+        session,
+        evidence_version_id=version_id,
+        inbox_file_id=None if version_id is not None else source.id,
+        renderer_version=RENDERER_VERSION,
+    )
+    if legacy is not None:
+        return False
+    if isinstance(source, InboxFile):
+        return source.channel != PORTAL_DROP and source.status == "waiting"
+    if not await latest_checks(session, source.id):
+        return False
+    return bool(await items_of_version(_system(source.tenant_id), source.id))
 
 
 async def pii_scan_upload(given: UploadInput) -> int:
@@ -386,6 +496,18 @@ async def pii_scan_upload(given: UploadInput) -> int:
         )
         if first:
             await insert_pii_regions(tx.session, rows)
+            if extraction is not None and await _announce(tx.session, source, version_id):
+                # P-03-T15: agents read only masked material, which a document with page text
+                # has from now on; the reviewer or matcher held back at extraction may follow.
+                tx.emit(
+                    UploadChecksRecorded(
+                        engagement_id=source.engagement_id, evidence_version_id=source_id
+                    )
+                    if version_id is not None
+                    else InboxFileExtracted(
+                        engagement_id=source.engagement_id, inbox_file_id=source_id
+                    )
+                )
         tx.record(
             "upload.pii_scanned" if first else "upload.pii_scan_exists",
             target=Target("evidence_version" if version_id else "inbox_file", source_id),
@@ -403,6 +525,7 @@ __all__ = [
     "Found",
     "detect",
     "lines_of",
+    "masked_rows",
     "pii_scan_upload",
     "value_context",
 ]

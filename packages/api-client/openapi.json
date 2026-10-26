@@ -63880,6 +63880,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -67815,6 +67825,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -79648,6 +79668,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -89639,7 +89669,7 @@
     },
     "/v1/evidence-versions/{version_id}/pii-reveals": {
       "post": {
-        "description": "AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.\nAuthorised before the stub answers (TASK-1207 review): an offshore member is refused at the\ncondition layer (`not_offshore`) now, not only once the reveal is built.",
+        "description": "AC4.4 to AC4.7 (P-03-T16): the value once, `expires_in` 30, `Cache-Control: no-store`.\n403 for an offshore member, a role without `pii.reveal`, an agent, the system, a support\nsession or a client principal, before anything is read; 403 with `facts.reason`\n`mfa_required` when only MFA is stale (the shell steps up); 404 for an invisible version or a\nregion not on it; 429 `reveal_rate_limited` past 20 an hour. One `pii_reveals` row, one\n`pii.revealed` audit event and one access event, never the value (DEC-60).",
         "operationId": "reveal_pii",
         "parameters": [
           {
@@ -89745,6 +89775,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           },
           "501": {
             "content": {

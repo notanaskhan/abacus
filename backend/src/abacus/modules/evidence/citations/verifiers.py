@@ -18,13 +18,14 @@ Every verifier first authorises the actor on the anchor's engagement (`evidence.
 - **`request_item`** `{request_item_id}`: the item exists in the anchor's engagement.
 
 Each derives the `match_id` (C4 §3.1) and renders `title` and `loc` by code. Verification reads
-the words as stored. P-03-T13 now records PII regions; verifying on the masked projection, so a
-quote an agent copied from masked text still verifies, is P-03-T15's (DEC-322).
+the masked projection (P-03-T15; SPEC-322 AC-25; DEC-369): a page a PII scan covers is read as its
+masked words, and a sheet as its masked cells, so a quote an agent copied from masked text
+verifies and a quote of a clear identifier does not. A page no scan covers verifies as before.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Annotated, Final
 from uuid import UUID
@@ -40,6 +41,7 @@ from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.citations.matching import (
     Box,
     Reason,
+    WordLike,
     amount,
     cell_reason,
     cell_text,
@@ -54,7 +56,9 @@ from abacus.modules.evidence.citations.registry import (
     unverifiable,
 )
 from abacus.modules.evidence.models import EvidenceVersion, InboxFile
+from abacus.modules.evidence.pii import masked_rows
 from abacus.modules.evidence.processing import document_text
+from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_item,
@@ -238,8 +242,14 @@ async def verify_document_text(
     page = next((p for p in pages if p.page_no == locator.page), None)
     if pages and page is None:
         return Verdict("page_not_found", *source, kept, number)
-    words = (await read_page_layer(tenant.tenant_id, page)).words if page is not None else ()
+    words: Sequence[WordLike] = (
+        (await read_page_layer(tenant.tenant_id, page)).words if page is not None else ()
+    )
     if words:
+        projection = await projection_of(
+            tx.session, evidence_version_id=version_id, inbox_file_id=inbox_id
+        )
+        words = projection.words(words, locator.page) or words  # masked once scanned
         text = " ".join(w.text for w in words)
     else:
         # No words for this page in the layer (no layer yet, or text only PDFium reads): the
@@ -291,7 +301,8 @@ async def verify_sheet_cell(
     else:  # the locator names exactly one; unreachable
         return unverifiable(claim)
     found = _value(claim.value if claim.value is not None else locator.value)
-    _, sheets = await _extracted_text(tx, version_id, inbox_file_id=inbox_id)
+    _, raw = await _extracted_text(tx, version_id, inbox_file_id=inbox_id)
+    sheets = {name: masked_rows(rows) for name, rows in raw.items()}  # as agents read them
     names = list(sheets)
     name = locator.sheet or ""
     if name not in sheets and locator.sheet is None and len(sheets) == 1:

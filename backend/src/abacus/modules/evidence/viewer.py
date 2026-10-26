@@ -11,12 +11,12 @@ C4 §3.3, §3.4; SPEC-322 AC-16, AC-21, AC-22, AC-24; ADR-110, ADR-052; DEC-266)
 - **Fail closed on unscanned pages (`projection`):** a page no PII scan covers is never searched;
   with no scanned text page at all, search answers 409 `preview_outdated`, as the pages do.
   Search needs 3 characters, reads at most 50 pages and counts at most 1,000 hits a call.
-- **Masked renditions only (AC-24):** a page is served only from a preview with `mask_version`
-  set. **Interim rule until P-03-T13 and T15:** no masked rendition exists yet, so a rendered
-  version's manifest reads `processing` with reason `preview_outdated` and its pages answer 409
-  `preview_outdated`; the C4 viewer never serves an unmasked page. Pages without a PII scan read
-  `not_scannable` (fail closed), never clean. The legacy preview routes keep their pre-masking
-  previews until T15 re-renders them (DEC-266).
+- **Masked renditions only (AC-24; P-03-T15):** a page is served only from a preview with
+  `mask_version` set, which `masked_previews` burns in the isolated child. A version with only a
+  pre-masking preview reads `processing` with reason `preview_outdated` and its pages answer 409
+  `preview_outdated` until the backfill re-renders it. Pages without a PII scan read
+  `not_scannable` (fail closed), never clean, and are refused to a reader who may not read
+  unmasked content (an offshore member or a run acting for one; AC-30, DEC-52): 403.
 - **Access logging:** a page image is content, and search hits are positions of content (an
   oracle for it): each read leaves an `evidence_content.read` access event (who, which version;
   never the query) before it is answered, and nothing is answered if logging fails (Q-02-T20).
@@ -32,13 +32,16 @@ from uuid import UUID
 
 from sqlalchemy import select
 
+from abacus.kernel._flags import EVIDENCE_PII_REVEAL
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.citations.matching import Box, line_rects, normalised, quote_spans
 from abacus.modules.evidence.extraction import ACTIVE_CONTENT
+from abacus.modules.evidence.masked_previews import PreviewOutdated
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
 from abacus.modules.evidence.previews import PAGE_WIDTH, RENDERER_VERSION
@@ -62,7 +65,7 @@ from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
-    authorise,
+    allowed_actions,
     may_read_unmasked,
     visible,
 )
@@ -86,12 +89,6 @@ class ActiveContent(DomainConflict):
     refuses it, whatever was derived before the rule existed."""
 
     code = "active_content"
-
-
-class PreviewOutdated(DomainConflict):
-    """The page was rendered before masking existed: it is never served (SPEC-322 AC-24)."""
-
-    code = "preview_outdated"
 
 
 @dataclass(frozen=True)
@@ -202,17 +199,18 @@ def _status(
     if media_type == PDF and not layered:
         return "processing", "words_pending"
     if not masked:
-        return "processing", "preview_outdated"  # the interim rule (DEC-266)
+        return "processing", "preview_outdated"  # only a pre-masking preview (DEC-266)
     return "ready", None
 
 
-async def authorise_reveal(ctx: AuthContext, version_id: UUID) -> None:
-    """SHL-08c's checks before any reveal is served (AC4.4 to AC4.6): the version is visible
-    (404 otherwise), then `pii.reveal` on its engagement, so an offshore member is refused at the
-    condition (`not_offshore`, 403) and a role without it at the role layer (TASK-1207 review)."""
-    version = await visible_version(ctx, version_id)
+async def _reveal_offered(ctx: AuthContext, version: EvidenceVersion, masked: bool) -> list[str]:
+    """`pii.reveal` when the version has a masked value, the reveal flag is on and every layer
+    but fresh MFA allows it (P-03-T16; AC-28: an offshore member, a client principal or a role
+    without it gets no chip). MFA is stepped up when the person acts."""
+    if not masked or not await flag_enabled(ctx.tenant, EVIDENCE_PII_REVEAL):
+        return []
     engagement = await get_ref(ctx, version.engagement_id)
-    await authorise(ctx, REVEAL, engagement.resource())
+    return [a for a in await allowed_actions(ctx, engagement.resource(), (REVEAL,)) if a == REVEAL]
 
 
 async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
@@ -294,14 +292,15 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         truncated=source.truncated,
         pages=pages,
         pii_masks=masks,
-        # The reveal (P-03-T16) and unlock (P-03-T19) offer their actions when they land.
-        allowed_actions=[],
+        # The unlock (P-03-T19) offers its action when it lands.
+        allowed_actions=await _reveal_offered(ctx, version, bool(masks)),
     )
 
 
 async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes:
     """One masked page image (AC-24): 409 `preview_outdated` while only a pre-masking preview
-    exists, 404 when nothing is rendered; the read is logged before the bytes leave."""
+    exists, 404 when nothing is rendered; a page no PII scan covers is refused (403) to a reader
+    who may not read unmasked content (AC-30); the read is logged before the bytes leave."""
     version = await visible_version(ctx, version_id)
     async with tenant_session(ctx.tenant) as session:
         masked = await masked_preview_for(session, version.id)
@@ -313,8 +312,11 @@ async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes
                 raise PreviewOutdated
             raise NotFound("preview_page")
         page = await preview_page(session, masked.id, page_no)
+        projection = await projection_of(session, evidence_version_id=version.id)
     if page is None:
         raise NotFound("preview_page")
+    if not projection.readable(page_no) and not await may_read_unmasked(ctx):
+        raise Forbidden(READ, "condition")  # an unscannable page, offshore (fail closed)
     await record_content_read(ctx, version.engagement_id, "evidence_version", version.id)
     stored = storage.StoredObject(
         page.storage_key, page.storage_version_id, page.fingerprint, page.size_bytes

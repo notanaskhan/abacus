@@ -4323,9 +4323,12 @@ export const viewerPage = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Reveal Pii Route
  *
- * AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.
- * Authorised before the stub answers (TASK-1207 review): an offshore member is refused at the
- * condition layer (`not_offshore`) now, not only once the reveal is built.
+ * AC4.4 to AC4.7 (P-03-T16): the value once, `expires_in` 30, `Cache-Control: no-store`.
+ * 403 for an offshore member, a role without `pii.reveal`, an agent, the system, a support
+ * session or a client principal, before anything is read; 403 with `facts.reason`
+ * `mfa_required` when only MFA is stale (the shell steps up); 404 for an invisible version or a
+ * region not on it; 429 `reveal_rate_limited` past 20 an hour. One `pii_reveals` row, one
+ * `pii.revealed` audit event and one access event, never the value (DEC-60).
  */
 export const revealPii = <ThrowOnError extends boolean = false>(options: Options<RevealPiiData, ThrowOnError>): RequestResult<RevealPiiResponses, RevealPiiErrors, ThrowOnError> => (options.client ?? client).post<RevealPiiResponses, RevealPiiErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -58,7 +58,6 @@ from abacus.modules.identity.api import (
     AgentContext,
     authorise,
     is_active_member,
-    may_read_unmasked,
 )
 
 ASSESSOR = "fieldwork.entry_assessor"
@@ -174,15 +173,12 @@ def _checked(
     )
 
 
-async def materials(
-    tenant: TenantContext, entry: EntryFacts, *, masked: bool = False
-) -> list[ReviewMaterial]:
+async def materials(tenant: TenantContext, entry: EntryFacts) -> list[ReviewMaterial]:
     """The entry's documents that have an extraction, in order (unreadable ones are skipped).
-    `masked` (the run acts for an offshore member; DEC-52, TASK-1207 review): only their masked
-    text, and a document not yet scanned for PII is skipped."""
+    Only their masked text (P-03-T15, DEC-369): a document not yet scanned for PII is skipped."""
     found: list[ReviewMaterial] = []
     for version_id in entry.evidence_version_ids:
-        material = await review_material(tenant, version_id, masked=masked)
+        material = await review_material(tenant, version_id)
         if material is not None and material.extraction_status == "extracted":
             found.append(material)
     return found
@@ -292,7 +288,7 @@ async def _assess(agent: AgentContext, item_id: UUID) -> AssessOutcome:
     entry = await entry_facts(agent.tenant, item_id)
     if entry is None or entry.engagement_id != agent.engagement:
         raise NotFound("selected_item")
-    documents = await materials(agent.tenant, entry, masked=not await may_read_unmasked(agent))
+    documents = await materials(agent.tenant, entry)
     if not documents:
         raise NotFound("upload_extraction")
     output, context = await ask(

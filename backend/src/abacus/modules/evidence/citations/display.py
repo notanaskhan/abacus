@@ -269,10 +269,17 @@ async def _quote(
         layer = await read_page_layer(tenant_id, page)
     except Exception:  # a shredded or unreadable layer object: storage raises several kinds
         return None, "withheld"
-    run = reread_span(layer.words, box, row.quote_sha256)
+    projection = reads.projections[key]
+    # P-03-T15: a quote verified since masking hashes the masked words (DEC-369).
+    masked = projection.words(layer.words, page_no)
+    if masked is not None:
+        found = reread_span(masked, box, row.quote_sha256)
+        if found is not None:
+            return " ".join(w.text for w in found), "shown"
+    run = reread_span(layer.words, box, row.quote_sha256)  # verified before masking
     if run is None:
         return None, "changed"
-    words = reads.projections[key].words(run, page_no)
+    words = projection.words(run, page_no)
     if words is None:
         return None, "withheld"  # not scanned for PII: never quoted raw
     return " ".join(w.text for w in words), "shown"

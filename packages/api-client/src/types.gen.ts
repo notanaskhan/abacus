@@ -29871,6 +29871,10 @@ export type VersionPreviewPageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -31695,6 +31699,10 @@ export type InboxPreviewPageErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -37119,6 +37127,10 @@ export type UploadPreviewPageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -41768,6 +41780,10 @@ export type RevealPiiErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
     /**
      * Contract stub: not implemented yet
      */

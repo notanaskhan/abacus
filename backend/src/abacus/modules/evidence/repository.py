@@ -1062,6 +1062,57 @@ async def sources_without_words(
     return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
 
 
+async def sources_without_masks(
+    session: AsyncSession,
+    renderer_version: str,
+    *,
+    after_version: UUID | None,
+    after_inbox: UUID | None,
+    limit: int,
+) -> list[tuple[str, UUID]]:
+    """P-03-T15: versions, then inbox files, by id after the cursors, that processing has
+    extracted (any outcome) and that have no masked rendition by this renderer version
+    (LIST_EXEMPT: the system backfill only). A withdrawn version is never listed."""
+    extracted = select(UploadExtraction.id).correlate_except(UploadExtraction)
+    masked = (
+        select(UploadPreview.id)
+        .where(
+            UploadPreview.renderer_version == renderer_version,
+            UploadPreview.mask_version.is_not(None),
+            UploadPreview.derivation_id.is_(None),
+        )
+        .correlate_except(UploadPreview)
+    )
+    version_query = select(EvidenceVersion.id).where(
+        extracted.where(UploadExtraction.evidence_version_id == EvidenceVersion.id).exists(),
+        ~masked.where(UploadPreview.evidence_version_id == EvidenceVersion.id).exists(),
+        not_withdrawn(),
+    )
+    if after_version is not None:
+        version_query = version_query.where(EvidenceVersion.id > after_version)
+    versions = (
+        (await session.execute(version_query.order_by(EvidenceVersion.id).limit(limit)))
+        .scalars()
+        .all()
+    )
+    inbox_query = select(InboxFile.id).where(
+        extracted.where(UploadExtraction.inbox_file_id == InboxFile.id).exists(),
+        ~masked.where(UploadPreview.inbox_file_id == InboxFile.id).exists(),
+    )
+    if after_inbox is not None:
+        inbox_query = inbox_query.where(InboxFile.id > after_inbox)
+    inbox = (
+        (
+            await session.execute(
+                inbox_query.order_by(InboxFile.id).limit(max(limit - len(versions), 0))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
+
+
 async def next_citation_n(session: AsyncSession, cited_from_type: str, cited_from_id: UUID) -> int:
     """The next position in an anchor's stack (1 for a new anchor)."""
     found = (
@@ -1199,15 +1250,23 @@ async def preview_pages_of(session: AsyncSession, preview_id: UUID) -> Sequence[
 
 
 async def masked_preview_for(
-    session: AsyncSession, evidence_version_id: UUID
+    session: AsyncSession,
+    evidence_version_id: UUID | None = None,
+    *,
+    inbox_file_id: UUID | None = None,
 ) -> UploadPreview | None:
-    """The version's newest masked rendition (none derived): a preview with `mask_version` set
+    """The source's newest masked rendition (none derived): a preview with `mask_version` set
     (P-03-T09, T15). None until the masker has rendered it."""
+    source = (
+        UploadPreview.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else UploadPreview.inbox_file_id == inbox_file_id
+    )
     return (
         await session.execute(
             select(UploadPreview)
             .where(
-                UploadPreview.evidence_version_id == evidence_version_id,
+                source,
                 UploadPreview.derivation_id.is_(None),
                 UploadPreview.mask_version.is_not(None),
             )

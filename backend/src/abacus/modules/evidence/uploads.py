@@ -15,6 +15,7 @@ import json
 import re
 import unicodedata
 import zipfile
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
@@ -27,23 +28,32 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, Limits, run_isolated_with
 from abacus.kernel.scanning import scan
+from abacus.kernel.tin_patterns import scrub_tins
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref, service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.active_content import REASON_CODES, UNSCANNABLE, reason_of
 from abacus.modules.evidence.events import EvidenceUploaded
+from abacus.modules.evidence.masked_previews import PreviewOutdated
+from abacus.modules.evidence.masking import MASK, MaskedWord
+from abacus.modules.evidence.models import EvidencePage
+from abacus.modules.evidence.pii import masked_rows
 from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
+from abacus.modules.evidence.projection import Projection, projection_of
 from abacus.modules.evidence.repository import (
     fingerprint_among,
     latest_checks,
+    masked_preview_for,
     newest_extraction,
+    pages_of,
     preview_for,
     preview_page,
     uploaded_versions,
 )
 from abacus.modules.evidence.retention import retain_until_for
 from abacus.modules.evidence.service import NewItem, Provenance, add_version, version_view
+from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 from abacus.modules.identity.api import (
     AuthContext,
     Resource,
@@ -678,10 +688,14 @@ async def _authorised_version(
 async def preview_of(
     tenant: TenantContext, *, evidence_version_id: UUID | None, inbox_file_id: UUID | None
 ) -> PreviewView:
-    """For a caller that has authorised on the upload: the viewer's description, with a
-    spreadsheet's first rows as plain text (from the extraction, TASK-054)."""
+    """For a caller that has authorised on the upload: the viewer's description, from the masked
+    rendition when there is one (P-03-T15), with a spreadsheet's first rows and a PDF's printed
+    lines as a reader may see them: masked by code, and lines only for pages a PII scan covers
+    (fail closed; DEC-369)."""
     async with tenant_session(tenant) as session:
-        found = await preview_for(
+        found = await masked_preview_for(
+            session, evidence_version_id, inbox_file_id=inbox_file_id
+        ) or await preview_for(
             session,
             evidence_version_id=evidence_version_id,
             inbox_file_id=inbox_file_id,
@@ -689,6 +703,15 @@ async def preview_of(
         )
         extracted = await newest_extraction(
             session, evidence_version_id=evidence_version_id, inbox_file_id=inbox_file_id
+        )
+        projection = await projection_of(
+            session, evidence_version_id=evidence_version_id, inbox_file_id=inbox_file_id
+        )
+        layer = await pages_of(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            extractor_version=WORDS_VERSION,
         )
     if found is None:
         return PreviewView("pending", None, 0, False)
@@ -702,9 +725,10 @@ async def preview_of(
             extracted.size_bytes or 0,
         )
         document = json.loads(await storage.get(tenant.tenant_id, stored))
-        return PreviewView(
-            found.kind, found.reason, found.page_count, truncated, (), page_lines_of(document)
+        lines = await masked_page_lines(
+            tenant.tenant_id, page_lines_of(document), projection, layer
         )
+        return PreviewView(found.kind, found.reason, found.page_count, truncated, (), lines)
     if found.kind == "table" and extracted is not None and extracted.storage_key is not None:
         stored = storage.StoredObject(
             extracted.storage_key,
@@ -718,14 +742,54 @@ async def preview_of(
         for table in tables:
             rows = cast(list[list[object]], table.get("rows") or [])
             truncated = truncated or len(rows) > TABLE_ROWS
-            built.append(
-                (
-                    str(table.get("sheet") or ""),
-                    tuple(tuple(str(c) for c in row) for row in rows[:TABLE_ROWS]),
-                )
-            )
+            shown = [tuple(str(c) for c in row) for row in rows[:TABLE_ROWS]]
+            built.append((str(table.get("sheet") or ""), masked_rows(shown)))
         sheets = tuple(built)
     return PreviewView(found.kind, found.reason, found.page_count, truncated, sheets)
+
+
+Line = tuple[str, tuple[float, float, float, float]]
+
+
+def _overlaps(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> bool:
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
+async def masked_page_lines(
+    tenant_id: UUID,
+    pages: tuple[tuple[Line, ...], ...],
+    projection: Projection,
+    layer: Sequence[EvidencePage],
+) -> tuple[tuple[Line, ...], ...]:
+    """The extraction's printed lines as a reader may see them (P-03-T15; DEC-369): a page no PII
+    scan covers has none (fail closed); a line crossing a detected region is rebuilt from the
+    page's masked words inside it; every line goes through the kernel's TIN scrub."""
+    by_page = {p.page_no: p for p in layer}
+    out: list[tuple[Line, ...]] = []
+    for number, lines in enumerate(pages, start=1):
+        page = by_page.get(number)
+        if page is None or not projection.readable(number):
+            out.append(())
+            continue
+        regions = [r.box for r in projection.regions if r.page_no == number]
+        words: list[MaskedWord] = []
+        if regions:
+            words = projection.words((await read_page_layer(tenant_id, page)).words, number) or []
+        width, height = float(page.width_pt), float(page.height_pt)
+        kept: list[Line] = []
+        for text, box in lines:
+            points = (box[0] * width, box[1] * height, box[2] * width, box[3] * height)
+            if any(_overlaps(points, region) for region in regions):
+                inside = [
+                    w.text
+                    for w in words
+                    if points[0] <= (w.x0 + w.x1) / 2 <= points[2]
+                    and points[1] <= (w.top + w.bottom) / 2 <= points[3]
+                ]
+                text = " ".join(inside) or MASK
+            kept.append((scrub_tins(text), box))
+        out.append(tuple(kept))
+    return tuple(out)
 
 
 def page_lines_of(
@@ -751,15 +815,22 @@ async def preview_page_of(
     inbox_file_id: UUID | None,
     page_no: int,
 ) -> bytes:
-    """One server-made PNG, verified against its fingerprint by storage."""
+    """One server-made PNG of the masked rendition only (P-03-T15; SPEC-322 AC-24), verified
+    against its fingerprint by storage: 409 `preview_outdated` while only a pre-masking preview
+    exists (until the backfill re-renders it), 404 when nothing is rendered."""
     async with tenant_session(tenant) as session:
-        found = await preview_for(
-            session,
-            evidence_version_id=evidence_version_id,
-            inbox_file_id=inbox_file_id,
-            renderer_version=RENDERER_VERSION,
-        )
-        page = await preview_page(session, found.id, page_no) if found is not None else None
+        found = await masked_preview_for(session, evidence_version_id, inbox_file_id=inbox_file_id)
+        if found is None:
+            legacy = await preview_for(
+                session,
+                evidence_version_id=evidence_version_id,
+                inbox_file_id=inbox_file_id,
+                renderer_version=RENDERER_VERSION,
+            )
+            if legacy is not None and legacy.kind in ("pages", "image"):
+                raise PreviewOutdated
+            raise NotFound("preview_page")
+        page = await preview_page(session, found.id, page_no)
     if page is None:
         raise NotFound("preview_page")
     stored = storage.StoredObject(

@@ -34,10 +34,20 @@ from abacus.modules.evidence.api import (
     check_upload_content,
 )
 from abacus.modules.evidence.api import process_upload as extract_upload
-from abacus.modules.evidence.processing import preview_upload
+from abacus.modules.evidence.masked_previews import masked_preview_upload
+from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.words import words_upload
 from abacus_tools.synthetic.documents import w2_pdf
 
 from .support import Net, Person, Seeder, Site
+
+
+async def preview_upload(given: UploadInput) -> str:
+    """The rendition steps of a v7 run (P-03-T15): word layer, PII scan, masked rendition."""
+    await words_upload(given)
+    await pii_scan_upload(given)
+    return await masked_preview_upload(given)
+
 
 BUCKET: Final = "task1207-offshore-reads"
 MASTER: Final = b"task1207-offshore-reads-master-key-0123456"
@@ -204,11 +214,24 @@ async def test_review1_a_wall_comes_first_for_an_offshore_member(firm: Firm, rou
 
 
 async def test_review5_the_logged_pii_reveal_refuses_an_offshore_member(firm: Firm) -> None:
-    """`pii.reveal` is `not_offshore`: Remy is refused at the condition (403) before the stub;
-    Mia, allowed, reaches the stub (501 until SHL-08c is live)."""
+    """`pii.reveal` is `not_offshore`: Remy is refused at the condition (403) and nothing is
+    revealed; Mia, allowed, gets the W-2's SSN once, `no-store` (P-03-T16, SPEC-322 AC-26)."""
     path = f"/v1/evidence-versions/{firm.version}/pii-reveals"
-    body = {"region_id": str(uuid.uuid4())}
+    region = await firm.seed.value(
+        "SELECT id FROM pii_regions WHERE evidence_version_id = $1 AND kind = 'ssn'",
+        firm.version,
+    )
+    body = {"region_id": str(region)}
     remy = await firm.net.call("POST", path, firm.remy, body=body)
     assert (remy.status_code, remy.json()) == (403, FORBIDDEN)
+    assert "6081" not in remy.text
+    count = "SELECT count(*) FROM pii_reveals WHERE user_id = $1"
+    assert await firm.seed.value(count, firm.remy.user_id) == 0
     mia = await firm.net.call("POST", path, firm.mia, body=body)
-    assert mia.status_code == 501, mia.text
+    assert mia.status_code == 201, mia.text
+    assert mia.headers["cache-control"] == "no-store"
+    answer = mia.json()
+    assert (answer["value"], answer["kind"], answer["expires_in"]) == ("000-00-6081", "ssn", 30)
+    assert await firm.seed.value(count, firm.mia.user_id) == 1
+    unknown = await firm.net.call("POST", path, firm.mia, body={"region_id": str(uuid.uuid4())})
+    assert unknown.status_code == 404

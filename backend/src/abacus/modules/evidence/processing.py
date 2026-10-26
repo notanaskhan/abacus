@@ -22,6 +22,7 @@ from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel import _flags
@@ -57,6 +58,7 @@ from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, ex
 from abacus.modules.evidence.masked_text import masked_pages
 from abacus.modules.evidence.models import UploadExtraction
 from abacus.modules.evidence.object_keys import under_key
+from abacus.modules.evidence.pii import DETECTOR_VERSION, masked_rows
 from abacus.modules.evidence.previews import RENDERER_VERSION, render_isolated
 from abacus.modules.evidence.repository import (
     checks_exist,
@@ -72,6 +74,7 @@ from abacus.modules.evidence.repository import (
     newest_extraction,
     other_version_with_fingerprint,
     preview_for,
+    scan_run_for,
     stale_pdf_uploads,
 )
 from abacus.modules.evidence.service import engagement_snapshots
@@ -394,7 +397,9 @@ async def check_upload(given: UploadInput) -> int:
             target=Target("evidence_version", version_id),
             after=Ref(checks=added, problems=sum(r.outcome == "problem" for r in results)),
         )
-        if added and items:  # SPEC-030 (TASK-059): the reviewer may follow
+        # SPEC-030 (TASK-059): the reviewer may follow, once its masked material can be built
+        # (P-03-T15): a PDF's text waits for its PII scan, which announces the checks instead.
+        if added and items and await material_ready(tx.session, row):
             tx.emit(
                 UploadChecksRecorded(
                     engagement_id=version.engagement_id, evidence_version_id=version_id
@@ -534,13 +539,11 @@ def _excerpt(
     return tuple(shown_pages), tuple(shown_sheets), truncated
 
 
-async def review_material(
-    tenant: TenantContext, version_id: UUID, *, masked: bool = False
-) -> ReviewMaterial | None:
+async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMaterial | None:
     """For an agent run authorised on the version's engagement; None without an extraction, or
-    for a version the client withdrew (P-06-T19: agents never read it). `masked` (the run acts
-    for an offshore member; DEC-52, TASK-1207 review): only the scanned pages' masked text, no
-    sheets, and None before the PII scan has run (fail closed)."""
+    for a version the client withdrew (P-06-T19: agents never read it). Always the masked
+    projection (P-03-T15; SPEC-322 AC-25, AC-40): scanned pages' masked text and masked sheets,
+    and None while a PDF's PII scan hasn't run (fail closed; `masked_document_text`)."""
     async with tenant_session(tenant) as session:
         if await is_withdrawn(session, version_id):
             return None
@@ -550,13 +553,10 @@ async def review_material(
         return None
     items = await items_of_version(tenant, version_id)
     item = next((i for i in items), None)
-    if masked:
-        text = await masked_pages(tenant, evidence_version_id=version_id)
-        if text is None:
-            return None
-        pages, sheets = text, {}
-    else:
-        pages, sheets = await document_text(tenant.tenant_id, row)
+    text = await masked_document_text(tenant, row)
+    if text is None:
+        return None
+    pages, sheets = text
     excerpt_pages, excerpt_tables, truncated = _excerpt(pages, sheets)
     return ReviewMaterial(
         row.engagement_id,
@@ -592,6 +592,39 @@ async def document_text(
             )
             sheets[str(table.get("sheet") or "")] = rows
     return pages, sheets
+
+
+async def material_ready(session: AsyncSession, row: UploadExtraction) -> bool:
+    """Whether agents' masked material can be built from this extraction now (P-03-T15): a
+    document with page text needs its PII scan first; sheets are masked as they are read."""
+    if row.status != "extracted" or not row.page_count:
+        return True
+    run = await scan_run_for(
+        session,
+        evidence_version_id=row.evidence_version_id,
+        inbox_file_id=row.inbox_file_id,
+        detector_version=DETECTOR_VERSION,
+    )
+    return run is not None
+
+
+async def masked_document_text(
+    tenant: TenantContext, row: UploadExtraction
+) -> tuple[dict[int, str], dict[str, tuple[tuple[str, ...], ...]]] | None:
+    """The only document text an agent reads (P-03-T15; SPEC-322 AC-25, AC-40; DEC-369): each
+    PII-scanned page's masked words (`masked_text.masked_pages`) and each sheet's masked cells
+    (`pii.masked_rows`), both through the kernel's TIN scrub. None when the document has page
+    text and no PII scan has run (fail closed); a page no scan covers is left out."""
+    pages, sheets = await document_text(tenant.tenant_id, row)
+    masked_sheets = {name: masked_rows(rows) for name, rows in sheets.items()}
+    if not pages:
+        return {}, masked_sheets
+    text = await masked_pages(
+        tenant, evidence_version_id=row.evidence_version_id, inbox_file_id=row.inbox_file_id
+    )
+    if text is None:
+        return None
+    return text, masked_sheets
 
 
 def excerpt_of(
