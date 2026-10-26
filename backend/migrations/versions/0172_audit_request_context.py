@@ -36,7 +36,7 @@ columns. The chain's leaf moves to version 2 in the same change (`kernel/uow/cha
 branches' migrations.
 
 Revision ID: 0172
-Revises: 0160
+Revises: 0171
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ from sqlalchemy import text
 from abacus.kernel.db.migration import insert_columns
 
 revision = "0172"
-down_revision = "0160"
+down_revision = "0171"
 branch_labels = None
 depends_on = None
 
