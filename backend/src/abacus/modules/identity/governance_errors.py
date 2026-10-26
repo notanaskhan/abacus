@@ -15,7 +15,7 @@ class SsoNotVerified(DomainConflict):
 
 class SsoExemptNeedsHardwareKey(DomainConflict):
     """The one SSO-exempt (break-glass) account must hold a hardware-key factor (AC-18; G-02-T11,
-    DEC-434). Raised by G-02-T14."""
+    DEC-432). Raised by G-02-T14."""
 
     code = "sso_exempt_needs_hardware_key"
 

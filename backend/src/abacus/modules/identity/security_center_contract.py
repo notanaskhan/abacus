@@ -6,7 +6,7 @@ G-02-T14 (sign-in and portal policies, the SSO-exempt account, sessions, unlock,
 switch, the overview and the posture). The incident read side and the safeguards program are
 platform's (`platform/security_center_contract.py`, T18 and T20); the export schedule is
 evidence's (`evidence/firm_export_schedule_contract.py`, T19): identity imports no other module,
-so each stub lives where its implementation will (DEC-434).
+so each stub lives where its implementation will (DEC-432).
 
 Rules the shapes carry (DEC-22, DEC-34, DEC-35, DEC-72, INV-1, INV-4):
 
@@ -181,7 +181,7 @@ class SupportAccessOut(BaseModel):
 
 class SecurityOverviewOut(BaseModel):
     """ADM-06 a: identity's fieldsets and cards. Incidents, safeguards, the export card and
-    retention have their own reads from the modules that own them (DEC-434)."""
+    retention have their own reads from the modules that own them (DEC-432)."""
 
     model_config = ConfigDict(frozen=True)
 

@@ -249,7 +249,7 @@ class Settings(BaseSettings):
     # Q-02-T24 (C-09): records kept in COMPLIANCE mode (chain anchors, seal manifests, consent and
     # signature evidence). Unset: writing a record fails closed (no fallback to the evidence one).
     records_bucket: Annotated[str | None, classified("internal")] = None
-    # A-01-T19 (DEC-436): engagement export bundles, sealed per 64 MiB segment, no Object Lock
+    # A-01-T19 (DEC-433): engagement export bundles, sealed per 64 MiB segment, no Object Lock
     # (transient copies, 7 days; the bucket's lifecycle rule removes them). Unset: an export
     # build fails closed, never falling back to the evidence bucket.
     exports_bucket: Annotated[str | None, classified("internal")] = None

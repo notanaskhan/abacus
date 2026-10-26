@@ -1,5 +1,5 @@
 """Evidence's own export sections and the audit-trail slot (A-01-T19; SPEC-344 §6, §7; DEC-379,
-DEC-436). PROTECTED.
+DEC-433). PROTECTED.
 
 Four core sections are read by evidence itself through the slot every module uses
 (`register_export_section`): `index` (one row per request), `fulfilments` (which file answers

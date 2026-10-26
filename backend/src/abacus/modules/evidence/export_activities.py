@@ -1,5 +1,5 @@
 """The engagement export workflow's activities and its start (A-01-T19; A-01 §4.5; SPEC-344
-AC-9 to AC-13; DEC-436). PROTECTED.
+AC-9 to AC-13; DEC-433). PROTECTED.
 
 Identifiers in, identifiers and digests out. The workflow input is never proof: each activity
 reads the export row under the tenant and acts as the system on behalf of the requester (INV-5).

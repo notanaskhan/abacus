@@ -49,7 +49,7 @@ and stale-MFA requests are refused."
   reader may `export.download` (T22 serves it).
 
 ## Files
-- `backend/migrations/versions/0191_engagement_exports.py` (down 0190)
+- `backend/migrations/versions/0191_engagement_exports.py` (down 0180, origin/main a0d16491's head; no 0190 exists)
 - `backend/src/abacus/modules/evidence/{exports.py,export_repository.py,export_events.py}` (new)
 - `backend/src/abacus/modules/evidence/export_contract.py` (routes live; download still 501)
 - `backend/src/abacus/modules/evidence/{registry.py,api.py,audit_targets.py}` (appends)
@@ -57,7 +57,7 @@ and stale-MFA requests are refused."
 - `backend/tests/integration/test_a01t18_engagement_exports.py` (new)
 - `backend/tests/contracts/engagement_export/test_engagement_export_v1.py`: the four live routes
   no longer declare 501 (the test's docstring: "501 on until A-01-T18 and T22")
-- `docs/contracts/engagement-export-v1.md`, `docs/product/decision-log.md` (DEC-435)
+- `docs/contracts/engagement-export-v1.md`, `docs/product/decision-log.md` (DEC-433)
 
 ## Migration 0191
 `engagement_exports` (A-01 §4.2 M2): every column of the row; CHECKs on kind, status,

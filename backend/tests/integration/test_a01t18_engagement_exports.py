@@ -1,4 +1,4 @@
-"""A-01-T18 against Postgres (TASK-1334; SPEC-344 AC-6 to AC-8; DEC-379, DEC-435): "Undo inside
+"""A-01-T18 against Postgres (TASK-1334; SPEC-344 AC-6 to AC-8; DEC-379, DEC-433): "Undo inside
 10 s leaves an undone row and no package, and agent, offshore and stale-MFA requests are
 refused."
 

@@ -1189,7 +1189,7 @@ codes:
     raised_by:
     - abacus.modules.identity.governance_errors.SsoExemptNeedsHardwareKey
     summary: The one SSO-exempt (break-glass) account must hold a hardware-key factor (AC-18; G-02-T11,
-      DEC-434). Raised by G-02-T14.
+      DEC-432). Raised by G-02-T14.
   sso_not_verified:
     status: 409
     raised_by:

@@ -1,5 +1,5 @@
 """Engagement exports: create, Undo, history and status (A-01-T18; SPEC-344 AC-6 to AC-8;
-DEC-376, DEC-379, DEC-435). PROTECTED (evidence, red). Contract:
+DEC-376, DEC-379, DEC-433). PROTECTED (evidence, red). Contract:
 `docs/contracts/engagement-export-v1.md`.
 
 A person (never an agent, the system or support: INV-1; the database agrees) with a fresh second

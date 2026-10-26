@@ -1,4 +1,4 @@
-"""A-01-T19 against Postgres and S3 (TASK-1335; SPEC-344 AC-9 to AC-13; DEC-436): "Northwind's
+"""A-01-T19 against Postgres and S3 (TASK-1335; SPEC-344 AC-9 to AC-13; DEC-433): "Northwind's
 export lists 24 requests and 12 files whose SHA-256 match their fingerprints, and two builds are
 byte-identical."
 

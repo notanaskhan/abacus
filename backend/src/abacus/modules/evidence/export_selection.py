@@ -1,4 +1,4 @@
-"""What an engagement export holds (A-01-T19; SPEC-344 §6, §7.2, §7.3; DEC-379, DEC-436).
+"""What an engagement export holds (A-01-T19; SPEC-344 §6, §7.2, §7.3; DEC-379, DEC-433).
 PROTECTED.
 
 The selection is read as the requester, never as the system: the scope's asked PBC binders'

@@ -1,4 +1,4 @@
-"""Engagement export bundles in the exports store (A-01-T19; A-01 §4.1; SPEC-344 §11; DEC-436).
+"""Engagement export bundles in the exports store (A-01-T19; A-01 §4.1; SPEC-344 §11; DEC-433).
 PROTECTED.
 
 A bundle is a transient copy (7 days, P-14: not a record), so it lives in its own bucket without

@@ -19,7 +19,7 @@ before sign-in policy and sessions (T14), the incident register's depth (T18), t
 schedule (T19) and the safeguards program (T20) exist.
 
 ## Plan
-- **Module placement (DEC-434).** Each stub lives in the module that will implement it, because
+- **Module placement (DEC-432).** Each stub lives in the module that will implement it, because
   identity may import no other module (`MODULE_DEPENDENCIES["identity"]` is empty), so routes in
   identity could never call platform's incident or safeguards service or evidence's schedule:
   - `identity/security_center_contract.py`: `GET /v1/firm/security` (overview: sign-in, MFA
@@ -56,7 +56,7 @@ schedule (T19) and the safeguards program (T20) exist.
   interfaces mirroring the Pydantic models field for field, because `make generate` runs at the
   integration step; incidents' Q-02 half, the on-demand export and the support sessions use the
   generated types that already exist.
-- No migration, no flag or matrix edit. DEC-434 records the decisions.
+- No migration, no flag or matrix edit. DEC-432 records the decisions.
 - Rollback: revert; the flag stays off.
 
 ## Files
@@ -68,7 +68,7 @@ schedule (T19) and the safeguards program (T20) exist.
   `apps/web/src/fixtures/{seed,handlers}/security-center.ts`, `apps/web/src/fixtures/scenarios/ADM-06.ts`.
 - Changed: `identity/api.py`, `platform/api.py`, `evidence/api.py` (ROUTERS),
   `identity/governance_errors.py`, `docs/architecture/error-codes.yaml` (generated),
-  `docs/contracts/README.md` (row), `docs/product/decision-log.md` (DEC-434).
+  `docs/contracts/README.md` (row), `docs/product/decision-log.md` (DEC-432).
 
 ## Tests
 - Contract: each route's one action, 404 and 501 declared, the family is exactly these routes,

@@ -1,5 +1,5 @@
 """The deterministic engagement export package (A-01-T19; SPEC-344 §7; ADR-036, ADR-042, ADR-052;
-DEC-436). PROTECTED.
+DEC-433). PROTECTED.
 
 Pure: given the files (their bytes and roles) and the manifest's facts, write the ZIP. The same
 inputs give the same bytes (AC-10):

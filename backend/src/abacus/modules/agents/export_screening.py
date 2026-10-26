@@ -1,4 +1,4 @@
-"""The engagement export's `screening` section (A-01-T19; SPEC-344 §6, §10; DEC-379, DEC-436).
+"""The engagement export's `screening` section (A-01-T19; SPEC-344 §6, §10; DEC-379, DEC-433).
 
 `provenance/screening.csv`: what screening recorded on the package's files, copied as recorded
 and read as the requester (`visible()`): each per-file proposal (the action and its confidence)

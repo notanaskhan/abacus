@@ -10,7 +10,7 @@
 | Freeze sprint | the sprint review after the stub |
 | Flag | `security_center.v1` (default off, created 2026-10-26, expires 2027-04-21 under DEC-137) |
 | Spec | SPEC-349 (AC-15 to AC-30, AC-45 to AC-47); G-02 §3.4 to §3.9, §4.3 |
-| ADRs | ADR-020, ADR-024, ADR-031, ADR-139 (P-36), ADR-165, ADR-168; DEC-22, DEC-34, DEC-35, DEC-72, DEC-415, DEC-416, DEC-434 |
+| ADRs | ADR-020, ADR-024, ADR-031, ADR-139 (P-36), ADR-165, ADR-168; DEC-22, DEC-34, DEC-35, DEC-72, DEC-415, DEC-416, DEC-432 |
 
 ## 1. Purpose
 One place where the firm's Qualified Individual runs the safeguards the FTC Safeguards Rule asks for, and the partners read them: staff sign-in (SSO, MFA, session limits, one break-glass account), the portal's sign-in floor, active sessions and staff unlocks, the incident register with its two-person decisions, the monthly firm data export and its dual approval, the support-access switch, the WISP and Pub 4557 evidence, residency, and a five-line posture.
@@ -90,4 +90,4 @@ Models in `backend/src/abacus/modules/identity/security_center_contract.py`, `ba
 `backend/tests/contracts/security_center/test_security_center_contract.py` (this stub); `backend/tests/integration/test_g02t12_security_center_ac_suite.py` (AC-15 to AC-30, independent, G-02-T12). Fixture mode serves ADM-06 a to h, the sessions and unlock states and the support states (`apps/web/src/fixtures/scenarios/ADM-06.ts`).
 
 ## 8. Change log
-- v1 (2026-10-26, G-02-T11): stub. DEC-434 records the module placement and the shape choices.
+- v1 (2026-10-26, G-02-T11): stub. DEC-432 records the module placement and the shape choices.

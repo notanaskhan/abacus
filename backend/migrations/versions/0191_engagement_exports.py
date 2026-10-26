@@ -1,4 +1,4 @@
-"""A-01-T18 (TASK-1334; A-01 §4.2 M2; SPEC-344 AC-6 to AC-8; DEC-435): engagement exports.
+"""A-01-T18 (TASK-1334; A-01 §4.2 M2; SPEC-344 AC-6 to AC-8; DEC-433): engagement exports.
 
 - `engagement_exports`: one binder export of an audit work item, requested by a person
   (`requested_by_kind = 'human'`: the database refuses an agent, the system or support, INV-1)
@@ -16,7 +16,7 @@
   withdrawn file voids the ready bundle (A-01-T22).
 
 Revision ID: 0191
-Revises: 0190
+Revises: 0180
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0191"
-down_revision = "0190"
+down_revision = "0180"
 branch_labels = None
 depends_on = None
 
