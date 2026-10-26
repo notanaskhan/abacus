@@ -5,6 +5,8 @@
 - A seeded SSN, in a client's name and on its event, is never findable, in whole or in part, and
   no label row holds it (AC-11).
 - The projection is the firm's own (RLS) and keeps up with new events when a search runs.
+- The `AuditLabelIndexer` Schedule's activity indexes every firm, idempotently, and skips a firm
+  whose indexer is busy (DEC-453).
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.audit_trail.api import backfill_labels, index_labels
+from abacus.modules.audit_trail.jobs import index_labels_activity
 from abacus.modules.audit_trail.labels import IndexBusy
 from abacus.modules.identity.api import AuthContext, current_context
 
@@ -211,3 +214,31 @@ async def test_l4_backfill_raises_while_another_indexer_holds_the_firm(
         assert searched.status_code == 200
         await conn.execute("SELECT pg_advisory_unlock(hashtextextended($1, 0))", key)
     assert await backfill_labels(tenant) == 3
+
+
+# --- the AuditLabelIndexer Schedule's activity (DEC-453; TASK-1355) ---------------------------
+
+
+async def test_dec453_the_scheduled_run_indexes_every_firm_and_skips_a_busy_one(
+    firm: tuple[uuid.UUID, AuthContext], seed: Seeder
+) -> None:
+    tenant, felix = firm
+    other = await seed.firm()
+    stranger = await _admin(seed, other, "Grace Holloway")
+    await _record(stranger.tenant, "wall.created", Target("ethical_wall", uuid.uuid4()))
+    await index_labels_activity()
+    assert len(await _labels(seed, tenant)) == 3
+    assert len(await _labels(seed, other)) == 1
+    first = await _labels(seed, tenant)
+    await index_labels_activity()  # a replay of the run changes nothing (idempotent)
+    assert await _labels(seed, tenant) == first
+    # A firm whose indexer is busy (a search catching up) is skipped this run, not failed.
+    await _record(felix.tenant, "staff.unlocked", Target("user", felix.user_id))
+    key = f"audit_label_index:{tenant}"
+    async with seed.held() as conn:
+        await conn.execute("SELECT pg_advisory_lock(hashtextextended($1, 0))", key)
+        await index_labels_activity()
+        assert len(await _labels(seed, tenant)) == 3
+        await conn.execute("SELECT pg_advisory_unlock(hashtextextended($1, 0))", key)
+    await index_labels_activity()
+    assert len(await _labels(seed, tenant)) == 4

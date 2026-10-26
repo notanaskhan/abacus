@@ -72,6 +72,8 @@ from abacus.modules.requests.api import (
     items_of_version,
     read_item,
     read_item_versions,
+    refuse_closed_item,
+    refuse_closed_item_in,
 )
 
 MAX_UPLOAD_BYTES: Final = 50 * 1024 * 1024  # DEC-58 (c), DEC-296; was SPEC-020's 25 MB
@@ -371,6 +373,7 @@ async def authorise_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID)
     engagement = await get_ref(ctx, engagement_id)
     item = await read_item(ctx.tenant, engagement_id, item_id)
     await authorise(ctx, "evidence.upload", item_resource(item, engagement.resource()))
+    await refuse_closed_item(ctx, item_id)  # ED-118: a closed binder is read-only (DEC-461)
 
 
 async def check_upload(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> None:
@@ -467,6 +470,7 @@ async def attach(
     if locked.engagement_id != engagement_id:
         raise NotFound("request_item")
     await authorise(ctx, "evidence.upload", item_resource(locked, locked_engagement.resource()))
+    await refuse_closed_item_in(tx.session, ctx, item_id)  # ED-118 (DEC-461)
     if locked.status not in ("draft", "requested", "uploaded", "returned"):
         raise ItemClosed
     if await fingerprint_among(tx.session, await item_versions(tx, item_id), stored.fingerprint):

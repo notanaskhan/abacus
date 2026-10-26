@@ -2003,6 +2003,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_unit_of_work.py",
             "tests/integration/test_outbox_relay.py",
             "tests/integration/test_identity.py",
+            # R-01-T19: seeds as the superuser and proves the app role's grants.
+            "tests/integration/test_r01t19_email_template_versions.py",
             "tests/integration/test_staff_session.py",  # P-01-T09: seeds as the superuser
             "tests/integration/test_telemetry_tunnel.py",  # Q-01-T48: seeds as the superuser
             "tests/integration/test_engagements.py",

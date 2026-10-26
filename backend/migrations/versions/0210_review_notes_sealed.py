@@ -12,7 +12,7 @@ to the row), and the plaintext columns stay only for the SPEC-313 rows written b
 - The app may insert `id` on both, so the seal can be bound to its own row before the insert.
 
 Revision ID: 0210
-Revises: 0182
+Revises: 0197
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns
 
 revision = "0210"
-down_revision = "0182"
+down_revision = "0197"
 branch_labels = None
 depends_on = None
 

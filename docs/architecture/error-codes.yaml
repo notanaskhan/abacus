@@ -161,6 +161,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.BelowFloor
     summary: The policy keeps records for less time than the published legal floor allows.
+  binder_closed:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.closed_binders.BinderClosed
+    summary: 'The binder is closed: the client reads it and acts on nothing in it (DEC-461).'
   binder_gate_unmet:
     status: 409
     raised_by:
@@ -1266,8 +1271,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement
@@ -1345,6 +1352,11 @@ codes:
     raised_by:
     - abacus.modules.communications.templates.TemplateInvalid
     summary: The template's key, locale, text or values are malformed.
+  template_lint_failed:
+    status: 422
+    raised_by:
+    - abacus.modules.communications.template_service.TemplateLintFailed
+    summary: The draft breaks the text lint; facts name each rule and where, never the text.
   template_name_invalid:
     status: 422
     raised_by:

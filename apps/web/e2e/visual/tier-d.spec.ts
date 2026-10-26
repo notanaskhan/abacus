@@ -756,3 +756,75 @@ test.describe("tier D: T11, T12 and O6 (M5 lock)", () => {
     });
   });
 });
+
+// F-05-T60 (tier-2 lock): Tier D on every tier-2 template. T3, T5, T8, T9 and TPL-03 and TPL-05
+// carry their rows above; these add TPL-02, TPL-08 and TPL-09 from the same templates' recorded
+// geometry (packages/ui/src/tokens/DECISIONS.md, F-05-T40, T56, T55): TPL-02 is T2 with its dock
+// on every board (rail 330, canvas 696, dock 330, audit bar 59); TPL-08 is T8's inbox preset (rail
+// 392, panes 752 tall); TPL-09 draws T9's three presets (a, d, e individual; b, g close review;
+// c, f entity).
+test.describe("tier D: TPL-02, TPL-08 and TPL-09 (F-05-T60)", () => {
+  test.beforeEach(async ({ page }) => {
+    await openGallery(page);
+  });
+
+  for (const id of ["tpl-02a", "tpl-02b"] as const) {
+    test(`${id}: rail 330, canvas 696, dock 330, audit bar 59`, async ({ page }) => {
+      const facts = await specimen(page, "tpl-02", `[data-artboard="${id}"]`).evaluate((el) => {
+        const w = (sel: string): number | null => {
+          const node = el.querySelector(sel);
+          return node === null ? null : node.getBoundingClientRect().width;
+        };
+        return {
+          rail: w('[data-cockpit="rail"]'),
+          canvas: w('[data-cockpit="canvas"]'),
+          dock: w('[data-cockpit="dock"]'),
+          bar: el.querySelector('[data-variant="audit"]')?.getBoundingClientRect().height ?? null,
+        };
+      });
+      expect(facts).toEqual({ rail: 330, canvas: 696, dock: 330, bar: 59 });
+    });
+  }
+
+  for (const id of ["tpl-08a"] as const) {
+    test(`${id}: rail 392, panes 752 tall`, async ({ page }) => {
+      const got = await specimen(page, "tpl-08", `[data-artboard="${id}"]`).evaluate((el) => {
+        const first = el.querySelector("[data-split-pane]");
+        return {
+          rail: first === null ? null : Math.round(first.getBoundingClientRect().width),
+          height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+        };
+      });
+      expect(got).toEqual({ rail: 392, height: 752 });
+    });
+  }
+
+  const INDIVIDUAL = { panes: [546, 433, 377], height: 706, queue: 262 };
+  const CLOSE = { panes: [790, 576], height: 700, queue: 310 };
+  const ENTITY = { panes: [470, 896], height: 700, queue: 470 };
+  for (const [id, expected] of [
+    ["tpl-09a", INDIVIDUAL],
+    ["tpl-09b", CLOSE],
+    ["tpl-09c", ENTITY],
+    ["tpl-09d", INDIVIDUAL],
+    ["tpl-09e", INDIVIDUAL],
+    ["tpl-09f", ENTITY],
+    ["tpl-09g", CLOSE],
+  ] as const) {
+    test(`${id}: panes ${JSON.stringify(expected)}`, async ({ page }) => {
+      const got = await specimen(page, "tpl-09", `[data-artboard="${id}"]`).evaluate((el) => {
+        const panes = [...el.querySelectorAll("[data-split-pane]")].map((p) =>
+          Math.round(p.getBoundingClientRect().width),
+        );
+        const first = el.querySelector("[data-split-pane]");
+        const queue = el.querySelector('[data-queue-part="queue"]');
+        return {
+          panes,
+          height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+          queue: queue === null ? null : Math.round(queue.getBoundingClientRect().width),
+        };
+      });
+      expect(got).toEqual(expected);
+    });
+  }
+});

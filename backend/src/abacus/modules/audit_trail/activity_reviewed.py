@@ -31,6 +31,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "agent_run.failed",
         "agent_run.started",
         "agent_run.trace_exported",
+        "agent_stage.changed",  # Q-02-T06 (ED-120): a platform staff change of a firm's stage
         "ai.boundary_refused",
         "approval_grant.consumed",
         "approval_grant.voided",
@@ -104,6 +105,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "decision.reassessed",
         "decision_card.raised",
         "decision_card.superseded",
+        "email_template.draft_discarded",  # R-01-T19
+        "email_template.draft_saved",  # R-01-T19
+        "email_template.published",  # R-01-T19
         "engagement.acceptance_file_attached",
         "engagement.acceptance_recorded",
         "engagement.ai_excluded",
