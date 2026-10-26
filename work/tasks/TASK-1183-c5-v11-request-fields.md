@@ -25,6 +25,7 @@ updated: 2026-10-25
 ## Progress log
 - 2026-10-25: built. `requests/source_documents.py` (row facts, `pbc_counts`, `pbc_counts_of`, `source_documents`), evidence's `upload_facts` provider through `requests.api.register_upload_facts`, `binders.binder_requests` fills `owed_by`, `latest_upload`, `match_confidence`, `linked_count` for firm readers; `for_viewer` still drops them for a client. Northwind at E0: 24 rows grouped 5/6/7/4/1/1, 11 received; Dana's rows read `client_contact`. Live owed-by for Harborline, PayGrid and Keystone is null (no organisation or delegation is stored in the E0 slice), and Linked (n)/match confidence are null at E0 (the slice seeds no fulfilments); both proven on seeded data in `test_audits_read_models.py`. Screening stays P-06-T15's.
 - 2026-10-25: security review fix (failing test first): upload facts skip withdrawn versions and their inbox files (DEC-313).
+- 2026-10-26: independent AC tests (A-01-T14): `backend/tests/integration/backfill/test_a01t14_audits_independent.py`; see TASK-1281.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
