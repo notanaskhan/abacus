@@ -40,8 +40,10 @@ from abacus.modules.identity.events import AccessChanged, ClientAccessGranted, C
 from abacus.modules.identity.repository import (
     GrantRow,
     active_grants,
+    active_memberships,
     delegate_grant_holders,
     delegate_holders,
+    engagement_members_of,
     get_grant,
     insert_grant,
     insert_grant_event,
@@ -191,6 +193,49 @@ async def third_party_on(tenant: TenantContext, user_id: UUID, engagement_id: UU
 
 
 register_third_party(third_party_on)
+
+
+RecipientRelation = Literal["staff", "client", "third_party"]
+
+
+async def recipient_relations(
+    tenant: TenantContext, user_id: UUID, engagement_id: UUID
+) -> frozenset[RecipientRelation]:
+    """R-01-T19 security review H and its re-review: how a person relates to the engagement a
+    firm email is about, so the template's audience can be checked against it. `staff`: an
+    active staff member on the engagement's team. `client`: an active client-side grant (not a
+    delegate's) whose scope covers the engagement (its client, entity, the engagement itself or
+    one of its work items). `third_party`: a delegate's grant on one of its requests. Empty: the
+    email may not go to them. Read under the firm's row-level security, so another firm's people
+    never relate; an inactive membership relates to nothing."""
+    member = [m for m in await active_memberships(user_id) if m.tenant_id == tenant.tenant_id]
+    if not member:
+        return frozenset()
+    found: set[RecipientRelation] = set()
+    if member[0].kind == "staff" and any(
+        who == user_id for who, _ in await engagement_members_of(tenant, engagement_id)
+    ):
+        found.add("staff")
+    client_id = await engagement_client(tenant, engagement_id)
+    for grant in await active_grants(tenant, user_id):
+        if grant.role in DELEGATE_ROLES:
+            continue
+        facts = await scope_facts(tenant, grant.scope_kind, grant.scope_id)
+        if facts is None:
+            continue
+        if facts.engagement_id is not None:
+            if facts.engagement_id == engagement_id:
+                found.add("client")
+        elif facts.work_item_id is None and client_id is not None and facts.client_id == client_id:
+            found.add("client")
+    if await third_party_on(tenant, user_id, engagement_id):
+        found.add("third_party")
+    return frozenset(found)
+
+
+async def may_receive_about(tenant: TenantContext, user_id: UUID, engagement_id: UUID) -> bool:
+    """Whether the person relates to the engagement at all (`recipient_relations`)."""
+    return bool(await recipient_relations(tenant, user_id, engagement_id))
 
 
 async def delegation_holders_by_grant(

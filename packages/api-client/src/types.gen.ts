@@ -7724,7 +7724,7 @@ export type EmailTemplateVersionOut = {
      * Published At
      */
     published_at: string;
-    published_by: TemplatePersonOut;
+    published_by?: TemplatePersonOut | null;
     /**
      * Subject
      */
@@ -24708,7 +24708,7 @@ export type TemplateVersionRefOut = {
      * Published At
      */
     published_at: string;
-    published_by: TemplatePersonOut;
+    published_by?: TemplatePersonOut | null;
     /**
      * Version
      */
@@ -41723,6 +41723,10 @@ export type ClientRespondErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -41778,6 +41782,10 @@ export type ClientWithdrawErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -42004,6 +42012,10 @@ export type PostItemCommentErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -43598,6 +43610,10 @@ export type PostVersionCommentErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -49786,10 +49802,6 @@ export type ListEmailTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListEmailTemplatesError = ListEmailTemplatesErrors[keyof ListEmailTemplatesErrors];
@@ -49893,10 +49905,6 @@ export type GetEmailTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetEmailTemplateError = GetEmailTemplateErrors[keyof GetEmailTemplateErrors];
@@ -49949,10 +49957,6 @@ export type DiscardEmailTemplateDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardEmailTemplateDraftError = DiscardEmailTemplateDraftErrors[keyof DiscardEmailTemplateDraftErrors];
@@ -50009,10 +50013,6 @@ export type SaveEmailTemplateDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SaveEmailTemplateDraftError = SaveEmailTemplateDraftErrors[keyof SaveEmailTemplateDraftErrors];
@@ -50129,10 +50129,6 @@ export type PublishEmailTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishEmailTemplateError = PublishEmailTemplateErrors[keyof PublishEmailTemplateErrors];
@@ -60028,6 +60024,10 @@ export type AnnounceUploadIntentErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */

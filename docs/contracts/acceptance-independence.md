@@ -88,7 +88,7 @@ C2: `acceptance_record`, `nas_evaluation`, `independence_conclusion`, `conflict_
 | 409 | `eqr_approver_is_ep` | the EP approving the EQR's eligibility |
 | 409 | `eqr_approver_on_engagement` | anyone else with a role on the engagement approving it (manager, team member, specialist, the EQR) |
 | 409 | `eqr_approval_required` | assigning a candidate whose competence is not assessed before the quality owner approved them |
-| 409 | `stale_version` (`facts.engagement_id`) | approving a team that changed since `member_set_hash` was read |
+| 409 | `stale_version` (`facts.engagement_id`) | approving a team that changed since `member_set_hash` was read; a conclusion that lost a race with another on the same newest conclusion (one successor each, DEC-429; ED-117, DEC-461): nothing of it is written, read again and conclude |
 | 403 | `{"detail": "forbidden"}` | a client principal, an agent or the system on any route here, before the flag is read; a client principal on the team reads |
 | 422 | `invalid` (`facts.user_id` or `facts.field`) | a reminder to a member whose confirmation is not open; the candidate approving themself |
 | 409 | `stale_version` · `gate_unmet` | as elsewhere |

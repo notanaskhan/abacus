@@ -43,6 +43,10 @@ Active, INC-2026-005, and the two rollout flags they sit behind) is opt-in (`--s
 which brings `people`) and goes through `evidence.api` and `platform.api` as the people the
 handoff names, with fresh MFA at the event's time; see the section comment and DEC-363.
 
+The `email_templates` slice (R-01-T22: Brightwater Hale's six email templates, POR-20's versions
+and the Reminder's v4 draft, behind the editor flag) is opt-in (`--slice email_templates`) and goes
+through `communications.api`'s editor service as Grace Holloway; see DEC-451.
+
 `--slice` adds slices to the default `audit_core`. The `shell` slice (P-01-T07: the training
 sandbox and Grace's membership in it, job titles, Hannah's default office and notification
 preferences) has no service yet either and is bootstrapped the same way. Its columns arrive with
@@ -64,8 +68,8 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import Awaitable, Callable, Generator
-from contextlib import contextmanager
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -82,6 +86,12 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import uow
 from abacus.modules.assurance.api import record_phase, update_profile
+from abacus.modules.communications.api import (
+    TemplateContent,
+    email_template_state,
+    publish_email_template,
+    save_email_template_draft,
+)
 from abacus.modules.engagements.api import (
     NewCondition,
     acceptance_record,
@@ -183,6 +193,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.compliance import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.compliance import (
     SLICE as COMPLIANCE_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
+    SLICE as EMAIL_TEMPLATES_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import snapshot
 from abacus_tools.synthetic.scenarios.brightwater_hale.firm_people import (
@@ -374,19 +387,52 @@ def deploy_in_flight() -> str | None:
 # --- bootstrap writes (no owning service yet) -------------------------------------------------
 
 
-async def _bootstrap(
-    conn: asyncpg.Connection, event: Event, write: Callable[[], Awaitable[tuple[str, str, str]]]
+@asynccontextmanager
+async def as_tenant(conn: asyncpg.Connection, tenant: UUID) -> AsyncGenerator[None]:
+    """A transaction that sees `tenant`'s rows. The owner role does not bypass row-level security
+    (`migrations/bootstrap.sql`), so a read outside one sees nothing on a hosted database even
+    where a laptop's superuser sees everything (security review, DEC-455)."""
+    async with conn.transaction():
+        await conn.execute("SELECT set_config($1, $2, true)", "app.tenant_id", str(tenant))
+        yield
+
+
+async def tenant_value(conn: asyncpg.Connection, tenant: UUID, sql: str, *args: object) -> object:
+    """One value read as `tenant` (`as_tenant`)."""
+    async with as_tenant(conn, tenant):
+        return await conn.fetchval(sql, *args)
+
+
+async def tenant_rows(
+    conn: asyncpg.Connection, tenant: UUID, sql: str, *args: object
+) -> list[asyncpg.Record]:
+    """Rows read as `tenant` (`as_tenant`)."""
+    async with as_tenant(conn, tenant):
+        return list(await conn.fetch(sql, *args))
+
+
+Write = Callable[[], Awaitable[tuple[str, str, str]]]
+
+
+async def bootstrap_write(
+    conn: asyncpg.Connection,
+    *,
+    tenant: UUID,
+    actor_kind: str,
+    actor_id: str,
+    at: datetime,
+    trace: str,
+    write: Write,
 ) -> None:
-    """One owner transaction carrying the event's tenant, actor and business time, ending with
-    the audit row the missing service would have written."""
-    kind, actor = _actor(event)
-    tenant = tenant_of(event)
+    """One owner transaction carrying the tenant, actor and business time, ending with the audit
+    row the missing service would have written (the scenario loader's and the load profiles'
+    bootstrap, `synthetic.fleet`)."""
     async with conn.transaction():
         for name, value in (
             ("app.tenant_id", str(tenant)),
-            ("app.actor_kind", kind),
-            ("app.actor_id", actor),
-            ("app.now", event.at.isoformat()),
+            ("app.actor_kind", actor_kind),
+            ("app.actor_id", actor_id),
+            ("app.now", at.isoformat()),
         ):
             await conn.execute("SELECT set_config($1, $2, true)", name, value)
         action, target_type, target_id = await write()
@@ -394,13 +440,27 @@ async def _bootstrap(
             "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, "
             "target_id, trace_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
             tenant,
-            kind,
-            actor,
+            actor_kind,
+            actor_id,
             action,
             target_type,
             target_id,
-            trace_hex(event),
+            trace,
         )
+
+
+async def _bootstrap(conn: asyncpg.Connection, event: Event, write: Write) -> None:
+    """The event's bootstrap write: its tenant, actor, business time and scenario trace."""
+    kind, actor = _actor(event)
+    await bootstrap_write(
+        conn,
+        tenant=tenant_of(event),
+        actor_kind=kind,
+        actor_id=actor,
+        at=event.at,
+        trace=trace_hex(event),
+        write=write,
+    )
 
 
 async def _firm_created(conn: asyncpg.Connection, scenario: Scenario, event: Event) -> None:
@@ -1174,6 +1234,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PORTAL_SLICE: PORTAL_NEEDS,
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
+    EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
 }
 
 
@@ -1521,6 +1582,26 @@ async def _staff_context(conn: asyncpg.Connection, event: Event) -> AuthContext:
     return AuthContext(
         TenantContext(TENANT, "human", str(user)), user, UUID(int=0), role, system_now()
     )
+
+
+async def _email_template_draft(conn: asyncpg.Connection, event: Event) -> AuthContext:
+    """R-01-T22: Grace saves the template's handoff copy as the draft, through the editor."""
+    ctx = await _staff_context(conn, event)
+    key = str(event.data["key"])
+    content = TemplateContent.from_json(cast(dict[str, object], event.data["content"]))
+    state = await email_template_state(ctx, key)
+    expected = state.draft.draft_version if state.draft is not None else 0
+    await save_email_template_draft(ctx, key, content, expected)
+    return ctx
+
+
+async def _email_template_draft_saved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await _email_template_draft(conn, event)
+
+
+async def _email_template_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _email_template_draft(conn, event)
+    await publish_email_template(ctx, str(event.data["key"]), source="handoff_seed")
 
 
 async def _flag_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
@@ -1881,6 +1962,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.acceptance_sent": _acceptance_sent,
     "engagements.acceptance_decided": _acceptance_decided,
     "engagements.member_proposed": _member_proposed,
+    # R-01-T22 (`--slice email_templates`): the editor flag (above), then versions, then drafts.
+    "communications.email_template_published": _email_template_published,
+    "communications.email_template_draft_saved": _email_template_draft_saved,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
@@ -1900,10 +1984,13 @@ class LoadResult:
 
 
 async def _already_loaded(conn: asyncpg.Connection, event: Event) -> bool:
+    tenant = tenant_of(event)
     return bool(
-        await conn.fetchval(
+        await tenant_value(
+            conn,
+            tenant,
             "SELECT EXISTS (SELECT 1 FROM audit_events WHERE tenant_id = $1 AND trace_id = $2)",
-            tenant_of(event),
+            tenant,
             trace_hex(event),
         )
     )
@@ -1912,8 +1999,11 @@ async def _already_loaded(conn: asyncpg.Connection, event: Event) -> bool:
 async def settle(conn: asyncpg.Connection, timeout: float = SETTLE_SECONDS) -> None:
     """The barrier: the tenant's outbox is empty (each async consequence has been handed on)."""
     deadline = system_now().timestamp() + timeout
-    while await conn.fetchval(
-        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND published_at IS NULL", TENANT
+    while await tenant_value(
+        conn,
+        TENANT,
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND published_at IS NULL",
+        TENANT,
     ):
         if system_now().timestamp() > deadline:
             raise SettleTimeout(f"the outbox did not drain within {timeout:.0f}s")
@@ -1938,7 +2028,9 @@ async def load(
     replayed = skipped = 0
     conn = await connect_db(dsn)
     try:
-        synthetic = await conn.fetchval("SELECT synthetic FROM firms WHERE tenant_id = $1", TENANT)
+        synthetic = await tenant_value(
+            conn, TENANT, "SELECT synthetic FROM firms WHERE tenant_id = $1", TENANT
+        )
         if synthetic is False:
             raise LoadRefused("the scenario firm exists and is not synthetic")
         await preflight(conn, scenario.events)

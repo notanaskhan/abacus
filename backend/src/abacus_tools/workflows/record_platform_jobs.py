@@ -4,7 +4,7 @@ fixture rules.
 Run: python -m abacus_tools.workflows.record_platform_jobs <output-directory>
 
 Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow`, `DrainSesEventsWorkflow`,
-`AccessEndSweepWorkflow` and the audit trail's four jobs against throwaway containers, with their
+`AccessEndSweepWorkflow` and the audit trail's five jobs against throwaway containers, with their
 activities replaced by stubs (replay never runs activities):
 - `spend-anomaly-v1-flagged.json`: one pass that flagged one engagement;
 - `notification-purge-v1-purged.json`: one pass that purged three notifications;
@@ -13,7 +13,9 @@ activities replaced by stubs (replay never runs activities):
 - `access-end-v1-swept.json`: one access-end pass that ended five members (G-01-T13);
 - `audit-partitions-v1-ensured.json`, `audit-checkpoint-v1-sealed.json`,
   `audit-chain-verify-v1-verified.json`, `audit-anchor-v1-anchored.json`: one pass of each
-  (Q-02-T20, T21).
+  (Q-02-T20, T21);
+- `audit-labels-v1-indexed.json`: one label-index pass that indexed seven events (G-02-T10,
+  DEC-453).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -30,10 +32,12 @@ from temporalio.worker import Worker
 from abacus.kernel.temporal import payload_codec
 from abacus.modules.audit_trail.api import (
     CHECKPOINT_ID,
+    LABELS_ID,
     PARTITIONS_ID,
     VERIFY_ID,
     AuditChainVerifyWorkflow,
     AuditCheckpointWorkflow,
+    AuditLabelIndexerWorkflow,
     AuditPartitionsWorkflow,
 )
 from abacus.modules.communications.api import SES_EVENTS_ID, DrainSesEventsWorkflow
@@ -54,6 +58,7 @@ _FILES = (
     "audit-checkpoint-v1-sealed.json",
     "audit-chain-verify-v1-verified.json",
     "audit-anchor-v1-anchored.json",
+    "audit-labels-v1-indexed.json",
 )
 
 
@@ -97,6 +102,11 @@ async def _anchor() -> int:
     return 2
 
 
+@activity.defn(name="audit_trail.index_labels")
+async def _labels() -> int:
+    return 7
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -121,8 +131,9 @@ async def _record(out: Path, stack: Stack) -> None:
             AuditCheckpointWorkflow,
             AuditChainVerifyWorkflow,
             AuditAnchorWorkflow,
+            AuditLabelIndexerWorkflow,
         ],
-        activities=[_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor],
+        activities=[_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor, _labels],
     ):
         runs = (
             (SpendAnomalyWorkflow, SPEND_ANOMALY_ID, _FILES[0]),
@@ -133,6 +144,7 @@ async def _record(out: Path, stack: Stack) -> None:
             (AuditCheckpointWorkflow, CHECKPOINT_ID, _FILES[5]),
             (AuditChainVerifyWorkflow, VERIFY_ID, _FILES[6]),
             (AuditAnchorWorkflow, ANCHOR_ID, _FILES[7]),
+            (AuditLabelIndexerWorkflow, LABELS_ID, _FILES[8]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():

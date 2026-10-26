@@ -36,6 +36,7 @@ from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import insert, select, update
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.classification import classified
@@ -122,6 +123,26 @@ class NasDecided(DomainConflict):
     """The engagement partner decided this NAS row; only they record another evaluation."""
 
     code = "decision_locked"
+
+
+class ConclusionSuperseded(DomainConflict):
+    """Another conclusion superseded the one this conclusion read as newest first (ED-117,
+    DEC-461): read the engagement again and conclude on the newest."""
+
+    code = "stale_version"
+
+
+# The one-successor chain (0175): one first conclusion per engagement, one successor each.
+_ONE_SUCCESSOR: Final = frozenset(
+    {"independence_conclusions_first", "independence_conclusions_tenant_id_supersedes_id_key"}
+)
+
+
+def _constraint(exc: DBAPIError) -> str | None:
+    orig = getattr(exc, "orig", None)
+    return getattr(orig, "constraint_name", None) or getattr(
+        getattr(orig, "__cause__", None), "constraint_name", None
+    )
 
 
 # --- outbox events (identifiers and codes only) ------------------------------------------------
@@ -965,6 +986,22 @@ async def conclude_independence(
     kept = (safeguards or "").strip() or None
     if option == "independent_with_safeguards" and kept is None:
         raise DomainInvalid(facts={"field": "safeguards"})
+    try:
+        view = await _conclude(ctx, engagement_id, option, kept)
+    except IntegrityError as exc:
+        # ED-117: a conclusion racing another on the same newest one loses on the one-successor
+        # chain; the unit of work rolled back, nothing of this conclusion remains (DEC-461).
+        if _constraint(exc) not in _ONE_SUCCESSOR:
+            raise
+        raise ConclusionSuperseded(facts={"engagement_id": str(engagement_id)}) from None
+    if view is None:  # never: the row was just written in this unit of work
+        raise NotFound("independence_conclusion")
+    return view
+
+
+async def _conclude(
+    ctx: AuthContext, engagement_id: UUID, option: Option, kept: str | None
+) -> ConclusionView | None:
     async with uow(ctx.tenant) as tx:
         ref = await _writable(tx, ctx, engagement_id, CONCLUDE)
         facts = await _facts(ctx, tx.session, ref)
@@ -1005,7 +1042,4 @@ async def conclude_independence(
         )
         if option in POSITIVE and not facts.breaches:
             tx.emit(GateMet(engagement_id=engagement_id, gate="G2"))
-        view = await _conclusion_view(ctx.tenant, tx.session, engagement_id)
-    if view is None:  # never: the row was just written in this unit of work
-        raise NotFound("independence_conclusion")
-    return view
+        return await _conclusion_view(ctx.tenant, tx.session, engagement_id)

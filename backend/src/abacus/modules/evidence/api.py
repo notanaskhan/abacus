@@ -9,6 +9,7 @@ from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
 from abacus.modules.evidence.anchor_job import SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
 from abacus.modules.evidence.citations.matching import (
     cell_reason as citation_cell_reason,
 )
@@ -234,6 +235,7 @@ from abacus.modules.evidence.workflows import (
     UploadProcessing,
 )
 from abacus.modules.identity.api import AbacusRouter, register_member_removed
+from abacus.modules.platform.api import register_audit_value_resolver
 from abacus.modules.requests.api import register_upload_facts
 
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -312,6 +314,9 @@ SUBSCRIPTIONS = {
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# G-02-T09 gap (DEC-459): ADM-07's values for versions and PII reveals (masked).
+register_audit_value_resolver("evidence_version", evidence_version_values)
+register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 

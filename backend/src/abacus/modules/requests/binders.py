@@ -68,6 +68,7 @@ from abacus.modules.identity.api import (
     void_grant,
 )
 from abacus.modules.requests.client_undo import FIRM_ITEM_ACTS, FirmAlreadyActed, NothingToUndo
+from abacus.modules.requests.closed_binders import refuse_closed
 from abacus.modules.requests.events import (
     BinderClosed,
     BinderMarkDoneUndone,
@@ -1053,6 +1054,7 @@ async def mark_done(ctx: AuthContext, binder_id: UUID) -> MarkedDoneView:
     _human(ctx, "binder.mark_done")
     async with uow(ctx.tenant) as tx:
         binder, _ref, _resource = await _locked(tx, ctx, binder_id, "binder.mark_done")
+        refuse_closed(ctx, binder, missing="binder")  # ED-118: read-only (DEC-461)
         if binder.status != "published":
             raise BinderNotPublished(facts={"status": binder.status})
         items = await binder_items(tx.session, binder.id)
@@ -1113,6 +1115,7 @@ async def undo_mark_done(ctx: AuthContext, binder_id: UUID) -> MarkDoneUndoneVie
     _human(ctx, "binder.mark_done")
     async with uow(ctx.tenant) as tx:
         binder, _ref, _resource = await _locked(tx, ctx, binder_id, "binder.mark_done")
+        refuse_closed(ctx, binder, missing="binder")  # ED-118: read-only (DEC-461)
         if binder.status == "published" and binder.marked_done_at is None:
             raise NothingToUndo(facts={"binder_id": str(binder.id)})
         if binder.status != "complete" or binder.marked_done_at is None:

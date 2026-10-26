@@ -38,6 +38,7 @@ from sqlalchemy import Column, FetchedValue, MetaData, RowMapping, Table, func, 
 from sqlalchemy import update as sql_update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import DateTime, Integer, Text
 
@@ -104,6 +105,11 @@ LINE_ITEM_ONLY: Final = frozenset({"form_56"})
 DEATH_FORM: Final = "706"  # Form 706 needs the date of death (CLI-06 i)
 _GATED_TINS: Final = frozenset({"ssn", "itin"})  # P-07 OQ-4, as `seal_tin`'s rule
 _NAME_MAX: Final = 190
+# ED-116 (DEC-461): the keys a second commit of the same draft meets when the first committed
+# while it ran (the entity's name or TIN, a contact's email on the client).
+_RACED: Final = frozenset(
+    {"client_entities_one_name", "client_entities_one_tin", "contacts_one_email"}
+)
 
 _meta = MetaData()
 drafts = Table(
@@ -638,7 +644,29 @@ def _groups(p: dict[str, object]) -> dict[GroupKey, list[tuple[CatalogueEntry, t
     return groups
 
 
+def _constraint(exc: DBAPIError) -> str | None:
+    orig = getattr(exc, "orig", None)
+    return getattr(orig, "constraint_name", None) or getattr(
+        getattr(orig, "__cause__", None), "constraint_name", None
+    )
+
+
 async def commit_intake(ctx: AuthContext, draft_id: UUID, start_acceptance: bool) -> Committed:
+    """One unit of work for the whole estate. A commit that loses a race with another commit of
+    the same draft (ED-116) answers what the winner stored, as a later commit would, or 409
+    `stale_version` when the draft was not committed; its unit of work rolled back (DEC-461)."""
+    try:
+        return await _commit(ctx, draft_id, start_acceptance)
+    except IntegrityError as exc:
+        if _constraint(exc) not in _RACED:
+            raise
+    done = await _stored(ctx, draft_id)
+    if done is not None:
+        return done
+    raise IntakeStaleVersion(facts={"draft_id": str(draft_id)})
+
+
+async def _commit(ctx: AuthContext, draft_id: UUID, start_acceptance: bool) -> Committed:
     await _gate(ctx)
     async with tenant_session(ctx.tenant) as session:
         found = _view(await _own_row(session, ctx, draft_id))
