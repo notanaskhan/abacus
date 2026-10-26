@@ -44,6 +44,11 @@ from abacus.modules.engagements.hold_scope import (
     work_item_engagement,
 )
 from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
+from abacus.modules.engagements.intake_contract import (
+    client_imports_router,
+    client_intake_drafts_router,
+    dedupe_router,
+)
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -239,6 +244,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     acceptance_router,
     independence_router,
     team_roles_router,
+    # The intake and import contract, v1 (P-07-T37).
+    dedupe_router,
+    client_intake_drafts_router,
+    client_imports_router,
     router,
     work_items_router,
     methodology_router,

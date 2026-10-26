@@ -18,7 +18,11 @@ from abacus.modules.organisations.contacts_contract import (
     contact_invitations_router,
     contacts_router,
 )
-from abacus.modules.organisations.contract import client_entities_router, clients_router
+from abacus.modules.organisations.contract import (
+    MaskedTinOut,
+    client_entities_router,
+    clients_router,
+)
 from abacus.modules.organisations.live import (
     NewRelationship,
     add_relationship,
@@ -136,6 +140,7 @@ __all__ = [
     "EntityChoice",
     "FirmName",
     "MaskedTin",
+    "MaskedTinOut",
     "NewClient",
     "NewContact",
     "NewRelationship",

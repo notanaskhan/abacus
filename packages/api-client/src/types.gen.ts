@@ -3862,6 +3862,265 @@ export type ClientEntityBriefOut = {
 };
 
 /**
+ * ClientImportCountsOut
+ *
+ * CLI-06 g: "204 matched · 8 to review · 0 new"; after the run, imported and skipped.
+ */
+export type ClientImportCountsOut = {
+    /**
+     * Failed
+     */
+    failed?: number;
+    /**
+     * Imported
+     */
+    imported?: number;
+    /**
+     * Matched
+     */
+    matched: number;
+    /**
+     * New
+     */
+    new: number;
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Skipped
+     */
+    skipped?: number;
+    /**
+     * To Review
+     */
+    to_review: number;
+};
+
+/**
+ * ClientImportOut
+ */
+export type ClientImportOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Completed At
+     */
+    completed_at?: string | null;
+    counts: ClientImportCountsOut;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Mapping
+     */
+    mapping?: {
+        [key: string]: string;
+    };
+    /**
+     * Source
+     */
+    source: 'cch_axcess_tax_export' | 'csv';
+    /**
+     * Stage
+     */
+    stage: 'uploaded' | 'mapped' | 'reviewing' | 'importing' | 'done' | 'failed';
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Started By
+     */
+    started_by: string;
+};
+
+/**
+ * ClientImportRowOut
+ *
+ * One parsed row: cells are inert text (ADR-052); a TIN sealed at parse and shown only in
+ * the masked shape (kind, presence, last four).
+ */
+export type ClientImportRowOut = {
+    /**
+     * Best Match Client Id
+     */
+    best_match_client_id?: string | null;
+    /**
+     * Best Match Name
+     */
+    best_match_name?: string | null;
+    /**
+     * Decided By
+     */
+    decided_by?: string | null;
+    /**
+     * Decision
+     */
+    decision?: 'new' | 'merge' | 'keep_both' | 'skip' | null;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Entity Type
+     */
+    entity_type?: string | null;
+    /**
+     * Error Code
+     */
+    error_code?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Row No
+     */
+    row_no: number;
+    /**
+     * Score
+     */
+    score?: number | null;
+    tin?: MaskedTinOut | null;
+};
+
+/**
+ * ClientImportRowsOut
+ *
+ * The list envelope's shape (P-36): rows, a cursor and the total.
+ */
+export type ClientImportRowsOut = {
+    /**
+     * Items
+     */
+    items?: Array<ClientImportRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * ClientIntakeDraftDiscardedOut
+ */
+export type ClientIntakeDraftDiscardedOut = {
+    /**
+     * Discarded At
+     */
+    discarded_at: string;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+};
+
+/**
+ * ClientIntakeDraftIn
+ */
+export type ClientIntakeDraftIn = {
+    payload?: ClientIntakeDraftPayload | null;
+    /**
+     * Step
+     */
+    step?: 'entity' | 'relationships' | 'contacts' | 'services' | 'conflicts' | 'review';
+};
+
+/**
+ * ClientIntakeDraftOut
+ */
+export type ClientIntakeDraftOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Committed Client Id
+     */
+    committed_client_id?: string | null;
+    /**
+     * Created By
+     */
+    created_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    payload: ClientIntakeDraftPayload;
+    /**
+     * Saved At
+     */
+    saved_at: string;
+    /**
+     * Step
+     */
+    step: 'entity' | 'relationships' | 'contacts' | 'services' | 'conflicts' | 'review';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ClientIntakeDraftPatchIn
+ *
+ * Autosave: absent fields are unchanged; `seen_version` behind answers 409
+ * `stale_version`.
+ */
+export type ClientIntakeDraftPatchIn = {
+    payload?: ClientIntakeDraftPayload | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Step
+     */
+    step?: 'entity' | 'relationships' | 'contacts' | 'services' | 'conflicts' | 'review' | null;
+};
+
+/**
+ * ClientIntakeDraftPayload
+ *
+ * Identifiers and typed values only: no TIN (entered on the entity, sealed, after commit),
+ * no free text beyond names (P-07 §4.2 M8).
+ */
+export type ClientIntakeDraftPayload = {
+    /**
+     * Conflict Check Id
+     */
+    conflict_check_id?: string | null;
+    /**
+     * Contacts
+     */
+    contacts?: Array<IntakeContactIn>;
+    /**
+     * Engagement Partner User Id
+     */
+    engagement_partner_user_id?: string | null;
+    entity?: IntakeEntityIn | null;
+    /**
+     * Relationships
+     */
+    relationships?: Array<IntakeRelationshipIn>;
+    /**
+     * Services
+     */
+    services?: Array<IntakeServiceIn>;
+};
+
+/**
  * ClientInvitationIn
  */
 export type ClientInvitationIn = {
@@ -5643,6 +5902,64 @@ export type DeclineIn = {
      * Note
      */
     note: string;
+};
+
+/**
+ * DedupeCandidateOut
+ *
+ * A client the person may see (walled clients are never candidates), with its score.
+ */
+export type DedupeCandidateOut = {
+    /**
+     * Basis
+     */
+    basis: 'name' | 'ein';
+    /**
+     * Client Entity Id
+     */
+    client_entity_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Entity Name
+     */
+    entity_name?: string | null;
+    /**
+     * Score
+     */
+    score: number;
+};
+
+/**
+ * DedupeIn
+ *
+ * The name is in the body so it never reaches a URL or an access log.
+ */
+export type DedupeIn = {
+    /**
+     * Kind
+     */
+    kind?: 'household' | 'business' | 'plan_sponsor' | 'nonprofit' | 'trust_family' | null;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * DedupeOut
+ */
+export type DedupeOut = {
+    /**
+     * Candidates
+     */
+    candidates?: Array<DedupeCandidateOut>;
 };
 
 /**
@@ -10164,6 +10481,181 @@ export type IndependenceSummaryOut = {
      * Total
      */
     total: number;
+};
+
+/**
+ * IntakeCommitIn
+ *
+ * "Create & start acceptance" (`start_acceptance`) or "Create".
+ */
+export type IntakeCommitIn = {
+    /**
+     * Start Acceptance
+     */
+    start_acceptance?: boolean;
+};
+
+/**
+ * IntakeCommittedOut
+ *
+ * One unit of work; a replay with the same `Idempotency-Key` answers the same body.
+ */
+export type IntakeCommittedOut = {
+    /**
+     * Acceptance Record Id
+     */
+    acceptance_record_id?: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Conflict Check Id
+     */
+    conflict_check_id?: string | null;
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+    /**
+     * Engagement Ids
+     */
+    engagement_ids?: Array<string>;
+    engagement_status: EngagementStatus;
+    /**
+     * Work Item Ids
+     */
+    work_item_ids?: Array<string>;
+};
+
+/**
+ * IntakeContactIn
+ */
+export type IntakeContactIn = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Email
+     */
+    email?: string | null;
+    /**
+     * Roles
+     */
+    roles?: Array<string>;
+};
+
+/**
+ * IntakeEntityIn
+ */
+export type IntakeEntityIn = {
+    /**
+     * Client Display Name
+     */
+    client_display_name?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Date Of Death
+     */
+    date_of_death?: string | null;
+    /**
+     * Entity Name
+     */
+    entity_name?: string | null;
+    /**
+     * Entity Type
+     */
+    entity_type?: string | null;
+    /**
+     * Mode
+     */
+    mode: 'new_client' | 'existing_client';
+};
+
+/**
+ * IntakeProblemOut
+ */
+export type IntakeProblemOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Field
+     */
+    field: string;
+};
+
+/**
+ * IntakeRelationshipIn
+ */
+export type IntakeRelationshipIn = {
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Related Entity Id
+     */
+    related_entity_id: string;
+};
+
+/**
+ * IntakeServiceIn
+ */
+export type IntakeServiceIn = {
+    /**
+     * Fiscal Period End
+     */
+    fiscal_period_end?: string | null;
+    /**
+     * Fiscal Period Start
+     */
+    fiscal_period_start?: string | null;
+    /**
+     * Type Code
+     */
+    type_code: string;
+};
+
+/**
+ * IntakeValidateIn
+ */
+export type IntakeValidateIn = {
+    /**
+     * Step
+     */
+    step: 'entity' | 'relationships' | 'contacts' | 'services' | 'conflicts' | 'review';
+};
+
+/**
+ * IntakeValidationOut
+ */
+export type IntakeValidationOut = {
+    /**
+     * Draft Id
+     */
+    draft_id: string;
+    /**
+     * Problems
+     */
+    problems?: Array<IntakeProblemOut>;
+    /**
+     * Step
+     */
+    step: 'entity' | 'relationships' | 'contacts' | 'services' | 'conflicts' | 'review';
+    /**
+     * Valid
+     */
+    valid: boolean;
 };
 
 /**
@@ -17167,6 +17659,22 @@ export type RouteProposalIn = {
      * Seen Version
      */
     seen_version: number;
+};
+
+/**
+ * RowDecisionIn
+ *
+ * A person's decision on a row; `merge` names the client it merges into.
+ */
+export type RowDecisionIn = {
+    /**
+     * Decision
+     */
+    decision: 'new' | 'merge' | 'keep_both' | 'skip';
+    /**
+     * Merge Client Id
+     */
+    merge_client_id?: string | null;
 };
 
 /**
@@ -24431,6 +24939,662 @@ export type RevealTinResponses = {
 
 export type RevealTinResponse = RevealTinResponses[keyof RevealTinResponses];
 
+export type UploadClientImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Source
+         */
+        source: 'cch_axcess_tax_export' | 'csv';
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/client-imports';
+};
+
+export type UploadClientImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UploadClientImportError = UploadClientImportErrors[keyof UploadClientImportErrors];
+
+export type UploadClientImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: ClientImportOut;
+};
+
+export type UploadClientImportResponse = UploadClientImportResponses[keyof UploadClientImportResponses];
+
+export type GetClientImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/client-imports/{import_id}';
+};
+
+export type GetClientImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetClientImportError = GetClientImportErrors[keyof GetClientImportErrors];
+
+export type GetClientImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientImportOut;
+};
+
+export type GetClientImportResponse = GetClientImportResponses[keyof GetClientImportResponses];
+
+export type ClientImportRowsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+        /**
+         * Review
+         */
+        review?: boolean;
+    };
+    url: '/v1/client-imports/{import_id}/rows';
+};
+
+export type ClientImportRowsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ClientImportRowsError = ClientImportRowsErrors[keyof ClientImportRowsErrors];
+
+export type ClientImportRowsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientImportRowsOut;
+};
+
+export type ClientImportRowsResponse = ClientImportRowsResponses[keyof ClientImportRowsResponses];
+
+export type DecideImportRowData = {
+    body: RowDecisionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+        /**
+         * Row Id
+         */
+        row_id: string;
+    };
+    query?: never;
+    url: '/v1/client-imports/{import_id}/rows/{row_id}/decision';
+};
+
+export type DecideImportRowErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecideImportRowError = DecideImportRowErrors[keyof DecideImportRowErrors];
+
+export type DecideImportRowResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientImportRowOut;
+};
+
+export type DecideImportRowResponse = DecideImportRowResponses[keyof DecideImportRowResponses];
+
+export type RunClientImportData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/client-imports/{import_id}/run';
+};
+
+export type RunClientImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RunClientImportError = RunClientImportErrors[keyof RunClientImportErrors];
+
+export type RunClientImportResponses = {
+    /**
+     * Successful Response
+     */
+    202: ClientImportOut;
+};
+
+export type RunClientImportResponse = RunClientImportResponses[keyof RunClientImportResponses];
+
+export type CreateIntakeDraftData = {
+    body: ClientIntakeDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/client-intake-drafts';
+};
+
+export type CreateIntakeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateIntakeDraftError = CreateIntakeDraftErrors[keyof CreateIntakeDraftErrors];
+
+export type CreateIntakeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: ClientIntakeDraftOut;
+};
+
+export type CreateIntakeDraftResponse = CreateIntakeDraftResponses[keyof CreateIntakeDraftResponses];
+
+export type DiscardIntakeDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/client-intake-drafts/{draft_id}';
+};
+
+export type DiscardIntakeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardIntakeDraftError = DiscardIntakeDraftErrors[keyof DiscardIntakeDraftErrors];
+
+export type DiscardIntakeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientIntakeDraftDiscardedOut;
+};
+
+export type DiscardIntakeDraftResponse = DiscardIntakeDraftResponses[keyof DiscardIntakeDraftResponses];
+
+export type GetIntakeDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/client-intake-drafts/{draft_id}';
+};
+
+export type GetIntakeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetIntakeDraftError = GetIntakeDraftErrors[keyof GetIntakeDraftErrors];
+
+export type GetIntakeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientIntakeDraftOut;
+};
+
+export type GetIntakeDraftResponse = GetIntakeDraftResponses[keyof GetIntakeDraftResponses];
+
+export type UpdateIntakeDraftData = {
+    body: ClientIntakeDraftPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/client-intake-drafts/{draft_id}';
+};
+
+export type UpdateIntakeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UpdateIntakeDraftError = UpdateIntakeDraftErrors[keyof UpdateIntakeDraftErrors];
+
+export type UpdateIntakeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientIntakeDraftOut;
+};
+
+export type UpdateIntakeDraftResponse = UpdateIntakeDraftResponses[keyof UpdateIntakeDraftResponses];
+
+export type CommitIntakeDraftData = {
+    body: IntakeCommitIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/client-intake-drafts/{draft_id}/commit';
+};
+
+export type CommitIntakeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CommitIntakeDraftError = CommitIntakeDraftErrors[keyof CommitIntakeDraftErrors];
+
+export type CommitIntakeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: IntakeCommittedOut;
+};
+
+export type CommitIntakeDraftResponse = CommitIntakeDraftResponses[keyof CommitIntakeDraftResponses];
+
+export type ValidateIntakeDraftData = {
+    body: IntakeValidateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Draft Id
+         */
+        draft_id: string;
+    };
+    query?: never;
+    url: '/v1/client-intake-drafts/{draft_id}/validate';
+};
+
+export type ValidateIntakeDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ValidateIntakeDraftError = ValidateIntakeDraftErrors[keyof ValidateIntakeDraftErrors];
+
+export type ValidateIntakeDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: IntakeValidationOut;
+};
+
+export type ValidateIntakeDraftResponse = ValidateIntakeDraftResponses[keyof ValidateIntakeDraftResponses];
+
 export type ListClientsData = {
     body?: never;
     headers?: {
@@ -24518,6 +25682,57 @@ export type ListClientsResponses = {
 };
 
 export type ListClientsResponse = ListClientsResponses[keyof ListClientsResponses];
+
+export type DedupeData = {
+    body: DedupeIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/clients/dedupe';
+};
+
+export type DedupeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DedupeError = DedupeErrors[keyof DedupeErrors];
+
+export type DedupeResponses = {
+    /**
+     * Successful Response
+     */
+    200: DedupeOut;
+};
+
+export type DedupeResponse = DedupeResponses[keyof DedupeResponses];
 
 export type GetClientData = {
     body?: never;

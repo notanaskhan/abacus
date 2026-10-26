@@ -103,3 +103,5 @@ layer, and the record locks." Today every acceptance route in
   mutable tables. Gates green (ruff, pyright, lint-imports, banned_patterns with ACCEPT-001,
   error_codes, validate_docs, scope_guards, fresh_mfa, check-heads, check-generated);
   `make generate` and the web type-check.
+- 2026-10-26: `tests/unit/api/test_app_gates.py` did not list the new completion route as a
+  200 route; fixed in the T37 commit (I did not run `tests/unit/api` before the T35 commit).

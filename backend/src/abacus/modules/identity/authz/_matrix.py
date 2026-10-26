@@ -290,6 +290,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "client.create": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "firm_manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "client.intake": {
         "firm_admin": "allow",
         "firm_partner": "allow",
@@ -355,6 +362,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "manager": "allow",
         "client_service": "allow",
         "client_admin": "allow",
+    },
+    "client_import.run": {
+        "firm_admin": "allow",
+        "firm_partner": "allow",
+        "firm_manager": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "client_item.respond": {
         "client_admin": "client_visible_only",

@@ -45,3 +45,12 @@ single intake (P-07-T42) and bulk import (P-07-T52) start from these stubs.
 
 ## Progress log
 - 2026-10-26: planned.
+- 2026-10-26: built (DEC-374). Deviations from the plan: no new flag (CLI-06's `clients.v2`
+  gates every route); the import upload is the raw request body with `source` and `filename`
+  query parameters (no multipart dependency); `client.create` is a new action (dedupe); dedupe
+  takes no EIN digits and import rows carry organisations' `MaskedTinOut` through
+  `mask_tins_for` (the plain-TIN and offshore-masking contract tests); the counts model is
+  `ClientImportCountsOut` (a name clash with requests'); the import's `stage` is a code, not a
+  registry status. Tests: `tests/contracts/intake_import/test_intake_import_stub.py` (25 pass);
+  `tests/unit/api/test_app_gates.py`'s creating-route lists gain the new routes (and the T35
+  completion route, which the T35 commit had missed). Gates green; `make generate`, web tsc.

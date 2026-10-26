@@ -16,6 +16,7 @@ from abacus_tools.codegen.security_tests import served
 from .route_checks import app, openapi_problems, public_problems, route_problems
 
 ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("DELETE", "/v1/client-intake-drafts/{draft_id}", "client.intake"),
     ("DELETE", "/v1/engagement-drafts/{draft_id}", "engagement.create"),
     (
         "DELETE",
@@ -45,6 +46,9 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/checkpoints/{checkpoint_id}", "checkpoint.read"),
     ("GET", "/v1/citations", "citation.read"),
     ("GET", "/v1/citations/{citation_id}", "citation.read"),
+    ("GET", "/v1/client-imports/{import_id}", "client_import.run"),
+    ("GET", "/v1/client-imports/{import_id}/rows", "client_import.run"),
+    ("GET", "/v1/client-intake-drafts/{draft_id}", "client.intake"),
     ("GET", "/v1/clients", "client.read"),
     ("GET", "/v1/clients/{client_id}", "client.read"),
     ("GET", "/v1/clients/{client_id}/contacts", "contact.read"),
@@ -323,6 +327,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/work-items", "work_item.read_metadata"),
     ("PATCH", "/v1/audits/{work_item_id}/profile", "engagement.update"),
     ("PATCH", "/v1/checkpoints/{checkpoint_id}", "checkpoint.rename"),
+    ("PATCH", "/v1/client-intake-drafts/{draft_id}", "client.intake"),
     ("PATCH", "/v1/clients/{client_id}", "client.update"),
     ("PATCH", "/v1/contacts/{contact_id}", "contact.manage"),
     ("PATCH", "/v1/engagement-drafts/{draft_id}", "engagement.create"),
@@ -351,6 +356,12 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/citations", "citation.create"),
     ("POST", "/v1/citations/{citation_id}/relink", "citation.relink"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
+    ("POST", "/v1/client-imports", "client_import.run"),
+    ("POST", "/v1/client-imports/{import_id}/run", "client_import.run"),
+    ("POST", "/v1/client-intake-drafts", "client.intake"),
+    ("POST", "/v1/client-intake-drafts/{draft_id}/commit", "client.intake"),
+    ("POST", "/v1/client-intake-drafts/{draft_id}/validate", "client.intake"),
+    ("POST", "/v1/clients/dedupe", "client.create"),
     ("POST", "/v1/clients/{client_id}/contacts", "contact.manage"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),
@@ -915,6 +926,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/binders/{binder_id}/follow-up-override", "binder.update"),
     ("PUT", "/v1/binders/{binder_id}/recipients", "binder.update"),
     ("PUT", "/v1/budget", "budget.manage"),
+    ("PUT", "/v1/client-imports/{import_id}/rows/{row_id}/decision", "client_import.run"),
     ("PUT", "/v1/contacts/{contact_id}/access", "client_access.grant"),
     ("PUT", "/v1/engagements/{engagement_id}/acceptance", "acceptance.record"),
     (

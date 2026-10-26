@@ -38,6 +38,12 @@ actions:
   # P-07 OQ-2 (DEC-143): Prospect-only engagements from intake and from an ENG-03 draft
   # ("Start acceptance"); accepting and staffing stay `engagement.create`. The manager path
   # lands with the live routes the DEC-132 way, as on `client.update`.
+  # P-07-T37 (DEC-374): CLI-06's dedupe (`POST /v1/clients/dedupe`); creating a client is the
+  # intake commit's (`client.intake`). Firm admin and partners and managers, derived (DEC-373).
+  client.create:            {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
+  # P-07-T37 (DEC-374): bulk import, CLI-06 g. Rows carry a masked TIN (kind and last four),
+  # masked further for an offshore reader through `mask_tins_for` (AC9.4).
+  client_import.run:        {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
   # P-07-T36 (DEC-373): the manager path lands as the derived `firm_manager`.
   client.intake:            {firm_admin: allow, firm_partner: allow, firm_manager: allow, agent: deny, system: deny}
   # --- Contacts and portal-access contract, v1 (P-07-T17 stub; P-07 §4.3, §4.4; DEC-226) ---
