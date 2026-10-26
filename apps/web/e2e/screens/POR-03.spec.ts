@@ -53,3 +53,46 @@ for (const { st, ready } of ARTBOARDS) {
     expect(serious).toEqual([]);
   });
 }
+
+// R-01-T21: all twelve POR-03 states at 1400 and on the 390 preset (the screen spec the plan names
+// por-03-documents), with the same white-label and axe checks; motion is read on its sorted frame.
+const ALL_STATES = [
+  { st: "a", ready: "Form 1095-C From Mercer Hill Health" },
+  { st: "b", ready: "Form 1095-C From Mercer Hill Health" },
+  { st: "motion", ready: "Form 1095-C From Mercer Hill Health" },
+  { st: "c", ready: "Suggested — Brightwater Hale will confirm" },
+  { st: "c2", ready: "Form 1095-C From Mercer Hill Health" },
+  { st: "d", ready: "Scan_0914.pdf" },
+  { st: "e", ready: "Marked done Sep 14 · Brightwater Hale will review your documents" },
+  { st: "f", ready: "Not applicable this year" },
+  { st: "g", ready: "Returned · wrong year" },
+  { st: "h", ready: "You’re all caught up." },
+  { st: "i", ready: "Employee census file — 2025" },
+  { st: "M", ready: "2 to do" },
+] as const;
+
+for (const size of [
+  { width: 1400, height: 900 },
+  { width: 390, height: 844 },
+] as const) {
+  test.describe(`POR-03 at ${String(size.width)}`, () => {
+    test.use({ viewport: size, deviceScaleFactor: 2, reducedMotion: "reduce" });
+
+    for (const { st, ready } of ALL_STATES) {
+      test(`POR-03${st}: white-labelled and axe finds nothing serious`, async ({ page }) => {
+        await page.goto(`/components/screens/POR-03?st=${st}&frame=1&static=1`);
+        const board = page.locator(`[data-artboard='${st}']`);
+        await expect(board).toBeVisible();
+        await expect(board.getByText(ready).first()).toBeVisible();
+        expect(await board.innerText()).not.toMatch(FIRM_WORDS);
+        const { violations } = await new AxeBuilder({ page })
+          .include(`[data-artboard='${st}']`)
+          .analyze();
+        const serious = violations
+          .filter((v) => SERIOUS.has(v.impact ?? ""))
+          .map((v) => `${v.id}: ${v.help} — ${v.nodes[0]?.target.join(" ") ?? ""}`);
+        expect(serious).toEqual([]);
+      });
+    }
+  });
+}
