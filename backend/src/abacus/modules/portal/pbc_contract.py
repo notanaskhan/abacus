@@ -7,9 +7,9 @@ ignore and mark-done undo and the firm's void of a rule fulfilment in `requests/
 the drop itself in `evidence/drops_contract.py`.
 
 Behind `portal.documents_v2` (binders, request), `portal.third_party_room` (room, suggest) and
-`portal.drop_sort` (drop batches): off, each route answers 404; on, 501 `not_implemented` until
-R-01-T13 (room) lands. The documents routes are live since R-01-T07, in `documents_routes.py`
-over the read model `documents.py`; the drop poll is served (R-01-T09).
+`portal.drop_sort` (drop batches): off, each route answers 404. Every route is live: the
+documents routes since R-01-T07 (`documents_routes.py` over `documents.py`), the drop poll here
+since R-01-T09, the room and its suggest since R-01-T13 (`rooms_routes.py` over `rooms.py`).
 
 These are a client's views. No field carries a firm status code, an amount, a confidence, a
 screening verdict, an agent name or another party's data: rows carry the client words (`to_do`,
@@ -22,16 +22,16 @@ frontend copy registry (ADR P-36 code to words). Every list is filtered by the c
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import PORTAL_DROP_SORT, PORTAL_THIRD_PARTY_ROOM
+from abacus.kernel._flags import PORTAL_DROP_SORT
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import Flag, flag_enabled
+from abacus.kernel.errors import NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import SingleLineText
 from abacus.modules.evidence.api import drop_batch
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
@@ -349,36 +349,7 @@ class DropBatchOut(BaseModel):
     settled: Annotated[bool, classified("internal")]
 
 
-async def _stub(ctx: AuthContext, flag: Flag) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
-    raise NotImplementedYet
-
-
 pbc_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
-
-
-@pbc_router.get(
-    "/room",
-    action="portal_documents.read",
-    response_model=PortalRoomOut,
-    errors=(501,),
-)
-async def get_portal_room_route(ctx: Member) -> PortalRoomOut:
-    """POR-14: the caller's delegated request items, by band."""
-    await _stub(ctx, PORTAL_THIRD_PARTY_ROOM)
-
-
-@pbc_router.post(
-    "/room/suggest",
-    action="portal_documents.read",
-    response_model=RoomSuggestOut,
-    errors=(501,),
-)
-async def suggest_room_request_route(body: RoomSuggestIn, ctx: Member) -> RoomSuggestOut:
-    """ "Which request is this for?": code-only file-name scoring among the caller's delegated
-    items. Writes nothing."""
-    await _stub(ctx, PORTAL_THIRD_PARTY_ROOM)
 
 
 @pbc_router.get(

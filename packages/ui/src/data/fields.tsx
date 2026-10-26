@@ -1,6 +1,7 @@
 import { type JSX, useState, useSyncExternalStore } from "react";
 import { cn } from "../cn";
 import { Amount } from "../components/amount";
+import { Button } from "../components/button";
 import type { ForceState } from "../force-state";
 import { type AmountStyle } from "../format";
 import { Icon } from "../icons";
@@ -35,6 +36,9 @@ export interface FieldItem {
   flagged?: boolean;
   /** Where the value came from: "Northwind Robotics W-2 2025.pdf · page 1 · box 1". */
   source?: string;
+  /** The agent's proposed value, not yet accepted: the value in a dashed match box, with a
+   * person's Accept and Reject under it (TPL-09a; the ghost value is one of the three purples). */
+  proposed?: boolean;
 }
 
 export interface FieldBlockProps {
@@ -48,6 +52,9 @@ export interface FieldBlockProps {
   selected?: string | null;
   onSelect?: (row: FieldItem) => void;
   onFlag?: (row: FieldItem, flagged: boolean) => void;
+  /** A proposed value's Accept (it opens the approve modal) and Reject. */
+  onAccept?: (row: FieldItem) => void;
+  onReject?: (row: FieldItem) => void;
   /** Hold one row in a state for a specimen. */
   forceState?: { row: string; state: Extract<ForceState, "hover" | "open"> };
   className?: string;
@@ -65,6 +72,8 @@ export function FieldBlock({
   selected,
   onSelect,
   onFlag,
+  onAccept,
+  onReject,
   forceState,
   className,
 }: FieldBlockProps): JSX.Element {
@@ -83,6 +92,8 @@ export function FieldBlock({
             selected={selected === row.id}
             {...(onSelect === undefined ? {} : { onSelect })}
             {...(onFlag === undefined ? {} : { onFlag })}
+            {...(onAccept === undefined ? {} : { onAccept })}
+            {...(onReject === undefined ? {} : { onReject })}
             {...(forceState?.row === row.id ? { forceState: forceState.state } : {})}
           />
         ))}
@@ -97,6 +108,8 @@ export interface FieldRowProps {
   selected?: boolean;
   onSelect?: (row: FieldItem) => void;
   onFlag?: (row: FieldItem, flagged: boolean) => void;
+  onAccept?: (row: FieldItem) => void;
+  onReject?: (row: FieldItem) => void;
   forceState?: Extract<ForceState, "hover" | "open">;
 }
 
@@ -108,6 +121,8 @@ export function FieldRow({
   selected = false,
   onSelect,
   onFlag,
+  onAccept,
+  onReject,
   forceState,
 }: FieldRowProps): JSX.Element {
   const store = useMatchStore();
@@ -144,18 +159,56 @@ export function FieldRow({
       >
         {row.label}
       </span>
-      <span
-        data-field-value=""
-        style={{ width: valueWidth }}
-        className={cn(
-          "-my-[3px] flex-none rounded-value px-[6px] py-[3px] text-right whitespace-nowrap tabular-nums",
-          "transition-[background-color,box-shadow] duration-[360ms]",
-          lit && "bg-match-bg ring-1 ring-match-line",
-          row.mismatch === true && "text-red-ink",
-        )}
-      >
-        {row.value === null ? "" : <Amount value={row.value} style={row.format ?? "cents"} />}
-      </span>
+      {row.proposed === true ? (
+        <span
+          data-field-proposed=""
+          style={{ width: valueWidth }}
+          className="flex flex-none flex-col items-end gap-[6px]"
+        >
+          <span
+            data-field-value=""
+            aria-label={`Proposed value for ${row.label}`}
+            className="w-full rounded-value border border-dashed border-match-line bg-match-bg px-[6px] py-[2px] text-right whitespace-nowrap text-match-ink tabular-nums"
+          >
+            {row.value === null ? "" : <Amount value={row.value} style={row.format ?? "cents"} />}
+          </span>
+          <span className="flex gap-[6px]">
+            <Button
+              variant="primary"
+              size="xs"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAccept?.(row);
+              }}
+            >
+              Accept
+            </Button>
+            <Button
+              variant="secondary"
+              size="xs"
+              onClick={(event) => {
+                event.stopPropagation();
+                onReject?.(row);
+              }}
+            >
+              Reject
+            </Button>
+          </span>
+        </span>
+      ) : (
+        <span
+          data-field-value=""
+          style={{ width: valueWidth }}
+          className={cn(
+            "-my-[3px] flex-none rounded-value px-[6px] py-[3px] text-right whitespace-nowrap tabular-nums",
+            "transition-[background-color,box-shadow] duration-[360ms]",
+            lit && "bg-match-bg ring-1 ring-match-line",
+            row.mismatch === true && "text-red-ink",
+          )}
+        >
+          {row.value === null ? "" : <Amount value={row.value} style={row.format ?? "cents"} />}
+        </span>
+      )}
       <span
         className={cn(
           "flex flex-none items-center gap-[2px] opacity-0 transition-opacity duration-[180ms]",

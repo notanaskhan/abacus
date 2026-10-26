@@ -15,7 +15,9 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
 from abacus.kernel.uow import Target, uow
 from abacus.kernel.uow.chain import (
+    LEAF_COLUMNS,
     LEAF_V1_COLUMNS,
+    LEAF_VERSION,
     chain_hash,
     latest_checkpoint,
     leaf,
@@ -80,8 +82,9 @@ async def test_q02t21_a_new_audit_column_must_join_the_leaf(seed: Seeder) -> Non
     rows = await seed.rows(
         "SELECT column_name FROM information_schema.columns WHERE table_name = 'audit_events'"
     )
-    # R7: a column the canonical form doesn't list means leaf version 2, in the same change.
-    assert {str(r["column_name"]) for r in rows} == set(LEAF_V1_COLUMNS)
+    # R7: a column the canonical form doesn't list means the next leaf version, in the same
+    # change (G-02-T06 moved it to version 2 with migration 0172).
+    assert {str(r["column_name"]) for r in rows} == set(LEAF_COLUMNS[LEAF_VERSION])
 
 
 async def test_ac26_checkpoints_chain_and_an_unaltered_log_verifies(seed: Seeder) -> None:

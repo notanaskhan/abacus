@@ -3,6 +3,7 @@
 from abacus.ai_gateway import register_client_data_facts
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
+from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
@@ -156,6 +157,8 @@ __all__ = [
     "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
+    "AiPolicyLoosened",
+    "ApproverMustDiffer",
     "Citation",
     "CitationStates",
     "DraftOutcome",

@@ -80,7 +80,7 @@ describe("SHL-13 agent dock", () => {
     expect(screen.queryByRole("button", { name: /approve|decide|sign off/i })).toBeNull();
   });
 
-  it("opens the trace drawer", async () => {
+  it("opens the trace drawer through the overlay", async () => {
     mockApi({
       [`GET /v1/engagements/${E}/agent-runs`]: () => json([RUN]),
       [`GET /v1/agent-runs/r-1/trace`]: () =>

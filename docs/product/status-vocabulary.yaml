@@ -491,7 +491,7 @@ objects:
   integration:   # catalogue and connection (repo object: connection)
     source: "blueprint 3.3.1; 9.5.6"
     codes:
-      available:    {label: "Available",  variant: outline, terminal: false, derived: false}
+      available:    {label: "Available",  variant: outline, terminal: false, derived: false, client_label: "Not connected"}   # POR-16 a: a catalogue card with no connection (A-02-T06, C20 v1)
       connecting:   {label: "Connecting", variant: null, disc: spinner, terminal: false, derived: false}
       connected:    {label: "Connected",  variant: null, disc: check_olive, terminal: false, derived: false}
       needs_attention: {label: "Needs attention", variant: amber, terminal: false, derived: false}   # blueprint canonical state Degraded; split from needs_reauth on failure code
@@ -666,6 +666,7 @@ objects:
       same_family_not_adverse: {label: "Same family · not adverse", variant: green-tint, terminal: true, derived: false}
       not_adverse:             {label: "Not adverse", variant: green-tint, terminal: true, derived: false}   # cleared by a manager or partner with a reason
       counterparty_review:     {label: "Counterparty · {relationship} — review", variant: amber, terminal: false, derived: false}   # CLI-06 h "Counterparty · custodian for Calloway Family Trust — review"
+      conflict:                {label: "Conflict", variant: red-tint, terminal: true, derived: false}   # P-07-T36 (SPEC-332 AC-25): a person records the hit as a conflict
 
   nas_evaluation:   # nas_evaluations.status (P-07 M7); CLI-08 b NAS matrix Status column
     source: "CLI-08 b"
@@ -735,6 +736,40 @@ objects:
       active:    {label: "Active", variant: amber, terminal: false, derived: false}
       releasing: {label: "Releasing", variant: state, terminal: false, derived: false}   # lifted; S3 holds coming off where no other hold covers the object
       released:  {label: "Released", variant: muted, terminal: true, derived: false}
+
+  # ---- Firm governance v1 (G-02-T02; DF-31; SPEC-349). Pills are set by the screen contracts
+  # (G-02-T03), so every variant is null here; none is invented. ----
+  ai_policy_version:
+    source: "DF-31; G-02 section 0.1 (ADM-04 a, d, g, j; ADR-186)"
+    codes:
+      draft:             {label: "Draft", variant: null, terminal: false, derived: false}   # the firm's one editable draft
+      awaiting_approval: {label: "Awaiting approval", variant: null, terminal: false, derived: false}   # "Awaiting approval · {name}" on ADM-04
+      published:         {label: "Published", variant: null, terminal: false, derived: false}
+      declined:          {label: "Declined", variant: null, terminal: true, derived: false}
+      withdrawn:         {label: "Withdrawn", variant: null, terminal: true, derived: false}
+      superseded:        {label: "Superseded", variant: null, terminal: true, derived: true}   # a later published version is effective; never stored
+
+  security_incident:
+    source: "DF-31 incident; G-02 section 3.7 (ADM-06 a, d)"
+    codes:
+      investigating: {label: "Investigating", variant: null, terminal: false, derived: false}
+      closed:        {label: "Closed", variant: null, terminal: true, derived: false}
+
+  firm_export:
+    source: "DF-31 export; G-02 section 3.8 (ADM-06 c, f, g); codes of Q-02's firm-export contract"
+    codes:
+      awaiting_approval: {label: "Waiting for approval", variant: null, terminal: false, derived: false}   # "Waiting for approval · {name}"
+      ready:             {label: "Ready", variant: null, terminal: false, derived: false}
+      downloaded:        {label: "Downloaded", variant: null, terminal: false, derived: false}
+      expired:           {label: "Expired", variant: null, terminal: true, derived: false}
+
+  support_session:
+    source: "DF-31 support session; G-02 section 3.9 (ADM-06 support card); codes of support_sessions (SPEC-012)"
+    codes:
+      requested: {label: "Awaiting firm approval", variant: null, terminal: false, derived: false}
+      active:    {label: "Granted until {time}", variant: null, terminal: false, derived: false}
+      declined:  {label: "Declined", variant: null, terminal: true, derived: false}   # stored from G-02-T14 (DEC-72)
+      revoked:   {label: "Revoked", variant: null, terminal: true, derived: false}
 
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---

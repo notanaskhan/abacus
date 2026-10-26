@@ -1,9 +1,14 @@
 // AUD-06 a–h and the five added states (A-02-T05): one scenario per artboard. The data and handlers
 // live under fixtures/scenarios/AUD-06.ts; OPENS names the engagement, TB, tab, layer and overlay
 // each artboard opens on. A-02-T09 (a, c) and A-02-T14 (b, d, e, g, h) draw the screen on them.
-import { OPENS, scenarios } from "../../fixtures/scenarios/AUD-06";
+import {
+  NORTHWIND_AUDIT,
+  NORTHWIND_ENGAGEMENT,
+  OPENS,
+  scenarios,
+} from "../../fixtures/scenarios/AUD-06";
 
-export { OPENS, scenarios };
+export { NORTHWIND_AUDIT, NORTHWIND_ENGAGEMENT, OPENS, scenarios };
 
 export type Aud06State = keyof typeof scenarios;
 

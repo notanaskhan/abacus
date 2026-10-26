@@ -1,0 +1,20 @@
+# The audit_trail module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: audit_log.explorer
+    description: 'The audit-log explorer (G-02, SPEC-349; ADM-07): GET /v1/audit-events and its detail, and the export request, status and link routes. Off: those routes answer 404 and the legacy explorer (GET /v1/firm/audit-events, SPEC-304) is unchanged. On: 501 not_implemented until G-02-T08 (list, detail) and G-02-T17 (export) land. Renewed or retired in G-02-T27.'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audit_log.values
+    description: 'Read-time value resolution on the audit-log detail and include-values exports (G-02-T09; DEC-60). Off: every values section answers `withheld` with reason `not_enabled` and exports carry metadata only. Held off for real firms until pen-test delta #1 retest closes (DEC-415 Q11). Renewed or retired in G-02-T27.'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

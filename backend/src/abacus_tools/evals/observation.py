@@ -24,3 +24,7 @@ class Observation:
     budget_usd: Decimal = Decimal(0)
     error: str | None = None
     latency_ms: int | None = None  # SPEC-026: the screening call, for the milestone report
+    # P-03-T17 (report-only `citation_region_resolved`): verified document_text citations the run
+    # wrote, and how many of them carry a region.
+    regions_cited: int = 0
+    regions_resolved: int = 0

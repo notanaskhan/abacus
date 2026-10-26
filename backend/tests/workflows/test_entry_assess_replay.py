@@ -17,7 +17,12 @@ IDS = [p.stem for p in ALL]
 
 
 def test_ac3_the_histories_are_committed() -> None:
-    assert IDS == ["entry-assess-v1-completed", "entry-assess-v1-skipped"]
+    assert IDS == [
+        "entry-assess-v1-completed",
+        "entry-assess-v1-skipped",
+        "entry-assess-v2-completed",  # Q-02-T41: the run record is persisted (run_record_v1)
+        "entry-assess-v2-failed",
+    ]
 
 
 @pytest.mark.parametrize("path", ALL, ids=IDS)

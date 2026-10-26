@@ -19,6 +19,7 @@ GROUPS = frozenset(
     | {"portal_access"}  # P-07-T25 (DEC-303), P-08-T21: a client's portal unlock and MFA reset
     | {"team"}  # P-07-T30 (DEC-327): the engagement partner's team approval
     | {"access_control"}  # P-08-T21 security review: security-role changes
+    | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
 )
 
 
@@ -43,6 +44,14 @@ def test_ac42_a_listed_action_needs_a_fresh_second_factor(action: str) -> None:
 
 def test_ac42_the_legal_hold_and_export_writes_are_listed() -> None:
     assert {"legal_hold.place", "legal_hold.lift", "firm_export.approve"} <= set(LISTED)
+
+
+def test_g02_ac45_the_governance_writes_need_a_fresh_second_factor() -> None:
+    """SPEC-349 AC-45 (G-02-T02): the firm-governance writes are on the list."""
+    governance = {"incident.decide", "ai_policy.publish", "ai_policy.approve"}
+    governance |= {"audit_event.export", "firm_export.schedule", "security.manage"}
+    governance |= {"session.end", "staff.unlock"}
+    assert governance <= set(LISTED)
     assert "trial_balance.export" in LISTED  # A-02 security review (DEC-316, amended)
 
 

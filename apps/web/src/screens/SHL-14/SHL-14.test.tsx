@@ -1,7 +1,8 @@
-// SHL-14 · Request composer drawer (P-06-T13). One test per state this task builds (a, b, e, f)
-// on its fixture scenario, the R2 items 1–5, the dirty guard, the send flow against the C5
-// routes, and the task's acceptance: "A Draft never offers Save & send without a due date and
-// Approve & send records the person as sender."
+// SHL-14 · Request composer drawer (P-06-T13, P-06-T24). One test per state built (a, b, e, f
+// and the close variant d) on its fixture scenario, the R2 items 1–5, the dirty guard, the send
+// flow against the C5 routes, and the acceptances: "A Draft never offers Save & send without a
+// due date and Approve & send records the person as sender" (T13) and "Raj marks the Square
+// payouts upload Incorporated and the pill turns green" (T24).
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
@@ -14,6 +15,7 @@ import {
 import { renderRoutes } from "../../testing/support";
 import { RequestComposer } from ".";
 import { CLOCK_A, CLOCK_F, OPENS, STATES, type Shl14State, scenarios } from "./scenarios";
+import { SQUARE_FILE } from "../../fixtures/scenarios/SHL-14";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -61,6 +63,20 @@ function show(state: Shl14State): Seen {
   return seen;
 }
 
+async function engagementOf(state: Shl14State): Promise<string> {
+  const binder = (await (
+    await scenarios[state].handlers["GET /v1/binders/{binder_id}"]?.({
+      method: "GET",
+      path: "",
+      params: { binder_id: OPENS[state].binderId },
+      query: new URLSearchParams(),
+      body: null,
+      persona: scenarios[state].persona,
+    })
+  )?.json()) as { engagement_id: string };
+  return binder.engagement_id;
+}
+
 function drawer(): HTMLElement {
   return screen.getByRole("dialog");
 }
@@ -79,8 +95,10 @@ async function choose(label: RegExp, option: string): Promise<void> {
 }
 
 describe("SHL-14 states", () => {
-  it("defines a, b and e as Marcus Delaney on Sep 14 and f as Cole Hart on Sep 24", () => {
-    expect(STATES).toEqual(["a", "b", "e", "f"]);
+  it("defines a, b and e as Marcus Delaney on Sep 14, f as Cole Hart on Sep 24 and d as Raj Malhotra", () => {
+    expect(STATES).toEqual(["a", "b", "e", "f", "d"]);
+    expect(scenarios.d.persona).toBe("raj-malhotra");
+    expect(scenarios.d.clock).toBe(CLOCK_A);
     for (const s of ["a", "b", "e"] as const) {
       expect(scenarios[s].persona).toBe("marcus-delaney");
       expect(scenarios[s].clock).toBe(CLOCK_A);
@@ -169,9 +187,78 @@ describe("SHL-14 states", () => {
       ),
     ).toBeTruthy();
   });
+
+  it("SHL-14d close variant: Square payouts — August on Copperleaf's close intake, Pending incorporation", async () => {
+    show("d");
+    expect(await screen.findByRole("heading", { name: "Request" })).toBeTruthy();
+    expect(await within(drawer()).findByText("Document Request")).toBeTruthy();
+    expect(within(drawer()).getByText("Square payouts — August")).toBeTruthy();
+    expect(await within(drawer()).findByText("Bank & Cash Accounts")).toBeTruthy();
+    expect(
+      within(drawer()).getByRole("tab", { name: "Client" }).getAttribute("aria-selected"),
+    ).toBe("true");
+    expect(await within(drawer()).findByText("Raj Malhotra")).toBeTruthy();
+    expect(within(drawer()).getByText("Sep 1, 2026")).toBeTruthy();
+    expect(await within(drawer()).findByText("Uploaded Document")).toBeTruthy();
+    expect(within(drawer()).getByText(SQUARE_FILE)).toBeTruthy();
+    expect(within(drawer()).getByText("Ben Ashby")).toBeTruthy();
+    expect(within(drawer()).getByText("Sep 3, 2026")).toBeTruthy();
+    expect(within(drawer()).getByText("Pending incorporation")).toBeTruthy();
+    expect(within(drawer()).getByRole("button", { name: "Mark incorporated" })).toBeTruthy();
+    expect(within(drawer()).getByRole("button", { name: "Return…" })).toBeTruthy();
+    // The composer's own controls are not offered on an upload under review.
+    expect(within(drawer()).queryByRole("button", { name: "Save draft" })).toBeNull();
+    expect(within(drawer()).queryByText("People")).toBeNull();
+  });
+
+  it("SHL-14d Return… opens the return dialog on Ben Ashby's upload", async () => {
+    show("d");
+    fireEvent.click(
+      await within(await screen.findByRole("dialog")).findByRole("button", { name: "Return…" }),
+    );
+    expect(await screen.findByRole("heading", { name: "Return to client" })).toBeTruthy();
+  });
 });
 
 describe("SHL-14 acceptance", () => {
+  it("SHL-14 acceptance: Raj marks the Square payouts upload Incorporated and the pill turns green", async () => {
+    const seen = show("d");
+    const pending = await within(await screen.findByRole("dialog")).findByText(
+      "Pending incorporation",
+    );
+    expect(pending.closest("[data-incorporation]")?.getAttribute("data-incorporation")).toBe(
+      "pending_incorporation",
+    );
+    fireEvent.click(within(drawer()).getByRole("button", { name: "Mark incorporated" }));
+    const done = await within(drawer()).findByText("Incorporated");
+    expect(done.closest(".bg-green")).not.toBeNull();
+    expect(within(drawer()).queryByText("Pending incorporation")).toBeNull();
+    expect(within(drawer()).queryByRole("button", { name: "Mark incorporated" })).toBeNull();
+    const writes = seen.calls.filter((c) => c.method !== "GET");
+    expect(writes.map((c) => c.path)).toEqual([
+      `/v1/engagements/${await engagementOf("d")}/request-items/${OPENS.d.requestId ?? ""}/incorporate`,
+    ]);
+  });
+
+  it("SHL-14 acceptance: close variant figures tie (73,166.90 − 1,684.54 = 71,482.36)", () => {
+    // spec.md state 4's summary figures, in cents: gross less fees is the net deposits.
+    expect(7_316_690 - 168_454).toBe(7_148_236);
+  });
+
+  it("SHL-14 acceptance: the close binder holds 8 recurring + 1 ad hoc = 9 requests, 7 received", async () => {
+    const binder = (await (
+      await scenarios.d.handlers["GET /v1/binders/{binder_id}"]?.({
+        method: "GET",
+        path: "",
+        params: { binder_id: OPENS.d.binderId },
+        query: new URLSearchParams(),
+        body: null,
+        persona: "raj-malhotra",
+      })
+    )?.json()) as { kind: string; total_count: number; done_count: number };
+    expect(binder).toMatchObject({ kind: "close_intake", total_count: 9, done_count: 7 });
+  });
+
   it("P-06 §3.3: a new request is created, given its fields and sent by the person, then toasts", async () => {
     const seen = show("a");
     await screen.findByRole("heading", { name: "New request" });

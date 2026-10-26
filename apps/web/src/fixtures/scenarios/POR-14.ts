@@ -51,16 +51,31 @@ const roomAt = (
   },
 });
 
+const BUILD = {
+  a: () => roomAt("a", "sam-ortiz", KEYSTONE_A),
+  b: () => roomAt("b", "sam-ortiz", KEYSTONE_B, ROOM_CLOCKS.b),
+  c: () => roomAt("c", "sam-ortiz", KEYSTONE_C, ROOM_CLOCKS.c),
+  d: () => roomAt("d", "harborline-certifications", HARBORLINE_D, ROOM_CLOCKS.d),
+  e: () => roomAt("e", "sam-ortiz", KEYSTONE_E, ROOM_CLOCKS.e),
+  f: () => roomAt("f", "sam-ortiz", undefined),
+} as const;
+
+export type Por14State = keyof typeof BUILD;
+
 export const scenarios = defineScenarios({
-  a: roomAt("a", "sam-ortiz", KEYSTONE_A),
-  b: roomAt("b", "sam-ortiz", KEYSTONE_B, ROOM_CLOCKS.b),
-  c: roomAt("c", "sam-ortiz", KEYSTONE_C, ROOM_CLOCKS.c),
-  d: roomAt("d", "harborline-certifications", HARBORLINE_D, ROOM_CLOCKS.d),
-  e: roomAt("e", "sam-ortiz", KEYSTONE_E, ROOM_CLOCKS.e),
-  f: roomAt("f", "sam-ortiz", undefined),
+  a: BUILD.a(),
+  b: BUILD.b(),
+  c: BUILD.c(),
+  d: BUILD.d(),
+  e: BUILD.e(),
+  f: BUILD.f(),
 });
 
-export type Por14State = keyof typeof scenarios;
+/** A scenario with handlers of its own: the writes it answers (an upload, a comment, a
+ * withdrawal) change only its own room (tests that write start from the artboard each time). */
+export function freshScenario(state: Por14State): Scenario {
+  return BUILD[state]();
+}
 
 export const ARTBOARD: Readonly<Record<Por14State, Por14Artboard>> = {
   a: { expanded: BRIDGE_ID },

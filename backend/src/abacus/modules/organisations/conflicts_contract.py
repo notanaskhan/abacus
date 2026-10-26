@@ -2,8 +2,8 @@
 ADR-139, P-36). Contract: `docs/contracts/acceptance-independence.md` §Conflicts; spec: SPEC-332
 Story 7; DEC-326.
 
-Behind `engagements.acceptance_v2`: off, every route here answers 404; on, 501 `not_implemented`
-until P-07-T36 implements it (the `conflict_checks` migration and the deterministic search).
+Behind `engagements.acceptance_v2`: off, every route here answers 404; on, live since P-07-T36
+(migration 0164 and `organisations.conflicts`; DEC-373).
 
 - A check runs synchronously over at most 50 names, searching clients, client entities, contacts,
   relationships and engagement counterparties as a system principal over metadata only; the
@@ -20,7 +20,7 @@ until P-07-T36 implements it (the `conflict_checks` migration and the determinis
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends
@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2
 from abacus.kernel._statuses import ConflictAssessmentStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import (
@@ -40,6 +40,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.organisations import conflicts
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -47,7 +48,7 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 SubjectKind = Literal["client", "client_entity", "engagement_draft", "client_intake_draft"]
 CheckOutcome = Literal["pending", "clear", "hits"]
 MatchKind = Literal["exact", "trigram", "relationship", "counterparty"]
-# AC-25's clearance codes; `conflict` joins the `conflict_assessment` vocabulary with P-07-T36.
+# AC-25's clearance codes; `conflict` joined the `conflict_assessment` vocabulary with P-07-T36.
 ClearAssessment = Literal[
     "clear", "same_family_not_adverse", "not_adverse", "counterparty_review", "conflict"
 ]
@@ -110,6 +111,9 @@ class ConflictCheckOut(BaseModel):
     run_by: Annotated[UUID, classified("internal")]
     run_at: Annotated[datetime, classified("internal")]
     results: Annotated[list[ConflictResultOut], classified("confidential")] = []
+    # DEC-375: a match on a client this reader is walled from, as one flag (and one restricted
+    # row), never a count or a kind.
+    restricted_match: Annotated[bool, classified("internal")] = False
 
 
 class ConflictClearIn(BaseModel):
@@ -145,15 +149,19 @@ class ScreeningRecordOut(BaseModel):
     recorded_at: Annotated[datetime, classified("internal")]
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """Security review (DEC-326): authorise before the flag or the stub answers (the audits
-    contract's order). Firm-level: no client principal, agent or system runs or reads a check."""
+async def _gate(ctx: AuthContext, action: str) -> None:
+    """Security review (DEC-326): authorise before the flag is read (the audits contract's
+    order). Firm-level: no client principal, agent or system runs or reads a check. The service
+    then requires a live person and authorises again."""
     if ctx.client or ctx.tenant.actor_kind != "human":
         raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
         raise NotFound("engagements.acceptance_v2")
-    raise NotImplementedYet
+
+
+def _check_out(view: conflicts.CheckView) -> ConflictCheckOut:
+    return ConflictCheckOut.model_validate(view, from_attributes=True)
 
 
 conflict_checks_router = AbacusRouter(prefix="/v1/conflict-checks", tags=["conflicts"])
@@ -161,41 +169,56 @@ screening_records_router = AbacusRouter(prefix="/v1/screening-records", tags=["c
 
 
 @conflict_checks_router.post(
-    "", action="conflict.run", response_model=ConflictCheckOut, status_code=201, errors=(501,)
+    "", action="conflict.run", response_model=ConflictCheckOut, status_code=201
 )
 async def run_conflict_check_route(body: ConflictCheckIn, ctx: Ctx) -> ConflictCheckOut:
-    """AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`."""
-    await _stub(ctx, "conflict.run")
+    """AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`.
+    A client or client-entity subject the caller cannot see answers 404."""
+    await _gate(ctx, "conflict.run")
+    view = await conflicts.run_conflict_check(
+        ctx, subject_kind=body.subject.kind, subject_id=body.subject.id, names=body.names
+    )
+    return _check_out(view)
 
 
-@conflict_checks_router.get(
-    "/{check_id}", action="conflict.run", response_model=ConflictCheckOut, errors=(501,)
-)
+@conflict_checks_router.get("/{check_id}", action="conflict.run", response_model=ConflictCheckOut)
 async def get_conflict_check_route(check_id: UUID, ctx: Ctx) -> ConflictCheckOut:
     """The check and its results, walled matches redacted for this reader."""
-    await _stub(ctx, "conflict.run")
+    await _gate(ctx, "conflict.run")
+    return _check_out(await conflicts.conflict_check(ctx, check_id))
 
 
 @conflict_checks_router.post(
     "/{check_id}/results/{result_id}/clear",
     action="conflict.clear",
     response_model=ConflictResultOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def clear_conflict_result_route(
     check_id: UUID, result_id: UUID, body: ConflictClearIn, ctx: Ctx
 ) -> ConflictResultOut:
-    """Human-only (AC-25): an insert-only event; `conflict.cleared`."""
-    await _stub(ctx, "conflict.clear")
+    """Human-only (AC-25): an insert-only event; `conflict.cleared`. A result on a client the
+    caller is walled from answers 404 like an unknown one."""
+    await _gate(ctx, "conflict.clear")
+    result = await conflicts.clear_conflict_result(
+        ctx, check_id, result_id, assessment=body.assessment, reason=body.reason
+    )
+    return ConflictResultOut.model_validate(result, from_attributes=True)
 
 
 @screening_records_router.post(
-    "",
-    action="screening.record",
-    response_model=ScreeningRecordOut,
-    status_code=201,
-    errors=(501,),
+    "", action="screening.record", response_model=ScreeningRecordOut, status_code=201
 )
 async def record_screening_route(body: ScreeningRecordIn, ctx: Ctx) -> ScreeningRecordOut:
     """AC-26: insert-only; `screening.recorded`."""
-    await _stub(ctx, "screening.record")
+    await _gate(ctx, "screening.record")
+    recorded = await conflicts.record_screening(
+        ctx,
+        subject_kind=body.subject.kind,
+        subject_id=body.subject.id,
+        screening_list=body.screening_list,
+        result=body.result,
+        evidence_version_id=body.evidence_version_id,
+        note=body.note,
+    )
+    return ScreeningRecordOut.model_validate(recorded, from_attributes=True)

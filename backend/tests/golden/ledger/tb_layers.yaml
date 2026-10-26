@@ -1,0 +1,187 @@
+# A-02-T07 (TASK-1285; ADR-078; A-02 §9): the trial balance of record's layers, footed by exact
+# Decimal. Every amount is quoted text, read as Decimal; a float never appears. Inputs and
+# expected figures are transcribed from the seed and the sources named in `source`, never from
+# the code. `probe` ties each Northwind input to the scenario documents' own regions, so the
+# golden fails if the seed drifts. Account codes are the scenario's chart, not figures.
+golden: ledger/tb_layers
+cases:
+  - id: northwind-py2025
+    source: >-
+      Current: the seed's trust-basis trial balance (abacus_tools brightwater_hale documents.py
+      `_TB_LINES`, blueprint 01 §9.4). Prior (12/31/2024): Harborline's 1/1/2025 column
+      (documents.py `_NET_ASSETS`) with the seed's own opening net assets, 14,228,500.00, as the
+      one credit. Expected: A-02 AC-2.1 / SPEC-333 AC-5 (14,895,000.00 / 12,683,000.00;
+      16,500,000.00 / 13,940,000.00; 16,812,400.00 / 14,228,500.00), C9 §8 (debits = credits
+      17,663,450.00), AUD-06 spec state e (the Investments leadsheet), revision.md R2 and
+      SPEC-333 AC-15 (AJE-1 48,600.00 = 33,540.00 + 15,060.00; Final net assets 16,861,000.00).
+    reviewed_by: pending (AY)
+    current:
+      # [code, name, debit, credit]; probed against the TB document's `<code>.name` and `<code>.amount` regions
+      - ["1110", "KRS 500 Index Fund", "6120450.00", "0.00"]
+      - ["1120", "KRS Target 2035 Fund", "2384910.00", "0.00"]
+      - ["1130", "KRS Target 2045 Fund", "2915330.00", "0.00"]
+      - ["1140", "KRS Bond Index Fund", "1408220.00", "0.00"]
+      - ["1150", "KRS International Index Fund", "902610.00", "0.00"]
+      - ["1160", "Harborline Stable Value Fund", "1163480.00", "0.00"]
+      - ["1200", "Self-directed brokerage (BrokerWindow)", "1605000.00", "0.00"]
+      - ["1300", "Notes receivable from participants", "312400.00", "0.00"]
+      - ["3000", "Net assets available for benefits, January 1, 2025", "0.00", "14228500.00"]
+      - ["4100", "Contributions received", "0.00", "1318300.00"]
+      - ["4200", "Net appreciation in fair value of investments", "0.00", "1755990.00"]
+      - ["4300", "Interest and dividends", "0.00", "342860.00"]
+      - ["4400", "Interest income on notes receivable from participants", "0.00", "17800.00"]
+      - ["5100", "Benefits paid to participants", "812650.00", "0.00"]
+      - ["5200", "Administrative expenses", "38400.00", "0.00"]
+    prior:
+      # [code, name, debit, credit, probe: the Harborline region holding the 1/1/2025 figure]
+      - ["1110", "KRS 500 Index Fund", "5102300.00", "0.00", "krs-500.second"]
+      - ["1120", "KRS Target 2035 Fund", "2011640.00", "0.00", "krs-2035.second"]
+      - ["1130", "KRS Target 2045 Fund", "2388970.00", "0.00", "krs-2045.second"]
+      - ["1140", "KRS Bond Index Fund", "1276090.00", "0.00", "krs-bond.second"]
+      - ["1150", "KRS International Index Fund", "868000.00", "0.00", "krs-intl.second"]
+      - ["1160", "Harborline Stable Value Fund", "1036000.00", "0.00", "stable-value.second"]
+      - ["1200", "Self-directed brokerage (BrokerWindow)", "1257000.00", "0.00", "brokerage.second"]
+      - ["1300", "Notes receivable from participants", "288500.00", "0.00", "loans.second"]
+      - ["3000", "Net assets available for benefits", "0.00", "14228500.00", "net-assets.second"]
+    area_rules:
+      - ["Investments", "1110", "1299"]
+      - ["Notes receivable from participants", "1300", "1399"]
+      - ["Contributions receivable", "1400", "1499"]
+      - ["Net assets", "3000", "3999"]
+      - ["Additions", "4000", "4999"]
+      - ["Deductions", "5000", "5999"]
+    entries:
+      - ref: AJE-1
+        kind: aje
+        lines:
+          - ["1400", "48600.00", "0.00"]
+          - ["4100", "0.00", "33540.00"]
+          - ["4100", "0.00", "15060.00"]
+    expected:
+      balances:
+        unadjusted: {debit: "17663450.00", credit: "17663450.00", difference: "0.00"}
+        boy: {debit: "14228500.00", credit: "14228500.00", difference: "0.00"}
+        aje: {debit: "48600.00", credit: "48600.00", difference: "0.00"}
+        rje: {debit: "0.00", credit: "0.00", difference: "0.00"}
+        # 17,663,450.00 + AJE-1 48,600.00 on each side.
+        final: {debit: "17712050.00", credit: "17712050.00", difference: "0.00"}
+      footings:
+        - label: Total mutual funds & CITs
+          accounts: ["1110", "1120", "1130", "1140", "1150", "1160"]
+          boy: "12683000.00"
+          eoy: "14895000.00"
+        - label: Total investments at fair value
+          accounts: ["1110", "1120", "1130", "1140", "1150", "1160", "1200"]
+          boy: "13940000.00"
+          eoy: "16500000.00"
+        - label: Net assets available for benefits
+          accounts: ["1110", "1120", "1130", "1140", "1150", "1160", "1200", "1300"]
+          boy: "14228500.00"
+          eoy: "16812400.00"
+        - label: Net assets available for benefits (Final)
+          accounts: ["1110", "1120", "1130", "1140", "1150", "1160", "1200", "1300", "1400"]
+          final: "16861000.00"
+      final_lines:
+        # New in Final only: BOY 0.00 against the prior year, as the handoff draws it.
+        "1400": {boy: "0.00", eoy: "0.00", aje: "48600.00", final: "48600.00", refs: ["AJE-1"]}
+        "4100": {boy: "0.00", eoy: "-1318300.00", aje: "-48600.00", final: "-1366900.00", refs: ["AJE-1"]}
+      leadsheets:
+        Investments:
+          py: "13940000.00"
+          cy: "16500000.00"
+          change: "2560000.00"
+          change_pct: "18.4"
+          rows:
+            # [code, py, cy, change, change_pct]
+            - ["1110", "5102300.00", "6120450.00", "1018150.00", "20.0"]
+            - ["1120", "2011640.00", "2384910.00", "373270.00", "18.6"]
+            - ["1130", "2388970.00", "2915330.00", "526360.00", "22.0"]
+            - ["1140", "1276090.00", "1408220.00", "132130.00", "10.4"]
+            - ["1150", "868000.00", "902610.00", "34610.00", "4.0"]
+            - ["1160", "1036000.00", "1163480.00", "127480.00", "12.3"]
+            - ["1200", "1257000.00", "1605000.00", "348000.00", "27.7"]
+        Contributions receivable:
+          py: "0.00"
+          cy: "0.00"
+          change: "0.00"
+        Notes receivable from participants:
+          py: "288500.00"
+          cy: "312400.00"
+          change: "23900.00"
+
+  - id: granite-peak-fy2026
+    source: >-
+      Current (FY2026, June 30, 2026): blueprint 01 §9.8 Granite Peak TB summary with the
+      accounts A-02 §5.3 lists (opening equity 7,800,000 inferred there, so debits = credits
+      71,910,000; the A-02-T05 fixture uses the same lines, DEC-342). Prior (FY2025): the
+      addendum waves 5-8 §9.4.1 balance sheet at June 30, 2025 (term loan 3,800,000 = current
+      portion 600,000 + long-term 3,200,000; §9.4.3 term loan repayments 600,000). Expected:
+      total assets 26,410,000 / 23,200,000, change 3,210,000 and 13.8 % (addendum §9.4.1 and the
+      FSP comparative), total liabilities 15,510,000 / 13,550,000, and the §9.4.3 cash-flow
+      changes (cash (470,000), receivables 1,140,000, inventory 2,240,000). Equity is not
+      compared across years: the FY2026 TB summary has no tax or dividends (DEC-394).
+    reviewed_by: pending (AY)
+    current:
+      - ["1000", "Cash", "2140000.00", "0.00"]
+      - ["1100", "Accounts receivable", "5860000.00", "0.00"]
+      - ["1300", "Inventory", "11420000.00", "0.00"]
+      - ["1500", "Property and equipment, net", "6380000.00", "0.00"]
+      - ["1800", "Other assets", "610000.00", "0.00"]
+      - ["2000", "Accounts payable", "0.00", "4180000.00"]
+      - ["2100", "Accrued liabilities", "0.00", "1630000.00"]
+      - ["2300", "Revolving line of credit (Front Range Bank)", "0.00", "6500000.00"]
+      - ["2400", "Term loan", "0.00", "3200000.00"]
+      - ["3000", "Stockholders' equity", "0.00", "7800000.00"]
+      - ["4000", "Revenue", "0.00", "48600000.00"]
+      - ["5000", "Cost of goods sold", "29160000.00", "0.00"]
+      - ["6000", "Operating expenses", "15820000.00", "0.00"]
+      - ["7000", "Interest expense", "520000.00", "0.00"]
+    prior:
+      - ["1000", "Cash", "2610000.00", "0.00"]
+      - ["1100", "Accounts receivable", "4720000.00", "0.00"]
+      - ["1300", "Inventory", "9180000.00", "0.00"]
+      - ["1500", "Property and equipment, net", "6050000.00", "0.00"]
+      - ["1800", "Other assets", "640000.00", "0.00"]
+      - ["2000", "Accounts payable", "0.00", "3310000.00"]
+      - ["2100", "Accrued liabilities", "0.00", "1540000.00"]
+      - ["2300", "Revolving line of credit (Front Range Bank)", "0.00", "4900000.00"]
+      - ["2400", "Term loan", "0.00", "3800000.00"]
+      - ["3000", "Stockholders' equity", "0.00", "9650000.00"]
+    area_rules:
+      - ["Assets", "1000", "1999"]
+      - ["Liabilities", "2000", "2999"]
+      - ["Equity", "3000", "3999"]
+      - ["Income statement", "4000", "7999"]
+    entries: []
+    expected:
+      balances:
+        unadjusted: {debit: "71910000.00", credit: "71910000.00", difference: "0.00"}
+        boy: {debit: "23200000.00", credit: "23200000.00", difference: "0.00"}
+      footings:
+        - label: Total assets
+          accounts: ["1000", "1100", "1300", "1500", "1800"]
+          boy: "23200000.00"
+          eoy: "26410000.00"
+        - label: Total liabilities
+          accounts: ["2000", "2100", "2300", "2400"]
+          boy: "-13550000.00"
+          eoy: "-15510000.00"
+        - label: Pre-tax income (credit)
+          accounts: ["4000", "5000", "6000", "7000"]
+          eoy: "-3100000.00"
+      leadsheets:
+        Assets:
+          py: "23200000.00"
+          cy: "26410000.00"
+          change: "3210000.00"
+          change_pct: "13.8"
+          rows:
+            - ["1000", "2610000.00", "2140000.00", "-470000.00"]
+            - ["1100", "4720000.00", "5860000.00", "1140000.00"]
+            - ["1300", "9180000.00", "11420000.00", "2240000.00"]
+            - ["1500", "6050000.00", "6380000.00", "330000.00"]
+            - ["1800", "640000.00", "610000.00", "-30000.00"]
+        Liabilities:
+          py: "-13550000.00"
+          cy: "-15510000.00"
+          change: "-1960000.00"

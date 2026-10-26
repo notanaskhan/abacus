@@ -85,8 +85,8 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
     # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick); SPEC-030 the
     # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two; SPEC-035
-    # (TASK-073) the drafter's two.
-    assert len(ACTIVITIES) == 17
+    # (TASK-073) the drafter's two. Q-02-T41 (TASK-1287) adds `agents.persist_run_record`.
+    assert len(ACTIVITIES) == 18
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

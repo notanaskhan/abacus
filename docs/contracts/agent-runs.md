@@ -3,14 +3,14 @@
 | Field | Value |
 |---|---|
 | Register row | C6 in `docs/contracts/README.md` |
-| Version | v0 live; v1 in progress (TASK-5000): the run read, records read and writes |
+| Version | v0 live; v1 in progress (TASK-5000): the run read, records read and writes; the run record (TASK-1287) |
 | Status | live, pre-contract. v1 extends these routes and does not replace them. |
 | Provider epic | P-09, owned by notanaskhan (DEC-336). SPEC-318: TASK-461, TASK-900, TASK-901, TASK-5000. |
 | Consumers | WB-09 trace drawer; SHL-13 dock (later); ADM-07 and AUD-29 trace links (later) |
 | Freeze sprint | v1 S12 (2027-04-05) |
 | Flag | none: read-only over existing runs |
 | Spec | `docs/specs/SPEC-318-agent-run-transparency.md` |
-| ADRs | ADR-005, ADR-019, ADR-065, ADR-111 |
+| ADRs | ADR-005, ADR-019, ADR-065, ADR-111, ADR-169 (run records) |
 
 ## 1. Purpose
 Consumers can list an engagement's agent runs and read one run's trace. The trace covers who started the run, each gateway attempt, what the run proposed, people's decisions on it, and how it finished. Every figure is computed from stored rows. Consumers can also export a trace as canonical JSON with a SHA-256 manifest.
@@ -31,6 +31,7 @@ Firm-level runs (no engagement) answer 404 in v0.
 | Items | `GET /v1/agent-runs/{run_id}/items?after_seq=` | `agent_run.read` | as above | denied |
 | Records read | `GET /v1/agent-runs/{run_id}/trace/records-read` | `agent_run.read` | as above | denied |
 | Writes | `GET /v1/agent-runs/{run_id}/trace/writes` | `agent_run.read` | as above | denied |
+| Run record | `GET /v1/agent-runs/{run_id}/record` | `agent_run.read` | as above | denied |
 | Trace export | `POST /v1/agent-runs/{run_id}/trace-exports` (201) | `run_trace.export` | engagement_partner, manager, senior; independence and fresh MFA required | agent: deny |
 
 The list filters through `visible()`. The trace and export check the run's engagement with `authorise`.
@@ -103,6 +104,19 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
   - `filename`;
   - `content`: `confidential`, the canonical JSON;
   - `sha256`, `rows`, `renderer_version` (`trace-v1`).
+- **RunRecordOut (v1, TASK-1287; ADR-169 §3):** the run's durable record as stored, written once when the run ended and never changed. Every field is `internal`: identifiers, versions and fingerprints, never prompt text, model text or client content.
+  - `run_id`, `engagement_id`, `capability`, `spec_version`, `stage` (`shadow` or `live`);
+  - `prompt_ref`, `prompt_sha256`, `model`, `route`, `region` (`local` for the fake route, `us` for the provider's API, the Bedrock region), `terms_version`, `boundary_basis`: from the call whose answer the run kept; null when the run called no model;
+  - `input_hashes`: `context` (the run's context hash) and `model_calls` (each call's inputs hash);
+  - `records_read`: `type` and `id` of each record the run read;
+  - `citations`: `source`, `record`, `locator` (`document`, `claim`, `page`, `cell`), `quote_fingerprint` and `sheet_fingerprint` (`confidential`: HMAC-SHA-256 of the quoted words and the sheet name under the firm's own fingerprint key, never the words; null for a reader who may not read unmasked content, DEC-52), and code's `verified`, `reason`, `amount_matches`;
+  - `outcome`: `state` (`succeeded`, `needs_input`, `failed`, `cancelled`), `failure_code`, `outputs` (counts by kind);
+  - `initiator_user_id`, `started_at`, `completed_at`, `persisted_at`;
+  - `record_sha256`: SHA-256 of the canonical JSON of every stored field except `persisted_at` (sorted keys, UTC instants; citations with their keyed fingerprints). It is the record's own hash, fixed once written; the run view's `run_record_sha256` is a different, read-time fingerprint of the live run row (DEC-396);
+  - `projection`: with `metadata` (DEC-87), `records_read` ids are null and citations keep only `source` and code's verdict;
+  - `withheld`: entries naming a withdrawn evidence version, left out of this read (P-06-T19). When it is not zero, the shown fields no longer hash to `record_sha256`.
+
+  The model id appears here, unlike on the trace: ADR-169 §4 names this route for consumers that verify or package records (A-07, G-02).
 
 Canonical JSON uses sorted keys, UTC ISO instants and rows in `seq` order. The same trace always gives the same bytes.
 
@@ -124,7 +138,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 ## 6. Errors
 | Status | Body | When |
 |---|---|---|
-| 404 | `{"detail": "not found"}` | Unknown run, shadow run, or firm-level run |
+| 404 | `{"detail": "not found"}` | Unknown run, shadow run, or firm-level run; on `/record`, also a run whose record is not persisted yet |
 | 403 | `{"detail": "forbidden"}` | Not on the engagement, independence unconfirmed, or no recent MFA (export) |
 | 422 | validation body | `format` other than `json` |
 
@@ -132,11 +146,13 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 | Event | Written when | Payload (no Restricted data) |
 |---|---|---|
 | `agent_run.trace_exported` | Each export | Target `agent_run` id; `Ref(sha256, rows)` |
+| `agent_run_record.persisted` | Once per run, when its workflow persists the record (actor system) | Target `agent_run` id; `Ref(record_sha256)` |
 
 ## 8. Changes v1 will make (P-09)
 - Done in TASK-5000: `GET /v1/agent-runs/{id}` (with `run_record_sha256` and `allowed_actions`), `/trace/records-read` and `/trace/writes`.
 - Done in TASK-5001: the `items?after_seq=` feed, with the read-time legacy adapter (P-09 Story 8.1).
 - Done in TASK-5002: the content and metadata projections (DEC-87).
+- Done in TASK-1287 (Q-02-T41): `GET /v1/agent-runs/{id}/record`. Still to come with C6 v1 (Q-02-T45, P-09): `record_sha256` and `record_persisted_at` on the run summary (ADR-169 §4).
 - Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}`. The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.

@@ -108,6 +108,9 @@ import { T3Specimen } from "./t3";
 import { Tpl03Specimen } from "./tpl03";
 import { T9Specimen } from "./t9";
 import { T8Specimen } from "./t8";
+import { Tpl08Specimen } from "./tpl08";
+import { Tpl09Specimen } from "./tpl09";
+import { T5Specimen, Tpl05Specimen } from "./t5";
 import { FieldRowsSpecimen, GridSpecimen, LeadsheetSpecimen, VirtualGridSpecimen } from "./data-3";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
@@ -281,8 +284,20 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "t3-evidence-triad", kit: "T3", title: "Evidence triad", Component: T3Specimen },
   // T8 InboxLayout and the C-15/C-18 File kit (F-05-T56): T8a to T8e
   { id: "t8-inbox", kit: "T8", title: "Inbox master-detail", Component: T8Specimen },
+  // T5 CatalogLayout with C-11 AgentCard and C-14 ConnectionTile (F-05-T59): T5a to T5f, TPL-05
+  { id: "t5-catalog", kit: "T5", title: "Catalog grid", Component: T5Specimen },
+  { id: "tpl-05", kit: "TPL-05", title: "Catalog grid specimen", Component: Tpl05Specimen },
   // T9 QueueDetailLayout and the C-17 Issue kit (F-05-T55): T9a to T9e
   { id: "t9-queue-detail", kit: "T9", title: "Queue · detail · evidence", Component: T9Specimen },
+  // TPL-08 firm Inbox specimen, the Feld thread (F-05-T58): TPL-08a to TPL-08e
+  { id: "tpl-08", kit: "TPL-08", title: "Inbox master-detail specimen", Component: Tpl08Specimen },
+  // TPL-09 three-preset specimen on the seed's issue lists (F-05-T57): TPL-09a to TPL-09g
+  {
+    id: "tpl-09",
+    kit: "TPL-09",
+    title: "Queue · detail · evidence specimen",
+    Component: Tpl09Specimen,
+  },
   // TPL-03 Feld 1040 review specimen (F-05-T54): TPL-03a to TPL-03e
   { id: "tpl-03", kit: "TPL-03", title: "Evidence triad specimen", Component: Tpl03Specimen },
   // TPL-02 Northwind 401(k) cockpit specimen (F-05-T51): TPL-02a to TPL-02e

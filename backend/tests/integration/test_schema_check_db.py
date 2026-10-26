@@ -1085,11 +1085,25 @@ def test_ac20_update_limited_to_the_declared_column_passes(
 
 def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert {
+        # P-07-T35 (0163): acceptance records, answers and manual checks; a guard trigger
+        # refuses any change once a record is decided (DEC-372).
+        "acceptance_records": frozenset(
+            {"status", "risk_rating", "sent_to_partner_at", "sent_to_partner_by", "version"}
+        ),
+        "acceptance_answers": frozenset(
+            {"answers_sealed", "state", "version", "updated_by", "updated_at"}
+        ),
+        "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
         # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
         "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(
             {"status", "removed_by", "removed_at"}  # TASK-016
             | {"approved_by", "approved_at", "removed_reason"}  # G-01-T09 (0151): walls v2
+        ),
+        # G-01-T12 (0167): a line's policy, edited in place against its version (never deleted).
+        "service_line_policies": frozenset(
+            {"enabled", "lead_user_id", "content_visible_to", "cross_line_access", "version"}
+            | {"updated_by", "updated_at"}
         ),
         # G-01-T08 (0150): offices and teams are edited in place, versioned (never deleted).
         "offices": frozenset(
@@ -1350,6 +1364,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"tenant_id", "engagement_id", "request_item_id", "requested_by", "files"}
     )  # P-06-T20 security review (DEC-324): a person's rerun, rate-limited per item
     assert {"screening_feedback", "screening_rerun_requests"} <= sc.INSERT_ONLY_TABLES
+    # Q-02-T41 (0171): run records, insert-only; `persisted_at` is the database's.
+    assert "agent_run_records" in sc.INSERT_ONLY_TABLES
+    assert "persisted_at" not in sc.APP_INSERT_COLUMNS["agent_run_records"]
+    assert {"run_id", "record_sha256", "citations"} <= sc.APP_INSERT_COLUMNS["agent_run_records"]
     assert sc.APP_INSERT_COLUMNS["usage_records"] == frozenset(
         {"id", "tenant_id", "engagement_id", "agent_id", "agent_run_id", "prompt_id"}
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
@@ -1871,6 +1889,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"retention_policy_history", "retention_defaults_backfill"}  # 0112
         | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
         | {"evidence_key_destroy"}  # 0144 (P-06-T18): the withdrawal purge's crypto-erase
+        | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

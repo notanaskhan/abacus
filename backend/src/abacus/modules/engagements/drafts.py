@@ -15,7 +15,10 @@
   open engagement of the same entity, type and period exists, until `confirm_duplicate`; 409
   `gate_unmet` (G1); 422 `draft_incomplete` naming the first step with a problem. A created
   draft answers its first result again (idempotent; the route also honours `Idempotency-Key`).
-- "Start acceptance" stays a stub until the acceptance record exists (P-07-T35, DEC-225).
+- "Start acceptance" (P-07-T35, DEC-372): under `client.intake`, a Prospect engagement for the
+  draft's client entity, type, name and period with the draft's team, and its acceptance record
+  pinned to the firm's questionnaire for the type's family; the draft points at the prospect, so
+  its G1 reads that record. A second call answers the same engagement and record.
 """
 
 from __future__ import annotations
@@ -23,7 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from typing import Final, Literal, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Column,
@@ -44,11 +47,13 @@ from sqlalchemy.types import DateTime, Integer, Text
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements import acceptance as acceptance_model
+from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.events import EngagementCreated
 from abacus.modules.engagements.gate_policy import required_gates
 from abacus.modules.engagements.models import Engagement, WorkItem
 from abacus.modules.engagements.record import GateBlocker, GateUnmet, GateView
-from abacus.modules.engagements.repository import latest_acceptance
+from abacus.modules.engagements.repository import insert_engagement
 from abacus.modules.engagements.service import PossibleDuplicate, lock_ref
 from abacus.modules.engagements.slots import NewWorkItem, work_item_provider
 from abacus.modules.engagements.type_catalogue import (
@@ -63,9 +68,11 @@ from abacus.modules.identity.api import (
     Forbidden,
     Resource,
     add_member,
+    add_rolled_forward_member,
     authorise,
     engagement_team_query,
     hidden_clients,
+    member_facts,
 )
 from abacus.modules.organisations.api import client_of_entity
 
@@ -279,6 +286,20 @@ async def create_draft(
     return await _with_gates(ctx, _view(row))
 
 
+async def draft_visible(ctx: AuthContext, draft_id: UUID) -> bool:
+    """For organisations' conflict checks (DEC-375, L4): the draft is the caller's own, live,
+    and its client is not walled off from them."""
+    async with tenant_session(ctx.tenant) as session:
+        try:
+            found = await _own(session, ctx, draft_id)
+        except NotFound:
+            return False
+    owner = found.client_id
+    if found.client_entity_id is not None:
+        owner = await client_of_entity(ctx.tenant, found.client_entity_id)
+    return owner is None or not await hidden_clients(ctx.tenant, ctx.user_id, [owner])
+
+
 async def get_draft(ctx: AuthContext, draft_id: UUID) -> DraftView:
     """The owner's draft; 404 once a wall stands between them and its client (DEC-227)."""
     await authorise(ctx, CREATE, Resource.firm(ctx.tenant_id))
@@ -408,12 +429,19 @@ async def _gates(ctx: AuthContext, d: DraftView) -> list[GateView]:
     client_id = await _check_scope(ctx, d.client_id, d.client_entity_id)
     async with tenant_session(ctx.tenant) as session:
         target = await _g1_engagement(session, d, client_id)
-        acceptance = None if target is None else await latest_acceptance(session, target.id)
+        acceptance = None if target is None else await g1_decision(session, target.id)
     views: list[GateView] = []
     for gate in required_gates(entry.engagement_type):
         if gate == "G1":
-            if acceptance is not None and acceptance.decision == "accepted":
-                views.append(GateView("G1", True, met_at=acceptance.created_at))
+            if acceptance is not None and acceptance.accepted:
+                views.append(
+                    GateView(
+                        "G1",
+                        True,
+                        met_at=acceptance.decided_at,
+                        met_by_user_id=acceptance.decided_by,
+                    )
+                )
             else:
                 ref = target.id if target is not None else d.id
                 kind = "engagement" if target is not None else "engagement_draft"
@@ -580,12 +608,12 @@ async def create_from_draft(
         raise DraftIncomplete(facts={"step": "client_type", "draft_id": str(draft_id)})
     async with tenant_session(ctx.tenant) as session:
         target = await _g1_engagement(session, d, scoped)
-        acceptance = None if target is None else await latest_acceptance(session, target.id)
+        acceptance = None if target is None else await g1_decision(session, target.id)
     if (
         target is None
         or target.status != _COMPLETABLE
         or acceptance is None
-        or acceptance.decision != "accepted"
+        or not acceptance.accepted
     ):
         raise GateUnmet(facts={"gate": "G1", "draft_id": str(draft_id)})
     async with tenant_session(ctx.tenant) as session:
@@ -683,3 +711,141 @@ async def _created(ctx: AuthContext, engagement_id: UUID, requested: list[UUID])
         requested,
         engagement.methodology_version_id,
     )
+
+
+# --- start acceptance (P-07-T35) -----------------------------------------------------------------
+
+INTAKE: Final = "client.intake"
+_START_STEPS: Final[tuple[WizardStep, ...]] = (
+    "client_type",
+    "period_deadlines",
+    "team_independence",
+)
+
+
+@dataclass(frozen=True)
+class AcceptanceStarted:
+    draft_id: UUID
+    engagement_id: UUID
+    acceptance_record_id: UUID
+    engagement_status: str
+
+
+async def start_acceptance(ctx: AuthContext, draft_id: UUID) -> AcceptanceStarted:
+    """ENG-03 d "Start acceptance" (OQ-2, DEC-143, DEC-372): one unit of work creates a Prospect
+    engagement for the draft's client entity, type, name and period, puts the draft's team on
+    it (each asked to confirm independence), and opens its acceptance record. Nothing is
+    accepted: accepting is the engagement partner's decision on the record. The draft points at
+    the prospect, so a second call answers the same engagement and record."""
+    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+        raise Forbidden(INTAKE, "role")
+    await authorise(ctx, INTAKE, Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        d = await _own(session, ctx, draft_id)
+    if d.created_engagement_id is not None:
+        raise DraftStaleVersion(facts={"draft_id": str(draft_id)})
+    if d.prospect_engagement_id is not None:
+        record_id = await acceptance_model.record_id_of(ctx.tenant, d.prospect_engagement_id)
+        if record_id is not None:
+            async with tenant_session(ctx.tenant) as session:
+                prospect = await session.get(Engagement, d.prospect_engagement_id)
+            status = prospect.status if prospect is not None else "prospect"
+            return AcceptanceStarted(draft_id, d.prospect_engagement_id, record_id, status)
+    entry = entry_of(d.type_code)
+    for step in _START_STEPS:
+        if problems_of(d, step):
+            raise DraftIncomplete(facts={"step": step, "draft_id": str(draft_id)})
+    if entry is None or d.client_id is None or d.client_entity_id is None:
+        raise DraftIncomplete(facts={"step": "client_type", "draft_id": str(draft_id)})
+    if entry.entitlement is not None and not await _entitled(ctx, entry.entitlement):
+        raise UnknownEngagementType(facts={"type_code": entry.code})
+    owner = await client_of_entity(ctx.tenant, d.client_entity_id)
+    if owner is None or await hidden_clients(ctx.tenant, ctx.user_id, [owner]):
+        raise NotFound("client")
+    if owner != d.client_id:
+        raise EntityOutsideClient(facts={"client_entity_id": str(d.client_entity_id)})
+    try:
+        await authorise(ctx, INTAKE, Resource.client(ctx.tenant_id, owner))
+    except Forbidden as denied:
+        if denied.layer == "wall":
+            raise NotFound("client") from None
+        raise
+    start = _date(d.payload, "fiscal_period_start")
+    end = _date(d.payload, "fiscal_period_end")
+    if start is None or end is None:
+        raise DraftIncomplete(facts={"step": "period_deadlines", "draft_id": str(draft_id)})
+    prior_raw = d.payload.get("prior_engagement_id")
+    prior = UUID(prior_raw) if isinstance(prior_raw, str) and prior_raw else None
+    if prior is not None:
+        async with tenant_session(ctx.tenant) as session:
+            before = await session.get(Engagement, prior)
+        if before is None or before.client_entity_id != d.client_entity_id:
+            raise DomainInvalid(facts={"field": "prior_engagement_id"})
+    team = cast(list[dict[str, str]], d.payload.get("team") or [])
+    # DEC-375 (M3): the engagement partner named on the draft is a partner-level staff member;
+    # anyone else could otherwise name themself and decide alone.
+    for member in team:
+        if member.get("role") == _PARTNER:
+            facts = await member_facts(ctx.tenant, UUID(member["user_id"]))
+            if facts is None or facts.client or facts.level != "partner":
+                raise DomainInvalid(facts={"field": "team"})
+    engagement_id = uuid4()
+    async with uow(ctx.tenant) as tx:
+        await insert_engagement(
+            tx.session,
+            engagement_id=engagement_id,
+            tenant_id=ctx.tenant_id,
+            client_id=owner,
+            client_entity_id=d.client_entity_id,
+            name=str(d.payload.get("name")),
+            fiscal_period_start=start,
+            fiscal_period_end=end,
+            created_by=ctx.user_id,
+            type=entry.engagement_type,
+            prior_engagement_id=prior,
+            prospect=True,
+        )
+        claimed = (
+            await tx.session.execute(
+                update(drafts)
+                .where(
+                    drafts.c.id == draft_id,
+                    drafts.c.prospect_engagement_id.is_(None),
+                    drafts.c.created_engagement_id.is_(None),
+                )
+                .values(prospect_engagement_id=engagement_id, saved_at=func.clock_timestamp())
+                .returning(drafts.c.id)
+            )
+        ).scalar_one_or_none()
+        if claimed is None:  # a concurrent start got there first
+            raise DraftStaleVersion(facts={"draft_id": str(draft_id)})
+        tx.record(
+            "engagement.created",
+            target=Target("engagement", engagement_id),
+            after=Ref(draft_id=draft_id),
+        )
+        on_team: set[UUID] = set()
+        for member in team:
+            user = UUID(member["user_id"])
+            if user in on_team:
+                continue
+            # Inside the creating unit of work, after `client.intake` was authorised: the
+            # engagement is new, so no one holds a role on it yet to add members (roll-forward's
+            # way, SPEC-025 AC-2). Each person is re-checked (active, not walled, consent).
+            await add_rolled_forward_member(tx, ctx, engagement_id, owner, user, member["role"])  # pyright: ignore[reportArgumentType] -- a role code the draft validated
+            on_team.add(user)
+        record_id = await acceptance_model.open_record(
+            tx,
+            ctx,
+            engagement_id=engagement_id,
+            client_id=owner,
+            family=entry.family,
+            prior_engagement_id=prior,
+        )
+        tx.record(
+            "engagement_draft.started_acceptance",
+            target=Target("engagement_draft", draft_id),
+            after=Ref(engagement_id=engagement_id),
+        )
+        tx.emit(EngagementCreated(engagement_id=engagement_id))
+    return AcceptanceStarted(draft_id, engagement_id, record_id, "prospect")

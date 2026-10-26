@@ -556,6 +556,7 @@ class ConflictAssessmentStatus(StrEnum):
     SAME_FAMILY_NOT_ADVERSE = "same_family_not_adverse"
     NOT_ADVERSE = "not_adverse"
     COUNTERPARTY_REVIEW = "counterparty_review"
+    CONFLICT = "conflict"
 
 
 class NasEvaluationStatus(StrEnum):
@@ -610,6 +611,34 @@ class LegalHoldStatus(StrEnum):
     ACTIVE = "active"
     RELEASING = "releasing"
     RELEASED = "released"
+
+
+class AiPolicyVersionStatus(StrEnum):
+    DRAFT = "draft"
+    AWAITING_APPROVAL = "awaiting_approval"
+    PUBLISHED = "published"
+    DECLINED = "declined"
+    WITHDRAWN = "withdrawn"
+    # derived, never stored: superseded
+
+
+class SecurityIncidentStatus(StrEnum):
+    INVESTIGATING = "investigating"
+    CLOSED = "closed"
+
+
+class FirmExportStatus(StrEnum):
+    AWAITING_APPROVAL = "awaiting_approval"
+    READY = "ready"
+    DOWNLOADED = "downloaded"
+    EXPIRED = "expired"
+
+
+class SupportSessionStatus(StrEnum):
+    REQUESTED = "requested"
+    ACTIVE = "active"
+    DECLINED = "declined"
+    REVOKED = "revoked"
 
 
 # Each object's stored codes, and their SQL CHECK list.
@@ -1082,6 +1111,7 @@ STORED: dict[str, tuple[str, ...]] = {
         "same_family_not_adverse",
         "not_adverse",
         "counterparty_review",
+        "conflict",
     ),
     "nas_evaluation": (
         "pending",
@@ -1125,6 +1155,29 @@ STORED: dict[str, tuple[str, ...]] = {
         "active",
         "releasing",
         "released",
+    ),
+    "ai_policy_version": (
+        "draft",
+        "awaiting_approval",
+        "published",
+        "declined",
+        "withdrawn",
+    ),
+    "security_incident": (
+        "investigating",
+        "closed",
+    ),
+    "firm_export": (
+        "awaiting_approval",
+        "ready",
+        "downloaded",
+        "expired",
+    ),
+    "support_session": (
+        "requested",
+        "active",
+        "declined",
+        "revoked",
     ),
 }
 CHECKS: dict[str, str] = {

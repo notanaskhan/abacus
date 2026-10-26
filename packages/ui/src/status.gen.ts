@@ -1852,7 +1852,8 @@ export const STATUS_REGISTRY = {
       "label": "Available",
       "variant": "outline",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "clientLabel": "Not connected"
     },
     "connecting": {
       "label": "Connecting",
@@ -2427,6 +2428,12 @@ export const STATUS_REGISTRY = {
       "variant": "amber",
       "terminal": false,
       "derived": false
+    },
+    "conflict": {
+      "label": "Conflict",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
     }
   },
   "nas_evaluation": {
@@ -2617,6 +2624,110 @@ export const STATUS_REGISTRY = {
     "released": {
       "label": "Released",
       "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ai_policy_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "awaiting_approval": {
+      "label": "Awaiting approval",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": null,
+      "terminal": true,
+      "derived": true
+    }
+  },
+  "security_incident": {
+    "investigating": {
+      "label": "Investigating",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "closed": {
+      "label": "Closed",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "firm_export": {
+    "awaiting_approval": {
+      "label": "Waiting for approval",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "downloaded": {
+      "label": "Downloaded",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "support_session": {
+    "requested": {
+      "label": "Awaiting firm approval",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "active": {
+      "label": "Granted until {time}",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "revoked": {
+      "label": "Revoked",
+      "variant": null,
       "terminal": true,
       "derived": false
     }

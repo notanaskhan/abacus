@@ -33,6 +33,7 @@ from abacus.modules.communications.notification_email import (
     send_notification_email,
     template_key,
 )
+from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.secure_link_routes import router as secure_link_router
@@ -69,6 +70,32 @@ from abacus.modules.communications.sink import (
     on_sink,
     sink_address,
     sink_domain,
+)
+from abacus.modules.communications.template_registry import (
+    VARIABLES as TEMPLATE_VARIABLES,
+)
+from abacus.modules.communications.template_registry import (
+    EmailTemplateRegistration,
+    RecipientRef,
+    SendOutcome,
+    SendRefusal,
+    SendScope,
+    SystemSendContext,
+    TemplateRegistrationInvalid,
+    TemplateVariable,
+    ValueFinding,
+    lint_values,
+    register_email_template,
+    registered_templates,
+    scheduled_send_enabled,
+    send_templated,
+)
+from abacus.modules.communications.templates_contract import (
+    FollowUpPolicyFields,
+    NextSendOut,
+    domains_router,
+    policy_router,
+    templates_router,
 )
 from abacus.modules.communications.transport import LocalMailbox, Transport, configure_transport
 from abacus.modules.communications.workflows import DrainSesEventsWorkflow
@@ -118,6 +145,9 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,  # P-01-T05: platform email templates
     secure_link_router,  # P-08-T21: a recipient's link renewal (pre-session)
+    templates_router,  # C16 v1.1 stub (R-01-T16): firm email templates
+    domains_router,  # C16 v1.1 stub (R-01-T16): sending domains
+    policy_router,  # C16 v1.1 stub (R-01-T16): the follow-up policy
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -132,13 +162,16 @@ __all__ = [
     "SCHEDULES",
     "SES_EVENTS_ID",
     "SUBSCRIPTIONS",
+    "TEMPLATE_VARIABLES",
     "WORKFLOWS",
     "ComposedFollowUp",
     "DnsRecord",
     "Draft",
     "DrainSesEventsWorkflow",
+    "EmailTemplateRegistration",
     "FakeSesEventQueue",
     "FakeSesTransport",
+    "FollowUpPolicyFields",
     "FollowUpTemplateMissing",
     "IdentitySetup",
     "IdentityStatus",
@@ -148,16 +181,26 @@ __all__ = [
     "MessageBounced",
     "MessageComplained",
     "MessageView",
+    "NextSendOut",
     "NotificationMail",
     "OutOfScope",
+    "PreviewSelection",
+    "RecipientRef",
     "SecureLinkView",
+    "SendOutcome",
+    "SendRefusal",
+    "SendScope",
     "SesEventQueue",
     "SesIdentities",
     "SesIdentityInvalid",
     "SesIdentityNotFound",
     "SesIdentityPort",
     "SesIdentityUnavailable",
+    "SystemSendContext",
+    "TemplateRegistrationInvalid",
+    "TemplateVariable",
     "Transport",
+    "ValueFinding",
     "Violation",
     "check_scope",
     "compose_follow_up",
@@ -168,13 +211,19 @@ __all__ = [
     "drain_ses_events",
     "is_suppressed",
     "issue_secure_link",
+    "lint_values",
     "on_sink",
+    "register_email_template",
+    "registered_templates",
     "resolve_secure_link",
+    "scheduled_send_enabled",
     "send",
     "send_email",
     "send_notification_email",
+    "send_templated",
     "ses_identities",
     "sink_address",
     "sink_domain",
     "template_key",
+    "viewer_scoped",
 ]

@@ -21,16 +21,21 @@ import type {
   PortalBinderListOut,
   PortalBinderOut,
   PortalBinderRefOut,
+  PortalFileOut,
   PortalRequestOut,
   PortalRoomOut,
   PortalRowOut,
+  CommentIn,
   RoomSuggestIn,
   RoomSuggestOut,
   UploadIntentIn,
+  UploadOut,
   UploadIntentOut,
   WithdrawalOut,
 } from "@abacus/api-client";
 import { type FixtureHandler, json, never } from "../../app-core/fixture-mode";
+import { getSeed, meFor } from "../seed";
+import { stableId } from "../seed/prng";
 
 const NOT_FOUND = { detail: "not found" };
 const DAY = 24 * 60 * 60 * 1000;
@@ -94,6 +99,13 @@ export function portalDocumentsHandlers(
   const requests = new Map((options.requests ?? []).map((r) => [r.id, r]));
   const threads = new Map(Object.entries(options.threads ?? {}).map(([k, v]) => [k, [...v]]));
   const ignoredBefore = new Map<string, PortalRowOut>();
+  let room = options.room;
+  const withdrawn = (versionId: string, itemId: string): WithdrawalOut => ({
+    evidence_version_id: versionId,
+    request_item_id: itemId,
+    withdrawn_at: clock,
+    erase_after: new Date(Date.parse(clock) + 30 * DAY).toISOString(),
+  });
 
   const findRow = (itemId: string): [PortalBinderOut, PortalRowOut] | undefined => {
     for (const b of binders.values()) {
@@ -223,6 +235,28 @@ export function portalDocumentsHandlers(
         };
         return json(out);
       }
+      // The sheet's own file (POR-04 c, portal-upload variant) or a room row's (POR-14).
+      for (const sheet of requests.values()) {
+        const own = (sheet.files ?? []).find((f) => f.id === versionId);
+        if (own === undefined) continue;
+        if (!own.withdrawable) return json({ detail: "evidence_accepted" }, 409);
+        const files = (sheet.files ?? []).filter((f) => f.id !== versionId);
+        requests.set(sheet.id, {
+          ...sheet,
+          files,
+          client_status: files.length === 0 ? "to_do" : sheet.client_status,
+          allowed_actions:
+            files.length === 0 ? ["upload", "ignore", "comment"] : (sheet.allowed_actions ?? []),
+        });
+        return json(withdrawn(versionId, sheet.id));
+      }
+      const roomRow = room?.bands
+        .flatMap((b) => b.rows)
+        .find((r) => (r.files ?? []).some((f) => f.id === versionId));
+      if (room !== undefined && roomRow !== undefined) {
+        room = withoutRoomFile(room, roomRow.id, versionId);
+        return json(withdrawn(versionId, roomRow.id));
+      }
       return json(NOT_FOUND, 404);
     },
     "POST /v1/portal/request-items/{item_id}/upload-intents": ({ params, body }) => {
@@ -248,10 +282,8 @@ export function portalDocumentsHandlers(
       options.drop !== undefined && options.drop.batch_id === params.batch_id
         ? json(options.drop)
         : json(NOT_FOUND, 404),
-    "GET /v1/portal/room": () =>
-      options.room === undefined ? json(NOT_FOUND, 404) : json(options.room),
+    "GET /v1/portal/room": () => (room === undefined ? json(NOT_FOUND, 404) : json(room)),
     "POST /v1/portal/room/suggest": ({ body }) => {
-      const room = options.room;
       if (room === undefined) return json(NOT_FOUND, 404);
       // Code-only, file names only: a word of the name in exactly one open delegated title.
       const open = room.bands.flatMap((b) => b.rows).filter((r) => r.state === "due");
@@ -277,5 +309,116 @@ export function portalDocumentsHandlers(
     },
     "GET /v1/engagements/{engagement_id}/request-items/{item_id}/comments": ({ params }) =>
       json(threads.get(params.item_id ?? "") ?? []),
+    // R-01-T12, T14: a client's comment joins the shared thread (SPEC-032: always shared).
+    "POST /v1/engagements/{engagement_id}/request-items/{item_id}/comments": ({
+      params,
+      body,
+      persona,
+    }) => {
+      const itemId = params.item_id ?? "";
+      const given = body as CommentIn;
+      const me = meFor(getSeed(), persona ?? "claire-feld");
+      const thread = threads.get(itemId) ?? [];
+      const out: CommentOut = {
+        id: stableId(`portal-pbc:comment:${itemId}:${String(thread.length)}`),
+        request_item_id: itemId,
+        author_user_id: me?.user_id ?? "",
+        author_name: me?.display_name ?? "",
+        author_side: "client",
+        created_at: clock,
+        text: given.text,
+        visibility: "shared",
+      };
+      threads.set(itemId, [...thread, out]);
+      return json(out, 201);
+    },
+    // R-01-T12, T14: a request's own upload ("Upload…" on the sheet or a room row): the file is
+    // the client's own and unaccepted, so it reads "You uploaded" with Withdraw.
+    "POST /v1/engagements/{engagement_id}/request-items/{item_id}/uploads": ({
+      params,
+      query,
+      persona,
+    }) => {
+      const itemId = params.item_id ?? "";
+      const name = query.get("filename") ?? "upload";
+      const fileId = stableId(`portal-pbc:upload:${itemId}:${name}`);
+      const uploaded: PortalFileOut = {
+        id: fileId,
+        name,
+        receipt: { kind: "uploaded", on },
+        withdrawable: true,
+      };
+      const sheet = requests.get(itemId);
+      if (sheet !== undefined) {
+        requests.set(itemId, {
+          ...sheet,
+          client_status: "done",
+          files: [uploaded, ...(sheet.files ?? [])],
+          returned: null,
+          allowed_actions: ["withdraw", "comment"],
+        });
+      }
+      if (room !== undefined) room = withRoomUpload(room, itemId, uploaded, on);
+      const me = meFor(getSeed(), persona ?? "claire-feld");
+      const out: UploadOut = {
+        evidence_version_id: fileId,
+        file_name: name,
+        media_type: "application/pdf",
+        size_bytes: 0,
+        uploaded_at: clock,
+        uploaded_by: me?.user_id ?? null,
+        uploaded_by_name: me?.display_name ?? "",
+      };
+      return json(out, 201);
+    },
   };
+}
+
+/** A room after the client's upload to one row: in review, with Withdraw on the file. */
+function withRoomUpload(
+  room: PortalRoomOut,
+  itemId: string,
+  file: PortalFileOut,
+  on: string,
+): PortalRoomOut {
+  const bands = room.bands.map((band) => {
+    const rows = band.rows.map((r) =>
+      r.id === itemId
+        ? {
+            ...r,
+            state: "in_review" as const,
+            state_on: on,
+            disc: "done" as const,
+            files: [file, ...(r.files ?? [])],
+            returned: null,
+            allowed_actions: ["withdraw" as const, "comment" as const],
+          }
+        : r,
+    );
+    return { ...band, rows, uploaded: rows.filter((r) => r.disc === "done").length };
+  });
+  const uploaded = bands.reduce((n, b) => n + b.uploaded, 0);
+  return { ...room, bands, uploaded_count: uploaded };
+}
+
+/** A room after the client withdrew one of its files: the row is due again when it was the
+ * only file. */
+function withoutRoomFile(room: PortalRoomOut, itemId: string, versionId: string): PortalRoomOut {
+  const bands = room.bands.map((band) => {
+    const rows = band.rows.map((r) => {
+      if (r.id !== itemId) return r;
+      const files = (r.files ?? []).filter((f) => f.id !== versionId);
+      return files.length > 0
+        ? { ...r, files }
+        : {
+            ...r,
+            files,
+            state: "due" as const,
+            disc: "ring" as const,
+            allowed_actions: ["upload" as const, "comment" as const],
+          };
+    });
+    return { ...band, rows, uploaded: rows.filter((r) => r.disc === "done").length };
+  });
+  return { ...room, bands, uploaded_count: bands.reduce((n, b) => n + b.uploaded, 0) };
 }

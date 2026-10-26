@@ -77,6 +77,7 @@ from abacus.modules.requests.client_undo import (
     IgnoreNotesExhausted,
     NothingToUndo,
 )
+from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.events import RequestItemIgnoreUndone, RequestItemSent
 from abacus.modules.requests.models import RequestItem
 from abacus.modules.requests.repository import (
@@ -89,13 +90,14 @@ from abacus.modules.requests.repository import (
     insert_delegation,
     insert_upload_intent,
     is_delegated,
+    live_item_engagements,
     live_upload_intents,
     newest_response,
     open_delegations,
     set_item_fields,
     stamp_sent,
 )
-from abacus.modules.requests.service import reclassify_described
+from abacus.modules.requests.service import item_ref, reclassify_described
 
 TERMINAL: Final = frozenset({"received", "not_applicable"})
 NA_REASONS: Final = ("not_applicable_this_year", "already_sent", "dont_have", "firm_waived")
@@ -614,6 +616,19 @@ class ContactNotPortalUser(DomainConflict):
     code = "contact_not_portal_user"
 
 
+class ConsentRequired(DomainConflict):
+    """§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to a
+    third party only under the client's `third_party_disclosure` consent (C19). Until T-01
+    registers that consent nobody holds it, so such a delegation is refused (fail closed)."""
+
+    code = "consent_required"
+
+
+async def _consented(tenant: TenantContext, engagement_id: UUID) -> None:
+    if not await third_party_consented(tenant, engagement_id):
+        raise ConsentRequired(facts={"engagement_id": str(engagement_id)})
+
+
 async def delegate_item(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, contact_id: UUID
 ) -> DelegationView:
@@ -628,6 +643,7 @@ async def delegate_item(
         ref.tenant_id, ref.id, archived=ref.archived, client_id=ref.client_id, item=_facts(item)
     )
     await authorise(ctx, "request_item.delegate", resource)
+    await _consented(ctx.tenant, engagement_id)  # before any grant exists (DEC-388)
     contact = await contact_portal_user(ctx.tenant, engagement_id, contact_id)
     if contact is None:
         raise ContactNotPortalUser
@@ -677,6 +693,11 @@ async def record_contact_delegations(
         item = await get_request_item(tx.session, item_id, lock=True)  # as `delegate_item`
         if item is None or item.deleted_at is not None:
             raise NotFound("request_item")
+        # §7216 (DEC-388): the invitation's unit of work rolls back, so no grant, invitation or
+        # email exists for a tax request without the client's consent.
+        await _consented(
+            TenantContext(item.tenant_id, "system", "requests:delegate"), item.engagement_id
+        )
         await insert_delegation(
             tx.session,
             tenant_id=item.tenant_id,
@@ -732,12 +753,15 @@ async def announce_upload(ctx: AuthContext, item_id: UUID, files_expected: int) 
         if item is None or item.deleted_at is not None:
             raise NotFound("request_item")
         ref = await lock_ref(tx, item.engagement_id)
+        # The item's facts with its delegates (R-01-T13, security review M1): a third party
+        # announces an upload on a request delegated to them, under the consent gate (DEC-389).
+        facts = (await item_ref(tx, item.id)).facts
         resource = Resource.engagement(
             ref.tenant_id,
             ref.id,
             archived=ref.archived,
             client_id=ref.client_id,
-            item=_facts(item),
+            item=facts,
         )
         try:
             await authorise(ctx, "evidence.upload", resource)
@@ -841,6 +865,21 @@ async def item_activity(
         else None
     )
     return ActivityPage([activity_view(e) for e in page], following, total[0], total[1])
+
+
+async def request_item_scopes(
+    tenant: TenantContext, item_ids: Sequence[UUID]
+) -> dict[UUID, ScopeFacts]:
+    """Many `request_item` grants' scopes at once (security review L2): one read of the requests,
+    one client lookup per engagement."""
+    async with tenant_session(tenant) as session:
+        engagements = await live_item_engagements(session, item_ids)
+    clients = {e: await client_of(tenant, e) for e in set(engagements.values())}
+    return {
+        item: ScopeFacts(client, engagement_id=engagement)
+        for item, engagement in engagements.items()
+        if (client := clients.get(engagement)) is not None
+    }
 
 
 async def request_item_scope(tenant: TenantContext, item_id: UUID) -> ScopeFacts | None:

@@ -27,6 +27,7 @@ GROUPS: Final = frozenset(
     | {"portal_access"}  # P-07-T25 (DEC-303), P-08-T21: a client's portal unlock and MFA reset
     | {"access_control"}  # P-08-T21 security review: security-role changes
     | {"team"}  # P-07-T30 (DEC-327): the engagement partner's team approval
+    | {"incident"}  # G-02-T02 (Q-02 AC-42): incident decisions
 )
 
 

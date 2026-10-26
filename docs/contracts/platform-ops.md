@@ -144,6 +144,7 @@ Operator commands run as ECS one-off `abacus-ops` tasks through `ops-task.yml`, 
 | `abacus_tools.schedules ensure` | none | creates or converges every declared platform-job Schedule, keeping an operator's pause (Q-01-T26, DEC-359; the deploys run it after migrate) | none (Temporal holds the Schedules) |
 | `abacus_tools.schedules show` | none | read-only: each Schedule's workflow, queue, interval, policy and pause | none |
 | `abacus_tools.schedules pause \| unpause \| delete` | `--id`, `--operator`, `--reason` | one declared Schedule; the note records the operator and reason | none (the Schedule's note) |
+| `abacus_tools.trust_layer_backfill` | the tenant id (one positional argument) | starts (or joins) that tenant's `trust_layer_backfill:<tenant>` workflow on the background queue: the word layer, PII scan and masked renditions for uploads made before P-03-T15 (#419; ED-088). Idempotent: a running backfill is joined | the workflow's own records |
 | `make deploy-lock` | `ENV` | read-only (section 3.4) | none |
 
 `--operator` is the operator's handle, never an email address. `--reason` is at most 200 characters and holds no client data. A command missing an argument exits non-zero before it touches anything. Commands that mutate are idempotent for the same idempotency key or the same arguments.

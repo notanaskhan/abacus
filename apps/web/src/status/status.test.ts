@@ -69,7 +69,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +4 (Q-02-T30): legal_hold 4.
     // +6 (A-01-T01): engagement_export 6.
     // +9 (A-02-T02): trial_balance_label 5, trial_balance_layer 4.
-    expect(ROWS).toHaveLength(376);
+    // +1 (P-07-T36): conflict_assessment `conflict`.
+    expect(ROWS).toHaveLength(377);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

@@ -20,6 +20,7 @@ from typing import Annotated, Literal, Self, cast
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from abacus_tools.evals.regions import check_reports
 from abacus_tools.evals.taxonomy import (
     ADVERSARIAL_CATEGORIES,
     FAILURE_CATEGORIES,
@@ -82,6 +83,8 @@ class Suite(BaseModel):
     cases: tuple[Case, ...]
     graders: tuple[str, ...]
     thresholds: tuple[Threshold, ...]
+    # Metrics reported with every run and never gating (P-03-T17: `citation_region_resolved`).
+    reports: tuple[str, ...] = ()
     dangerous_error: str
     repeats: Annotated[int, Field(ge=1, le=20)]
     required_pass_rate: Annotated[float, Field(gt=0, le=1)]
@@ -135,6 +138,7 @@ def validate(
     for metric in set(named) | {suite.dangerous_error}:
         if metric not in metrics:
             problems.append(f"unknown metric {metric!r}")
+    problems.extend(check_reports(suite.reports, metrics, named))
     if suite.dangerous_error == "accuracy":
         problems.append("accuracy is never the dangerous error (ADR-081)")
     elif suite.dangerous_error not in DANGEROUS_CLASSES:

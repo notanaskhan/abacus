@@ -20,7 +20,9 @@ _HTML_LINK = re.compile(
     r"<\s*(?:a|img|iframe|script|link|source)\b[^>]{0,2000}?(?:href|src)\s*=\s*['\"]?([^'\"\s>]{1,2000})[^>]{0,2000}>",
     re.IGNORECASE,
 )
-_URL = re.compile(r"\b(?:[a-z][a-z0-9+.-]{1,20}://|www\.)[^\s<>()\"']{1,2000}", re.IGNORECASE)
+# No word boundary before the scheme: a homoglyph (a Cyrillic letter, then "ttps://") is a word
+# character and would hide the link (TASK-5007). The scheme still starts at an ASCII letter.
+_URL = re.compile(r"(?:[a-z][a-z0-9+.-]{1,20}://|\bwww\.)[^\s<>()\"']{1,2000}", re.IGNORECASE)
 
 
 def _host(link: str) -> str:

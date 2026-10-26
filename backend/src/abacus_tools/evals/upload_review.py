@@ -46,10 +46,13 @@ from abacus.modules.evidence.api import (
     UPLOAD_VERSION,
     UploadInput,
     check_upload_content,
+    pii_scan_upload,
     process_upload,
+    words_upload,
 )
 from abacus.modules.evidence.api import upload as upload_file
 from abacus.modules.requests.api import NewRequestItem, add_request_item
+from abacus_tools.evals.regions import check_reports, region_counts, resolved_share
 from abacus_tools.evals.taxonomy import ADVERSARIAL_CATEGORIES, FAILURE_CATEGORIES
 from abacus_tools.stack import Seeded, Stack, connect_db
 from abacus_tools.synthetic.documents import (
@@ -228,6 +231,8 @@ class ReviewSuite(BaseModel):
     version: Annotated[int, Field(ge=1)]
     covers: frozenset[str]
     thresholds: tuple[Threshold, ...]
+    # Metrics reported with every run and never gating (P-03-T17: `citation_region_resolved`).
+    reports: tuple[str, ...] = ()
     dangerous_error: str
     cost_per_review_usd: Annotated[Decimal, Field(gt=0)]
     repeats: Annotated[int, Field(ge=1, le=20)]
@@ -252,6 +257,9 @@ class Seen:
     latency_ms: int | None = None
     error: str | None = None
     rationales: tuple[str, ...] = field(default=())
+    # P-03-T17 (report-only): verified document_text citations, and those with a region.
+    regions_cited: int = 0
+    regions_resolved: int = 0
 
 
 def load_suite(path: Path = SUITE) -> ReviewSuite:
@@ -277,6 +285,7 @@ def validate(suite: ReviewSuite) -> None:
     problems.extend(f"no case covers {c!r}" for c in sorted(suite.covers - covered))
     named = {t.metric for t in suite.thresholds}
     problems.extend(f"unknown metric {m!r}" for m in sorted(named - set(METRICS)))
+    problems.extend(check_reports(suite.reports, METRICS, named))
     if suite.dangerous_error not in named:
         problems.append(f"the dangerous error {suite.dangerous_error!r} has no threshold")
     if not any(c.key for c in suite.cases):
@@ -322,6 +331,13 @@ def quote_accuracy(attempts: Attempts) -> float:
     return _fraction(sum(s.quotes_verified for _, s in attempts), total, 1.0)
 
 
+def citation_region_resolved(attempts: Attempts) -> float:
+    """Report-only (P-03-T17): verified document_text citations that carry a region."""
+    return resolved_share(
+        (s.regions_cited, s.regions_resolved) for _, s in attempts if s.stage == "reviewed"
+    )
+
+
 def adversarial_containment(attempts: Attempts) -> float:
     """Delimited as untrusted, and not obeyed: every expected flag still shown."""
     relevant = [
@@ -340,6 +356,7 @@ METRICS: Final[dict[str, Callable[[Attempts], float]]] = {
     "citation_verification": citation_verification,
     "adversarial_containment": adversarial_containment,
     "quote_accuracy": quote_accuracy,
+    "citation_region_resolved": citation_region_resolved,
 }
 
 
@@ -487,6 +504,9 @@ async def attempt(
         given = UploadInput(str(world.tenant), UPLOAD_VERSION, str(uploaded.evidence_version_id))
         await process_upload(given)
         await check_upload_content(given)
+        # P-03-T15: the reviewer reads only masked material, built after the PII scan.
+        await words_upload(given)
+        await pii_scan_upload(given)
         run_id = await create_review_run(
             world.tenant, uploaded.evidence_version_id, uuid.uuid4(), world.user
         )
@@ -507,6 +527,7 @@ async def attempt(
             raise RuntimeError("not admitted after waiting")
         latency = round((time.monotonic() - started) * 1000)
         found = await _outcome(stack.superuser, run_id)
+        cited, resolved = await region_counts(stack.superuser, run_id)
         if outcome.status != "completed":
             return Seen(
                 case.id,
@@ -529,6 +550,8 @@ async def attempt(
             cost_usd=found.cost,
             latency_ms=latency,
             rationales=found.rationales,
+            regions_cited=cited,
+            regions_resolved=resolved,
         )
     except Exception as exc:
         cost = Decimal(0)

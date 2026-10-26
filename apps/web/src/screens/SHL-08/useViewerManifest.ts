@@ -2,10 +2,16 @@
 // masked page images, through the generated client only. A version still being processed answers
 // `status=processing`; the manifest is polled every 3 s until it is not (AC3.4, the legacy
 // EvidencePreview pattern). Pages are read as blobs and shown through object URLs that are revoked
-// when they change or the viewer closes: never a client file, never a document to parse.
+// when they change or the viewer closes: never a client file, never a document to parse. A reader
+// the manifest gives the `text` view (DEC-369: an offshore member, until OCR) gets the masked text
+// projection instead, and no page image or region is ever asked for.
 
-import { type ViewerManifestOut, viewerPage } from "@abacus/api-client";
-import { viewerManifestOptions, viewerRegionsOptions } from "@abacus/api-client/query";
+import { type ViewerManifestOut, type ViewerTextOut, viewerPage } from "@abacus/api-client";
+import {
+  viewerManifestOptions,
+  viewerRegionsOptions,
+  viewerTextOptions,
+} from "@abacus/api-client/query";
 import { type ViewerFile, type ViewerStatus, contractMatchId } from "@abacus/ui";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -52,6 +58,10 @@ function usePageUrls(versionId: string, pages: readonly number[]): Record<number
 
 export interface ViewerData {
   manifest: ViewerManifestOut | undefined;
+  /** The server's choice (DEC-369): `text` for a reader who gets no page images (offshore). */
+  view: "images" | "text";
+  /** The masked text projection, read only for the `text` view. */
+  text: ViewerTextOut | undefined;
   file: ViewerFile;
   status: ViewerStatus;
   /** The manifest has not answered, or the version is still processing: skeleton pages. */
@@ -65,13 +75,20 @@ export function useViewerData(versionId: string): ViewerData {
     refetchInterval: (query) => pollWhileProcessing(query.state.data),
   });
   const status = manifest.data?.status ?? "processing";
+  // The server decides the view (DEC-369); a text view never asks for a page image or a region.
+  const view = manifest.data?.view === "text" ? "text" : "images";
   const regions = useQuery({
     ...viewerRegionsOptions({ path: { version_id: versionId } }),
-    enabled: status === "ready",
+    enabled: status === "ready" && view === "images",
+  });
+  const text = useQuery({
+    ...viewerTextOptions({ path: { version_id: versionId } }),
+    enabled: status === "ready" && view === "text",
   });
   const pageNos = useMemo(
-    () => (status === "ready" ? (manifest.data?.pages ?? []).map((p) => p.n) : []),
-    [manifest.data, status],
+    () =>
+      status === "ready" && view === "images" ? (manifest.data?.pages ?? []).map((p) => p.n) : [],
+    [manifest.data, status, view],
   );
   const urls = usePageUrls(versionId, pageNos);
   const file = useMemo<ViewerFile>(
@@ -105,6 +122,8 @@ export function useViewerData(versionId: string): ViewerData {
   );
   return {
     manifest: manifest.data,
+    view,
+    text: text.data,
     file,
     status,
     loading: manifest.data === undefined || status === "processing",

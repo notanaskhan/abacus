@@ -3,7 +3,7 @@ stub; ADR-139, P-36). Contract: `docs/contracts/firm-settings.md`.
 
 Behind `firm_settings.v2`: off, every route here answers 404; on, 501 `not_implemented` until
 the task that implements it (G-01-T04 settings; T05 people; T09 walls v2; T12 service lines;
-T13 annual independence). Offices and teams are organisations' (`organisations/
+T13 annual independence); all are live now. Offices and teams are organisations' (`organisations/
 settings_contract.py`).
 
 Routes that already exist keep their paths and grow additively in their tasks:
@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -34,15 +34,24 @@ from abacus.kernel._statuses import (
     WallApprovalStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import CursorInvalid, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
-from abacus.modules.identity import offshore, people, settings_registry, walls
+from abacus.modules.identity import (
+    annual_independence,
+    offshore,
+    people,
+    service_lines,
+    settings_registry,
+    walls,
+)
+from abacus.modules.identity.authz import Resource, allowed_actions
 from abacus.modules.identity.context import AuthContext
-from abacus.modules.identity.routing import AbacusRouter, current_context
+from abacus.modules.identity.routing import OWN, AbacusRouter, current_context, current_member
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
+Member = Annotated[AuthContext, Depends(current_member)]
 
 # The settings sections (ADM-01 §3.1; the order is the section list's).
 Section = Literal["profile", "defaults", "plan"]
@@ -215,9 +224,8 @@ class PersonOut(BaseModel):
     ] = []  # the person's own walls (ADM-02d)
     assignment_count: Annotated[int, classified("internal")] = 0
     recent_sign_ins: Annotated[list[SignInOut], classified("confidential")] = []
-    annual_independence: Annotated[AnnualStatus, classified("internal")] = (
-        AnnualIndependenceStatus.NOT_YET
-    )
+    # Null unless the reader holds `independence.annual_read` (DEC-383).
+    annual_independence: Annotated[AnnualStatus | None, classified("internal")] = None
     version: Annotated[int, classified("internal")]
 
 
@@ -317,6 +325,34 @@ class AnnualConfirmedOut(BaseModel):
     decided_at: Annotated[datetime, classified("internal")]
 
 
+class AnnualStatementOut(BaseModel):
+    """The firm's independence statement (firm content, G-01-T13): the version a person
+    confirms."""
+
+    model_config = ConfigDict(frozen=True)
+
+    version: Annotated[int, classified("internal")]
+    body: Annotated[str, classified("internal")]
+
+
+class AnnualStatementIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    body: Annotated[MultiLineText, Field(min_length=1, max_length=4000), classified("internal")]
+
+
+class MyAnnualIndependenceOut(BaseModel):
+    """SHL-03's profile drawer (AC6.1): one's own status for the year and the statement to
+    confirm (absent until the firm publishes one)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    year: Annotated[int, classified("internal")]
+    status: Annotated[AnnualStatus, classified("internal")]
+    decided_at: Annotated[datetime | None, classified("internal")] = None
+    statement: Annotated[AnnualStatementOut | None, classified("internal")] = None
+
+
 # --- ADM-03: service lines, offshore, walls v2 ---------------------------------------------------
 
 
@@ -395,11 +431,6 @@ class WallEventOut(BaseModel):
 async def _gate(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, FIRM_SETTINGS_V2):
         raise NotFound("firm_settings.v2")
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    await _gate(ctx)
-    raise NotImplementedYet
 
 
 def _section(view: settings_registry.SectionView) -> SettingsSectionValuesOut:
@@ -495,6 +526,13 @@ def tallies_out(t: people.Tallies) -> StaffTalliesOut:
 
 async def _person_out(ctx: AuthContext, user_id: UUID) -> PersonOut:
     found = await people.staff_user(ctx, user_id)
+    # Only for those who may read the year's list (DEC-383): `firm.read_people` alone isn't it.
+    annual: str | None = None
+    if "independence.annual_read" in await allowed_actions(
+        ctx, Resource.firm(ctx.tenant_id), ("independence.annual_read",)
+    ):
+        year = (await annual_independence.business_today(ctx.tenant)).year
+        annual = await annual_independence.status_of(ctx.tenant, user_id, year)
     return PersonOut(
         row=row_out(found.row),
         firm_role=found.firm_role,
@@ -504,6 +542,7 @@ async def _person_out(ctx: AuthContext, user_id: UUID) -> PersonOut:
         recent_sign_ins=[
             SignInOut(at=s.at, method=s.method, mfa=s.mfa) for s in found.recent_sign_ins
         ],
+        annual_independence=None if annual is None else AnnualIndependenceStatus(annual),
         version=found.version,
     )
 
@@ -581,35 +620,105 @@ async def role_templates_route(ctx: Ctx) -> RoleTemplatesOut:
     "/independence/annual",
     action="independence.annual_read",
     response_model=AnnualIndependenceOut,
-    errors=(501,),
 )
 async def annual_independence_route(
     ctx: Ctx, year: Annotated[int, Query(ge=2025, le=2100)]
 ) -> AnnualIndependenceOut:
-    await _stub(ctx)
+    """ADM-02g (AC6.3): every active staff member's status for the year (Confirmed with its
+    date, Not yet, Declined with its note); the counts foot to them."""
+    await _gate(ctx)
+    found = await annual_independence.annual(ctx, year)
+    return AnnualIndependenceOut(
+        year=found.year,
+        rows=[
+            AnnualRowOut(
+                user_id=r.user_id,
+                status=AnnualIndependenceStatus(r.status),
+                decided_at=r.decided_at,
+                note=r.note,
+            )
+            for r in found.rows
+        ],
+        counts=found.counts,
+    )
+
+
+def _statement_out(found: annual_independence.Statement | None) -> AnnualStatementOut | None:
+    return None if found is None else AnnualStatementOut(version=found.version, body=found.body)
+
+
+@settings_router.get(
+    "/independence/statement",
+    action="firm.read_settings",
+    response_model=AnnualStatementOut | None,
+)
+async def independence_statement_route(ctx: Ctx) -> AnnualStatementOut | None:
+    """The firm's current independence statement, or null before the first (G-01-T13)."""
+    await _gate(ctx)
+    return _statement_out(await annual_independence.statement(ctx))
+
+
+@settings_router.put(
+    "/independence/statement",
+    action="firm.manage_settings",
+    response_model=AnnualStatementOut,
+)
+async def publish_independence_statement_route(
+    body: AnnualStatementIn, ctx: Ctx
+) -> AnnualStatementOut:
+    """A new version of the statement (firm admin, fresh MFA); confirmations name the version
+    they read (DEC-381)."""
+    await _gate(ctx)
+    found = await annual_independence.publish_statement(ctx, body.body)
+    return AnnualStatementOut(version=found.version, body=found.body)
+
+
+def _line_out(policy: service_lines.Policy) -> ServiceLinePolicyOut:
+    return ServiceLinePolicyOut(
+        service_line=policy.service_line,
+        enabled=policy.enabled,
+        lead_user_id=policy.lead_user_id,
+        content_visible_to=policy.content_visible_to,
+        cross_line_access=policy.cross_line_access,
+        version=policy.version,
+    )
 
 
 @settings_router.get(
     "/service-lines",
     action="firm.read_settings",
     response_model=list[ServiceLinePolicyOut],
-    errors=(501,),
 )
 async def service_lines_route(ctx: Ctx) -> list[ServiceLinePolicyOut]:
-    await _stub(ctx)
+    """ADM-03's service lines (AC10.1): the four lines in order; a line never saved reads its
+    defaults ("Engagement team only", "Hand-offs only", version 0)."""
+    await _gate(ctx)
+    return [_line_out(p) for p in await service_lines.policies(ctx)]
 
 
 @settings_router.put(
     "/service-lines/{line}",
     action="service_line_policy.manage",
     response_model=ServiceLinePolicyOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def set_service_line_route(
     line: ServiceLine, body: ServiceLinePolicyIn, ctx: Ctx
 ) -> ServiceLinePolicyOut:
-    """Fresh MFA; 422 `audit_locked`; 409 `stale_version`."""
-    await _stub(ctx)
+    """Fresh MFA; 422 `audit_locked` (Audit is never widened) and `service_line_lead_invalid`;
+    409 `stale_version`. Members whose reach changes get `access.changed` (AC10.2)."""
+    await _gate(ctx)
+    return _line_out(
+        await service_lines.set_policy(
+            ctx,
+            line,
+            version=body.version,
+            enabled=body.enabled,
+            lead_user_id=body.lead_user_id,
+            content_visible_to=body.content_visible_to,
+            cross_line_access=body.cross_line_access,
+        )
+    )
 
 
 @settings_router.get("/offshore", action="firm.read_settings", response_model=OffshoreOut)
@@ -693,13 +802,45 @@ def _cursor(cursor: str | None) -> int | None:
     return int(cursor)
 
 
+@me_router.get(
+    "/independence/annual",
+    action=OWN,
+    response_model=MyAnnualIndependenceOut,
+)
+async def my_annual_independence_route(
+    ctx: Member, year: Annotated[int | None, Query(ge=2025, le=2100)] = None
+) -> MyAnnualIndependenceOut:
+    """AC6.1: one's own status for the year (the firm's current year by default) and the
+    statement to confirm."""
+    await _gate(ctx)
+    found = await annual_independence.mine(ctx, year)
+    return MyAnnualIndependenceOut(
+        year=found.year,
+        status=AnnualIndependenceStatus(found.status),
+        decided_at=found.decided_at,
+        statement=_statement_out(found.statement),
+    )
+
+
 @me_router.post(
     "/independence/annual",
     action="independence.annual_confirm",
     response_model=AnnualConfirmedOut,
     status_code=201,
-    errors=(501,),
+    errors=(409,),
 )
 async def confirm_annual_independence_route(body: AnnualConfirmIn, ctx: Ctx) -> AnnualConfirmedOut:
-    """Oneself only (`independence.annual_confirm`); agents and the system can't confirm."""
-    await _stub(ctx)
+    """Oneself only (`independence.annual_confirm`); agents and the system can't confirm. The
+    current year only and a note to decline (422 `annual_confirmation_invalid`); the statement
+    version read (409 `stale_version`, `independence_statement_missing`)."""
+    await _gate(ctx)
+    found = await annual_independence.record(
+        ctx,
+        year=body.year,
+        decision=body.decision,
+        statement_version=body.statement_version,
+        note=body.note,
+    )
+    return AnnualConfirmedOut(
+        year=found.year, decision=found.decision, decided_at=found.decided_at
+    )

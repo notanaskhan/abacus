@@ -228,6 +228,11 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/independence/reminders",
     "/v1/engagements/{engagement_id}/eqr",
     "/v1/conflict-checks/{check_id}/results/{result_id}/clear",
+    # P-07-T35: completing the requested risk-partner review is an event on it, so 200.
+    "/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete",
+    # P-07-T37 (intake stub): a dedupe read and a step validation write nothing, so 200.
+    "/v1/clients/dedupe",
+    "/v1/client-intake-drafts/{draft_id}/validate",
     # TASK-1198 (ENG-02 status menu): holding and resuming move an engagement, so 200.
     "/v1/engagements/{engagement_id}/hold",
     "/v1/engagements/{engagement_id}/resume",
@@ -235,6 +240,17 @@ NOT_CREATING = {
     "/v1/firm/data-exports/{export_id}/approve",
     "/v1/firm/data-exports/{export_id}/decline",
     "/v1/firm/data-exports/{export_id}/link",
+    "/v1/audit-events/exports/{export_id}/link",  # G-02-T04: a download link, nothing created
+    # A-01-T17 (engagement export v1 stub): Undo voids an existing export's grant.
+    "/v1/exports/{export_id}/undo",
+    # A-02-T06 (C20 v1 stub): a disconnect revokes an existing connection and returns its card.
+    "/v1/portal/connections/{connection_id}/disconnect",
+    # R-01-T16 (C16 v1.1 stub): an import answers its results (a dry run by default), a preview
+    # renders and stores nothing, a check reads the SES identity, a logo replaces the draft's.
+    "/v1/firm/email-templates/import",
+    "/v1/firm/email-templates/{key}/preview",
+    "/v1/firm/sending-domains/{domain_id}/check",
+    "/v1/firm/portal-settings/logo",
 }
 
 
@@ -270,6 +286,17 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/links/renew",
         # Q-02-T38: a firm-export request waits for its approver, then builds, so 202.
         "/v1/firm/data-exports",
+        # G-02-T04: an audit-log export is requested, then builds, so 202.
+        "/v1/audit-events/exports",
+        # A-01-T17: an engagement export waits out its Undo window, then builds, so 202.
+        "/v1/work-items/{work_item_id}/exports",
+        # A-02-T06 (C20 v1 stub): a retry and an on-demand pull start a sync run, so 202.
+        "/v1/portal/connections/{connection_id}/retry",
+        "/v1/engagements/{engagement_id}/connection/pulls",
+        # R-01-T16: a test send queues one email to the acting admin, so 202.
+        "/v1/firm/email-templates/{key}/test-send",
+        # P-07-T37: an import run starts ClientImportWorkflow, so 202.
+        "/v1/client-imports/{import_id}/run",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -322,6 +349,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/eqr/eligibility/approve",
         "/v1/conflict-checks",
         "/v1/screening-records",
+        # P-07-T37 (intake stub): an intake draft, the committed client, an uploaded import.
+        "/v1/client-intake-drafts",
+        "/v1/client-intake-drafts/{draft_id}/commit",
+        "/v1/client-imports",
         "/v1/walls",
         "/v1/methodology/templates/{name}/versions",  # SPEC-008: a template version
         "/v1/engagements/{engagement_id}/methodology",  # SPEC-008: items seeded
@@ -448,6 +479,13 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/fields/{target_type}/{target_id}/{field_key}/references",
         "/v1/fields/{target_type}/{target_id}/{field_key}/ticks",
         "/v1/firm/security/incidents",  # Q-02-T33: a register entry
+        # A-02-T06 (C20 v1 stub): a consent record, and a reconnect request.
+        "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start",
+        "/v1/connections/{connection_id}/reconnect-requests",
+        # R-01-T16 (C16 v1.1 stub): a template version, a sending domain, a settings version.
+        "/v1/firm/email-templates/{key}/publish",
+        "/v1/firm/sending-domains",
+        "/v1/firm/portal-settings/publish",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
