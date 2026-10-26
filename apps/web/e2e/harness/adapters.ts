@@ -21,6 +21,9 @@ export type HarnessProject = (typeof HARNESS_PROJECTS)[number];
 export interface OpenOptions {
   /** The business instant a fixture journey stands at (ISO 8601 with an offset). */
   clock?: string;
+  /** Flags the firm reads as on, in the fixture project only (`?flags=`): a step walks a screen
+   * built on fixtures whose flag E0 leaves off. The other projects read the firm's own flags. */
+  flags?: readonly string[];
 }
 
 export interface PersonaAdapter {
@@ -99,7 +102,14 @@ const fixture: PersonaAdapter = {
       Date.parse(clock) + 12 * 3_600_000,
     );
     if (persona.kind !== "staff") await servePortalEntry(page, path);
-    await page.goto(withQuery(path, { as: persona.slug, clock }));
+    const flags = options.flags ?? [];
+    await page.goto(
+      withQuery(path, {
+        as: persona.slug,
+        clock,
+        ...(flags.length === 0 ? {} : { flags: flags.join(",") }),
+      }),
+    );
   },
   probe: () => Promise.resolve(null),
 };
