@@ -23,6 +23,8 @@ def test_ac3_the_histories_are_committed() -> None:
         "guidance-draft-v2-completed",  # TASK-074: the input names a template item, or not
         "guidance-draft-v2-skipped",
         "guidance-draft-v2-template",
+        "guidance-draft-v3-completed",  # Q-02-T41: the run record is persisted (run_record_v1)
+        "guidance-draft-v3-failed",
     ]
 
 

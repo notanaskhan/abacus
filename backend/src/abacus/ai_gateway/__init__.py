@@ -44,7 +44,7 @@ from abacus.ai_gateway.admission import (
     block,
     refusal_reason,
 )
-from abacus.ai_gateway.attempts import Attempt, attempts_for
+from abacus.ai_gateway.attempts import Attempt, ModelCall, attempts_for, model_calls_for
 from abacus.ai_gateway.boundary import (
     CLIENT_DATA_ROUTES,
     Basis,
@@ -880,6 +880,7 @@ __all__ = [
     "GatewayCall",
     "GatewayRefused",
     "GatewayResult",
+    "ModelCall",
     "ModelProvider",
     "ModelRequest",
     "ModelResponse",
@@ -904,6 +905,7 @@ __all__ = [
     "forget_boundary_facts",
     "hold_boundary_facts_for",
     "is_synthetic",
+    "model_calls_for",
     "model_id",
     "prompt",
     "register_client_data_facts",
