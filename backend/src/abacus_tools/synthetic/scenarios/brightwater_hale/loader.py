@@ -1590,13 +1590,14 @@ async def _questionnaire_template_added(
         for code, title in cast(list[tuple[str, str]], data["sections"])
     ]
     by = user_id_of(_SEATS[event.actor])
+    tenant = tenant_of(event)  # the tenant `_bootstrap` sets and audits (security review)
 
     async def write() -> tuple[str, str, str]:
         await conn.execute(
             "INSERT INTO acceptance_questionnaire_templates (id, tenant_id, name, family, "
             "created_by) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
             template,
-            TENANT,
+            tenant,
             str(data["name"]),
             family,
             by,
@@ -1606,7 +1607,7 @@ async def _questionnaire_template_added(
             "version_no, sections, created_by) VALUES ($1, $2, $3, 1, $4::jsonb, $5) "
             "ON CONFLICT DO NOTHING",
             UUID(stable_id(f"questionnaire-version:{family}:1")),
-            TENANT,
+            tenant,
             template,
             json.dumps(sections),
             by,
