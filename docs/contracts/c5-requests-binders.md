@@ -109,6 +109,7 @@ Codes are reserved for the implementing tasks; they enter `docs/architecture/err
 | 422 | `{"detail": "due_date_required", "facts": {...item ids}}` | publish or send with requests lacking a due date |
 | 422 | `{"detail": "reason_required"}` | unpublish or ignore without a reason (an absent or blank `reason` field is refused first by body validation, also 422) |
 | 409 | `{"detail": "request_already_sent"}` | delete a sent request |
+| 409 | `{"detail": "consent_required", "facts": {"engagement_id": "…"}}` | delegate a request of an engagement holding a `tax_return` work item without the client's C19 `third_party_disclosure` consent (ADR P-12; R-01-T13, DEC-388); nothing is written |
 | 409 | `{"detail": "out_of_scope"}` | client wording fails `communications` scope check |
 | 409 | `{"detail": "model_text_not_permitted"}` | unchanged model-drafted wording while P-25 is off (DV-11) |
 | 409 | `{"detail": "undo_window_closed"}` / `{"detail": "effect_started"}` | Undo after 10 s / after delivery began |

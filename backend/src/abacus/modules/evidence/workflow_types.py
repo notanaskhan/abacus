@@ -17,6 +17,10 @@ class UploadInput:
     tenant_id: str
     kind: str  # VERSION | INBOX
     source_id: str
+    # P-03-T15 review L1: whether a first PII scan may re-announce the upload to the reviewer
+    # or matcher. True for an upload's own run; the trust-layer backfill passes False, so it never
+    # starts agents on old uploads. A default, so histories recorded without it still decode.
+    announce: bool = True
 
 
 @dataclass(frozen=True)

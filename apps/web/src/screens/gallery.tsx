@@ -17,6 +17,13 @@ import {
   OPENS as ADM02_OPENS,
   scenarios as adm02Scenarios,
 } from "./ADM-02/scenarios";
+import { OfficesPage } from "./ADM-03";
+import {
+  type Adm03State,
+  STATES as ADM03_STATES,
+  OPENS as ADM03_OPENS,
+  scenarios as adm03Scenarios,
+} from "./ADM-03/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -97,6 +104,13 @@ import {
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
+import {
+  OPENS as ENG05_OPENS,
+  OVERLAYS as ENG05_OVERLAYS,
+  STATES as ENG05_STATES,
+  type Eng05State,
+  scenarios as eng05Scenarios,
+} from "./ENG-05/scenarios";
 import { PortalSignIn } from "./POR-01";
 import { PortalHome } from "./POR-02";
 import { PortalDocuments } from "./POR-03";
@@ -106,6 +120,20 @@ import {
   type Por03State,
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
+import { PortalRequest } from "./POR-04";
+import { PortalRoom } from "./POR-14";
+import {
+  ARTBOARD as POR14_ARTBOARD,
+  STATES as POR14_STATES,
+  type Por14State,
+  scenarios as por14Scenarios,
+} from "./POR-14/scenarios";
+import {
+  ARTBOARD as POR04_ARTBOARD,
+  STATES as POR04_STATES,
+  type Por04State,
+  scenarios as por04Scenarios,
+} from "./POR-04/scenarios";
 import {
   MOBILE_STATES as POR02_MOBILE,
   STATES as POR02_STATES,
@@ -391,6 +419,48 @@ function Adm02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-02", { title: "Users & roles · permission matrix", Component: Adm02Artboard });
+
+// ADM-03 a–h (G-01-T14): Offices & teams on the T12 frame; each state opens with its search.
+function Adm03Frame({ state }: { state: Adm03State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/offices" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <OfficesPage initial={ADM03_OPENS[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm03State = ADM03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm03Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-03", { title: "Offices, teams, walls & offshore", Component: Adm03Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -697,7 +767,48 @@ function Eng02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ENG-02", { title: "Engagement record", Component: Eng02Artboard });
 
-// SHL-14 (P-06-T13): the request composer drawer, opened over an empty frame.
+// ENG-05 (P-07-T39): Team & roles inside the ENG-02 record, on its Team tab, a–e.
+function Eng05Frame({ state }: { state: Eng05State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/engagements" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <EngagementRecordPage
+        engagementId={ENG05_OPENS[state]}
+        initialTab="team"
+        toolbar={bar.toolbar}
+        frame
+        teamOpen={ENG05_OVERLAYS[state]}
+      />
+    </div>
+  );
+}
+
+function Eng05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng05State = ENG05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Eng05Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ENG-05", { title: "Team & roles", Component: Eng05Artboard });
+
+// SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
 function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Shl14State = SHL14_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -876,6 +987,75 @@ function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-03", { title: "Documents · Feld 2025 Binder", Component: Por03Artboard });
+
+// POR-04 (R-01-T12): the request sheet over POR-03, a–g; e and f are the typed question and
+// decision slots (fixture only: C-01 and T-06 / T-09 wire them). `&w=390` draws the phone width.
+function Por04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por04State = POR04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR04_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalRequest
+        requestId={board.requestId}
+        frame
+        hold={{
+          ...(board.ignoreOpen === true ? { ignoreOpen: true } : {}),
+          ...(board.uploading === undefined ? {} : { uploading: board.uploading }),
+          ...(board.question === undefined ? {} : { question: board.question }),
+          ...(board.decision === undefined ? {} : { decision: board.decision }),
+        }}
+      />
+    </div>
+  );
+}
+
+registerScreen("POR-04", {
+  title: "Request detail · ignore reason sheet",
+  Component: Por04Artboard,
+});
+
+// POR-14 (R-01-T14): the third-party room, a–f, as the `ScopedRequestRoom` composition; `&w=390`
+// draws the 390 page (no tab bar).
+function Por14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por14State = POR14_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por14Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR14_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalRoom frame {...(board.expanded === undefined ? {} : { expanded: board.expanded })} />
+    </div>
+  );
+}
+
+registerScreen("POR-14", {
+  title: "Third-party request room · Keystone Retirement Services",
+  Component: Por14Artboard,
+});
 
 // SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.
 function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

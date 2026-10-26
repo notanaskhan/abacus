@@ -34,3 +34,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: portal.settings_editor
+    description: 'Portal settings and email template editor (R-01; C16 v1.1; docs/contracts/email-templates.md and portal-settings.md): the POR-20 and ADM-10 writes - template draft save and discard, test send and publish, portal settings draft, publish and logo. Off: those routes answer 404 and the screens show the published values read-only; reads and the onboarding import are not gated. On: 501 not_implemented until their task lands (drafts and publish R-01-T19; test send R-01-T23; settings R-01-T26). Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale.'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

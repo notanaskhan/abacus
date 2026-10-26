@@ -56,6 +56,34 @@ async def resolve_scope(
     return None if lookup is None else await lookup(tenant, scope_id)
 
 
+# R-01-T13 (security review L2): an owner may also register how to resolve many scopes of a kind
+# at once; without it, `resolve_scopes` resolves them one by one.
+ScopesResolver = Callable[[TenantContext, Sequence[UUID]], Awaitable[dict[UUID, ScopeFacts]]]
+_SCOPES_MANY: dict[str, ScopesResolver] = {}
+
+
+def register_scopes_resolver(scope_kind: str, lookup: ScopesResolver) -> None:
+    known = _SCOPES_MANY.get(scope_kind)
+    if known is not None and not _same(known, lookup):
+        raise ValueError(f"scope kind {scope_kind!r} already has a batch resolver")
+    _SCOPES_MANY[scope_kind] = lookup
+
+
+async def resolve_scopes(
+    tenant: TenantContext, scope_kind: str, scope_ids: Sequence[UUID]
+) -> dict[UUID, ScopeFacts]:
+    """The facts of each scope that resolves (unknown ones left out: deny)."""
+    many = _SCOPES_MANY.get(scope_kind)
+    if many is not None:
+        return await many(tenant, scope_ids)
+    out: dict[UUID, ScopeFacts] = {}
+    for scope_id in dict.fromkeys(scope_ids):
+        found = await resolve_scope(tenant, scope_kind, scope_id)
+        if found is not None:
+            out[scope_id] = found
+    return out
+
+
 # G-01-T09 (DEC-52): the same consent as a SQL predicate over a client-id column, part of C19's
 # registration shape. Since TASK-1207 (DEC-319, narrowed) offshore is not a wall, so `visible()`
 # doesn't read it; unregistered, no client qualifies (fail closed) for any later reader.

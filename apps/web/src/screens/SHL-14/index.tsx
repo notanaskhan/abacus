@@ -6,6 +6,7 @@ import {
   DrawerCard,
   Fieldset,
   Icon,
+  RegistryStatus,
   Segmented,
   StatusPill,
   ValueRow,
@@ -15,15 +16,19 @@ import {
   time,
   toast,
 } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import type { BinderRequestRowOut, UploadOut } from "@abacus/api-client";
+import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useSession } from "../../app-core/session";
 import {
+  ReturnDialog,
+  type ReturnTarget,
   useBinder,
   useBinderRequests,
   useClientContacts,
   useClientPreview,
   useComposerSave,
+  useIncorporate,
   useItemComments,
   useRequestDetail,
   useRequestItems,
@@ -41,9 +46,12 @@ import { COPY } from "./copy";
 //   b  the existing "Bridge letter — Keystone, Oct–Dec 2025", requested Sep 1, due Sep 25
 //   e  a with no due date: "Save & send" disabled with "Add a due date to send"
 //   f  the agent-drafted Granite Peak SURL Draft (Cole Hart): "Approve & send to Luis Ferrante"
+//   d  (P-06-T24) the close variant: an open request on a `close_intake` binder (Copperleaf's
+//      August "Square payouts — August", Raj Malhotra) reads as "Document Request" and
+//      "Uploaded Document" with "Mark incorporated" and "Return…" in the footer
 //
-// c (sample-driven bulk) is A-03's and d (the close variant) P-06-T24's. A person sends; the
-// agent never does (INV-1): every send here is this person's click.
+// c (sample-driven bulk) is A-03's. A person sends, incorporates and returns; the agent never
+// does (INV-1): every write here is this person's click.
 
 export type Wave = NonNullable<RequestItemPatchIn["wave"]>;
 const WAVES: readonly Wave[] = ["planning", "year_end", "sample"];
@@ -86,10 +94,14 @@ export function RequestComposer({
   const detail = useRequestDetail(engagementId, requestId);
   const comments = useItemComments(engagementId, requestId).data ?? [];
   const save = useComposerSave();
+  const incorporate = useIncorporate();
+  const [returning, setReturning] = useState<ReturnTarget | null>(null);
 
   const categories = binder?.categories ?? [];
   const isNew = requestId === null;
   const isDraft = isNew || row?.status === "draft";
+  // d: a request on a close-intake binder reviews its upload rather than composing (P-06-T24).
+  const closeRow = binder?.kind === "close_intake" && !isDraft ? row : undefined;
   const [tab, setTab] = useState<Tab>("details");
   const [title, setTitle] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -228,6 +240,48 @@ export function RequestComposer({
   );
 
   const reminderDays = binder?.follow_up_override?.every_days ?? null;
+  const upload = detail.uploads.at(-1);
+  const pending = closeRow?.incorporation_state === "pending_incorporation";
+  const closeFooter =
+    closeRow === undefined ? null : (
+      <div className="flex w-full items-center justify-end gap-[8px]">
+        <span className="min-w-0 flex-1 text-meta text-ink-3">{problem ?? ""}</span>
+        {upload !== undefined && engagementId !== undefined && (
+          <Button
+            variant="secondary"
+            size="sm"
+            opensDialog
+            onClick={() => {
+              setReturning({
+                engagementId,
+                versionId: upload.evidence_version_id,
+                fileName: upload.file_name,
+              });
+            }}
+          >
+            {COPY.close.return}
+          </Button>
+        )}
+        {pending && allowsRow(closeRow, "request_item.update") && (
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={incorporate.pending}
+            loading={incorporate.pending}
+            onClick={() => {
+              if (engagementId === undefined) return;
+              setProblem(null);
+              incorporate.run(engagementId, closeRow.id).catch(() => {
+                setProblem(COPY.toast.failed);
+              });
+            }}
+          >
+            {COPY.close.markIncorporated}
+          </Button>
+        )}
+      </div>
+    );
+  const sentBy = detail.activity.find((e) => e.event_type === "request_item.sent");
 
   return (
     <Drawer
@@ -242,11 +296,11 @@ export function RequestComposer({
       dirty={dirty}
       meta={
         <span className="flex items-center gap-[6px]">
-          {statusPill}
+          {closeRow === undefined && statusPill}
           {binder !== undefined && <span className="text-meta text-ink-3">{binder.name}</span>}
         </span>
       }
-      footer={footer}
+      footer={closeFooter ?? footer}
     >
       <div className="flex h-[40px] flex-none items-center justify-center bg-card hairline-b">
         <Segmented
@@ -265,7 +319,16 @@ export function RequestComposer({
           }}
         />
       </div>
-      {tab === "details" && (
+      {tab === "details" && closeRow !== undefined && (
+        <CloseDetails
+          row={closeRow}
+          category={categories.find((c) => c.id === closeRow.category_id)?.name ?? null}
+          requestedBy={sentBy?.actor_user_id == null ? undefined : staff.get(sentBy.actor_user_id)}
+          upload={upload}
+          day={(at) => date(at, { now, tz, withYear: true })}
+        />
+      )}
+      {tab === "details" && closeRow === undefined && (
         <div className="flex flex-col p-[10px]">
           <Fieldset title={COPY.card.documentRequest} flush>
             <ValueRow
@@ -477,6 +540,91 @@ export function RequestComposer({
           })}
         </ul>
       )}
+      <ReturnDialog
+        target={returning}
+        onClose={() => {
+          setReturning(null);
+        }}
+      />
     </Drawer>
+  );
+}
+
+function allowsRow(row: BinderRequestRowOut, action: string): boolean {
+  return (row.allowed_actions ?? []).includes(action);
+}
+
+/** A key over its date, as the close variant's "Requested by" and "Uploaded by" rows draw it. */
+function TwoLine({ top, bottom }: { top: ReactNode; bottom: string }): JSX.Element {
+  return (
+    <span className="flex flex-col items-end">
+      <span>{top}</span>
+      <span className="text-meta text-ink-3">{bottom}</span>
+    </span>
+  );
+}
+
+interface CloseDetailsProps {
+  row: BinderRequestRowOut;
+  category: string | null;
+  requestedBy: string | undefined;
+  upload: UploadOut | undefined;
+  day: (at: string) => string;
+}
+
+/** d: the close-intake request and its upload (spec.md state 4, R2 item 3). The upload's document
+ * title, type and summary are not in the C5 reads yet (docs/screens/SHL-14.md, G-6). */
+function CloseDetails({
+  row,
+  category,
+  requestedBy,
+  upload,
+  day,
+}: CloseDetailsProps): JSX.Element {
+  const state = row.incorporation_state ?? "none";
+  return (
+    <div className="flex flex-col p-[10px]">
+      <Fieldset title={COPY.close.documentRequest} flush>
+        <ValueRow kind="info" label={COPY.keys.request}>
+          {row.title}
+        </ValueRow>
+        <ValueRow kind="info" label={COPY.keys.category}>
+          {category ?? COPY.controlsNone}
+        </ValueRow>
+        <ValueRow kind="info" label={COPY.keys.visibility}>
+          <Segmented
+            size="small"
+            label={COPY.keys.visibility}
+            options={[
+              { label: COPY.visibility.owners, disabled: row.client_visible },
+              { label: COPY.visibility.client, disabled: !row.client_visible },
+            ]}
+            active={row.client_visible ? COPY.visibility.client : COPY.visibility.owners}
+          />
+        </ValueRow>
+        {row.requested_at != null && (
+          <ValueRow kind="info" label={COPY.close.keys.requestedBy}>
+            <TwoLine top={requestedBy ?? COPY.controlsNone} bottom={day(row.requested_at)} />
+          </ValueRow>
+        )}
+      </Fieldset>
+      {upload !== undefined && (
+        <Fieldset title={COPY.close.uploadCard} flush>
+          {state !== "none" && (
+            <ValueRow kind="info" label={COPY.close.keys.status}>
+              <span data-incorporation={state}>
+                <RegistryStatus object="request_close" code={state} />
+              </span>
+            </ValueRow>
+          )}
+          <ValueRow kind="info" label={COPY.close.keys.file}>
+            {upload.file_name}
+          </ValueRow>
+          <ValueRow kind="info" label={COPY.close.keys.uploadedBy}>
+            <TwoLine top={upload.uploaded_by_name} bottom={day(upload.uploaded_at)} />
+          </ValueRow>
+        </Fieldset>
+      )}
+    </div>
   );
 }

@@ -110,6 +110,10 @@ export interface InboxRowProps {
   thread?: { open: boolean; onToggle: () => void };
   /** A thread child: indented 34. */
   child?: boolean;
+  /** A waiting row's File… (it opens the INB-02 triage sheet), shown on hover at the right. */
+  onFile?: (message: InboxMessage) => void;
+  /** Hold the row hovered (a specimen's row-hover board). */
+  hovered?: boolean;
 }
 
 /** One rail row (C-18 InboxRow). */
@@ -119,18 +123,26 @@ export function InboxRow({
   onSelect,
   thread,
   child = false,
+  onFile,
+  hovered = false,
 }: InboxRowProps): JSX.Element {
   const ignored = message.state === "ignored";
+  const canFile = onFile !== undefined && message.state === "wait";
   const second =
     message.state === "filed" && message.filedTo !== undefined ? (
       <>
         Filed to <span className="text-ink">{message.filedTo}</span>
       </>
+    ) : message.preview === "" ? (
+      message.from
     ) : (
       `${message.from} · ${message.preview}`
     );
   return (
-    <li className="flex hairline-b last:shadow-none">
+    <li
+      className="group relative flex hairline-b last:shadow-none"
+      {...(hovered ? { "data-force": "hover" } : {})}
+    >
       <button
         type="button"
         data-inbox-row={message.id}
@@ -143,7 +155,7 @@ export function InboxRow({
         }}
         className={cn(
           "flex min-h-[52px] w-full items-start gap-[11px] rounded-tile py-[9px] pr-[10px] text-left",
-          "hover:bg-nested focus-visible:outline-offset-[-2px]",
+          "hover:bg-nested group-data-[force=hover]:bg-nested focus-visible:outline-offset-[-2px]",
           child ? "pl-[34px]" : "pl-[10px]",
           selected && "bg-sel-bg hover:bg-sel-bg",
           ignored && "text-ink-3",
@@ -172,6 +184,28 @@ export function InboxRow({
           <span className="truncate text-cell text-ink-3">{second}</span>
         </span>
       </button>
+      {canFile && (
+        <span
+          data-row-file=""
+          className={cn(
+            "absolute top-[9px] right-[10px] opacity-0 transition-opacity duration-[180ms]",
+            "group-focus-within:opacity-100 group-hover:opacity-100",
+            hovered && "opacity-100",
+          )}
+        >
+          <Button
+            variant="secondary"
+            size="sm"
+            opensDialog
+            aria-label={`File ${message.subject}…`}
+            onClick={() => {
+              onFile(message);
+            }}
+          >
+            File…
+          </Button>
+        </span>
+      )}
     </li>
   );
 }
@@ -185,6 +219,10 @@ export interface InboxListProps {
   onToggle?: (id: string) => void;
   /** What shows when the filters leave nothing. */
   empty?: ReactNode;
+  /** A waiting row's hover File…. */
+  onFile?: (message: InboxMessage) => void;
+  /** The row held hovered (a specimen's row-hover board). */
+  hovered?: string | null;
 }
 
 /** The rail's list (C-18 InboxList): rows, their thread children, padding 0 8 8. */
@@ -195,6 +233,8 @@ export function InboxList({
   open = [],
   onToggle,
   empty,
+  onFile,
+  hovered = null,
 }: InboxListProps): JSX.Element {
   if (messages.length === 0) return <>{empty}</>;
   return (
@@ -207,7 +247,9 @@ export function InboxList({
             key={m.id}
             message={m}
             selected={selected === m.id}
+            hovered={hovered === m.id}
             {...(onSelect === undefined ? {} : { onSelect })}
+            {...(onFile === undefined ? {} : { onFile })}
             {...(kids.length > 0
               ? { thread: { open: isOpen, onToggle: () => onToggle?.(m.id) } }
               : {})}
@@ -219,7 +261,9 @@ export function InboxList({
                   message={k}
                   child
                   selected={selected === k.id}
+                  hovered={hovered === k.id}
                   {...(onSelect === undefined ? {} : { onSelect })}
+                  {...(onFile === undefined ? {} : { onFile })}
                 />
               ))
             : []),
@@ -273,7 +317,11 @@ export interface InboxAttachment {
   meta: string;
   /** The server's page render: a same-origin URL (in fixtures, a PNG data URL). */
   src: string;
-  state?: Extract<InboxState, "wait" | "filed">;
+  state?: InboxState;
+  /** A flag raised before filing, in a red-tint micro tag: "2024 ≠ 2025". */
+  tag?: string;
+  /** What triage did: "Filed to" with the destination as a link, or "Ignored · wrong year". */
+  result?: { text: string; link?: string };
 }
 
 /** An attachment (C-18 AttachmentThumb): a 126 × 150 page render, its state disc over the top
@@ -299,6 +347,25 @@ export function AttachmentThumb({ attachment }: { attachment: InboxAttachment })
       </span>
       <span className="line-clamp-2 text-dense font-medium">{attachment.name}</span>
       <span className="text-meta text-ink-3">{attachment.meta}</span>
+      {attachment.tag !== undefined && (
+        <span
+          data-attachment-tag=""
+          className="inline-flex h-[20px] w-fit items-center rounded-pill bg-red-tint px-[7px] text-pill-sm text-red-ink"
+        >
+          {attachment.tag}
+        </span>
+      )}
+      {attachment.result !== undefined && (
+        <span data-attachment-result="" className="text-meta text-ink-3">
+          {attachment.result.text}
+          {attachment.result.link !== undefined && (
+            <>
+              {" "}
+              <span className="text-ink">{attachment.result.link}</span> →
+            </>
+          )}
+        </span>
+      )}
     </li>
   );
 }
@@ -401,6 +468,8 @@ export interface ReadingHeaderProps {
   clients: readonly string[];
   onMatch?: (client: string) => void;
   subject: string;
+  /** The record the message belongs to, after the chip: "TY2025 Form 1040 · Kevin Osei". */
+  context?: string;
   state: InboxState;
   /** File… (new or waiting) or Move… (filed): the destinations; Ignore is the last section. */
   fileTo?: readonly string[];
@@ -416,6 +485,7 @@ export function ReadingHeader({
   clients,
   onMatch,
   subject,
+  context,
   state,
   fileTo = [],
   onFile,
@@ -441,6 +511,11 @@ export function ReadingHeader({
         clients={clients}
         {...(onMatch === undefined ? {} : { onMatch })}
       />
+      {context !== undefined && (
+        <span data-reading-context="" className="flex-none truncate text-body text-ink-3">
+          {context}
+        </span>
+      )}
       <span className="min-w-0 flex-1 truncate text-right text-section font-normal text-ink-2">
         {subject}
       </span>

@@ -100,6 +100,8 @@ export interface POR03Props {
   frame?: boolean;
   /** A specimen's held interaction (the gallery replays an artboard). */
   hold?: POR03Hold;
+  /** A row's title opens the request in full (POR-04, R-01-T12). */
+  onOpenRequest?: (id: string) => void;
 }
 
 const TZ = DEFAULT_TZ;
@@ -213,6 +215,7 @@ function Binder({
   drop,
   onDropped,
   onNavigate,
+  onOpenRequest,
 }: {
   binder: PortalBinderOut;
   binders: readonly PortalBinderRefOut[];
@@ -225,6 +228,7 @@ function Binder({
   drop: DropView;
   onDropped: (batch: string | null, refused: readonly RefusedFile[]) => void;
   onNavigate: ((area: string) => void) | undefined;
+  onOpenRequest: ((id: string) => void) | undefined;
 }): JSX.Element {
   const now = useNow();
   const brand = usePortalBrand();
@@ -285,6 +289,7 @@ function Binder({
           },
         }),
     onFiles: send,
+    ...(onOpenRequest === undefined ? {} : { onOpen: onOpenRequest }),
     onIgnore: (id, reason, note) => {
       void act.ignore(id, reason, note);
     },
@@ -418,6 +423,7 @@ export function POR03({
   onNavigate,
   frame = false,
   hold = {},
+  onOpenRequest,
 }: POR03Props): JSX.Element | null {
   const bar = usePortalToolbar(null);
   const brand = usePortalBrand();
@@ -516,6 +522,7 @@ export function POR03({
           setDropped({ batch, refused });
         }}
         onNavigate={onNavigate}
+        onOpenRequest={onOpenRequest}
       />
     </div>
   );

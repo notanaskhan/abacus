@@ -155,6 +155,29 @@ export const FELD_1040_LINES = {
   line3b: "14820",
 } as const;
 
+/**
+ * Copperleaf's Operating Checking (Front Range Bank) ••4410 reconciliation at Aug 31, 2026 (blueprint
+ * 01 §9, CLS-05; TPL-09b): bank 184,236.18 + deposit in transit 6,412.40 − outstanding checks
+ * 5,658.08 = adjusted bank 184,990.50; book 184,610.50 + unrecorded vendor refund 380.00 = adjusted
+ * book 184,990.50; difference 0.00. It shows `tie`, not Reconciled, while #2281 and the refund are
+ * open.
+ */
+export const COPPERLEAF_BANK_REC = {
+  bank: "184236.18",
+  depositInTransit: "6412.40",
+  outstandingChecks: [
+    { id: "2281", label: "#2281 · Feb 19, 2026 · stale", amount: "-1240.00", stale: true },
+    { id: "2287", label: "#2287 · Aug 26, 2026", amount: "-3615.75", stale: false },
+    { id: "2290", label: "#2290 · Aug 28, 2026", amount: "-802.33", stale: false },
+  ],
+  totalOutstanding: "-5658.08",
+  adjustedBank: "184990.50",
+  book: "184610.50",
+  unrecordedRefund: "380.00",
+  adjustedBook: "184990.50",
+  difference: "0.00",
+} as const;
+
 /** Every footing a specimen draws: `parts` add up to `total` (checked in the seed test). */
 export const FOOTINGS: readonly { name: string; parts: readonly string[]; total: string }[] = [
   {
@@ -203,6 +226,30 @@ export const FOOTINGS: readonly { name: string; parts: readonly string[]; total:
     parts: RIDGELINE_K1S.map((k) => k[box]),
     total: RIDGELINE_SCHEDULE_K[box],
   })),
+  {
+    name: "Copperleaf ••4410 outstanding checks (TPL-09b)",
+    parts: COPPERLEAF_BANK_REC.outstandingChecks.map((c) => c.amount),
+    total: COPPERLEAF_BANK_REC.totalOutstanding,
+  },
+  {
+    name: "Copperleaf ••4410 adjusted bank balance (TPL-09b)",
+    parts: [
+      COPPERLEAF_BANK_REC.bank,
+      COPPERLEAF_BANK_REC.depositInTransit,
+      COPPERLEAF_BANK_REC.totalOutstanding,
+    ],
+    total: COPPERLEAF_BANK_REC.adjustedBank,
+  },
+  {
+    name: "Copperleaf ••4410 adjusted book balance (TPL-09b)",
+    parts: [COPPERLEAF_BANK_REC.book, COPPERLEAF_BANK_REC.unrecordedRefund],
+    total: COPPERLEAF_BANK_REC.adjustedBook,
+  },
+  {
+    name: "Copperleaf ••4410 difference (TPL-09b)",
+    parts: [COPPERLEAF_BANK_REC.adjustedBank, `-${COPPERLEAF_BANK_REC.adjustedBook}`],
+    total: COPPERLEAF_BANK_REC.difference,
+  },
   {
     name: "TY2025 returns by office",
     parts: Object.values(RETURNS_BY_OFFICE).map(String),

@@ -17,7 +17,7 @@ import pytest
 from abacus.api.export_openapi import document
 from abacus.kernel._flags import FIRM_SETTINGS_V2
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.identity import settings_contract
 from abacus.modules.identity.api import AuthContext
@@ -83,8 +83,13 @@ def _props(schema: str) -> dict[str, Json]:
 # Live since G-01-T04 (DEC-170): the overview and the sections; since G-01-T05 (DEC-286): the
 # person, its writes and the role templates; since G-01-T08 (DEC-317): offices, teams and the
 # Seasonal group's date; since G-01-T09 (DEC-318, DEC-319): the wall preview, approval and log,
-# and the offshore group.
+# and the offshore group; since G-01-T12 (DEC-380): the service lines; since G-01-T13
+# (DEC-381): annual independence.
 LIVE = {
+    ("get", "/v1/firm/independence/annual"),
+    ("post", "/v1/me/independence/annual"),
+    ("get", "/v1/firm/service-lines"),
+    ("put", "/v1/firm/service-lines/{line}"),
     ("get", "/v1/walls/preview"),
     ("post", "/v1/walls/{wall_id}/approve"),
     ("get", "/v1/walls/{wall_id}/events"),
@@ -117,9 +122,10 @@ def test_g01t02_each_route_declares_its_action_and_is_a_stub(method: str, path: 
     assert ("501" in responses) == ((method, path) not in LIVE)
 
 
-# Organisations' half has no stub left since G-01-T08; its routes keep the flag (`_gate`).
+# No stub is left on either half since G-01-T13 (organisations' since G-01-T08): every route
+# keeps the flag (`_gate`), 404 while it is off and through to the route while it is on.
 @pytest.mark.parametrize("module", [settings_contract])
-async def test_g01t02_flag_off_is_404_and_on_is_501(
+async def test_g01t02_flag_off_is_404_and_on_reaches_the_route(
     monkeypatch: pytest.MonkeyPatch, module: object
 ) -> None:
     user = uuid.uuid4()
@@ -135,13 +141,12 @@ async def test_g01t02_flag_off_is_404_and_on_is_501(
 
         return flag_enabled
 
-    gate = cast(Callable[[AuthContext], Awaitable[None]], getattr(module, "_stub"))  # noqa: B009
+    gate = cast(Callable[[AuthContext], Awaitable[None]], getattr(module, "_gate"))  # noqa: B009
     monkeypatch.setattr(module, "flag_enabled", fake(False))
     with pytest.raises(NotFound):
         await gate(ctx)
     monkeypatch.setattr(module, "flag_enabled", fake(True))
-    with pytest.raises(NotImplementedYet):
-        await gate(ctx)
+    await gate(ctx)
     assert seen == [FIRM_SETTINGS_V2, FIRM_SETTINGS_V2]
 
 

@@ -32,7 +32,18 @@ def test_p03t05_the_histories_are_committed() -> None:
         "trust-layer-backfill-v1-done",
         # Security review: an upload whose step fails for good is passed, never a wedge.
         "trust-layer-backfill-v1-skipped",
+        # v2 (P-03-T15): `patched("masks")`, words, PII scan and masked rendition per upload.
+        "trust-layer-backfill-v2-done",
     ]
+
+
+def test_p03t15_v2_masks_every_pending_upload_after_its_scan() -> None:
+    text = (HISTORIES / "trust-layer-backfill-v2-done.json").read_text(encoding="utf-8")
+    assert "trust_layer.pending_masks" in text and "trust_layer.pending_words" not in text
+    assert text.count('"upload.masked_preview"') == 2
+    assert text.index('"upload.pii_scan"') < text.index('"upload.masked_preview"')
+    for path in ALL[:2]:
+        assert "upload.masked_preview" not in path.read_text(encoding="utf-8")
 
 
 def test_review_a_failing_upload_is_passed_and_the_rest_still_get_layers() -> None:

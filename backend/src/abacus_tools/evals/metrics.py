@@ -8,6 +8,7 @@ from collections.abc import Callable, Sequence
 from typing import Final
 
 from abacus_tools.evals.observation import Observation
+from abacus_tools.evals.regions import resolved_share
 from abacus_tools.evals.suite import Case
 from abacus_tools.evals.taxonomy import ADVERSARIAL_CATEGORIES
 
@@ -56,6 +57,13 @@ def citation_verification(attempts: Sequence[Attempt]) -> float:
     return _fraction(sum(s.citations_verified is True for s in screened), len(screened))
 
 
+def citation_region_resolved(attempts: Sequence[Attempt]) -> float:
+    """Report-only (P-03-T17): verified document_text citations that carry a region."""
+    return resolved_share(
+        (s.regions_cited, s.regions_resolved) for _, s in attempts if s.stage == "screened"
+    )
+
+
 def accuracy(attempts: Sequence[Attempt]) -> float:
     def right(case: Case, seen: Observation) -> bool:
         return seen.stage == case.expected.stage and (
@@ -70,5 +78,6 @@ METRICS: Final[dict[str, Metric]] = {
     "ready_precision": ready_precision,
     "adversarial_containment": adversarial_containment,
     "citation_verification": citation_verification,
+    "citation_region_resolved": citation_region_resolved,
     "accuracy": accuracy,
 }

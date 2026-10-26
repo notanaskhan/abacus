@@ -6,6 +6,7 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     register_contact_delegations,
     register_scope_resolver,
+    register_scopes_resolver,
 )
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.availability import register_available_datasets
@@ -23,6 +24,7 @@ from abacus.modules.requests.comments import (
     insert_return_comment,
     register_comment_scope_check,
 )
+from abacus.modules.requests.consent import third_party_consented
 from abacus.modules.requests.contract import (
     RequestLatestUploadOut,
     RequestOwedByOut,
@@ -42,11 +44,13 @@ from abacus.modules.requests.follow_up_reads import (
     live_files,
 )
 from abacus.modules.requests.lifecycle import (
+    ConsentRequired,
     contact_delegations,
     end_contact_delegations,
     record_contact_delegations,
     register_live_facts,
     request_item_scope,
+    request_item_scopes,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
 from abacus.modules.requests.portal_documents import (
@@ -63,6 +67,12 @@ from abacus.modules.requests.portal_documents import (
     prior_year_link,
 )
 from abacus.modules.requests.portal_home import BinderProgress, ClientHome, client_home
+from abacus.modules.requests.portal_room import (
+    DelegateUpload,
+    RoomItem,
+    delegate_upload,
+    room_items,
+)
 from abacus.modules.requests.repository import open_requests_by_engagement
 from abacus.modules.requests.roll_forward import copy_items, proposed_items
 from abacus.modules.requests.routes import firm_router, methodology_router, router
@@ -139,6 +149,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 register_open_requests(open_requests_by_engagement)
 # P-06-T10: a delegate's `request_item` grant resolves to its request's engagement and client.
 register_scope_resolver("request_item", request_item_scope)
+# R-01-T13 (security review L2): many at once, for the third-party role's lookup.
+register_scopes_resolver("request_item", request_item_scopes)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
@@ -149,6 +161,8 @@ __all__ = [
     "WORKFLOWS",
     "BinderProgress",
     "ClientHome",
+    "ConsentRequired",
+    "DelegateUpload",
     "DropBinder",
     "DueDatesChanged",
     "FollowUpCandidate",
@@ -172,6 +186,7 @@ __all__ = [
     "RequestLatestUploadOut",
     "RequestOwedByOut",
     "ReviewTarget",
+    "RoomItem",
     "ScreeningSubject",
     "SourceDocuments",
     "UploadFacts",
@@ -181,6 +196,7 @@ __all__ = [
     "check_return_comment",
     "classify",
     "client_home",
+    "delegate_upload",
     "document_kind",
     "drop_binder",
     "drop_binder_open",
@@ -221,9 +237,11 @@ __all__ = [
     "reopen_after_undo",
     "request_items_for",
     "review_targets",
+    "room_items",
     "router",
     "screening_subject",
     "source_documents",
+    "third_party_consented",
     "upload_item_of",
     "void_rule_link_in",
     "withdraw_upload",

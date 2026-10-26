@@ -64,7 +64,7 @@ Built = already on the branch base; the row named finishes the criterion.
 - **AC-1** Adopting a snapshot writes one `trial_balances` row and version 1 in one unit of work, audited with the person as a human actor, and the view's provenance names them and the source. *Built (SPEC-309 AC-1); provenance facts T03, T10.*
 - **AC-2** An agent context is refused `trial_balance.adopt` by the matrix, and the table's `CHECK (actor_kind = 'human')` refuses it anyway; versions are never updated or deleted (grants and, from T04, the `ledger_immutable()` trigger). *Built; second layer T04.*
 - **AC-3** A snapshot of another client entity fails `snapshot_entity_mismatch` and writes nothing. *Built.*
-- **AC-4** A newer snapshot of the same entity and period is listed with a code-computed count of lines changed and net change; adopting it with a reason creates v2, leaves v1 and both snapshots untouched and emits `trial_balance.version_created`. *Built except the event (T07).*
+- **AC-4** A newer snapshot of the same entity and period is listed with a code-computed count of lines changed and net change; adopting it with a reason creates v2, leaves v1 and both snapshots untouched and emits `trial_balance.version_created`. *Built; the event T07 (TASK-1285).*
 
 ### Story 2 · Read the trial balance (§3.2)
 - **AC-5** Every total, subtotal and balance comes from the server; at E0 Northwind's six funds foot to 14,895,000.00 EOY and 12,683,000.00 BOY, investments to 16,500,000.00 / 13,940,000.00 and net assets to 16,812,400.00 / 14,228,500.00. No browser code sums a column. *Fixture T03, T05; live T10.*
@@ -83,7 +83,7 @@ Built = already on the branch base; the row named finishes the criterion.
 - **AC-14** With no adjustment source registered, AJE, RJE and Final answer `layer_unavailable`, never a Final equal to Unadjusted. *Built (SPEC-309, SPEC-311).*
 - **AC-15** In fixture mode at Oct 6, Final shows the AJE column, Contributions receivable 48,600.00 (AJE-1: 33,540.00 + 15,060.00) and net assets 16,861,000.00. *T05, T14.*
 - **AC-16** Harlow & Pike's Interim TB in whole dollars shows "TB: Interim · 8/31/2026", one column and a "Balances to 0" tie (86,000,000). *T14.*
-- **AC-17** Each layer balances or the view returns `layer_unbalanced` with the difference; label and layer words come from the status registry (`trial_balance_label`, `trial_balance_layer`). *Registry T02; engine T07.*
+- **AC-17** Each layer balances or the view returns `layer_unbalanced` with the difference; label and layer words come from the status registry (`trial_balance_label`, `trial_balance_layer`). *Registry T02; engine T07 (`layer_totals`, `require_balanced`); route T10.*
 
 ### Story 5 · Leadsheets (§3.5)
 - **AC-18** A leadsheet shows PY · CY · Δ · Δ% in statement grammar, Δ% rounded half-even to 0.1 % by code (Investments 13,940,000 · 16,500,000 · 2,560,000 · 18.4 %). *Built (all areas); per area stub T03.*
