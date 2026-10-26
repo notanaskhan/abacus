@@ -33,6 +33,7 @@ from abacus.kernel import request_context
 from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
 from abacus.kernel.telemetry import current_trace_id, current_traceparent
+from abacus.kernel.uow.placement import Placeable, Placement, place
 from abacus.kernel.uow.relay import Handler, OutboxEvent, payload_sha256
 
 _ACTION = re.compile(r"[a-z][a-z_]*\.[a-z][a-z_]*")
@@ -59,6 +60,15 @@ def _identifier(value: object) -> str:
         except ValueError:
             pass
     raise ValueError("audit identifiers are UUIDs or integers")
+
+
+def _uuid_or_none(value: object) -> UUID | None:
+    if isinstance(value, UUID):
+        return value
+    try:
+        return UUID(str(value))
+    except ValueError:
+        return None
 
 
 class MissingAuditEvent(RuntimeError):
@@ -126,10 +136,16 @@ def event_sha256(event: DomainEvent) -> str:
 
 @dataclass(frozen=True)
 class Scope:
-    """What an audit event is scoped to (Q-02-T16): the explorer filters on it exactly."""
+    """What an audit event is scoped to (Q-02-T16): the explorer filters on it exactly.
+
+    `client_id` and `office_id` (G-02-T08 gap, DEC-458) are for an event with no engagement
+    whose writer knows them; with an engagement (the scope's, or an engagement target) the unit
+    of work derives both through `placement`, and an explicit value must agree with it."""
 
     engagement_id: UUID | None = None
     work_item_id: UUID | None = None
+    client_id: UUID | None = None
+    office_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -139,6 +155,13 @@ class _AuditEvent:
     before: Ref | None
     after: Ref | None
     scope: Scope | None = None
+
+
+def _engagement_of(event: _AuditEvent) -> UUID | None:
+    """The event's engagement as the explorer reads it: the scope's, else an engagement target."""
+    if event.scope is not None and event.scope.engagement_id is not None:
+        return event.scope.engagement_id
+    return _uuid_or_none(event.target.id) if event.target.type == "engagement" else None
 
 
 @dataclass
@@ -224,24 +247,47 @@ class UnitOfWork:
             "mfa_at": mfa_at,
         }
 
+    async def _placements(self) -> list[Placement]:
+        """G-02-T08 gap (DEC-458): each event's client and office, from its engagement through
+        the owning modules' placers, else a client target, else the writer's scope."""
+        return await place(
+            self._connection,
+            [
+                Placeable(
+                    engagement_id=_engagement_of(a),
+                    work_item_id=a.scope.work_item_id if a.scope else None,
+                    client_target=_uuid_or_none(a.target.id)
+                    if a.target.type == "client"
+                    else None,
+                    client_id=a.scope.client_id if a.scope else None,
+                    office_id=a.scope.office_id if a.scope else None,
+                )
+                for a in self._audit
+            ],
+        )
+
     async def _write(self, ctx: TenantContext) -> None:
         # Every row can be followed to its trace (ADR-007; TASK-013).
         trace_id = current_trace_id()
         if self._audit:
             context = await self._request_context(ctx)
+            placements = await self._placements()
             await self._connection.execute(
                 text(
                     "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, "
                     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, "
                     "work_item_id, on_behalf_of_user_id, ip, user_agent_family, device_label, "
-                    "session_id, auth_method, mfa_at) VALUES (:tenant, :kind, :actor, "
-                    ":action, :target_type, :target_id, CAST(:before AS jsonb), "
+                    "session_id, auth_method, mfa_at, client_id, office_id) VALUES (:tenant, "
+                    ":kind, :actor, :action, :target_type, :target_id, CAST(:before AS jsonb), "
                     "CAST(:after AS jsonb), :trace_id, :engagement, :work_item, :on_behalf_of, "
-                    "CAST(:ip AS inet), :ua_family, :device, :session, :auth_method, :mfa_at)"
+                    "CAST(:ip AS inet), :ua_family, :device, :session, :auth_method, :mfa_at, "
+                    ":client, :office)"
                 ),
                 [
                     {
                         **context,
+                        "client": placed.client_id,
+                        "office": placed.office_id,
                         "tenant": ctx.tenant_id,
                         "kind": ctx.actor_kind,
                         "actor": ctx.actor_id,
@@ -255,7 +301,7 @@ class UnitOfWork:
                         "work_item": a.scope.work_item_id if a.scope else None,
                         "on_behalf_of": ctx.on_behalf_of_user_id,
                     }
-                    for a in self._audit
+                    for a, placed in zip(self._audit, placements, strict=True)
                 ],
             )
         if self._events:
