@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C20 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (A-02-T06, 2026-10-26) |
+| Status | stub (A-02-T06, 2026-10-26); framework v1 tables and module (A-02-T12) and entity-scoped connection tables (A-02-T13) built 2026-10-26, routes still stubs until A-02-T16 |
 | Provider epic | A-02 (T06 stub; T12 framework, T13 entity-scoped connections, T15 registry, T16 POR-16 service, T23 reconnect requests, T30 pulls); W-01 adds the catalogue v2 (C20 v2, S45) |
 | Consumers | POR-16 (A-02-T18 fixtures, T28 live); AUD-06 *Ask client to reconnect* and *Pull latest* (A-02-T24, T30); T-01 (CCH file bridge, `firm_integrations`, secrets); W-01 (catalogue v2); N-02 (W7 DocuSign registry entry); C-02 (W1 posting under ADR-161); C-01 (hourly sync); X-02 (POR-16 h, i); Q-01 (egress host allowlist) |
 | Freeze sprint | S10 (2027-03-08) |
@@ -95,3 +95,25 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 ## 11. Open points
 Decided in DEC-377 (flags, status codes per route, the reconnect request's idempotence, `client_label` "Not connected", DF-19 masking in the fixtures). POR-16 h and i (Tessellate, HR and ticketing) are X-02's.
+
+## A-02-T12 and A-02-T13 (2026-10-26)
+
+- **Framework v1** (migration 0194; `integrations.api`): `integration_catalog` is global content
+  the app reads through `integration_catalog_rows()` and an operator loads from a reviewed document
+  with `python -m abacus_tools.integration_catalog load --document … --operator … [--dry-run]`
+  (`integration_catalog_load(rows, operator)`, `abacus_ops` only; adds and changes with a revision
+  bump, never deletes; a dry run prints the same plan and writes nothing). Scopes are `read` only
+  by CHECK and by the document's schema. `register_adapter` is fail-closed (grammar, category,
+  hosts and scopes, no write-shaped method, one adapter per key and per provider);
+  `listing_of(row)` is `available` only for a registered adapter matching the row's category and
+  provider (AC-49). `firm_integrations` (one live install per app) and `integration_secrets`
+  (sealed with the tenant key, the install's id as associated data; delete is the crypto-erase).
+  No catalogue content is committed: the document is reviewed content, loaded per environment.
+- **Entity-scoped connections** (migration 0195): provider by key grammar; `category`,
+  `external_account_ref`, masked `display_label`, `connected_by_user_id`/`connected_at`,
+  `reauth_due_at`, `last_sync_at`, `status_reason_code` (§3's reasons); one live connection per
+  entity, provider and account, one live ledger per entity; `sync_runs.trigger` and `label`,
+  nullable `request_item_id` only for runs no request item asked for; insert-only
+  `connection_consents` with `connection_consent_links`; `reconnect_requests` with one open per
+  connection. The portal disconnect keeps `connection.disconnect` (DEC-379) and the secret's
+  crypto-erase when A-02-T16 implements it.

@@ -70,6 +70,8 @@ OPS_COMMANDS: Final = frozenset(
         "abacus_tools.schedules unpause",
         # P-03-T15 (#419, ED-088): re-render one tenant's pre-masking uploads after a deploy.
         "abacus_tools.trust_layer_backfill",
+        # A-02-T12: load the reviewed integration catalogue document (with --dry-run first).
+        "abacus_tools.integration_catalog load",
         # Not `abacus_tools.drill verify`: it swaps the production database host, so it runs only
         # from drill.yml with the host of the restore it made (security review, S8 wave B).
     }

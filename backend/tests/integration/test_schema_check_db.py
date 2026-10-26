@@ -1481,6 +1481,9 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "gl_account_balances": LEDGER_FUNCTION,
         "gl_entries": LEDGER_FUNCTION,
         "trial_balance_versions": LEDGER_FUNCTION,  # 0149 (A-02-T04; ED-037)
+        "tie_out_check_versions": "tie_out_check_versions_immutable",  # 0193 (A-02-T11)
+        "connection_consents": "connection_consents_immutable",  # 0195 (A-02-T13)
+        "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
     }
     assert _evidence_problems(evidence) == []
 
@@ -1890,6 +1893,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
         | {"evidence_key_destroy"}  # 0144 (P-06-T18): the withdrawal purge's crypto-erase
         | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
+        | {"integration_catalog_rows", "integration_catalog_load"}  # 0194 (A-02-T12)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
