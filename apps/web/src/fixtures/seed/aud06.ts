@@ -521,6 +521,41 @@ export const HARLOW_MANUFACTURING: readonly Row[] = [
   ["Operating expenses", "9800000.00"],
 ];
 
+/** AUD-06g's entity strip (revision.md g): Harlow & Pike's entities, Manufacturing open. The C9
+ * view carries no group (A-09 adds it), so the artboard passes these as planned facts. */
+export const HARLOW_ENTITIES: readonly string[] = [
+  "Holdings",
+  "Operating Co.",
+  "Manufacturing",
+  "Distribution",
+  "Real Estate",
+];
+
+/** AUD-06g's "Balances to 0" chip: a balanced check, debits = credits (the server's result). */
+export function harlowChecks(view: TbLayerViewOut): TieOutCheckOut[] {
+  return [
+    {
+      ...check(
+        "balances-to-0",
+        "Balances to 0",
+        "balanced",
+        "eoy",
+        [],
+        "0.00",
+        view.balance.difference,
+      ),
+      id: stableId("tie-out-check:harlow-pike:balances-to-0"),
+      citation_ids: [],
+      expected: null,
+      defined_by_name: "Caleb Dunn",
+    },
+  ];
+}
+
+/** AUD-06h's Hand off to tax… tooltip (revision.md h; AUD-38 is planned). */
+export const GRANITE_HAND_OFF =
+  "Final TB released Oct 27, 2026 → FY2026 Form 1120 · Granite Peak Outdoor Supply, Inc.";
+
 export const HARLOW_ENGAGEMENT = stableId("engagement:harlow-pike:fy2026");
 export const HARLOW_TB = stableId("trial-balance:harlow-pike:manufacturing:interim:2026-08-31");
 

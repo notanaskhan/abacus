@@ -17,6 +17,7 @@ actions:
     senior: allow
     staff: allow
     reviewer: allow
+    eqr_reviewer: allow   # DEC-427 (ED-106): the version a pii.reveal names must be readable
     client_admin: client_visible_only
     client_contributor: assigned_only
     agent: task_scope

@@ -36,6 +36,7 @@ from sqlalchemy.orm import aliased
 from abacus.modules.evidence.models import (
     Citation,
     CitationEvent,
+    EvidenceDerivation,
     EvidenceItem,
     EvidenceObjectKey,
     EvidencePage,
@@ -58,6 +59,14 @@ from abacus.modules.identity.api import AuthContext, visible
 # UPDATE privilege on the item, which the app deliberately doesn't have. Two-key form: the first
 # key namespaces evidence-version locks from any other advisory lock.
 _EVIDENCE_LOCK_SPACE = 9_004
+
+
+def _derived(column: object, derivation_id: UUID | None) -> ColumnElement[bool]:
+    """Rows of this derivation (P-03-T19), or the source's own rows when it is None."""
+    col = cast(ColumnElement[UUID | None], column)
+    return col == derivation_id if derivation_id is not None else col.is_(None)
+
+
 _LOCK_ITEM = text("SELECT pg_advisory_xact_lock(:space, hashtext(:item))")
 
 
@@ -812,8 +821,10 @@ async def preview_for(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     renderer_version: str,
+    derivation_id: UUID | None = None,
 ) -> UploadPreview | None:
-    """SPEC-029 (TASK-056): the upload's preview by this renderer version, if made."""
+    """SPEC-029 (TASK-056): the upload's preview by this renderer version, if made (none derived
+    unless a derivation is named: an unlock's rendition sits beside the version's, P-03-T19)."""
     source = (
         UploadPreview.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
@@ -821,7 +832,11 @@ async def preview_for(
     )
     return (
         await session.execute(
-            select(UploadPreview).where(source, UploadPreview.renderer_version == renderer_version)
+            select(UploadPreview).where(
+                source,
+                _derived(UploadPreview.derivation_id, derivation_id),
+                UploadPreview.renderer_version == renderer_version,
+            )
         )
     ).scalar_one_or_none()
 
@@ -963,9 +978,11 @@ async def pages_of(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     extractor_version: str,
+    derivation_id: UUID | None = None,
 ) -> Sequence[EvidencePage]:
-    """A source's word-layer pages by this extractor version, by page (none derived), for the
-    system or a caller that authorised on the source (LIST_EXEMPT: one source's pages)."""
+    """A source's word-layer pages by this extractor version, by page (none derived, unless a
+    derivation is named: an unlock's, P-03-T19), for the system or a caller that authorised on
+    the source (LIST_EXEMPT: one source's pages)."""
     source = (
         and_(
             EvidencePage.evidence_version_id == evidence_version_id,
@@ -984,7 +1001,7 @@ async def pages_of(
                 select(EvidencePage)
                 .where(
                     source,
-                    EvidencePage.derivation_id.is_(None),
+                    _derived(EvidencePage.derivation_id, derivation_id),
                     EvidencePage.extractor_version == extractor_version,
                 )
                 .order_by(EvidencePage.page_no)
@@ -1194,6 +1211,7 @@ async def pii_regions_of(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     detector_version: str | None = None,
+    derivation_id: UUID | None = None,
 ) -> Sequence[PiiRegion]:
     """A source's detected regions (none derived), by page; never their sealed values
     (LIST_EXEMPT: one source's regions, for a caller that authorised on it)."""
@@ -1208,7 +1226,7 @@ async def pii_regions_of(
                 select(PiiRegion)
                 .where(
                     source,
-                    PiiRegion.derivation_id.is_(None),
+                    _derived(PiiRegion.derivation_id, derivation_id),
                     # P-03-T15 review: only the regions of the current layer's scan, when named.
                     PiiRegion.detector_version == detector_version
                     if detector_version is not None
@@ -1228,6 +1246,7 @@ async def scanned_pages(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     detector_version: str | None = None,
+    derivation_id: UUID | None = None,
 ) -> set[int]:
     """The pages any PII scan of the source (none derived) recorded as scanned (LIST_EXEMPT:
     one source's scan runs, for a caller that authorised on it)."""
@@ -1240,7 +1259,7 @@ async def scanned_pages(
         await session.execute(
             select(PiiScanRun.pages_scanned).where(
                 source,
-                PiiScanRun.derivation_id.is_(None),
+                _derived(PiiScanRun.derivation_id, derivation_id),
                 PiiScanRun.detector_version == detector_version
                 if detector_version is not None
                 else true(),
@@ -1256,6 +1275,7 @@ async def unscannable_pages(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     detector_version: str | None = None,
+    derivation_id: UUID | None = None,
 ) -> set[int]:
     """The pages any PII scan of the source (none derived) recorded as not scannable, wholly or
     for their images (P-03-T15 review N1; LIST_EXEMPT: one source's scan runs, for a caller that
@@ -1269,7 +1289,7 @@ async def unscannable_pages(
         await session.execute(
             select(PiiScanRun.pages_not_scannable).where(
                 source,
-                PiiScanRun.derivation_id.is_(None),
+                _derived(PiiScanRun.derivation_id, derivation_id),
                 PiiScanRun.detector_version == detector_version
                 if detector_version is not None
                 else true(),
@@ -1300,6 +1320,7 @@ async def masked_preview_for(
     *,
     inbox_file_id: UUID | None = None,
     renderer_version: str,
+    derivation_id: UUID | None = None,
 ) -> UploadPreview | None:
     """The source's newest masked rendition (none derived) by this renderer version: a preview
     with `mask_version` set (P-03-T09, T15). None until the masker has rendered it; a rendition
@@ -1314,7 +1335,7 @@ async def masked_preview_for(
             select(UploadPreview)
             .where(
                 source,
-                UploadPreview.derivation_id.is_(None),
+                _derived(UploadPreview.derivation_id, derivation_id),
                 UploadPreview.mask_version.is_not(None),
                 UploadPreview.renderer_version == renderer_version,
             )
@@ -1539,15 +1560,16 @@ async def scan_run_for(
     evidence_version_id: UUID | None,
     inbox_file_id: UUID | None,
     detector_version: str,
+    derivation_id: UUID | None = None,
 ) -> PiiScanRun | None:
-    """The source's scan run by this detector version (none derived), if any."""
+    """The source's scan run by this detector version (none derived unless named), if any."""
     return (
         await session.execute(
             select(PiiScanRun).where(
                 PiiScanRun.evidence_version_id == evidence_version_id
                 if evidence_version_id is not None
                 else PiiScanRun.inbox_file_id == inbox_file_id,
-                PiiScanRun.derivation_id.is_(None),
+                _derived(PiiScanRun.derivation_id, derivation_id),
                 PiiScanRun.detector_version == detector_version,
             )
         )
@@ -1560,6 +1582,34 @@ async def insert_scan_run(session: AsyncSession, **values: object) -> bool:
         pg_insert(PiiScanRun).values(**values).on_conflict_do_nothing().returning(PiiScanRun.id)
     )
     return found.scalar_one_or_none() is not None
+
+
+# --- Unlock derivations (P-03-T19) -----------------------------------------------------------
+
+
+async def insert_derivation(session: AsyncSession, **values: object) -> EvidenceDerivation:
+    return (
+        await session.execute(
+            pg_insert(EvidenceDerivation).values(**values).returning(EvidenceDerivation)
+        )
+    ).scalar_one()
+
+
+async def current_derivation(
+    session: AsyncSession, evidence_version_id: UUID
+) -> EvidenceDerivation | None:
+    """The version's newest password-unlock derivation: what the viewer reads in its place."""
+    return (
+        await session.execute(
+            select(EvidenceDerivation)
+            .where(
+                EvidenceDerivation.evidence_version_id == evidence_version_id,
+                EvidenceDerivation.kind == "password_unlock",
+            )
+            .order_by(EvidenceDerivation.created_at.desc(), EvidenceDerivation.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
 
 
 # --- portal drops (R-01-T09) ---------------------------------------------------------------------

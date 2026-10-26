@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C9 in `docs/contracts/README.md` |
 | Version | v1 (layers half; A-03 adds groupings, the FS-line taxonomy and mapping, frozen S20) |
-| Status | stub (A-02-T03, 2026-10-25); the SPEC-309 to SPEC-311 operations are live |
+| Status | stub (A-02-T03, 2026-10-25); the SPEC-309 to SPEC-311 operations are live; the view by layer and the leadsheet by area are live (A-02-T10, 2026-10-26) |
 | Provider epic | A-02 (A-03 for the taxonomy half) |
 | Consumers | AUD-06 (A-02-T05, T09, T14, T24); A-03 (mapping), A-04 (materiality benchmark), A-05 (document-extracted TB), A-06 (adjustment source), T-05, T-06, C-01, A-10 |
 | Freeze sprint | S10 (starts Mon Mar 8, 2027) |
@@ -43,8 +43,8 @@ authorises its one action (independence required for every action here).
 | Annotations (area, WP ref) | `POST P/{tb_id}/annotations` (201) | `trial_balance.annotate` | partner, manager, senior, staff | **denied** | live |
 | Tie-out checks | `GET P/{tb_id}/checks`; `POST P/{tb_id}/checks` (201); `PUT P/{tb_id}/checks/{check_id}` | `trial_balance.read`; `tie_out_check.define` | as read; partner, manager, senior, staff | **denied** for define | live (SPEC-310) |
 | TB sign-offs L1 to L5 | `POST P/{tb_id}/sign-offs/{prepare,review,manager,partner,eqr}` (201) | `sign_off.*` | per level (SPEC-313) | **denied** | live (SPEC-313) |
-| **View by layer** | `GET P/{tb_id}/layers/{layer}?version=` (409 `layer_unavailable`, `layer_unbalanced`) | `trial_balance.read` | as read | denied | **stub** → A-02-T10 |
-| **Leadsheet by area** | `GET P/{tb_id}/leadsheets/{area}?layer=&version=` | `trial_balance.read` | as read | denied | **stub** → A-02-T10 |
+| **View by layer** | `GET P/{tb_id}/layers/{layer}?version=` (409 `layer_unavailable`, `layer_unbalanced`) | `trial_balance.read` | as read | denied | **live** (A-02-T10, `tb_read_model.py`) |
+| **Leadsheet by area** | `GET P/{tb_id}/leadsheets/{area}?layer=&version=` (404 for an area with no lines; `Unassigned` holds the unplaced accounts) | `trial_balance.read` | as read | denied | **live** (A-02-T10) |
 | **Open in Excel** | `GET P/{tb_id}/export.xlsx?layer=&version=` (XLSX attachment) | `trial_balance.export` | partner, manager, senior; fresh MFA (`mfa_recent`; DEC-316, amended) | **denied** | **stub** → A-02-T22 |
 | **Issue link** | `POST P/{tb_id}/checks/{check_id}/issue-link` `{issue_id, seen_version}` (`Idempotency-Key`; 201; 409) | `tie_out_check.define` | as define | **denied** | **stub** → A-02-T17 |
 
@@ -85,7 +85,7 @@ and total labels); everything else internal. Nothing Restricted.
 | 409 | `trial_balance_exists`, `no_assurance_item` | A second TB for the same item, entity, label and period; no assurance work item |
 | 409 | `tb_version_stale`, `tb_same_snapshot` | Re-versioning on a stale `seen_version`, or with the current snapshot |
 | 409 | `layer_unavailable` | AJE, RJE or Final before an adjustment source registers |
-| 409 | `layer_unbalanced` | A layer whose debits and credits differ (`facts.layer`, `facts.difference`); `ledger.api.require_balanced` (A-02-T07), answered by the view-by-layer route from A-02-T10 |
+| 409 | `layer_unbalanced` | A layer whose debits and credits differ (`facts.layer`, `facts.difference`); `ledger.api.require_balanced` (A-02-T07), called by the view-by-layer route (A-02-T10) |
 | 409 | `citation_required`, `tie_out_check_stale` | An expected value without a citation; a stale check `seen_version` (edit, issue link) |
 | 501 | `not_implemented` | A stub with the flag on |
 
@@ -113,3 +113,17 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 ## 11. Open points
 DEC-314 (the live routes stay ungated; the stubbed paths), DEC-316 (Open in Excel needs a fresh second factor, amended by the security review; staff may adopt). Before the freeze, A-02-T10 decides whether the live view moves onto `TbLayerViewOut` (and the P-36 envelope on the list) on the same paths, with the SPEC-309 tab moved in the same change.
+
+## A-02-T10 (2026-10-26): the live view by layer and leadsheet by area
+
+`backend/src/abacus/modules/assurance/tb_read_model.py` declares both routes on `tb_router`. Order:
+`get_ref` and `authorise` (`trial_balance.read`: a wall or another firm answers 404; a team member
+without an independence confirmation 403 `independence_pending`), then the flag (404 off), then
+the read. Groups are the audit areas (an annotation's area, else the engagement's own methodology
+account rules, read from its applied version inside the caller's tenant session on every call, no
+cache; DEC-440), alphabetical with `Unassigned` last; group subtotals, the layer's balance, Δ and
+Δ% are computed in exact `Decimal` (ADR-050); an unbalanced layer is 409 `layer_unbalanced`.
+`totals` is empty until A-03's grouping sets name the totals (DEC-395 D1); `ticks` are empty until
+P-04's field ticks reach the view (A-02-T35); `flags` mark the accounts of a check that is `off`
+(`issue_id` with A-02-T17). The SPEC-309 view (`GET P/{tb_id}`) is unchanged; the AUD-06 tab reads
+the C9 routes.

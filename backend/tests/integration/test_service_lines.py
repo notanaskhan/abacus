@@ -443,7 +443,13 @@ async def test_m1_a_team_role_the_read_isnt_granted_to_keeps_the_line_out(
     other = await firm.engagement(await firm.client(), "tax_compliance", grace.user_id)
     await _member(firm, tax, pat, role)
     await _open(grace, "tax", 0)
+    # DEC-427 (ED-106): an EQR reviewer's role grants evidence.read, so the role decides "allow".
+    granted = {"evidence.read"} if role == "eqr_reviewer" else set[str]()
+    for action in granted:
+        assert await _reads(pat, action, tax), action
     for action in ("engagement.read", "evidence.read", "run_content.read"):
+        if action in granted:
+            continue
         assert not await _reads(pat, action, tax), action
         assert tax not in await _listed(pat, action), action
         # The line still reaches the tax engagement she holds no role on.

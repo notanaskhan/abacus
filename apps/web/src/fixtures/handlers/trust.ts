@@ -5,7 +5,9 @@
 
 import type {
   CitationV2Out,
+  EvidenceUnlockOut,
   ListPageCitationV2Out,
+  PiiRevealOut,
   ViewerRegionsOut,
   ViewerSearchOut,
   ViewerTextOut,
@@ -17,7 +19,7 @@ import {
   json,
   never,
 } from "../../app-core/fixture-mode";
-import type { SeededCitation, SeededDocument } from "../seed/trust";
+import { REVEAL_AT, type SeededCitation, type SeededDocument } from "../seed/trust";
 
 const NOT_FOUND = { detail: "not found" };
 const FORBIDDEN = { detail: "forbidden" };
@@ -71,12 +73,23 @@ export interface TrustFixtures {
   /** The reader gets no page images (DEC-369: an offshore member until OCR): the manifest says
    * `view: text`, a page image is refused 403 as the server refuses it, the text is served. */
   textOnly?: boolean;
+  /** SHL-08c: the reveal answers 403 `mfa_required` (a stale step-up). */
+  revealNeedsMfa?: boolean;
+  /** SHL-08d flag off (or a person without `evidence.unlock`): the manifest offers no Unlock. */
+  unlockOff?: boolean;
+  /** SHL-08d: the next unlock answers 429 `unlock_rate_limited`. */
+  unlockLimited?: boolean;
+  /** Who the reveal names (the scenario's persona). */
+  revealedBy?: string;
 }
 
 /** The C4 read routes over `fixtures`. */
 export function trustHandlers(fixtures: TrustFixtures): Record<string, FixtureHandler> {
   const doc = (request: FixtureRequest): SeededDocument | undefined =>
     fixtures.documents[request.params.version_id ?? ""];
+  // Versions unlocked in this scenario's session (the derivation's manifest from then on).
+  const unlocked = new Set<string>();
+  let failures = 0;
   return {
     "GET /v1/citations": ({ query }) => {
       const items = listed(fixtures.citations, query);
@@ -90,15 +103,73 @@ export function trustHandlers(fixtures: TrustFixtures): Record<string, FixtureHa
       if (fixtures.loading?.includes(request.params.version_id ?? "")) return never();
       const found = doc(request);
       if (found === undefined) return json(NOT_FOUND, 404);
+      const id = request.params.version_id ?? "";
+      let manifest =
+        unlocked.has(id) && found.unlock !== undefined ? found.unlock.manifest : found.manifest;
+      if (fixtures.unlockOff === true) {
+        manifest = {
+          ...manifest,
+          allowed_actions: manifest.allowed_actions.filter((a) => a !== "evidence.unlock"),
+        };
+      }
+      return json(fixtures.textOnly === true ? { ...manifest, view: "text" } : manifest);
+    },
+    "POST /v1/evidence-versions/{version_id}/pii-reveals": (request) => {
+      const found = doc(request);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      if (fixtures.textOnly === true) return json(FORBIDDEN, 403);
+      if (fixtures.revealNeedsMfa === true) {
+        return json({ detail: "forbidden", facts: { reason: "mfa_required" } }, 403);
+      }
+      const body = (request.body ?? {}) as { region_id?: string };
+      const value = found.reveals?.[body.region_id ?? ""];
+      if (value === undefined) return json(NOT_FOUND, 404);
       return json(
-        fixtures.textOnly === true ? { ...found.manifest, view: "text" } : found.manifest,
+        {
+          mask_id: body.region_id ?? "",
+          value: value.value,
+          kind: value.kind,
+          expires_in: 30,
+          revealed_by: fixtures.revealedBy ?? "",
+          revealed_at: REVEAL_AT,
+        } satisfies PiiRevealOut,
+        201,
       );
+    },
+    "POST /v1/evidence-versions/{version_id}/unlock": (request) => {
+      const found = doc(request);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      if (found.unlock === undefined || fixtures.unlockOff === true) {
+        return json({ detail: "not_password_protected" }, 409);
+      }
+      if (fixtures.unlockLimited === true || failures >= 5) {
+        return json({ detail: "unlock_rate_limited", facts: { limit: 5, retry_after: 600 } }, 429);
+      }
+      const body = (request.body ?? {}) as { password?: string };
+      if (body.password !== found.unlock.password) {
+        failures += 1;
+        return json({
+          status: "wrong_password",
+          attempts_left: 5 - failures,
+          derivation_id: null,
+        } satisfies EvidenceUnlockOut);
+      }
+      unlocked.add(request.params.version_id ?? "");
+      return json({
+        status: "ready",
+        attempts_left: null,
+        derivation_id: found.unlock.manifest.derivation_id,
+      } satisfies EvidenceUnlockOut);
     },
     "GET /v1/evidence-versions/{version_id}/pages/{page_no}": (request) => {
       if (fixtures.textOnly === true) return json(FORBIDDEN, 403);
       const found = doc(request);
       const page = Number(request.params.page_no);
-      if (found === undefined || !found.manifest.pages.some((p) => p.n === page)) {
+      const shown =
+        found !== undefined && unlocked.has(request.params.version_id ?? "")
+          ? (found.unlock?.manifest ?? found.manifest)
+          : found?.manifest;
+      if (found === undefined || shown === undefined || !shown.pages.some((p) => p.n === page)) {
         return json(NOT_FOUND, 404);
       }
       return png(found.face);

@@ -155,6 +155,34 @@ def register_screening_evidence(check: SubjectCheck) -> None:
     _EVIDENCE[:] = [check]
 
 
+@dataclass(frozen=True)
+class SubjectNames:
+    """What a check on a draft subject searches, as its owner reads the draft (P-07-T42 security
+    review, H1; DEC-430): names typed on the draft, and the clients and entities it names, whose
+    names organisations reads itself."""
+
+    names: tuple[str, ...] = ()
+    client_ids: tuple[UUID, ...] = ()
+    entity_ids: tuple[UUID, ...] = ()
+
+
+SubjectNamesProvider = Callable[[AuthContext, UUID], Awaitable[SubjectNames | None]]
+_SUBJECT_NAMES: dict[str, SubjectNamesProvider] = {}
+
+
+def register_conflict_subject_names(kind: str, provider: SubjectNamesProvider) -> None:
+    """A draft subject whose check the server builds from the draft: the caller's names are not
+    searched, and the commit compares the check's names with the draft's (DEC-430)."""
+    current = _SUBJECT_NAMES.get(kind)
+    if current is not None and not _same(current, provider):
+        raise RuntimeError(f"conflict subject names {kind!r} are already registered")
+    _SUBJECT_NAMES[kind] = provider
+
+
+def subject_names_provider(kind: str) -> SubjectNamesProvider | None:
+    return _SUBJECT_NAMES.get(kind)
+
+
 async def subject_visible(ctx: AuthContext, kind: str, subject_id: UUID) -> bool:
     check = _SUBJECTS.get(kind)
     return check is not None and await check(ctx, subject_id)

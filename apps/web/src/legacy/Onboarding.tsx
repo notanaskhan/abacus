@@ -1,4 +1,4 @@
-import type { StepOut } from "@abacus/api-client";
+import type { AbacusModulesEngagementsRoutesStepOut as StepOut } from "@abacus/api-client";
 import {
   acknowledgeStepMutation,
   dismissOnboardingMutation,

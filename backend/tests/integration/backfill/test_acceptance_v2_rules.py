@@ -264,13 +264,18 @@ async def test_spec025s_route_cannot_contradict_the_record(net: Net) -> None:
     assert decided.status_code == 201, decided.text
     declined = await w.call("PUT", legacy, w.partner, {**body, "decision": "declined"})
     assert declined.status_code == 409, declined.text
-    same = await w.call(
+    same = await w.call("PUT", legacy, w.partner, body)
+    assert same.status_code == 200, same.text
+    # DEC-429 (P-07-T41 security review): with a CLI-07 record the conclusion is CLI-08's alone;
+    # SPEC-025's route refuses to document one.
+    concluded = await w.call(
         "PUT",
         legacy,
         w.partner,
         {**body, "independence_concluded": True, "independence_documented_at": "Memo"},
     )
-    assert same.status_code == 200, same.text
+    assert concluded.status_code == 409, concluded.text
+    assert concluded.json()["detail"] == "decision_locked"
     assert await net.seed.value(
         "SELECT status FROM engagements WHERE id = $1", uuid.UUID(eid)
     ) == ("accepted")
