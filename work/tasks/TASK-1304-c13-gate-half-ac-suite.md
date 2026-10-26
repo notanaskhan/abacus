@@ -1,8 +1,8 @@
 ---
 id: TASK-1304
 title: C13 gate half - red-zone service ticket and ADR-078 AC suite (I-01-T03)
-spec: I-01 §3 (F1, F6, F8), §4.2, §4.3
-acceptance_criteria: [I-01-T03]
+spec: SPEC-313
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 epic: I-01

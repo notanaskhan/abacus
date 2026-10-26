@@ -31,8 +31,8 @@ from .test_p04t17_human_gates_independent import (
     Firm,
     _daniels_eleven,  # pyright: ignore[reportPrivateUsage] -- P-04-T17's seed of Daniel's eleven
     _deliver,  # pyright: ignore[reportPrivateUsage] -- the projector, driven as the worker drives it
-    _event,  # pyright: ignore[reportPrivateUsage]
-    _waiting,  # pyright: ignore[reportPrivateUsage]
+    _event,  # pyright: ignore[reportPrivateUsage] -- a C13 event, as the relay hands it over
+    _waiting,  # pyright: ignore[reportPrivateUsage] -- what a consumer source says waits now
     firm,
 )
 

@@ -1,8 +1,8 @@
 ---
 id: TASK-1303
 title: C13 home-half stub - HomeVM models, 501 GET /v1/home behind home.dashboard, the home-count slot (I-01-T02)
-spec: I-01 §4.3, §8.2
-acceptance_criteria: [I-01-T02]
+spec: SPEC-307
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: in-review
 epic: I-01

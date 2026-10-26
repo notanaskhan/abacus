@@ -59,7 +59,7 @@ MODELS: list[type[BaseModel]] = [
 def _ctx(*, client: bool = False, actor_kind: str = "human") -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), actor_kind, str(user)),  # type: ignore[arg-type]
+        TenantContext(uuid.uuid4(), actor_kind, str(user)),  # type: ignore[arg-type]  # the actor kind under test is a plain str
         user,
         uuid.uuid4(),
         None,
