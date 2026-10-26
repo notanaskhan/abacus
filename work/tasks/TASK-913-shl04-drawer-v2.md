@@ -77,3 +77,4 @@ make check-generated
   `/v1/me/notification-preferences`). `docs/screens/SHL-04.md` updated. Tests at the end of the
   run (frame c after Accept, Undo inside and after the window, Return dialog, settings menu,
   agent rows without the pair).
+- 2026-10-26: SHL-04 tests pass (22): row d's pair and none on agent rows; Accept with receipt and Undo (the undo route called, the pair back); the 10 s window closing keeps the receipt without Undo; Return… needs a send-back reason and returns; the settings menu's four kinds and a saved toggle. The `settings` scenario joins the screen's states; the SHL-04 fixture answers the decision, reason-code and undo routes.

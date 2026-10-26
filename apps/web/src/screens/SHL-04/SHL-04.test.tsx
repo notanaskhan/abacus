@@ -3,13 +3,14 @@
 // live drawer.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
 import { overlayEntry } from "../../app-core/overlays";
 import {
   EMPTY_ALL,
+  PREFERENCE_KINDS,
   EMPTY_APPROVALS,
   OPEN_APPROVALS_QUEUE,
   R2_ROWS,
@@ -21,6 +22,7 @@ import { NOTIFICATIONS } from "../../shell/firm/copy";
 import {
   NOTIFICATIONS_OVERLAY,
   NotificationsDrawer,
+  UNDO_MS,
   groupByDay,
 } from "../../shell/firm/NotificationsDrawer";
 import { firmDayGroup } from "../../shell/notifications";
@@ -110,7 +112,7 @@ const ALL_TITLES = ROWS.map((r) => r.title);
 
 describe("SHL-04 artboards", () => {
   it("covers a, b, b′, b_raj and c–g", () => {
-    expect(STATES).toEqual(["a", "b", "bp", "b_raj", "c", "d", "e", "f", "g"]);
+    expect(STATES).toEqual(["a", "b", "bp", "b_raj", "c", "d", "e", "f", "g", "settings"]);
   });
 
   it("SHL-04a default: the frame, the tabs with counts, Today and Friday, September 11, 4 unread", async () => {
@@ -330,5 +332,143 @@ describe("SHL-04 behaviour (P-01 AC 3.1)", () => {
       ...Array<string>(2).fill("Friday, September 11"),
     ]);
     expect(groupByDay([], now, "America/Chicago")).toEqual([]);
+  });
+});
+
+/** Holds back only the 10 s Undo window's timer (to fire it by hand); every other timer runs. */
+function undoWindowSpy(timers: { fn: () => void; ms: number }[]) {
+  const real = window.setTimeout.bind(window);
+  return vi.spyOn(window, "setTimeout").mockImplementation(((
+    fn: () => void,
+    ms?: number,
+    ...rest: unknown[]
+  ) => {
+    if (ms === UNDO_MS) {
+      timers.push({ fn, ms });
+      return 0;
+    }
+    return real(fn, ms, ...rest);
+  }) as typeof window.setTimeout);
+}
+
+describe("SHL-04 inline decision and settings (P-01-T10 follow-up)", () => {
+  async function rowD(): Promise<HTMLElement> {
+    const list = await rows();
+    return list.find(
+      (r) =>
+        r.dataset.kind === "client_uploaded" &&
+        within(r).queryByRole("button", { name: NOTIFICATIONS.accept }),
+    ) as HTMLElement;
+  }
+
+  it("row d carries Accept and Return…; no agent row carries the pair", async () => {
+    live("a");
+    const d = await rowD();
+    expect(within(d).getByRole("button", { name: NOTIFICATIONS.accept })).toBeTruthy();
+    expect(within(d).getByRole("button", { name: NOTIFICATIONS.returnAction })).toBeTruthy();
+    const pairs = drawer().querySelectorAll("[data-notification]");
+    const withAccept = [...pairs].filter((r) =>
+      within(r as HTMLElement).queryByRole("button", { name: NOTIFICATIONS.accept }),
+    );
+    expect(withAccept).toHaveLength(1);
+  });
+
+  it("Accept writes the decision, shows the receipt with Undo, and Undo reverts it", async () => {
+    const timers: { fn: () => void; ms: number }[] = [];
+    const spy = undoWindowSpy(timers);
+    try {
+      const seen = live("a");
+      const d = await rowD();
+      fireEvent.click(within(d).getByRole("button", { name: NOTIFICATIONS.accept }));
+      await waitFor(() => {
+        expect(d.querySelector("[data-receipt]")?.textContent).toMatch(/^✓ Accepted by /);
+      });
+      expect(
+        seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/decision/accept")),
+      ).toBe(true);
+      expect(within(d).queryByRole("button", { name: NOTIFICATIONS.accept })).toBeNull();
+      expect(timers.some((t) => t.ms === UNDO_MS)).toBe(true);
+      fireEvent.click(within(d).getByRole("button", { name: NOTIFICATIONS.undo }));
+      await waitFor(() => {
+        expect(seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/undo"))).toBe(true);
+      });
+      await waitFor(() => {
+        expect(within(d).getByRole("button", { name: NOTIFICATIONS.accept })).toBeTruthy();
+      });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("after the 10-second window the receipt stays and Undo is gone", async () => {
+    const timers: { fn: () => void; ms: number }[] = [];
+    const spy = undoWindowSpy(timers);
+    try {
+      live("a");
+      const d = await rowD();
+      fireEvent.click(within(d).getByRole("button", { name: NOTIFICATIONS.accept }));
+      await waitFor(() => {
+        expect(within(d).getByRole("button", { name: NOTIFICATIONS.undo })).toBeTruthy();
+      });
+      const window10 = timers.find((t) => t.ms === UNDO_MS);
+      expect(window10).toBeDefined();
+      act(() => {
+        window10?.fn();
+      });
+      await waitFor(() => {
+        expect(within(d).queryByRole("button", { name: NOTIFICATIONS.undo })).toBeNull();
+      });
+      expect(d.querySelector("[data-receipt]")?.textContent).toMatch(/^✓ Accepted by /);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("Return… asks for a send-back reason before it returns the document", async () => {
+    const seen = live("a");
+    const d = await rowD();
+    fireEvent.click(within(d).getByRole("button", { name: NOTIFICATIONS.returnAction }));
+    const dialog = await screen.findByRole("dialog", { name: NOTIFICATIONS.returnTitle });
+    const confirm = within(dialog).getByRole("button", { name: NOTIFICATIONS.returnConfirm });
+    expect(confirm.hasAttribute("disabled")).toBe(true);
+    expect(within(dialog).getByText(NOTIFICATIONS.noteToClient)).toBeTruthy();
+    // The reason is a ValueRow choice: a pill button that opens a radio menu of the codes.
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path.includes("/review-reason-codes/send_back"))).toBe(true);
+    });
+    const reason = within(dialog).getByRole("button", {
+      name: `${NOTIFICATIONS.reason}: ${NOTIFICATIONS.chooseReason}`,
+    });
+    reason.focus();
+    fireEvent.keyDown(reason, { key: "ArrowDown" });
+    fireEvent.click(await screen.findByRole("menuitemradio", { name: /Wrong year/ }));
+    expect(confirm.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(confirm);
+    await waitFor(() => {
+      expect(d.querySelector("[data-receipt]")?.textContent).toMatch(/^Returned by /);
+    });
+    expect(
+      seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/decision/send-back")),
+    ).toBe(true);
+  });
+
+  it("settings: the four kinds with In Accrued and Email toggles, saved on change", async () => {
+    const seen = live("settings");
+    fireEvent.click(await screen.findByRole("button", { name: NOTIFICATIONS.settings }));
+    for (const kind of PREFERENCE_KINDS) {
+      expect(await screen.findByText(kind.label)).toBeTruthy();
+      expect(NOTIFICATIONS.kinds[kind.kind]).toBe(kind.label);
+    }
+    expect(screen.getAllByText(NOTIFICATIONS.settingsChannels)).toHaveLength(
+      PREFERENCE_KINDS.length,
+    );
+    const email = screen.getByRole("switch", { name: `Mention · ${NOTIFICATIONS.email}` });
+    expect(email.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(email);
+    await waitFor(() => {
+      expect(
+        seen.calls.some((c) => c.method === "PUT" && c.path === "/v1/me/notification-preferences"),
+      ).toBe(true);
+    });
   });
 });
