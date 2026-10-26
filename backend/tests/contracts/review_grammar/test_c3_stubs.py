@@ -128,8 +128,16 @@ def _ctx() -> AuthContext:
 
 
 # Live with the flag on (no longer 501): P-04-T16 serves the human gates from the projection
-# (tests/integration/backfill/test_p04t16_human_gate_projector.py).
-LIVE = frozenset({"human_gate_list_route"})
+# (tests/integration/backfill/test_p04t16_human_gate_projector.py); P-04-T18 the ladder,
+# eligibility and sign-off (tests/integration/test_p04t18_sign_off_service.py).
+LIVE = frozenset(
+    {
+        "human_gate_list_route",
+        "sign_off_ladder_route",
+        "sign_off_eligibility_route",
+        "sign_off_route",
+    }
+)
 
 
 _ENDPOINTS: list[tuple[ModuleType, Callable[..., Awaitable[object]]]] = [

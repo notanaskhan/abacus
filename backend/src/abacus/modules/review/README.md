@@ -12,3 +12,7 @@ Will own (docs/plan/03-backend-architecture.md §2.2): Sign-offs, review notes, 
 ## Human gates (C13; P-04-T16, DEC-320)
 
 `gates.py` is the projector Home reads: `register_gate_source(GateSource(...))` names an owner's gate kind, subject type, read action, the C13 events that may change it and `open_for(tenant, engagement_id | None)`. The projector (`SUBSCRIPTIONS`) reconciles an engagement's rows with what the owner says waits now, idempotent on the event and the subject; `rebuild_human_gates(tenant)` does every engagement. `GET /v1/human-gates` lists open gates assigned to the caller or to nobody, through `visible()`. The agent's four typed proposals register in `agents/gates.py`. `register_gate_kind` is the computed gate check slot (G1 to G5), not this one.
+
+## The sign-off service (P-04-T18, T19; DEC-400 to DEC-402)
+
+`sign_offs.py` serves `GET /v1/sign-offs`, `/eligibility` and `POST /v1/sign-offs` (behind `review.grammar_api`): a live person signs the hash they saw at a level the matrix allows them, and every R-SO rule answers its fixed code (`docs/contracts/review-grammar.md` §2, §6). Rows record initials, engagement role, version, statement version, the adopted agent run (R-SO-8) and when independence was checked; audit and outbox `sign_off.recorded`. `stale.py` is the `StaleSignOffDetector`: on `trial_balance.version_created` and `workpaper.content_changed` it emits `sign_off.went_stale` once per sign-off and hash (notification `sign_off_stale`). SIGNOFF-001 names the only files that reach `record_sign_off` and `sign_target`.

@@ -2,7 +2,8 @@
 // fixture scenario, the acceptance checklist (11 of 24 = 3 + 4 + 3 + 1; sub-lines exactly; the
 // agent never decides), A-01 Stories 2.1–2.3 (no Run, Begin…, Sign off run or Auto mode control
 // without its capability; the Viewer tab on a document row; DF-04; "Pause agent" → "Paused by …"),
-// the 404 and the AVOID list. f is A-01-T31's, h A-09's, i K-04's.
+// the 404 and the AVOID list. f (A-01-T31): the Auto mode confirm, its refusal, and no switch live
+// without `engagement_run.auto_mode`. h is A-09's, i K-04's.
 import type { ActivityOut, AuditCockpitOut } from "@abacus/api-client";
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
@@ -19,7 +20,15 @@ import type { JSX } from "react";
 import { auditRoute } from "../../routes/firm/audits";
 import { newQueryClient, renderRoutes } from "../../testing/support";
 import { AuditCockpitPage } from ".";
-import { AUDIT_ID, type Aud02State, OPENS, STATES, scenarios } from "./scenarios";
+import {
+  AUDIT_ID,
+  AUTO_MODE_ROUTE,
+  type Aud02State,
+  OPENS,
+  STATES,
+  autoModeRefused,
+  scenarios,
+} from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -34,7 +43,7 @@ afterEach(() => {
 });
 
 interface Seen {
-  calls: { method: string; path: string; query: string }[];
+  calls: { method: string; path: string; query: string; body: unknown }[];
 }
 
 function install(scenario: Scenario): Seen {
@@ -47,6 +56,7 @@ function install(scenario: Scenario): Seen {
           method: request.method,
           path: request.path,
           query: request.query.toString(),
+          body: request.body,
         });
         return handler(request);
       }) satisfies FixtureHandler,
@@ -124,8 +134,8 @@ const PHASES = [
 ];
 
 describe("AUD-02 artboards", () => {
-  it("has a scenario for a–e and g, all Hannah Leclerc at the state labels' times", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "e", "g"]);
+  it("has a scenario for a–g, all Hannah Leclerc at the state labels' times", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
     const clocks = Object.fromEntries(STATES.map((s) => [s, scenarios[s].clock]));
     expect(clocks).toEqual({
       a: "2026-09-14T09:41:00-05:00",
@@ -133,6 +143,7 @@ describe("AUD-02 artboards", () => {
       c: "2026-09-14T09:23:00-05:00",
       d: "2026-09-14T09:41:00-05:00",
       e: "2026-09-14T09:58:00-05:00",
+      f: "2026-09-14T09:41:00-05:00",
       g: "2026-09-14T09:41:00-05:00",
     });
     for (const s of STATES) expect(scenarios[s].persona).toBe("hannah-leclerc");
@@ -205,6 +216,94 @@ describe("AUD-02 artboards", () => {
     expect(phaseText("trial_balance")).not.toContain("Complete");
     expect(screen.getAllByText("Planning").length).toBe(2);
     expect(screen.queryByText("Processing")).toBeNull();
+  });
+
+  it("AUD-02f Auto mode pressed: the switch is on and the O3 confirm reads exactly", async () => {
+    show("f");
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Turn on Auto mode?")).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        "Agents will dispatch each level without waiting for plan approval. Decisions reserved to people still wait.",
+      ),
+    ).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "Cancel" })).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "Turn on" })).toBeTruthy();
+    const toggle = screen.getByRole("switch", { name: "Auto mode", hidden: true });
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    // The artboard's bar: the run time beside the switch.
+    expect(screen.getByText("Started 9:24 AM")).toBeTruthy();
+  });
+
+  it("AUD-02f Cancel closes the confirm, turns the switch back off and writes nothing", async () => {
+    const seen = show("f");
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(screen.getByRole("switch", { name: "Auto mode" }).getAttribute("aria-checked")).toBe(
+      "false",
+    );
+    expect(seen.calls.some((c) => c.method === "PUT")).toBe(false);
+    // Pressing the switch again asks again.
+    fireEvent.click(screen.getByRole("switch", { name: "Auto mode" }));
+    expect(await screen.findByRole("alertdialog")).toBeTruthy();
+  });
+
+  it("AUD-02f Turn on writes PUT /v1/engagements/{id}/auto-mode {enabled, confirmed} and the switch stays on", async () => {
+    const seen = show("f");
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Turn on" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    const put = seen.calls.find((c) => c.method === "PUT");
+    expect(put?.path).toMatch(/^\/v1\/engagements\/[^/]+\/auto-mode$/u);
+    expect(put?.body).toEqual({ enabled: true, confirmed: true });
+    expect(screen.getByRole("switch", { name: "Auto mode" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+  });
+
+  it("AUD-02f a real firm: the server refuses and the confirm says so", async () => {
+    show("f", {
+      ...scenarios.f,
+      handlers: { ...scenarios.f.handlers, [AUTO_MODE_ROUTE]: autoModeRefused },
+    });
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Turn on" }));
+    expect(
+      await within(dialog).findByText("Auto mode isn't available for client data yet"),
+    ).toBeTruthy();
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(screen.getByRole("switch", { name: "Auto mode" }).getAttribute("aria-checked")).toBe(
+      "false",
+    );
+  });
+
+  it("AUD-02f live without engagement_run.auto_mode in /v1/me: no switch and no confirm", async () => {
+    const seen = show("f", {
+      ...scenarios.f,
+      handlers: {
+        ...scenarios.f.handlers,
+        "GET /v1/me/capabilities":
+          scenarios.b.handlers["GET /v1/me/capabilities"] ?? (() => json({}, 500)),
+      },
+    });
+    await ready();
+    // The capabilities answer has arrived (f opens asking, so the confirm would show with it).
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path === "/v1/me/capabilities")).toBe(true);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByRole("switch", { name: "Auto mode", hidden: true })).toBeNull();
+    expect(screen.queryByText("Auto mode")).toBeNull();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 
   it("loading: the cockpit read never answers", () => {

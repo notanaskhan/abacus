@@ -124,5 +124,6 @@ def test_ac5_the_agent_signs_nothing_and_each_level_has_its_signers() -> None:
         assert "agent" not in allowed(f"sign_off.{action}")
     assert "engagement_partner" not in allowed("sign_off.prepare")
     assert allowed("sign_off.partner") == {"engagement_partner"}
-    assert allowed("sign_off.eqr") == {"reviewer"}
+    # DEC-401 (Ayush, 2026-10-26): ADR-160 clause 4, L5 is the EQR role's too.
+    assert allowed("sign_off.eqr") == {"reviewer", "eqr_reviewer"}
     assert "agent" not in allowed("workpaper.edit")

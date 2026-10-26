@@ -62,19 +62,14 @@ from abacus.modules.engagements.roll_forward import (
 )
 from abacus.modules.engagements.routes import (
     firm_router,
-    methodology_router,
     router,
     work_items_router,
 )
 from abacus.modules.engagements.service import (
-    ApprovedGuidance,
     CheckFacts,
     EngagementMetadata,
     EngagementRef,
     MethodologyAlreadyApplied,
-    MethodologyVersionView,
-    TemplateVersionSummary,
-    VersionNotLatest,
     active_engagements,
     ai_excluded,
     check_facts,
@@ -90,13 +85,10 @@ from abacus.modules.engagements.service import (
     get_ref,
     is_archived,
     lock_ref,
-    methodology_version,
     open_engagements,
     pin_methodology,
-    publish_drafted_version,
     register_auto_retrieval,
     run_auto_retrieval,
-    version_detail,
 )
 from abacus.modules.engagements.setup import (
     EngagementNotOpen,
@@ -153,13 +145,6 @@ from abacus.modules.engagements.work_items import (
     set_assurance_profile,
     wall_assignment_count,
 )
-from abacus.modules.engagements.workbook import (
-    AccountRule,
-    Area,
-    Effort,
-    TemplateItem,
-    area_for,
-)
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
@@ -181,6 +166,20 @@ from abacus.modules.identity.api import (
     register_work_item_functions,
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
+from abacus.modules.methodology.api import (
+    AccountRule,
+    ApprovedGuidance,
+    Area,
+    Effort,
+    MethodologyVersionView,
+    TemplateItem,
+    TemplateVersionSummary,
+    VersionNotLatest,
+    area_for,
+    methodology_version,
+    publish_drafted_version,
+    version_detail,
+)
 from abacus.modules.organisations.api import (
     OverviewSection,
     activate_contact,
@@ -266,7 +265,6 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     client_imports_router,
     router,
     work_items_router,
-    methodology_router,
     firm_router,
 )
 
@@ -345,7 +343,6 @@ __all__ = [
     "lock_assurance_item",
     "lock_engagement",
     "lock_ref",
-    "methodology_router",
     "methodology_version",
     "open_engagements",
     "pin_methodology",

@@ -34,6 +34,7 @@ from abacus.modules.review.api import (
     sign_off_states,
 )
 from abacus.modules.review.api import content_hash as review_content_hash
+from abacus.modules.workpapers.events import WorkpaperContentChanged
 from abacus.modules.workpapers.formulas import TbSource, evaluate, is_formula
 from abacus.modules.workpapers.models import Workpaper, WorkpaperCell, WorkpaperCellCitation
 from abacus.modules.workpapers.repository import (
@@ -475,6 +476,7 @@ async def set_cells(
             tx.record(
                 "workpaper.cells_set", target=Target(TARGET, paper.id), after=Ref(cells=len(rows))
             )
+            tx.emit(WorkpaperContentChanged(workpaper_id=paper.id, engagement_id=engagement_id))
     return len(rows)
 
 
@@ -512,6 +514,7 @@ async def cite(
             target=Target(TARGET, paper.id),
             after=Ref(evidence=evidence_version_id),
         )
+        tx.emit(WorkpaperContentChanged(workpaper_id=paper.id, engagement_id=engagement_id))
 
 
 async def sign_off(ctx: AuthContext, engagement_id: UUID, workpaper_id: UUID, level: int) -> None:
@@ -553,6 +556,8 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         setters = await cell_setters(session, paper.id)
         version_no = await next_version_no(session, paper.id) - 1
     tb = await tb_link(tenant, paper.engagement_id)
+    filled = [c for c in cells if c.raw or c.tickmarks]
+    cited = {c.cell_key for c in citations}
     return ReviewableFacts(
         TARGET,
         paper.id,
@@ -560,6 +565,16 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         content_hash(content_of(cells, citations, tb)),
         version_no,
         frozenset(setters | {c.added_by for c in citations}),
+        # P-04-T18 (SHL-12): the sheet's card and R-SO-6's uncited agent values (INV-2).
+        label=paper.title,
+        context_label=paper.code,
+        work_item_id=paper.work_item_id,
+        cell_count=len(filled),
+        citation_count=len(citations),
+        cited_count=sum(1 for c in filled if c.cell_key in cited),
+        uncited_count=sum(
+            1 for c in filled if c.value_source == "agent" and c.cell_key not in cited
+        ),
     )
 
 

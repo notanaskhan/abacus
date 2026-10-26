@@ -929,6 +929,19 @@ def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Fin
     return check
 
 
+def _check_named_any(
+    names: tuple[str, ...], message: str
+) -> Callable[[SourceFile], Iterator[Finding]]:
+    """`_check_named` for several names under one rule (SIGNOFF-001)."""
+    checks = [_check_named(name, message) for name in names]
+
+    def check(src: SourceFile) -> Iterator[Finding]:
+        for one in checks:
+            yield from one(src)
+
+    return check
+
+
 def _check_evaluation_mode(src: SourceFile) -> Iterator[Finding]:
     """Only the evaluation runner pins a tier (`ai_gateway.evaluation`, SPEC-005; TASK-020):
     product code never switches the gateway into evaluation mode."""
@@ -1081,7 +1094,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "support_request_ids"),  # TASK-085
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
-        ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        ("src/abacus/modules/methodology/repository.py", "list_templates"),  # K-01-T02: moved
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
@@ -1141,7 +1154,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
-        ("src/abacus/modules/engagements/repository.py", "version_rows"),
+        ("src/abacus/modules/methodology/repository.py", "version_rows"),  # K-01-T02: moved
         # Knowledge is firm-wide (SPEC-009 §9: `visible()` reduces to the tenant): listed and
         # searched after `authorise` on the firm, embedded by the platform's own workflow.
         ("src/abacus/modules/agents/repository.py", "list_documents"),
@@ -2299,6 +2312,27 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/evidence/service.py",
             "src/abacus/modules/evidence/routes.py",
+        ),
+    ),
+    Rule(
+        id="SIGNOFF-001",
+        description="Only the review service and the owners' sign routes reach a sign-off",
+        adr="ADR-160",
+        check=_check_named_any(
+            ("record_sign_off", "sign_target"),
+            "only a person signs off, through the review service (INV-1, ADR-160 clause 12)",
+        ),
+        # P-04-T18: the definitions, review's public interface and its route, and the owners'
+        # sign routes that call `record_sign_off` (SPEC-308, SPEC-333); any other file fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/review/service.py",
+            "src/abacus/modules/review/sign_offs.py",
+            "src/abacus/modules/review/contract.py",
+            "src/abacus/modules/review/api.py",
+            "src/abacus/modules/workpapers/service.py",
+            "src/abacus/modules/assurance/mapping.py",
+            "src/abacus/modules/assurance/trial_balance.py",
         ),
     ),
     Rule(

@@ -7,7 +7,7 @@ import io
 import pytest
 from openpyxl import Workbook
 
-from abacus.modules.engagements.workbook import TemplateInvalid, parse_workbook
+from abacus.modules.methodology.workbook import TemplateInvalid, parse_workbook
 
 
 def _book(requests: list[list[object]]) -> bytes:

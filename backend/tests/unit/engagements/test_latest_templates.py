@@ -7,7 +7,7 @@ from typing import cast
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.engagements.repository import list_templates
+from abacus.modules.methodology.repository import list_templates
 
 
 class _Rows:
