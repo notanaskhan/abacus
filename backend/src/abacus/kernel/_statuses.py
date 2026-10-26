@@ -556,6 +556,7 @@ class ConflictAssessmentStatus(StrEnum):
     SAME_FAMILY_NOT_ADVERSE = "same_family_not_adverse"
     NOT_ADVERSE = "not_adverse"
     COUNTERPARTY_REVIEW = "counterparty_review"
+    CONFLICT = "conflict"
 
 
 class NasEvaluationStatus(StrEnum):
@@ -1082,6 +1083,7 @@ STORED: dict[str, tuple[str, ...]] = {
         "same_family_not_adverse",
         "not_adverse",
         "counterparty_review",
+        "conflict",
     ),
     "nas_evaluation": (
         "pending",

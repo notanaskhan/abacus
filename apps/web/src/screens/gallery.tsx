@@ -17,6 +17,13 @@ import {
   OPENS as ADM02_OPENS,
   scenarios as adm02Scenarios,
 } from "./ADM-02/scenarios";
+import { OfficesPage } from "./ADM-03";
+import {
+  type Adm03State,
+  STATES as ADM03_STATES,
+  OPENS as ADM03_OPENS,
+  scenarios as adm03Scenarios,
+} from "./ADM-03/scenarios";
 import { BindersIndex } from "./BND-01";
 import {
   STATES as BND01_STATES,
@@ -398,6 +405,48 @@ function Adm02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-02", { title: "Users & roles · permission matrix", Component: Adm02Artboard });
+
+// ADM-03 a–h (G-01-T14): Offices & teams on the T12 frame; each state opens with its search.
+function Adm03Frame({ state }: { state: Adm03State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/settings/offices" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell
+        frame
+        height={860}
+        toolbar={{ ...bar.toolbar, active: "", firmPressed: true }}
+        overlay={bar.overlay}
+      >
+        <OfficesPage initial={ADM03_OPENS[state]} />
+      </AppShell>
+    </div>
+  );
+}
+
+function Adm03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm03State = ADM03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Adm03Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ADM-03", { title: "Offices, teams, walls & offshore", Component: Adm03Artboard });
 
 function Cli01Frame({ state }: { state: Cli01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

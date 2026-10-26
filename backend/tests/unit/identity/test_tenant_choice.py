@@ -86,6 +86,12 @@ def grace_in_one_firm(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(routing, "current_signed_in", signed_in)
 
+    # DEC-383: the request-time access-end check reads the firm's database; a unit test has none.
+    async def not_ended(*_: object) -> bool:
+        return False
+
+    monkeypatch.setattr(routing, "access_has_ended", not_ended)
+
 
 def _request() -> Request:
     return Request({"type": "http", "method": "GET", "headers": [], "path": "/v1/engagements"})

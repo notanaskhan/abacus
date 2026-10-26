@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import select, text
+from sqlalchemy import ColumnElement, select, text
+from sqlalchemy.orm import QueryableAttribute, aliased
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.engagements.models import Engagement
@@ -48,3 +49,17 @@ async def service_line_of(tenant: TenantContext, engagement_id: UUID) -> str | N
                 select(Engagement.service_line).where(Engagement.id == engagement_id)
             )
         ).scalar_one_or_none()
+
+
+def service_line_column(
+    engagement_id: ColumnElement[UUID] | QueryableAttribute[UUID],
+) -> ColumnElement[str]:
+    """For identity's `visible()` service-line reach (G-01-T12, DEC-380): the row's engagement's
+    service line, as a subquery correlated with the outer row (aliased, like `client_column`)."""
+    inner = aliased(Engagement)
+    return (
+        select(inner.service_line)
+        .where(inner.id == engagement_id)
+        .correlate_except(inner)
+        .scalar_subquery()
+    )

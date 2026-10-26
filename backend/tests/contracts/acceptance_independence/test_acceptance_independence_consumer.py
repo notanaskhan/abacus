@@ -298,10 +298,10 @@ def test_ac24_no_conflict_schema_counts_or_flags_walled_matches() -> None:
 
 def test_ac25_assessments_are_the_registry_and_clearing_takes_a_code_and_reason() -> None:
     assert _enum("ConflictResultOut", "assessment") == _codes("conflict_assessment")
-    # Contract §4: `conflict` has no display word yet (P-07-T36 adds it); every other clearance
-    # code is a registry assessment, and `pending` is never a clearance.
+    # Contract §4: `conflict` joined the registry with P-07-T36; every clearance code is a
+    # registry assessment, and `pending` is never a clearance.
     clearance = cast(set[str], _enum("ConflictClearIn", "assessment"))
-    assert clearance - {"conflict"} == _codes("conflict_assessment") - {"pending"}
+    assert clearance == _codes("conflict_assessment") - {"pending"}
     assert _required("ConflictClearIn") == {"assessment", "reason"}
     path = "/v1/conflict-checks/{check_id}/results/{result_id}/clear"
     assert _body("post", path) == "ConflictClearIn"

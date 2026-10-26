@@ -11,6 +11,7 @@ ROLE_LABELS: Final[dict[str, str]] = {
     "quality_partner": "Quality Partner",
     "security_admin": "IT / Security",
     "firm_partner": "Partner",
+    "firm_manager": "Manager",
     "engagement_partner": "Engagement Partner",
     "manager": "Manager",
     "senior": "Senior",
