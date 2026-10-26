@@ -307,6 +307,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/waiting/review", "own"),
     ("GET", "/v1/follow-ups/{follow_up_id}", "follow_up.draft"),
     ("GET", "/v1/grouping-sets", "grouping_set.import"),
+    ("GET", "/v1/home", "home.read"),
     ("GET", "/v1/human-gates", "human_gate.read"),
     ("GET", "/v1/issues", "issue.read"),
     ("GET", "/v1/issues/{issue_id}", "issue.read"),

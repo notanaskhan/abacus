@@ -1,0 +1,7 @@
+# The practice module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`.
+
+actions:
+  # --- C13 home half (I-01-T02; I-01 §4.3): HOME-01 for every firm role; tiles and rows are each
+  # owner's, under `visible()`; a client, the agent and the system never read Home ---
+  home.read:                {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # GET /v1/home (DEC-404)

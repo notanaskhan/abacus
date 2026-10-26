@@ -305,6 +305,18 @@ class SignOffSlotStatus(StrEnum):
     # derived, never stored: signed, stale
 
 
+class HumanGateStatus(StrEnum):
+    OPEN = "open"
+    DONE = "done"
+    VOIDED = "voided"
+    # derived, never stored: snoozed
+
+
+class DueRiskStatus(StrEnum):
+    pass
+    # derived, never stored: overdue, due_soon, approaching, later
+
+
 class DecisionCardStatus(StrEnum):
     AWAITING_ROLE = "awaiting_role"
     DECIDED = "decided"
@@ -898,6 +910,13 @@ STORED: dict[str, tuple[str, ...]] = {
         "withdrawn",
     ),
     "sign_off_slot": (
+    ),
+    "human_gate": (
+        "open",
+        "done",
+        "voided",
+    ),
+    "due_risk": (
     ),
     "decision_card": (
         "awaiting_role",

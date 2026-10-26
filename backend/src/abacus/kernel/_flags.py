@@ -151,6 +151,11 @@ GUIDANCE_DRAFTING = Flag(
     kind="boolean",
     default="false",
 )
+HOME_DASHBOARD = Flag(
+    name="home.dashboard",
+    kind="boolean",
+    default="false",
+)
 LEDGER_GL_IMPORT = Flag(
     name="ledger.gl_import",
     kind="boolean",
@@ -280,6 +285,7 @@ FLAGS: dict[str, Flag] = {
     "firm_settings.v2": FIRM_SETTINGS_V2,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
+    "home.dashboard": HOME_DASHBOARD,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
