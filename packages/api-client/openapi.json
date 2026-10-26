@@ -7647,6 +7647,61 @@
         "title": "CitationLocatorIn",
         "type": "object"
       },
+      "CitationLocatorOut": {
+        "description": "Where a citation points: positions and codes, never the quoted words.",
+        "properties": {
+          "cell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell"
+          },
+          "claim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Claim"
+          },
+          "document": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
+          }
+        },
+        "title": "CitationLocatorOut",
+        "type": "object"
+      },
       "CitationMovedOut": {
         "properties": {
           "at": {
@@ -35916,6 +35971,201 @@
         "title": "ReconnectRequestOut",
         "type": "object"
       },
+      "RecordCitationOut": {
+        "description": "A citation of the run's output: its locator, code's verdict and fingerprints only.",
+        "properties": {
+          "amount_matches": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Amount Matches"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/CitationLocatorOut",
+            "cls": "internal"
+          },
+          "quote_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Quote Fingerprint"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecordRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "sheet_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sheet Fingerprint"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          },
+          "verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Verified"
+          }
+        },
+        "required": [
+          "source",
+          "record",
+          "locator",
+          "quote_fingerprint",
+          "sheet_fingerprint"
+        ],
+        "title": "RecordCitationOut",
+        "type": "object"
+      },
+      "RecordInputHashesOut": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Context"
+          },
+          "model_calls": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Model Calls",
+            "type": "array"
+          }
+        },
+        "required": [
+          "context",
+          "model_calls"
+        ],
+        "title": "RecordInputHashesOut",
+        "type": "object"
+      },
+      "RecordOutcomeOut": {
+        "properties": {
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Failure Code"
+          },
+          "outputs": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Outputs",
+            "type": "object"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "succeeded",
+              "needs_input",
+              "failed",
+              "cancelled"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "failure_code",
+          "outputs"
+        ],
+        "title": "RecordOutcomeOut",
+        "type": "object"
+      },
+      "RecordRefOut": {
+        "description": "A record the run read, or a citation points into: its type and id (null in metadata).",
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Id"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "RecordRefOut",
+        "type": "object"
+      },
       "RecordsReadOut": {
         "properties": {
           "count": {
@@ -39858,6 +40108,227 @@
           "resync"
         ],
         "title": "RunItemsOut",
+        "type": "object"
+      },
+      "RunRecordOut": {
+        "description": "ADR-169 \u00a73: the run's durable record as stored. Content-free by construction:\nidentifiers, versions and fingerprints. `record_sha256` is SHA-256 of the canonical JSON\n(sorted keys, UTC instants) of every stored field but `persisted_at`, citations' keyed\nfingerprints included; it is the record's own hash, not the run view's `run_record_sha256`\n(DEC-396).",
+        "properties": {
+          "boundary_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Boundary Basis"
+          },
+          "capability": {
+            "cls": "internal",
+            "title": "Capability",
+            "type": "string"
+          },
+          "citations": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RecordCitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "completed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "initiator_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Initiator User Id",
+            "type": "string"
+          },
+          "input_hashes": {
+            "$ref": "#/components/schemas/RecordInputHashesOut",
+            "cls": "internal"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Model"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RecordOutcomeOut",
+            "cls": "internal"
+          },
+          "persisted_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Persisted At",
+            "type": "string"
+          },
+          "projection": {
+            "cls": "internal",
+            "enum": [
+              "content",
+              "metadata"
+            ],
+            "title": "Projection",
+            "type": "string"
+          },
+          "prompt_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prompt Ref"
+          },
+          "prompt_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prompt Sha256"
+          },
+          "record_sha256": {
+            "cls": "internal",
+            "title": "Record Sha256",
+            "type": "string"
+          },
+          "records_read": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RecordRefOut"
+            },
+            "title": "Records Read",
+            "type": "array"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Region"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Route"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "spec_version": {
+            "cls": "internal",
+            "title": "Spec Version",
+            "type": "integer"
+          },
+          "stage": {
+            "cls": "internal",
+            "enum": [
+              "shadow",
+              "live"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "terms_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Terms Version"
+          },
+          "withheld": {
+            "cls": "internal",
+            "title": "Withheld",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "engagement_id",
+          "capability",
+          "spec_version",
+          "stage",
+          "prompt_ref",
+          "prompt_sha256",
+          "model",
+          "route",
+          "region",
+          "terms_version",
+          "boundary_basis",
+          "input_hashes",
+          "records_read",
+          "citations",
+          "outcome",
+          "initiator_user_id",
+          "started_at",
+          "completed_at",
+          "record_sha256",
+          "persisted_at",
+          "projection",
+          "withheld"
+        ],
+        "title": "RunRecordOut",
         "type": "object"
       },
       "RunTraceOut": {
@@ -50315,6 +50786,112 @@
           }
         },
         "summary": "Agent Run Items Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "agent_run.read"
+      }
+    },
+    "/v1/agent-runs/{run_id}/record": {
+      "get": {
+        "operationId": "agent_run_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Agent Run Record Route",
         "tags": [
           "agents"
         ],
