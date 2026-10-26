@@ -43,6 +43,8 @@ ROUTES: dict[tuple[str, str], str] = {
     ("put", f"{IMPORTS}/{{import_id}}/rows/{{row_id}}/decision"): "client_import.run",
     ("post", f"{IMPORTS}/{{import_id}}/run"): "client_import.run",
 }
+# P-07-T42 (TASK-1326): dedupe, the intake drafts and the commit are live; imports stay stubs.
+LIVE = {path for (_, path), action in ROUTES.items() if action != "client_import.run"}
 IDEMPOTENT = {f"{DRAFTS}/{{draft_id}}/commit", f"{IMPORTS}/{{import_id}}/run"}
 PREFIXES = (
     "Dedupe",
@@ -64,7 +66,8 @@ def test_each_route_declares_its_action_and_the_stub_answer(method: str, path: s
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
     responses = set(cast(Json, op["responses"]))
-    assert {"404", "501"} <= responses
+    assert "404" in responses
+    assert ("501" in responses) is (path not in LIVE)
 
 
 @pytest.mark.parametrize("path", sorted(IDEMPOTENT))

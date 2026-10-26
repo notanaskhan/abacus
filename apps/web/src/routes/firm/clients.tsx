@@ -93,4 +93,37 @@ const clientContactsRoute = createRoute({
   },
 });
 
-export const clientRoutes = [clientsRoute, clientRoute, clientContactsRoute] as const;
+// CLI-07 (P-07-T46): acceptance and continuance of one engagement, behind
+// `engagements.acceptance_v2` (the routes answer 404 while it is off). Its links to the client
+// record (the back chip, "Open ‹client›" after a decline) are wired here (DEC-195, DEC-431).
+const Acceptance = lazyScreen(async () => (await import("../../screens/CLI-07")).AcceptancePage);
+
+const clientAcceptanceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId/acceptance/$engagementId",
+  component: function ClientAcceptancePage(): JSX.Element {
+    const clientId = useParam("clientId");
+    const engagementId = useParam("engagementId");
+    const navigate = useNavigate();
+    return (
+      <FeatureGate flag="engagements.acceptance_v2">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <Acceptance
+            clientId={clientId}
+            engagementId={engagementId}
+            onNavigate={(target) => {
+              void navigate({ to: "/clients/$clientId", params: { clientId: target.clientId } });
+            }}
+          />
+        </div>
+      </FeatureGate>
+    );
+  },
+});
+
+export const clientRoutes = [
+  clientsRoute,
+  clientRoute,
+  clientContactsRoute,
+  clientAcceptanceRoute,
+] as const;

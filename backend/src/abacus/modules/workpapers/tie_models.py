@@ -28,6 +28,10 @@ class TieOutCheck(Base):
     current_version_no: Mapped[int] = mapped_column(server_default=FetchedValue())
     created_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # 0193 (A-02-T11): the issue a check that does not tie is linked to; all three or none.
+    issue_id: Mapped[UUID | None]
+    issue_linked_by: Mapped[UUID | None]
+    issue_linked_at: Mapped[datetime | None]
 
 
 class TieOutCheckVersion(Base):

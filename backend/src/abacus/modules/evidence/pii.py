@@ -639,6 +639,53 @@ def masked_rows(rows: Sequence[Sequence[str]]) -> tuple[tuple[str, ...], ...]:
     return tuple(out)
 
 
+# --- One layer's scan (shared by the upload activity and the unlock, P-03-T19) -------------------
+
+
+@dataclass(frozen=True)
+class ScanPage:
+    """One word-layer page as the scan reads it: `words` None when it has no text layer."""
+
+    page_no: int
+    words: Sequence[WordLike] | None
+    rotation: int
+    width: float
+    height: float
+    unread: bool = False
+
+
+def scan_layer(pages: Sequence[ScanPage]) -> tuple[list[Found], list[int], list[int]]:
+    """Every value detected on a layer's pages, the pages scanned and the pages not scannable
+    (wholly, or for their pictures). Pure: the upload's scan and the unlock's isolated child run
+    exactly this, so an unlocked copy is scanned as any upload is."""
+    scanned: list[int] = []
+    unscannable: list[int] = []
+    found: list[Found] = []
+    continued = False
+    previous: PageWordsAt | None = None
+    for page in pages:
+        if page.words is None:
+            unscannable.append(page.page_no)
+            continued, previous = False, None
+            continue
+        size = (page.width, page.height)
+        found.extend(
+            detect_on_page(page.page_no, page.words, page.rotation, *size, continued=continued)
+        )
+        here = PageWordsAt(page.page_no, page.words, page.rotation, *size)
+        if previous is not None and not continued:
+            found.extend(across_break(previous, here))  # M-B: an unlabelled split TIN
+        # R5: a TIN fragment ending this page may finish at the top of the next.
+        continued, previous = page_dangles(page.words, page.rotation, *size), here
+        scanned.append(page.page_no)
+        if page.unread:
+            # Reviews N1, R1-R3: its words are scanned, its pictures, shapes and sideways digits
+            # are not (no OCR before P-11). Listed in both, so its text is masked and read as
+            # usual, but the page is never served to a reader who may not read unmasked content.
+            unscannable.append(page.page_no)
+    return found, scanned, unscannable
+
+
 # --- The activity's body -----------------------------------------------------------------------
 
 
@@ -711,33 +758,20 @@ async def pii_scan_upload(given: UploadInput) -> int:
         )
     if not pages:
         return 0  # no word layer: no run, so no page reads as scanned (fail closed)
-    scanned: list[int] = []
-    unscannable: list[int] = []
-    found: list[Found] = []
-    continued = False
-    previous: PageWordsAt | None = None
+    to_scan: list[ScanPage] = []
     for page in pages:
-        if not page.has_text_layer:
-            unscannable.append(page.page_no)
-            continued, previous = False, None
-            continue
-        layer = await read_page_layer(tenant_id, page)
-        size = (float(page.width_pt), float(page.height_pt))
-        found.extend(
-            detect_on_page(page.page_no, layer.words, page.rotation, *size, continued=continued)
+        layer = await read_page_layer(tenant_id, page) if page.has_text_layer else None
+        to_scan.append(
+            ScanPage(
+                page.page_no,
+                layer.words if layer is not None else None,
+                page.rotation,
+                float(page.width_pt),
+                float(page.height_pt),
+                layer.unread if layer is not None else False,
+            )
         )
-        here = PageWordsAt(page.page_no, layer.words, page.rotation, *size)
-        if previous is not None and not continued:
-            found.extend(across_break(previous, here))  # M-B: an unlabelled split TIN
-        # R5: a TIN fragment ending this page may finish at the top of the next.
-        continued, previous = page_dangles(layer.words, page.rotation, *size), here
-        scanned.append(page.page_no)
-        if layer.unread:
-            # Reviews N1, R1-R3: its words are scanned, its pictures, shapes and sideways digits
-            # are not (no OCR before P-11). Listed
-            # in both, so its text is masked and read as usual, but the page is never served to
-            # a reader who may not read unmasked content.
-            unscannable.append(page.page_no)
+    found, scanned, unscannable = scan_layer(to_scan)
     rows: list[dict[str, object]] = []
     for item in found:
         region_id = uuid.uuid4()
@@ -805,6 +839,7 @@ __all__ = [
     "LABELS",
     "Found",
     "PageWordsAt",
+    "ScanPage",
     "across_break",
     "detect",
     "detect_on_page",
@@ -812,5 +847,6 @@ __all__ = [
     "masked_rows",
     "page_dangles",
     "pii_scan_upload",
+    "scan_layer",
     "value_context",
 ]

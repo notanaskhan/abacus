@@ -41,6 +41,10 @@ TABLES: frozenset[str] = frozenset(
         "evidence_object_keys",
         "evidence_withdrawals",
         "evidence_version_voids",  # R-01 Story 2.2 (0159): retired with its voided rule link
+        # A-01-T18 (0191): engagement exports, their downloads and their contents.
+        "engagement_exports",
+        "engagement_export_downloads",
+        "engagement_export_contents",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -63,6 +67,8 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "pii_reveals",  # P-03-T04
         "retention_policy_versions",  # Q-02-T23: written by the policy trigger only
         "evidence_version_voids",  # R-01 Story 2.2 (0159)
+        "engagement_export_downloads",  # A-01-T18 (0191)
+        "engagement_export_contents",  # A-01-T18 (0191)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -121,6 +127,16 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"excluded", "exclusion_reason"}
         | {"box"}  # TASK-334
     ),
+    # A-01-T18 (0191): a person's export request; status starts queued (the default).
+    "engagement_exports": frozenset(
+        {"id", "tenant_id", "engagement_id", "work_item_id", "client_id", "kind", "scope"}
+        | {"format_version", "requested_by", "requested_by_kind", "mfa_at", "grant_id"}
+        | {"not_before"}
+    ),
+    "engagement_export_downloads": frozenset(
+        {"tenant_id", "export_id", "user_id", "bytes_sent", "range_start", "range_end", "mfa_at"}
+    ),
+    "engagement_export_contents": frozenset({"tenant_id", "export_id", "evidence_version_id"}),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -141,4 +157,10 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "evidence_object_keys": frozenset({"retained_at"}),
     # P-06-T19 (0144): the purge's stamps only (the guard binds the purge's system actor).
     "evidence_withdrawals": frozenset({"erased_at", "erase_blocked_at", "block_reason"}),
+    # A-01-T18 (0191): status forward only and the stamps (the guard trigger).
+    "engagement_exports": frozenset(
+        {"status", "as_of_seq", "bundle_sha256", "manifest_sha256", "bytes", "file_count"}
+        | {"request_count", "segment_count", "object_prefix", "ready_at", "expires_at"}
+        | {"failure_code", "void_reason", "undone_at", "undone_by"}
+    ),
 }

@@ -102,7 +102,8 @@ The manifest carries geometry and mask tokens only, never text. Coordinates are 
 - **`RevealIn`:** `region_id` I, `context_ref?` I (a citation or anchor).
 - **`RevealOut`:** `mask_id` I, `value` **R** (the only schema that carries an unmasked PII value), `kind` I, `expires_in` I (30 for the viewer surface), `revealed_by` I, `revealed_at` I. Served `Cache-Control: no-store` (P-03-T16). The value is formatted as the form prints it (`000-00-6081`, `00-1230287`). Each reveal writes one `pii_reveals` row, one `pii.revealed` audit event (target the version; `reveal_id` and `region_id`) and one `access_events` row (`pii.revealed`, subject `pii_region`), never the value. A region not on the version answers 404.
 - **`UnlockIn`:** `password` **R**, a `SecretStr`. It is never logged, stored, put in a Temporal payload, sent to error tracking, or echoed back.
-- **`UnlockOut`:** `status` I is `ready` or `wrong_password`. `attempts_left` I.
+- **`UnlockOut`:** `status` I is `ready` or `wrong_password`. `attempts_left` I (null on `ready`). `derivation_id` I (the derivation on `ready`). Served `Cache-Control: no-store` (P-03-T19).
+- **As built (P-03-T19, DEC-425):** one isolated child decrypts, reads the word layer (w2), scans it (d2, the upload's own scan) and renders masked pages (v3/m2); the results are an `evidence_derivations` row with its pages, scan run, sealed regions and masked rendition. The version's bytes and fingerprint never change. Once a version has a derivation, its manifest (`derivation_id` set), pages, text, search and reveal read the derivation, and a second unlock answers 409 `not_password_protected`. A `password_protected` manifest offers `evidence.unlock` in `allowed_actions` to a person who holds it while the flag is on. No derived extraction is written yet, so agent material for an unlocked file stays empty.
 
 ### 3.6 Reserved create (`POST /v1/citations`, 501)
 **`CitationCreateIn`:** `cited_from_ref` I, `cited_from_locator` I, `kind` (`document_text` only), `locator: {evidence_version_id, page, bbox}` I. The server derives the quote from the layer and ignores any text the client sends. The frozen shape for P-04 is the `CitationDisplay` response.
@@ -143,7 +144,7 @@ The YAML is the authority for labels. Never invent a synonym.
 | 409 | `{"detail": "not_moved"}` | relink on a citation whose state is not `moved` |
 | 422 | `{"detail": "relink_unverified"}` | the old text is not on the successor; the UI offers "Open source" |
 | 429 | `{"detail": "reveal_rate_limited", "facts": {"limit": 20, "retry_after": …}}` | the 21st reveal by one user in an hour (audited `pii.reveal_throttled`) |
-| 429 | `{"detail": "unlock_rate_limited", "facts": {"retry_after": …}}` | 5 failed unlocks in 15 minutes |
+| 429 | `{"detail": "unlock_rate_limited", "facts": {"limit": 5, "retry_after": …}}` | 5 failed unlocks by one person on one version in 15 minutes (audited `evidence_version.unlock_throttled`; DEC-425) |
 | 501 | `{"detail": "not_implemented"}` | `POST /v1/citations` (reserved) |
 
 The 403 reasons are `role`, `offshore` and `mfa_required` (P-03 §8.1). As built (DEC-370), only `mfa_required` carries `facts.reason`, because the shell must tell a step-up from a refusal. A role, offshore or client refusal answers the platform's plain `{"detail": "forbidden"}`, and the layer is never shown (ADR-020). A wrong password is not an error: it returns 200 `{status: wrong_password, attempts_left}`.
@@ -160,6 +161,7 @@ Every write goes through the unit of work (ADR-007). No event carries Restricted
 | `pii.revealed` | audit only, **never fanned out** | a reveal succeeds | viewer, version, region id, kind, last4, context ref; **never the value**. It also writes a Q-02 `access_events` row |
 | `evidence_version.unlocked` | audit and outbox | an unlock succeeds | version id, derivation id, the person |
 | `evidence_version.unlock_failed` | audit | an unlock attempt fails | version id, attempt count only; never the password |
+| `evidence_version.unlock_throttled` | audit | an attempt is refused by the limit (P-03-T19) | version id, limit |
 | `evidence_version.read` | audit (exists) | a download from ⋯ | unchanged |
 
 `evidence_version.created` already exists; the moved detector subscribes to it. Workflow writes of derived records follow the existing system-audited `upload_extractions` pattern.
@@ -200,7 +202,7 @@ Additive changes go in place. Breaking changes ship as C4 v2 with one sprint of 
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | | | contract doc 2026-10-23 (P-03-T01); stub P-03-T02; freeze S5 |
+| v1 | | | contract doc 2026-10-23 (P-03-T01); stub P-03-T02; freeze S5. Additive 2026-10-26 (P-03-T19): unlock served, `UnlockOut.derivation_id`, 429 facts `limit` |
 
 ## 11. Open points
 - **DEC-147** (ADR-166): the ten kinds, no stored quote, computed state, relink human-only, and the reserved `annotation_id` and create.

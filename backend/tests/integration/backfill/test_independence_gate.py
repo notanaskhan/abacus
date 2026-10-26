@@ -136,13 +136,29 @@ async def _record(team: Team, **given: object) -> None:
     assert response.status_code == 200, response.text
 
 
+async def _concluded_before_v2(team: Team) -> None:
+    """The partner's SPEC-025 conclusion as a row written before independence v2 (0175): since
+    DEC-429 (P-07-T41 security review) a row the app writes through SPEC-025's route no longer
+    meets G2, so the open engagement is seeded the way rows from before 0175 stand."""
+    await team.net.seed.run(
+        "INSERT INTO engagement_acceptance (tenant_id, engagement_id, kind, decision, "
+        "decided_by, documented_at, independence_concluded_by, independence_concluded_at, "
+        "independence_documented_at) VALUES ($1, $2, 'continuance', 'accepted', $3, "
+        "'Acceptance memo, 12 Oct', $3, clock_timestamp(), 'Memo 2')",
+        team.tenant_id,
+        team.site.engagement_id,
+        str(team.partner.user_id),
+    )
+
+
 async def _closed_by(team: Team, reason: str) -> None:
     if reason == "acceptance_declined":
         await _record(team, decision="declined")
     elif reason == "independence_conclusion_missing":
         await _record(team)
     elif reason == "letter_missing":
-        await _record(team, independence_concluded=True, independence_documented_at="Memo 2")
+        await _record(team)
+        await _concluded_before_v2(team)
         policy = await team.net.call(
             "PUT", "/v1/firm/letter-policy", team.admin, body={"required": True}
         )
@@ -179,7 +195,8 @@ async def test_ac7_once_the_engagement_is_open_the_actions_reach_their_own_check
 ) -> None:
     team = await _team(net, seed, opened=False)
     assert [r.status_code for r in await team.attempts(team.partner)] == [409] * 5
-    await _record(team, independence_concluded=True, independence_documented_at="Memo 2")
+    await _record(team)
+    await _concluded_before_v2(team)
     invited = await team.attempt(team.partner, "invite")
     assert invited.status_code == 201, invited.text  # the gate is open: the invitation is made
     started = await team.attempt(team.partner, "connect")

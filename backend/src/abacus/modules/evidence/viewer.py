@@ -17,6 +17,11 @@ C4 §3.3, §3.4; SPEC-322 AC-16, AC-21, AC-22, AC-24; ADR-110, ADR-052; DEC-266)
   `preview_outdated` until the backfill re-renders it. Pages without a PII scan read
   `not_scannable` (fail closed), never clean, and are refused to a reader who may not read
   unmasked content (an offshore member or a run acting for one; AC-30, DEC-52): 403.
+- **Unlocked files (P-03-T19):** a password-protected version that a person unlocked has an
+  `evidence_derivations` row; its manifest, pages, text and search read that derivation's word
+  layer, PII scan and masked rendition (made by the same code as any upload's) and carry its
+  `derivation_id`. A `password_protected` manifest offers `evidence.unlock` to a person who holds
+  it while `evidence.viewer_unlock` is on.
 - **Access logging:** a page image is content, and search hits are positions of content (an
   oracle for it): each read leaves an `evidence_content.read` access event (who, which version;
   never the query) before it is answered, and nothing is answered if logging fails (Q-02-T20).
@@ -32,7 +37,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from abacus.kernel._flags import EVIDENCE_PII_REVEAL
+from abacus.kernel._flags import EVIDENCE_PII_REVEAL, EVIDENCE_VIEWER_UNLOCK
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
@@ -50,6 +55,7 @@ from abacus.modules.evidence.previews import MASKED_RENDERER_VERSION, PAGE_WIDTH
 from abacus.modules.evidence.processing import document_text
 from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
+    current_derivation,
     get_item,
     masked_preview_for,
     newest_extraction,
@@ -75,6 +81,7 @@ from abacus.modules.identity.api import (
 
 READ: Final = "evidence.read"
 REVEAL: Final = "pii.reveal"
+UNLOCK: Final = "evidence.unlock"
 MAX_HITS: Final = 200
 # Search costs (security review #4): every searched page is a sealed object decrypted per call.
 MIN_QUERY: Final = 3  # characters, after normalising
@@ -209,34 +216,59 @@ def _status(
     return "ready", None
 
 
-async def _reveal_offered(ctx: AuthContext, version: EvidenceVersion, masked: bool) -> list[str]:
+async def _offered(
+    ctx: AuthContext, version: EvidenceVersion, *, masked: bool, locked: bool
+) -> list[str]:
     """`pii.reveal` when the version has a masked value, the reveal flag is on and every layer
     but fresh MFA allows it (P-03-T16; AC-28: an offshore member, a client principal or a role
-    without it gets no chip). MFA is stepped up when the person acts."""
-    if not masked or not await flag_enabled(ctx.tenant, EVIDENCE_PII_REVEAL):
+    without it gets no chip); MFA is stepped up when the person acts. `evidence.unlock` when the
+    version is password-protected, the unlock flag is on and the person holds it (P-03-T19)."""
+    wanted: list[str] = []
+    if masked and await flag_enabled(ctx.tenant, EVIDENCE_PII_REVEAL):
+        wanted.append(REVEAL)
+    if locked and not ctx.client and await flag_enabled(ctx.tenant, EVIDENCE_VIEWER_UNLOCK):
+        wanted.append(UNLOCK)
+    if not wanted:
         return []
     engagement = await get_ref(ctx, version.engagement_id)
-    return [a for a in await allowed_actions(ctx, engagement.resource(), (REVEAL,)) if a == REVEAL]
+    held = set(await allowed_actions(ctx, engagement.resource(), tuple(wanted)))
+    return [a for a in wanted if a in held]
+
+
+async def _derivation_of(ctx: AuthContext, version_id: UUID) -> UUID | None:
+    """The version's current unlock derivation (P-03-T19): what the viewer reads in its place."""
+    async with tenant_session(ctx.tenant) as session:
+        found = await current_derivation(session, version_id)
+    return found.id if found is not None else None
 
 
 async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
     """SHL-08's manifest: geometry and mask tokens only (AC-16)."""
     version = await visible_version(ctx, version_id)
+    derived = await _derivation_of(ctx, version.id)
     async with tenant_session(ctx.tenant) as session:
         item = await get_item(session, version.evidence_item_id)
         preview = await preview_for(
             session, evidence_version_id=version.id, renderer_version=RENDERER_VERSION
         )
         masked = await masked_preview_for(
-            session, version.id, renderer_version=MASKED_RENDERER_VERSION
+            session, version.id, renderer_version=MASKED_RENDERER_VERSION, derivation_id=derived
         )
         layer: Sequence[EvidencePage] = await pages_of(
-            session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
+            session,
+            evidence_version_id=version.id,
+            extractor_version=WORDS_VERSION,
+            derivation_id=derived,
         )
         regions = await pii_regions_of(
-            session, evidence_version_id=version.id, detector_version=DETECTOR_VERSION
+            session,
+            evidence_version_id=version.id,
+            detector_version=DETECTOR_VERSION,
+            derivation_id=derived,
         )
-        projection = await projection_of(session, evidence_version_id=version.id)
+        projection = await projection_of(
+            session, evidence_version_id=version.id, derivation_id=derived
+        )
         rendered = masked or preview
         images = (
             {p.page_no: p for p in await preview_pages_of(session, rendered.id)}
@@ -310,8 +342,10 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         truncated=source.truncated,
         pages=pages,
         pii_masks=masks,
-        # The unlock (P-03-T19) offers its action when it lands.
-        allowed_actions=await _reveal_offered(ctx, version, bool(masks)),
+        derivation_id=derived,
+        allowed_actions=await _offered(
+            ctx, version, masked=bool(masks), locked=status == "password_protected"
+        ),
         view="images" if await may_read_unmasked(ctx) else "text",
     )
 
@@ -325,9 +359,10 @@ async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes
     version = await visible_version(ctx, version_id)
     if not await may_read_unmasked(ctx):
         raise Forbidden(READ, "condition")
+    derived = await _derivation_of(ctx, version.id)
     async with tenant_session(ctx.tenant) as session:
         masked = await masked_preview_for(
-            session, version.id, renderer_version=MASKED_RENDERER_VERSION
+            session, version.id, renderer_version=MASKED_RENDERER_VERSION, derivation_id=derived
         )
         if masked is None:
             legacy = await preview_for(
@@ -377,17 +412,25 @@ async def viewer_text(ctx: AuthContext, version_id: UUID) -> ViewerText:
     most `MAX_SEARCH_PAGES` pages; a PDF with text pages and no PII scan yet answers 409
     `preview_outdated` (fail closed). Logged as a content read before it is answered."""
     version = await visible_version(ctx, version_id)
+    derived = await _derivation_of(ctx, version.id)
     async with tenant_session(ctx.tenant) as session:
         layer = await pages_of(
-            session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
+            session,
+            evidence_version_id=version.id,
+            extractor_version=WORDS_VERSION,
+            derivation_id=derived,
         )
-        projection = await projection_of(session, evidence_version_id=version.id)
+        projection = await projection_of(
+            session, evidence_version_id=version.id, derivation_id=derived
+        )
         extracted = await newest_extraction(session, evidence_version_id=version.id)
     texts = [p for p in layer if p.has_text_layer]
     if texts and not any(projection.readable(p.page_no) for p in texts):
         raise PreviewOutdated  # not scanned for PII yet: never read raw
     # The same masked text agents read (`masked_text.masked_pages`), so the two never drift.
-    masked = await masked_pages(ctx.tenant, evidence_version_id=version.id) or {}
+    masked = (
+        await masked_pages(ctx.tenant, evidence_version_id=version.id, derivation_id=derived) or {}
+    )
     items = [
         TextPage(p.page_no, masked.get(p.page_no, ""), not projection.complete(p.page_no))
         for p in layer[:MAX_SEARCH_PAGES]
@@ -471,11 +514,17 @@ async def viewer_search(ctx: AuthContext, version_id: UUID, query: str) -> Searc
     version = await visible_version(ctx, version_id)
     if len(normalised(query)) < MIN_QUERY:
         return SearchResult([], 0, False)
+    derived = await _derivation_of(ctx, version.id)
     async with tenant_session(ctx.tenant) as session:
         layer = await pages_of(
-            session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
+            session,
+            evidence_version_id=version.id,
+            extractor_version=WORDS_VERSION,
+            derivation_id=derived,
         )
-        projection = await projection_of(session, evidence_version_id=version.id)
+        projection = await projection_of(
+            session, evidence_version_id=version.id, derivation_id=derived
+        )
     texts = [p for p in layer if p.has_text_layer]
     readable = [p for p in texts if projection.readable(p.page_no)]
     if texts and not readable:
