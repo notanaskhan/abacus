@@ -29,6 +29,9 @@ labelled portal needs from the live seed, as events the loader replays.
   category (six, two of which the interim owner column names Harborline) and Keystone's three
   "Form 5500 & SOC 1" requests. No terms URL: no source gives one.
 
+- **The rollout flags** (P-08-T28, DEC-456): `portal.sign_in_v2` and `portal.home_v2` on for the
+  firm, as for every synthetic firm, so a seeded staging serves the v2 sign-in and home.
+
 Waiting on later tasks (DEC-213), so not here: Meera's `k1_recipient` grant (no K-1 package
 exists until T-02), Tess's TOTP factor (P-08-T17: WorkOS makes the secret, DEC-250), and
 POR-02b's Feb 2, 2026 history (no epoch predates the firm's setup). Claire's welcome has never
@@ -60,6 +63,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "portal"
 NEEDS: Final = ("binders",)
+# P-08-T28 (DEC-456): the portal's rollout flags, on for every synthetic firm.
+FLAGS: Final = ("portal.sign_in_v2", "portal.home_v2")
 # Grace Holloway (Firm Admin, client service) sets the branding, grants client-wide access and
 # invites from CLI-04 (P-08 J02 step 5: "Grace Holloway invites Tess Moreno and Ben Ashby").
 BY: Final = "GH"
@@ -188,6 +193,10 @@ def work_item_of(person: PortalPerson) -> str:
 @register_slice(SLICE)
 def portal_events() -> list[Event]:
     events = [
+        Event(f"flag:{name}", SETUP_AT, "platform.flag_set", "system", SLICE, {"flag": name})
+        for name in FLAGS
+    ]
+    events += [
         Event("portal-branding", SETUP_AT, "portal.branding_set", BY, SLICE, dict(BRANDING)),
         Event(
             f"portal-host:{HOST_LABEL}",

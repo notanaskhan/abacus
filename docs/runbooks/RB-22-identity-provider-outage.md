@@ -21,6 +21,8 @@ rehearse_by: 2026-12-11
 
 Staff sign in through hosted WorkOS AuthKit (P-54; the identity adapter port); the portal uses its own code sign-in (P-08). Sessions already issued keep working until they expire.
 
+The portal half: a client locked out of sign-in or two-step is RB-35; pausing one firm's portal sign-in is RB-36 (P-08-T28).
+
 ## 1. Recognise it
 New staff sign-ins fail at the WorkOS step; WorkOS's status page reports an incident; the deploy smoke's sign-in step fails.
 

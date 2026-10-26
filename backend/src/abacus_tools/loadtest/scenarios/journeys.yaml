@@ -1,0 +1,69 @@
+# The journey mix (Q-03-T044): J02-audit-core, J04's PBC slice and J12-core, shaped like the
+# product's use (chapter 10 section 10.11.3) at x1, against a local stack loaded with
+# `make seed-demo SLICE=portal` (Brightwater Hale at E0). Each virtual user is one of the people
+# below for the whole run, drawn by weight: the Northwind 401(k) audit team (A1) for J02 and J04,
+# and Northwind's client people for J12. `make loadtest PROFILE=journeys` passes the ids
+# (`abacus_tools.loadtest.journey_vars`). Targets: chapter 10 section 10.11.1 (a record read p95
+# 300 ms, a list with counts 500 ms). Read-only but for the J12 sign-in start, which writes one
+# challenge per call for an address that has no account (no email is sent).
+name: journeys
+description: J02, J04-PBC and J12 step mixes at x1, persona-weighted, on the Brightwater Hale E0 load.
+duration_seconds: 300
+users: 20
+think_ms: 1000
+max_error_rate: 0.001
+personas:
+  # Staff: more juniors than partners, as a working day has (J02, J04).
+  - {subject: scenario-margaret-okonkwo, weight: 1, groups: [j02_home, j02_client_record, j04_pbc_requests]}
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [j02_home, j02_client_record, j04_pbc_requests, j04_pbc_work]}
+  - {subject: scenario-marcus-delaney, weight: 3, groups: [j02_home, j04_pbc_requests, j04_pbc_work]}
+  - {subject: scenario-ana-cruz, weight: 4, groups: [j02_home, j04_pbc_requests, j04_pbc_work]}
+  # Client people: portal visitors outnumber staff (~400 portal users to 46 staff per firm).
+  - {subject: scenario-dana-kowalski, weight: 6, groups: [j12_branding, j12_sign_in, j12_shell]}
+groups:
+  # J02-audit-core: Home, "Waiting on you", the client list and Northwind's record.
+  - name: j02_home
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}
+      - {path: /v1/notifications}
+  - name: j02_client_record
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/clients?limit=25"}
+      - {path: "/v1/clients/{client_id}"}
+      - {path: "/v1/engagements?limit=25"}
+  # J04's PBC slice: the audit, its requests and the work queue.
+  - name: j04_pbc_requests
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{engagement_id}"}
+      - {path: "/v1/engagements/{engagement_id}/request-items"}
+  - name: j04_pbc_work
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/work-items?limit=25"}
+  # J12-core: the branded card, the code sign-in start (always 202, padded to its 0.5 s floor, so
+  # no target), and the signed-in shell.
+  - name: j12_branding
+    weight: 3
+    p95_ms: 300
+    steps:
+      - {path: /v1/portal/branding, auth: false}
+  - name: j12_sign_in
+    weight: 1
+    steps:
+      - method: POST
+        path: /v1/portal/auth/start
+        auth: false
+        json_body: {email: load.client@sink.brightwaterhale.test}
+        expect: [202]
+  - name: j12_shell
+    weight: 2
+    p95_ms: 300
+    steps:
+      - {path: /v1/me}
