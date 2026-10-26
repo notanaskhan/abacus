@@ -4,7 +4,8 @@
 - `audit_trail.seal_checkpoints` seals each firm's settled events (the settle window is shortened
   here) and seals nothing more on a second pass.
 - `audit_trail.verify_chains` passes on an unaltered chain and, once one audit row is altered,
-  fails as a non-retryable `AuditChainMismatch` naming the firm and the checkpoint.
+  fails as a non-retryable `AuditChainMismatch` naming the firm and the checkpoint; a firm that
+  cannot be read does not stop the others, and fails the run as `AuditChainVerifyFailed`.
 - `evidence.anchor_chains` anchors each firm, and one firm's failure does not stop the others.
 
 Each activity is called directly with the firm list narrowed to this test's firms, since the
@@ -92,6 +93,29 @@ async def test_the_checkpoint_and_verify_jobs_seal_verify_and_report_a_tampered_
     assert failed.value.type == "AuditChainMismatch"
     assert failed.value.non_retryable
     assert failed.value.details == ({str(tenant): [1]},)
+
+
+async def test_the_verify_job_checks_every_firm_when_one_cannot_be_read(
+    seed: Seeder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    good, broken = await seed.firm(), uuid.uuid4()
+    _only(monkeypatch, jobs, broken, good)
+    seen: list[uuid.UUID] = []
+    real = jobs.verify_chain
+
+    async def verify_chain(tenant: uuid.UUID) -> list[int]:
+        if tenant == broken:
+            raise RuntimeError("connection reset")
+        seen.append(tenant)
+        return await real(tenant)
+
+    monkeypatch.setattr(jobs, "verify_chain", verify_chain)
+    with pytest.raises(ApplicationError) as failed:
+        await jobs.verify_chains_activity()
+    assert seen == [good]  # the firm after the broken one was still verified
+    assert failed.value.type == "AuditChainVerifyFailed"
+    assert not failed.value.non_retryable
+    assert failed.value.details == ([str(broken)],)
 
 
 async def test_the_anchor_job_anchors_each_firm_and_survives_one_failing(

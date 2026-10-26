@@ -50,10 +50,21 @@ async def seal_checkpoints_activity() -> int:
 
 @activity.defn(name="audit_trail.verify_chains")
 async def verify_chains_activity() -> int:
+    """Every firm is verified even when one fails to: a mismatch anywhere fails the run as
+    `AuditChainMismatch` (non-retryable, the SEV1 metric's finding); otherwise a firm that could
+    not be read fails it as `AuditChainVerifyFailed`, retried (security review, 2026-10-26)."""
     bad: dict[str, list[int]] = {}
+    unread: list[str] = []
     firms = await firm_tenant_ids()
     for tenant in firms:
-        found = await verify_chain(tenant)
+        try:
+            found = await verify_chain(tenant)
+        except Exception as exc:
+            unread.append(str(tenant))
+            _log.error(
+                "audit_chain.verify_failed", tenant_id=str(tenant), error=type(exc).__name__
+            )
+            continue
         if found:
             bad[str(tenant)] = found
             _log.error("audit_chain.mismatch", tenant_id=str(tenant), checkpoints=found)
@@ -63,6 +74,10 @@ async def verify_chains_activity() -> int:
             bad,
             type="AuditChainMismatch",
             non_retryable=True,
+        )
+    if unread:
+        raise ApplicationError(
+            f"{len(unread)} firm(s) could not be verified", unread, type="AuditChainVerifyFailed"
         )
     return len(firms)
 
