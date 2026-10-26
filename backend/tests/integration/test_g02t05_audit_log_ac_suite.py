@@ -38,7 +38,7 @@ from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.identity.api import AuthContext, current_context
 from abacus.modules.identity.authz.matrix import RULES
 
-from .agent_tests.support import Seeder
+from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
 
 LIST: Final = ("GET", "/v1/audit-events")
@@ -47,8 +47,9 @@ EXPORT: Final = ("POST", "/v1/audit-events/exports")
 EXPORT_STATUS: Final = ("GET", "/v1/audit-events/exports/{export_id}")
 EXPORT_LINK: Final = ("POST", "/v1/audit-events/exports/{export_id}/link")
 ROUTES: Final = (LIST, DETAIL, EXPORT, EXPORT_STATUS, EXPORT_LINK)
-# Routes still answering 501 (the stub); remove each as its task makes it live.
-STUBBED: Final = frozenset({LIST, DETAIL, EXPORT, EXPORT_STATUS, EXPORT_LINK})
+# Routes still answering 501 (the stub); remove each as its task makes it live. G-02-T08
+# (TASK-1329) made the list and the detail live.
+STUBBED: Final = frozenset({EXPORT, EXPORT_STATUS, EXPORT_LINK})
 SSN: Final = "900-00-2208"
 IP_FELIX: Final = "198.51.100.57"
 
@@ -278,13 +279,40 @@ async def test_ac3_no_listed_approval_names_the_agent(
 async def test_ac4_a_walled_viewer_sees_no_ashford_event_and_nothing_says_so(
     world: World, as_: Callable[[object], Call], seed: Seeder
 ) -> None:
+    """DEC-434 (the S9 security review's binding): Hannah reads through her engagement role, so
+    firm-level events are not hers either; she manages Copperleaf, and of the firm's events sees
+    exactly Copperleaf's. Felix sees the Ashford event; for Hannah it is in no row and no count."""
+    copperleaf = await seed.engagement(
+        world.tenant,
+        await seed.entity(world.tenant, "Copperleaf Coffee Roasters, Inc."),
+        (world.grace.user_id),
+    )
+    await seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'manager')",
+        world.tenant,
+        copperleaf,
+        world.hannah.user_id,
+    )
+    await seed.confirm(copperleaf, Person(world.hannah.user_id, world.tenant))
+    await _record(
+        world.grace.tenant,
+        "engagement.updated",
+        Target("engagement", copperleaf),
+        Scope(engagement_id=copperleaf),
+    )
     hannah = await as_(world.hannah)(*LIST)
     felix = await as_(world.felix)(*LIST)
     if stubbed(LIST, hannah):
         return
     walled = str(world.ashford_engagement)
+    assert any(cast(dict[str, object], r["target"]).get("id") == walled for r in _items(felix))
     assert all(cast(dict[str, object], r["target"]).get("id") != walled for r in _items(hannah))
-    assert hannah.json()["total"] == felix.json()["total"] - 1
+    assert [cast(dict[str, object], r["target"]).get("id") for r in _items(hannah)] == [
+        str(copperleaf)
+    ]
+    assert hannah.json()["total"] == 1
+    assert hannah.json()["counts"]["all"] == 1
     assert not re.search(r"hidden|walled|omitted", hannah.text)
     seq = cast(
         int,

@@ -19,7 +19,9 @@ function Pane({ state }: { state: Aud06State }): JSX.Element {
       tab: opens.tab,
       layer: opens.layer,
       ...(opens.selected === undefined ? {} : { line: opens.selected }),
+      ...(opens.area === undefined ? {} : { area: opens.area }),
     },
+    ...(opens.planned === undefined ? {} : { planned: opens.planned }),
   });
   const state_ = canvas.state ?? { kind: "ready" };
   return (
@@ -69,6 +71,7 @@ export function AUD06Frame({ state }: { state: Aud06State }): JSX.Element {
               tab: opens.tab,
               layer: opens.layer,
               ...(opens.selected === undefined ? {} : { line: opens.selected }),
+              ...(opens.area === undefined ? {} : { area: opens.area }),
             },
           }}
         />

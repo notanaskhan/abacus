@@ -1,0 +1,101 @@
+# Nightly parser fuzzing (Q-03-T030; ADR-052, ADR-085, ADR-110). The Hypothesis suite in
+# backend/tests/property/fuzz/ runs on its `nightly` profile inside a 15-minute budget: five TB
+# and five GL ledger formats, the XLSX request-list importer and PDF extraction in its child.
+# Reaching the budget is a clean night; a crash fails the job and opens a SEV3 issue that names the
+# failing targets and links this run, whose artifact carries Hypothesis's minimised input. The fix
+# PR commits that input under regressions/<target>/ (docs/ops/fuzzing.md). Inputs are generated,
+# never client data. Third-party actions are pinned to full commit SHAs; no secrets are used.
+name: fuzz-nightly
+
+on:
+  schedule:
+    - cron: "41 8 * * *" # daily, 2:41 CT (3:41 in daylight time), after mutation-nightly
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-nightly
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: parser fuzzing (15-minute budget)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write # the SEV3 ticket on a crash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install the backend (no build)
+        run: cd backend && uv sync --frozen
+      - name: Fuzz inside the 15-minute budget
+        id: fuzz
+        working-directory: backend
+        env:
+          ABACUS_FUZZ_PROFILE: nightly
+        run: |
+          OUT="$RUNNER_TEMP/fuzz-report"
+          mkdir -p "$OUT"
+          set +e
+          # At the budget, timeout interrupts pytest (exit 124): the junit report still names any
+          # crash found before then, so the verdict is read from the report, not the exit code.
+          timeout --signal=INT 15m uv run pytest tests/property/fuzz -p no:cacheprovider \
+            --junitxml="$OUT/junit.xml" -o junit_family=xunit2 2>&1 | tee "$OUT/pytest.log"
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          uv run python - "$OUT/junit.xml" "$code" >> "$GITHUB_OUTPUT" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report, code = Path(sys.argv[1]), int(sys.argv[2])
+          failed = []
+          if report.exists():
+              for case in ET.parse(report).iter("testcase"):
+                  if case.find("failure") is not None or case.find("error") is not None:
+                      failed.append(f"{case.get('classname')}::{case.get('name')}")
+          elif code not in (0, 124):
+              failed.append("the suite did not report (exit %d)" % code)
+          print("failed=" + "; ".join(failed))
+          PY
+      - name: Night summary
+        if: always()
+        env:
+          EXIT: ${{ steps.fuzz.outputs.exit }}
+          FAILED: ${{ steps.fuzz.outputs.failed }}
+        run: |
+          {
+            echo "## Nightly parser fuzzing"
+            echo "pytest exit: $EXIT (124 = the 15-minute budget was spent)"
+            echo "Crashes: ${FAILED:-none}"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-nightly
+          path: |
+            ${{ runner.temp }}/fuzz-report
+            backend/.hypothesis
+          include-hidden-files: true
+          retention-days: 30
+      - name: Open the SEV3 ticket
+        if: steps.fuzz.outputs.failed != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILED: ${{ steps.fuzz.outputs.failed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="SEV3: parser fuzz crash $(date -u +%Y-%m-%d)"
+          body=$(printf 'Nightly fuzzing found a crash (Q-03-T030).\n\nFailing targets: %s\n\nRun and minimised input (artifact `fuzz-nightly`): %s\n\nFix per docs/ops/fuzzing.md: commit the minimised input under backend/tests/property/fuzz/regressions/<target>/ with the fix.\n' "$FAILED" "$RUN_URL")
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          exit 1

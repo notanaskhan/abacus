@@ -397,6 +397,24 @@ class CitationEvent(Base):
     at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
+class EvidenceDerivation(Base):
+    """What a password unlock derived from a protected file (P-03-T04, T19): the anchor of the
+    derived word layer, PII scan and masked rendition. The evidence object is never touched.
+    Insert-only; always a person (`created_by_user_id` NOT NULL)."""
+
+    __tablename__ = "evidence_derivations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    evidence_version_id: Mapped[UUID]
+    kind: Mapped[str]
+    created_by_user_id: Mapped[UUID]
+    extractor_version: Mapped[str]
+    renderer_version: Mapped[str]
+    detector_version: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
 class PiiScanRun(Base):
     """Which pages of a source the PII detector scanned, and which it couldn't (P-03-T04, T13).
     Insert-only."""

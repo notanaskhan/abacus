@@ -55,8 +55,10 @@ async def projection_of(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    derivation_id: UUID | None = None,
 ) -> Projection:
-    """For a caller that authorised on the source: what of its words may be read."""
+    """For a caller that authorised on the source: what of its words may be read (of an unlock's
+    derived layer when `derivation_id` is named, P-03-T19)."""
     # Only the current detector's scan of the current word layer (P-03-T15 review): an earlier
     # scan's pages and boxes belong to an earlier layer.
     scanned = await scanned_pages(
@@ -64,18 +66,21 @@ async def projection_of(
         evidence_version_id=evidence_version_id,
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
+        derivation_id=derivation_id,
     )
     regions = await pii_regions_of(
         session,
         evidence_version_id=evidence_version_id,
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
+        derivation_id=derivation_id,
     )
     unscanned = await unscannable_pages(
         session,
         evidence_version_id=evidence_version_id,
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
+        derivation_id=derivation_id,
     )
     return Projection(
         frozenset(scanned),
