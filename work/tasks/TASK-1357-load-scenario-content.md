@@ -1,8 +1,8 @@
 ---
 id: TASK-1357
 title: Load scenario content from the journeys, the 300-item PBC import and the x1/x25/x100 firm profiles (Q-03-T044)
-spec: docs/plan/10-quality-strategy.md section 10.11
-acceptance_criteria: ["make seed-staging PROFILE=x25 builds 25 Brightwater-size synthetic firms through service APIs on the perf stack"]
+spec: SPEC-000  # no Q-03 SPEC: chapter 10 section 10.11 and the Q-03-T044 row
+acceptance_criteria: [AC-1]  # Q-03-T044: make seed-staging PROFILE=x25 builds 25 Brightwater-size synthetic firms through service APIs on the perf stack
 risk_zone: amber
 status: in-review
 epic: Q-03
@@ -49,3 +49,4 @@ and x100 profiles chapter 10 section 10.11.2 sizes.
 
 ## Progress log
 - 2026-10-27: built; unit and integration tests written (results in the S10 wave C report).
+- 2026-10-27: targeted pass: unit 92 passed (loadtest, T043, T044, portal slice, P-08-T28, quality report, frozen snapshots); integration `test_q03t044_fleet_load.py` 2 passed after two fixes (seat initials are capitals only; a flag already on is not set again, so a second run writes nothing). `fleet.py` added to TENANT-001's exclusions beside the scenario loader.

@@ -1,8 +1,8 @@
 ---
 id: TASK-1358
 title: Load-test runbook and the loadtest skill (Q-03-T046)
-spec: docs/plan/10-quality-strategy.md section 10.11
-acceptance_criteria: ["AY runs a x1 profile on the perf stack from the runbook alone"]
+spec: SPEC-000  # no Q-03 SPEC: chapter 10 section 10.11 and the Q-03-T046 row
+acceptance_criteria: [AC-1]  # Q-03-T046: AY runs a x1 profile on the perf stack from the runbook alone
 risk_zone: green
 status: in-review
 epic: Q-03

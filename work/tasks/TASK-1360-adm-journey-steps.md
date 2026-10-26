@@ -1,8 +1,8 @@
 ---
 id: TASK-1360
 title: Playwright journey steps j01 3, j14 1-2, j16 2 and the ADM-01/02/03 screen specs (G-01-T16)
-spec: docs/plan/epics/G-01.md section 10
-acceptance_criteria: ["The named scenarios pass nightly in compose and on staging after the batch deploy."]
+spec: SPEC-000  # no G-01 journey SPEC: G-01 section 10 and the G-01-T16 row
+acceptance_criteria: [AC-1]  # G-01-T16: the named scenarios pass nightly in compose and on staging after the batch deploy
 risk_zone: green
 status: in-review
 epic: G-01

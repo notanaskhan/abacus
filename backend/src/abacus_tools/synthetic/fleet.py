@@ -235,6 +235,11 @@ def seat_user(firm: Firm, k: int) -> UUID:
     return firm.id("user", k)
 
 
+def seat_initials(k: int) -> str:
+    """Two capitals per seat (AA, AB, ...): memberships take one to four capital letters."""
+    return chr(65 + k // 26) + chr(65 + k % 26)
+
+
 def seat_subject(firm: Firm, k: int) -> str:
     """The local sign-in subject of a seat (`abacus_tools.fakes.identity`)."""
     return f"fleet-{firm.n:03d}-staff-{k:02d}"
@@ -262,7 +267,7 @@ async def _seats(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None:
                 user,
                 firm.firm_role(k),
                 firm.id("office", firm.seat_office(k)),
-                f"S{k + 1:02d}",
+                seat_initials(k),
                 SETUP_AT + timedelta(microseconds=k),
             )
             return "membership.created", "user", str(user)
@@ -431,9 +436,21 @@ async def _audit(conn: asyncpg.Connection, firm: Firm, a: int, counts: Counts) -
         await _step(conn, firm, f"portal:{a}:{p}", str(partner), portal_row, counts)
 
 
-async def _flags(firm: Firm) -> None:
+async def _flags(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None:
+    """Each flag on once: a flag already on is not set again (no second audit row)."""
+    on = {
+        str(r["flag"])
+        for r in await conn.fetch(
+            "SELECT flag FROM feature_flag_states WHERE tenant_id = $1 AND value = 'true'",
+            firm.tenant,
+        )
+    }
     for name in FLEET_FLAGS:
+        if name in on:
+            counts.skipped += 1
+            continue
         await set_flag(firm.tenant, name, "true", LOADER, "load profile (Q-03-T044)")
+        counts.written += 1
 
 
 # --- the run ------------------------------------------------------------------------------------
@@ -465,7 +482,7 @@ async def load(
             await _seats(conn, firm, counts)
             await _clients(conn, firm, counts)
             await _audits(conn, firm, counts)
-            await _flags(firm)
+            await _flags(conn, firm, counts)
     finally:
         await conn.close()
     return FleetResult(len(firms), counts.written, counts.skipped)

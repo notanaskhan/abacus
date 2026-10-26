@@ -2163,6 +2163,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus_tools/tenants.py",
             # F-04-T13: bootstrap writes carry the event's tenant, actor and business time.
             "src/abacus_tools/synthetic/scenarios/brightwater_hale/loader.py",
+            # Q-03-T044 (DEC-455): the load profiles' firms, bootstrapped as the loader does.
+            "src/abacus_tools/synthetic/fleet.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",

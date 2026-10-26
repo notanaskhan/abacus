@@ -1,8 +1,8 @@
 ---
 id: TASK-1362
 title: Load harness part 2, the chapter 10 scenarios and the x1 smoke trend (Q-03-T043)
-spec: docs/plan/10-quality-strategy.md section 10.11.3 and 10.11.5
-acceptance_criteria: ["The x1 smoke runs after two consecutive staging batch deploys and posts its trend to the quality report."]
+spec: SPEC-000  # no Q-03 SPEC: chapter 10 sections 10.11.3 and 10.11.5 and the Q-03-T043 row
+acceptance_criteria: [AC-1]  # Q-03-T043: the x1 smoke runs after two consecutive staging batch deploys and posts its trend to the quality report
 risk_zone: red
 status: in-review
 epic: Q-03

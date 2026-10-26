@@ -1,8 +1,8 @@
 ---
 id: TASK-1359
 title: Portal sign-in and home rollout, C5 v1.1 portal freeze, READMEs and the lockout and pause runbooks (P-08-T28)
-spec: SPEC-320
-acceptance_criteria: ["The canary walks sign-in with a second factor on the production build, both flags are gone before expiry, and each runbook is rehearsed once."]
+spec: SPEC-000  # SPEC-320 has no rollout criterion; the P-08-T28 row is the acceptance
+acceptance_criteria: [AC-1]  # P-08-T28: the canary walks sign-in with a second factor on the production build, both flags are gone before expiry, and each runbook is rehearsed once
 risk_zone: amber
 status: in-review
 epic: P-08
