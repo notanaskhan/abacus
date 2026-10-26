@@ -5,9 +5,15 @@ export { AuditCockpit, type AuditCockpitProps } from "./AuditCockpit";
 export { BlockedSectionCard, type BlockedSectionCardProps } from "./BlockedSectionCard";
 export { type DockHostOptions, dockHost } from "./DockHost";
 export { AUDIT_MESSAGES, type BandKey } from "./messages";
-export { isNotFound, useAuditCockpit, useSourceDocuments } from "./queries";
+export {
+  isNotFound,
+  useAuditCockpit,
+  useSourceDocumentDecisions,
+  useSourceDocuments,
+} from "./queries";
 export { AgentActivityTab, AgentDockMenu, aiRefused, useAgentTab } from "./AgentActivityTab";
-export { DockViewer } from "./DockViewer";
+export { DockViewer, type DockViewerOptions } from "./DockViewer";
+export { type LoggedReveal, RevealStepUp, useLoggedReveal } from "./reveal";
 export {
   BEGIN_ACTION,
   type RailModel,
