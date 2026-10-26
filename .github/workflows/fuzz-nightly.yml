@@ -1,10 +1,12 @@
 # Nightly parser fuzzing (Q-03-T030; ADR-052, ADR-085, ADR-110). The Hypothesis suite in
 # backend/tests/property/fuzz/ runs on its `nightly` profile inside a 15-minute budget: five TB
 # and five GL ledger formats, the XLSX request-list importer and PDF extraction in its child.
-# Reaching the budget is a clean night; a crash fails the job and opens a SEV3 issue that names the
-# failing targets and links this run, whose artifact carries Hypothesis's minimised input. The fix
-# PR commits that input under regressions/<target>/ (docs/ops/fuzzing.md). Inputs are generated,
-# never client data. Third-party actions are pinned to full commit SHAs; no secrets are used.
+# Reaching the budget is a clean night; a crash fails the job and opens a SEV3 issue. The repository
+# is public, so nothing here publishes a crashing input or names the parser it crashes before the
+# fix ships (security review, 2026-10-26): pytest's output stays on the runner (not echoed, not
+# uploaded), the summary and the issue carry only the count, the commit and the night's seed, and a
+# maintainer reproduces it locally from those (docs/ops/fuzzing.md). Inputs are generated, never
+# client data. Third-party actions are pinned to full commit SHAs; no secrets are used.
 name: fuzz-nightly
 
 on:
@@ -45,12 +47,16 @@ jobs:
         run: |
           OUT="$RUNNER_TEMP/fuzz-report"
           mkdir -p "$OUT"
+          SEED="$(date -u +%Y%m%d)"
+          echo "seed=$SEED" >> "$GITHUB_OUTPUT"
           set +e
           # At the budget, timeout interrupts pytest (exit 124): the junit report still names any
           # crash found before then, so the verdict is read from the report, not the exit code.
+          # Its output goes to a file on the runner only: the job log is public.
           timeout --signal=INT 15m uv run pytest tests/property/fuzz -p no:cacheprovider \
-            --junitxml="$OUT/junit.xml" -o junit_family=xunit2 2>&1 | tee "$OUT/pytest.log"
-          code=${PIPESTATUS[0]}
+            --hypothesis-seed="$SEED" --junitxml="$OUT/junit.xml" -o junit_family=xunit2 \
+            > "$OUT/pytest.log" 2>&1
+          code=$?
           set -e
           echo "exit=$code" >> "$GITHUB_OUTPUT"
           uv run python - "$OUT/junit.xml" "$code" >> "$GITHUB_OUTPUT" <<'PY'
@@ -59,43 +65,36 @@ jobs:
           from pathlib import Path
 
           report, code = Path(sys.argv[1]), int(sys.argv[2])
-          failed = []
+          crashes = 0
           if report.exists():
               for case in ET.parse(report).iter("testcase"):
                   if case.find("failure") is not None or case.find("error") is not None:
-                      failed.append(f"{case.get('classname')}::{case.get('name')}")
+                      crashes += 1
           elif code not in (0, 124):
-              failed.append("the suite did not report (exit %d)" % code)
-          print("failed=" + "; ".join(failed))
+              crashes = 1  # the suite did not report
+          print(f"crashes={crashes}")
           PY
       - name: Night summary
         if: always()
         env:
           EXIT: ${{ steps.fuzz.outputs.exit }}
-          FAILED: ${{ steps.fuzz.outputs.failed }}
+          CRASHES: ${{ steps.fuzz.outputs.crashes }}
+          SEED: ${{ steps.fuzz.outputs.seed }}
         run: |
           {
             echo "## Nightly parser fuzzing"
             echo "pytest exit: $EXIT (124 = the 15-minute budget was spent)"
-            echo "Crashes: ${FAILED:-none}"
+            echo "Crashing targets: ${CRASHES:-0} (named only locally; the repository is public)"
+            echo "Seed: $SEED at $GITHUB_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
-      - if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: fuzz-nightly
-          path: |
-            ${{ runner.temp }}/fuzz-report
-            backend/.hypothesis
-          include-hidden-files: true
-          retention-days: 30
       - name: Open the SEV3 ticket
-        if: steps.fuzz.outputs.failed != ''
+        if: steps.fuzz.outputs.crashes != '0'
         env:
           GH_TOKEN: ${{ github.token }}
-          FAILED: ${{ steps.fuzz.outputs.failed }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CRASHES: ${{ steps.fuzz.outputs.crashes }}
+          SEED: ${{ steps.fuzz.outputs.seed }}
         run: |
           title="SEV3: parser fuzz crash $(date -u +%Y-%m-%d)"
-          body=$(printf 'Nightly fuzzing found a crash (Q-03-T030).\n\nFailing targets: %s\n\nRun and minimised input (artifact `fuzz-nightly`): %s\n\nFix per docs/ops/fuzzing.md: commit the minimised input under backend/tests/property/fuzz/regressions/<target>/ with the fix.\n' "$FAILED" "$RUN_URL")
+          body=$(printf 'Nightly fuzzing found %s crashing target(s) (Q-03-T030).\n\nReproduce locally at commit %s with seed %s (docs/ops/fuzzing.md, "A crash"). The targets and inputs are not published here: the repository is public.\n' "$CRASHES" "$GITHUB_SHA" "$SEED")
           gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
           exit 1
