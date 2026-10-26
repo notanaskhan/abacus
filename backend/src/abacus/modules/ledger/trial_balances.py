@@ -409,7 +409,7 @@ def require_balanced(lines: Sequence[TbLine], layer: str) -> Totals:
     found = layer_totals(lines, layer)
     if not found.balanced:
         raise LayerUnbalanced(
-            layer, facts={"layer": layer, "difference": str(abs(found.difference))}
+            layer, facts={"layer": layer, "difference": format(abs(found.difference), "f")}
         )
     return found
 
