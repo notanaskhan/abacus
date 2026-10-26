@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Final, Literal
@@ -23,6 +23,7 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.modules.ledger.events import TrialBalanceVersionCreated
 from abacus.modules.ledger.models import (
     LedgerSnapshot,
     TrialBalance,
@@ -77,7 +78,15 @@ class SameSnapshot(DomainConflict):
 
 
 class LayerUnavailable(DomainConflict):
+    """AJE, RJE or Final before an adjustment source registers (A-06, C8)."""
+
     code = "layer_unavailable"
+
+
+class LayerUnbalanced(DomainConflict):
+    """A layer whose debits and credits differ (`facts.layer`, `facts.difference`)."""
+
+    code = "layer_unbalanced"
 
 
 @dataclass(frozen=True)
@@ -129,6 +138,25 @@ async def _entries(tenant: TenantContext, engagement_id: UUID) -> EntrySet | Non
         recorded.extend(found.recorded)
         pending += found.pending
     return EntrySet(tuple(recorded), pending)
+
+
+@dataclass(frozen=True)
+class AreaRule:
+    """A methodology account rule (A-02 §4.1; `engagements.api.area_for`): accounts whose code
+    falls in `account_from`..`account_to` (compared as text) belong to `area`. The caller turns
+    its methodology's rules into these; ledger stays dependency-free."""
+
+    area: str
+    account_from: str
+    account_to: str
+
+
+def area_of_rules(code: str, rules: Sequence[AreaRule]) -> str | None:
+    """The first rule in rule order whose range holds the code, as `area_for` reads it."""
+    for rule in rules:
+        if rule.account_from <= code <= rule.account_to:
+            return rule.area
+    return None
 
 
 @dataclass(frozen=True)
@@ -200,6 +228,9 @@ class TrialBalanceView:
     boy: Totals | None
     final: Totals | None = None  # None without an adjustment source
     pending_entries: int = 0
+    # Each available layer's debits, credits and balance (AC-17): Unadjusted always; AJE, RJE
+    # and Final once an adjustment source registers.
+    layer_balances: dict[str, Totals] = field(default_factory=dict[str, Totals])
 
 
 @dataclass(frozen=True)
@@ -262,7 +293,10 @@ def build_lines(
     current: Sequence[TrialBalanceLineRow],
     prior: Sequence[TrialBalanceLineRow] | None,
     annotations: dict[str, tuple[str | None, str | None]],
+    area_rules: Sequence[AreaRule] = (),
 ) -> list[TbLine]:
+    """Every account of either year, by code: BOY is the prior snapshot's net, EOY the current
+    one's. An annotated area wins over the methodology rules' area (A-02 §4.1)."""
     cy = _net(current)
     py = _net(prior) if prior is not None else {}
     lines: list[TbLine] = []
@@ -271,6 +305,7 @@ def build_lines(
         boy = (py[code][1] - py[code][2]) if code in py else (_ZERO if prior is not None else None)
         eoy = debit - credit
         area, wp_ref = annotations.get(code, (None, None))
+        area = area if area is not None else area_of_rules(code, area_rules)
         lines.append(
             TbLine(
                 code,
@@ -287,10 +322,17 @@ def build_lines(
     return lines
 
 
-def apply_entries(lines: Sequence[TbLine], entries: Sequence[AdjustmentEntry]) -> list[TbLine]:
+def apply_entries(
+    lines: Sequence[TbLine],
+    entries: Sequence[AdjustmentEntry],
+    area_rules: Sequence[AreaRule] = (),
+) -> list[TbLine]:
     """AJE, RJE and Final per account, by code; an entry's account the trial balance doesn't
-    hold appears as a new line with no unadjusted balance."""
+    hold appears as a new line with no unadjusted balance: 0.00 at the beginning of the year when
+    the trial balance has a prior year (as `build_lines` gives an account new this year), and
+    its area from the methodology rules."""
     names = {line.account_code: line for line in lines}
+    has_prior = any(line.boy is not None for line in lines)
     aje: dict[str, Decimal] = {}
     rje: dict[str, Decimal] = {}
     refs: dict[str, list[str]] = {}
@@ -304,7 +346,10 @@ def apply_entries(lines: Sequence[TbLine], entries: Sequence[AdjustmentEntry]) -
     for code in sorted(set(names) | set(aje) | set(rje)):
         base = names.get(code)
         if base is None:
-            base = TbLine(code, code, None, _ZERO, _ZERO, _ZERO, None, None, None)
+            boy = _ZERO if has_prior else None
+            change = None if boy is None else _ZERO
+            area = area_of_rules(code, area_rules)
+            base = TbLine(code, code, boy, _ZERO, _ZERO, _ZERO, change, area, None)
         a, r = aje.get(code, _ZERO), rje.get(code, _ZERO)
         out.append(
             TbLine(
@@ -339,6 +384,34 @@ def final_totals(lines: Sequence[TbLine]) -> Totals:
         (line.final for line in lines if line.final is not None and line.final < 0), _ZERO
     )
     return totals(debit, credit)
+
+
+def layer_totals(lines: Sequence[TbLine], layer: str) -> Totals:
+    """A layer's debits and credits (AC-17). Unadjusted is the snapshot's debit and credit
+    columns; AJE and RJE put each account's net adjustment on its own side; Final is the final
+    column's (`final_totals`). Callers check `layer_available` first."""
+    if layer == "unadjusted":
+        return totals(
+            sum((line.debit for line in lines), _ZERO), sum((line.credit for line in lines), _ZERO)
+        )
+    if layer == "final":
+        return final_totals(lines)
+    if layer not in ("aje", "rje"):
+        raise LayerUnavailable(layer)
+    values = [(line.aje if layer == "aje" else line.rje) or _ZERO for line in lines]
+    return totals(
+        sum((v for v in values if v > 0), _ZERO), -sum((v for v in values if v < 0), _ZERO)
+    )
+
+
+def require_balanced(lines: Sequence[TbLine], layer: str) -> Totals:
+    """The layer's totals, or `layer_unbalanced` with the difference (AC-17)."""
+    found = layer_totals(lines, layer)
+    if not found.balanced:
+        raise LayerUnbalanced(
+            layer, facts={"layer": layer, "difference": str(abs(found.difference))}
+        )
+    return found
 
 
 def leadsheets(lines: Sequence[TbLine], layer: str = "unadjusted") -> list[Leadsheet]:
@@ -498,9 +571,21 @@ async def adopt_trial_balance(
         content_fingerprint=fingerprint(snapshot, prior),
     )
     tx.record(
+        "trial_balance.created", target=Target("trial_balance", tb_id), after=Ref(version_no=1)
+    )
+    tx.record(
         "trial_balance.version_adopted",
         target=Target("trial_balance", tb_id),
         after=Ref(version_no=1, snapshot=snapshot.id),
+    )
+    tx.emit(
+        TrialBalanceVersionCreated(
+            trial_balance_id=tb_id,
+            engagement_id=engagement_id,
+            version_no=1,
+            snapshot_id=snapshot.id,
+            prior_snapshot_id=prior.id if prior else None,
+        )
     )
     return tb_id
 
@@ -551,10 +636,19 @@ async def adopt_version(
     )
     await set_current_version(tx.session, tb.id, version_no)
     tx.record(
-        "trial_balance.version_created",
+        "trial_balance.version_adopted",
         target=Target("trial_balance", tb.id),
         before=Ref(version_no=tb.current_version_no),
         after=Ref(version_no=version_no, snapshot=snapshot.id),
+    )
+    tx.emit(
+        TrialBalanceVersionCreated(
+            trial_balance_id=tb.id,
+            engagement_id=engagement_id,
+            version_no=version_no,
+            snapshot_id=snapshot.id,
+            prior_snapshot_id=prior.id if prior else None,
+        )
     )
     return version_no
 
@@ -610,8 +704,11 @@ async def trial_balance_view(
     tb_id: UUID,
     version_no: int | None = None,
     layer: str = "unadjusted",
+    area_rules: Sequence[AreaRule] = (),
 ) -> TrialBalanceView:
-    """AC-2, AC-4: a version's lines (BOY, debit, credit, EOY, change), totals and balance."""
+    """AC-2, AC-4: a version's lines (BOY, debit, credit, EOY, change), totals and balance,
+    and each available layer's balance (AC-17). Areas come from the annotations, then from the
+    caller's methodology rules."""
     if not layer_available(layer):
         raise LayerUnavailable(layer)
     async with tenant_session(tenant) as session:
@@ -639,10 +736,12 @@ async def trial_balance_view(
         if chosen.prior_snapshot_id
         else None
     )
-    lines = build_lines(current, prior, {a.account_code: (a.area, a.wp_ref) for a in notes})
+    lines = build_lines(
+        current, prior, {a.account_code: (a.area, a.wp_ref) for a in notes}, area_rules
+    )
     entries = await _entries(tenant, engagement_id)
     if entries is not None:
-        lines = apply_entries(lines, entries.recorded)
+        lines = apply_entries(lines, entries.recorded, area_rules)
 
     def info(v: TrialBalanceVersion) -> VersionInfo:
         s = snaps[v.snapshot_id]
@@ -659,8 +758,8 @@ async def trial_balance_view(
             s.pulled_at,
         )
 
-    debit = sum((line.debit for line in lines), _ZERO)
-    credit = sum((line.credit for line in lines), _ZERO)
+    available = ("unadjusted", "aje", "rje", "final") if entries is not None else ("unadjusted",)
+    balances = {name: layer_totals(lines, name) for name in available}
     boy = None
     if prior is not None:
         boy = totals(sum((r.debit for r in prior), _ZERO), sum((r.credit for r in prior), _ZERO))
@@ -669,10 +768,11 @@ async def trial_balance_view(
         info(chosen),
         [info(v) for v in versions],
         lines,
-        totals(debit, credit),
+        balances["unadjusted"],
         boy,
-        final_totals(lines) if entries is not None else None,
+        balances["final"] if entries is not None else None,
         entries.pending if entries is not None else 0,
+        balances,
     )
 
 
