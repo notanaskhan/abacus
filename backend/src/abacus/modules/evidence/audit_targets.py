@@ -12,6 +12,7 @@ from sqlalchemy import ColumnElement, select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.evidence.export_models import EngagementExport
 from abacus.modules.evidence.models import (
     Citation,
     EvidenceItem,
@@ -28,6 +29,7 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | Non
     "review_decision": (ReviewDecision.id, ReviewDecision.engagement_id),
     "statement_dataset": (StatementDataset.id, StatementDataset.engagement_id),  # SPEC-312
     "citation": (Citation.id, Citation.engagement_id),  # P-03-T06: a recorded citation
+    "engagement_export": (EngagementExport.id, EngagementExport.engagement_id),  # A-01-T18
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 # SPEC-036 AC-5 (TASK-1210): a shadow run's citation is never shown, so neither are its events.

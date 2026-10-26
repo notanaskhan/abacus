@@ -7,8 +7,19 @@ export const COPY = {
   edit: "Edit",
   signOff: "Sign off…",
   sourceDocs: "Source Docs",
-  /** The R2 label chip: "TB: Standard ⌄". */
-  tbChip: (label: string) => `TB: ${label}`,
+  /** The R2 label chip: "TB: Standard ⌄"; another label names its period, "TB: Interim ·
+   * 8/31/2026" (revision.md g). */
+  tbChip: (label: string, periodEnd?: string) =>
+    periodEnd === undefined ? `TB: ${label}` : `TB: ${label} · ${periodEnd}`,
+  /** g's one column: "Interim 8/31/2026". */
+  labelColumn: (label: string, periodEnd: string) => `${label} ${periodEnd}`,
+  /** AUD-06g's entity strip and its link (revision.md g; AUD-33 is planned). */
+  entities: "Entity",
+  consolidated: "Consolidated TB →",
+  /** AUD-06h (revision.md h; AUD-38 is planned). */
+  handOffToTax: "Hand off to tax…",
+  /** The leadsheet's area picker (AUD-06e). */
+  areas: "Audit area",
   tabs: { label: "Trial Balance view", trialBalance: "Trial Balance", leadsheets: "Leadsheets" },
   layers: "Layer",
   layerUnavailable: "Adjustments arrive with Findings & adjustments",

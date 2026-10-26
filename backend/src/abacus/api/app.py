@@ -46,12 +46,18 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules import MODULES
+from abacus.modules.audit_trail.api import events_for_work_item
 from abacus.modules.evidence.api import (
     MAX_CONTENT_BYTES,
     UPLOAD_EDGE_BYTES,
     UPLOAD_ROUTE_PATHS,
+    register_export_audit_trail,
 )
 from abacus.modules.identity import api as identity
+
+# A-01-T18 (SPEC-344, DEC-433): no module may import audit_trail, so the composition roots (this
+# and the worker) give the engagement export its audit-trail reader.
+register_export_audit_trail(events_for_work_item)
 
 # Every module's routers, in MODULES order (P-39; F-03-T07): adding a router edits only that
 # module's api.py.

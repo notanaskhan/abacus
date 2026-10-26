@@ -89,6 +89,17 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
     "/v1/platform/email-templates/import",  # TASK-401: idempotent, may write nothing, so 200
+    # K-01-T01 (C21 stub): moving a methodology version or a step's flag changes it, so 200.
+    "/v1/methodology/versions/{version_id}/approve",
+    "/v1/methodology/versions/{version_id}/discard",
+    "/v1/methodology/versions/{version_id}/submit",
+    "/v1/methodology/versions/{version_id}/steps/{step_id}/mandatory",
+    # G-02-T11 (security-center stub): a decision, a sign-out, an unlock and a schedule approval
+    # change what exists and return it, so 200.
+    "/v1/firm/data-exports/schedule/approve",
+    "/v1/firm/security/incidents/{incident_id}/decisions",
+    "/v1/firm/security/sessions/{session_id}/sign-out",
+    "/v1/firm/staff/{user_id}/unlock",
     # G-01-T02: deactivating and approving change a person or a wall and return it, so 200.
     "/v1/firm/staff/{user_id}/deactivate",
     "/v1/walls/{wall_id}/approve",
@@ -297,6 +308,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/email-templates/{key}/test-send",
         # P-07-T37: an import run starts ClientImportWorkflow, so 202.
         "/v1/client-imports/{import_id}/run",
+        # G-02-T11 (security-center stub): a WISP pack is built later, so 202.
+        "/v1/firm/safeguards/wisp-pack",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -304,6 +317,11 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # K-01-T01 (C21 stub): a methodology draft and a program step.
+        "/v1/methodology/versions/{version_id}/drafts",
+        "/v1/methodology/versions/{version_id}/programs/{program_id}/steps",
+        # G-02-T11 (security-center stub): an incident timeline entry.
+        "/v1/firm/security/incidents/{incident_id}/timeline",
         # G-01-T02 (firm-settings stub): an office, a team, and one's annual confirmation.
         "/v1/firm/offices",
         "/v1/firm/teams",

@@ -1125,10 +1125,12 @@ async def open_record(
     client_id: UUID,
     family: str,
     prior_engagement_id: UUID | None,
+    kind: Kind | None = None,
 ) -> UUID:
     """A Draft record for a new Prospect engagement, pinned to the newest version of the firm's
     questionnaire for the type's family; inside the caller's unit of work (after its
-    authorisation). 409 `acceptance_template_missing` when the firm has none."""
+    authorisation). 409 `acceptance_template_missing` when the firm has none. `kind` when the
+    caller knows it (the intake: an entity added under an existing client, P-07-T42)."""
     version = (
         await tx.session.execute(
             select(template_versions.c.id)
@@ -1155,8 +1157,8 @@ async def open_record(
                 select(records.c.id).where(records.c.engagement_id == prior_engagement_id)
             )
         ).scalar_one_or_none()
-        kind: Kind = "continuance"
-    else:
+        kind = "continuance"
+    elif kind is None:
         others = (
             await tx.session.execute(
                 select(Engagement.id)

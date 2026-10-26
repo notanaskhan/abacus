@@ -4,8 +4,10 @@ The review grammar (P-04): sign-offs first (SPEC-308); review notes, issues, dec
 checkpoints follow.
 """
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.review.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.review.contract import (
     checkpoints_router,
     decision_cards_router,
@@ -92,6 +94,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
+register_engagement_owners(AUDIT_KINDS, audit_owners)  # ED-112: `sign_off.went_stale`
 
 # P-04-T16 (C13): the human-gate projector, on the events its sources may change; P-04-T19:
 # the stale sign-off detector, on the owners' change events (no event is in both).
