@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
+import { type FixtureHandler, installFixtureMode, json } from "../../app-core/fixture-mode";
 import { SHELL_PERSONAS, officeIdOf } from "../../fixtures/seed/shell";
 import { ADMIN_ROWS, FirmMenu, adminRows, cardLine } from "../../shell/firm/FirmMenu";
 import { newQueryClient } from "../../testing/support";
@@ -35,12 +35,12 @@ interface Seen {
   calls: { method: string; path: string; body: unknown }[];
 }
 
-/** Installs a state's scenario, recording every request. */
-function install(state: Shl03State): Seen {
+/** Installs a state's scenario, recording every request; `extra` adds or replaces handlers. */
+function install(state: Shl03State, extra: Record<string, FixtureHandler> = {}): Seen {
   const seen: Seen = { calls: [] };
   const base = scenarios[state];
   const handlers = Object.fromEntries(
-    Object.entries(base.handlers).map(([key, handler]) => [
+    Object.entries({ ...base.handlers, ...extra }).map(([key, handler]) => [
       key,
       ((request) => {
         seen.calls.push({ method: request.method, path: request.path, body: request.body });
@@ -211,8 +211,12 @@ function Live({
   );
 }
 
-function live(state: Shl03State, props: Parameters<typeof Live>[0] = {}): Seen {
-  const seen = install(state);
+function live(
+  state: Shl03State,
+  props: Parameters<typeof Live>[0] = {},
+  extra: Record<string, FixtureHandler> = {},
+): Seen {
+  const seen = install(state, extra);
   render(
     <QueryClientProvider client={newQueryClient()}>
       <Live {...props} />
@@ -378,5 +382,106 @@ describe("SHL-03 behaviour (P-01 AC 2.1)", () => {
     fireEvent.keyDown(menu, { key: "ArrowUp" });
     fireEvent.keyDown(menu, { key: "ArrowUp" });
     expect(document.activeElement).toBe(rows[rows.length - 1]);
+  });
+});
+
+// G-01 AC6.1 (the T10 follow-up): the profile drawer's annual independence self-confirmation. The
+// firm's statement is firm content with no design data (DF-07), so these tests bring their own.
+describe("SHL-03 annual independence confirmation (G-01 AC6.1)", () => {
+  const STATEMENT = "Test statement one.\nTest statement two.\nTest statement three.";
+
+  function annual(status: "not_yet" | "confirmed" | "declined", statement = true) {
+    let current = status;
+    let decidedAt: string | null = status === "not_yet" ? null : "2026-09-14T14:31:00Z";
+    const handlers: Record<string, FixtureHandler> = {
+      "GET /v1/me/independence/annual": () =>
+        json({
+          year: 2026,
+          status: current,
+          decided_at: decidedAt,
+          statement: statement ? { body: STATEMENT, version: 3 } : null,
+        }),
+      "POST /v1/me/independence/annual": ({ body }) => {
+        const given = body as { decision: "confirmed" | "declined"; note: string | null };
+        current = given.decision;
+        decidedAt = "2026-09-14T14:31:00Z";
+        return json({ year: 2026, status: current, decided_at: decidedAt }, 201);
+      },
+    };
+    return handlers;
+  }
+
+  async function profile(extra: Record<string, FixtureHandler>): Promise<[HTMLElement, Seen]> {
+    const seen = live("a", {}, extra);
+    const menu = await tray();
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Your profile" }));
+    return [await screen.findByRole("dialog", { name: "Your profile" }), seen];
+  }
+
+  it("not yet: the row offers Confirm…, and Confirm sends the statement's version", async () => {
+    const [drawer, seen] = await profile(annual("not_yet"));
+    expect(
+      await within(drawer).findByText("Annual independence confirmation · 2026"),
+    ).toBeTruthy();
+    fireEvent.click(within(drawer).getByRole("button", { name: "Confirm…" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Annual independence confirmation · 2026",
+    });
+    expect(within(dialog).getByText(/Test statement one\./)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirm" }));
+    await waitFor(() => {
+      const post = seen.calls.find(
+        (c) => c.method === "POST" && c.path === "/v1/me/independence/annual",
+      );
+      expect(post?.body).toEqual({
+        decision: "confirmed",
+        year: 2026,
+        statement_version: 3,
+        note: null,
+      });
+    });
+    expect(await within(drawer).findByText(/^Confirmed /)).toBeTruthy();
+  });
+
+  it("declining needs a note", async () => {
+    const [drawer, seen] = await profile(annual("not_yet"));
+    fireEvent.click(await within(drawer).findByRole("button", { name: "Confirm…" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Annual independence confirmation · 2026",
+    });
+    const decline = within(dialog).getByRole("button", { name: "Decline" });
+    expect(decline.hasAttribute("disabled")).toBe(true);
+    fireEvent.change(within(dialog).getByRole("textbox"), {
+      target: { value: "I hold shares in a client." },
+    });
+    expect(decline.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(decline);
+    await waitFor(() => {
+      const post = seen.calls.find((c) => c.method === "POST");
+      expect(post?.body).toMatchObject({
+        decision: "declined",
+        note: "I hold shares in a client.",
+      });
+    });
+  });
+
+  it("without a published statement nothing can be confirmed", async () => {
+    const [drawer] = await profile(annual("not_yet", false));
+    fireEvent.click(await within(drawer).findByRole("button", { name: "Confirm…" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Annual independence confirmation · 2026",
+    });
+    expect(
+      within(dialog).getByText("Your firm hasn't published its independence statement yet."),
+    ).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "Confirm" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+  });
+
+  it("already confirmed: the date, no Confirm…", async () => {
+    const [drawer] = await profile(annual("confirmed"));
+    expect(await within(drawer).findByText(/^Confirmed /)).toBeTruthy();
+    expect(within(drawer).queryByRole("button", { name: "Confirm…" })).toBeNull();
   });
 });

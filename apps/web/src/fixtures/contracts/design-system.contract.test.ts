@@ -18,13 +18,16 @@ import type {
   ListPageActivityEventOut,
   ListPageBinderRequestRowOut,
   ListPageBinderRowOut,
+  ListPageChangeLogEntryOut,
   ListPageCitationV2Out,
   ListPageClientRelationshipOut,
   ListPageClientRowOut,
   ListPageDecisionCardItemOut,
   ListPageHumanGateOut,
   ListPageIssueItemOut,
+  ListPageKnowledgeItemOut,
   ListPageReviewNoteItemOut,
+  ListPageReviewQueueItemOut,
   ListPageWallEventOut,
   ListPageWorkItemRowOut,
   MePortalOut,
@@ -97,13 +100,16 @@ const LIST_PAGES = {
   ListPage_ActivityEventOut_: (p: ListPageActivityEventOut) => envelope(p),
   ListPage_BinderRequestRowOut_: (p: ListPageBinderRequestRowOut) => envelope(p),
   ListPage_BinderRowOut_: (p: ListPageBinderRowOut) => envelope(p),
+  ListPage_ChangeLogEntryOut_: (p: ListPageChangeLogEntryOut) => envelope(p), // K-01: KNW-01
   ListPage_CitationV2Out_: (p: ListPageCitationV2Out) => envelope(p),
   ListPage_ClientRelationshipOut_: (p: ListPageClientRelationshipOut) => envelope(p),
   ListPage_ClientRowOut_: (p: ListPageClientRowOut) => envelope(p),
   ListPage_DecisionCardItemOut_: (p: ListPageDecisionCardItemOut) => envelope(p),
   ListPage_HumanGateOut_: (p: ListPageHumanGateOut) => envelope(p),
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
+  ListPage_KnowledgeItemOut_: (p: ListPageKnowledgeItemOut) => envelope(p), // K-01: KNW-01
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
+  ListPage_ReviewQueueItemOut_: (p: ListPageReviewQueueItemOut) => envelope(p), // K-01: KNW-01
   ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02
   ListPage_WorkItemRowOut_: (p: ListPageWorkItemRowOut) => envelope(p),
 } as const;

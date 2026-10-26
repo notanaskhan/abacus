@@ -11,9 +11,10 @@ lets the effect out, and an Undo after the effect started answers `409 effect_st
 checks are pure functions over what was observed; `test_the_checks_fail_*` feed them a route that
 skips the window or the grant void and require them to say so.
 
-Registered: the evidence review-decision Undo (P-01-T15), the request send and binder publish
-Undo (P-06-T17), and the client's Undo of an Ignore and of Mark as Done (R-01-T08). The follow-up
-send Undo waits for a published binder with recipients and a template (P-06-T17 records it).
+Registered: the evidence review-decision Undo (P-01-T15), the request send, binder publish and
+follow-up send Undo (P-06-T17; the follow-up case seeds its published binder, its recipient and
+the Reminder template as test data), and the client's Undo of an Ignore and of Mark as Done
+(R-01-T08).
 
 Window kinds (DEC-334): a firm decision that holds an effect leaving the firm is undone within
 10 seconds (`ten_seconds`). A client's Ignore or Mark as Done holds none, so its Undo stays open
@@ -38,6 +39,8 @@ import httpx
 import pytest
 
 from abacus.kernel.clock import frozen
+from abacus.modules.communications.api import REMINDER_TEMPLATE
+from abacus.modules.communications.templates import import_platform_version
 from abacus.modules.identity.api import consume_grant
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
@@ -352,6 +355,110 @@ PUBLISH: Final = Case(
     _publish_grant,
 )
 
+# --- the follow-up send (P-06-T14, registered by P-06-T17) ---------------------------------------
+
+# Test data imported through the platform's import path as staff would (the product holds no
+# template text, AGENTS 16); one content, so importing it again writes nothing.
+_REMINDER_SUBJECT: Final = "{{firm_name}} is still waiting on {{engagement_display_name}}"
+_REMINDER_BODY: Final = (
+    "Hi {{recipient_first_name}},\n\n{{firm_name}} is still waiting for the following:\n\n"
+    "{{request_list}}\n\nOpen your list: {{app_link}}\n"
+)
+_REMINDER_VARIABLES: Final = [
+    "app_link",
+    "engagement_display_name",
+    "firm_name",
+    "recipient_first_name",
+    "request_list",
+]
+
+
+async def _follow_up_prepare(world: World) -> None:
+    """A published binder with one requested, client-visible item, a client admin to remind, and
+    the follow-up drafted for them before T0."""
+    await import_platform_version(
+        "staff-undo-suite",
+        REMINDER_TEMPLATE,
+        "en-US",
+        _REMINDER_SUBJECT,
+        _REMINDER_BODY,
+        _REMINDER_VARIABLES,
+    )
+    await world.seed.client(world.tenant, world.engagement, "Claire Feld")
+    work_item = await world.seed.value(
+        "SELECT id FROM work_items WHERE engagement_id = $1", world.engagement
+    )
+    created = await world.call(
+        world.decider,
+        "POST",
+        "/v1/binders",
+        {"work_item_id": str(work_item), "kind": "organizer", "name": "2025 Binder"},
+        at=T0 - timedelta(minutes=5),
+    )
+    assert created.status_code == 201, created.text
+    binder = uuid.UUID(created.json()["id"])
+    await world.seed.run(
+        "INSERT INTO request_items (tenant_id, engagement_id, request_list_id, description, "
+        "audit_area, created_by, client_visible, due_on, status, requested_at) VALUES ($1, $2, "
+        "$3, 'Brokerage statements', 'Income', $4, true, '2026-09-01', 'requested', $5)",
+        world.tenant,
+        world.engagement,
+        binder,
+        world.decider.user_id,
+        T0 - timedelta(minutes=4),
+    )
+    await world.seed.run(
+        "UPDATE request_lists SET status = 'published', published_at = $2, published_by = $3 "
+        "WHERE id = $1",
+        binder,
+        T0 - timedelta(minutes=4),
+        world.decider.user_id,
+    )
+    drafted = await world.call(
+        world.decider,
+        "POST",
+        "/v1/follow-ups/drafts",
+        {"binder_ids": [str(binder)]},
+        at=T0 - timedelta(minutes=1),
+    )
+    assert drafted.status_code == 201, drafted.text
+    items = drafted.json()["items"]
+    assert len(items) == 1, items
+    world.state.update(binder=binder, follow_up=uuid.UUID(items[0]["id"]))
+
+
+async def _follow_up_decide(world: World, who: Person, at: datetime) -> httpx.Response:
+    return await world.call(who, "POST", f"/v1/follow-ups/{world.state['follow_up']}/send", at=at)
+
+
+async def _follow_up_undo(world: World, who: Person, at: datetime) -> httpx.Response:
+    return await world.call(who, "POST", f"/v1/follow-ups/{world.state['follow_up']}/undo", at=at)
+
+
+async def _follow_up_compensations(world: World) -> list[str]:
+    return await _audited(world, "follow_up.undone", world.state["follow_up"])
+
+
+async def _follow_up_decided(world: World) -> int:
+    return len(await _audited(world, "follow_up.sent", world.state["follow_up"]))
+
+
+async def _follow_up_grant(world: World) -> uuid.UUID | None:
+    return await _held_grant(world, "follow_up.sent", "follow_up_id", world.state["follow_up"])
+
+
+FOLLOW_UP: Final = Case(
+    "follow_up_send",
+    "P-06-T17",
+    ("binders.engine",),
+    _follow_up_prepare,
+    _follow_up_decide,
+    _follow_up_undo,
+    _follow_up_compensations,
+    _follow_up_decided,
+    _follow_up_grant,
+)
+
 # --- the client's Undo of an Ignore and of Mark as Done (R-01-T08) -------------------------------
 
 
@@ -482,7 +589,7 @@ MARK_DONE: Final = Case(
     firm_acts=_waive,
 )
 
-CASES: Final = (REVIEW_DECISION, SEND, PUBLISH, IGNORE, MARK_DONE)
+CASES: Final = (REVIEW_DECISION, SEND, PUBLISH, FOLLOW_UP, IGNORE, MARK_DONE)
 GRANT_HELD: Final = tuple(c for c in CASES if c.grant is not None)
 TEN_SECONDS: Final = tuple(c for c in CASES if c.window == "ten_seconds")
 UNTIL_FIRM_ACTS: Final = tuple(c for c in CASES if c.window == "until_firm_acts")

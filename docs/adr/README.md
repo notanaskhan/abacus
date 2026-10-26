@@ -126,7 +126,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-135](ADR-135-pre-launch-migration-policy.md) | Until the first real firm is live, a breaking change is one reversible migration | red | accepted |
 | [ADR-136](ADR-136-engagement-work-items-gates.md) | Engagements hold work items, and the server enforces the gates | red | accepted |
 | [ADR-137](ADR-137-module-map-29.md) | The backend has 29 modules with a one-way dependency graph | amber | accepted |
-| [ADR-138](ADR-138-status-registry.md) | One status vocabulary file is the contract; enums, OpenAPI and UI tables are generated from it | amber | accepted |
+| [ADR-138](ADR-138-status-registry.md) | One status vocabulary file is the contract; enums, OpenAPI and UI tables are generated from it (amended by [ADR-190](ADR-190-status-fields-bare-codes.md): API status fields are bare codes) | amber | accepted |
 | [ADR-139](ADR-139-api-conventions.md) | API conventions - list envelope, allowed_actions, error catalogue, idempotency, classification, versioning | amber | accepted |
 | [ADR-140](ADR-140-per-module-registries.md) | Registries and the permission matrix are split per module | amber | accepted |
 | [ADR-141](ADR-141-authentication-workos.md) | Authentication and sessions use WorkOS AuthKit, with a BFF session for the portal | red | accepted |
@@ -162,3 +162,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-183](ADR-183-service-line-content-visibility.md) | Service-line content visibility: a firm may open a line's content, read-only, to its members; never Audit, attest clients, walled or offshore members, or admins | red | accepted |
 | [ADR-186](ADR-186-autonomy-policy-versions-auto-mode.md) | Autonomy policy versions and Auto mode: a versioned, stricter-only firm AI policy published by the QM owner and approved by a second partner | red | accepted |
 | [ADR-187](ADR-187-policy-principal-dormant.md) | Policy principal (dormant): the `policy` actor kind designed, stored off and locked, rendered in fixture mode only | red | accepted |
+| [ADR-190](ADR-190-status-fields-bare-codes.md) | API status fields carry the bare code; the label context is the screen's, a server-known discriminator its own field (amends ADR-138) | amber | accepted |

@@ -79,3 +79,4 @@ needs AY's issue number before its case can be marked
 - 2026-10-22: built under the S3 batch rules. `pytest tests/golden/scenario` gives 38 passed.
   ruff format, ruff check, pyright (strict) and `banned_patterns` are clean on these files.
   Full suites were not run.
+- 2026-10-26 (S10 code gap, branch `s10-f04-t29-goldens`, F-04-T29): `tests/integration/test_f04t29_loaded_goldens.py` reads the goldens back from a loaded E0: 184 clients by name with their primary entities, 46 staff seats by office, 3 offices, the 27 audit roster rows (entity, type group, phase, EP), and each holdout loading 183. Strict xfail citing this task: the loader writes no client facts (kind, office, relationship partner, attest, portal status) and only each client's primary entity (Thornbury's estate entity is missing at E0). northwind.yaml and granite_peak.yaml stay arithmetic until their engines load the figures.

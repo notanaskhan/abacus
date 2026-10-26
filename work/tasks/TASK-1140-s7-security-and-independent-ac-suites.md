@@ -84,3 +84,4 @@ Through the item upload and the inbox over HTTP (compose S3 image with Object Lo
 - 2026-10-24: F-04-T36 written: 36 + 10 pass.
 - 2026-10-24: Q-03-T014 and T015 written: 15 pass.
 - 2026-10-24: gates: ruff, pyright, banned_patterns, validate_docs, error_codes, `make check-fast` green; `pytest tests/unit tests/contracts tests/security` 26510 passed, 14 xfailed; the touched integration files 103 passed, 1 xfailed; web vitest `src/status src/fixtures/contracts src/lint` 421 passed. Status done.
+- 2026-10-26 (S10 code gap, branch `s10-p06-t17-undo`): P-06-T17's follow-up send Undo is registered in the C3 conformance suite (`follow_up_send`): a published binder, a client admin and the Reminder template seeded as test data, the follow-up drafted before T0; all six contract checks pass for it (35 in the suite).

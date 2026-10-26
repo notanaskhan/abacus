@@ -49,3 +49,10 @@ updated: 2026-10-25
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-353 | ADM-02's segments, deferrals, data gaps, writes, copy and manifest status | No |
+- 2026-10-26 (S10 code gap, branch `s10-g01-t10-selfconfirm`): the SHL-03 profile drawer's
+  annual independence self-confirmation (AC6.1), now that G-01-T13's routes are live: the row
+  "Annual independence confirmation · ‹year› · Confirm…", a dialog with the firm's published
+  statement as written, Confirm, and Decline with a required note; the confirmed or declined date
+  afterwards. `docs/screens/ADM-02.md` updated (DEC-353's wait is over). Tests at the end of the
+  run (not yet, confirm, decline needs a note, no statement).
+- 2026-10-26: SHL-03 tests pass (22, four new): not yet then Confirm with the statement version, decline needs a note, no statement disables Confirm, already confirmed shows the date. The tests bring their own statement text (DF-07 has no design data).
