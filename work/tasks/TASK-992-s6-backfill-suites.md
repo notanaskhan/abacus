@@ -122,3 +122,4 @@ Spec drift is listed in `docs/quality/backfill.md` ("Spec drift found by the bac
 
 ## Progress log
 - 2026-10-23: suites written in three clean sessions (T006 and T008, T007, T011) and triaged. 6 defects fixed with their tests; 5 held by 9 strict xfails; all logged. The tracker moves 6 rows to back-filled.
+- 2026-10-27 (S10, branch `s10-q03-t009-defects`): ED-007 fixed (the invite answers `ClientInvitationCreatedOut` with id, email and status from the new `client_invitation` vocabulary object; the link is still never returned) and ED-008 fixed (an archived engagement answers 409 `engagement_archived` to someone who may read its contacts; anyone else is refused as before). Both strict xfails came off: 37 passed. ED-010 stays open: its own xfail says tightening G3 moves binder publishing and every G3 consumer.

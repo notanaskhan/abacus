@@ -4878,6 +4878,23 @@ export type ClientIntakeDraftPayload = {
 };
 
 /**
+ * ClientInvitationCreatedOut
+ *
+ * ED-007 (SPEC-015 AC-1): the new invitation's id, email and status; never the link.
+ */
+export type ClientInvitationCreatedOut = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Invitation Id
+     */
+    invitation_id: string;
+    status: ClientInvitationStatus;
+};
+
+/**
  * ClientInvitationIn
  */
 export type ClientInvitationIn = {
@@ -4900,6 +4917,11 @@ export type ClientInvitationOut = {
      */
     invitation_id: string;
 };
+
+/**
+ * ClientInvitationStatus
+ */
+export type ClientInvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 
 /**
  * ClientObjectRefOut
@@ -34002,7 +34024,7 @@ export type InviteClientResponses = {
     /**
      * Successful Response
      */
-    201: ClientInvitationOut;
+    201: ClientInvitationCreatedOut;
 };
 
 export type InviteClientResponse = InviteClientResponses[keyof InviteClientResponses];

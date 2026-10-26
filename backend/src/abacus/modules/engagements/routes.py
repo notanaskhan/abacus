@@ -12,7 +12,7 @@ from uuid import UUID
 from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from abacus.kernel._statuses import EngagementStatus
+from abacus.kernel._statuses import ClientInvitationStatus, EngagementStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
@@ -490,6 +490,13 @@ class ClientInvitationOut(BaseModel):
     invitation_id: Annotated[UUID, classified("internal")]
 
 
+class ClientInvitationCreatedOut(ClientInvitationOut):
+    """ED-007 (SPEC-015 AC-1): the new invitation's id, email and status; never the link."""
+
+    email: Annotated[str, classified("confidential")]
+    status: Annotated[ClientInvitationStatus, classified("internal")]
+
+
 class ClientContactOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -504,16 +511,18 @@ class ClientContactOut(BaseModel):
 @router.post(
     "/{engagement_id}/client-invitations",
     action="client_contact.invite",
-    response_model=ClientInvitationOut,
+    response_model=ClientInvitationCreatedOut,
     status_code=201,
     errors=(409,),
 )
 async def invite_client_route(
     engagement_id: UUID, body: ClientInvitationIn, ctx: Ctx
-) -> ClientInvitationOut:
+) -> ClientInvitationCreatedOut:
     """The link is emailed, never returned (SPEC-015 AC-1)."""
     invitation_id = await invite_client(ctx, engagement_id, body.email, body.role)
-    return ClientInvitationOut(invitation_id=invitation_id)
+    return ClientInvitationCreatedOut(
+        invitation_id=invitation_id, email=body.email, status=ClientInvitationStatus.PENDING
+    )
 
 
 @router.get(

@@ -414,6 +414,13 @@ async def invite_client(
     await gate_client_data(ctx, engagement_id, "client_contact.invite")
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
+        if ref.archived:
+            # ED-008 (SPEC-015 AC-3): someone who may see the engagement's contacts hears that it
+            # is archived (409); anyone else is refused as before, so nothing leaks.
+            from abacus.modules.engagements.record import EngagementArchived  # record imports us
+
+            await authorise(ctx, "client_contact.read", ref.resource())
+            raise EngagementArchived
         await authorise(ctx, "client_contact.invite", ref.resource())
         return await create_invitation(tx, ctx, engagement_id, email, role)
 
