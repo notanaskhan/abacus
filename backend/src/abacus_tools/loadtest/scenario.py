@@ -1,9 +1,10 @@
 """Load-test scenarios as YAML (Q-03-T035; Q-03 E1). One file per profile in `scenarios/`.
 
-A scenario names who calls (a local persona), for how long, with how many virtual users, and
-what they call: weighted endpoint groups (each a short request sequence, timed per request under
-the group's name), SSE streams (time to first event) and Temporal-client operations at a rate.
-Targets are optional per group; the pass rule is `stats.verdict`.
+A scenario names who calls (one local persona, or several with weights: each virtual user is one
+of them for the whole run and plays only that persona's groups), for how long, with how many
+virtual users, and what they call: weighted endpoint groups (each a short request sequence,
+timed per request under the group's name), SSE streams (time to first event) and Temporal-client
+operations at a rate. Targets are optional per group; the pass rule is `stats.verdict`.
 """
 
 from __future__ import annotations
@@ -13,6 +14,8 @@ from typing import Annotated, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from abacus_tools.loadtest.bodies import BODIES
 
 SCENARIOS = Path(__file__).resolve().parent / "scenarios"
 _NAME = r"^[a-z][a-z0-9_]{0,39}$"
@@ -24,13 +27,23 @@ class _Strict(BaseModel):
 
 
 class Step(_Strict):
-    """One request. `path` is relative to the API's base URL; `{name}` takes a `--var`."""
+    """One request. `path` is relative to the API's base URL; `{name}` takes a `--var`. `body`
+    names a generated request body (`bodies.BODIES`, Q-03-T044), sent instead of `json_body`."""
 
     method: Literal["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"] = "GET"
     path: Annotated[str, Field(pattern=_PATH, max_length=300)]
     json_body: dict[str, object] | None = None
+    body: Annotated[str | None, Field(pattern=_NAME)] = None
     expect: tuple[int, ...] = (200,)
     auth: bool = True
+
+    @model_validator(mode="after")
+    def _one_body(self) -> Step:
+        if self.body is not None and self.json_body is not None:
+            raise ValueError("a step sends json_body or a named body, not both")
+        if self.body is not None and self.body not in BODIES:
+            raise ValueError(f"no body {self.body!r}; known: {', '.join(sorted(BODIES))}")
+        return self
 
 
 class Group(_Strict):
@@ -40,6 +53,16 @@ class Group(_Strict):
     weight: Annotated[int, Field(ge=1, le=1000)] = 1
     steps: Annotated[tuple[Step, ...], Field(min_length=1, max_length=20)]
     p95_ms: Annotated[float | None, Field(gt=0)] = None
+
+
+class Persona(_Strict):
+    """A local sign-in subject with a weight (Q-03-T044). A virtual user is one persona for the
+    whole run; `groups`, when given, are the only groups it plays (a client never plays a staff
+    mix)."""
+
+    subject: Annotated[str, Field(min_length=1, max_length=100)]
+    weight: Annotated[int, Field(ge=1, le=1000)] = 1
+    groups: tuple[Annotated[str, Field(pattern=_NAME)], ...] = ()
 
 
 class Stream(_Strict):
@@ -81,6 +104,8 @@ class Scenario(_Strict):
     seed: int = 7
     # A local sign-in subject (`abacus_tools.local.seed_dev`); None calls without a token.
     persona: Annotated[str | None, Field(max_length=100)] = None
+    # Q-03-T044: weighted personas instead of the one `persona` (never both).
+    personas: tuple[Persona, ...] = ()
     max_error_rate: Annotated[float, Field(ge=0, le=1)] = 0.001  # Q-03 E2: below 0.1%
     groups: tuple[Group, ...] = ()
     streams: tuple[Stream, ...] = ()
@@ -94,6 +119,17 @@ class Scenario(_Strict):
             raise ValueError("group, stream and temporal names must be unique")
         if not names:
             raise ValueError("a scenario needs at least one group, stream or temporal operation")
+        if self.personas and self.persona is not None:
+            raise ValueError("a scenario names one persona or weighted personas, not both")
+        known = {g.name for g in self.groups}
+        for persona in self.personas:
+            unknown = sorted(set(persona.groups) - known)
+            if unknown:
+                raise ValueError(f"persona {persona.subject} names unknown groups: {unknown}")
+        if self.personas and self.groups:
+            played = {g for p in self.personas for g in (p.groups or tuple(known))}
+            if played != known:
+                raise ValueError(f"no persona plays {sorted(known - played)}")
         return self
 
 

@@ -36,6 +36,7 @@ from temporalio.client import Client
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
+from abacus_tools.loadtest.bodies import BODIES
 from abacus_tools.loadtest.scenario import Scenario, Stream, TemporalOp, load, profile
 from abacus_tools.loadtest.stats import GroupResult, Samples, Verdict, summarise, verdict
 from abacus_tools.stack import is_loopback
@@ -103,14 +104,20 @@ async def run(
     client: httpx.AsyncClient,
     *,
     token: str | None = None,
+    tokens: Mapping[str, str] | None = None,
     temporal: TemporalCall | None = None,
     variables: Mapping[str, str] | None = None,
 ) -> Report:
-    """Play `scenario` with `client` (its base URL set) and report per group."""
+    """Play `scenario` with `client` (its base URL set) and report per group. `token` signs the
+    one `persona` in; `tokens` maps each weighted persona's subject to its token (Q-03-T044)."""
     given = dict(variables or {})
     _paths(scenario, given)
     if scenario.temporal and temporal is None:
         raise ValueError("the scenario has Temporal operations but no Temporal client")
+    signed = dict(tokens or {})
+    missing = [p.subject for p in scenario.personas if p.subject not in signed]
+    if missing:
+        raise ValueError(f"no token for persona {missing[0]}")
     auth = {"Authorization": f"Bearer {token}"} if token else {}
     samples: dict[str, Samples] = {g.name: Samples("http", g.p95_ms) for g in scenario.groups}
     for s in scenario.streams:
@@ -125,16 +132,29 @@ async def run(
 
     async def user(n: int) -> None:
         rng = random.Random(scenario.seed + n)
-        while groups and time.perf_counter() < deadline:
-            group = rng.choices(groups, weights)[0]
+        mine, chances, headers_of = groups, weights, auth
+        if scenario.personas:
+            persona = rng.choices(scenario.personas, [p.weight for p in scenario.personas])[0]
+            if persona.groups:
+                mine = tuple(g for g in groups if g.name in persona.groups)
+                chances = [g.weight for g in mine]
+            headers_of = {"Authorization": f"Bearer {signed[persona.subject]}"}
+        while mine and time.perf_counter() < deadline:
+            group = rng.choices(mine, chances)[0]
             for step in group.steps:
-                headers = auth if step.auth else {}
+                headers = dict(headers_of) if step.auth else {}
+                content: bytes | None = None
+                if step.body is not None:
+                    body = BODIES[step.body]()
+                    content = body.content
+                    headers["Content-Type"] = body.content_type
                 start = time.perf_counter()
                 try:
                     response = await client.request(
                         step.method,
                         _fill(step.path, given),
                         json=step.json_body,
+                        content=content,
                         headers=headers,
                     )
                 except httpx.HTTPError as exc:
@@ -262,10 +282,13 @@ async def _main(args: argparse.Namespace, scenario: Scenario) -> Report:
         temporal = temporal_caller(connected)
     limits = httpx.Limits(max_connections=scenario.users + sum(s.count for s in scenario.streams))
     async with httpx.AsyncClient(base_url=args.base_url, timeout=30.0, limits=limits) as client:
+        seconds = scenario.duration_seconds
+        signed = {p.subject: _token(p.subject, seconds) or "" for p in scenario.personas}
         return await run(
             scenario,
             client,
-            token=_token(scenario.persona, scenario.duration_seconds),
+            token=_token(scenario.persona, seconds),
+            tokens=signed,
             temporal=temporal,
             variables=dict(v.split("=", 1) for v in args.var),
         )
