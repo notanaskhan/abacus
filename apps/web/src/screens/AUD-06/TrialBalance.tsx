@@ -1,0 +1,621 @@
+// AUD-06 · Trial balance & leadsheets (A-02-T09; docs/screens/AUD-06.md): the T2 workpaper pane
+// the AUD-02 cockpit shows for its Trial Balance row, read through the generated client (C9 v1).
+// Header pills, the R2 label chip, the control row (Trial Balance · Leadsheets; Unadjusted · AJE ·
+// RJE · Final), the check strip, the evidence-grammar table with chips and ticks, the provenance
+// caption, and the linked row: a line's typed citation re-targets the dock's viewer.
+//
+// Code computes, models judge (ADR-050): every total, subtotal, difference, Δ and Δ% here is the
+// server's string. This file formats and places them; it adds, subtracts and compares no amount
+// (the "no browser sums" test reads this source).
+
+import type {
+  TbLayerLineOut,
+  TbLayerViewOut,
+  TbTickOut,
+  TieOutCheckOut,
+  TrialBalancesOut,
+} from "@abacus/api-client";
+import {
+  getCitationOptions,
+  tbLayerViewOptions,
+  tbLeadsheetAreaOptions,
+  tieOutChecksOptions,
+  trialBalancesOptions,
+} from "@abacus/api-client/query";
+import {
+  Amount,
+  type AmountStyle,
+  type CockpitCanvas,
+  Icon,
+  PaneAction,
+  Segmented,
+  TallyPill,
+  Tooltip,
+  type ViewState,
+  amount,
+  cn,
+  status,
+  useFormat,
+} from "@abacus/ui";
+import { useQuery } from "@tanstack/react-query";
+import { type JSX, type ReactNode, useState } from "react";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { isNotFound } from "../../domain/audits";
+import type { EvidenceViewerTarget } from "../SHL-08";
+import { COPY } from "./copy";
+
+export type TbTab = "trial_balance" | "leadsheets";
+export type TbLayer = TbLayerViewOut["layer"];
+
+const LAYERS: readonly TbLayer[] = ["unadjusted", "aje", "rje", "final"];
+
+export interface TrialBalanceOptions {
+  /** Read only while the pane is shown (the cockpit asks on every render). */
+  enabled?: boolean;
+  /** What the pane opens on (an artboard's state). */
+  initial?: { tab?: TbTab; layer?: TbLayer; line?: string };
+  /** A line was clicked and its citation resolved: the host shows its Viewer. */
+  onLink?: () => void;
+}
+
+export interface TrialBalancePane {
+  canvas: CockpitCanvas;
+  /** The selected line's citation, as the dock viewer's target; null without one. */
+  linked: EvidenceViewerTarget | null;
+}
+
+const layerWord = (layer: TbLayer): string => status("trial_balance_layer", layer).label;
+
+function styleOf(view: TbLayerViewOut): AmountStyle {
+  return view.display_unit === "whole_dollars" ? "whole" : "money";
+}
+
+function viewState(
+  list: { isError: boolean; error: unknown; data: TrialBalancesOut | undefined },
+  view: { isError: boolean; error: unknown; data: TbLayerViewOut | undefined },
+  retry: () => void,
+): ViewState {
+  for (const q of [list, view]) {
+    if (q.isError) {
+      return isNotFound(q.error)
+        ? { kind: "restricted", reason: "walled" }
+        : { kind: "error", retry };
+    }
+  }
+  if (list.data === undefined) return { kind: "loading" };
+  if (list.data.trial_balances.length === 0) return { kind: "empty" };
+  if (view.data === undefined) return { kind: "loading" };
+  return { kind: "ready" };
+}
+
+// ---- Ticks and chips ---------------------------------------------------------------------------
+
+/** The one mark a line's amounts carry: the reviewer's chip, the preparer's tick, or the agent's
+ * outlined tick (no initials, INV-5). */
+function markOf(ticks: readonly TbTickOut[]): TbTickOut | undefined {
+  return (
+    ticks.find((t) => t.actor_kind === "human" && t.kind === "reviewed") ??
+    ticks.find((t) => t.actor_kind === "human" && t.kind === "agreed") ??
+    ticks.find((t) => t.actor_kind === "agent")
+  );
+}
+
+function Mark({ tick, pinned }: { tick: TbTickOut; pinned: boolean }): JSX.Element {
+  const f = useFormat();
+  const at = `${f.date(tick.at)} ${f.time(tick.at)}`;
+  const place = pinned ? "absolute top-1/2 right-[10px] -translate-y-1/2" : "ml-[6px]";
+  if (tick.actor_kind === "agent") {
+    return (
+      <span
+        role="img"
+        aria-label={COPY.agentDraft}
+        data-tick="agent"
+        className={cn(place, "inline-flex size-[10px] rounded-pill inset-ring-1 inset-ring-ink-3")}
+      />
+    );
+  }
+  if (tick.kind === "reviewed" && tick.initials !== null) {
+    return (
+      <Tooltip
+        content={COPY.signedOff(
+          tick.by_name,
+          COPY.levels[tick.level] ?? `L${String(tick.level)}`,
+          at,
+        )}
+      >
+        <button
+          type="button"
+          data-tick="chip"
+          aria-label={COPY.signedOff(
+            tick.by_name,
+            COPY.levels[tick.level] ?? `L${String(tick.level)}`,
+            at,
+          )}
+          className={cn(
+            place,
+            "inline-flex h-[18px] items-center gap-[3px] rounded-pill bg-green pr-[6px] pl-[5px] text-micro leading-none font-medium text-on-dark shadow-e1",
+          )}
+        >
+          <Icon name="check" size={12} strokeWidth={2.4} className="size-[9px]" />
+          {tick.initials}
+        </button>
+      </Tooltip>
+    );
+  }
+  return (
+    <Tooltip content={COPY.agreed(tick.by_name)}>
+      <button
+        type="button"
+        data-tick="check"
+        aria-label={COPY.agreed(tick.by_name)}
+        className={cn(place, "inline-flex items-center text-ink-3")}
+      >
+        <Icon name="check" size={12} strokeWidth={2.2} className="size-[10px]" />
+      </button>
+    </Tooltip>
+  );
+}
+
+// ---- The check strip ---------------------------------------------------------------------------
+
+function CheckChip({ check }: { check: TieOutCheckOut }): JSX.Element {
+  const r = check.result;
+  const pill =
+    r.status === "off" ? (
+      <TallyPill code="off" vars={{ amount: amount(r.difference, "cents").text }} />
+    ) : r.status === "tie" ? (
+      <TallyPill code="tie" />
+    ) : (
+      <TallyPill code="pending" />
+    );
+  const chip = (
+    <span
+      tabIndex={r.formula === null ? undefined : 0}
+      data-check={check.key}
+      data-status={r.status}
+      className="inline-flex h-[22px] items-center gap-[6px] rounded-pill bg-card pr-[3px] pl-[9px] text-meta shadow-e1"
+    >
+      {check.label}
+      {pill}
+    </span>
+  );
+  return r.formula === null ? chip : <Tooltip content={r.formula}>{chip}</Tooltip>;
+}
+
+function CheckStrip({ checks }: { checks: readonly TieOutCheckOut[] }): JSX.Element | null {
+  if (checks.length === 0) return null;
+  return (
+    <div
+      role="group"
+      aria-label={COPY.checks}
+      data-aud06="checks"
+      className="flex h-[34px] flex-none items-center gap-[6px] px-[12px]"
+    >
+      {checks.map((c) => (
+        <CheckChip key={c.id} check={c} />
+      ))}
+    </div>
+  );
+}
+
+// ---- The table ---------------------------------------------------------------------------------
+
+function AmountCell({
+  value,
+  style,
+  tick,
+  flagged,
+}: {
+  value: string | null;
+  style: AmountStyle;
+  tick: TbTickOut | undefined;
+  flagged: boolean;
+}): JSX.Element {
+  return (
+    <td
+      className={cn(
+        "relative pr-[62px] pl-[8px] text-right whitespace-nowrap tabular-nums",
+        flagged && "font-medium text-red-ink",
+      )}
+      {...(flagged ? { "data-flagged": "" } : {})}
+    >
+      {value === null ? null : flagged ? (
+        amount(value, style, { zero: "explicit" }).text
+      ) : (
+        <Amount value={value} style={style} zero="explicit" />
+      )}
+      {tick !== undefined && value !== null && <Mark tick={tick} pinned />}
+    </td>
+  );
+}
+
+function LineRow({
+  line,
+  view,
+  checks,
+  selected,
+  onSelect,
+}: {
+  line: TbLayerLineOut;
+  view: TbLayerViewOut;
+  checks: readonly TieOutCheckOut[];
+  selected: boolean;
+  onSelect: () => void;
+}): JSX.Element {
+  const style = styleOf(view);
+  const final = view.layer === "final";
+  const tick = markOf(line.ticks ?? []);
+  const flags = line.flags ?? [];
+  const flaggedColumns = new Set(
+    flags.map((f) => checks.find((c) => c.id === f.check_id)?.column ?? "eoy"),
+  );
+  const refs = line.adjustment_refs ?? [];
+  return (
+    <tr
+      data-account={line.account_code}
+      {...(selected ? { "data-selected": "" } : {})}
+      className={cn("h-[29px] hairline-b", selected && "bg-sel-bg")}
+    >
+      <td className="max-w-[196px] truncate pr-[8px] pl-[12px]">
+        <button type="button" aria-pressed={selected} onClick={onSelect} className="text-left">
+          {line.account_name}
+        </button>
+        {tick?.kind === "reviewed" && tick.actor_kind === "human" && (
+          <Mark tick={tick} pinned={false} />
+        )}
+        {flags.map((f) => (
+          <span
+            key={f.check_id}
+            role="img"
+            aria-label={COPY.doesNotTie}
+            data-flag={f.kind}
+            data-issue={f.issue_id ?? undefined}
+            className="ml-[6px] inline-flex text-red-ink"
+          >
+            <Icon name="flag" size={12} />
+          </span>
+        ))}
+      </td>
+      <AmountCell value={line.boy} style={style} tick={tick} flagged={flaggedColumns.has("boy")} />
+      <AmountCell
+        value={final ? (line.final ?? line.eoy) : line.eoy}
+        style={style}
+        tick={tick}
+        flagged={flaggedColumns.has("eoy")}
+      />
+      {final && (
+        <td data-col="aje" className="pr-[8px] pl-[8px] text-right whitespace-nowrap tabular-nums">
+          {line.aje === null ? null : <Amount value={line.aje} style={style} />}
+          {refs.map((r) => (
+            <span
+              key={r}
+              data-ref={r}
+              className="ml-[6px] inline-flex h-[18px] items-center rounded-pill bg-nested px-[7px] text-micro font-medium text-ink-2"
+            >
+              {r}
+            </span>
+          ))}
+        </td>
+      )}
+      <td className="pr-[12px] pl-[8px] text-meta text-ink-3">{line.wp_ref ?? ""}</td>
+    </tr>
+  );
+}
+
+function TrialBalanceTable({
+  view,
+  checks,
+  selected,
+  onSelect,
+}: {
+  view: TbLayerViewOut;
+  checks: readonly TieOutCheckOut[];
+  selected: string | null;
+  onSelect: (line: TbLayerLineOut) => void;
+}): JSX.Element {
+  const style = styleOf(view);
+  const final = view.layer === "final";
+  const span = final ? 5 : 4;
+  const last = view.totals.length - 1;
+  return (
+    <table data-aud06="lines" aria-label={COPY.title} className="w-full text-cell">
+      <thead>
+        <tr className="h-[28px] bg-surface text-th text-ink-2 hairline-t hairline-b">
+          <th className="pl-[12px] text-left font-normal">{COPY.columns.description}</th>
+          <th className="pr-[62px] text-right font-normal">{COPY.columns.boy}</th>
+          <th className="pr-[62px] text-right font-normal">{COPY.columns.eoy}</th>
+          {final && <th className="pr-[8px] text-right font-normal">{COPY.columns.aje}</th>}
+          <th className="pr-[12px] text-left font-normal">{COPY.columns.wpRef}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {view.groups.map((g) => (
+          <GroupRows
+            key={g.key}
+            label={g.label}
+            span={span}
+            rows={g.lines.map((l) => (
+              <LineRow
+                key={l.account_code}
+                line={l}
+                view={view}
+                checks={checks}
+                selected={l.account_code === selected}
+                onSelect={() => {
+                  onSelect(l);
+                }}
+              />
+            ))}
+          />
+        ))}
+        {view.totals.map((t, i) => (
+          <tr
+            key={t.key}
+            data-total={t.key}
+            className={cn(
+              "h-[29px] font-medium hairline-t",
+              i === last && "border-b-3 border-double border-ink-3",
+            )}
+          >
+            <td className="pl-[12px]">{t.label}</td>
+            <td className="pr-[62px] text-right whitespace-nowrap tabular-nums">
+              {t.boy === null ? null : <Amount value={t.boy} style={style} zero="explicit" />}
+            </td>
+            <td className="pr-[62px] text-right whitespace-nowrap tabular-nums">
+              <Amount value={t.eoy} style={style} zero="explicit" />
+            </td>
+            {final && <td />}
+            <td />
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function GroupRows({
+  label,
+  span,
+  rows,
+}: {
+  label: string;
+  span: number;
+  rows: ReactNode;
+}): JSX.Element {
+  return (
+    <>
+      <tr data-group="" className="h-[29px] hairline-b">
+        <td colSpan={span} className="pl-[12px] font-medium uppercase">
+          {label}
+        </td>
+      </tr>
+      {rows}
+    </>
+  );
+}
+
+function Caption({ view }: { view: TbLayerViewOut }): JSX.Element {
+  const f = useFormat();
+  const p = view.provenance;
+  return (
+    <p data-aud06="caption" className="px-[12px] py-[10px] text-meta text-ink-3">
+      {COPY.caption(
+        layerWord(view.layer),
+        p.adopted_by_name,
+        COPY.sources[p.source] ?? COPY.otherSource,
+        `${f.date(p.adopted_at)}, ${f.time(p.adopted_at)}`,
+      )}
+    </p>
+  );
+}
+
+// ---- Leadsheets --------------------------------------------------------------------------------
+
+function Leadsheet({
+  engagementId,
+  view,
+  enabled,
+}: {
+  engagementId: string;
+  view: TbLayerViewOut;
+  enabled: boolean;
+}): JSX.Element | null {
+  // The first audit area the server names on a line; A-02-T14 adds the area picker.
+  const area = view.groups.flatMap((g) => g.lines).find((l) => l.area !== null)?.area ?? null;
+  const sheet = useQuery({
+    ...tbLeadsheetAreaOptions({
+      path: { engagement_id: engagementId, tb_id: view.trial_balance_id, area: area ?? "" },
+      query: { layer: view.layer },
+    }),
+    enabled: enabled && area !== null,
+    retry: false,
+  });
+  if (sheet.data === undefined) return null;
+  const s = sheet.data;
+  const pctOf = (v: string | null): string => (v === null ? "" : `${v}%`);
+  return (
+    <table data-aud06="leadsheet" aria-label={s.area} className="w-full text-cell">
+      <thead>
+        <tr className="h-[28px] bg-surface text-th text-ink-2 hairline-t hairline-b">
+          <th className="pl-[12px] text-left font-normal">{COPY.leadsheet.account}</th>
+          <th className="pr-[8px] text-right font-normal">{COPY.leadsheet.py}</th>
+          <th className="pr-[8px] text-right font-normal">{COPY.leadsheet.cy}</th>
+          <th className="pr-[8px] text-right font-normal">{COPY.leadsheet.change}</th>
+          <th className="pr-[12px] text-right font-normal">{COPY.leadsheet.changePct}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {s.rows.map((r) => (
+          <tr key={r.account_code} data-row={r.account_code} className="h-[29px] hairline-b">
+            <td className="pl-[12px]">{r.account_name}</td>
+            <td className="pr-[8px] text-right tabular-nums">
+              {r.py === null ? null : <Amount value={r.py} style="whole" />}
+            </td>
+            <td className="pr-[8px] text-right tabular-nums">
+              <Amount value={r.cy} style="whole" />
+            </td>
+            <td className="pr-[8px] text-right tabular-nums">
+              {r.change === null ? null : <Amount value={r.change} style="whole" />}
+            </td>
+            <td className="pr-[12px] text-right tabular-nums">{pctOf(r.change_pct)}</td>
+          </tr>
+        ))}
+        <tr data-row="total" className="h-[29px] font-medium hairline-t">
+          <td className="pl-[12px]">{s.area}</td>
+          <td className="pr-[8px] text-right tabular-nums">
+            {s.py === null ? null : <Amount value={s.py} style="whole" />}
+          </td>
+          <td className="pr-[8px] text-right tabular-nums">
+            <Amount value={s.cy} style="whole" />
+          </td>
+          <td className="pr-[8px] text-right tabular-nums">
+            {s.change === null ? null : <Amount value={s.change} style="whole" />}
+          </td>
+          <td className="pr-[12px] text-right tabular-nums">{pctOf(s.change_pct)}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+// ---- The pane ----------------------------------------------------------------------------------
+
+/** The first typed citation a line carries: its own, then a tick's. */
+function citationOf(line: TbLayerLineOut): string | null {
+  return (
+    (line.citation_ids ?? [])[0] ??
+    (line.ticks ?? []).find((t) => t.citation_id !== null)?.citation_id ??
+    null
+  );
+}
+
+export function useTrialBalancePane(
+  engagementId: string,
+  { enabled = true, initial = {}, onLink }: TrialBalanceOptions = {},
+): TrialBalancePane {
+  const [tab, setTab] = useState<TbTab>(initial.tab ?? "trial_balance");
+  const [layer, setLayer] = useState<TbLayer>(initial.layer ?? "unadjusted");
+  const [selected, setSelected] = useState<string | null>(initial.line ?? null);
+  const list = useQuery({
+    ...trialBalancesOptions({ path: { engagement_id: engagementId } }),
+    enabled,
+    retry: false,
+  });
+  const tb = list.data?.trial_balances[0];
+  const tbPath = { engagement_id: engagementId, tb_id: tb?.id ?? "" };
+  const view = useQuery({
+    ...tbLayerViewOptions({ path: { ...tbPath, layer } }),
+    enabled: enabled && tb !== undefined,
+    retry: false,
+  });
+  const checks = useQuery({
+    ...tieOutChecksOptions({ path: tbPath }),
+    enabled: enabled && tb !== undefined,
+    retry: false,
+  });
+  const v = view.data;
+  const line = v?.groups.flatMap((g) => g.lines).find((l) => l.account_code === selected);
+  const citationId = line === undefined ? null : citationOf(line);
+  const citation = useQuery({
+    ...getCitationOptions({ path: { citation_id: citationId ?? "" } }),
+    enabled: enabled && citationId !== null,
+    retry: false,
+  });
+  const c = citationId === null ? undefined : citation.data;
+  const linked: EvidenceViewerTarget | null =
+    c?.source.evidence_version_id == null || c.match_id === null
+      ? null
+      : { versionId: c.source.evidence_version_id, matchId: c.match_id, engagementId };
+
+  const state = viewState(list, view, () => {
+    void list.refetch();
+    void view.refetch();
+  });
+  const allowed = new Set(v?.allowed_actions ?? []);
+  const available = new Set(v?.layers_available ?? ["unadjusted"]);
+  const someUnavailable = LAYERS.some((l) => !available.has(l));
+
+  const layers = (
+    <Segmented
+      size="small"
+      label={COPY.layers}
+      options={LAYERS.map((l) => ({ label: layerWord(l), disabled: !available.has(l) }))}
+      active={layerWord(layer)}
+      onChange={(word) => {
+        const next = LAYERS.find((l) => layerWord(l) === word);
+        if (next !== undefined) setLayer(next);
+      }}
+    />
+  );
+
+  const canvas: CockpitCanvas = {
+    title: COPY.title,
+    state,
+    empty: { icon: "file-text", title: COPY.empty },
+    actions: (
+      <>
+        {PLANNED_VISIBLE && allowed.has("trial_balance.annotate") && (
+          <PaneAction icon="pencil" label={COPY.edit} disabled />
+        )}
+        {PLANNED_VISIBLE && allowed.has("sign_off.review") && (
+          <PaneAction icon="check" label={COPY.signOff} opensDialog disabled />
+        )}
+        {PLANNED_VISIBLE && <PaneAction icon="file-text" label={COPY.sourceDocs} disabled />}
+      </>
+    ),
+    controls:
+      v === undefined ? undefined : (
+        <>
+          <Segmented
+            size="small"
+            label={COPY.tabs.label}
+            options={[COPY.tabs.trialBalance, COPY.tabs.leadsheets]}
+            active={tab === "leadsheets" ? COPY.tabs.leadsheets : COPY.tabs.trialBalance}
+            onChange={(word) => {
+              setTab(word === COPY.tabs.leadsheets ? "leadsheets" : "trial_balance");
+            }}
+          />
+          {someUnavailable ? (
+            <Tooltip content={COPY.layerUnavailable}>
+              <span tabIndex={0} data-aud06="layers" aria-label={COPY.layerUnavailable}>
+                {layers}
+              </span>
+            </Tooltip>
+          ) : (
+            <span data-aud06="layers">{layers}</span>
+          )}
+          <PaneAction
+            kind="picker"
+            label={COPY.tbChip(status("trial_balance_label", v.label).label)}
+          />
+          <span className="flex-1" />
+          {PLANNED_VISIBLE && allowed.has("trial_balance.export") && (
+            <PaneAction icon="cloud-download" label={COPY.openInExcel} disabled />
+          )}
+        </>
+      ),
+    children:
+      v === undefined ? null : (
+        <div data-aud06="body" className="flex flex-col">
+          {tab === "leadsheets" ? (
+            <Leadsheet engagementId={engagementId} view={v} enabled={enabled} />
+          ) : (
+            <>
+              <CheckStrip checks={checks.data ?? []} />
+              <TrialBalanceTable
+                view={v}
+                checks={checks.data ?? []}
+                selected={selected}
+                onSelect={(l) => {
+                  setSelected(l.account_code);
+                  if (citationOf(l) !== null) onLink?.();
+                }}
+              />
+              <Caption view={v} />
+            </>
+          )}
+        </div>
+      ),
+  };
+  return { canvas, linked };
+}

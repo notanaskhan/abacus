@@ -26,6 +26,7 @@ updated: 2026-10-24
 - 2026-10-24: built. `fulfilments` is pinned insert-only by the schema-check suite, so voiding is a new insert-only table rather than a stamp column (DEC-298). The ORM `add` of the withdrawal sent its NULL stamp columns, which the app may not insert: core `insert().values()` instead. Not done (DEC-298): deleting the withdrawn version's derived database rows, the 30-day time-skipping test (Temporal's test server is a download), the erase record's "ciphertext persists until" date. Left for P-06-T23's independent suite: an accept racing a withdrawal at the database (the trigger is in 0144).
 
 - 2026-10-24: security review fixes (DEC-299), tests first (each new test failed on e31f80ad, checked in a throwaway worktree): derived agent output, citations, regions and word layers of withdrawn versions hidden; the erase definer checks the window, holds and the version lock itself and erases derived content; a held version is refused 409 `legal_hold_active`; authorised on the upload's own item; concurrent withdrawals 404. `tests/integration/backfill/test_p06t19_security_review.py` (8). The T19 test firm is now synthetic so the frozen business clock reaches `abacus_now()`.
+- 2026-10-26: the accept racing a withdrawal is tested at the database in `backend/tests/integration/backfill/test_p06t23_withdrawal_race_and_screening_rows.py` (TASK-1280); the first commit wins in both orders.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

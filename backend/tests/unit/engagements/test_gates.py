@@ -45,7 +45,14 @@ def _world(
     def session(*_: object) -> _Session:
         return _Session()
 
+    async def g1(*_: object) -> object:
+        # G1 reads the acceptance decision (P-07-T35, DEC-372): SPEC-025's row stands in for it.
+        if acceptance is None:
+            return None
+        return SimpleNamespace(accepted=getattr(acceptance, "decision", None) == "accepted")
+
     monkeypatch.setattr(subject, "latest_acceptance", latest)
+    monkeypatch.setattr(subject, "g1_decision", g1)
     monkeypatch.setattr(subject, "get_letter", get_letter)
     monkeypatch.setattr(subject, "letter_policy", policy)
     monkeypatch.setattr(subject, "tenant_session", session)

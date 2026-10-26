@@ -318,6 +318,8 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
     assert set(YAML_ROLES) - set(HUMAN_ROLES) == {
         "client_admin",
         "client_contributor",
+        # R-01-T13 (DEC-387): a request item's delegate, `delegated_only` cells only.
+        "third_party",
         "agent",
         "system",
         # SPEC-012: break-glass staff, never firm members.
@@ -325,6 +327,8 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
         "platform_support_content",
         # P-01-T04 (DEC-132): derived from a staff member's partner level, never held.
         "firm_partner",
+        # P-07-T36 (DEC-373): derived from a staff member's manager level, never held.
+        "firm_manager",
     }
 
 
@@ -1172,3 +1176,30 @@ async def test_dec132_a_partner_level_member_reads_settings_and_nobody_else(
             await authorise(ctx, "firm.read_settings", resource)
     with pytest.raises(Forbidden):  # derived for firm-level reads only, never writes
         await authorise(ctx, "firm.manage_settings", resource)
+
+
+# --- P-07-T36 (DEC-373): managers run and clear conflict checks through a derived role -------
+
+
+@pytest.mark.parametrize(("manager", "allowed"), [(True, True), (False, False)])
+async def test_dec373_a_manager_level_member_clears_conflicts_firm_level_only(
+    engagement: EngagementRoles, monkeypatch: pytest.MonkeyPatch, manager: bool, allowed: bool
+) -> None:
+    async def level(*args: object) -> bool:
+        return manager
+
+    async def not_partner(*args: object) -> bool:
+        return False
+
+    monkeypatch.setattr(authz, "_manager_level", level)
+    monkeypatch.setattr(authz, "_partner_level", not_partner)
+    ctx = _ctx()
+    firm = Resource.firm(ctx.tenant_id)
+    for action in ("conflict.run", "conflict.clear", "screening.record", "client.intake"):
+        if allowed:
+            await authorise(ctx, action, firm)
+        else:
+            with pytest.raises(Forbidden):
+                await authorise(ctx, action, firm)
+    with pytest.raises(Forbidden):  # derived only where a row names it: never the firm settings
+        await authorise(ctx, "firm.read_settings", firm)

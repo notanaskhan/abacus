@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.gate_policy import required_gates
 from abacus.modules.engagements.repository import get_letter, latest_acceptance
 from abacus.modules.engagements.slots import GateFact, gate_fact, register_gate_provider
@@ -21,11 +22,12 @@ C1_GATES = ("G1", "G2", "G3")
 
 
 async def _acceptance(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    """G1: the acceptance record's decision, or SPEC-025's row without a record (DEC-372)."""
     async with tenant_session(tenant) as session:
-        acceptance = await latest_acceptance(session, engagement_id)
-    if acceptance is None:
+        decided = await g1_decision(session, engagement_id)
+    if decided is None:
         return GateFact(met=False, blockers=("acceptance",))
-    if acceptance.decision != "accepted":
+    if not decided.accepted:
         return GateFact(met=False, blockers=("acceptance_declined",))
     return GateFact(met=True)
 

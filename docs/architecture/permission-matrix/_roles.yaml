@@ -5,6 +5,7 @@
 #   allow                     permitted, subject to global conditions
 #   deny                      never permitted
 #   assigned_only             only items assigned to this client user
+#   delegated_only            only items delegated to this person (a third party, R-01-T13)
 #   client_visible_only       only client-visible fields and items
 #   firm_setting(<name>)      permitted if the firm enables <name>
 #   in_scope                  practice leader / quality partner: engagements in their scope
@@ -21,7 +22,10 @@
 
 roles: [firm_admin, practice_leader, quality_partner, security_admin,
         firm_partner,   # P-01-T04 (DEC-132): derived from membership level `partner`, firm-level resources only
+        firm_manager,   # P-07-T36 (DEC-373): derived from membership level `manager`, firm-level resources only
         engagement_partner, manager, senior, staff, reviewer,
         eqr_reviewer, specialist, client_service,   # F-03-T23 (chapter 03 §4.2); client_service's cells: F-03-T30 (ADR-147)
-        client_admin, client_contributor, agent, system,
+        client_admin, client_contributor,
+        third_party,   # R-01-T13 (DEC-387): a request_item grant's holder, `delegated_only` cells only
+        agent, system,
         platform_support, platform_support_content]   # SPEC-012: break-glass, read-only

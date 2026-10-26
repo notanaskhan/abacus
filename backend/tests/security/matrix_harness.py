@@ -53,6 +53,11 @@ def arrange(monkeypatch: pytest.MonkeyPatch, role: str) -> tuple[AuthContext, Re
     monkeypatch.setattr(authz, "engagement_role", held)
     monkeypatch.setattr(authz, "engagement_roles_in_firm", none)
     monkeypatch.setattr(authz, "firm_policy", policy)
+
+    async def not_ended(*_: object) -> bool:
+        return False
+
+    monkeypatch.setattr(authz, "access_has_ended", not_ended)
     monkeypatch.setattr(authz, "_independence", (None, confirmed))
     for field in fields(LOOKUPS):
         monkeypatch.setattr(LOOKUPS, field.name, None)

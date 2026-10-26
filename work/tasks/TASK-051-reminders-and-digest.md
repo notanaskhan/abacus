@@ -130,6 +130,7 @@ Not protected but changed: requests, communications, notifications, `abacus_tool
 - [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-26` — Q-03-T031: INV-1 and DEC-74 (a person sends every follow-up) added in `backend/tests/integration/backfill/test_q03t031_engagement_agent.py`; the S0-10 suites re-run unchanged and pass; see TASK-1282.
 - `2026-10-20` — Q-03 back-fill (S0-10): 38 acceptance tests for SPEC-027 AC-3 to AC-5, AC-8 and AC-9. Found and fixed: `set_self_paused` inserted `self_paused_reason`, a column the app role may only UPDATE, so the agent's self-pause (AC-8) always failed with permission denied; it now inserts the row and then updates. A unit test that fakes the database cannot see a column grant. Open: SPEC-027 AC-3 says Routine sends the email; DEC-74 (the code) drafts for a person at every level.
 - `2026-10-10` — Implemented:
   - migration 0040: `request_items.due_on`, `request_lists.default_due_on`, `firms.time_zone`, `engagement_agents.self_paused_reason`, `reminders` and `reminder_items`; schema-check entries;

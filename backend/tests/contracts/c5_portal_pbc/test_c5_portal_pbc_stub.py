@@ -1,7 +1,7 @@
 """C5 section `portal-pbc` stub (R-01-T01; docs/contracts/portal-pbc.md): every route exists with
 its one matrix action and answers 404 with its flag off and 501 with it on until its task lands
-(`IMPLEMENTED`: the documents reads, R-01-T07, the undos, R-01-T08, the drop, R-01-T09, and the
-void, TASK-1248); the read action is a
+(`IMPLEMENTED`: the documents reads, R-01-T07, the undos, R-01-T08, the drop, R-01-T09, the
+void, TASK-1248, and the room with its suggest, R-01-T13); the read action is a
 client action that grants no firm role and denies the agent and system; the void is human only;
 every client-facing write takes an `Idempotency-Key`; every model field is classified; the three
 flags are boolean and off by default. The consumers' own tests are R-01-T02's, in this
@@ -27,11 +27,12 @@ from abacus.kernel._flags import (
 )
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.evidence import drops_contract
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
+from abacus.modules.portal import documents_routes, rooms
 from abacus.modules.portal import pbc_contract as portal_pbc
 from abacus.modules.requests import pbc_contract as requests_pbc
 
@@ -76,11 +77,12 @@ CONFLICTS = {
     ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"),  # firm_already_acted
     ("post", "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void"),  # not_voidable
 }
-STUBS: list[tuple[ModuleType, Flag]] = [
-    (portal_pbc, PORTAL_DOCUMENTS_V2),
-    (portal_pbc, PORTAL_THIRD_PARTY_ROOM),
-    (portal_pbc, PORTAL_DROP_SORT),
-]  # requests' routes are all live (the undos, R-01-T08; the void moved to evidence, TASK-1248)
+# Every route of the family is live (R-01-T13 retired the last stubs, the room and its suggest);
+# each flag still gates its routes: off, 404 before anything is read.
+GATES: list[tuple[ModuleType, str, Flag]] = [
+    (documents_routes, "_on", PORTAL_DOCUMENTS_V2),
+    (rooms, "_delegated", PORTAL_THIRD_PARTY_ROOM),
+]
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:
@@ -106,6 +108,8 @@ IMPLEMENTED: frozenset[tuple[str, str]] = frozenset(
         ("post", "/v1/portal/request-items/{item_id}/ignore/undo"),  # R-01-T08
         ("post", "/v1/portal/binders/{binder_id}/mark-done/undo"),  # R-01-T08
         ("post", "/v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void"),  # TASK-1248
+        ("get", "/v1/portal/room"),  # R-01-T13
+        ("post", "/v1/portal/room/suggest"),  # R-01-T13
     }
 )
 
@@ -154,7 +158,9 @@ def test_every_field_is_classified(model: type[BaseModel]) -> None:
 def test_the_read_action_is_a_client_action_over_a_covered_scope() -> None:
     rule = RULES["portal_documents.read"]
     granted = {r for r, d in rule.decisions.items() if d != "deny"}
-    assert granted == {"client_admin", "client_contributor"}
+    # R-01-T13 (DEC-387): the third party reads only what is delegated to them.
+    assert granted == {"client_admin", "client_contributor", "third_party"}
+    assert rule.decisions["third_party"] == "delegated_only"
     assert rule.decisions.get("agent") == "deny"
     assert rule.decisions.get("system") == "deny"
     assert rule.scope_only
@@ -174,16 +180,14 @@ def test_the_undos_reuse_the_client_actions_and_deny_the_agent() -> None:
         }
 
 
-Stub = Callable[[AuthContext, Flag], Awaitable[object]]
+Gate = Callable[[AuthContext], Awaitable[object]]
 
 
-@pytest.mark.parametrize(
-    ("module", "flag"), STUBS, ids=[f"{m.__name__.split('.')[-2]}:{f.name}" for m, f in STUBS]
-)
-async def test_flag_off_is_404_and_flag_on_is_501(
-    module: ModuleType, flag: Flag, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(("module", "name", "flag"), GATES, ids=[f.name for _, _, f in GATES])
+async def test_flag_off_is_404(
+    module: ModuleType, name: str, flag: Flag, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub = cast(Stub, module._stub)
+    gate = cast(Gate, getattr(module, name))
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -194,16 +198,27 @@ async def test_flag_off_is_404_and_flag_on_is_501(
         seen.append(asked)
         return False
 
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
     monkeypatch.setattr(module, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await stub(ctx, flag)
+        await gate(ctx)
     assert seen == [flag]
-    monkeypatch.setattr(module, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await stub(ctx, flag)
+
+
+async def test_the_drop_poll_is_404_with_its_flag_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    user = uuid.uuid4()
+    ctx = AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
+    )
+    seen: list[object] = []
+
+    async def off(_tenant: object, asked: object) -> bool:
+        seen.append(asked)
+        return False
+
+    monkeypatch.setattr(portal_pbc, "flag_enabled", off)
+    with pytest.raises(NotFound):
+        await portal_pbc.get_drop_batch_route(uuid.uuid4(), ctx)
+    assert seen == [PORTAL_DROP_SORT]
 
 
 async def test_the_drop_is_404_off_and_live_on(monkeypatch: pytest.MonkeyPatch) -> None:

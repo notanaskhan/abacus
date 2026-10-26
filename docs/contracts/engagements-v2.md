@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md`; an additive C1 v1.1 note to `work-items.md` (P-07 §8.1) |
 | Version | v2 of the engagement surfaces (C1 stays v1; these are additive operations and models) |
-| Status | live (P-07-T15, P-07-T16, 2026-10-24) except start-acceptance (stub until P-07-T35, DEC-225) |
+| Status | live (P-07-T15, P-07-T16, 2026-10-24); start-acceptance live (P-07-T35, 2026-10-26; DEC-372) |
 | Provider epic | P-07 (`engagements`) |
 | Consumers | ENG-01, ENG-02, ENG-03 (P-07-T20, T21, T27, T28); CLI-02's Engagements tab; fixtures P-07-T11; A-01 (AUD-02 hangs off ENG-02 and its gates); N-02 (`acceptance_decided_at`, the G3 swap); T-02 and C-01 (tax and CAS through ENG-03) |
 | Freeze sprint | the sprint review after the stub (P-07 §8.1) |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on an engagements index on the P-36 envelope whose status tiles (`counts`, minus the selected tile) and service-line segments (`facets.service_line`) come from one grouped query over the same `visible()` predicate and sum to `total`; a record projection with rail bands, contacts, letter summary, gates, tab counts and a read-only reason; the gates on their own; an interim recorded letter that enforces the G1 date rule; a selectable engagement-type catalogue that never contains single audit; and wizard drafts with per-step validation, "Start acceptance" and a one-unit-of-work create.
 
-**Stub behaviour.** With `engagements.v2` off every route below answers 404. With it on, the index, record, gates and recorded letter are live (P-07-T15, DEC-224); the catalogue, drafts, validation and create are live (P-07-T16, DEC-225); start-acceptance answers 501 `not_implemented` until the acceptance record lands (P-07-T35). No fixtures yet (P-07-T11).
+**Stub behaviour.** With `engagements.v2` off every route below answers 404. With it on, the index, record, gates and recorded letter are live (P-07-T15, DEC-224); the catalogue, drafts, validation and create are live (P-07-T16, DEC-225); start-acceptance is live (P-07-T35) and also needs `engagements.acceptance_v2`, read after `client.intake` is authorised: it creates a Prospect engagement for the draft's client entity, type, name and period with the draft's team (422 `draft_incomplete` without an engagement partner, a name or a period), opens its acceptance record (409 `acceptance_template_missing` when the firm has no questionnaire for the type's family) and points the draft at it; a second call answers the same engagement and record. A G1 decision is the acceptance record's where one exists, else SPEC-025's (DEC-372). No fixtures yet (P-07-T11).
 
 **Beside the live routes, not replacing them.** `GET /v1/engagements` (a plain `EngagementSummaryOut` list), `GET /v1/engagements/{id}` (C1's `EngagementOut`), `PUT /v1/engagements/{id}/letter` (SPEC-025's letter step), `POST /v1/engagements` and the team routes keep their paths and shapes. The v2 index is served at `/v1/engagements/index` and the record at `/v1/engagements/{id}/record`; P-07-T15 moves them to the plain paths when the v1 consumers are gone (a v1 to v2 change with one sprint of overlap, recorded in §10). `/index` is matched before the live `/{engagement_id}` because `engagements.api.ROUTERS` lists the v2 routers first; `test_ac14_the_v2_index_is_matched_before_the_live_record_route` holds that order. `PUT …/letter/record` becomes the interim recorded-letter route; the SPEC-025 `PUT …/letter` stays as an adapter until P-07-T59.
 
@@ -35,7 +35,7 @@ Matrix: `docs/architecture/permission-matrix/engagements.yaml` and `organisation
 | Autosave | `PATCH /v1/engagement-drafts/{draft_id}` | `engagement.create` | the owner | **denied** |
 | Discard | `DELETE /v1/engagement-drafts/{draft_id}` | `engagement.create` | the owner | **denied** |
 | Validate a step | `POST /v1/engagement-drafts/{draft_id}/validate` | `engagement.create` | the owner | **denied** |
-| Start acceptance (ENG-03 d) | `POST /v1/engagement-drafts/{draft_id}/start-acceptance` | `client.intake` (new, OQ-2) | firm admin, partner (`firm_partner`); manager when live (DEC-143) | **denied** |
+| Start acceptance (ENG-03 d) | `POST /v1/engagement-drafts/{draft_id}/start-acceptance` | `client.intake` (new, OQ-2) | firm admin, partner (`firm_partner`), manager (`firm_manager`, P-07-T36, DEC-373) | **denied** |
 | Create (ENG-03) | `POST /v1/engagement-drafts/{draft_id}/create` + `Idempotency-Key` | `engagement.create` | as the catalogue | **denied** |
 
 Client roles hold no write action here. They do hold `engagement.read_metadata` for their own engagement (SPEC-020), but the v2 index, record and gates are firm surfaces: P-07-T15 answers a client principal 404, as ENG-01 and ENG-02's contracts say (agent and client principals deny).

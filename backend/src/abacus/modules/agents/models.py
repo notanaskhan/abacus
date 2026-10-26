@@ -41,6 +41,38 @@ class AgentRun(Base):
     finished_at: Mapped[datetime | None]
 
 
+class AgentRunRecord(Base):
+    """The decision-relevant facts of one ended specialist run (Q-02-T41; ADR-169 §3; 0171).
+    Written once by the run's workflow, never updated: identifiers, versions and fingerprints
+    only, never prompt text, model text or client content."""
+
+    __tablename__ = "agent_run_records"
+
+    run_id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    engagement_id: Mapped[UUID | None]
+    work_item_id: Mapped[UUID | None]
+    capability: Mapped[str]
+    spec_version: Mapped[int]
+    stage: Mapped[str]
+    prompt_ref: Mapped[str | None]
+    prompt_sha256: Mapped[str | None]
+    model: Mapped[str | None]
+    route: Mapped[str | None]
+    region: Mapped[str | None]
+    terms_version: Mapped[str | None]
+    boundary_basis: Mapped[str | None]
+    input_hashes: Mapped[dict[str, object]] = mapped_column(JSONB)
+    records_read: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    citations: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    outcome: Mapped[dict[str, object]] = mapped_column(JSONB)
+    initiator_user_id: Mapped[UUID]
+    started_at: Mapped[datetime]
+    completed_at: Mapped[datetime]
+    record_sha256: Mapped[str]
+    persisted_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
 class ScreeningResult(Base):
     """One agent run's proposal on one version (`subject_kind = 'version'`), or, since 0154, the
     code-composed aggregate of a request batch (`request_batch`, P-06-T20). The per-run columns

@@ -6,6 +6,8 @@ Orchestration only: activities by name, identifiers in and out, no I/O (WF-001).
 create the agent run (none: `skipped`), then screen it as one activity. Any failure,
 cancellation included, ends in `screening.fail_run`, which retries until it succeeds, so a run
 never stays `running` because of the workflow. Changes are guarded with `workflow.patched(...)`.
+Q-02-T41 (`run_record_v1`): once a run has ended, each specialist workflow persists its run record
+(`agents.persist_run_record`) before releasing its slot.
 """
 
 from __future__ import annotations
@@ -67,6 +69,14 @@ _RELEASE_RETRY = RetryPolicy(
 )
 _RELEASE_WITHIN = timedelta(hours=1)
 _UNAVAILABLE = frozenset({"ProviderError"})
+# Q-02-T41 (ADR-169 §3): every specialist workflow persists its run's record once it has ended.
+RUN_RECORD_PATCH = "run_record_v1"
+_PERSIST_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=1),
+    maximum_attempts=10,
+)
 
 
 @workflow.defn(name="screening")
@@ -95,7 +105,7 @@ class ScreeningWorkflow:
             backoff = _MIN_ADMISSION_ASK
             while True:
                 try:
-                    return await workflow.execute_activity(
+                    outcome = await workflow.execute_activity(
                         "screening.screen",
                         run,
                         result_type=ScreeningOutcome,
@@ -103,6 +113,8 @@ class ScreeningWorkflow:
                         heartbeat_timeout=_SCREEN_HEARTBEAT,
                         retry_policy=_RETRY,
                     )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
                 except ActivityError as err:
                     refused = _not_admitted(err) if admission else None
                     if refused is None:
@@ -140,13 +152,34 @@ def _not_admitted(err: ActivityError) -> tuple[float, float] | None:
 
 
 async def _fail(run: RunInput, code: str) -> ScreeningOutcome:
-    return await workflow.execute_activity(
+    outcome = await workflow.execute_activity(
         "screening.fail_run",
         FailInput(run.tenant_id, run.run_id, code),
         result_type=ScreeningOutcome,
         start_to_close_timeout=_TIMEOUT,
         retry_policy=_FAIL_RETRY,
     )
+    await _persist(run)  # Q-02-T41: a failed or cancelled run gets its record too
+    return outcome
+
+
+async def _persist(run: RunInput) -> None:
+    """Q-02-T41 (ADR-169 §3): persist the ended run's record, behind `run_record_v1` so the
+    histories recorded before it still replay. Repeat-safe; a run still running gets none. A
+    record that can't be written within the hour never changes the run's outcome: the run row
+    keeps everything a later persist needs."""
+    if not workflow.patched(RUN_RECORD_PATCH):
+        return
+    try:
+        await workflow.execute_activity(
+            "agents.persist_run_record",
+            run,
+            start_to_close_timeout=_TIMEOUT,
+            schedule_to_close_timeout=_RELEASE_WITHIN,
+            retry_policy=_PERSIST_RETRY,
+        )
+    except ActivityError:
+        return
 
 
 def _code(err: ActivityError) -> str:
@@ -223,7 +256,7 @@ class UploadReviewWorkflow:
             backoff = _MIN_ADMISSION_ASK
             while True:
                 try:
-                    return await workflow.execute_activity(
+                    outcome = await workflow.execute_activity(
                         "upload_review.review",
                         run,
                         result_type=ScreeningOutcome,
@@ -231,6 +264,8 @@ class UploadReviewWorkflow:
                         heartbeat_timeout=_SCREEN_HEARTBEAT,
                         retry_policy=_RETRY,
                     )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
                 except ActivityError as err:
                     refused = _not_admitted(err)
                     if refused is None:
@@ -279,7 +314,7 @@ class InboxMatchWorkflow:
             backoff = _MIN_ADMISSION_ASK
             while True:
                 try:
-                    return await workflow.execute_activity(
+                    outcome = await workflow.execute_activity(
                         "inbox_match.match",
                         given,
                         result_type=ScreeningOutcome,
@@ -287,6 +322,8 @@ class InboxMatchWorkflow:
                         heartbeat_timeout=_SCREEN_HEARTBEAT,
                         retry_policy=_RETRY,
                     )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
                 except ActivityError as err:
                     refused = _not_admitted(err)
                     if refused is None:
@@ -337,7 +374,7 @@ class GuidanceDraftWorkflow:
             backoff = _MIN_ADMISSION_ASK
             while True:
                 try:
-                    return await workflow.execute_activity(
+                    outcome = await workflow.execute_activity(
                         "guidance_draft.draft",
                         given,
                         result_type=ScreeningOutcome,
@@ -345,6 +382,8 @@ class GuidanceDraftWorkflow:
                         heartbeat_timeout=_SCREEN_HEARTBEAT,
                         retry_policy=_RETRY,
                     )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
                 except ActivityError as err:
                     refused = _not_admitted(err)
                     if refused is None:
@@ -393,7 +432,7 @@ class EntryAssessWorkflow:
             backoff = _MIN_ADMISSION_ASK
             while True:
                 try:
-                    return await workflow.execute_activity(
+                    outcome = await workflow.execute_activity(
                         "entry_assess.assess",
                         given,
                         result_type=ScreeningOutcome,
@@ -401,6 +440,8 @@ class EntryAssessWorkflow:
                         heartbeat_timeout=_SCREEN_HEARTBEAT,
                         retry_policy=_RETRY,
                     )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
                 except ActivityError as err:
                     refused = _not_admitted(err)
                     if refused is None:

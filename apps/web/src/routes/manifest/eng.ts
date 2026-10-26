@@ -37,6 +37,8 @@ export const engScreens = {
     status: "planned",
     path: null,
   },
+  // P-07-T39 built a–e on fixtures as ENG-02's Team tab (in-screen tabs, no own path) behind
+  // `engagements.v2`; planned for ENG-02's reason (its links are wired in routes/firm).
   "ENG-05": { name: "Team & roles", status: "planned", path: null },
   "ENG-06": { name: "Budget, time & AI effort", status: "planned", path: null },
   "ENG-07": { name: "Season setup / roll-forward", status: "planned", path: null },

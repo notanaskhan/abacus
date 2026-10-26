@@ -331,6 +331,10 @@ def _check_provider_host(src: SourceFile) -> Iterator[Finding]:
 
 
 _ISSUE_REF = re.compile(r"#\d+|github\.com/[^/\s]+/[^/\s]+/issues/\d+")
+# A strict xfail may cite the task that holds the defect instead (AGENTS rule 13): it fails the
+# suite the moment the defect is fixed, so the task cannot go stale silently. Skips and the
+# imperative `pytest.xfail()` (never strict) still need an issue.
+_TASK_REF = re.compile(r"\bTASK-\d{3,}\b")
 _SKIP_MARKS = frozenset({"skip", "skipif", "xfail"})
 _SKIP_CALLS = frozenset({"skip", "xfail", "importorskip"})
 
@@ -388,6 +392,24 @@ def _pytest_aliases(src: SourceFile) -> Iterator[Finding]:
             yield Finding(node.lineno, _ALIASED)
 
 
+def _strict_xfail(call: ast.Call, kind: str) -> bool:
+    """A `pytest.mark.xfail(...)` that stays strict (`xfail_strict = true` in pyproject, unless the
+    mark says `strict=False`)."""
+    if kind != "mark.xfail":
+        return False
+    for kw in call.keywords:
+        if kw.arg == "strict":
+            return not (isinstance(kw.value, ast.Constant) and kw.value.value is False)
+    return True
+
+
+def _linked(call: ast.Call, kind: str) -> bool:
+    reason = _skip_reason(call, kind)
+    if _ISSUE_REF.search(reason):
+        return True
+    return _strict_xfail(call, kind) and bool(_TASK_REF.search(reason))
+
+
 def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
     yield from _pytest_aliases(src)
     called: set[int] = set()
@@ -396,7 +418,7 @@ def _check_unlinked_skip(src: SourceFile) -> Iterator[Finding]:
         if kind is None:
             continue
         called.add(id(call.func))
-        if not _ISSUE_REF.search(_skip_reason(call, kind)):
+        if not _linked(call, kind):
             yield Finding(call.lineno, f"pytest {kind.split('.')[1]} without an issue reference")
     for node in ast.walk(src.tree):
         if not isinstance(node, ast.Attribute) or id(node) in called:
@@ -884,6 +906,29 @@ def _check_review_decide(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 1), "only a person decides (ADR-005)")
 
 
+def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Finding]]:
+    """A call-site allowlist (ADR-005, INV-1): any file naming `name` (a name, an attribute, an
+    import or the string itself) fails, except the files excluded on the rule."""
+
+    def check(src: SourceFile) -> Iterator[Finding]:
+        for node in ast.walk(src.tree):
+            found = None
+            if isinstance(node, ast.Name):
+                found = node.id
+            elif isinstance(node, ast.Attribute):
+                found = node.attr
+            elif isinstance(node, ast.alias):
+                found = (node.asname or node.name).rsplit(".", 1)[-1]
+                if node.name.rsplit(".", 1)[-1] == name:
+                    found = name
+            elif isinstance(node, ast.Constant) and node.value == name:
+                found = name
+            if found == name:
+                yield Finding(getattr(node, "lineno", 1), message)
+
+    return check
+
+
 def _check_evaluation_mode(src: SourceFile) -> Iterator[Finding]:
     """Only the evaluation runner pins a tier (`ai_gateway.evaluation`, SPEC-005; TASK-020):
     product code never switches the gateway into evaluation mode."""
@@ -947,6 +992,15 @@ LIST_EXEMPT = frozenset(
         # organisations are named), and those versions' accept history and latest checks.
         ("src/abacus/modules/requests/repository.py", "live_links"),
         ("src/abacus/modules/requests/repository.py", "binder_delegated_contacts"),
+        # R-01-T13 (DEC-387): the room's requests, keyed by the caller's own `request_item`
+        # grants and each authorised through `delegated_only` before anything of it is read.
+        ("src/abacus/modules/requests/repository.py", "delegated_rows"),
+        # R-01-T13 (DEC-387): one request's open delegations' grants and their active holders,
+        # the facts `delegated_only` is judged on (keyed by one request and its grant ids).
+        ("src/abacus/modules/requests/repository.py", "open_delegation_grants"),
+        ("src/abacus/modules/requests/repository.py", "live_item_engagements"),
+        ("src/abacus/modules/identity/repository.py", "delegate_grant_holders"),
+        ("src/abacus/modules/identity/repository.py", "delegate_holders"),
         ("src/abacus/modules/evidence/repository.py", "ever_accepted"),
         ("src/abacus/modules/evidence/repository.py", "client_problem_codes"),
         # P-07-T25 (DEC-302): one contact's delegations, read for CLI-04 after the contact's
@@ -970,6 +1024,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "screening_results_of_run"),
         ("src/abacus/modules/agents/repository.py", "run_writes"),  # TASK-5000
         ("src/abacus/modules/agents/repository.py", "run_activity"),  # TASK-5001
+        ("src/abacus/modules/agents/repository.py", "run_outputs"),  # Q-02-T41 (TASK-1287)
         # P-06-T20 (DEC-324): the screening aggregate's inputs, keyed by one request item's live
         # versions, read by the system composer or after `authorise(upload_review.read)` on the
         # item's engagement; the citations its flags carry, keyed by those reviews.
@@ -1191,11 +1246,15 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
+        # P-03-T15: the masking backfill's batch, as the system on the firm's own uploads.
+        ("src/abacus/modules/evidence/repository.py", "sources_without_masks"),
         # P-03-T08, T09: the events of citations already read through `visible()` or authorised
         # on; one source's PII regions and one preview's page rows, after the viewer or the
         # citation reader authorised `evidence.read` / `citation.read` on that source.
         ("src/abacus/modules/evidence/repository.py", "events_of"),
         ("src/abacus/modules/evidence/repository.py", "pii_regions_of"),
+        # P-03-T15 review N1: one source's not-scannable pages, beside `scanned_pages`.
+        ("src/abacus/modules/evidence/repository.py", "unscannable_pages"),
         ("src/abacus/modules/evidence/repository.py", "preview_pages_of"),
         # SPEC-316 (TASK-345): firm taxonomy content (after a firm-level check) and a mapping
         # set's edits (after authorising on its engagement).
@@ -2029,7 +2088,7 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="SKIP-001",
-        description="skip and xfail carry an issue reference",
+        description="skip and xfail carry an issue reference (a strict xfail may cite a TASK)",
         adr="ADR-079",
         check=_check_unlinked_skip,
     ),
@@ -2240,6 +2299,37 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/evidence/service.py",
             "src/abacus/modules/evidence/routes.py",
+        ),
+    ),
+    Rule(
+        id="ACCEPT-001",
+        description="Only the acceptance service and its route reach the acceptance decision",
+        adr="ADR-005",
+        check=_check_named(
+            "decide_acceptance", "only the engagement partner decides acceptance (INV-1)"
+        ),
+        # P-07-T35 (SPEC-332 AC-10): the definition, its route, and the module's public
+        # interface that re-exports it; any other file naming it fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/engagements/acceptance.py",
+            "src/abacus/modules/engagements/acceptance_contract.py",
+            "src/abacus/modules/engagements/api.py",
+        ),
+    ),
+    Rule(
+        id="CONFLICT-001",
+        description="Only the conflict service and its route reach the conflict clearance",
+        adr="ADR-005",
+        check=_check_named(
+            "clear_conflict_result", "only a partner or manager clears a conflict hit (INV-1)"
+        ),
+        # P-07-T36 (SPEC-332 AC-25): the definition, its route and the module's interface.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/organisations/conflicts.py",
+            "src/abacus/modules/organisations/conflicts_contract.py",
+            "src/abacus/modules/organisations/api.py",
         ),
     ),
     Rule(

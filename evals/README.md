@@ -59,7 +59,8 @@ A suite declares:
 - `repeats` and `required_pass_rate`;
 - `calibration_tolerance` (ECE);
 - `cost_limit_usd`;
-- `sampling` (recorded with each run; the fake model ignores it).
+- `sampling` (recorded with each run; the fake model ignores it);
+- `reports` (optional): metrics computed and reported with every run that never gate. Each must be a known metric without a threshold. The screening, upload_review and matching suites report `citation_region_resolved` (P-03-T17): the share of a run's verified `document_text` citations that carry a region.
 
 Validation also requires the agent's required coverage (`taxonomy.REQUIRED_COVERAGE`), a mutation that injects each category a case claims, at least one key case, and a fast subset covering every class of the dangerous error.
 
@@ -72,3 +73,5 @@ These files aren't protected paths yet (TASK-020 D5, deferred).
 ## Deterministic suites
 
 `evals/agent_blocks/suite.yaml` (P-09-T15) is code-only: an adversarial corpus of agent turns run through the gateway's `agent_blocks` output check, with no model and no containers. `tests/unit/agents/test_blocks_suite.py` runs it on every test run. It must score 1.0 on every case and every repeat, and removing any one lint rule must make it fail. Hooking it into the runner's `eval_runs` store and its signed reports is still to come.
+
+`evals/citations/suite.yaml` (P-03-T17) is code-only too. It holds document_text claims on a seeded three-page document, checked by the verifier's own word-layer code on the masked projection: fabricated pages, boxes, quotes and values, unicode deception, moved and broken sources, quotes of masked text, valid citations, and agent material that must hold no unmasked TIN. `tests/unit/evidence/test_citations_suite.py` runs it. Each of its four metrics must be 1.0 on every repeat, and turning off the masking, the box check, the value check or the TIN scrub must make it fail.

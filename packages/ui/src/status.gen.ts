@@ -1852,7 +1852,8 @@ export const STATUS_REGISTRY = {
       "label": "Available",
       "variant": "outline",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "clientLabel": "Not connected"
     },
     "connecting": {
       "label": "Connecting",
@@ -2426,6 +2427,12 @@ export const STATUS_REGISTRY = {
       "label": "Counterparty · {relationship} — review",
       "variant": "amber",
       "terminal": false,
+      "derived": false
+    },
+    "conflict": {
+      "label": "Conflict",
+      "variant": "red-tint",
+      "terminal": true,
       "derived": false
     }
   },

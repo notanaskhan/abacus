@@ -28,7 +28,10 @@ import {
   useAuditCockpit,
   useSourceDocuments,
 } from "../../domain/audits";
+import { useFlag } from "../../app-core/flags";
 import { AgentDock } from "../../domain/agents";
+import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBalance";
+import { ViewerPane } from "../SHL-08";
 import { COPY } from "./copy";
 
 // AUD-02 · Audit cockpit (A-01-T12; docs/screens/AUD-02.md): F-05's T2 RecordCockpit through the
@@ -66,7 +69,12 @@ export interface AUD02Props {
   onAdd?: (binderId: string) => void;
   /** Inside the firm shell (a routed screen) the toolbar is the shell's. */
   embedded?: boolean;
+  /** What the Trial Balance row's AUD-06 pane opens on (tab, layer, selected line). */
+  trialBalance?: TrialBalanceOptions["initial"];
 }
+
+/** The rail row whose canvas is AUD-06 (A-02-T09). */
+const TRIAL_BALANCE = "trial_balance";
 
 type Sort = "missing_first" | "received_first";
 
@@ -150,6 +158,7 @@ function Cockpit({
   onBack,
   onAdd,
   embedded,
+  trialBalance,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("missing_first");
@@ -158,13 +167,25 @@ function Cockpit({
   const selected = section ?? "source_documents";
   const rows = (cockpit.bands ?? []).flatMap((b) => b.rows ?? []);
   const row: AuditSectionRowOut | undefined = rows.find((r) => r.key === selected);
+  // AUD-06 (A-02-T09): the Trial Balance row's workpaper; a line's citation re-targets the Viewer.
+  // Behind `ledger.tb_workpaper` (DEC-314): the C9 v1 view is a stub until A-02-T10.
+  const tbOn = useFlag("ledger.tb_workpaper") === true && selected === TRIAL_BALANCE;
+  const tb = useTrialBalancePane(cockpit.engagement_id, {
+    enabled: tbOn,
+    ...(trialBalance === undefined ? {} : { initial: trialBalance }),
+    onLink: () => {
+      onDock?.("viewer", doc ?? null);
+    },
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
   };
 
   let canvas: CockpitCanvas;
-  if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
+  if (tbOn) {
+    canvas = tb.canvas;
+  } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
       children: (
@@ -251,7 +272,12 @@ function Cockpit({
               <AgentActivityTab engagementId={cockpit.engagement_id} />
             </AgentDock>
           ),
-          viewer: <DockViewer versionId={doc ?? null} />,
+          viewer:
+            tbOn && tb.linked !== null ? (
+              <ViewerPane target={tb.linked} />
+            ) : (
+              <DockViewer versionId={doc ?? null} />
+            ),
           aiUnavailable: agent.aiUnavailable,
           ...(pausable ? { action: <AgentDockMenu engagementId={cockpit.engagement_id} /> } : {}),
         }}
@@ -295,7 +321,12 @@ export function AuditCockpitPage({
   onBack,
 }: {
   auditId: string;
-  initial?: { section?: string; dock?: DockTab; doc?: string | null };
+  initial?: {
+    section?: string;
+    dock?: DockTab;
+    doc?: string | null;
+    trialBalance?: TrialBalanceOptions["initial"];
+  };
   onBack?: () => void;
 }): JSX.Element {
   const [section, setSection] = useState(initial.section);
@@ -313,6 +344,7 @@ export function AuditCockpitPage({
         if (next !== undefined) setDoc(next);
       }}
       {...(onBack === undefined ? {} : { onBack })}
+      {...(initial.trialBalance === undefined ? {} : { trialBalance: initial.trialBalance })}
     />
   );
 }

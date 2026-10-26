@@ -28,7 +28,7 @@ actions:
   # (G-01-T04); `wall.create` and `wall.remove` moved to partners with G-01-T09 (DEC-318).
   firm.read_people:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny}   # ADM-02 list, drawer, role templates
   security_role.assign:     {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # grant or remove security_admin only
-  service_line_policy.manage: {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # ADM-03h; audit stays engagement-team-only
+  service_line_policy.manage: {firm_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # ADM-03h; audit stays engagement-team-only; ADR-183 condition 4 (Ayush, 2026-10-26): firm admins and partners, never security admins
   wall.approve:             {firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # the named partner only (the service checks the name; DEC-73)
   independence.annual_read: {firm_admin: allow, quality_partner: allow, firm_partner: allow, agent: deny, system: deny}   # ADM-02g
   independence.annual_confirm:

@@ -1,12 +1,11 @@
 """TASK-1207 security review, item 2 (DEC-52; DEC-322's portal-drop rule): an agent acting for
 an offshore member reads a document only as its masked projection.
 
-The upload reviewer and the inbox matcher get a firm upload's extracted text when their run's
-initiator is onshore. When the initiator is an offshore member, the material is the masked
-projection of the PII-scanned pages (every detected region replaced by its token; no sheets), the
-same rule a client's portal drop already has; before the scan has run there is no material, so the
-run can't proceed (fail closed). Against Postgres and the S3 gateway, with the real extraction,
-word layer and PII scan of the seeded W-2 (box a: SSN 000-00-6081).
+P-03-T15 (SPEC-322 AC-25, AC-40) widened the rule to every initiator: the upload reviewer and the
+inbox matcher read only the masked projection of the PII-scanned pages (every detected region
+replaced by its token), onshore and offshore alike; before the scan has run there is no material,
+so the run can't proceed (fail closed). Against Postgres and the S3 gateway, with the real
+extraction, word layer and PII scan of the seeded W-2 (box a: SSN 000-00-6081).
 """
 
 from __future__ import annotations
@@ -75,7 +74,8 @@ async def test_review2_the_upload_reviewer_reads_the_w2_masked_for_an_offshore_i
     version = await _version(firm, scan=True)
     onshore = await review_material_for(await _agent(firm, "evidence.upload_reviewer"), version)
     assert onshore is not None
-    assert SSN in _text(onshore.pages, onshore.excerpt_pages)  # the control: raw text onshore
+    shown = _text(onshore.pages, onshore.excerpt_pages)
+    assert SSN not in shown and MASKED in shown  # P-03-T15: masked onshore too
     await _offshore(firm)
     material = await review_material_for(await _agent(firm, "evidence.upload_reviewer"), version)
     assert material is not None
@@ -99,7 +99,8 @@ async def test_review2_the_inbox_matcher_reads_a_firm_upload_masked_for_an_offsh
     inbox = await _inbox(firm, scan=True)
     onshore = await match_material_for(await _agent(firm, "evidence.matcher"), inbox)
     assert onshore is not None
-    assert SSN in _text(onshore.pages, onshore.excerpt_pages)  # the control
+    shown = _text(onshore.pages, onshore.excerpt_pages)
+    assert SSN not in shown and MASKED in shown  # P-03-T15: masked onshore too
     await _offshore(firm)
     material = await match_material_for(await _agent(firm, "evidence.matcher"), inbox)
     assert material is not None

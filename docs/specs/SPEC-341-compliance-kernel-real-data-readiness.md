@@ -115,7 +115,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 - **AC-43** Given a staff session without a verified second factor, then every staff route answers 401; given a portal owner or a holder of a signing or approving scope, then P-08's slot requires MFA before those routes, on staging and production by Fri Apr 16; `make mfa-report` lists coverage. **Partial**: the portal floor is built (migration `0133_portal_mfa.py`, P-08-T17); the staff-route refusal waits for WorkOS MFA in each environment; the deliverable-scope floor waits for a deliverable grant kind; `make mfa-report` is **not built** (TASK-1200).
 
 ### Story 12: Run records and the C6 v1 stub (ADR-169, accepted)
-- **AC-44** Given a specialist run completes, then one insert-only `agent_run_records` row holds the capability, spec and prompt versions with the prompt SHA-256, model, route, region, register version, boundary basis, input hashes, records read, citations, outcome, initiator and `record_sha256`, still readable after raw traces expire. **Not built** (Q-02-T41).
+- **AC-44** Given a specialist run completes, then one insert-only `agent_run_records` row holds the capability, spec and prompt versions with the prompt SHA-256, model, route, region, register version, boundary basis, input hashes, records read, citations, outcome, initiator and `record_sha256`, still readable after raw traces expire. **Built** (Q-02-T41, TASK-1287; DEC-396): migration 0171, `agents/run_records.py`, the `run_record_v1` patch in the five specialist workflows, `GET /v1/agent-runs/{run_id}/record`.
 - **AC-45** Given the C6 v1 run reads, then they return the run summary with the legacy state map and `run_record_sha256`, visible only to people who can read the engagement; walled runs answer 404. **Partial**: the C6 v0 routes exist (`agents/runs_routes.py`, `docs/contracts/agent-runs.md`); the v1 stub and `run_record_sha256` are Q-02-T45.
 
 ### Story 13: The security stage
@@ -144,7 +144,7 @@ The compliance kernel is what must be true in code before any firm puts real cli
 
 ## 7. Domain and data changes
 - **Tables (built):** `firms.ai_client_data_*`, `agent_stages` (0056); `audit_events` attribution columns (0096, 0108); `access_events`, monthly partitions (0105); `audit_checkpoints`, `audit_anchors` (0106); `retention_floors`, `retention_policy_defaults`, `retention_policies`, `retention_policy_versions` (0112); `legal_holds`, `hold_objects` (0126); `security_incidents` (0143).
-- **Tables (not built):** `firm_exports` (Q-02-T43), `agent_run_records` (Q-02-T41).
+- **Tables (not built):** `firm_exports` (Q-02-T43). `agent_run_records` is built (0171, Q-02-T41).
 - **Invariants:** a firm policy is never below its published floor; a hold is never bypassed; an agent or policy actor never records a human-only action; access rows and checkpoints are insert-only.
 - **Retention:** the floors are counsel's content (§20); this spec holds no number.
 
@@ -200,7 +200,8 @@ None in this epic. Facts arrive as words and numbers so consumer screens never e
 | AC-38, AC-39 | integration, unit, replay | `test_security_incidents.py`, `unit/platform/test_incident_clock.py` |
 | AC-40, AC-41 | contract; T46 (not built) | `tests/contracts/compliance_kernel/` |
 | AC-42, AC-43 | lint, generated security tests | `unit/quality/test_fresh_mfa_*.py`, `security/test_fresh_mfa_generated.py` |
-| AC-44, AC-45 | not built | Q-02-T41, T45, T46 |
+| AC-44 | integration, unit, replay | `agent_tests/test_run_records.py`, `unit/agents/test_run_records.py`, `workflows/test_run_record_replay.py`; T46 (not built) |
+| AC-45 | not built | Q-02-T45, T46 |
 | AC-46 | generated security tests | `tests/security/` |
 
 ## 19. Rollout

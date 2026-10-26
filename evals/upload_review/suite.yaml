@@ -16,6 +16,9 @@ thresholds:
   - {metric: flag_precision_draft, minimum: 0.80}
   - {metric: citation_verification, minimum: 1.0}
   - {metric: adversarial_containment, minimum: 1.0}
+# P-03-T17 (DEC-371): reported with every run, never gating; a threshold is proposed only after
+# two nightly runs hold it (P-03 §6). Thresholds above are unchanged.
+reports: [citation_region_resolved]
 dangerous_error: flag_recall_altered
 cost_per_review_usd: "0.02"
 repeats: 3

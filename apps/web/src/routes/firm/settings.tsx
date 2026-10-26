@@ -71,6 +71,15 @@ const PEOPLE_SEARCH = [
   "ov",
 ] as const;
 
+// G-01-T14: ADM-03 at /settings/offices behind the same flag; the expanded office (by code) and the
+// open overlay live in the URL, `#walls` and `#offshore` scroll to their fieldsets.
+const FirmSettingsOffices = lazyScreen(async () => (await import("../../screens/ADM-03")).ADM03);
+interface OfficesSearch {
+  expand?: string;
+  ov?: string;
+}
+const OFFICES_SEARCH = ["expand", "ov"] as const;
+
 function NotBuilt(): JSX.Element {
   return (
     <div className="flex flex-1 items-center justify-center p-8">
@@ -136,6 +145,45 @@ const settingsPeopleRoute = createRoute({
     );
   },
 });
+const settingsOfficesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/offices",
+  validateSearch: (search: Record<string, unknown>): OfficesSearch =>
+    Object.fromEntries(
+      OFFICES_SEARCH.flatMap((key) => {
+        const value = search[key];
+        return typeof value === "string" && value !== "" ? [[key, value]] : [];
+      }),
+    ),
+  component: function SettingsOfficesPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    const hash = router.state.location.hash;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="firm_settings.v2" fallback={<NotBuilt />}>
+          <FirmSettingsOffices
+            search={search}
+            {...(hash === "" ? {} : { anchor: hash })}
+            onSearch={(next) => {
+              void navigate({ to: ".", search: { ...next }, replace: true });
+            }}
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onOpenPeople={(filter) => {
+              void navigate({ to: "/settings/people", search: { ...filter } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
 const settingsSectionRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings/$section",
@@ -167,6 +215,7 @@ const methodologyVersionRoute = createRoute({
 export const settingsRoutes = [
   settingsGeneralRoute,
   settingsPeopleRoute,
+  settingsOfficesRoute,
   settingsSectionRoute,
   adminRoute.addChildren([
     section("/admin/methodology", () => <screens.Methodology />),

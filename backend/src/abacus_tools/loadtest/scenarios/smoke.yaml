@@ -1,0 +1,29 @@
+# The smoke profile (Q-03-T035): a few seconds of light, read-only load on a local stack
+# (`make dev` + `make seed`), to prove the harness end to end. Not a load test: chapter 10's
+# scenarios and targets arrive with Q-03-T043 and T044.
+name: smoke
+description: Health, the signed-in person, the engagement list and notifications, and a Temporal visibility read.
+duration_seconds: 5
+users: 2
+think_ms: 50
+persona: dev-staff
+max_error_rate: 0.001
+groups:
+  - name: health
+    weight: 1
+    steps:
+      - {path: /healthz, auth: false}
+  - name: me
+    weight: 2
+    steps:
+      - {path: /v1/me}
+  - name: record_lists
+    weight: 3
+    p95_ms: 300  # chapter 10 §10.11.1: record reads at p95 300 ms
+    steps:
+      - {path: "/v1/engagements?limit=25"}
+      - {path: /v1/notifications}
+temporal:
+  - name: temporal_visibility
+    kind: count_workflows
+    rate_per_second: 2

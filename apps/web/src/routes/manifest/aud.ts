@@ -32,6 +32,9 @@ export const audScreens = {
     status: "planned",
     path: null,
   },
+  // A-02-T09 built a and c on fixtures as the AUD-02 cockpit's Trial Balance canvas
+  // (`?section=trial_balance`, behind `ledger.tb_workpaper`); it has no path of its own, and stays
+  // planned until A-02-T24 swaps it to the live C9 routes.
   "AUD-06": { name: "Trial balance & leadsheets", status: "planned", path: null },
   "AUD-07": { name: "Materiality · partner decision", status: "planned", path: null },
   "AUD-08": { name: "Risk assessment register & linkage", status: "planned", path: null },

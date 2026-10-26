@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-14 Request composer drawer/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-06 · contract P-06-T03 (TASK-404); a, b, e, f and R2 items 1–5 P-06-T13; d P-06-T24; request lifecycle P-06-T10; data P-06-T08; parity P-06-T26 |
-| Manifest status | fixture (`routes/manifest/shl.ts`): a, b, e, f built by P-06-T13 (TASK-989), registered as the `request` overlay in `routes/firm/binders.tsx` and opened from BND-02 |
+| Manifest status | fixture (`routes/manifest/shl.ts`): a, b, e, f built by P-06-T13 (TASK-989) and d by P-06-T24 (TASK-1273), registered as the `request` overlay in `routes/firm/binders.tsx` and opened from BND-02 |
 
 Code to come (P-06 §5.2): `src/domain/requests/{queries.ts, mutations.ts, messages.ts, ClientPreviewSheet.tsx}`, `src/screens/SHL-14/{index.tsx, scenarios.ts, copy.ts, SHL-14.test.tsx}`.
 
@@ -20,7 +20,7 @@ Code to come (P-06 §5.2): `src/domain/requests/{queries.ts, mutations.ts, messa
 | a | marcus-delaney (Marcus Delaney, Audit Senior) | Mon Sep 14, 2026, 9:41 AM CT (revision) | E0 | `?ov=request:new` on the Northwind PY2025 PBC binder: ERISA fidelity bond for Dana Kowalski; preview of what Dana sees | built · fixture (T13) |
 | b | marcus-delaney | same | E0 | Existing request "Bridge letter — Keystone, Oct–Dec 2025", `requested` Sep 1, due Sep 25, delegated to Sam Ortiz (Keystone) | built · fixture (T13) |
 | c | marcus-delaney | same | E0 | Sample-driven bulk: 25 requests from the EBP-04 sample (seed `0x5E2A91`) | **deferred → A-03** (S20–S23): needs the sampling engine. Recorded, not built, not missing |
-| d | raj-malhotra (Raj Malhotra) | same | E0 | Copperleaf August `close_intake` binder: "Square payouts — August", `incorporation_state = pending_incorporation`, uploaded by Ben Ashby Sep 3 | built · fixture (T24; hosted from BND-02 until C-01 builds CLS-03) |
+| d | raj-malhotra (Raj Malhotra) | same | E0 | An existing, non-draft request on a binder whose `kind = close_intake`: Copperleaf's August binder ("Requests", the backend seed's 9 requests), "Square payouts — August", `incorporation_state = pending_incorporation`, uploaded by Ben Ashby Sep 3 | built · fixture (T24, TASK-1273; hosted from BND-02 until C-01 builds CLS-03) |
 | e | marcus-delaney | same | E0 | State a with no due date | built · fixture (T13) |
 | f (R2) | cole-hart (Cole Hart, Audit Staff) | Thu Sep 24, 2026, 10:58 AM CT | E0 | Granite Peak FY2026 SURL request in `draft` with `drafted_by_run_id` set and `drafted_wording_source = 'template'` | built · fixture (T13) |
 
@@ -78,7 +78,7 @@ Copy keys live in `screens/SHL-14/copy.ts`; strings verbatim from spec.md and re
 | `footer.approveSend` | "Approve & send" / "Approve & send to {name}" (f: "Approve & send to Luis Ferrante") |
 | `footer.modelText` | "Edit the client wording before sending" (DV-11) |
 | `validation.due` | "Add a due date to send" |
-| `close.keys` | "Visible to client" · "Requested by" · "Document" · "Status" · "File" · "Type" · "Summary" · "Uploaded by" |
+| `close.keys` | "Requested by" · "Status" · "File" · "Uploaded by" (R2 item 3 makes "Visible to client" the "Visibility" row, Client; "Document", "Type" and "Summary" wait on G-6) |
 | `close.uploadCard` | "Uploaded Document" |
 | `close.markIncorporated` | "Mark incorporated" |
 | `close.return` | "Return…" |
@@ -135,6 +135,9 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | — | Related rows and Controls render "—" until sheets (F-08) and attest controls (X-01) exist | engines not built | P-06 §2.1 |
 | — | "+ Attach" for reference files is R-01's | portal file intake | P-06 §2.1 |
 | — | The spec's C-16 preview rows are drawn inline (README note) | README build detail | P-06 §5.3 |
+| DV-T24-1 | d: Category reads the seed's "Bank & Cash Accounts", not the spec's "Bank account"; the header meta reads the binder's seed name "Requests", not "Copperleaf · August 2026" | the backend seed (P-06-T08, `binders.py`) wins over a board's sample words (DEC-354 precedent) | TASK-1273 |
+| DV-T24-2 | d: Request and Category are read-only rows, not ⇕ pickers; the header carries no status pill (the screenshot draws none; the status lives in "Uploaded Document"); the Activity tab draws no count | the close variant reviews an upload, it does not compose; the drawer's Segmented has no count yet | TASK-1273 |
+| DV-T24-3 | d: "Mark incorporated" does not toast and the CLS-03 log is the server's audit event only | no copy for either in the handoff; CLS-03 is C-01's | TASK-1273 |
 
 ### Contract gaps (P-06-T13)
 | Gap | What the handoff draws | What the drawer does until the contract carries it | Owner |
@@ -144,6 +147,7 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 | G-3 | the period label ("Plan year 2025 (1/1–12/31/2025)") and the linked workpaper picker | not drawn; Supports is a text row | P-06-T10, A-01 |
 | G-4 | the client wording of a draft in the preview ("what Dana sees") | the preview draws only a request the binder's client projection holds (b); a new request (a, e) and a draft (f) show none | P-06-T10 (`client-view` extended for drafts) |
 | G-5 | the overlay's host context | `?ov=request:<new\|id>:<binderId>` | DEC-196 |
+| G-6 | d's upload facts: the document title ("Square Payouts 2026-08-01 to 2026-08-31"), Type ("Document") and the Summary paragraph with the figures 73,166.90 − 1,684.54 = 71,482.36 | `GET …/uploads` carries file name, uploader and time only, so "Uploaded Document" draws Status, File and Uploaded by; the figures foot in a copy test against spec.md | P-06-T10 or C-01 (an upload read with the document's title, kind and summary) |
 
 The Comments tab lists the request's comments (SPEC-032 route) with "No comments yet." when none; the Activity tab words `request_item.drafted` by the agent ("Drafted by Accrued Agent in the BH-FS-430 procedure session") and `request_item.sent` ("Sent by ‹person›"); "No activity yet." otherwise. Toast after a save without a send: "Draft saved"; on failure: "Couldn’t save the request."
 
@@ -151,7 +155,7 @@ The Comments tab lists the request's comments (SPEC-032 route) with "No comments
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
 | a, b, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26) | built; axe in `e2e/screens/SHL-14.spec.ts`; report-only until A-01's AUD-03 host is stable |
-| d | C | — | P-06-T24 |
+| d | C | not run (P-06-T26) | built (P-06-T24); in `e2e/screens/SHL-14.spec.ts` with axe; Playwright not run locally (chromium 1243 not cached) |
 | c | — | — | deferred to A-03; recorded in `routes/manifest/shl.ts`, not missing |
 | host | D | — | drawer 480, pane header 46 with a 14.5/500 title, rows 34, pills 21, radius 14 |
 
