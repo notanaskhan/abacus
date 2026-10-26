@@ -20,6 +20,7 @@ import type {
 } from "@abacus/api-client";
 import { stableId } from "./prng";
 import { cents, money, northwindTbView } from "./trial-balance";
+import { HARBORLINE_CITATIONS, HARBORLINE_ROWS, type SeededCitation } from "./trust";
 
 const MARCUS = { id: stableId("user:marcus-delaney"), name: "Marcus Delaney" };
 const HANNAH = { id: stableId("user:hannah-leclerc"), name: "Hannah Leclerc", initials: "HL" };
@@ -369,6 +370,28 @@ export function aud06Checks(view: TbLayerViewOut): TieOutCheckOut[] {
       },
     ),
   ];
+}
+
+/** A-02-T09: the C4 citation behind each cited Northwind line, so the dock viewer can resolve a
+ * line's `citation_ids` through `GET /v1/citations/{id}`. Each fund line cites the Harborline row
+ * of the same name (trust.ts `HARBORLINE_CITATIONS`, page 2): the citation keeps that row's match,
+ * source and value and carries the line's own citation id (DEC-395). Lines without a citation, or
+ * with no Harborline row of their name, have none. */
+export function aud06Citations(view: TbLayerViewOut): SeededCitation[] {
+  return lines(view).flatMap((l) => {
+    const row = HARBORLINE_ROWS.findIndex(([name]) => name === l.account_name);
+    const harborline = HARBORLINE_CITATIONS[row];
+    if (harborline === undefined) return [];
+    return (l.citation_ids ?? []).map((id) => ({
+      anchor: {
+        type: "trial_balance",
+        id: view.trial_balance_id,
+        ref: l.account_code,
+        section: null,
+      },
+      out: { ...harborline, id },
+    }));
+  });
 }
 
 // --- Single-column TBs (g, h, empty, newer) -------------------------------------------------------

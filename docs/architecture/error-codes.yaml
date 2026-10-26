@@ -613,6 +613,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.trial_balances.LayerUnavailable
+    summary: AJE, RJE or Final before an adjustment source registers (A-06, C8).
+  layer_unbalanced:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.trial_balances.LayerUnbalanced
+    summary: A layer whose debits and credits differ (`facts.layer`, `facts.difference`).
   ledger_import_off:
     status: 409
     raised_by:
