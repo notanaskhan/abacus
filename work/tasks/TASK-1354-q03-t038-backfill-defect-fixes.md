@@ -29,10 +29,12 @@ No agent back-fill failure is open at the S11 Contract Monday.
 
 ## Plan
 - **ED-082**: `requests.api.selection_engagements(ctx, binder_ids, item_ids)` returns the
-  engagements of the selected binders and requests the caller may read (`visible()`; 404 for a
-  binder they may not read, or a request selection none of which they may); `draft_for`
-  authorises `follow_up.draft` on each before reading what is open, then on any further
-  engagement the candidates name. Nothing to chase is 201 with no drafts.
+  engagements of the selected binders and requests the caller may read (`visible()`) and whether
+  every selected binder was readable. The route runs `check_draft_selection` first (404 for an
+  unreadable binder or a request selection none of which is readable, else `follow_up.draft` on
+  each engagement); `draft_for` authorises on the readable engagements before reading what is
+  open, so a direct call over an unreadable binder still drafts nothing (P-06-T14's
+  `test_ac16_a_walled_or_unreadable_binder_drafts_nothing`, which the first cut broke).
 - **ED-081**: migration **0197** `follow_up_sent_person_only` redefines
   `audit_events_human_only()`: `follow_up.sent` is refused from any actor but a person; every
   other human-only action keeps 0097's agent-or-policy rule (DEC-452).
@@ -41,3 +43,5 @@ No agent back-fill failure is open at the S11 Contract Monday.
 
 ## Progress log
 - 2026-10-27: planned and built (S10 wave C).
+- 2026-10-27: targeted pass: the first cut raised 404 inside `draft_for`, which broke P-06-T14's
+  service-level test; the 404 moved to the route's check. Both suites pass.

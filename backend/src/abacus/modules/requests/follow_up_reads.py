@@ -15,7 +15,6 @@ from datetime import date
 from uuid import UUID
 
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.requests.binders import BinderNotPublished, current_recipients
 from abacus.modules.requests.repository import (
@@ -84,15 +83,15 @@ async def follow_up_candidates(
 
 async def selection_engagements(
     ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
-) -> set[UUID]:
-    """Q-03-T038 (ED-082): the engagements a follow-up selection names, so the caller authorises
-    on them even when nothing in it is open. A binder the caller may not read (walled, another
-    firm's, or none) answers 404, as does a selection of requests none of which they may read."""
+) -> tuple[set[UUID], bool]:
+    """Q-03-T038 (ED-082): the engagements a follow-up selection names that the caller may read
+    (walls apply; another firm's rows are not there), so the caller authorises on them even when
+    nothing in it is open; and whether every selected binder (and, for requests, at least one)
+    was readable."""
     async with tenant_session(ctx.tenant) as session:
         binders, items = await repo_selection_engagements(session, ctx, binder_ids, item_ids)
-    if set(binder_ids) - set(binders) or (item_ids and not items):
-        raise NotFound("binder" if set(binder_ids) - set(binders) else "request_item")
-    return set(binders.values()) | set(items.values())
+    complete = not (set(binder_ids) - set(binders)) and (not item_ids or bool(items))
+    return set(binders.values()) | set(items.values()), complete
 
 
 async def live_files(ctx: AuthContext, item_id: UUID) -> list[UUID]:

@@ -36,3 +36,4 @@ migration, a constant or a fixture outside the scenario package.
 
 ## Progress log
 - 2026-10-27: planned and built (S10 wave C). Partial against the row: templates only.
+- 2026-10-27: unit slice tests green.

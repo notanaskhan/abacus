@@ -79,3 +79,6 @@ this task builds the list, read, draft save and discard, publish, the block rend
 
 ## Progress log
 - 2026-10-26: planned (S10 wave C red backend).
+- 2026-10-27: built; targeted pass green after two test fixes (the agent principal is an
+  `AgentContext`, not an `AuthContext`, so the reader case replaced it; probe titles without form
+  numbers, which the scope check reads as amounts). DEC-450 defers the legacy constants.

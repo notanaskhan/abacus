@@ -40,3 +40,4 @@ the label index keeps up without a search; keep the on-search catch-up as the fa
 
 ## Progress log
 - 2026-10-27: planned and built (S10 wave C); history recorded against throwaway containers.
+- 2026-10-27: targeted pass green (labels, schedules, replay, canary list).

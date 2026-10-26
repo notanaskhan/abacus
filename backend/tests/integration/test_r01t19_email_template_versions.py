@@ -4,7 +4,7 @@ Acceptance: the same version and variables render byte-identical HTML and text, 
 published version blocks the send, and v3 stays readable after v4 publishes. Around it: a stale
 draft answers 409, the lint refuses "$3,200" and the platform's name at publish, a firm's wording
 is sealed at rest, the app role can neither read the global tables nor change a version, another
-firm sees none of it, the agent and a staff member are refused, and a retried send sends once.
+firm sees none of it, a staff member and a reader are refused, and a retried send sends once.
 Brightwater Hale's own words are not used here: these are probe strings."""
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ VALUES = {
     "client_first_name": "Claire",
     "firm_name": "Probe Firm",
     "work_item": "2025 tax return",
-    "open_items": "Form W-2\nForm 1099-INT",
+    "open_items": "Form W-2\nBrokerage statements",
     "due_date": "Sep 21",
     "portal_link": LINK,
     "staff_name": "Marcus Delaney",
@@ -296,21 +296,17 @@ async def test_ac11_a_call_to_action_the_key_does_not_register_is_refused_at_sav
 # --- who may, and the flag ---------------------------------------------------------------------
 
 
-async def test_ac11_staff_and_the_agent_are_refused_and_the_flag_hides_writes(
+async def test_ac11_staff_and_a_reader_are_refused_and_the_flag_hides_writes(
     seed: Seeder,
 ) -> None:
     firm = await _firm(seed, editor=False)
     with pytest.raises(Forbidden):
         await template_service.template_state(firm.staff, "reminder")
-    agent = AuthContext(
-        TenantContext(firm.tenant, "agent", "agent:probe"),
-        firm.admin.user_id,
-        uuid.uuid4(),
-        "firm_admin",
-        datetime.now(UTC),
+    leader = AuthContext(  # reads the templates, never edits them (the agent is no AuthContext)
+        firm.admin.tenant, firm.admin.user_id, uuid.uuid4(), "practice_leader", datetime.now(UTC)
     )
     with pytest.raises(Forbidden):
-        await template_service.save_draft(agent, "reminder", content("A"), 0)
+        await template_service.save_draft(leader, "reminder", content("A"), 0)
     with pytest.raises(NotFound):  # authorised, then the flag: off answers 404
         await template_service.save_draft(firm.admin, "reminder", content("A"), 0)
     with pytest.raises(NotFound):  # not a registered firm-editable key
