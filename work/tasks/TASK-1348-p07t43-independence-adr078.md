@@ -34,3 +34,4 @@ derivation, G2 provider and attest-only scope, for P-07-T41 (#437).
 
 ## Progress log
 - 2026-10-27: planned and written.
+- 2026-10-27: targeted pass: 31 passed, 1 strict xfail. Conclusions answer 201. Defect: ED-117 (a conclusion racing another on the same predecessor answers 500; data intact) held by `test_ac18_a_losing_concurrent_conclusion_answers_409_never_500`, five rounds so the race shows every run.

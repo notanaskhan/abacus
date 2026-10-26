@@ -210,7 +210,10 @@ async def new_binder(
     site = await seed.site(tenant, admin.user_id, label)
     partner = await seed.person(tenant)
     await seed.member(site, partner, "engagement_partner")
-    binder = await _list(seed, tenant, site.engagement_id, partner, kind=kind, status=status)
+    # Part 2: the site's own seeded list already holds (work item, `pbc`, part 1).
+    binder = await _list(
+        seed, tenant, site.engagement_id, partner, kind=kind, status=status, part=2
+    )
     cats: dict[str, uuid.UUID] = {}
     for pos, name in enumerate(categories):
         cats[name] = cast(

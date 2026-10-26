@@ -35,3 +35,4 @@ read, and TASK-061 is recorded closed."
 
 ## Progress log
 - 2026-10-27: planned.
+- 2026-10-27: built and passed: the AC suite and the six security cases (one planted-read judgement). Binders are seeded as part 2 (the site's list holds pbc part 1). Defect: ED-118 (a closed binder reads read-only but the client write routes accept an Ignore and an upload intent) held by a strict xfail; the read half passes. R-01-T11 stays a strict xfail on TASK-1221 (DEC-348). TASK-061 recorded closed by this suite (DEC-448).

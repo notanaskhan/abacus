@@ -519,9 +519,9 @@ async def test_r01_forged_binder_and_request_ids_get_one_answer(net: Net) -> Non
     b = await new_binder(net, "forged")
     await b.request("Form W-2", "Income")
     internal = await b.request("Internal tie-out", "Income", visible=False)
-    draft = await another_list(b, status="draft", part=2)
+    draft = await another_list(b, status="draft", part=3)
     await b.request("Draft request", "Income", binder=draft)
-    unpublished = await another_list(b, status="unpublished", part=3)
+    unpublished = await another_list(b, status="unpublished", part=4)
     sibling = await new_binder(net, "forged-sibling", firm=(b.tenant, b.host, b.admin))
     sibling_item = await sibling.request("Sibling request", "Income")
     stranger = await new_binder(net, "forged-stranger")
@@ -568,6 +568,23 @@ async def test_r01_contributor_scope_reaches_only_assigned_requests(net: Net) ->
     assert ignored.status_code in REFUSED, ignored.text
 
 
+async def test_r01_a_closed_binder_reads_read_only(net: Net) -> None:
+    b = await new_binder(net, "closed", status="closed")
+    await b.request("Form 1099-INT", "Income")
+    _, email = await b.client("Claire Feld")
+    claire = await signed_in(b, email)
+    read = await claire.get(f"/v1/portal/binders/{b.binder}")
+    assert read.status_code == 200, read.text
+    assert read.json()["allowed_actions"] == []
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "TASK-1351 (ED-118): a closed binder reads read-only (no allowed_actions) but the "
+        "client write routes still accept an Ignore and an upload intent on its requests"
+    ),
+)
 async def test_r01_a_closed_binder_reads_but_takes_no_client_act(net: Net) -> None:
     b = await new_binder(net, "closed", status="closed")
     item = await b.request("Form 1099-INT", "Income")

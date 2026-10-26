@@ -24,3 +24,4 @@ updated: 2026-10-27
 
 ## Progress log
 - 2026-10-27: planned and written.
+- 2026-10-27: 17 passed. `MaskedTinOut.presence` is `on_file` or `applied_for`; `engagement_status` is the `EngagementStatus` schema by reference.

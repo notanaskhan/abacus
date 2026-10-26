@@ -34,16 +34,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final, cast
 
-import asyncpg
 import httpx
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.db.session import ActorKind
 from abacus.modules.engagements import api as engagements_api
 from abacus.modules.identity.api import AuthContext, Forbidden
 
-from .support import Migrated, Net, Person, Seeder, Site
+from .support import Net, Person, Seeder, Site
 
 Json = dict[str, object]
 CODES: Final = ["no_financial_interest", "no_family_in_key_position", "not_a_participant"]
@@ -504,7 +505,10 @@ async def test_ac18_concurrent_conclusions_leave_one_successor_each(plan: Plan) 
     ),
 )
 async def test_ac18_a_losing_concurrent_conclusion_answers_409_never_500(plan: Plan) -> None:
+    # Five rounds of three racers, so the defect shows whatever the scheduling of one round.
     answers = await _race(plan)
+    for _ in range(4):
+        answers += await asyncio.gather(plan.conclude(), plan.conclude(), plan.conclude())
     assert all(a.status_code in (201, 409) for a in answers), [a.text for a in answers]
 
 
@@ -579,9 +583,7 @@ async def test_ac28_a_breach_does_not_block_the_conclusion_itself(plan: Plan) ->
     assert (await plan.g2())["met"] is False
 
 
-async def test_ac28_breach_events_are_insert_only_for_the_app(
-    plan: Plan, migrated_db: Migrated
-) -> None:
+async def test_ac28_breach_events_are_insert_only_for_the_app(plan: Plan) -> None:
     breach = _ok(
         await plan.call(
             "POST", f"{plan.base}/breaches", plan.hannah, {"description": "A loan to a trustee."}
@@ -597,19 +599,21 @@ async def test_ac28_breach_events_are_insert_only_for_the_app(
         ),
         201,
     )
-    dsn = migrated_db.app_url.replace("postgresql+asyncpg://", "postgresql://")
-    conn = await asyncpg.connect(dsn)
-    try:
-        for verb in (
-            "DELETE FROM independence_breaches",
-            "UPDATE independence_breaches SET tenant_id = tenant_id",
-            "DELETE FROM independence_breach_events",
-            "UPDATE independence_breach_events SET tenant_id = tenant_id",
-        ):
-            with pytest.raises(asyncpg.PostgresError):
-                await conn.execute(verb)
-    finally:
-        await conn.close()
+    for verb in (
+        "DELETE FROM independence_breaches",
+        "UPDATE independence_breaches SET tenant_id = tenant_id",
+        "DELETE FROM independence_breach_events",
+        "UPDATE independence_breach_events SET tenant_id = tenant_id",
+    ):
+        with pytest.raises(DBAPIError):
+            async with tenant_session(
+                TenantContext(plan.tenant, "human", str(plan.hannah.user_id))
+            ) as session:
+                await session.execute(text(verb))
+    events = await plan.seed.value(
+        "SELECT count(*) FROM independence_breach_events WHERE tenant_id = $1", plan.tenant
+    )
+    assert events == 1
 
 
 async def test_ac28_breaches_are_managed_by_the_ep_manager_or_quality_partner(plan: Plan) -> None:

@@ -37,9 +37,11 @@ import pytest
 from fastapi import FastAPI
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
 from abacus.api import create_app
-from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.identity.api import RULES, AuthContext, current_context
 from abacus.modules.review import stale as review_stale
@@ -665,23 +667,22 @@ async def test_layer3_the_database_refuses_a_row_not_written_by_the_acting_perso
         )
 
 
-async def test_layer3_sign_offs_are_insert_only_for_the_app(
-    ladder: Ladder, migrated_db: MigratedDatabase
-) -> None:
+async def test_layer3_sign_offs_are_insert_only_for_the_app(ladder: Ladder) -> None:
+    """The app role (the kernel's tenant session) may neither update nor delete a sign-off."""
     target = ladder.target()
     seen = _seen(FACTS[target].content_hash)
     assert (await ladder.sign("ana", target, "L1_preparer", seen)).status_code == 201
-    dsn = migrated_db.app_url.replace("postgresql+asyncpg://", "postgresql://")
-    conn = await asyncpg.connect(dsn)
-    try:
-        with pytest.raises(asyncpg.InsufficientPrivilegeError):
-            await conn.execute(
-                "UPDATE sign_offs SET content_hash = $1 WHERE target_id = $2", "c" * 64, target
-            )
-        with pytest.raises(asyncpg.InsufficientPrivilegeError):
-            await conn.execute("DELETE FROM sign_offs WHERE target_id = $1", target)
-    finally:
-        await conn.close()
+    ana = ladder.people["ana"]
+    for statement in (
+        "UPDATE sign_offs SET content_hash = repeat('c', 64) WHERE target_id = :t",
+        "DELETE FROM sign_offs WHERE target_id = :t",
+    ):
+        with pytest.raises(DBAPIError) as refused:
+            async with tenant_session(
+                TenantContext(ladder.tenant, "human", str(ana.user_id))
+            ) as session:
+                await session.execute(text(statement), {"t": target})
+        assert "permission denied" in str(refused.value), statement
     assert len(await ladder.rows(target)) == 1
 
 

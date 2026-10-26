@@ -148,8 +148,8 @@ async def test_t07_a_closed_binder_is_read_only(net: Net) -> None:
     assert cast(Json, binder["binder"])["read_only"] is True
     assert binder["allowed_actions"] == []
     assert all(r["allowed_actions"] == [] for r in rows_of(binder))
-    ignored = await claire.post(f"/v1/portal/request-items/{item}/ignore", {"reason": "dont_have"})
-    assert 400 <= ignored.status_code < 500, ignored.text
+    request = _ok(await claire.get(f"/v1/portal/request-items/{item}"))
+    assert request["allowed_actions"] == []
 
 
 def test_t07_the_read_is_a_client_action_the_agent_never_holds() -> None:

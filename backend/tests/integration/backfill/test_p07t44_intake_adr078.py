@@ -166,7 +166,7 @@ class Intake:
         check = await self.check(draft)
         return await self.save(draft, self.payload(check=check), who)
 
-    async def commit(
+    async def commit_intake(
         self,
         draft: Json,
         *,
@@ -295,10 +295,10 @@ async def test_ac_the_key_is_required_before_anything_else_answers(intake: Intak
 async def test_ac_the_same_key_with_another_body_is_refused(intake: Intake) -> None:
     draft = await intake.ready()
     key = uuid.uuid4().hex
-    answered = await intake.commit(draft, key=key)
+    answered = await intake.commit_intake(draft, key=key)
     assert answered.status_code in (200, 201), answered.text
     before = await intake.footprint()
-    reused = await intake.commit(draft, key=key, start_acceptance=True)
+    reused = await intake.commit_intake(draft, key=key, start_acceptance=True)
     _refused(reused, 422, "idempotency_key_reused")
     assert await intake.footprint() == before
 
@@ -307,11 +307,11 @@ async def test_ac_a_committed_draft_answers_its_stored_result_under_any_key(
     intake: Intake,
 ) -> None:
     draft = await intake.ready()
-    first = await intake.commit(draft)
+    first = await intake.commit_intake(draft)
     assert first.status_code in (200, 201), first.text
     before = await intake.footprint()
     for start in (False, True):
-        again = await intake.commit(draft, start_acceptance=start)
+        again = await intake.commit_intake(draft, start_acceptance=start)
         assert again.status_code in (200, 201), again.text
         assert again.json() == first.json()
     assert await intake.footprint() == before
@@ -323,10 +323,10 @@ async def _race(intake: Intake) -> list[httpx.Response]:
     key = uuid.uuid4().hex
     return list(
         await asyncio.gather(
-            intake.commit(draft, key=key),
-            intake.commit(draft, key=key),
-            intake.commit(draft),
-            intake.commit(draft),
+            intake.commit_intake(draft, key=key),
+            intake.commit_intake(draft, key=key),
+            intake.commit_intake(draft),
+            intake.commit_intake(draft),
         )
     )
 
@@ -349,7 +349,11 @@ async def test_ac_concurrent_commits_of_one_draft_create_one_estate(intake: Inta
 async def test_ac_a_losing_concurrent_commit_answers_the_result_or_409_never_500(
     intake: Intake,
 ) -> None:
-    answers = await _race(intake)
+    # Three drafts raced in turn, so the defect shows whatever the scheduling of one race.
+    answers: list[httpx.Response] = []
+    for n in range(3):
+        intake.tag = f"{intake.tag[:6]}{n}"
+        answers += await _race(intake)
     assert all(a.status_code in (200, 201, 409) for a in answers), [a.text for a in answers]
 
 
@@ -363,12 +367,16 @@ async def test_ac_a_commit_refused_inside_its_unit_of_work_leaves_nothing(net: N
     intake = await _intake(net, template=False)
     draft = await intake.ready()
     before = await intake.footprint()
-    _refused(await intake.commit(draft, start_acceptance=True), 409, "acceptance_template_missing")
+    _refused(
+        await intake.commit_intake(draft, start_acceptance=True),
+        409,
+        "acceptance_template_missing",
+    )
     assert await intake.footprint() == before
     assert (await intake.call("GET", f"{DRAFTS}/{draft['id']}", intake.grace)).json()[
         "committed_client_id"
     ] is None
-    done = await intake.commit(draft)
+    done = await intake.commit_intake(draft)
     assert done.status_code in (200, 201), done.text
     assert await intake.estates() == 1
 
@@ -376,7 +384,7 @@ async def test_ac_a_commit_refused_inside_its_unit_of_work_leaves_nothing(net: N
 async def test_ac_one_commit_writes_the_whole_estate_as_prospect(intake: Intake) -> None:
     draft = await intake.ready()
     before = await intake.footprint()
-    done = await intake.commit(draft, start_acceptance=True)
+    done = await intake.commit_intake(draft, start_acceptance=True)
     assert done.status_code in (200, 201), done.text
     out = done.json()
     assert out["client_id"] == str(intake.walter)
@@ -398,7 +406,7 @@ async def test_ac_one_commit_writes_the_whole_estate_as_prospect(intake: Intake)
 
 async def test_ac_a_committed_draft_takes_no_further_update(intake: Intake) -> None:
     draft = await intake.ready()
-    assert (await intake.commit(draft)).status_code in (200, 201)
+    assert (await intake.commit_intake(draft)).status_code in (200, 201)
     current = _ok(await intake.call("GET", f"{DRAFTS}/{draft['id']}", intake.grace))
     edited = await intake.call(
         "PATCH",
@@ -417,7 +425,7 @@ async def test_ac_no_commit_while_the_check_has_an_uncleared_hit(intake: Intake)
     draft = await intake.create(intake.payload())
     check = await intake.check(draft, clear=False)
     draft = await intake.save(draft, intake.payload(check=check))
-    facts = _refused(await intake.commit(draft), 409, "gate_unmet")
+    facts = _refused(await intake.commit_intake(draft), 409, "gate_unmet")
     assert facts.get("gate") == "conflict_check", facts
     assert await intake.estates() == 0
 
@@ -429,7 +437,7 @@ async def test_ac_a_name_changed_after_clearance_needs_a_new_check(intake: Intak
         check=cast(Json, draft["payload"])["conflict_check_id"],
     )
     draft = await intake.save(draft, renamed)
-    _refused(await intake.commit(draft), 409, "gate_unmet")
+    _refused(await intake.commit_intake(draft), 409, "gate_unmet")
     assert await intake.estates() == 0
 
 
@@ -473,7 +481,7 @@ async def test_ac_another_persons_draft_is_unknown(intake: Intake) -> None:
     ):
         found = await intake.call(method, path + suffix, intake.daniel, body)
         assert found.status_code == 404, (method, suffix, found.text)
-    assert (await intake.commit(draft, who=intake.daniel)).status_code == 404
+    assert (await intake.commit_intake(draft, who=intake.daniel)).status_code == 404
     assert await intake.estates() == 0
 
 
@@ -481,11 +489,11 @@ async def test_inv2_another_firms_admin_and_client_are_unknown(intake: Intake, n
     other = await _intake(net)
     draft = await intake.ready()
     assert (await other.call("GET", f"{DRAFTS}/{draft['id']}", other.grace)).status_code == 404
-    assert (await other.commit(draft, who=other.grace)).status_code == 404
+    assert (await other.commit_intake(draft, who=other.grace)).status_code == 404
     # Their own draft naming our client as the existing client never writes into either firm.
     theirs = await other.create(intake.payload())
     before = await intake.footprint(), await other.footprint()
-    attempt = await other.commit(theirs, who=other.grace)
+    attempt = await other.commit_intake(theirs, who=other.grace)
     assert 400 <= attempt.status_code < 500, attempt.text
     assert (await intake.footprint(), await other.footprint()) == before
 
@@ -513,7 +521,11 @@ async def test_inv3_a_walled_client_is_never_a_candidate_nor_a_target(intake: In
     )
     if created.status_code == 201:
         draft = created.json()
-        assert (await intake.commit(draft, who=intake.samuel)).status_code in (404, 409, 422)
+        assert (await intake.commit_intake(draft, who=intake.samuel)).status_code in (
+            404,
+            409,
+            422,
+        )
     else:
         assert created.status_code == 404, created.text
     assert await intake.estates() == 0
@@ -552,7 +564,7 @@ async def test_ac_form_706_needs_the_date_of_death(intake: Intake) -> None:
     assert ("entity.date_of_death", "date_of_death_required") in problems
     assert found["valid"] is False
     before = await intake.footprint()
-    facts = _refused(await intake.commit(draft), 422, "draft_incomplete")
+    facts = _refused(await intake.commit_intake(draft), 422, "draft_incomplete")
     assert facts.get("step") == "services", facts
     assert await intake.footprint() == before
 

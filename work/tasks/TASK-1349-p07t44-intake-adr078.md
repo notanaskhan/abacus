@@ -31,3 +31,4 @@ check before commit, estate validation and the SSN guard, for P-07-T42 (#438).
 
 ## Progress log
 - 2026-10-27: planned and written.
+- 2026-10-27: targeted pass: 20 passed, 1 strict xfail. The date of death is reported on the services step; the guard test uses an ITIN-form 9xx fake (912-70-1234). Defect: ED-116 (racing commits of one draft answer 500; one estate written) held by `test_ac_a_losing_concurrent_commit_answers_the_result_or_409_never_500`, three races per run. Helper renamed `commit_intake` (UOW-001).

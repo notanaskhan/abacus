@@ -39,3 +39,4 @@ EQR, open notes block L2 and above, staleness by hash, five-layer human-only.
 
 ## Progress log
 - 2026-10-27: planned and written.
+- 2026-10-27: targeted pass green (16 passed incl. the hypothesis property, 30 examples). Fixes from the pass: the probe type renamed `segregation_probe` (target types allow no digits); the preparer case uses only levels the preparer's role holds (403 `level_not_permitted` comes first otherwise); the insert-only probe goes through the kernel's tenant session (DB-001). No production defect found.
