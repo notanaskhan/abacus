@@ -50,3 +50,4 @@ and x100 profiles chapter 10 section 10.11.2 sizes.
 ## Progress log
 - 2026-10-27: built; unit and integration tests written (results in the S10 wave C report).
 - 2026-10-27: targeted pass: unit 92 passed (loadtest, T043, T044, portal slice, P-08-T28, quality report, frozen snapshots); integration `test_q03t044_fleet_load.py` 2 passed after two fixes (seat initials are capitals only; a flag already on is not set again, so a second run writes nothing). `fleet.py` added to TENANT-001's exclusions beside the scenario loader.
+- 2026-10-27: security review fixes: every pre-check reads as the firm under RLS (`loader.tenant_value`; the Brightwater loader's synthetic check, trace check and settle too); the bootstrap is `loader.bootstrap_write` and the TENANT-001 exclusion for fleet.py is gone; x25 and x100 refuse any `--staging` host not starting `abacus-perf`. Owner-role integration tests prove the refusal and the no-op re-run.

@@ -23,8 +23,10 @@ go on for each firm. No demo clock is set: load runs on the system clock.
 
 Refuses (the Brightwater loader's guard): production always; on a laptop any database that is not
 loopback; with `--staging` an environment other than staging (the perf stack runs as a staging
-environment on its own database, QD-6) or a staging deploy in flight; and any existing firm with a
-fleet id that is not synthetic.
+environment on its own database, QD-6) or a staging deploy in flight; with `--staging`, x25 and
+x100 on any database host but the perf stack's (`perf_guard`); and any existing firm with a fleet
+id that is not synthetic. Every check reads as the firm (`loader.tenant_value`), so it holds under
+row-level security as the owner role, not only as a laptop's superuser.
 """
 
 from __future__ import annotations
@@ -34,10 +36,10 @@ import asyncio
 import hashlib
 import os
 import sys
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Final
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import asyncpg
@@ -60,7 +62,11 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.loader import (
     OFFICE_ZONES,
     SUPERUSER_ENV,
     LoadRefused,
+    Write,
+    bootstrap_write,
     guard,
+    tenant_rows,
+    tenant_value,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import SEATS
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
@@ -146,9 +152,6 @@ def trace_hex(firm: Firm, step: str) -> str:
     return hashlib.sha256(f"fleet:{FLEET_VERSION}:{firm.n}:{step}".encode()).hexdigest()[:32]
 
 
-Write = Callable[[], Awaitable[tuple[str, str, str]]]
-
-
 @dataclass
 class Counts:
     written: int = 0
@@ -157,7 +160,9 @@ class Counts:
 
 async def _done(conn: asyncpg.Connection, firm: Firm, step: str) -> bool:
     return bool(
-        await conn.fetchval(
+        await tenant_value(
+            conn,
+            firm.tenant,
             "SELECT EXISTS (SELECT 1 FROM audit_events WHERE tenant_id = $1 AND trace_id = $2)",
             firm.tenant,
             trace_hex(firm, step),
@@ -165,40 +170,22 @@ async def _done(conn: asyncpg.Connection, firm: Firm, step: str) -> bool:
     )
 
 
-async def _bootstrap(
-    conn: asyncpg.Connection, firm: Firm, step: str, actor: str, at: datetime, write: Write
-) -> None:
-    """The Brightwater loader's bootstrap for one step: owner transaction, settings, audit row."""
-    kind = "system" if actor == LOADER else "human"
-    async with conn.transaction():
-        for name, value in (
-            ("app.tenant_id", str(firm.tenant)),
-            ("app.actor_kind", kind),
-            ("app.actor_id", actor),
-            ("app.now", at.isoformat()),
-        ):
-            await conn.execute("SELECT set_config($1, $2, true)", name, value)
-        action, target_type, target_id = await write()
-        await conn.execute(
-            "INSERT INTO audit_events (tenant_id, actor_kind, actor_id, action, target_type, "
-            "target_id, trace_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            firm.tenant,
-            kind,
-            actor,
-            action,
-            target_type,
-            target_id,
-            trace_hex(firm, step),
-        )
-
-
 async def _step(
     conn: asyncpg.Connection, firm: Firm, step: str, actor: str, write: Write, counts: Counts
 ) -> None:
+    """The scenario loader's bootstrap (`loader.bootstrap_write`) for one step, once."""
     if await _done(conn, firm, step):
         counts.skipped += 1
         return
-    await _bootstrap(conn, firm, step, actor, SETUP_AT, write)
+    await bootstrap_write(
+        conn,
+        tenant=firm.tenant,
+        actor_kind="system" if actor == LOADER else "human",
+        actor_id=actor,
+        at=SETUP_AT,
+        trace=trace_hex(firm, step),
+        write=write,
+    )
     counts.written += 1
 
 
@@ -288,7 +275,9 @@ async def _clients(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None
     leader = str(seat_user(firm, 1))
     for c in range(firm.shape.clients):
         ids = client_ids(firm, c)
-        exists = await conn.fetchval(
+        exists = await tenant_value(
+            conn,
+            firm.tenant,
             "SELECT EXISTS (SELECT 1 FROM clients WHERE tenant_id = $1 AND id = $2)",
             firm.tenant,
             ids.client_id,
@@ -440,7 +429,9 @@ async def _flags(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None:
     """Each flag on once: a flag already on is not set again (no second audit row)."""
     on = {
         str(r["flag"])
-        for r in await conn.fetch(
+        for r in await tenant_rows(
+            conn,
+            firm.tenant,
             "SELECT flag FROM feature_flag_states WHERE tenant_id = $1 AND value = 'true'",
             firm.tenant,
         )
@@ -455,6 +446,24 @@ async def _flags(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None:
 
 # --- the run ------------------------------------------------------------------------------------
 
+# x25 and x100 are perf-stack loads only (QD-6; security review, DEC-455): with `--staging` their
+# database host must be the perf stack's own, whose instance Q-03-T036 names `abacus-perf-...`.
+# x1 may also seed staging's shared database (one firm, the runbook's rehearsal).
+PERF_HOST_PREFIX: Final = "abacus-perf"
+PERF_ONLY: Final = frozenset({"x25", "x100"})
+
+
+def perf_guard(dsn: str, profile: str, *, staging: bool) -> None:
+    """Refuse x25 and x100 on any hosted database but the perf stack's."""
+    if not staging or profile not in PERF_ONLY:
+        return
+    host = urlsplit(dsn).hostname or ""
+    if not host.startswith(PERF_HOST_PREFIX):
+        raise LoadRefused(
+            f"{profile} loads only the perf stack's own database (a host starting "
+            f"{PERF_HOST_PREFIX!r}), never staging's shared one"
+        )
+
 
 @dataclass(frozen=True)
 class FleetResult:
@@ -467,13 +476,14 @@ async def load(
     dsn: str, profile: str, *, staging: bool = False, shape: FirmShape | None = None
 ) -> FleetResult:
     guard(dsn, staging=staging)
+    perf_guard(dsn, profile, staging=staging)
     firms = plan(profile, shape)
     counts = Counts()
     conn = await connect_db(dsn)
     try:
         for firm in firms:
-            synthetic = await conn.fetchval(
-                "SELECT synthetic FROM firms WHERE tenant_id = $1", firm.tenant
+            synthetic = await tenant_value(
+                conn, firm.tenant, "SELECT synthetic FROM firms WHERE tenant_id = $1", firm.tenant
             )
             if synthetic is False:
                 raise LoadRefused(f"{firm.tenant} exists and is not synthetic")

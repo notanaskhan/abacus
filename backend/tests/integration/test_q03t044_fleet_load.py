@@ -109,3 +109,50 @@ async def test_ac_a_fleet_id_held_by_a_real_firm_is_refused(
     assert (
         await _count(seed, "SELECT count(*) FROM offices WHERE tenant_id = $1", held.tenant) == 0
     )
+
+
+def _only(firm: fleet.Firm, monkeypatch: pytest.MonkeyPatch) -> None:
+    def planned(profile: str, shape: fleet.FirmShape | None = None) -> tuple[fleet.Firm, ...]:
+        return (firm,)
+
+    monkeypatch.setattr(fleet, "plan", planned)
+
+
+async def test_ac_as_the_owner_role_under_rls_a_rerun_writes_nothing(
+    migrated_db: MigratedDatabase, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Security review (DEC-455): the owner role does not bypass row-level security, so every
+    pre-check reads as the firm; a laptop superuser would hide a blind check."""
+    configure_engine(migrated_db.app_url)
+    seed = Seeder(migrated_db.superuser_dsn)
+    firm = fleet.Firm(997, SMALL)
+    _only(firm, monkeypatch)
+    first = await fleet.load(migrated_db.owner_url, "x1", shape=SMALL)
+    assert first.written > 0 and first.skipped == 0
+    audits = await _count(
+        seed, "SELECT count(*) FROM audit_events WHERE tenant_id = $1", firm.tenant
+    )
+    again = await fleet.load(migrated_db.owner_url, "x1", shape=SMALL)
+    assert (again.written, again.skipped) == (0, first.written)
+    assert audits == await _count(
+        seed, "SELECT count(*) FROM audit_events WHERE tenant_id = $1", firm.tenant
+    )
+
+
+async def test_ac_as_the_owner_role_a_non_synthetic_firm_is_refused(
+    migrated_db: MigratedDatabase, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    configure_engine(migrated_db.app_url)
+    seed = Seeder(migrated_db.superuser_dsn)
+    held = fleet.Firm(996, SMALL)
+    _only(held, monkeypatch)
+    await seed.run(
+        "INSERT INTO firms (tenant_id, name, synthetic, region, time_zone) "
+        "VALUES ($1, 'A real firm', false, 'us', 'America/Chicago') ON CONFLICT DO NOTHING",
+        held.tenant,
+    )
+    with pytest.raises(fleet.LoadRefused, match="not synthetic"):
+        await fleet.load(migrated_db.owner_url, "x1", shape=SMALL)
+    assert (
+        await _count(seed, "SELECT count(*) FROM offices WHERE tenant_id = $1", held.tenant) == 0
+    )

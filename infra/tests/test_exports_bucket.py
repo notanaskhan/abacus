@@ -85,17 +85,21 @@ def test_the_bucket_is_named_for_its_environment_and_never_takes_object_lock() -
     assert any("aws:SecureTransport" in s and '"false"' in s for s in deny)
 
 
-def test_every_object_expires_after_seven_days_and_uploads_are_aborted() -> None:
+def test_every_object_is_gone_within_seven_days_and_uploads_are_aborted() -> None:
+    """Versioning keeps an expired object as a noncurrent copy for a day: current versions go
+    after 6 days, so the data is gone within 7 (security review, DEC-454)."""
     variables = (MODULE / "variables.tf").read_text(encoding="utf-8")
-    assert re.search(r'variable "expiry_days" \{[^}]*default\s*=\s*7\b', variables)
-    assert "var.expiry_days <= 7" in variables  # a longer life would make it a record
+    assert re.search(r'variable "expiry_days" \{[^}]*default\s*=\s*6\b', variables)
+    assert "var.expiry_days <= 6" in variables
     lifecycle = main().split('resource "aws_s3_bucket_lifecycle_configuration" "exports"', 1)[1]
     lifecycle = lifecycle.split("\nresource ", 1)[0]
     assert re.search(r"expiration \{\s*days\s*=\s*var\.expiry_days", lifecycle)
     assert re.search(r"noncurrent_version_expiration \{\s*noncurrent_days\s*=\s*1\b", lifecycle)
-    assert re.search(r"abort_incomplete_multipart_upload \{\s*days_after_initiation\s*=\s*1\b", lifecycle)
+    assert re.search(
+        r"abort_incomplete_multipart_upload \{\s*days_after_initiation\s*=\s*1\b", lifecycle
+    )
     assert "expired_object_delete_marker = true" in lifecycle
-    assert re.search(r'filter \{\}', lifecycle)  # the whole bucket, not a prefix
+    assert re.search(r"filter \{\}", lifecycle)  # the whole bucket, not a prefix
 
 
 def test_the_bucket_is_encrypted_with_its_own_rotating_key() -> None:
@@ -121,7 +125,7 @@ def test_the_worker_builds_reads_and_prunes_segments_under_exports_only() -> Non
     assert worker["s3:ListBucket"] == "aws_s3_bucket.exports.arn"
     listing = next(s for s in statements(document("worker")) if "s3:ListBucket" in s)
     assert re.search(r'variable\s*=\s*"s3:prefix"', listing)
-    assert 'prefix = "exports/"' in main()
+    assert re.search(r'prefix\s*=\s*"exports/"', main())
 
 
 def test_the_prefix_is_the_one_the_export_store_writes() -> None:
@@ -157,7 +161,7 @@ def test_policies_attach_only_to_the_task_roles_named() -> None:
             rf'resource "aws_iam_role_policy_attachment" "{role}" \{{\s*count = var\.{role}_task_role_name == null \? 0 : 1',
             text,
         )
-    assert "aws_iam_role\"" not in text  # the module creates no role of its own
+    assert 'aws_iam_role"' not in text  # the module creates no role of its own
 
 
 def test_the_task_environment_names_the_setting_the_app_reads() -> None:
@@ -167,3 +171,44 @@ def test_the_task_environment_names_the_setting_the_app_reads() -> None:
     outputs = (MODULE / "outputs.tf").read_text(encoding="utf-8")
     assert re.search(r"ABACUS_EXPORTS_BUCKET\s*=\s*aws_s3_bucket\.exports\.id", outputs)
     assert not re.search(r"\b\d{12}\b", outputs + main())  # no account ID anywhere
+
+
+def test_the_account_administers_the_key_but_only_the_task_roles_use_it() -> None:
+    key = document("key")
+    admin = next(st for st in statements(key) if 'sid = "KeyAdministration"' in st)
+    admin_actions = actions_of(admin)
+    assert "kms:*" not in admin_actions
+    assert (
+        not {"kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey*", "kms:ReEncrypt*"}
+        & admin_actions
+    )
+    use = key.split('sid       = "TaskRolesUseThroughS3"', 1)[1]
+    assert re.search(
+        r'actions\s*=\s*\["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey\*"\]', use
+    )
+    assert "identifiers = local.key_users" in use
+    assert 'variable = "kms:ViaService"' in use
+    assert 'variable = "kms:EncryptionContext:aws:s3:arn"' in use
+    assert re.search(
+        r"for name in compact\(\[var\.worker_task_role_name, var\.api_task_role_name\]\)", main()
+    )
+
+
+def test_a_put_naming_another_key_or_encryption_is_refused() -> None:
+    bucket = document("bucket")
+    other_key = bucket.split('sid       = "DenyOtherKeys"', 1)[1].split("statement {", 1)[0]
+    assert 'variable = "s3:x-amz-server-side-encryption-aws-kms-key-id"' in other_key
+    assert "values   = [aws_kms_key.exports.arn]" in other_key
+    assert '"s3:PutObject"' in other_key and 'effect    = "Deny"' in other_key
+    other_kind = bucket.split('sid       = "DenyOtherEncryption"', 1)[1].split("statement {", 1)[0]
+    assert 'variable = "s3:x-amz-server-side-encryption"' in other_kind
+    assert 'values   = ["aws:kms"]' in other_kind
+
+
+@pytest.mark.parametrize("name", ["worker", "api"])
+def test_every_s3_grant_requires_this_account_to_own_the_bucket(name: str) -> None:
+    for statement in statements(document(name)):
+        if any(a.startswith("s3:") for a in actions_of(statement)):
+            assert 'variable = "aws:ResourceAccount"' in statement
+            assert "values   = [local.account]" in statement
+    assert re.search(r"account\s*=\s*data\.aws_caller_identity\.current\.account_id", main())

@@ -63,7 +63,7 @@ recorded in the vault, never here.
 
 ## 3. Seed a profile (needs Q-03-T036's ops route)
 
-1. Seed through the perf stack's ops task, never from a laptop: the command is `make seed-staging PROFILE=x1` (or `x25`, `x100`), which runs `abacus_tools.synthetic.fleet --staging --profile x1`. It refuses unless the environment is a staging-type environment on its own database, no staging deploy is in flight, and every fleet firm id it touches is synthetic.
+1. Seed through the perf stack's ops task, never from a laptop: the command is `make seed-staging PROFILE=x1` (or `x25`, `x100`), which runs `abacus_tools.synthetic.fleet --staging --profile x1`. It refuses unless the environment is staging-type, no staging deploy is in flight, and every fleet firm id it touches is synthetic. **x25 and x100 also refuse any database host that does not start `abacus-perf`** (`fleet.perf_guard`): Q-03-T036 must name the perf stack's database instance that way, and staging's shared database never matches. x1 may seed staging (one firm). Every check reads as the firm under row-level security, so it holds as the owner role.
 2. The x1 profile is 1 firm; x25 is 25 and x100 is 100 Brightwater-size firms: 46 seats, 184 clients, 27 audits with a 16-request PBC list each, two client people per audit, the rollout and portal flags on. Firm n is the same firm in every profile, so x25 after x1 adds 24.
 3. Re-running a profile writes nothing (`N write(s), M already loaded` in the output). That is the check that the seed is complete.
 

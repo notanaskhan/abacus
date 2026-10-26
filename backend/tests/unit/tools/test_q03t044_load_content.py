@@ -239,3 +239,21 @@ def test_ac_the_fleet_loader_keeps_the_scenario_loaders_refusals() -> None:
     from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 
     assert fleet.guard is loader.guard and fleet.LoadRefused is loader.LoadRefused
+
+
+@pytest.mark.parametrize("profile", ["x25", "x100"])
+def test_ac_x25_and_x100_refuse_any_hosted_database_but_the_perf_stacks(profile: str) -> None:
+    """Security review (DEC-455): never 25 or 100 firms into staging's shared database."""
+    staging = "postgresql://owner@abacus-staging-db.example.test:5432/abacus"
+    with pytest.raises(fleet.LoadRefused, match="perf stack"):
+        fleet.perf_guard(staging, profile, staging=True)
+    fleet.perf_guard(
+        "postgresql://owner@abacus-perf-db.example.test:5432/abacus", profile, staging=True
+    )
+    fleet.perf_guard("postgresql://postgres@127.0.0.1:55432/abacus", profile, staging=False)
+
+
+def test_ac_x1_may_seed_staging() -> None:
+    fleet.perf_guard(
+        "postgresql://owner@abacus-staging-db.example.test/abacus", "x1", staging=True
+    )

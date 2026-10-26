@@ -13,6 +13,7 @@ description: Run, read and record a load test with abacus_tools.loadtest - rehea
 - Commit a result with a hostname, account ID, token, tenant id, request body, client data or a money amount. Results only, in `docs/ops/loadtests/<yyyy-mm>.md`.
 - Lower a p95 target or the 0.1% error ceiling to pass. A failure is a reliability-only batch and a re-test (ADR-093).
 - Leave the perf stack up past its window.
+- Seed x25 or x100 anywhere but the perf stack's database: the fleet loader refuses a host that does not start `abacus-perf`; never rename a database to get past it.
 
 ## Add or change a profile
 1. One YAML file per profile in `scenarios/`, validated by `scenario.Scenario` (strict: unknown keys fail). Name groups after the journey step they shape (`j04_pbc_requests`).

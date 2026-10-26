@@ -9,13 +9,13 @@ variable "environment" {
 }
 
 variable "expiry_days" {
-  description = "Days after which an export segment expires (A-01 section 4.1, P-14: a transient copy kept 7 days)."
+  description = "Days after which an export segment's current version expires. Versioning keeps it noncurrent for 1 more day, so the data is gone within 7 (A-01 section 4.1, P-14: a transient copy kept 7 days)."
   type        = number
-  default     = 7
+  default     = 6
 
   validation {
-    condition     = var.expiry_days >= 1 && var.expiry_days <= 7
-    error_message = "expiry_days is between 1 and 7: an export is a transient copy, never a record."
+    condition     = var.expiry_days >= 1 && var.expiry_days <= 6
+    error_message = "expiry_days is between 1 and 6: with the noncurrent day, an export is gone within 7 days, never a record."
   }
 }
 

@@ -48,3 +48,4 @@ defines the bucket or grants the API and worker access to it. Write the Terrafor
 - 2026-10-27: written (DEC-454). `terraform fmt` clean; no init, validate or plan run (session
   rule). Offline tests in `infra/tests/test_exports_bucket.py`. Security review asked for the IAM
   and bucket policy.
+- 2026-10-27: security review fixes: 6-day expiry (gone within 7 with the noncurrent day); bucket policy refuses another key or encryption; key policy is administration for the account and use for the named task roles only; `aws:ResourceAccount` on every S3 grant; `exports_bucket_owner` sends `ExpectedBucketOwner` (`tests/unit/evidence/test_export_storage_owner.py`). `terraform fmt` only.
