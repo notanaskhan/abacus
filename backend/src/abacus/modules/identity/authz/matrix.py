@@ -53,7 +53,14 @@ FIRM_SETTING_KEYS: frozenset[str] = frozenset(
 # they can never grant: `g2_blocks_view` restores the read gate on attest clients' engagements.
 G2_BLOCKS_VIEW = "g2_blocks_view"
 STRICTER_SETTING_KEYS: frozenset[str] = frozenset({G2_BLOCKS_VIEW})
-STORED_SETTING_KEYS: frozenset[str] = FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS
+# P-07-T15 (OQ-9; migration 0182): settings a module's service reads for a domain rule. No matrix
+# cell may name one either: `allow_letter_exceptions` lets the engagement partner record G3 as
+# "Not required this year" with a reason.
+ALLOW_LETTER_EXCEPTIONS = "allow_letter_exceptions"
+POLICY_SETTING_KEYS: frozenset[str] = frozenset({ALLOW_LETTER_EXCEPTIONS})
+STORED_SETTING_KEYS: frozenset[str] = (
+    FIRM_SETTING_KEYS | STRICTER_SETTING_KEYS | POLICY_SETTING_KEYS
+)
 AGENT_SETTING = "autonomy_policy"
 _MODIFIERS = {
     "mfa_recent": "required",

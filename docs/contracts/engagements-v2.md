@@ -72,7 +72,8 @@ Code: `backend/src/abacus/modules/engagements/contract.py`. Tags: **C** confiden
 | 409 | `{"detail": "possible_duplicate", "facts": {"engagement_id": "…"}}` | create without `confirm_duplicate` when the same type and period exists |
 | 409 | `{"detail": "stale_version", "facts": {"draft_id": "…"}}` | autosave with an old `seen_version` |
 | 409 | `{"detail": "engagement_archived"}` | any write on an archived engagement (`archived_write: deny`) |
-| 409 | `{"detail": "letter_exceptions_off", "facts": {"engagement_id": "…"}}` | "Not required this year" while `allow_letter_exceptions` is unregistered (DEC-224) |
+| 409 | `{"detail": "letter_exceptions_off", "facts": {"engagement_id": "…"}}` | "Not required this year" unless the firm has `allow_letter_exceptions` on (0182) and the caller is the engagement partner (DEC-224) |
+| 422 | `{"detail": "letter_exception_reason_required", "facts": {"engagement_id": "…"}}` | "Not required this year" without a reason (OQ-9) |
 | 422 | `{"detail": "unknown_engagement_type"}` | a draft or create naming a code outside the catalogue, `single_audit` included |
 | 422 | `{"detail": "draft_incomplete", "facts": {"step": "…", "draft_id": "…"}}` | create while a step still has a problem |
 | 422 | `{"detail": "entity_outside_client", "facts": {"client_entity_id": "…"}}` | a draft naming another client's entity |

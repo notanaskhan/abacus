@@ -29,3 +29,12 @@ updated: 2026-10-24
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-224 | Index sort, period and letter filters, the interim letter's columns and exception, deferred path move and flag retirement | No |
+- 2026-10-26 (S10 code gap, branch `s10-p07-t15-flag`): the EP exception. Migration 0182 registers
+  the firm setting `allow_letter_exceptions` (`authz.matrix.POLICY_SETTING_KEYS`: no matrix cell
+  may name it); `identity.firm_setting_on` reads it; `record_letter_v2` records "Not required this
+  year" for the engagement partner with a reason while it is on (409 `letter_exceptions_off`
+  otherwise, 422 `letter_exception_reason_required` without a reason), meets G3 and moves Accepted
+  to Contracted. 0182's `down_revision` is 0180 on this branch; re-point to 0181 at the batch
+  merge. **Still deferred:** retiring `engagements.work_items_api`, because F-03's independent
+  suite asserts the flag in `/v1/me` (`test_f03_independent_acceptance.py:680`) and a test is
+  never weakened without Ayush's word (DEC-224). Tests at the end of the run.

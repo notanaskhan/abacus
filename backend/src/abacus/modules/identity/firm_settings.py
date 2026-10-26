@@ -493,6 +493,20 @@ class OverrideRefused(DomainConflict):
     code = "override_refused"
 
 
+async def firm_setting_on(tenant: TenantContext, key: str) -> bool:
+    """Whether the firm has a registered setting switched on (no row: off). For a module's
+    service rule (`authz.matrix.POLICY_SETTING_KEYS`), read in the caller's own transaction
+    window; never a grant."""
+    if key not in STORED_SETTING_KEYS:
+        raise UnknownFirmSetting
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT value FROM firm_setting_values WHERE tenant_id = :tenant AND key = :key"),
+            {"tenant": tenant.tenant_id, "key": key},
+        )
+    return found is True
+
+
 async def set_firm_setting(ctx: AuthContext, key: str, value: bool) -> int:
     """Switch a registered firm setting on or off (firm administrator, fresh MFA); its version
     afterwards. Read by `authorise` from the next request."""

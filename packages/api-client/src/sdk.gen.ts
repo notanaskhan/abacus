@@ -2652,7 +2652,9 @@ export const letterFile = <ThrowOnError extends boolean = false>(options: Option
  *
  * Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
  * `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
- * exception while its firm setting is unregistered; one `letter.recorded` audit event.
+ * exception unless the firm has `allow_letter_exceptions` on and the caller is the engagement
+ * partner, 422 `letter_exception_reason_required` without a reason; one `letter.recorded`
+ * audit event. The exception reads `mode: not_required_this_year`.
  */
 export const recordEngagementLetter = <ThrowOnError extends boolean = false>(options: Options<RecordEngagementLetterData, ThrowOnError>): RequestResult<RecordEngagementLetterResponses, RecordEngagementLetterErrors, ThrowOnError> => (options.client ?? client).put<RecordEngagementLetterResponses, RecordEngagementLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

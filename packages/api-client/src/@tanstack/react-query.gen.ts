@@ -4525,7 +4525,9 @@ export const letterFileMutation = (options?: Partial<Options<LetterFileData>>): 
  *
  * Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
  * `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
- * exception while its firm setting is unregistered; one `letter.recorded` audit event.
+ * exception unless the firm has `allow_letter_exceptions` on and the caller is the engagement
+ * partner, 422 `letter_exception_reason_required` without a reason; one `letter.recorded`
+ * audit event. The exception reads `mode: not_required_this_year`.
  */
 export const recordEngagementLetterMutation = (options?: Partial<Options<RecordEngagementLetterData>>): UseMutationOptions<RecordEngagementLetterResponse, RecordEngagementLetterError, Options<RecordEngagementLetterData>> => {
     const mutationOptions: UseMutationOptions<RecordEngagementLetterResponse, RecordEngagementLetterError, Options<RecordEngagementLetterData>> = {
