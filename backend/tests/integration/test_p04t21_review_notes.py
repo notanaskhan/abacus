@@ -12,8 +12,10 @@ from collections.abc import AsyncIterator
 from typing import cast
 
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
-from abacus.kernel.db import configure_engine, dispose_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_connection
 from abacus.modules.identity.api import agent_context_for_run
 
 from .conftest import MigratedDatabase
@@ -252,3 +254,39 @@ async def test_another_firm_reads_and_writes_nothing(
         assert found.status_code == 404, (method, path)
     listed = await other.call("hannah")("GET", "/v1/review-notes")
     assert listed.json()["items"] == []
+
+
+async def test_the_data_layer_holds_the_note_transitions(team: Cast) -> None:
+    """Security review M4 (0213): a note's status only moves forward, only a person moves it,
+    only the raiser withdraws it, and a withdrawn event is a person's."""
+    target = team.probe()
+    note_id = uuid.UUID(_note_id(await _raise(team, "hannah", target, "RA!C14")))
+    hannah = ("human", str(team["hannah"].user_id))
+    await _refused_update(team, ("agent", "agent:evidence.screener:run"), "cleared", note_id)
+    await _refused_update(team, ("human", str(team["marcus"].user_id)), "withdrawn", note_id)
+    withdrawn = await team.call("hannah")("POST", f"/v1/review-notes/{note_id}/withdraw", json={})
+    assert withdrawn.status_code == 200, withdrawn.text
+    await _refused_update(team, hannah, "open", note_id)  # withdrawn is final
+    await _refused_update(team, hannah, "responded", note_id)
+    with pytest.raises(DBAPIError):
+        async with tenant_connection(TenantContext(team.tenant, "agent", "agent:x:y")) as conn:
+            await conn.execute(
+                text(
+                    "INSERT INTO reviewable_note_events (tenant_id, note_id, kind, by_user) "
+                    "VALUES (:t, :n, 'withdrawn', :u)"
+                ),
+                {"t": team.tenant, "n": note_id, "u": team["hannah"].user_id},
+            )  # refused at the statement: nothing to commit, and the connection rolls back
+
+
+async def _refused_update(
+    team: Cast, actor: tuple[str, str], status: str, note_id: uuid.UUID
+) -> None:
+    """The guard refuses at the statement; the connection rolls back on leaving."""
+    tenant = TenantContext(team.tenant, actor[0], actor[1])  # type: ignore[arg-type]  # the actor kind under test
+    with pytest.raises(DBAPIError):
+        async with tenant_connection(tenant) as conn:
+            await conn.execute(
+                text("UPDATE reviewable_notes SET status = :s WHERE id = :id"),
+                {"s": status, "id": note_id},
+            )
