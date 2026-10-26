@@ -19,6 +19,7 @@ function targetOf(state: Shl08State): EvidenceViewerTarget {
     anchor: o.anchor ?? null,
     figure: o.figure ?? null,
     hovered: o.hovered ?? null,
+    locked: o.locked ?? null,
   };
 }
 

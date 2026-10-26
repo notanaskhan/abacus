@@ -43,7 +43,16 @@ export interface SeededDocument {
   face: "form" | "statement";
   /** The masked text projection (`…/text`; DEC-369), page by page; none reads as empty pages. */
   text?: ViewerTextPageOut[];
+  /** SHL-08c: each mask's value as `POST …/pii-reveals` returns it (synthetic, from the handoff). */
+  reveals?: Readonly<
+    Record<string, { value: string; kind: ViewerManifestOut["pii_masks"][number]["kind"] }>
+  >;
+  /** SHL-08d: the fixture password and the manifest the unlocked derivation reads. */
+  unlock?: { password: string; manifest: ViewerManifestOut };
 }
+
+/** SHL-08c: Samuel Ito reveals box a at 9:31 AM (P-03 §5.4). */
+export const REVEAL_AT = "2026-09-14T09:31:00-05:00";
 
 const at = (version: string, page: number, rect: Rect): string =>
   `ev:${version}#p${String(page)}:${rect.map(String).join(",")}`;
@@ -491,6 +500,7 @@ export const DOCUMENTS: Record<string, SeededDocument> = {
       allowed_actions: ["pii.reveal"],
     }),
     regions: [region(W2_CLAIRE, 1, W2_BOX_1, W2_WAGES.id, "268,400.00")],
+    reveals: { [stableId("mask:w2:claire:ssn")]: { value: "000-00-6081", kind: "ssn" } },
     // DEC-369: the W-2's masked text, as the server's text view gives it (box a and box 1).
     text: [
       {
@@ -520,6 +530,13 @@ export const DOCUMENTS: Record<string, SeededDocument> = {
       allowed_actions: ["evidence.unlock"],
     }),
     regions: [],
+    // Not a handoff frame: after Unlock the derivation's masked page (one page, no regions).
+    unlock: {
+      password: "fixture-password",
+      manifest: manifest(HALVARD_1099, "Halvard_2025_Consolidated_1099.pdf", 1, {
+        derivation_id: stableId("derivation:feld:halvard-consolidated-1099"),
+      }),
+    },
   },
 };
 

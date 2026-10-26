@@ -65,6 +65,10 @@ export interface RevealSlot {
   revealed?: Readonly<Record<string, RevealedValue>>;
   /** "Reveal (logged)" */
   label?: string;
+  /** Re-mask a revealed value now (SHL-08c: the chip reads "Hide"). Without it, no chip. */
+  onHide?: (maskId: string) => void;
+  /** "Hide" */
+  hideLabel?: string;
 }
 
 export interface SourceViewerProps {
@@ -99,6 +103,9 @@ export interface SourceViewerProps {
   aboveWell?: ReactNode;
   /** In the well, after the pages (the SHL-08 "Also cited" caption). */
   afterPages?: ReactNode;
+  /** In-document search (SHL-08, C4 §3.4): the caller asks the server and lights its hits. Without
+   * it, the search capsule finds region labels on the client. */
+  onFind?: (query: string) => void;
 }
 
 // ---- Toolbar ----------------------------------------------------------------------------------------
@@ -293,7 +300,19 @@ function Mask({
             {reveal.label ?? "Reveal (logged)"}
           </button>
         )}
-        {shown !== undefined && (
+        {shown !== undefined && reveal?.onHide !== undefined && (
+          <button
+            type="button"
+            aria-describedby={labelId}
+            onClick={() => {
+              reveal.onHide?.(mask.id);
+            }}
+            className="rounded-pill px-[4px] text-meta whitespace-nowrap text-ink-2 underline decoration-ink-4 underline-offset-2 hover:text-ink"
+          >
+            {reveal.hideLabel ?? "Hide"}
+          </button>
+        )}
+        {shown !== undefined && reveal?.onHide === undefined && (
           <span data-reveal-note="" className="whitespace-nowrap text-ink-3">
             {shown.note}
           </span>
@@ -448,6 +467,7 @@ export function SourceViewer({
   stack,
   aboveWell,
   afterPages,
+  onFind,
 }: SourceViewerProps): JSX.Element {
   const evidence = variant === "evidence";
   const widthPx = pageWidth ?? (evidence ? 400 : 600);
@@ -504,6 +524,10 @@ export function SourceViewer({
   const find = (): void => {
     const q = query.trim().toLowerCase();
     if (q === "") return;
+    if (onFind !== undefined) {
+      onFind(query.trim());
+      return;
+    }
     const hit = file.regions.find((r) => (r.label ?? "").toLowerCase().includes(q));
     if (hit === undefined) return;
     if (state.id !== hit.match || !state.pinned) store.togglePin(hit.match, null);
