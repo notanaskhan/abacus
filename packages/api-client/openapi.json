@@ -94748,16 +94748,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tb Layer View Route",
@@ -94921,7 +94911,7 @@
     },
     "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/leadsheets/{area}": {
       "get": {
-        "description": "AUD-06 e: one audit area's leadsheet, PY \u00b7 CY \u00b7 \u0394 \u00b7 \u0394% (A-02-T10).",
+        "description": "AUD-06 e: one audit area's leadsheet, PY \u00b7 CY \u00b7 \u0394 \u00b7 \u0394% (A-02-T10); \"Unassigned\" holds the\naccounts no rule or annotation places.",
         "operationId": "tb_leadsheet_area",
         "parameters": [
           {
@@ -95074,16 +95064,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tb Leadsheet Area Route",

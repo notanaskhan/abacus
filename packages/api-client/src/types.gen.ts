@@ -44044,10 +44044,6 @@ export type TbLayerViewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLayerViewError = TbLayerViewErrors[keyof TbLayerViewErrors];
@@ -44185,10 +44181,6 @@ export type TbLeadsheetAreaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLeadsheetAreaError = TbLeadsheetAreaErrors[keyof TbLeadsheetAreaErrors];
