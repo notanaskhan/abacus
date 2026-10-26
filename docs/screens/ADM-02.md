@@ -25,7 +25,7 @@ Code (G-01-T10): `src/routes/firm/settings.tsx` (`/settings/people`), `src/scree
 | f | grace-holloway | Mon Jan 5, 2026, 10:12 AM CT | Lena Park's Jan 5 invitation | Lena Park's row is an invitation (`status invited`, expires Jan 19, 2026): "Invite pending · expires Jan 19", Sign-in "—", Last active "—"; Invitations 1; "46 of 46 · 1 pending" | built · fixture (T10); Prod |
 | g | margaret-okonkwo (Margaret Okonkwo, Managing Partner) | Mon Sep 14, 2026, 9:24 AM CT | E0 | `?segment=independence`: `GET /v1/firm/independence/annual?year=2026`, each seat holder's status for the year (Confirmed with date · Not yet · Declined with a note), counts that foot to the seat holders; names from `GET /v1/firm/members` | built · fixture (T10); Prod once G-01-T13 replaces the 501 stub |
 
-State g's self-confirm dialog in the SHL-03 profile drawer (AC6.1) is not built in T10: it needs T13's route and the firm's `independence.annual_statement` text, which is firm content (§1.8.4 fallback 2; DEC-353).
+State g's self-confirm dialog in the SHL-03 profile drawer (AC6.1) is built (S10 follow-up of T10): the drawer's row "Annual independence confirmation · ‹year›" with "Confirm…" opens a dialog that shows the firm's published statement as written, confirms it, or declines it with a note (`GET`/`POST /v1/me/independence/annual`, the statement version recorded). Without a published statement the dialog says so and nothing can be confirmed. The dialog's labels are not in the handoff (G-01 AC6.1 gives the row's words).
 
 Non-artboard states (data conditions, never an `st` prop):
 
