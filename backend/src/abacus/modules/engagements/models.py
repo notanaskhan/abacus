@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import ARRAY, FetchedValue, String
+from sqlalchemy import FetchedValue
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -42,70 +42,6 @@ class Engagement(Base):
     period_label: Mapped[str | None] = mapped_column(server_default=FetchedValue())
     # TASK-1198 (0155): the reason code while on hold, cleared on resume.
     hold_reason: Mapped[str | None] = mapped_column(server_default=FetchedValue())
-
-
-class MethodologyTemplate(Base):
-    __tablename__ = "methodology_templates"
-
-    id: Mapped[UUID] = mapped_column(primary_key=True)
-    tenant_id: Mapped[UUID]
-    name: Mapped[str]
-    created_by: Mapped[UUID]
-    created_at: Mapped[datetime]
-    # SPEC-024: the engagement types it serves, fixed when the template is created.
-    engagement_types: Mapped[list[str]] = mapped_column(ARRAY(String))
-
-
-class MethodologyVersion(Base):
-    __tablename__ = "methodology_versions"
-
-    id: Mapped[UUID] = mapped_column(primary_key=True)
-    tenant_id: Mapped[UUID]
-    template_id: Mapped[UUID]
-    version: Mapped[int]
-    source_fingerprint: Mapped[str]
-    imported_by: Mapped[UUID]
-    created_at: Mapped[datetime]
-
-
-class MethodologyArea(Base):
-    __tablename__ = "methodology_areas"
-
-    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
-    version_id: Mapped[UUID] = mapped_column(primary_key=True)
-    code: Mapped[str] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    position: Mapped[int]
-
-
-class MethodologyRequestItem(Base):
-    __tablename__ = "methodology_request_items"
-
-    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
-    version_id: Mapped[UUID] = mapped_column(primary_key=True)
-    position: Mapped[int] = mapped_column(primary_key=True)
-    area_code: Mapped[str]
-    description: Mapped[str]
-    retrievability_tier: Mapped[str]
-    # SPEC-031 (TASK-060): guidance carried to engagements.
-    why: Mapped[str | None]
-    good_looks_like: Mapped[str | None]
-    blocks_fieldwork: Mapped[bool] = mapped_column(server_default=FetchedValue())
-    effort: Mapped[str | None]
-    # SPEC-035 Q3 (TASK-074): approved drafted guidance and who approved it.
-    guidance_source: Mapped[str | None]
-    guidance_approved_by: Mapped[UUID | None]
-
-
-class MethodologyAccountRule(Base):
-    __tablename__ = "methodology_account_rules"
-
-    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
-    version_id: Mapped[UUID] = mapped_column(primary_key=True)
-    position: Mapped[int] = mapped_column(primary_key=True)
-    area_code: Mapped[str]
-    account_from: Mapped[str]
-    account_to: Mapped[str]
 
 
 # --- Acceptance, independence and the letter (SPEC-025; TASK-044) ------------------------------

@@ -27,6 +27,16 @@ class SignOff(Base):
     content_hash: Mapped[str]
     signed_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # P-04-T03 (migration 0093): what was true at signing, written by P-04-T18's service.
+    kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    work_item_id: Mapped[UUID | None]
+    initials: Mapped[str | None]
+    engagement_role_at_sign: Mapped[str | None]
+    function_at_sign: Mapped[str | None]
+    version_no: Mapped[int | None]
+    statement_version: Mapped[str | None]
+    adopted_run_id: Mapped[UUID | None]
+    independence_checked_at: Mapped[datetime | None]
 
 
 class ReviewableNote(Base):

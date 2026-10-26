@@ -238,6 +238,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Checkpoint | Returns and workbooks. | `checkpoints`, `checkpoint_diffs`, `checkpoint_decisions` | — |
 | Field history | SHL-09 provenance. | `field_value_versions` | — |
 | Approvals (Home queue) | A projection; "Approvals" is a UI label only. | `human_gates` (projection; `kind`) | — |
+| Waiting on you | The open human gates assigned to the viewer, directly or by role on the engagement, not snoozed by them (I-01, C13). Every surface reads one count source. | `human_gates` (open, assigned to the viewer) | — |
+| Snooze | A person hides one gate from their own queue and counts until a time on or before its due date; it reappears by itself (I-01 OQ-4). Insert-only, per viewer. | `human_gate_snoozes` (I-01-T04) | — |
+| Client activity | HOME-01's timeline of allowlisted client events, as codes, ids and counts. A rebuildable projection, not a record: the audit trail is. | `home_activity_items` (I-01-T12) | — |
+| Home count | One HOME-01 tile or pill (audits, binders, agents running), counted by its owner under `visible()` and registered with the platform slot. | `register_home_count`, `HomeCount` | — |
 | Sign-off kind and level | `kind` is `ladder`, `field_tick` or `final_approval`. `level` is 1 to 5: L1 preparer, L2 reviewer, L3 manager, L4 partner, L5 EQR (stored as a number, DEC-134). Level names are fixed; which levels a target needs comes from firm standards (ADR-160). | `sign_offs.kind`, `sign_offs.level` | — |
 | Field tick | A sign-off on one field at L1 or L2 (SHL-09 "✓ KO"). Not a separate table. | `sign_offs` (`kind = 'field_tick'`) | — |
 | Final approval | The signer's approval of a tax return (SHL-12 h). It is a sign-off, and open issues block it. | `sign_offs` (`kind = 'final_approval'`) | — |

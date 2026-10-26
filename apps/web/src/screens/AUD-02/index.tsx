@@ -7,6 +7,7 @@ import type {
 import {
   Button,
   type CockpitCanvas,
+  ConfirmDialog,
   EmptyState,
   PaneAction,
   type SourceDoc,
@@ -16,16 +17,18 @@ import {
   ViewStateBody,
   type ViewState,
 } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, useRef, useState } from "react";
 import {
   AgentActivityTab,
   AgentDockMenu,
   AuditCockpit,
+  type AutoModeStep,
   BlockedSectionCard,
   DockViewer,
   isNotFound,
   useAgentTab,
   useAuditCockpit,
+  useAutoMode,
   useSourceDocuments,
 } from "../../domain/audits";
 import { useFlag } from "../../app-core/flags";
@@ -44,12 +47,14 @@ import { COPY } from "./copy";
 //   c  the plan proposed, 9:23 AM: rail as b (the proposal card is P-09's dock)
 //   d  `?section=materiality` blocked on Margaret Okonkwo: the BlockedSectionCard
 //   e  9:58 AM: Internal Control "Failed — see run"
+//   f  Auto mode pressed: the O3 confirm (A-01-T31), and the server's refusal for a real firm
 //   g  no run, the audit-program grammar: "Ready" / "In progress" pills
 //
 // a, c, d and e draw the rail and canvas from fixtures; their dock (RunCard, transcript, plan
-// approval, Retry) is P-09 on P-10 and is masked in parity. f (Auto mode) is A-01-T31's; h (Group
-// band) A-09's; i (Board) K-04's. No Run, Begin…, Sign off run or Auto mode control renders without
-// its capability (A-01 Story 2.1).
+// approval, Retry) is P-09 on P-10 and is masked in parity. f is fixture only until P-10-T39 serves
+// `PUT /v1/engagements/{id}/auto-mode` and reports `engagement_run.auto_mode` (DEC-405); h (Group
+// band) is A-09's; i (Board) K-04's. No Run, Begin…, Sign off run or Auto mode control renders
+// without its capability (A-01 Story 2.1).
 
 export type DockTab = "agent" | "viewer";
 
@@ -71,6 +76,8 @@ export interface AUD02Props {
   embedded?: boolean;
   /** What the Trial Balance row's AUD-06 pane opens on (tab, layer, selected line). */
   trialBalance?: TrialBalanceOptions["initial"];
+  /** The Auto mode confirm's opening step (AUD-02 f opens it asking). */
+  autoMode?: AutoModeStep;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -159,8 +166,13 @@ function Cockpit({
   onAdd,
   embedded,
   trialBalance,
+  autoMode: autoModeStep,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   const [query, setQuery] = useState("");
+  // AUD-02 f (A-01-T31): the switch renders only with `engagement_run.auto_mode` from `/v1/me`.
+  const autoMode = useAutoMode(cockpit, autoModeStep);
+  // The kit's confirm closes itself after Turn on; the write decides whether it stays open.
+  const confirming = useRef(false);
   const [sort, setSort] = useState<Sort>("missing_first");
   const docs = useSourceDocuments(cockpit.work_item_id, sort);
   const agent = useAgentTab(cockpit.engagement_id);
@@ -260,7 +272,11 @@ function Cockpit({
         onSection={(r) => {
           onSection?.(r.key);
         }}
-        bar={onBack === undefined ? {} : { onBack }}
+        bar={{
+          ...(onBack === undefined ? {} : { onBack }),
+          autoMode: autoMode.allowed ? autoMode.on : null,
+          onAutoMode: autoMode.press,
+        }}
         dock={{
           tab: dock ?? "agent",
           onTab: (tab) => {
@@ -283,6 +299,33 @@ function Cockpit({
         }}
         {...(embedded === undefined ? {} : { embedded })}
       />
+      <ConfirmDialog
+        open={autoMode.allowed && autoMode.step !== "idle"}
+        onOpenChange={(open) => {
+          if (open) return;
+          if (confirming.current) {
+            confirming.current = false;
+            return;
+          }
+          autoMode.cancel();
+        }}
+        title={COPY.autoMode.title}
+        confirmLabel={COPY.autoMode.confirm}
+        cancelLabel={COPY.autoMode.cancel}
+        destructive={false}
+        onConfirm={() => {
+          confirming.current = true;
+          if (!autoMode.saving) autoMode.confirm();
+        }}
+      >
+        {autoMode.step === "refused" ? (
+          <span role="alert" data-auto-mode="refused">
+            {COPY.autoMode.refused}
+          </span>
+        ) : (
+          COPY.autoMode.body
+        )}
+      </ConfirmDialog>
     </div>
   );
 }
@@ -326,6 +369,7 @@ export function AuditCockpitPage({
     dock?: DockTab;
     doc?: string | null;
     trialBalance?: TrialBalanceOptions["initial"];
+    autoMode?: AutoModeStep;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -345,6 +389,7 @@ export function AuditCockpitPage({
       }}
       {...(onBack === undefined ? {} : { onBack })}
       {...(initial.trialBalance === undefined ? {} : { trialBalance: initial.trialBalance })}
+      {...(initial.autoMode === undefined ? {} : { autoMode: initial.autoMode })}
     />
   );
 }

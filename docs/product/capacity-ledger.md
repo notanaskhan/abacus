@@ -86,3 +86,18 @@ S6 plans 9.5 te against 8.57 (111%): the identity and client-access back-fill mu
 | T011 ADR-078 catch-up lane 2027 Q1 | L | 1 | see TASK-992 | TASK-992 |
 
 **Labels and burn-down issues.** T001 names GitHub labels (`reserve:q03`, `backfill`, `pen-finding`, `drill`) and a burn-down issue per workstream. Under the solo edition there are no issue queues to route (`AMENDMENT-solo.md` item 4), and the builder works without GitHub issues, so the burn-down lives in files instead: this section for the reserve, `docs/quality/backfill.md` for the 55 owed suites and `docs/quality/escaped-defects.md` for the defects they find (DEC-200).
+
+## P-06 Requests and binders engine (close-out, updated 2026-10-26, P-06-T27)
+
+Plan: 29 rows, 26.0 task-equivalents, S3 to S10 (`docs/plan/epics/P-06.tasks.csv`). States from the task files on `main` plus this close-out's two (TASK-1310, TASK-1311).
+
+| State | Rows | Task-equivalents | Rows |
+|---|---|---|---|
+| done | 23 | 21.0 | T01 (TASK-415), T02 (TASK-420), T03 (TASK-404), T04 (TASK-405), T05 (TASK-419), T06 (TASK-418), T07 (TASK-914), T08 (TASK-921), T09 (TASK-931), T10 (TASK-967), T11 (TASK-952), T12 (TASK-949), T13 (TASK-989), T14 (TASK-1006), T15 (TASK-1007), T17 (TASK-1140), T18 (TASK-1171), T19 (TASK-1172), T20 (TASK-1194), T23 (TASK-1280), T24 (TASK-1273), T28 (TASK-403), T29 (TASK-993) |
+| in review | 3 | 2.75 | T22 (TASK-1223, TASK-1252), T26 (TASK-1310: keyboard suites pass; parity and axe not measured), T27 (TASK-1311: docs written, merge with the batch) |
+| in progress | 2 | 1.25 | T16 (TASK-1008: Grace's send not yet walked on staging), T21 (TASK-1195: the reviewer fake and the direct-route run) |
+| not started | 1 | 1.0 | T25 (journey E2E j06, j16, j03, j10, j22; no spec file yet) |
+
+Delivered (done plus in review): 26 rows, 23.75 of 26.0 task-equivalents (91%).
+
+**What is still owed.** The epic's DoD is not met: the journeys (T25), the staging walk (T16), the eval run (T21), the Tier C parity locks and the axe run (T26, `docs/quality/parity-P-06.md`) and the C5 v1 freeze (`docs/contracts/README.md`, ready at the batch merge). Open seams, none folded into a done row: the live poll's provider (DEC-158), the OQ-1 preparer path (DEC-136), the follow-up override write (501), `awaiting_review_count`. Chapter 01 dates are unchanged.

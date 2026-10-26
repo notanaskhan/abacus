@@ -122,9 +122,11 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, c, d, e | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26) | `e2e/screens/BND-01.spec.ts` renders each at 1440×900 DPR 2 with axe at 0 serious or critical; locked (blocking) at the end of S10; mask the skeleton pulse in e |
-| b | C | not run (P-06-T26) | fixture built in P-06-T16 |
-| host | D | — | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12 |
+| a, c, d, e | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | `e2e/screens/BND-01.spec.ts` renders each at 1440×900 DPR 2 with axe at 0 serious or critical (not run here either); the Tier C lock (P-06 §5.5) is pending its first measured run; mask the skeleton pulse in e |
+| b | C | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | fixture built in P-06-T16; added to `e2e/screens/BND-01.spec.ts` by P-06-T26; same pending lock |
+| host | D | not run | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12; `e2e/visual/tier-d.spec.ts` has the shell and pill rows, not yet T1's rows 38/44 |
+
+Keyboard: `src/screens/BND-01/BND-01.keyboard.test.tsx` (P-06-T26; vitest, passing). Report: `docs/quality/parity-P-06.md`.
 
 ## Open gaps
 - Last client activity is the `binder_activity` projection (portal upload, answer, sign and `inbox_file.added` events); the inbound-email part may move to N-01 under cut order item 3 (P-06 §11.3).

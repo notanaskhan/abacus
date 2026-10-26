@@ -1,12 +1,13 @@
 // SHL-20 Evidence screening (P-06-T22; docs/screens/SHL-20.md): the C-34 card in local state
-// (chapter 04 §2.4), opened from the screening chip on an upload row and closed by the chip or ✕.
+// (chapter 04 §2.4), opened from the screening chip on an upload row and closed by the chip, ✕ or
+// Escape; closing gives focus back to the chip (P-06 §5.6; ED-090).
 // This frame draws the upload row the card hangs from (the hosts are BND-02 here, AUD-03 with
 // A-01, CLS-03 with C-01) and the ScreeningCardHost under it; the O3 follow-up sheet, the
 // ReturnDialog and "View" → SHL-08 open from the card.
 
 import type { ScreeningCardOut } from "@abacus/api-client";
 import { Icon, Pill, registryWord } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, type KeyboardEvent, useRef, useState } from "react";
 import {
   ScreeningCardHost,
   type ScreeningSubjectRef,
@@ -56,15 +57,30 @@ function ScreeningChip({
 export function EvidenceScreening({ subject, file, open }: EvidenceScreeningProps): JSX.Element {
   const [shown, setShown] = useState(true);
   const card = useScreeningCard(subject).data;
+  const frame = useRef<HTMLDivElement>(null);
   const toggle = (): void => {
     setShown((s) => !s);
   };
   const close = (): void => {
     setShown(false);
+    frame.current?.querySelector<HTMLElement>("[data-screening-chip]")?.focus();
+  };
+  // Escape closes the non-modal card from anywhere in this frame. An overlay the card opened (the
+  // ReturnDialog, "Why?", the O3 sheet) is portalled outside the frame and handles its own Escape.
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== "Escape" || !shown || event.defaultPrevented) return;
+    if (!(event.target instanceof Node) || frame.current?.contains(event.target) !== true) return;
+    event.preventDefault();
+    close();
   };
   const unlinked = subject === null;
   return (
-    <div data-screen="SHL-20" className="flex flex-col gap-[8px] p-[12px]">
+    <div
+      ref={frame}
+      data-screen="SHL-20"
+      onKeyDown={onKeyDown}
+      className="flex flex-col gap-[8px] p-[12px]"
+    >
       <div className="flex w-[536px] flex-col gap-[6px] rounded-pane bg-card px-[16px] py-[12px] shadow-e2">
         <div className="flex items-start gap-[10px]">
           <Icon
