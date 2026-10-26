@@ -13,7 +13,7 @@
 
 # The base image is pinned by digest (the multi-arch index), never by tag alone. Refresh it with
 # the weekly base rebuild (Q-01-T11): docker buildx imagetools inspect python:3.12-slim
-ARG PYTHON_IMAGE=python:3.12-slim@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2
+ARG PYTHON_IMAGE=python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
 
 FROM ${PYTHON_IMAGE} AS builder
 # uv builds the environment from uv.lock and is not shipped: it stays in this stage.
