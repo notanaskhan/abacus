@@ -267,9 +267,14 @@ generate:
 migrate: db-guard
 	cd backend && $(STACK_ENV) uv run alembic upgrade head
 
-# Not built yet: the load test arrives with Q-01 (OPS-16).
+# The load-test harness (Q-03-T035): `make loadtest PROFILE=smoke` plays
+# backend/src/abacus_tools/loadtest/scenarios/$(PROFILE).yaml against this checkout's local stack
+# (`make dev` and `make seed` running) and writes p50/p95/p99 per endpoint group under
+# backend/.local/loadtest/. Loopback targets only; never a hosted environment or database.
+PROFILE ?= smoke
 loadtest:
-	@echo "not implemented: Q-01 OPS-16 (load test)" >&2; exit 1
+	cd backend && $(LOCAL_ENV) uv run python -m abacus_tools.loadtest.run --profile $(PROFILE) \
+		--base-url http://127.0.0.1:$(API_PORT) --temporal-target 127.0.0.1:$(ABACUS_TEMPORAL_PORT)
 
 # The Brightwater Hale scenario (F-04-T13): `make seed-demo SNAPSHOT=E0 HOLDOUT=fairhaven_ebp`.
 # Loopback only; a second run writes nothing. NO_SETTLE=1 where no outbox relay runs.
