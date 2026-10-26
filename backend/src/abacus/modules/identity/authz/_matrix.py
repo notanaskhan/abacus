@@ -831,6 +831,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "eqr_reviewer": "allow",
         "client_admin": "client_visible_only",
         "client_contributor": "assigned_only",
         "agent": "task_scope",

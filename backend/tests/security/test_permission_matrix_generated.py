@@ -1669,7 +1669,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("evidence.read", "senior", "allow"),
     ("evidence.read", "staff", "allow"),
     ("evidence.read", "reviewer", "allow"),
-    ("evidence.read", "eqr_reviewer", "deny"),
+    ("evidence.read", "eqr_reviewer", "allow"),
     ("evidence.read", "specialist", "deny"),
     ("evidence.read", "client_service", "deny"),
     ("evidence.read", "client_admin", "deny"),
