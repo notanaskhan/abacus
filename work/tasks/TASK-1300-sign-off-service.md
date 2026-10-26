@@ -1,8 +1,8 @@
 ---
 id: TASK-1300
 title: The sign-off service, POST /v1/sign-offs with the ladder and eligibility reads (P-04-T18)
-spec: ADR-160
-acceptance_criteria: [R-SO-1, R-SO-2, R-SO-3, R-SO-4, R-SO-5, R-SO-6, R-SO-8]
+spec: SPEC-308
+acceptance_criteria: [AC-5]
 risk_zone: red
 status: in-review
 epic: P-04
@@ -47,8 +47,8 @@ after Marcus Delaney's L1 adoption, and every R-SO rule returns its fixed error 
   fill label, counts and uncited agent cells; trial balances their label.
 - **Statements**: per level, versioned in code (`STATEMENTS`), copy verbatim from the SHL-12
   handoff spec (reviewer and EQR texts).
-- **Matrix**: `sign_off.eqr` gains `eqr_reviewer: allow` (R-SO-2: L5 needs the EQR role); EP is
-  never EQR (one role per membership, and the EP cell is absent on the L5 row).
+- **Matrix**: unchanged. ADR-160 wants `eqr_reviewer` on `sign_off.eqr`, but SPEC-308's
+  shipped test pins `{reviewer}`; left open for Ayush (DEC-401).
 - **Static rule** `SIGNOFF-001`: only review's service files, its `api.py` and the two existing
   owner call sites (`workpapers/service.py`, `assurance/mapping.py`,
   `assurance/trial_balance.py`) name `record_sign_off` / `sign_target`.

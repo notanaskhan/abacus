@@ -50,7 +50,12 @@ from abacus.modules.identity.api import (
 from abacus.modules.review.events import SignOffRecorded
 from abacus.modules.review.models import SignOff
 from abacus.modules.review.notes import OPEN
-from abacus.modules.review.repository import insert_sign_off, notes_of_target, sign_offs_of
+from abacus.modules.review.repository import (
+    insert_sign_off,
+    lock_target,
+    notes_of_target,
+    sign_offs_of,
+)
 from abacus.modules.review.service import AlreadySigned, NotPrepared, SignOffInvalid
 from abacus.modules.review.slots import ReviewableFacts, reviewable_facts
 
@@ -408,6 +413,11 @@ async def sign_target(
     facts, resource = await _target(ctx, target_type, target_id)
     await authorise(ctx, "sign_off.create", resource)
     async with uow(ctx.tenant) as tx:
+        # One signer per target at a time (security review M1, L4): the rows, the owner's facts
+        # and the insert are read and written under the same lock, so two levels signed at once
+        # each see the other.
+        await lock_target(tx.session, target_type, target_id)
+        facts = await reviewable_facts(ctx.tenant, target_type, target_id)
         rows = list(await sign_offs_of(tx.session, target_type, [target_id]))
         preparers = _preparers(facts, rows)
         await _authorise_level(ctx, level, resource, preparers)
@@ -452,6 +462,14 @@ async def _rules(
         if preparer is None or preparer.content_hash != facts.content_hash:
             raise NotPrepared(facts={"level": LEVEL_CODES[level]})
     if level in SEGREGATED and ctx.user_id in preparers:  # also the matrix (R-SO-3)
+        raise Segregation(facts={"level": LEVEL_CODES[level]})
+    # R-SO-3 the other way round (security review M1, L2): whoever reviewed a target (L2, L3)
+    # never prepares it, and its EQR (L5) and its L1 to L4 signers are never the same person,
+    # whatever their role is now. Any content counts: a role held once on a target stays held.
+    mine_levels = {r.level for r in rows if r.signed_by == ctx.user_id}
+    if level == 1 and mine_levels & SEGREGATED:
+        raise Segregation(facts={"level": LEVEL_CODES[level]})
+    if (level == 5 and mine_levels & {1, 2, 3, 4}) or (level < 5 and 5 in mine_levels):
         raise Segregation(facts={"level": LEVEL_CODES[level]})
 
 

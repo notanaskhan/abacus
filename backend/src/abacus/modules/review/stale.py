@@ -6,9 +6,9 @@ newest-per-level sign-off that no longer matches, so the signer is told (notific
 `sign_off_stale`). Nothing about a sign-off row changes: staleness stays `content_hash <> the
 target's hash`, and a re-sign is a new row.
 
-Idempotent: each announcement's event id is derived from the sign-off and the hash it went stale
-against, written in its own unit of work, so a replayed change event finds it already written
-and skips it.
+Idempotent: each announcement's event id is derived from the sign-off, written (with its audit
+event) in its own unit of work, so a replayed or later change event finds it already written and
+skips it: a signer is told once per sign-off.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import uow
+from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.review.events import SignOffWentStale
 from abacus.modules.review.service import stale_of
@@ -43,8 +43,10 @@ def _system(tenant_id: UUID) -> TenantContext:
     return TenantContext(tenant_id, "system", "review.stale_sign_offs")
 
 
-def went_stale_id(sign_off_id: UUID, current_hash: str) -> UUID:
-    return uuid.uuid5(_NAMESPACE, f"{sign_off_id}:{current_hash}")
+def went_stale_id(sign_off_id: UUID) -> UUID:
+    """Once per sign-off (security review L3): later edits to an already stale target tell the
+    signer nothing new; a re-sign is a new row and is told again if it goes stale."""
+    return uuid.uuid5(_NAMESPACE, str(sign_off_id))
 
 
 async def detect_stale(event: OutboxEvent) -> int:
@@ -64,7 +66,7 @@ async def detect_stale(event: OutboxEvent) -> int:
         if found.sign_off_id is None:
             continue
         went = SignOffWentStale(
-            event_id=went_stale_id(found.sign_off_id, found.current_hash),
+            event_id=went_stale_id(found.sign_off_id),
             sign_off_id=found.sign_off_id,
             engagement_id=facts.engagement_id,
             target_type=target_type,
@@ -74,6 +76,12 @@ async def detect_stale(event: OutboxEvent) -> int:
         )
         try:
             async with uow(tenant) as tx:
+                tx.record(
+                    "sign_off.went_stale",
+                    target=Target("sign_off", found.sign_off_id),
+                    after=Ref(level=found.level),
+                    scope=Scope(engagement_id=facts.engagement_id),
+                )
                 tx.emit(went)
         except IntegrityError:
             continue  # already announced against this hash (a replay)

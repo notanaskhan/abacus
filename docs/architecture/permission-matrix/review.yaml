@@ -7,7 +7,7 @@ actions:
   sign_off.review:          {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required, not_preparer_of_target: required}   # L2 reviewer; never a preparer of the target (P-04-T15, R-SO-3)
   sign_off.manager:         {engagement_partner: allow, manager: allow, agent: deny, independence: required, not_preparer_of_target: required}   # L3 manager; never a preparer of the target (P-04-T15, R-SO-3)
   sign_off.partner:         {engagement_partner: allow, agent: deny, independence: required}   # L4 partner
-  sign_off.eqr:             {reviewer: allow, eqr_reviewer: allow, agent: deny, independence: required}   # L5 engagement quality reviewer; P-04-T18 (R-SO-2, DEC-401): the EQR role signs L5 and nothing below
+  sign_off.eqr:             {reviewer: allow, agent: deny, independence: required}   # L5 engagement quality reviewer
   # --- C3 stub 1 (P-04-T07; ADR-160): the ladder and eligibility reads, the umbrella write and
   # bulk. The level rows above are the plan's sign_off.l1 to l5 (DEC-135); POST /v1/sign-offs
   # declares sign_off.create and the service also authorises the level's row, with the target's

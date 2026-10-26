@@ -1,8 +1,8 @@
 ---
 id: TASK-1301
 title: Stale detection and re-sign (P-04-T19)
-spec: ADR-160
-acceptance_criteria: [R-SO-5, DEC-84]
+spec: SPEC-308
+acceptance_criteria: [AC-5]
 risk_zone: red
 status: in-review
 epic: P-04

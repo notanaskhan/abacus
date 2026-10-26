@@ -3769,7 +3769,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("sign_off.eqr", "senior", "deny"),
     ("sign_off.eqr", "staff", "deny"),
     ("sign_off.eqr", "reviewer", "allow"),
-    ("sign_off.eqr", "eqr_reviewer", "allow"),
+    ("sign_off.eqr", "eqr_reviewer", "deny"),
     ("sign_off.eqr", "specialist", "deny"),
     ("sign_off.eqr", "client_service", "deny"),
     ("sign_off.eqr", "client_admin", "deny"),

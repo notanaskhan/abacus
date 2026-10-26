@@ -36,7 +36,7 @@ async def _paper(world: World) -> tuple[uuid.UUID, str]:
 async def _changes(world: World) -> list[OutboxEvent]:
     rows = await world.seed.rows(
         "SELECT id, tenant_id, event_type, payload FROM outbox WHERE tenant_id = $1 "
-        "AND event_type = 'workpaper.content_changed' ORDER BY created_at",
+        "AND event_type = 'workpaper.content_changed' ORDER BY seq",
         world.team.tenant,
     )
     return [
@@ -121,7 +121,8 @@ async def test_a_partner_who_has_not_concluded_g2_blocks_signing_on_an_attest_cl
         "SELECT client_id FROM engagements WHERE id = $1", world.team.engagement
     )
     await world.seed.run(
-        "UPDATE engagement_acceptance SET independence_concluded_at = NULL "
+        "UPDATE engagement_acceptance SET independence_concluded_at = NULL, "
+        "independence_concluded_by = NULL, independence_documented_at = NULL "
         "WHERE engagement_id = $1",
         world.team.engagement,
     )

@@ -51,7 +51,7 @@ async def engines(migrated_db: MigratedDatabase) -> AsyncIterator[None]:
 
 def person_ctx(who: Person, actor_kind: str = "human") -> AuthContext:
     return AuthContext(
-        TenantContext(who.tenant_id, actor_kind, str(who.user_id)),  # type: ignore[arg-type]
+        TenantContext(who.tenant_id, actor_kind, str(who.user_id)),  # type: ignore[arg-type]  # the actor kind under test is a plain str
         who.user_id,
         uuid.uuid4(),
         None,
@@ -118,7 +118,7 @@ class World:
             cast(str, facts.pop("digest", "a" * 64)),
             1,
             cast(frozenset[uuid.UUID], facts.pop("preparers", frozenset[uuid.UUID]())),
-            **facts,  # type: ignore[arg-type]
+            **facts,  # type: ignore[arg-type]  # the actor kind under test is a plain str
         )
         return target
 
@@ -148,7 +148,7 @@ async def world(migrated_db: MigratedDatabase) -> World:
     await _named(seed, thomas, "Thomas Whitcombe")
     await seed.run(
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-        "VALUES ($1, $2, $3, 'eqr_reviewer')",
+        "VALUES ($1, $2, $3, 'reviewer')",
         tenant,
         engagement,
         thomas.user_id,
@@ -248,7 +248,8 @@ async def test_rso2_a_level_the_matrix_does_not_allow_is_level_not_permitted(
     for who, level in (("ana", "L2_reviewer"), ("hannah", "L4_partner"), ("margaret", "L5_eqr")):
         found = await world.sign(who, "probe_signed", target, level, seen)
         assert (found.status_code, found.json()["detail"]) == (403, "level_not_permitted"), who
-    # The EQR signs L5 only (R-SO-3): L1 to L4 are refused, L5 after the preparer is signed.
+    # The EQR (the matrix's `reviewer` cell on L5 today; DEC-401) signs L5 only (R-SO-3): L1 to L4
+    # are refused, L5 after the preparer is signed.
     for level in ("L1_preparer", "L2_reviewer", "L3_manager", "L4_partner"):
         found = await world.sign("thomas", "probe_signed", target, level, seen)
         assert (found.status_code, found.json()["detail"]) == (403, "level_not_permitted")
@@ -295,7 +296,7 @@ async def test_rso4_open_review_notes_block_l2_with_their_count(world: World) ->
 async def test_rso5_an_unconfirmed_signer_is_independence_pending(world: World) -> None:
     target = world.probe()
     await world.seed.run(
-        "UPDATE independence_confirmations SET status = 'requested' "
+        "UPDATE independence_confirmations SET status = 'requested', answered_at = NULL "
         "WHERE engagement_id = $1 AND user_id = $2",
         world.team.engagement,
         world["ana"].user_id,
@@ -371,3 +372,19 @@ async def test_the_routes_are_404_with_the_flag_off(world: World) -> None:
     assert (await world.ladder("hannah", "probe_signed", target)).status_code == 404
     found = await world.sign("ana", "probe_signed", target, "L1_preparer", "sha256:" + "a" * 64)
     assert found.status_code == 404
+
+
+async def test_rso3_a_reviewer_never_prepares_what_they_reviewed(world: World) -> None:
+    """Security review M1: R-SO-3 holds both ways. Kevin reviewed (L2); he may not then sign
+    L1 on the same target, on any content."""
+    target = world.probe()
+    seen = "sha256:" + "a" * 64
+    assert (
+        await world.sign("ana", "probe_signed", target, "L1_preparer", seen)
+    ).status_code == 201
+    assert (
+        await world.sign("kevin", "probe_signed", target, "L2_reviewer", seen)
+    ).status_code == 201
+    found = await world.sign("kevin", "probe_signed", target, "L1_preparer", seen)
+    assert (found.status_code, found.json()["detail"]) == (409, "segregation")
+    assert await world.count(target) == 2
