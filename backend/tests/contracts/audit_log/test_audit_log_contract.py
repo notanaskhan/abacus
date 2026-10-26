@@ -57,12 +57,21 @@ def _enum(schema: str, field: str) -> set[str]:
     raise AssertionError(f"{schema}.{field} has no enum")
 
 
+# G-02-T08 (TASK-1329): the list and the detail are live; the export family stays the stub's
+# until G-02-T17.
+LIVE = frozenset({("get", "/v1/audit-events"), ("get", "/v1/audit-events/{seq}")})
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_g02t04_each_route_declares_its_one_action_and_is_a_stub(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
     responses = set(cast(Json, op["responses"]))
-    assert {"404", "501"} <= responses
+    assert "404" in responses
+    if (method, path) in LIVE:
+        assert "501" not in responses
+    else:
+        assert "501" in responses
 
 
 def test_g02t04_the_family_is_exactly_these_routes() -> None:
@@ -133,6 +142,13 @@ def test_m2_request_context_is_for_three_roles_and_null_for_everyone_else() -> N
     for name in ("session_id", "auth_method", "mfa_at"):
         assert not contract.AuditSessionOut.model_fields[name].is_required(), name
     assert "firm_admin, security_admin and quality_partner" in CONTRACT_DOC.read_text("utf-8")
+    # G-02-T08: the projection asks the matrix (AUTHZ-002); its row names exactly these roles.
+    allowed = {
+        role
+        for role, decision in RULES["audit_event.read_request_context"].decisions.items()
+        if decision == "allow"
+    }
+    assert allowed == contract.REQUEST_CONTEXT_READERS
 
 
 MODELS = [

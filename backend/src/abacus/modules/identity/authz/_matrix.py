@@ -200,6 +200,27 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
     },
+    "audit_event.read_firm_level": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "quality_partner": "allow",
+        "platform_support": "allow",
+        "platform_support_content": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "audit_event.read_firm_values": {
+        "quality_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "audit_event.read_request_context": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "quality_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "audit_export.read": {
         "security_admin": "allow",
         "quality_partner": "in_scope",

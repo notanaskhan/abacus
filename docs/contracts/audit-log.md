@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` (G-02) |
 | Version | v1 |
-| Status | stub (G-02-T04, 2026-10-26): every route answers 501 with the flag on |
+| Status | list and detail live (G-02-T08, 2026-10-26); the export routes answer 501 until G-02-T17 |
 | Provider epic | G-02 (`audit_trail`; slots in `platform`; capture in `kernel.uow`) |
 | Consumers | ADM-07 (G-02-T13); the F-04 harness (`since_seq`, INV-5 on staging); A-01 (`events_for_work_item`); P-05 (AUD-29); P-09 (Run links) |
 | Freeze sprint | the sprint review after the stub |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 One firm-wide, immutable, filterable log of every event, read by the people who answer for the firm: who did it (a person, a person via Agent, a named policy, the system or a support engineer), to what, from where, through which run, and, for a viewer allowed to see them, the values before and after. Nothing here writes an event; corrections are new events.
 
-**Stub behaviour.** With `audit_log.explorer` off every route below answers 404. With it on, every route answers 501 `not_implemented` until G-02-T08 (list, detail) and G-02-T17 (export) land. The legacy SPEC-304 explorer (`GET /v1/firm/audit-events`, `/facets`, `audit.read`) is unchanged until ADM-07 replaces it (SPEC-349 §21).
+**Behaviour.** With `audit_log.explorer` off every route below answers 404. With it on, the list and the detail are live (G-02-T08); the export routes answer 501 `not_implemented` until G-02-T17. The legacy SPEC-304 explorer (`GET /v1/firm/audit-events`, `/facets`, `audit.read`) is unchanged until ADM-07 replaces it (SPEC-349 §21).
 
 ## 2. Who may call it
 | Operation | Method and path | Matrix action |
@@ -30,7 +30,9 @@ One firm-wide, immutable, filterable log of every event, read by the people who 
 
 **The matrix answers first** (security review L1): every route, the stubs included, checks the principal before it reads `audit_log.explorer`: a client principal gets 404, and the agent, the system and anyone refused an export action at the firm get 403, whatever the flag's state. A person's list or detail read is narrowed per event by `visible()` (engagement roles, `in_scope`), so a person with no right sees an empty list. In-scope exporters (`quality_partner`, `practice_leader`) are refused at the firm by the stub; G-02-T17 scopes their export to the events they can see.
 
-**Request context is for three roles** (DEC-420, security review M2): `ip`, `user_agent_family`, `device_label` and `session` (`session_id`, `auth_method`, `mfa_at`) are shown only to firm_admin, security_admin and quality_partner (`REQUEST_CONTEXT_READERS`). Every other reader, engagement partners, managers, practice leaders and platform support included, gets those fields null. The projection lands in G-02-T08; every one of these fields is nullable in the models.
+**Request context is for three roles** (DEC-420, security review M2): `ip`, `user_agent_family`, `device_label` and `session` (`session_id`, `auth_method`, `mfa_at`) are shown only to firm_admin, security_admin and quality_partner (`REQUEST_CONTEXT_READERS`). Every other reader, engagement partners, managers, practice leaders and platform support included, gets those fields null. The projection (`audit_trail/explorer.py`, G-02-T08) nulls them for everyone else; every one of these fields is nullable in the models. The `ip` filter, too, applies only for these three roles: for any other reader it matches nothing, so nobody can probe who used an address.
+
+**Firm-level events** (DEC-434, the S9 security review's binding): an event with no engagement (its `engagement_id`, else its target when that is an engagement) is firm-level: sign-ins, security settings, walls, firm structure and unscoped history. Only `firm_admin`, `security_admin` and platform support (each authorised at the firm) and the QM owner (`quality_partner`) see them; engagement roles never do, whatever matrix cell they hold. A firm-level reader walled from any client sees, among them, only the kinds that can name no client.
 
 ## 3. Shapes
 Models in `backend/src/abacus/modules/audit_trail/audit_log_contract.py`; every field carries its classification.
@@ -50,6 +52,7 @@ Request context (`ip`, `device_label`, `user_agent_family`, `session`) is captur
 
 ## 4. Behaviour
 - **List** (AC-1, AC-2, AC-6, AC-7): newest first by `seq`; keyset pages that stay stable while new events arrive. Filters: `actor_kind`, `actor_id`, `object_type`, `action`, `from` and `to` (dates on `effective_at`, the firm's time zone), `office_id` (the object's office, else the actor's membership office: DEC-415 Q9), `ip`, `q` (labels through the label index, G-02-T10; never a value), `cursor`, `limit` ≤ 100.
+- **`q`** (G-02-T10): searched in `audit_event_labels` only (actor, target and fact labels and the action's words; no value, no identifier text), every word required, at most 2,000 matches newest first; the list's `total` over a search is capped there. A search first catches the firm's label index up by one batch (DEC-436).
 - **`since_seq`** (the F-04 harness): events with `seq` greater than it, **oldest first**, so a consumer can tail the log; combined with the other filters. The harness switches its INV-5 check to this route on staging and the canary (G-02-T21).
 - **Visibility** (AC-4, AC-5): through `visible()`: walled events are omitted (404 on detail), with no hidden count. Walls key on `client_id`, which the projection derives from `engagement_id` for history and for new events whose writer left it null, so a null-client row never slips past a wall (security review L4). `firm_admin` and `security_admin` read metadata; values resolve only for a viewer holding the target's content read (`quality_partner` and `practice_leader` in scope, the engagement team).
 - **Export** (AC-12 to AC-14): one person with a fresh second factor (DEC-415 Q8). The job writes `audit-log-<from>-<to>.csv`, `manifest.json` (format `accrued.audit-log-export` v1: filter, requester, seq range, row count, the SHA-256 of each file, the P-43 checkpoint covering the range) and `manifest.sig` (the environment's KMS export-signing key) to the exports bucket with a 7-day expiry. Request, ready (system) and download each write an audit event naming the person.
@@ -63,5 +66,6 @@ Request context (`ip`, `device_label`, `user_agent_family`, `session`) is captur
 404 (flag off, a walled or invisible event, another person's export), 403 (no matrix right; fresh MFA missing on export), 409 `export_not_ready`, 410 `export_expired`, 422 `cursor_invalid` and request validation, 501 while stubbed.
 
 ## 7. Change log
+- v1 live reads (2026-10-26, G-02-T08 to T10): list and detail live; firm-level events for firm-level readers only (DEC-434); values per viewer with masking (DEC-435); `q` over the label index (DEC-436). The shapes are unchanged; list and detail no longer declare 501.
 - v1 security review (2026-10-26): facts are codes and ids with `labels` beside them (M4); request context for three roles (M2, DEC-420); authorise before the flag (L1); `audit_export.read` for the status read (L5). Still v1: the stub is not frozen.
 - v1 (2026-10-26, G-02-T04): stub. Consumer tests `backend/tests/contracts/audit_log/`; fixture mode serves ADM-07 a to g (`apps/web/src/fixtures/scenarios/ADM-07.ts`).

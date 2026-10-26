@@ -89,8 +89,9 @@ export const agentRunWrites = <ThrowOnError extends boolean = false>(options: Op
  * List Audit Events Route
  *
  * ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
- * `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
- * (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).
+ * `effective_at` in the firm's time zone; `office_id` is the object's office (DEC-415 Q9);
+ * `q` searches actor, target and fact labels only, never a value (M4); `ip` filters only for
+ * the readers who see request context (DEC-420).
  */
 export const listAuditEvents = <ThrowOnError extends boolean = false>(options?: Options<ListAuditEventsData, ThrowOnError>): RequestResult<ListAuditEventsResponses, ListAuditEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListAuditEventsResponses, ListAuditEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
