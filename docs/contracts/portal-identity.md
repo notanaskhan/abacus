@@ -4,11 +4,11 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` (this file is the portal half; the binders and requests half is `c5-requests-binders.md`) |
 | Version | v1.1 (additive to C5 v1) |
-| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the sign-in family (T10, T17) and the invitation preview and accept v2 (T18, 2026-10-24) are served; since P-08-T21 (2026-10-25, DEC-329) `links/renew`, the firm-side unlock and MFA reset and the sign-in pause are live |
+| Status | stub (POR-01 firm-side recovery, POR-02 home and preferences, `/v1/me` portal fields: P-08-T01, 2026-10-23). Branding and its logo are live (P-08-T05, 2026-10-23); the sign-in family (T10, T17) and the invitation preview and accept v2 (T18, 2026-10-24) are served; since P-08-T21 (2026-10-25, DEC-329) `links/renew`, the firm-side unlock and MFA reset and the sign-in pause are live. **Frozen at v1.1 on 2026-10-27** (P-08-T28, DEC-456): the snapshot `backend/tests/contracts/c5_portal/v1.1.json` holds the request and response models listed in `abacus_tools.contracts.MODELS["c5_portal"]`; from here a change is additive or ships v1.2 with overlap (the frozen-contract rule) |
 | Provider epic | P-08 (schema half: F-03-T26, F-03-T27, F-03-T30) |
 | Consumers | R-01 (POR-03, POR-04, POR-14, POR-20 emails), P-07 (CLI-04 unlock and invitations v2), G-02 (ADM-06 MFA policy), N-02, N-01, T-01, T-02, R-02, N-03, A-08, A-09, R-03. Screens: POR-01, POR-02 |
 | Freeze sprint | S3 (starts 2026-11-30) with the rest of C5; freeze Fri 2026-12-11 |
-| Flags | `portal.sign_in_v2` (identity; default off, created 2026-10-23, expires 2027-01-21) and `portal.home_v2` (portal; default off, created 2026-10-23, expires 2027-01-21). Retired by P-08-T28 |
+| Flags | `portal.sign_in_v2` (identity) and `portal.home_v2` (portal); boolean, default off, created 2026-10-23, expiry in `docs/architecture/feature-flags/`. **Rollout (P-08-T28, DEC-456):** on for every synthetic firm the seeds build (the Brightwater Hale `portal` slice, the load profiles), then on for the production canary by hand; after the canary walks sign-in with a second factor on the production build, both are retired in one PR with the legacy `ClientAccept`/`ClientHome` paths and the firm bundle's `/client/*` routes (TASK-1359's checklist), before their expiry |
 | Spec | `docs/specs/SPEC-320-portal-identity-and-home.md` (outline; supersedes SPEC-015's expiry and lockout clauses) |
 | ADRs | ADR-139 (P-36 conventions), ADR-140 (P-39), ADR-146 (client access grants), ADR-152 (P-45 public routes), ADR-163 (P-11 white label), ADR-005, ADR-031; DEC-34, DEC-35, DEC-58, DEC-59, DEC-63, DEC-129, DEC-139 |
 
