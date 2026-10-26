@@ -49,7 +49,7 @@ from abacus.modules.communications.template_registry import (
 from abacus.modules.communications.template_service import person_of
 from abacus.modules.communications.template_store import StoredVersion
 from abacus.modules.communications.templates import TemplateInvalid, UnknownTemplateVariable
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.engagements.api import EngagementRef, get_ref, lock_ref
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -124,6 +124,11 @@ def _render(
         return None
 
 
+async def _authorise_send(ctx: AuthContext, ref: EngagementRef) -> None:
+    """A person sends: `message.send` on the engagement the message is about."""
+    await authorise(ctx, "message.send", ref.resource())
+
+
 async def _system_sender(ctx: SystemSendContext, key: str) -> tuple[AuthContext, StoredVersion]:
     """The scheduled reminder (DEC-74): only with its flag, only `reminder`, only from a version
     the firm published, attributed to its publisher, who must still be a member (INV-5)."""
@@ -171,7 +176,7 @@ async def send(
     if already is not None:
         if not isinstance(ctx, SystemSendContext):  # a replay still authorises (ED-026)
             replayed = await get_ref(ctx, scope.engagement_id)
-            await authorise(ctx, "message.send", replayed.resource())
+            await _authorise_send(ctx, replayed)
         return already
     registration = registration_of(key)
     address = await _address(recipient)
@@ -182,7 +187,7 @@ async def send(
     async with uow(tenant) as tx:
         ref = await lock_ref(tx, scope.engagement_id)
         if not isinstance(ctx, SystemSendContext):
-            await authorise(ctx, "message.send", ref.resource())
+            await _authorise_send(ctx, ref)
         version = await template_store.resolve(tx.session, tenant.tenant_id, key)
         violations: list[dict[str, str]] = []
         reason: SendRefusal | None = None

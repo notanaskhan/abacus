@@ -160,14 +160,19 @@ async def _publish(firm: Firm, word: str) -> int:
     return (await template_service.publish(firm.admin, "reminder")).version
 
 
-async def _send(firm: Firm, key: str = "idem-0001", **override: str) -> SendOutcome:
+def _attempt(n: int) -> str:
+    """A retry's identifier: the same `n` is the same send."""
+    return f"probe-send-{n}"
+
+
+async def _send(firm: Firm, attempt: int = 1, **override: str) -> SendOutcome:
     return await send_templated(
         firm.manager,
         "reminder",
         RecipientRef("user", firm.recipient.user_id),
         {**VALUES, **override},
         scope=SendScope(engagement_id=firm.engagement),
-        idempotency_key=key,
+        idempotency_key=_attempt(attempt),
     )
 
 
@@ -388,7 +393,7 @@ async def test_ac10_a_value_with_an_amount_or_outside_the_whitelist_blocks_the_s
     firm: Firm, recorder: Recorder
 ) -> None:
     await _publish(firm, "Reminder")
-    amount = await _send(firm, "idem-0002", work_item="Refund of $3,200")
+    amount = await _send(firm, 2, work_item="Refund of $3,200")
     assert amount.blocked_reason == "template_lint_failed"
     outside = await send_templated(
         firm.manager,
@@ -396,7 +401,7 @@ async def test_ac10_a_value_with_an_amount_or_outside_the_whitelist_blocks_the_s
         RecipientRef("user", firm.recipient.user_id),
         {**VALUES, "connection_name": "American Express"},
         scope=SendScope(engagement_id=firm.engagement),
-        idempotency_key="idem-0003",
+        idempotency_key=_attempt(3),
     )
     assert outside.blocked_reason == "template_lint_failed"
     assert recorder.sent == []
@@ -413,6 +418,6 @@ async def test_ac10_a_person_without_message_send_on_the_engagement_is_refused(
             RecipientRef("user", firm.recipient.user_id),
             VALUES,
             scope=SendScope(engagement_id=firm.engagement),
-            idempotency_key="idem-0004",
+            idempotency_key=_attempt(4),
         )
     assert recorder.sent == []

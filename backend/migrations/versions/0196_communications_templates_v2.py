@@ -184,7 +184,7 @@ def upgrade() -> None:
              WHERE t.tenant_id = v_tenant AND t.key = p_key AND t.locale = p_locale;
             RETURN v_id;
         END $$
-        """
+        """,  # noqa: S608 -- fixed SQL; the tenant comes from the session
     )
     op.execute(
         f"""
@@ -195,7 +195,7 @@ def upgrade() -> None:
             SELECT t.id FROM public.email_templates t
              WHERE t.tenant_id = {_TENANT} AND t.key = p_key AND t.locale = p_locale
         $$
-        """
+        """,  # noqa: S608 -- fixed SQL; the tenant comes from the session
     )
     op.execute(
         f"""
@@ -275,7 +275,7 @@ def upgrade() -> None:
             UPDATE public.email_templates SET current_version_id = v_id WHERE id = p_template;
             RETURN v_id;
         END $$
-        """
+        """,  # noqa: S608 -- fixed SQL; the tenant comes from the session
     )
     for function in (_ROW, _FIRM_ID, _RESOLVE, _AT, _PUBLISH):
         op.execute(f"REVOKE ALL ON FUNCTION {function} FROM PUBLIC")

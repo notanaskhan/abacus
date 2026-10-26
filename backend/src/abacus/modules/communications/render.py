@@ -73,7 +73,7 @@ class TemplateContent:
         for item in blocks_raw:  # pyright: ignore[reportUnknownVariableType] -- checked below
             if not isinstance(item, dict):
                 raise TemplateInvalid
-            b: dict[str, object] = item  # pyright: ignore[reportUnknownVariableType]
+            b: dict[str, object] = item  # pyright: ignore[reportUnknownVariableType] -- a JSON object
             kind, block_id, text = b.get("kind"), b.get("id"), b.get("text")
             if kind not in BLOCK_KINDS or not isinstance(block_id, str):
                 raise TemplateInvalid

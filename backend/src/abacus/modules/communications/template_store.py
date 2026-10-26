@@ -1,7 +1,7 @@
 """Firm email template rows (R-01-T19; migration 0196). Communications' own tables only.
 
 Template rows and versions are global: the app reaches them only through 0196's SECURITY DEFINER
-functions, which take the firm from the session (`app.tenant_id`). Drafts are a tenant table
+functions, which take the firm from the session's tenant setting. Drafts are a tenant table
 under RLS. A firm's wording (version and draft) is sealed with the firm's key and bound to the
 template, the version (or draft version) and, for a version, its content hash, so a sealed body
 can't be moved to another row or opened as another firm's (ADR-035).
@@ -23,12 +23,16 @@ from abacus.modules.communications.render import TemplateContent, content_sha256
 from abacus.modules.communications.templates import TemplateInvalid
 
 LOCALE = "en-US"
-_COLUMNS = (
+_RESOLVE = text(
     "SELECT template_id, version_id, version, firm, format, subject, preheader, blocks, sealed, "
-    "cta_label, cta_target, content_sha256, published_by, published_at FROM "
+    "cta_label, cta_target, content_sha256, published_by, published_at "
+    "FROM email_template_resolve(:key, :locale)"
 )
-_RESOLVE = text(_COLUMNS + "email_template_resolve(:key, :locale)")
-_VERSION_AT = text(_COLUMNS + "email_template_version_at(:key, :locale, :version)")
+_VERSION_AT = text(
+    "SELECT template_id, version_id, version, firm, format, subject, preheader, blocks, sealed, "
+    "cta_label, cta_target, content_sha256, published_by, published_at "
+    "FROM email_template_version_at(:key, :locale, :version)"
+)
 
 
 @dataclass(frozen=True)
@@ -70,7 +74,7 @@ def _content(raw: bytes) -> TemplateContent:
     return TemplateContent.from_json(cast(dict[str, object], json.loads(raw)))
 
 
-async def _stored(tenant_id: UUID, key: str, row: Row[Any]) -> StoredVersion:
+async def _stored(tenant_id: UUID, key: str, row: Row[Any]) -> StoredVersion:  # Any: a text() row
     template_id: UUID = row.template_id
     version: int = row.version
     sha: str = row.content_sha256
@@ -145,12 +149,14 @@ async def ensure_firm_template(session: AsyncSession, key: str, audience: tuple[
     return cast(UUID, found)
 
 
-_DRAFT_SQL = (
+_DRAFT = text(
     "SELECT template_id, base_version_id, sealed, cta_target, draft_version, updated_by, "
     "updated_at FROM email_template_drafts WHERE template_id = :template"
 )
-_DRAFT = text(_DRAFT_SQL)
-_DRAFT_LOCKED = text(_DRAFT_SQL + " FOR UPDATE")
+_DRAFT_LOCKED = text(
+    "SELECT template_id, base_version_id, sealed, cta_target, draft_version, updated_by, "
+    "updated_at FROM email_template_drafts WHERE template_id = :template FOR UPDATE"
+)
 
 
 async def draft_of(
