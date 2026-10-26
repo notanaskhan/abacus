@@ -4,7 +4,12 @@ from abacus.ai_gateway import register_client_data_facts
 from abacus.modules.engagements.acceptance import (
     NewCondition,
     acceptance_record,
+    add_flag,
+    complete_manual_check,
     decide_acceptance,
+    request_manual_check,
+    send_to_partner,
+    update_answers,
 )
 from abacus.modules.engagements.acceptance_contract import (
     acceptance_router,
@@ -40,7 +45,7 @@ from abacus.modules.engagements.contract import (
     engagement_types_router,
     engagements_v2_router,
 )
-from abacus.modules.engagements.drafts import draft_visible
+from abacus.modules.engagements.drafts import create_draft, draft_visible, start_acceptance
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.hold_scope import (
@@ -78,7 +83,9 @@ from abacus.modules.engagements.service import (
     EngagementRef,
     MethodologyAlreadyApplied,
     active_engagements,
+    add_to_team,
     ai_excluded,
+    change_team_role,
     check_facts,
     client_of,
     client_subquery,
@@ -95,6 +102,7 @@ from abacus.modules.engagements.service import (
     open_engagements,
     pin_methodology,
     register_auto_retrieval,
+    remove_from_team,
     run_auto_retrieval,
 )
 from abacus.modules.engagements.setup import (
@@ -132,6 +140,12 @@ from abacus.modules.engagements.slots import (
     register_progress_source,
     register_work_item_kind,
     work_item_provider,
+)
+from abacus.modules.engagements.team import (
+    approve_eqr_eligibility,
+    approve_team,
+    assign_eqr,
+    team_approval,
 )
 from abacus.modules.engagements.work_items import (
     WORK_ITEM_FUNCTIONS,
@@ -317,8 +331,13 @@ __all__ = [
     "WorkItemExists",
     "WorkItemProvider",
     "acceptance_record",
+    "add_flag",
+    "add_to_team",
     "answer_independence",
+    "approve_eqr_eligibility",
+    "approve_team",
     "area_for",
+    "assign_eqr",
     "assign_work_item",
     "assurance_index",
     "assurance_item",
@@ -326,14 +345,17 @@ __all__ = [
     "attach_acceptance_file",
     "attach_letter_file",
     "audit_engagements",
+    "change_team_role",
     "check_facts",
     "client_contact_names",
     "client_contact_organisations",
     "client_contact_organisations_of_users",
     "commit_client_intake",
+    "complete_manual_check",
     "conclude_independence",
     "confirm_independence",
     "contact_portal_user",
+    "create_draft",
     "create_work_item",
     "decide_acceptance",
     "designate_contact",
@@ -371,12 +393,18 @@ __all__ = [
     "register_progress_source",
     "register_roll_forward_items",
     "register_work_item_kind",
+    "remove_from_team",
+    "request_manual_check",
     "require_open",
     "router",
     "run_auto_retrieval",
+    "send_to_partner",
     "service_line_of",
     "set_assurance_profile",
+    "start_acceptance",
     "stored_file",
+    "team_approval",
+    "update_answers",
     "version_detail",
     "visible_among",
     "work_item_engagement",
