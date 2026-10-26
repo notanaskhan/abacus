@@ -65,12 +65,15 @@ export async function screenScenarioFromSearch(
   return { scenario: found, opens };
 }
 
-/** A path with `_<key>_` segments (`/binders/_binderId_`) resolved from what the scenario opens,
- * so a journey names the record a scenario holds without knowing its id. */
-export function resolveOpens(path: string, opens: Readonly<Record<string, string>>): string {
-  return path.replace(/\/_([A-Za-z]+)_(?=\/|$)/g, (segment, key: string) => {
+/** A path or query with `_<key>_` segments or values (`/binders/_binderId_?ov=request:new:_binderId_`)
+ * resolved from what the scenario opens, so a journey names the record a scenario holds without
+ * knowing its id. */
+export function resolveOpens(url: string, opens: Readonly<Record<string, string>>): string {
+  // Bounded by `/`, `=`, `?`, `&`, `:` or its escape `%3A` (`?ov=request:_requestId_:_binderId_`).
+  const tokens = /(\/|=|:|%3A)_([A-Za-z]+)_(?=[/?&:]|%3A|$)/g;
+  return url.replace(tokens, (token, lead: string, key: string) => {
     const id = opens[key];
-    return id === undefined ? segment : `/${id}`;
+    return id === undefined ? token : `${lead}${id}`;
   });
 }
 

@@ -19,10 +19,9 @@ if (import.meta.env.VITE_FIXTURES === "1") {
   const screen = await screenScenarioFromSearch(window.location.search);
   installSeedFromSearch(window.location.search, screen?.scenario);
   if (screen !== undefined) {
-    const path = resolveOpens(window.location.pathname, screen.opens);
-    if (path !== window.location.pathname) {
-      window.history.replaceState(null, "", `${path}${window.location.search}`);
-    }
+    const here = `${window.location.pathname}${window.location.search}`;
+    const resolved = resolveOpens(here, screen.opens);
+    if (resolved !== here) window.history.replaceState(null, "", resolved);
   }
 }
 // Q-01-T50: browser error reporting, off unless the runtime config names a DSN and the tunnel.
