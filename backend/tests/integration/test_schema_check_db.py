@@ -1248,6 +1248,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
         "independence_confirmations": frozenset(
             {"status", "statement_version", "note", "answered_at"}
+            # P-07-T41 (0175): the three statements, sealed notes and reminders.
+            | {
+                "statements",
+                "interests_note",
+                "decline_note",
+                "reminder_count",
+                "last_reminded_at",
+            }
         ),
         "engagement_letters": frozenset(
             {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
@@ -1362,6 +1370,16 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "undone_at",
                 "undone_by",
             }
+        ),
+        # G-02-T10 (0192): the label index is re-labelled in place; an audit-log export moves
+        # through its build and records what it wrote.
+        "audit_event_labels": frozenset(
+            {"actor_label", "target_label", "keywords", "effective_at", "indexed_at"}
+            | {"engagement_id", "client_id", "office_id"}
+        ),
+        "audit_exports": frozenset(
+            {"status", "updated_at", "seq_from", "seq_to", "row_count", "expires_at"}
+            | {"csv_key", "manifest_key", "manifest_sha256", "signature_key_ref"}
         ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
