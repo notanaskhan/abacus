@@ -37,3 +37,12 @@ class PortalLinkRenewRequested(DomainEvent):
 
     event_type: ClassVar[str] = "portal.link_renew_requested"
     secure_link_id: Annotated[UUID, classified("internal")]
+
+
+class EmailTemplatePublished(DomainEvent):
+    """A firm published a new version of a template key (R-01-T19; C16 v1.1 §7). Later sends of
+    the key use it; messages already sent keep their `template_version_id`."""
+
+    event_type: ClassVar[str] = "email_template.published"
+    key: Annotated[str, classified("internal")]
+    version: Annotated[int, classified("internal")]

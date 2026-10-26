@@ -106,6 +106,7 @@ Codes are reserved for the implementing tasks; they enter `docs/architecture/err
 | 409 | `{"detail": "binder_gate_unmet", "facts": {"gate": "G3"}}` | publish before G3, except `intake` |
 | 409 | `{"detail": "binder_not_draft"}` | publish or edit from a state that doesn't allow it |
 | 409 | `{"detail": "binder_not_published"}` | unpublish or the client's mark-done on a binder that isn't Published (P-06-T07, additive) |
+| 409 | `{"detail": "binder_closed", "facts": {"binder_id": "…"}}` | a client's write on a Closed binder or one of its requests (ignore, upload intent, upload, withdraw, comment, mark-done and the undos; DEC-461, ED-118, additive); nothing is written |
 | 422 | `{"detail": "due_date_required", "facts": {...item ids}}` | publish or send with requests lacking a due date |
 | 422 | `{"detail": "reason_required"}` | unpublish or ignore without a reason (an absent or blank `reason` field is refused first by body validation, also 422) |
 | 409 | `{"detail": "request_already_sent"}` | delete a sent request |

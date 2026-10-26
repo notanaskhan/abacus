@@ -23,6 +23,7 @@ from abacus.modules.requests.repository import (
     follow_up_items,
     fulfilling_versions,
 )
+from abacus.modules.requests.repository import selection_engagements as repo_selection_engagements
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,19 @@ async def follow_up_candidates(
         )
         for item, due in rows
     ]
+
+
+async def selection_engagements(
+    ctx: AuthContext, binder_ids: Sequence[UUID], item_ids: Sequence[UUID]
+) -> tuple[set[UUID], bool]:
+    """Q-03-T038 (ED-082): the engagements a follow-up selection names that the caller may read
+    (walls apply; another firm's rows are not there), so the caller authorises on them even when
+    nothing in it is open; and whether every selected binder (and, for requests, at least one)
+    was readable."""
+    async with tenant_session(ctx.tenant) as session:
+        binders, items = await repo_selection_engagements(session, ctx, binder_ids, item_ids)
+    complete = not (set(binder_ids) - set(binders)) and (not item_ids or bool(items))
+    return set(binders.values()) | set(items.values()), complete
 
 
 async def live_files(ctx: AuthContext, item_id: UUID) -> list[UUID]:

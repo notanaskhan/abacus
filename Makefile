@@ -279,10 +279,16 @@ migrate: db-guard
 # backend/src/abacus_tools/loadtest/scenarios/$(PROFILE).yaml against this checkout's local stack
 # (`make dev` and `make seed` running) and writes p50/p95/p99 per endpoint group under
 # backend/.local/loadtest/. Loopback targets only; never a hosted environment or database.
+# Q-03-T044: the journey profiles (`journeys`, `pbc_import_burst`) read the Brightwater Hale ids
+# from `abacus_tools.loadtest.journey_vars` (needs `make seed-demo`); VARS adds more NAME=VALUE.
+# Q-03-T043: DRY_RUN=1 prints the plan and sends nothing (`make loadtest PROFILE=monday_9am DRY_RUN=1`).
 PROFILE ?= smoke
+VARS ?=
 loadtest:
 	cd backend && $(LOCAL_ENV) uv run python -m abacus_tools.loadtest.run --profile $(PROFILE) \
-		--base-url http://127.0.0.1:$(API_PORT) --temporal-target 127.0.0.1:$(ABACUS_TEMPORAL_PORT)
+		--base-url http://127.0.0.1:$(API_PORT) --temporal-target 127.0.0.1:$(ABACUS_TEMPORAL_PORT) \
+		$$(uv run python -m abacus_tools.loadtest.journey_vars) $(foreach v,$(VARS),--var $(v)) \
+		$(if $(DRY_RUN),--dry-run)
 
 # The Brightwater Hale scenario (F-04-T13): `make seed-demo SNAPSHOT=E0 HOLDOUT=fairhaven_ebp`.
 # Loopback only; a second run writes nothing. NO_SETTLE=1 where no outbox relay runs.
@@ -300,9 +306,17 @@ seed-demo: db-guard
 # deploy-staging run in flight (it names the run). No db-guard: staging is hosted by design.
 # The portal slice (P-08-T14, with the binders it needs) gives staging the branded portal host
 # `brightwaterhale.<portal_base_domain>` and every portal persona; it refuses without the domain.
+# Load profiles (Q-03-T044): `make seed-staging PROFILE=x1|x25|x100` builds that many synthetic
+# Brightwater-size firms (abacus_tools.synthetic.fleet) instead, on the perf stack (QD-6), with
+# the same refusals. Any other PROFILE (the loadtest default `smoke`) seeds Brightwater Hale.
 RESET_CLOCK ?= E0
+FLEET_PROFILE = $(filter x1 x25 x100,$(PROFILE))
 seed-staging:
+ifneq ($(FLEET_PROFILE),)
+	cd backend && uv run python -m abacus_tools.synthetic.fleet --staging --profile $(FLEET_PROFILE)
+else
 	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK) --slice portal
+endif
 
 # F-04-T31 (F-04.21): fixture JSON exported from the Python scenario at a snapshot, through the
 # API, into apps/web/src/fixtures/seed/exported/<SNAPSHOT>/. Throwaway Postgres (Docker), never

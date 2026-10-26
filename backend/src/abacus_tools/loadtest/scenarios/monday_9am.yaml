@@ -1,0 +1,44 @@
+# Monday 9 AM (Q-03-T043; chapter 10 section 10.11.3): a sign-in wave, then Home and "Waiting on
+# you", then list views with counts. Must show: the list and projection targets hold (10.11.1:
+# list with counts p95 500 ms, record read p95 300 ms). Every user arrives in the first 10
+# minutes (the wave), then works for the rest of the hour. At x1 here; the x25 and x100 windows
+# run the same profile on the perf stack against those firm counts (runbook). Read-only.
+name: monday_9am
+description: Sign-in wave, Home and Waiting on you, list views with counts, record reads.
+duration_seconds: 3600
+users: 46
+think_ms: 2000
+ramp_seconds: 600
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-margaret-okonkwo, weight: 1}
+  - {subject: scenario-hannah-leclerc, weight: 2}
+  - {subject: scenario-marcus-delaney, weight: 3}
+  - {subject: scenario-ana-cruz, weight: 4}
+groups:
+  - name: sign_in_shell
+    weight: 1
+    p95_ms: 300
+    steps:
+      - {path: /v1/me}
+      - {path: /v1/me/capabilities}
+  - name: home_waiting_on_you
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}
+      - {path: /v1/notifications}
+  - name: lists_with_counts
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements?limit=25"}
+      - {path: "/v1/clients?limit=25"}
+      - {path: "/v1/work-items?limit=25"}
+  - name: record_reads
+    weight: 3
+    p95_ms: 300
+    steps:
+      - {path: "/v1/engagements/{engagement_id}"}
+      - {path: "/v1/clients/{client_id}"}
+      - {path: "/v1/engagements/{engagement_id}/request-items"}

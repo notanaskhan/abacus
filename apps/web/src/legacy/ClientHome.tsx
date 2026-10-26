@@ -7,7 +7,7 @@ import { type JSX, useState } from "react";
 import { errorMessage } from "../api";
 import { PortalBrand } from "../shell/PortalBrand";
 import { chooseTenant, signIn, signOut, useSignedIn } from "../app-core/auth";
-import { yourPartMessage } from "./clientHubMessages";
+import { yourPartMessage } from "../domain/portal/clientHub";
 
 /** The client portal (ADR-011's separate tree; SPEC-016): the firms the client works with. */
 export function ClientHome(): JSX.Element {

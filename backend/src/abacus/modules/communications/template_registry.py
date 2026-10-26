@@ -32,6 +32,7 @@ message `blocked`; an authorisation failure raises as every `authorise` does.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
@@ -39,7 +40,6 @@ from uuid import UUID
 
 from abacus.kernel._flags import FOLLOW_UPS_SCHEDULED_SEND
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AuthContext
 
@@ -133,6 +133,9 @@ class EmailTemplateRegistration:
     cta_targets: tuple[CtaTarget, ...]
     used_by: tuple[str, ...]  # screen ids ("CLI-04", "SIG-01")
     firm_editable: bool
+    name: str = ""  # the list's label ("Signature request"); defaults to the key in words
+    used_by_label: str = ""  # "Used by …" ("SIG-02 envelopes")
+    designed: bool = False  # one of R-01's designed six: listed first (POR-20 a)
 
 
 class TemplateRegistrationInvalid(ValueError):
@@ -150,6 +153,9 @@ def register_email_template(
     used_by: tuple[str, ...],
     *,
     firm_editable: bool,
+    name: str | None = None,
+    used_by_label: str = "",
+    designed: bool = False,
 ) -> EmailTemplateRegistration:
     """Register a template key, once, at import time: whitelisted variables only, at most one
     call-to-action target per audience (an email still renders one button), screens by id."""
@@ -168,8 +174,19 @@ def register_email_template(
         raise TemplateRegistrationInvalid(f"{key}: used_by names screen ids")
     if firm_editable and "staff" in audience:
         raise TemplateRegistrationInvalid(f"{key}: staff templates are platform-locked")
+    label = name if name is not None else key.replace("_", " ").capitalize()
+    if not 1 <= len(label) <= 60 or len(used_by_label) > 120:
+        raise TemplateRegistrationInvalid(f"{key}: name and used-by label are short labels")
     registration = EmailTemplateRegistration(
-        key, tuple(audience), tuple(variables), tuple(cta_targets), tuple(used_by), firm_editable
+        key,
+        tuple(audience),
+        tuple(variables),
+        tuple(cta_targets),
+        tuple(used_by),
+        firm_editable,
+        label,
+        used_by_label,
+        designed,
     )
     _REGISTERED[key] = registration
     return registration
@@ -177,6 +194,10 @@ def register_email_template(
 
 def registered_templates() -> tuple[EmailTemplateRegistration, ...]:
     return tuple(_REGISTERED[k] for k in sorted(_REGISTERED))
+
+
+def registration_of(key: str) -> EmailTemplateRegistration | None:
+    return _REGISTERED.get(key)
 
 
 @dataclass(frozen=True)
@@ -224,18 +245,31 @@ async def send_templated(
     """Authorise, render the key's published version for one recipient and queue it, or record
     it `blocked` with a `SendRefusal`. A person: `authorise(ctx, "message.send", engagement)`
     first, then `lint_values`, then the rendered text through `check_scope`. The system: the
-    flag, the `reminder` key and the policy's mode, then the same checks. R-01-T19 builds it;
-    until then it refuses to run."""
-    raise NotImplementedYet
+    flag, the `reminder` key and a version the firm published, then the same checks (R-01-T19;
+    the policy's mode joins with R-01-T24, the client-mail gate with R-01-T27)."""
+    # Imported here: `template_send` imports this module.
+    from abacus.modules.communications import template_send
+
+    return await template_send.send(
+        ctx, key, recipient, variables, scope=scope, idempotency_key=idempotency_key
+    )
 
 
 # --- the value lint (DEC-379): client-written values never carry these shapes ------------------
 
 _AMOUNT_VALUE: Final = re.compile(
     r"[$€£]\s?\d|\b\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?\b|\b\d+\.\d{2}\b"
+    r"|(?i:\b(?:usd|us\$)\s?\d|\d(?:[\d,]*\d)?(?:\.\d+)?\s?(?:usd|dollars?)\b)"
 )
-_TIN_VALUE: Final = re.compile(r"\b\d{3}-\d{2}-\d{4}\b|\b\d{2}-\d{7}\b|(?<!\d)\d{9}(?!\d)")
+# Security review L2: a TIN separated by spaces or dots as well as dashes, or not at all.
+_TIN_VALUE: Final = re.compile(
+    r"\b\d{3}[\s.\-]?\d{2}[\s.\-]?\d{4}\b|\b\d{2}[\s.\-]\d{7}\b|(?<!\d)\d{9}(?!\d)"
+)
 _ACCOUNT_VALUE: Final = re.compile(r"(?:••|\*{2,}|[xX]{2,}|#)\s?\d{4}\b|(?<!\d)\d{10,}(?!\d)")
+# The same shapes for the template text lint (`lint.py`).
+AMOUNT_SHAPE: Final = _AMOUNT_VALUE
+TIN_SHAPE: Final = _TIN_VALUE
+ACCOUNT_SHAPE: Final = _ACCOUNT_VALUE
 
 
 @dataclass(frozen=True)
@@ -246,19 +280,47 @@ class ValueFinding:
     variable: str
 
 
+# The re-review: dash-like characters (hyphens, en and em dashes, minus, slashes) read as "-".
+_DASHES: Final = str.maketrans(
+    dict.fromkeys("\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u2043/\uff0f\\", "-")
+)
+# A link a mail client would make clickable: a scheme, `www.`, or an address (the re-review M).
+_VALUE_LINK: Final = re.compile(r"(?i)\b(?:https?|ftp)://|\bwww\.|[^\s@]+@[^\s@]+\.[a-z]{2,}")
+
+
+def folded(text: str) -> str:
+    """NFKC-folded (full-width digits, ligatures), accents and other combining marks dropped,
+    format characters (zero-width spaces and joiners, direction marks) removed."""
+    decomposed = unicodedata.normalize("NFKD", unicodedata.normalize("NFKC", text))
+    kept = "".join(ch for ch in decomposed if unicodedata.category(ch) not in ("Cf", "Mn"))
+    return unicodedata.normalize("NFC", kept)
+
+
+def normalised(text: str) -> str:
+    """What the shape rules read (security review L2 and its re-review): `folded`, with
+    dash-like characters and slashes read as "-", so a value can't slip a TIN or the platform's
+    name past a rule. Links are looked for in the `folded` text, where `://` is still itself."""
+    return folded(text).translate(_DASHES)
+
+
 def lint_values(values: Mapping[str, str]) -> list[ValueFinding]:
-    """The amount, TIN-shape and account-number rules over every filled value (each line of a
-    block variable). Deterministic; run at preview (shown as findings) and at send (refused as
-    `template_lint_failed`). A masked last four ("••4436") counts as an account number."""
+    """The amount, TIN-shape, account-number and link rules over every filled value (each line of
+    a block variable); `portal_link` is the platform's secure link, never linted. Deterministic;
+    run at preview (shown as findings) and at send (refused as `template_lint_failed`). A
+    masked last four ("••4436") counts as an account number."""
     found: list[ValueFinding] = []
     for name in sorted(values):
-        value = values[name]
+        if name == "portal_link":
+            continue
+        value = normalised(values[name])
         if _TIN_VALUE.search(value):
             found.append(ValueFinding("tin_shape", name))
         if _ACCOUNT_VALUE.search(value):
             found.append(ValueFinding("account_number", name))
         if _AMOUNT_VALUE.search(_TIN_VALUE.sub(" ", value)):
             found.append(ValueFinding("amount", name))
+        if _VALUE_LINK.search(folded(values[name])):
+            found.append(ValueFinding("foreign_link", name))  # a bare domain is defanged instead
     return found
 
 

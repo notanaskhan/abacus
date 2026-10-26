@@ -114,7 +114,8 @@ describe("SPEC-025 ac9 the roll-forward review", () => {
 
 type Fs = { readFileSync: (path: string, encoding: "utf8") => string };
 const cwd = (globalThis as unknown as { process: { cwd: () => string } }).process.cwd();
-const SCREENS = ["GlExport", "RollForward", "Board"];
+// The Board was retired for AUD-03 by A-01-T21 (DEC-442; SPEC-330 section 8 maps its tests).
+const SCREENS = ["GlExport", "RollForward"];
 // As spec024states and spec025states: hex, rgb/hsl, Tailwind's numbered palette, black or white,
 // arbitrary values.
 const LITERAL =
