@@ -2,7 +2,7 @@
 id: TASK-1354
 title: S9-S10 back-fill defect fixes for the agent, comments and guidance suites (Q-03-T038)
 spec: SPEC-319
-acceptance_criteria: [Q-03-T038]
+acceptance_criteria: [AC-16, AC-19, AC-20]
 risk_zone: red
 status: in-review
 epic: Q-03

@@ -43,7 +43,7 @@ CONTENT = TemplateContent(
 )
 
 
-def test_the_same_content_and_values_are_byte_identical() -> None:
+def test_ac9_the_same_content_and_values_are_byte_identical() -> None:
     first = render_email(CONTENT, VALUES, allowed=ALLOWED, block_variables=BLOCKS)
     second = render_email(
         CONTENT, dict(reversed(VALUES.items())), allowed=ALLOWED, block_variables=BLOCKS
@@ -58,7 +58,7 @@ def test_the_same_content_and_values_are_byte_identical() -> None:
     )
 
 
-def test_values_are_escaped_and_the_button_is_the_only_link() -> None:
+def test_ac9_values_are_escaped_and_the_button_is_the_only_link() -> None:
     rendered = render_email(
         CONTENT,
         {**VALUES, "client_first_name": '<script>x</script>"'},
@@ -71,7 +71,7 @@ def test_values_are_escaped_and_the_button_is_the_only_link() -> None:
     assert rendered.html.index("Open documents") < rendered.html.index("Ask Marcus")
 
 
-def test_390_is_the_same_html_with_a_full_width_button() -> None:
+def test_ac9_390_is_the_same_html_with_a_full_width_button() -> None:
     wide = render_email(CONTENT, VALUES, allowed=ALLOWED, block_variables=BLOCKS, width=600)
     narrow = render_email(CONTENT, VALUES, allowed=ALLOWED, block_variables=BLOCKS, width=390)
     assert wide.text == narrow.text and "max-width:390px" in narrow.html
@@ -87,12 +87,12 @@ def test_390_is_the_same_html_with_a_full_width_button() -> None:
         {"portal_link": "javascript:alert(1)"},  # not a secure link
     ],
 )
-def test_refused_values(values: dict[str, str]) -> None:
+def test_ac9_refused_values(values: dict[str, str]) -> None:
     with pytest.raises((UnknownTemplateVariable, TemplateInvalid)):
         render_email(CONTENT, {**VALUES, **values}, allowed=ALLOWED, block_variables=BLOCKS)
 
 
-def test_a_missing_value_or_a_stray_brace_is_refused() -> None:
+def test_ac9_a_missing_value_or_a_stray_brace_is_refused() -> None:
     with pytest.raises(UnknownTemplateVariable):
         render_email(
             CONTENT,
@@ -108,7 +108,7 @@ def test_a_missing_value_or_a_stray_brace_is_refused() -> None:
         render_email(misplaced, VALUES, allowed=ALLOWED, block_variables=BLOCKS)
 
 
-def test_the_lint_names_the_rule_and_the_block_never_the_text() -> None:
+def test_ac9_the_lint_names_the_rule_and_the_block_never_the_text() -> None:
     bad = TemplateContent(
         "Refund {balance_due}",
         "",

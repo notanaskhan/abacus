@@ -2,7 +2,7 @@
 id: TASK-1352
 title: Email template versions, drafts, publish and send_templated (R-01-T19; C16 v1.1)
 spec: SPEC-345
-acceptance_criteria: [R-01-T19]
+acceptance_criteria: [AC-9, AC-10, AC-11]
 risk_zone: red
 status: in-review
 epic: R-01

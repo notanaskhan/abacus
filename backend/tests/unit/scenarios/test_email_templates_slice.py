@@ -24,7 +24,7 @@ SLICES = ("audit_core", SLICE)
 REGISTRATIONS = {r.key: r for r in DESIGNED}
 
 
-def test_the_slice_is_registered_opt_in_and_deterministic() -> None:
+def test_ac12_the_slice_is_registered_opt_in_and_deterministic() -> None:
     assert SLICE in registered()
     assert all(e.slice == "audit_core" for e in build().events)
     assert build().fingerprint() == SCENARIO_HASH
@@ -32,7 +32,7 @@ def test_the_slice_is_registered_opt_in_and_deterministic() -> None:
     assert {e.kind for e in email_template_events()} <= set(loader.HANDLERS)
 
 
-def test_the_designed_six_at_por20s_versions_by_grace_the_firm_admin() -> None:
+def test_ac12_the_designed_six_at_por20s_versions_by_grace_the_firm_admin() -> None:
     assert {t.key for t in TEMPLATES} == set(REGISTRATIONS)
     versions = {t.key: (t.published, t.draft) for t in TEMPLATES}
     assert versions == {
@@ -50,7 +50,7 @@ def test_the_designed_six_at_por20s_versions_by_grace_the_firm_admin() -> None:
     assert sum(e.kind == "communications.email_template_draft_saved" for e in events) == 1
 
 
-def test_the_editor_flag_replays_first() -> None:
+def test_ac12_the_editor_flag_replays_first() -> None:
     kinds = [e.kind for e in loader.replay_order(build(slices=SLICES).events)]
     flag = next(
         i
@@ -61,7 +61,7 @@ def test_the_editor_flag_replays_first() -> None:
     assert kinds.index("identity.staff_member_added") < flag
 
 
-def test_every_seeded_version_would_publish() -> None:
+def test_ac12_every_seeded_version_would_publish() -> None:
     for template in TEMPLATES:
         registration = REGISTRATIONS[template.key]
         content = TemplateContent.from_json(template.content())

@@ -174,7 +174,7 @@ async def _send(firm: Firm, key: str = "idem-0001", **override: str) -> SendOutc
 # --- acceptance --------------------------------------------------------------------------------
 
 
-async def test_ac_the_same_version_and_values_render_byte_identical_html_and_text(
+async def test_ac9_the_same_version_and_values_render_byte_identical_html_and_text(
     firm: Firm,
 ) -> None:
     await _publish(firm, "Reminder")
@@ -197,7 +197,7 @@ async def test_ac_the_same_version_and_values_render_byte_identical_html_and_tex
     assert "<li" in renders[0].html and f'href="{LINK}"' in renders[0].html
 
 
-async def test_ac_a_key_with_no_published_version_blocks_the_send(
+async def test_ac10_a_key_with_no_published_version_blocks_the_send(
     firm: Firm, seed: Seeder, recorder: Recorder
 ) -> None:
     outcome = await _send(firm)
@@ -211,7 +211,7 @@ async def test_ac_a_key_with_no_published_version_blocks_the_send(
     assert recorder.sent == []
 
 
-async def test_ac_v3_stays_readable_after_v4_publishes(firm: Firm) -> None:
+async def test_ac11_v3_stays_readable_after_v4_publishes(firm: Firm) -> None:
     for n, word in enumerate(("One", "Two", "Three", "Four"), start=1):
         assert await _publish(firm, word) == n
     async with tenant_session(firm.admin.tenant) as session:
@@ -226,7 +226,7 @@ async def test_ac_v3_stays_readable_after_v4_publishes(firm: Firm) -> None:
 # --- drafts, publish and the lint --------------------------------------------------------------
 
 
-async def test_a_stale_draft_answers_409_and_discard_and_empty_publish_are_refused(
+async def test_ac11_a_stale_draft_answers_409_and_discard_and_empty_publish_are_refused(
     firm: Firm,
 ) -> None:
     saved = await template_service.save_draft(firm.admin, "reminder", content("A"), 0)
@@ -242,7 +242,7 @@ async def test_a_stale_draft_answers_409_and_discard_and_empty_publish_are_refus
         await template_service.publish(firm.admin, "reminder")
 
 
-async def test_a_draft_based_on_an_older_version_cannot_publish_over_a_newer_one(
+async def test_ac11_a_draft_based_on_an_older_version_cannot_publish_over_a_newer_one(
     firm: Firm, seed: Seeder
 ) -> None:
     await _publish(firm, "One")
@@ -267,7 +267,7 @@ async def test_a_draft_based_on_an_older_version_cannot_publish_over_a_newer_one
         ("Hello {balance_due}", "unregistered_variable"),
     ],
 )
-async def test_publish_refuses_the_lint_findings_naming_the_block_not_the_text(
+async def test_ac11_publish_refuses_the_lint_findings_naming_the_block_not_the_text(
     firm: Firm, text: str, code: str
 ) -> None:
     bad = TemplateContent(
@@ -280,7 +280,9 @@ async def test_publish_refuses_the_lint_findings_naming_the_block_not_the_text(
     assert all(text not in str(v) for v in refused.value.facts.values())
 
 
-async def test_a_call_to_action_the_key_does_not_register_is_refused_at_save(firm: Firm) -> None:
+async def test_ac11_a_call_to_action_the_key_does_not_register_is_refused_at_save(
+    firm: Firm,
+) -> None:
     wrong = TemplateContent("S", "", (Block("p", "paragraph", "x"),), "Sign", "sign")
     with pytest.raises(template_service.TemplateInvalid):
         await template_service.save_draft(firm.admin, "reminder", wrong, 0)
@@ -289,7 +291,9 @@ async def test_a_call_to_action_the_key_does_not_register_is_refused_at_save(fir
 # --- who may, and the flag ---------------------------------------------------------------------
 
 
-async def test_staff_and_the_agent_are_refused_and_the_flag_hides_writes(seed: Seeder) -> None:
+async def test_ac11_staff_and_the_agent_are_refused_and_the_flag_hides_writes(
+    seed: Seeder,
+) -> None:
     firm = await _firm(seed, editor=False)
     with pytest.raises(Forbidden):
         await template_service.template_state(firm.staff, "reminder")
@@ -311,7 +315,7 @@ async def test_staff_and_the_agent_are_refused_and_the_flag_hides_writes(seed: S
         await template_service.check_publish(stale, "reminder")
 
 
-async def test_another_firm_sees_none_of_it(firm: Firm, seed: Seeder) -> None:
+async def test_ac11_another_firm_sees_none_of_it(firm: Firm, seed: Seeder) -> None:
     await _publish(firm, "Mine")
     other = await _firm(seed)
     state = await template_service.template_state(other.admin, "reminder")
@@ -323,7 +327,7 @@ async def test_another_firm_sees_none_of_it(firm: Firm, seed: Seeder) -> None:
 # --- at rest -----------------------------------------------------------------------------------
 
 
-async def test_a_firms_wording_is_sealed_at_rest_and_versions_stay_insert_only(
+async def test_ac11_a_firms_wording_is_sealed_at_rest_and_versions_stay_insert_only(
     firm: Firm, seed: Seeder, migrated_db: MigratedDatabase
 ) -> None:
     await _publish(firm, "Sealedword")
@@ -359,7 +363,7 @@ async def test_a_firms_wording_is_sealed_at_rest_and_versions_stay_insert_only(
 # --- send_templated ----------------------------------------------------------------------------
 
 
-async def test_a_send_renders_the_published_version_once_and_stores_no_link(
+async def test_ac10_a_send_renders_the_published_version_once_and_stores_no_link(
     firm: Firm, seed: Seeder, recorder: Recorder
 ) -> None:
     await _publish(firm, "Reminder")
@@ -380,7 +384,7 @@ async def test_a_send_renders_the_published_version_once_and_stores_no_link(
     assert LINK not in row["body"] and "[link removed]" in row["body"]
 
 
-async def test_a_value_with_an_amount_or_outside_the_whitelist_blocks_the_send(
+async def test_ac10_a_value_with_an_amount_or_outside_the_whitelist_blocks_the_send(
     firm: Firm, recorder: Recorder
 ) -> None:
     await _publish(firm, "Reminder")
@@ -398,7 +402,7 @@ async def test_a_value_with_an_amount_or_outside_the_whitelist_blocks_the_send(
     assert recorder.sent == []
 
 
-async def test_a_person_without_message_send_on_the_engagement_is_refused(
+async def test_ac10_a_person_without_message_send_on_the_engagement_is_refused(
     firm: Firm, recorder: Recorder
 ) -> None:
     await _publish(firm, "Reminder")
