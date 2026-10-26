@@ -68,3 +68,78 @@ Reads write none. Engagement creation writes `engagement.created` and emits `eng
 
 ## 8. C1 v1.1 note (P-07-T05)
 Additive, no C1 field changes: P-07's engagements family (`engagements-v2.md`) adds the gate facts with blockers for G1 to G9 (`GET /v1/engagements/{id}/gates`, `EngagementGateOut`), the v2 index and record projection beside `GET /v1/engagements` and `GET /v1/engagements/{id}`, the interim recorded letter, and the engagement-type catalogue that F-02-T11's check covers (no `single_audit`). Behind `engagements.v2`; stub 2026-10-23.
+
+## 9. Brightwater Hale E0 examples (F-03-T06)
+Captured from the API on the E0 scenario with the binders slice (`make seed-demo SLICE=binders`), read by Grace Holloway (firm admin), on 2026-10-26. These are synthetic: Brightwater Hale only (ADR-085). Each block is `GET /v1/engagements/{engagement_id}/work-items` for the client's first engagement in the `GET /v1/engagements` order. Engagement ids are stable across loads; work-item ids are made by the database's trigger at load and differ from one load to the next.
+
+### Copperleaf Coffee Roasters, Inc.: TY2025 Form 1120-S (`active`)
+Engagement `73767760-de32-4fe0-a437-6776d12762b1`.
+
+```json
+[
+  {
+    "due_on": null,
+    "id": "349e31ba-2399-4501-81df-9f2c3a7ecae0",
+    "kind": "tax_return",
+    "name": "2025 Form 1120-S",
+    "period_end": "2025-12-31",
+    "period_start": "2025-01-01",
+    "phase": null,
+    "status": "active"
+  }
+]
+```
+
+### Northwind Robotics, Inc.: PY2025 EBP Audit (`active`)
+Engagement `36cf7ac7-6f57-4dd7-b71d-2ebff60c6928`.
+
+```json
+[
+  {
+    "due_on": "2026-10-09",
+    "id": "680f7807-73b6-47db-be35-c68a4a9b72bf",
+    "kind": "assurance",
+    "name": "PY2025 EBP Audit",
+    "period_end": "2025-12-31",
+    "period_start": "2025-01-01",
+    "phase": "planning",
+    "status": "active"
+  }
+]
+```
+
+### Bluestem Analytics, LLC: TY2025 Form 1120-S (`active`)
+Engagement `ea61faf9-5033-430d-b91f-757a8411bca1`.
+
+```json
+[
+  {
+    "due_on": null,
+    "id": "de3dbfab-ce74-470b-bfad-bbabbd757d78",
+    "kind": "tax_return",
+    "name": "2025 Form 1120-S",
+    "period_end": "2025-12-31",
+    "period_start": "2025-01-01",
+    "phase": null,
+    "status": "active"
+  }
+]
+```
+
+### Meridian Tool & Die, Inc.: TY2025 Form 1120 (`active`)
+Engagement `95a4a979-3d58-4885-a947-dc3067aa86fc`.
+
+```json
+[
+  {
+    "due_on": null,
+    "id": "217e3314-d8c0-4ac4-9b1b-faaa1d2cbc96",
+    "kind": "tax_return",
+    "name": "2025 Form 1120",
+    "period_end": "2025-12-31",
+    "period_start": "2025-01-01",
+    "phase": null,
+    "status": "active"
+  }
+]
+```
