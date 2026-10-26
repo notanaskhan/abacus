@@ -222,6 +222,10 @@ async def load_gl_import_context(tenant_id: UUID, import_id: UUID) -> SystemCont
 
 
 def _view(run: SyncRun) -> RetrievalView:
+    # A run no request item asked for (0195: on demand, scheduled, an export) is not a
+    # retrieval; A-02-T30 gives those runs their own view.
+    if run.request_item_id is None:
+        raise NotFound("sync_run")
     return RetrievalView(
         run.id,
         run.request_item_id,

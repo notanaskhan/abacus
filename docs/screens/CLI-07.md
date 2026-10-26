@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLI-07 Acceptance and continuance - Estate of Walter Thornbury/` (README.md, spec.md, revision.md R2; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | P-07 · contract P-07-T23 · stub P-07-T29 · live P-07-T35 · AC suite P-07-T38 · screen P-07-T46 · gate kinds P-07-T47 |
-| Manifest status | planned (`routes/manifest/cli.ts`) until P-07-T46 |
+| Manifest status | live (`routes/manifest/cli.ts`, P-07-T46): a, b, d, e, f over the live routes; c and g on fixtures; links to CLI-02 wired in `routes/firm/clients.tsx` (DEC-195, DEC-431) |
 
-Code to come: `src/screens/CLI-07/{index.tsx, scenarios.ts, copy.ts, CLI-07.test.tsx}`, `src/domain/engagements/DecisionDock.tsx`, `src/fixtures/handlers/acceptance.ts`. Flag `engagements.acceptance_v2`. Spec: SPEC-332 AC-1 to AC-12.
+Code (P-07-T46, TASK-1328): `src/screens/CLI-07/{index.tsx, scenarios.ts, copy.ts, CLI-07.test.tsx}`, `src/domain/engagements/{DecisionDock.tsx, acceptance.ts}`, `src/fixtures/{seed,handlers}/acceptance.ts`, `src/fixtures/scenarios/CLI-07.ts`, `e2e/screens/CLI-07.spec.ts` (axe), the route in `src/routes/firm/clients.tsx` and the gallery artboard. Flag `engagements.acceptance_v2`. Spec: SPEC-332 AC-1 to AC-12. Built per DEC-431.
 
 ## States
 
@@ -55,6 +55,16 @@ Not-allowed: everyone but the engagement partner sees the decide control disable
 | `running.card` (c, fixture) | "Accrued Agent is screening · {done} of {total} sections" |
 | `g.dock` | "Not ready for decision — questionnaire in progress" |
 | `g.rail` | "Client responsiveness" |
+| `dock.continuance` (f, g) | "Continue" · "Continue with conditions" · "Discontinue"; details "Proceed to the {period} engagement letter." · "Add conditions from the flags." · "Record reasons; no letter." |
+| `dock.question` | "Accept the {client} engagement?" · continuance "Continue the {client} engagement for {period}?" |
+| `dock.reserved` | "Reserved to {partner} · Engagement partner. The decision date must precede the engagement letter (G1)." |
+| `dock.recorded` (d, e) | "Decision recorded {date} · it can't be edited. The engagement letter follows it (G1)." · "… No engagement letter will be drafted." |
+| `dock.labels` | "Rationale" · "Reasons" (Decline) · "Continuance note" (continuance in Draft) · "Conditions" · "{done} of {total} done" · "Owner {person} · Open" |
+| `flag.partnerCan` (b) | "{partner} can make this a condition" |
+| `risk.summary` | "{n} sections clear ({m} by manual check) · {n} flags · {n} manual check open · conclusion awaiting partner · risk-partner review not required at {rating}" |
+| `check.open` (b) | "Manual check open · {section}" |
+| `clear` | "Clear sections ({n})" |
+| Written for P-07-T46 (DEC-431) | "Request manual check…", "Complete check…", "Mark check done", "Asked of {person} · {date}", "Add flag…", "Request review", "Complete review", source rows "File" / "Request", refusals "Choose an option.", "A rationale is required.", "Add at least one condition.", "This record changed since you opened it. Reload to see the latest.", "The decision is already recorded.", "A risk-partner review must be completed first.", "That person can't take this on here.", "Couldn’t save. Try again." |
 
 Questionnaire sections come from the firm's database template ("Tax engagements v2"), never `copy.ts`; flag text, sources and conditions are data.
 
@@ -91,6 +101,12 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | recommendation | "Decide requires a rationale when the choice differs from the recommendation" becomes: a rationale is always required | No agent recommendation in production | SPEC-332 AC-7 |
 | states | Record states Draft · Pre-screening · Awaiting partner · Decided · Declined | Undesigned states | DF-06 |
 | g | Fixture until INS-05 exists | Insights lands with I-03 | P-07 §5 |
+| dock | A local `DecisionDock`; no agent recommendation, Reasoning block or "Request more analysis…"; continuance option words from f and g | SHL-11's card is not built; no agent in production | DEC-431 |
+| rail and clear lines | A section's rail line and clear line are its answers `summary` and `detail`; the `conclusion` section reads the decision | The record carries no per-section sentence; the template is database content | DEC-431 |
+| sources | A flag's source row reads "File" or "Request" (the API carries `{kind, id}` only), no citation count | No source-name read yet | DEC-431 |
+| bar meta | "Prepared by ‹preparer› · ‹sent date›"; g reads "Prepared by Hannah Leclerc" (no "Opened by" fact) | The record has no opened-by field | DEC-64, DEC-431 |
+| writes | "Request manual check…", "Complete check…", "Add flag…" are added; "Edit answers" and "View answers" are not drawn | Undesigned controls for live routes; no section form yet | DEC-431 |
+| engagement pill | The record bar shows the engagement's own status (f reads "Prospect", not "Not started") | The status comes from the engagement record | DEC-431 |
 
 ## Parity
 | Artboard | Tier (A/B/D) | Diff % | Notes |
@@ -99,4 +115,6 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum, 
 | c g | C (fixture) | — | |
 
 ## Open gaps
-None open.
+- Source names and citation counts on flag rows wait on a source-name read (P-03, SHL-08).
+- The risk-partner picker offers the team candidates; a partner-level filter needs a level on `CandidateOut` (the server already refuses a non-partner).
+- Parity (Tier C) and axe are not yet run: `e2e/screens/CLI-07.spec.ts` is written; Playwright was skipped in P-07-T46 (chromium mismatch).

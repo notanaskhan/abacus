@@ -6,7 +6,7 @@ service lands:
 - `evidence.citations_v2`: citations; the two reads are served (P-03-T08), relink too (P-03-T12);
 - `evidence.viewer_v1`: the viewer; served (P-03-T09);
 - `evidence.pii_reveal`: reveal; served (P-03-T16);
-- `evidence.viewer_unlock`: unlock; P-03-T14.
+- `evidence.viewer_unlock`: unlock; served (P-03-T19).
 `POST /v1/citations` is reserved: 501 until its first anchor consumer.
 
 Shapes per P-03 §4.3 and `docs/contracts/c04-citations-viewer.md`. Hard rules:
@@ -47,6 +47,7 @@ from abacus.modules.evidence.reveals import reveal_pii
 from abacus.modules.evidence.routes import (
     _png_response,  # pyright: ignore[reportPrivateUsage] -- the module's own PNG answer
 )
+from abacus.modules.evidence.unlock import unlock_version
 from abacus.modules.evidence.viewer import (
     viewer_manifest,
     viewer_page,
@@ -522,11 +523,22 @@ async def reveal_pii_route(
     "/evidence-versions/{version_id}/unlock",
     action="evidence.unlock",
     response_model=EvidenceUnlockOut,
-    errors=(409, 501),
+    errors=(409, 429, 501),
 )
 async def unlock_version_route(
-    version_id: VersionId, body: EvidenceUnlockIn, ctx: Ctx
+    version_id: VersionId, body: EvidenceUnlockIn, ctx: Ctx, response: Response
 ) -> EvidenceUnlockOut:
-    """AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;
-    429 `unlock_rate_limited` with `retry_after`."""
-    await _stub(ctx, EVIDENCE_VIEWER_UNLOCK)
+    """AC5.2 to AC5.5 (P-03-T19): a derivation, never a change to the evidence. `ready` with the
+    derivation's id, or `wrong_password` with `attempts_left` (200, audited by count only); 409
+    `not_password_protected` for a version that isn't locked or is unlocked already; 429
+    `unlock_rate_limited` with `retry_after` after five failures in fifteen minutes; 403 for an
+    agent, the system, a support session, a client principal or a role without
+    `evidence.unlock`. The password is never logged, stored, sent to Temporal or echoed."""
+    await _gate(ctx, EVIDENCE_VIEWER_UNLOCK)
+    result = await unlock_version(ctx, version_id, body.password)
+    response.headers["Cache-Control"] = "no-store"
+    return EvidenceUnlockOut(
+        status=result.status,
+        attempts_left=result.attempts_left,
+        derivation_id=result.derivation_id,
+    )
