@@ -296,7 +296,7 @@ def _glyph(x: int, digit: str, width: int = 8) -> bytes:
 
 
 @pytest.mark.parametrize("pitch", [8, 11, 12])
-@pytest.mark.parametrize("number", ["123-45-6789", "123456789", "203-55-6089"])
+@pytest.mark.parametrize("number", ["923-45-6789", "923456789", "923-55-6089"])
 def test_r2_outlined_digits_mark_the_page_unread(pitch: int, number: str) -> None:
     row = b"q 1 w 0 g\n" + b"".join(_glyph(100 + i * pitch, c) for i, c in enumerate(number))
     body = b"BT /F1 9 Tf 100 420 Td (Social security number) Tj ET\n"
