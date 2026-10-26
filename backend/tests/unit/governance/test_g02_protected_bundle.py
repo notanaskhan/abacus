@@ -100,7 +100,7 @@ def test_an_unregistered_type_has_no_label_and_its_values_are_unavailable() -> N
 
 
 def test_a_failing_resolver_answers_unavailable_and_restricted_labels_are_refused() -> None:
-    async def labeler(viewer: AuthContext, ids: Sequence[str]) -> Mapping[str, AuditLabel]:
+    async def labeler(viewer: AuthContext | None, ids: Sequence[str]) -> Mapping[str, AuditLabel]:
         return {"1": AuditLabel("Copperleaf", "confidential"), "2": AuditLabel("x", "restricted")}
 
     async def resolver(viewer: AuthContext, event: AuditEventRef) -> AuditValues:

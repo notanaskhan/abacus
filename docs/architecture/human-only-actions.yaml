@@ -89,3 +89,7 @@ actions:
     verb: decide  # G-01-T13 (DEC-381, DEC-383, 0168): a firm admin publishes the statement
   - action: service_line_policy.updated
     verb: decide  # G-01-T12 (DEC-380, DEC-383, 0168): a firm decides who reads a line's content
+  - action: independence.concluded
+    verb: decide  # P-07-T41 (DEC-428, 0175): the engagement partner concludes independence (SPEC-332 AC-18)
+  - action: nas.evaluated
+    verb: decide  # P-07-T41 (DEC-428, 0175): a NAS evaluation, decided by the engagement partner (AC-21)

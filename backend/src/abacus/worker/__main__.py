@@ -64,11 +64,15 @@ from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import RoutingPublisher, run_relay
 from abacus.modules import MODULES as ALL_MODULES
 from abacus.modules.agents import api as agents
-from abacus.modules.evidence.api import check_ready
+from abacus.modules.audit_trail.api import events_for_work_item
+from abacus.modules.evidence.api import check_ready, register_export_audit_trail
 from abacus.modules.platform.api import configure_canary_probe
 from abacus.worker.canary_probe import ServiceProbe
 
 GRACEFUL_SHUTDOWN = timedelta(seconds=60)
+# A-01-T19 (DEC-433): the export build reads its audit-trail section through audit_trail
+# (see api/app.py).
+register_export_audit_trail(events_for_work_item)
 # The modules with worker parts (subscriptions, workflows, activities), in MODULES order (P-39;
 # F-03-T07): a module's api.py declares them, so adding one never edits the worker.
 MODULES = tuple(

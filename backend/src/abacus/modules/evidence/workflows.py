@@ -6,7 +6,8 @@ Orchestration only: activities by name, identifiers in, identifiers out. One run
 P-03-T05 adds v4 `words` (the word layer) and the `trust_layer_backfill` workflow; P-03-T13
 adds v5 `pii_scan`; R-01-T09 v6 `portal_drop_sort`; P-03-T15 v7 `masked_preview`, which
 replaces the unmasked v3 preview for new runs, and the backfill's v2 `masks`. The legal-hold
-workflows (Q-02-T29) follow the upload workflow, with their own v1 histories.
+workflows (Q-02-T29) follow the upload workflow, with their own v1 histories. The engagement
+export (A-01-T19) is v1, recorded in its own histories.
 Extraction never fails the run on a bad file: the activity records `unreadable` instead.
 """
 
@@ -16,14 +17,20 @@ from datetime import timedelta
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
-from temporalio.exceptions import ActivityError
+from temporalio.exceptions import ActivityError, ApplicationError
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.evidence.workflow_types import (
+        BUILD_ERROR,
         HOLD_NOT_FOUND,
         INBOX,
+        INTEGRITY_MISMATCH,
+        SECTION_MISSING,
         VERSION,
         BackfillInput,
+        EngagementExportInput,
+        ExportFailure,
+        ExportPackageFacts,
         LegalHoldInput,
         UploadInput,
         WithdrawalPurgeInput,
@@ -322,4 +329,98 @@ class AuditAnchorWorkflow:
             result_type=int,
             start_to_close_timeout=_ANCHOR_TIMEOUT,
             retry_policy=_ANCHOR_RETRY,
+        )
+
+
+# --- Engagement export (A-01-T19; A-01 §4.5; SPEC-344). v1, recorded in its histories. ----------
+
+# Bookkeeping must land whatever the outage: the export never stays `queued` or `packaging`.
+_EXPORT_STAMP_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=5),
+    maximum_attempts=0,
+)
+# The grant is retried while it is not yet due (the business clock may run behind the timer).
+_EXPORT_GRANT_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=2),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(seconds=30),
+    maximum_attempts=20,
+)
+# A decided failure (a swapped object, a missing section) is never retried.
+_EXPORT_BUILD_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=5),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(minutes=2),
+    maximum_attempts=4,
+    non_retryable_error_types=[INTEGRITY_MISMATCH, SECTION_MISSING],
+)
+_EXPORT_BUILD_TIMEOUT = timedelta(minutes=60)
+_EXPORT_HEARTBEAT = timedelta(minutes=2)
+
+
+def _failure_code(error: ActivityError) -> str:
+    cause = error.cause
+    if isinstance(cause, ApplicationError) and cause.type in (INTEGRITY_MISMATCH, SECTION_MISSING):
+        return cause.type
+    return BUILD_ERROR
+
+
+@workflow.defn(name="engagement_export")
+class EngagementExportWorkflow:
+    """`engagement_export:<tenant>:<export_id>` (reuse rejected): sleep out the Undo window on a
+    durable timer, consume the grant (an Undo voided it: the run ends `undone`), snapshot the
+    selection at one audit sequence, build and store the package, then mark it ready; any build
+    failure marks it failed with its code. Nothing is published before `mark_ready`."""
+
+    @workflow.run
+    async def run(self, given: EngagementExportInput) -> str:
+        if given.wait_seconds > 0:
+            await workflow.sleep(timedelta(seconds=given.wait_seconds))
+        try:
+            started = await workflow.execute_activity(
+                "engagement_export.consume_grant",
+                given,
+                result_type=str,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_EXPORT_GRANT_RETRY,
+            )
+        except ActivityError:  # retries spent: the export never stays `queued`
+            return await self._failed(given, BUILD_ERROR)
+        if started != "packaging":
+            return started
+        try:
+            await workflow.execute_activity(
+                "engagement_export.snapshot",
+                given,
+                result_type=int,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_RETRY,
+            )
+            facts = await workflow.execute_activity(
+                "engagement_export.package",
+                given,
+                result_type=ExportPackageFacts,
+                start_to_close_timeout=_EXPORT_BUILD_TIMEOUT,
+                heartbeat_timeout=_EXPORT_HEARTBEAT,
+                retry_policy=_EXPORT_BUILD_RETRY,
+            )
+        except ActivityError as error:
+            return await self._failed(given, _failure_code(error))
+        return await workflow.execute_activity(
+            "engagement_export.mark_ready",
+            facts,
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_EXPORT_STAMP_RETRY,
+        )
+
+    async def _failed(self, given: EngagementExportInput, code: str) -> str:
+        return await workflow.execute_activity(
+            "engagement_export.mark_failed",
+            ExportFailure(given.tenant_id, given.export_id, code),
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_EXPORT_STAMP_RETRY,
         )
