@@ -99,6 +99,9 @@ AttestLookup = Callable[[TenantContext, UUID], Awaitable[bool | None]]
 GatesLookup = Callable[[TenantContext, UUID, tuple[str, ...]], Awaitable[dict[str, bool]]]
 ServiceLineLookup = Callable[[TenantContext, UUID], Awaitable[str | None]]
 ScopeLookup = Callable[[TenantContext, UUID, UUID, UUID | None], Awaitable[bool]]
+# R-01-T13 (DEC-387): (tenant, user, engagement) -> whether the person holds an active
+# `request_item` grant of a third party on one of the engagement's requests.
+ThirdPartyLookup = Callable[[TenantContext, UUID, UUID], Awaitable[bool]]
 
 
 # P-07-T24 (ADR-164 item 3): the attest flag as a column, for `visible()` under `g2_blocks_view`:
@@ -117,6 +120,7 @@ class _Lookups:
     service_line: ServiceLineLookup | None = None
     service_line_column: ServiceLineColumn | None = None
     scope: ScopeLookup | None = None
+    third_party: ThirdPartyLookup | None = None
 
 
 LOOKUPS = _Lookups()
@@ -173,3 +177,10 @@ def register_client_scope(lookup: ScopeLookup) -> None:
     """client grants: (tenant, user, engagement, work item) -> whether a grant covers it."""
     _once("scope", lookup)
     LOOKUPS.scope = lookup
+
+
+def register_third_party(lookup: ThirdPartyLookup) -> None:
+    """client grants (R-01-T13): whether a client person is a third party on an engagement, the
+    matrix role `third_party`, whose cells are `delegated_only`. Unregistered: never."""
+    _once("third_party", lookup)
+    LOOKUPS.third_party = lookup

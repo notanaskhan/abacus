@@ -9,14 +9,14 @@
 #
 # C5 section portal-pbc (R-01-T01 stub; R-01 §4.3). The plan's `portal.documents.read` is spelt
 # `portal_documents.read` (DEC-139). One read action serves the binder picker, POR-03, POR-04,
-# the drop poll and, for third parties, POR-14 and its suggest. The `third_party` role and the
-# `delegated_only` condition do not exist in the matrix yet (DEC-240): R-01-T13 adds them with the
-# room read model; until then a third-party grant holds no cell here and every route is 404.
+# the drop poll and, for third parties, POR-14 and its suggest. R-01-T13 (DEC-387) adds the
+# `third_party` role (the holder of a `request_item` grant) with `delegated_only`: an item whose
+# open delegation is the person's, so the room authorises row by row and reaches nothing else.
 
 actions:
   portal_home.read:         {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-02, GET /v1/portal/home
   portal_preferences.update: {client_admin: allow, client_contributor: allow, agent: deny, system: deny}   # POR-02 b, the person's own per-scope preferences
-  portal_documents.read:    {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-03, POR-04, POR-14; GET /v1/portal/binders, binders/{id}, request-items/{id}, room, drops/{batch}; POST room/suggest
+  portal_documents.read:    {client_admin: allow, client_contributor: allow, third_party: delegated_only, agent: deny, system: deny, scope_only: required}   # POR-03, POR-04, POR-14; GET /v1/portal/binders, binders/{id}, request-items/{id}, room, drops/{batch}; POST room/suggest
   # --- C16 v1.1: portal settings and preview (R-01-T16 stub; R-01 §4.3; ADM-10) ---
   # The plan's `portal.settings.read` and `portal.settings.manage` are spelt `portal_settings.*`
   # (DEC-139: one dot). `portal.preview`'s target is checked by the service under `visible()` (a

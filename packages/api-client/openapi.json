@@ -10055,10 +10055,17 @@
             "type": "string"
           },
           "author_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Author User Id",
-            "type": "string"
+            "title": "Author User Id"
           },
           "corrected_by": {
             "cls": "internal",
@@ -117833,7 +117840,7 @@
     },
     "/v1/portal/room": {
       "get": {
-        "description": "POR-14: the caller's delegated request items, by band.",
+        "description": "POR-14: the caller's delegated request items, by band. No delegation, or any request\noutside it: 404.",
         "operationId": "get_portal_room",
         "parameters": [
           {
@@ -117919,16 +117926,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Portal Room Route",
@@ -118036,16 +118033,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Suggest Room Request Route",

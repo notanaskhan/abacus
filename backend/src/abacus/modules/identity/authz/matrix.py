@@ -18,12 +18,22 @@ Decision = Literal[
     "deny",
     "assigned_only",
     "client_visible_only",
+    "delegated_only",
     "in_scope",
     "task_scope",
     "firm_setting",
 ]
 _SIMPLE: frozenset[str] = frozenset(
-    {"allow", "deny", "assigned_only", "client_visible_only", "in_scope", "task_scope"}
+    {
+        "allow",
+        "deny",
+        "assigned_only",
+        "client_visible_only",
+        # R-01-T13 (DEC-387): a third party's cell, an item delegated to the person
+        "delegated_only",
+        "in_scope",
+        "task_scope",
+    }
 )
 _FIRM_SETTING = re.compile(r"firm_setting\(([a-z_]+)\)")
 # The firm settings a person's cell may name (F-03-T24; DEC-38). Migration 0081's CHECK on

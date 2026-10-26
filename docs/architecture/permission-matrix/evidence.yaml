@@ -29,6 +29,7 @@ actions:
     staff: allow
     client_admin: allow
     client_contributor: assigned_only
+    third_party: delegated_only   # R-01-T13 (DEC-387): POR-14, the delegated request only
     system: allow             # retrieval via connections
   evidence.accept:
     independence: required   # SPEC-025 (TASK-045): client data, per person
@@ -53,7 +54,7 @@ actions:
     agent: deny               # ADR-005
     system: deny              # ADR-005
   evidence.void:            {engagement_partner: allow, manager: allow, requires: reason}
-  evidence.withdraw:        {client_admin: client_visible_only, client_contributor: assigned_only, agent: deny, system: deny}   # ADR-162 (P-31): an unaccepted client upload; every firm role denied (C5 stub, P-06-T01)
+  evidence.withdraw:        {client_admin: client_visible_only, client_contributor: assigned_only, third_party: delegated_only, agent: deny, system: deny}   # ADR-162 (P-31): an unaccepted client upload; every firm role denied (C5 stub, P-06-T01)
   # --- Review queues (SPEC-004 Q7, Q8; TASK-019) ---
   review.read:
     independence: required   # SPEC-025 (TASK-045): client data, per person

@@ -29,7 +29,10 @@ agent's scope. A firm's policy overrides (`firm_policy_overrides`) narrow a cell
 any of this, and never widen one (`overrides.py`). The client
 conditions (SPEC-020, TASK-035 D2) need the item's facts on the resource (`ItemFacts`):
 `client_visible_only` allows a client-visible item, `assigned_only` a client-visible item
-assigned to the person. Without the facts they deny. `visible_items` is their list-query twin.
+assigned to the person, `delegated_only` (R-01-T13, DEC-387) a client-visible item one of whose
+open delegations the person holds the grant of. Without the facts they deny. `visible_items` is
+their list-query twin for the first two; `delegated_only` reaches no list (a third party reads
+through the room, which authorises item by item).
 
 Ethical walls (ADR-026, SPEC-002) come before roles: a person walled off from a client is denied
 every engagement of it, whatever their roles, and agents and system runs with them. The walled
@@ -117,7 +120,9 @@ Layer = Literal[
 EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
 BoolColumn = ColumnElement[bool] | QueryableAttribute[bool]
 UserColumn = ColumnElement[UUID] | ColumnElement[UUID | None] | QueryableAttribute[UUID | None]
-_CLIENT_CONDITIONS = frozenset({"client_visible_only", "assigned_only"})
+_CLIENT_CONDITIONS = frozenset({"client_visible_only", "assigned_only", "delegated_only"})
+# The client conditions `visible_items` turns into SQL; `delegated_only` reaches no list.
+_LISTED_CONDITIONS = frozenset({"client_visible_only", "assigned_only"})
 # The engagements module tells identity how to find an engagement's client (TASK-016 Q1):
 # identity owns walls, engagements owns the engagement-to-client fact, and identity never imports
 # engagements. `column` turns an engagement-ID column into its client-ID subquery (for
@@ -220,6 +225,9 @@ class ItemFacts:
 
     client_visible: bool
     client_assignee: UUID | None
+    # R-01-T13 (DEC-387): the people holding an active grant under one of the item's open
+    # delegations, for `delegated_only`; None when the owner did not read them (deny).
+    delegated_to: frozenset[UUID] | None = None
 
 
 @dataclass(frozen=True)
@@ -660,12 +668,29 @@ _probe_roles: ContextVar[dict[tuple[UUID, UUID], str | None] | None] = ContextVa
 )
 
 
+THIRD_PARTY = "third_party"
+# The roles a client person acts in, for the client conditions (`scope_only`): the two engagement
+# client roles and, on the requests delegated to them, a third party (R-01-T13, DEC-387).
+CLIENT_ACTOR_ROLES: frozenset[str] = CLIENT_ROLES | {THIRD_PARTY}
+
+
 async def _engagement_role_once(ctx: AuthContext, engagement_id: UUID) -> str | None:
     cache = _probe_roles.get()
     key = (ctx.user_id, engagement_id)
     if cache is not None and key in cache:
         return cache[key]
     role = await engagement_role(ctx.tenant, ctx.user_id, engagement_id)
+    if (
+        role is None
+        and ctx.client
+        and not ctx.is_support
+        and LOOKUPS.third_party is not None
+        and await LOOKUPS.third_party(ctx.tenant, ctx.user_id, engagement_id)
+    ):
+        # R-01-T13 (DEC-387): a client person with no role on the engagement who holds a
+        # third party's `request_item` grant on one of its requests. Its cells are all
+        # `delegated_only`, so it reaches only the items whose facts name the person.
+        role = THIRD_PARTY
     if cache is not None:
         cache[key] = role
     return role
@@ -733,7 +758,7 @@ async def _condition_facts(
     scope_covered: bool | None = None
     preparer: bool | None = None
     reserved_holder: bool | None = None
-    client_actor = bool(roles & CLIENT_ROLES)
+    client_actor = bool(roles & CLIENT_ACTOR_ROLES)
     if isinstance(ctx, AuthContext):
         if rule.level_in or rule.not_offshore:
             member = member or await member_facts(ctx.tenant, ctx.user_id)
@@ -798,6 +823,10 @@ def _on_item(decision: str | None, ctx: Actor, resource: Resource) -> str | None
     if item is None or not item.client_visible or not isinstance(ctx, AuthContext):
         return None
     if decision == "assigned_only" and item.client_assignee != ctx.user_id:
+        return None
+    if decision == "delegated_only" and (
+        item.delegated_to is None or ctx.user_id not in item.delegated_to
+    ):
         return None
     return "allow"
 
@@ -1188,7 +1217,9 @@ async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
         if denied.layer != "role" or not isinstance(ctx, AuthContext):
             raise
         roles = await _roles(ctx, resource, rule)
-        if not any(rule.decisions.get(role) in _CLIENT_CONDITIONS for role in roles):
+        # Only the conditions `visible_items` filters by: `delegated_only` reaches no list, so a
+        # third party never passes a list's check (R-01-T13; it reads through the room).
+        if not any(rule.decisions.get(role) in _LISTED_CONDITIONS for role in roles):
             raise
         _record(action)
 
@@ -1209,7 +1240,7 @@ def visible_items(
     rule = _rule(action)
     reach: list[ColumnElement[bool]] = []
     for role, decision in rule.decisions.items():
-        if decision not in _CLIENT_CONDITIONS or role not in CLIENT_ROLES:
+        if decision not in _LISTED_CONDITIONS or role not in CLIENT_ROLES:
             continue
         member_of = client_grant_engagements(ctx.tenant_id, ctx.user_id, [role])
         rows = (

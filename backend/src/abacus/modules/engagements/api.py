@@ -337,6 +337,7 @@ __all__ = [
     "gate_fact",
     "gate_registered",
     "get_ref",
+    "holds_tax_return",
     "independence_cleared",
     "is_archived",
     "judgments_of",

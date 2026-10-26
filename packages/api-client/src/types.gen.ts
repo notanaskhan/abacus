@@ -4694,7 +4694,7 @@ export type CommentOut = {
     /**
      * Author User Id
      */
-    author_user_id: string;
+    author_user_id: string | null;
     /**
      * Corrected By
      */
@@ -54691,10 +54691,6 @@ export type GetPortalRoomErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetPortalRoomError = GetPortalRoomErrors[keyof GetPortalRoomErrors];
@@ -54742,10 +54738,6 @@ export type SuggestRoomRequestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SuggestRoomRequestError = SuggestRoomRequestErrors[keyof SuggestRoomRequestErrors];

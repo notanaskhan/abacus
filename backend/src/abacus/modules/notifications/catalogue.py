@@ -127,6 +127,17 @@ async def _hold_notify(tenant_id: UUID, payload: dict[str, object]) -> list[UUID
     return out
 
 
+async def _request_owner(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """R-01-T13 (INV-5): the request's firm owner, else the engagement's partner and managers;
+    never a client or the third party."""
+    owner = _uuid(payload, "owner_user_id")
+    if owner is not None:
+        member = await member_facts(TenantContext(tenant_id, "system", "notifications"), owner)
+        if member is not None and not member.client:
+            return [owner]
+    return await _leads(tenant_id, payload)
+
+
 async def _incident_recorded(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """Q-02-T33 (Q-02 §4.8): the firm's QI and partner-level members; never the recorder."""
     people = set(await security_admins(tenant_id)) | set(await partner_members(tenant_id))
@@ -221,6 +232,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "membership.access_ending": Kind("seasonal_access_ending", _admins, "firm", None, None),
     # R-01-T09: a client's portal drop the code rule could not sort waits for a person.
     "portal.drop_unsorted": Kind("portal_drop_unsorted", _leads, "inbox_file", "inbox_file_id"),
+    # R-01-T13: a third party uploaded to a request delegated to them (POR-14).
+    "third_party.uploaded": Kind(
+        "third_party_uploaded", _request_owner, "request_item", "request_item_id"
+    ),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -252,6 +267,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "wall.approved": "The ethical wall you added was approved.",
     "membership.access_ending": "Seasonal access ends within seven days for some of your people.",
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
+    "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
 }
 
 
@@ -297,6 +313,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("wall_approved", "system", "ShieldCheck"),
     NotificationKind("seasonal_access_ending", "system", "UserMinus"),  # G-01-T13
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
+    NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

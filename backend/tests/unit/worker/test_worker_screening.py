@@ -51,6 +51,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "identity",  # P-08-T17: access changes end portal sessions and trusted devices
         "notifications",
         "platform",  # Q-01-T45: tenant provisioning
+        "portal",  # R-01-T13: the request owner hears of a third party's upload
         "requests",  # P-06-T07: binders close on C1's terminal transitions
         "review",  # P-04-T16: the human-gate projector (C13)
     )

@@ -6894,7 +6894,8 @@ export const announceUploadIntent = <ThrowOnError extends boolean = false>(optio
 /**
  * Get Portal Room Route
  *
- * POR-14: the caller's delegated request items, by band.
+ * POR-14: the caller's delegated request items, by band. No delegation, or any request
+ * outside it: 404.
  */
 export const getPortalRoom = <ThrowOnError extends boolean = false>(options?: Options<GetPortalRoomData, ThrowOnError>): RequestResult<GetPortalRoomResponses, GetPortalRoomErrors, ThrowOnError> => (options?.client ?? client).get<GetPortalRoomResponses, GetPortalRoomErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

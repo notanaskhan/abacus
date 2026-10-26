@@ -127,12 +127,28 @@ async def portal_binder_ref(ctx: AuthContext, binder_id: UUID) -> PortalBinderRe
     return _ref(found) if found is not None else None
 
 
+async def portal_items_of(
+    session: AsyncSession,
+    ctx: AuthContext,
+    binder: RequestList,
+    rows: Sequence[RequestItem],
+    shown: bool,
+    *,
+    delegate: bool = False,
+) -> tuple[PortalItem, ...]:
+    """The client's view of these requests of one binder (the room's, R-01-T13, with
+    `delegate`: comment counts of requests authorised through `delegated_only`)."""
+    return await _items(session, ctx, binder, rows, shown, delegate=delegate)
+
+
 async def _items(
     session: AsyncSession,
     ctx: AuthContext,
     binder: RequestList,
     rows: Sequence[RequestItem],
     shown: bool,
+    *,
+    delegate: bool = False,
 ) -> tuple[PortalItem, ...]:
     ids = [r.id for r in rows]
     links: dict[UUID, list[PortalLink]] = {}
@@ -141,7 +157,7 @@ async def _items(
             PortalLink(f.id, f.evidence_version_id, f.created_by_kind, f.created_at)
         )
     uploading = await live_upload_intents(session, ids)
-    comments = await portal_comment_counts(session, ctx, ids)
+    comments = await portal_comment_counts(session, ctx, ids, delegate=delegate)
     responses = await client_responses(session, ctx, binder.engagement_id)
     out: list[PortalItem] = []
     for r in rows:

@@ -220,6 +220,13 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  consent_required:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.lifecycle.ConsentRequired
+    summary: '§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to
+      a third party only under the client''s `third_party_disclosure` consent (C19). Until T-01 registers
+      that consent nobody holds it, so such a delegation is refused (fail closed).'
   contact_bound:
     status: 409
     raised_by:
