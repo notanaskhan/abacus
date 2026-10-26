@@ -34,6 +34,8 @@ Part 1 (P-04-T07). Every route is behind `review.grammar_api`. Off, it answers 4
 
 **Level actions (DEC-135).** The plan names the level actions `sign_off.l1` to `sign_off.l5`. The matrix already holds them as `sign_off.prepare`, `sign_off.review`, `sign_off.manager`, `sign_off.partner` and `sign_off.eqr` (SPEC-308), and live workpaper, trial-balance and mapping routes declare them. C3 keeps those names, so each level has one row and there are no aliases. Wherever the plan writes `sign_off.l<n>`, read the matching row above.
 
+**Live (P-04-T18, T19; DEC-400 to DEC-402).** The ladder, eligibility and `POST /v1/sign-offs` are served by `review.sign_offs` behind the same flag; bulk stays 501 until P-04-T22. A sign-off answers the fixed codes in §6 in this order: a non-person 403; `sign_off.create`; the level row (403 `level_not_permitted`, 409 `segregation` for a known preparer at L2 or L3, 409 `independence_pending`); the signer's own independence and, on an attest client, the G2 gate (409 `independence_pending`); `content_changed`; the statement version (422 `sign_off_invalid`); `incomplete`; `uncited_change`; `already_signed`; `open_review_notes`; `not_prepared` (L2 and above need a current L1); `segregation`. Statements are `reviewer-v1` (L1 to L4) and `eqr-v1` (L5). `allowed_actions` on the ladder names `sign_off.<level>` for each level the caller may sign now and `sign_off.resign.<level>` where that level's newest row is stale. `sign_off.eqr` holds `eqr_reviewer` (DEC-401). The owners announce changes (`trial_balance.version_created`, `workpaper.content_changed`); the stale detector emits `sign_off.went_stale` once per sign-off and new hash, and `sign_off_stale` notifies the signer.
+
 **Conditions arriving later.** P-04-T15 adds the matrix conditions `not_preparer_of_target` (L2, L3) and `reserved_role`, plus the generated I-AGENT-NEVER tests for every resolution action. Until then the service enforces segregation (R-SO-3).
 
 The SPEC-313 routes under `/v1/engagements/{engagement_id}/review-notes` stay live. They are retired when the notes UI (A-06) reads `/v1/review-notes`.
@@ -315,10 +317,13 @@ Fixed codes the services will answer:
 |---|---|---|
 | 409 | `{"detail": "content_changed"}` | the target's current hash differs from `seen_hash`; nothing is written |
 | 409 | `{"detail": "open_review_notes", "facts": {"count": 2}}` | L2 and above while notes are open (R-SO-4) |
-| 409 | `{"detail": "segregation"}` | the preparer at L2 or L3; the EQR at L1 to L4; the engagement partner as EQR (R-SO-3) |
+| 409 | `{"detail": "segregation"}` | the preparer (the owner's preparers and every L1 signer) at L2 or L3 (R-SO-3). The EQR at L1 to L4 and the engagement partner at L5 hold no level row, so they answer 403 `level_not_permitted` (P-04 F2, SHL-12g) |
 | 409 | `{"detail": "independence_pending"}` | no current independence confirmation (R-SO-5, G2) |
-| 409 | `{"detail": "incomplete"}` | an empty required field (R-SO-6) |
-| 422 | `{"detail": "uncited_change", "facts": {"rows": [...]}}` | an uncited value (R-SO-6) |
+| 409 | `{"detail": "incomplete", "facts": {"count": 2}}` | empty required fields (R-SO-6) |
+| 422 | `{"detail": "uncited_change", "facts": {"count": 1}}` | uncited agent values (R-SO-6); facts are identifiers only, so a count (ADR-139) |
+| 409 | `{"detail": "not_prepared"}` | L2 and above without a current L1 |
+| 409 | `{"detail": "already_signed"}` | the caller signed this level on this exact content |
+| 422 | `{"detail": "sign_off_invalid", "facts": {"field": "statement_version"}}` | a statement version that isn't the level's current one, or a kind not served yet |
 | 403 | `{"detail": "level_not_permitted"}` | the level's row denies the caller (R-SO-2) |
 
 Bulk items carry the same codes in `results[].detail`.

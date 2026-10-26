@@ -69,8 +69,10 @@ async def stale_sign_offs(
     return (await session.execute(query)).scalars().all()
 
 
-async def insert_sign_off(session: AsyncSession, **values: object) -> None:
-    await session.execute(insert(SignOff).values(**values))
+async def insert_sign_off(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(insert(SignOff).values(**values).returning(SignOff.id))
+    ).scalar_one()
 
 
 async def notes_of(
