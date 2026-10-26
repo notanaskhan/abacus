@@ -45967,6 +45967,10 @@ export type UnlockVersionErrors = {
      */
     422: ValidationErrorOut;
     /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+    /**
      * Contract stub: not implemented yet
      */
     501: ErrorOut;

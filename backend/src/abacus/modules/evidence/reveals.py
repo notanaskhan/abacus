@@ -41,6 +41,7 @@ from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.models import PiiRegion
 from abacus.modules.evidence.pii import value_context
+from abacus.modules.evidence.repository import current_derivation
 from abacus.modules.evidence.viewer import visible_version
 from abacus.modules.identity.api import (
     MFA_RECENT,
@@ -201,12 +202,17 @@ async def _reveal_once(
     context_ref: str | None,
 ) -> tuple[RevealedPii, str]:
     async with uow(ctx.tenant) as tx:
+        # The version's own regions, or those of its current unlock (P-03-T19): the regions the
+        # viewer's manifest shows.
+        derivation = await current_derivation(tx.session, version_id)
         region = (
             await tx.session.execute(
                 select(PiiRegion).where(
                     PiiRegion.id == region_id,
                     PiiRegion.evidence_version_id == version_id,
-                    PiiRegion.derivation_id.is_(None),
+                    PiiRegion.derivation_id.is_(None)
+                    if derivation is None
+                    else PiiRegion.derivation_id == derivation.id,
                 )
             )
         ).scalar_one_or_none()

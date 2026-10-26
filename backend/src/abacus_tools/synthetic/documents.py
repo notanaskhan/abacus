@@ -4,6 +4,9 @@
   written by a tiny PDF writer (no dependency).
 - `scanned_pdf`: a page with a drawing and no text layer, as a scanner makes.
 - `encrypted_pdf`: a text PDF whose trailer asks for a password nobody has.
+- `password_pdf`: a text PDF that really opens with a password (RC4, standard security handler
+  revision 2, written here with no dependency): the Halvard consolidated 1099 the unlock opens
+  (P-03-T19).
 - `aging_schedule_xlsx`: an accounts receivable aging, optionally with formulas (no cached values)
   and a total row that doesn't add up.
 - `pii_corpus`: a W-2, a K-1, a 1099-INT and a direct-deposit form with synthetic TINs, accounts
@@ -12,7 +15,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
+import struct
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -28,23 +33,78 @@ def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def _pdf(pages: Sequence[bytes], *, encrypt: bool = False) -> bytes:
-    """A minimal PDF: one Helvetica font, one content stream per page."""
+# ISO 32000-1 §7.6.3.3: the padding a password is completed with.
+_PAD = bytes.fromhex("28bf4e5e4e758a4164004e56fffa01082e2e00b6d0683e802f0ca9fe6453697a")
+_PERMISSIONS = -4  # every permission (the reserved high bits set)
+_FILE_ID = b"\x33" * 16
+
+
+def _rc4(key: bytes, data: bytes) -> bytes:
+    box = list(range(256))
+    j = 0
+    for i in range(256):
+        j = (j + box[i] + key[i % len(key)]) % 256
+        box[i], box[j] = box[j], box[i]
+    out = bytearray()
+    i = j = 0
+    for byte in data:
+        i = (i + 1) % 256
+        j = (j + box[i]) % 256
+        box[i], box[j] = box[j], box[i]
+        out.append(byte ^ box[(box[i] + box[j]) % 256])
+    return bytes(out)
+
+
+def _padded(password: str) -> bytes:
+    return (password.encode("latin-1") + _PAD)[:32]
+
+
+def _standard_security(password: str) -> tuple[bytes, bytes, bytes]:
+    """Revision 2 (40-bit RC4), owner password = user password: the O and U entries and the file
+    key (ISO 32000-1 algorithms 2, 3 and 4)."""
+    owner = _rc4(hashlib.md5(_padded(password)).digest()[:5], _padded(password))  # noqa: S324 -- the PDF format's own hash
+    key = hashlib.md5(  # noqa: S324 -- the PDF format's own hash
+        _padded(password) + owner + struct.pack("<i", _PERMISSIONS) + _FILE_ID
+    ).digest()[:5]
+    return owner, _rc4(key, _PAD), key
+
+
+def _object_key(key: bytes, number: int) -> bytes:
+    return hashlib.md5(key + struct.pack("<i", number)[:3] + b"\x00\x00").digest()[:10]  # noqa: S324 -- the PDF format's own hash
+
+
+def _pdf(pages: Sequence[bytes], *, encrypt: bool = False, password: str | None = None) -> bytes:
+    """A minimal PDF: one Helvetica font, one content stream per page. `password` encrypts the
+    content streams so the file opens with that password only (`password_pdf`)."""
     objects: list[bytes] = []
     count = len(pages)
     kids = " ".join(f"{3 + 2 * i} 0 R" for i in range(count))
     font = 3 + 2 * count
     objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
     objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {count} >>".encode())
+    security = _standard_security(password) if password is not None else None
     for i, stream in enumerate(pages):
         objects.append(
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents {4 + 2 * i} 0 R "
             f"/Resources << /Font << /F1 {font} 0 R >> >> >>".encode()
         )
+        if security is not None:
+            stream = _rc4(_object_key(security[2], 4 + 2 * i), stream)
         objects.append(b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream")
     objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
     trailer_extra = b""
-    if encrypt:
+    if security is not None:
+        owner, user, _key = security
+        objects.append(
+            b"<< /Filter /Standard /V 1 /R 2 /P %d /O <%s> /U <%s> >>"
+            % (_PERMISSIONS, owner.hex().encode(), user.hex().encode())
+        )
+        trailer_extra = b" /Encrypt %d 0 R /ID [<%s> <%s>]" % (
+            len(objects),
+            _FILE_ID.hex().encode(),
+            _FILE_ID.hex().encode(),
+        )
+    elif encrypt:
         objects.append(
             b"<< /Filter /Standard /V 1 /R 2 /P -4 /O <"
             + b"11" * 32
@@ -79,7 +139,9 @@ def _text_page(lines: Sequence[str]) -> bytes:
     return f"BT /F1 10 Tf 14 TL 50 750 Td {body}ET".encode("latin-1")
 
 
-def positioned_pdf(pages: Sequence[Sequence[tuple[float, float, str]]]) -> bytes:
+def positioned_pdf(
+    pages: Sequence[Sequence[tuple[float, float, str]]], *, password: str | None = None
+) -> bytes:
     """A text PDF whose every run sits at a fixed place: `(x, baseline, text)` in page points,
     bottom-left origin, Helvetica 10 on a US Letter page. Scenario documents use it so that each
     cited value has a fixed page region (F-04-T25). Text is ASCII."""
@@ -90,7 +152,7 @@ def positioned_pdf(pages: Sequence[Sequence[tuple[float, float, str]]]) -> bytes
         ).encode("ascii")
         for runs in pages
     ]
-    return _pdf(streams)
+    return _pdf(streams, password=password)
 
 
 def _money(value: Decimal) -> str:
@@ -723,6 +785,25 @@ def direct_deposit_pdf() -> bytes:
                 (36.0, 640.0, "Reference 000-00-1111 Invoice 12345 Total 4,210.55"),
             ]
         ]
+    )
+
+
+def password_pdf(password: str) -> bytes:
+    """The Halvard 2025 consolidated 1099 (SHL-08d), opening only with `password`: the
+    recipient's TIN 900-12-3456 (a 9xx fake) under its label, and the interest it reports."""
+    return positioned_pdf(
+        [
+            [
+                (36.0, 760.0, "Halvard Securities (Synthetic) 2025 Consolidated Form 1099"),
+                (36.0, 740.0, "PAYER'S TIN"),
+                (200.0, 740.0, "RECIPIENT'S TIN"),
+                (36.0, 726.0, "00-7654321"),
+                (200.0, 726.0, "900-12-3456"),
+                (300.0, 690.0, "1 Interest income"),
+                (300.0, 676.0, "2,310.00"),
+            ]
+        ],
+        password=password,
     )
 
 
