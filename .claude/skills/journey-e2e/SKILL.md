@@ -5,9 +5,10 @@ description: Turn one Accrued journey (J01–J28) into Playwright specs — fixt
 
 # Journey e2e
 
-## Paths that arrive later
-If one of these is missing when this skill needs it, stop and report which one and the task that creates it.
-- apps/web/e2e/journeys/ and the assertInvariants helper (arrive with P-08-T16, S6; fixture mode with F-04)
+## Paths
+- apps/web/e2e/journeys/ (J01, J02, J04, J12 exist) and the harness apps/web/e2e/harness/ (F-04-T21):
+  `import { expect, test } from "../harness"`, `journey.as(persona, path, {clock})`, `journey.step(name, run, scope)`
+  (axe and assertInvariants run after every step). One step at a time: the `journey-step` skill.
 
 Input: Jnn. Sources: $ACCRUED_BLUEPRINT_DIR/accrued-blueprint/prompts/by-journey/Jnn-*.md (J20–J28 in addendum-waves-5-8),
 blueprint §7 step tables, chapter 01 §1.5.1 (when each journey becomes walkable), the screen contracts.
@@ -15,9 +16,10 @@ blueprint §7 step tables, chapter 01 §1.5.1 (when each journey becomes walkabl
 ## Conventions
 - apps/web/e2e/journeys/Jnn-<slug>.spec.ts; tests named "Jnn <steps>: <outcome>"; long journeys in test.describe.serial
   blocks that share one seeded tenant.
-- One spec, two Playwright projects: `fixture` (VITE_FIXTURES, ?as=<persona>, page.clock.setFixedTime) runs on pull
-  requests touching the journey's areas; `full` (make dev, make seed-demo, injected clock, fakes for CCH, QBO, NetSuite,
-  DocuSign/KBA, M365, Drata) runs nightly and before releases.
+- One spec, four Playwright projects (harness/adapters.ts): `fixture` (`make journeys`; VITE_FIXTURES, ?as=<persona>)
+  runs on pull requests touching the journey's areas; `fullstack` (`make journeys-full` after make dev and
+  make seed-demo; injected clock, fakes for third parties) runs nightly and before releases; `staging` and `canary`
+  run from the jobs that set their URL.
 - Navigate with to.<ID>() builders or real clicks; raw URLs only for entry points. expectNoSeriousViolations(page) on every step.
 - assertInvariants(page, ctx) after every state-changing step:
   INV-1 no sign-off, decision, release, posting, export, envelope send or outbound message has actor kind `agent`;
@@ -31,7 +33,7 @@ blueprint §7 step tables, chapter 01 §1.5.1 (when each journey becomes walkabl
 1. List the steps and their screens; mark each planned, fixture or live from the manifest.
 2. Write the fixture-mode spec for every fixture or live step, with the journey's actors, seed epoch and dates.
 3. Add the full-stack variant once those steps' backends are live.
-4. make e2e-fixtures (and make e2e for full). Fix flakiness by waiting on state, never on time.
+4. make journeys (and make journeys-full for the full stack). Fix flakiness by waiting on state, never on time.
 5. Record walkability on the epic issue: "Jnn steps x–y walkable (fixture | full)". Append to the Progress log.
 
 ## Never

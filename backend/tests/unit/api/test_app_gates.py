@@ -240,6 +240,7 @@ NOT_CREATING = {
     "/v1/firm/data-exports/{export_id}/approve",
     "/v1/firm/data-exports/{export_id}/decline",
     "/v1/firm/data-exports/{export_id}/link",
+    "/v1/audit-events/exports/{export_id}/link",  # G-02-T04: a download link, nothing created
     # A-01-T17 (engagement export v1 stub): Undo voids an existing export's grant.
     "/v1/exports/{export_id}/undo",
     # A-02-T06 (C20 v1 stub): a disconnect revokes an existing connection and returns its card.
@@ -285,6 +286,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/links/renew",
         # Q-02-T38: a firm-export request waits for its approver, then builds, so 202.
         "/v1/firm/data-exports",
+        # G-02-T04: an audit-log export is requested, then builds, so 202.
+        "/v1/audit-events/exports",
         # A-01-T17: an engagement export waits out its Undo window, then builds, so 202.
         "/v1/work-items/{work_item_id}/exports",
         # A-02-T06 (C20 v1 stub): a retry and an on-demand pull start a sync run, so 202.

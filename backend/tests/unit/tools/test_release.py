@@ -239,6 +239,21 @@ def test_an_ops_request_is_one_allowlisted_command() -> None:
         "--tenant",
         "00000000-0000-4000-8000-000000000000",
     ]
+    # ED-088: a command with no subcommand runs as `python -m <module> <args>`, no empty word.
+    backfill = ops_request(
+        {
+            "command": "abacus_tools.trust_layer_backfill",
+            "args": ["00000000-0000-4000-8000-000000000000"],
+            "operator": "builder",
+            "reason": "S9 masking backfill after deploy",
+        }
+    )
+    assert backfill.argv() == [
+        "python",
+        "-m",
+        "abacus_tools.trust_layer_backfill",
+        "00000000-0000-4000-8000-000000000000",
+    ]
     for bad in (
         {"command": "abacus_tools.tenants drop"},
         {"command": "bash -c rm"},
