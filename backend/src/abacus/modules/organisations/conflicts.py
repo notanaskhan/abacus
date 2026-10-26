@@ -42,9 +42,9 @@ from sqlalchemy import RowMapping, TextClause, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.kernel.crypto import seal
+from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import NotFound, ServiceUnavailable
+from abacus.kernel.errors import DomainInvalid, NotFound, ServiceUnavailable
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import (
     AuthContext,
@@ -56,12 +56,18 @@ from abacus.modules.identity.api import (
     walled_from,
 )
 from abacus.modules.organisations.service import normalise
-from abacus.modules.organisations.slots import evidence_visible, subject_visible
+from abacus.modules.organisations.slots import (
+    SubjectNames,
+    evidence_visible,
+    subject_names_provider,
+    subject_visible,
+)
 
 RUN: Final = "conflict.run"
 CLEAR: Final = "conflict.clear"
 RECORD: Final = "screening.record"
 TRIGRAM_FLOOR: Final = 0.6
+MAX_NAMES: Final = 50
 COUNTERPARTY_ROLES: Final = ("custodian", "recordkeeper", "tpa", "payroll_provider")
 # Assessments that leave a hit standing; the others clear it.
 _STANDING: Final = frozenset({"pending", "counterparty_review", "conflict"})
@@ -448,6 +454,63 @@ async def conflict_check(ctx: AuthContext, check_id: UUID) -> CheckView:
         return await _view(ctx, session, check)
 
 
+# --- draft subjects: the names come from the draft (P-07-T42 security review, H1; DEC-430) -----
+
+
+def _name_key(names: Sequence[str]) -> frozenset[str]:
+    return frozenset(" ".join(n.casefold().split()) for n in names if n.strip())
+
+
+async def subject_search_names(session: AsyncSession, wanted: SubjectNames) -> list[str]:
+    """The names a check on a draft searches: those typed on it, then the names of the clients
+    and entities it names (read here), once each, in that order, at most `MAX_NAMES`."""
+    refs = [("client", c) for c in wanted.client_ids] + [
+        ("client_entity", e) for e in wanted.entity_ids
+    ]
+    found = await _names(session, refs)
+    out: dict[str, str] = {}
+    for name in [*wanted.names, *(found[r] for r in refs if r in found)]:
+        key = " ".join(name.casefold().split())
+        if key:
+            out.setdefault(key, name.strip())
+    return list(out.values())[:MAX_NAMES]
+
+
+async def check_clear_for(
+    session: AsyncSession,
+    ctx: AuthContext,
+    check_id: UUID,
+    *,
+    subject_kind: str,
+    subject_id: UUID,
+    expected: SubjectNames,
+) -> bool:
+    """For the intake commit, in the caller's session (its unit of work): the check is on this
+    subject, searched exactly the names the subject holds now (the sealed names against
+    `expected`, resolved the same way), and is clear for this reader (a walled match never is,
+    DEC-375)."""
+    check = (
+        (
+            await session.execute(
+                text("SELECT * FROM conflict_checks WHERE id = :id"), {"id": check_id}
+            )
+        )
+        .mappings()
+        .one_or_none()
+    )
+    if check is None or check["subject_kind"] != subject_kind or check["subject_id"] != subject_id:
+        return False
+    searched = json.loads(
+        await open_sealed(
+            ctx.tenant_id, cast(bytes, check["names_sealed"]), _binding("conflict_check", check_id)
+        )
+    )
+    now = await subject_search_names(session, expected)
+    if not now or _name_key(cast(list[str], searched)) != _name_key(now):
+        return False
+    return (await _view(ctx, session, check)).outcome == "clear"
+
+
 # --- writes -------------------------------------------------------------------------------------
 
 
@@ -458,6 +521,16 @@ async def run_conflict_check(
     _live_human(ctx, RUN)
     await authorise(ctx, RUN, Resource.firm(ctx.tenant_id))
     await _visible_subject(ctx, subject_kind, subject_id)
+    provider = subject_names_provider(subject_kind)
+    if provider is not None:
+        # A draft subject: the server searches the draft's own names, never the caller's (H1).
+        wanted = await provider(ctx, subject_id)
+        if wanted is None:
+            raise NotFound(subject_kind)
+        async with tenant_session(ctx.tenant) as session:
+            names = await subject_search_names(session, wanted)
+        if not names:
+            raise DomainInvalid(facts={"field": "names"})
     system = TenantContext(ctx.tenant_id, "system", "conflict-search")
     async with tenant_session(system) as session:
         hits = await _search(session, names)
@@ -631,3 +704,47 @@ async def record_screening(
         recorded_by=ctx.user_id,
         recorded_at=cast(datetime, row["recorded_at"]),
     )
+
+
+# --- the independence conclusion's precondition (P-07-T41; SPEC-332 AC-19) ----------------------
+
+_STANDING_FOR_CLIENT = text(
+    """
+    SELECT r.id, r.matched_client_id
+      FROM conflict_results r
+      JOIN conflict_checks c ON c.id = r.check_id
+      LEFT JOIN LATERAL (
+          SELECT assessment FROM conflict_result_events
+           WHERE result_id = r.id ORDER BY cleared_at DESC, id DESC LIMIT 1
+      ) e ON true
+     WHERE (
+            (c.subject_kind = 'client' AND c.subject_id = :client)
+         OR (c.subject_kind = 'client_entity'
+             AND c.subject_id IN (SELECT id FROM client_entities WHERE client_id = :client))
+         OR c.id = ANY(CAST(:checks AS uuid[]))
+           )
+       AND r.matched_client_id <> :client
+       AND COALESCE(
+               e.assessment,
+               CASE WHEN r.match_kind = 'counterparty' THEN 'counterparty_review'
+                    ELSE 'pending' END
+           ) IN ('pending', 'counterparty_review', 'conflict')
+     ORDER BY r.id
+    """
+)
+
+
+async def standing_conflict_results(
+    tenant: TenantContext, client_id: UUID, check_ids: Sequence[UUID] = ()
+) -> list[tuple[UUID, UUID]]:
+    """The conflict results still standing (pending, counterparty review or conflict) on the
+    checks run for the client or its entities, and on any checks named (an intake's, linked to
+    the engagement), leaving out matches on the client itself: `(result id, matched client)`.
+    Identifiers only, for a caller that authorised reading the client's engagement; walls do not
+    narrow the search (it is a precondition), so a caller showing it to a person drops or
+    collapses results on clients that person is walled from (DEC-428, DEC-429)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _STANDING_FOR_CLIENT, {"client": client_id, "checks": list(check_ids)}
+        )
+        return [(cast(UUID, r.id), cast(UUID, r.matched_client_id)) for r in rows.all()]

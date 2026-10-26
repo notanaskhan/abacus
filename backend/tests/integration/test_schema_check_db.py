@@ -1154,7 +1154,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
         ),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
-        "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310 (TASK-321)
+        "tie_out_checks": frozenset(  # SPEC-310 (TASK-321)
+            {"current_version_no"}
+            | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): issue link
+        ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
             {"status", "published_by", "published_at", "published_actor_kind"}
         ),
@@ -1163,8 +1166,13 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # SPEC-020 (TASK-036): checking and revoking a connection; a state is spent once.
         "connections": frozenset(
             {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+            # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
+            | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
+            | {"status_reason_code"}
         ),
         "connection_states": frozenset({"used_at"}),
+        "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195 (A-02-T13)
+        "firm_integrations": frozenset({"status", "version"}),  # 0194 (A-02-T12)
         # SPEC-024 (TASK-041): staff invitations.
         "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
         # F-03-T25 (migration 0082): the client record, entity attributes and contacts; the
@@ -1240,6 +1248,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # SPEC-025 (TASK-044): a person answers once; the letter's record is replaced in place.
         "independence_confirmations": frozenset(
             {"status", "statement_version", "note", "answered_at"}
+            # P-07-T41 (0175): the three statements, sealed notes and reminders.
+            | {
+                "statements",
+                "interests_note",
+                "decline_note",
+                "reminder_count",
+                "last_reminded_at",
+            }
         ),
         "engagement_letters": frozenset(
             {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}
@@ -1253,6 +1269,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"client_id", "client_entity_id", "type_code", "step", "payload"}
             | {"prospect_engagement_id", "created_engagement_id", "version", "saved_at"}
             | {"discarded_at"}
+        ),
+        "client_intake_drafts": frozenset(  # P-07-T42 (0177): autosave, discard, commit
+            {"step", "payload", "version", "saved_at", "discarded_at", "committed_at"}
+            | {"committed_client_id", "result"}
         ),
         "inbox_files": frozenset(  # SPEC-023
             {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
@@ -1314,10 +1334,60 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # P-07-T30 (0155): ENG-05's hours and the portal flag; roles stay behind the definers.
         "engagement_members": frozenset({"budget_hours", "shown_on_portal"}),
+        # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
+        "methodology_version_states": frozenset(
+            {
+                "approval_basis",
+                "approved_actor_kind",
+                "approved_at",
+                "approved_by",
+                "default_for_new_engagements",
+                "effective_from",
+                "effective_to",
+                "engagement_types",
+                "quality_management_ref",
+                "row_version",
+                "standards_set_id",
+                "status",
+            }
+        ),
+        # A-01-T18 (0191): status forward only and its stamps; the guard trigger decides.
+        "engagement_exports": frozenset(
+            {
+                "status",
+                "as_of_seq",
+                "bundle_sha256",
+                "manifest_sha256",
+                "bytes",
+                "file_count",
+                "request_count",
+                "segment_count",
+                "object_prefix",
+                "ready_at",
+                "expires_at",
+                "failure_code",
+                "void_reason",
+                "undone_at",
+                "undone_by",
+            }
+        ),
+        # G-02-T10 (0192): the label index is re-labelled in place; an audit-log export moves
+        # through its build and records what it wrote.
+        "audit_event_labels": frozenset(
+            {"actor_label", "target_label", "keywords", "effective_at", "indexed_at"}
+            | {"engagement_id", "client_id", "office_id"}
+        ),
+        "audit_exports": frozenset(
+            {"status", "updated_at", "seq_from", "seq_to", "row_count", "expires_at"}
+            | {"csv_key", "manifest_key", "manifest_sha256", "signature_key_ref"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+        # 0195 (A-02-T13): entity-scoped connections
+        | {"category", "external_account_ref", "display_label", "connected_by_user_id"}
+        | {"connected_at"}
     )
     assert sc.APP_INSERT_COLUMNS["ethical_walls"] == frozenset(  # TASK-016
         {"id", "tenant_id", "user_id", "client_id", "created_by"}
@@ -1326,6 +1396,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["sync_runs"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "connection_id", "engagement_id"}
         | {"request_item_id", "dataset", "period_start", "period_end", "started_by"}
+        | {"trigger", "label"}  # 0195 (A-02-T13)
     )
     assert sc.APP_INSERT_COLUMNS["ledger_snapshots"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
@@ -1481,6 +1552,11 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "gl_account_balances": LEDGER_FUNCTION,
         "gl_entries": LEDGER_FUNCTION,
         "trial_balance_versions": LEDGER_FUNCTION,  # 0149 (A-02-T04; ED-037)
+        "tie_out_check_versions": "tie_out_check_versions_immutable",  # 0193 (A-02-T11)
+        "connection_consents": "connection_consents_immutable",  # 0195 (A-02-T13)
+        "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
+        "engagement_export_downloads": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
+        "engagement_export_contents": "engagement_export_rows_immutable",  # 0191 (TASK-1334)
     }
     assert _evidence_problems(evidence) == []
 
@@ -1890,6 +1966,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
         | {"evidence_key_destroy"}  # 0144 (P-06-T18): the withdrawal purge's crypto-erase
         | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
+        | {"integration_catalog_rows", "integration_catalog_load"}  # 0194 (A-02-T12)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

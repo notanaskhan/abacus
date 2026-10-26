@@ -1,6 +1,7 @@
 """Engagement export v1 (A-01-T17; SPEC-344 AC-1 to AC-5; ADR-036 "a versioned schema with
 tests"): the format's manifest and its generated JSON schema, the section slot, and the routes
-stub behind `audits.binder_export` (404 off, 501 on until A-01-T18 and T22). Expectations come
+stub behind `audits.binder_export` (404 off, 501 on until A-01-T18 and T22; A-01-T18 made
+create, undo and the reads live, so only download still declares 501). Expectations come
 from A-01 §3.6, §4.3 and §4.4. The Northwind example is Story 6.2's: 24 requests, 12 accepted
 files (3 + 5 + 3 + 1)."""
 
@@ -57,12 +58,32 @@ CLIENT_ROLES = ("client_admin", "client_contributor")
 # --- AC-1 the routes -----------------------------------------------------------------------------
 
 
+# A-01-T18 (TASK-1334) made these live; download stays the stub until A-01-T22.
+LIVE = {
+    ("post", WI),
+    ("get", WI),
+    ("get", "/v1/exports/{export_id}"),
+    ("post", "/v1/exports/{export_id}/undo"),
+}
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_ac1_each_route_declares_its_action_and_the_stub_answer(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
     responses = cast(Json, op["responses"])
-    assert {"404", "501"} <= set(responses)
+    assert "404" in responses
+    # A stub declares 501 until its task lands; a live route no longer answers it.
+    assert ("501" in responses) == ((method, path) not in LIVE)
+
+
+def test_ac1_create_and_undo_declare_their_conflicts() -> None:
+    """A-01-T18: 409 `undo_window_closed` (and `effect_started`), 422 for a non-audit item or a
+    foreign binder (`export_kind_unsupported`, `binder_not_in_work_item`)."""
+    create = cast(Json, PATHS[WI]["post"]["responses"])
+    undo = cast(Json, PATHS["/v1/exports/{export_id}/undo"]["post"]["responses"])
+    assert {"409", "422"} <= set(create)
+    assert "409" in undo
 
 
 def test_ac1_create_takes_an_idempotency_key_and_answers_202() -> None:

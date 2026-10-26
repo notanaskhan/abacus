@@ -57,3 +57,42 @@ class WithdrawalPurgeInput:
     evidence_version_id: str
     wait_seconds: int
     attempts: int = 0
+
+
+# --- Engagement export (A-01-T19; A-01 §4.5) ----------------------------------------------------
+
+# Why a build failed (the export row's `failure_code`); the first two are decided, never retried.
+INTEGRITY_MISMATCH: Final = "integrity_mismatch"
+SECTION_MISSING: Final = "export_section_missing"
+BUILD_ERROR: Final = "build_error"
+
+
+@dataclass(frozen=True)
+class EngagementExportInput:
+    """`EngagementExportWorkflow`: the export, and how long its Undo window still runs."""
+
+    tenant_id: str
+    export_id: str
+    wait_seconds: int
+
+
+@dataclass(frozen=True)
+class ExportPackageFacts:
+    """What the package activity built and stored: digests, counts and where (no content)."""
+
+    tenant_id: str
+    export_id: str
+    bundle_sha256: str
+    manifest_sha256: str
+    bytes: int
+    file_count: int
+    request_count: int
+    segment_count: int
+    object_prefix: str
+
+
+@dataclass(frozen=True)
+class ExportFailure:
+    tenant_id: str
+    export_id: str
+    failure_code: str

@@ -1,8 +1,9 @@
 """The audit-log contract, v1: ADM-07 (G-02-T04 stub; SPEC-349 §8; ADR-139, P-36). Contract:
 `docs/contracts/audit-log.md`.
 
-Behind `audit_log.explorer`: off, every route here answers 404; on, 501 `not_implemented` until
-G-02-T08 (list and detail) and G-02-T17 (export). The legacy explorer (`GET
+Behind `audit_log.explorer`: off, every route answers 404. The list and the detail are live
+(G-02-T08: `audit_log_routes.py`, `explorer.py`); the export routes here answer 501
+`not_implemented` until G-02-T17. The legacy explorer (`GET
 /v1/firm/audit-events`, SPEC-304) is unchanged until ADM-07 replaces it.
 
 Rules the shapes carry (DEC-60, DEC-43, INV-1, INV-5):
@@ -24,7 +25,7 @@ Rules the shapes carry (DEC-60, DEC-43, INV-1, INV-5):
 - **Request context** (`ip`, `user_agent_family`, `device_label`, `session`) is personal data,
   null on agent and system events (G-02-T06), and shown only to `REQUEST_CONTEXT_READERS`
   (`firm_admin`, `security_admin`, `quality_partner`); every other reader gets it null (DEC-420,
-  security review M2). The projection lands in G-02-T08.
+  security review M2). `explorer.py` projects it (G-02-T08).
 - **Authorisation comes first** (security review L1): a client principal gets 404 (INV-4), and
   the agent, the system and anyone refused an export action get 403, before the flag is read. A
   person's read is narrowed per event by `visible()` in the live route.
@@ -35,11 +36,10 @@ Rules the shapes carry (DEC-60, DEC-43, INV-1, INV-5):
 from __future__ import annotations
 
 from datetime import date, datetime
-from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated, Final, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
+from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AUDIT_LOG_EXPLORER
@@ -322,6 +322,11 @@ async def _authorised(ctx: AuthContext, action: str) -> None:
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
 
 
+# The family's one gate, for the live routes (`audit_log_routes.py`): the matrix, then the flag.
+authorised = _authorised
+gate = _gate
+
+
 async def _stub(ctx: AuthContext, action: str) -> NoReturn:
     await _authorised(ctx, action)
     await _gate(ctx)
@@ -331,28 +336,6 @@ async def _stub(ctx: AuthContext, action: str) -> NoReturn:
 Text = Annotated[str | None, Query(max_length=200)]
 
 
-@router.get("", action="audit_event.read", response_model=AuditEventPageOut, errors=(501,))
-async def list_audit_events_route(
-    ctx: Ctx,
-    actor_kind: Annotated[ActorKind | None, Query()] = None,
-    actor_id: Annotated[UUID | None, Query()] = None,
-    object_type: Annotated[str | None, Query(max_length=64)] = None,
-    action: Annotated[str | None, Query(max_length=80)] = None,
-    from_: Annotated[date | None, Query(alias="from")] = None,
-    to: Annotated[date | None, Query()] = None,
-    office_id: Annotated[UUID | None, Query()] = None,
-    ip: Annotated[IPv4Address | IPv6Address | None, Query()] = None,
-    q: Text = None,
-    since_seq: Annotated[int | None, Query(ge=0)] = None,
-    cursor: Annotated[str | None, Query(max_length=1024)] = None,
-    limit: Annotated[int, Query(ge=1, le=100)] = 50,
-) -> AuditEventPageOut:
-    """ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
-    `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
-    (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4)."""
-    await _stub(ctx, "audit_event.read")
-
-
 @router.get(
     "/exports/{export_id}", action="audit_export.read", response_model=AuditExport, errors=(501,)
 )
@@ -360,12 +343,6 @@ async def audit_export_route(export_id: UUID, ctx: Ctx) -> AuditExport:
     """ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh
     second factor (L5); the request and the link do."""
     await _stub(ctx, "audit_export.read")
-
-
-@router.get("/{seq}", action="audit_event.read", response_model=AuditEventDetail, errors=(501,))
-async def audit_event_route(seq: Annotated[int, Path(ge=1)], ctx: Ctx) -> AuditEventDetail:
-    """ADM-07 c: one event; a walled or invisible one answers 404 (DEC-43)."""
-    await _stub(ctx, "audit_event.read")
 
 
 @router.post(

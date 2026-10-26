@@ -738,13 +738,14 @@ class UnlockBody(BaseModel):
     action="evidence.upload",
     response_model=UploadOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 429),
 )
 async def unlock_upload_route(
     engagement_id: UUID, item_id: UUID, version_id: UUID, body: UnlockBody, ctx: Ctx
 ) -> UploadOut:
     """TASK-323: a password-protected PDF upload, saved again without its password as a new
-    version of the item."""
+    version of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429
+    `unlock_rate_limited` after five in fifteen minutes."""
     await check_upload(ctx, engagement_id, item_id)
     return _upload_out(
         await unlock_upload(

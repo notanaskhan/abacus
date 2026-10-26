@@ -49,7 +49,14 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
+from abacus.modules.engagements.independence import (
+    conclude_independence,
+    confirm_independence,
+)
 from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
+from abacus.modules.engagements.intake import commit_intake as commit_client_intake
+from abacus.modules.engagements.intake import draft_visible as intake_draft_visible
+from abacus.modules.engagements.intake import subject_names as intake_subject_names
 from abacus.modules.engagements.intake_contract import (
     client_imports_router,
     client_intake_drafts_router,
@@ -185,6 +192,7 @@ from abacus.modules.organisations.api import (
     activate_contact,
     register_client_engagements,
     register_conflict_subject,
+    register_conflict_subject_names,
     register_open_requests,
     register_overview_section,
     register_screening_evidence,
@@ -218,6 +226,9 @@ register_independence(confirmed_subquery, confirmed_for)
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
 # P-07-T36 review (DEC-375, L4): what a conflict check or screening record may name.
 register_conflict_subject("engagement_draft", draft_visible)
+register_conflict_subject("client_intake_draft", intake_draft_visible)  # P-07-T42
+# P-07-T42 security review (H1): a check on an intake draft searches the draft's own names.
+register_conflict_subject_names("client_intake_draft", intake_subject_names)
 register_screening_evidence(evidence_readable)
 # F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
 register_work_item_functions(functions_on)
@@ -319,6 +330,9 @@ __all__ = [
     "client_contact_names",
     "client_contact_organisations",
     "client_contact_organisations_of_users",
+    "commit_client_intake",
+    "conclude_independence",
+    "confirm_independence",
     "contact_portal_user",
     "create_work_item",
     "decide_acceptance",
