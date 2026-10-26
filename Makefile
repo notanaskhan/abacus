@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
+.PHONY: agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-pr
 
 setup:
 	cd backend && uv sync --locked
@@ -213,6 +213,14 @@ access-review:
 # Q-02-T21: recompute a firm's audit checkpoints from their rows; exits 1 on any mismatch.
 audit-chain-verify:
 	cd backend && uv run python -m abacus_tools.audit_chain verify --tenant $(TENANT)
+
+# Q-02-T07 (SPEC-036 Q1, Q3): an agent's shadow report for a firm, or set its stage (founder, owner
+# credentials; audited). `make agent-stage FIRM=<id> AGENT=evidence.screener` reports;
+# add STAGE=shadow|live|off NOTE="..." to set (the note reaches the command as an environment
+# variable, never as shell text). Staff use PUT /v1/platform/agent-stages instead.
+agent-stage: export AGENT_STAGE_NOTE := $(NOTE)
+agent-stage:
+	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE",report $(FIRM) $(AGENT))
 
 # SPEC-011: set a firm's feature flag (operators; audited).
 flag:

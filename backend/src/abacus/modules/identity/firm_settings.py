@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import text
 
-from abacus.ai_gateway import forget_boundary_facts
+from abacus.ai_gateway import BoundaryFactsChanged, forget_boundary_facts
 from abacus.kernel import clock, provider_terms
 from abacus.kernel._flags import AGENTS_CLIENT_DATA_OPTIN
 from abacus.kernel.clock import system_now
@@ -470,6 +470,7 @@ async def set_ai_client_data_setting(ctx: AuthContext, on: bool) -> AiClientData
             "firm.ai_client_data_on" if on else "firm.ai_client_data_off",
             target=Target("firm", ctx.tenant_id),
         )
+        tx.emit(BoundaryFactsChanged())  # Q-02-T08: the worker forgets them too
     forget_boundary_facts(ctx.tenant_id)
     # The answer is the setting as it now stands, without the flag's read gate: an opt-out made
     # with the flag off answers what it did, never a 404 for a change that took effect (ED-059).

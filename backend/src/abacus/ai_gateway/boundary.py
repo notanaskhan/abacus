@@ -27,7 +27,7 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final, Literal, NoReturn, cast
+from typing import ClassVar, Final, Literal, NoReturn, cast
 from uuid import UUID
 
 from abacus.ai_gateway.admission import NotAdmitted
@@ -38,7 +38,8 @@ from abacus.kernel.controls import control_state
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.kernel.uow.relay import OutboxEvent
 
 SyntheticCheck = Callable[[TenantContext], Awaitable[bool]]
 # SPEC-036: (firm) -> opted in; (firm, engagement) -> excluded; (firm, agent) -> stage.
@@ -300,3 +301,17 @@ def clear_cache(tenant_id: UUID | None = None) -> None:
     _cache.pop(tenant_id, None)
     for key in [k for k in _facts if k[1] == tenant_id]:
         _facts.pop(key, None)
+
+
+class BoundaryFactsChanged(DomainEvent):
+    """A firm's boundary facts changed (opt-in or out, an engagement's exclusion, an agent's
+    stage; Q-02-T08). The process that made the change forgets them at once; the relay hands
+    this to the worker, where agent runs call models, so it forgets them too instead of waiting
+    out the cache period (SPEC-036 Q5). Identifiers only: the tenant is the outbox row's."""
+
+    event_type: ClassVar[str] = "ai_boundary.facts_changed"
+
+
+async def on_boundary_facts_changed(event: OutboxEvent) -> None:
+    """Idempotent: forgetting twice is forgetting."""
+    clear_cache(event.tenant_id)

@@ -1966,6 +1966,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"record_incident_propagation", "incident_propagation_log"}  # 0143 (Q-02-T33)
         | {"evidence_key_destroy"}  # 0144 (P-06-T18): the withdrawal purge's crypto-erase
         | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
+        | {"agent_stage_set"}  # 0181 (Q-02-T07): the staff route's stage row
         | {"integration_catalog_rows", "integration_catalog_load"}  # 0194 (A-02-T12)
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []

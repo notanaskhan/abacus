@@ -971,6 +971,42 @@ export type AgentRunOut = {
 export type AgentRunStatus = 'queued' | 'planning' | 'awaiting_plan_approval' | 'dispatched' | 'running' | 'needs_input' | 'blocked_on_decision' | 'waiting_on_inputs' | 'succeeded' | 'failed' | 'cancelled';
 
 /**
+ * AgentStageIn
+ */
+export type AgentStageIn = {
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Stage
+     */
+    stage: 'shadow' | 'live' | 'off';
+};
+
+/**
+ * AgentStageOut
+ */
+export type AgentStageOut = {
+    /**
+     * Agent Id
+     */
+    agent_id: string;
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Stage
+     */
+    stage: 'shadow' | 'live' | 'off';
+};
+
+/**
  * AgentSuggestionOut
  *
  * One proposed value for one target, after a person's decision.
@@ -58045,6 +58081,62 @@ export type ReadNotificationResponses = {
 };
 
 export type ReadNotificationResponse = ReadNotificationResponses[keyof ReadNotificationResponses];
+
+export type PutAgentStageData = {
+    body: AgentStageIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/agent-stages/{firm_id}/{agent_id}';
+};
+
+export type PutAgentStageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PutAgentStageError = PutAgentStageErrors[keyof PutAgentStageErrors];
+
+export type PutAgentStageResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentStageOut;
+};
+
+export type PutAgentStageResponse = PutAgentStageResponses[keyof PutAgentStageResponses];
 
 export type ImportEmailTemplateData = {
     body: EmailTemplateImportIn;

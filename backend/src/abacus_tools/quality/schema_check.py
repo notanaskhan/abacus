@@ -304,6 +304,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0144 (P-06-T18, ADR-162): the withdrawal purge's crypto-erase of one version's key.
     | {"evidence_key_destroy"}
     | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
+    # 0181 (Q-02-T07): the staff route's stage row, inside the firm's own unit of work only.
+    | {"agent_stage_set"}
     # 0194 (A-02-T12): the catalogue's read (app and operators) and the operator's load.
     | {"integration_catalog_rows", "integration_catalog_load"}
 )
