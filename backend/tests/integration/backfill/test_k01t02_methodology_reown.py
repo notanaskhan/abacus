@@ -105,25 +105,28 @@ async def test_ac_an_import_is_published_as_legacy_and_becomes_the_default(net: 
 
 
 @pytest.mark.parametrize(
-    "table",
+    "statement",
     [
-        "methodology_templates",
-        "methodology_versions",
-        "methodology_areas",
-        "methodology_request_items",
-        "methodology_account_rules",
-        "methodology_version_events",
+        "UPDATE methodology_templates SET tenant_id = tenant_id",
+        "DELETE FROM methodology_templates",
+        "UPDATE methodology_versions SET tenant_id = tenant_id",
+        "DELETE FROM methodology_versions",
+        "UPDATE methodology_areas SET tenant_id = tenant_id",
+        "DELETE FROM methodology_areas",
+        "UPDATE methodology_request_items SET tenant_id = tenant_id",
+        "DELETE FROM methodology_request_items",
+        "UPDATE methodology_account_rules SET tenant_id = tenant_id",
+        "DELETE FROM methodology_account_rules",
+        "UPDATE methodology_version_events SET tenant_id = tenant_id",
+        "DELETE FROM methodology_version_events",
     ],
 )
-async def test_ac_the_versions_and_their_events_stay_insert_only(net: Net, table: str) -> None:
+async def test_ac_the_versions_and_their_events_stay_insert_only(net: Net, statement: str) -> None:
     seed = net.seed
     tenant = await seed.firm()
     admin = await seed.person(tenant, "firm_admin")
     await _import(net, admin, f"Probe {uuid.uuid4().hex[:6]}", "Bank statements")
     me = TenantContext(tenant, "human", str(admin.user_id))
-    # The table names are this test's own parameters, never input.
-    update, delete = f"UPDATE {table} SET tenant_id = tenant_id", f"DELETE FROM {table}"  # noqa: S608
-    for statement in (update, delete):
-        with pytest.raises(DBAPIError, match=r"permission denied|insert-only"):
-            async with tenant_session(me) as session:
-                await session.execute(text(statement))
+    with pytest.raises(DBAPIError, match=r"permission denied|insert-only"):
+        async with tenant_session(me) as session:
+            await session.execute(text(statement))

@@ -1,8 +1,8 @@
 ---
 id: TASK-1305
 title: Knowledge-catalog and methodology-programs contract stubs (K-01-T01)
-spec: K-01 §4.3, §8.2
-acceptance_criteria: [K-01-T01]
+spec: SPEC-008
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: K-01
@@ -31,3 +31,4 @@ two contract documents; the generated client.
 
 ## Progress log
 - 2026-10-26: built with K-01-T02 on one branch; tests run in the end-of-batch targeted pass.
+- 2026-10-26: targeted pass green (tests/contracts/knowledge); gates clean.

@@ -1266,7 +1266,7 @@ codes:
   template_name_invalid:
     status: 422
     raised_by:
-    - abacus.modules.engagements.service.TemplateNameInvalid
+    - abacus.modules.methodology.service.TemplateNameInvalid
     summary: A template name is 1 to 100 characters.
   template_type_mismatch:
     status: 409
@@ -1392,7 +1392,7 @@ codes:
   version_not_latest:
     status: 409
     raised_by:
-    - abacus.modules.engagements.service.VersionNotLatest
+    - abacus.modules.methodology.service.VersionNotLatest
     summary: Drafted guidance is published onto the template's latest version only (TASK-074 D2).
   wall_exists:
     status: 409

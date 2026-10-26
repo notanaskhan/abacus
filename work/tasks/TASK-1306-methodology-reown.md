@@ -1,8 +1,8 @@
 ---
 id: TASK-1306
 title: Migration methodology_reown - methodology owns its tables and code; version lifecycle (K-01-T02)
-spec: K-01 §4.1, §4.2 (migration A)
-acceptance_criteria: [K-01-T02]
+spec: SPEC-008
+acceptance_criteria: [AC-3]
 risk_zone: amber
 status: in-review
 epic: K-01
@@ -37,3 +37,4 @@ published (`legacy_import`).
 
 ## Progress log
 - 2026-10-26: built; import-linter and banned patterns clean; tests in the end-of-batch pass.
+- 2026-10-26: targeted pass green (contracts, backfill, migration up/down/up with the schema check, unit, security); gates clean. The schema check needed the five tables' insert columns in the methodology registry (moved from engagements, plus 0180's new ones).

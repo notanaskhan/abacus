@@ -113,23 +113,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"prior_engagement_id"}  # SPEC-025 (TASK-048): roll-forward, set at creation only
         | {"office_id", "standards_set_id"}  # F-03-T12 (0069)
     ),
-    # Methodology templates (SPEC-008): insert-only, immutable versions.
-    "methodology_templates": frozenset(
-        {"id", "tenant_id", "name", "created_by", "engagement_types"}  # SPEC-024: types served
-    ),
-    "methodology_versions": frozenset(
-        {"id", "tenant_id", "template_id", "version", "source_fingerprint", "imported_by"}
-    ),
-    "methodology_areas": frozenset({"tenant_id", "version_id", "code", "name", "position"}),
-    "methodology_request_items": frozenset(
-        {"tenant_id", "version_id", "area_code", "description", "retrievability_tier"}
-        | {"position"}
-        | {"why", "good_looks_like", "blocks_fieldwork", "effort"}  # SPEC-031 (TASK-060)
-        | {"guidance_source", "guidance_approved_by"}  # SPEC-035 Q3 (TASK-074)
-    ),
-    "methodology_account_rules": frozenset(
-        {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
-    ),
+    # The methodology_* tables' columns are the methodology module's since K-01-T02 (0180).
     # Work items (F-03-T05; migration 0068).
     "work_items": frozenset(
         {"tenant_id", "engagement_id", "client_id", "client_entity_id", "kind", "name"}

@@ -30,6 +30,25 @@ INSERT_ONLY: frozenset[str] = frozenset(
     }
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # Methodology templates (SPEC-008): insert-only, immutable versions.
+    "methodology_templates": frozenset(
+        {"id", "tenant_id", "name", "created_by", "engagement_types"}  # SPEC-024: types served
+        | {"family"}  # K-01-T02 (0180)
+    ),
+    "methodology_versions": frozenset(
+        {"id", "tenant_id", "template_id", "version", "source_fingerprint", "imported_by"}
+        | {"label", "drafted_from_version_id", "origin"}  # K-01-T02 (0180)
+    ),
+    "methodology_areas": frozenset({"tenant_id", "version_id", "code", "name", "position"}),
+    "methodology_request_items": frozenset(
+        {"tenant_id", "version_id", "area_code", "description", "retrievability_tier"}
+        | {"position"}
+        | {"why", "good_looks_like", "blocks_fieldwork", "effort"}  # SPEC-031 (TASK-060)
+        | {"guidance_source", "guidance_approved_by"}  # SPEC-035 Q3 (TASK-074)
+    ),
+    "methodology_account_rules": frozenset(
+        {"tenant_id", "version_id", "area_code", "account_from", "account_to", "position"}
+    ),
     "methodology_version_states": frozenset(
         {"tenant_id", "version_id", "template_id", "status", "effective_from", "effective_to"}
         | {"approved_by", "approved_at", "approved_actor_kind", "approval_basis"}
