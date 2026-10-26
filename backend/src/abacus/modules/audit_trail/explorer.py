@@ -639,16 +639,18 @@ async def get_event(ctx: AuthContext, seq: int) -> AuditEventDetail:
     )
 
 
-async def events_for_work_item(ctx: AuthContext, work_item_id: UUID) -> list[AuditEventRow]:
+async def events_for_work_item(
+    ctx: AuthContext, work_item_id: UUID, *, as_of_seq: int | None = None
+) -> list[AuditEventRow]:
     """A-01's binder export: one work item's events, oldest first, as `ctx` may see them
-    (bounded at `WORK_ITEM_LIMIT`). The caller has authorised its read of the work item."""
+    (bounded at `WORK_ITEM_LIMIT`), up to the export's snapshot `as_of_seq` when given. The caller
+    has authorised its read of the work item."""
     reader = await reader_of(ctx)
+    conditions = [shown_to(reader), t.work_item_id == work_item_id]
+    if as_of_seq is not None:
+        conditions.append(t.seq <= as_of_seq)
     async with tenant_session(ctx.tenant) as session:
-        stmt = (
-            _select([shown_to(reader), t.work_item_id == work_item_id])
-            .order_by(t.seq)
-            .limit(WORK_ITEM_LIMIT)
-        )
+        stmt = _select(conditions).order_by(t.seq).limit(WORK_ITEM_LIMIT)
         rows = [dict(m) for m in (await session.execute(stmt)).mappings().all()]
     found = await _labels(ctx, rows)
     return [row_of(r, reader, found) for r in rows]
