@@ -34,6 +34,8 @@ from abacus.modules.communications.notification_email import (
     template_key,
 )
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
+from abacus.modules.communications.render import Block as TemplateBlockContent
+from abacus.modules.communications.render import TemplateContent
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.secure_link_routes import router as secure_link_router
@@ -90,6 +92,12 @@ from abacus.modules.communications.template_registry import (
     scheduled_send_enabled,
     send_templated,
 )
+from abacus.modules.communications.template_service import (
+    discard_draft as discard_email_template_draft,
+)
+from abacus.modules.communications.template_service import publish as publish_email_template
+from abacus.modules.communications.template_service import save_draft as save_email_template_draft
+from abacus.modules.communications.template_service import template_state as email_template_state
 from abacus.modules.communications.templates_contract import (
     FollowUpPolicyFields,
     NextSendOut,
@@ -197,6 +205,8 @@ __all__ = [
     "SesIdentityPort",
     "SesIdentityUnavailable",
     "SystemSendContext",
+    "TemplateBlockContent",
+    "TemplateContent",
     "TemplateRegistrationInvalid",
     "TemplateVariable",
     "Transport",
@@ -208,14 +218,18 @@ __all__ = [
     "configure_ses_identities",
     "configure_transport",
     "deliver_follow_up",
+    "discard_email_template_draft",
     "drain_ses_events",
+    "email_template_state",
     "is_suppressed",
     "issue_secure_link",
     "lint_values",
     "on_sink",
+    "publish_email_template",
     "register_email_template",
     "registered_templates",
     "resolve_secure_link",
+    "save_email_template_draft",
     "scheduled_send_enabled",
     "send",
     "send_email",
