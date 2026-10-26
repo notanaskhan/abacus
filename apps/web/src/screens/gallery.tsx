@@ -106,6 +106,13 @@ import {
   type Por03State,
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
+import { PortalRequest } from "./POR-04";
+import {
+  ARTBOARD as POR04_ARTBOARD,
+  STATES as POR04_STATES,
+  type Por04State,
+  scenarios as por04Scenarios,
+} from "./POR-04/scenarios";
 import {
   MOBILE_STATES as POR02_MOBILE,
   STATES as POR02_STATES,
@@ -876,6 +883,45 @@ function Por03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("POR-03", { title: "Documents · Feld 2025 Binder", Component: Por03Artboard });
+
+// POR-04 (R-01-T12): the request sheet over POR-03, a–g; e and f are the typed question and
+// decision slots (fixture only: C-01 and T-06 / T-09 wire them). `&w=390` draws the phone width.
+function Por04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por04State = POR04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR04_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalRequest
+        requestId={board.requestId}
+        frame
+        hold={{
+          ...(board.ignoreOpen === true ? { ignoreOpen: true } : {}),
+          ...(board.uploading === undefined ? {} : { uploading: board.uploading }),
+          ...(board.question === undefined ? {} : { question: board.question }),
+          ...(board.decision === undefined ? {} : { decision: board.decision }),
+        }}
+      />
+    </div>
+  );
+}
+
+registerScreen("POR-04", {
+  title: "Request detail · ignore reason sheet",
+  Component: Por04Artboard,
+});
 
 // SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.
 function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

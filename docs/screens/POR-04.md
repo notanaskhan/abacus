@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled: the firm's mark, name and people; nowhere "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-04 Request detail - ignore reason sheet/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | R-01 · contract R-01-T03; contract stub R-01-T01; consumer tests R-01-T02; fixtures R-01-T05; read model R-01-T07; ignore note and undo R-01-T08; sheet R-01-T12; live swap R-01-T18; parity and accessibility R-01-T31. e goes live with C-01 (transaction questions), f with T-06 / T-09 (client decision) |
-| Manifest status | planned (`routes/manifest/por.ts`); fixture once R-01-T12 builds it |
+| Manifest status | built on fixtures (R-01-T12, 2026-10-26): every artboard in the gallery, and the portal entry's `/documents/requests/$requestId` over POR-03 (a row's title opens it); the manifest entry stays `planned` with a null path, as POR-03's (DEC-347) |
 
 Code to come (R-01 §5.2): `src/screens/POR-04/{index.tsx, scenarios.ts, copy.ts, POR-04.test.tsx}`, `src/routes/portal/documents.requests.tsx`, `src/domain/portal/{documents.ts, messages.ts}`; reused and restyled: `ClientUploadChecks` (`screens/CheckResults.tsx`) for the pre-checks, `CommentThread` (`screens/CommentThread.tsx`) for the shared thread.
 
@@ -162,6 +162,10 @@ Each becomes a test in `POR-04.test.tsx` ("POR-04 avoid: …"): gradients in pro
 | DF-03 / DEC-45 | The 390 full-screen sheet is specified, not drawn: Tier D only; "Take a photo" is the native camera input | Portal responsive scope | 09 DF-03; decision-log DEC-45 |
 | — | e and f ship as typed variant slots of one sheet in fixture mode only; R-01 adds no question or decision endpoint | They go live with C-01 and T-06 / T-09 | R-01 §2.4 |
 | — | The README's viewer column reads "—" for b, c, d and g; the viewer is Claire Feld | The spec's default viewer | R-01 §5.4 |
+| — | The header shows "Request" (as designed) and the sheet is described by the request's title for assistive technology, rather than named by it | The O3 header's centred title is the kind of sheet; the title is the first card's heading | R-01-T12 |
+| — | "Add a note for Kevin (optional)" names the newest firm commenter of the thread by first name, else the firm ("Add a note for Brightwater Hale (optional)") | `PortalRequestOut` carries no request owner; no shape change in R-01-T12 | R-01-T12 |
+| — | "Mark not applicable" is a secondary button, not a primary | The header's "Upload…" is the sheet's one primary (AVOID: more than one primary) | R-01-T12 |
+| — | The portal-upload variant's in-flight row shows 0% until the file is stored, then the receipt | The upload is one request with no progress events; g's 46% is the fixture's held frame | R-01-T12 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
@@ -172,5 +176,5 @@ Each becomes a test in `POR-04.test.tsx` ("POR-04 avoid: …"): gradients in pro
 | host | D | — | sheet 500 from y52, header 56, fieldset cards radius 10, DropZone 112, composer 44, radio rows 40 |
 
 ## Open gaps
-- No handoff string for the not-found sheet, the load error, the upload refusals or the pre-check messages: keys reserved in `domain/portal/messages.ts`; R-01-T12 reuses `ClientUploadChecks`' existing fixed words and records any new string here.
+- No handoff string for the not-found sheet, the load error, a failed write or the pre-check messages. R-01-T12 wrote them in `domain/portal/messages.ts` (`SHEET_WORDS`) on the C-20 grammar: "This request isn't available." (404, no oracle); "Couldn’t load this request. Nothing was lost; try again in a moment." with Retry; "That didn't go through. Nothing changed; try again in a moment." (a toast); the pre-checks in `ClientUploadChecks`' fixed words for a file of no known kind ("This file isn't for the year end." for `wrong_period` and `stale_as_of`; "This looks like it's for a different company."; "The totals in this file don't add up. Please check it and upload it again."). The question's text field is labelled "Tell us more" and its radio group "Your answer"; the decision's "Your decision".
 - The question and decision variants' toasts reuse "Sent to Brightwater Hale" (the spec's interaction line); their routes and allowed actions are C-01's and T-06's.

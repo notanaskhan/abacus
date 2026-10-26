@@ -3,6 +3,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  useParams,
   useRouter,
 } from "@tanstack/react-router";
 import { type JSX, Suspense, lazy, useEffect, useState } from "react";
@@ -41,6 +42,10 @@ const Home = lazy(async () => ({
 }));
 const Documents = lazy(async () => ({
   default: (await import("../../screens/POR-03")).POR03,
+}));
+// POR-04 (R-01-T12): the request sheet over Documents, its own chunk.
+const RequestSheetScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-04")).POR04,
 }));
 
 /** The portal's built areas by nav label; the others stay the shell's planned page. */
@@ -130,6 +135,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (!signedIn) return null;
   if (area === "Home") return <HomePage />;
   if (area === "Documents") return <DocumentsPage />;
+  if (area === "Request") return <RequestPage />;
   return <Shell area={area} />;
 }
 
@@ -149,11 +155,38 @@ function DocumentsPage(): JSX.Element {
   const [binder] = useState(
     () => new URLSearchParams(window.location.search).get("binder") ?? undefined,
   );
+  const { history } = useRouter();
   return (
     <Documents
       {...(binder === undefined ? {} : { binderId: binder })}
       mobile={mobile}
       onNavigate={navigateTo}
+      onOpenRequest={(id) => {
+        history.push(`/documents/requests/${encodeURIComponent(id)}${window.location.search}`);
+      }}
+    />
+  );
+}
+
+/** POR-04 over POR-03 (R-01-T12; docs/screens/POR-04.md): ✕, the scrim and Esc go back to
+ * `/documents` with its `?binder=` and filters, and focus to the row that opened the sheet. */
+function RequestPage(): JSX.Element {
+  const { history } = useRouter();
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  const params: { requestId?: string } = useParams({ strict: false });
+  const [binder] = useState(
+    () => new URLSearchParams(window.location.search).get("binder") ?? undefined,
+  );
+  return (
+    <RequestSheetScreen
+      requestId={params.requestId ?? ""}
+      {...(binder === undefined ? {} : { binderId: binder })}
+      mobile={mobile}
+      onNavigate={navigateTo}
+      onClose={() => {
+        history.push(`/documents${window.location.search}`);
+      }}
     />
   );
 }
@@ -208,6 +241,7 @@ export const portalTree = rootRoute.addChildren([
   page("/accept", AcceptPage), // POR-01 d (P-08-T19)
   page("/", () => <Area area="Home" />),
   page("/documents", () => <Area area="Documents" />),
+  page("/documents/requests/$requestId", () => <Area area="Request" />), // POR-04
   page("/requests", NotBuilt),
   page("/k1s", NotBuilt),
   page("/governance", NotBuilt),

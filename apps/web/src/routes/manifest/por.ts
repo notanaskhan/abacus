@@ -19,6 +19,9 @@ export const porScreens = {
   // planned with a null path: manifest paths resolve in the firm's route tree, so the link
   // checker cannot see the portal's (DEC-347).
   "POR-03": { name: "Documents · Feld 2025 Binder", status: "planned", path: null },
+  // R-01-T12: all seven artboards render in the gallery on fixtures, and the portal entry opens
+  // the sheet at /documents/requests/$requestId over POR-03 (a row's title opens it). Planned with
+  // a null path for the reason POR-03 gives (DEC-347).
   "POR-04": { name: "Request detail · ignore reason sheet", status: "planned", path: null },
   "POR-05": { name: "Questions · Feld 2025 Tax Organizer", status: "planned", path: null },
   "POR-06": { name: "Sign · Ridgeline engagement letter", status: "planned", path: null },

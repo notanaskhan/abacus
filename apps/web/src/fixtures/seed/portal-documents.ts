@@ -98,13 +98,13 @@ export const FELD_FILES = {
     "1095c-2025",
     "Feld_1095C_2025.pdf",
     { kind: "emailed", on: "2026-09-14" },
-    { size_bytes: 412_000 },
+    { size_bytes: 412 * 1024 }, // "412 KB" in the portal's binary units
   ),
   uploaded1095c: file(
     "1095c-2025-portal",
     "Feld_1095C_2025.pdf",
     { kind: "uploaded", on: "2026-09-14" },
-    { size_bytes: 412_000 },
+    { size_bytes: 412 * 1024 }, // "412 KB" in the portal's binary units
   ),
   returned1095c: file(
     "1095c-2024",

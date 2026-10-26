@@ -595,6 +595,8 @@ export interface RequestRowProps {
   readOnly?: boolean;
   /** The row's place in a sort reveal (POR-03 motion): it rises in 135ms after the one before. */
   revealIndex?: number;
+  /** The title opens the request in full (POR-04's sheet, R-01-T12); focus comes back to it. */
+  onOpen?: (id: string) => void;
 }
 
 /** The gap between two rows of a sort reveal (POR-03 motion, `client-upload.png`). */
@@ -616,6 +618,7 @@ export function RequestRow({
   withdraw = false,
   readOnly = false,
   revealIndex,
+  onOpen,
 }: RequestRowProps): JSX.Element {
   const shown = rowView(item, firm);
   const view = readOnly
@@ -658,14 +661,30 @@ export function RequestRow({
     >
       <DocGlyph filled={view.docFilled} />
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
-        <span
-          className={cn(
-            "text-section leading-[1.3] tracking-normal [overflow-wrap:anywhere]",
-            view.titleMuted && "text-ink-3",
-          )}
-        >
-          {item.title}
-        </span>
+        {onOpen === undefined ? (
+          <span
+            className={cn(
+              "text-section leading-[1.3] tracking-normal [overflow-wrap:anywhere]",
+              view.titleMuted && "text-ink-3",
+            )}
+          >
+            {item.title}
+          </span>
+        ) : (
+          <button
+            type="button"
+            data-open-title=""
+            onClick={() => {
+              onOpen(item.id);
+            }}
+            className={cn(
+              "self-start text-left text-section leading-[1.3] tracking-normal [overflow-wrap:anywhere] hover:underline",
+              view.titleMuted && "text-ink-3",
+            )}
+          >
+            {item.title}
+          </button>
+        )}
         {view.fileLines.map((f) => (
           <span key={f} className="truncate text-dense text-ink-2">
             {f}

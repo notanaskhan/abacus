@@ -96,6 +96,8 @@ export interface RequestBinderProps {
   withdraw?: boolean;
   /** A closed binder: no upload, Ignore, Withdraw or Mark as Done anywhere. */
   readOnly?: boolean;
+  /** A row's title opens the request in full (POR-04's sheet, R-01-T12). */
+  onOpen?: (id: string) => void;
 }
 
 export interface RequestBinder {
@@ -453,6 +455,7 @@ export function RequestDocuments({
                   withdraw={props.withdraw === true}
                   readOnly={props.readOnly === true}
                   {...(props.reveal === true ? { revealIndex: order.get(r.id) ?? 0 } : {})}
+                  {...(props.onOpen === undefined ? {} : { onOpen: props.onOpen })}
                   onUpload={(id) => {
                     binder.choose(id);
                   }}
