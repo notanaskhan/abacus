@@ -11,6 +11,7 @@
 import type {
   TbLayerLineOut,
   TbLayerViewOut,
+  TbLeadsheetAreaOut,
   TbTickOut,
   TieOutCheckOut,
   TrialBalancesOut,
@@ -23,6 +24,7 @@ import {
   trialBalancesOptions,
 } from "@abacus/api-client/query";
 import {
+  AGENT_NAME,
   Amount,
   type AmountStyle,
   type CockpitCanvas,
@@ -49,11 +51,23 @@ export type TbLayer = TbLayerViewOut["layer"];
 
 const LAYERS: readonly TbLayer[] = ["unadjusted", "aje", "rje", "final"];
 
+/** Facts the C9 v1 view does not carry yet, for controls whose targets are planned (AUD-33,
+ * AUD-38): drawn only in dev, fixture and gallery builds, never in production (A-02-T14). */
+export interface PlannedFacts {
+  /** A group's entities, the open one first named in `entity` (AUD-06g). */
+  entities?: readonly string[];
+  entity?: string;
+  /** "Final TB released … → FY2026 Form 1120 · …": the hand-off's tooltip (AUD-06h). */
+  handOffToTax?: string;
+}
+
 export interface TrialBalanceOptions {
   /** Read only while the pane is shown (the cockpit asks on every render). */
   enabled?: boolean;
   /** What the pane opens on (an artboard's state). */
-  initial?: { tab?: TbTab; layer?: TbLayer; line?: string };
+  initial?: { tab?: TbTab; layer?: TbLayer; line?: string; area?: string };
+  /** Planned controls' facts (dev, fixture and gallery builds only). */
+  planned?: PlannedFacts;
   /** A line was clicked and its citation resolved: the host shows its Viewer. */
   onLink?: () => void;
 }
@@ -65,6 +79,34 @@ export interface TrialBalancePane {
 }
 
 const layerWord = (layer: TbLayer): string => status("trial_balance_layer", layer).label;
+const labelWord = (view: TbLayerViewOut): string =>
+  status("trial_balance_label", view.label).label;
+
+/** "2026-08-31" as "8/31/2026" (revision.md g): the date's own digits, reordered. */
+function shortDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${String(Number.parseInt(m ?? "", 10))}/${String(Number.parseInt(d ?? "", 10))}/${y ?? ""}`;
+}
+
+/** The R2 chip: Standard alone; any other label with its period end. */
+function chipOf(view: TbLayerViewOut): string {
+  return view.label === "standard"
+    ? COPY.tbChip(labelWord(view))
+    : COPY.tbChip(labelWord(view), shortDate(view.period_end));
+}
+
+/** A trial balance with no prior year shows one amount column (AUD-06g). */
+function hasPrior(view: TbLayerViewOut): boolean {
+  return (
+    view.prior_period_end !== null || view.groups.some((g) => g.lines.some((l) => l.boy !== null))
+  );
+}
+
+/** AUD-06b: every mark on the lines is the agent's (a draft no person has adopted or agreed). */
+function isAgentDraft(view: TbLayerViewOut): boolean {
+  const ticks = view.groups.flatMap((g) => g.lines.flatMap((l) => l.ticks ?? []));
+  return ticks.length > 0 && ticks.every((t) => t.actor_kind === "agent");
+}
 
 function styleOf(view: TbLayerViewOut): AmountStyle {
   return view.display_unit === "whole_dollars" ? "whole" : "money";
@@ -105,10 +147,12 @@ function Mark({ tick, pinned }: { tick: TbTickOut; pinned: boolean }): JSX.Eleme
   const at = `${f.date(tick.at)} ${f.time(tick.at)}`;
   const place = pinned ? "absolute top-1/2 right-[10px] -translate-y-1/2" : "ml-[6px]";
   if (tick.actor_kind === "agent") {
+    // An agent's mark is outlined and never carries initials (INV-5); it names the agent only.
     return (
       <span
         role="img"
         aria-label={COPY.agentDraft}
+        title={AGENT_NAME}
         data-tick="agent"
         className={cn(place, "inline-flex size-[10px] rounded-pill inset-ring-1 inset-ring-ink-3")}
       />
@@ -276,7 +320,14 @@ function LineRow({
           </span>
         ))}
       </td>
-      <AmountCell value={line.boy} style={style} tick={tick} flagged={flaggedColumns.has("boy")} />
+      {hasPrior(view) && (
+        <AmountCell
+          value={line.boy}
+          style={style}
+          tick={tick}
+          flagged={flaggedColumns.has("boy")}
+        />
+      )}
       <AmountCell
         value={final ? (line.final ?? line.eoy) : line.eoy}
         style={style}
@@ -315,15 +366,20 @@ function TrialBalanceTable({
 }): JSX.Element {
   const style = styleOf(view);
   const final = view.layer === "final";
-  const span = final ? 5 : 4;
+  const prior = hasPrior(view);
+  const span = (final ? 5 : 4) - (prior ? 0 : 1);
   const last = view.totals.length - 1;
+  const eoyHeader =
+    view.label === "standard"
+      ? COPY.columns.eoy
+      : COPY.labelColumn(labelWord(view), shortDate(view.period_end));
   return (
     <table data-aud06="lines" aria-label={COPY.title} className="w-full text-cell">
       <thead>
         <tr className="h-[28px] bg-surface text-th text-ink-2 hairline-t hairline-b">
           <th className="pl-[12px] text-left font-normal">{COPY.columns.description}</th>
-          <th className="pr-[62px] text-right font-normal">{COPY.columns.boy}</th>
-          <th className="pr-[62px] text-right font-normal">{COPY.columns.eoy}</th>
+          {prior && <th className="pr-[62px] text-right font-normal">{COPY.columns.boy}</th>}
+          <th className="pr-[62px] text-right font-normal">{eoyHeader}</th>
           {final && <th className="pr-[8px] text-right font-normal">{COPY.columns.aje}</th>}
           <th className="pr-[12px] text-left font-normal">{COPY.columns.wpRef}</th>
         </tr>
@@ -358,9 +414,11 @@ function TrialBalanceTable({
             )}
           >
             <td className="pl-[12px]">{t.label}</td>
-            <td className="pr-[62px] text-right whitespace-nowrap tabular-nums">
-              {t.boy === null ? null : <Amount value={t.boy} style={style} zero="explicit" />}
-            </td>
+            {prior && (
+              <td className="pr-[62px] text-right whitespace-nowrap tabular-nums">
+                {t.boy === null ? null : <Amount value={t.boy} style={style} zero="explicit" />}
+              </td>
+            )}
             <td className="pr-[62px] text-right whitespace-nowrap tabular-nums">
               <Amount value={t.eoy} style={style} zero="explicit" />
             </td>
@@ -411,17 +469,32 @@ function Caption({ view }: { view: TbLayerViewOut }): JSX.Element {
 
 // ---- Leadsheets --------------------------------------------------------------------------------
 
+/** The audit areas the server names on the lines, in the view's order, each once. */
+function areasOf(view: TbLayerViewOut): string[] {
+  const seen: string[] = [];
+  for (const l of view.groups.flatMap((g) => g.lines)) {
+    if (l.area !== null && !seen.includes(l.area)) seen.push(l.area);
+  }
+  return seen;
+}
+
 function Leadsheet({
   engagementId,
   view,
   enabled,
+  initialArea,
 }: {
   engagementId: string;
   view: TbLayerViewOut;
   enabled: boolean;
+  initialArea?: string;
 }): JSX.Element | null {
-  // The first audit area the server names on a line; A-02-T14 adds the area picker.
-  const area = view.groups.flatMap((g) => g.lines).find((l) => l.area !== null)?.area ?? null;
+  // AUD-06e: one leadsheet per audit area the server names; the picker chooses which.
+  const areas = areasOf(view);
+  const [picked, setPicked] = useState<string | null>(
+    initialArea !== undefined && areas.includes(initialArea) ? initialArea : null,
+  );
+  const area = picked ?? areas[0] ?? null;
   const sheet = useQuery({
     ...tbLeadsheetAreaOptions({
       path: { engagement_id: engagementId, tb_id: view.trial_balance_id, area: area ?? "" },
@@ -433,6 +506,31 @@ function Leadsheet({
   if (sheet.data === undefined) return null;
   const s = sheet.data;
   const pctOf = (v: string | null): string => (v === null ? "" : `${v}%`);
+  return (
+    <>
+      {areas.length > 1 && (
+        <div data-aud06="areas" className="flex h-[36px] flex-none items-center px-[12px]">
+          <Segmented
+            size="small"
+            label={COPY.areas}
+            options={areas.slice(0, 7)}
+            active={s.area}
+            onChange={setPicked}
+          />
+        </div>
+      )}
+      <LeadsheetTable s={s} pctOf={pctOf} />
+    </>
+  );
+}
+
+function LeadsheetTable({
+  s,
+  pctOf,
+}: {
+  s: TbLeadsheetAreaOut;
+  pctOf: (v: string | null) => string;
+}): JSX.Element {
   return (
     <table data-aud06="leadsheet" aria-label={s.area} className="w-full text-cell">
       <thead>
@@ -491,7 +589,7 @@ function citationOf(line: TbLayerLineOut): string | null {
 
 export function useTrialBalancePane(
   engagementId: string,
-  { enabled = true, initial = {}, onLink }: TrialBalanceOptions = {},
+  { enabled = true, initial = {}, onLink, planned = {} }: TrialBalanceOptions = {},
 ): TrialBalancePane {
   const [tab, setTab] = useState<TbTab>(initial.tab ?? "trial_balance");
   const [layer, setLayer] = useState<TbLayer>(initial.layer ?? "unadjusted");
@@ -554,6 +652,21 @@ export function useTrialBalancePane(
     empty: { icon: "file-text", title: COPY.empty },
     actions: (
       <>
+        {v !== undefined && isAgentDraft(v) && (
+          <span
+            data-aud06="draft"
+            className="inline-flex h-[22px] items-center rounded-pill bg-nested px-[9px] text-meta text-ink-2"
+          >
+            {COPY.agentDraft}
+          </span>
+        )}
+        {PLANNED_VISIBLE && planned.handOffToTax !== undefined && v?.layer === "final" && (
+          <Tooltip content={planned.handOffToTax}>
+            <span tabIndex={0} data-aud06="hand-off" aria-label={planned.handOffToTax}>
+              <PaneAction label={COPY.handOffToTax} disabled />
+            </span>
+          </Tooltip>
+        )}
         {PLANNED_VISIBLE && allowed.has("trial_balance.annotate") && (
           <PaneAction icon="pencil" label={COPY.edit} disabled />
         )}
@@ -584,10 +697,7 @@ export function useTrialBalancePane(
           ) : (
             <span data-aud06="layers">{layers}</span>
           )}
-          <PaneAction
-            kind="picker"
-            label={COPY.tbChip(status("trial_balance_label", v.label).label)}
-          />
+          <PaneAction kind="picker" label={chipOf(v)} />
           <span className="flex-1" />
           {PLANNED_VISIBLE && allowed.has("trial_balance.export") && (
             <PaneAction icon="cloud-download" label={COPY.openInExcel} disabled />
@@ -597,8 +707,30 @@ export function useTrialBalancePane(
     children:
       v === undefined ? null : (
         <div data-aud06="body" className="flex flex-col">
+          {PLANNED_VISIBLE && (planned.entities?.length ?? 0) > 1 && (
+            <div
+              data-aud06="entities"
+              className="flex h-[36px] flex-none items-center gap-[8px] px-[12px]"
+            >
+              <Segmented
+                size="small"
+                label={COPY.entities}
+                options={(planned.entities ?? []).map((e) => ({
+                  label: e,
+                  disabled: e !== planned.entity,
+                }))}
+                {...(planned.entity === undefined ? {} : { active: planned.entity })}
+              />
+              <span className="text-meta text-ink-3">{COPY.consolidated}</span>
+            </div>
+          )}
           {tab === "leadsheets" ? (
-            <Leadsheet engagementId={engagementId} view={v} enabled={enabled} />
+            <Leadsheet
+              engagementId={engagementId}
+              view={v}
+              enabled={enabled}
+              {...(initial.area === undefined ? {} : { initialArea: initial.area })}
+            />
           ) : (
             <>
               <CheckStrip checks={checks.data ?? []} />

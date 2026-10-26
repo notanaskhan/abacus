@@ -101,3 +101,30 @@ Plan: 29 rows, 26.0 task-equivalents, S3 to S10 (`docs/plan/epics/P-06.tasks.csv
 Delivered (done plus in review): 26 rows, 23.75 of 26.0 task-equivalents (91%).
 
 **What is still owed.** The epic's DoD is not met: the journeys (T25), the staging walk (T16), the eval run (T21), the Tier C parity locks and the axe run (T26, `docs/quality/parity-P-06.md`) and the C5 v1 freeze (`docs/contracts/README.md`, ready at the batch merge). Open seams, none folded into a done row: the live poll's provider (DEC-158), the OQ-1 preparer path (DEC-136), the follow-up override write (501), `awaiting_review_count`. Chapter 01 dates are unchanged.
+
+## F-05 Design system: M3 calibration (F-05-T26, measured 2026-10-26)
+
+The M3 measure (chapter 01 §1.8.7; F-05 §2 and §9): kit-task throughput for S1 and S2 against the rebalanced plan, and the hold or cut decision. Planned Fri Nov 20, 2026; measured early because S1 and S2 are already behind us. "Done" is the read-only reconcile of main `a0d16491` (every code clause built), not a task file's own status.
+
+**Kit tasks, S1 and S2** (F-05 rows, `size_tasks`; this calibration row itself left out):
+
+| Sprint | Rows | Planned | Done | Partial | Done share |
+|---|---|---|---|---|---|
+| S1 | 8 | 9.5 | 8.0 | T16 (1.5): the baseline fetch from the design-baselines bucket is not wired (needs AWS) | 84% |
+| S2 | 8 | 9.0 | 8.0 | T25 (1.0): the text-only handoff mirror, held while the repo is public | 89% |
+| **S1 + S2** | **16** | **18.5** | **16.0** | 2.5 | **86%** |
+
+Counting the two partial rows at half, throughput is 93%. Beyond S2, F-05's S0 to S6 rows deliver 46.5 of 50.5 planned (92%).
+
+**Decision: hold, no cut** (DEC-410). Throughput is above the 85% threshold, so the §2 deferral list (T5 + TPL-05 to K-01, T8 + TPL-08 to N-01, T9 + TPL-09 to T-02, T3 + TPL-03 to F-06) is not invoked. Neither open partial blocks a tier-0 or tier-1 consumer: T16's harness runs on a local baseline directory, and T25's mirror is a publication choice.
+
+**Post-rebalance S1–S6 AY plan for F-02…F-05** (F-05 §9, planned tasks per sprint) beside what was delivered (rows done on main, all four epics, AY and N together since the solo edition has one builder):
+
+| Sprint | S1 | S2 | S3 | S4 | S5 | S6 |
+|---|---|---|---|---|---|---|
+| AY capacity (ch. 01 §1.8.3) | 11.1 | 10.0 | 11.1 | 6.6 | 6.6 | 11.1 |
+| F-02…F-05 AY, rebalanced plan | 11.75 | 11.0 | 12.5 | 8.0 | 6.5 | 10.5 |
+| F-02…F-05 planned (all rows) | 26.75 | 24.25 | 20.5 | 11.5 | 7.5 | 11.5 |
+| F-02…F-05 delivered (done rows) | 24.25 | 22.75 | 20.5 | 10.0 | 6.5 | 9.5 |
+
+The residual overcommit the plan names (106–121% of AY capacity in S1 to S4) did not bind: the solo build delivered S1 to S6 of these four epics in calendar weeks, ahead of chapter 01's dates, which are unchanged.

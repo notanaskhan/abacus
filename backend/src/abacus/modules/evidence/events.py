@@ -179,3 +179,15 @@ class PortalDropUnsorted(DomainEvent):
 
     engagement_id: Annotated[UUID, classified("internal")]
     inbox_file_id: Annotated[UUID, classified("internal")]
+
+
+class EvidenceVersionUnlocked(DomainEvent):
+    """A person unlocked a password-protected version into derived records (P-03-T19; C4 §7):
+    the evidence itself is unchanged. Identifiers only; never the password."""
+
+    event_type: ClassVar[str] = "evidence_version.unlocked"
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    derivation_id: Annotated[UUID, classified("internal")]
+    unlocked_by: Annotated[UUID, classified("internal")]

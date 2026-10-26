@@ -1,9 +1,9 @@
 """The intake and import contract, v1: CLI-06 single intake and bulk import (P-07-T37 stub;
 ADR-139, P-36). Contract: `docs/contracts/intake-import.md`; spec: SPEC-332; DEC-374.
 
-Behind `clients.v2` (CLI-06's flag): off, every route here answers 404; on, 501
-`not_implemented` until P-07-T42 (dedupe, intake drafts and commit) and P-07-T52 (client
-imports) implement them.
+Behind `clients.v2` (CLI-06's flag): off, every route here answers 404. Dedupe, the intake
+drafts and the commit are live (P-07-T42, `intake.py`, DEC-430); the client-import routes
+answer 501 `not_implemented` until P-07-T52.
 
 - **Dedupe** takes the name in the body, never the URL, and answers scored candidates.
 - **Intake drafts** hold identifiers and typed values only (no TIN, no free text beyond names);
@@ -25,7 +25,7 @@ or a count of walled clients (DEC-43).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request
@@ -37,6 +37,8 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import SingleLineText
+from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.engagements import intake as intake_model
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -46,7 +48,7 @@ from abacus.modules.identity.api import (
     current_context,
     mask_tins_for,
 )
-from abacus.modules.organisations.api import MaskedTinOut
+from abacus.modules.organisations.api import MaskedTinOut, dedupe_candidates
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -129,7 +131,10 @@ class IntakeContactIn(BaseModel):
 class IntakeServiceIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    type_code: Annotated[Code, classified("internal")]  # an ENG-03 catalogue code
+    type_code: Annotated[Code, classified("internal")]  # an ENG-03 catalogue code, or `form_56`
+    # The type's forms this service creates (P-07-T42, additive): default all of them, so
+    # `forms_706_709` with `["706"]` is the estate's Form 706 alone.
+    forms: Annotated[list[Code] | None, Field(max_length=5), classified("internal")] = None
     fiscal_period_start: Annotated[date | None, classified("confidential")] = None
     fiscal_period_end: Annotated[date | None, classified("confidential")] = None
 
@@ -308,14 +313,19 @@ class RowDecisionIn(BaseModel):
 # --- routes -------------------------------------------------------------------------------------
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+async def _gate(ctx: AuthContext, action: str) -> None:
     """DEC-326's order: refuse a client principal, an agent and the system, authorise firm-level,
-    then read the flag; 501 until the implementing task."""
+    then read the flag (404 when off)."""
     if ctx.client or ctx.tenant.actor_kind != "human":
         raise Forbidden(action, "role")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, CLIENTS_V2):
         raise NotFound(CLIENTS_V2.name)
+
+
+async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+    """The gate, then 501 until the implementing task (the import routes, P-07-T52)."""
+    await _gate(ctx, action)
     raise NotImplementedYet
 
 
@@ -327,52 +337,102 @@ INTAKE = "client.intake"
 IMPORT = "client_import.run"
 
 
-@dedupe_router.post("/dedupe", action="client.create", response_model=DedupeOut, errors=(501,))
+def _payload_in(payload: ClientIntakeDraftPayload | None) -> dict[str, object]:
+    return {} if payload is None else payload.model_dump(mode="json", exclude_none=True)
+
+
+def _draft_out(d: intake_model.IntakeDraftView) -> ClientIntakeDraftOut:
+    return ClientIntakeDraftOut(
+        id=d.id,
+        created_by=d.created_by,
+        step=cast(IntakeStep, d.step),
+        payload=ClientIntakeDraftPayload.model_validate(d.payload),
+        committed_client_id=d.committed_client_id,
+        version=d.version,
+        saved_at=d.saved_at,
+        allowed_actions=[] if d.committed_client_id is not None else [INTAKE],
+    )
+
+
+@dedupe_router.post("/dedupe", action="client.create", response_model=DedupeOut)
 async def dedupe_route(body: DedupeIn, ctx: Ctx) -> DedupeOut:
-    """CLI-06 b: "96% match · Walter Thornbury" (P-07-T42)."""
-    await _stub(ctx, "client.create")
+    """CLI-06 b: "96% match · Walter Thornbury" (DEC-441); walled clients are never candidates."""
+    await _gate(ctx, "client.create")
+    found = await dedupe_candidates(ctx, body.name)
+    return DedupeOut(
+        candidates=[
+            DedupeCandidateOut(
+                client_id=m.client_id,
+                display_name=m.display_name,
+                client_entity_id=m.client_entity_id,
+                entity_name=m.entity_name,
+                score=m.score,
+                basis=cast(MatchBasis, m.basis),
+            )
+            for m in found
+        ]
+    )
 
 
 @client_intake_drafts_router.post(
-    "", action=INTAKE, response_model=ClientIntakeDraftOut, status_code=201, errors=(501,)
+    "", action=INTAKE, response_model=ClientIntakeDraftOut, status_code=201
 )
 async def create_intake_draft_route(body: ClientIntakeDraftIn, ctx: Ctx) -> ClientIntakeDraftOut:
-    await _stub(ctx, INTAKE)
+    """422 `tin_kind_not_allowed`: an SSN or ITIN in the draft's text on a real firm (OQ-4)."""
+    await _gate(ctx, INTAKE)
+    return _draft_out(await intake_model.create_draft(ctx, body.step, _payload_in(body.payload)))
 
 
-@client_intake_drafts_router.get(
-    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftOut, errors=(501,)
-)
+@client_intake_drafts_router.get("/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftOut)
 async def get_intake_draft_route(draft_id: UUID, ctx: Ctx) -> ClientIntakeDraftOut:
     """The owner's draft only (another person's answers 404)."""
-    await _stub(ctx, INTAKE)
+    await _gate(ctx, INTAKE)
+    return _draft_out(await intake_model.get_draft(ctx, draft_id))
 
 
 @client_intake_drafts_router.patch(
-    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftOut, errors=(409, 501)
+    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftOut, errors=(409,)
 )
 async def update_intake_draft_route(
     draft_id: UUID, body: ClientIntakeDraftPatchIn, ctx: Ctx
 ) -> ClientIntakeDraftOut:
-    """Autosave; 409 `stale_version`."""
-    await _stub(ctx, INTAKE)
+    """Autosave; 409 `stale_version`; 422 `tin_kind_not_allowed`."""
+    await _gate(ctx, INTAKE)
+    return _draft_out(
+        await intake_model.update_draft(
+            ctx,
+            draft_id,
+            body.seen_version,
+            step=body.step,
+            payload=None if body.payload is None else _payload_in(body.payload),
+        )
+    )
 
 
 @client_intake_drafts_router.delete(
-    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftDiscardedOut, errors=(501,)
+    "/{draft_id}", action=INTAKE, response_model=ClientIntakeDraftDiscardedOut
 )
 async def discard_intake_draft_route(draft_id: UUID, ctx: Ctx) -> ClientIntakeDraftDiscardedOut:
-    await _stub(ctx, INTAKE)
+    await _gate(ctx, INTAKE)
+    at = await intake_model.discard_draft(ctx, draft_id)
+    return ClientIntakeDraftDiscardedOut(draft_id=draft_id, discarded_at=at)
 
 
 @client_intake_drafts_router.post(
-    "/{draft_id}/validate", action=INTAKE, response_model=IntakeValidationOut, errors=(501,)
+    "/{draft_id}/validate", action=INTAKE, response_model=IntakeValidationOut
 )
 async def validate_intake_draft_route(
     draft_id: UUID, body: IntakeValidateIn, ctx: Ctx
 ) -> IntakeValidationOut:
     """CLI-06 i: "Required for Form 706 due date" is `date_of_death_required`."""
-    await _stub(ctx, INTAKE)
+    await _gate(ctx, INTAKE)
+    problems = await intake_model.validate_draft(ctx, draft_id, body.step)
+    return IntakeValidationOut(
+        draft_id=draft_id,
+        step=body.step,
+        valid=not problems,
+        problems=[IntakeProblemOut(field=p.field, code=p.code) for p in problems],
+    )
 
 
 @client_intake_drafts_router.post(
@@ -380,14 +440,39 @@ async def validate_intake_draft_route(
     action=INTAKE,
     response_model=IntakeCommittedOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def commit_intake_draft_route(
     draft_id: UUID, body: IntakeCommitIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeCommittedOut:
     """Human-only, one unit of work, Prospect engagements only (OQ-2); 409 `gate_unmet` without
-    a cleared conflict check, 409 `possible_duplicate`; a replayed key answers the same."""
-    await _stub(ctx, INTAKE)
+    a cleared conflict check, 409 `possible_duplicate`, 422 `draft_incomplete`; a replayed key
+    answers the same."""
+    await _gate(ctx, INTAKE)
+    await intake_model.check_commit(ctx, draft_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await intake_model.commit_intake(ctx, draft_id, body.start_acceptance)
+        out = IntakeCommittedOut(
+            draft_id=made.draft_id,
+            client_id=made.client_id,
+            client_entity_id=made.client_entity_id,
+            engagement_ids=made.engagement_ids,
+            engagement_status=EngagementStatus(made.engagement_status),
+            work_item_ids=made.work_item_ids,
+            conflict_check_id=made.conflict_check_id,
+            acceptance_record_id=made.acceptance_record_id,
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="client_intake_drafts.commit",
+        key=idempotency_key,
+        body={"draft_id": str(draft_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return IntakeCommittedOut.model_validate(stored.body)
 
 
 @client_imports_router.post(

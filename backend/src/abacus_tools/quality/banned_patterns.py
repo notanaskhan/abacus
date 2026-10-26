@@ -1951,6 +1951,9 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/uow/*",
             "src/abacus/kernel/slots.py",
             "src/abacus/ai_gateway/admission.py",  # the provider bucket: the same decision
+            # G-02-T10 (DEC-436): the audit label index, a rebuildable projection of the audit
+            # trail; auditing its own writes would feed itself, as the hash chain's would.
+            "src/abacus/modules/audit_trail/labels.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_uow_session_rollback.py",
             # Calls the slot ledger's functions as the app, one committed call at a time.
@@ -2018,6 +2021,11 @@ RULES: list[Rule | TreeRule] = [
             # A-02-T04: 0149's round trip on a private database; seeds as the superuser and
             # proves the app role's refusals with the tenant set, as tenant_session sets it.
             "tests/integration/test_tb_of_record_schema.py",
+            # A-02-T11/T12/T13 (S10): 0193-0195's round trips on private databases; seed as the
+            # superuser and prove the app role's refusals with the tenant set by hand.
+            "tests/integration/test_tie_out_schema.py",
+            "tests/integration/test_integrations_schema.py",
+            "tests/integration/test_entity_connections_schema.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2121,6 +2129,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/uow/*",
             "src/abacus/kernel/slots.py",  # see UOW-001
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
+            "src/abacus/modules/audit_trail/labels.py",  # see UOW-001 (DEC-436)
             "tests/integration/*",
             "tests/security/conftest.py",  # the suite's database (as integration's conftest)
             "tests/contracts/undo/conftest.py",  # P-04-T13: the Undo suite's own database
@@ -2163,6 +2172,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             # A-02-T04: the app role's refusals on 0149's tables, with the tenant set by hand.
             "tests/integration/test_tb_of_record_schema.py",
+            # A-02-T11/T12/T13 (S10): the app role's refusals on 0193-0195's tables.
+            "tests/integration/test_tie_out_schema.py",
+            "tests/integration/test_integrations_schema.py",
+            "tests/integration/test_entity_connections_schema.py",
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
@@ -2364,6 +2377,21 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/organisations/conflicts.py",
             "src/abacus/modules/organisations/conflicts_contract.py",
             "src/abacus/modules/organisations/api.py",
+        ),
+    ),
+    Rule(
+        id="INDEP-001",
+        description="Only the independence service and its route reach the conclusion",
+        adr="ADR-005",
+        check=_check_named(
+            "conclude_independence", "only the engagement partner concludes independence (INV-1)"
+        ),
+        # P-07-T41 (SPEC-332 AC-20): the definition, its route, and the module's interface.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/engagements/independence.py",
+            "src/abacus/modules/engagements/acceptance_contract.py",
+            "src/abacus/modules/engagements/api.py",
         ),
     ),
     Rule(

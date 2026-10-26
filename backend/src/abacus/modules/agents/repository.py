@@ -61,6 +61,10 @@ def _shown_run(run_id: QueryableAttribute[UUID]) -> ColumnElement[bool]:
     )
 
 
+# Public within agents: the engagement export's screening section filters as every reader does.
+shown_run = _shown_run
+
+
 async def insert_run(
     session: AsyncSession,
     *,

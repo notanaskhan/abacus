@@ -176,7 +176,10 @@ async def test_ac4_g1_and_g2_are_unmet_until_the_partner_records_each_fact(
     assert gates["G2"] == (False, ["independence_conclusion"])
     concluded = await eng.accept(independence_concluded=True, independence_documented_at="Memo 2")
     assert concluded.status_code == 200, concluded.text
-    assert (await eng.gates())["G2"] == (True, [])
+    # Spec drift (DEC-429, P-07-T41 security review): SPEC-332 AC-18 and AC-19 make G2 the
+    # engagement partner's CLI-08 conclusion; SPEC-025's route still documents its conclusion on
+    # a firm without independence v2, but a row it writes after 0175 never meets G2.
+    assert (await eng.gates())["G2"] == (False, ["independence_conclusion"])
 
 
 @pytest.mark.xfail(

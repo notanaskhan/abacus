@@ -403,6 +403,7 @@ __all__ = [
     "UnitOfWork",
     "audit_acted_since",
     "audit_activity",
+    "audit_actor_count_since",
     "audit_facets",
     "audit_of_targets",
     "audit_page",
@@ -506,6 +507,38 @@ async def audit_acted_since(
         },
     )
     return bool(found)
+
+
+async def audit_actor_count_since(
+    session: AsyncSession,
+    *,
+    action: str,
+    target: tuple[str, UUID],
+    actor_id: str,
+    window_seconds: int,
+) -> tuple[int, datetime | None, datetime]:
+    """How many `action` events one actor left about one target in the last `window_seconds`
+    (system time, `occurred_at`), the oldest of them and the database's now (P-03-T19: failed
+    unlocks per person per version). A rate limiter's count; identifiers only. The caller
+    serialises concurrent callers (an advisory lock) when the count gates a write."""
+    row = (
+        await session.execute(
+            text(
+                "SELECT count(*) AS n, min(occurred_at) AS oldest, clock_timestamp() AS now "
+                "FROM audit_events WHERE action = :action AND target_type = :type "
+                "AND target_id = :id AND actor_id = :actor "
+                "AND occurred_at > clock_timestamp() - make_interval(secs => :window)"
+            ),
+            {
+                "action": action,
+                "type": target[0],
+                "id": str(target[1]),
+                "actor": actor_id,
+                "window": window_seconds,
+            },
+        )
+    ).one()
+    return int(row.n), row.oldest, row.now
 
 
 _audit_events = table(
