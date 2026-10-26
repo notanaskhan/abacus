@@ -38,6 +38,43 @@ MODELS: dict[str, tuple[str, ...]] = {
         "EmailTemplateImportIn",
         "EmailTemplateImportOut",
     ),
+    # C5 v1 with v1.1 and v1.2, the binders and requests half (P-06-T27, DEC-409; frozen
+    # 2026-10-27): c5-requests-binders.md §3 and the SHL-20 family's follow-ups and card (§12).
+    # The portal half (portal-identity.md, portal-pbc.md) is P-08's and R-01's and not listed.
+    "c5_requests_binders": (
+        "BinderRowOut",
+        "ListPage_BinderRowOut_",
+        "BinderOut",
+        "BinderIn",
+        "UnpublishIn",
+        "RecipientsIn",
+        "FollowUpOverrideIn",
+        "BinderRequestRowOut",
+        "ListPage_BinderRequestRowOut_",
+        "BinderLiveOut",
+        "BinderClientPreviewOut",
+        "ActivityEventOut",
+        "ListPage_ActivityEventOut_",
+        "RequestItemV2Out",
+        "RequestItemPatchIn",
+        "WaiveIn",
+        "ReturnToClientIn",
+        "DelegateIn",
+        "DelegationOut",
+        "RequestItemDeletedOut",
+        "IgnoreIn",
+        "IgnoredOut",
+        "UploadIntentIn",
+        "UploadIntentOut",
+        "BinderMarkedDoneOut",
+        "WithdrawalOut",
+        "FollowUpOut",
+        "FollowUpDraftsIn",
+        "FollowUpDraftsOut",
+        "FollowUpEditIn",
+        "FollowUpSendManyIn",
+        "ScreeningCardOut",
+    ),
 }
 Schema = dict[str, object]
 
