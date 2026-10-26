@@ -22393,6 +22393,10 @@ export type ViewerManifestOut = {
      * Truncated
      */
     truncated: boolean;
+    /**
+     * View
+     */
+    view?: 'images' | 'text';
 };
 
 /**
@@ -22517,6 +22521,60 @@ export type ViewerSearchOut = {
      * Truncated
      */
     truncated: boolean;
+};
+
+/**
+ * ViewerTextOut
+ */
+export type ViewerTextOut = {
+    /**
+     * Items
+     */
+    items: Array<ViewerTextPageOut>;
+    /**
+     * Sheets
+     */
+    sheets: Array<ViewerTextSheetOut>;
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+};
+
+/**
+ * ViewerTextPageOut
+ */
+export type ViewerTextPageOut = {
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Unread
+     */
+    unread: boolean;
+};
+
+/**
+ * ViewerTextSheetOut
+ */
+export type ViewerTextSheetOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Rows
+     */
+    rows: Array<Array<string>>;
+    /**
+     * Withheld
+     */
+    withheld?: boolean;
 };
 
 /**
@@ -31342,6 +31400,10 @@ export type VersionPreviewPageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -33166,6 +33228,10 @@ export type InboxPreviewPageErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -38590,6 +38656,10 @@ export type UploadPreviewPageErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -43240,6 +43310,10 @@ export type RevealPiiErrors = {
      */
     422: ValidationErrorOut;
     /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+    /**
      * Contract stub: not implemented yet
      */
     501: ErrorOut;
@@ -43385,6 +43459,66 @@ export type ViewerSearchResponses = {
 };
 
 export type ViewerSearchResponse = ViewerSearchResponses[keyof ViewerSearchResponses];
+
+export type ViewerTextData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/evidence-versions/{version_id}/text';
+};
+
+export type ViewerTextErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ViewerTextError = ViewerTextErrors[keyof ViewerTextErrors];
+
+export type ViewerTextResponses = {
+    /**
+     * Successful Response
+     */
+    200: ViewerTextOut;
+};
+
+export type ViewerTextResponse = ViewerTextResponses[keyof ViewerTextResponses];
 
 export type UnlockVersionData = {
     body: EvidenceUnlockIn;

@@ -1191,11 +1191,15 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
+        # P-03-T15: the masking backfill's batch, as the system on the firm's own uploads.
+        ("src/abacus/modules/evidence/repository.py", "sources_without_masks"),
         # P-03-T08, T09: the events of citations already read through `visible()` or authorised
         # on; one source's PII regions and one preview's page rows, after the viewer or the
         # citation reader authorised `evidence.read` / `citation.read` on that source.
         ("src/abacus/modules/evidence/repository.py", "events_of"),
         ("src/abacus/modules/evidence/repository.py", "pii_regions_of"),
+        # P-03-T15 review N1: one source's not-scannable pages, beside `scanned_pages`.
+        ("src/abacus/modules/evidence/repository.py", "unscannable_pages"),
         ("src/abacus/modules/evidence/repository.py", "preview_pages_of"),
         # SPEC-316 (TASK-345): firm taxonomy content (after a firm-level check) and a mapping
         # set's edits (after authorising on its engagement).

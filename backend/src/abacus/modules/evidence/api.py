@@ -73,6 +73,7 @@ from abacus.modules.evidence.holds import (
 from abacus.modules.evidence.holds import activate as legal_hold_activate
 from abacus.modules.evidence.holds import apply_batch as legal_hold_apply_batch
 from abacus.modules.evidence.inbox import add_to_inbox, register_match_picks
+from abacus.modules.evidence.masked_previews import masked_preview_upload
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -81,6 +82,7 @@ from abacus.modules.evidence.match_material import (
 )
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
+from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.portal_files import (
     PortalFile,
     SentBack,
@@ -186,7 +188,7 @@ from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVIT
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
-from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill
+from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import (
@@ -371,9 +373,11 @@ __all__ = [
     "legal_hold_apply_batch",
     "list_holds",
     "mark_sources_superseded",
+    "masked_preview_upload",
     "match_material",
     "normalised_text",
     "page_quote_reason",
+    "pii_scan_upload",
     "place_hold",
     "portal_files",
     "process_upload",
@@ -407,6 +411,7 @@ __all__ = [
     "version_view",
     "waiting_among",
     "withdrawn_among",
+    "words_upload",
     "worth_matching",
 ]
 

@@ -47020,6 +47020,16 @@
             "cls": "internal",
             "title": "Truncated",
             "type": "boolean"
+          },
+          "view": {
+            "cls": "internal",
+            "default": "images",
+            "enum": [
+              "images",
+              "text"
+            ],
+            "title": "View",
+            "type": "string"
           }
         },
         "required": [
@@ -47275,6 +47285,97 @@
           "truncated"
         ],
         "title": "ViewerSearchOut",
+        "type": "object"
+      },
+      "ViewerTextOut": {
+        "properties": {
+          "items": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ViewerTextPageOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "sheets": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ViewerTextSheetOut"
+            },
+            "title": "Sheets",
+            "type": "array"
+          },
+          "truncated": {
+            "cls": "internal",
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "sheets",
+          "truncated"
+        ],
+        "title": "ViewerTextOut",
+        "type": "object"
+      },
+      "ViewerTextPageOut": {
+        "properties": {
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "text": {
+            "cls": "restricted",
+            "title": "Text",
+            "type": "string"
+          },
+          "unread": {
+            "cls": "internal",
+            "title": "Unread",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "text",
+          "unread"
+        ],
+        "title": "ViewerTextPageOut",
+        "type": "object"
+      },
+      "ViewerTextSheetOut": {
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "restricted",
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "withheld": {
+            "cls": "internal",
+            "default": false,
+            "title": "Withheld",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "rows"
+        ],
+        "title": "ViewerTextSheetOut",
         "type": "object"
       },
       "WaitingOut": {
@@ -66974,6 +67075,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -70909,6 +71020,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -82742,6 +82863,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -92593,7 +92724,7 @@
     },
     "/v1/evidence-versions/{version_id}/pages/{page_no}": {
       "get": {
-        "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking. The read leaves an access event first (Q-02-T20).",
+        "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking. The read leaves an access event first (Q-02-T20). Never served to a reader who\nmay not read unmasked content: 403 (Ayush, 2026-10-26; DEC-369), whose view is `\u2026/text`.",
         "operationId": "viewer_page",
         "parameters": [
           {
@@ -92733,7 +92864,7 @@
     },
     "/v1/evidence-versions/{version_id}/pii-reveals": {
       "post": {
-        "description": "AC4.4 to AC4.7: 403 `offshore`, `mfa_required` or `role`; 429 `reveal_rate_limited`.\nAuthorised before the stub answers (TASK-1207 review): an offshore member is refused at the\ncondition layer (`not_offshore`) now, not only once the reveal is built.",
+        "description": "AC4.4 to AC4.7 (P-03-T16): the value once, `expires_in` 30, `Cache-Control: no-store`.\n403 for an offshore member, a role without `pii.reveal`, an agent, the system, a support\nsession or a client principal, before anything is read; 403 with `facts.reason`\n`mfa_required` when only MFA is stale (the shell steps up); 404 for an invisible version or a\nregion not on it; 429 `reveal_rate_limited` past 20 an hour. One `pii_reveals` row, one\n`pii.revealed` audit event and one access event, never the value (DEC-60).",
         "operationId": "reveal_pii",
         "parameters": [
           {
@@ -92839,6 +92970,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           },
           "501": {
             "content": {
@@ -93137,6 +93278,133 @@
           }
         },
         "summary": "Viewer Search Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/text": {
+      "get": {
+        "description": "Ayush, 2026-10-26 (DEC-369): the masked text projection, page by page, the view a reader\nwho may not read unmasked content gets instead of page images until OCR (P-11): detected\nvalues as tokens, the kernel TIN scrub applied, `unread` on pages with content no scan read,\na workbook's cells masked; 409 `preview_outdated` before the PII scan. `no-store`; logged as\na content read.",
+        "operationId": "viewer_text",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewerTextOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Viewer Text Route",
         "tags": [
           "trust kit"
         ],
