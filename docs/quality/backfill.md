@@ -39,13 +39,13 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 068 | amber | Ledger file import, part 3: TB exports | SPEC-028 | S8 | T024 | back-filled | `backfill/test_ledger_formats.py` (TASK-1232); five formats round-trip |
 | 070 | amber | GL detail, part 2: workbooks and upload screens | SPEC-034 | S8 | T024 | back-filled | `backfill/test_gl_detail.py`; AC-9 `legacy/q03ledgerstates.test.tsx` (TASK-1232); GL error state fixed |
 | 071 | amber | GL detail, part 3: GL exports | SPEC-034 | S8 | T024 | back-filled | `backfill/test_gl_detail.py` (TASK-1232); five GL formats round-trip |
-| 050 | red | Engagement agent v1, part 1 | SPEC-027 | S9 | T031 | scheduled | |
-| 051 | red | Engagement agent v1, part 2: due dates, reminders, digest | SPEC-027 | S9 | T031 | scheduled | AC-3 to AC-5, AC-8, AC-9 already on `main`: `tests/integration/backfill/test_follow_ups_and_due_dates.py`, `test_due_dates_and_delegation.py` |
-| 058 | red | Upload reviewer, part 1 | SPEC-030 | S9 | T032 | scheduled | |
-| 059 | red | Upload reviewer, part 2 | SPEC-030 | S9 | T032 | scheduled | |
-| 065 | red | Content matching, part 2: the matcher agent | SPEC-033 | S9 | T033 | scheduled | |
-| 066 | red | Content matching, part 3: Suggest with AI | SPEC-033 | S9 | T033 | scheduled | |
-| 064 | amber | Content matching, part 1: code suggestions | SPEC-033 | S9 | T033 | scheduled | |
+| 050 | red | Engagement agent v1, part 1 | SPEC-027 | S9 | T031 | back-filled | `backfill/test_q03t031_engagement_agent.py` (TASK-1282); SPEC-027 §14 actor kind follows TASK-050 D2 |
+| 051 | red | Engagement agent v1, part 2: due dates, reminders, digest | SPEC-027 | S9 | T031 | back-filled | `backfill/test_follow_ups_and_due_dates.py`, `test_due_dates_and_delegation.py` (re-run unchanged); INV-1 and DEC-74 in `backfill/test_q03t031_engagement_agent.py` (TASK-1282) |
+| 058 | red | Upload reviewer, part 1 | SPEC-030 | S9 | T032 | back-filled | `backfill/test_q03t032_upload_reviewer.py` (TASK-1283), stand-in model; AC-8 stays with `unit/tools/evals/test_upload_review_cases.py` |
+| 059 | red | Upload reviewer, part 2 | SPEC-030 | S9 | T032 | back-filled | `backfill/test_q03t032_upload_reviewer.py` (TASK-1283); AC-10 `legacy/spec030review.test.tsx` |
+| 065 | red | Content matching, part 2: the matcher agent | SPEC-033 | S9 | T033 | back-filled | `backfill/test_q03t033_matcher.py` (TASK-1284); fake model on a stubbed real route; AC-7, AC-8 eval-only |
+| 066 | red | Content matching, part 3: Suggest with AI | SPEC-033 | S9 | T033 | back-filled | `backfill/test_q03t033_matcher.py` (TASK-1284); `inbox_match.read` independence follows ADR-164 |
+| 064 | amber | Content matching, part 1: code suggestions | SPEC-033 | S9 | T033 | back-filled | `backfill/test_q03t033_matcher.py` (TASK-1284); AC-9 stays with the Inbox panel's vitest |
 | 062 | red | Comments, part 1 (backend) | SPEC-032 | S10 | T039 | scheduled | |
 | 072 | red | Drafted guidance, part 1 | SPEC-035 | S10 | T039 | scheduled | |
 | 073 | red | Drafted guidance, part 2 | SPEC-035 | S10 | T040 | scheduled | |
@@ -73,8 +73,8 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | Status | Rows |
 |---|---|
 | tranche 0 | 9 |
-| scheduled | 25 |
-| back-filled | 10 |
+| scheduled | 10 |
+| back-filled | 25 |
 | superseded | 11 |
 | **Total** | **55** |
 
@@ -96,3 +96,12 @@ Recorded at the S6 Contract Monday (Mon Jan 11, 2027; pulled forward to 2026-10-
 | 040 | SPEC-024 AC-1 | a second attempt is "refused"; sign-up is "rate-limited" | 409 `signup_code_invalid`, `signup_already_staff`, `signup_rate_limited`; 422 `signup_invalid` | `docs/architecture/error-codes.yaml` |
 | 044 | SPEC-025 Q4 | the letter warns and does not block | G3 is strict (held by ED-010) | DEC-39 (b) |
 | 044 | SPEC-025 AC-9 | the roll-forward wizard's states | belongs to TASK-048's suite | Q-03-T023 (S8) |
+| 050 | SPEC-027 §14 | automatic actions audited with actor kind `agent`, policy and version | one `agent.activity` row by the system actor on the engagement; policy and version on the feed row | TASK-050 D2 |
+| 051 | SPEC-027 AC-3, §4.6 | Routine sends; feed outcome `drafted` | the agent drafts at every level and a person sends; outcomes done, skipped, failed | DEC-74, DEC-220 |
+| 058 | SPEC-030 §6.3 | invalid output ends the run `failed` | the run escalates after its repair attempt; no review is recorded | ADR-048 |
+| 059 | SPEC-030 §8 | `…/request-items/{item}/uploads/{version}/review` under `evidence.read` | `…/evidence-versions/{version}/review` under `upload_review.read` | TASK-059 D1 |
+| 058 | Q-03-T032 acceptance | an unverified output "reads Uncited" | a flag with no verified quote is never shown; shown flags list verified quotes only | SPEC-030 Q3 |
+| 066 | SPEC-033 AC-5 | `inbox_match.read` for firm roles with independence | a pending member reads by default; `g2_blocks_view` restores the gate on an attest client's engagement | ADR-164 items 2 and 3 (P-07-T24) |
+| 066 | SPEC-033 §6 | firm reads at `GET …/inbox/matches` | `GET …/inbox-matches` | TASK-066 decision table |
+| 065 | SPEC-033 §4.2 | prompt `evidence.inbox_match@v1` | agent spec `evidence.matcher` v2, prompt `@v2` | TASK-067 |
+| 064 | SPEC-033 AC-6 | the audit records which suggestion source and rank | integers: `file_name` 1, `content` 2, `matcher` 3 | TASK-064 D5, TASK-066 §7 |

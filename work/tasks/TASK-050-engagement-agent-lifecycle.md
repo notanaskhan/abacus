@@ -119,6 +119,7 @@ Not touched: `identity/authz/__init__.py` (the autonomy condition is TASK-051), 
 - [x] Module READMEs and the relevant docs are updated
 
 ## Progress log
+- `2026-10-26` — Q-03-T031 back-fill: `backend/tests/integration/backfill/test_q03t031_engagement_agent.py` (AC-1, AC-2, AC-6, AC-7; 30 pass, no defect); see TASK-1282.
 - `2026-10-10` — Implemented:
   - migration 0039: `engagement_agents`, `agent_activity` (insert-only; a count and the person an action was for, so a resume can screen for the same initiator; one row per policy per event), and `firms.agents_paused_*`; schema-check entries;
   - the matrix actions `activity.read`, `agent.pause`, `firm_agents.pause` (regenerated `_matrix.py`) and the flag `engagement_agent.enabled` (seeded on for Dev firm);

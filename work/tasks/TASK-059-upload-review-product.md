@@ -65,6 +65,7 @@ SPEC-030 AC-4, AC-5, AC-6, AC-7, AC-9, AC-10.
 ## Progress log
 - `2026-10-12` — Design written for founder review after TASK-058 (#105) and the gateway temperature pin (#106) merged.
 - `2026-10-12` — Built (D1–D4): `upload_checks.recorded`; P-6; `review_start` (starter, "Review now", reads); `UploadReviewWorkflow` and activities (reusing the screener's slot and fail steps) with replay histories; `upload_review.read`; flag `upload_review.enabled`; the firm's AI review panel (verified quotes, preview page links), the Board's AI flags marker and filter. Unit (agents 386), workflow (171) and web (256) tests and gates pass. Local smoke: P-6 starts the reviewer; with no real model route it records `no_real_model` (a first run on the fake model retried as a provider outage until cancelled, which led to the guard). The product path with the real model on the synthetic Dev firm flagged a DRAFT statement with a verified quote. Evaluation still passes every threshold.
+- `2026-10-26` — Q-03-T032 back-fill: `backend/tests/integration/backfill/test_q03t032_upload_reviewer.py` (AC-4, AC-5, AC-6, AC-7, AC-9; all pass, no defect); see TASK-1283.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

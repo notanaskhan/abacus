@@ -36,6 +36,7 @@ updated: 2026-10-24
 - Deferred: the screening-return send (returns + shared comment in one UoW) to P-06-T20/T22; a firm-level template override (C16 has platform defaults only).
 
 - 2026-10-24: security review fixes (5): chase only Published binders (409 `binder_not_published`); scope-check each title and the person's text at draft and send; the SPEC-027 engagement route kept (FollowUps.tsx uses it) but hardened (option b: refuses binder drafts, checks the note, sends through the grant-held outbox); one open chase draft per contact (partial unique index in 0121, ON CONFLICT, read inside the UoW); state-aware allowed_actions and independence on follow_up.*. Failing tests first: 13 review tests failed on the unfixed code and pass now. Open: human-only guard for a `system` actor (cross-cutting trigger change); the scope checker reads bare form numbers as amounts.
+- 2026-10-26: P-06-T23's independent suite `backend/tests/integration/backfill/test_p06t23_follow_ups_v2_independent.py` (TASK-1280); ED-081 (system actor and `follow_up.sent`) and ED-082 (empty selection answers 500) held open.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
