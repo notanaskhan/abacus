@@ -90490,7 +90490,7 @@
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock": {
       "post": {
-        "description": "TASK-323: a password-protected PDF upload, saved again without its password as a new\nversion of the item.",
+        "description": "TASK-323: a password-protected PDF upload, saved again without its password as a new\nversion of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429\n`unlock_rate_limited` after five in fifteen minutes.",
         "operationId": "unlock_upload",
         "parameters": [
           {
@@ -90626,6 +90626,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Unlock Upload Route",
@@ -100559,7 +100569,7 @@
     },
     "/v1/evidence-versions/{version_id}/unlock": {
       "post": {
-        "description": "AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;\n429 `unlock_rate_limited` with `retry_after`.",
+        "description": "AC5.2 to AC5.5 (P-03-T19): a derivation, never a change to the evidence. `ready` with the\nderivation's id, or `wrong_password` with `attempts_left` (200, audited by count only); 409\n`not_password_protected` for a version that isn't locked or is unlocked already; 429\n`unlock_rate_limited` with `retry_after` after five failures in fifteen minutes; 403 for an\nagent, the system, a support session, a client principal or a role without\n`evidence.unlock`. The password is never logged, stored, sent to Temporal or echoed.",
         "operationId": "unlock_version",
         "parameters": [
           {
@@ -100675,6 +100685,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           },
           "501": {
             "content": {

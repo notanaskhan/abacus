@@ -790,6 +790,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.notes.NotRaiser
     summary: 'AC-3: only the person who raised a note clears it.'
+  not_password_protected:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.unlock.NotPasswordProtected
+    summary: The version isn't a password-protected PDF, or it has already been unlocked.
   not_pending_incorporation:
     status: 409
     raised_by:

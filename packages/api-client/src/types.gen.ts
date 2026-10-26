@@ -42209,6 +42209,10 @@ export type UnlockUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
 };
 
 export type UnlockUploadError = UnlockUploadErrors[keyof UnlockUploadErrors];
@@ -46843,6 +46847,10 @@ export type UnlockVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
     /**
      * Contract stub: not implemented yet
      */

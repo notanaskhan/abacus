@@ -14,8 +14,13 @@
 //   no raw file, pdf.js or SheetJS reaches the browser (AC3.7). Masks render as their tokens; the
 //   viewer never unmasks anything itself. When the manifest gives the `text` view (DEC-369: an
 //   offshore reader, until OCR) the body is the masked text instead of any page image.
+// - SHL-08c (P-03-T20): a reader whose manifest offers `pii.reveal` gets "Reveal (logged)" on each
+//   mask (MaskedValue: the value in component memory for 30 s, the logged line, Hide, step-up).
+// - SHL-08d (P-03-T20): a `password_protected` manifest draws the UnlockPanel in place of pages.
+// - In-document search (C4 §3.4, AC3.9): the search capsule asks the server, which answers page
+//   rects only; the hits light as regions, the first one scrolled into view.
 
-import { type CitationV2Out, content } from "@abacus/api-client";
+import { type CitationV2Out, content, viewerSearch } from "@abacus/api-client";
 import { listCitationsOptions } from "@abacus/api-client/query";
 import {
   type MatchId,
@@ -25,11 +30,14 @@ import {
   useMatchStore,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { type JSX, useEffect, useMemo, useState } from "react";
+import { type JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { MaskedTextView } from "../../app-core/masked-text";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { RevealStepUp } from "../../domain/audits";
 import { COPY } from "./copy";
 import { LinkedFigures } from "./LinkedFigures";
+import { type MaskedReveal, RevealLine, useMaskedReveal } from "./MaskedValue";
+import { type LockedTarget, UnlockPanel } from "./UnlockPanel";
 import { type ViewerData, useViewerData } from "./useViewerManifest";
 
 export interface ViewerAnchor {
@@ -50,6 +58,8 @@ export interface EvidenceViewerTarget {
   engagementId?: string | null;
   /** A region hovered as the artboard opens (SHL-08h). */
   hovered?: string | null;
+  /** SHL-08d: who sent the password, the client to ask, and the host's SHL-14 opener. */
+  locked?: LockedTarget | null;
 }
 
 // ---- Auto-highlight preference ----------------------------------------------------------------
@@ -102,6 +112,12 @@ export interface EvidenceViewerState {
   /** The ⋯ menu: Download and Open in Files, then the auto-highlight toggle. */
   menu: MenuItem[][];
   alsoCited: string | null;
+  /** SHL-08c: the logged reveal for this version's masks. */
+  reveal: MaskedReveal;
+  /** In-document search: asks the server and lights its hits. */
+  onFind: (query: string) => void;
+  /** The last search's count line, or null before any search. */
+  found: string | null;
 }
 
 /** "Also cited: Ridgeline statement p. 3 (…) · Ridgeline TB 4510 …" from the stack's other members. */
@@ -137,7 +153,23 @@ export function useEvidenceViewer(target: EvidenceViewerTarget): EvidenceViewerS
   const versionId = current?.source.evidence_version_id ?? target.versionId;
   const matchText = current?.match_id ?? target.matchId ?? null;
   const match = matchText === null ? null : contractMatchId({ match_id: matchText, rects: [] });
-  const raw = useViewerData(versionId);
+  const fetched = useViewerData(versionId);
+  // In-document search hits (rects only), lit as regions of their own; cleared per version.
+  const [hits, setHits] = useState<{ version: string; regions: ViewerData["file"]["regions"] }>({
+    version: versionId,
+    regions: [],
+  });
+  const [found, setFound] = useState<string | null>(null);
+  const raw = useMemo<ViewerData>(
+    () =>
+      hits.version !== versionId || hits.regions.length === 0
+        ? fetched
+        : {
+            ...fetched,
+            file: { ...fetched.file, regions: [...fetched.file.regions, ...hits.regions] },
+          },
+    [fetched, hits, versionId],
+  );
   // The opened region carries its linked-figure tag ("Form 1040 · line 2a 1,550"): the region's
   // label with the citation's verified value split off it, so the value reads in the match ink.
   const data = useMemo<ViewerData>(() => {
@@ -158,6 +190,37 @@ export function useEvidenceViewer(target: EvidenceViewerTarget): EvidenceViewerS
   }, [raw, current, matchText]);
 
   const store = useMatchStore();
+  const onFind = useCallback(
+    (query: string): void => {
+      void viewerSearch({
+        path: { version_id: versionId },
+        query: { q: query },
+        throwOnError: true,
+      })
+        .then(({ data: out }) => {
+          const regions = out.items.map((hit, i) => ({
+            match: contractMatchId({ match_id: `search-${String(i + 1)}`, rects: hit.rects }),
+            page: hit.page,
+            rects: hit.rects,
+            label: null,
+            cited: false,
+          }));
+          setHits({ version: versionId, regions });
+          setFound(COPY.search.hits(out.total, out.truncated));
+          const first = regions[0];
+          if (first !== undefined) store.light(first.match, null);
+        })
+        .catch(() => {
+          setHits({ version: versionId, regions: [] });
+          setFound(COPY.search.hits(0, false));
+        });
+    },
+    [versionId, store],
+  );
+  const reveal = useMaskedReveal(
+    versionId,
+    (data.manifest?.allowed_actions ?? []).includes("pii.reveal"),
+  );
   const regionsReady = data.file.regions.length > 0;
   const lit = match ?? (target.hovered == null ? null : (target.hovered as MatchId));
   useEffect(() => {
@@ -221,6 +284,9 @@ export function useEvidenceViewer(target: EvidenceViewerTarget): EvidenceViewerS
     autoHighlight,
     menu,
     alsoCited: items.length > 1 ? alsoCitedLine(items, index) : null,
+    reveal,
+    onFind,
+    found: hits.version === versionId ? found : null,
   };
 }
 
@@ -245,6 +311,16 @@ export function EvidenceViewerBody({
     // DEC-369: no page images for this reader; the server's masked text instead.
     return <MaskedTextView text={data.text} width={PAGE_WIDTH[host]} />;
   }
+  if (data.status === "password_protected" && !data.loading) {
+    return (
+      <UnlockPanel
+        versionId={viewer.versionId}
+        fileName={data.file.name}
+        canUnlock={(data.manifest?.allowed_actions ?? []).includes("evidence.unlock")}
+        locked={target.locked ?? null}
+      />
+    );
+  }
   const anchor = target.anchor ?? null;
   const card =
     host === "drawer" && anchor !== null ? (
@@ -260,34 +336,58 @@ export function EvidenceViewerBody({
         }
       />
     ) : undefined;
+  const { reveal } = viewer;
+  const line =
+    reveal.line !== null || reveal.announce !== "" || viewer.found !== null ? (
+      <>
+        <RevealLine line={reveal.line} announce={reveal.announce} />
+        {viewer.found !== null && (
+          <p data-search-count="" className="flex-none px-[16px] pt-[6px] text-meta text-ink-3">
+            {viewer.found}
+          </p>
+        )}
+      </>
+    ) : null;
+  const above =
+    line === null && card === undefined ? undefined : (
+      <>
+        {line}
+        {card}
+      </>
+    );
   return (
-    <SourceViewer
-      key={viewer.versionId}
-      file={data.file}
-      variant={host === "dock" ? "evidence" : "full"}
-      header={false}
-      status={data.status === "processing" ? "ready" : data.status}
-      loading={data.loading}
-      skeletons={3}
-      pageWidth={PAGE_WIDTH[host]}
-      outlineCited={viewer.autoHighlight}
-      scrollToLit
-      {...(host === "dock"
-        ? { menu: viewer.menu.flat().filter((i) => i.checked === undefined) }
-        : {})}
-      {...(stack !== null && match !== null
-        ? { stack: { match, edges: stack.items.length > 2 ? 2 : 1 } as const }
-        : {})}
-      {...(card === undefined ? {} : { aboveWell: card })}
-      {...(viewer.alsoCited === null || host === "dock"
-        ? {}
-        : {
-            afterPages: (
-              <p data-also-cited="" className="w-[436px] pb-[12px] text-para text-ink-3">
-                {viewer.alsoCited}
-              </p>
-            ),
-          })}
-    />
+    <>
+      <RevealStepUp open={reveal.stepUp} onOpenChange={reveal.setStepUp} />
+      <SourceViewer
+        key={viewer.versionId}
+        file={data.file}
+        variant={host === "dock" ? "evidence" : "full"}
+        header={false}
+        status={data.status === "processing" ? "ready" : data.status}
+        loading={data.loading}
+        skeletons={3}
+        pageWidth={PAGE_WIDTH[host]}
+        outlineCited={viewer.autoHighlight}
+        scrollToLit
+        {...(host === "dock"
+          ? { menu: viewer.menu.flat().filter((i) => i.checked === undefined) }
+          : {})}
+        {...(stack !== null && match !== null
+          ? { stack: { match, edges: stack.items.length > 2 ? 2 : 1 } as const }
+          : {})}
+        {...(above === undefined ? {} : { aboveWell: above })}
+        {...(reveal.slot === undefined ? {} : { reveal: reveal.slot })}
+        onFind={viewer.onFind}
+        {...(viewer.alsoCited === null || host === "dock"
+          ? {}
+          : {
+              afterPages: (
+                <p data-also-cited="" className="w-[436px] pb-[12px] text-para text-ink-3">
+                  {viewer.alsoCited}
+                </p>
+              ),
+            })}
+      />
+    </>
   );
 }

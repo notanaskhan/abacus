@@ -3685,7 +3685,8 @@ export const statementPreview = <ThrowOnError extends boolean = false>(options: 
  * Unlock Upload Route
  *
  * TASK-323: a password-protected PDF upload, saved again without its password as a new
- * version of the item.
+ * version of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429
+ * `unlock_rate_limited` after five in fifteen minutes.
  */
 export const unlockUpload = <ThrowOnError extends boolean = false>(options: Options<UnlockUploadData, ThrowOnError>): RequestResult<UnlockUploadResponses, UnlockUploadErrors, ThrowOnError> => (options.client ?? client).post<UnlockUploadResponses, UnlockUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4673,8 +4674,12 @@ export const viewerText = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Unlock Version Route
  *
- * AC5.2, AC5.3: a derivation, never a change to the evidence; 409 `not_password_protected`;
- * 429 `unlock_rate_limited` with `retry_after`.
+ * AC5.2 to AC5.5 (P-03-T19): a derivation, never a change to the evidence. `ready` with the
+ * derivation's id, or `wrong_password` with `attempts_left` (200, audited by count only); 409
+ * `not_password_protected` for a version that isn't locked or is unlocked already; 429
+ * `unlock_rate_limited` with `retry_after` after five failures in fifteen minutes; 403 for an
+ * agent, the system, a support session, a client principal or a role without
+ * `evidence.unlock`. The password is never logged, stored, sent to Temporal or echoed.
  */
 export const unlockVersion = <ThrowOnError extends boolean = false>(options: Options<UnlockVersionData, ThrowOnError>): RequestResult<UnlockVersionResponses, UnlockVersionErrors, ThrowOnError> => (options.client ?? client).post<UnlockVersionResponses, UnlockVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
