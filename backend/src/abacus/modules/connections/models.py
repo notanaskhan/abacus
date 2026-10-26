@@ -30,6 +30,16 @@ class Connection(Base):
     last_check_ok: Mapped[bool | None]
     revoked_at: Mapped[datetime | None]
     revoked_by: Mapped[str | None]
+    # 0195 (A-02-T13): entity-scoped connections. `display_label` is client content (masked,
+    # rendered as text); `status_reason_code` is C20's reason for `needs_attention`.
+    category: Mapped[str] = mapped_column(server_default=FetchedValue())
+    external_account_ref: Mapped[str | None]
+    display_label: Mapped[str | None]
+    connected_by_user_id: Mapped[UUID | None]
+    connected_at: Mapped[datetime | None]
+    reauth_due_at: Mapped[datetime | None]
+    last_sync_at: Mapped[datetime | None]
+    status_reason_code: Mapped[str | None]
 
 
 class ConnectionState(Base):
@@ -68,7 +78,10 @@ class SyncRun(Base):
     client_entity_id: Mapped[UUID]
     connection_id: Mapped[UUID]
     engagement_id: Mapped[UUID]
-    request_item_id: Mapped[UUID]
+    # 0195 (A-02-T13): null for a run no request item asked for (`trigger` says why it ran).
+    request_item_id: Mapped[UUID | None]
+    trigger: Mapped[str] = mapped_column(server_default=FetchedValue())
+    label: Mapped[str | None]
     dataset: Mapped[str]
     period_start: Mapped[date]
     period_end: Mapped[date]
@@ -144,3 +157,47 @@ class GlImport(Base):
     on_behalf: Mapped[bool] = mapped_column(server_default=FetchedValue())
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
     updated_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ConnectionConsent(Base):
+    """What a client agreed to before the provider's sheet, as shown (0195; insert-only)."""
+
+    __tablename__ = "connection_consents"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    connection_id: Mapped[UUID | None]
+    client_entity_id: Mapped[UUID]
+    catalog_key: Mapped[str]
+    consent_version: Mapped[int]
+    will: Mapped[list[str]] = mapped_column(ARRAY(String))
+    wont: Mapped[list[str]] = mapped_column(ARRAY(String))
+    authorization_text: Mapped[str]
+    authorised_by_user_id: Mapped[UUID]
+    ip_sha256: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ConnectionConsentLink(Base):
+    """The connection a consent produced, recorded once (0195; insert-only)."""
+
+    __tablename__ = "connection_consent_links"
+
+    consent_id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID]
+    connection_id: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class ReconnectRequest(Base):
+    """The firm asking the client to reconnect; one open per connection (0195)."""
+
+    __tablename__ = "reconnect_requests"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    connection_id: Mapped[UUID]
+    requested_by_user_id: Mapped[UUID]
+    engagement_id: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    fulfilled_at: Mapped[datetime | None]

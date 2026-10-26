@@ -15,12 +15,18 @@ TABLES: frozenset[str] = frozenset(
         "sync_runs",
         "connection_states",
         "connection_secrets",
+        # 0195 (A-02-T13): consents as shown, the connection each produced, reconnect requests.
+        "connection_consents",
+        "connection_consent_links",
+        "reconnect_requests",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {
         "ledger_imports",  # SPEC-028 (TASK-052): an upload and its check are facts
+        "connection_consents",  # 0195 (A-02-T13): what the client agreed to, as shown
+        "connection_consent_links",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -34,16 +40,28 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-020 (TASK-036): a client admin connects; states and sealed secrets are the flow's.
     "connections": frozenset(
         {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+        # 0195 (A-02-T13): entity-scoped connections
+        | {"category", "external_account_ref", "display_label", "connected_by_user_id"}
+        | {"connected_at"}
     ),
     "sync_runs": frozenset(
         {"id", "tenant_id", "connection_id", "engagement_id", "request_item_id", "dataset"}
         | {"period_start", "period_end", "started_by", "client_entity_id"}
+        | {"trigger", "label"}  # 0195 (A-02-T13)
     ),
     "connection_states": frozenset(
         {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
         | {"state_hash", "expires_at"}
     ),
     "connection_secrets": frozenset({"connection_id", "tenant_id", "sealed"}),
+    "connection_consents": frozenset(
+        {"tenant_id", "connection_id", "client_entity_id", "catalog_key", "consent_version"}
+        | {"will", "wont", "authorization_text", "authorised_by_user_id", "ip_sha256"}
+    ),
+    "connection_consent_links": frozenset({"consent_id", "tenant_id", "connection_id"}),
+    "reconnect_requests": frozenset(
+        {"tenant_id", "connection_id", "requested_by_user_id", "engagement_id"}
+    ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -53,6 +71,9 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "connections": frozenset(
         {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+        # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
+        | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
+        | {"status_reason_code"}
     ),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
@@ -60,4 +81,5 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"evidence_version_id", "queued_reason", "estimated_start_at"}
     ),
     "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
+    "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195: cleared on reconnect
 }
