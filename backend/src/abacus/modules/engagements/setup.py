@@ -18,9 +18,11 @@ from uuid import UUID
 from sqlalchemy import ColumnElement, select
 from sqlalchemy.orm import QueryableAttribute
 
+from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2
 from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.acceptance import DecisionLocked
 from abacus.modules.engagements.acceptance_tables import g1_decision
@@ -28,6 +30,7 @@ from abacus.modules.engagements.acceptance_tables import records as acceptance_r
 from abacus.modules.engagements.contacts import attest_of
 from abacus.modules.engagements.events import IndependenceRequested
 from abacus.modules.engagements.gate_policy import required_gates
+from abacus.modules.engagements.independence_tables import g2_met, legacy_concluded
 from abacus.modules.engagements.models import Engagement, EngagementAcceptance, EngagementLetter
 from abacus.modules.engagements.repository import (
     answer_confirmation,
@@ -105,6 +108,7 @@ def _blocked(
     *,
     gates: frozenset[str],
     needs_letter: bool,
+    g2: bool | None = None,
 ) -> EngagementNotOpen | None:
     """The first gate the engagement's type requires that is not met (F-03-T13: the per-type gate
     policy, so a tax or non-attest CAS engagement opens on G1 and G3 without G2)."""
@@ -113,7 +117,9 @@ def _blocked(
             return AcceptanceMissing("acceptance", facts={"gate": "G1"})
         if acceptance.decision != "accepted":
             return AcceptanceDeclined("acceptance", facts={"gate": "G1"})
-    if "G2" in gates and (acceptance is None or acceptance.independence_concluded_at is None):
+    if g2 is None:  # SPEC-025's conclusion alone (the rule's pure form)
+        g2 = legacy_concluded(acceptance) is not None
+    if "G2" in gates and not g2:  # P-07-T41: callers pass `g2_met` (DEC-428)
         return IndependenceConclusionMissing("independence", facts={"gate": "G2"})
     if (
         "G3" in gates
@@ -135,8 +141,11 @@ async def require_open(tenant: TenantContext, engagement_id: UUID) -> None:
             raise NotFound("engagement")
         acceptance = await latest_acceptance(session, engagement_id)
         letter = await get_letter(session, engagement_id)
+        g2 = await g2_met(session, engagement_id)
     gates = frozenset(required_gates(engagement_type))
-    blocked = _blocked(acceptance, letter, gates=gates, needs_letter=await letter_policy(tenant))
+    blocked = _blocked(
+        acceptance, letter, gates=gates, needs_letter=await letter_policy(tenant), g2=g2
+    )
     if blocked is not None:
         raise blocked
 
@@ -250,6 +259,22 @@ async def _v2_agrees(tx: UnitOfWork, engagement_id: UUID, decision: str) -> None
         raise DecisionLocked(facts={"record_id": str(record)})
 
 
+async def _no_v1_conclusion(ctx: AuthContext, tx: UnitOfWork, engagement_id: UUID) -> None:
+    """DEC-429 (security review H1): with independence v2 on for the firm, or a CLI-07 record on
+    the engagement, the conclusion is CLI-08's alone (AC-19's preconditions, the EP's fresh
+    MFA); SPEC-025's route refuses to document one (409 `decision_locked`). Elsewhere it may
+    still document it, but a row the app writes after 0175 never meets G2 (`legacy_g2`)."""
+    record = (
+        await tx.session.execute(
+            select(acceptance_records.c.id).where(
+                acceptance_records.c.engagement_id == engagement_id
+            )
+        )
+    ).scalar_one_or_none()
+    if record is not None or await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
+        raise DecisionLocked(facts={"engagement_id": str(engagement_id)})
+
+
 async def record_acceptance(ctx: AuthContext, engagement_id: UUID, given: AcceptanceInput) -> None:
     """The engagement partner's decision (fresh MFA), with where it's documented; a new record
     supersedes the old and keeps its file unless a new one is attached."""
@@ -260,6 +285,8 @@ async def record_acceptance(ctx: AuthContext, engagement_id: UUID, given: Accept
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "acceptance.record", ref.resource())
         await _v2_agrees(tx, engagement_id, given.decision)
+        if given.independence_concluded:
+            await _no_v1_conclusion(ctx, tx, engagement_id)
         previous = await latest_acceptance(tx.session, engagement_id)
         kind = given.kind or (
             "continuance"
@@ -516,6 +543,7 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
             raise NotFound("engagement")
         acceptance = await latest_acceptance(session, engagement_id)
         letter = await get_letter(session, engagement_id)
+        g2 = await g2_met(session, engagement_id)
         rows = await confirmations_of(session, engagement_id)
         client = (await client_names(session, [engagement.client_entity_id])).get(
             engagement.client_entity_id
@@ -530,6 +558,7 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         letter,
         gates=frozenset(required_gates(engagement.type)),
         needs_letter=needs_letter,
+        g2=g2,
     )
     team = [Member(m.display_name, m.role) for m in await engagement_team(ctx, engagement_id)]
     admins: list[str] = []
@@ -549,7 +578,7 @@ async def setup(ctx: AuthContext, engagement_id: UUID) -> SetupView:
         methodology_applied=engagement.methodology_version_id is not None,
         acceptance_decision=acceptance.decision if acceptance else None,
         acceptance_at=acceptance.created_at if acceptance else None,
-        concluded=acceptance is not None and acceptance.independence_concluded_at is not None,
+        concluded=g2,
         letter_status=letter.status if letter else None,
         letter_required=needs_letter,
         confirmations=[Confirmation(names.get(r.user_id, ""), r.status) for r in rows],

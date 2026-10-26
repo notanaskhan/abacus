@@ -2,15 +2,16 @@
 `docs/contracts/engagement-export-v1.md`.
 
 For the export sheet (AUD-02, AUD-03; A-01-T24), Q-04's rollback path, G-02/Q-02's firm export
-and A-07's archive seal. Behind `audits.binder_export` (off: 404; on: 501 `not_implemented` until
-A-01-T18 creates, undoes and reads, and A-01-T22 downloads). The shapes are fixed here so the
-consumers' tests and fixture mode run against them:
+and A-07's archive seal. Behind `audits.binder_export` (off: 404). Create, undo and the reads are
+live (A-01-T18, `evidence.exports`); download answers 501 `not_implemented` until A-01-T22. The
+shapes are fixed here so the consumers' tests and fixture mode run against them:
 
 - `POST /v1/work-items/{work_item_id}/exports` (`export.create`: engagement partner or manager,
   fresh MFA, independence, not offshore; `Idempotency-Key`): 202 `queued` with `not_before` ten
   seconds on, a single-use approval grant behind it (P-35). A retried key returns the same export.
   422 `export_kind_unsupported` for a work item that is not an audit (fail closed until C19);
-  422 `binder_not_in_work_item` for a binder id that is not one of the work item's (DEC-379).
+  422 `binder_not_in_work_item` for a binder id that is not one of the work item's (DEC-379);
+  422 `export_section_missing` for the audit trail while no reader is registered (DEC-433).
 - `POST /v1/exports/{export_id}/undo` (`export.create`): inside the window, `undone`; after it,
   409 `undo_window_closed`.
 - `GET /v1/work-items/{work_item_id}/exports` and `GET /v1/exports/{export_id}` (`export.read`):
@@ -22,14 +23,14 @@ consumers' tests and fixture mode run against them:
 
 Statuses are C2's `engagement_export` codes. No route is reachable by a client principal (INV-4)
 and the agent holds none of the actions (INV-1). Sizes are bytes; counts and digests exist only
-once the package is built. The stub checks the flag first, as every stub does; the implementing
-tasks authorise first (404 behind a wall before anything else).
+once the package is built. The download stub checks the flag first, as every stub does; the live
+routes authorise first (404 behind a wall before anything else).
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -41,6 +42,7 @@ from abacus.kernel._statuses import EngagementExportStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
+from abacus.modules.evidence import exports
 from abacus.modules.evidence.export_manifest import ExportKind
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -126,6 +128,37 @@ class EngagementExportPageOut(BaseModel):
     next_cursor: Annotated[str | None, classified("internal")] = None
 
 
+def _out(view: exports.ExportView) -> EngagementExportOut:
+    return EngagementExportOut(
+        id=view.id,
+        engagement_id=view.engagement_id,
+        work_item_id=view.work_item_id,
+        kind=cast(ExportKind, view.kind),
+        scope=ExportScopeOut(
+            binder_ids=list(view.scope.binder_ids),
+            include_unaccepted=view.scope.include_unaccepted,
+            include_audit_trail=view.scope.include_audit_trail,
+        ),
+        format_version="1.0",
+        status=EngagementExportStatus(view.status),
+        requested_by=ExportPersonOut(
+            user_id=view.requested_by, display_name=view.requested_by_name
+        ),
+        requested_at=view.requested_at,
+        not_before=view.not_before,
+        ready_at=view.ready_at,
+        expires_at=view.expires_at,
+        request_count=view.request_count,
+        file_count=view.file_count,
+        size_bytes=view.size_bytes,
+        manifest_sha256=view.manifest_sha256,
+        bundle_sha256=view.bundle_sha256,
+        failure_code=cast(ExportFailure | None, view.failure_code),
+        void_reason=cast(ExportVoidReason | None, view.void_reason),
+        allowed_actions=cast(list[ExportAllowedAction], view.allowed_actions),
+    )
+
+
 async def _stub(ctx: AuthContext) -> NoReturn:
     if not await flag_enabled(ctx.tenant, AUDITS_BINDER_EXPORT):
         raise NotFound(AUDITS_BINDER_EXPORT.name)
@@ -143,46 +176,57 @@ exports_router = AbacusRouter(prefix="/v1/exports", tags=["engagement export"])
     action="export.create",
     response_model=EngagementExportOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_export_route(
     work_item_id: UUID, body: ExportCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EngagementExportOut:
     """AUD-02/03 "Export binder…" (A-01-T18): `queued` with a 10-second Undo window; 422
-    `export_kind_unsupported` for a non-audit work item; audited `engagement_export.requested`."""
-    await _stub(ctx)
+    `export_kind_unsupported` for a non-audit work item, `binder_not_in_work_item` for a binder
+    outside it, `export_section_missing` for the audit trail while it has no reader; audited
+    `engagement_export.requested`."""
+    view = await exports.create(
+        ctx,
+        work_item_id,
+        kind=body.kind,
+        binder_ids=body.scope.binder_ids,
+        include_unaccepted=body.scope.include_unaccepted,
+        include_audit_trail=body.scope.include_audit_trail,
+        idempotency_key=idempotency_key,
+    )
+    return _out(view)
 
 
-@work_item_exports_router.get(
-    "", action="export.read", response_model=EngagementExportPageOut, errors=(501,)
-)
+@work_item_exports_router.get("", action="export.read", response_model=EngagementExportPageOut)
 async def list_exports_route(
     work_item_id: UUID,
     ctx: Ctx,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> EngagementExportPageOut:
     """The export sheet's history for the work item, newest first (A-01-T18)."""
-    await _stub(ctx)
+    page = await exports.work_item_exports(ctx, work_item_id, cursor)
+    return EngagementExportPageOut(
+        items=[_out(v) for v in page.items], next_cursor=page.next_cursor
+    )
 
 
-@exports_router.get(
-    "/{export_id}", action="export.read", response_model=EngagementExportOut, errors=(501,)
-)
+@exports_router.get("/{export_id}", action="export.read", response_model=EngagementExportOut)
 async def get_export_route(export_id: UUID, ctx: Ctx) -> EngagementExportOut:
     """The sheet's poll: Queued, Packaging…, Ready, Export failed, Expired, Undone (A-01-T18)."""
-    await _stub(ctx)
+    return _out(await exports.read(ctx, export_id))
 
 
 @exports_router.post(
     "/{export_id}/undo",
     action="export.create",
     response_model=EngagementExportOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_export_route(export_id: UUID, ctx: Ctx) -> EngagementExportOut:
     """Undo inside the window voids the grant: `undone`, no package (A-01-T18); 409
-    `undo_window_closed` after it. Audited `engagement_export.undone`."""
-    await _stub(ctx)
+    `undo_window_closed` after it (`effect_started` once the build began). Audited
+    `engagement_export.undone`."""
+    return _out(await exports.undo(ctx, export_id))
 
 
 @exports_router.get(

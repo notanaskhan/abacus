@@ -646,6 +646,11 @@ NO_YAML_ENTRY = {
     # G-02-T04 (audit-log stub, DEC-417): the export's `building` and the values' `withheld` and
     # `unavailable` get their DF-31 entries with the live routes (G-02-T08, G-02-T17).
     "AuditExport.status": "building",
+    # G-02-T11 (security-center stub, DEC-432): the firm export schedule's approval step and a
+    # safeguard control's evidenced state have no status-vocabulary entry yet.
+    "FirmExportScheduleOut.status": "pending_approval",
+    "SafeguardsControlIn.status": "evidenced",
+    "SafeguardsControlOut.status": "evidenced",
     "AuditValuesOut.status": "withheld, unavailable",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
@@ -658,6 +663,9 @@ OUTSIDE_ITS_OBJECT = {
 UNTYPED = {
     "FileMatchOut.status", "GraphEngagementOut.status", "GraphItemOut.status",
     "LetterOut.status", "ProcedureOut.status", "ReviewOut.status",
+    # I-01-T01 (HOME contracts, #431): the home rows carry each owner's own status word as a
+    # string until the HOME-01 build types them per source; recorded as findings like the rest.
+    "DeadlineRowOut.status", "HomeTileOut.by_status", "WorkRowOut.status",
 }  # fmt: skip
 
 
@@ -926,6 +934,10 @@ def _status_fields() -> dict[str, Json]:
 def _literals(prop: Json) -> list[str] | None:
     if "enum" in prop:
         return [str(v) for v in prop["enum"]]
+    # An optional status (`Literal[...] | None`) is the enum beside a null (G-02-T11).
+    variants = [v for v in prop.get("anyOf", []) if v.get("type") != "null"]
+    if len(variants) == 1:
+        return _literals(variants[0])
     if "$ref" in prop:
         target = SCHEMAS[str(prop["$ref"]).rsplit("/", 1)[1]]
         return [str(v) for v in target["enum"]] if "enum" in target else None

@@ -3,8 +3,7 @@ ADR-139, ADR-164, P-36). Contract: `docs/contracts/acceptance-independence.md`; 
 DEC-326. The conflict and screening half is `organisations.conflicts_contract`.
 
 - **Acceptance (CLI-07)** and **independence (CLI-08)** routes sit behind
-  `engagements.acceptance_v2`: off, 404; on, 501 `not_implemented` until P-07-T35 (acceptance)
-  and P-07-T41 (independence v2) implement them.
+  `engagements.acceptance_v2`: off, 404; on, live (P-07-T35 acceptance, P-07-T41 independence).
 - **Team and roles (ENG-05)** routes, and the confirmation requests, sit behind `engagements.v2`
   (the ENG-05 screen's flag): off, 404; on, live since P-07-T30 (`engagements.team`).
 
@@ -19,7 +18,7 @@ tenant at rest and read back only on these routes.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends
@@ -32,10 +31,11 @@ from abacus.kernel._statuses import (
     NasEvaluationStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.engagements import acceptance as acceptance_model
+from abacus.modules.engagements import independence as independence_model
 from abacus.modules.engagements import team as team_model
 from abacus.modules.engagements.service import get_ref
 from abacus.modules.identity.api import (
@@ -72,13 +72,6 @@ AnswerValue = str | int | bool | None
 
 
 # --- Errors (`error-codes.yaml`; ENG-05's are in `team_errors.py`) -------------------------------
-
-
-class IndependencePreconditionsUnmet(DomainConflict):
-    """The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
-    clear, an SKE designee or NAS evaluations on an attest client)."""
-
-    code = "independence_preconditions_unmet"
 
 
 class NotSelf(DomainConflict):
@@ -308,6 +301,9 @@ class MemberConfirmationOut(BaseModel):
     statement_version: Annotated[str | None, classified("internal")] = None
     decline_note: Annotated[str | None, classified("confidential")] = None
     reminder_count: Annotated[int, classified("internal")] = 0
+    # P-07-T41 (DEC-428): the member's annual confirmation read from G-01, for a reader who holds
+    # `independence.annual_read`; null for everyone else.
+    annual_confirmed: Annotated[bool | None, classified("internal")] = None
 
 
 class IndependenceConclusionOut(BaseModel):
@@ -614,13 +610,6 @@ async def _allowed(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
     await authorise(ctx, action, ref.resource())
 
 
-async def _acceptance_stub(ctx: AuthContext, action: str, engagement_id: UUID) -> NoReturn:
-    await _allowed(ctx, action, engagement_id)
-    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
-        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
-    raise NotImplementedYet
-
-
 async def _acceptance_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
     """CLI-07's routes are live (P-07-T35) behind `engagements.acceptance_v2`, after the same
     check; the service then requires a live person and authorises again inside its unit of
@@ -850,48 +839,62 @@ async def decide_acceptance_route(
 
 
 @independence_router.get(
-    INDEPENDENCE, action="independence.read", response_model=IndependenceSummaryOut, errors=(501,)
+    INDEPENDENCE, action="independence.read", response_model=IndependenceSummaryOut
 )
 async def get_independence_route(engagement_id: UUID, ctx: Ctx) -> IndependenceSummaryOut:
     """CLI-08 a: the summary and the banner reasons."""
-    await _acceptance_stub(ctx, "independence.read", engagement_id)
+    await _acceptance_gate(ctx, "independence.read", engagement_id)
+    view = await independence_model.independence_summary(ctx, engagement_id)
+    return IndependenceSummaryOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.get(
     f"{INDEPENDENCE}/rotation",
     action="independence.read",
     response_model=RotationOut,
-    errors=(501,),
 )
 async def get_rotation_route(engagement_id: UUID, ctx: Ctx) -> RotationOut:
     """CLI-08 d (AC-27)."""
-    await _acceptance_stub(ctx, "independence.read", engagement_id)
+    await _acceptance_gate(ctx, "independence.read", engagement_id)
+    view = await independence_model.rotation(ctx, engagement_id)
+    return RotationOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.post(
     f"{INDEPENDENCE}/confirm",
     action="independence.confirm",
     response_model=ConfirmationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def confirm_independence_route(
     engagement_id: UUID, body: ConfirmIn, ctx: Ctx
 ) -> ConfirmationOut:
-    """Human-only, self only (AC-17); `independence.confirmed`."""
-    await _acceptance_stub(ctx, "independence.confirm", engagement_id)
+    """Human-only, self only (AC-17): the three statements; `independence.confirmed`."""
+    await _acceptance_gate(ctx, "independence.confirm", engagement_id)
+    view = await independence_model.confirm_independence(
+        ctx,
+        engagement_id,
+        statement_version=body.statement_version,
+        statement_codes=body.statement_codes,
+        interests_note=body.interests_note,
+    )
+    return ConfirmationOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.post(
     f"{INDEPENDENCE}/decline",
     action="independence.confirm",
     response_model=ConfirmationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def decline_independence_route(
     engagement_id: UUID, body: DeclineIn, ctx: Ctx
 ) -> ConfirmationOut:
-    """Self only; the note sealed, the EP notified, the member stays not cleared (DF-06)."""
-    await _acceptance_stub(ctx, "independence.confirm", engagement_id)
+    """Self only; the note sealed, the member stays not cleared (DF-06); `independence.declined`
+    (the EP's notification registers with P-07-T47)."""
+    await _acceptance_gate(ctx, "independence.confirm", engagement_id)
+    view = await independence_model.decline_independence(ctx, engagement_id, note=body.note)
+    return ConfirmationOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.post(
@@ -908,26 +911,37 @@ async def send_reminders_route(engagement_id: UUID, body: RemindersIn, ctx: Ctx)
     return RemindersOut(reminded_user_ids=reminded)
 
 
-@independence_router.get(
-    f"{INDEPENDENCE}/nas", action="independence.read", response_model=NasOut, errors=(501,)
-)
+@independence_router.get(f"{INDEPENDENCE}/nas", action="independence.read", response_model=NasOut)
 async def get_nas_route(engagement_id: UUID, ctx: Ctx) -> NasOut:
     """CLI-08 b; a non-attest client answers `attest_client: false` and no rows (AC-22)."""
-    await _acceptance_stub(ctx, "independence.read", engagement_id)
+    await _acceptance_gate(ctx, "independence.read", engagement_id)
+    view = await independence_model.nas(ctx, engagement_id)
+    return NasOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.put(
     f"{INDEPENDENCE}/nas/{{service_code}}",
     action="nas.evaluate",
     response_model=NasRowOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def put_nas_route(
     engagement_id: UUID, service_code: Code, body: NasEvaluationIn, ctx: Ctx
 ) -> NasRowOut:
     """AC-21, AC-22: an insert-only event; the evaluation decision is the EP's; refused without
     an SKE designee on an attest client; `nas.evaluated`."""
-    await _acceptance_stub(ctx, "nas.evaluate", engagement_id)
+    await _acceptance_gate(ctx, "nas.evaluate", engagement_id)
+    row = await independence_model.evaluate_nas(
+        ctx,
+        engagement_id,
+        service_code,
+        provided=body.provided,
+        status=body.status.value,
+        evaluation=body.evaluation,
+        safeguards=body.safeguards,
+        ske_contact_id=body.ske_contact_id,
+    )
+    return NasRowOut.model_validate(row, from_attributes=True)
 
 
 @independence_router.post(
@@ -935,11 +949,14 @@ async def put_nas_route(
     action="independence.breach_manage",
     response_model=BreachOut,
     status_code=201,
-    errors=(501,),
 )
 async def log_breach_route(engagement_id: UUID, body: BreachIn, ctx: Ctx) -> BreachOut:
     """AC-28: `independence_breach.logged`."""
-    await _acceptance_stub(ctx, "independence.breach_manage", engagement_id)
+    await _acceptance_gate(ctx, "independence.breach_manage", engagement_id)
+    view = await independence_model.log_breach(
+        ctx, engagement_id, description=body.description, user_id=body.user_id
+    )
+    return BreachOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.post(
@@ -947,13 +964,18 @@ async def log_breach_route(engagement_id: UUID, body: BreachIn, ctx: Ctx) -> Bre
     action="independence.breach_manage",
     response_model=BreachOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def add_breach_event_route(
     engagement_id: UUID, breach_id: UUID, body: BreachEventIn, ctx: Ctx
 ) -> BreachOut:
-    """AC-28: insert-only; `independence_breach.updated`."""
-    await _acceptance_stub(ctx, "independence.breach_manage", engagement_id)
+    """AC-28: insert-only, each kind once (409 `illegal_transition`);
+    `independence_breach.updated`."""
+    await _acceptance_gate(ctx, "independence.breach_manage", engagement_id)
+    view = await independence_model.add_breach_event(
+        ctx, engagement_id, breach_id, kind=body.kind, note=body.note
+    )
+    return BreachOut.model_validate(view, from_attributes=True)
 
 
 @independence_router.post(
@@ -961,13 +983,17 @@ async def add_breach_event_route(
     action="independence.conclude",
     response_model=IndependenceConclusionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def conclude_independence_route(
     engagement_id: UUID, body: ConcludeIn, ctx: Ctx
 ) -> IndependenceConclusionOut:
     """Human-only, fresh MFA (AC-18 to AC-20); 409 `independence_preconditions_unmet`."""
-    await _acceptance_stub(ctx, "independence.conclude", engagement_id)
+    await _acceptance_gate(ctx, "independence.conclude", engagement_id)
+    view = await independence_model.conclude_independence(
+        ctx, engagement_id, option=body.option.value, safeguards=body.safeguards
+    )
+    return IndependenceConclusionOut.model_validate(view, from_attributes=True)
 
 
 def _approval_out(a: team_model.TeamApproval) -> TeamApprovalOut:

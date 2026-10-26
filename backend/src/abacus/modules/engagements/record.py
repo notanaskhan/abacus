@@ -36,6 +36,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.gate_policy import required_gates
+from abacus.modules.engagements.independence_tables import latest_conclusion, legacy_concluded
 from abacus.modules.engagements.index import PARTNER_ROLES, LetterSummary, letter_summary
 from abacus.modules.engagements.models import (
     Engagement,
@@ -137,6 +138,7 @@ async def gate_views(ctx: AuthContext, engagement: Engagement) -> list[GateView]
     async with tenant_session(ctx.tenant) as session:
         decided = await g1_decision(session, engagement.id)
         acceptance = await latest_acceptance(session, engagement.id)
+        concluded = await latest_conclusion(session, engagement.id)
         letter = await get_letter(session, engagement.id)
     views: list[GateView] = []
     for gate in required_gates(engagement.type):
@@ -146,8 +148,10 @@ async def gate_views(ctx: AuthContext, engagement: Engagement) -> list[GateView]
             met_by = None
             if gate == "G1" and decided is not None:
                 met_at, met_by = decided.decided_at, decided.decided_by
-            elif gate == "G2" and acceptance is not None:
-                met_at = acceptance.independence_concluded_at
+            elif gate == "G2" and concluded is not None:  # P-07-T41 (DEC-429)
+                met_at, met_by = concluded.concluded_at, concluded.concluded_by
+            elif gate == "G2":
+                met_at = legacy_concluded(acceptance)
             elif gate == "G3" and letter is not None:
                 met_at = letter.recorded_at
                 met_by = letter.recorded_by_user_id

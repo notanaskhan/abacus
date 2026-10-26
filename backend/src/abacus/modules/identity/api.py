@@ -135,6 +135,7 @@ from abacus.modules.identity.firm_settings import (
 )
 from abacus.modules.identity.governance_errors import (
     SecurityPolicyLoosened,
+    SsoExemptNeedsHardwareKey,
     SsoNotVerified,
     SupersededByAiPolicy,
     SupportRequestsDisabled,
@@ -250,6 +251,11 @@ from abacus.modules.identity.routing import (
     current_signed_in,
     current_staff,
     declared_action,
+)
+from abacus.modules.identity.security_center_contract import (
+    security_router,
+    staff_unlock_router,
+    support_access_router,
 )
 from abacus.modules.identity.service import (
     EQR_ROLES,
@@ -376,6 +382,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     settings_router,  # firm-settings family v1 (G-01-T02 stub)
     walls_v2_router,
     me_annual_router,
+    security_router,  # security-center v1 (G-02-T11 stub; G-02-T14 implements it)
+    staff_unlock_router,
+    support_access_router,
 )
 
 # P-04-T10 (ADR-161): grant-held outbox events are delivered only through `consume_grant`.
@@ -512,6 +521,7 @@ __all__ = [
     "SecurityPolicyLoosened",
     "SettingKey",
     "SignInPaused",
+    "SsoExemptNeedsHardwareKey",
     "SsoNotVerified",
     "Staff",
     "StaffInvitationIssued",
