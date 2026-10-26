@@ -15,7 +15,7 @@
   final, whatever the app's grants allow.
 
 Revision ID: 0177
-Revises: 0180
+Revises: 0175
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0177"
-down_revision = "0180"
+down_revision = "0175"
 branch_labels = None
 depends_on = None
 
