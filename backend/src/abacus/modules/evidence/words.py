@@ -49,12 +49,13 @@ from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.pdf_layout import (
-    drawn_like_a_scan,
     flattened,
+    image_content,
+    outlined_text,
     reconciled,
     render_space,
+    sideways_number,
     text_boxes,
-    upright,
 )
 from abacus.modules.evidence.repository import (
     get_inbox_file,
@@ -103,6 +104,9 @@ class PageWords:
     height: float
     rotation: int  # the page's /Rotate: 0, 90, 180 or 270
     words: tuple[Word, ...]
+    # Review N1: an image covering `pdf_layout.IMAGE_FLOOR` of the page or more, which no scan can
+    # read before OCR: the page's text is masked, its pictures are not.
+    images: bool = False
 
 
 @dataclass(frozen=True)
@@ -158,8 +162,8 @@ def _page_words(number: int, page: PlumberPage, shown: PdfPage) -> PageWords:
         # A hostile or broken page box (zero, negative, tiny, past PDF's limit) or geometry the
         # parsers disagree on: recorded without a text layer, with sides the table can hold.
         return _unscannable(number, width, height, rotation)
-    if not upright(cast(list[dict[str, object]], page.chars)):
-        return _unscannable(number, width, height, rotation)  # sideways or mirrored text
+    if sideways_number(cast(list[dict[str, object]], page.chars)):
+        return _unscannable(number, width, height, rotation)  # a number read out of order
     found = cast(list[dict[str, object]], page.extract_words(keep_blank_chars=False))
     words: list[Word] = []
     for raw in found:
@@ -182,9 +186,10 @@ def _page_words(number: int, page: PlumberPage, shown: PdfPage) -> PageWords:
     drawn = text_boxes(shown, space)
     if not reconciled([(w.x0, w.top, w.x1, w.bottom) for w in words], drawn):
         return _unscannable(number, width, height, rotation)
-    if drawn_like_a_scan(shown, space):
+    if outlined_text(shown, space):
         return _unscannable(number, width, height, rotation)
-    return PageWords(number, width, height, rotation, tuple(words))
+    images = image_content(shown, space)  # review N1: text masked, the page unscanned for images
+    return PageWords(number, width, height, rotation, tuple(words), images)
 
 
 def _reason(exc: BaseException) -> str:
@@ -256,6 +261,7 @@ def layer_document(page: PageWords) -> bytes:
         "w": page.width,
         "h": page.height,
         "rotation": page.rotation,
+        "images": page.images,
         "words": [
             {"text": w.text, "x0": w.x0, "top": w.top, "x1": w.x1, "bottom": w.bottom}
             for w in page.words
@@ -283,6 +289,7 @@ def parse_layer(raw: bytes) -> PageWords:
         float(cast(float, body["h"])),
         int(cast(int, body["rotation"])),
         words,
+        bool(body.get("images", False)),
     )
 
 

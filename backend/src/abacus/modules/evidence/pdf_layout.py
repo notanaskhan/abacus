@@ -12,9 +12,13 @@ renderer have to agree on both what is on a page and where it is:
   back to PDF user space and on to render space.
 - **Fail closed:** a page is unscannable (no word layer, so `not_scannable`) when the mapping
   can't be reconciled with PDFium's own text positions (a word PDFium has no text under, or text
-  PDFium draws that no word covers), when images cover `IMAGE_SHARE` of it or more (a scan with a
-  little real text: a fax header, a Bates stamp, an OCR layer), when it draws `CURVE_LIMIT` or
-  more Bézier segments (text drawn as outlines), or when its words pass the extractor's cap.
+  PDFium draws that no word covers), when a run of nine digits is set sideways, upside down or
+  mirrored (`sideways_number`: read out of order, no detector sees it), when it draws text as
+  outlines (`outlined_text`), or when its words pass the extractor's cap.
+- **Images (review N1):** image pixels can't be read before OCR (P-11). A page with an image
+  covering `IMAGE_FLOOR` of it or more keeps its words (its text is still masked for everyone)
+  but is marked as holding unscanned image content (`image_content`), so the page is never served
+  to a reader who may not read unmasked content. Agents never receive page images.
 """
 
 from __future__ import annotations
@@ -31,10 +35,20 @@ if TYPE_CHECKING:
 
 Box = tuple[float, float, float, float]  # x0, top, x1, bottom: render space, points
 
-# DEC-369 (security review H2): images covering a quarter of the page or more make it a scan.
-IMAGE_SHARE: Final = 0.25
-# DEC-369 (H2): this many Bézier segments or more read as drawn text (an outlined digit is a few).
-CURVE_LIMIT: Final = 40
+# DEC-369 (review N1): an image is unscanned content (a pasted SSN card, a W-2 photo, a cheque, a
+# logo) when it covers a quarter of a percent of the page or more and is big enough to hold a
+# nine-digit number at a legible 6 pt (30 pt along, 6 pt across); tinier marks are left alone.
+IMAGE_FLOOR: Final = 0.0025
+IMAGE_LONG: Final = 30.0
+IMAGE_SHORT: Final = 6.0
+# DEC-369 (review N1 regression check): outlined text is a row of `GLYPH_ROW` or more glyph-sized
+# curved paths on one baseline, or one curved path of `GLYPH_CURVES`+ Bézier segments shaped like
+# a line of text. Logos, rounded boxes and charts are neither.
+GLYPH_ROW: Final = 9
+GLYPH_CURVES: Final = 20
+GLYPH_MIN: Final = 4.0  # points: the shortest and tallest a glyph may be
+GLYPH_MAX: Final = 40.0
+TIN_DIGITS: Final = 9
 SLACK: Final = 2.0  # points: rounding between the two parsers
 
 
@@ -165,24 +179,51 @@ def render_space(
     )
 
 
-def upright(chars: Sequence[dict[str, object]]) -> bool:
-    """Every letter and digit on the page is set upright and unmirrored in the content (a text
-    matrix with positive diagonal and no shear): text set sideways, upside down or mirrored is read
-    out of order, so no detector can be trusted on it (fail closed)."""
+def sideways_number(chars: Sequence[dict[str, object]]) -> bool:
+    """A run of `TIN_DIGITS` digits (single spaces or hyphens between them allowed) among the
+    characters not set upright (a text matrix without a positive diagonal and no shear): text
+    read out of order, where no detector can be trusted (fail closed). Sideways labels, margin
+    notes with a few digits and a diagonal DRAFT watermark don't qualify (review N1 check)."""
+    groups: dict[tuple[float, float, float, float], list[tuple[float, float, str]]] = {}
     for char in chars:
         text = str(char.get("text") or "")
-        if not any(c.isalnum() for c in text):
-            continue
         matrix = char.get("matrix")
-        if not isinstance(matrix, tuple | list):
-            return False
-        values = cast(Sequence[float], matrix)
+        values = cast(Sequence[float], matrix) if isinstance(matrix, tuple | list) else ()
         if len(values) < 4:
-            return False
+            if any(c.isdigit() for c in text):
+                return True  # a digit we can't place: fail closed
+            continue
         a, b, c, d = (float(v) for v in values[:4])
-        if a <= 0 or d <= 0 or abs(b) > 0.01 * a or abs(c) > 0.01 * d:
-            return False
-    return True
+        if a > 0 and d > 0 and abs(b) <= 0.01 * a and abs(c) <= 0.01 * d:
+            continue
+        x = (float(cast(float, char.get("x0") or 0)) + float(cast(float, char.get("x1") or 0))) / 2
+        y = (
+            -(
+                float(cast(float, char.get("top") or 0))
+                + float(cast(float, char.get("bottom") or 0))
+            )
+            / 2
+        )
+        norm = max((a * a + b * b) ** 0.5, 1e-6)
+        along = (x * a + y * b) / norm
+        across = (-x * b + y * a) / norm
+        key = (round(a / norm, 2), round(b / norm, 2), round(c, 1), round(across / 2))
+        groups.setdefault(key, []).append((along, across, text))
+    for found in groups.values():
+        found.sort()
+        line = "".join(t if (t.isdigit() or t in " -") else "|" for _, _, t in found)
+        digits = 0
+        gap = 0
+        for ch in line:
+            if ch.isdigit():
+                digits, gap = digits + 1, 0
+            elif ch in " -" and digits and gap == 0:
+                gap = 1
+            else:
+                digits, gap = 0, 0
+            if digits >= TIN_DIGITS:
+                return True
+    return False
 
 
 def _overlap(a: Box, b: Box, slack: float = SLACK) -> bool:
@@ -226,46 +267,99 @@ def reconciled(words: Sequence[Box], drawn: Sequence[Box]) -> bool:
     )
 
 
-def drawn_like_a_scan(pdfium_page: PdfPage, space: RenderSpace) -> bool:
-    """Images covering `IMAGE_SHARE` of the page or more, or `CURVE_LIMIT` or more Bézier
-    segments (outlined text): content the word layer can't account for (H2). An image inside a
-    form XObject counts as its top-level form's whole box (bounds inside a form aren't in page
+def _clipped(space: RenderSpace, bounds: tuple[float, float, float, float]) -> Box | None:
+    x0, y0, x1, y1 = space.user_box(*bounds)
+    x0, y0 = max(0.0, x0), max(0.0, y0)
+    x1, y1 = min(space.width, x1), min(space.height, y1)
+    return (x0, y0, x1, y1) if x1 > x0 and y1 > y0 else None
+
+
+def image_content(pdfium_page: PdfPage, space: RenderSpace) -> bool:
+    """An image covering `IMAGE_FLOOR` of the page or more and big enough to hold a legible
+    number (`IMAGE_LONG` by `IMAGE_SHORT`; review N1). An image inside a form
+    XObject counts as its top-level object's whole box (bounds inside a form aren't in page
     space), which can only overcount."""
     raw = _raw()
     area = space.width * space.height
-    covered = 0.0
-    curves = 0
     top: PdfObject | None = None
-    counted, top_index = -1, -2
-    for index, obj in enumerate(pdfium_page.get_objects(max_depth=15)):
+    for obj in pdfium_page.get_objects(max_depth=15):
         if obj.level == 0:
-            top, top_index = obj, index
-        if obj.type == raw.FPDF_PAGEOBJ_IMAGE and top is not None and counted != top_index:
-            counted = top_index
-            left, bottom, right, upper = top.get_bounds()
-            x0, y0, x1, y1 = space.user_box(left, bottom, right, upper)
-            x0, y0 = max(0.0, x0), max(0.0, y0)
-            x1, y1 = min(space.width, x1), min(space.height, y1)
-            if x1 > x0 and y1 > y0:
-                covered += (x1 - x0) * (y1 - y0)
-        elif obj.type == raw.FPDF_PAGEOBJ_PATH:
-            for n in range(max(0, raw.FPDFPath_CountSegments(obj.raw))):
-                segment = raw.FPDFPath_GetPathSegment(obj.raw, n)
-                if segment and raw.FPDFPathSegment_GetType(segment) == raw.FPDF_SEGMENT_BEZIERTO:
-                    curves += 1
-        if (area > 0 and covered / area >= IMAGE_SHARE) or curves >= CURVE_LIMIT:
+            top = obj
+        if obj.type == raw.FPDF_PAGEOBJ_IMAGE and top is not None:
+            box = _clipped(space, top.get_bounds())
+            if box is None or area <= 0:
+                continue
+            wide, tall = box[2] - box[0], box[3] - box[1]
+            legible = max(wide, tall) >= IMAGE_LONG and min(wide, tall) >= IMAGE_SHORT
+            if legible and wide * tall / area >= IMAGE_FLOOR:
+                return True
+    return False
+
+
+def _beziers(obj: PdfObject, raw: _Raw) -> int:
+    found = 0
+    for n in range(max(0, raw.FPDFPath_CountSegments(obj.raw))):
+        segment = raw.FPDFPath_GetPathSegment(obj.raw, n)
+        if segment and raw.FPDFPathSegment_GetType(segment) == raw.FPDF_SEGMENT_BEZIERTO:
+            found += 1
+    return found
+
+
+def _glyph_sized(box: Box) -> bool:
+    return GLYPH_MIN <= box[3] - box[1] <= GLYPH_MAX
+
+
+def outlined_text(pdfium_page: PdfPage, space: RenderSpace) -> bool:
+    """Text drawn as curves, which no word layer holds (review H2, N1): `GLYPH_ROW` or more
+    glyph-sized curved paths of similar height on one baseline with glyph-sized gaps, or one
+    top-level curved object (a path, or a form holding paths) of `GLYPH_CURVES` or more Bézier
+    segments, glyph-tall and at least four times as wide (a line of outlined glyphs)."""
+    raw = _raw()
+    curved: dict[int, tuple[Box, int]] = {}  # top-level index -> (box, Bézier segments)
+    index = -1
+    top: PdfObject | None = None
+    for obj in pdfium_page.get_objects(max_depth=15):
+        if obj.level == 0:
+            index, top = index + 1, obj
+        if obj.type == raw.FPDF_PAGEOBJ_PATH and top is not None:
+            count = _beziers(obj, raw)
+            if count:
+                box = _clipped(space, top.get_bounds())
+                if box is not None:
+                    seen = curved.get(index)
+                    curved[index] = (box, count + (seen[1] if seen else 0))
+    for box, count in curved.values():
+        tall, wide = box[3] - box[1], box[2] - box[0]
+        if count >= GLYPH_CURVES and _glyph_sized(box) and wide >= 4 * tall:
+            return True
+    glyphs = sorted(
+        (b for b, _ in curved.values() if _glyph_sized(b) and b[2] - b[0] <= 1.5 * (b[3] - b[1])),
+        key=lambda b: (round(b[3] / 3), b[0]),
+    )
+    run: list[Box] = []
+    for box in glyphs:
+        if run:
+            last = run[-1]
+            height = last[3] - last[1]
+            same_line = abs(box[3] - last[3]) <= 3
+            similar = 1 / 1.5 <= (box[3] - box[1]) / max(height, 1e-6) <= 1.5
+            close = 0 <= box[0] - last[2] <= 1.5 * height
+            if not (same_line and similar and close):
+                run = []
+        run.append(box)
+        if len(run) >= GLYPH_ROW:
             return True
     return False
 
 
 __all__ = [
-    "CURVE_LIMIT",
-    "IMAGE_SHARE",
+    "IMAGE_FLOOR",
     "RenderSpace",
-    "drawn_like_a_scan",
     "flattened",
+    "image_content",
+    "outlined_text",
     "reconciled",
     "render_space",
+    "sideways_number",
     "text_boxes",
-    "upright",
 ]

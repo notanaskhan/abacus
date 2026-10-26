@@ -1250,6 +1250,35 @@ async def scanned_pages(
     return {int(page) for pages in rows for page in pages}
 
 
+async def unscannable_pages(
+    session: AsyncSession,
+    *,
+    evidence_version_id: UUID | None = None,
+    inbox_file_id: UUID | None = None,
+    detector_version: str | None = None,
+) -> set[int]:
+    """The pages any PII scan of the source (none derived) recorded as not scannable, wholly or
+    for their images (P-03-T15 review N1; LIST_EXEMPT: one source's scan runs, for a caller that
+    authorised on it)."""
+    source = (
+        PiiScanRun.evidence_version_id == evidence_version_id
+        if evidence_version_id is not None
+        else PiiScanRun.inbox_file_id == inbox_file_id
+    )
+    rows = (
+        await session.execute(
+            select(PiiScanRun.pages_not_scannable).where(
+                source,
+                PiiScanRun.derivation_id.is_(None),
+                PiiScanRun.detector_version == detector_version
+                if detector_version is not None
+                else true(),
+            )
+        )
+    ).scalars()
+    return {int(page) for pages in rows for page in pages}
+
+
 async def preview_pages_of(session: AsyncSession, preview_id: UUID) -> Sequence[UploadPreviewPage]:
     """A preview's page images' rows, by page (LIST_EXEMPT: one preview's pages)."""
     return (
@@ -1270,9 +1299,11 @@ async def masked_preview_for(
     evidence_version_id: UUID | None = None,
     *,
     inbox_file_id: UUID | None = None,
+    renderer_version: str,
 ) -> UploadPreview | None:
-    """The source's newest masked rendition (none derived): a preview with `mask_version` set
-    (P-03-T09, T15). None until the masker has rendered it."""
+    """The source's newest masked rendition (none derived) by this renderer version: a preview
+    with `mask_version` set (P-03-T09, T15). None until the masker has rendered it; a rendition
+    by an earlier masker is never current (review L5)."""
     source = (
         UploadPreview.evidence_version_id == evidence_version_id
         if evidence_version_id is not None
@@ -1285,6 +1316,7 @@ async def masked_preview_for(
                 source,
                 UploadPreview.derivation_id.is_(None),
                 UploadPreview.mask_version.is_not(None),
+                UploadPreview.renderer_version == renderer_version,
             )
             .order_by(UploadPreview.created_at.desc(), UploadPreview.id.desc())
             .limit(1)

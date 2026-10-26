@@ -259,19 +259,101 @@ def _box(words: Sequence[WordLike]) -> Box:
     )
 
 
+_DIGITISH: Final = re.compile(r"^[0-9][0-9-]*$|^-[0-9][0-9-]*$")
+# Review N2: digits drawn one per box (a W-9's comb), or a TIN split into runs, sit this close.
+_RUN_GAP: Final = 2.0  # line heights
+
+
+def _digitish(word: WordLike) -> bool:
+    return bool(_DIGITISH.match(_token(word.text)))
+
+
+def _joined(parts: Sequence[WordLike]) -> str:
+    """Digit runs joined into one TIN-shaped candidate: `dd-ddddddd` when the first run holds two
+    digits, else `ddd-dd-dddd` (nine digits; any other count is no candidate)."""
+    digits = "".join(_digits(w.text) for w in parts)
+    if len(digits) != 9:
+        return ""
+    if len(_digits(parts[0].text)) == 2:
+        return f"{digits[:2]}-{digits[2:]}"
+    return f"{digits[:3]}-{digits[3:5]}-{digits[5:]}"
+
+
+def _close(left: WordLike, right: WordLike) -> bool:
+    height = max(left.bottom - left.top, right.bottom - right.top, 1.0)
+    return 0 <= right.x0 - left.x1 <= _RUN_GAP * height
+
+
+def _runs(words: Sequence[WordLike]) -> list[tuple[WordLike, ...]]:
+    """Nine-digit spans of adjacent digit-only tokens on a line (review N2): `1` … `9` in comb
+    boxes, `123-45-` + `6789`, `123` `45` `6789`. Spans of one token are the single candidates."""
+    out: list[tuple[WordLike, ...]] = []
+    for start in range(len(words)):
+        if not _digitish(words[start]):
+            continue
+        count = 0
+        for end in range(start, len(words)):
+            if end > start and not (_digitish(words[end]) and _close(words[end - 1], words[end])):
+                break
+            count += len(_digits(words[end].text))
+            if count == 9 and end > start:
+                out.append(tuple(words[start : end + 1]))
+            if count >= 9:
+                break
+    return out
+
+
 def _candidates(line: _Line) -> list[tuple[str, tuple[WordLike, ...]]]:
-    """Single tokens, and `ddd dd dddd` written as three tokens (joined with hyphens)."""
+    """Single tokens, `ddd dd dddd` written as three tokens (joined with hyphens), and nine-digit
+    spans of adjacent digit runs (review N2)."""
     words = line.words
     out: list[tuple[str, tuple[WordLike, ...]]] = [(_token(w.text), (w,)) for w in words]
     for i in range(len(words) - 2):
         parts = [_token(w.text) for w in words[i : i + 3]]
         if [len(p) for p in parts] == [3, 2, 4] and all(p.isdigit() for p in parts):
             out.append(("-".join(parts), tuple(words[i : i + 3])))
+    out.extend((_joined(run), run) for run in _runs(words))
     return out
 
 
+def _tail(line: _Line) -> tuple[WordLike, ...]:
+    """The line's trailing run of adjacent digit-only tokens."""
+    words = line.words
+    end = len(words)
+    start = end
+    while (
+        start > 0
+        and _digitish(words[start - 1])
+        and (start == end or _close(words[start - 1], words[start]))
+    ):
+        start -= 1
+    return tuple(words[start:end])
+
+
+def _head(line: _Line) -> tuple[WordLike, ...]:
+    """The line's leading run of adjacent digit-only tokens."""
+    words = line.words
+    end = 0
+    while (
+        end < len(words)
+        and _digitish(words[end])
+        and (end == 0 or _close(words[end - 1], words[end]))
+    ):
+        end += 1
+    return tuple(words[:end])
+
+
+def _found(
+    page_no: int, kind: PiiKind, value: str, span: Sequence[WordLike], anchored: bool
+) -> Found:
+    digits = _digits(value)
+    last4 = None if kind == "dob" or len(digits) < 2 else digits[-4:]
+    return Found(page_no, kind, _box(span), value, last4, anchored)
+
+
 def detect(page_no: int, words: Sequence[WordLike]) -> list[Found]:
-    """Every PII value on one page's words (pure; P-03 §4.4)."""
+    """Every PII value on one page's words (pure; P-03 §4.4). A TIN wrapped from one line to the
+    next after a TIN label is one value with a region on each line (review N2)."""
     lines = lines_of(words)
     found: list[Found] = []
     used: set[int] = set()
@@ -285,18 +367,22 @@ def detect(page_no: int, words: Sequence[WordLike]) -> list[Found]:
             if classified is None:
                 continue
             kind, value = classified
-            digits = _digits(value)
-            found.append(
-                Found(
-                    page_no,
-                    kind,
-                    _box(span),
-                    value,
-                    None if kind == "dob" or len(digits) < 2 else digits[-4:],
-                    bool(families),
-                )
-            )
+            found.append(_found(page_no, kind, value, span, bool(families)))
             used.update(id(w) for w in span)
+    for index in range(len(lines) - 1):
+        tail, head = _tail(lines[index]), _head(lines[index + 1])
+        if not tail or not head or any(id(w) in used for w in (*tail, *head)):
+            continue
+        above = lines[index - 1] if index > 0 else None
+        families = _anchoring(lines[index], above, tail[0]) & {"tin", "ein"}
+        text = _joined((*tail, *head))
+        classified = _classify(text, families) if families and text else None
+        if classified is None:
+            continue
+        kind, value = classified
+        found.append(_found(page_no, kind, value, tail, True))
+        found.append(_found(page_no, kind, value, head, True))
+        used.update(id(w) for w in (*tail, *head))
     return found
 
 
@@ -512,6 +598,11 @@ async def pii_scan_upload(given: UploadInput) -> int:
             )
         )
         scanned.append(page.page_no)
+        if layer.images:
+            # Review N1: its words are scanned, its pictures are not (no OCR before P-11). Listed
+            # in both, so its text is masked and read as usual, but the page is never served to
+            # a reader who may not read unmasked content.
+            unscannable.append(page.page_no)
     rows: list[dict[str, object]] = []
     for item in found:
         region_id = uuid.uuid4()

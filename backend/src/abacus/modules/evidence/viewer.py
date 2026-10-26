@@ -45,7 +45,7 @@ from abacus.modules.evidence.masked_previews import PreviewOutdated
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
 from abacus.modules.evidence.pii import DETECTOR_VERSION
-from abacus.modules.evidence.previews import PAGE_WIDTH, RENDERER_VERSION
+from abacus.modules.evidence.previews import MASKED_RENDERER_VERSION, PAGE_WIDTH, RENDERER_VERSION
 from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
     get_item,
@@ -222,7 +222,9 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         preview = await preview_for(
             session, evidence_version_id=version.id, renderer_version=RENDERER_VERSION
         )
-        masked = await masked_preview_for(session, version.id)
+        masked = await masked_preview_for(
+            session, version.id, renderer_version=MASKED_RENDERER_VERSION
+        )
         layer: Sequence[EvidencePage] = await pages_of(
             session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
         )
@@ -306,7 +308,9 @@ async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes
     who may not read unmasked content (AC-30); the read is logged before the bytes leave."""
     version = await visible_version(ctx, version_id)
     async with tenant_session(ctx.tenant) as session:
-        masked = await masked_preview_for(session, version.id)
+        masked = await masked_preview_for(
+            session, version.id, renderer_version=MASKED_RENDERER_VERSION
+        )
         if masked is None:
             legacy = await preview_for(
                 session, evidence_version_id=version.id, renderer_version=RENDERER_VERSION
@@ -318,8 +322,10 @@ async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes
         projection = await projection_of(session, evidence_version_id=version.id)
     if page is None:
         raise NotFound("preview_page")
-    if not projection.readable(page_no) and not await may_read_unmasked(ctx):
-        raise Forbidden(READ, "condition")  # an unscannable page, offshore (fail closed)
+    if not projection.complete(page_no) and not await may_read_unmasked(ctx):
+        # A page not wholly scanned (no text layer, or images no scan reads: review N1) is never
+        # served to an offshore reader (fail closed).
+        raise Forbidden(READ, "condition")
     await record_content_read(ctx, version.engagement_id, "evidence_version", version.id)
     stored = storage.StoredObject(
         page.storage_key, page.storage_version_id, page.fingerprint, page.size_bytes

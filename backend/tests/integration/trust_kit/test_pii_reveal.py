@@ -107,7 +107,9 @@ async def test_ac26_an_onshore_member_gets_the_value_and_a_logged_record(seed: S
         "source_review",
         "human",
     )
-    assert row["mfa_at"] is not None and row["lasts"] == timedelta(seconds=30)
+    assert row["mfa_at"] is not None
+    # Thirty seconds from the reveal; both stamps are clock_timestamp(), read microseconds apart.
+    assert abs(row["lasts"] - timedelta(seconds=30)) < timedelta(milliseconds=100)
     [audit] = await seed.rows(
         "SELECT actor_id, target_type, target_id, after_ref::text AS after FROM audit_events "
         "WHERE tenant_id = $1 AND action = 'pii.revealed'",

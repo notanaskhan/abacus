@@ -61,6 +61,9 @@ while an offshore member, an agent or a client principal is refused and nothing 
 - 2026-10-26 (security review): the reveal itself passed review. L3: added a route test that
   the 429 carries `Retry-After` equal to `facts.retry_after` (the platform handler already set
   it). DEC-370 note added.
+- 2026-10-26 (round 2): `test_ac26` failed once under `-n 2` while gates ran beside it, then
+  passed twice in full trust-kit runs. The likely cause is its exact `expires_at - revealed_at
+  == 30 s`: the two stamps are separate `clock_timestamp()` reads. It now allows 100 ms.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

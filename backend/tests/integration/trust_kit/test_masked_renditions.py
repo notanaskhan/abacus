@@ -21,6 +21,7 @@ from typing import cast
 import pytest
 from PIL import Image
 
+from abacus.kernel.db import tenant_session
 from abacus.kernel.tin_patterns import has_tin
 from abacus.kernel.uow import uow
 from abacus.modules.agents.upload_review import review_material_for
@@ -41,8 +42,9 @@ from abacus.modules.evidence.masked_previews import (
     pending_masks,
 )
 from abacus.modules.evidence.pii import pii_scan_upload
-from abacus.modules.evidence.previews import pixel_box
+from abacus.modules.evidence.previews import MASK_VERSION, MASKED_RENDERER_VERSION, pixel_box
 from abacus.modules.evidence.processing import preview_upload
+from abacus.modules.evidence.repository import masked_preview_for
 from abacus.modules.evidence.uploads import preview_of, preview_page_of
 from abacus.modules.evidence.words import words_upload
 from abacus.modules.evidence.workflow_types import BackfillInput, UploadInput
@@ -167,7 +169,8 @@ async def test_ac24_served_pages_have_no_unmasked_pixel_in_a_region(seed: Seeder
         "WHERE evidence_version_id = $1",
         version,
     )
-    assert [tuple(r) for r in stored] == [("v2", "m1")]  # no unmasked rendition was made
+    # No unmasked rendition was made; the one stored is the current masker's (review L5).
+    assert [tuple(r) for r in stored] == [(MASKED_RENDERER_VERSION, MASK_VERSION)]
 
 
 async def test_ac24_a_pre_masking_preview_is_outdated_until_re_rendered(seed: Seeder) -> None:
@@ -389,3 +392,112 @@ async def test_review_h1_a_cropped_or_rotated_w2_is_served_masked(
         assert lines == ""
     else:
         assert MASKED in lines
+
+
+# --- Security review round 2 (DEC-369: N1, L4, L5) ----------------------------------------------
+
+
+def _with_image(share: bytes) -> bytes:
+    """A W-9-like page: a typed TIN line and a picture (a pasted card) holding a number."""
+    picture = io.BytesIO()
+    card = Image.new("L", (300, 120), 255)
+    for x in range(20, 280, 30):  # dark strokes where the card's digits are
+        for y in range(40, 80):
+            card.putpixel((x, y), 0)
+    card.save(picture, format="PNG")
+    raw = card.tobytes()
+    page = (
+        b"BT /F1 12 Tf 72 720 Td (Recipient's TIN 900-70-1234) Tj ET q " + share + b" cm /Im1 Do Q"
+    )
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R "
+        b">> /XObject << /Im1 6 0 R >> >> /Contents 4 0 R >>",
+        b"<< /Length %d >>\nstream\n" % len(page) + page + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Type /XObject /Subtype /Image /Width 300 /Height 120 /ColorSpace /DeviceGray "
+        b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(raw) + raw + b"\nendstream",
+    ]
+    out = io.BytesIO()
+    out.write(b"%PDF-1.4\n")
+    offsets: list[int] = []
+    for n, body in enumerate(objects, 1):
+        offsets.append(out.tell())
+        out.write(b"%d 0 obj\n" % n + body + b"\nendobj\n")
+    start = out.tell()
+    out.write(b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1))
+    for offset in offsets:
+        out.write(b"%010d 00000 n \n" % offset)
+    out.write(
+        b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n"
+        % (len(objects) + 1, start)
+    )
+    return out.getvalue()
+
+
+@pytest.mark.parametrize("share", [b"200 0 0 194 100 300", b"440 0 0 220 80 300"])  # 8%, 20%
+async def test_review_n1_an_image_page_is_never_served_offshore(
+    seed: Seeder, share: bytes
+) -> None:
+    """The typed TIN is masked for everyone; the picture can't be read before OCR, so the page
+    reads `not_scannable` and an offshore reader is refused it (no image pixels reach them);
+    agent material is the masked text only."""
+    firm = await make_firm(seed)
+    version = await _version(firm, _with_image(share))
+    [region] = await seed.rows(
+        "SELECT kind, last4 FROM pii_regions WHERE evidence_version_id = $1", version
+    )
+    assert (region["kind"], region["last4"]) == ("itin", "1234")
+    [page] = (await viewer.viewer_manifest(firm.person(), version)).pages
+    assert page.pii_scan == "not_scannable"
+    assert (await viewer.viewer_page(firm.person(), version, 1)).startswith(b"\x89PNG")  # onshore
+    material = await review_material(firm.system, version)
+    assert material is not None
+    # Text only, masked (pdfplumber prints the apostrophe curly).
+    assert material.pages == {1: "Recipient\u2019s TIN •••-••-1234"}
+    await _offshore(firm)
+    with pytest.raises(Forbidden):
+        await viewer.viewer_page(firm.person(), version, 1)
+
+
+async def test_review_l5_an_earlier_maskers_rendition_is_never_served(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    version = await _version(firm, w2_pdf())
+    await seed.run(
+        "INSERT INTO upload_previews (tenant_id, engagement_id, evidence_version_id, "
+        "renderer_version, kind, page_count, truncated, mask_version) SELECT tenant_id, "
+        "engagement_id, evidence_version_id, 'v2', kind, page_count, truncated, 'm1' "
+        "FROM upload_previews WHERE evidence_version_id = $1",
+        version,
+    )  # newer, but burned with the old geometry
+    async with tenant_session(firm.system) as session:
+        current = await masked_preview_for(
+            session, version, renderer_version=MASKED_RENDERER_VERSION
+        )
+    assert current is not None and current.renderer_version == MASKED_RENDERER_VERSION
+
+
+async def test_review_l4_page_lines_are_left_out_when_a_region_word_is_not_a_token(
+    seed: Seeder,
+) -> None:
+    """The extraction prints the SSN joined to its label (`SSN:000-00-6081`), the word layer as
+    its own word: no token matches, so the page's lines are left out rather than shown clear."""
+    from abacus.modules.evidence.projection import projection_of
+    from abacus.modules.evidence.repository import pages_of
+    from abacus.modules.evidence.uploads import masked_page_lines
+    from abacus.modules.evidence.words import WORDS_VERSION
+
+    firm = await make_firm(seed)
+    version = await _version(firm, w2_pdf())
+    async with tenant_session(firm.system) as session:
+        projection = await projection_of(session, evidence_version_id=version)
+        layer = await pages_of(
+            session, evidence_version_id=version, extractor_version=WORDS_VERSION
+        )
+    box = (0.1, 0.1, 0.9, 0.2)
+    clear = ((("a Employee's SSN:000-00-6081", box),),)
+    assert await masked_page_lines(firm.tenant_id, clear, projection, layer) == ((),)
+    punctuated = ((("SSN (000-00-6081), EIN 00-1230287.", box),),)
+    [[(text, _)]] = await masked_page_lines(firm.tenant_id, punctuated, projection, layer)
+    assert "6081" in text and "000-00" not in text and "1230287" not in text

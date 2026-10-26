@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.modules.evidence.citations.matching import WordLike
 from abacus.modules.evidence.masking import MaskedWord, MaskRegion, masked_words
 from abacus.modules.evidence.pii import DETECTOR_VERSION
-from abacus.modules.evidence.repository import pii_regions_of, scanned_pages
+from abacus.modules.evidence.repository import pii_regions_of, scanned_pages, unscannable_pages
 
 
 @dataclass(frozen=True)
@@ -28,13 +28,20 @@ class Projection:
 
     scanned: frozenset[int]
     regions: tuple[MaskRegion, ...]
+    # Review N1: pages a scan listed as not scannable, wholly (no text layer) or for their images
+    # (their words were scanned too: `readable`, yet never `complete`).
+    unscanned: frozenset[int] = frozenset()
 
     def readable(self, page_no: int) -> bool:
-        """The page was scanned for PII: its masked words may be read."""
+        """The page's words were scanned for PII: its masked words may be read."""
         return page_no in self.scanned
 
+    def complete(self, page_no: int) -> bool:
+        """Everything the page shows was scanned: it may be served to any reader."""
+        return page_no in self.scanned and page_no not in self.unscanned
+
     def scan_state(self, page_no: int) -> str:
-        return "done" if self.readable(page_no) else "not_scannable"
+        return "done" if self.complete(page_no) else "not_scannable"
 
     def words(self, words: Sequence[WordLike], page_no: int) -> list[MaskedWord] | None:
         """The page's masked words, or None when the page may not be read (fail closed)."""
@@ -64,6 +71,12 @@ async def projection_of(
         inbox_file_id=inbox_file_id,
         detector_version=DETECTOR_VERSION,
     )
+    unscanned = await unscannable_pages(
+        session,
+        evidence_version_id=evidence_version_id,
+        inbox_file_id=inbox_file_id,
+        detector_version=DETECTOR_VERSION,
+    )
     return Projection(
         frozenset(scanned),
         tuple(
@@ -75,6 +88,7 @@ async def projection_of(
             )
             for r in regions
         ),
+        frozenset(unscanned),
     )
 
 

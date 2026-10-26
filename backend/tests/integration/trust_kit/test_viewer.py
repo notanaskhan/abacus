@@ -23,6 +23,7 @@ from abacus.modules.evidence.api import (
     record_citations,
 )
 from abacus.modules.evidence.pii import DETECTOR_VERSION
+from abacus.modules.evidence.previews import MASKED_RENDERER_VERSION
 from abacus.modules.evidence.processing import preview_upload
 from abacus.modules.evidence.viewer import (
     PreviewOutdated,
@@ -60,9 +61,10 @@ async def _masked(seed: Seeder, firm: Firm, version: uuid.UUID) -> uuid.UUID:
     masked = await seed.id(
         "INSERT INTO upload_previews (tenant_id, engagement_id, evidence_version_id, "
         "renderer_version, kind, page_count, truncated, mask_version) SELECT tenant_id, "
-        "engagement_id, evidence_version_id, 'v99', kind, page_count, truncated, 'k1' "
+        "engagement_id, evidence_version_id, $2, kind, page_count, truncated, 'k1' "
         "FROM upload_previews WHERE evidence_version_id = $1 RETURNING id",
         version,
+        MASKED_RENDERER_VERSION,  # the current masker's (P-03-T15 review L5)
     )
     await seed.run(
         "INSERT INTO upload_preview_pages (tenant_id, preview_id, page_no, storage_key, "

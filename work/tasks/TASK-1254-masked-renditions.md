@@ -113,6 +113,30 @@ unmasked TIN pattern, and agent quotes of masked text still verify."
     `preview_outdated`, and agents get no material, until `trust_layer_backfill` v2 has run for
     each tenant: `python -m abacus_tools.trust_layer_backfill`, as an ECS one-off on staging and
     production after the deploy. P-03-T26's RB-31 runbook should carry this step.
+- 2026-10-26 (security review round 2, recorded in DEC-369):
+  - **N1:** image content (0.25% of the page or more, and legible-number sized) marks the page
+    unscanned for its images. Its text stays masked; offshore readers are refused the page.
+  - **N2:** `detect` joins comb, split and wrapped digit runs; the kernel scrub reads
+    single-separated nine-digit runs.
+  - **L4:** page lines are matched on punctuation-free tokens; a page with an unmatched region
+    word has no lines.
+  - **L5:** the masked renderer is `v3`, and only the current renderer version is served.
+  - Regression check: the sideways-text and curve rules are tuned (see DEC-369), and all
+    synthetic PDFs stay scannable.
+  - r2 variants through the pipeline:
+    - comb, split-on-one-line, spaced and wrapped TINs each leave exactly the label-only
+      baseline of dark pixels;
+    - agent material for each carries `•••-••-6789` and no TIN;
+    - images at 0.5%, 1.2%, 8% and 20% are all flagged.
+  - Tests:
+    - `test_pdf_layout.py`: 28;
+    - `test_tin_spaced.py`: 9;
+    - `test_masked_renditions.py`: N1 at 8% and 20% (onshore served, offshore refused, agent
+      text only), L4 and L5.
+  - Existing tests changed:
+    - the H2 "mostly an image" test is replaced by N1's (stricter flag);
+    - `test_viewer` seeds the current renderer version;
+    - the stored-rendition assertion uses the version constants.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

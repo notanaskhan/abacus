@@ -38,8 +38,10 @@ from abacus.modules.evidence.pdf_layout import flattened
 RENDERER_VERSION: Final = "v1"
 # P-03-T15: the masked rendition is its own renderer version, so it never collides with a
 # pre-masking preview of the same source; `MASK_VERSION` names the masker that burned it.
-MASKED_RENDERER_VERSION: Final = "v2"
-MASK_VERSION: Final = "m1"
+# v3 (P-03-T15 review L5): burned from the render-space word layer `w2`; a `v2` rendition used
+# the old geometry and is never served as current.
+MASKED_RENDERER_VERSION: Final = "v3"
+MASK_VERSION: Final = "m2"
 MASK_PAD: Final = 2  # pixels around each detected box (P-03 §4.4)
 MAX_PAGES: Final = 50
 PAGE_WIDTH: Final = 1240

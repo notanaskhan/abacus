@@ -1198,6 +1198,8 @@ LIST_EXEMPT = frozenset(
         # citation reader authorised `evidence.read` / `citation.read` on that source.
         ("src/abacus/modules/evidence/repository.py", "events_of"),
         ("src/abacus/modules/evidence/repository.py", "pii_regions_of"),
+        # P-03-T15 review N1: one source's not-scannable pages, beside `scanned_pages`.
+        ("src/abacus/modules/evidence/repository.py", "unscannable_pages"),
         ("src/abacus/modules/evidence/repository.py", "preview_pages_of"),
         # SPEC-316 (TASK-345): firm taxonomy content (after a firm-level check) and a mapping
         # set's edits (after authorising on its engagement).

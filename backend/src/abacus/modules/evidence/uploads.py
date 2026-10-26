@@ -40,7 +40,7 @@ from abacus.modules.evidence.masked_previews import PreviewOutdated
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.pii import masked_rows
-from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
+from abacus.modules.evidence.previews import MASKED_RENDERER_VERSION, RENDERER_VERSION, TABLE_ROWS
 from abacus.modules.evidence.projection import Projection, projection_of
 from abacus.modules.evidence.repository import (
     fingerprint_among,
@@ -695,7 +695,10 @@ async def preview_of(
     (fail closed; DEC-369)."""
     async with tenant_session(tenant) as session:
         found = await masked_preview_for(
-            session, evidence_version_id, inbox_file_id=inbox_file_id
+            session,
+            evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            renderer_version=MASKED_RENDERER_VERSION,
         ) or await preview_for(
             session,
             evidence_version_id=evidence_version_id,
@@ -750,6 +753,12 @@ async def preview_of(
 
 
 Line = tuple[str, tuple[float, float, float, float]]
+_EDGE_PUNCTUATION: Final = re.compile(r"^[^0-9A-Za-z]+|[^0-9A-Za-z]+$")
+
+
+def _plain(token: str) -> str:
+    """A printed token without the punctuation around it, for matching across extractors."""
+    return _EDGE_PUNCTUATION.sub("", unicodedata.normalize("NFKC", token))
 
 
 async def masked_page_lines(
@@ -762,8 +771,9 @@ async def masked_page_lines(
     page no PII scan covers or one with a `/Rotate` (its lines are read in another order and
     frame than the word layer's; fail closed). On the rest, every word a detected region covers
     in the word layer is replaced by that region's token wherever the line prints it (matched by
-    text, so the extraction's own geometry is never trusted), and every line goes through the
-    kernel's TIN scrub."""
+    text without edge punctuation, so the extraction's own geometry is never trusted), every line
+    goes through the kernel's TIN scrub, and a page where some region's word can't be found as a
+    token has no lines at all (review L4)."""
     by_page = {p.page_no: p for p in layer}
     out: list[tuple[Line, ...]] = []
     for number, lines in enumerate(pages, start=1):
@@ -777,12 +787,22 @@ async def masked_page_lines(
             raw = (await read_page_layer(tenant_id, page)).words
             for region in regions:
                 for word in words_in(raw, region.box):
-                    tokens[word.text] = mask_token(region.kind, region.last4)
+                    tokens[_plain(word.text)] = mask_token(region.kind, region.last4)
         kept: list[Line] = []
+        seen: set[str] = set()
         for text, box in lines:
-            shown = " ".join(tokens.get(part, part) for part in text.split())
-            kept.append((scrub_tins(shown), box))
-        out.append(tuple(kept))
+            parts: list[str] = []
+            for part in text.split():
+                key = _plain(part)
+                if key in tokens:
+                    seen.add(key)
+                    parts.append(tokens[key])
+                else:
+                    parts.append(part)
+            kept.append((scrub_tins(" ".join(parts)), box))
+        # Review L4: a region's word the lines don't print as a token (split or joined
+        # differently) could still be in them in the clear: the page's lines are left out.
+        out.append(tuple(kept) if seen == set(tokens) else ())
     return tuple(out)
 
 
@@ -813,7 +833,12 @@ async def preview_page_of(
     against its fingerprint by storage: 409 `preview_outdated` while only a pre-masking preview
     exists (until the backfill re-renders it), 404 when nothing is rendered."""
     async with tenant_session(tenant) as session:
-        found = await masked_preview_for(session, evidence_version_id, inbox_file_id=inbox_file_id)
+        found = await masked_preview_for(
+            session,
+            evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            renderer_version=MASKED_RENDERER_VERSION,
+        )
         if found is None:
             legacy = await preview_for(
                 session,
