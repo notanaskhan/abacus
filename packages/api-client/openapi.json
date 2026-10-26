@@ -80007,7 +80007,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/record": {
       "put": {
-        "description": "Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409\n`letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the\nexception while its firm setting is unregistered; one `letter.recorded` audit event.",
+        "description": "Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409\n`letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the\nexception unless the firm has `allow_letter_exceptions` on and the caller is the engagement\npartner, 422 `letter_exception_reason_required` without a reason; one `letter.recorded`\naudit event. The exception reads `mode: not_required_this_year`.",
         "operationId": "record_engagement_letter",
         "parameters": [
           {

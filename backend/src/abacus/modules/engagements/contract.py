@@ -808,7 +808,9 @@ async def record_engagement_letter_route(
 ) -> EngagementLetterRecordOut:
     """Human-only. The interim G3 provider until C7: 409 `gate_unmet` (G1), 409
     `letter_before_acceptance`, 409 `engagement_archived`, 409 `letter_exceptions_off` for the
-    exception while its firm setting is unregistered; one `letter.recorded` audit event."""
+    exception unless the firm has `allow_letter_exceptions` on and the caller is the engagement
+    partner, 422 `letter_exception_reason_required` without a reason; one `letter.recorded`
+    audit event. The exception reads `mode: not_required_this_year`."""
     await _gate(ctx)
     done = await record_model.record_letter_v2(
         ctx,
