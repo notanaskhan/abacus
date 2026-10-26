@@ -15,7 +15,7 @@
   transaction's `app.actor_id`.
 
 Revision ID: 0167
-Revises: 0160 (the main session re-points this to the previous merged head at merge time)
+Revises: 0165 (re-pointed at the S9 batch merge)
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0167"
-down_revision = "0160"
+down_revision = "0165"
 branch_labels = None
 depends_on = None
 

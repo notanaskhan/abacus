@@ -13,10 +13,11 @@
 - Actors (DEC-383): the trigger `independence_own_row` refuses a confirmation whose `user_id`, or
   a statement whose `created_by`, isn't the transaction's `app.actor_id` (one answers only for
   oneself, publishes only as oneself).
-- `abacus_human_only_actions()`: 0159's 33 entries plus `independence.annual_confirmed`,
-  `independence.annual_declined`, `independence.statement_published` and
-  `service_line_policy.updated` (37; ED-011 precedent). The downgrade restores 0159's list. At
-  merge, a branch that also redefines the function must carry the union.
+- `abacus_human_only_actions()`: 0164's 36 entries (0159's 33 plus 0163's
+  `acceptance.decided`, `acceptance.review_completed` and 0164's `conflict.cleared`) plus
+  `independence.annual_confirmed`, `independence.annual_declined`,
+  `independence.statement_published` and `service_line_policy.updated` (40; ED-011 precedent).
+  The downgrade restores 0164's list.
 
 The hourly access-end job lists firm ids through the identity role (which already reads
 `firms.tenant_id`) and works inside each firm's own session, so no cross-firm function is added.
@@ -38,9 +39,12 @@ depends_on = None
 
 _TABLES = ("independence_statements", "independence_annual_confirmations", "access_end_notices")
 
-# The register as 0159 left it (33 entries).
-_HUMAN_ONLY_0159 = sorted(
+# The register as 0164 left it (36 entries).
+_HUMAN_ONLY_0164 = sorted(
     [
+        "acceptance.decided",
+        "acceptance.review_completed",
+        "conflict.cleared",
         "assurance.phase_recorded",
         "contact.unlocked",
         "engagement.acceptance_recorded",
@@ -78,7 +82,7 @@ _HUMAN_ONLY_0159 = sorted(
 )
 _HUMAN_ONLY = sorted(
     [
-        *_HUMAN_ONLY_0159,
+        *_HUMAN_ONLY_0164,
         "independence.annual_confirmed",
         "independence.annual_declined",
         "independence.statement_published",
@@ -209,7 +213,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    _human_only(_HUMAN_ONLY_0159)
+    _human_only(_HUMAN_ONLY_0164)
     for table in reversed(_TABLES):
         op.execute(f"DROP TABLE {table}")
         op.execute(f"DROP FUNCTION {table}_immutable()")
