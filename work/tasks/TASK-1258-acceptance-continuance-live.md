@@ -117,3 +117,10 @@ layer, and the record locks." Today every acceptance route in
   api.py (P-07-T38 calls it there; ACCEPT-001 still guards it). Tests:
   `test_p07_security_review_fixes.py` (11), the rules tests adapted to 0165 (probes through
   the unit of work), P-07-T38 unchanged and passing.
+- 2026-10-26: re-review follow-ups (notes on DEC-375; 0165 amended in place before main): a
+  reviewer seated as an engagement partner since the request cannot complete the review, and
+  the person who completed it cannot decide (service and database); `updated_by`,
+  `prepared_by` and `run_by` are the acting person in the database; a check's outcome is
+  `hits` whenever `restricted_match` is true. Tests: three new in
+  `test_p07_security_review_fixes.py`, two outcome assertions moved to `hits`; P-07-T38
+  unchanged. P-07 and schema suites 287 passed; gates green.

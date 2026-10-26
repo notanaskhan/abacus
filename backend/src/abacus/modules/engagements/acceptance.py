@@ -978,6 +978,10 @@ async def complete_risk_review(ctx: AuthContext, engagement_id: UUID) -> RiskRev
         current = await _review(tx.session, cast(UUID, record["id"]))
         if current is None or current.partner_id != ctx.user_id:
             raise Forbidden(COMPLETE_REVIEW, "role")
+        # DEC-375 note (re-review 1): independence holds at completion too; someone seated as
+        # an engagement partner here since the request is no longer the risk partner.
+        if await team_standing(ctx.tenant, engagement_id, ctx.user_id) == "partner":
+            raise Forbidden(COMPLETE_REVIEW, "role")
         if current.completed_at is not None:
             raise DomainInvalid(facts={"record_id": str(record["id"])})
         await tx.session.execute(
@@ -1044,6 +1048,13 @@ async def decide_acceptance(
             facts = await member_facts(ctx.tenant, c.assignee_user_id)
             if facts is None or facts.client:
                 raise DomainInvalid(facts={"field": "conditions"})
+        review_now = await _review(tx.session, record_id)
+        if (
+            review_now is not None
+            and review_now.completed_at is not None
+            and (review_now.partner_id == ctx.user_id)
+        ):  # DEC-375 note (re-review 1): the reviewer never decides what they reviewed
+            raise Forbidden(DECIDE, "role")
         # DEC-375 (H1): a record ever rated High keeps needing the review.
         if record["risk_rating"] == "high" or record["high_risk_seen"]:
             review = await _review(tx.session, record_id)

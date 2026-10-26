@@ -419,7 +419,8 @@ async def _view(ctx: AuthContext, session: AsyncSession, check: RowMapping) -> C
         id=check["id"],
         subject=SubjectRef(check["subject_kind"], check["subject_id"]),
         names_count=check["names_count"],
-        outcome="hits" if standing else "clear",
+        # DEC-375 note (re-review 2): never `clear` while a restricted match stands.
+        outcome="hits" if standing or restricted else "clear",
         restricted_match=restricted,
         run_by=check["run_by"],
         run_at=check["run_at"],

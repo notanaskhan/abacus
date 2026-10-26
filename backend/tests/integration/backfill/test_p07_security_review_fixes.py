@@ -411,7 +411,8 @@ async def test_m2_walled_matches_collapse_into_one_restricted_row(net: Net) -> N
     assert len(rows) == 1 and rows[0]["redacted"] is True
     assert rows[0]["match_kind"] == "trigram" and rows[0]["assessment"] == "pending"
     assert body["restricted_match"] is True
-    assert body["outcome"] == "clear"  # only what the reader may see
+    # Re-review follow-up 2: never `clear` while a restricted match stands (DEC-375 note).
+    assert body["outcome"] == "hits"
     # The restricted row cannot be cleared by the walled reader: an unknown result.
     cleared = await w.call(
         "POST",
@@ -465,3 +466,129 @@ async def test_l4_draft_subjects_and_evidence_links_must_be_visible(net: Net) ->
     assert screening.status_code == 404, screening.text
     refs = await w.audit_refs("conflict_check.run")
     assert refs and all("results" not in r for r in refs)
+
+
+# --- Re-review follow-ups (DEC-375 notes) -------------------------------------------------------
+
+
+async def _seat_as_partner(net: Net, w: World, who: Person) -> None:
+    await net.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'engagement_partner')",
+        w.tenant,
+        w.engagement_id,
+        who.user_id,
+    )
+
+
+async def _high_and_sent(w: World) -> None:
+    for code, _ in SECTIONS:
+        r = await w.answer(code, w.samuel, risk_rating="high" if code == "integrity" else None)
+        assert r.status_code == 200, r.text
+    assert (await w.send(w.samuel)).status_code == 200
+    requested = await w.call(
+        "POST", f"{w.acc}/risk-partner-review", w.daniel, {"partner_id": str(w.rita.user_id)}
+    )
+    assert requested.status_code == 201, requested.text
+
+
+async def test_f1_a_risk_partner_seated_as_engagement_partner_cannot_complete(net: Net) -> None:
+    w = await _world(net)
+    assert (await w.start()).status_code == 201
+    await _high_and_sent(w)
+    await _seat_as_partner(net, w, w.rita)  # the EP seats the reviewer after naming them
+    refused = await w.call("POST", f"{w.acc}/risk-partner-review/complete", w.rita, {})
+    assert refused.status_code == 403, refused.text
+    with pytest.raises(IntegrityError) as db:
+        await _as(
+            w.tenant,
+            w.rita.user_id,
+            "INSERT INTO risk_partner_reviews (tenant_id, record_id, event, partner_id, "
+            "actor_id) SELECT tenant_id, id, 'completed', :by, :by FROM acceptance_records "
+            "WHERE engagement_id = :eid",
+            by=w.rita.user_id,
+            eid=w.engagement_id,
+        )
+    _check_violation(db)
+    assert (await w.decide(w.daniel)).json()["detail"] == "review_required"
+
+
+async def test_f1_the_risk_partner_who_completed_the_review_cannot_decide(net: Net) -> None:
+    w = await _world(net)
+    assert (await w.start()).status_code == 201
+    await _high_and_sent(w)
+    done = await w.call("POST", f"{w.acc}/risk-partner-review/complete", w.rita, {})
+    assert done.status_code == 200, done.text
+    await _seat_as_partner(net, w, w.rita)  # then seated, to decide on their own review
+    refused = await w.decide(w.rita)
+    assert refused.status_code == 403, refused.text
+    record = await w.record()
+    with pytest.raises(IntegrityError) as db:
+        await _as(
+            w.tenant,
+            w.rita.user_id,
+            "INSERT INTO acceptance_decisions (tenant_id, record_id, option, rationale_sealed, "
+            "decided_by, mfa_verified_at) VALUES (:tid, :record, 'accept', '\\x00'::bytea, "
+            ":by, now())",
+            tid=w.tenant,
+            record=uuid.UUID(cast(str, record["id"])),
+            by=w.rita.user_id,
+        )
+    _check_violation(db)
+    assert (await w.decide(w.daniel)).status_code == 201  # the other partner still decides
+
+
+async def test_f3_preparers_and_runners_are_the_acting_person(net: Net) -> None:
+    w = await _world(net)
+    assert (await w.start()).status_code == 201
+    record = await w.record()
+    rid = uuid.UUID(cast(str, record["id"]))
+    with pytest.raises(IntegrityError) as answers:
+        await _as(
+            w.tenant,
+            w.samuel.user_id,
+            "INSERT INTO acceptance_answers (tenant_id, record_id, section_code, state, "
+            "updated_by) VALUES (:tid, :record, 'scope', 'complete', :by)",
+            tid=w.tenant,
+            record=rid,
+            by=w.daniel.user_id,
+        )
+    _check_violation(answers)
+    with pytest.raises(IntegrityError) as check:
+        await _as(
+            w.tenant,
+            w.samuel.user_id,
+            "INSERT INTO conflict_checks (id, tenant_id, subject_kind, subject_id, names_sealed, "
+            "names_count, status, run_by) VALUES (gen_random_uuid(), :tid, 'client', :client, "
+            "'\\x00'::bytea, 1, 'clear', :by)",
+            tid=w.tenant,
+            client=w.client_id,
+            by=w.daniel.user_id,
+        )
+    _check_violation(check)
+    other = cast(
+        uuid.UUID,
+        await net.seed.value(
+            "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
+            "fiscal_period_start, fiscal_period_end, created_by, status) VALUES ($1, $2, $3, "
+            "'Other', '2026-01-01', '2026-12-31', $4, 'prospect') RETURNING id",
+            w.tenant,
+            w.client_id,
+            w.entity_id,
+            w.admin.user_id,
+        ),
+    )
+    with pytest.raises(IntegrityError) as prepared:
+        await _as(
+            w.tenant,
+            w.samuel.user_id,
+            "INSERT INTO acceptance_records (id, tenant_id, engagement_id, client_id, kind, "
+            "template_version_id, prepared_by) VALUES (gen_random_uuid(), :tid, :eid, :client, "
+            "'new_client', :version, :by)",
+            tid=w.tenant,
+            eid=other,
+            client=w.client_id,
+            version=uuid.UUID(cast(str, record["template_version_id"])),
+            by=w.daniel.user_id,
+        )
+    _check_violation(prepared)

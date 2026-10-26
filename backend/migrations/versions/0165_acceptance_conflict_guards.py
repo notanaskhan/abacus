@@ -12,6 +12,10 @@
 - `acting_person_is` (BEFORE INSERT, the column named as the trigger's argument): the person
   column of a flag, a condition completion, a risk-partner review event, a conflict clearance
   and a screening record is the acting person.
+- Re-review follow-ups: a risk-partner review is completed by someone who holds no engagement
+  partner seat on the engagement (`risk_partner_reviews_independent`), and the decision guard
+  refuses the person who completed the review; `acceptance_answers.updated_by` (insert and
+  update), `acceptance_records.prepared_by` and `conflict_checks.run_by` are the acting person.
 - Refusals here are `check_violation`, as the `actor_kind` CHECKs are.
 
 The human-only register is unchanged (0164's list).
@@ -35,6 +39,13 @@ _BOUND = (
     ("risk_partner_reviews", "actor_id"),
     ("conflict_result_events", "cleared_by"),
     ("screening_records", "recorded_by"),
+)
+# Re-review follow-up 3: also on update for answers (the last person to write them). Named to
+# fire after the draft and lock guards, which answer first for a sent or decided record.
+_BOUND_LATE = (
+    ("acceptance_answers", "updated_by", "INSERT OR UPDATE"),
+    ("acceptance_records", "prepared_by", "INSERT"),
+    ("conflict_checks", "run_by", "INSERT"),
 )
 
 _GUARD_BODY = """
@@ -134,12 +145,39 @@ _DECISION_GUARD = """
             RAISE EXCEPTION 'only a partner-level engagement partner decides acceptance'
                 USING ERRCODE = 'check_violation';
         END IF;
+        IF EXISTS (
+            SELECT 1 FROM public.risk_partner_reviews v
+             WHERE v.tenant_id = NEW.tenant_id AND v.record_id = NEW.record_id
+               AND v.event = 'completed' AND v.actor_id = NEW.decided_by
+        ) THEN
+            RAISE EXCEPTION 'the risk partner who reviewed a record does not decide it'
+                USING ERRCODE = 'check_violation';
+        END IF;
         IF v_high AND NOT EXISTS (
             SELECT 1 FROM public.risk_partner_reviews v
              WHERE v.tenant_id = NEW.tenant_id AND v.record_id = NEW.record_id
                AND v.event = 'completed'
         ) THEN
             RAISE EXCEPTION 'a record rated High needs a completed risk-partner review'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        RETURN NEW;
+    END $$
+"""
+_REVIEW_GUARD = """
+    CREATE FUNCTION risk_partner_reviews_independent() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    BEGIN
+        IF NEW.event = 'completed' AND EXISTS (
+            SELECT 1 FROM public.acceptance_records r
+              JOIN public.engagement_members m
+                ON m.tenant_id = r.tenant_id AND m.engagement_id = r.engagement_id
+             WHERE r.tenant_id = NEW.tenant_id AND r.id = NEW.record_id
+               AND m.user_id = NEW.actor_id AND m.role = 'engagement_partner'
+        ) THEN
+            RAISE EXCEPTION 'an engagement partner here is not the risk partner'
                 USING ERRCODE = 'check_violation';
         END IF;
         RETURN NEW;
@@ -183,9 +221,23 @@ def upgrade() -> None:
             f"CREATE TRIGGER {table}_acting_person BEFORE INSERT ON {table} "
             f"FOR EACH ROW EXECUTE FUNCTION acting_person_is('{column}')"
         )
+    for table, column, events in _BOUND_LATE:
+        op.execute(
+            f"CREATE TRIGGER {table}_person_bound BEFORE {events} ON {table} "
+            f"FOR EACH ROW EXECUTE FUNCTION acting_person_is('{column}')"
+        )
+    op.execute(_REVIEW_GUARD)
+    op.execute(
+        "CREATE TRIGGER risk_partner_reviews_independent BEFORE INSERT ON risk_partner_reviews "
+        "FOR EACH ROW EXECUTE FUNCTION risk_partner_reviews_independent()"
+    )
 
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER risk_partner_reviews_independent ON risk_partner_reviews")
+    op.execute("DROP FUNCTION risk_partner_reviews_independent()")
+    for table, _, _ in _BOUND_LATE:
+        op.execute(f"DROP TRIGGER {table}_person_bound ON {table}")
     for table, _ in _BOUND:
         op.execute(f"DROP TRIGGER {table}_acting_person ON {table}")
     op.execute("DROP FUNCTION acting_person_is()")
