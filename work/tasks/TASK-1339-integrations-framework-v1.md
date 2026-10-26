@@ -43,6 +43,18 @@ the owner id as associated data, and a dry-run load reports adds and changes wit
 ## Progress log
 - 2026-10-26: plan written; built with the rest of S10 wave B.
 
+- 2026-10-26: one targeted pass at the end of the wave (brief step 7): 1,520 backend tests in the
+  touched and covering files (unit integrations, assurance, ledger, workpapers ties, audit
+  targets, release and deploy workflows; C9 and C20 contract suites; the three new schema files,
+  test_tb_versions, test_schema_check_db, test_retrieval; security a02t10, c09 authz, route
+  introspection, tenant isolation, audit targets): 5 failed, fixed, re-run green (expected-map
+  and consumer 501 updates; the a02t10 test now turns on `g2_blocks_view` on an attest
+  engagement, since G2 binds reads only there, ADR-164; fieldwork registers the adjustment
+  source, so all four layers exist in the app). Vitest AUD-06, AUD-02, C9 and C20 fixture
+  contracts: 73 passed. Gates: ruff format/check, pyright, lint-imports, banned_patterns,
+  error_codes, validate_docs, scope_guards, fresh_mfa, secrets_scan, check-heads,
+  check-generated; tsc, eslint, prettier on touched files. Playwright not run.
+
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|

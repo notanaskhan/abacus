@@ -1154,7 +1154,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
         ),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
-        "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310 (TASK-321)
+        "tie_out_checks": frozenset(  # SPEC-310 (TASK-321)
+            {"current_version_no"}
+            | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): issue link
+        ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
             {"status", "published_by", "published_at", "published_actor_kind"}
         ),
@@ -1163,8 +1166,13 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # SPEC-020 (TASK-036): checking and revoking a connection; a state is spent once.
         "connections": frozenset(
             {"status", "last_checked_at", "last_check_ok", "revoked_at", "revoked_by"}
+            # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
+            | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
+            | {"status_reason_code"}
         ),
         "connection_states": frozenset({"used_at"}),
+        "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195 (A-02-T13)
+        "firm_integrations": frozenset({"status", "version"}),  # 0194 (A-02-T12)
         # SPEC-024 (TASK-041): staff invitations.
         "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
         # F-03-T25 (migration 0082): the client record, entity attributes and contacts; the
@@ -1318,6 +1326,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "provider", "scopes", "created_by"}
+        # 0195 (A-02-T13): entity-scoped connections
+        | {"category", "external_account_ref", "display_label", "connected_by_user_id"}
+        | {"connected_at"}
     )
     assert sc.APP_INSERT_COLUMNS["ethical_walls"] == frozenset(  # TASK-016
         {"id", "tenant_id", "user_id", "client_id", "created_by"}
@@ -1326,6 +1337,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
     assert sc.APP_INSERT_COLUMNS["sync_runs"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "connection_id", "engagement_id"}
         | {"request_item_id", "dataset", "period_start", "period_end", "started_by"}
+        | {"trigger", "label"}  # 0195 (A-02-T13)
     )
     assert sc.APP_INSERT_COLUMNS["ledger_snapshots"] == frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}

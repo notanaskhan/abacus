@@ -76,11 +76,11 @@ async def test_area_rules_are_read_each_call_from_the_engagements_own_version(
 
     monkeypatch.setattr(tb_read_model, "version_detail", detail)
     ctx = _ctx()
-    first = await tb_read_model.area_rules(ctx, _ref(version))  # type: ignore[arg-type]
-    second = await tb_read_model.area_rules(ctx, _ref(version))  # type: ignore[arg-type]
+    first = await tb_read_model.area_rules(ctx, _ref(version))  # type: ignore[arg-type]  # a stand-in EngagementRef
+    second = await tb_read_model.area_rules(ctx, _ref(version))  # type: ignore[arg-type]  # a stand-in EngagementRef
     assert first == second and first[0].area == "Cash"
     assert reads == [(ctx.tenant_id, version)] * 2  # no cache: read in the caller's tenant
-    assert await tb_read_model.area_rules(ctx, _ref(None)) == ()  # type: ignore[arg-type]
+    assert await tb_read_model.area_rules(ctx, _ref(None)) == ()  # type: ignore[arg-type]  # a stand-in EngagementRef
 
 
 def test_the_module_keeps_no_rule_cache() -> None:

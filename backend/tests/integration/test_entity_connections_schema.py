@@ -167,8 +167,14 @@ async def _run(db: sc.Database, firm: Firm, connection: uuid.UUID) -> uuid.UUID:
     )
 
 
+_ROW_JSON = {
+    "connections": "SELECT to_jsonb(t)::text FROM connections t WHERE id = $1",
+    "sync_runs": "SELECT to_jsonb(t)::text FROM sync_runs t WHERE id = $1",
+}
+
+
 async def _json(db: sc.Database, table: str, row_id: uuid.UUID) -> dict[str, object]:
-    raw = await _sql(db, f"SELECT to_jsonb(t)::text FROM {table} t WHERE id = $1", row_id)  # noqa: S608
+    raw = await _sql(db, _ROW_JSON[table], row_id)
     return cast(dict[str, object], json.loads(cast(str, raw)))
 
 

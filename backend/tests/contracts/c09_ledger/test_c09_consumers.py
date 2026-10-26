@@ -186,7 +186,9 @@ def test_ac17_labels_and_layers_are_the_registrys() -> None:
 
 def test_ac17_the_layer_view_documents_its_conflicts() -> None:
     responses = cast(Json, PATHS[f"{TB}/layers/{{layer}}"]["get"]["responses"])
-    assert {"404", "409", "501"} <= set(responses)
+    # Live since A-02-T10 (TASK-1336): 404 (walls, flag off) and 409, no longer 501.
+    assert {"404", "409"} <= set(responses)
+    assert "501" not in responses
 
 
 @pytest.mark.parametrize("code", LIVE_REFUSALS)

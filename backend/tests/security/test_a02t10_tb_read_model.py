@@ -14,17 +14,21 @@ from __future__ import annotations
 import hashlib
 import uuid
 from dataclasses import replace
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Final, cast
 
 import pytest
+from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.tb_contract import TbLayerViewOut, TbLeadsheetAreaOut
 from abacus.modules.assurance.tb_read_model import area_rules
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import AuthContext
+from abacus.modules.ledger.api import LedgerLine, NormalisedTrialBalance, record_snapshot
 
 from .support import Env, Person, Seeder, Site
 
@@ -56,29 +60,34 @@ async def _flag_on(seed: Seeder, tenant_id: uuid.UUID) -> None:
 
 
 async def _snapshot(
-    seed: Seeder, tenant_id: uuid.UUID, entity_id: uuid.UUID, end: str, lines: list[Line]
+    tenant_id: uuid.UUID, by: uuid.UUID, entity_id: uuid.UUID, end: str, lines: list[Line]
 ) -> uuid.UUID:
-    """A snapshot and its lines in one transaction (lines join a snapshot only in its own):
-    one simple-protocol script of fixed test literals."""
-    snapshot = uuid.uuid4()
-    debit = sum((Decimal(x[2]) for x in lines), Decimal(0))
-    credit = sum((Decimal(x[3]) for x in lines), Decimal(0))
-    start = f"{int(end[:4])}-01-01"
-    rows = ", ".join(
-        f"('{tenant_id}', '{snapshot}', '{code}', '{name}', {dr}, {cr}, 'row:{n}')"
-        for n, (code, name, dr, cr) in enumerate(lines, start=1)
+    """A snapshot and its lines through the ledger's own writer, in one unit of work."""
+    period_end = date.fromisoformat(end)
+    tb = NormalisedTrialBalance(
+        period_start=date(period_end.year, 1, 1),
+        period_end=period_end,
+        currency="USD",
+        lines=tuple(
+            LedgerLine(code, name, Decimal(dr), Decimal(cr), f"row:{n}")
+            for n, (code, name, dr, cr) in enumerate(lines, start=1)
+        ),
+        declared_debit=sum((Decimal(x[2]) for x in lines), Decimal(0)),
+        declared_credit=sum((Decimal(x[3]) for x in lines), Decimal(0)),
     )
-    fingerprint = hashlib.sha256(snapshot.bytes).hexdigest()
-    await seed.run(
-        "INSERT INTO ledger_snapshots (id, tenant_id, client_entity_id, period_start, "  # noqa: S608
-        "period_end, pulled_at, source, raw_fingerprint, line_count, total_debit, total_credit) "
-        f"VALUES ('{snapshot}', '{tenant_id}', '{entity_id}', '{start}', '{end}', "
-        f"clock_timestamp(), 'import_netsuite_tb_csv', '{fingerprint}', {len(lines)}, "
-        f"{debit}, {credit}); "
-        "INSERT INTO trial_balance_lines (tenant_id, snapshot_id, account_code, account_name, "
-        f"debit, credit, source_ref) VALUES {rows};"
-    )
-    return snapshot
+    async with uow(TenantContext(tenant_id, "human", str(by))) as tx:
+        ref = await record_snapshot(
+            tx,
+            client_entity_id=entity_id,
+            period_start=tb.period_start,
+            period_end=tb.period_end,
+            tb=tb,
+            raw_fingerprint=hashlib.sha256(uuid.uuid4().bytes).hexdigest(),
+            pulled_at=datetime.now(UTC),
+            source="import_netsuite_tb_csv",
+        )
+        tx.record("ledger_snapshot.created", target=Target("ledger_snapshot", ref.id))
+    return ref.id
 
 
 async def _methodology(
@@ -130,8 +139,8 @@ async def _trial_balance(
     seed: Seeder, tenant_id: uuid.UUID, site: Site, by: uuid.UUID
 ) -> uuid.UUID:
     """Site's engagement with an adopted TB (v1, with a prior year), seeded as C9's adopt would."""
-    current = await _snapshot(seed, tenant_id, site.entity_id, "2025-12-31", EOY)
-    prior = await _snapshot(seed, tenant_id, site.entity_id, "2024-12-31", BOY)
+    current = await _snapshot(tenant_id, by, site.entity_id, "2025-12-31", EOY)
+    prior = await _snapshot(tenant_id, by, site.entity_id, "2024-12-31", BOY)
     item = await seed.value(
         "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
         site.engagement_id,
@@ -209,7 +218,8 @@ async def test_ac17_the_view_by_layer_is_c9s_with_code_computed_figures(env: Env
     assert groups["Unassigned"].eoy == Decimal("-800.00")  # 200 - 400 - 600, by code
     assert view.balance.debit == view.balance.credit == Decimal("1000.00")
     assert view.balance.balanced and view.balance.difference == Decimal("0.00")
-    assert [m.value for m in view.layers_available] == ["unadjusted"]
+    # Fieldwork registers the adjustment source in this process (A-06), so all four layers exist.
+    assert [m.value for m in view.layers_available] == ["unadjusted", "aje", "rje", "final"]
     assert view.provenance.source_kind == "import"
     assert view.prior_period_end is not None and view.prior_period_end.isoformat() == "2024-12-31"
     assert view.checks.worst is None and view.newer_snapshots == 0
@@ -238,11 +248,15 @@ async def test_ac18_the_leadsheet_by_area_and_unassigned(env: Env) -> None:
     assert (await env.get(manager, base + "/leadsheets/Inventory")).status_code == 404
 
 
-async def test_ac17_an_adjusted_layer_without_a_source_is_layer_unavailable(env: Env) -> None:
+async def test_ac17_the_final_layer_balances_and_names_its_layer(env: Env) -> None:
+    """With no recorded entries the Final layer equals the unadjusted figures and balances; the
+    refusal with no source registered is the ledger's (`layer_unavailable`, A-02-T07's tests)."""
     manager, tb = await _setup(env)
     response = await env.get(manager, (TB + "/layers/final").format(e=env.a.engagement_id, tb=tb))
-    assert response.status_code == 409
-    assert response.json()["detail"] == "layer_unavailable"
+    assert response.status_code == 200, response.text
+    view = TbLayerViewOut.model_validate(response.json())
+    assert view.layer.value == "final" and view.balance.balanced
+    assert view.balance.debit == Decimal("1000.00")
 
 
 async def test_ac9_a_walled_member_gets_404_with_no_hidden_count(env: Env) -> None:
@@ -259,6 +273,21 @@ async def test_ac9_a_walled_member_gets_404_with_no_hidden_count(env: Env) -> No
 async def test_ac9_a_member_without_independence_is_refused_independence_pending(env: Env) -> None:
     _, tb = await _setup(env)
     seed = env.net.seed
+    # ADR-164: G2 binds a read only on an attest client's engagement (an active audit, DEC-128)
+    # when the firm turns `g2_blocks_view` on. The attest trigger reads under the tenant.
+    await seed.run("UPDATE engagements SET type = 'fs_audit' WHERE id = $1", env.a.engagement_id)
+    async with uow(TenantContext(env.tenant_id, "human", str(env.admin.user_id))) as tx:
+        await tx.session.execute(
+            text("UPDATE engagements SET status = 'active' WHERE id = :id"),
+            {"id": env.a.engagement_id},
+        )
+        tx.record("engagement.probed", target=Target("engagement", env.a.engagement_id))
+    await seed.run(
+        "INSERT INTO firm_setting_values (tenant_id, key, value, set_by) "
+        "VALUES ($1, 'g2_blocks_view', true, $2)",
+        env.tenant_id,
+        env.admin.user_id,
+    )
     pending = await seed.person(env.tenant_id)
     await seed.run(  # on the team, no independence confirmation
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
