@@ -20,13 +20,19 @@ nights before M6.
 
 ## A crash
 
-1. The nightly job fails and opens a **SEV3** issue naming the failing targets and linking the run.
-   The run's `fuzz-nightly` artifact holds the pytest log with Hypothesis's minimised falsifying
-   example (`print_blob`) and the Hypothesis database.
-2. Reproduce locally with the printed `@reproduce_failure` blob, or from the bytes.
-3. Commit the minimised input as `backend/tests/property/fuzz/regressions/<target>/<short-name>.bin`
-   (target names are the keys of `TARGETS`, such as `tb.qbo_tb_csv` or `evidence.pdf`) in the same
-   PR as the fix. `test_regressions` replays every committed case on every run.
+The repository is public, so the nightly job publishes no crashing input and names no target:
+pytest's output stays on the runner, nothing is uploaded, and the issue and the job summary carry
+only the number of crashing targets, the commit and the night's seed.
+
+1. The nightly job fails and opens a **SEV3** issue with the count, the commit and the seed.
+2. Reproduce locally at that commit:
+   `cd backend && ABACUS_FUZZ_PROFILE=nightly uv run pytest tests/property/fuzz --hypothesis-seed=<seed>`.
+   Hypothesis prints the minimised falsifying example and a `@reproduce_failure` blob.
+3. Fix the parser and commit the minimised input as
+   `backend/tests/property/fuzz/regressions/<target>/<short-name>.bin` (target names are the keys
+   of `TARGETS`, such as `tb.qbo_tb_csv` or `evidence.pdf`) in the same PR; `test_regressions`
+   replays every committed case on every run. A crash usable against a live parser is fixed in the
+   security lane before its case is public (docs/ops/pentests/README.md).
 4. Close the issue with the PR.
 
 Inputs are generated, never client data (ADR-085): never commit a real client file as a case.
