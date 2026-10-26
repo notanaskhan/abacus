@@ -7,6 +7,7 @@ from abacus.modules.identity.api import (
     register_office_list,
     register_settings_area,
 )
+from abacus.modules.organisations.conflicts import clear_conflict_result
 from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
@@ -149,6 +150,7 @@ __all__ = [
     "add_relationship",
     "attest_client_ids",
     "attest_client_of",
+    "clear_conflict_result",
     "clear_tin",
     "client_exists",
     "client_name_column",

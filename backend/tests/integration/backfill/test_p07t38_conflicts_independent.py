@@ -216,10 +216,6 @@ async def intake(net: Net) -> Intake:
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac23_the_check_finds_clients_counterparties_and_relationships(
     intake: Intake,
 ) -> None:
@@ -259,10 +255,6 @@ async def test_ac23_the_check_finds_clients_counterparties_and_relationships(
     assert {r["id"] for r in _results(again)} == {r["id"] for r in _results(check)}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac23_a_near_spelling_is_a_trigram_match_and_no_match_is_clear(
     intake: Intake,
 ) -> None:
@@ -281,10 +273,6 @@ async def test_ac23_at_most_fifty_names(intake: Intake) -> None:
     assert response.status_code == 422, response.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac23_who_runs_a_check(intake: Intake) -> None:
     for who in (intake.grace, intake.samuel, intake.daniel):
         _json(await intake.run(who, intake.name("Meridian Tool and Die")), 201)
@@ -297,10 +285,6 @@ async def test_ac23_who_runs_a_check(intake: Intake) -> None:
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac24_a_match_on_a_walled_client_shows_samuel_no_name(intake: Intake) -> None:
     response = await intake.run(
         intake.samuel, intake.name("Ashford Holdings"), intake.name("Meridian Tool and Die")
@@ -348,10 +332,6 @@ async def test_ac24_a_match_on_a_walled_client_shows_samuel_no_name(intake: Inta
     assert refused.json() == unknown.json()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac24_another_firm_never_reads_a_check(intake: Intake) -> None:
     check = _json(await intake.run(intake.grace, intake.name("Meridian Tool and Die")), 201)
     other = await intake.seed.firm()
@@ -365,10 +345,6 @@ async def test_ac24_another_firm_never_reads_a_check(intake: Intake) -> None:
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac25_samuel_clears_the_harborline_hit_with_a_reason(intake: Intake) -> None:
     check = _json(await intake.run(intake.grace, intake.name("Harborline Trust Company")), 201)
     hit = next(r for r in _results(check) if r["match_kind"] == "counterparty")
@@ -413,10 +389,6 @@ async def test_ac25_samuel_clears_the_harborline_hit_with_a_reason(intake: Intak
         )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac25_a_partner_may_record_a_conflict(intake: Intake) -> None:
     check = _json(await intake.run(intake.daniel, intake.name("Fenwick LLC")), 201)
     hit = next(r for r in _results(check) if r["match_kind"] == "exact")
@@ -439,10 +411,6 @@ async def test_ac25_the_matrix_denies_the_agent_and_the_system_every_conflict_ac
         assert not {r for r, d in decisions.items() if r.startswith("client_") and d != "deny"}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac25_the_service_and_the_database_refuse_a_non_human_clearance(
     intake: Intake,
 ) -> None:
@@ -490,10 +458,6 @@ async def test_ac25_the_service_and_the_database_refuse_a_non_human_clearance(
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1259: P-07-T36 not built; conflict routes answer 501 (main at #409)",
-)
 async def test_ac26_grace_records_a_screening_result_by_hand(intake: Intake) -> None:
     body: Json = {
         "subject": {"kind": "client_entity", "id": str(intake.estate_entity)},

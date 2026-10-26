@@ -9,6 +9,7 @@ ROLES: tuple[str, ...] = (
     "quality_partner",
     "security_admin",
     "firm_partner",
+    "firm_manager",
     "engagement_partner",
     "manager",
     "senior",
@@ -292,6 +293,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "client.intake": {
         "firm_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -417,12 +419,14 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "conflict.clear": {
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },
     "conflict.run": {
         "firm_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -1611,6 +1615,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     "screening.record": {
         "firm_admin": "allow",
         "firm_partner": "allow",
+        "firm_manager": "allow",
         "agent": "deny",
         "system": "deny",
     },

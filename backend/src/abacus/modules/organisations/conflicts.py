@@ -1,0 +1,563 @@
+"""Conflict checks and screening records, live (P-07-T36; CLI-06 a and h, CLI-08 c; SPEC-332
+AC-23 to AC-26; DEC-373).
+
+- **The search** is deterministic and synchronous: at most 50 names, a 2-second statement
+  timeout, run as a system principal over metadata only (names and relationships, never
+  documents), so walls do not narrow what is found. For each name: clients and client entities
+  whose normalised name equals it (`exact`) or is similar to it (`trigram`, `pg_trgm`
+  similarity of at least 0.6); contacts the same, except that a contact holding a counterparty
+  role (custodian, recordkeeper, TPA, payroll provider) is a `counterparty` match on its client;
+  and for each matched entity, every relationship edge to an entity of another client is a
+  `relationship` match on that client. One result per matched client and kind (the best score).
+  The names are sealed per tenant, bound to the check.
+- **Redaction** happens when a check is read, per reader: a result on a client the reader is
+  walled from carries only its id, `redacted`, the match kind and the assessment. No count of
+  them is given anywhere, and clearing one answers 404, as an unknown result does.
+- **Clearance** is a person's (never an agent or the platform), with an assessment code and a
+  sealed reason, as an insert-only event; the newest event is the result's assessment.
+- **Screening** results are recorded by a person; nothing is looked up.
+
+`clear_conflict_result` is named only here, in its route and in `organisations/api.py` (banned
+pattern CONFLICT-001).
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from datetime import datetime
+from decimal import Decimal
+from typing import Final, Literal, cast
+from uuid import UUID, uuid4
+
+from sqlalchemy import RowMapping, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from abacus.kernel.crypto import seal
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    Resource,
+    allowed_actions,
+    authorise,
+    hidden_clients,
+    walled_from,
+)
+from abacus.modules.organisations.service import normalise
+
+RUN: Final = "conflict.run"
+CLEAR: Final = "conflict.clear"
+RECORD: Final = "screening.record"
+TRIGRAM_FLOOR: Final = 0.6
+COUNTERPARTY_ROLES: Final = ("custodian", "recordkeeper", "tpa", "payroll_provider")
+# Assessments that leave a hit standing; the others clear it.
+_STANDING: Final = frozenset({"pending", "counterparty_review", "conflict"})
+_NON_ALNUM: Final = re.compile(r"[^a-z0-9]+")
+
+SubjectKind = Literal["client", "client_entity", "engagement_draft", "client_intake_draft"]
+MatchKind = Literal["exact", "trigram", "relationship", "counterparty"]
+_AUDIT_TARGET: Final[dict[str, str]] = {
+    "client": "client",
+    "client_entity": "client_entity",
+    "engagement_draft": "engagement_draft",
+    "client_intake_draft": "client_intake_draft",
+}
+
+
+@dataclass(frozen=True)
+class Hit:
+    name_index: int
+    ref_type: Literal["client", "client_entity", "contact"]
+    ref_id: UUID
+    client_id: UUID
+    kind: MatchKind
+    score: float
+    counterparty_role: str | None = None
+
+
+@dataclass(frozen=True)
+class SubjectRef:
+    kind: str
+    id: UUID
+
+
+@dataclass(frozen=True)
+class ResultView:
+    id: UUID
+    redacted: bool
+    match_kind: str
+    assessment: str
+    matched_client_id: UUID | None = None
+    matched_name: str | None = None
+    matched_ref_type: str | None = None
+    matched_ref_id: UUID | None = None
+    score: float | None = None
+    cleared_by: UUID | None = None
+    cleared_at: datetime | None = None
+    allowed_actions: list[str] = field(default_factory=list[str])
+
+
+@dataclass(frozen=True)
+class CheckView:
+    id: UUID
+    subject: SubjectRef
+    names_count: int
+    outcome: str
+    run_by: UUID
+    run_at: datetime
+    results: list[ResultView]
+
+
+@dataclass(frozen=True)
+class ScreeningView:
+    id: UUID
+    subject: SubjectRef
+    screening_list: str
+    result: str
+    evidence_version_id: UUID | None
+    recorded_by: UUID
+    recorded_at: datetime
+
+
+def _binding(kind: str, row_id: UUID) -> str:
+    return hashlib.sha256(f"{kind}:{row_id}".encode()).hexdigest()
+
+
+def _person(name: str) -> str:
+    """As contacts' generated `normalised_name` (0103's person rule: no suffixes dropped)."""
+    return " ".join(_NON_ALNUM.sub(" ", name.lower()).split())
+
+
+def _live_human(ctx: AuthContext, action: str) -> None:
+    """INV-1: a person's own act, never an agent, the platform, a client or a support session."""
+    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+        raise Forbidden(action, "role")
+
+
+# --- the search ---------------------------------------------------------------------------------
+
+_NAMED = text(
+    """
+    SELECT 'client' AS ref_type, c.id AS ref_id, c.id AS client_id,
+           similarity(c.normalised_name, :name) AS score
+      FROM clients c
+     WHERE c.normalised_name % :name OR c.normalised_name = :name
+    UNION ALL
+    SELECT 'client_entity', e.id, e.client_id, similarity(e.normalised_name, :name)
+      FROM client_entities e
+     WHERE e.normalised_name % :name OR e.normalised_name = :name
+    """
+)
+_CONTACTS = text(
+    """
+    SELECT c.id AS ref_id, c.client_id, similarity(c.normalised_name, :person) AS score,
+           (SELECT min(r.role) FROM contact_roles r
+             WHERE r.contact_id = c.id AND r.role = ANY(:roles)) AS counterparty_role
+      FROM contacts c
+     WHERE c.normalised_name % :person OR c.normalised_name = :person
+    """
+)
+_RELATED = text(
+    """
+    SELECT other.id AS ref_id, other.client_id
+      FROM entity_relationships r
+      JOIN client_entities mine ON mine.id = r.from_entity_id OR mine.id = r.to_entity_id
+      JOIN client_entities other
+        ON other.id = CASE WHEN mine.id = r.from_entity_id THEN r.to_entity_id
+                           ELSE r.from_entity_id END
+     WHERE mine.id = ANY(:entities)
+       AND other.client_id <> mine.client_id
+       AND (r.effective_to IS NULL OR r.effective_to >= current_date)
+    """
+)
+
+
+async def _search(session: AsyncSession, names: Sequence[str]) -> list[Hit]:
+    await session.execute(text("SET LOCAL statement_timeout = '2s'"))
+    await session.execute(text("SET LOCAL pg_trgm.similarity_threshold = 0.6"))  # TRIGRAM_FLOOR
+    best: dict[tuple[UUID, str], Hit] = {}
+
+    def keep(hit: Hit) -> None:
+        key = (hit.client_id, hit.kind)
+        current = best.get(key)
+        if current is None or hit.score > current.score:
+            best[key] = hit
+
+    for index, name in enumerate(names):
+        wanted, person = normalise(name), _person(name)
+        matched_entities: list[UUID] = []
+        if wanted:
+            for r in (await session.execute(_NAMED, {"name": wanted})).mappings():
+                score = float(r["score"]) if r["score"] is not None else 0.0
+                exact = score >= 1.0
+                if not exact and score < TRIGRAM_FLOOR:
+                    continue
+                if r["ref_type"] == "client_entity":
+                    matched_entities.append(cast(UUID, r["ref_id"]))
+                keep(
+                    Hit(
+                        index,
+                        cast(Literal["client", "client_entity"], r["ref_type"]),
+                        cast(UUID, r["ref_id"]),
+                        cast(UUID, r["client_id"]),
+                        "exact" if exact else "trigram",
+                        1.0 if exact else round(score, 4),
+                    )
+                )
+        if person:
+            rows = await session.execute(
+                _CONTACTS, {"person": person, "roles": list(COUNTERPARTY_ROLES)}
+            )
+            for r in rows.mappings():
+                score = float(r["score"]) if r["score"] is not None else 0.0
+                exact = score >= 1.0
+                if not exact and score < TRIGRAM_FLOOR:
+                    continue
+                role = cast(str | None, r["counterparty_role"])
+                kind: MatchKind = (
+                    "counterparty" if role is not None else ("exact" if exact else "trigram")
+                )
+                keep(
+                    Hit(
+                        index,
+                        "contact",
+                        cast(UUID, r["ref_id"]),
+                        cast(UUID, r["client_id"]),
+                        kind,
+                        1.0 if exact else round(score, 4),
+                        role,
+                    )
+                )
+        if matched_entities:
+            rows = await session.execute(_RELATED, {"entities": matched_entities})
+            for r in rows.mappings():
+                keep(
+                    Hit(
+                        index,
+                        "client_entity",
+                        cast(UUID, r["ref_id"]),
+                        cast(UUID, r["client_id"]),
+                        "relationship",
+                        1.0,
+                    )
+                )
+    return sorted(best.values(), key=lambda h: (h.name_index, h.kind, str(h.client_id)))
+
+
+# --- subjects -----------------------------------------------------------------------------------
+
+
+async def _subject_client(tenant: TenantContext, kind: str, subject_id: UUID) -> UUID | None:
+    """The client a client or client-entity subject names (404 when unknown); drafts are
+    engagements' (and P-07-T42's) references, which organisations does not read."""
+    if kind not in ("client", "client_entity"):
+        return None
+    query = (
+        "SELECT id FROM clients WHERE id = :id"
+        if kind == "client"
+        else "SELECT client_id FROM client_entities WHERE id = :id"
+    )
+    async with tenant_session(tenant) as session:
+        found = (await session.execute(text(query), {"id": subject_id})).scalar_one_or_none()
+    if found is None:
+        raise NotFound(kind)
+    return cast(UUID, found)
+
+
+async def _visible_subject(ctx: AuthContext, kind: str, subject_id: UUID) -> None:
+    client = await _subject_client(ctx.tenant, kind, subject_id)
+    if client is not None and await hidden_clients(ctx.tenant, ctx.user_id, [client]):
+        raise NotFound(kind)
+
+
+# --- reads --------------------------------------------------------------------------------------
+
+
+async def _names(
+    session: AsyncSession, refs: Sequence[tuple[str, UUID]]
+) -> dict[tuple[str, UUID], str]:
+    queries = {
+        "client": "SELECT id, name FROM clients WHERE id = ANY(:ids)",
+        "client_entity": "SELECT id, name FROM client_entities WHERE id = ANY(:ids)",
+        "contact": "SELECT id, display_name AS name FROM contacts WHERE id = ANY(:ids)",
+    }
+    out: dict[tuple[str, UUID], str] = {}
+    for ref_type, query in queries.items():
+        ids = [i for t, i in refs if t == ref_type]
+        if not ids:
+            continue
+        for r in (await session.execute(text(query), {"ids": ids})).mappings():
+            out[(ref_type, cast(UUID, r["id"]))] = cast(str, r["name"])
+    return out
+
+
+async def _view(ctx: AuthContext, session: AsyncSession, check: RowMapping) -> CheckView:
+    rows = (
+        (
+            await session.execute(
+                text(
+                    """
+                    SELECT r.*, e.assessment AS latest, e.cleared_by, e.cleared_at
+                      FROM conflict_results r
+                      LEFT JOIN LATERAL (
+                          SELECT assessment, cleared_by, cleared_at FROM conflict_result_events
+                           WHERE result_id = r.id ORDER BY cleared_at DESC, id DESC LIMIT 1
+                      ) e ON true
+                     WHERE r.check_id = :check
+                     ORDER BY r.name_index, r.match_kind, r.id
+                    """
+                ),
+                {"check": check["id"]},
+            )
+        )
+        .mappings()
+        .all()
+    )
+    walled = await walled_from(ctx.tenant, ctx.user_id)
+    visible = [r for r in rows if r["matched_client_id"] not in walled]
+    names = await _names(
+        session,
+        [(cast(str, r["matched_ref_type"]), cast(UUID, r["matched_ref_id"])) for r in visible],
+    )
+    may_clear = CLEAR in await allowed_actions(ctx, Resource.firm(ctx.tenant_id), [CLEAR])
+    results: list[ResultView] = []
+    for r in rows:
+        default = "counterparty_review" if r["match_kind"] == "counterparty" else "pending"
+        assessment = cast(str, r["latest"] or default)
+        if r["matched_client_id"] in walled:
+            results.append(ResultView(r["id"], True, r["match_kind"], assessment))
+            continue
+        results.append(
+            ResultView(
+                id=r["id"],
+                redacted=False,
+                match_kind=r["match_kind"],
+                assessment=assessment,
+                matched_client_id=r["matched_client_id"],
+                matched_name=names.get((r["matched_ref_type"], r["matched_ref_id"])),
+                matched_ref_type=r["matched_ref_type"],
+                matched_ref_id=r["matched_ref_id"],
+                score=float(cast(Decimal, r["score"])),
+                cleared_by=r["cleared_by"],
+                cleared_at=r["cleared_at"],
+                allowed_actions=[CLEAR] if may_clear else [],
+            )
+        )
+    standing = any(r.assessment in _STANDING for r in results)
+    return CheckView(
+        id=check["id"],
+        subject=SubjectRef(check["subject_kind"], check["subject_id"]),
+        names_count=check["names_count"],
+        outcome="hits" if standing else "clear",
+        run_by=check["run_by"],
+        run_at=check["run_at"],
+        results=results,
+    )
+
+
+async def conflict_check(ctx: AuthContext, check_id: UUID) -> CheckView:
+    """A check and its results, redacted for this reader."""
+    _live_human(ctx, RUN)
+    await authorise(ctx, RUN, Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        check = (
+            (
+                await session.execute(
+                    text("SELECT * FROM conflict_checks WHERE id = :id"), {"id": check_id}
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if check is None:
+            raise NotFound("conflict_check")
+        await _visible_subject(ctx, check["subject_kind"], check["subject_id"])
+        return await _view(ctx, session, check)
+
+
+# --- writes -------------------------------------------------------------------------------------
+
+
+async def run_conflict_check(
+    ctx: AuthContext, *, subject_kind: SubjectKind, subject_id: UUID, names: Sequence[str]
+) -> CheckView:
+    """AC-23: run, store (names sealed) and answer the check, redacted for the caller."""
+    _live_human(ctx, RUN)
+    await authorise(ctx, RUN, Resource.firm(ctx.tenant_id))
+    await _visible_subject(ctx, subject_kind, subject_id)
+    system = TenantContext(ctx.tenant_id, "system", "conflict-search")
+    async with tenant_session(system) as session:
+        hits = await _search(session, names)
+    check_id = uuid4()
+    async with uow(ctx.tenant) as tx:
+        sealed = await seal(
+            ctx.tenant_id, json.dumps(list(names)).encode(), _binding("conflict_check", check_id)
+        )
+        await tx.session.execute(
+            text(
+                "INSERT INTO conflict_checks (id, tenant_id, subject_kind, subject_id, "
+                "names_sealed, names_count, status, run_by) VALUES (:id, :tenant, :kind, "
+                ":subject, :sealed, :count, :status, :by)"
+            ),
+            {
+                "id": check_id,
+                "tenant": ctx.tenant_id,
+                "kind": subject_kind,
+                "subject": subject_id,
+                "sealed": sealed,
+                "count": len(names),
+                "status": "hits" if hits else "clear",
+                "by": ctx.user_id,
+            },
+        )
+        for hit in hits:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO conflict_results (tenant_id, check_id, name_index, "
+                    "matched_ref_type, matched_ref_id, matched_client_id, match_kind, score, "
+                    "counterparty_role) VALUES (:tenant, :check, :index, :ref_type, :ref_id, "
+                    ":client, :kind, :score, :role)"
+                ),
+                {
+                    "tenant": ctx.tenant_id,
+                    "check": check_id,
+                    "index": hit.name_index,
+                    "ref_type": hit.ref_type,
+                    "ref_id": hit.ref_id,
+                    "client": hit.client_id,
+                    "kind": hit.kind,
+                    "score": Decimal(str(hit.score)),
+                    "role": hit.counterparty_role,
+                },
+            )
+        tx.record(
+            "conflict_check.run",
+            target=Target(_AUDIT_TARGET[subject_kind], subject_id),
+            after=Ref(check_id=check_id, names=len(names), results=len(hits)),
+        )
+    return await conflict_check(ctx, check_id)
+
+
+async def clear_conflict_result(
+    ctx: AuthContext, check_id: UUID, result_id: UUID, *, assessment: str, reason: str
+) -> ResultView:
+    """AC-25: a partner's or manager's assessment with a reason (human-only; insert-only event);
+    a result on a client the caller is walled from answers 404 like an unknown one."""
+    _live_human(ctx, CLEAR)
+    await authorise(ctx, CLEAR, Resource.firm(ctx.tenant_id))
+    reason = reason.strip()
+    async with uow(ctx.tenant) as tx:
+        found = (
+            (
+                await tx.session.execute(
+                    text(
+                        "SELECT r.matched_client_id, c.subject_kind, c.subject_id "
+                        "FROM conflict_results r JOIN conflict_checks c ON c.id = r.check_id "
+                        "WHERE r.id = :result AND r.check_id = :check"
+                    ),
+                    {"result": result_id, "check": check_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if found is None or await hidden_clients(
+            ctx.tenant, ctx.user_id, [cast(UUID, found["matched_client_id"])]
+        ):
+            raise NotFound("conflict_result")
+        await _visible_subject(ctx, found["subject_kind"], found["subject_id"])
+        event_id = uuid4()
+        await tx.session.execute(
+            text(
+                "INSERT INTO conflict_result_events (id, tenant_id, result_id, assessment, "
+                "reason_sealed, cleared_by) VALUES (:id, :tenant, :result, :assessment, "
+                ":sealed, :by)"
+            ),
+            {
+                "id": event_id,
+                "tenant": ctx.tenant_id,
+                "result": result_id,
+                "assessment": assessment,
+                "sealed": await seal(
+                    ctx.tenant_id, reason.encode(), _binding("conflict_result_event", event_id)
+                ),
+                "by": ctx.user_id,
+            },
+        )
+        tx.record(
+            "conflict.cleared",
+            target=Target(_AUDIT_TARGET[found["subject_kind"]], found["subject_id"]),
+            after=Ref(check_id=check_id, result_id=result_id),
+        )
+    view = await conflict_check(ctx, check_id)
+    return next(r for r in view.results if r.id == result_id)
+
+
+async def record_screening(
+    ctx: AuthContext,
+    *,
+    subject_kind: SubjectKind,
+    subject_id: UUID,
+    screening_list: str,
+    result: str,
+    evidence_version_id: UUID | None,
+    note: str | None,
+) -> ScreeningView:
+    """AC-26: a person records what a list they checked said; nothing is looked up."""
+    _live_human(ctx, RECORD)
+    await authorise(ctx, RECORD, Resource.firm(ctx.tenant_id))
+    await _visible_subject(ctx, subject_kind, subject_id)
+    record_id = uuid4()
+    async with uow(ctx.tenant) as tx:
+        sealed = (
+            await seal(
+                ctx.tenant_id, note.strip().encode(), _binding("screening_record", record_id)
+            )
+            if note and note.strip()
+            else None
+        )
+        row = (
+            (
+                await tx.session.execute(
+                    text(
+                        "INSERT INTO screening_records (id, tenant_id, subject_kind, subject_id, "
+                        "list, result, evidence_version_id, note_sealed, recorded_by) VALUES "
+                        "(:id, :tenant, :kind, :subject, :list, :result, :evidence, :sealed, "
+                        ":by) RETURNING recorded_at"
+                    ),
+                    {
+                        "id": record_id,
+                        "tenant": ctx.tenant_id,
+                        "kind": subject_kind,
+                        "subject": subject_id,
+                        "list": screening_list,
+                        "result": result,
+                        "evidence": evidence_version_id,
+                        "sealed": sealed,
+                        "by": ctx.user_id,
+                    },
+                )
+            )
+            .mappings()
+            .one()
+        )
+        tx.record(
+            "screening.recorded",
+            target=Target(_AUDIT_TARGET[subject_kind], subject_id),
+            after=Ref(record_id=record_id),
+        )
+    return ScreeningView(
+        id=record_id,
+        subject=SubjectRef(subject_kind, subject_id),
+        screening_list=screening_list,
+        result=result,
+        evidence_version_id=evidence_version_id,
+        recorded_by=ctx.user_id,
+        recorded_at=cast(datetime, row["recorded_at"]),
+    )

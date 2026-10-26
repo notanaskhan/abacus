@@ -9986,7 +9986,8 @@
           "clear",
           "same_family_not_adverse",
           "not_adverse",
-          "counterparty_review"
+          "counterparty_review",
+          "conflict"
         ],
         "title": "ConflictAssessmentStatus",
         "type": "string"
@@ -53081,7 +53082,7 @@
     },
     "/v1/conflict-checks": {
       "post": {
-        "description": "AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`.",
+        "description": "AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`.\nA client or client-entity subject the caller cannot see answers 404.",
         "operationId": "run_conflict_check",
         "parameters": [
           {
@@ -53177,16 +53178,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Run Conflict Check Route",
@@ -53294,16 +53285,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Conflict Check Route",
@@ -53315,7 +53296,7 @@
     },
     "/v1/conflict-checks/{check_id}/results/{result_id}/clear": {
       "post": {
-        "description": "Human-only (AC-25): an insert-only event; `conflict.cleared`.",
+        "description": "Human-only (AC-25): an insert-only event; `conflict.cleared`. A result on a client the\ncaller is walled from answers 404 like an unknown one.",
         "operationId": "clear_conflict_result",
         "parameters": [
           {
@@ -53441,16 +53422,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Clear Conflict Result Route",
@@ -110183,16 +110154,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Record Screening Route",

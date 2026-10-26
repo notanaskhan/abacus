@@ -22,6 +22,7 @@ TEMPLATES: dict[str, dict[str, object]] = {
         ],
         "firm_role": None,
         "roles": [
+            "firm_manager",
             "manager",
         ],
     },
@@ -32,6 +33,7 @@ TEMPLATES: dict[str, dict[str, object]] = {
         ],
         "firm_role": None,
         "roles": [
+            "firm_manager",
             "manager",
             "senior",
         ],

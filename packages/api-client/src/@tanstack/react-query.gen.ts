@@ -1363,6 +1363,7 @@ export const clientRelationshipsInfiniteOptions = (options: Options<ClientRelati
  * Run Conflict Check Route
  *
  * AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`.
+ * A client or client-entity subject the caller cannot see answers 404.
  */
 export const runConflictCheckMutation = (options?: Partial<Options<RunConflictCheckData>>): UseMutationOptions<RunConflictCheckResponse, RunConflictCheckError, Options<RunConflictCheckData>> => {
     const mutationOptions: UseMutationOptions<RunConflictCheckResponse, RunConflictCheckError, Options<RunConflictCheckData>> = {
@@ -1401,7 +1402,8 @@ export const getConflictCheckOptions = (options: Options<GetConflictCheckData>) 
 /**
  * Clear Conflict Result Route
  *
- * Human-only (AC-25): an insert-only event; `conflict.cleared`.
+ * Human-only (AC-25): an insert-only event; `conflict.cleared`. A result on a client the
+ * caller is walled from answers 404 like an unknown one.
  */
 export const clearConflictResultMutation = (options?: Partial<Options<ClearConflictResultData>>): UseMutationOptions<ClearConflictResultResponse, ClearConflictResultError, Options<ClearConflictResultData>> => {
     const mutationOptions: UseMutationOptions<ClearConflictResultResponse, ClearConflictResultError, Options<ClearConflictResultData>> = {

@@ -4633,7 +4633,7 @@ export type ConfirmIn = {
 /**
  * ConflictAssessmentStatus
  */
-export type ConflictAssessmentStatus = 'pending' | 'clear' | 'same_family_not_adverse' | 'not_adverse' | 'counterparty_review';
+export type ConflictAssessmentStatus = 'pending' | 'clear' | 'same_family_not_adverse' | 'not_adverse' | 'counterparty_review' | 'conflict';
 
 /**
  * ConflictCheckIn
@@ -25011,10 +25011,6 @@ export type RunConflictCheckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RunConflictCheckError = RunConflictCheckErrors[keyof RunConflictCheckErrors];
@@ -25067,10 +25063,6 @@ export type GetConflictCheckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetConflictCheckError = GetConflictCheckErrors[keyof GetConflictCheckErrors];
@@ -25131,10 +25123,6 @@ export type ClearConflictResultErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClearConflictResultError = ClearConflictResultErrors[keyof ClearConflictResultErrors];
@@ -51039,10 +51027,6 @@ export type RecordScreeningErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordScreeningError = RecordScreeningErrors[keyof RecordScreeningErrors];

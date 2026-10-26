@@ -106,9 +106,11 @@ def test_ac12_human_only_actions_deny_agent_and_system(action: str) -> None:
     assert not {r for r in CLIENT_ROLES if decisions.get(r, "deny") != "deny"}
 
 
-def test_ac12_client_intake_is_the_firm_admin_and_partners() -> None:
+def test_ac12_client_intake_is_the_firm_admin_partners_and_managers() -> None:
+    """P-07 §4.4 (OQ-2): firm admin + partner + manager; the manager cell is the derived
+    `firm_manager` since P-07-T36 (DEC-373)."""
     granted = {r for r, d in RULES["client.intake"].decisions.items() if d != "deny"}
-    assert granted == {"firm_admin", "firm_partner"}
+    assert granted == {"firm_admin", "firm_partner", "firm_manager"}
 
 
 async def test_ac13_flag_off_is_404_and_start_acceptance_authorises_before_its_flag(

@@ -2281,6 +2281,21 @@ RULES: list[Rule | TreeRule] = [
         ),
     ),
     Rule(
+        id="CONFLICT-001",
+        description="Only the conflict service and its route reach the conflict clearance",
+        adr="ADR-005",
+        check=_check_named(
+            "clear_conflict_result", "only a partner or manager clears a conflict hit (INV-1)"
+        ),
+        # P-07-T36 (SPEC-332 AC-25): the definition, its route and the module's interface.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/organisations/conflicts.py",
+            "src/abacus/modules/organisations/conflicts_contract.py",
+            "src/abacus/modules/organisations/api.py",
+        ),
+    ),
+    Rule(
         id="EVAL-001",
         description="Only the evaluation runner switches the gateway into evaluation mode",
         adr="ADR-019",

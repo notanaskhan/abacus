@@ -680,6 +680,7 @@ export const clientRelationships = <ThrowOnError extends boolean = false>(option
  * Run Conflict Check Route
  *
  * AC-23, AC-24: synchronous, bounded (2-second statement timeout); `conflict_check.run`.
+ * A client or client-entity subject the caller cannot see answers 404.
  */
 export const runConflictCheck = <ThrowOnError extends boolean = false>(options: Options<RunConflictCheckData, ThrowOnError>): RequestResult<RunConflictCheckResponses, RunConflictCheckErrors, ThrowOnError> => (options.client ?? client).post<RunConflictCheckResponses, RunConflictCheckErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -705,7 +706,8 @@ export const getConflictCheck = <ThrowOnError extends boolean = false>(options: 
 /**
  * Clear Conflict Result Route
  *
- * Human-only (AC-25): an insert-only event; `conflict.cleared`.
+ * Human-only (AC-25): an insert-only event; `conflict.cleared`. A result on a client the
+ * caller is walled from answers 404 like an unknown one.
  */
 export const clearConflictResult = <ThrowOnError extends boolean = false>(options: Options<ClearConflictResultData, ThrowOnError>): RequestResult<ClearConflictResultResponses, ClearConflictResultErrors, ThrowOnError> => (options.client ?? client).post<ClearConflictResultResponses, ClearConflictResultErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

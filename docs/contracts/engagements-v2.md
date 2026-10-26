@@ -35,7 +35,7 @@ Matrix: `docs/architecture/permission-matrix/engagements.yaml` and `organisation
 | Autosave | `PATCH /v1/engagement-drafts/{draft_id}` | `engagement.create` | the owner | **denied** |
 | Discard | `DELETE /v1/engagement-drafts/{draft_id}` | `engagement.create` | the owner | **denied** |
 | Validate a step | `POST /v1/engagement-drafts/{draft_id}/validate` | `engagement.create` | the owner | **denied** |
-| Start acceptance (ENG-03 d) | `POST /v1/engagement-drafts/{draft_id}/start-acceptance` | `client.intake` (new, OQ-2) | firm admin, partner (`firm_partner`); manager when live (DEC-143) | **denied** |
+| Start acceptance (ENG-03 d) | `POST /v1/engagement-drafts/{draft_id}/start-acceptance` | `client.intake` (new, OQ-2) | firm admin, partner (`firm_partner`), manager (`firm_manager`, P-07-T36, DEC-373) | **denied** |
 | Create (ENG-03) | `POST /v1/engagement-drafts/{draft_id}/create` + `Idempotency-Key` | `engagement.create` | as the catalogue | **denied** |
 
 Client roles hold no write action here. They do hold `engagement.read_metadata` for their own engagement (SPEC-020), but the v2 index, record and gates are firm surfaces: P-07-T15 answers a client principal 404, as ENG-01 and ENG-02's contracts say (agent and client principals deny).

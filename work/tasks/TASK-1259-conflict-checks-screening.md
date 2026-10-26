@@ -64,3 +64,11 @@ no name to the walled user." Today `organisations/conflicts_contract.py` answers
 
 ## Progress log
 - 2026-10-26: planned.
+- 2026-10-26: built as planned (DEC-373). Results store references and scores, never names;
+  the outcome is derived from the newest assessments. Engagement counterparties are contact
+  roles only (the ledger's counterparties are another module's). Tests: P-07-T38's conflict
+  suite, 9 markers removed, 11 pass; `test_conflict_checks_rules.py` 2 pass; the derived
+  `firm_manager` unit test; the stub and consumer contract suites updated (conflict routes
+  LIVE, `conflict` now a registry assessment); the role partition and `client.intake` matrix
+  tests updated for `firm_manager`; the web registry row count (377). Gates green; `make
+  generate`, web tsc and the status and SHL-03 vitest suites.

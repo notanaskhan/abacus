@@ -4,7 +4,7 @@ title: Independent AC tests (ADR-078) for acceptance and conflicts (P-07-T38)
 spec: SPEC-332
 acceptance_criteria: [AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-23, AC-24, AC-25, AC-26]
 risk_zone: red
-status: in-review
+status: done
 epic: P-07
 plan_key: P-07-T38
 branch: s9a-engagement-lifecycle
@@ -51,3 +51,5 @@ walled users (INV-3), clearance audit.
   b's check is Grace's in that role. Also before T35 was built: the duplicate-decision probe in
   `test_ac6_the_decision_row_is_insert_only_and_one_per_record` names `actor_kind` so it tests
   the uniqueness alone (amended into the T38 commit).
+- 2026-10-26 (with T36): the 9 TASK-1259 markers removed; the conflict suite passes unchanged
+  (11 pass). Both suites: 35 tests, all pass.
