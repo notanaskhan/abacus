@@ -1,0 +1,46 @@
+# The methodology module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`. K-01 §4.6: five rollout flags, created by the
+# K-01-T01 contract stubs; each route answers 404 with its flag off and 501 with it on until
+# its task lands.
+
+flags:
+  - name: knowledge.catalog
+    description: 'KNW-01, the knowledge catalog (K-01): GET /v1/knowledge/items, /review-queue and /change-log. Off: 404 and the old screens stay. On: 501 not_implemented until K-01-T03. First on for synthetic firms in S11; per firm at onboarding.'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: methodology.lifecycle
+    description: 'Methodology version lifecycle (K-01, KNW-02 e, f): submit, approve with effective dates, supersede, version-for-date pinning. Off: 404 and imports publish as today (legacy_import). On: 501 not_implemented until K-01-T06.'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: methodology.programs
+    description: 'Programs and steps (K-01, KNW-03): program and step reads, the resolve endpoint, drafts and discard, step edits and mandatory locks, the program export. Off: 404. On: 501 not_implemented until K-01-T12 (reads, export) and K-01-T14 (drafts, edits, locks).'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: methodology.import_review
+    description: 'Document upload, diff, standards mapping, parse flags and draft review in KNW-02 (K-01-T18 to T20). No route yet: the import contract lands with K-01-T18. Dark until S22; real firms no earlier than Tue Oct 26, 2027.'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: methodology.importer
+    description: 'AI parsing of methodology documents (K-01-T21) and its kill switch. No route yet. On only after clearance and opt-in, no earlier than Tue Oct 26, 2027.'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

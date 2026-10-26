@@ -151,6 +151,11 @@ GUIDANCE_DRAFTING = Flag(
     kind="boolean",
     default="false",
 )
+KNOWLEDGE_CATALOG = Flag(
+    name="knowledge.catalog",
+    kind="boolean",
+    default="false",
+)
 LEDGER_GL_IMPORT = Flag(
     name="ledger.gl_import",
     kind="boolean",
@@ -168,6 +173,26 @@ LEDGER_TB_WORKPAPER = Flag(
 )
 MATCHING_ENABLED = Flag(
     name="matching.enabled",
+    kind="boolean",
+    default="false",
+)
+METHODOLOGY_IMPORT_REVIEW = Flag(
+    name="methodology.import_review",
+    kind="boolean",
+    default="false",
+)
+METHODOLOGY_IMPORTER = Flag(
+    name="methodology.importer",
+    kind="boolean",
+    default="false",
+)
+METHODOLOGY_LIFECYCLE = Flag(
+    name="methodology.lifecycle",
+    kind="boolean",
+    default="false",
+)
+METHODOLOGY_PROGRAMS = Flag(
+    name="methodology.programs",
     kind="boolean",
     default="false",
 )
@@ -280,10 +305,15 @@ FLAGS: dict[str, Flag] = {
     "firm_settings.v2": FIRM_SETTINGS_V2,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
+    "knowledge.catalog": KNOWLEDGE_CATALOG,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_workpaper": LEDGER_TB_WORKPAPER,
     "matching.enabled": MATCHING_ENABLED,
+    "methodology.import_review": METHODOLOGY_IMPORT_REVIEW,
+    "methodology.importer": METHODOLOGY_IMPORTER,
+    "methodology.lifecycle": METHODOLOGY_LIFECYCLE,
+    "methodology.programs": METHODOLOGY_PROGRAMS,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
     "portal.documents_v2": PORTAL_DOCUMENTS_V2,

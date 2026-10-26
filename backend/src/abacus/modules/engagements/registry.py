@@ -10,11 +10,7 @@ from __future__ import annotations
 TABLES: frozenset[str] = frozenset(
     {
         "engagements",
-        "methodology_templates",
-        "methodology_versions",
-        "methodology_areas",
-        "methodology_request_items",
-        "methodology_account_rules",
+        # The methodology_* tables are the methodology module's since K-01-T02 (0180).
         "engagement_acceptance",
         "independence_confirmations",
         "work_items",  # F-03-T05 (0068)
@@ -44,11 +40,6 @@ TABLES: frozenset[str] = frozenset(
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {
-        "methodology_templates",
-        "methodology_versions",
-        "methodology_areas",
-        "methodology_request_items",
-        "methodology_account_rules",
         "work_item_assignments",  # F-03-T05 (0068)
         "engagement_entities",  # F-03-T05 (0068)
         "gate_policy_overrides",  # F-03-T12 (0069): a new row per change

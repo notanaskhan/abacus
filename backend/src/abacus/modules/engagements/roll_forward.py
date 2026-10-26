@@ -22,14 +22,8 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.engagements.models import Engagement
-from abacus.modules.engagements.repository import get_engagement, list_templates, prior_candidates
-from abacus.modules.engagements.service import (
-    MethodologyVersionView,
-    TemplateItem,
-    get_ref,
-    pin_methodology,
-    version_detail,
-)
+from abacus.modules.engagements.repository import get_engagement, prior_candidates
+from abacus.modules.engagements.service import get_ref, pin_methodology
 from abacus.modules.identity.api import (
     Actor,
     AuthContext,
@@ -38,6 +32,12 @@ from abacus.modules.identity.api import (
     authorise,
     available_staff,
     engagement_team,
+)
+from abacus.modules.methodology.api import (
+    MethodologyVersionView,
+    TemplateItem,
+    latest_versions,
+    version_detail,
 )
 
 ItemKind = Literal["used", "not_used", "new_in_template"]
@@ -217,12 +217,11 @@ async def _latest_of(
     if version_id is None:
         return None
     then = await version_detail(ctx.tenant, version_id)
-    async with tenant_session(ctx.tenant) as session:
-        latest = [
-            v.id
-            for t, v in await list_templates(session, latest=True)
-            if t.id == then.summary.template_id
-        ]
+    latest = [
+        v.version_id
+        for v in await latest_versions(ctx.tenant)
+        if v.template_id == then.summary.template_id
+    ]
     return then, await version_detail(ctx.tenant, latest[0]) if latest else then
 
 

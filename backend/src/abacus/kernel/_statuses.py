@@ -327,6 +327,38 @@ class TodoStatus(StrEnum):
     # derived, never stored: overdue
 
 
+class MethodologyVersionStatus(StrEnum):
+    DRAFT = "draft"
+    PARSING = "parsing"
+    NEEDS_REVIEW = "needs_review"
+    PUBLISHED = "published"
+    SUPERSEDED = "superseded"
+    DISCARDED = "discarded"
+
+
+class MethodologyImportStatus(StrEnum):
+    AWAITING_FILES = "awaiting_files"
+    SCANNING = "scanning"
+    PARSING = "parsing"
+    NEEDS_REVIEW = "needs_review"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class KnowledgeItemStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    SUPERSEDED = "superseded"
+
+
+class ParseFlagStatus(StrEnum):
+    LOW_CONFIDENCE = "low_confidence"
+    SPLIT_ACROSS_PAGES = "split_across_pages"
+    NUMBERING_GAP = "numbering_gap"
+    UNVERIFIED_CITATION = "unverified_citation"
+    CROSS_REFERENCE_MISSING = "cross_reference_missing"
+
+
 class EnvelopeStatus(StrEnum):
     DRAFT = "draft"
     SENT = "sent"
@@ -913,6 +945,34 @@ STORED: dict[str, tuple[str, ...]] = {
     "todo": (
         "open",
         "done",
+    ),
+    "methodology_version": (
+        "draft",
+        "parsing",
+        "needs_review",
+        "published",
+        "superseded",
+        "discarded",
+    ),
+    "methodology_import": (
+        "awaiting_files",
+        "scanning",
+        "parsing",
+        "needs_review",
+        "failed",
+        "cancelled",
+    ),
+    "knowledge_item": (
+        "draft",
+        "published",
+        "superseded",
+    ),
+    "parse_flag": (
+        "low_confidence",
+        "split_across_pages",
+        "numbering_gap",
+        "unverified_citation",
+        "cross_reference_missing",
     ),
     "envelope": (
         "draft",

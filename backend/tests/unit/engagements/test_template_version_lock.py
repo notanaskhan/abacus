@@ -9,7 +9,7 @@ from typing import cast
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.modules.engagements.repository import lock_or_insert_template
+from abacus.modules.methodology.repository import lock_or_insert_template
 
 
 class _Result:
