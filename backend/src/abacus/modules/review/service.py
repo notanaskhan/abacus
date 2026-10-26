@@ -111,6 +111,7 @@ class StaleSignOff:
     signed_at: datetime
     signed_hash: str
     current_hash: str
+    sign_off_id: UUID | None = None  # P-04-T19: which row, for `sign_off.went_stale`
 
 
 async def stale_of(
@@ -122,7 +123,13 @@ async def stale_of(
         rows = await stale_sign_offs(session, target_type, hashes)
     return [
         StaleSignOff(
-            r.target_id, r.level, r.signed_by, r.created_at, r.content_hash, hashes[r.target_id]
+            r.target_id,
+            r.level,
+            r.signed_by,
+            r.created_at,
+            r.content_hash,
+            hashes[r.target_id],
+            r.id,
         )
         for r in rows
     ]

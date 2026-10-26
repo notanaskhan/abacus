@@ -233,7 +233,13 @@ async def tb_facts(tenant: TenantContext, tb_id: UUID) -> ReviewableFacts | None
     if digest is None:
         return None
     return ReviewableFacts(
-        TARGET, tb_id, authors.engagement_id, digest, authors.version_no, authors.authors
+        TARGET,
+        tb_id,
+        authors.engagement_id,
+        digest,
+        authors.version_no,
+        authors.authors,
+        label="Trial Balance",  # P-04-T18: SHL-12's card (the handoff's label)
     )
 
 

@@ -1882,6 +1882,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "sign_off.eqr": {
         "reviewer": "allow",
+        "eqr_reviewer": "allow",
         "agent": "deny",
         "independence": "required",
     },
