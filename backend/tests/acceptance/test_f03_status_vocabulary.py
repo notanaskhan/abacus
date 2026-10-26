@@ -643,6 +643,10 @@ NO_YAML_ENTRY = {
     # R-01-T16 (C16 v1.1 stub): the sender-domain codes; their words ("Pending DNS", "Verified")
     # are a DF-31 addition that must land before R-01-T28 (docs/screens/ADM-10.md, Open gaps).
     "SendingDomainOut.status": "pending_dns, verified, failed, revoked",
+    # G-02-T04 (audit-log stub, DEC-417): the export's `building` and the values' `withheld` and
+    # `unavailable` get their DF-31 entries with the live routes (G-02-T08, G-02-T17).
+    "AuditExport.status": "building",
+    "AuditValuesOut.status": "withheld, unavailable",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
 OUTSIDE_ITS_OBJECT = {
