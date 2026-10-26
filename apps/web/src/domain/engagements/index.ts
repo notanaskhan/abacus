@@ -38,3 +38,27 @@ export {
   isNarrowedIndex,
   useEngagementIndex,
 } from "./list";
+export {
+  type AcceptanceOption,
+  CONCLUSION,
+  type FlagSeverity,
+  type NewCondition,
+  answerText,
+  fieldOf,
+  isClear,
+  isLocked,
+  mayOn,
+  needsStepUp,
+  openChecks,
+  refusalOf,
+  unanswered,
+  useAcceptance,
+  useAcceptanceWrites,
+  useReviewCandidates,
+} from "./acceptance";
+export {
+  DecisionDock,
+  DecisionDockFooter,
+  type DecisionDockOption,
+  type DecisionDockProps,
+} from "./DecisionDock";

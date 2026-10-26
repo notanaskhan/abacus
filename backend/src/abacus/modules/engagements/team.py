@@ -30,7 +30,7 @@ from decimal import Decimal
 from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text, update
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
@@ -531,6 +531,18 @@ async def remind_independence(
         for user_id in wanted:
             if user_id not in open_:
                 raise DomainInvalid(facts={"user_id": str(user_id)})
+        # P-07-T41: CLI-08 shows how often each member was reminded.
+        await tx.session.execute(
+            update(IndependenceConfirmation)
+            .where(
+                IndependenceConfirmation.engagement_id == engagement_id,
+                IndependenceConfirmation.user_id.in_(wanted),
+            )
+            .values(
+                reminder_count=IndependenceConfirmation.reminder_count + 1,
+                last_reminded_at=func.clock_timestamp(),
+            )
+        )
         for user_id in wanted:
             tx.record(
                 "independence.reminded",

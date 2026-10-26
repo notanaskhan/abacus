@@ -24,7 +24,10 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
-from abacus.modules.assurance.tb_contract import tb_router
+
+# A-02-T10: the live C9 routes are declared on `tb_router` in `tb_read_model`, so it is
+# imported from there (loading the module registers them before the API mounts the router).
+from abacus.modules.assurance.tb_read_model import tb_router
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter
@@ -33,7 +36,7 @@ from abacus.modules.review.api import register_reviewable, register_reviewable_f
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
-    tb_router,  # A-02-T03 C9 v1 stub (docs/contracts/c09-ledger.md)
+    tb_router,  # C9 v1 (docs/contracts/c09-ledger.md): A-02-T03 stubs, A-02-T10 live reads
     audits_router,  # A-01-T02 audits family stub (docs/contracts/audits-cockpit.md)
     completion_router,
     mapping_router,

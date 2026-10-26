@@ -39,10 +39,30 @@ class IsolationFailed(Exception):
     """The child crashed, ran out of time or memory, or couldn't start."""
 
 
+_PR_SET_DUMPABLE: Final = 4  # <linux/prctl.h>
+
+
+def _no_core_dumps() -> None:
+    """In the child: never a core file (security review M2, P-03-T19). A hostile file that crashes
+    a parser must not leave its decrypted bytes or a password on disk. On Linux the process is also
+    made non-dumpable, which keeps other processes of the same user from reading its memory."""
+    import resource
+    import sys
+
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    if sys.platform.startswith("linux"):
+        import ctypes
+
+        with suppress(OSError, AttributeError):
+            ctypes.CDLL(None, use_errno=True).prctl(_PR_SET_DUMPABLE, 0, 0, 0, 0)
+
+
 def _limit(cpu_seconds: int, memory_bytes: int) -> None:
-    """In the child: CPU and memory limits (best effort where the platform ignores one)."""
+    """In the child: no core dumps, CPU and memory limits (best effort where the platform ignores
+    one)."""
     import resource
 
+    _no_core_dumps()
     resource.setrlimit(resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds))
     # macOS doesn't enforce RLIMIT_AS; the wall-clock timeout still applies there.
     with suppress(ValueError, OSError):
