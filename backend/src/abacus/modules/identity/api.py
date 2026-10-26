@@ -215,6 +215,7 @@ from abacus.modules.identity.repository import (
     my_engagement_roles,
     register_engagements_of_scope,
 )
+from abacus.modules.identity.request_session import resolve_request_session
 from abacus.modules.identity.routes import (
     auth_router,
     firm_support_router,
@@ -640,6 +641,7 @@ __all__ = [
     "resend_invitation",
     "reset_portal_mfa",
     "reset_verifier",
+    "resolve_request_session",
     "resolve_scope",
     "revoke_client_access",
     "revoke_contact",
