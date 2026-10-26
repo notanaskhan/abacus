@@ -193,32 +193,42 @@ async def reader_of(ctx: AuthContext) -> Reader:
 # (fail closed; security review M1). `client_id` is checked exactly instead.
 FIRM_SAFE_REFS: Final = frozenset(
     {"user_id", "staff_id", "approver_user_id", "on_behalf_of", "initiator", "uploaded_by"}
-    | {"security_admin", "office", "office_id", "team_id", "flag_id", "methodology_version_id"}
-    | {"renewed_from_id", "supersedes_id", "feedback_id", "decision_id", "check_id"}
+    | {"security_admin", "office", "office_id", "team_id", "methodology_version_id"}
+    | {"supersedes_id"}
 )
+# Firm-level kinds whose target is itself client- or contact-side (a person's engagement draft
+# before any engagement exists; a portal email's link to one contact). The explorer cannot place
+# them, so a walled reader sees none (security review, re-review 2).
+CLIENT_SIDE_TARGETS: Final = frozenset({"engagement_draft", "secure_link"})
 _NO_REFS: Final = literal({}, JSONB)
-
-
-def _refs_of_event() -> ColumnElement[Any]:  # Any: jsonb
-    return func.coalesce(t.before_ref, _NO_REFS).op("||")(func.coalesce(t.after_ref, _NO_REFS))
 
 
 def _names_walled_work(walled: frozenset[UUID]) -> ColumnElement[bool]:
     """A firm-level event whose references name a walled client, or name any client-side
     identifier the explorer cannot place (security review M1)."""
-    pairs = func.jsonb_each_text(_refs_of_event()).table_valued("key", "value").render_derived()
-    unplaced = exists(
-        select(literal(1))
-        .select_from(pairs)
-        .where(
-            pairs.c.value.op("~")(_UUID),
-            pairs.c.key.not_in(sorted(FIRM_SAFE_REFS | {"client_id"})),
+
+    def unplaced(refs: ColumnElement[Any]) -> ColumnElement[bool]:  # Any: jsonb
+        # Each side on its own: `before || after` would let an after key hide a before id.
+        pairs = func.jsonb_each_text(func.coalesce(refs, _NO_REFS)).table_valued("key", "value")
+        pairs = pairs.render_derived()
+        return exists(
+            select(literal(1))
+            .select_from(pairs)
+            .where(
+                pairs.c.value.op("~")(_UUID),
+                pairs.c.key.not_in(sorted(FIRM_SAFE_REFS | {"client_id"})),
+            )
         )
-    )
+
     clients = sorted(str(c) for c in walled)
     # Coalesced: a missing key is NULL, and NOT (NULL OR false) would hide the event too.
     named = func.coalesce(t.before_ref["client_id"].astext, "").in_(clients)
-    return or_(named, func.coalesce(t.after_ref["client_id"].astext, "").in_(clients), unplaced)
+    return or_(
+        named,
+        func.coalesce(t.after_ref["client_id"].astext, "").in_(clients),
+        unplaced(t.before_ref),
+        unplaced(t.after_ref),
+    )
 
 
 def shown_to(reader: Reader) -> ColumnElement[bool]:
@@ -231,7 +241,7 @@ def shown_to(reader: Reader) -> ColumnElement[bool]:
         if reader.walled:
             firm_level = and_(
                 firm_level,
-                t.target_type.in_(sorted(FIRM_LEVEL)),
+                t.target_type.in_(sorted(FIRM_LEVEL - CLIENT_SIDE_TARGETS)),
                 ~_names_walled_work(reader.walled),
             )
         clauses.append(firm_level)

@@ -31,6 +31,8 @@ visibility.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import re
 from collections.abc import Mapping, Sequence
 from typing import Any, Final, cast
@@ -177,6 +179,13 @@ async def _label_rows(tenant_id: UUID, rows: Sequence[Row]) -> list[dict[str, ob
     return out
 
 
+class IndexBusy(RuntimeError):
+    """Another indexer holds the firm's label-index lock (L4)."""
+
+    def __init__(self, tenant_id: UUID) -> None:
+        super().__init__(f"the audit label index of {tenant_id} is being written")
+
+
 def _lock_key(tenant_id: UUID) -> ColumnElement[int]:
     return func.hashtextextended(literal(f"audit_label_index:{tenant_id}", Text()), 0)
 
@@ -201,13 +210,14 @@ async def index_batch(
 ) -> tuple[int, int | None]:
     """Index up to `limit` of the firm's events (`_pending`); upserts, so a replay of the same
     range writes the same rows. One indexer per firm at a time (L4): a run that finds the firm's
-    advisory lock held writes nothing. Answers how many it wrote and the last `seq` it indexed."""
+    advisory lock held writes nothing and raises `IndexBusy`. Answers how many it wrote and the
+    last `seq` it indexed."""
     async with tenant_connection(_indexer(tenant_id)) as conn:
         locked = (
             await conn.execute(select(func.pg_try_advisory_xact_lock(_lock_key(tenant_id))))
         ).scalar_one()
         if not locked:
-            return 0, None
+            raise IndexBusy(tenant_id)
         start = (
             after
             if after is not None
@@ -278,11 +288,24 @@ async def index_batch(
     return len(rows), max(int(e["seq"]) for e in events)
 
 
-async def backfill(tenant_id: UUID, *, batch: int = BATCH) -> int:
-    """Index the firm's whole history from the start (rewriting what is there)."""
+async def backfill(
+    tenant_id: UUID, *, batch: int = BATCH, retries: int = 20, pause: float = 0.25
+) -> int:
+    """Index the firm's whole history from the start (rewriting what is there). A batch that
+    finds another indexer running waits and retries; after `retries` it raises `IndexBusy`
+    rather than stop early and claim it is done (re-review 2)."""
     total, after = 0, 0
     while True:
-        written, last = await index_batch(tenant_id, batch, after=after)
+        for attempt in range(retries + 1):
+            try:
+                written, last = await index_batch(tenant_id, batch, after=after)
+                break
+            except IndexBusy:
+                if attempt == retries:
+                    raise
+                await asyncio.sleep(pause)
+        else:  # pragma: no cover -- the loop breaks or raises
+            raise IndexBusy(tenant_id)
         total += written
         if last is None or written < batch:
             return total
@@ -295,8 +318,10 @@ def _query(q: str) -> str:
 
 
 async def catch_up(tenant_id: UUID) -> None:
-    """One bounded batch before a search, while the Schedule is not wired (DEC-436)."""
-    await index_batch(tenant_id)
+    """One bounded batch before a search, while the Schedule is not wired (DEC-436). Another
+    indexer running for the firm is catching it up already: the search does not wait."""
+    with contextlib.suppress(IndexBusy):
+        await index_batch(tenant_id)
 
 
 def matching(seq: ColumnElement[int], q: str) -> ColumnElement[bool]:
@@ -316,6 +341,7 @@ __all__ = [
     "AUDIT_EVENT_LABELS",
     "BATCH",
     "SETTLE_SECONDS",
+    "IndexBusy",
     "backfill",
     "catch_up",
     "index_batch",

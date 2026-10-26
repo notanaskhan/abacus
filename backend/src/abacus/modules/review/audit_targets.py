@@ -26,4 +26,4 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
     key, owner = _OWNERS[kind]
     async with tenant_session(tenant) as session:
         rows = await session.execute(select(key, owner).where(key.in_(list(ids))))
-        return {found: owned for found, owned in rows if owned is not None}
+        return {found: owned for found, owned in rows}

@@ -22,6 +22,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.audit_trail.api import backfill_labels, index_labels
+from abacus.modules.audit_trail.labels import IndexBusy
 from abacus.modules.identity.api import AuthContext, current_context
 
 from .agent_tests.support import Seeder
@@ -194,3 +195,19 @@ async def test_m2_an_event_committed_late_below_the_indexed_seq_is_still_indexed
     written, _ = await index_labels(tenant)
     assert written == 1
     assert [r[0] for r in await _labels(seed, tenant)].count(late) == 1
+
+
+async def test_l4_backfill_raises_while_another_indexer_holds_the_firm(
+    firm: tuple[uuid.UUID, AuthContext], seed: Seeder
+) -> None:
+    """Re-review 2: a busy firm is never reported as backfilled; a search does not wait."""
+    tenant, felix = firm
+    key = f"audit_label_index:{tenant}"
+    async with seed.held() as conn:
+        await conn.execute("SELECT pg_advisory_lock(hashtextextended($1, 0))", key)
+        with pytest.raises(IndexBusy):
+            await backfill_labels(tenant, retries=1, pause=0.01)
+        searched = await _as(felix)("GET", LIST, params={"q": "felix"})
+        assert searched.status_code == 200
+        await conn.execute("SELECT pg_advisory_unlock(hashtextextended($1, 0))", key)
+    assert await backfill_labels(tenant) == 3

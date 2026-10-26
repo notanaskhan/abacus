@@ -66,3 +66,6 @@ Flag `audit_log.explorer` off (404). No migration in this task.
   counts and search. L3: search is a predicate in the list query. L5: role rows probed via
   `allowed_actions`. L7: an IPv6 zone in `ip` answers 422. **Known gap:** writers fill neither
   `audit_events.client_id` nor `office_id`, so the Office filter matches nothing yet (DEC-436).
+- 2026-10-26: re-review 2: FIRM_SAFE_REFS narrowed (check_id, renewed_from_id, decision_id,
+  flag_id, feedback_id out); engagement_draft and secure_link targets hidden from walled readers;
+  before and after refs checked each on its own; backfill raises IndexBusy instead of stopping.

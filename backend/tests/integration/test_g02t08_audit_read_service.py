@@ -425,3 +425,39 @@ async def test_l7_an_ipv6_zone_in_the_ip_filter_answers_422(
     assert refused.status_code == 422
     plain = await as_(world.felix)("GET", LIST, params={"ip": "fe80::1"})
     assert plain.status_code == 200
+
+
+# --- Re-review 2: client-side targets and references, each side on its own ----------------------
+
+
+async def test_m1_client_side_targets_and_refs_are_hidden_from_a_walled_reader(
+    world: World, as_: Callable[[object], Call]
+) -> None:
+    draft, link = uuid.uuid4(), uuid.uuid4()
+    await _record(
+        world.grace.tenant, "engagement_draft.started", Target("engagement_draft", draft)
+    )
+    await _record(world.grace.tenant, "secure_link.revoked", Target("secure_link", link))
+    # A conflict check names a client-side record: `check_id` is not firm-safe.
+    checked = uuid.uuid4()
+    await _record(
+        world.grace.tenant,
+        "user.updated",
+        Target("user", checked),
+        after=Ref(check_id=uuid.uuid4()),
+    )
+    # A before-side id must not be hidden by an after-side value under the same key.
+    masked = uuid.uuid4()
+    async with uow(world.grace.tenant) as tx:
+        tx.record(
+            "user.updated",
+            target=Target("user", masked),
+            before=Ref(contact_id=uuid.uuid4()),
+            after=Ref(contact_id=1),
+        )
+    ivan = _target_ids(await as_(world.ivan)("GET", LIST))
+    for hidden in (draft, link, checked, masked):
+        assert str(hidden) not in ivan
+    grace = _target_ids(await as_(world.grace)("GET", LIST))
+    for shown in (draft, link, checked, masked):
+        assert str(shown) in grace
