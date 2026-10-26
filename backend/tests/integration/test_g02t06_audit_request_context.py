@@ -212,7 +212,9 @@ def test_migration_0172_goes_up_down_and_up(private_db: sc.Database) -> None:
     migrate(private_db.owner_url, "head")
     assert asyncio.run(count()) == 8
     # M3: a failure in the autocommit block leaves alembic at 0160 with the transactional part
-    # applied; running the upgrade again finishes it.
+    # applied; running the upgrade again finishes it. The migrations after 0172 are stepped back
+    # first, so the replay re-runs only 0172 against the schema it would have met.
+    migrate(private_db.owner_url, "0172", down=True)
     seed = Seeder(private_db.superuser_dsn)
     asyncio.run(seed.run("UPDATE alembic_version SET version_num = $1", PARENT_0172))
     asyncio.run(seed.run("DROP INDEX audit_events_ip"))
