@@ -92,3 +92,10 @@ Adding `record_sha256` / `record_persisted_at` to the run summary (ADR-169 §4) 
   replay files).
 - [x] Backend gates, schema check (192), check-heads, check-generated, web tsc.
 
+- 2026-10-26: security review fixes (DEC-396 notes). M1: quote and sheet fingerprints are
+  HMAC-SHA-256 under a per-firm key (`run_record_fingerprint_pepper`, the TIN fingerprint's
+  pattern), renamed `quote_fingerprint`/`sheet_fingerprint`, `confidential`, withheld from
+  readers who may not read unmasked content; no record without the pepper outside local and
+  test. L1: withdrawn versions leave the read (`withheld`). L2: the guard ties stage, times and
+  outcome to the run. L3: `agent_run_records` is a retention record class. Tests: run records
+  14 integration, 13 unit; workflow suites 59; replay, route, schema check, isolation green.

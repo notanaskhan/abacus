@@ -8,6 +8,13 @@ how it ended and for whom. It is written once, by the run's own workflow after t
 state (`agents.persist_run_record`), never updated, and kept for the engagement's retention, so
 it still answers "what produced this proposal" after the raw trace (~30 days, ADR-032) is gone.
 
+A citation's quoted words and sheet name are kept only as `quote_fingerprint` and
+`sheet_fingerprint`: HMAC-SHA-256 under the firm's own fingerprint key, itself
+HMAC-SHA-256(`run_record_fingerprint_pepper`, "abacus-run-record-fingerprint-v1|" + tenant id), the
+pattern of the TIN fingerprint (DEC-223). A short quoted value (a TIN, an amount, a date) can't be
+recovered by hashing guesses without the pepper, and two firms' fingerprints of the same words
+differ. Readers who may not read unmasked content (offshore members, DEC-52) get neither.
+
 `record_sha256` is the SHA-256 of the canonical JSON of every other field. It is not the run
 view's `run_record_sha256` (TASK-5000), a read-time fingerprint of the live run row: both are
 kept, with their own meanings (DEC-396).
@@ -16,8 +23,10 @@ kept, with their own meanings (DEC-396).
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 from collections.abc import Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final, Literal, cast
@@ -26,8 +35,10 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from abacus.ai_gateway import ModelCall, UnknownPrompt, model_calls_for, prompt
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import NotFound, ServiceUnavailable
+from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.models import AgentRun, AgentRunRecord
 from abacus.modules.agents.repository import (
@@ -42,9 +53,14 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.agents.runs import Projection, authorised_run, projection_for
 from abacus.modules.agents.workflow_types import CANCELLED
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.evidence.api import withdrawn_among
+from abacus.modules.identity.api import AuthContext, may_read_unmasked
 
 PERSISTED: Final = "agent_run_record.persisted"
+_LOCAL_PEPPER: Final = b"abacus-local-run-record-fingerprint-pepper"
+_KEY_LABEL: Final = b"abacus-run-record-fingerprint-v1|"
+FINGERPRINTS: Final = ("quote_fingerprint", "sheet_fingerprint")
+_log = get_logger(__name__)
 RecordState = Literal["succeeded", "needs_input", "failed", "cancelled"]
 # A citation keeps where it points and code's verdict on it, never what it quotes: these keys
 # are positions and codes (the handoff models classify them `internal`).
@@ -77,8 +93,27 @@ FIELDS: Final = (
 )
 
 
-def _sha256(value: str) -> str:
-    return hashlib.sha256(value.encode()).hexdigest()
+def _pepper() -> bytes:
+    configured = settings().run_record_fingerprint_pepper
+    if configured is not None:
+        return configured.get_secret_value().encode()
+    if settings().environment in ("local", "test"):
+        return _LOCAL_PEPPER
+    raise ServiceUnavailable("run record fingerprinting is not configured")
+
+
+def fingerprinting_configured() -> bool:
+    try:
+        _pepper()
+    except ServiceUnavailable:
+        return False
+    return True
+
+
+def fingerprint(tenant_id: UUID, words: str) -> str:
+    """HMAC-SHA-256 of `words` under the firm's own fingerprint key, as hex."""
+    firm_key = hmac.new(_pepper(), _KEY_LABEL + tenant_id.bytes, hashlib.sha256).digest()
+    return hmac.new(firm_key, words.encode(), hashlib.sha256).hexdigest()
 
 
 def _plain(value: object) -> object:
@@ -111,9 +146,9 @@ def _code(value: object) -> object:
     return None
 
 
-def scrub_citation(row: RunCitationRow) -> dict[str, object]:
+def scrub_citation(tenant_id: UUID, row: RunCitationRow) -> dict[str, object]:
     """Where a citation points and what code found, with the quoted words (and the sheet name,
-    client content) kept only as SHA-256 fingerprints."""
+    client content) kept only as the firm's keyed fingerprints."""
     c = row.citation
     quote, sheet = c.get("quote"), c.get("sheet")
     out: dict[str, object] = {
@@ -122,8 +157,12 @@ def scrub_citation(row: RunCitationRow) -> dict[str, object]:
         if row.record_id is None
         else {"type": row.record_type, "id": str(row.record_id)},
         "locator": {k: _code(c[k]) for k in _LOCATOR_KEYS if c.get(k) is not None},
-        "quote_sha256": _sha256(quote) if isinstance(quote, str) and quote else None,
-        "sheet_sha256": _sha256(sheet) if isinstance(sheet, str) and sheet else None,
+        "quote_fingerprint": fingerprint(tenant_id, quote)
+        if isinstance(quote, str) and quote
+        else None,
+        "sheet_fingerprint": fingerprint(tenant_id, sheet)
+        if isinstance(sheet, str) and sheet
+        else None,
     }
     for key in _FACT_KEYS:
         if key in c:
@@ -204,7 +243,7 @@ def build_record(
             "model_calls": model_inputs,
         },
         "records_read": [{"type": t, "id": str(i)} for t, i in sorted(read, key=str)],
-        "citations": [scrub_citation(c) for c in outputs.citations],
+        "citations": [scrub_citation(run.tenant_id, c) for c in outputs.citations],
         "outcome": {
             "state": record_state(run),
             "failure_code": run.failure_code,
@@ -227,6 +266,10 @@ async def persist_run_record(tenant_id: UUID, run_id: UUID) -> str | None:
     system, `Ref(record_sha256)`), returning its hash. Repeat-safe: an existing record's hash
     is returned unchanged. A run still running gets none (None)."""
     tenant = _system(tenant_id, run_id)
+    if not fingerprinting_configured():
+        # Never fall back to an unkeyed hash of quoted words: no record until the pepper is set.
+        _log.warning("run_record.not_persisted", reason="fingerprint_pepper_unset")
+        return None
     async with tenant_session(tenant) as session:
         run = await get_run(session, run_id)
         existing = await get_run_record(session, run_id)
@@ -269,7 +312,20 @@ def _metadata_citation(citation: Mapping[str, object]) -> dict[str, object]:
     """DEC-87: what a metadata viewer keeps of a citation: its source and code's verdict."""
     kept: dict[str, object] = {k: v for k, v in citation.items() if k in ("source", *_FACT_KEYS)}
     locator: dict[str, object] = {}
-    return kept | {"record": None, "locator": locator, "quote_sha256": None, "sheet_sha256": None}
+    return kept | {"record": None, "locator": locator} | dict.fromkeys(FINGERPRINTS)
+
+
+def _without_fingerprints(citation: Mapping[str, object]) -> dict[str, object]:
+    """DEC-52: a reader who may not read unmasked content gets no fingerprint of quoted words."""
+    return dict(citation) | dict.fromkeys(FINGERPRINTS)
+
+
+def _names_withdrawn(ref: object, hidden: AbstractSet[UUID]) -> bool:
+    if not isinstance(ref, Mapping):
+        return False
+    found = cast("Mapping[str, object]", ref)
+    raw = found.get("id")
+    return found.get("type") == "evidence_version" and isinstance(raw, str) and UUID(raw) in hidden
 
 
 def fields_of(row: AgentRunRecord) -> dict[str, object]:
@@ -301,21 +357,37 @@ class RunRecord:
     record_sha256: str
     persisted_at: datetime
     projection: Projection
+    withheld: int  # entries naming a withdrawn evidence version, left out of this read
 
 
 async def record_for(ctx: AuthContext, run_id: UUID) -> RunRecord:
     """The run's record as stored, for a person who may read the run (`agent_run.read` on its
     engagement; walls, shadow and firm-level runs answer 404). 404 until it is persisted. The
-    metadata projection (DEC-87) keeps the facts and fingerprints and drops record identifiers
-    and citation locators."""
+    metadata projection (DEC-87) keeps the facts and drops record identifiers, citation locators
+    and fingerprints; a reader who may not read unmasked content gets no fingerprints either.
+    Entries naming a withdrawn evidence version are left out (`withheld` counts them), so the
+    shown fields need not hash to `record_sha256`."""
     run = await authorised_run(ctx, run_id)
     async with tenant_session(ctx.tenant) as session:
         row = await get_run_record(session, run.id)
     if row is None or run.engagement_id is None:
         raise NotFound("agent_run_record")
     projection = await projection_for(ctx, run.engagement_id)
-    records_read = row.records_read
-    citations = row.citations
+    # P-06-T19: a withdrawn evidence version leaves every read, as on the trace and the writes.
+    versions = {
+        UUID(cast(str, ref["id"]))
+        for ref in [*row.records_read, *(c.get("record") for c in row.citations)]
+        if isinstance(ref, Mapping)
+        and cast("Mapping[str, object]", ref).get("type") == "evidence_version"
+    }
+    hidden: AbstractSet[UUID] = (
+        await withdrawn_among(ctx.tenant, sorted(versions, key=str)) if versions else frozenset()
+    )
+    records_read = [r for r in row.records_read if not _names_withdrawn(r, hidden)]
+    citations = [c for c in row.citations if not _names_withdrawn(c.get("record"), hidden)]
+    withheld = len(row.records_read) - len(records_read) + len(row.citations) - len(citations)
+    if not await may_read_unmasked(ctx):
+        citations = [_without_fingerprints(c) for c in citations]
     if projection == "metadata":
         records_read = [{"type": r.get("type"), "id": None} for r in records_read]
         citations = [_metadata_citation(c) for c in citations]
@@ -342,6 +414,7 @@ async def record_for(ctx: AuthContext, run_id: UUID) -> RunRecord:
         row.record_sha256,
         row.persisted_at,
         projection,
+        withheld,
     )
 
 
@@ -350,6 +423,7 @@ __all__: Sequence[str] = [
     "RunRecord",
     "build_record",
     "fields_of",
+    "fingerprint",
     "persist_run_record",
     "record_for",
     "record_sha256",

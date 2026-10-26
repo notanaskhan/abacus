@@ -11,10 +11,12 @@ the `agents.persist_run_record` activity, as its workflow does. Expectations com
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from collections.abc import Awaitable, Callable, Iterator
 from datetime import timedelta
+from pathlib import Path
 from typing import cast
 
 import asyncpg
@@ -25,20 +27,22 @@ from sqlalchemy.exc import DBAPIError
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
 
-from abacus.ai_gateway import FakeModel, configure_provider, prompt
+from abacus.ai_gateway import FakeModel, ModelRequest, configure_provider, prompt
 from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.activities import persist_run_record_activity
 from abacus.modules.agents.api import (
+    SCREEN_PROMPT,
     SCREENER,
     create_screening_run,
-    install_fake_responses,
     load_agent_context,
     screen,
+    screening_responder,
 )
 from abacus.modules.agents.run_records import (
     PERSISTED,
+    fingerprint,
     persist_run_record,
     record_for,
     record_sha256,
@@ -46,16 +50,26 @@ from abacus.modules.agents.run_records import (
 from abacus.modules.agents.workflow_types import RunInput
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
-from .support import Seeder, World, retrieve
+from .support import Seeder, World, make_world, retrieve
 from .walls_support import Net
 
 Json = dict[str, object]
 
 
+QUOTED = "912-34-5678"  # a synthetic TIN-shaped quote: what a fingerprint must never give away
+
+
+def _quoting(request: ModelRequest) -> str:
+    """The stock screener answer, its first citation quoting a short, guessable value."""
+    answer = cast(Json, json.loads(screening_responder(request)))
+    cast(list[Json], answer["citations"])[0]["quote"] = QUOTED
+    return json.dumps(answer)
+
+
 @pytest.fixture(autouse=True)
 def _model() -> Iterator[None]:
     fake = FakeModel()
-    install_fake_responses(fake)
+    fake.respond(SCREEN_PROMPT, _quoting)
     configure_provider(fake)
     yield
     configure_provider(None)
@@ -67,10 +81,12 @@ async def _activity(argument: RunInput) -> None:
     await env.run(run, argument)
 
 
-async def _screened(world: World) -> uuid.UUID:
-    result = await retrieve(world)
+async def _screened(world: World, version: uuid.UUID | None = None) -> uuid.UUID:
+    """A completed screener run on `version` (a fresh retrieval when None)."""
+    if version is None:
+        version = (await retrieve(world)).evidence_version_id
     run_id = await create_screening_run(
-        world.tenant_id, result.evidence_version_id, uuid.uuid4(), world.requester.user_id
+        world.tenant_id, version, uuid.uuid4(), world.requester.user_id
     )
     assert run_id is not None
     await screen(await load_agent_context(world.tenant_id, run_id))
@@ -133,8 +149,11 @@ async def test_ac44_a_completed_run_persists_one_record_with_its_facts(
     for stored, original in zip(citations, cited, strict=True):
         assert stored["source"] == "screening_result"
         assert cast(Json, stored["locator"])["cell"] == original["cell"]
-        if original.get("quote"):
-            assert isinstance(stored["quote_sha256"], str)
+        quote = original.get("quote")
+        if isinstance(quote, str) and quote:
+            # Keyed per firm (DEC-396): never the plain SHA-256 a guess could be checked against.
+            assert stored["quote_fingerprint"] == fingerprint(world.tenant_id, quote)
+            assert stored["quote_fingerprint"] != hashlib.sha256(quote.encode()).hexdigest()
     text = json.dumps(row, default=str)
     for original in cited:
         for key in ("quote", "value"):
@@ -252,3 +271,124 @@ async def test_ac44_records_are_insert_only_and_written_by_the_system_only(
             "INSERT INTO agent_run_records SELECT * FROM agent_run_records WHERE run_id = $1",
             run_id,
         )
+
+
+async def _withdraw(seed: Seeder, world: World, version: uuid.UUID) -> None:
+    """The withdrawal row the route writes for a client's own upload (ADR-162 §4)."""
+    async with seed.held() as conn:
+        await conn.execute("SET session_replication_role = replica")
+        await conn.execute(
+            "INSERT INTO evidence_withdrawals (tenant_id, evidence_version_id, engagement_id, "
+            "withdrawn_by_user_id, withdrawn_at, erase_after) "
+            "VALUES ($1, $2, $3, $4, now(), now() + interval '7 days')",
+            world.tenant_id,
+            version,
+            world.engagement_id,
+            world.requester.user_id,
+        )
+
+
+def _has_fingerprints(citations: list[Json]) -> bool:
+    return any(c.get("quote_fingerprint") or c.get("sheet_fingerprint") for c in citations)
+
+
+async def test_review_m1_an_offshore_reader_gets_no_fingerprint_of_quoted_words(
+    seed: Seeder, world: World
+) -> None:
+    run_id = await _screened(world)
+    await persist_run_record(world.tenant_id, run_id)
+    onshore = await record_for(world.requester.context(), run_id)
+    assert _has_fingerprints(onshore.citations)
+    await seed.run(
+        "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
+        world.tenant_id,
+        world.requester.user_id,
+    )
+    offshore = await record_for(world.requester.context(), run_id)
+    assert offshore.citations and not _has_fingerprints(offshore.citations)
+    assert len(offshore.citations) == len(onshore.citations)  # locators and verdicts stay
+
+
+async def test_review_m1_two_firms_fingerprint_the_same_words_differently(
+    seed: Seeder, world: World, fake_dir: Path
+) -> None:
+    other = await make_world(seed, fake_dir)
+    mine, theirs = await _screened(world), await _screened(other)
+    await persist_run_record(world.tenant_id, mine)
+    await persist_run_record(other.tenant_id, theirs)
+    a = await _record_row(seed, mine)
+    b = await _record_row(seed, theirs)
+    quotes_a = [c["quote_fingerprint"] for c in cast(list[Json], a["citations"])]
+    quotes_b = [c["quote_fingerprint"] for c in cast(list[Json], b["citations"])]
+    assert quotes_a and any(quotes_a)  # the same stock answer quotes the same words
+    assert not set(filter(None, quotes_a)) & set(filter(None, quotes_b))
+
+
+async def test_review_l1_a_withdrawn_version_leaves_the_record_read(
+    seed: Seeder, world: World
+) -> None:
+    run_id = await _screened(world)
+    await persist_run_record(world.tenant_id, run_id)
+    stored = await _record_row(seed, run_id)
+    [version] = [
+        uuid.UUID(cast(str, r["id"]))
+        for r in cast(list[Json], stored["records_read"])
+        if r["type"] == "evidence_version"
+    ]
+    await _withdraw(seed, world, version)
+    found = await record_for(world.requester.context(), run_id)
+    named = [*found.records_read, *(c.get("record") for c in found.citations)]
+    assert all(cast(Json, r).get("id") != str(version) for r in named if r)
+    total = len(cast(list[Json], stored["records_read"])) + len(
+        cast(list[Json], stored["citations"])
+    )
+    assert found.withheld == total - len(found.records_read) - len(found.citations) > 0
+
+
+_COPY = (
+    "INSERT INTO agent_run_records (run_id, tenant_id, engagement_id, work_item_id, capability, "
+    "spec_version, stage, prompt_ref, prompt_sha256, model, route, region, terms_version, "
+    "boundary_basis, input_hashes, records_read, citations, outcome, initiator_user_id, "
+    "started_at, completed_at, record_sha256) "
+    "SELECT $2, a.tenant_id, a.engagement_id, a.work_item_id, a.capability, a.spec_version, "
+    "coalesce($3, a.stage), a.prompt_ref, a.prompt_sha256, a.model, a.route, a.region, "
+    "a.terms_version, a.boundary_basis, a.input_hashes, a.records_read, a.citations, "
+    "coalesce($4::jsonb, a.outcome), a.initiator_user_id, r.started_at + $5::interval, "
+    "r.finished_at + $6::interval, a.record_sha256 "
+    "FROM agent_run_records a JOIN agent_runs r ON r.id = $2 WHERE a.run_id = $1"
+)
+_NONE = timedelta(0)
+_TAMPER: dict[str, tuple[str | None, str | None, timedelta, timedelta]] = {
+    "stage": ("shadow", None, _NONE, _NONE),
+    "outcome": (None, '{"state": "failed", "failure_code": null, "outputs": {}}', _NONE, _NONE),
+    "started_at": (None, None, -timedelta(days=1), _NONE),
+    "completed_at": (None, None, _NONE, timedelta(hours=1)),
+}
+
+
+async def _copy_record(
+    seed: Seeder,
+    world: World,
+    source: uuid.UUID,
+    target: uuid.UUID,
+    changed: tuple[str | None, str | None, timedelta, timedelta],
+) -> None:
+    """Insert, as the system, `source`'s record for the run `target` (its own run's times),
+    with `changed` (stage, outcome, start shift, finish shift) misstated."""
+    await seed.as_actor(
+        world.tenant_id, ("system", f"agent-run:{target}"), _COPY, source, target, *changed
+    )
+
+
+@pytest.mark.parametrize("column", sorted(_TAMPER))
+async def test_review_l2_a_record_that_misstates_its_run_is_refused(
+    seed: Seeder, world: World, column: str
+) -> None:
+    first = await _screened(world)
+    [version] = await seed.rows("SELECT evidence_version_id FROM agent_runs WHERE id = $1", first)
+    second = await _screened(world, cast(uuid.UUID, version["evidence_version_id"]))
+    await persist_run_record(world.tenant_id, first)
+    with pytest.raises(asyncpg.CheckViolationError):
+        await _copy_record(seed, world, first, second, _TAMPER[column])
+    # The same statement with the run's own facts is accepted: the refusal is the misstatement.
+    await _copy_record(seed, world, first, second, (None, None, _NONE, _NONE))

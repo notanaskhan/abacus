@@ -15526,18 +15526,18 @@ export type RecordCitationOut = {
     amount_matches?: boolean | null;
     locator: CitationLocatorOut;
     /**
-     * Quote Sha256
+     * Quote Fingerprint
      */
-    quote_sha256: string | null;
+    quote_fingerprint: string | null;
     /**
      * Reason
      */
     reason?: string | null;
     record: RecordRefOut | null;
     /**
-     * Sheet Sha256
+     * Sheet Fingerprint
      */
-    sheet_sha256: string | null;
+    sheet_fingerprint: string | null;
     /**
      * Source
      */
@@ -17376,8 +17376,10 @@ export type RunItemsOut = {
  * RunRecordOut
  *
  * ADR-169 §3: the run's durable record as stored. Content-free by construction:
- * identifiers, versions and fingerprints. `record_sha256` is the record's own hash, not the
- * run view's `run_record_sha256` (DEC-396).
+ * identifiers, versions and fingerprints. `record_sha256` is SHA-256 of the canonical JSON
+ * (sorted keys, UTC instants) of every stored field but `persisted_at`, citations' keyed
+ * fingerprints included; it is the record's own hash, not the run view's `run_record_sha256`
+ * (DEC-396).
  */
 export type RunRecordOut = {
     /**
@@ -17462,6 +17464,10 @@ export type RunRecordOut = {
      * Terms Version
      */
     terms_version: string | null;
+    /**
+     * Withheld
+     */
+    withheld: number;
 };
 
 /**

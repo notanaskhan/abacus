@@ -8,12 +8,15 @@ Raw traces keep ADR-032's ~30 days; a record outlives them for the engagement's 
 
 - `run_id` is the primary key (one record per run) and references `agent_runs`; a run with an
   engagement references the run's own engagement (template runs are firm-level, no engagement).
+- A citation's quoted words and sheet name are kept only as HMAC-SHA-256 fingerprints under the
+  firm's own key (`quote_fingerprint`, `sheet_fingerprint`; DEC-396), never plain hashes.
 - `record_sha256` is the SHA-256 of the canonical JSON of every other field (ADR-169 §3), as
   lowercase hex, the form `kernel.uow.Ref` carries into the `agent_run_record.persisted` audit
   event. It is not the run view's read-time `run_record_sha256` (TASK-5000; DEC-396).
 - Insert-only for the app role, TRUNCATE revoked; forced row-level security.
-- A guard requires the `system` actor, and a run that has ended whose capability, engagement and
-  initiator the record repeats.
+- A guard requires the `system` actor, and a run that has ended whose capability, engagement,
+  initiator, spec version, stage (its shadow flag), start and finish, failure code and terminal
+  state (ADR-169 §2's legacy map) the record repeats (security review, DEC-396).
 
 Numbered 0171 on a branch based on 0160 (`down_revision = "0160"`); the merge re-points the chain.
 The downgrade refuses while any record exists.
@@ -119,7 +122,8 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'a run record is persisted by the run''s workflow (ADR-169)'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
-            SELECT r.status, r.agent_id, r.engagement_id, r.initiator_user_id, r.spec_version
+            SELECT r.status, r.agent_id, r.engagement_id, r.initiator_user_id, r.spec_version,
+                   r.shadow, r.started_at, r.finished_at, r.failure_code
               INTO v_run FROM agent_runs r
              WHERE r.tenant_id = NEW.tenant_id AND r.id = NEW.run_id;
             IF NOT FOUND OR v_run.status = 'running' THEN
@@ -130,7 +134,17 @@ def upgrade() -> None:
             IF NEW.capability IS DISTINCT FROM v_run.agent_id
                OR NEW.engagement_id IS DISTINCT FROM v_run.engagement_id
                OR NEW.initiator_user_id IS DISTINCT FROM v_run.initiator_user_id
-               OR NEW.spec_version IS DISTINCT FROM v_run.spec_version THEN
+               OR NEW.spec_version IS DISTINCT FROM v_run.spec_version
+               OR NEW.stage IS DISTINCT FROM (CASE WHEN v_run.shadow THEN 'shadow' ELSE 'live' END)
+               OR NEW.started_at IS DISTINCT FROM v_run.started_at
+               OR NEW.completed_at IS DISTINCT FROM v_run.finished_at
+               OR NEW.outcome ->> 'failure_code' IS DISTINCT FROM v_run.failure_code
+               OR NEW.outcome ->> 'state' IS DISTINCT FROM (CASE v_run.status
+                    WHEN 'completed' THEN 'succeeded'
+                    WHEN 'escalated' THEN 'needs_input'
+                    ELSE CASE WHEN v_run.failure_code = 'cancelled' THEN 'cancelled'
+                              ELSE 'failed' END
+                  END) THEN
                 RAISE EXCEPTION 'a run record repeats its run'
                     USING ERRCODE = 'check_violation',
                           CONSTRAINT = 'agent_run_records_of_run';

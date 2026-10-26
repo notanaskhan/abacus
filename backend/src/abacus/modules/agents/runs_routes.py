@@ -205,8 +205,10 @@ class RecordCitationOut(BaseModel):
     source: Annotated[str, classified("internal")]
     record: Annotated[RecordRefOut | None, classified("internal")]
     locator: Annotated[CitationLocatorOut, classified("internal")]
-    quote_sha256: Annotated[str | None, classified("internal")]
-    sheet_sha256: Annotated[str | None, classified("internal")]
+    # HMAC-SHA-256 of the quoted words and of the sheet name under the firm's fingerprint key
+    # (DEC-396): never the words; null for readers who may not read unmasked content.
+    quote_fingerprint: Annotated[str | None, classified("confidential")]
+    sheet_fingerprint: Annotated[str | None, classified("confidential")]
     verified: Annotated[bool | None, classified("internal")] = None
     reason: Annotated[str | None, classified("internal")] = None
     amount_matches: Annotated[bool | None, classified("internal")] = None
@@ -231,8 +233,10 @@ class RecordOutcomeOut(BaseModel):
 
 class RunRecordOut(BaseModel):
     """ADR-169 §3: the run's durable record as stored. Content-free by construction:
-    identifiers, versions and fingerprints. `record_sha256` is the record's own hash, not the
-    run view's `run_record_sha256` (DEC-396)."""
+    identifiers, versions and fingerprints. `record_sha256` is SHA-256 of the canonical JSON
+    (sorted keys, UTC instants) of every stored field but `persisted_at`, citations' keyed
+    fingerprints included; it is the record's own hash, not the run view's `run_record_sha256`
+    (DEC-396)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -255,9 +259,14 @@ class RunRecordOut(BaseModel):
     initiator_user_id: Annotated[UUID, classified("internal")]
     started_at: Annotated[datetime, classified("internal")]
     completed_at: Annotated[datetime, classified("internal")]
+    # SHA-256 of the canonical JSON of the stored fields (not `persisted_at`); citations enter it
+    # with their keyed fingerprints (HMAC-SHA-256 under the firm's key), never the quoted words.
     record_sha256: Annotated[str, classified("internal")]
     persisted_at: Annotated[datetime, classified("internal")]
     projection: Annotated[Literal["content", "metadata"], classified("internal")]
+    # Entries naming a withdrawn evidence version, left out of this read (P-06-T19); when it is
+    # not zero the shown fields no longer hash to `record_sha256`.
+    withheld: Annotated[int, classified("internal")]
 
 
 def _record(found: RunRecord) -> RunRecordOut:

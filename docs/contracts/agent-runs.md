@@ -109,11 +109,12 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
   - `prompt_ref`, `prompt_sha256`, `model`, `route`, `region` (`local` for the fake route, `us` for the provider's API, the Bedrock region), `terms_version`, `boundary_basis`: from the call whose answer the run kept; null when the run called no model;
   - `input_hashes`: `context` (the run's context hash) and `model_calls` (each call's inputs hash);
   - `records_read`: `type` and `id` of each record the run read;
-  - `citations`: `source`, `record`, `locator` (`document`, `claim`, `page`, `cell`), `quote_sha256` and `sheet_sha256` (fingerprints of the words, never the words), and code's `verified`, `reason`, `amount_matches`;
+  - `citations`: `source`, `record`, `locator` (`document`, `claim`, `page`, `cell`), `quote_fingerprint` and `sheet_fingerprint` (`confidential`: HMAC-SHA-256 of the quoted words and the sheet name under the firm's own fingerprint key, never the words; null for a reader who may not read unmasked content, DEC-52), and code's `verified`, `reason`, `amount_matches`;
   - `outcome`: `state` (`succeeded`, `needs_input`, `failed`, `cancelled`), `failure_code`, `outputs` (counts by kind);
   - `initiator_user_id`, `started_at`, `completed_at`, `persisted_at`;
-  - `record_sha256`: SHA-256 of the canonical JSON of every field above except `persisted_at` (sorted keys, UTC instants). It is the record's own hash, fixed once written; the run view's `run_record_sha256` is a different, read-time fingerprint of the live run row (DEC-396);
-  - `projection`: with `metadata` (DEC-87), `records_read` ids are null and citations keep only `source` and code's verdict.
+  - `record_sha256`: SHA-256 of the canonical JSON of every stored field except `persisted_at` (sorted keys, UTC instants; citations with their keyed fingerprints). It is the record's own hash, fixed once written; the run view's `run_record_sha256` is a different, read-time fingerprint of the live run row (DEC-396);
+  - `projection`: with `metadata` (DEC-87), `records_read` ids are null and citations keep only `source` and code's verdict;
+  - `withheld`: entries naming a withdrawn evidence version, left out of this read (P-06-T19). When it is not zero, the shown fields no longer hash to `record_sha256`.
 
   The model id appears here, unlike on the trace: ADR-169 §4 names this route for consumers that verify or package records (A-07, G-02).
 

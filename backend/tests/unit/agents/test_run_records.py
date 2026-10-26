@@ -7,21 +7,27 @@ import hashlib
 import json
 import uuid
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
 
 from abacus.ai_gateway import ModelCall, prompt
+from abacus.kernel.errors import ServiceUnavailable
+from abacus.modules.agents import run_records
 from abacus.modules.agents.models import AgentRun
 from abacus.modules.agents.repository import RunCitationRow, RunOutputRows, RunWriteRow
 from abacus.modules.agents.run_records import (
     FIELDS,
     build_record,
+    fingerprint,
+    fingerprinting_configured,
     record_sha256,
     record_state,
     scrub_citation,
 )
 
+TENANT = uuid.UUID(int=2)
 START = datetime(2027, 1, 4, 15, 0, tzinfo=UTC)
 VERSION = uuid.UUID(int=7)
 PROMPT = "evidence.screen@v0"
@@ -75,13 +81,13 @@ OUTPUTS = RunOutputRows({"screening_result": 1}, [("evidence_version", VERSION)]
 
 
 def test_ac44_a_citation_keeps_its_locator_and_fingerprints_never_the_words() -> None:
-    scrubbed = scrub_citation(CITED)
+    scrubbed = scrub_citation(TENANT, CITED)
     assert scrubbed == {
         "source": "screening_result",
         "record": {"type": "evidence_version", "id": str(VERSION)},
         "locator": {"cell": "B12"},
-        "quote_sha256": hashlib.sha256(b"Cash at Harbor Bank").hexdigest(),
-        "sheet_sha256": hashlib.sha256(b"Client sheet name").hexdigest(),
+        "quote_fingerprint": fingerprint(TENANT, "Cash at Harbor Bank"),
+        "sheet_fingerprint": fingerprint(TENANT, "Client sheet name"),
         "verified": True,
         "reason": None,
     }
@@ -90,9 +96,29 @@ def test_ac44_a_citation_keeps_its_locator_and_fingerprints_never_the_words() ->
         assert words not in text
 
 
+def test_ac44_a_fingerprint_is_keyed_per_firm_never_a_plain_hash() -> None:
+    """Security review (DEC-396): a short quoted value (a 9xx TIN) can't be found by hashing
+    guesses, and two firms' fingerprints of the same words differ."""
+    words = "912-34-5678"
+    mine, theirs = fingerprint(TENANT, words), fingerprint(uuid.UUID(int=99), words)
+    assert mine != hashlib.sha256(words.encode()).hexdigest()
+    assert mine != theirs
+    assert mine == fingerprint(TENANT, words) and len(mine) == 64
+
+
+def test_ac44_no_record_is_persisted_without_the_fingerprint_pepper_outside_local(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hosted = SimpleNamespace(environment="staging", run_record_fingerprint_pepper=None)
+    monkeypatch.setattr(run_records, "settings", lambda: hosted)
+    assert not fingerprinting_configured()
+    with pytest.raises(ServiceUnavailable):
+        fingerprint(TENANT, "words")
+
+
 def test_ac44_a_locator_value_that_is_not_a_short_code_is_dropped() -> None:
     long = RunCitationRow("x", "evidence_version", None, {"cell": "Z" * 200, "page": 3})
-    assert scrub_citation(long)["locator"] == {"cell": None, "page": 3}
+    assert scrub_citation(TENANT, long)["locator"] == {"cell": None, "page": 3}
 
 
 @pytest.mark.parametrize(
