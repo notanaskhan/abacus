@@ -89,3 +89,29 @@ The parser (`workbook.py`) is read-only, bounded (5 MB, 2,000 rows), and reports
 - Work-item facts (kind, season, office, preparer, client and work item names) come from `engagements.api.work_item_index()`, joined on the binder's work item.
 - `binder_activity` is the projection it reads for the last client activity; the client's mark-done keeps it (`repository.touch_client_activity`).
 - **Slot:** `register_binder_tag(code, provider)`: a provider names, of a page's binders, those carrying its tag (the §7216 consents tag: P-07, T-01). None registered, no tags.
+
+## Request lifecycle v2 (P-06-T10; C5 v1; SPEC-319 AC-11 to AC-14)
+`lifecycle.py` (PROTECTED), routes in `contract.py`, behind `binders.engine`. Every move is a person's (INV-1) except the client's Ignore.
+- **Edit and delete:** `PATCH …/request-items/{id}` edits a non-terminal request (`request_item.update`); `DELETE` soft-deletes a never-sent Draft only (409 `request_already_sent`).
+- **Send** (`request_item.send`, `Idempotency-Key`): Draft to Requested.
+  - It needs a due date, its own or the binder's (422 `due_date_required`).
+  - Unchanged model-drafted wording is refused while the firm's P-25 setting is off (409 `model_text_not_permitted`, DV-11), compared by `drafted_wording_fingerprint`.
+  - The title and wording pass `communications`' scope check (409 `out_of_scope`, nothing sent; with no check registered, 409 `sharing_unavailable`).
+  - The `request_item.sent` email is held by an approval grant until the 10-s Undo window ends (ADR-161), as a binder's publish is. Undo after 10 s: 409 `undo_window_closed`; once delivered: 409 `effect_started`.
+- **Waive** (`request_item.waive`, a reason): to `not_applicable`. **Ignore** (the client, `POST /v1/portal/request-items/{id}/ignore`, a reason): the status stays `requested` with `client_ignored_at` (OQ-3). **Return to client** (`request_item.return`) clears it. **Incorporate** (`request_item.update`): `pending_incorporation` to `incorporated`.
+- **The client's Undo** of an Ignore or a Mark as Done (`client_undo.py`, R-01-T08): a compensating event, by the person who acted, open until the firm acts (409 `firm_already_acted`).
+- **Delegate** (`request_item.delegate`): a client contact who is a portal user (else 409 `contact_not_portal_user`) gets a `request_item` grant on this one request (P-09), recorded in `request_delegations`. On an engagement holding a `tax_return` work item it needs the client's §7216 `third_party_disclosure` consent (`consent.py`; 409 `consent_required`; nobody holds it until T-01 registers C19, DEC-388).
+- **Activity** (`activity.read`): the request's audit events through `kernel.uow.audit_of_targets`, identifiers only.
+- **Upload intents** (`POST /v1/portal/request-items/{id}/upload-intents`, `evidence.upload`): a 90-second hint in the UNLOGGED `request_upload_intents`, audited `upload_intent.announced`. Expired rows are ignored at read; nothing sweeps them.
+- **The live poll** (`GET /v1/binders/{id}/live`, `request_item.read`; BND-02 every 5 s): unexpired intents per request, plus inbox files waiting and a screening running from the provider registered with `register_live_facts`. **No module registers that provider yet**, so on the live stack both read 0 and false (DEC-158); fixture mode draws "Waiting 2".
+
+## What follow-ups chase (P-06-T14; `follow_up_reads.py`)
+The agents module drafts follow-ups and reads the requests only through this. A request is chased while it is open for the client: Requested or Returned, client-visible, not deleted, in a Published binder (otherwise 409 `binder_not_published`). A screening return names a request the client answered: Uploaded, or Returned once sent. Reads go through `visible()` for the caller.
+
+## A client's withdrawal, the requests side (P-06-T19; ADR-162)
+`service.withdraw_upload(tx, …)` runs inside evidence's withdrawal unit of work. It voids the version's fulfilments of the items the client may withdraw from, audits `fulfilment.withdrawn` and `request_item.upload_withdrawn` (identifiers only, never the file name), and returns to `requested` each item the version was the only fulfilment of.
+
+## Not built (P-06 close-out, 2026-10-26)
+- `PUT /v1/binders/{id}/follow-up-override` still answers 501: the column exists and `BinderOut` carries it, but nothing writes it.
+- The OQ-1 preparer path (DEC-136): `binder.publish` on a `tax_return` binder has DEC-38's cells only, so the return's preparer cannot publish on the live stack.
+- `requests.api.awaiting_review_count` (P-06 §2.3, for I-01) does not exist.
