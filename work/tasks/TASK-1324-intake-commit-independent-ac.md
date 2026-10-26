@@ -31,3 +31,6 @@ for P-07-T42 (TASK-1326).
 
 ## Progress log
 - 2026-10-26: planned and written as strict xfails before T42.
+- 2026-10-26: T42 landed; the module marker was dropped and the 12 tests pass. One helper rename
+  after the gates: `World.commit` became `World.commit_intake` (banned pattern UOW-001 reads any
+  `.commit(` as a unit-of-work bypass); no assertion changed.

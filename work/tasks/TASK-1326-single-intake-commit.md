@@ -47,3 +47,11 @@ and commit stubs live (the import routes stay 501 until P-07-T52).
 
 ## Progress log
 - 2026-10-26: planned.
+- 2026-10-26: built (DEC-430, DEC-441). Deviation found by TASK-1324's suite: a manager could not
+  clear a hit on the firm admin's intake, because the conflict subject was owner-only; the
+  `client_intake_draft` subject is now visible to its owner and to anyone holding
+  `conflict.clear` who is not walled from the draft's client (DEC-430). `open_record` takes the
+  record kind; `drafts._work_items` is now `work_items_for`. Tests: TASK-1324's suite (12),
+  `tests/unit/engagements/test_intake_rules.py`, the stub suite (live routes no longer 501),
+  `test_schema_check_db.py` (the new update columns), regenerated tenant-isolation suite. Gates
+  green; `make generate`; web tsc.

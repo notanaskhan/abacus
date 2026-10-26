@@ -1254,6 +1254,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"prospect_engagement_id", "created_engagement_id", "version", "saved_at"}
             | {"discarded_at"}
         ),
+        "client_intake_drafts": frozenset(  # P-07-T42 (0177): autosave, discard, commit
+            {"step", "payload", "version", "saved_at", "discarded_at", "committed_at"}
+            | {"committed_client_id", "result"}
+        ),
         "inbox_files": frozenset(  # SPEC-023
             {"status", "assigned_item_id", "assigned_version_id", "decided_by", "decided_at"}
             | {"sort_outcome"}  # R-01-T09 (0153): a portal drop's sort, once

@@ -193,7 +193,7 @@ class World:
         check = await self.cleared_check(draft["id"])
         return await self.save(draft, self.payload(check=check))
 
-    async def commit(
+    async def commit_intake(
         self,
         draft: Json,
         *,
@@ -331,7 +331,7 @@ async def test_ac_the_estate_is_added_under_walter_with_three_returns_in_one_com
 ) -> None:
     before = await w.footprint()
     draft = await w.ready()
-    done = _json(await w.commit(draft), 201)
+    done = _json(await w.commit_intake(draft), 201)
 
     # DEC-62: the estate is a new entity of the existing client, whose name stays "Walter".
     assert done["client_id"] == str(w.walter)
@@ -433,7 +433,7 @@ async def test_ac_the_estate_is_added_under_walter_with_three_returns_in_one_com
 
 async def test_ac_create_without_acceptance_opens_no_record(w: World) -> None:
     """ "Create": the same write without the acceptance record (lands on CLI-02)."""
-    done = _json(await w.commit(await w.ready(), start_acceptance=False), 201)
+    done = _json(await w.commit_intake(await w.ready(), start_acceptance=False), 201)
     assert done["acceptance_record_id"] is None
     assert done["engagement_status"] == "prospect"
     assert not await w.count("SELECT count(*) FROM acceptance_records WHERE tenant_id = $1")
@@ -445,18 +445,22 @@ async def test_ac_create_without_acceptance_opens_no_record(w: World) -> None:
 async def test_ac_a_replayed_key_answers_the_same_and_writes_nothing_more(w: World) -> None:
     draft = await w.ready()
     key = f"thornbury-{w.marker}-commit"
-    first = _json(await w.commit(draft, key=key), 201)
+    first = _json(await w.commit_intake(draft, key=key), 201)
     written = await w.footprint()
 
-    again = await w.commit(draft, key=key)
+    again = await w.commit_intake(draft, key=key)
     assert again.status_code == 201
     assert again.json() == first
     assert await w.footprint() == written
 
     # The same key with another request is refused, not replayed.
-    _refusal(await w.commit(draft, key=key, start_acceptance=False), 422, "idempotency_key_reused")
+    _refusal(
+        await w.commit_intake(draft, key=key, start_acceptance=False),
+        422,
+        "idempotency_key_reused",
+    )
     # A committed draft answers its first result to a new key, and writes nothing.
-    other = _json(await w.commit(draft, key=f"thornbury-{w.marker}-retry"), 201)
+    other = _json(await w.commit_intake(draft, key=f"thornbury-{w.marker}-retry"), 201)
     assert other == first
     assert await w.footprint() == written
     assert (
@@ -488,7 +492,7 @@ async def test_ac_a_failure_inside_the_commit_leaves_nothing_behind(net: Net) ->
     w = await _world(net, template=False)
     before = await w.footprint()
     draft = await w.ready()
-    _refusal(await w.commit(draft), 409, "acceptance_template_missing")
+    _refusal(await w.commit_intake(draft), 409, "acceptance_template_missing")
     assert await w.footprint() == before
     assert not await w.count(
         "SELECT count(*) FROM audit_events WHERE tenant_id = $1 "
@@ -497,7 +501,7 @@ async def test_ac_a_failure_inside_the_commit_leaves_nothing_behind(net: Net) ->
     # The draft is still open: "Create" (no acceptance record) then succeeds.
     still = _json(await w.call("GET", f"{DRAFTS}/{draft['id']}", w.grace))
     assert still["committed_client_id"] is None
-    done = _json(await w.commit(draft, start_acceptance=False), 201)
+    done = _json(await w.commit_intake(draft, start_acceptance=False), 201)
     assert len(cast(list[str], done["work_item_ids"])) == 3
 
 
@@ -507,7 +511,7 @@ async def test_ac_a_failure_inside_the_commit_leaves_nothing_behind(net: Net) ->
 async def test_ac_the_firm_admin_creates_prospect_engagements_only(w: World) -> None:
     """OQ-2: Grace (firm admin) holds `client.intake`, which creates Prospect engagements only;
     nothing is accepted by the commit."""
-    done = _json(await w.commit(await w.ready()), 201)
+    done = _json(await w.commit_intake(await w.ready()), 201)
     statuses = await w.seed.rows(
         "SELECT DISTINCT status FROM engagements WHERE tenant_id = $1", w.tenant
     )
@@ -520,9 +524,9 @@ async def test_ac_a_role_without_client_intake_is_refused(w: World) -> None:
     draft = await w.ready()
     # Kira (staff) holds no `client.intake`: no draft of her own, and not Grace's commit.
     assert (await w.call("POST", DRAFTS, w.kira, {"step": "entity"})).status_code == 403
-    assert (await w.commit(draft, who=w.kira)).status_code == 403
+    assert (await w.commit_intake(draft, who=w.kira)).status_code == 403
     # Samuel (manager) holds the action, but the draft is Grace's own: 404.
-    assert (await w.commit(draft, who=w.samuel)).status_code == 404
+    assert (await w.commit_intake(draft, who=w.samuel)).status_code == 404
     assert not await w.count("SELECT count(*) FROM engagements WHERE tenant_id = $1")
 
 
@@ -554,25 +558,25 @@ async def test_ac_no_commit_without_a_cleared_conflict_check(w: World) -> None:
 
     # No check at all.
     draft = await w.save(draft, w.payload())
-    facts = _refusal(await w.commit(draft), 409, "gate_unmet")
+    facts = _refusal(await w.commit_intake(draft), 409, "gate_unmet")
     assert facts.get("gate") == "conflict_check"
 
     # A check whose hits stand (nobody cleared Walter's own match).
     standing = await w.cleared_check(draft["id"], clear=False)
     draft = await w.save(draft, w.payload(check=standing))
-    _refusal(await w.commit(draft), 409, "gate_unmet")
+    _refusal(await w.commit_intake(draft), 409, "gate_unmet")
 
     # A cleared check, but run on another draft.
     other = await w.draft()
     foreign = await w.cleared_check(other["id"])
     draft = await w.save(draft, w.payload(check=foreign))
-    _refusal(await w.commit(draft), 409, "gate_unmet")
+    _refusal(await w.commit_intake(draft), 409, "gate_unmet")
     assert not await w.count("SELECT count(*) FROM engagements WHERE tenant_id = $1")
 
     # This draft's check, every hit cleared by a manager: the commit goes through.
     cleared = await w.cleared_check(draft["id"])
     draft = await w.save(draft, w.payload(check=cleared))
-    done = _json(await w.commit(draft), 201)
+    done = _json(await w.commit_intake(draft), 201)
     assert done["conflict_check_id"] == str(cleared)
 
 
@@ -592,7 +596,7 @@ async def test_ac_form_706_needs_the_date_of_death(w: World) -> None:
     assert {"field": "entity.date_of_death", "code": "date_of_death_required"} in cast(
         list[Json], v["problems"]
     )
-    facts = _refusal(await w.commit(draft), 422, "draft_incomplete")
+    facts = _refusal(await w.commit_intake(draft), 422, "draft_incomplete")
     assert facts.get("step") == "services"
     assert not await w.count("SELECT count(*) FROM engagements WHERE tenant_id = $1")
 
@@ -601,7 +605,7 @@ async def test_ac_form_706_needs_the_date_of_death(w: World) -> None:
         await w.call("POST", f"{DRAFTS}/{draft['id']}/validate", w.grace, {"step": "services"})
     )
     assert v["valid"] is True and v["problems"] == []
-    _json(await w.commit(draft), 201)
+    _json(await w.commit_intake(draft), 201)
 
 
 # --- the SSN guard on a real tenant -------------------------------------------------------------

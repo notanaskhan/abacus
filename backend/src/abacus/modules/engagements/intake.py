@@ -38,6 +38,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import DateTime, Integer, Text
 
+from abacus.kernel import clock
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.tin_patterns import find_tins
@@ -55,6 +56,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     Resource,
     add_rolled_forward_member,
+    allowed_actions,
     authorise,
     hidden_clients,
     is_synthetic_firm,
@@ -78,6 +80,7 @@ from abacus.modules.organisations.api import (
 )
 
 INTAKE: Final = "client.intake"
+CLEAR_CONFLICT: Final = "conflict.clear"
 SUBJECT: Final = "client_intake_draft"  # the conflict check's subject kind (DEC-373)
 Step = Literal["entity", "relationships", "contacts", "services", "conflicts", "review"]
 STEPS: Final[tuple[Step, ...]] = (
@@ -333,11 +336,36 @@ async def get_draft(ctx: AuthContext, draft_id: UUID) -> IntakeDraftView:
 
 
 async def draft_visible(ctx: AuthContext, draft_id: UUID) -> bool:
-    """For organisations' conflict checks (DEC-375, L4): the caller's own live draft, its
-    client not walled off from them."""
+    """For organisations' conflict checks (DEC-375, L4; DEC-430): the caller's own live draft,
+    or, for a person who may clear conflict hits (a partner or manager), any live draft of the
+    firm, so a hit on the firm admin's intake can be cleared (CLI-06 h); never one whose client
+    is walled off from them."""
     try:
         await get_draft(ctx, draft_id)
     except (NotFound, Forbidden):
+        pass
+    else:
+        return True
+    may = await allowed_actions(ctx, Resource.firm(ctx.tenant_id), [CLEAR_CONFLICT])
+    if CLEAR_CONFLICT not in may:
+        return False
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            (
+                await session.execute(
+                    select(drafts.c.payload).where(
+                        drafts.c.id == draft_id, drafts.c.discarded_at.is_(None)
+                    )
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+    if row is None:
+        return False
+    try:
+        await _walled_client(ctx, cast(dict[str, object], row["payload"] or {}))
+    except NotFound:
         return False
     return True
 
@@ -589,6 +617,7 @@ async def commit_intake(ctx: AuthContext, draft_id: UUID, start_acceptance: bool
     kind: acceptance_model.Kind = (
         "new_engagement_existing_client" if existing is not None else "new_client"
     )
+    today = await clock.today(ctx.tenant)  # a relationship's start without a date of death
     async with uow(ctx.tenant) as tx:
         if existing is not None:
             made = await client_with_entity(
@@ -609,7 +638,6 @@ async def commit_intake(ctx: AuthContext, draft_id: UUID, start_acceptance: bool
                 date_of_death=_date(entity.get("date_of_death")),
             ),
         )
-        today = date.today()
         for rel in _list(p, "relationships"):
             await add_intake_relationship(
                 tx,

@@ -25,3 +25,4 @@ updated: 2026-10-26
 
 ## Progress log
 - 2026-10-26: planned.
+- 2026-10-26: built; `tests/contracts/intake_import/test_intake_import_consumer.py` passes.
