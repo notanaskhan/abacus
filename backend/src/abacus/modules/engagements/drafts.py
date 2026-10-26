@@ -522,10 +522,11 @@ class Created:
     methodology_version_id: UUID | None
 
 
-async def _work_items(
+async def work_items_for(
     tx: UnitOfWork, ctx: AuthContext, target: Engagement, entry: CatalogueEntry, name: str
 ) -> list[UUID]:
-    """The type's work items (cardinality, chapter 03 §3.1); ones already there are kept."""
+    """The type's work items (cardinality, chapter 03 §3.1); ones already there are kept. Also
+    the intake commit's (P-07-T42), with the entry's forms narrowed to the service's."""
     existing = (
         await tx.session.execute(
             select(WorkItem.id, WorkItem.kind, WorkItem.name).where(
@@ -661,7 +662,7 @@ async def create_from_draft(
             await tx.session.execute(
                 update(Engagement).where(Engagement.id == target.id).values(**values)
             )
-        work = await _work_items(tx, ctx, target, entry, name)
+        work = await work_items_for(tx, ctx, target, entry, name)
         roster = engagement_team_query().subquery("roster")
         on_team = set(
             (

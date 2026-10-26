@@ -206,6 +206,9 @@ class VersionInfo:
     adopted_at: datetime
     source: str
     pulled_at: datetime
+    # A-02-T10: the caption's source kind (0149's generated column) and the prior year's end.
+    source_kind: str = "other"
+    prior_period_end: date | None = None
 
 
 @dataclass(frozen=True)
@@ -747,6 +750,7 @@ async def trial_balance_view(
         s = snaps[v.snapshot_id]
         if s is None:
             raise NotFound("ledger_snapshot")
+        p = snaps.get(v.prior_snapshot_id) if v.prior_snapshot_id else None
         return VersionInfo(
             v.version_no,
             v.snapshot_id,
@@ -756,6 +760,8 @@ async def trial_balance_view(
             v.created_at,
             s.source,
             s.pulled_at,
+            s.source_kind,
+            p.period_end if p is not None else None,
         )
 
     available = ("unadjusted", "aje", "rje", "final") if entries is not None else ("unadjusted",)

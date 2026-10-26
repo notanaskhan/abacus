@@ -35,8 +35,6 @@ TB = f"{TBS}/{{tb_id}}"
 
 # The new C9 v1 operations, stubbed behind the flag (method, path) -> the one matrix action.
 STUBS: dict[tuple[str, str], str] = {
-    ("get", f"{TB}/layers/{{layer}}"): "trial_balance.read",
-    ("get", f"{TB}/leadsheets/{{area}}"): "trial_balance.read",
     ("get", f"{TB}/export.xlsx"): "trial_balance.export",
     ("post", f"{TB}/checks/{{check_id}}/issue-link"): "tie_out_check.define",
 }
@@ -57,6 +55,9 @@ LIVE: dict[tuple[str, str], str] = {
     ("post", f"{TB}/sign-offs/manager"): "sign_off.manager",
     ("post", f"{TB}/sign-offs/partner"): "sign_off.partner",
     ("post", f"{TB}/sign-offs/eqr"): "sign_off.eqr",
+    # A-02-T10 (TASK-1336): the view by layer and the leadsheet by area are live.
+    ("get", f"{TB}/layers/{{layer}}"): "trial_balance.read",
+    ("get", f"{TB}/leadsheets/{{area}}"): "trial_balance.read",
 }
 CLIENT_ROLES = {"client_admin", "client_contributor", "client_service"}
 
