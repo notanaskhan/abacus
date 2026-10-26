@@ -595,7 +595,15 @@ async def test_ac4_1_1_every_registered_kind_with_its_default(world: World) -> N
     # Email on by default for mention (inferred, P-01) and for an Accrued-side incident, which
     # Q-02 §4 says is emailed "even when digests are on" (Q-02-T30), and for a wall's approval
     # request to its named partner (G-01 §4.7, G-01-T09); every other kind is off.
-    emailed = {"mention", "incident_from_accrued", "wall_approval_requested"}
+    # G-02-T02 (G-02 section 4.8): governance's approval requests and incident deadline too.
+    emailed = {
+        "mention",
+        "incident_from_accrued",
+        "wall_approval_requested",
+        "ai_policy_approval_requested",
+        "incident_decision_requested",
+        "incident_deadline_approaching",
+    }
     assert {k: choices[k] for k in emailed} == dict.fromkeys(emailed, (True, True))
     assert {k: v for k, v in choices.items() if k not in emailed} == dict.fromkeys(
         set(choices) - emailed, (True, False)

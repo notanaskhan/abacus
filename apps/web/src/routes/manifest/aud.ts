@@ -14,14 +14,24 @@ export const audScreens = {
     path: "/audits",
     navArea: "Audits",
   },
-  // A-01-T12 built a–e and g on fixtures (b, g live); f is A-01-T31's, h A-09's, i K-04's.
+  // A-01-T12 built a–e and g on fixtures (b, g live); h is A-09's, i K-04's. f (Auto mode confirm):
+  // the frame's owner is A-01 (A-01-T31, on fixtures), the route's P-10 (P-10-T39 serves
+  // `PUT /v1/engagements/{id}/auto-mode` and `engagement_run.auto_mode`, which turn it live).
   "AUD-02": {
     name: "Audit cockpit · Overview, Source Documents, Agent",
     status: "planned",
     path: "/audits/$auditId",
     navArea: "Audits",
   },
-  "AUD-03": { name: "Source documents · PBC with viewer", status: "planned", path: null },
+  // A-01-T15 built a–g on fixtures (A-01-T16 wired Remind, the screening return and delegation to
+  // the live P-06 routes). It stays planned for AUD-02's reason: its "+ Add" link (SHL-14, an
+  // overlay without a path) has no to.<ID>() builder; the staging swap is A-01-T16's on staging.
+  "AUD-03": {
+    name: "Source documents · PBC with viewer",
+    status: "planned",
+    path: "/audits/$auditId/source-documents",
+    navArea: "Audits",
+  },
   "AUD-04": {
     name: "Audit program & workpaper · General Audit Planning › Service Organizations",
     status: "planned",

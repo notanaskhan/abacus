@@ -5,10 +5,13 @@ description: Add or extend the Brightwater Hale seed and the per-artboard fixtur
 
 # Fixture scenarios
 
-## Paths that arrive later
-If one of these is missing when this skill needs it, stop and report which one and the task that creates it.
-- apps/web/src/fixtures/seed/<area>.ts, kernel.clock and fixture mode (arrive with F-04, S1–S3)
-- docs/product/status-vocabulary.yaml (arrives with F-03-T04, S0)
+## Paths
+- The Python scenario (the one source, ADR-085): backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/
+  (`epochs.py` holds the named snapshots; `make seed-demo SNAPSHOT=<snapshot>` loads it locally).
+- Exported fixture JSON: `make fixtures SNAPSHOT=<snapshot>` writes one apps/web/src/fixtures/seed/<snapshot>.<read>.json
+  per MVP read path, imported by `seed/exported.ts` (F-04-T31); the TS seed in apps/web/src/fixtures/seed/<area>.ts
+  stays for paths not exported yet.
+- kernel.clock, fixture mode and docs/product/status-vocabulary.yaml exist.
 
 Input: SCREEN_ID or a contract name. Sources: $ACCRUED_HANDOFF_DIR/uploads/04-shared-context-block.md (+ 04b for waves ≥ 5),
 blueprint §9 and addendum §9, the screen's README artboard table (state, viewer, rendered), docs/screens/<ID>.md.
