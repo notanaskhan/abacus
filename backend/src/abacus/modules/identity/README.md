@@ -159,3 +159,9 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - `portal_recovery.py`: `reset_portal_mfa` (this firm's trusted devices and portal sessions only, never the person's factor or backup codes, the same answer whatever other firms exist; `portal_mfa.reset`; notice through the outbox; DEC-329), `renew_invitation` and `renew_invitation_by_id` (a recipient's renewal of an expired invitation, at most twice). Unlock clears only the firm's sign-in lock. Organisations serves the routes, since it owns the contact.
 - `portal_session.check_not_paused`: 503 `sign_in_paused` on the sign-in routes while the firm's `portal_sign_in` control is on (`kernel.controls.control_active`, 10 s cache).
 - `start_sign_in(link_token=…)`: a portal email's link through `slots.claim_link` (communications registers it); every bad link raises `LinkUnusable` (404 `link_expired`).
+
+## Rollout and runbooks (P-08-T28; DEC-456)
+- `portal.sign_in_v2` is on for every synthetic firm the seeds build (the Brightwater Hale `portal` slice, the load profiles) and is turned on for the production canary by hand (`make flag`, through an ops task). Off, no code email is sent for the firm's host and the portal entry keeps the legacy hosted sign-in.
+- The MFA floor is code, not the flag: owners, signers and approvers always pass the second step once the firm is on v2.
+- Retirement removes the flag and the legacy path in one PR after the canary walk (the checklist is TASK-1359's); until then `docs/architecture/feature-flags/identity.yaml` keeps its expiry.
+- A locked-out client: RB-35. Pausing a firm's portal sign-in: RB-36. Both are linked from RB-22.

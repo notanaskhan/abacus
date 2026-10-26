@@ -8,7 +8,9 @@ from abacus.modules.identity.api import (
     register_scope_resolver,
     register_scopes_resolver,
 )
+from abacus.modules.platform.api import register_audit_value_resolver
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.requests.audit_values import request_item_values
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_tag
 from abacus.modules.requests.binders import (
@@ -19,6 +21,11 @@ from abacus.modules.requests.binders import (
     register_binder_close_rule,
 )
 from abacus.modules.requests.classification import classify, document_kind
+from abacus.modules.requests.closed_binders import (
+    BinderClosed,
+    refuse_closed_item,
+    refuse_closed_item_in,
+)
 from abacus.modules.requests.comments import (
     check_return_comment,
     insert_return_comment,
@@ -155,12 +162,15 @@ register_scope_resolver("request_item", request_item_scope)
 register_scopes_resolver("request_item", request_item_scopes)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# G-02-T09 gap (DEC-459): ADM-07's values for requests.
+register_audit_value_resolver("request_item", request_item_values)
 
 __all__ = [
     "ACTIVITIES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "BinderClosed",
     "BinderProgress",
     "ClientHome",
     "ConsentRequired",
@@ -231,6 +241,8 @@ __all__ = [
     "prior_year_link",
     "read_item",
     "read_item_versions",
+    "refuse_closed_item",
+    "refuse_closed_item_in",
     "register_available_datasets",
     "register_binder_close_rule",
     "register_binder_tag",

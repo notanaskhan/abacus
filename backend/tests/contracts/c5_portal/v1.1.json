@@ -1,0 +1,1686 @@
+{
+  "ContactMfaResetOut": {
+    "description": "What a firm's reset ended: the person's trusted devices and portal sessions in this firm,\nso the next sign-in here asks for the second step again. Never the person's factor, which\nis theirs across firms (DEC-329), and nothing about other firms.",
+    "properties": {
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "contact_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Contact Id",
+        "type": "string"
+      },
+      "reset_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Reset At",
+        "type": "string"
+      },
+      "sessions_ended": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Sessions Ended",
+        "type": "integer"
+      },
+      "trusted_devices_revoked": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Trusted Devices Revoked",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "client_id",
+      "contact_id",
+      "trusted_devices_revoked",
+      "sessions_ended",
+      "reset_at"
+    ],
+    "title": "ContactMfaResetOut",
+    "type": "object"
+  },
+  "ContactPortalStatusOut": {
+    "description": "The contact's portal access after an unlock (CLI-04 badge; `invitation` status words).",
+    "properties": {
+      "client_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Client Id",
+        "type": "string"
+      },
+      "contact_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Contact Id",
+        "type": "string"
+      },
+      "locked_until": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Locked Until"
+      },
+      "portal_status": {
+        "$ref": "#/components/schemas/InvitationStatus",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "client_id",
+      "contact_id",
+      "portal_status"
+    ],
+    "title": "ContactPortalStatusOut",
+    "type": "object"
+  },
+  "InvitationAccessOut": {
+    "properties": {
+      "item_count": {
+        "anyOf": [
+          {
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Item Count"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "firm_invite",
+          "colleague",
+          "outside_org",
+          "delegate"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "scope_label": {
+        "cls": "confidential",
+        "title": "Scope Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "scope_label"
+    ],
+    "title": "InvitationAccessOut",
+    "type": "object"
+  },
+  "InvitationPreviewIn": {
+    "additionalProperties": false,
+    "description": "POST keeps the token out of URLs and logs.",
+    "properties": {
+      "token": {
+        "cls": "restricted",
+        "maxLength": 128,
+        "title": "Token",
+        "type": "string"
+      }
+    },
+    "required": [
+      "token"
+    ],
+    "title": "InvitationPreviewIn",
+    "type": "object"
+  },
+  "InvitationPreviewOut": {
+    "description": "POR-01 d. Every failure (expired, used, revoked, malformed, a staff member's) answers the\nsame 404.",
+    "properties": {
+      "access": {
+        "$ref": "#/components/schemas/InvitationAccessOut",
+        "cls": "internal"
+      },
+      "expires_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Expires At",
+        "type": "string"
+      },
+      "firm_name": {
+        "cls": "public",
+        "title": "Firm Name",
+        "type": "string"
+      },
+      "invitee_email": {
+        "cls": "confidential",
+        "title": "Invitee Email",
+        "type": "string"
+      },
+      "invitee_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Invitee Name"
+      },
+      "organisation_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Organisation Name"
+      },
+      "terms_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Terms Url"
+      },
+      "terms_version": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Terms Version"
+      }
+    },
+    "required": [
+      "firm_name",
+      "invitee_email",
+      "access",
+      "expires_at"
+    ],
+    "title": "InvitationPreviewOut",
+    "type": "object"
+  },
+  "MeMfaOut": {
+    "description": "The person's second step: whether the DEC-34 floor requires it and whether a factor and a\ntrusted device exist. Never the factor, a secret or a backup code.",
+    "properties": {
+      "enrolled": {
+        "cls": "internal",
+        "title": "Enrolled",
+        "type": "boolean"
+      },
+      "required": {
+        "cls": "internal",
+        "title": "Required",
+        "type": "boolean"
+      },
+      "trusted_until": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Trusted Until"
+      }
+    },
+    "required": [
+      "enrolled",
+      "required"
+    ],
+    "title": "MeMfaOut",
+    "type": "object"
+  },
+  "MePortalOut": {
+    "description": "The portal shell for a client user in the active firm (role union, DEC-129).",
+    "properties": {
+      "landing": {
+        "cls": "internal",
+        "enum": [
+          "home",
+          "requests",
+          "k1s",
+          "governance",
+          "intake",
+          "component_room",
+          "none"
+        ],
+        "title": "Landing",
+        "type": "string"
+      },
+      "nav": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "home",
+            "documents",
+            "questions",
+            "approvals",
+            "sign",
+            "messages",
+            "deliverables"
+          ],
+          "type": "string"
+        },
+        "title": "Nav",
+        "type": "array"
+      },
+      "scopes": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/MePortalScopeOut"
+        },
+        "title": "Scopes",
+        "type": "array"
+      },
+      "shell": {
+        "cls": "internal",
+        "enum": [
+          "full",
+          "k1",
+          "limited",
+          "none"
+        ],
+        "title": "Shell",
+        "type": "string"
+      }
+    },
+    "required": [
+      "shell",
+      "scopes",
+      "nav",
+      "landing"
+    ],
+    "title": "MePortalOut",
+    "type": "object"
+  },
+  "MePortalScopeOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "client",
+          "client_entity",
+          "engagement",
+          "work_item",
+          "request_item",
+          "k1_package",
+          "governance_room",
+          "component",
+          "intake"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "role_label": {
+        "cls": "internal",
+        "title": "Role Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "id",
+      "label",
+      "role_label"
+    ],
+    "title": "MePortalScopeOut",
+    "type": "object"
+  },
+  "PortalBrandingOut": {
+    "description": "Public fields only, the same shape for an unknown host (neutral values), and no tenant\nidentifier on any host (ADR-163 \u00a75, \u00a76).",
+    "properties": {
+      "address_line": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Address Line"
+      },
+      "firm_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Firm Name"
+      },
+      "help_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Help Url"
+      },
+      "logo_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Logo Url"
+      },
+      "maintenance_banner": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Maintenance Banner"
+      },
+      "portal_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Portal Name"
+      },
+      "privacy_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Privacy Url"
+      },
+      "secured_footer": {
+        "cls": "public",
+        "default": false,
+        "title": "Secured Footer",
+        "type": "boolean"
+      },
+      "sign_in": {
+        "$ref": "#/components/schemas/PortalSignInPolicyOut",
+        "cls": "public"
+      },
+      "support_contact_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "public",
+        "title": "Support Contact Name"
+      }
+    },
+    "required": [
+      "firm_name",
+      "portal_name",
+      "logo_url",
+      "address_line",
+      "help_url",
+      "privacy_url",
+      "support_contact_name",
+      "sign_in"
+    ],
+    "title": "PortalBrandingOut",
+    "type": "object"
+  },
+  "PortalHomeBinderOut": {
+    "description": "Binder progress: \"19 of 21 requests done \u00b7 Brightwater Hale sorted 37 of your files\". The\nsorted count is firm-attributed; the agent is never named (INV-5, DEC-19).",
+    "properties": {
+      "binder_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Binder Id",
+        "type": "string"
+      },
+      "done": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Done",
+        "type": "integer"
+      },
+      "sorted_count": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Sorted Count",
+        "type": "integer"
+      },
+      "total": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "binder_id",
+      "done",
+      "total",
+      "sorted_count"
+    ],
+    "title": "PortalHomeBinderOut",
+    "type": "object"
+  },
+  "PortalHomeEarlierOut": {
+    "description": "An Earlier row: \"2024 Form 1040 filed and accepted\".",
+    "properties": {
+      "date": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Date"
+      },
+      "facts": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "cls": "internal",
+        "default": {},
+        "title": "Facts",
+        "type": "object"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "return_filed",
+          "extension_filed",
+          "engagement_letter_signed",
+          "deliverable_released"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "target": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PortalHomeTargetOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "title": "PortalHomeEarlierOut",
+    "type": "object"
+  },
+  "PortalHomeK1Out": {
+    "description": "A My K-1s row (T-02 registers the source). `released` only: the firm's package status\n(\"Draft K-1 \u00b7 pre-release\") never reaches the portal.",
+    "properties": {
+      "expected_by": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Expected By"
+      },
+      "k1_package_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "K1 Package Id",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "released": {
+        "cls": "internal",
+        "title": "Released",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "k1_package_id",
+      "label",
+      "released"
+    ],
+    "title": "PortalHomeK1Out",
+    "type": "object"
+  },
+  "PortalHomeNoticeOut": {
+    "description": "An information row (\"\u2026 notice \u2014 Brightwater Hale is reviewing it. Nothing needed from\nyou.\"); N-04 registers the source.",
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "const": "agency_notice_in_review",
+        "title": "Code",
+        "type": "string"
+      },
+      "notice_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Notice Id",
+        "type": "string"
+      },
+      "subject": {
+        "cls": "confidential",
+        "title": "Subject",
+        "type": "string"
+      }
+    },
+    "required": [
+      "notice_id",
+      "code",
+      "subject"
+    ],
+    "title": "PortalHomeNoticeOut",
+    "type": "object"
+  },
+  "PortalHomeOut": {
+    "description": "POR-02 for one scope: what the firm needs now, where the work stands, who the team is.",
+    "properties": {
+      "all_done": {
+        "cls": "internal",
+        "title": "All Done",
+        "type": "boolean"
+      },
+      "binder": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PortalHomeBinderOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "earlier": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeEarlierOut"
+        },
+        "title": "Earlier",
+        "type": "array"
+      },
+      "first_visit": {
+        "cls": "internal",
+        "title": "First Visit",
+        "type": "boolean"
+      },
+      "my_k1s": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeK1Out"
+        },
+        "title": "My K1S",
+        "type": "array"
+      },
+      "notices_info": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeNoticeOut"
+        },
+        "title": "Notices Info",
+        "type": "array"
+      },
+      "recent_threads": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeThreadOut"
+        },
+        "title": "Recent Threads",
+        "type": "array"
+      },
+      "scope": {
+        "$ref": "#/components/schemas/PortalHomeScopeOut",
+        "cls": "internal"
+      },
+      "team": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeTeamMemberOut"
+        },
+        "title": "Team",
+        "type": "array"
+      },
+      "todos": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeTodoOut"
+        },
+        "title": "Todos",
+        "type": "array"
+      },
+      "welcome_dismissed": {
+        "cls": "internal",
+        "title": "Welcome Dismissed",
+        "type": "boolean"
+      },
+      "work_cards": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeWorkCardOut"
+        },
+        "title": "Work Cards",
+        "type": "array"
+      }
+    },
+    "required": [
+      "scope",
+      "first_visit",
+      "welcome_dismissed",
+      "all_done"
+    ],
+    "title": "PortalHomeOut",
+    "type": "object"
+  },
+  "PortalHomePillOut": {
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "enum": [
+          "getting_started",
+          "preparing_return",
+          "reviewing_return",
+          "reconciling_accounts",
+          "filed_and_accepted",
+          "finishing_audit",
+          "testing_under_way"
+        ],
+        "title": "Code",
+        "type": "string"
+      },
+      "variant": {
+        "cls": "internal",
+        "enum": [
+          "state",
+          "success",
+          "neutral"
+        ],
+        "title": "Variant",
+        "type": "string"
+      }
+    },
+    "required": [
+      "code",
+      "variant"
+    ],
+    "title": "PortalHomePillOut",
+    "type": "object"
+  },
+  "PortalHomeScopeOut": {
+    "description": "The scope the home is for (one grant's target; `?scope_id=`).",
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "client",
+          "client_entity",
+          "engagement",
+          "work_item",
+          "request_item",
+          "k1_package",
+          "governance_room",
+          "component",
+          "intake"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "role_label": {
+        "cls": "internal",
+        "title": "Role Label",
+        "type": "string"
+      },
+      "sub": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Sub"
+      }
+    },
+    "required": [
+      "kind",
+      "id",
+      "label",
+      "role_label"
+    ],
+    "title": "PortalHomeScopeOut",
+    "type": "object"
+  },
+  "PortalHomeStageOut": {
+    "properties": {
+      "code": {
+        "cls": "internal",
+        "enum": [
+          "gather_documents",
+          "prepare",
+          "review",
+          "sign_form_8879",
+          "file",
+          "requests",
+          "reconcile",
+          "statements",
+          "planning",
+          "fieldwork",
+          "statements_review",
+          "report",
+          "scoping",
+          "system_description",
+          "testing",
+          "exceptions"
+        ],
+        "title": "Code",
+        "type": "string"
+      },
+      "facts": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "cls": "internal",
+        "default": {},
+        "title": "Facts",
+        "type": "object"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "done",
+          "current",
+          "upcoming"
+        ],
+        "title": "State",
+        "type": "string"
+      }
+    },
+    "required": [
+      "code",
+      "state"
+    ],
+    "title": "PortalHomeStageOut",
+    "type": "object"
+  },
+  "PortalHomeTargetOut": {
+    "properties": {
+      "params": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "cls": "internal",
+        "default": {},
+        "title": "Params",
+        "type": "object"
+      },
+      "screen": {
+        "cls": "internal",
+        "enum": [
+          "POR-03",
+          "POR-04",
+          "POR-05",
+          "POR-06",
+          "POR-07",
+          "POR-08",
+          "POR-09",
+          "POR-11",
+          "POR-12",
+          "POR-13",
+          "POR-16",
+          "POR-21"
+        ],
+        "title": "Screen",
+        "type": "string"
+      }
+    },
+    "required": [
+      "screen"
+    ],
+    "title": "PortalHomeTargetOut",
+    "type": "object"
+  },
+  "PortalHomeTeamMemberOut": {
+    "properties": {
+      "display_name": {
+        "cls": "confidential",
+        "title": "Display Name",
+        "type": "string"
+      },
+      "role_code": {
+        "cls": "internal",
+        "enum": [
+          "partner_signs_return",
+          "partner",
+          "engagement_partner",
+          "manager_reviews_return",
+          "manager",
+          "preparer_day_to_day",
+          "preparer",
+          "close_preparer",
+          "day_to_day_contact",
+          "client_service"
+        ],
+        "title": "Role Code",
+        "type": "string"
+      },
+      "user_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "User Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "user_id",
+      "display_name",
+      "role_code"
+    ],
+    "title": "PortalHomeTeamMemberOut",
+    "type": "object"
+  },
+  "PortalHomeThreadOut": {
+    "description": "A Recent messages row (N-03 registers the source).",
+    "properties": {
+      "at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "At",
+        "type": "string"
+      },
+      "from_name": {
+        "cls": "confidential",
+        "title": "From Name",
+        "type": "string"
+      },
+      "subject": {
+        "cls": "confidential",
+        "title": "Subject",
+        "type": "string"
+      },
+      "thread_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Thread Id",
+        "type": "string"
+      },
+      "unread": {
+        "cls": "internal",
+        "title": "Unread",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "thread_id",
+      "subject",
+      "from_name",
+      "at",
+      "unread"
+    ],
+    "title": "PortalHomeThreadOut",
+    "type": "object"
+  },
+  "PortalHomeTodoOut": {
+    "description": "A to-do card. `detail` is the source's client-safe line (request titles, the person who\nasked), already in the client's words; it never holds a firm status word.",
+    "properties": {
+      "count": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Count",
+        "type": "integer"
+      },
+      "detail": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Detail"
+      },
+      "due_date": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Due Date"
+      },
+      "facts": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        },
+        "cls": "internal",
+        "default": {},
+        "title": "Facts",
+        "type": "object"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "upload",
+          "answer",
+          "sign",
+          "deliverables",
+          "approve",
+          "reconnect",
+          "review_statements",
+          "control_requests",
+          "exceptions",
+          "description_approved"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "open",
+          "none",
+          "overdue"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "target": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PortalHomeTargetOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "kind",
+      "count",
+      "state"
+    ],
+    "title": "PortalHomeTodoOut",
+    "type": "object"
+  },
+  "PortalHomeWorkCardOut": {
+    "description": "A work item as the client sees it: its client-safe display fields and its stage.",
+    "properties": {
+      "kind": {
+        "cls": "internal",
+        "maxLength": 60,
+        "title": "Kind",
+        "type": "string"
+      },
+      "note_code": {
+        "anyOf": [
+          {
+            "enum": [
+              "waiting_on_k1",
+              "waiting_on_your_k1"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Note Code"
+      },
+      "note_date": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Note Date"
+      },
+      "note_subject": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note Subject"
+      },
+      "pill": {
+        "$ref": "#/components/schemas/PortalHomePillOut",
+        "cls": "internal"
+      },
+      "stages": {
+        "cls": "internal",
+        "default": [],
+        "items": {
+          "$ref": "#/components/schemas/PortalHomeStageOut"
+        },
+        "title": "Stages",
+        "type": "array"
+      },
+      "sub": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Sub"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      },
+      "work_item_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Work Item Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "work_item_id",
+      "kind",
+      "title",
+      "pill"
+    ],
+    "title": "PortalHomeWorkCardOut",
+    "type": "object"
+  },
+  "PortalLinkRenewIn": {
+    "additionalProperties": false,
+    "properties": {
+      "link_token": {
+        "cls": "restricted",
+        "maxLength": 128,
+        "title": "Link Token",
+        "type": "string"
+      }
+    },
+    "required": [
+      "link_token"
+    ],
+    "title": "PortalLinkRenewIn",
+    "type": "object"
+  },
+  "PortalLinkRenewOut": {
+    "description": "Always 202 with this shape, for any token; a new link goes only to the address the old one\nwas sent to. The toast names that address from the SPA's own state, never from here.",
+    "properties": {
+      "accepted": {
+        "cls": "internal",
+        "const": true,
+        "default": true,
+        "title": "Accepted",
+        "type": "boolean"
+      }
+    },
+    "title": "PortalLinkRenewOut",
+    "type": "object"
+  },
+  "PortalMfaIn": {
+    "additionalProperties": false,
+    "description": "`POST /v1/portal/auth/mfa`: exactly one of `totp` and `backup_code`. Errors: 401\n`mfa_mismatch {tries_left}`, 423 `mfa_locked {locked_until}`.",
+    "properties": {
+      "backup_code": {
+        "anyOf": [
+          {
+            "maxLength": 32,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Backup Code"
+      },
+      "mfa_token": {
+        "cls": "restricted",
+        "maxLength": 512,
+        "title": "Mfa Token",
+        "type": "string"
+      },
+      "totp": {
+        "anyOf": [
+          {
+            "pattern": "^[0-9]{6}$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Totp"
+      },
+      "trust_device": {
+        "cls": "internal",
+        "default": false,
+        "title": "Trust Device",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "mfa_token"
+    ],
+    "title": "PortalMfaIn",
+    "type": "object"
+  },
+  "PortalMfaSetupIn": {
+    "additionalProperties": false,
+    "properties": {
+      "mfa_token": {
+        "cls": "restricted",
+        "maxLength": 512,
+        "title": "Mfa Token",
+        "type": "string"
+      }
+    },
+    "required": [
+      "mfa_token"
+    ],
+    "title": "PortalMfaSetupIn",
+    "type": "object"
+  },
+  "PortalMfaSetupOut": {
+    "description": "The QR code's URI and the manual key (DF-17, POR-01 setup state).",
+    "properties": {
+      "manual_key": {
+        "cls": "restricted",
+        "title": "Manual Key",
+        "type": "string"
+      },
+      "otpauth_uri": {
+        "cls": "restricted",
+        "title": "Otpauth Uri",
+        "type": "string"
+      }
+    },
+    "required": [
+      "otpauth_uri",
+      "manual_key"
+    ],
+    "title": "PortalMfaSetupOut",
+    "type": "object"
+  },
+  "PortalMfaSetupVerifyIn": {
+    "additionalProperties": false,
+    "properties": {
+      "mfa_token": {
+        "cls": "restricted",
+        "maxLength": 512,
+        "title": "Mfa Token",
+        "type": "string"
+      },
+      "totp": {
+        "cls": "restricted",
+        "pattern": "^[0-9]{6}$",
+        "title": "Totp",
+        "type": "string"
+      }
+    },
+    "required": [
+      "mfa_token",
+      "totp"
+    ],
+    "title": "PortalMfaSetupVerifyIn",
+    "type": "object"
+  },
+  "PortalMfaSetupVerifyOut": {
+    "description": "Eight backup codes, shown once; then the session as `PortalSignInVerifyOut` signed in.",
+    "properties": {
+      "backup_codes": {
+        "cls": "restricted",
+        "items": {
+          "type": "string"
+        },
+        "title": "Backup Codes",
+        "type": "array"
+      },
+      "session": {
+        "$ref": "#/components/schemas/PortalSignInVerifyOut",
+        "cls": "internal"
+      }
+    },
+    "required": [
+      "backup_codes",
+      "session"
+    ],
+    "title": "PortalMfaSetupVerifyOut",
+    "type": "object"
+  },
+  "PortalPreferencesIn": {
+    "additionalProperties": false,
+    "description": "The person's own per-scope preferences (Story 6.2). `version` is the row's, for the 409.",
+    "properties": {
+      "scope_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Scope Id",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Version",
+        "type": "integer"
+      },
+      "welcome_dismissed": {
+        "cls": "internal",
+        "title": "Welcome Dismissed",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "scope_id",
+      "welcome_dismissed",
+      "version"
+    ],
+    "title": "PortalPreferencesIn",
+    "type": "object"
+  },
+  "PortalPreferencesOut": {
+    "properties": {
+      "scope_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Scope Id",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      },
+      "welcome_dismissed": {
+        "cls": "internal",
+        "title": "Welcome Dismissed",
+        "type": "boolean"
+      },
+      "welcome_dismissed_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Welcome Dismissed At"
+      }
+    },
+    "required": [
+      "scope_id",
+      "welcome_dismissed",
+      "version"
+    ],
+    "title": "PortalPreferencesOut",
+    "type": "object"
+  },
+  "PortalSignInPolicyOut": {
+    "properties": {
+      "methods": {
+        "cls": "public",
+        "items": {
+          "const": "email_code",
+          "type": "string"
+        },
+        "title": "Methods",
+        "type": "array"
+      },
+      "mfa_floor": {
+        "cls": "public",
+        "items": {
+          "enum": [
+            "owner",
+            "signer",
+            "approver"
+          ],
+          "type": "string"
+        },
+        "title": "Mfa Floor",
+        "type": "array"
+      }
+    },
+    "required": [
+      "methods",
+      "mfa_floor"
+    ],
+    "title": "PortalSignInPolicyOut",
+    "type": "object"
+  },
+  "PortalSignInResendIn": {
+    "additionalProperties": false,
+    "description": "New code, old code void, tries not reset; 429 `resend_too_soon {resend_available_at}`.",
+    "properties": {
+      "challenge_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Challenge Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "challenge_id"
+    ],
+    "title": "PortalSignInResendIn",
+    "type": "object"
+  },
+  "PortalSignInStartIn": {
+    "additionalProperties": false,
+    "description": "`POST /v1/portal/auth/start`. At most one of the two tokens.",
+    "properties": {
+      "email": {
+        "cls": "confidential",
+        "maxLength": 320,
+        "minLength": 3,
+        "title": "Email",
+        "type": "string"
+      },
+      "invitation_token": {
+        "anyOf": [
+          {
+            "maxLength": 128,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Invitation Token"
+      },
+      "link_token": {
+        "anyOf": [
+          {
+            "maxLength": 128,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Link Token"
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "title": "PortalSignInStartIn",
+    "type": "object"
+  },
+  "PortalSignInStartOut": {
+    "description": "Always 202 with this shape, for any email (unknown, staff, no grant, another firm's,\nlocked): identical status, body and padded timing. No email is sent unless eligible.",
+    "properties": {
+      "challenge_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Challenge Id",
+        "type": "string"
+      },
+      "code_expires_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Code Expires At",
+        "type": "string"
+      },
+      "resend_available_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Resend Available At",
+        "type": "string"
+      }
+    },
+    "required": [
+      "challenge_id",
+      "code_expires_at",
+      "resend_available_at"
+    ],
+    "title": "PortalSignInStartOut",
+    "type": "object"
+  },
+  "PortalSignInVerifyIn": {
+    "additionalProperties": false,
+    "properties": {
+      "challenge_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Challenge Id",
+        "type": "string"
+      },
+      "code": {
+        "cls": "restricted",
+        "pattern": "^[0-9]{6}$",
+        "title": "Code",
+        "type": "string"
+      }
+    },
+    "required": [
+      "challenge_id",
+      "code"
+    ],
+    "title": "PortalSignInVerifyIn",
+    "type": "object"
+  },
+  "PortalSignInVerifyOut": {
+    "description": "200. `signed_in` carries the access token and the landing; the MFA states carry a\n5-minute single-use `mfa_token`. Errors: 401 `code_mismatch {tries_left}`, 423\n`sign_in_locked {locked_until}`, 410 `code_expired`, 503 `sign_in_paused`.",
+    "properties": {
+      "access_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Access Token"
+      },
+      "expires_in": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Expires In"
+      },
+      "landing": {
+        "anyOf": [
+          {
+            "enum": [
+              "home",
+              "requests",
+              "k1s",
+              "governance",
+              "intake",
+              "component_room",
+              "none"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Landing"
+      },
+      "mfa_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Mfa Token"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "signed_in",
+          "mfa_required",
+          "mfa_setup_required"
+        ],
+        "title": "State",
+        "type": "string"
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "title": "PortalSignInVerifyOut",
+    "type": "object"
+  }
+}

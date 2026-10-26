@@ -161,6 +161,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.BelowFloor
     summary: The policy keeps records for less time than the published legal floor allows.
+  binder_closed:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.closed_binders.BinderClosed
+    summary: 'The binder is closed: the client reads it and acts on nothing in it (DEC-461).'
   binder_gate_unmet:
     status: 409
     raised_by:
@@ -1253,6 +1258,7 @@ codes:
     - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement

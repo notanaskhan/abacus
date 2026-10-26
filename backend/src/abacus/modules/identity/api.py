@@ -9,6 +9,11 @@ from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_cl
 from abacus.kernel.uow.relay import register_grant_consumer
 from abacus.modules.identity.access_end import sweep_access_ends_activity
 from abacus.modules.identity.annual_independence import has_current_annual_confirmation
+from abacus.modules.identity.audit_facts import (
+    AuditFact,
+    membership_audit_facts,
+    support_session_audit_facts,
+)
 from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
     MFA_RECENT,
@@ -462,6 +467,7 @@ __all__ = [
     "AlreadyMember",
     "ApproverNotPartner",
     "Assistant",
+    "AuditFact",
     "AuthContext",
     "AutonomyView",
     "Candidate",
@@ -636,6 +642,7 @@ __all__ = [
     "member_could",
     "member_details",
     "member_facts",
+    "membership_audit_facts",
     "mfa_required",
     "my_engagement_roles",
     "my_engagements",
@@ -717,6 +724,7 @@ __all__ = [
     "staff_holding_line",
     "staff_router",
     "staff_seats_by_office",
+    "support_session_audit_facts",
     "system_context_for_run",
     "team_of",
     "team_standing",
