@@ -7,6 +7,7 @@ from abacus.modules.identity.api import (
     register_office_list,
     register_settings_area,
 )
+from abacus.modules.organisations.conflicts import clear_conflict_result
 from abacus.modules.organisations.conflicts_contract import (
     conflict_checks_router,
     screening_records_router,
@@ -17,7 +18,11 @@ from abacus.modules.organisations.contacts_contract import (
     contact_invitations_router,
     contacts_router,
 )
-from abacus.modules.organisations.contract import client_entities_router, clients_router
+from abacus.modules.organisations.contract import (
+    MaskedTinOut,
+    client_entities_router,
+    clients_router,
+)
 from abacus.modules.organisations.live import (
     NewRelationship,
     add_relationship,
@@ -76,9 +81,11 @@ from abacus.modules.organisations.slots import (
     OverviewSection,
     SectionRows,
     register_client_engagements,
+    register_conflict_subject,
     register_office_facts,
     register_open_requests,
     register_overview_section,
+    register_screening_evidence,
 )
 from abacus.modules.organisations.tin import (
     MaskedTin,
@@ -135,6 +142,7 @@ __all__ = [
     "EntityChoice",
     "FirmName",
     "MaskedTin",
+    "MaskedTinOut",
     "NewClient",
     "NewContact",
     "NewRelationship",
@@ -149,6 +157,7 @@ __all__ = [
     "add_relationship",
     "attest_client_ids",
     "attest_client_of",
+    "clear_conflict_result",
     "clear_tin",
     "client_exists",
     "client_name_column",
@@ -168,9 +177,11 @@ __all__ = [
     "normalise",
     "office_name_column",
     "register_client_engagements",
+    "register_conflict_subject",
     "register_office_facts",
     "register_open_requests",
     "register_overview_section",
+    "register_screening_evidence",
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",

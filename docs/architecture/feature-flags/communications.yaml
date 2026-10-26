@@ -1,0 +1,20 @@
+# The communications module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: communications.firm_sender_domain
+    description: 'Client mail From the firm''s verified sender domain (R-01; C16 v1.1; docs/contracts/email-templates.md §sending domains; DEC-59): POST /v1/firm/sending-domains, POST …/{id}/check and DELETE …/{id}, and the From selection. Off: those writes answer 404 and client mail goes from the neutral sender with the firm''s display name and Reply-To. On: 501 not_implemented until R-01-T27 lands. Off until a founder switches it on per firm; on for a pilot firm once its domain verifies.'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: follow_ups.scheduled_send
+    description: 'System-scheduled reminder sends (R-01; DEC-74; C16 v1.1 follow-up policy): with a firm policy in mode send_on_schedule, the system sends the published Reminder at the recipient''s send time. Off: the policy drives drafts a person sends (the MVP-1 rule), whatever the mode says. Stays off at pilot firms through M10 (R-01-T24 builds the sender).'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

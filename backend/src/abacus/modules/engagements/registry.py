@@ -28,6 +28,17 @@ TABLES: frozenset[str] = frozenset(
         "engagement_drafts",  # P-07-T16 (0124): ENG-03's autosaved wizard, own scope
         "team_approvals",  # P-07-T30 (0155): the EP's approval of the team
         "eqr_eligibility_approvals",  # P-07-T30 (0155): the quality owner's EQR approvals
+        # P-07-T35 (0163): acceptance and continuance in-app (CLI-07)
+        "acceptance_questionnaire_templates",
+        "acceptance_questionnaire_template_versions",
+        "acceptance_records",
+        "acceptance_answers",
+        "acceptance_manual_checks",
+        "acceptance_flags",
+        "acceptance_decisions",
+        "acceptance_conditions",
+        "acceptance_condition_events",
+        "risk_partner_reviews",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -45,10 +56,51 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "advisory_projects",  # F-03-T22 (0089)
         "team_approvals",  # P-07-T30 (0155)
         "eqr_eligibility_approvals",  # P-07-T30 (0155)
+        # P-07-T35 (0163): firm content versions and a person's acts, never changed
+        "acceptance_questionnaire_templates",
+        "acceptance_questionnaire_template_versions",
+        "acceptance_flags",
+        "acceptance_decisions",
+        "acceptance_conditions",
+        "acceptance_condition_events",
+        "risk_partner_reviews",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # P-07-T35 (0163): acceptance and continuance (CLI-07)
+    "acceptance_questionnaire_templates": frozenset({"tenant_id", "name", "family", "created_by"}),
+    "acceptance_questionnaire_template_versions": frozenset(
+        {"tenant_id", "template_id", "version_no", "sections", "created_by"}
+    ),
+    "acceptance_records": frozenset(
+        {"id", "tenant_id", "engagement_id", "client_id", "kind", "template_version_id"}
+        | {"prepared_by", "prior_record_id"}
+    ),
+    "acceptance_answers": frozenset(
+        {"tenant_id", "record_id", "section_code", "answers_sealed", "state", "updated_by"}
+    ),
+    "acceptance_manual_checks": frozenset(
+        {"id", "tenant_id", "record_id", "section_code", "requested_of", "requested_by"}
+    ),
+    "acceptance_flags": frozenset(
+        {"id", "tenant_id", "record_id", "severity", "title_sealed", "body_sealed"}
+        | {"source_refs", "authored_by"}
+    ),
+    "acceptance_decisions": frozenset(
+        {"id", "tenant_id", "record_id", "option", "rationale_sealed", "decided_by"}
+        | {"mfa_verified_at"}
+    ),
+    "acceptance_conditions": frozenset(
+        {"id", "tenant_id", "record_id", "decision_id", "position", "text_sealed"}
+        | {"assignee_user_id", "due_on"}
+    ),
+    "acceptance_condition_events": frozenset(
+        {"id", "tenant_id", "condition_id", "note_sealed", "actor_id"}
+    ),
+    "risk_partner_reviews": frozenset(
+        {"tenant_id", "record_id", "event", "partner_id", "actor_id"}
+    ),
     "team_approvals": frozenset(  # P-07-T30 (0155)
         {"tenant_id", "engagement_id", "approved_by", "member_set_hash"}
     ),
@@ -108,6 +160,14 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # P-07-T35 (0163): a guard trigger refuses any change once the record is decided.
+    "acceptance_records": frozenset(
+        {"status", "risk_rating", "sent_to_partner_at", "sent_to_partner_by", "version"}
+    ),
+    "acceptance_answers": frozenset(
+        {"answers_sealed", "state", "version", "updated_by", "updated_at"}
+    ),
+    "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
     "engagements": frozenset(
         {"status", "methodology_version_id"}  # SPEC-008: pinned once
         | {"ai_excluded_at", "ai_excluded_by", "ai_excluded_reason"}  # SPEC-036 (TASK-076)

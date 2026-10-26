@@ -12,6 +12,18 @@ export {
   useRecordLetter,
   waitsOnLetter,
 } from "./record";
+export {
+  type TeamRole,
+  type TeamRouteRole,
+  hoursText,
+  hoursTotal,
+  tenthsOf,
+  useEqrCandidates,
+  useTeamApproval,
+  useTeamCandidates,
+  useTeamRoster,
+  useTeamWrites,
+} from "./team";
 export { type ConsentPreview, useDraft, useDraftWrites, useEngagementTypes } from "./wizard";
 export {
   DEFAULT_ENGAGEMENT_FILTERS,

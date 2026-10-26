@@ -26,6 +26,8 @@ import { SHL08 } from "./artboard";
 import { AUTO_HIGHLIGHT_KEY, alsoCitedLine } from "./EvidenceViewer";
 import { figureValue } from "./LinkedFigures";
 import { OPENS, type Shl08State, scenarios } from "./scenarios";
+import { textOnly } from "../../fixtures/scenarios/SHL-08";
+import { TEXT_VIEW } from "../../app-core/masked-text";
 import { PROCESSING_POLL_MS, pollWhileProcessing } from "./useViewerManifest";
 
 beforeAll(() => {
@@ -314,5 +316,26 @@ describe("the 30% rule and the overlay", () => {
     expect(alsoCitedLine(K1_STACK.slice(0, 1), 0)).toBeNull();
     expect(figureValue("307,900")).toBe("$307,900");
     expect(figureValue("IL / CO / NY")).toBe("IL / CO / NY");
+  });
+});
+
+describe("DEC-369: the text view an offshore reader gets (no page images until OCR)", () => {
+  it("renders the masked text the server gives and never a page image or a region", async () => {
+    restore = installFixtureMode(textOnly("c"));
+    renderRoutes([{ path: "/", component: () => <SHL08 state="c" /> }]);
+    await waitFor(() => {
+      expect(screen.getByText(TEXT_VIEW.note)).toBeTruthy();
+      expect(screen.getByText(/•••-••-6081/)).toBeTruthy();
+    });
+    expect(screen.getByText(TEXT_VIEW.page(1))).toBeTruthy();
+    expect(document.querySelectorAll("img")).toHaveLength(0);
+    expect(document.querySelectorAll('[data-match-kind="region"]')).toHaveLength(0);
+    expect(document.body.textContent).not.toMatch(/\d{3}-\d{2}-\d{4}/);
+  });
+
+  it("the images view is unchanged for the same version read onshore", async () => {
+    show("c");
+    await regionsDrawn();
+    expect(screen.queryByText(TEXT_VIEW.note)).toBeNull();
   });
 });

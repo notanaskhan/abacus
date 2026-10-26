@@ -1,9 +1,14 @@
 """Public interface of the identity module; other modules import only this (ADR-008)."""
 
+from datetime import timedelta
+
 from abacus.ai_gateway import register_client_data_facts, register_synthetic_tenants
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.clock import register_tenant_clock
+from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow.relay import register_grant_consumer
+from abacus.modules.identity.access_end import sweep_access_ends_activity
+from abacus.modules.identity.annual_independence import has_current_annual_confirmation
 from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
     MFA_RECENT,
@@ -36,6 +41,7 @@ from abacus.modules.identity.authz.conditions import (
     register_attest_client_column,
     register_client_scope,
     register_engagement_service_line,
+    register_engagement_service_line_column,
     register_gates,
     register_work_item_functions,
 )
@@ -338,6 +344,7 @@ from abacus.modules.identity.walls import (
     WallExists,
     end_assignments_for_wall,
 )
+from abacus.modules.identity.workflows import ACCESS_END_ID, AccessEndSweepWorkflow
 
 # SPEC-026 (TASK-049): the AI gateway's per-call data boundary asks identity which firms are
 # synthetic.
@@ -380,10 +387,21 @@ SUBSCRIPTIONS = {
     ClientAccessRevoked.event_type: revoke_portal_access,
     WallCreated.event_type: end_assignments_for_wall,
 }
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+# G-01-T13 (AC4.5; DEC-381): the hourly access-end sweep, a platform job on a Schedule.
+WORKFLOWS: dict[type, WorkClass] = {AccessEndSweepWorkflow: "background"}
+register_work_classes(WORKFLOWS)
+ACTIVITIES: tuple[object, ...] = (sweep_access_ends_activity,)
+SCHEDULES: tuple[PlatformSchedule, ...] = (
+    PlatformSchedule(
+        id=ACCESS_END_ID,
+        workflow=AccessEndSweepWorkflow,
+        every=timedelta(hours=1),
+        note="G-01-T13 AC4.5: seasonal access ends after the firm's midnight; T-7 notice",
+    ),
+)
 
 __all__ = [
+    "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",
     "CODE_DIGITS",
@@ -399,6 +417,7 @@ __all__ = [
     "ROLE_LABELS",
     "ROUTERS",
     "RULES",  # the parsed matrix, for the generated security tests (Q-02-T13)
+    "SCHEDULES",
     "SELF",
     "STAFF",
     "SUBSCRIPTIONS",
@@ -409,6 +428,7 @@ __all__ = [
     "AbacusRoute",
     "AbacusRouter",
     "AccessChanged",
+    "AccessEndSweepWorkflow",
     "Actor",
     "AgentContext",
     "AlreadyApproved",
@@ -554,6 +574,7 @@ __all__ = [
     "grant_client_access",
     "grant_contact_ids",
     "grants_of_contacts",
+    "has_current_annual_confirmation",
     "hidden_clients",
     "invitation_contact",
     "invitation_grants",
@@ -605,6 +626,7 @@ __all__ = [
     "register_engagement_client",
     "register_engagement_resource",
     "register_engagement_service_line",
+    "register_engagement_service_line_column",
     "register_engagements_of_scope",
     "register_firm_setting",
     "register_gates",
