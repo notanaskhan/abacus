@@ -116,4 +116,15 @@ export const PROFILE = {
   office: "Office",
   email: "Email",
   timeZone: "Time zone",
+  // G-01 AC6.1: the annual independence self-confirmation (the statement is the firm's text).
+  annual: (year: number) => `Annual independence confirmation · ${String(year)}`,
+  annualConfirmAction: "Confirm…",
+  annualConfirmed: (date: string) => `Confirmed ${date}`,
+  annualDeclined: (date: string) => `Declined ${date}`,
+  annualTitle: (year: number) => `Annual independence confirmation · ${String(year)}`,
+  annualConfirm: "Confirm",
+  annualDecline: "Decline",
+  annualNote: "Note (required to decline)",
+  annualNoStatement: "Your firm hasn't published its independence statement yet.",
+  annualFailed: "That didn't work. Try again.",
 } as const;

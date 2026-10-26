@@ -1,12 +1,19 @@
 import type { MeOut, MembershipOut, RoleOut } from "@abacus/api-client";
 import {
+  confirmAnnualIndependenceMutation,
   meQueryKey,
   meOptions,
+  myAnnualIndependenceOptions,
+  myAnnualIndependenceQueryKey,
   setPreferencesMutation,
   signOutMutation,
 } from "@abacus/api-client/query";
 import {
+  Button,
+  Dialog,
   Drawer,
+  Fieldset,
+  ValueRow,
   FirmMark,
   Icon,
   type IconName,
@@ -15,6 +22,7 @@ import {
   Wordmark,
   cn,
   toast,
+  useFormat,
   useMotion,
   useOverlayLayer,
   useOverlayStack,
@@ -532,6 +540,107 @@ function ProfileDrawer({
           </div>
         ))}
       </dl>
+      <AnnualIndependence enabled={open} />
     </Drawer>
+  );
+}
+
+/** G-01 AC6.1: one's own annual independence confirmation for the firm's year; a decline needs
+ * a note. The statement is the firm's published text, shown as written (version recorded). */
+function AnnualIndependence({ enabled }: { enabled: boolean }): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const f = useFormat();
+  const mine = useQuery({ ...myAnnualIndependenceOptions(), enabled, retry: false });
+  const [confirming, setConfirming] = useState(false);
+  const [note, setNote] = useState("");
+  const confirm = useMutation({
+    ...confirmAnnualIndependenceMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: myAnnualIndependenceQueryKey() });
+      setConfirming(false);
+      setNote("");
+    },
+    onError: () => {
+      toast.show({ kind: "error", text: PROFILE.annualFailed });
+    },
+  });
+  const data = mine.data;
+  if (data === undefined) return null;
+  const statement = data.statement ?? null;
+  const decided = data.decided_at ?? null;
+  const decide = (decision: "confirmed" | "declined"): void => {
+    if (statement === null) return;
+    confirm.mutate({
+      body: {
+        decision,
+        year: data.year,
+        statement_version: statement.version,
+        note: note.trim() === "" ? null : note.trim(),
+      },
+    });
+  };
+  return (
+    <div className="mt-[10px] flex min-h-[44px] items-center gap-[12px] rounded-pane bg-card px-[12px] shadow-e1">
+      <span className="min-w-0 flex-1 text-body text-ink">{PROFILE.annual(data.year)}</span>
+      {data.status === "not_yet" || decided === null ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            setConfirming(true);
+          }}
+        >
+          {PROFILE.annualConfirmAction}
+        </Button>
+      ) : (
+        <span className="text-meta text-ink-3">
+          {data.status === "confirmed"
+            ? PROFILE.annualConfirmed(f.date(decided))
+            : PROFILE.annualDeclined(f.date(decided))}
+        </span>
+      )}
+      <Dialog
+        open={confirming}
+        onOpenChange={(next) => {
+          if (!next) {
+            setConfirming(false);
+            setNote("");
+          }
+        }}
+        title={PROFILE.annualTitle(data.year)}
+        dirty={note.trim() !== ""}
+        action={
+          <Button
+            variant="primary"
+            disabled={statement === null || confirm.isPending}
+            onClick={() => {
+              decide("confirmed");
+            }}
+          >
+            {PROFILE.annualConfirm}
+          </Button>
+        }
+      >
+        {statement === null ? (
+          <p className="text-para text-ink-2">{PROFILE.annualNoStatement}</p>
+        ) : (
+          <p className="whitespace-pre-line text-para text-ink">{statement.body}</p>
+        )}
+        <Fieldset flush>
+          <ValueRow kind="paragraph" label={PROFILE.annualNote} value={note} onChange={setNote} />
+        </Fieldset>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="self-start"
+          disabled={statement === null || note.trim() === "" || confirm.isPending}
+          onClick={() => {
+            decide("declined");
+          }}
+        >
+          {PROFILE.annualDecline}
+        </Button>
+      </Dialog>
+    </div>
   );
 }
