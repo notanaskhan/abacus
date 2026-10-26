@@ -91,3 +91,15 @@ layer, and the record locks." Today every acceptance route in
 
 ## Progress log
 - 2026-10-26: planned.
+- 2026-10-26: built. Deviations from the plan: the app still never inserts an engagement status;
+  "Start acceptance" inserts and moves the row to `prospect` in the same transaction (the
+  schema test that the app cannot insert `status` stands). Answers' `seen_version` is the
+  section's (0 before the first answer); the record's version is the decision's and the send's.
+  The legacy adapter refuses any decision other than the record's. Errors moved from the
+  contract module to `acceptance.py` (the catalogue's `raised_by` follows). DEC-372.
+  Tests: P-07-T38's acceptance suite, 23 markers removed, 24 pass; `test_acceptance_v2_rules.py`
+  3 pass; stub and consumer contract suites updated (the acceptance routes LIVE, the completion
+  route added); the update-column contract in `test_schema_check_db.py` gains the three
+  mutable tables. Gates green (ruff, pyright, lint-imports, banned_patterns with ACCEPT-001,
+  error_codes, validate_docs, scope_guards, fresh_mfa, check-heads, check-generated);
+  `make generate` and the web type-check.

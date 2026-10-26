@@ -12,6 +12,15 @@ from .isolation import problems
 from .support import Seeder, TwoFirms, two_firms
 
 TABLES: tuple[str, ...] = (
+    "acceptance_answers",
+    "acceptance_condition_events",
+    "acceptance_conditions",
+    "acceptance_decisions",
+    "acceptance_flags",
+    "acceptance_manual_checks",
+    "acceptance_questionnaire_template_versions",
+    "acceptance_questionnaire_templates",
+    "acceptance_records",
     "access_events",
     "adjustment_events",
     "adjustment_lines",
@@ -177,6 +186,7 @@ TABLES: tuple[str, ...] = (
     "reviewable_note_events",
     "reviewable_notes",
     "risk_approvals",
+    "risk_partner_reviews",
     "risk_versions",
     "risks",
     "screening_feedback",

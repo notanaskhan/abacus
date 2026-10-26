@@ -17,9 +17,9 @@ from fastapi.routing import APIRoute
 
 from abacus.api import create_app
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import ENGAGEMENTS_V2
+from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.engagements import contract
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
@@ -49,9 +49,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{DRAFT}/create"): "engagement.create",
 }
 HUMAN_ONLY = {"engagement.create", "client.intake", "letter.record"}
-# Live since P-07-T15 (index, record, gates, recorded letter) and P-07-T16 (catalogue, drafts,
-# create); start-acceptance stays a stub until the acceptance record lands (P-07-T35, DEC-225).
-LIVE = set(ROUTES) - {("post", f"{DRAFT}/start-acceptance")}
+# Live since P-07-T15 (index, record, gates, recorded letter), P-07-T16 (catalogue, drafts,
+# create) and P-07-T35 (start-acceptance, with the acceptance record; DEC-372).
+LIVE = set(ROUTES)
 CLIENT_ROLES = {"client_admin", "client_contributor"}
 
 
@@ -111,7 +111,11 @@ def test_ac12_client_intake_is_the_firm_admin_and_partners() -> None:
     assert granted == {"firm_admin", "firm_partner"}
 
 
-async def test_ac13_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ac13_flag_off_is_404_and_start_acceptance_authorises_before_its_flag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every route answers 404 with `engagements.v2` off. Start-acceptance (P-07-T35) also needs
+    `engagements.acceptance_v2`, read only after `client.intake` is authorised (DEC-326)."""
     user = uuid.uuid4()
     ctx = AuthContext(
         TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), None, None
@@ -125,13 +129,21 @@ async def test_ac13_flag_off_is_404_and_flag_on_is_501(monkeypatch: pytest.Monke
     async def on(_tenant: object, _flag: object) -> bool:
         return True
 
+    async def authorised(_ctx: object, action: str, _resource: object) -> None:
+        seen.append(action)
+
     monkeypatch.setattr(contract, "flag_enabled", off)
+    monkeypatch.setattr(contract, "authorise", authorised)
     with pytest.raises(NotFound):
-        await contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the stub gate
+        await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
     assert seen == [ENGAGEMENTS_V2]
+    seen.clear()
+    with pytest.raises(NotFound):
+        await contract._intake_gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
+    assert seen == ["client.intake", ENGAGEMENTS_ACCEPTANCE_V2]
     monkeypatch.setattr(contract, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the stub gate
+    await contract._gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the flag gate
+    await contract._intake_gate(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate
 
 
 class _RouteContext(Protocol):

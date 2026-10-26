@@ -32,9 +32,10 @@ from abacus.kernel._statuses import (
     NasEvaluationStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.engagements import acceptance as acceptance_model
 from abacus.modules.engagements import team as team_model
 from abacus.modules.engagements.service import get_ref
 from abacus.modules.identity.api import (
@@ -70,31 +71,6 @@ AnswerValue = str | int | bool | None
 
 
 # --- Errors (`error-codes.yaml`; ENG-05's are in `team_errors.py`) -------------------------------
-
-
-class DecisionLocked(DomainConflict):
-    """The acceptance record is decided and locked: nothing on it changes any more."""
-
-    code = "decision_locked"
-
-
-class RationaleRequired(DomainInvalid):
-    """A decision needs a rationale; Accept with conditions needs a condition (`facts.field`)."""
-
-    code = "rationale_required"
-
-
-class AcceptanceNotReady(DomainConflict):
-    """A manual check is still open (`facts.sections`): complete it before sending to the
-    partner."""
-
-    code = "acceptance_not_ready"
-
-
-class ReviewRequired(DomainConflict):
-    """A High-risk record needs a completed risk-partner review before the decision."""
-
-    code = "review_required"
 
 
 class IndependencePreconditionsUnmet(DomainConflict):
@@ -273,6 +249,12 @@ class SendToPartnerIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     seen_version: Annotated[int, Field(ge=0), classified("internal")]
+
+
+class RiskPartnerReviewCompleteIn(BaseModel):
+    """The named risk partner completes the review they were asked for (AC-4; TASK-1258)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class ConditionCompleteIn(BaseModel):
@@ -638,6 +620,19 @@ async def _acceptance_stub(ctx: AuthContext, action: str, engagement_id: UUID) -
     raise NotImplementedYet
 
 
+async def _acceptance_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
+    """CLI-07's routes are live (P-07-T35) behind `engagements.acceptance_v2`, after the same
+    check; the service then requires a live person and authorises again inside its unit of
+    work."""
+    await _allowed(ctx, action, engagement_id)
+    if not await flag_enabled(ctx.tenant, ENGAGEMENTS_ACCEPTANCE_V2):
+        raise NotFound(ENGAGEMENTS_ACCEPTANCE_V2.name)
+
+
+def _record_out(view: acceptance_model.RecordView) -> AcceptanceRecordOut:
+    return AcceptanceRecordOut.model_validate(view, from_attributes=True)
+
+
 async def _team_gate(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
     """ENG-05's rows are live (P-07-T30) behind the screen's flag, after the same check."""
     await _allowed(ctx, action, engagement_id)
@@ -654,25 +649,35 @@ TEAM = "/{engagement_id}/team"
 EQR = "/{engagement_id}/eqr"
 
 
-@acceptance_router.get(
-    ACCEPTANCE, action="acceptance.read", response_model=AcceptanceRecordOut, errors=(501,)
-)
+@acceptance_router.get(ACCEPTANCE, action="acceptance.read", response_model=AcceptanceRecordOut)
 async def get_acceptance_route(engagement_id: UUID, ctx: Ctx) -> AcceptanceRecordOut:
     """CLI-07: the record, answers, checks, flags, decision and conditions."""
-    await _acceptance_stub(ctx, "acceptance.read", engagement_id)
+    await _acceptance_gate(ctx, "acceptance.read", engagement_id)
+    return _record_out(await acceptance_model.acceptance_record(ctx, engagement_id))
 
 
 @acceptance_router.put(
     f"{ACCEPTANCE}/answers/{{section_code}}",
     action="acceptance.prepare",
     response_model=AcceptanceSectionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def put_acceptance_answers_route(
     engagement_id: UUID, section_code: Code, body: AcceptanceAnswersIn, ctx: Ctx
 ) -> AcceptanceSectionOut:
-    """`acceptance.answers_updated`; 409 `stale_version`, 409 `decision_locked`."""
-    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
+    """`acceptance.answers_updated`; 409 `stale_version` (the section's version, 0 before its
+    first answer), 409 `decision_locked`."""
+    await _acceptance_gate(ctx, "acceptance.prepare", engagement_id)
+    section = await acceptance_model.update_answers(
+        ctx,
+        engagement_id,
+        section_code,
+        seen_version=body.seen_version,
+        values=body.answers,
+        complete=body.complete,
+        risk_rating=body.risk_rating,
+    )
+    return AcceptanceSectionOut.model_validate(section, from_attributes=True)
 
 
 @acceptance_router.post(
@@ -680,13 +685,22 @@ async def put_acceptance_answers_route(
     action="acceptance.prepare",
     response_model=AcceptanceFlagOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def add_acceptance_flag_route(
     engagement_id: UUID, body: AcceptanceFlagIn, ctx: Ctx
 ) -> AcceptanceFlagOut:
     """AC-2: an insert-only flag authored by the caller; `acceptance.flag_added`."""
-    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
+    await _acceptance_gate(ctx, "acceptance.prepare", engagement_id)
+    flag = await acceptance_model.add_flag(
+        ctx,
+        engagement_id,
+        severity=body.severity,
+        title=body.title,
+        body=body.body,
+        sources=[acceptance_model.SourceRef(s.kind, s.id) for s in body.sources],
+    )
+    return AcceptanceFlagOut.model_validate(flag, from_attributes=True)
 
 
 @acceptance_router.post(
@@ -694,52 +708,69 @@ async def add_acceptance_flag_route(
     action="acceptance.prepare",
     response_model=ManualCheckOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def request_manual_check_route(
     engagement_id: UUID, section_code: Code, body: ManualCheckRequestIn, ctx: Ctx
 ) -> ManualCheckOut:
-    """`acceptance.manual_check_requested`."""
-    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
+    """`acceptance.manual_check_requested`; 422 `invalid` when the person may not complete it
+    here or the section already has an open check."""
+    await _acceptance_gate(ctx, "acceptance.prepare", engagement_id)
+    check = await acceptance_model.request_manual_check(
+        ctx, engagement_id, section_code, body.requested_of
+    )
+    return ManualCheckOut.model_validate(check, from_attributes=True)
 
 
 @acceptance_router.post(
     f"{ACCEPTANCE}/manual-checks/{{section_code}}/complete",
     action="acceptance.prepare",
     response_model=ManualCheckOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def complete_manual_check_route(
     engagement_id: UUID, section_code: Code, body: ManualCheckCompleteIn, ctx: Ctx
 ) -> ManualCheckOut:
-    """By the person it was requested of (client service included); `…manual_check_completed`."""
-    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
+    """By the person it was requested of (client service included); `…manual_check_completed`;
+    403 for anyone else."""
+    await _acceptance_gate(ctx, "acceptance.prepare", engagement_id)
+    check = await acceptance_model.complete_manual_check(
+        ctx, engagement_id, section_code, body.note
+    )
+    return ManualCheckOut.model_validate(check, from_attributes=True)
 
 
 @acceptance_router.post(
     f"{ACCEPTANCE}/send-to-partner",
     action="acceptance.prepare",
     response_model=AcceptanceRecordOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def send_to_partner_route(
     engagement_id: UUID, body: SendToPartnerIn, ctx: Ctx
 ) -> AcceptanceRecordOut:
-    """AC-1, AC-3: Draft → Awaiting partner; 409 `acceptance_not_ready` (open checks as facts)."""
-    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
+    """AC-1, AC-3: Draft → Awaiting partner; 409 `acceptance_not_ready` (open checks as facts),
+    409 `illegal_transition` once sent."""
+    await _acceptance_gate(ctx, "acceptance.prepare", engagement_id)
+    return _record_out(
+        await acceptance_model.send_to_partner(ctx, engagement_id, body.seen_version)
+    )
 
 
 @acceptance_router.post(
     f"{ACCEPTANCE}/conditions/{{condition_id}}/complete",
     action="acceptance.prepare",
     response_model=AcceptanceConditionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def complete_condition_route(
     engagement_id: UUID, condition_id: UUID, body: ConditionCompleteIn, ctx: Ctx
 ) -> AcceptanceConditionOut:
-    """AC-9: an insert-only completion event by a person; `acceptance.condition_completed`."""
-    await _acceptance_stub(ctx, "acceptance.prepare", engagement_id)
+    """AC-9: an insert-only completion event by a person; `acceptance.condition_completed`;
+    422 `invalid` when already complete."""
+    await _acceptance_gate(ctx, "acceptance.prepare", engagement_id)
+    done = await acceptance_model.complete_condition(ctx, engagement_id, condition_id, body.note)
+    return AcceptanceConditionOut.model_validate(done, from_attributes=True)
 
 
 @acceptance_router.post(
@@ -747,13 +778,34 @@ async def complete_condition_route(
     action="acceptance.request_review",
     response_model=RiskPartnerReviewOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def request_risk_partner_review_route(
     engagement_id: UUID, body: RiskPartnerReviewIn, ctx: Ctx
 ) -> RiskPartnerReviewOut:
-    """AC-4: another partner, picked by the EP; `acceptance.review_requested`."""
-    await _acceptance_stub(ctx, "acceptance.request_review", engagement_id)
+    """AC-4: another partner, picked by the EP; `acceptance.review_requested`; 422 `invalid`
+    for the EP themself, an engagement partner here, a non-partner or someone walled from the
+    client."""
+    await _acceptance_gate(ctx, "acceptance.request_review", engagement_id)
+    review = await acceptance_model.request_risk_review(ctx, engagement_id, body.partner_id)
+    return RiskPartnerReviewOut.model_validate(review, from_attributes=True)
+
+
+@acceptance_router.post(
+    f"{ACCEPTANCE}/risk-partner-review/complete",
+    action="acceptance.complete_review",
+    response_model=RiskPartnerReviewOut,
+    errors=(409,),
+)
+async def complete_risk_partner_review_route(
+    engagement_id: UUID, body: RiskPartnerReviewCompleteIn, ctx: Ctx
+) -> RiskPartnerReviewOut:
+    """AC-4 (TASK-1258): only the named risk partner, authorised on the client (the derived
+    `firm_partner`; walls apply); `acceptance.review_completed`."""
+    if ctx.client or ctx.tenant.actor_kind != "human":
+        raise Forbidden("acceptance.complete_review", "role")
+    review = await acceptance_model.complete_risk_review(ctx, engagement_id)
+    return RiskPartnerReviewOut.model_validate(review, from_attributes=True)
 
 
 @acceptance_router.post(
@@ -761,7 +813,7 @@ async def request_risk_partner_review_route(
     action="acceptance.decide",
     response_model=AcceptanceRecordOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def decide_acceptance_route(
     engagement_id: UUID, body: AcceptanceDecisionIn, ctx: Ctx
@@ -769,7 +821,19 @@ async def decide_acceptance_route(
     """Human-only (INV-1), fresh MFA: one insert-only decision, `acceptance.decided`, Prospect →
     Accepted or Declined (AC-6 to AC-8); 409 `review_required`, `decision_locked`; 422
     `rationale_required`."""
-    await _acceptance_stub(ctx, "acceptance.decide", engagement_id)
+    await _acceptance_gate(ctx, "acceptance.decide", engagement_id)
+    record = await acceptance_model.decide_acceptance(
+        ctx,
+        engagement_id,
+        option=body.option,
+        rationale=body.rationale,
+        conditions=[
+            acceptance_model.NewCondition(c.text, c.assignee_user_id, c.due_on)
+            for c in body.conditions
+        ],
+        seen_version=body.seen_version,
+    )
+    return _record_out(record)
 
 
 @independence_router.get(

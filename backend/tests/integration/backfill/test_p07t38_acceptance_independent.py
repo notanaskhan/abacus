@@ -328,10 +328,6 @@ async def tb(net: Net) -> Thornbury:
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac1_the_record_starts_in_draft_with_the_firms_template_sections(
     tb: Thornbury,
 ) -> None:
@@ -351,10 +347,6 @@ async def test_ac1_the_record_starts_in_draft_with_the_firms_template_sections(
     assert (await tb.record(tb.kira))["id"] == record["id"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac1_a_firm_without_a_questionnaire_template_cannot_start_acceptance(
     net: Net,
 ) -> None:
@@ -366,14 +358,19 @@ async def test_ac1_a_firm_without_a_questionnaire_template_cannot_start_acceptan
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac1_send_to_partner_is_refused_while_a_manual_check_is_open(
     tb: Thornbury,
 ) -> None:
     await tb.start()
+    # CLI-07 b's check is Grace's as the engagement's client service (DEC-326: completion is the
+    # only prepare right client service has).
+    await tb.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'client_service')",
+        tb.tenant,
+        tb.engagement_id,
+        tb.grace.user_id,
+    )
     for code, _ in SECTIONS:
         await tb.answer(code)
     check = _json(
@@ -417,10 +414,6 @@ async def test_ac1_send_to_partner_is_refused_while_a_manual_check_is_open(
     ]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac1_staff_without_the_prepare_right_cannot_change_the_record(
     tb: Thornbury,
 ) -> None:
@@ -443,10 +436,6 @@ async def test_ac1_staff_without_the_prepare_right_cannot_change_the_record(
     assert refused.status_code == 403, refused.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac2_a_flag_is_authored_by_the_person_and_never_changes(tb: Thornbury) -> None:
     await tb.start()
     source = str(uuid.uuid4())
@@ -492,10 +481,6 @@ async def test_ac2_a_flag_is_authored_by_the_person_and_never_changes(tb: Thornb
         )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac3_send_to_partner_moves_draft_to_awaiting_partner_audited_and_emitted(
     tb: Thornbury,
 ) -> None:
@@ -517,10 +502,6 @@ async def test_ac3_send_to_partner_moves_draft_to_awaiting_partner_audited_and_e
     assert again.status_code == 409, again.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac4_a_high_risk_record_waits_for_another_partners_completed_review(
     tb: Thornbury,
 ) -> None:
@@ -557,10 +538,6 @@ async def test_ac4_a_high_risk_record_waits_for_another_partners_completed_revie
     assert review_out["partner_id"] == str(tb.rita.user_id)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac5_a_continuance_shows_the_prior_years_decision_and_conditions(
     tb: Thornbury,
 ) -> None:
@@ -590,10 +567,6 @@ async def test_ac5_a_continuance_shows_the_prior_years_decision_and_conditions(
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac6_daniel_decides_thornbury_with_conditions_and_the_record_locks(
     tb: Thornbury,
 ) -> None:
@@ -653,10 +626,6 @@ async def test_ac6_daniel_decides_thornbury_with_conditions_and_the_record_locks
     assert cast(Json, after["decision"])["option"] == "accept_with_conditions"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac6_the_decision_row_is_insert_only_and_one_per_record(tb: Thornbury) -> None:
     await tb.start()
     await tb.ready()
@@ -680,10 +649,6 @@ async def test_ac6_the_decision_row_is_insert_only_and_one_per_record(tb: Thornb
     assert "Estate within" not in str(dict(row[0]))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac6_a_decision_on_a_stale_version_answers_409(tb: Thornbury) -> None:
     await tb.start()
     record = await tb.ready()
@@ -698,20 +663,12 @@ async def test_ac6_a_decision_on_a_stale_version_answers_409(tb: Thornbury) -> N
     assert (await tb.record())["decision"] is None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac6_a_draft_record_is_not_ready_for_decision(tb: Thornbury) -> None:
     await tb.start()
     _refusal(await tb.decide("accept"), 409, "acceptance_not_ready")
     assert await tb.status() == "prospect"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac7_a_rationale_is_required_and_conditions_for_accept_with_conditions(
     tb: Thornbury,
 ) -> None:
@@ -733,10 +690,6 @@ async def test_ac7_a_rationale_is_required_and_conditions_for_accept_with_condit
     assert await tb.audit("acceptance.decided") == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac8_accept_moves_prospect_to_accepted_and_g1_is_met_by_daniel(
     tb: Thornbury,
 ) -> None:
@@ -760,10 +713,6 @@ async def test_ac8_accept_moves_prospect_to_accepted_and_g1_is_met_by_daniel(
     assert await tb.audit("engagement.accepted") == [("human", str(tb.daniel.user_id))]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac8_decline_moves_to_declined_and_no_letter_can_be_recorded(
     tb: Thornbury,
 ) -> None:
@@ -789,10 +738,6 @@ async def test_ac8_decline_moves_to_declined_and_no_letter_can_be_recorded(
     assert facts.get("gate") == "G1"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac8_conditions_belong_only_to_accept_with_conditions(tb: Thornbury) -> None:
     await tb.start()
     await tb.ready()
@@ -800,10 +745,6 @@ async def test_ac8_conditions_belong_only_to_accept_with_conditions(tb: Thornbur
     assert (await tb.record())["decision"] is None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac9_completing_a_condition_is_an_insert_only_event_by_a_person(
     tb: Thornbury,
 ) -> None:
@@ -830,10 +771,6 @@ async def test_ac9_completing_a_condition_is_an_insert_only_event_by_a_person(
         await tb.seed.run("DELETE FROM acceptance_conditions WHERE tenant_id = $1", tb.tenant)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac10_samuel_cannot_decide_at_the_matrix_and_daniel_needs_fresh_mfa(
     tb: Thornbury,
 ) -> None:
@@ -859,10 +796,6 @@ async def test_ac10_the_matrix_holds_the_decision_for_the_engagement_partner_alo
     assert rule.decisions.get("system") == "deny"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac10_an_agent_or_system_context_is_refused_by_the_service(
     tb: Thornbury,
 ) -> None:
@@ -914,10 +847,6 @@ async def test_ac10_an_agent_or_system_context_is_refused_by_the_service(
     assert (await tb.record())["decision"] is None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac10_the_database_refuses_a_decision_row_written_by_a_non_human(
     tb: Thornbury,
 ) -> None:
@@ -944,10 +873,6 @@ async def test_ac10_the_database_refuses_a_decision_row_written_by_a_non_human(
     assert "action: acceptance.decided" in register
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac10_only_the_acceptance_module_may_call_the_decision_function(
     tmp_path: Path,
 ) -> None:
@@ -970,10 +895,6 @@ async def test_ac10_only_the_acceptance_module_may_call_the_decision_function(
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_ac11_a_letter_dated_before_the_decision_answers_409(tb: Thornbury) -> None:
     await tb.start()
     await tb.ready()
@@ -1019,10 +940,6 @@ async def test_ac11_a_letter_dated_before_the_decision_answers_409(tb: Thornbury
 # ================================================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-1258: P-07-T35 not built; acceptance routes answer 501 (main at #409)",
-)
 async def test_inv3_a_walled_team_member_and_another_firm_get_404(tb: Thornbury, net: Net) -> None:
     await tb.start()
     walled = _json(

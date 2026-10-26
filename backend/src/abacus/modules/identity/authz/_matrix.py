@@ -26,6 +26,11 @@ ROLES: tuple[str, ...] = (
 )
 
 ACTIONS: dict[str, dict[str, str]] = {
+    "acceptance.complete_review": {
+        "firm_partner": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "acceptance.decide": {
         "engagement_partner": "allow",
         "mfa_recent": "required",

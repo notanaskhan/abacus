@@ -43,3 +43,11 @@ walled users (INV-3), clearance audit.
   TASK-1258 and TASK-1259 before either was built. On the stubs: 32 xfailed (each needs a live
   route), 3 passed (the matrix rows for `acceptance.decide` and the conflict actions, and the
   50-name bound, which the request model already holds).
+- 2026-10-26 (with T35): the 23 TASK-1258 markers removed; the acceptance suite passes. One
+  setup line added, not an expectation: `test_ac1_send_to_partner_is_refused_while_a_manual_check_is_open`
+  now seats Grace on the engagement as client service before asking her for the check. The
+  suite had asked a firm admin with no role on the engagement, but `acceptance.prepare` (and so
+  completion) is the engagement partner's, the manager's and client service's (DEC-326); CLI-07
+  b's check is Grace's in that role. Also before T35 was built: the duplicate-decision probe in
+  `test_ac6_the_decision_row_is_insert_only_and_one_per_record` names `actor_kind` so it tests
+  the uniqueness alone (amended into the T38 commit).

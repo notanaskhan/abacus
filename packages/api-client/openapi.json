@@ -35465,6 +35465,13 @@
         "title": "RiskOut",
         "type": "object"
       },
+      "RiskPartnerReviewCompleteIn": {
+        "additionalProperties": false,
+        "description": "The named risk partner completes the review they were asked for (AC-4; TASK-1258).",
+        "properties": {},
+        "title": "RiskPartnerReviewCompleteIn",
+        "type": "object"
+      },
       "RiskPartnerReviewIn": {
         "additionalProperties": false,
         "description": "The EP picks another partner (never the EP) for a High-risk record (AC-4).",
@@ -55557,7 +55564,7 @@
     },
     "/v1/engagement-drafts/{draft_id}/start-acceptance": {
       "post": {
-        "description": "Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted.",
+        "description": "Human-only (OQ-2): a Prospect engagement and an acceptance record; nothing is accepted\n(P-07-T35, DEC-372). Behind `engagements.v2` and `engagements.acceptance_v2`; 409\n`acceptance_template_missing`, 422 `draft_incomplete`.",
         "operationId": "start_acceptance_from_draft",
         "parameters": [
           {
@@ -55663,16 +55670,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Start Acceptance From Draft Route",
@@ -56730,16 +56727,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Acceptance Route",
@@ -56866,7 +56853,7 @@
     },
     "/v1/engagements/{engagement_id}/acceptance/answers/{section_code}": {
       "put": {
-        "description": "`acceptance.answers_updated`; 409 `stale_version`, 409 `decision_locked`.",
+        "description": "`acceptance.answers_updated`; 409 `stale_version` (the section's version, 0 before its\nfirst answer), 409 `decision_locked`.",
         "operationId": "put_acceptance_answers",
         "parameters": [
           {
@@ -56992,16 +56979,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Put Acceptance Answers Route",
@@ -57013,7 +56990,7 @@
     },
     "/v1/engagements/{engagement_id}/acceptance/conditions/{condition_id}/complete": {
       "post": {
-        "description": "AC-9: an insert-only completion event by a person; `acceptance.condition_completed`.",
+        "description": "AC-9: an insert-only completion event by a person; `acceptance.condition_completed`;\n422 `invalid` when already complete.",
         "operationId": "complete_condition",
         "parameters": [
           {
@@ -57139,16 +57116,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Complete Condition Route",
@@ -57276,16 +57243,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Acceptance Route",
@@ -57541,16 +57498,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Add Acceptance Flag Route",
@@ -57562,7 +57509,7 @@
     },
     "/v1/engagements/{engagement_id}/acceptance/manual-checks/{section_code}/complete": {
       "post": {
-        "description": "By the person it was requested of (client service included); `\u2026manual_check_completed`.",
+        "description": "By the person it was requested of (client service included); `\u2026manual_check_completed`;\n403 for anyone else.",
         "operationId": "complete_manual_check",
         "parameters": [
           {
@@ -57688,16 +57635,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Complete Manual Check Route",
@@ -57709,7 +57646,7 @@
     },
     "/v1/engagements/{engagement_id}/acceptance/manual-checks/{section_code}/request": {
       "post": {
-        "description": "`acceptance.manual_check_requested`.",
+        "description": "`acceptance.manual_check_requested`; 422 `invalid` when the person may not complete it\nhere or the section already has an open check.",
         "operationId": "request_manual_check",
         "parameters": [
           {
@@ -57835,16 +57772,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Request Manual Check Route",
@@ -57856,7 +57783,7 @@
     },
     "/v1/engagements/{engagement_id}/acceptance/risk-partner-review": {
       "post": {
-        "description": "AC-4: another partner, picked by the EP; `acceptance.review_requested`.",
+        "description": "AC-4: another partner, picked by the EP; `acceptance.review_requested`; 422 `invalid`\nfor the EP themself, an engagement partner here, a non-partner or someone walled from the\nclient.",
         "operationId": "request_risk_partner_review",
         "parameters": [
           {
@@ -57972,16 +57899,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Request Risk Partner Review Route",
@@ -57991,9 +57908,136 @@
         "x-abacus-action": "acceptance.request_review"
       }
     },
+    "/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete": {
+      "post": {
+        "description": "AC-4 (TASK-1258): only the named risk partner, authorised on the client (the derived\n`firm_partner`; walls apply); `acceptance.review_completed`.",
+        "operationId": "complete_risk_partner_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskPartnerReviewCompleteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPartnerReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Complete Risk Partner Review Route",
+        "tags": [
+          "acceptance"
+        ],
+        "x-abacus-action": "acceptance.complete_review"
+      }
+    },
     "/v1/engagements/{engagement_id}/acceptance/send-to-partner": {
       "post": {
-        "description": "AC-1, AC-3: Draft \u2192 Awaiting partner; 409 `acceptance_not_ready` (open checks as facts).",
+        "description": "AC-1, AC-3: Draft \u2192 Awaiting partner; 409 `acceptance_not_ready` (open checks as facts),\n409 `illegal_transition` once sent.",
         "operationId": "send_to_partner",
         "parameters": [
           {
@@ -58109,16 +58153,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send To Partner Route",

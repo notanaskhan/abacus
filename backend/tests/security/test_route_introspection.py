@@ -392,6 +392,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/acceptance/risk-partner-review",
         "acceptance.request_review",
     ),
+    (
+        "POST",
+        "/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete",
+        "acceptance.complete_review",
+    ),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/send-to-partner", "acceptance.prepare"),
     ("POST", "/v1/engagements/{engagement_id}/adjustments", "adjustment.propose"),
     (

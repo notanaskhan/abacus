@@ -45,6 +45,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{ACC}/send-to-partner"): "acceptance.prepare",
     ("post", f"{ACC}/conditions/{{condition_id}}/complete"): "acceptance.prepare",
     ("post", f"{ACC}/risk-partner-review"): "acceptance.request_review",
+    ("post", f"{ACC}/risk-partner-review/complete"): "acceptance.complete_review",
     ("post", f"{ACC}/decision"): "acceptance.decide",
     ("get", IND): "independence.read",
     ("get", f"{IND}/rotation"): "independence.read",
@@ -67,9 +68,10 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{CHECK}/{{check_id}}/results/{{result_id}}/clear"): "conflict.clear",
     ("post", "/v1/screening-records"): "screening.record",
 }
-# ENG-05's team rows and the confirmation requests are live since P-07-T30 (TASK-1197); the rest
-# wait for P-07-T35, T36 and T41.
+# ENG-05's team rows and the confirmation requests are live since P-07-T30 (TASK-1197); CLI-07's
+# acceptance routes since P-07-T35 (TASK-1258); the rest wait for P-07-T36 and T41.
 LIVE: set[tuple[str, str]] = {
+    *((m, p) for (m, p) in ROUTES if p.startswith(ACC)),
     ("get", f"{E}/team/approval"),
     ("post", f"{E}/team/approve"),
     ("put", f"{E}/team/{{user_id}}/portal-visibility"),
@@ -81,6 +83,7 @@ LIVE: set[tuple[str, str]] = {
 STUBBED = set(ROUTES) - LIVE
 HUMAN_ONLY = {
     "acceptance.decide",
+    "acceptance.complete_review",
     "independence.confirm",
     "independence.conclude",
     "conflict.clear",
@@ -89,6 +92,7 @@ HUMAN_ONLY = {
 }
 NEW_ACTIONS = {
     "acceptance.read",
+    "acceptance.complete_review",
     "acceptance.prepare",
     "acceptance.request_review",
     "acceptance.decide",

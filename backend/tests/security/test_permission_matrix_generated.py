@@ -10,6 +10,20 @@ import pytest
 from .matrix_harness import outcome
 
 CASES: tuple[tuple[str, str, str], ...] = (
+    ("acceptance.complete_review", "firm_admin", "deny"),
+    ("acceptance.complete_review", "practice_leader", "deny"),
+    ("acceptance.complete_review", "quality_partner", "deny"),
+    ("acceptance.complete_review", "security_admin", "deny"),
+    ("acceptance.complete_review", "engagement_partner", "deny"),
+    ("acceptance.complete_review", "manager", "deny"),
+    ("acceptance.complete_review", "senior", "deny"),
+    ("acceptance.complete_review", "staff", "deny"),
+    ("acceptance.complete_review", "reviewer", "deny"),
+    ("acceptance.complete_review", "eqr_reviewer", "deny"),
+    ("acceptance.complete_review", "specialist", "deny"),
+    ("acceptance.complete_review", "client_service", "deny"),
+    ("acceptance.complete_review", "client_admin", "deny"),
+    ("acceptance.complete_review", "client_contributor", "deny"),
     ("acceptance.decide", "firm_admin", "deny"),
     ("acceptance.decide", "practice_leader", "deny"),
     ("acceptance.decide", "quality_partner", "deny"),

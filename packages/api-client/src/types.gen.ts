@@ -16865,6 +16865,15 @@ export type RiskOut = {
 };
 
 /**
+ * RiskPartnerReviewCompleteIn
+ *
+ * The named risk partner completes the review they were asked for (AC-4; TASK-1258).
+ */
+export type RiskPartnerReviewCompleteIn = {
+    [key: string]: never;
+};
+
+/**
  * RiskPartnerReviewIn
  *
  * The EP picks another partner (never the EP) for a High-risk record (AC-4).
@@ -21877,6 +21886,15 @@ export type AbacusModulesFieldworkRoutesStartIn = {
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
 };
 
+/**
+ * RiskPartnerReviewCompleteIn
+ *
+ * The named risk partner completes the review they were asked for (AC-4; TASK-1258).
+ */
+export type RiskPartnerReviewCompleteInWritable = {
+    [key: string]: never;
+};
+
 export type AgentRunData = {
     body?: never;
     headers?: {
@@ -26123,10 +26141,6 @@ export type StartAcceptanceFromDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StartAcceptanceFromDraftError = StartAcceptanceFromDraftErrors[keyof StartAcceptanceFromDraftErrors];
@@ -26577,10 +26591,6 @@ export type GetAcceptanceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetAcceptanceError = GetAcceptanceErrors[keyof GetAcceptanceErrors];
@@ -26693,10 +26703,6 @@ export type PutAcceptanceAnswersErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutAcceptanceAnswersError = PutAcceptanceAnswersErrors[keyof PutAcceptanceAnswersErrors];
@@ -26757,10 +26763,6 @@ export type CompleteConditionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CompleteConditionError = CompleteConditionErrors[keyof CompleteConditionErrors];
@@ -26817,10 +26819,6 @@ export type DecideAcceptanceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DecideAcceptanceError = DecideAcceptanceErrors[keyof DecideAcceptanceErrors];
@@ -26938,10 +26936,6 @@ export type AddAcceptanceFlagErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddAcceptanceFlagError = AddAcceptanceFlagErrors[keyof AddAcceptanceFlagErrors];
@@ -27002,10 +26996,6 @@ export type CompleteManualCheckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CompleteManualCheckError = CompleteManualCheckErrors[keyof CompleteManualCheckErrors];
@@ -27066,10 +27056,6 @@ export type RequestManualCheckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RequestManualCheckError = RequestManualCheckErrors[keyof RequestManualCheckErrors];
@@ -27126,10 +27112,6 @@ export type RequestRiskPartnerReviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RequestRiskPartnerReviewError = RequestRiskPartnerReviewErrors[keyof RequestRiskPartnerReviewErrors];
@@ -27142,6 +27124,62 @@ export type RequestRiskPartnerReviewResponses = {
 };
 
 export type RequestRiskPartnerReviewResponse = RequestRiskPartnerReviewResponses[keyof RequestRiskPartnerReviewResponses];
+
+export type CompleteRiskPartnerReviewData = {
+    body: RiskPartnerReviewCompleteInWritable;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete';
+};
+
+export type CompleteRiskPartnerReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CompleteRiskPartnerReviewError = CompleteRiskPartnerReviewErrors[keyof CompleteRiskPartnerReviewErrors];
+
+export type CompleteRiskPartnerReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: RiskPartnerReviewOut;
+};
+
+export type CompleteRiskPartnerReviewResponse = CompleteRiskPartnerReviewResponses[keyof CompleteRiskPartnerReviewResponses];
 
 export type SendToPartnerData = {
     body: SendToPartnerIn;
@@ -27186,10 +27224,6 @@ export type SendToPartnerErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendToPartnerError = SendToPartnerErrors[keyof SendToPartnerErrors];

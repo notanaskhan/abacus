@@ -2,6 +2,7 @@
 // Regenerate: python -m abacus_tools.codegen.permission_matrix
 
 export const ACTIONS = [
+  "acceptance.complete_review",
   "acceptance.decide",
   "acceptance.prepare",
   "acceptance.read",

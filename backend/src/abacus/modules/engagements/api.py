@@ -1,6 +1,11 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.modules.engagements.acceptance import (
+    NewCondition,
+    acceptance_record,
+    decide_acceptance,
+)
 from abacus.modules.engagements.acceptance_contract import (
     acceptance_router,
     independence_router,
@@ -263,6 +268,7 @@ __all__ = [
     "JudgmentSource",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
+    "NewCondition",
     "NewWorkItem",
     "PortalWorkItem",
     "PriorItem",
@@ -276,6 +282,7 @@ __all__ = [
     "VersionNotLatest",
     "WorkItemExists",
     "WorkItemProvider",
+    "acceptance_record",
     "answer_independence",
     "area_for",
     "assign_work_item",
@@ -291,6 +298,7 @@ __all__ = [
     "client_contact_organisations_of_users",
     "contact_portal_user",
     "create_work_item",
+    "decide_acceptance",
     "designate_contact",
     "engagement_contacts",
     "engagement_hold_facts",
