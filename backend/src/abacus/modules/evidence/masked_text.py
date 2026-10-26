@@ -23,8 +23,10 @@ async def masked_pages(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    derivation_id: UUID | None = None,
 ) -> dict[int, str] | None:
-    """The source's scanned pages as masked text, or None when no PII scan has run on it."""
+    """The source's scanned pages as masked text, or None when no PII scan has run on it. An
+    unlock's derived layer when `derivation_id` is named (P-03-T19: the viewer's text view)."""
     if (evidence_version_id is None) == (inbox_file_id is None):
         raise ValueError("name exactly one source")
     async with tenant_session(tenant) as session:
@@ -33,6 +35,7 @@ async def masked_pages(
             evidence_version_id=evidence_version_id,
             inbox_file_id=inbox_file_id,
             detector_version=DETECTOR_VERSION,
+            derivation_id=derivation_id,
         )
         if run is None:
             return None
@@ -41,9 +44,13 @@ async def masked_pages(
             evidence_version_id=evidence_version_id,
             inbox_file_id=inbox_file_id,
             extractor_version=WORDS_VERSION,
+            derivation_id=derivation_id,
         )
         projection = await projection_of(
-            session, evidence_version_id=evidence_version_id, inbox_file_id=inbox_file_id
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            derivation_id=derivation_id,
         )
     out: dict[int, str] = {}
     for page in pages:

@@ -10,7 +10,7 @@ transaction (`app.tenant_id` must name the firm), where the caller's unit of wor
 execute it; the route admits only platform staff (the STAFF marker).
 
 Revision ID: 0181
-Revises: 0180
+Revises: 0192
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0181"
-down_revision = "0180"
+down_revision = "0192"
 branch_labels = None
 depends_on = None
 

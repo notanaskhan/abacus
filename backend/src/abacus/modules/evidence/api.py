@@ -42,6 +42,9 @@ from abacus.modules.evidence.events import (
     InboxFileExtracted,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIVITIES
+from abacus.modules.evidence.export_activities import SUBSCRIPTIONS as EXPORT_SUBSCRIPTIONS
+from abacus.modules.evidence.export_activities import WORKFLOWS as EXPORT_WORKFLOWS
 from abacus.modules.evidence.export_contract import exports_router, work_item_exports_router
 from abacus.modules.evidence.export_manifest import (
     FORMAT_VERSION as EXPORT_FORMAT_VERSION,
@@ -57,7 +60,22 @@ from abacus.modules.evidence.export_package import (
     SectionRequest,
     register_export_section,
 )
+from abacus.modules.evidence.export_sections import (
+    included_versions as included_export_versions,
+)
+from abacus.modules.evidence.export_sections import (
+    register_export_audit_trail,
+)
+from abacus.modules.evidence.export_sections import (
+    requester as export_requester,
+)
+from abacus.modules.evidence.export_sections import (
+    section_csv as export_section_csv,
+)
 from abacus.modules.evidence.firm_export_contract import router as firm_export_router
+from abacus.modules.evidence.firm_export_schedule_contract import (
+    schedule_router as firm_export_schedule_router,
+)
 from abacus.modules.evidence.gate_facts import decided_among, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
@@ -195,11 +213,15 @@ from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import VERSION as UPLOAD_VERSION
 from abacus.modules.evidence.workflow_types import (
     BackfillInput,
+    EngagementExportInput,
+    ExportPackageFacts,
     LegalHoldInput,
     UploadInput,
     WithdrawalPurgeInput,
 )
+from abacus.modules.evidence.workflow_types import ExportFailure as ExportBuildFailure
 from abacus.modules.evidence.workflows import (
+    EngagementExportWorkflow,
     EvidenceWithdrawalPurge,
     LegalHoldApply,
     LegalHoldRelease,
@@ -219,8 +241,11 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
     legal_hold_router,  # Q-02-T29: legal holds
+    # G-02-T11 (security-center v1 stub; G-02-T19 implements it): before Q-02's router, whose
+    # `POST /{export_id}/approve` would otherwise take `schedule/approve`.
+    firm_export_schedule_router,
     firm_export_router,  # Q-02-T38: the firm-export contract stub (Q-02-T43 implements it)
-    work_item_exports_router,  # A-01-T17: engagement export v1 stub (A-01-T18, T22 implement it)
+    work_item_exports_router,  # A-01-T17 stub; A-01-T18 create, undo, reads (T22: download)
     exports_router,  # A-01-T17
 )
 
@@ -228,11 +253,18 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # gets its S3 holds before its processing starts. Importing `holds` registered `holds_covering`
 # as the kernel's hold check (fail closed without it).
 # P-06-T19 (ADR-162 §7): the withdrawal purge, started by `evidence_version.withdrawn`.
-WORKFLOWS: dict[type, str] = {**UPLOAD_WORKFLOWS, **HOLD_WORKFLOWS, **WITHDRAWAL_WORKFLOWS}
+# A-01-T19: the engagement export, started by `engagement_export.requested`.
+WORKFLOWS: dict[type, str] = {
+    **UPLOAD_WORKFLOWS,
+    **HOLD_WORKFLOWS,
+    **WITHDRAWAL_WORKFLOWS,
+    **EXPORT_WORKFLOWS,
+}
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
     *HOLD_ACTIVITIES,
     *WITHDRAWAL_ACTIVITIES,
+    *EXPORT_ACTIVITIES,
 )
 
 
@@ -257,6 +289,7 @@ _SUBSCRIPTIONS: dict[str, Handler] = {
     },
     **HOLD_SUBSCRIPTIONS,
     **WITHDRAWAL_SUBSCRIPTIONS,
+    **EXPORT_SUBSCRIPTIONS,
 }
 # P-03-T12: the moved and broken detector follows each (both idempotent; a failure retries both).
 SUBSCRIPTIONS = {
@@ -306,13 +339,17 @@ __all__ = [
     "ContentTooLarge",
     "EffectivePolicy",
     "EngagementArchived",
+    "EngagementExportInput",
     "EngagementExportManifest",
+    "EngagementExportWorkflow",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
     "EvidenceVersionView",
     "EvidenceVersionWithdrawn",
     "EvidenceWithdrawalPurge",
+    "ExportBuildFailure",
+    "ExportPackageFacts",
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
@@ -367,9 +404,12 @@ __all__ = [
     "engagement_snapshots",
     "evidence_versions_for",
     "export_manifest_json_schema",
+    "export_requester",
+    "export_section_csv",
     "extend_retention_for",
     "firm_router",
     "holds_covering",
+    "included_export_versions",
     "is_version_withdrawn",
     "legal_hold_activate",
     "legal_hold_apply_batch",
@@ -389,6 +429,7 @@ __all__ = [
     "read_version",
     "record_citations",
     "register_citable",
+    "register_export_audit_trail",
     "register_export_section",
     "register_match_picks",
     "register_proposal_source",

@@ -43,8 +43,10 @@ import { DOCUMENTS } from "../seed/trust";
 import {
   GRANITE_FY2026,
   GRANITE_FY2026_REPULL,
+  GRANITE_HAND_OFF,
   GRANITE_TB,
   HARLOW_ENGAGEMENT,
+  HARLOW_ENTITIES,
   aud06Checks,
   aud06Citations,
   aud06Newer,
@@ -56,6 +58,7 @@ import {
   aud06g,
   aud06h,
   graniteTrialBalance,
+  harlowChecks,
   snapshotOf,
 } from "../seed/aud06";
 import { stableId } from "../seed/prng";
@@ -240,7 +243,7 @@ export const scenarios = defineScenarios({
           snapshots: [],
         },
         view: harlow,
-        checks: [],
+        checks: harlowChecks(harlow),
       }),
     },
   },
@@ -292,6 +295,8 @@ export const OPENS: Readonly<
       area?: string;
       selected?: string;
       ov?: string;
+      /** Facts for planned controls (the entity strip, Hand off to tax…): dev builds only. */
+      planned?: { entities?: readonly string[]; entity?: string; handOffToTax?: string };
     }
   >
 > = {
@@ -339,8 +344,15 @@ export const OPENS: Readonly<
     tbId: harlow.trial_balance_id,
     tab: "trial_balance",
     layer: "unadjusted",
+    planned: { entities: HARLOW_ENTITIES, entity: "Manufacturing" },
   },
-  h: { engagementId: GRANITE_ENGAGEMENT, tbId: GRANITE_TB, tab: "trial_balance", layer: "final" },
+  h: {
+    engagementId: GRANITE_ENGAGEMENT,
+    tbId: GRANITE_TB,
+    tab: "trial_balance",
+    layer: "final",
+    planned: { handOffToTax: GRANITE_HAND_OFF },
+  },
   empty: {
     engagementId: GRANITE_ENGAGEMENT,
     tbId: null,

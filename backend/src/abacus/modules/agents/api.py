@@ -20,6 +20,7 @@ from abacus.modules.agents.engagement_agent_workflow import (
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
+from abacus.modules.agents.export_screening import screening_section
 from abacus.modules.agents.fake_responses import SCREEN_PROMPT, screening_responder
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
@@ -108,11 +109,13 @@ from abacus.modules.agents.workflows import (
     ScreeningWorkflow,
     UploadReviewWorkflow,
 )
-from abacus.modules.evidence.api import register_proposal_source
+from abacus.modules.evidence.api import register_export_section, register_proposal_source
 from abacus.modules.identity.api import AbacusRouter, register_ai_assistants
 
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
+# A-01-T19 (SPEC-344 §6): screening results are the export's `provenance/screening.csv`.
+register_export_section("screening", screening_section)
 # SPEC-036 (TASK-075): which agents may see a real firm's data (stages follow in TASK-076).
 register_client_data_facts(cleared=cleared_for_client_data, stage=stage_for)
 # SPEC-036 (TASK-076): identity's disclosure lists the cleared assistants and their stage.

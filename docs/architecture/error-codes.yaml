@@ -171,6 +171,12 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.BinderNotDraft
     summary: Only a Draft or Unpublished binder publishes.
+  binder_not_in_work_item:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.exports.BinderNotInWorkItem
+    summary: A scope binder id is not one of the work item's asked PBC binders (DEC-379), or the work
+      item has none to export.
   binder_not_published:
     status: 409
     raised_by:
@@ -281,6 +287,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.acceptance.DecisionLocked
+    - abacus.modules.engagements.independence.NasDecided
     summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409
@@ -305,6 +312,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.engagements.drafts.DraftIncomplete
+    - abacus.modules.engagements.intake.IntakeIncomplete
     summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
   drafted_guidance_not_allowed:
     status: 409
@@ -332,6 +340,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpEffectStarted
+    - abacus.modules.evidence.exports.ExportEffectStarted
     - abacus.modules.requests.binders.EffectStarted
     summary: 'The publish''s delivery has started (its grant was consumed): it can no longer be undone.'
   empty_comment:
@@ -401,6 +410,17 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
+  export_kind_unsupported:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.exports.ExportKindUnsupported
+    summary: Only an audit work item exports a binder (fail closed until C19 and a tax-export review).
+  export_section_missing:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.exports.ExportSectionUnavailable
+    summary: 'The scope asks for a section no provider can write yet (the audit trail until its reader
+      is registered): refused at create, before any grant, rather than failing after the window.'
   fieldwork_unavailable:
     status: 409
     raised_by:
@@ -547,9 +567,8 @@ codes:
   independence_preconditions_unmet:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
-    summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
-      clear, an SKE designee or NAS evaluations on an attest client).
+    - abacus.modules.engagements.independence.IndependencePreconditionsUnmet
+    summary: The conclusion (or a NAS evaluation) waits on the blockers counted in `facts`.
   independence_statement_missing:
     status: 409
     raised_by:
@@ -789,6 +808,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.notes.NotRaiser
     summary: 'AC-3: only the person who raised a note clears it.'
+  not_password_protected:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.unlock.NotPasswordProtected
+    summary: The version isn't a password-protected PDF, or it has already been unlocked.
   not_pending_incorporation:
     status: 409
     raised_by:
@@ -1197,6 +1221,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.SnapshotEntityMismatch
+  sso_exempt_needs_hardware_key:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.governance_errors.SsoExemptNeedsHardwareKey
+    summary: The one SSO-exempt (break-glass) account must hold a hardware-key factor (AC-18; G-02-T11,
+      DEC-432). Raised by G-02-T14.
   sso_not_verified:
     status: 409
     raised_by:
@@ -1217,6 +1247,7 @@ codes:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
@@ -1349,6 +1380,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpUndoClosed
+    - abacus.modules.evidence.exports.ExportUndoClosed
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.

@@ -20,7 +20,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel._flags import ENGAGEMENTS_ACCEPTANCE_V2, ENGAGEMENTS_V2
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.engagements import acceptance_contract
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
@@ -70,8 +70,9 @@ ROUTES: dict[tuple[str, str], str] = {
 }
 # ENG-05's team rows and the confirmation requests are live since P-07-T30 (TASK-1197); CLI-07's
 # acceptance routes since P-07-T35 (TASK-1258); conflicts and screening since P-07-T36
-# (TASK-1259); independence v2 waits for P-07-T41.
+# (TASK-1259); independence v2 since P-07-T41 (TASK-1325).
 LIVE: set[tuple[str, str]] = {
+    *((m, p) for (m, p) in ROUTES if p.startswith(IND)),
     *((m, p) for (m, p) in ROUTES if p.startswith(ACC)),
     *((m, p) for (m, p) in ROUTES if p.startswith((CHECK, "/v1/screening-records"))),
     ("get", f"{E}/team/approval"),
@@ -285,7 +286,7 @@ async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.Monk
     for module in (acceptance_contract, conflicts_contract):
         monkeypatch.setattr(module, "flag_enabled", off)
     with pytest.raises(NotFound):
-        await acceptance_contract._acceptance_stub(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
+        await acceptance_contract._acceptance_gate(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(NotFound):
         await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(NotFound):
@@ -300,8 +301,7 @@ async def test_the_flags_gate_each_half_after_authorise(monkeypatch: pytest.Monk
     ]
     for module in (acceptance_contract, conflicts_contract):
         monkeypatch.setattr(module, "flag_enabled", on)
-    with pytest.raises(NotImplementedYet):
-        await acceptance_contract._acceptance_stub(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
+    await acceptance_contract._acceptance_gate(_ctx(), "acceptance.read", E_ID)  # pyright: ignore[reportPrivateUsage] -- live (P-07-T41)
     await acceptance_contract._team_gate(_ctx(), "team.approve", E_ID)  # pyright: ignore[reportPrivateUsage] -- live
     await conflicts_contract._gate(_ctx(), "conflict.run")  # pyright: ignore[reportPrivateUsage] -- live
 
@@ -322,7 +322,7 @@ async def test_agent_system_and_client_are_refused_whatever_the_flag(
         monkeypatch.setattr(module, "flag_enabled", flag)
     ctx = _ctx("human", client=True) if who == "client" else _ctx(cast(ActorKind, who))
     with pytest.raises(Forbidden):
-        await acceptance_contract._acceptance_stub(ctx, "acceptance.decide", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
+        await acceptance_contract._acceptance_gate(ctx, "acceptance.decide", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(Forbidden):
         await acceptance_contract._team_gate(ctx, "engagement.read_metadata", E_ID)  # pyright: ignore[reportPrivateUsage] -- the gate
     with pytest.raises(Forbidden):
