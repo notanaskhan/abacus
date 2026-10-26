@@ -24,6 +24,9 @@ export interface OpenOptions {
   /** Flags the firm reads as on, in the fixture project only (`?flags=`): a step walks a screen
    * built on fixtures whose flag E0 leaves off. The other projects read the firm's own flags. */
   flags?: readonly string[];
+  /** A screen scenario laid over the seed, in the fixture project only (`?scenario=BND-02:b`):
+   * a step walks a screen whose routes only its own scenarios answer yet. */
+  scenario?: string;
 }
 
 export interface PersonaAdapter {
@@ -108,6 +111,7 @@ const fixture: PersonaAdapter = {
         as: persona.slug,
         clock,
         ...(flags.length === 0 ? {} : { flags: flags.join(",") }),
+        ...(options.scenario === undefined ? {} : { scenario: options.scenario }),
       }),
     );
   },

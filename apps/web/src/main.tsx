@@ -10,11 +10,20 @@ import { router } from "./router";
 
 configureClient();
 // `make dev-fixtures` (VITE_FIXTURES=1): the generated client answers from the Brightwater Hale
-// seed, as the persona in `?as=` at the clock in `?clock=` (F-04-T05). A production build folds
-// the flag to a constant and drops the seed.
+// seed, as the persona in `?as=` at the clock in `?clock=` (F-04-T05), with a screen's scenario
+// laid over it where `?scenario=` names one (a journey walking a screen built on fixtures). A
+// production build folds the flag to a constant and drops the seed.
 if (import.meta.env.VITE_FIXTURES === "1") {
-  const { installSeedFromSearch } = await import("./fixtures/install");
-  installSeedFromSearch(window.location.search);
+  const { installSeedFromSearch, resolveOpens, screenScenarioFromSearch } =
+    await import("./fixtures/install");
+  const screen = await screenScenarioFromSearch(window.location.search);
+  installSeedFromSearch(window.location.search, screen?.scenario);
+  if (screen !== undefined) {
+    const path = resolveOpens(window.location.pathname, screen.opens);
+    if (path !== window.location.pathname) {
+      window.history.replaceState(null, "", `${path}${window.location.search}`);
+    }
+  }
 }
 // Q-01-T50: browser error reporting, off unless the runtime config names a DSN and the tunnel.
 // The SDK is a lazy chunk, so a host with reporting off never downloads it.
