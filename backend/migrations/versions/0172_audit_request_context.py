@@ -10,12 +10,16 @@
 New rules: the request-context columns are null unless a person or a support engineer acted
 (`audit_events_request_context_is_a_persons`); agent, system and policy events never carry one.
 `ip` is a single address (`audit_events_ip_is_a_host`), so `host(ip)` is its one canonical text
-for the hash chain. Each CHECK is added NOT VALID, then validated under a lock that lets writes
-continue (security review M3).
+for the hash chain.
 
-Indexes for the explorer, built CONCURRENTLY outside the migration's transaction so the unit of
-work keeps writing: the feed by business time, the Actor filter, a client's events and an IP's
-events.
+Locking (security review M3): the transactional part (columns, NOT VALID CHECKs, grants, the
+function) holds ACCESS EXCLUSIVE only briefly, since nothing in it scans the table. After it
+commits, an autocommit block with no statement timeout validates each CHECK (SHARE UPDATE
+EXCLUSIVE, so writes continue) and builds the explorer's indexes CONCURRENTLY: the feed by
+business time, the Actor filter, a client's events and an IP's events. An invalid index a failed
+build left behind is dropped before it is built again. The transactional part is re-runnable
+(IF NOT EXISTS, guarded constraints, CREATE OR REPLACE), so a failure in the autocommit block,
+which leaves alembic at 0160, is fixed by running the upgrade again.
 
 Downgrade refuses (raises) once any event carries a new column or any checkpoint is sealed at
 leaf version 2: dropping the columns would leave those checkpoints unverifiable forever
@@ -38,6 +42,7 @@ Revises: 0160
 from __future__ import annotations
 
 from alembic import op
+from sqlalchemy import text
 
 from abacus.kernel.db.migration import insert_columns
 
@@ -95,23 +100,34 @@ def upgrade() -> None:
     op.execute(
         """
         ALTER TABLE audit_events
-            ADD COLUMN ip inet NULL,
-            ADD COLUMN user_agent_family text NULL,
-            ADD COLUMN device_label text NULL,
-            ADD COLUMN session_id uuid NULL,
-            ADD COLUMN auth_method text NULL,
-            ADD COLUMN mfa_at timestamptz NULL,
-            ADD COLUMN client_id uuid NULL,
-            ADD COLUMN office_id uuid NULL
+            ADD COLUMN IF NOT EXISTS ip inet NULL,
+            ADD COLUMN IF NOT EXISTS user_agent_family text NULL,
+            ADD COLUMN IF NOT EXISTS device_label text NULL,
+            ADD COLUMN IF NOT EXISTS session_id uuid NULL,
+            ADD COLUMN IF NOT EXISTS auth_method text NULL,
+            ADD COLUMN IF NOT EXISTS mfa_at timestamptz NULL,
+            ADD COLUMN IF NOT EXISTS client_id uuid NULL,
+            ADD COLUMN IF NOT EXISTS office_id uuid NULL
         """
     )
     for name, check in _CHECKS:
-        op.execute(f"ALTER TABLE audit_events ADD CONSTRAINT {name} CHECK ({check}) NOT VALID")
-        op.execute(f"ALTER TABLE audit_events VALIDATE CONSTRAINT {name}")
+        present = (
+            op.get_bind()
+            .execute(
+                text(
+                    "SELECT 1 FROM pg_constraint WHERE conname = :name "
+                    "AND conrelid = 'public.audit_events'::regclass"
+                ),
+                {"name": name},
+            )
+            .first()
+        )
+        if present is None:
+            op.execute(f"ALTER TABLE audit_events ADD CONSTRAINT {name} CHECK ({check}) NOT VALID")
     insert_columns(op, "audit_events", _AFTER)
     op.execute(
         """
-        CREATE FUNCTION audit_request_session(p_cookie_sha256 text, p_user_id uuid)
+        CREATE OR REPLACE FUNCTION audit_request_session(p_cookie_sha256 text, p_user_id uuid)
         RETURNS TABLE (session_id uuid, mfa_at timestamptz)
         LANGUAGE sql STABLE SECURITY DEFINER
         SET search_path = pg_catalog, public, pg_temp AS $$
@@ -130,12 +146,29 @@ def upgrade() -> None:
     op.execute("REVOKE ALL ON FUNCTION audit_request_session(text, uuid) FROM PUBLIC")
     op.execute("GRANT EXECUTE ON FUNCTION audit_request_session(text, uuid) TO abacus_app")
     with op.get_context().autocommit_block():
-        for name, columns, where in _INDEXES:
-            predicate = f" WHERE {where}" if where else ""
-            op.execute(
-                f"CREATE INDEX CONCURRENTLY IF NOT EXISTS {name} ON audit_events "
-                f"{columns}{predicate}"
-            )
+        # env.py's 60 s statement timeout would fail a long build; this session only.
+        op.execute("SET statement_timeout = 0")
+        try:
+            for name, _ in _CHECKS:
+                op.execute(f"ALTER TABLE audit_events VALIDATE CONSTRAINT {name}")
+            bind = op.get_bind()
+            for name, columns, where in _INDEXES:
+                invalid = bind.execute(
+                    text(
+                        "SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid "
+                        "WHERE c.relname = :name AND NOT i.indisvalid"
+                    ),
+                    {"name": name},
+                ).first()
+                if invalid is not None:
+                    op.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {name}")
+                predicate = f" WHERE {where}" if where else ""
+                op.execute(
+                    f"CREATE INDEX CONCURRENTLY IF NOT EXISTS {name} ON audit_events "
+                    f"{columns}{predicate}"
+                )
+        finally:
+            op.execute("RESET statement_timeout")
 
 
 def downgrade() -> None:

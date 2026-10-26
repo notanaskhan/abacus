@@ -196,3 +196,19 @@ def test_migration_0172_goes_up_down_and_up(private_db: sc.Database) -> None:
     assert asyncio.run(count()) == 0
     migrate(private_db.owner_url, "head")
     assert asyncio.run(count()) == 8
+    # M3: a failure in the autocommit block leaves alembic at 0160 with the transactional part
+    # applied; running the upgrade again finishes it.
+    seed = Seeder(private_db.superuser_dsn)
+    asyncio.run(seed.run("UPDATE alembic_version SET version_num = '0160'"))
+    asyncio.run(seed.run("DROP INDEX audit_events_ip"))
+    migrate(private_db.owner_url, "head")
+    assert asyncio.run(count()) == 8
+    indexes = asyncio.run(
+        seed.value(
+            "SELECT count(*) FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid "
+            "WHERE c.relname LIKE 'audit_events_%' AND c.relname IN ('audit_events_feed', "
+            "'audit_events_actor_kind', 'audit_events_client', 'audit_events_ip') "
+            "AND i.indisvalid"
+        )
+    )
+    assert indexes == 4
