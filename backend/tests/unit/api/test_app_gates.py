@@ -239,6 +239,12 @@ NOT_CREATING = {
     "/v1/exports/{export_id}/undo",
     # A-02-T06 (C20 v1 stub): a disconnect revokes an existing connection and returns its card.
     "/v1/portal/connections/{connection_id}/disconnect",
+    # R-01-T16 (C16 v1.1 stub): an import answers its results (a dry run by default), a preview
+    # renders and stores nothing, a check reads the SES identity, a logo replaces the draft's.
+    "/v1/firm/email-templates/import",
+    "/v1/firm/email-templates/{key}/preview",
+    "/v1/firm/sending-domains/{domain_id}/check",
+    "/v1/firm/portal-settings/logo",
 }
 
 
@@ -279,6 +285,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # A-02-T06 (C20 v1 stub): a retry and an on-demand pull start a sync run, so 202.
         "/v1/portal/connections/{connection_id}/retry",
         "/v1/engagements/{engagement_id}/connection/pulls",
+        # R-01-T16: a test send queues one email to the acting admin, so 202.
+        "/v1/firm/email-templates/{key}/test-send",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -460,6 +468,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # A-02-T06 (C20 v1 stub): a consent record, and a reconnect request.
         "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start",
         "/v1/connections/{connection_id}/reconnect-requests",
+        # R-01-T16 (C16 v1.1 stub): a template version, a sending domain, a settings version.
+        "/v1/firm/email-templates/{key}/publish",
+        "/v1/firm/sending-domains",
+        "/v1/firm/portal-settings/publish",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

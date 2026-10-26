@@ -640,6 +640,9 @@ NO_YAML_ENTRY = {
     # same gap; registered with the details drawer's words (A-02-T18).
     "SyncRunRefOut.status": "failed_validation",
     "SyncRunSummaryOut.status": "failed_validation",
+    # R-01-T16 (C16 v1.1 stub): the sender-domain codes; their words ("Pending DNS", "Verified")
+    # are a DF-31 addition that must land before R-01-T28 (docs/screens/ADM-10.md, Open gaps).
+    "SendingDomainOut.status": "pending_dns, verified, failed, revoked",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
 OUTSIDE_ITS_OBJECT = {

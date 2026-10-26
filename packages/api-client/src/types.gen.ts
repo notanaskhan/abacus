@@ -3862,6 +3862,32 @@ export type ClientEntityBriefOut = {
 };
 
 /**
+ * ClientExperienceFields
+ */
+export type ClientExperienceFields = {
+    /**
+     * Allow Upload Something Else
+     */
+    allow_upload_something_else?: boolean;
+    /**
+     * Phone Capture
+     */
+    phone_capture?: boolean;
+    /**
+     * Show Progress Per Item
+     */
+    show_progress_per_item?: boolean;
+    /**
+     * Show Team Card
+     */
+    show_team_card?: boolean;
+    /**
+     * Support Contact User Id
+     */
+    support_contact_user_id?: string | null;
+};
+
+/**
  * ClientInvitationIn
  */
 export type ClientInvitationIn = {
@@ -5950,6 +5976,28 @@ export type DismissSuggestionIn = {
 };
 
 /**
+ * DnsRecordOut
+ */
+export type DnsRecordOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Status
+     */
+    status: 'pending' | 'verified' | 'failed';
+    /**
+     * Type
+     */
+    type: 'CNAME' | 'MX' | 'TXT';
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * DocumentKindIn
  */
 export type DocumentKindIn = {
@@ -6246,6 +6294,163 @@ export type EligibilityCheckOut = {
 };
 
 /**
+ * EmailPreviewIn
+ */
+export type EmailPreviewIn = {
+    /**
+     * Sample Contact Id
+     */
+    sample_contact_id?: string | null;
+    /**
+     * Source
+     */
+    source?: 'draft' | 'published';
+    /**
+     * Width
+     */
+    width?: 600 | 390;
+};
+
+/**
+ * EmailPreviewOut
+ *
+ * Deterministic: the same version and values give byte-identical HTML and text.
+ */
+export type EmailPreviewOut = {
+    /**
+     * Findings
+     */
+    findings?: Array<LintFindingOut>;
+    /**
+     * From Address
+     */
+    from_address: string;
+    /**
+     * From Display
+     */
+    from_display: string;
+    /**
+     * Html
+     */
+    html: string;
+    /**
+     * Reply To
+     */
+    reply_to?: string | null;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * EmailTemplateBundleEntryIn
+ */
+export type EmailTemplateBundleEntryIn = {
+    /**
+     * Blocks
+     */
+    blocks: Array<TemplateBlock>;
+    /**
+     * Cta Label
+     */
+    cta_label?: string | null;
+    /**
+     * Cta Target
+     */
+    cta_target?: 'portal_home' | 'documents' | 'request' | 'room' | 'sign' | 'deliverables' | 'confirm' | 'connections' | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Preheader
+     */
+    preheader?: string;
+    /**
+     * Publish
+     */
+    publish?: boolean;
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
+ * EmailTemplateDraftIn
+ */
+export type EmailTemplateDraftIn = {
+    /**
+     * Blocks
+     */
+    blocks: Array<TemplateBlock>;
+    /**
+     * Cta Label
+     */
+    cta_label?: string | null;
+    /**
+     * Cta Target
+     */
+    cta_target?: 'portal_home' | 'documents' | 'request' | 'room' | 'sign' | 'deliverables' | 'confirm' | 'connections' | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Preheader
+     */
+    preheader?: string;
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
+ * EmailTemplateDraftOut
+ */
+export type EmailTemplateDraftOut = {
+    /**
+     * Base Version
+     */
+    base_version: number | null;
+    /**
+     * Blocks
+     */
+    blocks: Array<TemplateBlock>;
+    /**
+     * Cta Label
+     */
+    cta_label: string | null;
+    /**
+     * Cta Target
+     */
+    cta_target: 'portal_home' | 'documents' | 'request' | 'room' | 'sign' | 'deliverables' | 'confirm' | 'connections' | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Preheader
+     */
+    preheader: string;
+    /**
+     * Saved At
+     */
+    saved_at: string;
+    saved_by: TemplatePersonOut;
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
  * EmailTemplateImportIn
  *
  * Platform staff author the text here, never in code (AGENTS 16).
@@ -6293,6 +6498,153 @@ export type EmailTemplateImportOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * EmailTemplateListOut
+ */
+export type EmailTemplateListOut = {
+    /**
+     * Items
+     */
+    items: Array<EmailTemplateRowOut>;
+};
+
+/**
+ * EmailTemplateOut
+ */
+export type EmailTemplateOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'edit' | 'test_send' | 'publish'>;
+    /**
+     * Audience
+     */
+    audience: Array<'client' | 'third_party' | 'respondent' | 'staff'>;
+    draft?: EmailTemplateDraftOut | null;
+    /**
+     * Firm Editable
+     */
+    firm_editable: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Name
+     */
+    name: string;
+    published?: EmailTemplateVersionOut | null;
+    /**
+     * Variables
+     */
+    variables: Array<TemplateVariableOut>;
+};
+
+/**
+ * EmailTemplateRowOut
+ *
+ * A POR-20 list row: "Published · v3", "Draft changes · v4", "Used by" links.
+ */
+export type EmailTemplateRowOut = {
+    /**
+     * Audience
+     */
+    audience: Array<'client' | 'third_party' | 'respondent' | 'staff'>;
+    draft?: TemplateDraftRefOut | null;
+    /**
+     * Group
+     */
+    group: 'designed' | 'registered';
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Name
+     */
+    name: string;
+    published?: TemplateVersionRefOut | null;
+    /**
+     * Used By Label
+     */
+    used_by_label: string;
+    /**
+     * Used By Screen
+     */
+    used_by_screen?: string | null;
+};
+
+/**
+ * EmailTemplateVersionOut
+ *
+ * A published version: insert-only, never edited (R-01 Story 7.3).
+ */
+export type EmailTemplateVersionOut = {
+    /**
+     * Blocks
+     */
+    blocks: Array<TemplateBlock>;
+    /**
+     * Content Sha256
+     */
+    content_sha256: string;
+    /**
+     * Cta Label
+     */
+    cta_label: string | null;
+    /**
+     * Cta Target
+     */
+    cta_target: 'portal_home' | 'documents' | 'request' | 'room' | 'sign' | 'deliverables' | 'confirm' | 'connections' | null;
+    /**
+     * Preheader
+     */
+    preheader: string;
+    /**
+     * Published At
+     */
+    published_at: string;
+    published_by: TemplatePersonOut;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EmailTestSendIn
+ */
+export type EmailTestSendIn = {
+    /**
+     * Sample Contact Id
+     */
+    sample_contact_id?: string | null;
+};
+
+/**
+ * EmailTestSendOut
+ *
+ * Sent to the acting admin only, subject prefixed "[Test]" (synthetic tenants: the sink).
+ */
+export type EmailTestSendOut = {
+    /**
+     * Message Id
+     */
+    message_id: string;
+    /**
+     * Sent To
+     */
+    sent_to: string;
+    /**
+     * Subject
+     */
+    subject: string;
 };
 
 /**
@@ -8358,6 +8710,37 @@ export type FirmClientOut = {
 };
 
 /**
+ * FirmEmailTemplateImportIn
+ *
+ * A counsel-approved onboarding bundle (F-09-T115 pattern). Distinct from C16 v1's staff
+ * `EmailTemplateImportIn`, which stays frozen.
+ */
+export type FirmEmailTemplateImportIn = {
+    /**
+     * Bundle
+     */
+    bundle: Array<EmailTemplateBundleEntryIn>;
+    /**
+     * Dry Run
+     */
+    dry_run?: boolean;
+};
+
+/**
+ * FirmEmailTemplateImportOut
+ */
+export type FirmEmailTemplateImportOut = {
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Results
+     */
+    results: Array<TemplateImportResultOut>;
+};
+
+/**
  * FirmExportDeclineIn
  */
 export type FirmExportDeclineIn = {
@@ -9032,6 +9415,59 @@ export type FollowUpOverride = {
  */
 export type FollowUpOverrideIn = {
     override: FollowUpOverride | null;
+};
+
+/**
+ * FollowUpPolicyFields
+ *
+ * The firm's one follow-up policy (R-01 §4.2 `follow_up_policies`), shared by POR-20's
+ * Reminder schedule and ADM-10's Reminders; P-06's per-binder override wins over it.
+ */
+export type FollowUpPolicyFields = {
+    /**
+     * Cadence Days
+     */
+    cadence_days?: number;
+    /**
+     * Cc Assigned Preparer
+     */
+    cc_assigned_preparer?: boolean;
+    /**
+     * Max Reminders
+     */
+    max_reminders?: number;
+    /**
+     * Mode
+     */
+    mode?: 'draft_for_person' | 'send_on_schedule';
+    /**
+     * Notify Preparer After Max
+     */
+    notify_preparer_after_max?: boolean;
+    /**
+     * Send Local Time
+     */
+    send_local_time?: string;
+    /**
+     * Stop On Binder Done
+     */
+    stop_on_binder_done?: boolean;
+    /**
+     * Weekdays Only
+     */
+    weekdays_only?: boolean;
+};
+
+/**
+ * FollowUpPolicyOut
+ */
+export type FollowUpPolicyOut = {
+    next_send?: NextSendOut | null;
+    policy: FollowUpPolicyFields;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -11826,6 +12262,26 @@ export type LinkedRefOut = {
 };
 
 /**
+ * LintFindingOut
+ *
+ * One lint finding: what and where, never the text (identifier-only facts).
+ */
+export type LintFindingOut = {
+    /**
+     * Block Id
+     */
+    block_id?: string | null;
+    /**
+     * Code
+     */
+    code: 'amount' | 'tin_shape' | 'account_number' | 'attachment' | 'second_button' | 'unregistered_variable' | 'foreign_link' | 'platform_name';
+    /**
+     * Variable
+     */
+    variable?: string | null;
+};
+
+/**
  * ListDoneOut
  */
 export type ListDoneOut = {
@@ -13143,6 +13599,31 @@ export type NextItemOut = {
 };
 
 /**
+ * NextSendOut
+ *
+ * The next reminder for one recipient: the same pure function the scheduler uses
+ * (`next_send_at`: cadence, weekday shift, the recipient's time zone).
+ */
+export type NextSendOut = {
+    /**
+     * Last Sent At
+     */
+    last_sent_at: string | null;
+    /**
+     * Next Send At
+     */
+    next_send_at: string;
+    /**
+     * Sample Contact Id
+     */
+    sample_contact_id: string | null;
+    /**
+     * Shifted From
+     */
+    shifted_from?: string | null;
+};
+
+/**
  * NoteAnchorIn
  */
 export type NoteAnchorIn = {
@@ -14047,6 +14528,57 @@ export type PortalBinderRefOut = {
 };
 
 /**
+ * PortalBrandFields
+ *
+ * Brand slots, not theming: the accent is fixed (ADR-155) and the host is read-only until
+ * custom portal domains ship (DEC-59).
+ */
+export type PortalBrandFields = {
+    /**
+     * Portal Name
+     */
+    portal_name: string;
+    /**
+     * Secured Footer
+     */
+    secured_footer?: boolean;
+    /**
+     * Sender Display Name
+     */
+    sender_display_name: string;
+};
+
+/**
+ * PortalBrandOut
+ */
+export type PortalBrandOut = {
+    /**
+     * Accent
+     */
+    accent?: 'espresso';
+    /**
+     * Logo Url
+     */
+    logo_url?: string | null;
+    /**
+     * Portal Host
+     */
+    portal_host: string;
+    /**
+     * Portal Name
+     */
+    portal_name: string;
+    /**
+     * Secured Footer
+     */
+    secured_footer?: boolean;
+    /**
+     * Sender Display Name
+     */
+    sender_display_name: string;
+};
+
+/**
  * PortalBrandingOut
  *
  * Public fields only, the same shape for an unknown host (neutral values), and no tenant
@@ -14675,6 +15207,20 @@ export type PortalLinkRenewOut = {
 };
 
 /**
+ * PortalLogoOut
+ */
+export type PortalLogoOut = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Logo Sha256
+     */
+    logo_sha256: string;
+};
+
+/**
  * PortalMarkDoneOut
  */
 export type PortalMarkDoneOut = {
@@ -14824,6 +15370,37 @@ export type PortalPreferencesOut = {
      * Welcome Dismissed At
      */
     welcome_dismissed_at?: string | null;
+};
+
+/**
+ * PortalPreviewOut
+ *
+ * POR-02 as one client would see it, read-only. No session, no mutation route, no
+ * `allowed_actions`: `read_only` is always true.
+ */
+export type PortalPreviewOut = {
+    brand: PortalBrandOut;
+    /**
+     * Contact Id
+     */
+    contact_id: string | null;
+    /**
+     * Device
+     */
+    device: 'desktop' | 'phone';
+    home: PortalHomeOut;
+    /**
+     * Read Only
+     */
+    read_only?: true;
+    /**
+     * Sample
+     */
+    sample: boolean;
+    /**
+     * Source
+     */
+    source: 'draft' | 'published';
 };
 
 /**
@@ -15119,6 +15696,98 @@ export type PortalRowOut = {
      * Uploading Count
      */
     uploading_count?: number;
+};
+
+/**
+ * PortalSettingsDraftIn
+ */
+export type PortalSettingsDraftIn = {
+    brand: PortalBrandFields;
+    client_experience: ClientExperienceFields;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    follow_up_policy: FollowUpPolicyFields;
+};
+
+/**
+ * PortalSettingsDraftOut
+ */
+export type PortalSettingsDraftOut = {
+    /**
+     * Base Version
+     */
+    base_version: number | null;
+    brand: PortalBrandFields;
+    client_experience: ClientExperienceFields;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    follow_up_policy: FollowUpPolicyFields;
+    /**
+     * Has New Logo
+     */
+    has_new_logo?: boolean;
+    /**
+     * Saved At
+     */
+    saved_at: string;
+    saved_by: PortalSettingsPersonOut;
+};
+
+/**
+ * PortalSettingsOut
+ *
+ * ADM-10 a: published values, the draft, and the next reminder for the preview contact.
+ */
+export type PortalSettingsOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'edit' | 'publish' | 'preview'>;
+    draft?: PortalSettingsDraftOut | null;
+    next_reminder?: NextSendOut | null;
+    published?: PortalSettingsVersionOut | null;
+};
+
+/**
+ * PortalSettingsPersonOut
+ */
+export type PortalSettingsPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * PortalSettingsVersionOut
+ *
+ * A published version: insert-only (`portal_settings_versions`).
+ */
+export type PortalSettingsVersionOut = {
+    brand: PortalBrandOut;
+    client_experience: ClientExperienceFields;
+    /**
+     * Content Sha256
+     */
+    content_sha256: string;
+    follow_up_policy: FollowUpPolicyFields;
+    /**
+     * Published At
+     */
+    published_at: string;
+    published_by: PortalSettingsPersonOut;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -18268,6 +18937,76 @@ export type SendToPartnerIn = {
 };
 
 /**
+ * SendingDomainIn
+ */
+export type SendingDomainIn = {
+    /**
+     * Domain
+     */
+    domain: string;
+    /**
+     * From Local Part
+     */
+    from_local_part?: string;
+};
+
+/**
+ * SendingDomainListOut
+ */
+export type SendingDomainListOut = {
+    /**
+     * Items
+     */
+    items: Array<SendingDomainOut>;
+};
+
+/**
+ * SendingDomainOut
+ */
+export type SendingDomainOut = {
+    /**
+     * Domain
+     */
+    domain: string;
+    /**
+     * Failure Reason
+     */
+    failure_reason?: string | null;
+    /**
+     * From Local Part
+     */
+    from_local_part: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Checked At
+     */
+    last_checked_at?: string | null;
+    /**
+     * Mail From Domain
+     */
+    mail_from_domain: string;
+    /**
+     * Records
+     */
+    records: Array<DnsRecordOut>;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    /**
+     * Status
+     */
+    status: 'pending_dns' | 'verified' | 'failed' | 'revoked';
+    /**
+     * Verified At
+     */
+    verified_at?: string | null;
+};
+
+/**
  * ServiceLinePolicyIn
  *
  * Audit is always `engagement_team_only` (422 `audit_locked`).
@@ -20629,6 +21368,27 @@ export type TelemetryReceivedOut = {
 };
 
 /**
+ * TemplateBlock
+ *
+ * One block of a template body, typed by a person or imported; never model text (P-25
+ * off). Variables appear as `{name}` and must be the key's whitelisted ones.
+ */
+export type TemplateBlock = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'heading' | 'paragraph' | 'item_list' | 'note' | 'footer';
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * TemplateDraftOut
  */
 export type TemplateDraftOut = {
@@ -20679,6 +21439,20 @@ export type TemplateDraftOut = {
 };
 
 /**
+ * TemplateDraftRefOut
+ */
+export type TemplateDraftRefOut = {
+    /**
+     * Saved At
+     */
+    saved_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * TemplateDraftStartedOut
  */
 export type TemplateDraftStartedOut = {
@@ -20686,6 +21460,24 @@ export type TemplateDraftStartedOut = {
      * Positions
      */
     positions: Array<number>;
+};
+
+/**
+ * TemplateImportResultOut
+ */
+export type TemplateImportResultOut = {
+    /**
+     * Change
+     */
+    change: 'add' | 'update' | 'unchanged' | 'refused';
+    /**
+     * Findings
+     */
+    findings?: Array<LintFindingOut>;
+    /**
+     * Key
+     */
+    key: string;
 };
 
 /**
@@ -20723,6 +21515,45 @@ export type TemplateItemOut = {
 };
 
 /**
+ * TemplatePersonOut
+ */
+export type TemplatePersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * TemplateVariableOut
+ *
+ * A variable the key may use, with what it resolves to; never an amount, an account
+ * number or a TIN (R-01 §4.7).
+ */
+export type TemplateVariableOut = {
+    /**
+     * Block
+     */
+    block: boolean;
+    /**
+     * Classification
+     */
+    classification: 'public' | 'internal' | 'confidential';
+    /**
+     * Kind
+     */
+    kind: 'person_name' | 'organisation_name' | 'title' | 'item_list' | 'date' | 'secure_link' | 'summary';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * TemplateVersionOut
  */
 export type TemplateVersionOut = {
@@ -20750,6 +21581,21 @@ export type TemplateVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * TemplateVersionRefOut
+ */
+export type TemplateVersionRefOut = {
+    /**
+     * Published At
+     */
+    published_at: string;
+    published_by: TemplatePersonOut;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -44122,6 +44968,460 @@ export type SetDraftedGuidanceResponses = {
 
 export type SetDraftedGuidanceResponse = SetDraftedGuidanceResponses[keyof SetDraftedGuidanceResponses];
 
+export type ListEmailTemplatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/email-templates';
+};
+
+export type ListEmailTemplatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListEmailTemplatesError = ListEmailTemplatesErrors[keyof ListEmailTemplatesErrors];
+
+export type ListEmailTemplatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailTemplateListOut;
+};
+
+export type ListEmailTemplatesResponse = ListEmailTemplatesResponses[keyof ListEmailTemplatesResponses];
+
+export type ImportEmailTemplatesData = {
+    body: FirmEmailTemplateImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/email-templates/import';
+};
+
+export type ImportEmailTemplatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ImportEmailTemplatesError = ImportEmailTemplatesErrors[keyof ImportEmailTemplatesErrors];
+
+export type ImportEmailTemplatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmEmailTemplateImportOut;
+};
+
+export type ImportEmailTemplatesResponse = ImportEmailTemplatesResponses[keyof ImportEmailTemplatesResponses];
+
+export type GetEmailTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/firm/email-templates/{key}';
+};
+
+export type GetEmailTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetEmailTemplateError = GetEmailTemplateErrors[keyof GetEmailTemplateErrors];
+
+export type GetEmailTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailTemplateOut;
+};
+
+export type GetEmailTemplateResponse = GetEmailTemplateResponses[keyof GetEmailTemplateResponses];
+
+export type DiscardEmailTemplateDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/firm/email-templates/{key}/draft';
+};
+
+export type DiscardEmailTemplateDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardEmailTemplateDraftError = DiscardEmailTemplateDraftErrors[keyof DiscardEmailTemplateDraftErrors];
+
+export type DiscardEmailTemplateDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailTemplateOut;
+};
+
+export type DiscardEmailTemplateDraftResponse = DiscardEmailTemplateDraftResponses[keyof DiscardEmailTemplateDraftResponses];
+
+export type SaveEmailTemplateDraftData = {
+    body: EmailTemplateDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/firm/email-templates/{key}/draft';
+};
+
+export type SaveEmailTemplateDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SaveEmailTemplateDraftError = SaveEmailTemplateDraftErrors[keyof SaveEmailTemplateDraftErrors];
+
+export type SaveEmailTemplateDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailTemplateDraftOut;
+};
+
+export type SaveEmailTemplateDraftResponse = SaveEmailTemplateDraftResponses[keyof SaveEmailTemplateDraftResponses];
+
+export type PreviewEmailTemplateData = {
+    body: EmailPreviewIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/firm/email-templates/{key}/preview';
+};
+
+export type PreviewEmailTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PreviewEmailTemplateError = PreviewEmailTemplateErrors[keyof PreviewEmailTemplateErrors];
+
+export type PreviewEmailTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmailPreviewOut;
+};
+
+export type PreviewEmailTemplateResponse = PreviewEmailTemplateResponses[keyof PreviewEmailTemplateResponses];
+
+export type PublishEmailTemplateData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/firm/email-templates/{key}/publish';
+};
+
+export type PublishEmailTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishEmailTemplateError = PublishEmailTemplateErrors[keyof PublishEmailTemplateErrors];
+
+export type PublishEmailTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    201: EmailTemplateVersionOut;
+};
+
+export type PublishEmailTemplateResponse = PublishEmailTemplateResponses[keyof PublishEmailTemplateResponses];
+
+export type TestSendEmailTemplateData = {
+    body: EmailTestSendIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/firm/email-templates/{key}/test-send';
+};
+
+export type TestSendEmailTemplateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TestSendEmailTemplateError = TestSendEmailTemplateErrors[keyof TestSendEmailTemplateErrors];
+
+export type TestSendEmailTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    202: EmailTestSendOut;
+};
+
+export type TestSendEmailTemplateResponse = TestSendEmailTemplateResponses[keyof TestSendEmailTemplateResponses];
+
 export type FieldworkSettingsData = {
     body?: never;
     headers?: {
@@ -44215,6 +45515,62 @@ export type SetFieldworkSettingsResponses = {
 };
 
 export type SetFieldworkSettingsResponse = SetFieldworkSettingsResponses[keyof SetFieldworkSettingsResponses];
+
+export type GetFollowUpPolicyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Sample Contact Id
+         */
+        sample_contact_id?: string | null;
+    };
+    url: '/v1/firm/follow-up-policy';
+};
+
+export type GetFollowUpPolicyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetFollowUpPolicyError = GetFollowUpPolicyErrors[keyof GetFollowUpPolicyErrors];
+
+export type GetFollowUpPolicyResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpPolicyOut;
+};
+
+export type GetFollowUpPolicyResponse = GetFollowUpPolicyResponses[keyof GetFollowUpPolicyResponses];
 
 export type SetSeasonalAccessEndsData = {
     body: SeasonalAccessEndsIn;
@@ -44811,6 +46167,349 @@ export type AcknowledgeStepResponses = {
 
 export type AcknowledgeStepResponse = AcknowledgeStepResponses[keyof AcknowledgeStepResponses];
 
+export type GetPortalSettingsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/portal-settings';
+};
+
+export type GetPortalSettingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetPortalSettingsError = GetPortalSettingsErrors[keyof GetPortalSettingsErrors];
+
+export type GetPortalSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSettingsOut;
+};
+
+export type GetPortalSettingsResponse = GetPortalSettingsResponses[keyof GetPortalSettingsResponses];
+
+export type DiscardPortalSettingsDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/portal-settings/draft';
+};
+
+export type DiscardPortalSettingsDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardPortalSettingsDraftError = DiscardPortalSettingsDraftErrors[keyof DiscardPortalSettingsDraftErrors];
+
+export type DiscardPortalSettingsDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSettingsOut;
+};
+
+export type DiscardPortalSettingsDraftResponse = DiscardPortalSettingsDraftResponses[keyof DiscardPortalSettingsDraftResponses];
+
+export type SavePortalSettingsDraftData = {
+    body: PortalSettingsDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/portal-settings/draft';
+};
+
+export type SavePortalSettingsDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SavePortalSettingsDraftError = SavePortalSettingsDraftErrors[keyof SavePortalSettingsDraftErrors];
+
+export type SavePortalSettingsDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalSettingsDraftOut;
+};
+
+export type SavePortalSettingsDraftResponse = SavePortalSettingsDraftResponses[keyof SavePortalSettingsDraftResponses];
+
+export type UploadPortalLogoData = {
+    body?: never;
+    headers: {
+        /**
+         * Content-Type
+         */
+        'Content-Type': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/portal-settings/logo';
+};
+
+export type UploadPortalLogoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UploadPortalLogoError = UploadPortalLogoErrors[keyof UploadPortalLogoErrors];
+
+export type UploadPortalLogoResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalLogoOut;
+};
+
+export type UploadPortalLogoResponse = UploadPortalLogoResponses[keyof UploadPortalLogoResponses];
+
+export type PreviewPortalData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * As
+         */
+        as?: string | null;
+        /**
+         * Device
+         */
+        device?: 'desktop' | 'phone';
+        /**
+         * Source
+         */
+        source?: 'draft' | 'published';
+    };
+    url: '/v1/firm/portal-settings/preview';
+};
+
+export type PreviewPortalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PreviewPortalError = PreviewPortalErrors[keyof PreviewPortalErrors];
+
+export type PreviewPortalResponses = {
+    /**
+     * Successful Response
+     */
+    200: PortalPreviewOut;
+};
+
+export type PreviewPortalResponse = PreviewPortalResponses[keyof PreviewPortalResponses];
+
+export type PublishPortalSettingsData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/portal-settings/publish';
+};
+
+export type PublishPortalSettingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishPortalSettingsError = PublishPortalSettingsErrors[keyof PublishPortalSettingsErrors];
+
+export type PublishPortalSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    201: PortalSettingsVersionOut;
+};
+
+export type PublishPortalSettingsResponse = PublishPortalSettingsResponses[keyof PublishPortalSettingsResponses];
+
 export type RoleTemplatesData = {
     body?: never;
     headers?: {
@@ -45012,6 +46711,228 @@ export type RecordIncidentResponses = {
 };
 
 export type RecordIncidentResponse = RecordIncidentResponses[keyof RecordIncidentResponses];
+
+export type ListSendingDomainsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/sending-domains';
+};
+
+export type ListSendingDomainsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListSendingDomainsError = ListSendingDomainsErrors[keyof ListSendingDomainsErrors];
+
+export type ListSendingDomainsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SendingDomainListOut;
+};
+
+export type ListSendingDomainsResponse = ListSendingDomainsResponses[keyof ListSendingDomainsResponses];
+
+export type CreateSendingDomainData = {
+    body: SendingDomainIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/sending-domains';
+};
+
+export type CreateSendingDomainErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateSendingDomainError = CreateSendingDomainErrors[keyof CreateSendingDomainErrors];
+
+export type CreateSendingDomainResponses = {
+    /**
+     * Successful Response
+     */
+    201: SendingDomainOut;
+};
+
+export type CreateSendingDomainResponse = CreateSendingDomainResponses[keyof CreateSendingDomainResponses];
+
+export type RevokeSendingDomainData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Domain Id
+         */
+        domain_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/sending-domains/{domain_id}';
+};
+
+export type RevokeSendingDomainErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevokeSendingDomainError = RevokeSendingDomainErrors[keyof RevokeSendingDomainErrors];
+
+export type RevokeSendingDomainResponses = {
+    /**
+     * Successful Response
+     */
+    200: SendingDomainOut;
+};
+
+export type RevokeSendingDomainResponse = RevokeSendingDomainResponses[keyof RevokeSendingDomainResponses];
+
+export type CheckSendingDomainData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Domain Id
+         */
+        domain_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/sending-domains/{domain_id}/check';
+};
+
+export type CheckSendingDomainErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CheckSendingDomainError = CheckSendingDomainErrors[keyof CheckSendingDomainErrors];
+
+export type CheckSendingDomainResponses = {
+    /**
+     * Successful Response
+     */
+    200: SendingDomainOut;
+};
+
+export type CheckSendingDomainResponse = CheckSendingDomainResponses[keyof CheckSendingDomainResponses];
 
 export type ServiceLinesData = {
     body?: never;
