@@ -148,7 +148,7 @@ async def world(migrated_db: MigratedDatabase) -> World:
     await _named(seed, thomas, "Thomas Whitcombe")
     await seed.run(
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-        "VALUES ($1, $2, $3, 'reviewer')",
+        "VALUES ($1, $2, $3, 'eqr_reviewer')",
         tenant,
         engagement,
         thomas.user_id,
@@ -248,8 +248,8 @@ async def test_rso2_a_level_the_matrix_does_not_allow_is_level_not_permitted(
     for who, level in (("ana", "L2_reviewer"), ("hannah", "L4_partner"), ("margaret", "L5_eqr")):
         found = await world.sign(who, "probe_signed", target, level, seen)
         assert (found.status_code, found.json()["detail"]) == (403, "level_not_permitted"), who
-    # The EQR (the matrix's `reviewer` cell on L5 today; DEC-401) signs L5 only (R-SO-3): L1 to L4
-    # are refused, L5 after the preparer is signed.
+    # The EQR (`eqr_reviewer`, ADR-160 clause 4; DEC-401) signs L5 only (R-SO-3): L1 to L4 are
+    # refused, L5 after the preparer is signed.
     for level in ("L1_preparer", "L2_reviewer", "L3_manager", "L4_partner"):
         found = await world.sign("thomas", "probe_signed", target, level, seen)
         assert (found.status_code, found.json()["detail"]) == (403, "level_not_permitted")

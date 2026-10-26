@@ -47,8 +47,8 @@ after Marcus Delaney's L1 adoption, and every R-SO rule returns its fixed error 
   fill label, counts and uncited agent cells; trial balances their label.
 - **Statements**: per level, versioned in code (`STATEMENTS`), copy verbatim from the SHL-12
   handoff spec (reviewer and EQR texts).
-- **Matrix**: unchanged. ADR-160 wants `eqr_reviewer` on `sign_off.eqr`, but SPEC-308's
-  shipped test pins `{reviewer}`; left open for Ayush (DEC-401).
+- **Matrix**: `sign_off.eqr` grants `eqr_reviewer` (ADR-160 clause 4; DEC-401, decided by Ayush
+  2026-10-26); SPEC-308's test updated to match.
 - **Static rule** `SIGNOFF-001`: only review's service files, its `api.py` and the two existing
   owner call sites (`workpapers/service.py`, `assurance/mapping.py`,
   `assurance/trial_balance.py`) name `record_sign_off` / `sign_target`.
@@ -66,3 +66,4 @@ after Marcus Delaney's L1 adoption, and every R-SO rule returns its fixed error 
 ## Progress log
 - 2026-10-26: planned.
 - 2026-10-26: built (tests written first, run in the end-of-batch targeted pass). Matrix and API client regenerated.
+- 2026-10-26: DEC-401 decided by Ayush (follow ADR-160): `eqr_reviewer` on `sign_off.eqr`, SPEC-308's test updated.
