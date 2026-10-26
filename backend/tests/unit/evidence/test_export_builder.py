@@ -11,6 +11,7 @@ import io
 import json
 import uuid
 import zipfile
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 
 import pytest
@@ -20,10 +21,13 @@ from abacus.kernel.db import TenantContext
 from abacus.modules.evidence import export_package
 from abacus.modules.evidence.export_activities import ExportBuildFailed, section_files
 from abacus.modules.evidence.export_builder import (
+    AnyFile,
     BuiltPackage,
     PackageFacts,
     PackageFile,
+    PackageIntegrityError,
     PackageInvalid,
+    StreamedFile,
     build_package,
 )
 from abacus.modules.evidence.export_manifest import (
@@ -118,10 +122,44 @@ def _files() -> list[PackageFile]:
     ]
 
 
-def _build(files: list[PackageFile] | None = None) -> tuple[bytes, BuiltPackage]:
+def _build(files: Sequence[AnyFile] | None = None) -> tuple[bytes, BuiltPackage]:
     out = io.BytesIO()
     built = build_package(_facts(), files if files is not None else _files(), out)
     return out.getvalue(), built
+
+
+def _streamed(f: PackageFile, read: bytes | None = None) -> StreamedFile:
+    """`f` as the activity hands it over: named by its digest, read when written."""
+
+    def read_it() -> bytes:
+        return f.content if read is None else read
+
+    return StreamedFile(
+        f.path,
+        hashlib.sha256(f.content).hexdigest(),
+        len(f.content),
+        f.role,
+        read_it,
+        evidence=f.evidence,
+    )
+
+
+# --- streaming (security review M4) --------------------------------------------------------------
+
+
+def test_a_streamed_original_builds_the_same_bytes_as_one_in_memory() -> None:
+    files = _files()
+    streamed = [_streamed(f) if f.role == "evidence" else f for f in files]
+    assert _build(streamed)[0] == _build(files)[0]
+
+
+def test_a_streamed_original_that_differs_from_its_fingerprint_stops_the_build() -> None:
+    files = _files()
+    for wrong in (b"%PDF-1.7 two", b"%PDF-1.7 one!"):  # same size, then a different size
+        streamed = [_streamed(f, wrong) if f.role == "evidence" else f for f in files]
+        with pytest.raises(PackageIntegrityError) as failed:
+            _build(streamed)
+        assert failed.value.path.startswith("evidence/")
 
 
 # --- AC-10: byte-identical -----------------------------------------------------------------------

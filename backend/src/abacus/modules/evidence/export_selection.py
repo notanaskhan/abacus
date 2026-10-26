@@ -29,11 +29,13 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from abacus.kernel.db import tenant_session
+from abacus.kernel.errors import NotFound
 from abacus.kernel.tin_patterns import scrub_tins
+from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.export_manifest import EVIDENCE_DIR, MAX_PATH, archive_path_problem
 from abacus.modules.evidence.export_package import ExportSectionInvalid, SectionRequest
 from abacus.modules.evidence.repository import item_versions_with_decisions
-from abacus.modules.identity.api import AuthContext, firm_time_zone, names_of
+from abacus.modules.identity.api import AuthContext, Forbidden, authorise, firm_time_zone, names_of
 from abacus.modules.requests.api import read_item_versions, source_documents
 
 ReviewState = Literal["accepted", "needs_review"]
@@ -253,7 +255,14 @@ async def plan_selection(
     ctx: AuthContext, request: SectionRequest, *, only: frozenset[UUID] | None = None
 ) -> Plan:
     """The export's requests and files as `ctx` (the requester) may read them now. `only`
-    restricts files to the versions snapshot in `engagement_export_contents`."""
+    restricts files to the versions snapshot in `engagement_export_contents`. The requester
+    must still read the engagement's evidence (a wall, a role or independence lost since the
+    request refuses the build), before `visible()` narrows each read."""
+    try:
+        engagement = await get_ref(ctx, request.engagement_id)
+        await authorise(ctx, "evidence.read", engagement.resource())
+    except (Forbidden, NotFound):
+        raise ExportSectionInvalid("the requester may no longer read the evidence") from None
     zone = ZoneInfo(await firm_time_zone(ctx.tenant))
     categories: list[tuple[str, list[_Row]]] = []
     for binder_id in request.binder_ids:

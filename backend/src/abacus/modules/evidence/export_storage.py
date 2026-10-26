@@ -82,12 +82,14 @@ def _binding(export_id: UUID, n: int) -> str:
 async def put_segments(
     tenant_id: UUID, export_id: UUID, bundle: IO[bytes], *, segment_bytes: int = SEGMENT_BYTES
 ) -> int:
-    """Seal and store `bundle` (read from its current position) in segments; their count."""
+    """Seal and store `bundle` (read from its current position) in segments; their count. A
+    retry that cuts fewer segments removes the earlier attempt's higher ones."""
     target = _target()
     n = 0
     while True:
         chunk = bundle.read(segment_bytes)
         if not chunk and n > 0:
+            await _drop_from(target, tenant_id, export_id, n)
             return n
         sealed = await seal(tenant_id, chunk, _binding(export_id, n))
         await asyncio.to_thread(
@@ -99,7 +101,34 @@ async def put_segments(
         )
         n += 1
         if len(chunk) < segment_bytes:
+            await _drop_from(target, tenant_id, export_id, n)
             return n
+
+
+async def _drop_from(target: _Exports, tenant_id: UUID, export_id: UUID, n: int) -> None:
+    """Delete this export's segments numbered `n` and above (a previous attempt's tail)."""
+    prefix = export_prefix(tenant_id, export_id)
+    keep = {segment_key(tenant_id, export_id, k) for k in range(n)}
+    token = ""
+    while True:
+        if token:
+            listed = await asyncio.to_thread(
+                target.client.list_objects_v2,
+                Bucket=target.bucket,
+                Prefix=prefix,
+                ContinuationToken=token,
+            )
+        else:
+            listed = await asyncio.to_thread(
+                target.client.list_objects_v2, Bucket=target.bucket, Prefix=prefix
+            )
+        keys = [o.get("Key", "") for o in listed.get("Contents", [])]
+        for key in keys:
+            if key and key not in keep:
+                await asyncio.to_thread(target.client.delete_object, Bucket=target.bucket, Key=key)
+        token = listed.get("NextContinuationToken", "")
+        if not listed.get("IsTruncated") or not token:
+            return
 
 
 async def get_segment(tenant_id: UUID, export_id: UUID, n: int) -> bytes:

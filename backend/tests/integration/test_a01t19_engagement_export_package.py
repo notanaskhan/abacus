@@ -440,11 +440,84 @@ async def test_ac13_a_core_section_without_a_provider_fails_the_build(
 async def test_ac13_no_audit_trail_reader_fails_a_build_that_asks_for_the_trail(
     northwind: Northwind, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Create refuses the trail with no reader (422); a reader gone by build time still fails
+    closed with `export_section_missing`."""
     monkeypatch.setattr(export_sections, "_audit_trail", None)
+    with pytest.raises(exports.ExportSectionUnavailable):
+        await _requested(northwind)
+    monkeypatch.setattr(export_sections, "_audit_trail", _audit_trail)
     row = await _requested(northwind)
+    monkeypatch.setattr(export_sections, "_audit_trail", None)
     with clock.frozen(row.not_before + timedelta(seconds=1)):
         await export_activities.start_export(northwind.tenant, row.id)
         await export_activities.snapshot_export(northwind.tenant, row.id)
         with pytest.raises(export_activities.ExportBuildFailed) as failed:
             await export_activities.package_export(northwind.tenant, row.id)
     assert failed.value.code == SECTION_MISSING
+
+
+# --- screening provenance ------------------------------------------------------------------------
+
+
+async def _screened(world: Northwind, version: uuid.UUID, *, shadow: bool) -> uuid.UUID:
+    engagement = await world.seed.value(
+        "SELECT engagement_id FROM work_items WHERE id = $1", world.work_item
+    )
+    run = await world.seed.value(
+        "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, "
+        "evidence_version_id, initiator_user_id, task_scope, status, finished_at, shadow) "
+        "VALUES ($1, 'evidence.screener', 1, $2, $3, $4, ARRAY['evidence.read'], 'completed', "
+        "now(), $5) RETURNING id",
+        world.tenant,
+        engagement,
+        version,
+        world.hannah.user_id,
+        shadow,
+    )
+    return cast(
+        uuid.UUID,
+        await world.seed.value(
+            "INSERT INTO screening_results (tenant_id, engagement_id, evidence_version_id, "
+            "agent_run_id, action, confidence, rationale, citations, unverified) VALUES "
+            "($1, $2, $3, $4, 'needs_revision', 0.5, 'Totals differ', '[]', '[]') RETURNING id",
+            world.tenant,
+            engagement,
+            version,
+            run,
+        ),
+    )
+
+
+async def test_a_shadow_runs_screening_never_reaches_the_package(northwind: Northwind) -> None:
+    """SPEC-036 AC-5 (security review M1): a shadow run's output is never shown to the firm."""
+    version = next(iter(northwind.versions))
+    shown = await _screened(northwind, version, shadow=False)
+    hidden = await _screened(northwind, version, shadow=True)
+    row = await _requested(northwind)
+    with clock.frozen(row.not_before + timedelta(seconds=1)):
+        await export_activities.start_export(northwind.tenant, row.id)
+        await export_activities.snapshot_export(northwind.tenant, row.id)
+        facts = await export_activities.package_export(northwind.tenant, row.id)
+    bundle = await _bundle(northwind, row.id, facts.segment_count)
+    with zipfile.ZipFile(io.BytesIO(bundle)) as archive:
+        screening = archive.read("provenance/screening.csv").decode()
+    assert str(shown) in screening
+    assert str(hidden) not in screening
+
+
+async def test_a_retry_with_fewer_segments_leaves_no_stale_tail(
+    northwind: Northwind, raw: S3Client
+) -> None:
+    """Security review L: a rebuild cut into fewer segments removes the earlier higher ones."""
+    row = await _requested(northwind)
+    with clock.frozen(row.not_before + timedelta(seconds=1)):
+        await export_activities.start_export(northwind.tenant, row.id)
+        await export_activities.snapshot_export(northwind.tenant, row.id)
+        many = await export_activities.package_export(northwind.tenant, row.id, segment_bytes=1024)
+        few = await export_activities.package_export(northwind.tenant, row.id)
+    assert many.segment_count > few.segment_count == 1
+    stored = raw.list_objects_v2(Bucket=EXPORTS, Prefix=f"exports/{northwind.tenant}/{row.id}/")
+    assert [o.get("Key", "") for o in stored.get("Contents", [])] == [
+        f"exports/{northwind.tenant}/{row.id}/segment-0000"
+    ]
+    assert hashlib.sha256(await _bundle(northwind, row.id, 1)).hexdigest() == few.bundle_sha256

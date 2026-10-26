@@ -9,8 +9,10 @@ reads the export row under the tenant and acts as the system on behalf of the re
 - `snapshot`: the tenant's newest audit sequence becomes `as_of_seq`, and the versions the
   requester's selection holds now are written to `engagement_export_contents` (once).
 - `package`: the selection (restricted to the snapshot), every registered section, the audit
-  trail, every evidence file read through `evidence.storage.get` and its SHA-256 compared again
-  with its fingerprint; the ZIP built in worker scratch and stored sealed in 64 MiB segments.
+  trail, every evidence file read through `evidence.storage.get` only when its ZIP entry is
+  written (one original in memory at a time) and hashed as it is written against its
+  fingerprint; the ZIP built in worker scratch, off the event loop, and stored sealed in 64 MiB
+  segments.
   A swapped object fails `integrity_mismatch`, a core section without a provider
   `export_section_missing` (both decided, never retried); nothing is published either way.
 - `mark_ready` / `mark_failed`: the stamps, the audit event and the outbox event.
@@ -18,7 +20,7 @@ reads the export row under the tenant and acts as the system on behalf of the re
 
 from __future__ import annotations
 
-import hashlib
+import asyncio
 import math
 import tempfile
 from collections.abc import Callable
@@ -52,7 +54,9 @@ from abacus.modules.evidence import storage
 from abacus.modules.evidence.export_builder import (
     PackageFacts,
     PackageFile,
+    PackageIntegrityError,
     PackageInvalid,
+    StreamedFile,
     build_package,
 )
 from abacus.modules.evidence.export_events import (
@@ -275,45 +279,50 @@ async def _contents(tenant: TenantContext, export_id: UUID) -> frozenset[UUID]:
         return frozenset(found.scalars().all())
 
 
-async def _evidence_files(
-    tenant_id: UUID, plan: Plan, heartbeat: Callable[[], None]
-) -> list[PackageFile]:
-    """Each file decrypted and checked against its fingerprint twice: by storage, and here."""
-    out: list[PackageFile] = []
-    for f in plan.files:
-        stored = storage.StoredObject(
-            f.storage_key, f.storage_version_id, f.fingerprint, f.size_bytes
-        )
-        try:
-            content = await storage.get(tenant_id, stored)
-        except storage.IntegrityError:
-            content = None
-        if content is None or hashlib.sha256(content).hexdigest() != f.fingerprint:
-            # RB-29: the integrity alarm reads this event. Identifiers only.
-            _log.error(
-                "evidence.integrity_mismatch",
-                tenant_id=tenant_id,
-                evidence_version_id=f.evidence_version_id,
-                export_id=plan.export_id,
-            )
-            raise ExportBuildFailed(INTEGRITY_MISMATCH)
-        out.append(
-            PackageFile(
-                f.path,
-                content,
-                "evidence",
-                evidence=ManifestEvidence(
-                    evidence_version_id=f.evidence_version_id,
-                    request_item_id=f.request_item_id,
-                    binder_id=f.binder_id,
-                    version_no=f.version_no,
-                    review_state=f.review_state,
-                    media_type=f.media_type,
+def _evidence_files(
+    tenant_id: UUID,
+    plan: Plan,
+    loop: asyncio.AbstractEventLoop,
+    heartbeat: Callable[[], None],
+) -> list[StreamedFile]:
+    """Each file named by its fingerprint and read only when the builder writes its entry, from
+    the builder's thread through the event loop; storage verifies it, and the builder hashes it
+    again as it writes."""
+
+    def reader(stored: storage.StoredObject, path: str) -> Callable[[], bytes]:
+        async def fetch() -> bytes:
+            try:
+                return await storage.get(tenant_id, stored)
+            except storage.IntegrityError:
+                raise PackageIntegrityError(path) from None
+            finally:
+                heartbeat()
+
+        return lambda: asyncio.run_coroutine_threadsafe(fetch(), loop).result()
+
+    return [
+        StreamedFile(
+            f.path,
+            f.fingerprint,
+            f.size_bytes,
+            "evidence",
+            reader(
+                storage.StoredObject(
+                    f.storage_key, f.storage_version_id, f.fingerprint, f.size_bytes
                 ),
-            )
+                f.path,
+            ),
+            evidence=ManifestEvidence(
+                evidence_version_id=f.evidence_version_id,
+                request_item_id=f.request_item_id,
+                binder_id=f.binder_id,
+                version_no=f.version_no,
+                review_state=f.review_state,
+                media_type=f.media_type,
+            ),
         )
-        heartbeat()
-    return out
+        for f in plan.files
+    ]
 
 
 async def section_files(
@@ -377,7 +386,7 @@ async def package_export(
             sections.append(
                 PackageFile(AUDIT_TRAIL, await audit_trail_lines(ctx, request), "audit_trail")
             )
-        evidence = await _evidence_files(tenant_id, plan, heartbeat)
+        evidence = _evidence_files(tenant_id, plan, asyncio.get_running_loop(), heartbeat)
         meta = await engagement_metadata(ctx, row.engagement_id)
         names = await names_of([row.requested_by])
         facts = PackageFacts(
@@ -414,9 +423,22 @@ async def package_export(
         raise ExportBuildFailed(BUILD_ERROR) from None
     with tempfile.TemporaryFile() as scratch:  # worker scratch, removed on close
         try:
-            built = build_package(facts, [*sections, *evidence], scratch)
+            built = await asyncio.to_thread(build_package, facts, [*sections, *evidence], scratch)
         except PackageInvalid:
             raise ExportBuildFailed(BUILD_ERROR) from None
+        except PackageIntegrityError as mismatch:
+            failed_path = mismatch.path
+            version_id = next(
+                (f.evidence_version_id for f in plan.files if f.path == failed_path), None
+            )
+            # RB-29: the integrity alarm reads this event. Identifiers only.
+            _log.error(
+                "evidence.integrity_mismatch",
+                tenant_id=tenant_id,
+                evidence_version_id=version_id,
+                export_id=plan.export_id,
+            )
+            raise ExportBuildFailed(INTEGRITY_MISMATCH) from None
         heartbeat()
         segments = await put_segments(
             tenant_id, export_id, scratch, segment_bytes=segment_bytes or SEGMENT_BYTES

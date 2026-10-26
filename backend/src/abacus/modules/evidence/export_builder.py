@@ -12,6 +12,11 @@ inputs give the same bytes (AC-10):
   quoted;
 - `checksums.sha256` lists every file but itself and `manifest.sha256`; `manifest.sha256` names
   `manifest.json`; both in `sha256sum` format, so `shasum -a 256 -c checksums.sha256` passes.
+
+Evidence files stream (SPEC-344 §16): a `StreamedFile` names its recorded SHA-256 and size, which
+the manifest and checksums use, and is read only when its ZIP entry is written, one file at a
+time, hashed as it is written; a file that does not match what it names raises
+`PackageIntegrityError` and the package is abandoned.
 """
 
 from __future__ import annotations
@@ -21,7 +26,7 @@ import hashlib
 import io
 import json
 import zipfile
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import IO, Final, cast
@@ -89,6 +94,14 @@ class PackageInvalid(ValueError):
     """The files given would not make a valid v1 package (a builder or provider defect)."""
 
 
+class PackageIntegrityError(Exception):
+    """A streamed file's bytes do not match the SHA-256 and size it was recorded with."""
+
+    def __init__(self, path: str) -> None:
+        super().__init__(path)
+        self.path = path
+
+
 @dataclass(frozen=True)
 class PackageFile:
     path: str
@@ -96,6 +109,29 @@ class PackageFile:
     role: FileRole
     evidence: ManifestEvidence | None = None
     section: str | None = None
+
+
+@dataclass(frozen=True)
+class StreamedFile:
+    """A file read only when its entry is written (`read`), named by its recorded digest."""
+
+    path: str
+    sha256: str
+    bytes: int
+    role: FileRole
+    read: Callable[[], bytes]
+    evidence: ManifestEvidence | None = None
+    section: str | None = None
+
+
+AnyFile = PackageFile | StreamedFile
+_CHUNK: Final = 1 << 20
+
+
+def _digest(f: AnyFile) -> tuple[str, int]:
+    if isinstance(f, StreamedFile):
+        return f.sha256, f.bytes
+    return _sha(f.content), len(f.content)
 
 
 @dataclass(frozen=True)
@@ -185,7 +221,7 @@ def index_xlsx(index_csv: bytes, generated_at: datetime) -> bytes:
     return normalised(buffer.getvalue(), moment)
 
 
-def _manifest(facts: PackageFacts, files: Sequence[PackageFile]) -> bytes:
+def _manifest(facts: PackageFacts, files: Sequence[AnyFile]) -> bytes:
     listed = sorted(files, key=lambda f: f.path)
     evidence = sum(1 for f in listed if f.role == "evidence")
     manifest = EngagementExportManifest(
@@ -212,8 +248,8 @@ def _manifest(facts: PackageFacts, files: Sequence[PackageFile]) -> bytes:
         files=[
             ManifestFile(
                 path=f.path,
-                sha256=_sha(f.content),
-                bytes=len(f.content),
+                sha256=_digest(f)[0],
+                bytes=_digest(f)[1],
                 role=f.role,
                 evidence=f.evidence,
                 section=f.section,
@@ -226,52 +262,80 @@ def _manifest(facts: PackageFacts, files: Sequence[PackageFile]) -> bytes:
     ).encode("utf-8")
 
 
-def build_package(
-    facts: PackageFacts, files: Sequence[PackageFile], out: IO[bytes]
-) -> BuiltPackage:
+def _write_entry(
+    archive: zipfile.ZipFile, path: str, stamp: tuple[int, int, int, int, int, int], data: bytes
+) -> str:
+    """One entry, as `writestr` would write it, in chunks; returns the SHA-256 of what was
+    written."""
+    entry = zipfile.ZipInfo(path, date_time=stamp)
+    entry.compress_type = zipfile.ZIP_DEFLATED
+    entry._compresslevel = 9  # pyright: ignore[reportAttributeAccessIssue] -- writestr's own field
+    entry.external_attr = 0o644 << 16
+    entry.create_system = 3  # the same on every platform
+    entry.file_size = len(data)
+    digest = hashlib.sha256()
+    view = memoryview(data)
+    with archive.open(entry, "w") as dest:
+        for at in range(0, len(view), _CHUNK):
+            chunk = view[at : at + _CHUNK]
+            digest.update(chunk)
+            dest.write(chunk)
+    return digest.hexdigest()
+
+
+def build_package(facts: PackageFacts, files: Sequence[AnyFile], out: IO[bytes]) -> BuiltPackage:
     """Write the package to `out` (from its current position) and return its digests. `files`
     holds every file but the README, index.xlsx, the manifest and the checksum files, which are
-    made here; index.csv must be among them."""
+    made here; index.csv must be among them (in memory). A `StreamedFile` is read when its entry
+    is written and must match its recorded digest (`PackageIntegrityError`)."""
     by_path = {f.path: f for f in files}
     if len(by_path) != len(files):
         raise PackageInvalid("two files share a path")
     reserved = {README, INDEX_XLSX, MANIFEST, MANIFEST_SHA256, CHECKSUMS}
     if reserved & set(by_path):
         raise PackageInvalid("the builder writes the README, index.xlsx, manifest and checksums")
-    if INDEX_CSV not in by_path:
+    index = by_path.get(INDEX_CSV)
+    if not isinstance(index, PackageFile):
         raise PackageInvalid("a package has an index")
     if (AUDIT_TRAIL in by_path) != facts.scope.include_audit_trail:
         raise PackageInvalid("the audit trail is in the package exactly when the scope asks")
     made = [
         PackageFile(README, readme(), "readme"),
-        PackageFile(
-            INDEX_XLSX, index_xlsx(by_path[INDEX_CSV].content, facts.generated_at), "index"
-        ),
+        PackageFile(INDEX_XLSX, index_xlsx(index.content, facts.generated_at), "index"),
     ]
-    listed = [*files, *made]
+    listed: list[AnyFile] = [*files, *made]
     try:
         manifest = _manifest(facts, listed)
     except ValueError as exc:  # pydantic's ValidationError included: never a partial package
         raise PackageInvalid(str(exc)) from exc
     manifest_sha = _sha(manifest)
-    contents = {f.path: f.content for f in listed} | {MANIFEST: manifest}
-    checksums = "".join(f"{_sha(contents[p])}  {p}\n" for p in sorted(contents)).encode()
-    contents |= {CHECKSUMS: checksums, MANIFEST_SHA256: f"{manifest_sha}  {MANIFEST}\n".encode()}
+    entries: dict[str, AnyFile | bytes] = {f.path: f for f in listed}
+    entries[MANIFEST] = manifest
+    named = {p: (_sha(e) if isinstance(e, bytes) else _digest(e)[0]) for p, e in entries.items()}
+    checksums = "".join(f"{named[p]}  {p}\n" for p in sorted(named)).encode()
+    entries |= {CHECKSUMS: checksums, MANIFEST_SHA256: f"{manifest_sha}  {MANIFEST}\n".encode()}
     stamp = _zip_time(facts.generated_at)
     start = out.tell()
-    digest = hashlib.sha256()
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for path in sorted(contents):
-            entry = zipfile.ZipInfo(path, date_time=stamp)
-            entry.compress_type = zipfile.ZIP_DEFLATED
-            entry.external_attr = 0o644 << 16
-            entry.create_system = 3  # the same on every platform
-            archive.writestr(entry, contents[path], compresslevel=9)
+        for path in sorted(entries):
+            entry = entries[path]
+            if isinstance(entry, StreamedFile):
+                data = entry.read()
+                if len(data) != entry.bytes:
+                    raise PackageIntegrityError(path)
+                if _write_entry(archive, path, stamp, data) != entry.sha256:
+                    raise PackageIntegrityError(path)
+                del data  # one original in memory at a time
+            else:
+                _write_entry(
+                    archive, path, stamp, entry if isinstance(entry, bytes) else entry.content
+                )
     end = out.tell()
     out.seek(start)
+    digest = hashlib.sha256()
     remaining = end - start
     while remaining > 0:
-        chunk = out.read(min(remaining, 1 << 20))
+        chunk = out.read(min(remaining, _CHUNK))
         if not chunk:
             break
         digest.update(chunk)

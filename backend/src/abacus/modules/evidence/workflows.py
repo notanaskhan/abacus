@@ -359,13 +359,16 @@ class EngagementExportWorkflow:
     async def run(self, given: EngagementExportInput) -> str:
         if given.wait_seconds > 0:
             await workflow.sleep(timedelta(seconds=given.wait_seconds))
-        started = await workflow.execute_activity(
-            "engagement_export.consume_grant",
-            given,
-            result_type=str,
-            start_to_close_timeout=_TIMEOUT,
-            retry_policy=_EXPORT_GRANT_RETRY,
-        )
+        try:
+            started = await workflow.execute_activity(
+                "engagement_export.consume_grant",
+                given,
+                result_type=str,
+                start_to_close_timeout=_TIMEOUT,
+                retry_policy=_EXPORT_GRANT_RETRY,
+            )
+        except ActivityError:  # retries spent: the export never stays `queued`
+            return await self._failed(given, BUILD_ERROR)
         if started != "packaging":
             return started
         try:
@@ -385,16 +388,19 @@ class EngagementExportWorkflow:
                 retry_policy=_EXPORT_BUILD_RETRY,
             )
         except ActivityError as error:
-            return await workflow.execute_activity(
-                "engagement_export.mark_failed",
-                ExportFailure(given.tenant_id, given.export_id, _failure_code(error)),
-                result_type=str,
-                start_to_close_timeout=_TIMEOUT,
-                retry_policy=_EXPORT_STAMP_RETRY,
-            )
+            return await self._failed(given, _failure_code(error))
         return await workflow.execute_activity(
             "engagement_export.mark_ready",
             facts,
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_EXPORT_STAMP_RETRY,
+        )
+
+    async def _failed(self, given: EngagementExportInput, code: str) -> str:
+        return await workflow.execute_activity(
+            "engagement_export.mark_failed",
+            ExportFailure(given.tenant_id, given.export_id, code),
             result_type=str,
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_EXPORT_STAMP_RETRY,

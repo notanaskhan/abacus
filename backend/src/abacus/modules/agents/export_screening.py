@@ -2,9 +2,9 @@
 
 `provenance/screening.csv`: what screening recorded on the package's files, copied as recorded
 and read as the requester (`visible()`): each per-file proposal (the action and its confidence)
-and each request batch's code-composed verdict. Identifiers and codes only: the rationale is a
-model's free text and stays out. Registered in evidence's slot (`register_export_section`); it
-reads, never writes, never calls a model.
+and each request batch's code-composed verdict; a shadow run's output never (SPEC-036 AC-5).
+Identifiers and codes only: the rationale is a model's free text and stays out. Registered in
+evidence's slot (`register_export_section`); it reads, never writes, never calls a model.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.agents.models import ScreeningResult
+from abacus.modules.agents.repository import shown_run
 from abacus.modules.evidence.api import (
     SectionFile,
     SectionRequest,
@@ -63,6 +64,8 @@ async def screening_section(tenant: TenantContext, request: SectionRequest) -> l
                                     PG_ARRAY(PG_UUID(as_uuid=True)),
                                 ).overlap(versions),
                             ),
+                            # SPEC-036 AC-5: a shadow run's output is never shown to the firm.
+                            shown_run(ScreeningResult.agent_run_id),
                             visible(ctx, "evidence.read", ScreeningResult.engagement_id),
                         )
                         .order_by(ScreeningResult.created_at, ScreeningResult.id)
