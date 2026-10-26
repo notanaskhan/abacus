@@ -27151,10 +27151,6 @@ export type ListAuditEventsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListAuditEventsError = ListAuditEventsErrors[keyof ListAuditEventsErrors];
@@ -27382,10 +27378,6 @@ export type AuditEventErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AuditEventError = AuditEventErrors[keyof AuditEventErrors];

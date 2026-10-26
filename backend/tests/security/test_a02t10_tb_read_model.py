@@ -104,8 +104,8 @@ async def _methodology(
     version = cast(
         uuid.UUID,
         await seed.value(
-            "INSERT INTO methodology_versions (tenant_id, template_id, version, "
-            "source_fingerprint, imported_by) VALUES ($1, $2, 1, $3, $4) RETURNING id",
+            "INSERT INTO methodology_versions (tenant_id, template_id, version, label, "
+            "source_fingerprint, imported_by) VALUES ($1, $2, 1, 'v1', $3, $4) RETURNING id",
             tenant_id,
             template,
             hashlib.sha256(uuid.uuid4().bytes).hexdigest(),

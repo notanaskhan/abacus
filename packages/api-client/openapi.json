@@ -56894,7 +56894,7 @@
     },
     "/v1/audit-events": {
       "get": {
-        "description": "ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on\n`effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's\n(DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).",
+        "description": "ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on\n`effective_at` in the firm's time zone; `office_id` is the object's office (DEC-415 Q9);\n`q` searches actor, target and fact labels only, never a value (M4); `ip` filters only for\nthe readers who see request context (DEC-420).",
         "operationId": "list_audit_events",
         "parameters": [
           {
@@ -57189,16 +57189,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Audit Events Route",
@@ -57688,16 +57678,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Audit Event Route",

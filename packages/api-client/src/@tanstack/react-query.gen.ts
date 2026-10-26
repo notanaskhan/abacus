@@ -170,8 +170,9 @@ export const listAuditEventsQueryKey = (options?: Options<ListAuditEventsData>) 
  * List Audit Events Route
  *
  * ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
- * `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
- * (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).
+ * `effective_at` in the firm's time zone; `office_id` is the object's office (DEC-415 Q9);
+ * `q` searches actor, target and fact labels only, never a value (M4); `ip` filters only for
+ * the readers who see request context (DEC-420).
  */
 export const listAuditEventsOptions = (options?: Options<ListAuditEventsData>) => queryOptions<ListAuditEventsResponse, ListAuditEventsError, ListAuditEventsResponse, ReturnType<typeof listAuditEventsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -221,8 +222,9 @@ export const listAuditEventsInfiniteQueryKey = (options?: Options<ListAuditEvent
  * List Audit Events Route
  *
  * ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
- * `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
- * (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).
+ * `effective_at` in the firm's time zone; `office_id` is the object's office (DEC-415 Q9);
+ * `q` searches actor, target and fact labels only, never a value (M4); `ip` filters only for
+ * the readers who see request context (DEC-420).
  */
 export const listAuditEventsInfiniteOptions = (options?: Options<ListAuditEventsData>) => {
     const opts = infiniteQueryOptions<ListAuditEventsResponse, ListAuditEventsError, InfiniteData<ListAuditEventsResponse>, QueryKey<Options<ListAuditEventsData>>, string | null | Pick<QueryKey<Options<ListAuditEventsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(

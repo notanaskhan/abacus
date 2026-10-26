@@ -4,16 +4,23 @@ from abacus.kernel.controls import ControlName, control_active
 from abacus.kernel.dispatch import PlatformSchedule
 from abacus.kernel.uow import Handler
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.platform.audit_resolvers import register as register_audit_resolvers
 from abacus.modules.platform.audit_slots import (
     AuditEventRef,
     AuditLabel,
     AuditLabeler,
+    AuditNotIncluded,
+    AuditSource,
+    AuditSourceResolver,
     AuditValueResolver,
     AuditValueRow,
     AuditValues,
     audit_labels,
+    audit_source,
     audit_values,
+    mask_value,
     register_audit_labeler,
+    register_audit_source,
     register_audit_value_resolver,
     registered_audit_types,
 )
@@ -137,6 +144,9 @@ from abacus.modules.platform.workflows import (
     tenant_key_workflow_id,
 )
 
+# G-02-T09 (DEC-435): labelers and value resolvers for identity-owned audit targets.
+register_audit_resolvers()
+
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
@@ -189,6 +199,9 @@ __all__ = [
     "AuditEventRef",
     "AuditLabel",
     "AuditLabeler",
+    "AuditNotIncluded",
+    "AuditSource",
+    "AuditSourceResolver",
     "AuditValueResolver",
     "AuditValueRow",
     "AuditValues",
@@ -235,6 +248,7 @@ __all__ = [
     "TenantProvisioned",
     "TenantProvisioningWorkflow",
     "audit_labels",
+    "audit_source",
     "audit_values",
     "canary_boundary",
     "canary_probe",
@@ -254,12 +268,14 @@ __all__ = [
     "incident_clock",
     "incident_propagation_workflow_id",
     "inv2_violations",
+    "mask_value",
     "operator_context",
     "propagate_into",
     "propagation_log",
     "provisioning_workflow_id",
     "record_incident",
     "register_audit_labeler",
+    "register_audit_source",
     "register_audit_value_resolver",
     "register_home_count",
     "register_search_projection",
