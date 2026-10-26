@@ -38,7 +38,8 @@ from abacus.modules.identity.api import issue_sign_in_code, totp_at
 from abacus.modules.identity.portal_idp import InMemoryPortalIdp, configure_portal_idp
 from abacus.modules.portal.api import activate_portal_host, add_portal_host
 
-from .support import Person, Seeder, Site
+from .portal_pbc_support import another_list, new_binder, signed_in
+from .support import Net, Person, Seeder, Site
 
 FLAGS = ("portal.sign_in_v2", "portal.home_v2", "portal.documents_v2")
 REFUSED = (401, 403, 404)
@@ -473,3 +474,164 @@ def test_the_judgement_catches_a_planted_cross_scope_read() -> None:
     assert _leaks(planted, [marker]) == ["status 200", f"names {marker}"]
     # A refusal that still names the other scope is a leak too.
     assert _leaks(_response(404, '{"detail":"' + marker + '"}'), [marker]) == [f"names {marker}"]
+
+
+# --- R-01-T20 (TASK-1351): the documents, the request sheet and the room ------------------------
+# Written from C5 section `portal-pbc` §2 and §6 ("one answer for every case"), DEC-333 and
+# DEC-387/388. The firm, binders and sessions come from `portal_pbc_support`.
+
+
+async def test_r01_room_isolation_the_third_party_reaches_only_delegated_requests(
+    net: Net,
+) -> None:
+    b = await new_binder(net, "room", kind="pbc", categories=("Recordkeeper reports", "Census"))
+    delegated = await b.request("Schedule of account balances", "Recordkeeper reports")
+    held = f"Census held back {uuid.uuid4().hex[:8]}"
+    held_back = await b.request(held, "Census")
+    elsewhere = await new_binder(net, "room-other", firm=(b.tenant, b.host, b.admin))
+    other_marker = f"Another client {uuid.uuid4().hex[:8]}"
+    other = await elsewhere.request(other_marker, "Income")
+    _, contact, email = await b.outsider("Sam Ortiz", "Keystone Retirement Services")
+    assert (await b.delegate(delegated, contact)).status_code == 201
+    sam = await signed_in(b, email)
+    room = await sam.get("/v1/portal/room")
+    assert room.status_code == 200, room.text
+    assert str(delegated) in room.text
+    assert held not in room.text and other_marker not in room.text
+    paths = [
+        "/v1/portal/binders",
+        f"/v1/portal/binders/{b.binder}",
+        f"/v1/portal/binders/{elsewhere.binder}",
+        f"/v1/portal/request-items/{held_back}",
+        f"/v1/portal/request-items/{other}",
+        f"/v1/engagements/{b.eid}/request-items/{held_back}/comments",
+        f"/v1/engagements/{elsewhere.eid}/request-items/{other}/comments",
+    ]
+    markers = [held, other_marker, str(held_back), str(other), *_foreign(elsewhere.site)]
+    found = {p: _leaks(await sam.get(p), markers) for p in paths}
+    # The picker may answer an empty list rather than refuse; it must name nothing.
+    picker = found.pop("/v1/portal/binders")
+    assert [p for p in picker if p.startswith("names")] == []
+    assert {p: v for p, v in found.items() if v} == {}
+
+
+async def test_r01_forged_binder_and_request_ids_get_one_answer(net: Net) -> None:
+    b = await new_binder(net, "forged")
+    await b.request("Form W-2", "Income")
+    internal = await b.request("Internal tie-out", "Income", visible=False)
+    draft = await another_list(b, status="draft", part=2)
+    await b.request("Draft request", "Income", binder=draft)
+    unpublished = await another_list(b, status="unpublished", part=3)
+    sibling = await new_binder(net, "forged-sibling", firm=(b.tenant, b.host, b.admin))
+    sibling_item = await sibling.request("Sibling request", "Income")
+    stranger = await new_binder(net, "forged-stranger")
+    stranger_item = await stranger.request("Stranger request", "Income")
+    _, contact, _ = await b.outsider("Sam Ortiz", "Keystone Retirement Services")
+    delegated = await b.request("Delegated request", "Income")
+    assert (await b.delegate(delegated, contact)).status_code == 201
+    _, email = await b.client("Claire Feld")
+    claire = await signed_in(b, email)
+    unknown = await claire.get(f"/v1/portal/binders/{uuid.uuid4()}")
+    assert unknown.status_code == 404
+    for path in (
+        f"/v1/portal/binders/{draft}",
+        f"/v1/portal/binders/{unpublished}",
+        f"/v1/portal/binders/{sibling.binder}",
+        f"/v1/portal/binders/{stranger.binder}",
+    ):
+        found = await claire.get(path)
+        assert (found.status_code, found.text) == (404, unknown.text), path
+    unknown_item = await claire.get(f"/v1/portal/request-items/{uuid.uuid4()}")
+    for item in (internal, sibling_item, stranger_item, delegated):
+        found = await claire.get(f"/v1/portal/request-items/{item}")
+        assert (found.status_code, found.text) == (404, unknown_item.text), item
+
+
+async def test_r01_contributor_scope_reaches_only_assigned_requests(net: Net) -> None:
+    b = await new_binder(net, "contrib", kind="pbc", categories=("Census",))
+    dana, email = await b.client("Dana Kowalski", role="contributor")
+    mine = await b.request("Census file", "Census", assignee=dana)
+    marker = f"Trustee minutes {uuid.uuid4().hex[:8]}"
+    theirs = await b.request(marker, "Census")
+    portal = await signed_in(b, email)
+    binder = await portal.get(f"/v1/portal/binders/{b.binder}?filter=all")
+    assert binder.status_code == 200 and str(mine) in binder.text
+    assert _leaks(binder, [marker, str(theirs)]) == ["status 200"]
+    for path in (
+        f"/v1/portal/request-items/{theirs}",
+        f"/v1/engagements/{b.eid}/request-items/{theirs}/comments",
+    ):
+        assert _leaks(await portal.get(path), [marker]) == [], path
+    ignored = await portal.post(
+        f"/v1/portal/request-items/{theirs}/ignore", {"reason": "dont_have"}
+    )
+    assert ignored.status_code in REFUSED, ignored.text
+
+
+async def test_r01_a_closed_binder_reads_but_takes_no_client_act(net: Net) -> None:
+    b = await new_binder(net, "closed", status="closed")
+    item = await b.request("Form 1099-INT", "Income")
+    _, email = await b.client("Claire Feld")
+    claire = await signed_in(b, email)
+    read = await claire.get(f"/v1/portal/binders/{b.binder}")
+    assert read.status_code == 200, read.text
+    acts = [
+        await claire.post(f"/v1/portal/request-items/{item}/ignore", {"reason": "dont_have"}),
+        await claire.post(f"/v1/portal/binders/{b.binder}/mark-done"),
+        await claire.post(
+            f"/v1/portal/request-items/{item}/upload-intents", {"files_expected": 1}
+        ),
+    ]
+    assert all(400 <= a.status_code < 500 for a in acts), [a.text for a in acts]
+    assert (
+        await b.seed.value("SELECT status FROM request_items WHERE id = $1", item) == "requested"
+    )
+
+
+async def test_r01_a_tax_engagement_never_reaches_a_third_party_without_consent(
+    net: Net,
+) -> None:
+    """Even a delegation already on file (written before the work item became a tax return)
+    reaches nothing: the room leaves the engagement out and the request routes refuse."""
+    b = await new_binder(net, "tax")
+    marker = f"Form 1099-B {uuid.uuid4().hex[:8]}"
+    item = await b.request(marker, "Income")
+    who, contact, email = await b.outsider("Marta Lindqvist", "Halvard Securities")
+    assert (await b.delegate(item, contact)).status_code == 201
+    await b.seed.run(
+        "INSERT INTO work_items (tenant_id, engagement_id, client_id, client_entity_id, kind, "
+        "name, created_by) VALUES ($1, $2, $3, $4, 'tax_return', '2025 Form 1040', $5)",
+        b.tenant,
+        b.eid,
+        b.site.client_id,
+        b.site.entity_id,
+        b.admin.user_id,
+    )
+    del who
+    marta = await signed_in(b, email)
+    for path in (
+        "/v1/portal/room",
+        f"/v1/portal/request-items/{item}",
+        f"/v1/engagements/{b.eid}/request-items/{item}/comments",
+    ):
+        found = await marta.get(path)
+        if path == "/v1/portal/room" and found.status_code == 200:
+            assert found.json()["total"] == 0, found.text
+            assert marker not in found.text
+        else:
+            assert _leaks(found, [marker]) == [], path
+    intent = await marta.post(
+        f"/v1/portal/request-items/{item}/upload-intents", {"files_expected": 1}
+    )
+    assert intent.status_code in REFUSED, intent.text
+
+
+def test_r01_the_judgement_catches_a_planted_cross_scope_room_read() -> None:
+    marker = "Census held back 0a1b2c3d"
+    room = (
+        '{"total": 2, "bands": [{"label": "Census", "rows": [{"id": "x", "title": "'
+        + marker
+        + '"}]}]}'
+    )
+    assert _leaks(_response(200, room), [marker]) == ["status 200", f"names {marker}"]
+    assert _leaks(_response(404, '{"detail":"not_found"}'), [marker]) == []
