@@ -76,3 +76,8 @@ non-derived rows.
   (0109 has the tables and grants); 0173-0174 unused. Follow-ups: a derived extraction for agent
   material and the OQ-8 check re-run; human-only audit listing for `evidence_version.unlocked`
   would need a migration.
+- 2026-10-26: security review (PASS) fix round. M1: the TASK-323 upload unlock route shares the
+  guard (`unlock._attempt`) and refuses non-request callers; declares 429. M2: no core dumps in
+  the isolated child. L1: migration 0173 (`down_revision` 0172, re-point at merge), one unlock per
+  version, the loser 409. L2 and L3 recorded as follow-ups in DEC-425. Tests:
+  `tests/integration/test_p03t19_unlock_hardening.py` (4), `tests/unit/kernel/test_isolation_no_core.py`.

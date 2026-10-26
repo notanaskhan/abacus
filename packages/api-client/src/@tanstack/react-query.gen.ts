@@ -6156,7 +6156,8 @@ export const statementPreviewMutation = (options?: Partial<Options<StatementPrev
  * Unlock Upload Route
  *
  * TASK-323: a password-protected PDF upload, saved again without its password as a new
- * version of the item.
+ * version of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429
+ * `unlock_rate_limited` after five in fifteen minutes.
  */
 export const unlockUploadMutation = (options?: Partial<Options<UnlockUploadData>>): UseMutationOptions<UnlockUploadResponse, UnlockUploadError, Options<UnlockUploadData>> => {
     const mutationOptions: UseMutationOptions<UnlockUploadResponse, UnlockUploadError, Options<UnlockUploadData>> = {

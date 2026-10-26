@@ -88690,7 +88690,7 @@
     },
     "/v1/engagements/{engagement_id}/request-items/{item_id}/uploads/{version_id}/unlock": {
       "post": {
-        "description": "TASK-323: a password-protected PDF upload, saved again without its password as a new\nversion of the item.",
+        "description": "TASK-323: a password-protected PDF upload, saved again without its password as a new\nversion of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429\n`unlock_rate_limited` after five in fifteen minutes.",
         "operationId": "unlock_upload",
         "parameters": [
           {
@@ -88826,6 +88826,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Unlock Upload Route",

@@ -3680,7 +3680,8 @@ export const statementPreview = <ThrowOnError extends boolean = false>(options: 
  * Unlock Upload Route
  *
  * TASK-323: a password-protected PDF upload, saved again without its password as a new
- * version of the item.
+ * version of the item. Failed attempts share the viewer unlock's budget (DEC-425): 429
+ * `unlock_rate_limited` after five in fifteen minutes.
  */
 export const unlockUpload = <ThrowOnError extends boolean = false>(options: Options<UnlockUploadData, ThrowOnError>): RequestResult<UnlockUploadResponses, UnlockUploadErrors, ThrowOnError> => (options.client ?? client).post<UnlockUploadResponses, UnlockUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

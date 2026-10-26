@@ -44,3 +44,5 @@ Revert the commit; the kit props are optional.
   tooltip-only link (disabled with its destination as the hint), as "Open in Files" is. DEC-426.
 - 2026-10-26: vitest `src/screens/SHL-08` 39 passed (10 new), `packages/ui` viewer 28 passed;
   tsc, eslint and prettier clean on touched files. Playwright skipped (chromium mismatch).
+- 2026-10-26: security review L4: stale reveal answers dropped (generation refs);
+  `MaskedValue.test.tsx` (control and the dropped case; fails without the fix).

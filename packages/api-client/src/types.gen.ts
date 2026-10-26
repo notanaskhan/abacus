@@ -41324,6 +41324,10 @@ export type UnlockUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
 };
 
 export type UnlockUploadError = UnlockUploadErrors[keyof UnlockUploadErrors];

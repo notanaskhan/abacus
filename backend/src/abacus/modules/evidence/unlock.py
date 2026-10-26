@@ -31,6 +31,8 @@ import asyncio
 import io
 import math
 import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Final, Literal, Protocol, cast
@@ -38,13 +40,21 @@ from uuid import UUID
 
 from pydantic import SecretStr
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.crypto import seal
 from abacus.kernel.errors import DomainConflict, DomainInvalid, DomainRateLimited, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import Ref, Scope, Target, audit_actor_count_since, uow
+from abacus.kernel.uow import (
+    Ref,
+    Scope,
+    Target,
+    UnitOfWork,
+    audit_actor_count_since,
+    uow,
+)
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceVersionUnlocked
@@ -145,7 +155,12 @@ def remove_password(content: bytes, password: str) -> tuple[Outcome, bytes]:
 async def unlock_upload(
     ctx: AuthContext, engagement_id: UUID, item_id: UUID, version_id: UUID, password: str
 ) -> UploadView:
-    """A new version of the item: the stored PDF without its password."""
+    """A new version of the item: the stored PDF without its password. Guessing is limited as on
+    the viewer's unlock (security review M1, DEC-425): the same per-person, per-version lock and
+    `evidence_version.unlock_failed` counter, so the two routes share one budget of five failed
+    attempts in fifteen minutes. A client principal may use this route (their own upload); an
+    agent, the system, a support session or a call outside a request may not."""
+    _live_person(ctx, clients=True)
     if not 1 <= len(password) <= MAX_PASSWORD:
         raise WrongPassword("length")
     await authorise_upload(ctx, engagement_id, item_id)
@@ -163,10 +178,15 @@ async def unlock_upload(
         raise NotLocked("not_pdf")
     view = await version_view(ctx.tenant, version_id)
     content = await storage.get(ctx.tenant_id, view.stored)
-    try:
-        outcome, plain = await asyncio.to_thread(run_isolated, remove_password, content, password)
-    except IsolationFailed as exc:
-        raise UnlockFailed("crashed") from exc
+    async with _attempt(ctx, version_id, engagement_id) as attempt:
+        try:
+            outcome, plain = await asyncio.to_thread(
+                run_isolated, remove_password, content, password
+            )
+        except IsolationFailed as exc:
+            raise UnlockFailed("crashed") from exc
+        if outcome == "wrong_password":
+            attempt.failed()  # committed with the attempt, then refused below
     if outcome == "wrong_password":
         raise WrongPassword("incorrect")
     if outcome == "not_locked":
@@ -198,6 +218,7 @@ UNLOCK_WINDOW_SECONDS: Final = 15 * 60
 _LOCK: Final = text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
 
 UnlockStatus = Literal["ready", "wrong_password"]
+ONE_UNLOCK: Final = "evidence_derivations_one_unlock"  # 0173's partial unique index
 
 
 class NotPasswordProtected(DomainConflict):
@@ -291,17 +312,74 @@ class _OverLimit(Exception):
         self.retry_after = retry_after
 
 
-def _human(ctx: AuthContext) -> None:
-    """INV-1: only a person, in a request they are making themself, never a support session or a
-    client principal (INV-4)."""
+def _live_person(ctx: AuthContext, *, clients: bool) -> None:
+    """INV-1: only a person, in a request they are making themself, never a support session; a
+    client principal only where `clients` (the upload route), never on the viewer (INV-4)."""
     if (
         not isinstance(ctx, AuthContext)  # pyright: ignore[reportUnnecessaryIsInstance] -- ADR-005 at runtime too
         or ctx.tenant.actor_kind != "human"
         or ctx.is_support
-        or ctx.client
+        or (ctx.client and not clients)
         or not serving_request()
     ):
         raise Forbidden(UNLOCK, "role")
+
+
+def _human(ctx: AuthContext) -> None:
+    _live_person(ctx, clients=False)
+
+
+@dataclass
+class _Attempt:
+    """One guarded unlock attempt, inside its unit of work."""
+
+    tx: UnitOfWork
+    ctx: AuthContext
+    target: Target
+    scope: Scope
+    failures: int
+
+    def failed(self) -> int:
+        """Record this attempt as failed (the count only); the attempts left after it."""
+        attempt = self.failures + 1
+        self.tx.record(
+            UNLOCK_FAILED, target=self.target, after=Ref(attempt=attempt), scope=self.scope
+        )
+        _log.info("evidence.unlock_failed", evidence_version_id=self.target.id, attempt=attempt)
+        return UNLOCK_LIMIT - attempt
+
+
+@asynccontextmanager
+async def _attempt(
+    ctx: AuthContext, version_id: UUID, engagement_id: UUID
+) -> AsyncGenerator[_Attempt]:
+    """Both unlock routes' guard (DEC-425, security review M1): a per-(person, version) advisory
+    lock held for the attempt, the failed attempts in the window counted, and 429
+    `unlock_rate_limited` (audited `evidence_version.unlock_throttled`) at the limit. The attempt
+    runs inside the unit of work it yields; a failure it records commits with it."""
+    target = Target("evidence_version", version_id)
+    scope = Scope(engagement_id=engagement_id)
+    try:
+        async with uow(ctx.tenant) as tx:
+            await tx.session.execute(
+                _LOCK, {"key": f"unlock:{ctx.tenant_id}:{ctx.user_id}:{version_id}"}
+            )
+            failures, oldest, now = await audit_actor_count_since(
+                tx.session,
+                action=UNLOCK_FAILED,
+                target=("evidence_version", version_id),
+                actor_id=ctx.tenant.actor_id,
+                window_seconds=UNLOCK_WINDOW_SECONDS,
+            )
+            if failures >= UNLOCK_LIMIT:
+                elapsed = (now - oldest).total_seconds() if oldest is not None else 0.0
+                raise _OverLimit(max(1, math.ceil(UNLOCK_WINDOW_SECONDS - elapsed)))
+            yield _Attempt(tx, ctx, target, scope, failures)
+    except _OverLimit as over:
+        await _record_throttle(ctx, target, scope)
+        raise UnlockRateLimited(
+            facts={"limit": UNLOCK_LIMIT, "retry_after": over.retry_after}
+        ) from None
 
 
 async def unlock_version(ctx: AuthContext, version_id: UUID, password: SecretStr) -> UnlockResult:
@@ -320,57 +398,37 @@ async def unlock_version(ctx: AuthContext, version_id: UUID, password: SecretStr
         version.storage_key, version.storage_version_id, version.fingerprint, version.size_bytes
     )
     content = await storage.get(ctx.tenant_id, stored)
-    target = Target("evidence_version", version.id)
-    scope = Scope(engagement_id=engagement.id)
-    try:
-        async with uow(ctx.tenant) as tx:
-            await tx.session.execute(
-                _LOCK, {"key": f"unlock:{ctx.tenant_id}:{ctx.user_id}:{version.id}"}
+    async with _attempt(ctx, version.id, engagement.id) as attempt:
+        tx = attempt.tx
+        if await current_derivation(tx.session, version.id) is not None:
+            raise NotPasswordProtected  # unlocked already: the viewer reads the derivation
+        try:
+            derived = await asyncio.to_thread(run_isolated, derive_unlocked, content, secret)
+        except IsolationFailed as exc:
+            raise UnlockFailed("crashed") from exc
+        if derived.outcome == "wrong_password":
+            return UnlockResult("wrong_password", attempt.failed(), None)
+        if derived.outcome == "not_locked":
+            raise NotPasswordProtected
+        if derived.outcome == "active_content":
+            raise ActiveContent
+        if derived.outcome != "unlocked" or derived.rendered is None:
+            raise UnlockFailed(derived.outcome)
+        derivation_id = await _store(ctx, tx.session, version, derived, derived.rendered)
+        tx.record(
+            UNLOCKED,
+            target=attempt.target,
+            after=Ref(derivation_id=derivation_id),
+            scope=attempt.scope,
+        )
+        tx.emit(
+            EvidenceVersionUnlocked(
+                evidence_version_id=version.id,
+                engagement_id=engagement.id,
+                derivation_id=derivation_id,
+                unlocked_by=ctx.user_id,
             )
-            failures, oldest, now = await audit_actor_count_since(
-                tx.session,
-                action=UNLOCK_FAILED,
-                target=("evidence_version", version.id),
-                actor_id=ctx.tenant.actor_id,
-                window_seconds=UNLOCK_WINDOW_SECONDS,
-            )
-            if failures >= UNLOCK_LIMIT:
-                elapsed = (now - oldest).total_seconds() if oldest is not None else 0.0
-                raise _OverLimit(max(1, math.ceil(UNLOCK_WINDOW_SECONDS - elapsed)))
-            if await current_derivation(tx.session, version.id) is not None:
-                raise NotPasswordProtected  # unlocked already: the viewer reads the derivation
-            try:
-                derived = await asyncio.to_thread(run_isolated, derive_unlocked, content, secret)
-            except IsolationFailed as exc:
-                raise UnlockFailed("crashed") from exc
-            if derived.outcome == "wrong_password":
-                attempt = failures + 1
-                tx.record(UNLOCK_FAILED, target=target, after=Ref(attempt=attempt), scope=scope)
-                _log.info(
-                    "evidence.unlock_failed", evidence_version_id=version.id, attempt=attempt
-                )
-                return UnlockResult("wrong_password", UNLOCK_LIMIT - attempt, None)
-            if derived.outcome == "not_locked":
-                raise NotPasswordProtected
-            if derived.outcome == "active_content":
-                raise ActiveContent
-            if derived.outcome != "unlocked" or derived.rendered is None:
-                raise UnlockFailed(derived.outcome)
-            derivation_id = await _store(ctx, tx.session, version, derived, derived.rendered)
-            tx.record(UNLOCKED, target=target, after=Ref(derivation_id=derivation_id), scope=scope)
-            tx.emit(
-                EvidenceVersionUnlocked(
-                    evidence_version_id=version.id,
-                    engagement_id=engagement.id,
-                    derivation_id=derivation_id,
-                    unlocked_by=ctx.user_id,
-                )
-            )
-    except _OverLimit as over:
-        await _record_throttle(ctx, target, scope)
-        raise UnlockRateLimited(
-            facts={"limit": UNLOCK_LIMIT, "retry_after": over.retry_after}
-        ) from None
+        )
     _log.info(
         "evidence.unlocked",
         evidence_version_id=version.id,
@@ -393,17 +451,27 @@ async def _store(
     tenant_id = ctx.tenant_id
     under = under_key(version)
     derivation_id = uuid.uuid4()
-    await insert_derivation(
-        session,
-        id=derivation_id,
-        tenant_id=tenant_id,
-        evidence_version_id=version.id,
-        kind=DERIVATION_KIND,
-        created_by_user_id=ctx.user_id,
-        extractor_version=WORDS_VERSION,
-        renderer_version=MASKED_RENDERER_VERSION,
-        detector_version=DETECTOR_VERSION,
-    )
+    try:
+        await insert_derivation(
+            session,
+            id=derivation_id,
+            tenant_id=tenant_id,
+            evidence_version_id=version.id,
+            kind=DERIVATION_KIND,
+            created_by_user_id=ctx.user_id,
+            extractor_version=WORDS_VERSION,
+            renderer_version=MASKED_RENDERER_VERSION,
+            detector_version=DETECTOR_VERSION,
+        )
+    except IntegrityError as exc:
+        # 0173 (security review L1): one unlock per version; a concurrent one got there first.
+        orig = exc.orig
+        named = getattr(orig, "constraint_name", None) or getattr(
+            getattr(orig, "__cause__", None), "constraint_name", None
+        )
+        if named == ONE_UNLOCK:
+            raise NotPasswordProtected from None
+        raise
     layer_objects = [
         await storage.put(tenant_id, layer_document(page), under=under) if page.words else None
         for page in derived.pages

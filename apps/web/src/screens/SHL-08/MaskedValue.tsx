@@ -38,8 +38,13 @@ export function useMaskedReveal(versionId: string, allowed: boolean): MaskedReve
   const [announce, setAnnounce] = useState("");
   const [stepUp, setStepUp] = useState(false);
   const timers = useRef<Map<string, number>>(new Map());
+  // Security review L4: an answer that arrives after Hide on its mask, a version change or unmount
+  // is dropped. Each bumps a generation the request captured when it was sent.
+  const viewGen = useRef(0);
+  const maskGen = useRef<Map<string, number>>(new Map());
 
   const hide = useCallback((maskId: string, words: string = COPY.reveal.hidden): void => {
+    maskGen.current.set(maskId, (maskGen.current.get(maskId) ?? 0) + 1);
     const timer = timers.current.get(maskId);
     if (timer !== undefined) window.clearTimeout(timer);
     timers.current.delete(maskId);
@@ -55,6 +60,7 @@ export function useMaskedReveal(versionId: string, allowed: boolean): MaskedReve
   useEffect(() => {
     const live = timers.current;
     return () => {
+      viewGen.current += 1;
       for (const t of live.values()) window.clearTimeout(t);
       live.clear();
       setRevealed({});
@@ -62,12 +68,17 @@ export function useMaskedReveal(versionId: string, allowed: boolean): MaskedReve
   }, [versionId]);
 
   const onReveal = (maskId: string): void => {
+    const sentView = viewGen.current;
+    const sentMask = maskGen.current.get(maskId) ?? 0;
+    const stale = (): boolean =>
+      viewGen.current !== sentView || (maskGen.current.get(maskId) ?? 0) !== sentMask;
     void revealPii({
       path: { version_id: versionId },
       body: { region_id: maskId },
       throwOnError: true,
     }).then(
       ({ data }) => {
+        if (stale()) return; // hidden, moved on or closed while the answer was on its way
         setRevealed((was) => ({
           ...was,
           [maskId]: {
@@ -84,7 +95,7 @@ export function useMaskedReveal(versionId: string, allowed: boolean): MaskedReve
         );
       },
       (error: unknown) => {
-        if (needsMfa(error)) setStepUp(true);
+        if (!stale() && needsMfa(error)) setStepUp(true);
       },
     );
   };
