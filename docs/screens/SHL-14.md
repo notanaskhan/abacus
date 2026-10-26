@@ -154,10 +154,12 @@ The Comments tab lists the request's comments (SPEC-032 route) with "No comments
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26) | built; axe in `e2e/screens/SHL-14.spec.ts`; report-only until A-01's AUD-03 host is stable |
-| d | C | not run (P-06-T26) | built (P-06-T24); in `e2e/screens/SHL-14.spec.ts` with axe; Playwright not run locally (chromium 1243 not cached) |
+| a, b, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built; axe in `e2e/screens/SHL-14.spec.ts` (not run by P-06-T26); report-only until A-01's AUD-03 host is stable |
+| d | C | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built (P-06-T24); in `e2e/screens/SHL-14.spec.ts` with axe; Playwright not run locally (chromium 1243 not cached) |
 | c | — | — | deferred to A-03; recorded in `routes/manifest/shl.ts`, not missing |
-| host | D | — | drawer 480, pane header 46 with a 14.5/500 title, rows 34, pills 21, radius 14 |
+| host | D | not run | drawer 480, pane header 46 with a 14.5/500 title, rows 34, pills 21, radius 14; no `e2e/visual/tier-d.spec.ts` row for the O2 drawer yet |
+
+Keyboard: `src/screens/SHL-14/SHL-14.keyboard.test.tsx` (P-06-T26; vitest, passing). Report: `docs/quality/parity-P-06.md`.
 
 ## Open gaps
 - Clocks: the README renders a–e at "Thu Sep 24, 9:41 AM"; revision.md renders states 1–5 at Mon Sep 14, 2026, 9:41 AM CT. Revision wins (DEC-15 precedence).

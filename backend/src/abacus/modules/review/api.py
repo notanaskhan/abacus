@@ -41,6 +41,16 @@ from abacus.modules.review.service import (
     stale_of,
     states_of,
 )
+from abacus.modules.review.sign_offs import (
+    STATEMENTS,
+    ContentChanged,
+    Incomplete,
+    IndependencePending,
+    LevelNotPermitted,
+    OpenReviewNotes,
+    Segregation,
+    UncitedChange,
+)
 from abacus.modules.review.slots import (
     REQUIRED_LEVELS,
     DecisionKind,
@@ -64,6 +74,8 @@ from abacus.modules.review.slots import (
     reviewables_of,
     run_fix,
 )
+from abacus.modules.review.stale import SUBSCRIPTIONS as STALE_SUBSCRIPTIONS
+from abacus.modules.review.stale import detect_stale
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 # C3 stubs behind `review.grammar_api` (P-04-T07, T08, T11).
@@ -81,8 +93,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
 
-# P-04-T16 (C13): the human-gate projector, on the events its sources may change.
-SUBSCRIPTIONS = dict(GATE_SUBSCRIPTIONS)
+# P-04-T16 (C13): the human-gate projector, on the events its sources may change; P-04-T19:
+# the stale sign-off detector, on the owners' change events (no event is in both).
+SUBSCRIPTIONS = dict(GATE_SUBSCRIPTIONS) | dict(STALE_SUBSCRIPTIONS)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
@@ -92,29 +105,38 @@ __all__ = [
     "LEVELS",
     "REQUIRED_LEVELS",
     "ROUTERS",
+    "STATEMENTS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "AlreadySigned",
+    "ContentChanged",
     "DecisionKind",
     "FieldOwner",
     "GateSource",
+    "Incomplete",
+    "IndependencePending",
     "Json",
+    "LevelNotPermitted",
     "LevelState",
     "NotCanonical",
     "NotPrepared",
     "NotesOpen",
     "OpenGate",
+    "OpenReviewNotes",
     "PreparerCannotReview",
     "Reviewable",
     "ReviewableFacts",
     "ReviewableFactsProvider",
     "ReviewableProvider",
+    "Segregation",
     "SignOffInvalid",
     "StaleSignOff",
+    "UncitedChange",
     "UnregisteredKind",
     "canonical_json",
     "content_hash",
     "decision_kind",
+    "detect_stale",
     "field_owner",
     "gate_met",
     "notes_for",

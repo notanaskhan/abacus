@@ -69,8 +69,17 @@ async def stale_sign_offs(
     return (await session.execute(query)).scalars().all()
 
 
-async def insert_sign_off(session: AsyncSession, **values: object) -> None:
-    await session.execute(insert(SignOff).values(**values))
+async def lock_target(session: AsyncSession, target_type: str, target_id: UUID) -> None:
+    """P-04-T18 (security review M1): serialise sign-offs on one target until commit. Advisory,
+    so it needs no privilege on the owner's tables."""
+    key = f"sign_off:{target_type}:{target_id}"
+    await session.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(key, 0))))
+
+
+async def insert_sign_off(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(insert(SignOff).values(**values).returning(SignOff.id))
+    ).scalar_one()
 
 
 async def notes_of(

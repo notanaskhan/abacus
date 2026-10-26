@@ -11822,7 +11822,7 @@ export const signOffLadderQueryKey = (options: Options<SignOffLadderData>) => cr
 /**
  * Sign Off Ladder Route
  *
- * SHL-12: the ladder per level, with computed staleness.
+ * SHL-12: the ladder per level, with computed staleness (P-04-T18).
  */
 export const signOffLadderOptions = (options: Options<SignOffLadderData>) => queryOptions<SignOffLadderResponse, SignOffLadderError, SignOffLadderResponse, ReturnType<typeof signOffLadderQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

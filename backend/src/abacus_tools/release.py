@@ -68,6 +68,8 @@ OPS_COMMANDS: Final = frozenset(
         "abacus_tools.schedules show",
         "abacus_tools.schedules pause",
         "abacus_tools.schedules unpause",
+        # P-03-T15 (#419, ED-088): re-render one tenant's pre-masking uploads after a deploy.
+        "abacus_tools.trust_layer_backfill",
         # Not `abacus_tools.drill verify`: it swaps the production database host, so it runs only
         # from drill.yml with the host of the restore it made (security review, S8 wave B).
     }
@@ -305,7 +307,8 @@ class OpsRequest:
 
     def argv(self) -> list[str]:
         module, _, sub = self.command.partition(" ")
-        return ["python", "-m", module, sub, *self.args]
+        # A command with no subcommand (`abacus_tools.trust_layer_backfill`) passes no empty word.
+        return ["python", "-m", module, *([sub] if sub else []), *self.args]
 
 
 def ops_request(raw: Mapping[str, object]) -> OpsRequest:

@@ -46,10 +46,10 @@ The 55 tasks that merged without an independent acceptance-test suite, and how e
 | 065 | red | Content matching, part 2: the matcher agent | SPEC-033 | S9 | T033 | back-filled | `backfill/test_q03t033_matcher.py` (TASK-1284); fake model on a stubbed real route; AC-7, AC-8 eval-only |
 | 066 | red | Content matching, part 3: Suggest with AI | SPEC-033 | S9 | T033 | back-filled | `backfill/test_q03t033_matcher.py` (TASK-1284); `inbox_match.read` independence follows ADR-164 |
 | 064 | amber | Content matching, part 1: code suggestions | SPEC-033 | S9 | T033 | back-filled | `backfill/test_q03t033_matcher.py` (TASK-1284); AC-9 stays with the Inbox panel's vitest |
-| 062 | red | Comments, part 1 (backend) | SPEC-032 | S10 | T039 | scheduled | |
-| 072 | red | Drafted guidance, part 1 | SPEC-035 | S10 | T039 | scheduled | |
-| 073 | red | Drafted guidance, part 2 | SPEC-035 | S10 | T040 | scheduled | |
-| 074 | red | Drafted guidance, part 3 | SPEC-035 | S10 | T040 | scheduled | |
+| 062 | red | Comments, part 1 (backend) | SPEC-032 | S10 | T039 | back-filled | `backfill/test_q03t039_comments_and_drafter.py` (TASK-1308); AC-10 stays with TASK-063's vitest |
+| 072 | red | Drafted guidance, part 1 | SPEC-035 | S10 | T039 | back-filled | `backfill/test_q03t039_comments_and_drafter.py` (TASK-1308); AC-1, AC-7 need a model and stay with `evals/guidance_drafting` |
+| 073 | red | Drafted guidance, part 2 | SPEC-035 | S10 | T040 | back-filled | `backfill/test_q03t040_drafted_guidance.py` (TASK-1309); ADR-111 on a real firm asserted with the setting forced on underneath |
+| 074 | red | Drafted guidance, part 3 | SPEC-035 | S10 | T040 | back-filled | `backfill/test_q03t040_drafted_guidance.py` (TASK-1309); template drafting refusals |
 | 033 | amber | Request list import from Excel | SPEC-018 | S11 | T047 | scheduled | |
 | 037 | amber | Request item detail | SPEC-021 | S11 | T047 | scheduled | |
 | 039 | amber | Uploads on the client's behalf, inbox, matching | SPEC-023 | S11 | T047 | scheduled | |

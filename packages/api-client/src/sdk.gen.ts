@@ -7229,7 +7229,7 @@ export const screeningFeedback = <ThrowOnError extends boolean = false>(options:
 /**
  * Sign Off Ladder Route
  *
- * SHL-12: the ladder per level, with computed staleness.
+ * SHL-12: the ladder per level, with computed staleness (P-04-T18).
  */
 export const signOffLadder = <ThrowOnError extends boolean = false>(options: Options<SignOffLadderData, ThrowOnError>): RequestResult<SignOffLadderResponses, SignOffLadderErrors, ThrowOnError> => (options.client ?? client).get<SignOffLadderResponses, SignOffLadderErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

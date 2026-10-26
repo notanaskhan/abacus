@@ -68,6 +68,14 @@ import {
   type Aud02State,
   scenarios as aud02Scenarios,
 } from "./AUD-02/scenarios";
+import { SourceDocumentsPage } from "./AUD-03";
+import {
+  AUDIT_ID as AUD03_AUDIT_ID,
+  OPENS as AUD03_OPENS,
+  STATES as AUD03_STATES,
+  type Aud03State,
+  scenarios as aud03Scenarios,
+} from "./AUD-03/scenarios";
 import { AUD06Frame } from "./AUD-06/artboard";
 import {
   STATES as AUD06_STATES,
@@ -609,6 +617,50 @@ function Aud02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   }, [state, params.as]);
   return ready === state ? <Aud02Frame key={state} state={state} /> : null;
 }
+
+function Aud03Frame({ state }: { state: Aud03State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <SourceDocumentsPage
+          auditId={AUD03_AUDIT_ID}
+          initial={AUD03_OPENS[state]}
+          onBack={() => undefined}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+// AUD-03 a–g (A-01-T15): each artboard on its own scenario, as the routed screen draws it.
+function Aud03Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud03State = AUD03_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud03Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Aud03Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-03", {
+  title: "Source documents · PBC with viewer",
+  Component: Aud03Artboard,
+});
 
 // AUD-06's fixture frames (A-02-T05): persona, clock and figures per artboard until A-02-T09 and
 // A-02-T14 draw the screen on the same scenarios.

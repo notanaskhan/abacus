@@ -138,9 +138,15 @@ def test_c13_only_firm_people_read_what_waits_on_them() -> None:
         assert decisions.get(principal, "deny") == "deny", principal
 
 
+# P-04-T19 (DEC-402): review's other consumer, the stale sign-off detector, on the owners'
+# change events. No event is in both sets, so every C13 event still reaches the projector.
+STALE_EVENTS: Final = {"trial_balance.version_created", "workpaper.content_changed"}
+
+
 def test_c13_the_event_set_is_fixed() -> None:
     assert set(C13_EVENTS) == EVENTS
-    assert set(review_api.SUBSCRIPTIONS) == EVENTS
+    assert set(review_api.SUBSCRIPTIONS) == EVENTS | STALE_EVENTS
+    assert not EVENTS & STALE_EVENTS
 
 
 def test_c13_the_worker_hands_every_c13_event_to_the_projector() -> None:

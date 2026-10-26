@@ -123391,7 +123391,7 @@
     },
     "/v1/sign-offs": {
       "get": {
-        "description": "SHL-12: the ladder per level, with computed staleness.",
+        "description": "SHL-12: the ladder per level, with computed staleness (P-04-T18).",
         "operationId": "sign_off_ladder",
         "parameters": [
           {
