@@ -87,6 +87,7 @@ from abacus.modules.identity.repository import (
     engagement_roles_in_firm,
     ethical_walls,
     firm_policy,
+    firm_policy_overrides,
     firm_setting_values,
     member_facts,
     memberships,
@@ -404,8 +405,8 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
         # SPEC-014: a firm-level read counts the person's engagement roles on the firm's active
         # engagements; skipped when the firm role already allows it (TASK-029 D2).
         roles |= await _engagement_roles_in_firm(ctx)
-        if await _line_reader(ctx, rule, None):
-            roles.add(SERVICE_LINE_READER)  # G-01-T12: rows are then `visible()`'s
+        # The service-line reader never counts at firm level (DEC-383, ADR-183 condition 2):
+        # not every firm-level read filters its rows with `visible()`.
     return roles
 
 
@@ -438,9 +439,15 @@ def _cell(rule: Rule, role: str) -> Decision | None:
     return rule.decisions.get(role)
 
 
+# DEC-383 (ADR-183 condition 3): set while an agent's action is checked against its initiator,
+# so an agent run never inherits the initiator's service line.
+_delegating: ContextVar[bool] = ContextVar("abacus_authz_delegating", default=False)
+
+
 def _may_read_lines(ctx: AuthContext, rule: Rule) -> bool:
     return (
         SERVICE_LINE_REACH
+        and not _delegating.get()
         and _line_reader_cell(rule) is not None
         and not ctx.is_support
         and not ctx.client
@@ -448,9 +455,9 @@ def _may_read_lines(ctx: AuthContext, rule: Rule) -> bool:
     )
 
 
-async def _line_reader(ctx: AuthContext, rule: Rule, engagement_id: UUID | None) -> bool:
-    """Whether the person reads `rule` on the engagement (or, at firm level, on some engagement)
-    through an open service line. Every unknown fact refuses."""
+async def _line_reader(ctx: AuthContext, rule: Rule, engagement_id: UUID) -> bool:
+    """Whether the person, holding no role on the engagement, reads `rule` on it through an
+    open service line. Every unknown fact refuses."""
     if not _may_read_lines(ctx, rule):
         return False
     policy = await _firm_policy(ctx)
@@ -462,8 +469,6 @@ async def _line_reader(ctx: AuthContext, rule: Rule, engagement_id: UUID | None)
     open_lines = policy.line_reach & member.service_lines
     if not open_lines:
         return False
-    if engagement_id is None:
-        return True
     line_of, attest_of = LOOKUPS.service_line, LOOKUPS.attest
     if line_of is None or attest_of is None:
         return False
@@ -570,12 +575,15 @@ async def authorise(
     if isinstance(ctx, AgentContext):
         reach = AGENT_ONLY_REACH if resource.engagement_id is not None else AGENT_FIRM_REACH
         delegated = action if _human_held(rule) else reach
+        token = _delegating.set(True)
         try:
             await authorise(ctx.initiator, delegated, resource, reason=reason)
         except Forbidden as denied:
             # An attribute the initiator fails (an archived engagement) is the agent's too.
             layer: Layer = "attribute" if denied.layer == "attribute" else "delegation"
             raise _deny(ctx, action, layer) from None
+        finally:
+            _delegating.reset(token)
     # 4. Attributes.
     if resource.archived and not rule.reads:
         raise _deny(ctx, action, "attribute")
@@ -998,9 +1006,12 @@ def _visible_by_role(
             return false()
         if ctx.engagement_id is None:
             return false()  # a firm-level agent lists no engagement's rows
-        return and_(
-            engagement_id == ctx.engagement_id, visible(ctx.initiator, action, engagement_id)
-        )
+        token = _delegating.set(True)  # the initiator's line never reaches the agent (DEC-383)
+        try:
+            initiator = visible(ctx.initiator, action, engagement_id)
+        finally:
+            _delegating.reset(token)
+        return and_(engagement_id == ctx.engagement_id, initiator)
     if isinstance(ctx, SystemContext):
         if rule.decisions.get("system") != "allow":
             return false()
@@ -1015,7 +1026,7 @@ def _visible_by_role(
     client = [role for role in allowed if role in CLIENT_ROLES]
     # G-01-T12 (DEC-380): the service-line reach, on attest-free engagements only, so G2 never
     # applies to it.
-    line = _line_reach(ctx, rule, engagement_id)
+    line = _line_reach(ctx, action, rule, engagement_id)
     if rule.independence and not ctx.is_support:
         # G2 v2 (ADR-164): a staff engagement role reaches a marked read unless the person isn't
         # cleared and the firm's `g2_blocks_view` applies to the row's attest-client engagement.
@@ -1035,10 +1046,12 @@ def _visible_by_role(
 
 
 def _line_reach(
-    ctx: AuthContext, rule: Rule, engagement_id: EngagementColumn
+    ctx: AuthContext, action: str, rule: Rule, engagement_id: EngagementColumn
 ) -> ColumnElement[bool] | None:
     """`_line_reader` in SQL: rows whose engagement's line the firm opened and the person holds,
-    on a client known not to be an attest client; None when the reach can't apply."""
+    on a client known not to be an attest client, where the person holds no team role (a team
+    role decides, ADR-183 rule 6; DEC-383) and the firm has not narrowed `staff`'s cell for this
+    action (`firm_policy_overrides`, as `authorise` applies it); None when it can't apply."""
     line_of, attest_of = LOOKUPS.service_line_column, LOOKUPS.attest_column
     if not _may_read_lines(ctx, rule) or line_of is None or attest_of is None:
         return None
@@ -1063,8 +1076,27 @@ def _line_reach(
         .correlate_except(memberships)
         .exists()
     )
+    on_team = select(engagement_members.c.engagement_id).where(
+        engagement_members.c.tenant_id == ctx.tenant_id,
+        engagement_members.c.user_id == ctx.user_id,
+    )
+    narrowed = (
+        select(firm_policy_overrides.c.action)
+        .where(
+            firm_policy_overrides.c.tenant_id == ctx.tenant_id,
+            firm_policy_overrides.c.action == action,
+            firm_policy_overrides.c.role == _LINE_READER_CELL,
+        )
+        .exists()
+    )
     # An unknown client or line compares as NULL, which admits nothing.
-    return and_(line.in_(opened.scalar_subquery()), held, attest_of(engagement_id).is_(False))
+    return and_(
+        line.in_(opened.scalar_subquery()),
+        held,
+        attest_of(engagement_id).is_(False),
+        ~engagement_id.in_(on_team),
+        ~narrowed,
+    )
 
 
 def _member_of(

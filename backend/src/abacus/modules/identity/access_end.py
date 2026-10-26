@@ -19,8 +19,15 @@ For each firm:
   one notice per firm and date (`access_end_notices`).
 
 Firms are listed through the identity role, which already reads `firms.tenant_id`; everything
-else runs inside each firm's own session (row-level security). A failing firm is logged and the
-others still run.
+else runs inside each firm's own session (row-level security). A failing firm is logged at error
+(`access_end.firm_failed`) and counted (`abacus.access_end.firm_failed`), and the others still run.
+
+The job is the state change, the notices and the audit; it is not what keeps a member out. Access
+ends at request time too (`access_has_ended`, read by `routing.current_context`; DEC-383): a
+staff member whose end date is before the firm's business date is refused whether or not a sweep
+ran, so a stopped Schedule can't extend access. Each pass is counted (`abacus.access_end.sweep`,
+by outcome) and, when neither of the two runs before it succeeded (no successful sweep in two
+hours), logged at error as `access_end.stale` and counted (`abacus.access_end.stale`).
 """
 
 from __future__ import annotations
@@ -37,7 +44,9 @@ from temporalio import activity
 
 from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import schedule_results
 from abacus.kernel.logging import get_logger
+from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Target, audit_of_targets, uow
 from abacus.modules.identity import people_repository as repo
 from abacus.modules.identity.events import (
@@ -52,11 +61,21 @@ from abacus.modules.identity.repository import (
     memberships_elsewhere,
     time_zone_of,
 )
+from abacus.modules.identity.workflows import ACCESS_END_ID
 
 NOTICE_DAYS: Final = 7
 _ACTOR: Final = "identity:access_end"
 _ACCESS_ENDED: Final = 2  # `people._REASON_INDEX["access_ended"]`
 _log = get_logger(__name__)
+_sweeps = meter(__name__).create_counter(
+    "abacus.access_end.sweep", description="Access-end passes, by outcome (ok, partial, failed)"
+)
+_firm_failures = meter(__name__).create_counter(
+    "abacus.access_end.firm_failed", description="Firms an access-end pass could not sweep"
+)
+_stale = meter(__name__).create_counter(
+    "abacus.access_end.stale", description="Passes after two runs with no successful sweep"
+)
 
 
 @dataclass(frozen=True)
@@ -64,6 +83,7 @@ class Sweep:
     firms: int
     ended: int
     notices: int
+    failed_firms: int = 0
 
 
 class _Skip(Exception):
@@ -101,7 +121,9 @@ async def _set_by(tenant: TenantContext, user_id: UUID) -> UUID | None:
             try:
                 return UUID(event.actor_id)
             except ValueError:
-                return None
+                break
+    # The date came with the invitation or the seed: the system ends access on its own behalf.
+    _log.info("access_end.setter_unknown", tenant_id=tenant.tenant_id, user_id=user_id)
     return None
 
 
@@ -194,19 +216,59 @@ async def sweep_firm(tenant_id: UUID) -> tuple[int, int]:
 async def sweep_access_ends() -> Sweep:
     """One pass over every firm (AC4.5); idempotent."""
     firms = await firm_tenant_ids()
-    ended = notices = 0
+    ended = notices = failed = 0
     for tenant_id in firms:
         try:
             firm_ended, firm_notices = await sweep_firm(tenant_id)
         except Exception as exc:  # one firm's failure never stops the others
-            _log.warning("access_end.firm_failed", tenant_id=tenant_id, error=type(exc).__name__)
+            failed += 1
+            _firm_failures.add(1)
+            _log.error("access_end.firm_failed", tenant_id=tenant_id, error=type(exc).__name__)
             continue
         ended += firm_ended
         notices += firm_notices
-    _log.info("access_end.swept", firms=len(firms), ended=ended, notices=notices)
-    return Sweep(len(firms), ended, notices)
+    _log.info(
+        "access_end.swept", firms=len(firms), ended=ended, notices=notices, failed_firms=failed
+    )
+    return Sweep(len(firms), ended, notices, failed)
+
+
+def stale(previous_succeeded: list[bool]) -> bool:
+    """No successful sweep in two hours: the two runs before this one both failed."""
+    return len(previous_succeeded) >= 2 and not any(previous_succeeded[:2])
 
 
 @activity.defn(name="identity.sweep_access_ends")
 async def sweep_access_ends_activity() -> int:
-    return (await sweep_access_ends()).ended
+    try:
+        previous = await schedule_results(
+            ACCESS_END_ID, exclude_run_id=activity.info().workflow_run_id, limit=2
+        )
+        if stale([run.completed for run in previous]):
+            _stale.add(1)
+            _log.error("access_end.stale", schedule=ACCESS_END_ID)
+    except Exception as exc:  # the staleness read never stops the sweep
+        _log.warning("access_end.stale_unknown", error=type(exc).__name__)
+    try:
+        swept = await sweep_access_ends()
+    except Exception:
+        _sweeps.add(1, {"outcome": "failed"})
+        raise
+    _sweeps.add(1, {"outcome": "partial" if swept.failed_firms else "ok"})
+    return swept.ended
+
+
+async def access_has_ended(tenant: TenantContext, user_id: UUID) -> bool:
+    """Whether the person's staff membership here is past its access end in the firm's time
+    zone (`kernel.clock`, with the firm's demo clock): the request-time check (DEC-383)."""
+    async with tenant_session(tenant) as session:
+        ends = await session.scalar(
+            text(
+                "SELECT access_ends_on FROM memberships WHERE user_id = :u AND kind = 'staff' "
+                "AND status = 'active'"
+            ),
+            {"u": user_id},
+        )
+    if ends is None:
+        return False
+    return cast(date, ends) < await clock.today(tenant, await _zone(tenant))

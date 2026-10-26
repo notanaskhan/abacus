@@ -186,6 +186,16 @@ service_line_policies = Table(
     Column("enabled", Boolean, nullable=False),
     Column("content_visible_to", String, nullable=False),
 )
+# A firm's stricter-only overrides (0081): `visible()` keeps the service-line reach out of an
+# action whose `staff` cell a firm narrowed (DEC-383).
+firm_policy_overrides = Table(
+    "firm_policy_overrides",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("action", String, nullable=False),
+    Column("role", String, nullable=False),
+    Column("decision", String, nullable=False),
+)
 # The person's own membership facts `visible()` reads for the service-line reach (0004, 0142).
 memberships = Table(
     "memberships",

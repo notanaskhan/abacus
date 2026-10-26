@@ -10,18 +10,27 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import httpx
 import pytest
 
+from abacus.api import create_app
 from abacus.kernel import clock
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.modules.identity import access_end, people
-from abacus.modules.identity.api import SCHEDULES, AccessEndSweepWorkflow, AuthContext
+from abacus.modules.identity.api import (
+    SCHEDULES,
+    AccessEndSweepWorkflow,
+    AuthContext,
+    configure_verifier,
+    reset_verifier,
+)
 from abacus.modules.notifications.api import SUBSCRIPTIONS as NOTIFY
+from abacus_tools.fakes.identity import FakeIdentityProvider
 
 from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
@@ -218,3 +227,74 @@ def test_the_job_is_an_hourly_background_schedule() -> None:
         timedelta(hours=1),
         AccessEndSweepWorkflow,
     )
+
+
+# --- security review M3 (DEC-383): access ends at request time, whatever the job did --
+
+
+@pytest.fixture
+def idp() -> Iterator[FakeIdentityProvider]:
+    provider = FakeIdentityProvider()
+    configure_verifier(provider.verifier())
+    yield provider
+    reset_verifier()
+
+
+@pytest.fixture
+async def http(idp: FakeIdentityProvider) -> AsyncIterator[httpx.AsyncClient]:
+    transport = httpx.ASGITransport(app=create_app(), raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+
+async def _get(firm: Firm, http: httpx.AsyncClient, idp: FakeIdentityProvider, who: Person) -> int:
+    subject = str(
+        await firm.seed.value("SELECT idp_subject FROM users WHERE id = $1", who.user_id)
+    )
+    response = await http.get(
+        "/v1/engagements",
+        headers={
+            "Authorization": f"Bearer {idp.token(subject, mfa=True)}",
+            "X-Abacus-Tenant": str(firm.tenant),
+        },
+    )
+    return response.status_code
+
+
+async def test_m3_a_past_access_end_refuses_requests_even_if_the_job_never_ran(
+    firm: Firm, http: httpx.AsyncClient, idp: FakeIdentityProvider
+) -> None:
+    _, seasonal, kevin = await _season(firm)
+    lena = seasonal[0]
+    with clock.frozen(_at(OCT_31, 23, 50)):
+        assert await _get(firm, http, idp, lena) == 200  # the last day of access, in Chicago
+    with clock.frozen(_at(date(2026, 11, 1), 0, 20)):
+        assert await _get(firm, http, idp, lena) == 403  # no sweep has run
+        assert await _get(firm, http, idp, kevin) == 200  # no end date
+    assert (await firm.status(lena))[0] == "active"  # the state change stays the job's
+
+
+async def test_m3_a_failing_firm_is_logged_and_counted_and_the_others_still_run(
+    firm: Firm, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    await _season(firm)
+    real = access_end.sweep_firm
+
+    async def flaky(tenant_id: uuid.UUID) -> tuple[int, int]:
+        if tenant_id == firm.tenant:
+            raise RuntimeError("boom")
+        return await real(tenant_id)
+
+    monkeypatch.setattr(access_end, "sweep_firm", flaky)
+    with clock.frozen(_at(date(2026, 11, 1), 0, 20)):
+        swept = await access_end.sweep_access_ends()
+    assert swept.failed_firms == 1
+    assert (await firm.status(await firm.person(level="seasonal")))[0] == "active"
+
+
+def test_m3_no_successful_sweep_in_two_runs_is_stale() -> None:
+    assert access_end.stale([False, False])
+    assert not access_end.stale([True, False])
+    assert not access_end.stale([False, True])
+    assert not access_end.stale([False])  # one failed run is not two hours
+    assert not access_end.stale([])

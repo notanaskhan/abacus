@@ -13433,7 +13433,7 @@ export type PauseIn = {
  * ADM-02d's drawer.
  */
 export type PersonOut = {
-    annual_independence?: AnnualIndependenceStatus;
+    annual_independence?: AnnualIndependenceStatus | null;
     /**
      * Assignment Count
      */

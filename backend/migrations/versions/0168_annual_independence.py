@@ -10,6 +10,14 @@
 - `access_end_notices` (new, identity, insert-only): one row per firm and access-end date once
   firm admins were told, seven days ahead, that seasonal access ends (the job's idempotence).
 
+- Actors (DEC-383): the trigger `independence_own_row` refuses a confirmation whose `user_id`, or
+  a statement whose `created_by`, isn't the transaction's `app.actor_id` (one answers only for
+  oneself, publishes only as oneself).
+- `abacus_human_only_actions()`: 0159's 33 entries plus `independence.annual_confirmed`,
+  `independence.annual_declined`, `independence.statement_published` and
+  `service_line_policy.updated` (37; ED-011 precedent). The downgrade restores 0159's list. At
+  merge, a branch that also redefines the function must carry the union.
+
 The hourly access-end job lists firm ids through the identity role (which already reads
 `firms.tenant_id`) and works inside each firm's own session, so no cross-firm function is added.
 
@@ -29,6 +37,82 @@ branch_labels = None
 depends_on = None
 
 _TABLES = ("independence_statements", "independence_annual_confirmations", "access_end_notices")
+
+# The register as 0159 left it (33 entries).
+_HUMAN_ONLY_0159 = sorted(
+    [
+        "assurance.phase_recorded",
+        "contact.unlocked",
+        "engagement.acceptance_recorded",
+        "engagement.accepted",
+        "engagement.letter_recorded",
+        "eqr.eligibility_approved",
+        "evidence.accepted",
+        "firm.ai_client_data_opted_in",
+        "firm_export.approved",
+        "firm_export.declined",
+        "follow_up.sent",
+        "fulfilment.voided",
+        "going_concern.decided",
+        "guidance_draft.approved",
+        "independence.confirmed",
+        "independence.declined",
+        "legal_hold.lifted",
+        "legal_hold.placed",
+        "materiality.decided",
+        "portal_mfa.reset",
+        "procedure.concluded",
+        "report.approved",
+        "report.released",
+        "retention_policy.updated",
+        "review.decided",
+        "review.released",
+        "review_decision.created",
+        "review_decision.undone",
+        "risk.approved",
+        "sample.approved",
+        "sign_off.recorded",
+        "statement.approved",
+        "team.approved",
+    ]
+)
+_HUMAN_ONLY = sorted(
+    [
+        *_HUMAN_ONLY_0159,
+        "independence.annual_confirmed",
+        "independence.annual_declined",
+        "independence.statement_published",
+        "service_line_policy.updated",
+    ]
+)
+_OWN_ROW = """
+    CREATE FUNCTION independence_own_row() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    DECLARE v_person uuid;
+    BEGIN
+        IF TG_TABLE_NAME = 'independence_annual_confirmations' THEN
+            v_person := NEW.user_id;
+        ELSE
+            v_person := NEW.created_by;
+        END IF;
+        IF v_person::text IS DISTINCT FROM current_setting('app.actor_id', true) THEN
+            RAISE EXCEPTION 'one answers and publishes only as oneself'
+                USING ERRCODE = 'insufficient_privilege';
+        END IF;
+        RETURN NEW;
+    END $$
+"""
+
+
+def _human_only(actions: list[str]) -> None:
+    listed = ", ".join(f"'{a}'" for a in actions)
+    op.execute(
+        "CREATE OR REPLACE FUNCTION abacus_human_only_actions() RETURNS text[] "
+        "LANGUAGE sql IMMUTABLE PARALLEL SAFE "
+        f"AS $$ SELECT ARRAY[{listed}]::text[] $$"
+    )
 
 
 def _insert_only(table: str) -> None:
@@ -115,8 +199,18 @@ def upgrade() -> None:
     _insert_only("access_end_notices")
     insert_columns(op, "access_end_notices", ("tenant_id", "access_ends_on", "members"))
 
+    op.execute(_OWN_ROW)
+    for table in ("independence_statements", "independence_annual_confirmations"):
+        op.execute(
+            f"CREATE TRIGGER {table}_own_row BEFORE INSERT ON {table} "
+            "FOR EACH ROW EXECUTE FUNCTION independence_own_row()"
+        )
+    _human_only(_HUMAN_ONLY)
+
 
 def downgrade() -> None:
+    _human_only(_HUMAN_ONLY_0159)
     for table in reversed(_TABLES):
         op.execute(f"DROP TABLE {table}")
         op.execute(f"DROP FUNCTION {table}_immutable()")
+    op.execute("DROP FUNCTION independence_own_row()")

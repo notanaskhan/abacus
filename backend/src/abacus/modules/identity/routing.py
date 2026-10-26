@@ -30,6 +30,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.controls import control_active, ensure_writable
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
+from abacus.modules.identity.access_end import access_has_ended
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.context import AuthContext, TenantNotHeld
@@ -210,13 +211,19 @@ async def current_context(
         return portal
     signed_in = await current_signed_in(authorization)
     try:
-        return choose_tenant(signed_in, x_abacus_tenant)
+        ctx = choose_tenant(signed_in, x_abacus_tenant)
     except TenantNotHeld:
         # P-01 AC 2.1.4 (DEC-304): the app's own 404, the answer for any record that isn't
         # there, so a firm she is not in reads as one that never existed.
         raise NotFound("tenant") from None
     except NoActiveTenant:
         raise HTTPException(403, "forbidden") from None
+    # G-01-T13 (DEC-383): seasonal access ends on the firm's date at request time, whether or
+    # not the hourly sweep has deactivated the membership yet.
+    if not ctx.client and await access_has_ended(ctx.tenant, ctx.user_id):
+        _log.info("access_end.refused", tenant_id=ctx.tenant_id, user_id=ctx.user_id)
+        raise HTTPException(403, "forbidden")
+    return ctx
 
 
 async def _support_context(

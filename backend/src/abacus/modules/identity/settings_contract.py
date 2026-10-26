@@ -46,6 +46,7 @@ from abacus.modules.identity import (
     settings_registry,
     walls,
 )
+from abacus.modules.identity.authz import Resource, allowed_actions
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.routing import OWN, AbacusRouter, current_context, current_member
 
@@ -223,9 +224,8 @@ class PersonOut(BaseModel):
     ] = []  # the person's own walls (ADM-02d)
     assignment_count: Annotated[int, classified("internal")] = 0
     recent_sign_ins: Annotated[list[SignInOut], classified("confidential")] = []
-    annual_independence: Annotated[AnnualStatus, classified("internal")] = (
-        AnnualIndependenceStatus.NOT_YET
-    )
+    # Null unless the reader holds `independence.annual_read` (DEC-383).
+    annual_independence: Annotated[AnnualStatus | None, classified("internal")] = None
     version: Annotated[int, classified("internal")]
 
 
@@ -526,8 +526,13 @@ def tallies_out(t: people.Tallies) -> StaffTalliesOut:
 
 async def _person_out(ctx: AuthContext, user_id: UUID) -> PersonOut:
     found = await people.staff_user(ctx, user_id)
-    year = (await annual_independence.business_today(ctx.tenant)).year
-    annual = await annual_independence.status_of(ctx.tenant, user_id, year)
+    # Only for those who may read the year's list (DEC-383): `firm.read_people` alone isn't it.
+    annual: str | None = None
+    if "independence.annual_read" in await allowed_actions(
+        ctx, Resource.firm(ctx.tenant_id), ("independence.annual_read",)
+    ):
+        year = (await annual_independence.business_today(ctx.tenant)).year
+        annual = await annual_independence.status_of(ctx.tenant, user_id, year)
     return PersonOut(
         row=row_out(found.row),
         firm_role=found.firm_role,
@@ -537,7 +542,7 @@ async def _person_out(ctx: AuthContext, user_id: UUID) -> PersonOut:
         recent_sign_ins=[
             SignInOut(at=s.at, method=s.method, mfa=s.mfa) for s in found.recent_sign_ins
         ],
-        annual_independence=AnnualIndependenceStatus(annual),
+        annual_independence=None if annual is None else AnnualIndependenceStatus(annual),
         version=found.version,
     )
 

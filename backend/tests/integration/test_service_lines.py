@@ -234,7 +234,10 @@ async def test_ac10_1_audit_can_never_be_widened_by_the_api_or_the_database(firm
     # Narrowing (or restating) Audit is fine.
     assert await _open(grace, "audit", 0, to="engagement_team_only") == 1
     with pytest.raises(asyncpg.CheckViolationError):
-        await firm.seed.run(
+        # As Grace herself, so the actor trigger passes and only the Audit CHECK can refuse.
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(grace.user_id)),
             "UPDATE service_line_policies SET content_visible_to = 'service_line' "
             "WHERE tenant_id = $1 AND service_line = 'audit'",
             firm.tenant,
@@ -409,3 +412,131 @@ async def test_another_firms_policy_reaches_nothing_here(firm: Firm, seed: Seede
     # Their reader can't reach this firm's engagement either (tenancy first).
     theirs = await other.person(lines=["tax"])
     assert not await _reads(_ctx(other.tenant, theirs.user_id, None), "engagement.read", tax)
+
+
+# --- security review fix round (DEC-383) --
+
+
+async def _member(firm: Firm, engagement: uuid.UUID, who: AuthContext, role: str) -> None:
+    await firm.seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, $4)",
+        firm.tenant,
+        engagement,
+        who.user_id,
+        role,
+    )
+
+
+@pytest.mark.parametrize("role", ["client_service", "specialist", "eqr_reviewer"])
+async def test_m1_a_team_role_the_read_isnt_granted_to_keeps_the_line_out(
+    firm: Firm, role: str
+) -> None:
+    """ADR-183 rule 6: a team role decides, so Pat's role on E (which the read doesn't grant)
+    is not topped up by her open line, in `authorise` and in lists alike."""
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    pat = await firm.person(lines=["tax"])
+    tax = await firm.engagement(await firm.client(), "tax_compliance", grace.user_id)
+    other = await firm.engagement(await firm.client(), "tax_compliance", grace.user_id)
+    await _member(firm, tax, pat, role)
+    await _open(grace, "tax", 0)
+    for action in ("engagement.read", "evidence.read", "run_content.read"):
+        assert not await _reads(pat, action, tax), action
+        assert tax not in await _listed(pat, action), action
+        # The line still reaches the tax engagement she holds no role on.
+        assert await _reads(pat, action, other), action
+        assert other in await _listed(pat, action), action
+
+
+async def test_m2_the_reach_grants_nothing_at_firm_level(firm: Firm) -> None:
+    """The reach is per engagement row only: a line-only member gets no firm-level read, so the
+    client search and the firm's knowledge stay as they were before the line opened."""
+    from abacus.modules.engagements.service import search_clients
+
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    kevin = await firm.person(lines=["tax"])
+    await firm.engagement(await firm.client(), "tax_compliance", grace.user_id)
+    actions = ("client.read", "knowledge.read", "retention_policy.read", "engagement.read")
+
+    async def firm_reads() -> list[str]:
+        allowed: list[str] = []
+        for action in actions:
+            try:
+                await authorise(kevin, action, Resource.firm(firm.tenant))
+            except Forbidden:
+                continue
+            allowed.append(action)
+        return allowed
+
+    before = await firm_reads()
+    with pytest.raises(Forbidden):
+        await search_clients(kevin, "Client")
+    await _open(grace, "tax", 0)
+    assert await firm_reads() == before == []
+    with pytest.raises(Forbidden):
+        await search_clients(kevin, "Client")
+
+
+async def test_l1_a_firms_staff_override_keeps_the_line_out_of_lists_too(firm: Firm) -> None:
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    kevin = await firm.person(lines=["tax"])
+    tax = await firm.engagement(await firm.client(), "tax_compliance", grace.user_id)
+    await _open(grace, "tax", 0)
+    assert tax in await _listed(kevin, "evidence.read")
+    await firm.seed.run(
+        "INSERT INTO firm_policy_overrides (tenant_id, action, role, decision, reason, set_by) "
+        "VALUES ($1, 'evidence.read', 'staff', 'deny', 'stricter', $2)",
+        firm.tenant,
+        grace.user_id,
+    )
+    assert not await _reads(kevin, "evidence.read", tax)
+    assert tax not in await _listed(kevin, "evidence.read")
+    assert tax in await _listed(kevin, "engagement.read")  # only the overridden action narrows
+
+
+async def test_l2_an_agent_run_never_inherits_the_initiators_line(firm: Firm) -> None:
+    from abacus.modules.identity import context
+    from abacus.modules.identity.api import AgentContext
+
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    kevin = await firm.person(lines=["tax"])
+    tax = await firm.engagement(await firm.client(), "tax_compliance", grace.user_id)
+    await _open(grace, "tax", 0)
+    assert await _reads(kevin, "evidence.read", tax)
+    run_id = uuid.uuid4()
+    agent = AgentContext(
+        tenant=TenantContext(firm.tenant, "agent", f"agent:evidence.screener:{run_id}"),
+        agent_id="evidence.screener",
+        agent_run_id=run_id,
+        engagement_id=tax,
+        task_scope=frozenset({"screening.run", "evidence.read"}),
+        initiator=kevin,
+        issued_by=context._ISSUER,  # pyright: ignore[reportPrivateUsage] -- an agent run's context
+    )
+    for action in ("screening.run", "evidence.read"):
+        with pytest.raises(Forbidden):
+            await authorise(agent, action, Resource.engagement(firm.tenant, tax, archived=False))
+    async with tenant_session(agent.tenant) as session:
+        rows = await session.execute(
+            select(Engagement.id).where(visible(agent, "evidence.read", Engagement.id))
+        )
+        assert tax not in set(rows.scalars())
+
+
+async def test_l4_a_policy_row_is_a_live_persons_own(firm: Firm) -> None:
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    other = await firm.person(firm_role="firm_admin", level="admin")
+    for actor, by in (
+        (("agent", f"agent:x:{uuid.uuid4()}"), grace.user_id),
+        (("human", str(other.user_id)), grace.user_id),
+    ):
+        with pytest.raises(asyncpg.PostgresError):
+            await firm.seed.as_actor(
+                firm.tenant,
+                actor,
+                "INSERT INTO service_line_policies (tenant_id, service_line, content_visible_to, "
+                "updated_by) VALUES ($1, 'tax', 'service_line', $2)",
+                firm.tenant,
+                by,
+            )
+    assert await _open(grace, "tax", 0) == 1  # the service's own write is the person's

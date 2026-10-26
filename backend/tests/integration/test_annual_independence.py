@@ -302,7 +302,8 @@ async def test_ac6_1_agents_the_platform_support_and_client_users_never_confirm(
     with pytest.raises(asyncpg.CheckViolationError):
         await firm.seed.as_actor(
             firm.tenant,
-            ("agent", "agent:test"),
+            # The agent's actor id is the person's, so only the actor-kind CHECK can refuse it.
+            ("agent", str(kevin.user_id)),
             "INSERT INTO independence_annual_confirmations (tenant_id, user_id, year, decision, "
             "statement_version) VALUES ($1, $2, 2026, 'confirmed', 1)",
             firm.tenant,
@@ -395,3 +396,85 @@ async def test_another_firm_reads_and_counts_nothing_of_this_one(firm: Firm, see
         )
         == 0
     )
+
+
+# --- security review fix round (DEC-383) --
+
+
+async def test_l3_a_new_statement_version_needs_a_new_confirmation(firm: Firm) -> None:
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    kevin = await firm.person()
+    tenant = _ctx(kevin).tenant
+    await annual.publish_statement(_ctx(grace, "firm_admin"), STATEMENT)
+    await annual.record(
+        _ctx(kevin), year=THIS_YEAR, decision="confirmed", statement_version=1, note=None
+    )
+    assert await has_current_annual_confirmation(tenant, kevin.user_id)
+    await annual.publish_statement(_ctx(grace, "firm_admin"), STATEMENT + " Amended.")
+    assert not await has_current_annual_confirmation(tenant, kevin.user_id)
+    assert (await annual.mine(_ctx(kevin))).status == "not_yet"
+    found = await annual.annual(_ctx(grace, "firm_admin"), THIS_YEAR)
+    assert {r.user_id: r.status for r in found.rows}[kevin.user_id] == "not_yet"
+    await annual.record(
+        _ctx(kevin), year=THIS_YEAR, decision="confirmed", statement_version=2, note=None
+    )
+    assert await has_current_annual_confirmation(tenant, kevin.user_id)
+
+
+async def test_l4_nobody_records_an_answer_or_a_statement_as_someone_else(firm: Firm) -> None:
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    kevin = await firm.person()
+    await annual.publish_statement(_ctx(grace, "firm_admin"), STATEMENT)
+    with pytest.raises(asyncpg.PostgresError):
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(grace.user_id)),
+            "INSERT INTO independence_annual_confirmations (tenant_id, user_id, year, decision, "
+            "statement_version) VALUES ($1, $2, 2026, 'confirmed', 1)",
+            firm.tenant,
+            kevin.user_id,
+        )
+    with pytest.raises(asyncpg.PostgresError):
+        await firm.seed.as_actor(
+            firm.tenant,
+            ("human", str(kevin.user_id)),
+            "INSERT INTO independence_statements (tenant_id, version, body, created_by) "
+            "VALUES ($1, 2, 'Forged', $2)",
+            firm.tenant,
+            grace.user_id,
+        )
+    # As oneself it is accepted (the app's own path does exactly this).
+    await firm.seed.as_actor(
+        firm.tenant,
+        ("human", str(kevin.user_id)),
+        "INSERT INTO independence_annual_confirmations (tenant_id, user_id, year, decision, "
+        "statement_version) VALUES ($1, $2, 2026, 'confirmed', 1)",
+        firm.tenant,
+        kevin.user_id,
+    )
+
+
+async def test_l4_the_human_only_register_names_the_new_decisions(firm: Firm) -> None:
+    listed = set(cast(list[str], await firm.seed.value("SELECT abacus_human_only_actions()")))
+    assert {
+        "independence.annual_confirmed",
+        "independence.annual_declined",
+        "independence.statement_published",
+        "service_line_policy.updated",
+    } <= listed
+
+
+async def test_l5_the_drawer_shows_annual_status_only_to_annual_readers(firm: Firm) -> None:
+    from abacus.modules.identity import settings_contract
+
+    grace = await firm.person(firm_role="firm_admin", level="admin")
+    felix = await firm.person(firm_role="security_admin", level="admin")
+    lena = await firm.person(level="seasonal")
+    await firm.seed.run(
+        "UPDATE memberships SET access_ends_on = DATE '2026-10-31' WHERE user_id = $1",
+        lena.user_id,
+    )
+    seen = await settings_contract._person_out(_ctx(grace, "firm_admin"), lena.user_id)  # pyright: ignore[reportPrivateUsage] -- the drawer's projection
+    assert seen.annual_independence == "not_yet"
+    hidden = await settings_contract._person_out(_ctx(felix, "security_admin"), lena.user_id)  # pyright: ignore[reportPrivateUsage] -- the drawer's projection
+    assert hidden.annual_independence is None

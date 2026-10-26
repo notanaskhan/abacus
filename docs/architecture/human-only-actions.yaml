@@ -75,3 +75,11 @@ actions:
     verb: decide  # P-08-T21 (DEC-329, 0156): a firm person clears a client's portal lock
   - action: fulfilment.voided
     verb: decide  # a person voids a wrong rule link (R-01 Story 2.2; TASK-1248, 0159)
+  - action: independence.annual_confirmed
+    verb: confirm  # G-01-T13 (DEC-91, DEC-383, 0168): a person confirms their own annual independence
+  - action: independence.annual_declined
+    verb: decide  # G-01-T13 (DEC-383, 0168): a person declines it, with a note
+  - action: independence.statement_published
+    verb: decide  # G-01-T13 (DEC-381, DEC-383, 0168): a firm admin publishes the statement
+  - action: service_line_policy.updated
+    verb: decide  # G-01-T12 (DEC-380, DEC-383, 0168): a firm decides who reads a line's content

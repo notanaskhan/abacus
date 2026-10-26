@@ -112,7 +112,7 @@ async def business_today(tenant: TenantContext) -> date:
 
 
 _LATEST = text(
-    "SELECT DISTINCT ON (user_id) user_id, decision, note, decided_at "
+    "SELECT DISTINCT ON (user_id) user_id, decision, note, decided_at, statement_version "
     "FROM independence_annual_confirmations WHERE year = :year "
     "AND (CAST(:user AS uuid) IS NULL OR user_id = :user) ORDER BY user_id, seq DESC"
 )
@@ -128,8 +128,19 @@ async def _latest(
     return {cast(UUID, r["user_id"]): r for r in rows.mappings()}
 
 
-def _status(row: RowMapping | None) -> Status:
-    return cast(Status, row["decision"]) if row is not None else "not_yet"
+def _status(row: RowMapping | None, current: int | None) -> Status:
+    """The newest answer, where a confirmation counts only for the statement as now published:
+    a new version needs a new confirmation (DEC-383). A decline stands until answered again."""
+    if row is None:
+        return "not_yet"
+    if row["decision"] == "confirmed" and row["statement_version"] != current:
+        return "not_yet"
+    return cast(Status, row["decision"])
+
+
+async def _current_version(session: AsyncSession) -> int | None:
+    found = await _statement(session)
+    return None if found is None else found.version
 
 
 async def _statement(session: AsyncSession) -> Statement | None:
@@ -158,15 +169,19 @@ async def annual(ctx: AuthContext, year: int) -> AnnualView:
         ).scalars()
         people = [cast(UUID, m) for m in members]
         latest = await _latest(session, year)
-    rows = [
-        AnnualRow(
-            user,
-            _status(latest.get(user)),
-            cast(datetime | None, latest[user]["decided_at"]) if user in latest else None,
-            cast(str | None, latest[user]["note"]) if user in latest else None,
+        current = await _current_version(session)
+    rows: list[AnnualRow] = []
+    for user in people:
+        status = _status(latest.get(user), current)
+        answered = latest.get(user) if status != "not_yet" else None
+        rows.append(
+            AnnualRow(
+                user,
+                status,
+                cast(datetime | None, answered["decided_at"]) if answered is not None else None,
+                cast(str | None, answered["note"]) if answered is not None else None,
+            )
         )
-        for user in people
-    ]
     counts = {status: sum(1 for r in rows if r.status == status) for status in STATUSES}
     return AnnualView(year, rows, counts)
 
@@ -194,10 +209,13 @@ async def mine(ctx: AuthContext, year: int | None = None) -> MyAnnual:
     async with tenant_session(ctx.tenant) as session:
         latest = (await _latest(session, year, ctx.user_id)).get(ctx.user_id)
         statement = await _statement(session)
+    status = _status(latest, None if statement is None else statement.version)
     return MyAnnual(
         year,
-        _status(latest),
-        cast(datetime | None, latest["decided_at"]) if latest is not None else None,
+        status,
+        cast(datetime | None, latest["decided_at"])
+        if latest is not None and status != "not_yet"
+        else None,
         statement,
     )
 
@@ -206,14 +224,16 @@ async def status_of(tenant: TenantContext, user_id: UUID, year: int) -> Status:
     """A person's status for the year, for a caller that already authorised reading the person
     (ADM-02d's drawer)."""
     async with tenant_session(tenant) as session:
-        return _status((await _latest(session, year, user_id)).get(user_id))
+        latest = (await _latest(session, year, user_id)).get(user_id)
+        return _status(latest, await _current_version(session))
 
 
 async def has_current_annual_confirmation(
     tenant: TenantContext, user_id: UUID, at: date | datetime | None = None
 ) -> bool:
     """AC6.2 (P-07-T41): whether the person's newest answer for `at`'s year (the firm's current
-    business year by default) is a confirmation. A decline, or no answer, is False."""
+    business year by default) confirms the statement as now published (DEC-383). A decline, no
+    answer, or a confirmation of an earlier version is False."""
     year = (await business_today(tenant)).year if at is None else at.year
     return await status_of(tenant, user_id, year) == "confirmed"
 

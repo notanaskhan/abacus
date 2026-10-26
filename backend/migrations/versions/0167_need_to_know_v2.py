@@ -10,6 +10,9 @@
   'engagement_team_only'` holds whatever the app sends (422 `audit_locked` above it).
 - The lead, when named, is a member of the firm. Rows are never deleted by the app; the editable
   columns are updated against `version`.
+- A row is a live person's own (DEC-383): the trigger `service_line_policies_actor` refuses an
+  insert or update whose `app.actor_kind` isn't `human` or whose `updated_by` isn't the
+  transaction's `app.actor_id`.
 
 Revision ID: 0167
 Revises: 0160 (the main session re-points this to the previous merged head at merge time)
@@ -69,7 +72,28 @@ def upgrade() -> None:
         "GRANT UPDATE (enabled, lead_user_id, content_visible_to, cross_line_access, version, "
         "updated_by, updated_at) ON service_line_policies TO abacus_app"
     )
+    op.execute(
+        """
+        CREATE FUNCTION service_line_policies_actor() RETURNS trigger
+        LANGUAGE plpgsql
+        SET search_path = pg_catalog, public, pg_temp
+        AS $$
+        BEGIN
+            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+               OR NEW.updated_by::text IS DISTINCT FROM current_setting('app.actor_id', true) THEN
+                RAISE EXCEPTION 'a service-line policy is a live person''s own'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER service_line_policies_actor BEFORE INSERT OR UPDATE "
+        "ON service_line_policies FOR EACH ROW EXECUTE FUNCTION service_line_policies_actor()"
+    )
 
 
 def downgrade() -> None:
     op.execute("DROP TABLE service_line_policies")
+    op.execute("DROP FUNCTION service_line_policies_actor()")

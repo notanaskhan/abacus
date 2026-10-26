@@ -28223,9 +28223,15 @@
         "description": "ADM-02d's drawer.",
         "properties": {
           "annual_independence": {
-            "$ref": "#/components/schemas/AnnualIndependenceStatus",
-            "cls": "internal",
-            "default": "not_yet"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnnualIndependenceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "assignment_count": {
             "cls": "internal",

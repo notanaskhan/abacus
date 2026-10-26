@@ -35,9 +35,11 @@ from zoneinfo import ZoneInfo
 import asyncpg
 import httpx
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel import clock
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.identity.api import (
     RULES,
     AgentContext,
@@ -54,6 +56,8 @@ from abacus.modules.identity.context import (
 )
 
 from .support import Migrated, Net, Person, Seeder
+
+CHECK_VIOLATION: Final = "23514"
 
 pytestmark = pytest.mark.asyncio
 
@@ -346,14 +350,21 @@ async def test_ac21_audit_can_never_be_widened_through_the_api_or_the_database(
     assert _detail(refused) == "audit_locked"
     assert (await _lines(firm))["audit"]["content_visible_to"] == "engagement_team_only"
     assert await firm.audit("service_line_policy.updated") == []
-    with pytest.raises(asyncpg.CheckViolationError):
-        await firm.seed.run(
-            "INSERT INTO service_line_policies (tenant_id, service_line, enabled, "
-            "content_visible_to, cross_line_access, version, updated_by) "
-            "VALUES ($1, 'audit', true, 'service_line', 'handoffs_only', 1, $2)",
-            firm.tenant_id,
-            firm.grace.user_id,
-        )
+    # As Grace herself, through the app's own session (DEC-383's actor trigger passes), so only
+    # the Audit CHECK can refuse.
+    with pytest.raises(IntegrityError) as raised:
+        async with tenant_session(
+            TenantContext(firm.tenant_id, "human", str(firm.grace.user_id))
+        ) as session:
+            await session.execute(
+                text(
+                    "INSERT INTO service_line_policies (tenant_id, service_line, enabled, "
+                    "content_visible_to, cross_line_access, updated_by) "
+                    "VALUES (:t, 'audit', true, 'service_line', 'handoffs_only', :by)"
+                ),
+                {"t": firm.tenant_id, "by": firm.grace.user_id},
+            )
+    assert getattr(raised.value.orig, "sqlstate", None) == CHECK_VIOLATION
 
 
 async def test_ac21_a_change_is_an_admins_with_fresh_mfa_against_the_version_and_audited(
@@ -538,7 +549,23 @@ async def test_ac22_lists_agree_with_authorise_for_every_principal(firm: Firm) -
         await firm.person(lines=("tax",), offshore=True),
         await firm.person(level="admin", lines=("tax",)),
         await firm.person(),
+        # Security review M1 (DEC-383): people on the tax line holding a team role on the tax
+        # engagement that the read is not granted to; ADR-183 rule 6 says the team role decides.
+        await firm.person(lines=("tax",)),
+        await firm.person(lines=("tax",)),
+        await firm.person(lines=("tax",)),
     ]
+    for who, role in zip(
+        people[5:], ("client_service", "specialist", "eqr_reviewer"), strict=True
+    ):
+        await firm.seed.run(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, $4)",
+            firm.tenant_id,
+            engagements[0].id,
+            who.user_id,
+            role,
+        )
     tenant = TenantContext(firm.tenant_id, "human", "probe")
     for who in people:
         allowed: set[uuid.UUID] = set()
@@ -711,14 +738,20 @@ async def test_ac10_confirmations_are_insert_only_and_human_only_in_the_database
     ):
         with pytest.raises(asyncpg.InsufficientPrivilegeError):
             await app_role.run(sql)
-    with pytest.raises(asyncpg.CheckViolationError):
-        await firm.seed.run(
-            "INSERT INTO independence_annual_confirmations (tenant_id, user_id, year, decision, "
-            "statement_version, decided_at, actor_kind) "
-            "VALUES ($1, $2, 2026, 'confirmed', 1, now(), 'agent')",
-            firm.tenant_id,
-            kevin.user_id,
-        )
+    # As an agent acting with Kevin's id, through the app's own session (DEC-383's own-row
+    # trigger passes), so only the actor-kind CHECK can refuse.
+    with pytest.raises(IntegrityError) as raised:
+        async with tenant_session(
+            TenantContext(firm.tenant_id, "agent", str(kevin.user_id))
+        ) as session:
+            await session.execute(
+                text(
+                    "INSERT INTO independence_annual_confirmations (tenant_id, user_id, year, "
+                    "decision, statement_version) VALUES (:t, :u, 2026, 'confirmed', 1)"
+                ),
+                {"t": firm.tenant_id, "u": kevin.user_id},
+            )
+    assert getattr(raised.value.orig, "sqlstate", None) == CHECK_VIOLATION
 
 
 async def test_ac10_agents_the_system_and_client_users_never_confirm(firm: Firm) -> None:
