@@ -53,3 +53,11 @@ them; agent and system events never do; `audit_events` stays insert-only (G-02-T
 - Decisions: DEC-418. `auth_method` stays null for staff BFF sessions until the sign-in method is
   stored on the session (G-02-T14, SPEC-349 Q7); `client_id` and `office_id` are columns only
   here, callers fill them from G-02-T08.
+- 2026-10-26: security review fix round (DEC-420). H1: `tests/integration/test_g02_chain_v2.py`
+  seals a version 1 checkpoint on the pre-0172 schema, migrates, verifies, grows a version 2
+  checkpoint on it and anchors the mixed chain; forging `ip`, `session_id` or `client_id` on a
+  version 2 sealed row breaks verification; the Q-02-T27 independent verifier's restore carries
+  the new columns. M1: downgrade refuses once request context or a leaf-version-2 checkpoint
+  exists (tested). M3: CHECKs NOT VALID then validated, indexes CONCURRENTLY in an
+  `autocommit_block`. L3: `ip` held to one host, `host(ip)` the canonical text, address objects
+  canonicalise the same (tested). L2 noted in DEC-418 as a T14 check.

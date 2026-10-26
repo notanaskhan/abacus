@@ -53,7 +53,6 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("staff.unlock", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
-    ("GET", "/v1/audit-events/exports/{export_id}", "audit_event.export"),
     (
         "GET",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx",

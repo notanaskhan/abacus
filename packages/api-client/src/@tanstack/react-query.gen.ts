@@ -153,7 +153,7 @@ export const listAuditEventsQueryKey = (options?: Options<ListAuditEventsData>) 
  *
  * ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
  * `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
- * (DEC-415 Q9); `q` searches actors, objects and details, never a Restricted value.
+ * (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).
  */
 export const listAuditEventsOptions = (options?: Options<ListAuditEventsData>) => queryOptions<ListAuditEventsResponse, ListAuditEventsError, ListAuditEventsResponse, ReturnType<typeof listAuditEventsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -204,7 +204,7 @@ export const listAuditEventsInfiniteQueryKey = (options?: Options<ListAuditEvent
  *
  * ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
  * `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
- * (DEC-415 Q9); `q` searches actors, objects and details, never a Restricted value.
+ * (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).
  */
 export const listAuditEventsInfiniteOptions = (options?: Options<ListAuditEventsData>) => {
     const opts = infiniteQueryOptions<ListAuditEventsResponse, ListAuditEventsError, InfiniteData<ListAuditEventsResponse>, QueryKey<Options<ListAuditEventsData>>, string | null | Pick<QueryKey<Options<ListAuditEventsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -256,7 +256,8 @@ export const auditExportQueryKey = (options: Options<AuditExportData>) => create
 /**
  * Audit Export Route
  *
- * ADM-07 g: the requester's export; anyone else's answers 404.
+ * ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh
+ * second factor (L5); the request and the link do.
  */
 export const auditExportOptions = (options: Options<AuditExportData>) => queryOptions<AuditExportResponse, AuditExportError, AuditExportResponse, ReturnType<typeof auditExportQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

@@ -16,8 +16,18 @@ Rules the shapes carry (DEC-60, DEC-43, INV-1, INV-5):
 - **Walls** omit events; nothing here counts or flags what was left out (DEC-43).
 - **Values** are resolved at read time for viewers with the target's content read, masked by
   classification, and never stored (`values.status`: `resolved`, `withheld`, `unavailable`).
-- **Request context** (`ip`, `device_label`, `session`) is personal data, `confidential`, and
-  null on agent and system events (G-02-T06).
+- **Facts are codes and identifiers only** (security review M4): counts, booleans, codes and
+  ids, never a value, an amount or free text. Anything that carries a value lives under the
+  detail's `values`, resolved per viewer and masked (ADR-024, DEC-60). `labels` names the ids in
+  the row (people, policies, agents) as their owners' labelers give them, never above
+  Confidential. `q` searches actor, target and fact labels only, never a value, for every reader.
+- **Request context** (`ip`, `user_agent_family`, `device_label`, `session`) is personal data,
+  null on agent and system events (G-02-T06), and shown only to `REQUEST_CONTEXT_READERS`
+  (`firm_admin`, `security_admin`, `quality_partner`); every other reader gets it null (DEC-420,
+  security review M2). The projection lands in G-02-T08.
+- **Authorisation comes first** (security review L1): a client principal gets 404 (INV-4), and
+  the agent, the system and anyone refused an export action get 403, before the flag is read. A
+  person's read is narrowed per event by `visible()` in the live route.
 - **No route changes or removes an event.** Corrections are new events.
 - **`since_seq`** lists events with a higher `seq`, oldest first, for the F-04 harness.
 """
@@ -26,7 +36,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from ipaddress import IPv4Address, IPv6Address
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Final, Literal, NoReturn
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -37,7 +47,13 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -56,6 +72,8 @@ WithheldReason = Literal["need_to_know", "walled", "not_enabled"]
 AuthMethod = Literal["sso", "email_code", "passkey", "totp", "support", "service"]
 ExportStatus = Literal["requested", "building", "ready", "downloaded", "expired", "failed"]
 Fact = str | int | bool | None
+# DEC-420: who sees a person's request context (IP, device, session); everyone else gets null.
+REQUEST_CONTEXT_READERS: Final = frozenset({"firm_admin", "security_admin", "quality_partner"})
 Sha256 = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 
 
@@ -109,11 +127,17 @@ class AuditEventRow(BaseModel):
     mark: Annotated[Mark, classified("internal")]
     actor: Annotated[AuditActorOut, classified("internal")]
     target: Annotated[AuditTargetOut, classified("internal")]
-    # The detail line's facts, keyed by the catalogue's fact names; Restricted values masked.
-    detail_facts: Annotated[dict[str, Fact], classified("confidential")] = Field(
-        default_factory=dict
+    # The detail line's facts, keyed by the catalogue's fact names: codes, counts, booleans and
+    # ids only, never a value (M4). Values are the detail's `values`.
+    detail_facts: Annotated[dict[str, Fact], classified("internal")] = Field(
+        default_factory=dict[str, Fact]
+    )
+    # Display labels for the ids in `detail_facts`, keyed by the id (labelers; ≤ Confidential).
+    labels: Annotated[dict[str, str], classified("confidential")] = Field(
+        default_factory=dict[str, str]
     )
     office_id: Annotated[UUID | None, classified("internal")] = None
+    # Null for agent and system events, and for readers outside REQUEST_CONTEXT_READERS.
     ip: Annotated[str | None, classified("confidential")] = None
     run_id: Annotated[UUID | None, classified("internal")] = None
     link_kind: Annotated[LinkKind, classified("internal")] = "none"
@@ -209,6 +233,7 @@ class AuditEventDetail(AuditEventRow):
     events."."""
 
     occurred_at: Annotated[datetime, classified("internal")]
+    # Request context: null for agent and system events and outside REQUEST_CONTEXT_READERS.
     authority: Annotated[AuditAuthorityOut | None, classified("internal")] = None
     device_label: Annotated[str | None, classified("confidential")] = None
     user_agent_family: Annotated[str | None, classified("internal")] = None
@@ -279,7 +304,26 @@ async def _gate(ctx: AuthContext) -> None:
         raise NotFound("audit_log.explorer")
 
 
-async def _stub(ctx: AuthContext) -> NoReturn:
+# The read actions are answered per event by `visible()` (engagement roles, `in_scope`); the
+# export family is firm-level and authorised as such.
+_READS: Final = frozenset({"audit_event.read"})
+
+
+async def _authorised(ctx: AuthContext, action: str) -> None:
+    """L1: the matrix first. A client principal gets 404 (INV-4). The agent, the system and any
+    other non-person principal are authorised at the firm and refused (403). A person asking
+    for a read passes here: the live route narrows each event with `visible()`, so someone who
+    holds no right sees an empty list, never another firm's or another team's events. Export
+    actions are authorised at the firm for everyone."""
+    if ctx.client:
+        raise NotFound("audit_log")
+    if action in _READS and ctx.tenant.actor_kind == "human":
+        return
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+
+
+async def _stub(ctx: AuthContext, action: str) -> NoReturn:
+    await _authorised(ctx, action)
     await _gate(ctx)
     raise NotImplementedYet
 
@@ -305,22 +349,23 @@ async def list_audit_events_route(
 ) -> AuditEventPageOut:
     """ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
     `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
-    (DEC-415 Q9); `q` searches actors, objects and details, never a Restricted value."""
-    await _stub(ctx)
+    (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4)."""
+    await _stub(ctx, "audit_event.read")
 
 
 @router.get(
-    "/exports/{export_id}", action="audit_event.export", response_model=AuditExport, errors=(501,)
+    "/exports/{export_id}", action="audit_export.read", response_model=AuditExport, errors=(501,)
 )
 async def audit_export_route(export_id: UUID, ctx: Ctx) -> AuditExport:
-    """ADM-07 g: the requester's export; anyone else's answers 404."""
-    await _stub(ctx)
+    """ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh
+    second factor (L5); the request and the link do."""
+    await _stub(ctx, "audit_export.read")
 
 
 @router.get("/{seq}", action="audit_event.read", response_model=AuditEventDetail, errors=(501,))
 async def audit_event_route(seq: Annotated[int, Path(ge=1)], ctx: Ctx) -> AuditEventDetail:
     """ADM-07 c: one event; a walled or invisible one answers 404 (DEC-43)."""
-    await _stub(ctx)
+    await _stub(ctx, "audit_event.read")
 
 
 @router.post(
@@ -335,7 +380,7 @@ async def request_audit_export_route(
 ) -> AuditExport:
     """ADM-07 e: one person with a fresh second factor (DEC-415 Q8); 202 `requested`. Audited
     `audit_export.requested`; values only as the requester may see them on screen."""
-    await _stub(ctx)
+    await _stub(ctx, "audit_event.export")
 
 
 @router.post(
@@ -348,4 +393,4 @@ async def link_audit_export_route(export_id: UUID, ctx: Ctx) -> AuditExportLinkO
     """ADM-07 g: a 15-minute link for the requester while `ready` or `downloaded` (409
     `export_not_ready` before), 410 `export_expired` after 7 days. Audited
     `audit_export.downloaded`."""
-    await _stub(ctx)
+    await _stub(ctx, "audit_event.export")

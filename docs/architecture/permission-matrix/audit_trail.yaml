@@ -6,3 +6,4 @@ actions:
   # --- Audit trail and export ---
   audit_event.read:         {engagement_partner: allow, manager: allow, quality_partner: in_scope, practice_leader: in_scope, firm_admin: allow, security_admin: allow, platform_support: allow, platform_support_content: allow, agent: deny, system: deny}   # G-02-T02 (SPEC-349 §9, DEC-60): + security_admin (metadata), practice_leader in scope; values only with the target's content read (G-02-T09)
   audit_event.export:       {security_admin: allow, quality_partner: in_scope, practice_leader: in_scope, agent: deny, system: deny, mfa_recent: required}   # G-02-T02: ADM-07 export, one person with fresh MFA (DEC-415 Q8); audited request and download
+  audit_export.read:        {security_admin: allow, quality_partner: in_scope, practice_leader: in_scope, agent: deny, system: deny}   # G-02 security review L5: an export's status, the requester's own; no fresh MFA for a read

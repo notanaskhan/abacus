@@ -170,6 +170,8 @@ The text below is the epic's §3, numbered as there. Where the gate check decide
 - **Classification:** `ip` and `device_label` are `confidential` personal data: never logged, never in a domain event, masked nowhere because only readers of `audit_event.read` see them. `user_agent_family`, `auth_method`, `session_id`, `mfa_at`, `client_id`, `office_id` are `internal`.
 - **Later tables** (their own tasks and migrations): `audit_event_labels`, `audit_exports` (T10), `security_policies`, `auth_session_tenant_revocations` (T14), `firm_export_schedules` (T19), `safeguards_programs`, `safeguards_control_statuses` (T20), `autonomy_policy_drafts`, `autonomy_policy_versions` (T23); shapes in G-02 §4.2.
 - **Invariants:** no value of a target is ever written to `audit_events` (DEC-60): `before_ref`/`after_ref` stay identifier-only (`kernel.uow.Ref`); UPDATE and DELETE on `audit_events` stay refused for the app role.
+- **`client_id` for walls (security review L4, G-02-T08):** the read projection derives `client_id` from `engagement_id` (the engagement's client) for history and for any new event whose writer left `client_id` null, and the wall filter runs on that derived value, so a null-client row about a walled client's engagement is never shown.
+- **Downgrade:** 0172's downgrade refuses once any event carries a new column or any checkpoint is sealed at leaf version 2 (security review M1); production forward-fixes.
 - **Retention:** `audit_event` keeps its 7-year floor (P-14, SPEC-341).
 
 ## 8. Interfaces
@@ -180,7 +182,7 @@ Three internal contracts, stub first: `docs/contracts/audit-log.md` v1 (G-02-T04
 | GET | `/v1/audit-events` | List with filters, capped counts, `since_seq` | `audit_event.read` |
 | GET | `/v1/audit-events/{seq}` | Detail with request context and values section | `audit_event.read` |
 | POST | `/v1/audit-events/exports` | Request an export (202) | `audit_event.export` (fresh) |
-| GET | `/v1/audit-events/exports/{export_id}` | Export status | `audit_event.export` |
+| GET | `/v1/audit-events/exports/{export_id}` | Export status | `audit_export.read` (no fresh MFA) |
 | POST | `/v1/audit-events/exports/{export_id}/link` | 15-minute download link | `audit_event.export` (fresh) |
 
 Module interfaces: `audit_trail.api.list_events`, `get_event`, `events_for_work_item` (T08); `platform.api.register_audit_labeler`, `register_audit_value_resolver` (slots declared in T02, used in T09); `agents.api.effective_ai_policy` (T24).
@@ -189,6 +191,9 @@ Module interfaces: `audit_trail.api.list_events`, `get_event`, `events_for_work_
 - **Tenant scoping:** every route through `tenant_session(ctx)`; RLS forced on every new table.
 - **Who can do what:** the matrix rows of G-02 §4.4, with `level_in(partner)` written as the derived `firm_partner` role (DEC-132). Every new write action denies `agent` and `system`; every action is unreachable to client principals (404, INV-4).
 - **Need-to-know (ADR-024, DEC-60):** `firm_admin` and `security_admin` read audit metadata; values resolve only for a viewer holding the target's content read (`visible()`), so `quality_partner` and `practice_leader` see values `in_scope`.
+- **Facts carry no values (security review M4):** an event's `detail_facts` are codes, counts, booleans and identifiers only; display names come through `labels` (≤ Confidential); anything that carries a value is under the detail's `values`, resolved and masked per viewer. `q` searches labels only, never a value, for every reader.
+- **Request context for three roles (DEC-420, security review M2):** `ip`, `user_agent_family`, `device_label`, `session_id`, `auth_method` and `mfa_at` are shown only to `firm_admin`, `security_admin` and `quality_partner`; every other `audit_event.read` holder (engagement partners, managers, practice leaders, platform support) gets them null. The projection is G-02-T08's.
+- **Matrix before flag (security review L1):** every route authorises before reading its flag; a client principal gets 404.
 - **Walls (ADR-026, DEC-43):** walled events are omitted with no hidden count.
 - **Client-side access:** none.
 

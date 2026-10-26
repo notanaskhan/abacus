@@ -81,7 +81,7 @@ export const agentRunWrites = <ThrowOnError extends boolean = false>(options: Op
  *
  * ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on
  * `effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's
- * (DEC-415 Q9); `q` searches actors, objects and details, never a Restricted value.
+ * (DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).
  */
 export const listAuditEvents = <ThrowOnError extends boolean = false>(options?: Options<ListAuditEventsData, ThrowOnError>): RequestResult<ListAuditEventsResponses, ListAuditEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListAuditEventsResponses, ListAuditEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -108,7 +108,8 @@ export const requestAuditExport = <ThrowOnError extends boolean = false>(options
 /**
  * Audit Export Route
  *
- * ADM-07 g: the requester's export; anyone else's answers 404.
+ * ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh
+ * second factor (L5); the request and the link do.
  */
 export const auditExport = <ThrowOnError extends boolean = false>(options: Options<AuditExportData, ThrowOnError>): RequestResult<AuditExportResponses, AuditExportErrors, ThrowOnError> => (options.client ?? client).get<AuditExportResponses, AuditExportErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -3474,7 +3474,7 @@
                 }
               ]
             },
-            "cls": "confidential",
+            "cls": "internal",
             "title": "Detail Facts",
             "type": "object"
           },
@@ -3507,6 +3507,14 @@
             ],
             "cls": "confidential",
             "title": "Ip"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
           },
           "link_kind": {
             "cls": "internal",
@@ -3728,7 +3736,7 @@
                 }
               ]
             },
-            "cls": "confidential",
+            "cls": "internal",
             "title": "Detail Facts",
             "type": "object"
           },
@@ -3749,6 +3757,14 @@
             ],
             "cls": "confidential",
             "title": "Ip"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Labels",
+            "type": "object"
           },
           "link_kind": {
             "cls": "internal",
@@ -47825,7 +47841,7 @@
     },
     "/v1/audit-events": {
       "get": {
-        "description": "ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on\n`effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's\n(DEC-415 Q9); `q` searches actors, objects and details, never a Restricted value.",
+        "description": "ADM-07 a, b, f: newest first by `seq` (oldest first after `since_seq`). Dates filter on\n`effective_at` in the firm's time zone; `office_id` is the object's office, else the actor's\n(DEC-415 Q9); `q` searches actor, target and fact labels only, never a value (M4).",
         "operationId": "list_audit_events",
         "parameters": [
           {
@@ -48269,7 +48285,7 @@
     },
     "/v1/audit-events/exports/{export_id}": {
       "get": {
-        "description": "ADM-07 g: the requester's export; anyone else's answers 404.",
+        "description": "ADM-07 g: the requester's export; anyone else's answers 404. A status read needs no fresh\nsecond factor (L5); the request and the link do.",
         "operationId": "audit_export",
         "parameters": [
           {
@@ -48381,7 +48397,7 @@
         "tags": [
           "audit log"
         ],
-        "x-abacus-action": "audit_event.export"
+        "x-abacus-action": "audit_export.read"
       }
     },
     "/v1/audit-events/exports/{export_id}/link": {

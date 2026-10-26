@@ -42,3 +42,5 @@ from SPEC-349 and `docs/contracts/audit-log.md` (G-02-T05).
 - Note for the main session: the brief allows `xfail(strict=True)` citing `TASK-NNNN`, but
   `banned_patterns` (SKIP-001) only accepts `#NNN` or an issues URL, so a TASK-only reason fails
   `make check-fast`. Hence `STUBBED` rather than strict xfails.
+- 2026-10-26: with the principal checked before the flag (L1), AC-12's fresh-MFA refusal and
+  AC-14/AC-46's client 404 and agent refusal now run in full against the stubs.

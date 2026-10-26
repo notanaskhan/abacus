@@ -4,8 +4,9 @@ Each firm's audit events are sealed in checkpoints:
 - `leaf` hashes one event's canonical form. Leaf version 1 covers every `audit_events` column
   of Q-02, `occurred_at` and `effective_at` included, as sorted-key JSON. Timestamps are ISO 8601
   in UTC with microseconds. Leaf version 2 (G-02-T06, migration 0172) adds the request context
-  and the explorer's dimensions (`ip` as `inet` text, with its mask); new checkpoints seal at
-  version 2, and a version 1 checkpoint keeps verifying with version 1's columns.
+  and the explorer's dimensions; `ip` is read as `host(ip)`, the address with no mask (0172 holds
+  every `ip` to one host), and an address object canonicalises to the same text. New
+  checkpoints seal at version 2; a version 1 checkpoint keeps verifying with version 1's columns.
 - `merkle_root` folds a checkpoint's leaves pairwise, carrying an odd last leaf up a level.
 - `chain_hash` is SHA-256(previous chain hash ‖ root ‖ seq_from ‖ seq_to ‖ count). The first
   checkpoint chains from 32 zero bytes.
@@ -28,7 +29,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address, IPv4Interface, IPv6Address, IPv6Interface
 from typing import Any, Final, cast
 from uuid import UUID
 
@@ -81,6 +82,8 @@ _mismatches = meter(__name__).create_counter(
 def _canonical(value: object) -> object:
     if isinstance(value, datetime):
         return value.astimezone(UTC).isoformat(timespec="microseconds")
+    if isinstance(value, IPv4Interface | IPv6Interface):
+        return str(value.ip)  # an `inet` read without `host()`: the address, never "/32"
     if isinstance(value, UUID | IPv4Address | IPv6Address):
         return str(value)
     if isinstance(value, str) and value.startswith(("{", "[")):
@@ -144,7 +147,7 @@ _ALL = text(
 _NEW_EVENTS = text(
     "SELECT id, tenant_id, seq, occurred_at, effective_at, actor_kind, actor_id, action, "
     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, work_item_id, "
-    "on_behalf_of_user_id, policy_ref, CAST(ip AS text) AS ip, user_agent_family, device_label, "
+    "on_behalf_of_user_id, policy_ref, host(ip) AS ip, user_agent_family, device_label, "
     "session_id, auth_method, mfa_at, client_id, office_id FROM audit_events "
     "WHERE seq > :after AND occurred_at <= clock_timestamp() - make_interval(secs => :settle) "
     "ORDER BY seq LIMIT :limit"
@@ -152,7 +155,7 @@ _NEW_EVENTS = text(
 _RANGE = text(
     "SELECT id, tenant_id, seq, occurred_at, effective_at, actor_kind, actor_id, action, "
     "target_type, target_id, before_ref, after_ref, trace_id, engagement_id, work_item_id, "
-    "on_behalf_of_user_id, policy_ref, CAST(ip AS text) AS ip, user_agent_family, device_label, "
+    "on_behalf_of_user_id, policy_ref, host(ip) AS ip, user_agent_family, device_label, "
     "session_id, auth_method, mfa_at, client_id, office_id FROM audit_events "
     "WHERE seq BETWEEN :lo AND :hi ORDER BY seq"
 )

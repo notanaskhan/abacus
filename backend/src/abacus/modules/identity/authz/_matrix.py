@@ -192,6 +192,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
     },
+    "audit_export.read": {
+        "security_admin": "allow",
+        "quality_partner": "in_scope",
+        "practice_leader": "in_scope",
+        "agent": "deny",
+        "system": "deny",
+    },
     "autonomy_policy.update": {
         "firm_admin": "allow",
         "mfa_recent": "required",

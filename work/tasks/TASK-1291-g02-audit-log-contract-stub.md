@@ -34,3 +34,10 @@ Contract first for ADM-07 (G-02-T04): the shapes, routes, flag gate and fixtures
 
 ## Progress log
 - 2026-10-26: built. 33 provider tests and 11 fixture tests green; api-client regenerated.
+- 2026-10-26: security review fix round (DEC-420). M4: `detail_facts` are codes and ids with
+  `labels` beside them; the fixtures moved amounts, titles, topics and the masked number out of
+  the facts (values are the drawer's). M2: `REQUEST_CONTEXT_READERS` (firm_admin,
+  security_admin, quality_partner), every request-context field nullable, the rule in the
+  contract and SPEC-349; the projection is T08's. L1: the stub checks the principal before the
+  flag (client 404; agent, system and refused exporters 403; a person's read passes to
+  `visible()`). L5: `GET /exports/{id}` is `audit_export.read`, no fresh MFA. L4 in SPEC-349 §7.

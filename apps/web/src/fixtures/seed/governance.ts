@@ -64,12 +64,21 @@ export const INC_2026_003: IncidentOut = closed(
   "2026-08-20",
 );
 
-/** ADM-06d: INC-2026-005's timeline, in order. */
-export const INC_2026_005_TIMELINE: readonly { at: string; entry: string }[] = [
-  { at: "2026-09-10T07:14:00Z", entry: "1,812 failed sign-ins from 203.0.113.0/24 blocked" },
-  { at: "2026-09-10T12:05:00Z", entry: "Rate limit tightened by FA" },
-  { at: "2026-09-11", entry: "Forensic review: 0 accounts accessed" },
-  { at: "2026-09-14", entry: "Status Investigating" },
+/** ADM-06d: INC-2026-005's timeline, in order, as codes and facts (the drawer's words come
+ * from the screen's copy registry, G-02-T16). */
+export const INC_2026_005_TIMELINE: readonly {
+  at: string;
+  code: string;
+  facts: Record<string, string | number>;
+}[] = [
+  {
+    at: "2026-09-10T07:14:00Z",
+    code: "sign_ins_blocked",
+    facts: { failed: 1812, network: "203.0.113.0/24" },
+  },
+  { at: "2026-09-10T12:05:00Z", code: "rate_limit_tightened", facts: { by: "FA" } },
+  { at: "2026-09-11", code: "review_completed", facts: { accounts_accessed: 0 } },
+  { at: "2026-09-14", code: "status_set", facts: { status: "investigating" } },
 ];
 
 export interface PersonRef {

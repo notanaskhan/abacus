@@ -24,6 +24,7 @@ export const ACTIONS = [
   "audit.read",
   "audit_event.export",
   "audit_event.read",
+  "audit_export.read",
   "autonomy_policy.update",
   "binder.create",
   "binder.mark_done",

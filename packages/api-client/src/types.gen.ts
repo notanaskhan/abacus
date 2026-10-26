@@ -1656,6 +1656,12 @@ export type AuditEventDetail = {
      */
     ip?: string | null;
     /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    };
+    /**
      * Link Kind
      */
     link_kind?: 'run' | 'none';
@@ -1755,6 +1761,12 @@ export type AuditEventRow = {
      * Ip
      */
     ip?: string | null;
+    /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    };
     /**
      * Link Kind
      */

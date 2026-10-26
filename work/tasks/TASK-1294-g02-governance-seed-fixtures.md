@@ -45,3 +45,7 @@ import; no template text is committed (human to-do).
 ## Progress log
 - 2026-10-26: fixtures, golden and both golden tests green (6 pytest, 6 Vitest). Partial: the
   live slices above are recorded in DEC-419 against their tasks.
+- 2026-10-26: the INC-2026-005 timeline is codes and facts (the scope guard refuses the X-03
+  word in a string; the drawer's words come from the copy registry in T16). This was a
+  `scope_guards` failure in the T07 commit: I ran the gates without it. Lesson for the gate
+  loop: run every quality module, every commit.

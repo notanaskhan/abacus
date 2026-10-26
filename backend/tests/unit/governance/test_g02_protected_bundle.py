@@ -21,6 +21,7 @@ from abacus.modules.platform.audit_slots import AuditEventRef, AuditLabel, Audit
 
 NEW_ACTIONS = (
     "audit_event.export",
+    "audit_export.read",
     "security.read",
     "security.manage",
     "session.end",

@@ -476,8 +476,7 @@ async def test_ac12_export_needs_a_fresh_second_factor(
         datetime.now(UTC) - timedelta(hours=2),
     )
     refused = await as_(stale)(*EXPORT, json=_EXPORT_BODY, headers={"Idempotency-Key": "k1"})
-    if stubbed(EXPORT, refused):
-        return
+    # The matrix answers before the stub (security review L1), so this holds against it too.
     assert refused.status_code == 403
 
 
@@ -538,8 +537,6 @@ async def test_ac14_ac46_the_agent_and_client_principals_are_refused_everywhere(
     if method == "POST" and template.endswith("/exports"):
         kwargs = {"json": _EXPORT_BODY, "headers": {"Idempotency-Key": "k4"}}
     client = await as_(world.client)(method, path, **kwargs)
-    if route in STUBBED and client.status_code == 501:
-        return
     assert client.status_code == 404  # INV-4: nothing of the firm's log exists for a client
     agent = AuthContext(
         TenantContext(world.tenant, "agent", "agent:probe:run", world.agent_on_behalf_of),

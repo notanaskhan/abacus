@@ -68,6 +68,10 @@ const target = (type: string, label: string, extra: Partial<AuditEventRow["targe
   ...extra,
 });
 const ASHFORD = stableId("client:ashford-manufacturing-co");
+const LENA = stableId("user:lena-park");
+const CLAIRE = stableId("contact:claire-feld");
+const OWEN = stableId("contact:owen-calder");
+const AJE_POLICY = "bh-aje-thresholds-v2";
 const runOf = (name: string) => stableId(`run:${name}`);
 
 // ROWS 1–14, newest first. `seq` is an identifier: the newest is the log's 18,406th event.
@@ -91,7 +95,7 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "pl",
     actor: asPerson(PEOPLE.hannah),
     target: target("workbench_session", "Workbench"),
-    detail_facts: { topic: "TY2025 season progress by office" },
+    // The session's topic is content: under `values`, for need-to-know readers (M4).
     ip: "198.51.100.31",
   },
   {
@@ -102,9 +106,14 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     actor: asPerson(PEOPLE.grace),
     target: target("wall", "Firm settings · Walls", { client_id: ASHFORD }),
     detail_facts: {
-      walled_person: "Lena Park",
-      client: "Ashford Manufacturing Co.",
-      approved_by: "Margaret Okonkwo",
+      walled_user_id: LENA,
+      client_id: ASHFORD,
+      approved_by_user_id: PEOPLE.margaret.user_id,
+    },
+    labels: {
+      [LENA]: "Lena Park",
+      [ASHFORD]: "Ashford Manufacturing Co.",
+      [PEOPLE.margaret.user_id]: "Margaret Okonkwo",
     },
     ip: "198.51.100.12",
   },
@@ -117,19 +126,9 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     target: target("close", "Copperleaf Coffee Roasters, Inc. · Close 2026-08", {
       client_id: stableId("client:copperleaf-coffee-roasters-inc"),
     }),
-    detail_facts: {
-      policy: "BH AJE thresholds v2",
-      within_threshold: 4,
-      entry_1: "Payroll accrual",
-      amount_1: "11860.00",
-      entry_2: "Prepaid insurance",
-      amount_2: "700.00",
-      entry_3: "Depreciation",
-      amount_3: "2140.00",
-      entry_4: "Deferred revenue",
-      amount_4: "5320.00",
-      total: "20020.00",
-    },
+    // The entries and amounts are values: the drawer's `values`, for Margaret only (DEC-60).
+    detail_facts: { policy_ref: AJE_POLICY, within_threshold: 4 },
+    labels: { [AJE_POLICY]: "BH AJE thresholds v2" },
     ip: "198.51.100.57",
   },
   {
@@ -139,7 +138,8 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "pl",
     actor: SYSTEM,
     target: target("inbox_item", "Inbox · docs@brightwaterhale.com"),
-    detail_facts: { from_name: "Claire Feld", attachments: 2, filed: false },
+    detail_facts: { from_contact_id: CLAIRE, attachments: 2, filed: false },
+    labels: { [CLAIRE]: "Claire Feld" },
   },
   {
     effective_at: at(14, 9, 0),
@@ -149,11 +149,12 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     actor: viaAgent(PEOPLE.hannah, "workbench.season_progress_reporter"),
     target: target("agent_run", "Workbench · Agent run"),
     detail_facts: {
-      agent: "Season Progress Reporter",
-      schedule: "Mondays 9:00 AM CT",
+      agent_id: "workbench.season_progress_reporter",
+      schedule: "weekly_monday_0900_ct",
       duration_s: 161,
       artifacts: 1,
     },
+    labels: { "workbench.season_progress_reporter": "Season Progress Reporter" },
     run_id: runOf("season-progress-reporter"),
     link_kind: "run",
   },
@@ -164,11 +165,13 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "pl",
     actor: asPerson(PEOPLE.daniel),
     target: target("envelope", "Signatures · E13"),
+    // The letter's title is content (`values`); signers are named through `labels`.
     detail_facts: {
-      document: "Engagement letter",
-      title: "Ridgeline cost segregation & §754 analysis",
-      signers: "Owen Calder, Daniel Reyes",
+      document_kind: "engagement_letter",
+      signer_1_id: OWEN,
+      signer_2_id: PEOPLE.daniel.user_id,
     },
+    labels: { [OWEN]: "Owen Calder", [PEOPLE.daniel.user_id]: "Daniel Reyes" },
     ip: "198.51.100.40",
   },
   {
@@ -180,7 +183,8 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     target: target("client", "Jonah & Claire Feld", {
       client_id: stableId("client:jonah-claire-feld"),
     }),
-    detail_facts: { masked: "•••-••-2208", reason: "match to IRS wage & income transcript" },
+    // The masked number is a value (`values`, masked); the reason is a code.
+    detail_facts: { field: "ssn", reason_code: "irs_wage_income_transcript_match" },
     ip: "198.51.100.44",
   },
   {
@@ -190,7 +194,8 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "pl",
     actor: viaAgent(PEOPLE.grace, "workbench.request_chaser"),
     target: target("agent_run", "Workbench · Agent run"),
-    detail_facts: { agent: "Request Chaser", schedule: "daily", drafts: 12, sent: 0 },
+    detail_facts: { agent_id: "workbench.request_chaser", schedule: "daily", drafts: 12, sent: 0 },
+    labels: { "workbench.request_chaser": "Request Chaser" },
     run_id: runOf("request-chaser"),
     link_kind: "run",
   },
@@ -201,7 +206,7 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "pl",
     actor: asPerson(PEOPLE.neil),
     target: target("auth_session", "Firm sign-in"),
-    detail_facts: { method: "sso", provider: "Microsoft", mfa: true },
+    detail_facts: { method: "sso", provider: "microsoft", mfa: true },
     ip: "198.51.100.18",
   },
   {
@@ -224,7 +229,7 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "ok",
     actor: asPerson(PEOPLE.samuel),
     target: target("tax_return", "Harborview Dental Properties, LP · 2025 Form 1065"),
-    detail_facts: { destination: "CCH Axcess Tax", return_ref: "2025P:Harborview:V3" },
+    detail_facts: { destination: "cch_axcess_tax", synced: true },
     ip: "198.51.100.44",
   },
   {
@@ -234,7 +239,7 @@ const BASE: readonly Omit<AuditEventRow, "seq">[] = [
     mark: "ok",
     actor: asPerson(PEOPLE.daniel),
     target: target("tax_return", "Harborview Dental Properties, LP · 2025 Form 1065"),
-    detail_facts: { gate: "BH-TAX-02", open_review_items: 0 },
+    detail_facts: { gate: "bh_tax_02", open_review_items: 0 },
     ip: "198.51.100.40",
   },
   {
@@ -266,11 +271,8 @@ export const POLICY_ROWS: readonly AuditEventRow[] = [
     mark: "no",
     actor: asPerson(PEOPLE.priya),
     target: ADM07_ROWS[3]?.target ?? target("close", "Copperleaf"),
-    detail_facts: {
-      entry: "Depreciation",
-      amount: "2140.00",
-      reason: "asset_additions_unconfirmed",
-    },
+    // The entry and its amount are values (`values`); the reason is a code.
+    detail_facts: { entries: 1, reason_code: "asset_additions_unconfirmed" },
   },
   {
     seq: 0,
@@ -278,21 +280,12 @@ export const POLICY_ROWS: readonly AuditEventRow[] = [
     action: "entry_batch.accepted",
     category: "decision",
     mark: "ok",
-    actor: { kind: "policy", policy_ref: "BH AJE thresholds v2" },
+    actor: { kind: "policy", policy_ref: AJE_POLICY },
     target: ADM07_ROWS[3]?.target ?? target("close", "Copperleaf"),
-    detail_facts: {
-      entry_1: "Payroll accrual",
-      amount_1: "11860.00",
-      limit_1: "payroll_accruals_15000",
-      entry_2: "Prepaid insurance",
-      amount_2: "700.00",
-      entry_3: "Depreciation",
-      amount_3: "2140.00",
-      entry_4: "Deferred revenue",
-      amount_4: "5320.00",
-      limit_2_to_4: "each_10000",
-      reversible: true,
-    },
+    // The entries, amounts and limits are values (`values`); the row says how many and that
+    // each is reversible.
+    detail_facts: { within_threshold: 4, reversible: true },
+    labels: { [AJE_POLICY]: "BH AJE thresholds v2" },
   },
 ];
 

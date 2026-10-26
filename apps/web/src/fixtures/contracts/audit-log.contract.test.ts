@@ -141,7 +141,8 @@ describe("audit-log v1 fixtures (ADM-07)", () => {
     );
     expect(body.counts?.policy).toBe(2);
     const policy = body.items.filter((r) => r.actor.kind === "policy");
-    expect(policy.map((r) => r.actor.policy_ref)).toEqual(["BH AJE thresholds v2"]);
+    expect(policy.map((r) => r.actor.policy_ref)).toEqual(["bh-aje-thresholds-v2"]);
+    expect(policy[0]?.labels?.["bh-aje-thresholds-v2"]).toBe("BH AJE thresholds v2");
     expect(
       body.items.some((r) => r.mark === "no" && r.actor.person?.display_name === "Priya Raman"),
     ).toBe(true);
@@ -189,6 +190,16 @@ describe("audit-log v1 fixtures (ADM-07)", () => {
       request("GET", "/v1/audit-events", {}, `since_seq=${String(AUDIT_TOTAL - 2)}`),
     );
     expect(since.body.items.map((r) => r.seq)).toEqual([AUDIT_TOTAL - 1, AUDIT_TOTAL]);
+  });
+
+  it("M4: facts are codes, counts, booleans and ids only; names come through labels", () => {
+    const code = /^[a-z0-9][a-z0-9_.-]*$/;
+    for (const row of [...feed("default"), ...feed("policy")]) {
+      for (const value of Object.values(row.detail_facts ?? {})) {
+        if (typeof value === "string") expect(value).toMatch(code);
+      }
+      for (const label of Object.values(row.labels ?? {})) expect(label).not.toMatch(/\d+\.\d{2}/);
+    }
   });
 
   it("agent and system rows carry no request context", () => {

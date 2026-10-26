@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -21,7 +22,7 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag
 from abacus.modules.audit_trail import audit_log_contract as contract
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 
 Json = dict[str, object]
@@ -33,10 +34,11 @@ ROUTES: dict[tuple[str, str], str] = {
     ("get", "/v1/audit-events"): "audit_event.read",
     ("get", "/v1/audit-events/{seq}"): "audit_event.read",
     ("post", "/v1/audit-events/exports"): "audit_event.export",
-    ("get", "/v1/audit-events/exports/{export_id}"): "audit_event.export",
+    ("get", "/v1/audit-events/exports/{export_id}"): "audit_export.read",  # L5: no fresh MFA
     ("post", "/v1/audit-events/exports/{export_id}/link"): "audit_event.export",
 }
 NAMED = ("AuditEventRow", "AuditEventDetail", "ValueRow", "AuditExport")
+CONTRACT_DOC = Path(__file__).resolve().parents[4] / "docs" / "contracts" / "audit-log.md"
 HIDDEN = re.compile(r"(hidden|walled|wall_count|by_wall|omitted)")
 
 
@@ -99,13 +101,38 @@ def test_inv5_the_actor_grammar_names_people_policies_or_the_system_never_the_ag
 
 def test_ac9_request_context_and_values_are_personal_data() -> None:
     for model, fields in (
-        (contract.AuditEventRow, ("ip", "detail_facts")),
+        (contract.AuditEventRow, ("ip", "labels")),
         (contract.AuditEventDetail, ("ip", "device_label")),
         (contract.ValueRow, ("item_label", "before", "after", "amount")),
     ):
         for name in fields:
             assert level_of(model.model_fields[name]) == "confidential", (model, name)
     assert level_of(contract.AuditExportLinkOut.model_fields["url"]) == "restricted"
+
+
+def test_m4_facts_are_codes_and_ids_and_values_live_under_values() -> None:
+    """Security review M4: a metadata-only reader gets `detail_facts`, so they carry no value."""
+    assert level_of(contract.AuditEventRow.model_fields["detail_facts"]) == "internal"
+    assert "values" in contract.AuditEventDetail.model_fields
+    assert "values" not in contract.AuditEventRow.model_fields
+    text = CONTRACT_DOC.read_text("utf-8")
+    assert "codes and identifiers only" in text
+    assert "searches labels only" in text
+
+
+def test_m2_request_context_is_for_three_roles_and_null_for_everyone_else() -> None:
+    """DEC-420 (security review M2): the projection (G-02-T08) nulls request context for every
+    reader outside these roles, so every request-context field must be nullable."""
+    assert frozenset({"firm_admin", "security_admin", "quality_partner"}) == (
+        contract.REQUEST_CONTEXT_READERS
+    )
+    readers = set(RULES["audit_event.read"].decisions) - {"agent", "system"}
+    assert readers - contract.REQUEST_CONTEXT_READERS, "some readers must get request context null"
+    for name in ("ip", "device_label", "user_agent_family", "session"):
+        assert not contract.AuditEventDetail.model_fields[name].is_required(), name
+    for name in ("session_id", "auth_method", "mfa_at"):
+        assert not contract.AuditSessionOut.model_fields[name].is_required(), name
+    assert "firm_admin, security_admin and quality_partner" in CONTRACT_DOC.read_text("utf-8")
 
 
 MODELS = [
@@ -136,24 +163,70 @@ def test_ac14_ac45_the_export_is_a_fresh_second_factor_and_no_agent_or_client_ho
         assert RULES["audit_event.read"].decisions.get(principal, "deny") == "deny"
 
 
-async def test_g02t04_flag_off_is_404_and_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+def _ctx(firm_role: str | None, *, client: bool = False) -> AuthContext:
     user = uuid.uuid4()
-    ctx = AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), "security_admin", None
+    return AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)),
+        user,
+        uuid.uuid4(),
+        firm_role,  # pyright: ignore[reportArgumentType] -- a firm role code
+        None,
+        client=client,
     )
+
+
+def _flags(monkeypatch: pytest.MonkeyPatch, value: bool) -> list[Flag]:
     seen: list[Flag] = []
 
-    def fake(value: bool):  # noqa: ANN202 - a tiny fake
-        async def flag_enabled(_tenant: object, flag: Flag) -> bool:
-            seen.append(flag)
-            return value
+    async def flag_enabled(_tenant: object, flag: Flag) -> bool:
+        seen.append(flag)
+        return value
 
-        return flag_enabled
+    monkeypatch.setattr(contract, "flag_enabled", flag_enabled)
+    return seen
 
-    monkeypatch.setattr(contract, "flag_enabled", fake(False))
+
+def _authorise(monkeypatch: pytest.MonkeyPatch, *, allow: bool) -> None:
+    async def authorise(_ctx: object, action: str, _resource: object) -> None:
+        if not allow:
+            raise Forbidden(action, "role")
+
+    monkeypatch.setattr(contract, "authorise", authorise)
+
+
+async def test_g02t04_flag_off_is_404_and_on_is_501(monkeypatch: pytest.MonkeyPatch) -> None:
+    _authorise(monkeypatch, allow=True)
+    seen = _flags(monkeypatch, False)
     with pytest.raises(NotFound):
-        await contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the route gate
-    monkeypatch.setattr(contract, "flag_enabled", fake(True))
+        await contract._stub(_ctx("security_admin"), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+    seen = _flags(monkeypatch, True)
     with pytest.raises(NotImplementedYet):
-        await contract._stub(ctx)  # pyright: ignore[reportPrivateUsage] -- the route gate
-    assert seen == [AUDIT_LOG_EXPLORER, AUDIT_LOG_EXPLORER]
+        await contract._stub(_ctx("security_admin"), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+    assert seen == [AUDIT_LOG_EXPLORER]
+
+
+async def test_l1_the_matrix_answers_before_the_flag_is_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _authorise(monkeypatch, allow=False)
+    seen = _flags(monkeypatch, True)
+    with pytest.raises(Forbidden):  # no role the export row names
+        await contract._stub(_ctx(None), "audit_event.export")  # pyright: ignore[reportPrivateUsage] -- the route gate
+    agent = _ctx(None)
+    agent = AuthContext(
+        TenantContext(agent.tenant_id, "agent", "agent:probe:run", agent.user_id),
+        agent.user_id,
+        agent.membership_id,
+        None,
+        None,
+    )
+    with pytest.raises(Forbidden):  # INV-1: the agent never reads the log
+        await contract._stub(agent, "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+    with pytest.raises(NotFound):  # INV-4: a client principal learns nothing, not even a 403
+        await contract._stub(_ctx(None, client=True), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
+    assert seen == []
+    # An in-scope or engagement-role reader passes to the gate; the live route narrows per event
+    # with visible().
+    for role in ("quality_partner", None):
+        with pytest.raises(NotImplementedYet):
+            await contract._stub(_ctx(role), "audit_event.read")  # pyright: ignore[reportPrivateUsage] -- the route gate
