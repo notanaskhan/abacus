@@ -12,7 +12,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Final
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, type_coerce
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.agents.models import ScreeningResult
@@ -56,7 +58,10 @@ async def screening_section(tenant: TenantContext, request: SectionRequest) -> l
                                 (ScreeningResult.subject_kind == "version")
                                 & ScreeningResult.evidence_version_id.in_(versions),
                                 (ScreeningResult.subject_kind == "request_batch")
-                                & ScreeningResult.evidence_version_ids.overlap(versions),
+                                & type_coerce(
+                                    ScreeningResult.evidence_version_ids,
+                                    PG_ARRAY(PG_UUID(as_uuid=True)),
+                                ).overlap(versions),
                             ),
                             visible(ctx, "evidence.read", ScreeningResult.engagement_id),
                         )

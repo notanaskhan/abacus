@@ -50,7 +50,7 @@ and stale-MFA requests are refused."
 
 ## Files
 - `backend/migrations/versions/0191_engagement_exports.py` (down 0180, origin/main a0d16491's head; no 0190 exists)
-- `backend/src/abacus/modules/evidence/{exports.py,export_repository.py,export_events.py}` (new)
+- `backend/src/abacus/modules/evidence/{exports.py,export_models.py,export_events.py}` (new)
 - `backend/src/abacus/modules/evidence/export_contract.py` (routes live; download still 501)
 - `backend/src/abacus/modules/evidence/{registry.py,api.py,audit_targets.py}` (appends)
 - `backend/src/abacus/modules/requests/{source_documents.py,api.py}`: `pbc_binders` (append)
@@ -90,3 +90,4 @@ the trigger function (synthetic data only before Jun 1, 2027; P-38).
 ## Progress log
 - 2026-10-26: plan written; built with TASK-1335 in the s10b worktree (no commits by this agent,
   the lead commits and regenerates).
+- 2026-10-26 (relaunched builder): migration 0191 now revises 0180 (no 0190 exists); single head 0191. Fixed in the pass: `engagement_exports` and `engagement_export_contents` added to the integration seed's COUNTS; the schema-check contract test gains `engagement_exports` (and K-01's `methodology_version_states`, ED-111). Decision renumbered DEC-433 (merged with T19's). one targeted pass (`-n 2`, 13 files/dirs: the engagement-export, security-center and compliance-kernel contracts, the A-01-T18/T19 and G-02-T12 integration suites, schema check, the three regenerated security tests, the export builder, worker main, the export replay): 1604 passed, 8 failed; failures fixed and re-run green (20 passed).

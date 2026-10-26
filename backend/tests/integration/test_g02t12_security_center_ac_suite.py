@@ -789,7 +789,7 @@ async def test_ac24_ac47_felix_requests_and_only_another_person_approves(
     requested = await as_(world.felix)(
         *EXPORT_REQUEST,
         json={"approver_user_id": str(world.margaret.user_id)},
-        headers={"Idempotency-Key": "g02t12-export"},
+        headers={"Idempotency-Key": "k1"},
     )
     if stubbed(EXPORT_REQUEST, requested):
         return

@@ -58,3 +58,4 @@ Delete the file.
   support approve and revoke by `security_admin`. No xfail. Not covered here: AC-17's idle
   refresh failure (a BFF test for G-02-T14) and AC-15's positive path (T14 seeds a verified
   admin SSO sign-in).
+- 2026-10-26 (relaunched builder): suite green in the targeted pass against the stubs; one Idempotency-Key literal shortened to `k1` (secrets_scan SECRET-003). one targeted pass (`-n 2`, 13 files/dirs: the engagement-export, security-center and compliance-kernel contracts, the A-01-T18/T19 and G-02-T12 integration suites, schema check, the three regenerated security tests, the export builder, worker main, the export replay): 1604 passed, 8 failed; failures fixed and re-run green (20 passed).

@@ -75,11 +75,11 @@ schedule (T19) and the safeguards program (T20) exist.
   every field classified, request context and the pack link classified, no MFA-off or
   retention write path, the gate order (matrix before flag), the schedule path not shadowed.
 
-## For the main session after `make generate`
-- Switch `seed/security-center.ts` from its local interfaces to the generated types (same names:
-  `SecurityOverviewOut`, `SignInPolicyOut`, …) and add the TS contract test against the OpenAPI
-  document, as `contracts/audit-log.contract.test.ts` does.
-- Regenerate the route-introspection security tests.
+## After `make generate` (done 2026-10-26, relaunched builder)
+- `seed/security-center.ts` re-exports the generated types (same names) instead of local
+  interfaces; `apps/web/src/fixtures/contracts/security-center.contract.test.ts` checks every read
+  against the OpenAPI document, as `contracts/audit-log.contract.test.ts` does.
+- Route-introspection, fresh-MFA and tenant-isolation security tests regenerated (`make regenerate`).
 
 ## Progress log
 - 2026-10-26: built (not committed; the main session commits and runs `make generate`). Contract
@@ -95,3 +95,4 @@ schedule (T19) and the safeguards program (T20) exist.
   rename touched `portal/contract.py` and two c5 tests by mistake; reverted the same minute (no
   diff remains). Lint idea: a contract test asserting no OpenAPI schema key starts with
   `abacus__` beyond the known list would catch the collision at the stub.
+- 2026-10-26 (relaunched builder): merged origin/main a0d16491, `make regenerate`; fixtures moved to the generated types; TS contract test `security-center.contract.test.ts` (13 passed); decision renumbered DEC-432 (reserved range). one targeted pass (`-n 2`, 13 files/dirs: the engagement-export, security-center and compliance-kernel contracts, the A-01-T18/T19 and G-02-T12 integration suites, schema check, the three regenerated security tests, the export builder, worker main, the export replay): 1604 passed, 8 failed; failures fixed and re-run green (20 passed).

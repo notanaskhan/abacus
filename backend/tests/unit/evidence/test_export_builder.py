@@ -205,8 +205,8 @@ def test_ac11_formula_names_are_literal_cells() -> None:
 
 
 def test_ac11_a_tin_in_a_cell_or_a_name_is_masked() -> None:
-    assert "123-45-6789" not in literal_cell("W-9 for 123-45-6789")
-    assert "123-45-6789" not in segment("W-9 123-45-6789", 56)
+    assert "912-70-1234" not in literal_cell("W-9 for 912-70-1234")
+    assert "912-70-1234" not in segment("W-9 912-70-1234", 56)
 
 
 @pytest.mark.parametrize(
