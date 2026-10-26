@@ -107,6 +107,13 @@ import {
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
 import { PortalRequest } from "./POR-04";
+import { PortalRoom } from "./POR-14";
+import {
+  ARTBOARD as POR14_ARTBOARD,
+  STATES as POR14_STATES,
+  type Por14State,
+  scenarios as por14Scenarios,
+} from "./POR-14/scenarios";
 import {
   ARTBOARD as POR04_ARTBOARD,
   STATES as POR04_STATES,
@@ -921,6 +928,36 @@ function Por04Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 registerScreen("POR-04", {
   title: "Request detail · ignore reason sheet",
   Component: Por04Artboard,
+});
+
+// POR-14 (R-01-T14): the third-party room, a–f, as the `ScopedRequestRoom` composition; `&w=390`
+// draws the 390 page (no tab bar).
+function Por14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por14State = POR14_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por14Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR14_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalRoom frame {...(board.expanded === undefined ? {} : { expanded: board.expanded })} />
+    </div>
+  );
+}
+
+registerScreen("POR-14", {
+  title: "Third-party request room · Keystone Retirement Services",
+  Component: Por14Artboard,
 });
 
 // SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.

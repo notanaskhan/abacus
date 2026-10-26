@@ -40,6 +40,9 @@ export const porScreens = {
   },
   "POR-12": { name: "Entities, people & account", status: "planned", path: null },
   "POR-13": { name: "K-1 recipient view · My K-1s", status: "planned", path: null },
+  // R-01-T14: all six artboards render in the gallery on fixtures, and the portal entry mounts
+  // the room at /requests (a row at /requests/$requestId). Planned with a null path for the reason
+  // POR-03 gives (DEC-347).
   "POR-14": {
     name: "Third-party request room · Keystone Retirement Services",
     status: "planned",

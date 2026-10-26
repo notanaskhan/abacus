@@ -23,7 +23,7 @@ export {
   useBinderActions,
   useBinders,
 } from "./documents";
-export { DOCUMENT_WORDS, SHEET_WORDS, SIGN_IN_WORDS, failureWords } from "./messages";
+export { DOCUMENT_WORDS, ROOM_WORDS, SHEET_WORDS, SIGN_IN_WORDS, failureWords } from "./messages";
 export {
   type QuestionAnswer,
   type SheetDecision,
@@ -62,3 +62,5 @@ export {
   type RequestSlot,
   type SheetSlot,
 } from "./RequestSheet";
+export { openRows, roomRows, suggestFor, useRoom, useRoomActions } from "./room";
+export { ScopedRequestRoom, type ScopedRequestRoomProps } from "./ScopedRequestRoom";

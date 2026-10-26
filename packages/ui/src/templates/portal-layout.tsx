@@ -174,14 +174,17 @@ function MobileFrame({
           {mobileFooter}
         </div>
       )}
-      <MobileTabBar
-        nav={nav}
-        {...(active === undefined ? {} : { active })}
-        {...(onNavigate === undefined ? {} : { onNavigate })}
-        {...(moreOpen === undefined ? {} : { moreOpen })}
-        {...(onMoreChange === undefined ? {} : { onMoreChange })}
-        {...(moreForceState === undefined ? {} : { forceState: moreForceState })}
-      />
+      {/* A room of one area (a third party's, POR-14 at 390) has no tab bar. */}
+      {nav.length > 0 && (
+        <MobileTabBar
+          nav={nav}
+          {...(active === undefined ? {} : { active })}
+          {...(onNavigate === undefined ? {} : { onNavigate })}
+          {...(moreOpen === undefined ? {} : { moreOpen })}
+          {...(onMoreChange === undefined ? {} : { onMoreChange })}
+          {...(moreForceState === undefined ? {} : { forceState: moreForceState })}
+        />
+      )}
     </div>
   );
   if (!frame) return phone;

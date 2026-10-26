@@ -140,3 +140,44 @@ export const SHEET_WORDS = {
   loading: "Loading",
   failed: "That didn't go through. Nothing changed; try again in a moment.",
 } as const;
+
+// POR-14, the third-party room (R-01-T14; docs/screens/POR-14.md, Copy): verbatim from the
+// handoff, templated where the data varies (the firm, the organisation, the dates).
+const shortName = (organisation: string): string => organisation.split(" ")[0] ?? organisation;
+
+export const ROOM_WORDS = {
+  nav: "Requests",
+  pane: "Requests",
+  intro: (firm: string, organisation: string) =>
+    `${firm} asked ${organisation} for these items. You can only see and upload to these requests.`,
+  progress: (n: number, total: number) => `${String(n)} of ${String(total)} uploaded`,
+  dropPill: "Drop files here",
+  bandCount: (n: number, total: number) => `${String(n)} of ${String(total)}`,
+  uploaded: (on: string) => `Uploaded ${on}`,
+  due: (on: string) => `Due ${on}`,
+  inReview: (on: string, firm: string) => `You uploaded ${on} · ${firm} is reviewing it`,
+  /** The expanded row's upload slot: "letter" for a letter (the bridge letter), else "file". */
+  uploadSlot: (title: string) =>
+    `Drop the ${/\bletter\b/i.test(title) ? "letter" : "file"} here or Upload…`,
+  comment: "Comment…",
+  send: "Send comment",
+  returnedNote: (note: string | null | undefined, by: string) =>
+    note == null || note === "" ? `— ${by}` : `${note} — ${by}`,
+  complete: (firm: string, organisation: string) =>
+    `Everything ${firm} asked ${shortName(organisation)} for is in. Thank you.`,
+  /** The chip: "Sam Ortiz · Keystone" (DEC-63: a named person, the organisation an attribute). */
+  user: (name: string, organisation: string) =>
+    organisation === "" ? name : `${name} · ${shortName(organisation)}`,
+  expiredTitle: "This link has expired or was already used",
+  expiredAction: (firm: string) => `Ask ${firm} for a new link`,
+  pickerTitle: "Which request is this for?",
+  pickerUpload: "Upload",
+  cancel: "Cancel",
+  signOut: "Sign out",
+  userMenu: "Account",
+  // No handoff frame: written by R-01-T14 on the C-20 grammar (docs/screens/POR-14.md, Open gaps).
+  loading: "Loading",
+  loadError: "Couldn’t load your requests. Nothing was lost; try again in a moment.",
+  retry: "Retry",
+  failed: "That didn't go through. Nothing changed; try again in a moment.",
+} as const;

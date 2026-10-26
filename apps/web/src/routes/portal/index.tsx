@@ -43,6 +43,10 @@ const Home = lazy(async () => ({
 const Documents = lazy(async () => ({
   default: (await import("../../screens/POR-03")).POR03,
 }));
+// POR-14 (R-01-T14): a third party's room, its own chunk.
+const Room = lazy(async () => ({
+  default: (await import("../../screens/POR-14")).POR14,
+}));
 // POR-04 (R-01-T12): the request sheet over Documents, its own chunk.
 const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
@@ -136,6 +140,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Home") return <HomePage />;
   if (area === "Documents") return <DocumentsPage />;
   if (area === "Request") return <RequestPage />;
+  if (area === "Requests") return <RoomPage />;
   return <Shell area={area} />;
 }
 
@@ -186,6 +191,23 @@ function RequestPage(): JSX.Element {
       onNavigate={navigateTo}
       onClose={() => {
         history.push(`/documents${window.location.search}`);
+      }}
+    />
+  );
+}
+
+/** POR-14 (R-01-T14; docs/screens/POR-14.md): the room, a row open at `/requests/$requestId`
+ * (full screen at 390). */
+function RoomPage(): JSX.Element {
+  const { history } = useRouter();
+  const mobile = useMobileViewport();
+  const params: { requestId?: string } = useParams({ strict: false });
+  return (
+    <Room
+      mobile={mobile}
+      {...(params.requestId === undefined ? {} : { expanded: params.requestId })}
+      onExpand={(id) => {
+        history.replace(id === null ? "/requests" : `/requests/${encodeURIComponent(id)}`);
       }}
     />
   );
@@ -242,7 +264,8 @@ export const portalTree = rootRoute.addChildren([
   page("/", () => <Area area="Home" />),
   page("/documents", () => <Area area="Documents" />),
   page("/documents/requests/$requestId", () => <Area area="Request" />), // POR-04
-  page("/requests", NotBuilt),
+  page("/requests", () => <Area area="Requests" />), // POR-14
+  page("/requests/$requestId", () => <Area area="Requests" />),
   page("/k1s", NotBuilt),
   page("/governance", NotBuilt),
   page("/intake", NotBuilt),

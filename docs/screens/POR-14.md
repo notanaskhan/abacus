@@ -7,7 +7,7 @@
 | Surface | portal (white-labelled; the third party sees the firm's name, never "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-14 Third-party request room - Keystone Retirement Services/` (README.md, spec.md; no revision.md) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | R-01 · contract R-01-T03; contract stub R-01-T01; consumer tests R-01-T02; fixtures R-01-T05; room read model and invitations on delegation R-01-T13; frontend (the `ScopedRequestRoom` composition) R-01-T14; parity and accessibility R-01-T31. A-09 reuses `ScopedRequestRoom` for POR-23 |
-| Manifest status | planned (`routes/manifest/por.ts`); fixture once R-01-T14 builds it |
+| Manifest status | built on fixtures and live (R-01-T14 over R-01-T13's read model, 2026-10-26): every artboard in the gallery, and the portal entry's `/requests` (a row at `/requests/$requestId`); the manifest entry stays `planned` with a null path, as POR-03's (DEC-347) |
 
 Code to come (R-01 §5.2): `src/screens/POR-14/{index.tsx, scenarios.ts, copy.ts, POR-14.test.tsx}`, `src/domain/portal/{room.ts, ScopedRequestRoom.tsx}`, `src/routes/portal/requests.tsx`, `src/fixtures/handlers/portal-room.ts`.
 
@@ -135,6 +135,11 @@ Each becomes a test in `POR-14.test.tsx` ("POR-14 avoid: …"): gradients in pro
 | DEC-63 | The third party is a named person with the organisation as an attribute ("Sam Ortiz · Keystone") | Third parties and the approver of record | decision-log DEC-63 |
 | DF-03 | The 390 layout is specified, not drawn: Tier D only | Portal responsive scope | 09 DF-03 |
 | — | The "Which request is this for?" picker pre-selects by code-only file-name scoring among the delegated items (`room/suggest`); the person chooses | No content and no model reach the choice (ADR-050) | R-01 Story 6.2 |
+| — | `intro` is null from the live read model: the intro reads the template with the firm's name ("Brightwater Hale asked …"); the fixtures carry the legal name and, at d, the custodian's line | No firm-written room introduction exists yet (DEC-387); the custodian's line is request guidance | DEC-387 |
+| — | The banner and the chip shorten the organisation to its first word ("Keystone", "Harborline"), as the handoff writes them | The read model carries the organisation's full name | R-01-T14 |
+| — | The open row's slot reads "Drop the letter here or Upload…" for a letter and "Drop the file here or Upload…" for anything else | The handoff draws only the bridge letter | R-01-T14 |
+| — | Any 404 from the room (no delegation, the flag off, an expired or used link) reads as f | One answer for every case (no oracle) | R-01 Story 6.2 |
+| — | At 390 an open row is shown alone (`/requests/$requestId`); the page has no tab bar (`PortalLayout` draws none for an empty nav) | T7-M for a room of one area | R-01-T14 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
@@ -145,5 +150,6 @@ Each becomes a test in `POR-14.test.tsx` ("POR-14 avoid: …"): gradients in pro
 | host | D | — | pane 720 centred, header 46, intro padding 16 18, band 32, row 52, disc 18, progress 3 px × 200, pill 30 |
 
 ## Open gaps
+- R-01-T14 wrote the words the handoff has no frame for in `domain/portal/messages.ts` (`ROOM_WORDS`): "Couldn’t load your requests. Nothing was lost; try again in a moment." with Retry, a failed write's toast "That didn't go through. Nothing changed; try again in a moment.", the picker's "Upload" and "Cancel", the composer's "Send comment".
 - No handoff string for the room's load error or flag-off state: the keys are reserved; R-01-T14 uses F-05's portal flag-off ViewState and records any new string here.
 - The user menu's "Security" target is POR-12's security section (N-03); until it exists the item is hidden in production.
