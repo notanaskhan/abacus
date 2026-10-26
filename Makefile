@@ -216,9 +216,11 @@ audit-chain-verify:
 
 # Q-02-T07 (SPEC-036 Q1, Q3): an agent's shadow report for a firm, or set its stage (founder, owner
 # credentials; audited). `make agent-stage FIRM=<id> AGENT=evidence.screener` reports;
-# add STAGE=shadow|live|off NOTE="..." to set. Staff use PUT /v1/platform/agent-stages instead.
+# add STAGE=shadow|live|off NOTE="..." to set (the note reaches the command as an environment
+# variable, never as shell text). Staff use PUT /v1/platform/agent-stages instead.
+agent-stage: export AGENT_STAGE_NOTE := $(NOTE)
 agent-stage:
-	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$(NOTE)",report $(FIRM) $(AGENT))
+	cd backend && uv run python -m abacus_tools.agent_stage $(if $(STAGE),set $(FIRM) $(AGENT) $(STAGE) "$$AGENT_STAGE_NOTE",report $(FIRM) $(AGENT))
 
 # SPEC-011: set a firm's feature flag (operators; audited).
 flag:

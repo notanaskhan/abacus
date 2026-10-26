@@ -48,7 +48,9 @@ async def set_agent_stage(
         raise UnknownAgent(facts={"agent_id": agent_id})
     actor = f"staff:{staff_id}"
     try:
-        async with uow(TenantContext(firm_id, "system", actor)) as tx:
+        # A staff member decides: the firm's trail names them as `support` (identity.support's
+        # way), never `system`, with the request's context (security review, 2026-10-26).
+        async with uow(TenantContext(firm_id, "support", actor)) as tx:
             stage_id = (
                 await tx.session.execute(
                     _SET,

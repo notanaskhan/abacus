@@ -93,7 +93,7 @@ async def test_staff_set_shadow_with_its_audit_and_boundary_events(
         tenant,
     )
     assert [(r["actor_kind"], r["actor_id"], r["target_id"]) for r in audit] == [
-        ("system", rows[0]["changed_by"], body["id"])
+        ("support", rows[0]["changed_by"], body["id"])
     ]
     outbox = await seed.value(
         "SELECT count(*) FROM outbox WHERE tenant_id = $1 "
