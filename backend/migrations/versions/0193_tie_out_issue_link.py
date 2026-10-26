@@ -19,7 +19,7 @@ What the row still asks for:
 branches' migrations.
 
 Revision ID: 0193
-Revises: 0172
+Revises: 0180
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0193"
-down_revision = "0172"
+down_revision = "0180"
 branch_labels = None
 depends_on = None
 
