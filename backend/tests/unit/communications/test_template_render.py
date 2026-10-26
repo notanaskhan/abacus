@@ -13,10 +13,10 @@ from abacus.modules.communications.render import (
     render_email,
 )
 from abacus.modules.communications.template_keys import RECONNECT_REQUEST, REMINDER
-from abacus.modules.communications.template_registry import VARIABLES
+from abacus.modules.communications.template_registry import VARIABLES, lint_values
 from abacus.modules.communications.templates import TemplateInvalid, UnknownTemplateVariable
 
-LINK = "https://portal.example.test/l/Token0123456789"
+LINK = "http://localhost:5173/sign-in#link=Token0123456789"  # the test environment's portal
 ALLOWED = frozenset(REMINDER.variables)
 BLOCKS = frozenset(n for n, v in VARIABLES.items() if v.block)
 VALUES = {
@@ -85,6 +85,8 @@ def test_ac9_390_is_the_same_html_with_a_full_width_button() -> None:
         {"connection_name": "American Express"},  # not this key's
         {"client_first_name": "Claire\nBcc: x@example.test"},  # a value adds a line
         {"portal_link": "javascript:alert(1)"},  # not a secure link
+        {"portal_link": "https://evil.example.com/sign-in#link=x"},  # not the portal (M3)
+        {"portal_link": "http://localhost:5173/sign-in?link=x"},  # never a query string
     ],
 )
 def test_ac9_refused_values(values: dict[str, str]) -> None:
@@ -134,3 +136,41 @@ def test_ac9_the_lint_names_the_rule_and_the_block_never_the_text() -> None:
     assert {f.fact() for f in lint_template(CONTENT, RECONNECT_REQUEST)} >= {
         "unregistered_variable:subject"
     }
+
+
+# --- the security review's fixes (M3, L2) ------------------------------------------------------
+
+
+def test_ac9_portal_link_goes_only_in_the_button() -> None:
+    inline = TemplateContent(
+        "S", "", (Block("p", "paragraph", "Open {portal_link}"),), "Open", "documents"
+    )
+    with pytest.raises(TemplateInvalid):
+        render_email(inline, VALUES, allowed=ALLOWED, block_variables=BLOCKS)
+    assert {f.fact() for f in lint_template(inline, REMINDER)} == {"foreign_link:p"}
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["See https://evil.example.com", "Visit www.example.org", "Write to help@example.com"],
+)
+def test_ac9_firm_text_carries_no_address_of_its_own(text: str) -> None:
+    bad = TemplateContent("S", "", (Block("p", "paragraph", text),), None, None)
+    assert "foreign_link:p" in {f.fact() for f in lint_template(bad, REMINDER)}
+
+
+@pytest.mark.parametrize(
+    ("text", "code"),
+    [
+        ("Powered by Acc\u200brued", "platform_name"),  # a zero-width space inside the name
+        ("SSN 912 34 5678", "tin_shape"),
+        ("SSN 912.34.5678", "tin_shape"),
+        ("SSN \uff19\uff11\uff12-34-5678", "tin_shape"),  # full-width digits
+        ("A refund of USD 5000", "amount"),
+        ("A refund of 5000 dollars", "amount"),
+    ],
+)
+def test_ac9_the_shapes_are_read_after_folding(text: str, code: str) -> None:
+    bad = TemplateContent("S", "", (Block("p", "paragraph", text),), None, None)
+    assert f"{code}:p" in {f.fact() for f in lint_template(bad, REMINDER)}
+    assert code in {f.code for f in lint_values({"work_item": text})} or code == "platform_name"

@@ -40,8 +40,10 @@ from abacus.modules.identity.events import AccessChanged, ClientAccessGranted, C
 from abacus.modules.identity.repository import (
     GrantRow,
     active_grants,
+    active_memberships,
     delegate_grant_holders,
     delegate_holders,
+    engagement_members_of,
     get_grant,
     insert_grant,
     insert_grant_event,
@@ -191,6 +193,29 @@ async def third_party_on(tenant: TenantContext, user_id: UUID, engagement_id: UU
 
 
 register_third_party(third_party_on)
+
+
+async def may_receive_about(tenant: TenantContext, user_id: UUID, engagement_id: UUID) -> bool:
+    """R-01-T19 security review H: whether a firm email about this engagement may go to this
+    person. They must hold an active membership in the firm and either be on the engagement's
+    team or hold an active grant whose scope covers the engagement (its client, entity, the
+    engagement itself, one of its work items or a request delegated to them). Read under the
+    firm's row-level security, so another firm's people never qualify."""
+    if not any(m.tenant_id == tenant.tenant_id for m in await active_memberships(user_id)):
+        return False
+    if any(member == user_id for member, _ in await engagement_members_of(tenant, engagement_id)):
+        return True
+    client_id = await engagement_client(tenant, engagement_id)
+    for grant in await active_grants(tenant, user_id):
+        facts = await scope_facts(tenant, grant.scope_kind, grant.scope_id)
+        if facts is None:
+            continue
+        if facts.engagement_id is not None:
+            if facts.engagement_id == engagement_id:
+                return True
+        elif facts.work_item_id is None and client_id is not None and facts.client_id == client_id:
+            return True
+    return await third_party_on(tenant, user_id, engagement_id)
 
 
 async def delegation_holders_by_grant(

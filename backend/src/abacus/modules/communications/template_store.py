@@ -140,11 +140,12 @@ async def firm_template_id(session: AsyncSession, key: str) -> UUID | None:
     return cast(UUID | None, found)
 
 
-async def ensure_firm_template(session: AsyncSession, key: str, audience: tuple[str, ...]) -> UUID:
-    """The firm's override row for `key`, created on its first edit or import."""
+async def ensure_firm_template(session: AsyncSession, key: str) -> UUID:
+    """The firm's override row for `key`, created on its first edit or import. The database
+    refuses a key its platform row does not mark firm-editable and takes the audience from that
+    row (security review M1)."""
     found = await session.scalar(
-        text("SELECT email_template_firm_row(:key, :locale, :audience)"),
-        {"key": key, "locale": LOCALE, "audience": list(audience)},
+        text("SELECT email_template_firm_row(:key, :locale)"), {"key": key, "locale": LOCALE}
     )
     return cast(UUID, found)
 
@@ -236,17 +237,16 @@ async def publish_version(
     version: int,
     content: TemplateContent,
     *,
-    published_by: str,
     source: str,
 ) -> tuple[UUID, str]:
     """Insert the firm's version `version` (insert-only); the function refuses any other number
-    (`serialization_failure`, a concurrent publish). Returns the version id and its hash."""
+    (`serialization_failure`, a concurrent publish), records the session's person as its
+    publisher and refuses any other actor (security review M1). Returns the id and the hash."""
     sha = content_sha256(key, LOCALE, content)
     sealed = await seal(tenant_id, _plain(content), _version_binding(template_id, version, sha))
     version_id = await session.scalar(
         text(
-            "SELECT email_template_publish(:template, :version, :sealed, :target, :sha, :by, "
-            ":source)"
+            "SELECT email_template_publish(:template, :version, :sealed, :target, :sha, :source)"
         ),
         {
             "template": template_id,
@@ -254,7 +254,6 @@ async def publish_version(
             "sealed": sealed,
             "target": content.cta_target,
             "sha": sha,
-            "by": published_by,
             "source": source,
         },
     )

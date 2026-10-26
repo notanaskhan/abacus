@@ -4,8 +4,9 @@ A version is a subject, a preheader, typed blocks and at most one call to action
 the key's whitelisted `{variables}` and gives an HTML part and a plain-text part, and it is pure:
 the same content, values and width give byte-identical output (no clock, no ids, no ordering that
 depends on a dict). Every filled value and every word of the template is HTML-escaped; the only
-link is the button, whose address is the `{portal_link}` value (a secure link, P-08-T21), and it
-is written only when it is an https address or the local sink's http one.
+link is the button, whose address is the `{portal_link}` value (a secure link, P-08-T21): it is
+written only when it opens the portal (`portal_link_allowed`), and `{portal_link}` may not
+appear in any text (security review M3).
 
 - `{name}` is a variable; a brace that is not part of one is refused (`TemplateInvalid`).
 - A variable must be one the content's key registers, and every variable the content uses needs a
@@ -24,7 +25,9 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
+from urllib.parse import urlsplit
 
+from abacus.kernel.config import settings
 from abacus.modules.communications.templates import TemplateInvalid, UnknownTemplateVariable
 
 BlockKind = Literal["heading", "paragraph", "item_list", "note", "footer"]
@@ -32,7 +35,9 @@ Width = Literal[600, 390]
 BLOCK_KINDS: Final = ("heading", "paragraph", "item_list", "note", "footer")
 _PLACEHOLDER: Final = re.compile(r"\{([a-z][a-z0-9_]{0,39})\}")
 _BRACE: Final = re.compile(r"[{}]")
-_LINK: Final = re.compile(r"(https://|http://localhost[:/])[^\s\"'<>]{1,1900}")
+_LINK_CHARS: Final = re.compile(r"[^\s\"'<>\\]{1,2000}")
+_LOCAL_LINKS: Final = ("local", "test")  # plain http to localhost only here (review M3)
+LINK_VARIABLE: Final = "portal_link"
 _BUTTON_BEFORE: Final = frozenset({"note", "footer"})
 _FONT: Final = "font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"
 
@@ -133,6 +138,8 @@ def _check_values(
     used = content_variables(content)
     if not used <= allowed or not used <= set(values):
         raise UnknownTemplateVariable
+    if LINK_VARIABLE in used:
+        raise TemplateInvalid  # the secure link goes only in the button (security review M3)
     for text in (content.subject, content.preheader, content.cta_label or ""):
         if set(used_variables(text)) & block_variables:
             raise TemplateInvalid
@@ -147,6 +154,30 @@ def _check_values(
                 raise TemplateInvalid
         elif "\n" in value:
             raise TemplateInvalid
+
+
+def portal_link_allowed(link: str) -> bool:
+    """Security review M3: the button opens only the portal. https on the neutral portal domain
+    (or one of its firm hosts) or the app's own https origin, with no query string and no
+    credentials; plain http to localhost in the local and test environments only."""
+    if not _LINK_CHARS.fullmatch(link):
+        return False
+    parts = urlsplit(link)
+    if parts.query or parts.username or parts.password or not parts.hostname:
+        return False
+    host = parts.hostname
+    config = settings()
+    app = urlsplit(config.app_base_url)
+    if parts.scheme == "https":
+        if app.scheme == "https" and host == app.hostname:
+            return True
+        base = config.portal_base_domain
+        return base is not None and (host == base or host.endswith(f".{base}"))
+    return (
+        parts.scheme == "http"
+        and config.environment in _LOCAL_LINKS
+        and host in ("localhost", "127.0.0.1")
+    )
 
 
 def _fill(text: str, values: Mapping[str, str]) -> str:
@@ -207,8 +238,8 @@ def render_email(
     link = values.get("portal_link")
     button: tuple[str, str] | None = None
     if content.cta_label is not None:
-        if link is None or not _LINK.fullmatch(link):
-            raise TemplateInvalid  # a button needs a secure link to open
+        if link is None or not portal_link_allowed(link):
+            raise TemplateInvalid  # a button needs a secure link on the portal to open
         button = (_fill(content.cta_label, values), link)
     html_parts: list[str] = []
     text_parts: list[str] = []

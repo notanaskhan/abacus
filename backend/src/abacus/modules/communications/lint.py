@@ -3,8 +3,9 @@
 Each finding names its rule and where it is (a block id, or `subject`, `preheader`,
 `cta_label`), never the text. T19 runs the rules a published version must never break: a
 variable the key does not register (or a block variable outside an item list), an amount, a
-TIN-shaped number, an account number, and the platform's name. R-01-T23 adds attachments, a
-second button, foreign links and the scope guards' banned words, and runs the lint at preview,
+TIN-shaped number, an account number, the platform's name, and a link or domain in the text or
+`{portal_link}` anywhere but the button (security review M3). R-01-T23 adds attachments, a
+second button and the scope guards' banned words, and runs the lint at preview,
 test send and import too. Deterministic: the same content gives the same findings in the same
 order.
 """
@@ -23,11 +24,16 @@ from abacus.modules.communications.template_registry import (
     VARIABLES,
     EmailTemplateRegistration,
     LintCode,
+    normalised,
 )
 from abacus.modules.communications.templates import TemplateInvalid
 
 _PLATFORM: Final = re.compile(r"accrued", re.IGNORECASE)
 _PLACEHOLDER: Final = re.compile(r"\{[a-z][a-z0-9_]{0,39}\}")
+# Security review M3: firm text carries no address of its own; the one link is the button's.
+_FOREIGN_LINK: Final = re.compile(
+    r"(?i)\b(?:https?://|www\.)|[a-z0-9](?:[a-z0-9-]{0,62})(?:\.[a-z0-9-]{1,63})*\.[a-z]{2,24}\b"
+)
 
 
 @dataclass(frozen=True)
@@ -40,7 +46,7 @@ class LintFinding:
 
 
 def _text_findings(where: str, text: str) -> list[LintFinding]:
-    bare = _PLACEHOLDER.sub(" ", text)
+    bare = normalised(_PLACEHOLDER.sub(" ", text))
     found: list[LintFinding] = []
     if TIN_SHAPE.search(bare):
         found.append(LintFinding("tin_shape", where))
@@ -50,6 +56,8 @@ def _text_findings(where: str, text: str) -> list[LintFinding]:
         found.append(LintFinding("amount", where))
     if _PLATFORM.search(bare):
         found.append(LintFinding("platform_name", where))
+    if _FOREIGN_LINK.search(bare) or "{portal_link}" in text:
+        found.append(LintFinding("foreign_link", where))  # the link goes only in the button
     return found
 
 

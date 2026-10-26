@@ -47,11 +47,26 @@ _TARGETS = (
     "'portal_home', 'documents', 'request', 'room', 'sign', 'deliverables', 'confirm', "
     "'connections'"
 )
-_ROW = "email_template_firm_row(text, text, text[])"
+_ROW = "email_template_firm_row(text, text)"
 _FIRM_ID = "email_template_firm_id(text, text)"
 _RESOLVE = "email_template_resolve(text, text)"
 _AT = "email_template_version_at(text, text, integer)"
-_PUBLISH = "email_template_publish(uuid, integer, bytea, text, text, text, text)"
+_PUBLISH = "email_template_publish(uuid, integer, bytea, text, text, text)"
+_GUARD = "messages_sender_guard()"
+# R-01's six firm-editable keys and their audiences (template_keys.py); a later epic's key adds
+# its row in its own migration.
+_REGISTRATIONS = """
+    (NULL, 'invitation', 'en-US', true, ARRAY['client', 'third_party']),
+    (NULL, 'reminder', 'en-US', true, ARRAY['client', 'third_party']),
+    (NULL, 'signature_request', 'en-US', true, ARRAY['client']),
+    (NULL, 'deliverable_ready', 'en-US', true, ARRAY['client']),
+    (NULL, 'confirmation_request', 'en-US', true, ARRAY['respondent']),
+    (NULL, 'reconnect_request', 'en-US', true, ARRAY['client'])
+"""
+_EDITABLE = """
+              JOIN public.email_templates p ON p.tenant_id IS NULL AND p.key = t.key
+               AND p.locale = t.locale AND p.firm_editable
+"""
 _VERSION_COLUMNS = """
     template_id uuid, version_id uuid, version integer, firm boolean, format text,
     subject text, preheader text, blocks jsonb, sealed bytea, cta_label text, cta_target text,
@@ -160,10 +175,20 @@ def upgrade() -> None:
         """
     )
     op.execute("GRANT INSERT (template_version_id, kind) ON messages TO abacus_app")
+    # --- the firm-editable keys (registrations, not content; R-01 §4.7) ----------------------
+    # The allowlist lives here, not only in code (security review M1): a firm may override only
+    # a key whose platform row says `firm_editable`, with that row's audience. No text.
+    op.execute(
+        f"""
+        INSERT INTO email_templates (tenant_id, key, locale, firm_editable, audience)
+        VALUES {_REGISTRATIONS}
+        ON CONFLICT DO NOTHING
+        """  # noqa: S608 -- fixed SQL
+    )
     # --- definer functions -------------------------------------------------------------------
     op.execute(
         f"""
-        CREATE FUNCTION email_template_firm_row(p_key text, p_locale text, p_audience text[])
+        CREATE FUNCTION email_template_firm_row(p_key text, p_locale text)
         RETURNS uuid
         LANGUAGE plpgsql SECURITY DEFINER
         SET search_path = pg_catalog, public, pg_temp
@@ -171,14 +196,22 @@ def upgrade() -> None:
         AS $$
         DECLARE
             v_tenant uuid := {_TENANT};
+            v_audience text[];
             v_id uuid;
         BEGIN
             IF v_tenant IS NULL THEN
                 RAISE EXCEPTION 'email_template_firm_row: no firm'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
+            SELECT p.audience INTO v_audience FROM public.email_templates p
+             WHERE p.tenant_id IS NULL AND p.key = p_key AND p.locale = p_locale
+               AND p.firm_editable;
+            IF v_audience IS NULL THEN
+                RAISE EXCEPTION 'email_template_firm_row: not a firm-editable key'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             INSERT INTO public.email_templates (tenant_id, key, locale, firm_editable, audience)
-            VALUES (v_tenant, p_key, p_locale, true, p_audience)
+            VALUES (v_tenant, p_key, p_locale, true, v_audience)
             ON CONFLICT DO NOTHING;
             SELECT t.id INTO v_id FROM public.email_templates t
              WHERE t.tenant_id = v_tenant AND t.key = p_key AND t.locale = p_locale;
@@ -207,6 +240,7 @@ def upgrade() -> None:
             {_SELECT_VERSION}
               FROM public.email_templates t
               JOIN public.email_template_versions v ON v.id = t.current_version_id
+              {_EDITABLE}
              WHERE t.key = p_key AND t.locale = p_locale
                AND (t.tenant_id IS NULL OR t.tenant_id = {_TENANT})
              ORDER BY t.tenant_id IS NULL
@@ -224,6 +258,7 @@ def upgrade() -> None:
             {_SELECT_VERSION}
               FROM public.email_templates t
               JOIN public.email_template_versions v ON v.template_id = t.id
+              {_EDITABLE}
              WHERE t.key = p_key AND t.locale = p_locale AND v.version = p_version
                AND (t.tenant_id IS NULL OR t.tenant_id = {_TENANT})
              ORDER BY t.tenant_id IS NULL
@@ -235,7 +270,7 @@ def upgrade() -> None:
         f"""
         CREATE FUNCTION email_template_publish(
             p_template uuid, p_version integer, p_sealed bytea, p_cta_target text,
-            p_sha text, p_by text, p_source text
+            p_sha text, p_source text
         ) RETURNS uuid
         LANGUAGE plpgsql SECURITY DEFINER
         SET search_path = pg_catalog, public, pg_temp
@@ -243,16 +278,31 @@ def upgrade() -> None:
         AS $$
         DECLARE
             v_tenant uuid := {_TENANT};
+            v_actor text := NULLIF(current_setting('app.actor_id', true), '');
             v_key text;
             v_locale text;
             v_current integer;
             v_id uuid;
         BEGIN
+            -- Security review M1: a person publishes, as themself; the session says who.
+            IF current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+               OR v_actor IS NULL OR v_actor !~ '^[0-9a-f-]{{36}}$' THEN
+                RAISE EXCEPTION 'email_template_publish: a person publishes'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF p_source = 'handoff_seed' AND NOT EXISTS (
+                SELECT 1 FROM public.firms f WHERE f.tenant_id = v_tenant AND f.synthetic
+            ) THEN
+                RAISE EXCEPTION 'email_template_publish: seed content only on a synthetic firm'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
             SELECT t.key, t.locale INTO v_key, v_locale FROM public.email_templates t
              WHERE t.id = p_template AND t.tenant_id = v_tenant
+               AND EXISTS (SELECT 1 FROM public.email_templates p WHERE p.tenant_id IS NULL
+                           AND p.key = t.key AND p.locale = t.locale AND p.firm_editable)
                FOR UPDATE;
             IF v_key IS NULL OR v_tenant IS NULL THEN
-                RAISE EXCEPTION 'email_template_publish: not this firm''s template'
+                RAISE EXCEPTION 'email_template_publish: not this firm''s editable template'
                     USING ERRCODE = 'insufficient_privilege';
             END IF;
             SELECT coalesce(max(v.version), 0) INTO v_current
@@ -269,15 +319,62 @@ def upgrade() -> None:
             INSERT INTO public.email_template_versions
                 (template_id, version, format, sealed, cta_target, content_sha256,
                  published_by, source)
-            VALUES (p_template, p_version, 'blocks', p_sealed, p_cta_target, p_sha, p_by,
-                    p_source)
+            VALUES (p_template, p_version, 'blocks', p_sealed, p_cta_target, p_sha,
+                    'user:' || v_actor, p_source)
             RETURNING id INTO v_id;
             UPDATE public.email_templates SET current_version_id = v_id WHERE id = p_template;
             RETURN v_id;
         END $$
-        """,  # noqa: S608 -- fixed SQL; the tenant comes from the session
+        """,  # noqa: S608 -- fixed SQL; the tenant and actor come from the session
     )
-    for function in (_ROW, _FIRM_ID, _RESOLVE, _AT, _PUBLISH):
+    # Security review M2, L3: who may record a templated message, and with whose version. A
+    # templated message is a person's, or the system's scheduled Reminder from a version its own
+    # firm published (DEC-74); an agent or policy never records any message (ADR-005); the
+    # version is the platform's or the message's own firm's.
+    op.execute(
+        """
+        CREATE FUNCTION messages_sender_guard() RETURNS trigger
+        LANGUAGE plpgsql SECURITY DEFINER
+        SET search_path = pg_catalog, public, pg_temp
+        AS $$
+        DECLARE
+            v_kind text := NULLIF(current_setting('app.actor_kind', true), '');
+            v_owner uuid;
+            v_key text;
+            v_by text;
+        BEGIN
+            IF v_kind IN ('agent', 'policy') THEN
+                RAISE EXCEPTION 'messages: an agent never sends'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF NEW.template_version_id IS NULL THEN
+                RETURN NEW;
+            END IF;
+            SELECT t.tenant_id, t.key, v.published_by INTO v_owner, v_key, v_by
+              FROM public.email_template_versions v
+              JOIN public.email_templates t ON t.id = v.template_id
+             WHERE v.id = NEW.template_version_id;
+            IF v_owner IS NOT NULL AND v_owner <> NEW.tenant_id THEN
+                RAISE EXCEPTION 'messages: another firm''s template version'
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF v_kind = 'human' THEN
+                RETURN NEW;
+            END IF;
+            IF v_kind = 'system' AND v_key = 'reminder' AND v_owner = NEW.tenant_id
+               AND v_by LIKE 'user:%' AND NEW.created_by::text = substr(v_by, 6) THEN
+                RETURN NEW;
+            END IF;
+            RAISE EXCEPTION 'messages: only a person, or the scheduled Reminder, sends a template'
+                USING ERRCODE = 'insufficient_privilege';
+        END $$
+        """,
+    )
+    op.execute(
+        "CREATE TRIGGER messages_sender_guard BEFORE INSERT ON messages "
+        "FOR EACH ROW EXECUTE FUNCTION messages_sender_guard()"
+    )
+    for function in (_ROW, _FIRM_ID, _RESOLVE, _AT, _PUBLISH, _GUARD):
         op.execute(f"REVOKE ALL ON FUNCTION {function} FROM PUBLIC")
         op.execute(f"GRANT EXECUTE ON FUNCTION {function} TO abacus_app")
 
@@ -285,13 +382,20 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute(
         "DO $$ BEGIN IF EXISTS (SELECT 1 FROM email_templates WHERE tenant_id IS NOT NULL) "
+        "OR EXISTS (SELECT 1 FROM email_templates WHERE tenant_id IS NULL AND firm_editable "
+        "AND current_version_id IS NOT NULL) "
         "OR EXISTS (SELECT 1 FROM email_template_versions WHERE format <> 'text') "
         "OR EXISTS (SELECT 1 FROM messages WHERE template_version_id IS NOT NULL) THEN "
         "RAISE EXCEPTION 'refusing to downgrade: firm templates or block versions exist'; "
         "END IF; END $$"
     )
-    for function in (_PUBLISH, _AT, _RESOLVE, _FIRM_ID, _ROW):
+    op.execute("DROP TRIGGER messages_sender_guard ON messages")
+    for function in (_GUARD, _PUBLISH, _AT, _RESOLVE, _FIRM_ID, _ROW):
         op.execute(f"DROP FUNCTION {function}")
+    op.execute(
+        "DELETE FROM email_templates WHERE tenant_id IS NULL AND firm_editable "
+        "AND current_version_id IS NULL"
+    )
     op.execute("ALTER TABLE messages DROP COLUMN kind, DROP COLUMN template_version_id")
     op.execute("DROP TABLE email_template_drafts")
     op.execute(

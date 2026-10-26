@@ -82,3 +82,6 @@ this task builds the list, read, draft save and discard, publish, the block rend
 - 2026-10-27: built; targeted pass green after two test fixes (the agent principal is an
   `AgentContext`, not an `AuthContext`, so the reader case replaced it; probe titles without form
   numbers, which the scope check reads as amounts). DEC-450 defers the legacy constants.
+- 2026-10-27: security review fix round (H, M1-M4, L1-L4): recipient binding, DB-held editable keys and
+  publisher, messages_sender_guard, portal-only links and foreign_link, recipient-bound message ids,
+  header-line and folding rules, rotating label runs. Targeted pass and gates green.

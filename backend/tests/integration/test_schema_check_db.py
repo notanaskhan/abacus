@@ -1944,7 +1944,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
         | {"email_template_firm_row", "email_template_resolve"}  # 0196 (R-01-T19)
         | {"email_template_version_at", "email_template_publish"}  # 0196 (R-01-T19)
-        | {"email_template_firm_id"}  # 0196 (R-01-T19)
+        | {"email_template_firm_id", "messages_sender_guard"}  # 0196 (R-01-T19)
         # 0101 (P-01-T09): the staff session BFF.
         | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
         | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}

@@ -32,6 +32,7 @@ message `blocked`; an authorisation failure raises as every `authorise` does.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
@@ -258,8 +259,12 @@ async def send_templated(
 
 _AMOUNT_VALUE: Final = re.compile(
     r"[$€£]\s?\d|\b\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?\b|\b\d+\.\d{2}\b"
+    r"|(?i:\b(?:usd|us\$)\s?\d|\d(?:[\d,]*\d)?(?:\.\d+)?\s?(?:usd|dollars?)\b)"
 )
-_TIN_VALUE: Final = re.compile(r"\b\d{3}-\d{2}-\d{4}\b|\b\d{2}-\d{7}\b|(?<!\d)\d{9}(?!\d)")
+# Security review L2: a TIN separated by spaces or dots as well as dashes, or not at all.
+_TIN_VALUE: Final = re.compile(
+    r"\b\d{3}[\s.\-]?\d{2}[\s.\-]?\d{4}\b|\b\d{2}[\s.\-]\d{7}\b|(?<!\d)\d{9}(?!\d)"
+)
 _ACCOUNT_VALUE: Final = re.compile(r"(?:••|\*{2,}|[xX]{2,}|#)\s?\d{4}\b|(?<!\d)\d{10,}(?!\d)")
 # The same shapes for the template text lint (`lint.py`).
 AMOUNT_SHAPE: Final = _AMOUNT_VALUE
@@ -275,13 +280,21 @@ class ValueFinding:
     variable: str
 
 
+def normalised(text: str) -> str:
+    """What the shape rules read (security review L2): NFKC-folded (full-width digits, ligatures)
+    with format characters (zero-width spaces and joiners, direction marks) removed, so a value
+    can't slip a TIN or the platform's name past a rule."""
+    folded = unicodedata.normalize("NFKC", text)
+    return "".join(ch for ch in folded if unicodedata.category(ch) != "Cf")
+
+
 def lint_values(values: Mapping[str, str]) -> list[ValueFinding]:
     """The amount, TIN-shape and account-number rules over every filled value (each line of a
     block variable). Deterministic; run at preview (shown as findings) and at send (refused as
     `template_lint_failed`). A masked last four ("••4436") counts as an account number."""
     found: list[ValueFinding] = []
     for name in sorted(values):
-        value = values[name]
+        value = normalised(values[name])
         if _TIN_VALUE.search(value):
             found.append(ValueFinding("tin_shape", name))
         if _ACCOUNT_VALUE.search(value):

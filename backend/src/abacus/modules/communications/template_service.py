@@ -17,6 +17,7 @@ R-01 Story 7.1, 7.3).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
@@ -43,6 +44,7 @@ from abacus.modules.communications.templates import TemplateInvalid
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 
 _SERIALIZATION: Final = "40001"
+_LINE_BREAKS: Final = re.compile("[\r\n\x00\u0085\u2028\u2029]")
 _MAX_FINDING_FACTS: Final = 20
 Source = str  # editor | import | handoff_seed
 
@@ -115,8 +117,12 @@ def check_content(content: TemplateContent, registration: EmailTemplateRegistrat
         raise TemplateInvalid
     if len({b.id for b in content.blocks}) != len(content.blocks):
         raise TemplateInvalid
-    if not content.subject.strip() or "\n" in content.subject or "\n" in content.preheader:
+    if not content.subject.strip():
         raise TemplateInvalid
+    # Security review L1: a header line stays one line, with no NUL.
+    for line in (content.subject, content.preheader, content.cta_label or ""):
+        if _LINE_BREAKS.search(line):
+            raise TemplateInvalid
     content_variables(content)  # a stray brace is refused here; unknown names are lint findings
 
 
@@ -157,9 +163,7 @@ async def save_draft(
     registration = editable(key)
     check_content(content, registration)
     async with uow(ctx.tenant) as tx:
-        template_id = await template_store.ensure_firm_template(
-            tx.session, key, registration.audience
-        )
+        template_id = await template_store.ensure_firm_template(tx.session, key)
         current = await template_store.draft_of(tx.session, ctx.tenant_id, template_id, lock=True)
         have = current.draft_version if current is not None else 0
         if expected_version != have:
@@ -248,7 +252,6 @@ async def publish(ctx: AuthContext, key: str, *, source: Source = "editor") -> P
                 template_id,
                 version,
                 draft.content,
-                published_by=f"user:{ctx.user_id}",
                 source=source,
             )
         except DBAPIError as exc:

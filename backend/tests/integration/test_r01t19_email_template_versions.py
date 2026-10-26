@@ -17,6 +17,7 @@ from typing import cast
 
 import asyncpg
 import pytest
+from sqlalchemy.exc import DBAPIError
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
@@ -35,14 +36,16 @@ from abacus.modules.communications.render import (
     TemplateContent,
     render_email,
 )
-from abacus.modules.communications.template_keys import REMINDER
+from abacus.modules.communications.repository import insert_message
+from abacus.modules.communications.template_keys import DESIGNED, REMINDER
 from abacus.modules.communications.template_registry import VARIABLES
 from abacus.modules.identity.api import AuthContext, Forbidden
 
 from .agent_tests.support import Person, Seeder
 from .conftest import MigratedDatabase
 
-LINK = "https://portal.example.test/l/AbCdEf0123456789"
+# The local portal origin: plain http to localhost is allowed in the test environment only.
+LINK = "http://localhost:5173/sign-in#link=AbCdEf0123456789"
 VALUES = {
     "client_first_name": "Claire",
     "firm_name": "Probe Firm",
@@ -132,6 +135,7 @@ async def _firm(seed: Seeder, *, editor: bool = True) -> Firm:
     entity = await seed.entity(tenant)
     engagement = await seed.engagement(tenant, entity, admin.user_id)
     await seed.member(engagement, manager, "manager")
+    await seed.member(engagement, recipient, "staff")  # someone the engagement concerns (H)
     if editor:
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
@@ -417,3 +421,129 @@ async def test_ac10_a_person_without_message_send_on_the_engagement_is_refused(
             idempotency_key=_attempt(4),
         )
     assert recorder.sent == []
+
+
+# --- the security review's fixes (TASK-1352 fix round) -----------------------------------------
+
+
+async def test_h_a_recipient_the_engagement_does_not_concern_is_refused(
+    firm: Firm, seed: Seeder, recorder: Recorder
+) -> None:
+    """Another firm's user, and a member of this firm who is not on the engagement nor holds a
+    client grant covering it, are both refused 404 before anything is recorded or sent."""
+    await _publish(firm, "Reminder")
+    stranger = await seed.person(await seed.firm())
+    outsider = await seed.person(firm.tenant)
+    for n, who in enumerate((stranger, outsider), start=10):
+        with pytest.raises(NotFound):
+            await send_templated(
+                firm.manager,
+                "reminder",
+                RecipientRef("user", who.user_id),
+                VALUES,
+                scope=SendScope(engagement_id=firm.engagement),
+                idempotency_key=_attempt(n),
+            )
+    assert recorder.sent == []
+    assert await seed.value("SELECT count(*) FROM messages WHERE tenant_id = $1", firm.tenant) == 0
+
+
+async def test_m1_the_database_keeps_the_editable_keys_and_the_publisher(
+    firm: Firm, seed: Seeder
+) -> None:
+    """A platform-locked key can't get a firm override, and only a person publishes, as
+    themself, whatever the caller passes."""
+    with pytest.raises(DBAPIError):
+        async with tenant_session(firm.admin.tenant) as session:
+            await template_store.ensure_firm_template(session, "notification.mention")
+    await template_service.save_draft(firm.admin, "reminder", content("Mine"), 0)
+    template = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM email_templates WHERE tenant_id = $1 AND key = 'reminder'",
+            firm.tenant,
+        ),
+    )
+    system = TenantContext(firm.tenant, "system", "probe")
+    with pytest.raises(DBAPIError):
+        async with tenant_session(system) as session:
+            await template_store.publish_version(
+                session, firm.tenant, "reminder", template, 1, content("Sys"), source="editor"
+            )
+    with pytest.raises(DBAPIError):  # seed content only on a synthetic firm
+        async with tenant_session(firm.admin.tenant) as session:
+            await template_store.publish_version(
+                session, firm.tenant, "reminder", template, 1, content("S"), source="handoff_seed"
+            )
+    await template_service.publish(firm.admin, "reminder")
+    by = await seed.value(
+        "SELECT published_by FROM email_template_versions WHERE template_id = $1", template
+    )
+    assert by == f"user:{firm.admin.user_id}"
+    platform = await seed.rows(
+        "SELECT key FROM email_templates WHERE tenant_id IS NULL AND firm_editable ORDER BY key"
+    )
+    assert {r["key"] for r in platform} >= {r.key for r in DESIGNED}
+
+
+async def _version_of(seed: Seeder, tenant: uuid.UUID) -> uuid.UUID:
+    return cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT v.id FROM email_template_versions v JOIN email_templates t "
+            "ON t.id = v.template_id WHERE t.tenant_id = $1 ORDER BY v.version DESC LIMIT 1",
+            tenant,
+        ),
+    )
+
+
+async def _insert(ctx: TenantContext, firm: Firm, version: uuid.UUID | None) -> None:
+    async with tenant_session(ctx) as session:
+        await insert_message(
+            session,
+            message_id=uuid.uuid4(),
+            tenant_id=firm.tenant,
+            engagement_id=firm.engagement,
+            channel="email",
+            recipient_ref="user:probe",
+            body="probe",
+            status="sent",
+            violations=[],
+            created_by=firm.manager.user_id,
+            template_version_id=version,
+            kind="client",
+        )
+
+
+async def test_m2_l3_the_database_refuses_an_agent_a_system_template_and_another_firms_version(
+    firm: Firm, seed: Seeder
+) -> None:
+    await _publish(firm, "Reminder")
+    mine = await _version_of(seed, firm.tenant)
+    with pytest.raises(DBAPIError):  # an agent never records a message
+        await _insert(TenantContext(firm.tenant, "agent", "agent:probe"), firm, None)
+    with pytest.raises(DBAPIError):  # the system's Reminder is attributed to its publisher
+        await _insert(TenantContext(firm.tenant, "system", "probe"), firm, mine)
+    other = await _firm(seed)
+    await _publish(other, "Theirs")
+    theirs = await _version_of(seed, other.tenant)
+    with pytest.raises(DBAPIError):  # another firm's version
+        await _insert(firm.manager.tenant, firm, theirs)
+
+
+async def test_m4_the_same_key_for_another_recipient_is_another_message(
+    firm: Firm, seed: Seeder, recorder: Recorder
+) -> None:
+    await _publish(firm, "Reminder")
+    second = await seed.person(firm.tenant)
+    await seed.member(firm.engagement, second, "staff")
+    first = await _send(firm)
+    other = await send_templated(
+        firm.manager,
+        "reminder",
+        RecipientRef("user", second.user_id),
+        VALUES,
+        scope=SendScope(engagement_id=firm.engagement),
+        idempotency_key=_attempt(1),
+    )
+    assert first.message_id != other.message_id and len(recorder.sent) == 2

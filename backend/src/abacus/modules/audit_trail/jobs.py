@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import contextlib
 from datetime import timedelta
+from uuid import UUID
 
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
@@ -91,13 +92,34 @@ async def verify_chains_activity() -> int:
 LABEL_BATCHES_PER_RUN = 5
 
 
+# The run stops starting firms after this long, well inside its 5-minute timeout; the next run
+# carries on from where the rotation puts it (security review L4).
+LABEL_RUN_BUDGET = timedelta(minutes=3)
+
+
+def label_run_order(firms: list[UUID], run_minute: int) -> list[UUID]:
+    """Every firm once, starting at a different one each minute, so with a whole-run budget the
+    same firms are never the ones left out (security review L4)."""
+    if not firms:
+        return []
+    ordered = sorted(firms, key=str)
+    start = run_minute % len(ordered)
+    return ordered[start:] + ordered[:start]
+
+
 @activity.defn(name="audit_trail.index_labels")
 async def index_labels_activity() -> int:
-    """G-02-T10 (DEC-453): each firm's new events into its label index, a few batches at most.
-    Another indexer holding a firm's lock (a search catching up) skips that firm this run; a
-    firm that fails is logged by id and the others still run."""
+    """G-02-T10 (DEC-453): each firm's new events into its label index, a few batches at most,
+    firms in a rotating order within a time budget. Another indexer holding a firm's lock (a
+    search catching up) skips that firm this run; a firm that fails is logged by id and the
+    others still run."""
+    started = system_now()
     written = 0
-    for tenant in await firm_tenant_ids():
+    firms = await firm_tenant_ids()
+    for tenant in label_run_order(list(firms), int(started.timestamp() // 60)):
+        if system_now() - started > LABEL_RUN_BUDGET:
+            _log.info("audit_labels.budget_spent", written=written)
+            break
         try:
             for _ in range(LABEL_BATCHES_PER_RUN):
                 count = 0

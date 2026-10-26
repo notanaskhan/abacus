@@ -11,9 +11,13 @@ key's whitelist, a missing value, or a value with an amount, TIN or account-numb
 recorded `sent` with its `template_version_id` and handed to delivery after the commit.
 
 The stored body is the text part with the secure link removed, so the token is never stored.
-The message id is derived from the firm, the key and the idempotency key: a retry answers what
-the first call recorded and sends nothing again. The client-mail gate (`firm_not_client_facing`)
-arrives with R-01-T27 and the follow-up policy's mode with R-01-T24.
+The message id is derived from the firm, the key, the recipient, the engagement and the
+idempotency key: a retry answers what the first call recorded and sends nothing again, after
+authorising on the stored message's engagement. A recipient must be someone the engagement
+concerns (its team, or a client grant covering it), read under the firm's row-level security,
+else 404 (security review H). The system's Reminder is checked as its publisher could send it
+(security review M2), and the database refuses any other non-person templated message. The
+client-mail gate (`firm_not_client_facing`) arrives with R-01-T27, the policy's mode with T24.
 """
 
 from __future__ import annotations
@@ -26,6 +30,7 @@ from uuid import UUID
 from sqlalchemy import select
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.communications import template_store
@@ -56,7 +61,9 @@ from abacus.modules.identity.api import (
     authorise,
     contact_emails,
     firm_name,
+    may_receive_about,
     member_context,
+    member_could,
 )
 
 _NAMESPACE: Final = uuid.UUID("6f1d6c2e-8d0c-4f0e-9b5a-0c16e7a1a019")
@@ -65,22 +72,39 @@ _BLOCK_VARIABLES: Final = frozenset(n for n, v in VARIABLES.items() if v.block)
 _log = get_logger(__name__)
 
 
-def message_id_for(tenant_id: UUID, key: str, idempotency_key: str) -> UUID:
-    return uuid.uuid5(_NAMESPACE, f"{tenant_id}:{key}:{idempotency_key}")
+def message_id_for(
+    tenant_id: UUID,
+    key: str,
+    recipient: RecipientRef,
+    engagement_id: UUID,
+    idempotency_key: str,
+) -> UUID:
+    """One message per firm, key, recipient, engagement and idempotency key (security review
+    M4): the same key reused for another person or engagement is another message."""
+    name = f"{tenant_id}:{key}:{recipient.kind}:{recipient.id}:{engagement_id}:{idempotency_key}"
+    return uuid.uuid5(_NAMESPACE, name)
 
 
-async def _recorded(tenant: TenantContext, message_id: UUID) -> SendOutcome | None:
+async def _recorded(tenant: TenantContext, message_id: UUID) -> tuple[SendOutcome, UUID] | None:
+    """What the first call recorded, and the engagement it is about."""
     async with tenant_session(tenant) as session:
         row = (
             await session.execute(
-                select(Message.status, Message.violations).where(Message.id == message_id)
+                select(Message.status, Message.violations, Message.engagement_id).where(
+                    Message.id == message_id
+                )
             )
         ).one_or_none()
     if row is None:
         return None
-    if row.status == "sent":
+    return _outcome(message_id, row.status, row.violations), row.engagement_id
+
+
+def _outcome(message_id: UUID, status: str, violations: list[dict[str, str]]) -> SendOutcome:
+    if status == "sent":
         return SendOutcome(message_id, "queued", None)
-    kinds = {v.get("kind") for v in row.violations}
+    row_violations = violations
+    kinds = {v.get("kind") for v in row_violations}
     reason: SendRefusal = "out_of_scope"
     for candidate in ("template_missing", "template_lint_failed", "suppressed"):
         if candidate in kinds:
@@ -129,6 +153,13 @@ async def _authorise_send(ctx: AuthContext, ref: EngagementRef) -> None:
     await authorise(ctx, "message.send", ref.resource())
 
 
+async def _authorise_system(person: AuthContext, ref: EngagementRef) -> None:
+    """The scheduled reminder is attributed to its version's publisher, so it goes only where
+    that person could send it themself (walls, independence, the team; review M2)."""
+    if not await member_could(person.tenant_id, person.user_id, "message.send", ref.resource()):
+        raise Forbidden("message.send", "role")
+
+
 async def _system_sender(ctx: SystemSendContext, key: str) -> tuple[AuthContext, StoredVersion]:
     """The scheduled reminder (DEC-74): only with its flag, only `reminder`, only from a version
     the firm published, attributed to its publisher, who must still be a member (INV-5)."""
@@ -171,23 +202,38 @@ async def send(
         tenant, checker = ctx.tenant, ctx
     if not 1 <= len(idempotency_key) <= 255:
         raise TemplateInvalid
-    message_id = message_id_for(tenant.tenant_id, key, idempotency_key)
+    message_id = message_id_for(
+        tenant.tenant_id, key, recipient, scope.engagement_id, idempotency_key
+    )
     already = await _recorded(tenant, message_id)
     if already is not None:
-        if not isinstance(ctx, SystemSendContext):  # a replay still authorises (ED-026)
-            replayed = await get_ref(ctx, scope.engagement_id)
+        outcome, engagement_id = already
+        # A replay still authorises (ED-026), on the stored message's engagement (review M4).
+        replayed = await get_ref(checker, engagement_id)
+        if isinstance(ctx, SystemSendContext):
+            await _authorise_system(checker, replayed)
+        else:
             await _authorise_send(ctx, replayed)
-        return already
+        return outcome
     registration = registration_of(key)
-    address = await _address(recipient)
+    if registration is not None and not registration.firm_editable:
+        registration = None  # send_templated sends firm-editable keys only (review M1)
+    address: str | None = None
     values = dict(variables)
     link = values.get("portal_link")
     rendered: RenderedEmail | None = None
     body = ""
     async with uow(tenant) as tx:
         ref = await lock_ref(tx, scope.engagement_id)
-        if not isinstance(ctx, SystemSendContext):
+        if isinstance(ctx, SystemSendContext):
+            await _authorise_system(checker, ref)
+        else:
             await _authorise_send(ctx, ref)
+        # Security review H: only someone the engagement concerns may be written to about it.
+        if recipient.kind == "user":
+            if not await may_receive_about(tenant, recipient.id, ref.id):
+                raise NotFound("recipient")
+            address = await _address(recipient)
         version = await template_store.resolve(tx.session, tenant.tenant_id, key)
         violations: list[dict[str, str]] = []
         reason: SendRefusal | None = None

@@ -270,6 +270,7 @@ DEFINER_FUNCTIONS = frozenset(
     # 0196 (R-01-T19): firm overrides, resolving and publishing, in the session's firm only.
     | {"email_template_firm_row", "email_template_resolve", "email_template_version_at"}
     | {"email_template_publish", "email_template_firm_id"}
+    | {"messages_sender_guard"}  # 0196 (R-01-T19): who records a templated message
     # 0101 (P-01-T09, ADR-165): the staff session BFF's sign-in state and sessions.
     | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
     | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
