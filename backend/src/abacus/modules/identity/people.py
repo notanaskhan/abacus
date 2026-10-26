@@ -919,7 +919,10 @@ async def role_templates(ctx: AuthContext) -> RoleTemplates:
         for t in TEMPLATES:
             roles = cast(list[str], generated.TEMPLATES[t]["roles"])
             if cells[t] != "deny" and any(
-                all((a, role) in denied or _never_held(a, role) for role in roles)
+                # Only a firm's own override narrows a cell: at least one of the template's roles
+                # is denied the action, and every other role either is too or never holds it.
+                any((a, role) in denied for role in roles)
+                and all((a, role) in denied or _never_held(a, role) for role in roles)
                 for a in row_actions
             ):
                 cells[t] = "deny"
