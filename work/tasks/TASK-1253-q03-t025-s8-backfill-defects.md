@@ -2,7 +2,7 @@
 id: TASK-1253
 title: S8 back-fill defect fixes for connections, ledger and GL suites (Q-03-T025)
 spec: SPEC-034
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the row's one acceptance line: no S8 back-fill failure open
 risk_zone: red
 status: done
 epic: Q-03
