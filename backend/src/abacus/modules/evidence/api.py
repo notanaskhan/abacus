@@ -41,6 +41,21 @@ from abacus.modules.evidence.events import (
     InboxFileExtracted,
     UploadChecksRecorded,
 )
+from abacus.modules.evidence.export_contract import exports_router, work_item_exports_router
+from abacus.modules.evidence.export_manifest import (
+    FORMAT_VERSION as EXPORT_FORMAT_VERSION,
+)
+from abacus.modules.evidence.export_manifest import SCHEMA_FILE as EXPORT_SCHEMA_FILE
+from abacus.modules.evidence.export_manifest import EngagementExportManifest
+from abacus.modules.evidence.export_manifest import (
+    manifest_json_schema as export_manifest_json_schema,
+)
+from abacus.modules.evidence.export_package import (
+    SectionFile,
+    SectionProvider,
+    SectionRequest,
+    register_export_section,
+)
 from abacus.modules.evidence.firm_export_contract import router as firm_export_router
 from abacus.modules.evidence.gate_facts import decided_among, waiting_among
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
@@ -201,6 +216,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     retention_platform_router,  # Q-02-T23: staff floor and default sets
     legal_hold_router,  # Q-02-T29: legal holds
     firm_export_router,  # Q-02-T38: the firm-export contract stub (Q-02-T43 implements it)
+    work_item_exports_router,  # A-01-T17: engagement export v1 stub (A-01-T18, T22 implement it)
+    exports_router,  # A-01-T17
 )
 
 # Q-02-T29: the legal-hold workflows and their activities beside upload processing; a new version
@@ -258,6 +275,8 @@ __all__ = [
     "CODE_COLUMN",
     "CREDIT_COLUMN",
     "DEBIT_COLUMN",
+    "EXPORT_FORMAT_VERSION",
+    "EXPORT_SCHEMA_FILE",
     "FIRST_LINE_ROW",
     "MAX_CONTENT_BYTES",
     "NAME_COLUMN",
@@ -283,6 +302,7 @@ __all__ = [
     "ContentTooLarge",
     "EffectivePolicy",
     "EngagementArchived",
+    "EngagementExportManifest",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
@@ -311,6 +331,9 @@ __all__ = [
     "ReviewMaterial",
     "ScreeningDecision",
     "ScreeningFacts",
+    "SectionFile",
+    "SectionProvider",
+    "SectionRequest",
     "SentBack",
     "StoredObject",
     "StoredRecord",
@@ -339,6 +362,7 @@ __all__ = [
     "effective_policies",
     "engagement_snapshots",
     "evidence_versions_for",
+    "export_manifest_json_schema",
     "extend_retention_for",
     "firm_router",
     "holds_covering",
@@ -359,6 +383,7 @@ __all__ = [
     "read_version",
     "record_citations",
     "register_citable",
+    "register_export_section",
     "register_match_picks",
     "register_proposal_source",
     "render_general_ledger",
