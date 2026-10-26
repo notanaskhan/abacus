@@ -14,7 +14,7 @@
 Both tables in one migration, as G-02 §4.2 plans; G-02-T17 adds none. Expand-only.
 
 Revision ID: 0192
-Revises: 0180
+Revises: 0191
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0192"
-down_revision = "0180"
+down_revision = "0191"
 branch_labels = None
 depends_on = None
 
