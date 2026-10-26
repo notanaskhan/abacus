@@ -14,7 +14,9 @@ export const audScreens = {
     path: "/audits",
     navArea: "Audits",
   },
-  // A-01-T12 built a–e and g on fixtures (b, g live); f is A-01-T31's, h A-09's, i K-04's.
+  // A-01-T12 built a–e and g on fixtures (b, g live); h is A-09's, i K-04's. f (Auto mode confirm):
+  // the frame's owner is A-01 (A-01-T31, on fixtures), the route's P-10 (P-10-T39 serves
+  // `PUT /v1/engagements/{id}/auto-mode` and `engagement_run.auto_mode`, which turn it live).
   "AUD-02": {
     name: "Audit cockpit · Overview, Source Documents, Agent",
     status: "planned",
