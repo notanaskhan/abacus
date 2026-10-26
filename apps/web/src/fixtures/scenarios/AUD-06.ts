@@ -20,6 +20,7 @@
 // They live under fixtures/ (dev and test only); src/screens/AUD-06/scenarios.ts re-exports them.
 
 import type {
+  CapabilitiesOut,
   TbLayerViewOut,
   TbLeadsheetAreaOut,
   TieOutCheckOut,
@@ -33,14 +34,19 @@ import {
   json,
   never,
 } from "../../app-core/fixture-mode";
+import { auditHandlers, northwindAuditId } from "../handlers/audits";
+import { trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
+import { capabilitiesFor } from "../seed/shell";
+import { DOCUMENTS } from "../seed/trust";
 import {
   GRANITE_FY2026,
   GRANITE_FY2026_REPULL,
   GRANITE_TB,
   HARLOW_ENGAGEMENT,
   aud06Checks,
+  aud06Citations,
   aud06Newer,
   aud06a,
   aud06b,
@@ -66,6 +72,8 @@ function engagementOf(entity: string): string {
 export const NORTHWIND_ENGAGEMENT = engagementOf("Northwind Robotics 401(k) Plan");
 export const GRANITE_ENGAGEMENT = engagementOf("Granite Peak Outdoor Supply, Inc.");
 export { HARLOW_ENGAGEMENT };
+/** Northwind's PY2025 audit work item: the AUD-02 cockpit a–f open AUD-06 in (A-02-T09). */
+export const NORTHWIND_AUDIT = northwindAuditId(seed);
 
 const NOT_FOUND = { detail: "not_found" };
 const LAYER_UNAVAILABLE = { detail: "layer_unavailable" };
@@ -133,6 +141,18 @@ function northwindList(view: TbLayerViewOut): TrialBalancesOut {
   };
 }
 
+/** The cockpit's flag, as AUD-02's scenarios grant it, and the C9 v1 workpaper's (DEC-314). */
+function cockpitCapabilities(persona: string | undefined): CapabilitiesOut {
+  const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
+  return {
+    ...base,
+    capabilities: [...base.capabilities, "engagement.read_metadata"],
+    flags: { ...base.flags, "audits.cockpit": true, "ledger.tb_workpaper": true },
+  };
+}
+
+/** Northwind's frames are the AUD-02 cockpit with the Trial Balance row open (A-02-T09): the
+ * cockpit's reads, the Harborline document and the citation behind each cited line. */
 function northwind(
   state: string,
   view: TbLayerViewOut,
@@ -145,6 +165,9 @@ function northwind(
     clock,
     handlers: {
       ...E0.handlers,
+      ...trustHandlers({ documents: DOCUMENTS, citations: aud06Citations(view) }),
+      ...auditHandlers(seed, "run"),
+      "GET /v1/me/capabilities": ({ persona }) => json(cockpitCapabilities(persona)),
       ...tbHandlers({
         engagementId: NORTHWIND_ENGAGEMENT,
         list: northwindList(view),
