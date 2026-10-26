@@ -16,13 +16,13 @@ from abacus.modules.connections.connect import (
     ConnectionView,
     access_log,
     check,
-    complete,
     connection_of,
     providers,
     revoke,
     start,
 )
 from abacus.modules.connections.connector import Period
+from abacus.modules.connections.entity import complete_any
 from abacus.modules.connections.gl_formats import GL_FORMATS
 from abacus.modules.connections.gl_import import (
     GlImportView,
@@ -150,6 +150,10 @@ class CompleteOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     engagement_id: Annotated[UUID, classified("internal")]
+    # A-02-T16: where a portal (POR-16) flow returns to; null for the legacy engagement flow.
+    client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    connection_id: Annotated[UUID | None, classified("internal")] = None
+    reconnected: Annotated[bool, classified("internal")] = False
 
 
 class ConnectionOut(BaseModel):
@@ -212,8 +216,17 @@ async def start_route(engagement_id: UUID, body: StartIn, ctx: Ctx) -> StartOut:
     errors=(409,),
 )
 async def complete_route(body: CompleteIn, ctx: Ctx) -> CompleteOut:
-    """SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code."""
-    return CompleteOut(engagement_id=await complete(ctx, body.state, body.code))
+    """SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:
+    a state POR-16 started finishes as an entity-scoped connection (or a reconnect)."""
+    done = await complete_any(ctx, body.state, body.code)
+    if done.connection_id is None:
+        return CompleteOut(engagement_id=done.engagement_id)
+    return CompleteOut(
+        engagement_id=done.engagement_id,
+        client_entity_id=done.client_entity_id,
+        connection_id=done.connection_id,
+        reconnected=done.reconnected,
+    )
 
 
 @connection_router.get("", action="connection.read_log", response_model=ConnectionOut | None)

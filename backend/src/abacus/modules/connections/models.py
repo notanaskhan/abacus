@@ -40,6 +40,8 @@ class Connection(Base):
     reauth_due_at: Mapped[datetime | None]
     last_sync_at: Mapped[datetime | None]
     status_reason_code: Mapped[str | None]
+    # 0215 (A-02-T16): bumped on every status change (the portal's disconnect `seen_version`).
+    version: Mapped[int] = mapped_column(server_default=FetchedValue())
 
 
 class ConnectionState(Base):
@@ -57,6 +59,11 @@ class ConnectionState(Base):
     created_at: Mapped[datetime]
     expires_at: Mapped[datetime]
     used_at: Mapped[datetime | None]
+    # 0215 (A-02-T16): POR-16's consent (same entity), and the connection a reconnect
+    # re-authorises; both null for the legacy engagement flow (SPEC-020).
+    consent_id: Mapped[UUID | None]
+    connection_id: Mapped[UUID | None]
+    category: Mapped[str | None]
 
 
 class ConnectionSecret(Base):

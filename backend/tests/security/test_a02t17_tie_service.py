@@ -26,8 +26,8 @@ from abacus.modules.review.api import detect_stale, field_owner
 
 from .support import Env, Person, Seeder
 from .test_a02t10_tb_read_model import (  # the A-02-T10 suite's seeding, reused
-    _flag_on,  # pyright: ignore[reportPrivateUsage]
-    _trial_balance,  # pyright: ignore[reportPrivateUsage]
+    _flag_on,  # pyright: ignore[reportPrivateUsage] -- the T10 suite's seeding
+    _trial_balance,  # pyright: ignore[reportPrivateUsage] -- the T10 suite's seeding
 )
 
 TB: Final = "/v1/engagements/{e}/trial-balances/{tb}"

@@ -14,10 +14,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.clock import system_now
 from abacus.modules.connections.models import (
     Connection,
+    ConnectionConsent,
+    ConnectionConsentLink,
     ConnectionSecret,
     ConnectionState,
     GlImport,
     LedgerImport,
+    ReconnectRequest,
     SyncRun,
 )
 from abacus.modules.identity.api import AuthContext, visible
@@ -26,13 +29,16 @@ from abacus.modules.identity.api import AuthContext, visible
 async def active_connection_for(
     session: AsyncSession, client_entity_id: UUID
 ) -> Connection | None:
-    """The entity's active connection, newest first (expired ones don't count)."""
+    """The entity's active ledger connection, newest first (expired ones don't count). A-02-T16:
+    retrievals pull a trial balance, so only the ledger serves them; a bank feed beside it does
+    not."""
     now = system_now()
     return (
         await session.execute(
             select(Connection)
             .where(
                 Connection.client_entity_id == client_entity_id,
+                Connection.category == "ledger",
                 Connection.status == "active",
                 (Connection.expires_at.is_(None)) | (Connection.expires_at > now),
             )
@@ -203,9 +209,13 @@ LIVE = ("active", "needs_attention")
 async def live_connection_for(
     session: AsyncSession, client_entity_id: UUID, *, lock: bool = False
 ) -> Connection | None:
-    """The entity's live connection (active or needing attention), if any; at most one exists."""
+    """The entity's live ledger connection (active or needing attention), if any; at most one
+    exists (`connections_one_live_ledger`). A-02-T16: the legacy engagement routes (SPEC-020)
+    read the entity's ledger; bank, card and sales feeds may now sit beside it."""
     query = select(Connection).where(
-        Connection.client_entity_id == client_entity_id, Connection.status.in_(LIVE)
+        Connection.client_entity_id == client_entity_id,
+        Connection.category == "ledger",
+        Connection.status.in_(LIVE),
     )
     if lock:
         query = query.with_for_update()
@@ -237,6 +247,9 @@ async def insert_connection(
 
 
 async def set_connection(session: AsyncSession, connection_id: UUID, **values: object) -> None:
+    """A-02-T16 (0215): a status change bumps the version (the portal's `seen_version`)."""
+    if "status" in values:
+        values["version"] = Connection.version + 1
     await session.execute(
         update(Connection).where(Connection.id == connection_id).values(**values)
     )
@@ -279,6 +292,9 @@ async def insert_state(
     provider: str,
     state_hash: str,
     expires_at: datetime,
+    consent_id: UUID | None = None,
+    connection_id: UUID | None = None,
+    category: str | None = None,
 ) -> UUID:
     return (
         await session.execute(
@@ -291,6 +307,9 @@ async def insert_state(
                 provider=provider,
                 state_hash=state_hash,
                 expires_at=expires_at,
+                consent_id=consent_id,
+                connection_id=connection_id,
+                category=category,
             )
             .returning(ConnectionState.id)
         )
@@ -501,3 +520,158 @@ async def waiting_gl_imports(session: AsyncSession, client_entity_id: UUID) -> S
 
 async def set_gl_import(session: AsyncSession, import_id: UUID, **values: object) -> None:
     await session.execute(update(GlImport).where(GlImport.id == import_id).values(**values))
+
+
+# --- Entity-scoped connections (A-02-T16; POR-16) ------------------------------------------------
+
+
+async def live_connections_of(
+    session: AsyncSession, client_entity_id: UUID
+) -> Sequence[Connection]:
+    """The entity's live connections, oldest first (LIST_EXEMPT: the caller authorised
+    `connection.read` on an engagement of this entity)."""
+    return (
+        (
+            await session.execute(
+                select(Connection)
+                .where(
+                    Connection.client_entity_id == client_entity_id,
+                    Connection.status.in_(LIVE),
+                )
+                .order_by(Connection.created_at, Connection.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def lock_connection(session: AsyncSession, connection_id: UUID) -> Connection | None:
+    return (
+        await session.execute(
+            select(Connection).where(Connection.id == connection_id).with_for_update()
+        )
+    ).scalar_one_or_none()
+
+
+async def last_failures(
+    session: AsyncSession, connection_ids: Sequence[UUID]
+) -> dict[UUID, datetime]:
+    """Per connection, when its newest run failed, if its newest finished run failed."""
+    if not connection_ids:
+        return {}
+    rows = await session.execute(
+        select(SyncRun.connection_id, SyncRun.status, SyncRun.finished_at)
+        .where(SyncRun.connection_id.in_(list(connection_ids)), SyncRun.finished_at.is_not(None))
+        .distinct(SyncRun.connection_id)
+        .order_by(SyncRun.connection_id, SyncRun.finished_at.desc())
+    )
+    return {
+        cid: at
+        for cid, status, at in rows.all()
+        if status in ("failed", "failed_validation") and at is not None
+    }
+
+
+async def recent_runs(session: AsyncSession, connection_id: UUID, limit: int) -> Sequence[SyncRun]:
+    """The connection's newest runs (LIST_EXEMPT: the caller authorised `connection.read`)."""
+    return (
+        (
+            await session.execute(
+                select(SyncRun)
+                .where(SyncRun.connection_id == connection_id)
+                .order_by(SyncRun.started_at.desc(), SyncRun.id)
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def running_run_of(session: AsyncSession, connection_id: UUID) -> SyncRun | None:
+    return (
+        await session.execute(
+            select(SyncRun)
+            .where(SyncRun.connection_id == connection_id, SyncRun.status == "running")
+            .order_by(SyncRun.started_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def latest_failed_run(session: AsyncSession, connection_id: UUID) -> SyncRun | None:
+    return (
+        await session.execute(
+            select(SyncRun)
+            .where(
+                SyncRun.connection_id == connection_id,
+                SyncRun.status.in_(("failed", "failed_validation")),
+            )
+            .order_by(SyncRun.started_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def open_reconnect_requests(
+    session: AsyncSession, connection_ids: Sequence[UUID]
+) -> dict[UUID, datetime]:
+    if not connection_ids:
+        return {}
+    rows = await session.execute(
+        select(ReconnectRequest.connection_id, ReconnectRequest.created_at).where(
+            ReconnectRequest.connection_id.in_(list(connection_ids)),
+            ReconnectRequest.fulfilled_at.is_(None),
+        )
+    )
+    return {cid: at for cid, at in rows.all()}
+
+
+async def fulfil_reconnect_requests(session: AsyncSession, connection_id: UUID) -> int:
+    done = await session.execute(
+        update(ReconnectRequest)
+        .where(
+            ReconnectRequest.connection_id == connection_id,
+            ReconnectRequest.fulfilled_at.is_(None),
+        )
+        .values(fulfilled_at=func.abacus_now())
+        .returning(ReconnectRequest.id)
+    )
+    return len(done.all())
+
+
+async def insert_consent(session: AsyncSession, **values: object) -> UUID:
+    return (
+        await session.execute(
+            insert(ConnectionConsent).values(**values).returning(ConnectionConsent.id)
+        )
+    ).scalar_one()
+
+
+async def insert_consent_link(session: AsyncSession, **values: object) -> None:
+    await session.execute(insert(ConnectionConsentLink).values(**values))
+
+
+async def insert_entity_connection(session: AsyncSession, **values: object) -> Connection:
+    return (
+        await session.execute(
+            insert(Connection).values(id=uuid4(), scopes=[], **values).returning(Connection)
+        )
+    ).scalar_one()
+
+
+async def insert_retry_run(session: AsyncSession, **values: object) -> SyncRun | None:
+    """A retried run; None when a running or successful run exists for its item and period
+    (the request-item runs' unique index)."""
+    return (
+        await session.execute(
+            pg_insert(SyncRun)
+            .values(id=uuid4(), **values)
+            .on_conflict_do_nothing(
+                index_elements=["tenant_id", "request_item_id", "period_start", "period_end"],
+                index_where=text("status IN ('running', 'succeeded')"),
+            )
+            .returning(SyncRun)
+        )
+    ).scalar_one_or_none()

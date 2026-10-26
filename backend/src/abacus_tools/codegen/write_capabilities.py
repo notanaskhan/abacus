@@ -28,7 +28,7 @@ from typing import cast
 import yaml
 from pydantic import ValidationError
 
-from abacus.modules.integrations.ports import WriteCapabilityRegistry
+from abacus.modules.integrations.api import WriteCapabilityRegistry
 
 BACKEND = Path(__file__).resolve().parents[3]
 SOURCE = BACKEND.parent / "docs" / "architecture" / "write-capabilities.yaml"

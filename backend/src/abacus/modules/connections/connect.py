@@ -24,7 +24,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.connections.connector import ConnectorError
 from abacus.modules.connections.events import ConnectionCreated, ConnectionRevoked
-from abacus.modules.connections.models import Connection, SyncRun
+from abacus.modules.connections.models import Connection, ConnectionState, SyncRun
 from abacus.modules.connections.repository import (
     destroy_secret,
     insert_connection,
@@ -170,11 +170,21 @@ def _unsaved(provider: str, client_entity_id: UUID, ctx: AuthContext) -> Connect
 async def complete(ctx: AuthContext, state: str, code: str) -> UUID:
     """AC-2: finish the flow the same person started. The state is spent whatever happens;
     a reused, expired or mismatched one is refused and nothing is created. Returns the
-    engagement, for the SPA to return to."""
-    found = await _spend(ctx, state)
-    if found is None:
+    engagement, for the SPA to return to. A-02-T16: a state POR-16 started (it names a consent)
+    finishes through `entity.complete_entity`; this one finishes the legacy engagement flow."""
+    found = await spend(ctx, state)
+    if found is None or found.consent_id is not None:
         raise InvalidState
-    engagement_id, client_entity_id, provider = found
+    return await finish_legacy(ctx, found, code)
+
+
+async def finish_legacy(ctx: AuthContext, found: ConnectionState, code: str) -> UUID:
+    """The SPEC-020 completion of a spent legacy state: the entity's live ledger is replaced."""
+    engagement_id, client_entity_id, provider = (
+        found.engagement_id,
+        found.client_entity_id,
+        found.provider,
+    )
     await gate_client_data(ctx, engagement_id, "connection.create")  # SPEC-025 AC-7
     connector = connector_for(_unsaved(provider, client_entity_id, ctx))
     try:
@@ -223,9 +233,10 @@ def _code_ref(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
-async def _spend(ctx: AuthContext, state: str) -> tuple[UUID, UUID, str] | None:
+async def spend(ctx: AuthContext, state: str) -> ConnectionState | None:
     """Mark the state used (in its own unit of work, so it stays spent if anything later fails)
-    and return what it was for, if it was this person's, unused and unexpired."""
+    and return it, if it was this person's, unused and unexpired (A-02-T16: single use, bound to
+    the tenant by row-level security, to the person, and to its entity and consent)."""
     async with uow(ctx.tenant) as tx:
         row = await lock_state(tx.session, _hash(state))
         if row is None:
@@ -240,7 +251,7 @@ async def _spend(ctx: AuthContext, state: str) -> tuple[UUID, UUID, str] | None:
             "connection.state_used" if valid else "connection.state_refused",
             target=Target("connection_state", row.id),
         )
-        return (row.engagement_id, row.client_entity_id, row.provider) if valid else None
+        return row if valid else None
 
 
 async def _live(tx: UnitOfWork, client_entity_id: UUID) -> Connection:
@@ -377,3 +388,12 @@ def _entry(run: SyncRun) -> LogEntry:
         run.finished_at,
         run.started_by,
     )
+
+
+# A-02-T16: the entity-scoped flow (`entity.py`) shares the legacy flow's state, redirect and
+# provider rules; these are its names for them.
+hash_state = _hash
+redirect_uri = _redirect_uri
+unsaved_connection = _unsaved
+oauth_providers = _available
+code_ref = _code_ref

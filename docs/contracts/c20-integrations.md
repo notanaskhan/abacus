@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C20 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (A-02-T06, 2026-10-26); framework v1 tables and module (A-02-T12) and entity-scoped connection tables (A-02-T13) built 2026-10-26, routes still stubs until A-02-T16 |
+| Status | stub (A-02-T06, 2026-10-26); framework v1 tables and module (A-02-T12) and entity-scoped connection tables (A-02-T13) built 2026-10-26; write-capability registry (A-02-T15) and the five POR-16 routes live (A-02-T16) 2026-10-27; reconnect requests (T23) and pulls (T30) still stubs |
 | Provider epic | A-02 (T06 stub; T12 framework, T13 entity-scoped connections, T15 registry, T16 POR-16 service, T23 reconnect requests, T30 pulls); W-01 adds the catalogue v2 (C20 v2, S45) |
 | Consumers | POR-16 (A-02-T18 fixtures, T28 live); AUD-06 *Ask client to reconnect* and *Pull latest* (A-02-T24, T30); T-01 (CCH file bridge, `firm_integrations`, secrets); W-01 (catalogue v2); N-02 (W7 DocuSign registry entry); C-02 (W1 posting under ADR-161); C-01 (hourly sync); X-02 (POR-16 h, i); Q-01 (egress host allowlist) |
 | Freeze sprint | S10 (2027-03-08) |
@@ -57,6 +57,10 @@ Every action above denies the agent and the system principal (INV-1, SPEC-333 AC
 | 409 | `{"detail": "connector_not_available"}` | the catalogue row's adapter is not registered here (AC-49) |
 | 409 | `{"detail": "connection_needs_reauth"}` | retry or pull on a connection that needs the client |
 | 409 | `{"detail": "stale_version"}` | disconnect with an old `seen_version` |
+| 409 | `{"detail": "no_failed_sync"}` | Try again with no failed sync (A-02-T16) |
+| 409 | `{"detail": "retry_unavailable"}` | Try again on a run no request item asked for, until A-02-T30 |
+| 409 | `{"detail": "invalid_state"}` | complete with a reused, expired or someone else's state (SPEC-020) |
+| 409 | `{"detail": "write_capability_refused"}` | any `execute_write` (not a route; A-02-T15) |
 | 501 | `{"detail": "not_implemented"}` | flag on, until the implementing task |
 
 A reconnect request while one is open returns the open request and sends nothing (one open request per connection).
@@ -120,3 +124,33 @@ Decided in DEC-377 (flags, status codes per route, the reconnect request's idemp
   `connection_consents` with `connection_consent_links`; `reconnect_requests` with one open per
   connection. The portal disconnect keeps `connection.disconnect` (DEC-379) and the secret's
   crypto-erase when A-02-T16 implements it.
+
+## A-02-T15 and A-02-T16 (2026-10-27)
+
+- **Write-capability registry** (DEC-512): `docs/architecture/write-capabilities.yaml`, compiled by
+  `python -m abacus_tools.codegen.write_capabilities` into the generated, protected
+  `integrations/_capabilities.py` (`--check` in `make check-generated`; `--egress` prints Q-01's
+  allowlist). v1: no read connector yet (A-02-T26 declares QuickBooks Online's hosts); W1, W2, W7
+  reserved, none enabled, each naming its decision (`decision`). `integrations.api`:
+  `authorise_write` / `execute_write` refuse every call 409 `write_capability_refused`, audited
+  `write_capability.refused` on the client (capability fingerprint, reason index, shape); W1 is
+  refused for an attest client by `policy_refusal` whatever `enabled` says; nobody holds
+  `write_capability.execute` (`permission-matrix/integrations.yaml`). `egress_allowlist()`,
+  `undeclared_egress()`; the API refuses to start while a registered adapter reaches an
+  undeclared host. `Writer` is a port only (`integrations/writers`).
+- **POR-16 live** (DEC-514): each route authorises on an engagement of the entity first (walls,
+  another client's entity: 404), then the flag, then acts. Start: 422 `authorization_required`,
+  409 `connector_not_available` (no adapter here), `consent_version_stale`,
+  `ledger_already_connected`; the consent as shown is written once and the hashed single-use
+  state names it (migration 0215: `connection_states.consent_id`, `connection_id`, `category`;
+  `connections.version`). Optional `connection_id` on the start names the card being reconnected.
+  `POST /v1/connections/complete` finishes both flows: a reconnect re-authorises the same
+  connection (`connection.reauthorized`, open reconnect requests fulfilled), a new one is
+  `connection.created`; the response adds `client_entity_id`, `connection_id`, `reconnected` for a
+  portal flow. The details drawer adds `activity[]` `{action, text, at}`: "Connected by Tess Moreno
+  (client)", "Reconnected by …", "Disconnected by …" (`client_actor=1` on the events a client
+  causes). Try again re-runs the newest failed request-item run (one live run: a second click
+  answers it). Disconnect needs `seen_version` and fresh MFA, erases the secret, keeps every
+  received snapshot and evidence. *Export instead* is on every ledger card with no target yet
+  (`{request_item_id: null, binder_id: null}`: "the team will ask"); A-02-T28 resolves the open
+  trial-balance request.

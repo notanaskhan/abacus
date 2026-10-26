@@ -156,6 +156,11 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.AuditLocked
     summary: Audit content is visible to the engagement team only; it can never be widened.
+  authorization_required:
+    status: 422
+    raised_by:
+    - abacus.modules.connections.entity.AuthorizationRequired
+    summary: The consent sheet's authorization toggle was not on (AC-36).
   below_floor:
     status: 422
     raised_by:
@@ -236,6 +241,16 @@ codes:
     raised_by:
     - abacus.modules.connections.connect.ConnectionFailed
     summary: The provider refused or failed the exchange (its code, never its text, is logged).
+  connection_needs_reauth:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.ConnectionNeedsReauth
+    summary: The client must sign in again before anything is pulled.
+  connector_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.ConnectorNotAvailable
+    summary: No adapter for this system is registered here (catalogue honesty, AC-49).
   consent_required:
     status: 409
     raised_by:
@@ -243,6 +258,11 @@ codes:
     summary: '§7216 (ADR P-12, R-01-T13): a request of an engagement that holds a tax return goes to
       a third party only under the client''s `third_party_disclosure` consent (C19). Until T-01 registers
       that consent nobody holds it, so such a delegation is refused (fail closed).'
+  consent_version_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.ConsentVersionStale
+    summary: 'The consent copy shown is older than the catalogue''s: read the cards again.'
   contact_bound:
     status: 409
     raised_by:
@@ -675,6 +695,11 @@ codes:
     raised_by:
     - abacus.modules.ledger.trial_balances.LayerUnbalanced
     summary: A layer whose debits and credits differ (`facts.layer`, `facts.difference`).
+  ledger_already_connected:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.LedgerAlreadyConnected
+    summary: The entity has a live ledger connection already (one per entity, ADR-045).
   ledger_import_off:
     status: 409
     raised_by:
@@ -768,6 +793,11 @@ codes:
     - abacus.modules.connections.connect.NoLiveConnection
     - abacus.modules.connections.service.NoConnection
     summary: The engagement's client entity has no active connection.
+  no_failed_sync:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.NoFailedSync
+    summary: There is no failed sync to try again.
   no_ledger:
     status: 409
     raised_by:
@@ -1111,6 +1141,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.SamePerson
     summary: 'The person who imported a set can''t also publish it: a second staff member approves.'
+  retry_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.entity.RetryUnavailable
+    summary: Only a run a request item asked for can be retried until on-demand runs land (A-02-T30).
   review_note_invalid:
     status: 422
     raised_by:
@@ -1256,6 +1291,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.template_service.TemplateDraftStale
+    - abacus.modules.connections.entity.StaleConnection
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.independence.ConclusionSuperseded

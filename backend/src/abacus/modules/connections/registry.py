@@ -52,6 +52,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "connection_states": frozenset(
         {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
         | {"state_hash", "expires_at"}
+        | {"consent_id", "connection_id", "category"}  # 0215 (A-02-T16)
     ),
     "connection_secrets": frozenset({"connection_id", "tenant_id", "sealed"}),
     "connection_consents": frozenset(
@@ -76,6 +77,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
         | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
         | {"status_reason_code"}
+        | {"version"}  # 0215 (A-02-T16): bumped on every status change
     ),
     "sync_runs": frozenset(
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}

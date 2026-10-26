@@ -1169,6 +1169,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             # 0195 (A-02-T13): who (re)connected, reauth and sync facts, the reason code
             | {"connected_by_user_id", "connected_at", "reauth_due_at", "last_sync_at"}
             | {"status_reason_code"}
+            | {"version"}  # 0215 (A-02-T16): bumped on every status change
         ),
         "connection_states": frozenset({"used_at"}),
         "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195 (A-02-T13)

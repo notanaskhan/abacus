@@ -337,6 +337,14 @@ async def tb_leadsheet_area_route(
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 
 
+async def _define_gate(ctx: AuthContext, engagement_id: UUID) -> None:
+    """Authorise `tie_out_check.define` first (walls 404, a role 403), then the flag (404 off)."""
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, "tie_out_check.define", ref.resource())
+    if not await flag_enabled(ctx.tenant, LEDGER_TB_WORKPAPER):
+        raise NotFound(LEDGER_TB_WORKPAPER.name)
+
+
 @tb_router.post(
     "/{tb_id}/checks/{check_id}/issue-link",
     action="tie_out_check.define",
@@ -356,10 +364,7 @@ async def tie_issue_link_route(
     409 `tie_out_check_stale` on a stale `seen_version`, 409 `tie_out_check_issue_linked` for a
     second issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the
     flag (404 off)."""
-    ref = await get_ref(ctx, engagement_id)
-    await authorise(ctx, "tie_out_check.define", ref.resource())
-    if not await flag_enabled(ctx.tenant, LEDGER_TB_WORKPAPER):
-        raise NotFound(LEDGER_TB_WORKPAPER.name)
+    await _define_gate(ctx, engagement_id)
     link = await link_issue(ctx, engagement_id, tb_id, check_id, body.issue_id, body.seen_version)
     return TieIssueLinkOut(
         check_id=link.check_id,

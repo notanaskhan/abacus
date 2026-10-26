@@ -17,11 +17,11 @@ from abacus.modules.integrations.adapters import (
     unregister_adapter,
 )
 from abacus.modules.integrations.capabilities import (
-    REGISTRY,
     UndeclaredEgress,
     assert_egress_declared,
     egress_allowlist,
     policy_refusal,
+    registry,
     undeclared_egress,
     write_capability,
 )
@@ -35,7 +35,7 @@ from abacus.modules.integrations.catalog import (
     listing_of,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
-from abacus.modules.integrations.contract import firm_router, portal_router
+from abacus.modules.integrations.contract import firm_router
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
     IntegrationCategory,
@@ -43,6 +43,10 @@ from abacus.modules.integrations.ports import (
     WriteCapabilityEntry,
     WriteCapabilityRegistry,
 )
+
+# A-02-T16: the live POR-16 routes are declared on C20's `portal_router` in `routes`, so it is
+# imported from there (loading the module registers them before the API mounts the router).
+from abacus.modules.integrations.routes import portal_router
 from abacus.modules.integrations.secrets import erase_secret, open_secret, store_secret
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
 from abacus.modules.integrations.writes import (
@@ -53,12 +57,11 @@ from abacus.modules.integrations.writes import (
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
-    portal_router,  # C20 v1 stub (A-02-T06): POR-16
-    firm_router,  # C20 v1 stub (A-02-T06): reconnect requests and on-demand pulls
+    portal_router,  # C20 v1: POR-16, live since A-02-T16
+    firm_router,  # C20 v1 stub (A-02-T06): reconnect requests (T23) and on-demand pulls (T30)
 )
 
 __all__ = [
-    "REGISTRY",
     "ROUTERS",
     "AdapterRefused",
     "CatalogDocument",
@@ -92,6 +95,7 @@ __all__ = [
     "register_adapter",
     "registered_adapter",
     "registered_keys",
+    "registry",
     "store_secret",
     "undeclared_egress",
     "unregister_adapter",

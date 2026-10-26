@@ -955,7 +955,8 @@ export const clearConflictResult = <ThrowOnError extends boolean = false>(option
 /**
  * Complete Route
  *
- * SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code.
+ * SPEC-020 AC-2 (TASK-036 D1): the SPA hands back the provider's state and code. A-02-T16:
+ * a state POR-16 started finishes as an entity-scoped connection (or a reconnect).
  */
 export const complete = <ThrowOnError extends boolean = false>(options: Options<CompleteData, ThrowOnError>): RequestResult<CompleteResponses, CompleteErrors, ThrowOnError> => (options.client ?? client).post<CompleteResponses, CompleteErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4244,8 +4245,10 @@ export const editCheck = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Tie Issue Link Route
  *
- * AUD-06 c: link an issue raised through C3 to a check that does not tie (A-02-T17);
- * 409 `tie_out_check_stale` on a stale `seen_version`, audited `tie_out_check.issue_linked`.
+ * AUD-06 c (A-02-T17): link an issue raised through C3 on this engagement to a check, once;
+ * 409 `tie_out_check_stale` on a stale `seen_version`, 409 `tie_out_check_issue_linked` for a
+ * second issue; audited `tie_out_check.issue_linked`. Authorised first (walls 404), then the
+ * flag (404 off).
  */
 export const tieIssueLink = <ThrowOnError extends boolean = false>(options: Options<TieIssueLinkData, ThrowOnError>): RequestResult<TieIssueLinkResponses, TieIssueLinkErrors, ThrowOnError> => (options.client ?? client).post<TieIssueLinkResponses, TieIssueLinkErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7321,7 +7324,7 @@ export const getPortalLogo = <ThrowOnError extends boolean = false>(options?: Op
 /**
  * Connection Detail Route
  *
- * The details drawer (A-02-T16).
+ * The details drawer: scopes, who connected it and when, the last 5 syncs, the activity.
  */
 export const connectionDetail = <ThrowOnError extends boolean = false>(options: Options<ConnectionDetailData, ThrowOnError>): RequestResult<ConnectionDetailResponses, ConnectionDetailErrors, ThrowOnError> => (options.client ?? client).get<ConnectionDetailResponses, ConnectionDetailErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7332,8 +7335,8 @@ export const connectionDetail = <ThrowOnError extends boolean = false>(options: 
 /**
  * Disconnect Connection Route
  *
- * POR-16 f (A-02-T16): "Disconnected" (neutral); the secret is crypto-erased and received
- * data stays. 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.
+ * POR-16 f: "Disconnected" (neutral); the secret is crypto-erased and received data stays.
+ * 409 `stale_version` on an old `seen_version`. Audited `connection.revoked`.
  */
 export const disconnectConnection = <ThrowOnError extends boolean = false>(options: Options<DisconnectConnectionData, ThrowOnError>): RequestResult<DisconnectConnectionResponses, DisconnectConnectionErrors, ThrowOnError> => (options.client ?? client).post<DisconnectConnectionResponses, DisconnectConnectionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7348,8 +7351,8 @@ export const disconnectConnection = <ThrowOnError extends boolean = false>(optio
 /**
  * Retry Connection Route
  *
- * POR-16 g *Try again* (A-02-T16): one run; while it runs the same run is returned; 409
- * `connection_needs_reauth` when the client must sign in again. Audited
+ * POR-16 g *Try again*: one run; while it runs the same run is returned; 409
+ * `connection_needs_reauth`, `no_failed_sync`, `retry_unavailable`. Audited
  * `connection.retry_requested`.
  */
 export const retryConnection = <ThrowOnError extends boolean = false>(options: Options<RetryConnectionData, ThrowOnError>): RequestResult<RetryConnectionResponses, RetryConnectionErrors, ThrowOnError> => (options.client ?? client).post<RetryConnectionResponses, RetryConnectionErrors, ThrowOnError>({
@@ -7372,7 +7375,7 @@ export const getDropBatch = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * List Entity Connections Route
  *
- * POR-16 a (A-02-T16): cards for the catalogue rows with a registered adapter.
+ * POR-16 a: cards for the catalogue rows listed here, with the entity's connections.
  */
 export const listEntityConnections = <ThrowOnError extends boolean = false>(options: Options<ListEntityConnectionsData, ThrowOnError>): RequestResult<ListEntityConnectionsResponses, ListEntityConnectionsErrors, ThrowOnError> => (options.client ?? client).get<ListEntityConnectionsResponses, ListEntityConnectionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -7383,9 +7386,9 @@ export const listEntityConnections = <ThrowOnError extends boolean = false>(opti
 /**
  * Start Connection Route
  *
- * POR-16 b, e, i (A-02-T16): one consent row, then the provider's sign-in. 422
+ * POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
  * `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
- * `connector_not_available`. Audited `connection.started`, `connection.consent_recorded`.
+ * `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
  */
 export const startConnection = <ThrowOnError extends boolean = false>(options: Options<StartConnectionData, ThrowOnError>): RequestResult<StartConnectionResponses, StartConnectionErrors, ThrowOnError> => (options.client ?? client).post<StartConnectionResponses, StartConnectionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

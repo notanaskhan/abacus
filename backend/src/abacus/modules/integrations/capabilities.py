@@ -3,8 +3,10 @@ SPEC-333 AC-50; C20 v1).
 
 `_capabilities.py` is generated from the protected `docs/architecture/write-capabilities.yaml`
 (`abacus_tools.codegen.write_capabilities`; a hand edit fails `make check-generated`). It is
-validated again here, at import, against the schema: a generated file edited to enable a write
-does not load, so the process does not start (fail closed).
+validated again here, on first use, against the schema: a generated file edited to enable a
+write does not load, and the API's start-up reads it first (`assert_egress_declared`), so the
+process does not start (fail closed). Importing this module does not read it, so the compiler
+can always regenerate it.
 
 - `egress_allowlist()`: every host a declared read connector may reach (Q-01's DNS Firewall
   allowlist; the CLI's `--egress` prints the same set).
@@ -17,6 +19,7 @@ does not load, so the process does not start (fail closed).
 
 from __future__ import annotations
 
+from functools import cache
 from typing import Final, Literal
 
 from abacus.modules.integrations import _capabilities as compiled
@@ -36,23 +39,30 @@ REASONS: Final[tuple[RefusalReason, ...]] = (
 )
 ATTEST_REFUSED_SHAPES: Final = frozenset({"W1"})
 
-REGISTRY: Final = WriteCapabilityRegistry.model_validate(
-    {
-        "version": compiled.VERSION,
-        "read_connectors": list(compiled.READ_CONNECTORS),
-        "writes": list(compiled.WRITES),
-    }
-)
+
+@cache
+def registry() -> WriteCapabilityRegistry:
+    """The compiled registry, validated once against the schema."""
+    return WriteCapabilityRegistry.model_validate(
+        {
+            "version": compiled.VERSION,
+            "read_connectors": list(compiled.READ_CONNECTORS),
+            "writes": list(compiled.WRITES),
+        }
+    )
 
 
 def egress_allowlist() -> frozenset[str]:
     """Q-01's export: the hosts any declared read connector may reach."""
-    return REGISTRY.egress_hosts()
+    return registry().egress_hosts()
 
 
 def declared_hosts(adapter_key: str) -> frozenset[str]:
     return frozenset(
-        h for r in REGISTRY.read_connectors if r.adapter_key == adapter_key for h in r.egress_hosts
+        h
+        for r in registry().read_connectors
+        if r.adapter_key == adapter_key
+        for h in r.egress_hosts
     )
 
 
@@ -75,6 +85,7 @@ class UndeclaredEgress(RuntimeError):
 
 def assert_egress_declared() -> None:
     """Called at start-up: refuse to serve while an adapter's host is undeclared."""
+    registry()  # a generated file that does not validate stops start-up here
     found = undeclared_egress()
     if found:
         listed = "; ".join(f"{k}: {', '.join(v)}" for k, v in found.items())
@@ -82,7 +93,7 @@ def assert_egress_declared() -> None:
 
 
 def write_capability(key: str) -> WriteCapabilityEntry | None:
-    return next((w for w in REGISTRY.writes if w.key == key), None)
+    return next((w for w in registry().writes if w.key == key), None)
 
 
 def policy_refusal(entry: WriteCapabilityEntry, *, attest_client: bool) -> RefusalReason | None:

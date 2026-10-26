@@ -19,10 +19,10 @@ import pytest
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.integrations.api import (
-    REGISTRY,
     WriteCapabilityRefused,
     authorise_write,
     execute_write,
+    registry,
 )
 from abacus.modules.integrations.capabilities import REASONS
 
@@ -52,11 +52,11 @@ async def _refusals(seed: Seeder, site: Site) -> list[dict[str, object]]:
 
 
 def _shape(key: str) -> str:
-    return next(w.shape for w in REGISTRY.writes if w.key == key)
+    return next(w.shape for w in registry().writes if w.key == key)
 
 
-W1 = next(w.key for w in REGISTRY.writes if w.shape == "W1")
-OTHERS = [w.key for w in REGISTRY.writes if w.shape != "W1"]
+W1 = next(w.key for w in registry().writes if w.shape == "W1")
+OTHERS = [w.key for w in registry().writes if w.shape != "W1"]
 
 
 @pytest.fixture

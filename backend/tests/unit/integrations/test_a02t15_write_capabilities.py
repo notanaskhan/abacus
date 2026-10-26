@@ -20,13 +20,13 @@ from pathlib import Path
 import pytest
 
 from abacus.modules.integrations.api import (
-    REGISTRY,
     UndeclaredEgress,
     WriteCapabilityRefused,
     assert_egress_declared,
     egress_allowlist,
     policy_refusal,
     register_adapter,
+    registry,
     undeclared_egress,
     unregister_adapter,
     write_capability,
@@ -123,18 +123,18 @@ def test_a_read_connector_never_also_writes() -> None:
 
 
 def test_the_registry_enables_nothing_and_names_each_writes_decision() -> None:
-    assert REGISTRY.version == 1
-    assert REGISTRY.writes, "the reserved writes are declared"
-    assert all(w.enabled is False for w in REGISTRY.writes)
-    assert all(w.decision for w in REGISTRY.writes)
-    shapes = {w.shape for w in REGISTRY.writes}
+    assert registry().version == 1
+    assert registry().writes, "the reserved writes are declared"
+    assert all(w.enabled is False for w in registry().writes)
+    assert all(w.decision for w in registry().writes)
+    shapes = {w.shape for w in registry().writes}
     assert "W1" in shapes  # posting is reserved, so the attest rule has an entry to refuse
 
 
 def test_the_egress_export_is_the_declared_hosts(capsys: pytest.CaptureFixture[str]) -> None:
-    assert egress_allowlist() == REGISTRY.egress_hosts()
+    assert egress_allowlist() == registry().egress_hosts()
     assert compiler.main(["--egress"]) == 0
-    assert json.loads(capsys.readouterr().out) == sorted(REGISTRY.egress_hosts())
+    assert json.loads(capsys.readouterr().out) == sorted(registry().egress_hosts())
     with_reader = SOURCE.replace(
         "read_connectors: []\n",
         "read_connectors:\n"
@@ -161,14 +161,14 @@ def test_start_up_passes_with_no_undeclared_host() -> None:
 
 
 def test_ac50_w1_is_refused_for_an_attest_client_at_registry_level() -> None:
-    w1 = next(w for w in REGISTRY.writes if w.shape == "W1")
+    w1 = next(w for w in registry().writes if w.shape == "W1")
     assert policy_refusal(w1, attest_client=True) == "attest_client"
     assert policy_refusal(w1, attest_client=False) == "not_enabled"
     # A later schema that could enable W1 would still be refused for an attest client.
     enabled = w1.model_copy(update={"enabled": True})  # no validation: a future schema
     assert policy_refusal(enabled, attest_client=True) == "attest_client"
     assert policy_refusal(enabled, attest_client=False) is None
-    other = next(w for w in REGISTRY.writes if w.shape != "W1")
+    other = next(w for w in registry().writes if w.shape != "W1")
     assert policy_refusal(other, attest_client=True) == "not_enabled"
 
 
