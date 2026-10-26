@@ -21321,6 +21321,10 @@ export type WallIn = {
  * shape plus `WallV2Out`'s fields (G-01-T09).
  */
 export type WallOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
     approval_status: WallApprovalStatus;
     /**
      * Approved At

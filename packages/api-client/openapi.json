@@ -44736,6 +44736,15 @@
       "WallOut": {
         "description": "Who is walled off from which client is itself sensitive (conflicts of interest). The v1\nshape plus `WallV2Out`'s fields (G-01-T09).",
         "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
           "approval_status": {
             "$ref": "#/components/schemas/WallApprovalStatus",
             "cls": "internal"
