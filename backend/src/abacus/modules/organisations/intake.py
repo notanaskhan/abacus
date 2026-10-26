@@ -11,8 +11,8 @@ DEC-441). Engagements' intake service calls these through `organisations.api`.
 - **Writes inside the caller's unit of work** (the intake commit authorised `client.intake` on
   the client): a relationship edge from the new entity to an entity of a client the person may
   see, and a contact with its roles on the new entity.
-- **The conflict check's outcome** for the committing person (`conflict_check_outcome`):
-  its subject and whether it is clear for them (a walled match is never clear, DEC-375).
+- **The conflict check** on an intake draft searches the draft's own names and is compared with
+  the draft's names at commit (`conflicts.check_clear_for`; P-07-T42 security review, H1).
 """
 
 from __future__ import annotations
@@ -36,7 +36,6 @@ from abacus.modules.identity.api import (
     hidden_clients,
     walled_from,
 )
-from abacus.modules.organisations.conflicts import conflict_check
 from abacus.modules.organisations.events import ContactCreated
 from abacus.modules.organisations.models import EntityRelationship
 from abacus.modules.organisations.repository import replace_contact_roles
@@ -259,23 +258,3 @@ async def add_intake_contact(
     )
     tx.emit(ContactCreated(client_id=client_id, contact_id=contact_id))
     return contact_id
-
-
-# --- the conflict check ------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class CheckOutcome:
-    subject_kind: str
-    subject_id: UUID
-    clear: bool
-
-
-async def conflict_check_outcome(ctx: AuthContext, check_id: UUID) -> CheckOutcome | None:
-    """The check's subject and whether it is clear for this person; None when unknown or not
-    theirs to see."""
-    try:
-        view = await conflict_check(ctx, check_id)
-    except NotFound:
-        return None
-    return CheckOutcome(view.subject.kind, view.subject.id, view.outcome == "clear")

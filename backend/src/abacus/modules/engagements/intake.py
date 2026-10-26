@@ -17,7 +17,10 @@
   engagement per engagement type and period with the engagement partner on its team and its work
   items by service (a service names the forms it creates; Form 56 is a line item only), and with
   `start_acceptance` an acceptance record per engagement. It needs the draft's own conflict
-  check, clear for the committing person (409 `gate_unmet`), and refuses a new client whose
+  check, which searched the names the draft holds now (the server builds them from the draft,
+  `subject_names`; security review H1) and is clear for the committing person, re-read inside
+  the unit of work (409 `gate_unmet`); an autosave since the commit read the draft is 409
+  `stale_version`. It refuses a new client whose
   normalised name is a client the person may see (409 `possible_duplicate`). One
   `client_intake.committed` event; `engagement.created` outbox events. The draft keeps what the
   commit answered, so a committed draft answers the same again (the route also replays by
@@ -68,11 +71,12 @@ from abacus.modules.organisations.api import (
     RELATIONSHIP_KINDS,
     ClientRecordChange,
     EntityAttributes,
+    SubjectNames,
     TinKindNotAllowed,
     add_intake_contact,
     add_intake_relationship,
+    check_clear_for,
     client_with_entity,
-    conflict_check_outcome,
     create_client,
     same_name_client,
     set_client_record,
@@ -258,9 +262,12 @@ async def _tin_guard(ctx: AuthContext, payload: dict[str, object]) -> None:
         raise TinKindNotAllowed(facts={"field": gated[0]})
 
 
-async def _walled_client(ctx: AuthContext, payload: dict[str, object]) -> None:
-    """An existing client the person is walled from reads as unknown (DEC-43)."""
-    client = _uuid(_entity(payload).get("client_id"))
+async def _walled_client(
+    ctx: AuthContext, payload: dict[str, object], committed: UUID | None = None
+) -> None:
+    """An existing client the person is walled from reads as unknown (DEC-43); once committed,
+    the client the draft created or added to (security review L3: a replay re-applies walls)."""
+    client = committed or _uuid(_entity(payload).get("client_id"))
     if client is not None and await hidden_clients(ctx.tenant, ctx.user_id, [client]):
         raise NotFound("client")
 
@@ -331,7 +338,7 @@ async def get_draft(ctx: AuthContext, draft_id: UUID) -> IntakeDraftView:
     await _gate(ctx)
     async with tenant_session(ctx.tenant) as session:
         found = _view(await _own_row(session, ctx, draft_id))
-    await _walled_client(ctx, found.payload)
+    await _walled_client(ctx, found.payload, found.committed_client_id)
     return found
 
 
@@ -353,7 +360,7 @@ async def draft_visible(ctx: AuthContext, draft_id: UUID) -> bool:
         row = (
             (
                 await session.execute(
-                    select(drafts.c.payload).where(
+                    select(drafts.c.payload, drafts.c.committed_client_id).where(
                         drafts.c.id == draft_id, drafts.c.discarded_at.is_(None)
                     )
                 )
@@ -364,7 +371,11 @@ async def draft_visible(ctx: AuthContext, draft_id: UUID) -> bool:
     if row is None:
         return False
     try:
-        await _walled_client(ctx, cast(dict[str, object], row["payload"] or {}))
+        await _walled_client(
+            ctx,
+            cast(dict[str, object], row["payload"] or {}),
+            cast(UUID | None, row["committed_client_id"]),
+        )
     except NotFound:
         return False
     return True
@@ -504,18 +515,61 @@ def _service_problems(p: dict[str, object], entity: dict[str, object]) -> list[P
     return out
 
 
-async def conflict_problems(ctx: AuthContext, draft_id: UUID, p: dict[str, object]) -> bool:
-    """True when the draft's own conflict check is clear for this person."""
+def names_of(p: dict[str, object]) -> SubjectNames:
+    """What the draft's conflict check searches (security review H1, DEC-430): the client's name
+    (typed, or the existing client's), the entity's, each contact's, and each related entity's."""
+    entity = _entity(p)
+    typed = [
+        v
+        for v in (entity.get("client_display_name"), entity.get("entity_name"))
+        if isinstance(v, str) and v
+    ]
+    typed += [
+        cast(str, c["display_name"])
+        for c in _list(p, "contacts")
+        if isinstance(c.get("display_name"), str)
+    ]
+    client = _uuid(entity.get("client_id")) if entity.get("mode") == "existing_client" else None
+    related = [_uuid(x.get("related_entity_id")) for x in _list(p, "relationships")]
+    return SubjectNames(
+        names=tuple(typed),
+        client_ids=() if client is None else (client,),
+        entity_ids=tuple(r for r in related if r is not None),
+    )
+
+
+async def subject_names(ctx: AuthContext, draft_id: UUID) -> SubjectNames | None:
+    """Organisations' names provider for a `client_intake_draft` subject: a live, uncommitted
+    draft (the caller's visibility was checked first, `draft_visible`)."""
+    async with tenant_session(ctx.tenant) as session:
+        payload = (
+            await session.execute(
+                select(drafts.c.payload).where(
+                    drafts.c.id == draft_id,
+                    drafts.c.discarded_at.is_(None),
+                    drafts.c.committed_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+    return None if payload is None else names_of(cast(dict[str, object], payload))
+
+
+async def conflict_problems(
+    ctx: AuthContext, draft_id: UUID, p: dict[str, object], session: AsyncSession | None = None
+) -> bool:
+    """True when the draft's own conflict check searched the names the draft holds now and is
+    clear for this person; in `session` when given (the commit's unit of work)."""
     check = _uuid(p.get("conflict_check_id"))
     if check is None:
         return False
-    outcome = await conflict_check_outcome(ctx, check)
-    return (
-        outcome is not None
-        and outcome.subject_kind == SUBJECT
-        and outcome.subject_id == draft_id
-        and outcome.clear
-    )
+    if session is not None:
+        return await check_clear_for(
+            session, ctx, check, subject_kind=SUBJECT, subject_id=draft_id, expected=names_of(p)
+        )
+    async with tenant_session(ctx.tenant) as own:
+        return await check_clear_for(
+            own, ctx, check, subject_kind=SUBJECT, subject_id=draft_id, expected=names_of(p)
+        )
 
 
 async def validate_draft(ctx: AuthContext, draft_id: UUID, step: str) -> list[Problem]:
@@ -534,7 +588,12 @@ async def check_commit(ctx: AuthContext, draft_id: UUID) -> None:
     a live person with the action, and the draft is their own."""
     await _gate(ctx)
     async with tenant_session(ctx.tenant) as session:
-        await _own_row(session, ctx, draft_id)
+        row = await _own_row(session, ctx, draft_id)
+    await _walled_client(
+        ctx,
+        cast(dict[str, object], row["payload"] or {}),
+        cast(UUID | None, row["committed_client_id"]),
+    )
 
 
 async def _stored(ctx: AuthContext, draft_id: UUID) -> Committed | None:
@@ -619,6 +678,9 @@ async def commit_intake(ctx: AuthContext, draft_id: UUID, start_acceptance: bool
     )
     today = await clock.today(ctx.tenant)  # a relationship's start without a date of death
     async with uow(ctx.tenant) as tx:
+        # H1, L2: the check is re-read in this unit of work against the names the draft holds.
+        if not await conflict_problems(ctx, draft_id, p, tx.session):
+            raise GateUnmet(facts={"gate": "conflict_check", "draft_id": str(draft_id)})
         if existing is not None:
             made = await client_with_entity(
                 tx, ctx.tenant_id, existing, None, cast(str, entity["entity_name"])
@@ -726,11 +788,15 @@ async def commit_intake(ctx: AuthContext, draft_id: UUID, start_acceptance: bool
                     drafts.c.id == draft_id,
                     drafts.c.committed_at.is_(None),
                     drafts.c.discarded_at.is_(None),
+                    # The payload committed is the one read and checked (an autosave since: 409).
+                    drafts.c.version == found.version,
                 )
                 .values(
                     committed_at=func.clock_timestamp(),
                     committed_client_id=client_id,
                     result=result.stored(),
+                    # L5: the client tables hold the data now; the draft keeps identifiers only.
+                    payload={},
                     saved_at=func.clock_timestamp(),
                 )
                 .returning(drafts.c.id)

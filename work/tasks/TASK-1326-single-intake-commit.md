@@ -55,3 +55,17 @@ and commit stubs live (the import routes stay 501 until P-07-T52).
   `tests/unit/engagements/test_intake_rules.py`, the stub suite (live routes no longer 501),
   `test_schema_check_db.py` (the new update columns), regenerated tenant-isolation suite. Gates
   green; `make generate`; web tsc.
+- 2026-10-26: security review fix round (DEC-430 notes). H1: a check on an intake draft
+  searches the names the server builds from the draft (`register_conflict_subject_names`), the
+  commit compares the check's sealed names with the draft's current names and re-reads the
+  outcome inside its unit of work (L2), and the claim matches the version read. L1: trigger
+  `client_intake_drafts_final` (0177, amended in place; now `down_revision = "0180"` after the
+  rebase onto a0d16491). L3: walls re-applied before a replay. L5: payload emptied on commit.
+  L4 (human-only register) and the discarded-draft purge are follow-ups. TASK-1324's suite had
+  three call sites changed: its checks now run on drafts that already hold their names
+  (`draft(payload())` instead of `draft()`), since a check on an empty draft is now refused and
+  a check run before the names exist no longer clears them; no assertion changed. New tests:
+  `tests/integration/backfill/test_p07t42_intake_review_fixes.py` (scenarios A and B, L1, L3,
+  L5). Pre-existing on main, not this branch: `test_schema_check_db.py::
+  test_ac20_the_real_update_column_declarations_match_the_contract` lacks 0180's
+  `methodology_version_states`.

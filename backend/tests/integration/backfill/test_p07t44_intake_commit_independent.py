@@ -189,7 +189,7 @@ class World:
 
     async def ready(self) -> Json:
         """A complete draft with a cleared conflict check on it."""
-        draft = await self.draft()
+        draft = await self.draft(self.payload())
         check = await self.cleared_check(draft["id"])
         return await self.save(draft, self.payload(check=check))
 
@@ -567,7 +567,7 @@ async def test_ac_no_commit_without_a_cleared_conflict_check(w: World) -> None:
     _refusal(await w.commit_intake(draft), 409, "gate_unmet")
 
     # A cleared check, but run on another draft.
-    other = await w.draft()
+    other = await w.draft(w.payload())
     foreign = await w.cleared_check(other["id"])
     draft = await w.save(draft, w.payload(check=foreign))
     _refusal(await w.commit_intake(draft), 409, "gate_unmet")
@@ -586,7 +586,7 @@ async def test_ac_no_commit_without_a_cleared_conflict_check(w: World) -> None:
 async def test_ac_form_706_needs_the_date_of_death(w: World) -> None:
     """CLI-06 i: "Required for Form 706 due date" is `date_of_death_required`; Next is refused
     and so is the commit."""
-    draft = await w.draft()
+    draft = await w.draft(w.payload(date_of_death=None))
     check = await w.cleared_check(draft["id"])
     draft = await w.save(draft, w.payload(date_of_death=None, check=check), step="services")
     v = _json(

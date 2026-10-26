@@ -9,10 +9,13 @@
   operational (OQ-17).
 - `result` is what the commit answered (identifiers only: the client, the entity, engagements,
   work items, the conflict check, the acceptance record), so a committed draft answers the same
-  again whatever key a retry carries. It is written once, with `committed_at`.
+  again whatever key a retry carries. It is written once, with `committed_at`, when the
+  payload is emptied (the client tables hold the data then; security review L5).
+- A trigger refuses any UPDATE of a committed or discarded draft (security review L1): both are
+  final, whatever the app's grants allow.
 
 Revision ID: 0177
-Revises: 0172
+Revises: 0180
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0177"
-down_revision = "0172"
+down_revision = "0180"
 branch_labels = None
 depends_on = None
 
@@ -73,7 +76,25 @@ def upgrade() -> None:
     op.execute("REVOKE UPDATE, DELETE ON client_intake_drafts FROM abacus_app")
     insert_columns(op, "client_intake_drafts", ("tenant_id", "created_by", "step", "payload"))
     op.execute(f"GRANT UPDATE ({', '.join(_UPDATES)}) ON client_intake_drafts TO abacus_app")
+    op.execute(
+        """
+        CREATE FUNCTION client_intake_drafts_final() RETURNS trigger
+        LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+        BEGIN
+            IF OLD.committed_at IS NOT NULL OR OLD.discarded_at IS NOT NULL THEN
+                RAISE EXCEPTION 'client_intake_drafts: a committed or discarded draft is final'
+                    USING ERRCODE = 'check_violation';
+            END IF;
+            RETURN NEW;
+        END $$
+        """
+    )
+    op.execute(
+        "CREATE TRIGGER client_intake_drafts_final BEFORE UPDATE ON client_intake_drafts "
+        "FOR EACH ROW EXECUTE FUNCTION client_intake_drafts_final()"
+    )
 
 
 def downgrade() -> None:
     op.execute("DROP TABLE client_intake_drafts")
+    op.execute("DROP FUNCTION client_intake_drafts_final()")
