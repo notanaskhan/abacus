@@ -9,7 +9,9 @@ ADM-07's values section for events on `request_item` targets, resolved at read t
 - `user_id` before and after (the client assignee): display names (Confidential).
 
 Anything else is `unavailable` ("Values not available"). When the event names an engagement,
-the request must belong to it, else `unavailable` (fail closed).
+the request must belong to it; when it names none (most writers pass no `Scope`), the viewer
+must hold `engagement.read` on the request's own engagement (security review M1). Otherwise
+`unavailable` (fail closed).
 """
 
 from __future__ import annotations
@@ -21,10 +23,17 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import tenant_session
-from abacus.modules.identity.api import AuthContext, names_of
+from abacus.kernel.errors import NotFound
+from abacus.modules.identity.api import (
+    AuthContext,
+    allowed_actions,
+    engagement_resource,
+    names_of,
+)
 from abacus.modules.platform.api import AuditEventRef, AuditValueRow, AuditValues
 
 UNAVAILABLE: Final = AuditValues("unavailable")
+CONTENT_READ: Final = "engagement.read"
 _ITEM = text("SELECT engagement_id, title FROM request_items WHERE id = :id")
 
 
@@ -35,6 +44,17 @@ def _uuid(value: object) -> UUID | None:
         return UUID(str(value))
     except ValueError:
         return None
+
+
+async def _may_read(viewer: AuthContext, engagement_id: UUID) -> bool:
+    """Security review M1: an event with no engagement of its own is not firm-level content when
+    its target belongs to one; the reader must hold that engagement's content read, as
+    `audit_trail.values` requires on an engagement event (a probe: no `authz.denied` logged)."""
+    try:
+        resource = await engagement_resource(viewer.tenant, engagement_id)
+    except NotFound:
+        return False
+    return CONTENT_READ in await allowed_actions(viewer, resource, (CONTENT_READ,))
 
 
 def _flag(refs: Mapping[str, str | int], key: str) -> str | None:
@@ -55,8 +75,11 @@ async def request_item_values(viewer: AuthContext, event: AuditEventRef) -> Audi
         item = (await session.execute(_ITEM, {"id": item_id})).mappings().first()
     if item is None:
         return UNAVAILABLE
-    if event.engagement_id is not None and item["engagement_id"] != event.engagement_id:
-        return UNAVAILABLE
+    if event.engagement_id is not None:
+        if item["engagement_id"] != event.engagement_id:
+            return UNAVAILABLE
+    elif not await _may_read(viewer, item["engagement_id"]):
+        return UNAVAILABLE  # an unscoped event on this request: its engagement's read decides
     label = str(item["title"] or "")
     rows: list[AuditValueRow] = []
     if visible != (None, None):

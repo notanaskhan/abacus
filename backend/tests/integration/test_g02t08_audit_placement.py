@@ -375,3 +375,32 @@ async def test_ac7_the_office_filter_matches_the_events_stored_office(
     assert _target_ids(austin) == [str(in_austin)]
     nowhere = await as_(world.grace)("GET", LIST, params={"office_id": str(world.boulder)})
     assert _target_ids(nowhere) == []
+
+
+# --- Security review L2, L3: an engagement decides, never the writer's unchecked values ---------
+
+
+async def test_l3_an_explicit_office_is_ignored_on_an_engagement_event(
+    world: World, seed: Seeder
+) -> None:
+    item = uuid.uuid4()
+    await _record(
+        world.grace.tenant,
+        "request_item.received",
+        Target("request_item", item),
+        Scope(engagement_id=world.ashford, office_id=world.austin),
+    )
+    assert await _placed(seed, world, item) == (world.ashford_client, world.denver)
+
+
+async def test_l2_an_engagement_nobody_finds_stores_no_explicit_placement(
+    world: World, seed: Seeder
+) -> None:
+    item = uuid.uuid4()
+    await _record(
+        world.grace.tenant,
+        "request_item.received",
+        Target("request_item", item),
+        Scope(engagement_id=uuid.uuid4(), client_id=world.ashford_client, office_id=world.denver),
+    )
+    assert await _placed(seed, world, item) == (None, None)

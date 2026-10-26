@@ -465,3 +465,35 @@ async def test_ac5_every_resolver_stays_behind_need_to_know_and_the_flag(
         world.tenant,
     )
     assert all(SSN_LAST4 not in cast(str, r["a"]) for r in stored)
+
+
+# --- Security review M1: unscoped events on engagement content ---------------------------------
+
+
+async def test_m1_an_unscoped_event_resolves_only_for_a_reader_of_its_targets_engagement(
+    world: World, seed: Seeder, as_: Callable[[object], Call]
+) -> None:
+    # Most writers pass no Scope: the event reads as firm-level, so values.py lets the QM owner
+    # through; the resolver must still require the target engagement's content read.
+    quinn = await _member(seed, world.tenant, "Quinn Adeyemi", "quality_partner", "partner")
+    await seed.member(world.copperleaf, Person(quinn.user_id, world.tenant), "engagement_partner")
+    version = await _version(seed, world, world.copperleaf)
+    item = await seed.item(world.tenant, world.copperleaf, world.grace.user_id)
+    evidence = await _record(
+        world,
+        "review.taken",
+        Target("evidence_version", version),
+        after=Ref(user_id=world.hannah.user_id),
+    )
+    request = await _record(
+        world,
+        "request_item.assignee_changed",
+        Target("request_item", item),
+        after=Ref(user_id=world.hannah.user_id),
+    )
+    for seq in (evidence, request):
+        # Margaret, the QM owner off the team: nothing about the engagement's content.
+        off_team = await _values(as_(world.margaret), seq)
+        assert (off_team["status"], off_team["rows"]) == ("unavailable", [])
+        on_team = _rows(await _values(as_(quinn), seq))
+        assert [r["after"] for r in on_team] == ["Hannah Leclerc"]

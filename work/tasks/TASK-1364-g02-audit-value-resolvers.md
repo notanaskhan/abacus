@@ -56,3 +56,8 @@ Revert: the types read "Values not available" again. Flag `audit_log.values` off
   targets (`membership.*` actions). Index maps exposed as `people.DEACTIVATION_REASONS` and
   `staff.FIRM_ROLES_BY_INDEX`. DEC-459. `test_g02t09_audit_value_resolvers.py` (6 tests) green
   in the targeted pass; gates clean (TYPE-001 caught once on a pyright ignore, fixed with a cast).
+- 2026-10-27: security review M1: unscoped evidence and request events (most writers pass no
+  `Scope`) read as firm-level, so the QM owner passed need-to-know; the two resolvers now load
+  the target's engagement and require `engagement.read` on it (`allowed_actions` probe, as
+  `values.may_see_values`), else unavailable. `test_m1_*`: an off-team QM owner gets
+  unavailable on both; an on-team quality partner resolves.

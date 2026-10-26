@@ -66,3 +66,11 @@ Revert the commit: the columns go back to null for new events; rows already plac
   office's people). DEC-458. Targeted pass (17 files, -n 2): 452 passed, 3 failed, none from
   this change: ED-127 (`agent_stage.changed` uncatalogued and unplaced, two unit tests) and
   ED-128 (0172 up-down-up fails re-adding 0180's `methodology_templates.family`).
+- 2026-10-27: security review (PASS WITH FIXES). L2: an engagement the placer does not find drops
+  the explicit scope client and office (stored null). L3: an explicit office is ignored on an
+  engagement event. Tests `test_l2_*`, `test_l3_*`. **Follow-up (worth doing, not this round):**
+  derive the engagement for unscoped events whose target type has a registered engagement owner
+  (`kernel.audit_owners`: request_item, evidence_version and the like) so they get a stored
+  client and office, and the explorer could treat them as engagement events. The owners take a
+  `TenantContext`, not the unit of work's connection, so it needs connection-aware owners (or
+  writers passing `Scope`, the DEC-121 follow-up); writers were not changed here.

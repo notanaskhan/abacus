@@ -11,7 +11,9 @@ modules that own them register a placer here, as identity registers its session 
 transaction and tenant row-level security):
 
 - the engagement placer: `(engagement, work item or None)` pairs -> the engagement's client and
-  the office (the work item's, else the engagement's);
+  the office (the work item's, else the engagement's). For an event with an engagement this is
+  the only source: an explicit scope office is ignored, and when the placer finds nothing (or
+  none is registered in the process) both columns stay null (security review L2, L3);
 - the client placer: client ids -> the client's primary office.
 
 Unregistered or answering nothing, the column stays null: the explorer's ref-based wall rule
@@ -84,14 +86,20 @@ async def place(conn: AsyncConnection, events: Sequence[Placeable]) -> list[Plac
     )
     placed: list[Placement] = []
     for e in events:
-        client, office = e.client_id, e.office_id
         if e.engagement_id is not None:
+            # The engagement decides (security review L2, L3): its client (an explicit one must
+            # agree), and the office of its work item, else its own, else the client's primary
+            # office below; an explicit office is ignored. Not found, or no placer in this
+            # process: nothing is stored, never the writer's unchecked values.
             found = by_engagement.get((e.engagement_id, e.work_item_id))
-            if found is not None:
-                client = _agree(e.client_id, found.client_id, "client")
-                office = _agree(e.office_id, found.office_id, "office")
-        elif e.client_target is not None:
-            client = _agree(e.client_id, e.client_target, "client")
+            if found is None or found.client_id is None:
+                placed.append(Placement(None, None))
+                continue
+            placed.append(Placement(_agree(e.client_id, found.client_id), found.office_id))
+            continue
+        client, office = e.client_id, e.office_id
+        if e.client_target is not None:
+            client = _agree(e.client_id, e.client_target)
         placed.append(Placement(client, office))
     # An event with a client and no office takes the client's primary office (DEC-415 Q9).
     clients = sorted({p.client_id for p in placed if p.client_id and p.office_id is None}, key=str)
@@ -106,11 +114,11 @@ async def place(conn: AsyncConnection, events: Sequence[Placeable]) -> list[Plac
     return placed
 
 
-def _agree(explicit: UUID | None, derived: UUID | None, what: str) -> UUID | None:
-    """The derived value wins; an explicit one must match it."""
-    if explicit is not None and derived is not None and explicit != derived:
-        raise PlacementMismatch(f"the scope's {what} is not its engagement's")
-    return derived if derived is not None else explicit
+def _agree(explicit: UUID | None, derived: UUID) -> UUID:
+    """The derived client wins; an explicit one must match it."""
+    if explicit is not None and explicit != derived:
+        raise PlacementMismatch("the scope's client is not its engagement's or its target's")
+    return derived
 
 
 __all__ = [

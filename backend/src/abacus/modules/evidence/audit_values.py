@@ -12,7 +12,9 @@ Facts the event pins only, never a value that may have changed since:
 - a review assignment's person refs (`user_id` before and after): display names.
 
 Anything else is `unavailable` ("Values not available"). When the event names an engagement,
-the version must belong to it, else `unavailable` (fail closed).
+the version must belong to it; when it names none (most writers pass no `Scope`), the viewer
+must hold `engagement.read` on the version's own engagement (security review M1). Otherwise
+`unavailable` (fail closed).
 """
 
 from __future__ import annotations
@@ -23,11 +25,18 @@ from uuid import UUID
 from sqlalchemy import RowMapping, text
 
 from abacus.kernel.db import tenant_session
+from abacus.kernel.errors import NotFound
 from abacus.modules.evidence.masking import mask_token
-from abacus.modules.identity.api import AuthContext, names_of
+from abacus.modules.identity.api import (
+    AuthContext,
+    allowed_actions,
+    engagement_resource,
+    names_of,
+)
 from abacus.modules.platform.api import AuditEventRef, AuditValueRow, AuditValues
 
 UNAVAILABLE: Final = AuditValues("unavailable")
+CONTENT_READ: Final = "engagement.read"
 _VERSION = text(
     "SELECT v.engagement_id, i.title FROM evidence_versions v "
     "JOIN evidence_items i ON i.id = v.evidence_item_id WHERE v.id = :id"
@@ -45,6 +54,17 @@ def _uuid(value: object) -> UUID | None:
         return UUID(str(value))
     except ValueError:
         return None
+
+
+async def _may_read(viewer: AuthContext, engagement_id: UUID) -> bool:
+    """Security review M1: an event with no engagement of its own is not firm-level content when
+    its target belongs to one; the reader must hold that engagement's content read, as
+    `audit_trail.values` requires on an engagement event (a probe: no `authz.denied` logged)."""
+    try:
+        resource = await engagement_resource(viewer.tenant, engagement_id)
+    except NotFound:
+        return False
+    return CONTENT_READ in await allowed_actions(viewer, resource, (CONTENT_READ,))
 
 
 async def _person_rows(event: AuditEventRef, item: str) -> tuple[AuditValueRow, ...]:
@@ -82,8 +102,11 @@ async def _resolve(
         version = (await session.execute(_VERSION, {"id": version_id})).mappings().first()
     if version is None:
         return UNAVAILABLE
-    if event.engagement_id is not None and version["engagement_id"] != event.engagement_id:
-        return UNAVAILABLE
+    if event.engagement_id is not None:
+        if version["engagement_id"] != event.engagement_id:
+            return UNAVAILABLE
+    elif not await _may_read(viewer, version["engagement_id"]):
+        return UNAVAILABLE  # an unscoped event on this version: its engagement's read decides
     item = str(version["title"])
     if reveal is not None:
         kind = str(reveal["kind"])

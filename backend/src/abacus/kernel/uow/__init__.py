@@ -140,7 +140,8 @@ class Scope:
 
     `client_id` and `office_id` (G-02-T08 gap, DEC-458) are for an event with no engagement
     whose writer knows them; with an engagement (the scope's, or an engagement target) the unit
-    of work derives both through `placement`, and an explicit value must agree with it."""
+    of work derives both through `placement`: an explicit client must agree with it, an explicit
+    office is ignored, and an engagement it cannot find stores neither."""
 
     engagement_id: UUID | None = None
     work_item_id: UUID | None = None
