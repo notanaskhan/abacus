@@ -9,7 +9,7 @@ Rows are set by the firm administrator (`firm_settings.set_firm_setting`), never
 removes any `allow_letter_exceptions` row and restores 0138's list.
 
 Revision ID: 0182
-Revises: 0192 (0181 at the batch merge)
+Revises: 0181
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0182"
-down_revision = "0192"  # 0181 (#447) at the batch merge
+down_revision = "0181"
 branch_labels = None
 depends_on = None
 
