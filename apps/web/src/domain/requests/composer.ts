@@ -10,6 +10,7 @@ import {
   clientContactsOptions,
   createRequestItemMutation,
   delegateRequestItemMutation,
+  incorporateRequestItemMutation,
   itemCommentsOptions,
   listRequestItemsOptions,
   sendRequestItemMutation,
@@ -83,4 +84,20 @@ export function useComposerSave() {
   };
   const pending = create.isPending || update.isPending || delegate.isPending || send.isPending;
   return { run, pending };
+}
+
+/** SHL-14 d (P-06-T24): "Mark incorporated" on a close-intake request, `pending_incorporation` to
+ * `incorporated` (`POST …/request-items/{id}/incorporate`, `request_item.update`). A person's act;
+ * every binder read refreshes after, so the pill turns green from the server's row. */
+export function useIncorporate() {
+  const queryClient = useQueryClient();
+  const incorporate = useMutation({ ...incorporateRequestItemMutation() });
+  const run = async (engagementId: string, itemId: string): Promise<RequestItemV2Out> => {
+    const saved = await incorporate.mutateAsync({
+      path: { engagement_id: engagementId, item_id: itemId },
+    });
+    await queryClient.invalidateQueries();
+    return saved;
+  };
+  return { run, pending: incorporate.isPending };
 }
