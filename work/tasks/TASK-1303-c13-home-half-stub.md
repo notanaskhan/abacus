@@ -37,3 +37,4 @@ fixtures (T05) build against a frozen home half.
 ## Progress log
 - 2026-10-26: built; matrix, flags, statuses and the API client regenerated. Tests run in the
   end-of-batch targeted pass.
+- 2026-10-26: security review L: a provider's failure is logged (key and error class) before the tile is left out. The owners' free-text `filter` and `facts` get code patterns when I-01-T10 and T12 fill them.

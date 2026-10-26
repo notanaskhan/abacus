@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
+from abacus.kernel.logging import get_logger
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,7 @@ class HomeCount:
 # `provider(viewer, office_id)`: the viewer is the identity module's `AuthContext`, passed through
 # untyped here because `platform` sits below identity (DEC-13 graph).
 HomeCountProvider = Callable[[object, UUID | None], Awaitable[HomeCount]]
+_log = get_logger(__name__)
 _HOME_COUNTS: dict[str, HomeCountProvider] = {}
 _HOME_KEY = re.compile(r"[a-z][a-z_]{0,39}")
 
@@ -104,5 +106,7 @@ async def home_count(viewer: object, key: str, office_id: UUID | None) -> HomeCo
         return None
     try:
         return await provider(viewer, office_id)
-    except Exception:
+    except Exception as error:
+        # Seen, never shown (security review L): the key and the error class, no payload.
+        _log.warning("home_count.failed", key=key, error=type(error).__name__)
         return None
