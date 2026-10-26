@@ -61,3 +61,5 @@ group."
 ## Definition of done
 - [x] Unit tests (21) pass; the smoke profile writes p50/p95/p99 per endpoint group locally.
 - [x] Backend gates.
+- 2026-10-26: security review L4: `start_workflow` runs only in the local `default` namespace
+  (DEC-397 note); 22 unit tests.

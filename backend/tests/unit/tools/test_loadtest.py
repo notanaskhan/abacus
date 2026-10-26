@@ -229,3 +229,22 @@ async def test_e1_the_report_is_written_as_json_and_markdown(tmp_path: Path) -> 
     assert all({"p50_ms", "p95_ms", "p99_ms"} <= set(g) for g in data["groups"])
     assert as_md.read_text() == markdown(report)
     assert "| records | http |" in as_md.read_text()
+
+
+def test_e1_start_workflow_runs_only_in_the_local_default_namespace(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Security review (DEC-397): starting workflows is load only a local namespace takes."""
+    scenario = tmp_path / "starts.yaml"
+    scenario.write_text(
+        "name: starts\nduration_seconds: 1\ntemporal:\n"
+        "  - {name: starts, kind: start_workflow, workflow: canary, task_queue: q}\n"
+    )
+    code = harness.main(
+        ["--scenario", str(scenario), "--base-url", "http://127.0.0.1:8001", "--namespace", "prod"]
+    )
+    assert code == 2
+    assert "namespace" in capsys.readouterr().err
+    with pytest.raises(Refused):
+        check_local("http://127.0.0.1:8001", "127.0.0.1:7233", starts_in="staging")
+    check_local("http://127.0.0.1:8001", "127.0.0.1:7233", starts_in="default")

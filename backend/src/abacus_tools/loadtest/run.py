@@ -43,6 +43,7 @@ from abacus_tools.stack import is_loopback
 OUT = Path(__file__).resolve().parents[3] / ".local" / "loadtest"
 DEFAULT_BASE_URL = "http://127.0.0.1:8001"
 DEFAULT_TEMPORAL = "127.0.0.1:7233"
+LOCAL_NAMESPACE = "default"
 _LOCAL_ENVIRONMENTS = frozenset({"local", "test"})
 TemporalCall = Callable[[TemporalOp], Awaitable[object]]
 
@@ -51,8 +52,14 @@ class Refused(Exception):
     """The harness will not run against this target."""
 
 
-def check_local(base_url: str, temporal_target: str | None) -> None:
-    """Loopback targets in a local or test environment only (QD-6: never a hosted build)."""
+def check_local(
+    base_url: str, temporal_target: str | None, *, starts_in: str | None = None
+) -> None:
+    """Loopback targets in a local or test environment only (QD-6: never a hosted build).
+    `starts_in`: the namespace a scenario would start workflows in, which must be the local
+    default one (security review, DEC-397)."""
+    if starts_in is not None and starts_in != LOCAL_NAMESPACE:
+        raise Refused(f"start_workflow runs only in the local {LOCAL_NAMESPACE!r} namespace")
     if settings().environment not in _LOCAL_ENVIRONMENTS:
         raise Refused(f"environment {settings().environment!r} is not local")
     if not base_url.startswith(("http://", "https://")) or not is_loopback(base_url):
@@ -278,7 +285,12 @@ def main(argv: Sequence[str]) -> int:
     args = parser.parse_args(list(argv))
     try:
         scenario = load(args.scenario) if args.scenario else profile(args.profile)
-        check_local(args.base_url, args.temporal_target if scenario.temporal else None)
+        starts = any(op.kind == "start_workflow" for op in scenario.temporal)
+        check_local(
+            args.base_url,
+            args.temporal_target if scenario.temporal else None,
+            starts_in=args.namespace if starts else None,
+        )
         if any("=" not in v for v in args.var):
             raise ValueError("--var takes NAME=VALUE")
         report = asyncio.run(_main(args, scenario))
