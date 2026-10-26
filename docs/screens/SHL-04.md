@@ -18,12 +18,12 @@ Code: `src/shell/firm/NotificationsDrawer.tsx` (`NotificationsDrawer`, `groupByD
 | b | hannah-leclerc | same | E0 | Approvals tab: the rows with `pending` (a, b, d) | built · fixture |
 | b′ (`bp`) | hannah-leclerc | same | E0 | Approvals tab, nothing pending → EmptyState | built · fixture |
 | b_raj | raj-malhotra | same | E0 | Approvals adds the Copperleaf `proposal_routed` row (agent, deep link only) | built · fixture |
-| c | hannah-leclerc | same | E0 | Row d decided: `facts.receipt`, no `inline_actions`, not pending | built · fixture (receipt line; the Accept and Undo controls are deferred) |
+| c | hannah-leclerc | same | E0 | Row d decided: `facts.receipt`, no `inline_actions`, not pending | built · fixture (receipt line; after an inline Accept the row shows the receipt with Undo for 10 s) |
 | d | hannah-leclerc | same | E0 | Every row read → no dots; Mark all read has nothing to do | built · fixture |
 | e | hannah-leclerc | same | E0 | No rows → "You're all caught up." | built · fixture |
 | f | hannah-leclerc | same | E0 | The feed never answers → 5 skeleton rows, `aria-busy` | built · fixture |
 | g | hannah-leclerc | Thu Oct 1, 2026 11:00 AM CT | E2 | The R2 kinds: a to-do, a template update, two trigger runs | built · fixture |
-| settings | hannah-leclerc | Thu Oct 1 11:00 AM CT | E2 | The Notification settings menu | deferred (scenario data exists) |
+| settings | hannah-leclerc | Thu Oct 1 11:00 AM CT | E2 | The Notification settings menu | built · live (`GET`/`PUT /v1/me/notification-preferences`) |
 
 Error: a failed feed shows an error EmptyState with Retry. Not-allowed: none; every firm user has their own feed.
 
@@ -44,7 +44,7 @@ Day groups use the firm's calendar (`/v1/me/capabilities.tz`): "Today", then eac
 |---|---|---|
 | Rows a–i, g's rows | AUD-07, SHL-12, AUD-06, AUD-03, WB-01, HOME-03, SHL-17, ENG-11, SHL-20, SHL-13 | planned; meanwhile a row with an engagement goes to its legacy page (`/engagements/$id`, `/requests` for client uploads), and one without only marks itself read |
 | Open approvals queue → | HOME-02 | planned until I-01; closes the drawer |
-| Notification settings | SHL-04 settings menu (R2; the original spec's SHL-03 profile link) | deferred |
+| Notification settings | SHL-04 settings menu (R2; the original spec's SHL-03 profile link) | live (footer popover) |
 
 ## Acceptance
 - SHL-04 acceptance: 480 wide, 10 px inset, shell body with white grouped cards, the 46 header with a centred title (O2 `Drawer`, `width={480}`, `peek`).
@@ -54,7 +54,7 @@ Day groups use the firm's calendar (`/v1/me/capabilities.tz`): "Today", then eac
 - SHL-04 acceptance (R2): frame g shows one row of each new kind, the trigger rows begin "Auto-started by trigger ·", and nothing applies a template from the drawer.
 
 ## Deviations
-- **Deferred to a follow-up of P-01-T10:** inline Accept and Return… on row d (`accept_document`, `return_document`), the receipt's 10 s Undo (the undo route is P-01-T13, not in the generated client yet), the Return reason dialog, and the Notification settings menu with its preferences PUT. Frame c shows the receipt from the facts, without Undo.
+- **Built in the P-01-T10 follow-up (S10):** inline Accept and Return… on a person's pending client upload (`accept_document` and `return_document`, never on an agent row), through the evidence decision routes; Return asks for one of the engagement's send-back reason codes and a note the client sees; the receipt ("✓ Accepted by ‹viewer› · ‹time›") keeps a ghost Undo for 10 s (`POST …/review-decisions/{id}/undo`); the footer's Notification settings popover lists each kind with In Accrued and Email toggles. Frame c still shows the facts' receipt for a decision made elsewhere, without Undo. The Return dialog's title and button ("Return") are not in the handoff, which draws only the row.
 - The manifest keeps SHL-04 `planned`. With SHL-03 at `fixture`, link-contract rule 1 would require `to.SHL03()` in this folder, but neither overlay has a path, so there is no builder. The R2 revision replaced that link with the settings menu.
 - Row i's Timer glyph is not in the icon registry (F-05-T13); `clock` stands in.
 - The tabs are the kit `Segmented` (a tablist, 28 high); the spec's track is 26 high and the epic's a11y note asks for a radiogroup. The count is in each tab's text ("Approvals3"), not "Approvals, 3".

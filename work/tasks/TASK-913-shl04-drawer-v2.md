@@ -70,3 +70,10 @@ make check-generated
 - `2026-10-23`: Built part 1 as above. All checks above passed.
   - Skipped Tier C parity and axe. P-01-T16 locks both (epic §5.4).
   - Deferred the items listed under "Not in this part".
+- 2026-10-26 (S10 code gap, branch `s10-p01-t10-drawer`): the deferred part. Inline Accept and
+  Return… on a person's pending client upload (`inlinePair`: never an agent row), Return with the
+  engagement's send-back reason codes and a client-visible note, the receipt with a ghost Undo
+  for 10 s (`UNDO_MS`, `undoDecision`), and the footer's Notification settings popover (GET/PUT
+  `/v1/me/notification-preferences`). `docs/screens/SHL-04.md` updated. Tests at the end of the
+  run (frame c after Accept, Undo inside and after the window, Return dialog, settings menu,
+  agent rows without the pair).
