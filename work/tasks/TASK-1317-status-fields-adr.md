@@ -4,7 +4,7 @@ title: F-03-T09 status serialisation - propose ADR-190 (bare codes) instead of {
 spec: SPEC-306
 acceptance_criteria: [AC-2]
 risk_zone: amber
-status: in-review
+status: done
 epic: F-03
 plan_key: F-03-T09
 branch: s10-f03-t09-status-context
@@ -25,3 +25,4 @@ without breaking the frozen contracts.
 ## Progress log
 - 2026-10-26: drafted (AGENTS.md "How you work" item 9: contradicting an accepted ADR means a
   new ADR, not a workaround).
+- 2026-10-26: Ayush accepted ADR-190; DEC-413 decided; ADR-138 marked amended in the index.

@@ -1,9 +1,9 @@
 ---
 id: ADR-190
 title: API status fields carry the bare code; the label context is the screen's, and a server-known discriminator travels as its own field
-status: proposed         # supersedes ADR-138's "Return `status: {code, context?}`" sentence once accepted
+status: accepted         # amends ADR-138's "Return `status: {code, context?}`" sentence
 date: 2026-10-26
-deciders: ayushkbhatia
+deciders: ayushkbhatia   # accepted by Ayush on 2026-10-26 (DEC-413)
 risk_zone: amber
 ---
 
@@ -65,7 +65,7 @@ client for no reader that needs it.
 - A future server-known discriminator needs its own field and a vocabulary note naming it.
 
 **Follow-up work created**
-- On acceptance: mark ADR-138 "amended by ADR-190" in `docs/adr/README.md`; F-03-T10's
+- Done on acceptance: ADR-138 marked "amended by ADR-190" in `docs/adr/README.md`. F-03-T10's
   conformance tests check that no response model wraps a status (a status field is a vocabulary
   enum or a nullable one).
 
