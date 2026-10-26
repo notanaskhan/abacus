@@ -53,6 +53,7 @@ Verbatim from the handoff spec via `copy.ts` (the SPA composes titles from actio
 
 | From | To (manifest builder) | Planned or live |
 |---|---|---|
+| Settings navigation rail: Settings home · Offices & teams · Security · AI policy · Consents · Developer · Integrations · Portal · Quality · Monitoring · Inbox · Run history · Review · Ridgeline · BH AJE thresholds v2 | ADM-01 · ADM-03 · ADM-06 · ADM-04 · ADM-05 · ADM-09 · ADM-08 · ADM-10 · ADM-11 · ADM-12 · INB-01 · WB-08 · TXP-02 · KNW-04 | live where built, as ADM-01's section rows; "not built yet" in dev and fixture builds, hidden in production (ED-113) |
 | "Run ›" | WB-09 (P-09) | planned |
 | object chips | AUD-02 (live), CLS-07 (C-01), TAX-09 (T-01), SIG-01 (N-02), CLI-02 (live), WB-01 (W-03) | mixed |
 | actor names | ADM-02 user drawer | live |

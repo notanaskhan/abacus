@@ -528,7 +528,11 @@ async def item_comments_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> l
 
 
 @router.post(
-    "/{item_id}/comments", action="comment.create", response_model=CommentOut, status_code=201
+    "/{item_id}/comments",
+    action="comment.create",
+    response_model=CommentOut,
+    status_code=201,
+    errors=(409,),
 )
 async def post_item_comment_route(
     engagement_id: UUID, item_id: UUID, body: CommentIn, ctx: Ctx
@@ -565,6 +569,7 @@ async def version_comments_route(
     action="comment.create",
     response_model=CommentOut,
     status_code=201,
+    errors=(409,),
 )
 async def post_version_comment_route(
     engagement_id: UUID, item_id: UUID, version_id: UUID, body: CommentIn, ctx: Ctx
@@ -654,6 +659,7 @@ class RespondedOut(BaseModel):
     action="client_item.respond",
     response_model=RespondedOut,
     status_code=201,
+    errors=(409,),
 )
 async def client_respond_route(
     engagement_id: UUID, item_id: UUID, body: ClientResponseIn, ctx: Ctx
@@ -668,6 +674,7 @@ async def client_respond_route(
     action="client_item.respond",
     response_model=RespondedOut,
     status_code=201,
+    errors=(409,),
 )
 async def client_withdraw_route(engagement_id: UUID, item_id: UUID, ctx: Ctx) -> RespondedOut:
     """SPEC-042 AC-2: the client takes it back."""

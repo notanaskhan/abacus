@@ -997,6 +997,7 @@ async def ignore_request_item_route(item_id: UUID, body: IgnoreIn, ctx: Ctx) -> 
     action="evidence.upload",
     response_model=UploadIntentOut,
     status_code=201,
+    errors=(409,),
 )
 async def announce_upload_intent_route(
     item_id: UUID, body: UploadIntentIn, ctx: Ctx
