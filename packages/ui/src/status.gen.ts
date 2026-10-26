@@ -1362,6 +1362,58 @@ export const STATUS_REGISTRY = {
       }
     }
   },
+  "human_gate": {
+    "open": {
+      "label": "Open",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "done": {
+      "label": "Done",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "voided": {
+      "label": "Voided",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "snoozed": {
+      "label": "Snoozed until {date}",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "due_risk": {
+    "overdue": {
+      "label": "Overdue",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "due_soon": {
+      "label": "{date} · {n} days",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "approaching": {
+      "label": "{date} · {n} days",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "later": {
+      "label": "{date}",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
   "decision_card": {
     "awaiting_role": {
       "label": "Waiting on {person}",

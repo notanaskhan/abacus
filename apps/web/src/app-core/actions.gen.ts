@@ -148,6 +148,7 @@ export const ACTIONS = [
   "guidance_draft.read",
   "guidance_draft.request",
   "guidance_draft.run",
+  "home.read",
   "human_gate.read",
   "inbox_match.read",
   "inbox_match.request",

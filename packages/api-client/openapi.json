@@ -1142,6 +1142,53 @@
         "title": "AccruedIncidentFactsIn",
         "type": "object"
       },
+      "ActivityActorOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Id"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "user",
+              "contact",
+              "agent_run",
+              "system"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "label"
+        ],
+        "title": "ActivityActorOut",
+        "type": "object"
+      },
       "ActivityEventOut": {
         "description": "One audit event, identifiers only, through `audit_trail.api` (\u00a74.7). The UI words it;\na withdrawn upload never carries its file name (ADR-162).",
         "properties": {
@@ -1317,6 +1364,27 @@
           "created_at"
         ],
         "title": "ActivityOut",
+        "type": "object"
+      },
+      "ActivityRefOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ActivityRefOut",
         "type": "object"
       },
       "AdjustmentIn": {
@@ -9156,6 +9224,91 @@
         "title": "CitedSourceOut",
         "type": "object"
       },
+      "ClientActivityOut": {
+        "description": "One timeline row: an allowlisted event about a client, with codes and counts only\n(`{\"count\": 2, \"document_class\": \"health_insurance_form\"}`).",
+        "properties": {
+          "actor": {
+            "$ref": "#/components/schemas/ActivityActorOut",
+            "cls": "confidential"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_label": {
+            "cls": "confidential",
+            "title": "Client Label",
+            "type": "string"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "event_type": {
+            "cls": "internal",
+            "title": "Event Type",
+            "type": "string"
+          },
+          "facts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "cls": "internal",
+            "title": "Facts",
+            "type": "object"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "occurred_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/ActivityRefOut",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "occurred_at",
+          "event_type",
+          "client_id",
+          "client_label",
+          "engagement_id",
+          "actor",
+          "subject",
+          "facts"
+        ],
+        "title": "ClientActivityOut",
+        "type": "object"
+      },
       "ClientAnswerIn": {
         "additionalProperties": false,
         "properties": {
@@ -13345,6 +13498,88 @@
           }
         },
         "title": "DeactivateIn",
+        "type": "object"
+      },
+      "DeadlineRowOut": {
+        "properties": {
+          "client": {
+            "cls": "confidential",
+            "title": "Client",
+            "type": "string"
+          },
+          "due_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "filing_label": {
+            "cls": "confidential",
+            "title": "Filing Label",
+            "type": "string"
+          },
+          "risk": {
+            "cls": "internal",
+            "enum": [
+              "overdue",
+              "due_soon",
+              "approaching",
+              "later"
+            ],
+            "title": "Risk",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "due_on",
+          "client",
+          "filing_label",
+          "status",
+          "risk"
+        ],
+        "title": "DeadlineRowOut",
+        "type": "object"
+      },
+      "DeadlinesOut": {
+        "description": "The viewer's next 14 days (interim source: work items' `due_on` and milestones; T-08 moves\nit to `filing_deadlines` without a shape change). `next` is the first one past the window.",
+        "properties": {
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeadlineRowOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DeadlineRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows",
+          "next"
+        ],
+        "title": "DeadlinesOut",
         "type": "object"
       },
       "DecideIn": {
@@ -23224,6 +23459,28 @@
         "title": "GraphTeamMemberOut",
         "type": "object"
       },
+      "GreetingOut": {
+        "description": "\"Good morning, Daniel\" and the date, in the firm's time zone on `kernel.clock`.",
+        "properties": {
+          "date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "first_name": {
+            "cls": "confidential",
+            "title": "First Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "first_name",
+          "date"
+        ],
+        "title": "GreetingOut",
+        "type": "object"
+      },
       "GridRowOut": {
         "description": "One capability row; cells per template computed from the compiled matrix and the firm's\noverrides, or from `role-templates.yaml` for actions not yet in the matrix.",
         "properties": {
@@ -23705,6 +23962,137 @@
           "outcome"
         ],
         "title": "HistoryEntryOut",
+        "type": "object"
+      },
+      "HomeOut": {
+        "description": "`HomeVM`: HOME-01 without the queue. The Approvals badge, the header count and the\n\"Waiting on you\" pane read `review`'s C13 counts and list.",
+        "properties": {
+          "client_activity": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ClientActivityOut"
+            },
+            "title": "Client Activity",
+            "type": "array"
+          },
+          "deadlines": {
+            "$ref": "#/components/schemas/DeadlinesOut",
+            "cls": "confidential"
+          },
+          "greeting": {
+            "$ref": "#/components/schemas/GreetingOut",
+            "cls": "confidential"
+          },
+          "running_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Running Count"
+          },
+          "segments": {
+            "$ref": "#/components/schemas/SegmentsOut",
+            "cls": "internal"
+          },
+          "tiles": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/HomeTileOut"
+            },
+            "title": "Tiles",
+            "type": "array"
+          },
+          "your_work": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/YourWorkOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          }
+        },
+        "required": [
+          "greeting",
+          "tiles",
+          "your_work",
+          "deadlines",
+          "client_activity",
+          "running_count",
+          "segments"
+        ],
+        "title": "HomeOut",
+        "type": "object"
+      },
+      "HomeTileOut": {
+        "description": "One practice count tile (\"Audits 27 \u00b7 17 Planning \u00b7 15 Fieldwork \u2026\"). `key` is the\nregistered home count; `label` and `caption` are copy keys the SPA renders.",
+        "properties": {
+          "by_office": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TileOfficeOut"
+            },
+            "title": "By Office",
+            "type": "array"
+          },
+          "by_status": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TileStatusOut"
+            },
+            "title": "By Status",
+            "type": "array"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Caption"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "target": {
+            "cls": "internal",
+            "title": "Target",
+            "type": "string"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "caption",
+          "total",
+          "by_status",
+          "by_office",
+          "target"
+        ],
+        "title": "HomeTileOut",
         "type": "object"
       },
       "HumanGateOut": {
@@ -42474,6 +42862,48 @@
         "title": "SecurityRoleIn",
         "type": "object"
       },
+      "SegmentsOut": {
+        "description": "DF-39: the Home segmented control's other options, each available, planned (hidden in\nproduction) or missing its entitlement (Insights, DEC-55).",
+        "properties": {
+          "capacity": {
+            "cls": "internal",
+            "enum": [
+              "available",
+              "planned",
+              "entitlement_missing"
+            ],
+            "title": "Capacity",
+            "type": "string"
+          },
+          "deadlines": {
+            "cls": "internal",
+            "enum": [
+              "available",
+              "planned",
+              "entitlement_missing"
+            ],
+            "title": "Deadlines",
+            "type": "string"
+          },
+          "insights": {
+            "cls": "internal",
+            "enum": [
+              "available",
+              "planned",
+              "entitlement_missing"
+            ],
+            "title": "Insights",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deadlines",
+          "capacity",
+          "insights"
+        ],
+        "title": "SegmentsOut",
+        "type": "object"
+      },
       "SelectionOut": {
         "properties": {
           "by_rule": {
@@ -48827,6 +49257,27 @@
         "title": "TierIn",
         "type": "object"
       },
+      "TileOfficeOut": {
+        "properties": {
+          "n": {
+            "cls": "internal",
+            "title": "N",
+            "type": "integer"
+          },
+          "office_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Office Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "office_id",
+          "n"
+        ],
+        "title": "TileOfficeOut",
+        "type": "object"
+      },
       "TileOut": {
         "properties": {
           "attention": {
@@ -48870,6 +49321,32 @@
           "attention"
         ],
         "title": "TileOut",
+        "type": "object"
+      },
+      "TileStatusOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "filter": {
+            "cls": "internal",
+            "title": "Filter",
+            "type": "string"
+          },
+          "n": {
+            "cls": "internal",
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "n",
+          "filter"
+        ],
+        "title": "TileStatusOut",
         "type": "object"
       },
       "TimeZoneIO": {
@@ -50994,6 +51471,61 @@
         "title": "WorkItemRowOut",
         "type": "object"
       },
+      "WorkRowOut": {
+        "properties": {
+          "client": {
+            "cls": "confidential",
+            "title": "Client",
+            "type": "string"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Function"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          },
+          "tags": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "name",
+          "client",
+          "status",
+          "function",
+          "tags"
+        ],
+        "title": "WorkRowOut",
+        "type": "object"
+      },
       "WorkingPaperOut": {
         "properties": {
           "audit_area": {
@@ -51282,6 +51814,30 @@
           "minutes"
         ],
         "title": "YourPartOut",
+        "type": "object"
+      },
+      "YourWorkOut": {
+        "description": "HOME-01 a2: the viewer's assigned work items; `label` is the band's copy key.",
+        "properties": {
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/WorkRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "label",
+          "rows"
+        ],
+        "title": "YourWorkOut",
         "type": "object"
       },
       "abacus__modules__agents__routes__ApprovalIn": {
@@ -110708,6 +111264,130 @@
           "mapping"
         ],
         "x-abacus-action": "grouping_set.publish"
+      }
+    },
+    "/v1/home": {
+      "get": {
+        "description": "HOME-01: the viewer's Home, optionally narrowed to one office (DEC-30).",
+        "operationId": "home",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "office_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Office Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Home Route",
+        "tags": [
+          "practice"
+        ],
+        "x-abacus-action": "home.read"
       }
     },
     "/v1/human-gates": {

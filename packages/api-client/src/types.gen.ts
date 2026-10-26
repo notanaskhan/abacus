@@ -534,6 +534,24 @@ export type AccruedIncidentFactsIn = {
 };
 
 /**
+ * ActivityActorOut
+ */
+export type ActivityActorOut = {
+    /**
+     * Id
+     */
+    id: string | null;
+    /**
+     * Label
+     */
+    label: string | null;
+    /**
+     * Type
+     */
+    type: 'user' | 'contact' | 'agent_run' | 'system';
+};
+
+/**
  * ActivityEventOut
  *
  * One audit event, identifiers only, through `audit_trail.api` (§4.7). The UI words it;
@@ -620,6 +638,20 @@ export type ActivityOut = {
      * Record Type
      */
     record_type: string | null;
+};
+
+/**
+ * ActivityRefOut
+ */
+export type ActivityRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Type
+     */
+    type: string;
 };
 
 /**
@@ -4257,6 +4289,47 @@ export type CitedSourceOut = {
 };
 
 /**
+ * ClientActivityOut
+ *
+ * One timeline row: an allowlisted event about a client, with codes and counts only
+ * (`{"count": 2, "document_class": "health_insurance_form"}`).
+ */
+export type ClientActivityOut = {
+    actor: ActivityActorOut;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Label
+     */
+    client_label: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: string | number | boolean;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    subject: ActivityRefOut;
+};
+
+/**
  * ClientAnswerIn
  */
 export type ClientAnswerIn = {
@@ -6198,6 +6271,50 @@ export type DeactivateIn = {
      * Reason
      */
     reason?: 'manual' | 'access_ended' | 'scim_deprovisioned';
+};
+
+/**
+ * DeadlineRowOut
+ */
+export type DeadlineRowOut = {
+    /**
+     * Client
+     */
+    client: string;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Filing Label
+     */
+    filing_label: string;
+    /**
+     * Risk
+     */
+    risk: 'overdue' | 'due_soon' | 'approaching' | 'later';
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * DeadlinesOut
+ *
+ * The viewer's next 14 days (interim source: work items' `due_on` and milestones; T-08 moves
+ * it to `filing_deadlines` without a shape change). `next` is the first one past the window.
+ */
+export type DeadlinesOut = {
+    next: DeadlineRowOut | null;
+    /**
+     * Rows
+     */
+    rows: Array<DeadlineRowOut>;
 };
 
 /**
@@ -10956,6 +11073,22 @@ export type GraphTeamMemberOut = {
 };
 
 /**
+ * GreetingOut
+ *
+ * "Good morning, Daniel" and the date, in the firm's time zone on `kernel.clock`.
+ */
+export type GreetingOut = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * First Name
+     */
+    first_name: string;
+};
+
+/**
  * GridRowOut
  *
  * One capability row; cells per template computed from the compiled matrix and the firm's
@@ -11192,6 +11325,68 @@ export type HistoryEntryOut = {
      * Reason Label
      */
     reason_label?: string | null;
+};
+
+/**
+ * HomeOut
+ *
+ * `HomeVM`: HOME-01 without the queue. The Approvals badge, the header count and the
+ * "Waiting on you" pane read `review`'s C13 counts and list.
+ */
+export type HomeOut = {
+    /**
+     * Client Activity
+     */
+    client_activity: Array<ClientActivityOut>;
+    deadlines: DeadlinesOut;
+    greeting: GreetingOut;
+    /**
+     * Running Count
+     */
+    running_count: number | null;
+    segments: SegmentsOut;
+    /**
+     * Tiles
+     */
+    tiles: Array<HomeTileOut>;
+    your_work: YourWorkOut | null;
+};
+
+/**
+ * HomeTileOut
+ *
+ * One practice count tile ("Audits 27 · 17 Planning · 15 Fieldwork …"). `key` is the
+ * registered home count; `label` and `caption` are copy keys the SPA renders.
+ */
+export type HomeTileOut = {
+    /**
+     * By Office
+     */
+    by_office: Array<TileOfficeOut>;
+    /**
+     * By Status
+     */
+    by_status: Array<TileStatusOut>;
+    /**
+     * Caption
+     */
+    caption: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target
+     */
+    target: string;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -20138,6 +20333,27 @@ export type SecurityRoleIn = {
 };
 
 /**
+ * SegmentsOut
+ *
+ * DF-39: the Home segmented control's other options, each available, planned (hidden in
+ * production) or missing its entitlement (Insights, DEC-55).
+ */
+export type SegmentsOut = {
+    /**
+     * Capacity
+     */
+    capacity: 'available' | 'planned' | 'entitlement_missing';
+    /**
+     * Deadlines
+     */
+    deadlines: 'available' | 'planned' | 'entitlement_missing';
+    /**
+     * Insights
+     */
+    insights: 'available' | 'planned' | 'entitlement_missing';
+};
+
+/**
  * SelectionOut
  */
 export type SelectionOut = {
@@ -23136,6 +23352,20 @@ export type TierIn = {
 };
 
 /**
+ * TileOfficeOut
+ */
+export type TileOfficeOut = {
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Office Id
+     */
+    office_id: string;
+};
+
+/**
  * TileOut
  */
 export type TileOut = {
@@ -23159,6 +23389,24 @@ export type TileOut = {
      * Value
      */
     value: number;
+};
+
+/**
+ * TileStatusOut
+ */
+export type TileStatusOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Filter
+     */
+    filter: string;
+    /**
+     * N
+     */
+    n: number;
 };
 
 /**
@@ -24209,6 +24457,36 @@ export type WorkItemRowOut = {
 };
 
 /**
+ * WorkRowOut
+ */
+export type WorkRowOut = {
+    /**
+     * Client
+     */
+    client: string;
+    /**
+     * Function
+     */
+    function: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Tags
+     */
+    tags: Array<string>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * WorkingPaperOut
  */
 export type WorkingPaperOut = {
@@ -24361,6 +24639,22 @@ export type YourPartOut = {
      * Minutes
      */
     minutes: number;
+};
+
+/**
+ * YourWorkOut
+ *
+ * HOME-01 a2: the viewer's assigned work items; `label` is the band's copy key.
+ */
+export type YourWorkOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rows
+     */
+    rows: Array<WorkRowOut>;
 };
 
 /**
@@ -51376,6 +51670,62 @@ export type PublishGroupingSetResponses = {
 };
 
 export type PublishGroupingSetResponse = PublishGroupingSetResponses[keyof PublishGroupingSetResponses];
+
+export type HomeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+    };
+    url: '/v1/home';
+};
+
+export type HomeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HomeError = HomeErrors[keyof HomeErrors];
+
+export type HomeResponses = {
+    /**
+     * Successful Response
+     */
+    200: HomeOut;
+};
+
+export type HomeResponse = HomeResponses[keyof HomeResponses];
 
 export type HumanGateListData = {
     body?: never;
