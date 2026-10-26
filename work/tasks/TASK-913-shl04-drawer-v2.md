@@ -70,3 +70,11 @@ make check-generated
 - `2026-10-23`: Built part 1 as above. All checks above passed.
   - Skipped Tier C parity and axe. P-01-T16 locks both (epic §5.4).
   - Deferred the items listed under "Not in this part".
+- 2026-10-26 (S10 code gap, branch `s10-p01-t10-drawer`): the deferred part. Inline Accept and
+  Return… on a person's pending client upload (`inlinePair`: never an agent row), Return with the
+  engagement's send-back reason codes and a client-visible note, the receipt with a ghost Undo
+  for 10 s (`UNDO_MS`, `undoDecision`), and the footer's Notification settings popover (GET/PUT
+  `/v1/me/notification-preferences`). `docs/screens/SHL-04.md` updated. Tests at the end of the
+  run (frame c after Accept, Undo inside and after the window, Return dialog, settings menu,
+  agent rows without the pair).
+- 2026-10-26: SHL-04 tests pass (22): row d's pair and none on agent rows; Accept with receipt and Undo (the undo route called, the pair back); the 10 s window closing keeps the receipt without Undo; Return… needs a send-back reason and returns; the settings menu's four kinds and a saved toggle. The `settings` scenario joins the screen's states; the SHL-04 fixture answers the decision, reason-code and undo routes.

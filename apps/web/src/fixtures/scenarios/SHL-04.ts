@@ -15,12 +15,14 @@ import {
   never,
 } from "../../app-core/fixture-mode";
 import type {
+  DecisionOut,
   NotificationItemOut,
   NotificationPageOut,
   ReadAllOut,
   NotificationPreferenceOut,
   NotificationPreferencesIn,
   NotificationPreferencesOut,
+  UndoneDecisionOut,
 } from "@abacus/api-client";
 import type { NotificationTab } from "../contracts/shell";
 import { seedScenario } from "../scenario";
@@ -36,6 +38,7 @@ import {
   preferences,
   toWire,
 } from "../seed/notifications";
+import { SEND_BACK_REASONS } from "../seed/screening";
 import { capabilitiesFor, meV3For } from "../seed/shell";
 
 const E0 = seedScenario();
@@ -56,6 +59,19 @@ interface Data {
   /** c: the certified trust report request reads received (PBC 12 of 24). */
   accepted?: boolean;
   loading?: boolean;
+}
+
+function decision(request: FixtureRequest, kind: DecisionOut["decision"]): DecisionOut {
+  const reason = (request.body as { reason_code?: string } | null)?.reason_code ?? null;
+  return {
+    id: `decision-${kind}-${request.params.version_id ?? ""}`,
+    decision: kind,
+    evidence_version_id: request.params.version_id ?? "",
+    item_status: kind === "accept" ? "received" : "returned",
+    reason_code: kind === "accept" ? null : reason,
+    request_item_ids: [],
+    corrects_proposal: false,
+  };
 }
 
 function handlers(data: Data): Record<string, FixtureHandler> {
@@ -96,6 +112,24 @@ function handlers(data: Data): Record<string, FixtureHandler> {
       const marked: ReadAllOut = { marked: items.filter((n) => !n.read).length };
       items = items.map((n) => ({ ...n, read: true }));
       return json(marked);
+    },
+    // P-01-T10 follow-up: row d's inline Accept or Return, and the receipt's Undo (SHL-04 c).
+    "GET /v1/engagements/{engagement_id}/review-reason-codes/{applies_to}": () =>
+      json(SEND_BACK_REASONS),
+    "POST /v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/accept": (r) =>
+      json(decision(r, "accept"), 201),
+    "POST /v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/send-back": (
+      r,
+    ) => json(decision(r, "send_back"), 201),
+    "POST /v1/engagements/{engagement_id}/review-decisions/{decision_id}/undo": ({ params }) => {
+      const undone: UndoneDecisionOut = {
+        id: `undo-${params.decision_id ?? ""}`,
+        undoes_decision_id: params.decision_id ?? "",
+        evidence_version_id: "",
+        item_status: "uploaded",
+        request_item_ids: [],
+      };
+      return json(undone, 201);
     },
     "GET /v1/me/notification-preferences": () => json(prefsBody()),
     "PUT /v1/me/notification-preferences": ({ body }) => {

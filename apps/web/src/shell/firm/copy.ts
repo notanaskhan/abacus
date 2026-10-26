@@ -79,6 +79,31 @@ export const NOTIFICATIONS = {
   loading: "Loading notifications",
   error: "Couldn't load notifications",
   retry: "Retry",
+  // P-01-T10 follow-up: row d's inline pair, its receipt and Undo (SHL-04 spec frame 3).
+  accept: "Accept",
+  returnAction: "Return…",
+  returnTitle: "Return",
+  returnConfirm: "Return",
+  reason: "Reason (required)",
+  chooseReason: "Choose a reason",
+  note: "Note",
+  noteRequired: "Note (required)",
+  noteToClient: "The client will see this note.",
+  accepted: (name: string, time: string) => `✓ Accepted by ${name} · ${time}`,
+  returned: (name: string, time: string) => `Returned by ${name} · ${time}`,
+  undo: "Undo",
+  failed: "That didn't work. Try again.",
+  // R2: the footer menu, the four kinds with "In Accrued · Email".
+  settings: "Notification settings",
+  settingsChannels: "In Accrued · Email",
+  inApp: "In Accrued",
+  email: "Email",
+  kinds: {
+    mention: "Mention",
+    todo_assigned: "To-do assigned",
+    template_update_available: "Template update available",
+    trigger_run_finished: "Trigger run finished",
+  } as Record<string, string>,
 } as const;
 
 export const PROFILE = {
