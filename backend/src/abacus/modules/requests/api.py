@@ -8,7 +8,9 @@ from abacus.modules.identity.api import (
     register_scope_resolver,
     register_scopes_resolver,
 )
+from abacus.modules.platform.api import register_audit_value_resolver
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.requests.audit_values import request_item_values
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_tag
 from abacus.modules.requests.binders import (
@@ -154,6 +156,8 @@ register_scope_resolver("request_item", request_item_scope)
 register_scopes_resolver("request_item", request_item_scopes)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# G-02-T09 gap (DEC-459): ADM-07's values for requests.
+register_audit_value_resolver("request_item", request_item_values)
 
 __all__ = [
     "ACTIVITIES",
