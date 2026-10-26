@@ -35,6 +35,7 @@ from sqlalchemy import (
     union,
     update,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.engine import Row, RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -176,6 +177,40 @@ firm_setting_values = Table(
 )
 
 
+# G-01-T12 (0167; DEC-380): the lines a firm opened to their members (`visible()`'s reach).
+service_line_policies = Table(
+    "service_line_policies",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("service_line", String, nullable=False),
+    Column("enabled", Boolean, nullable=False),
+    Column("content_visible_to", String, nullable=False),
+)
+# A firm's stricter-only overrides (0081): `visible()` keeps the service-line reach out of an
+# action whose `staff` cell a firm narrowed (DEC-383).
+firm_policy_overrides = Table(
+    "firm_policy_overrides",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("action", String, nullable=False),
+    Column("role", String, nullable=False),
+    Column("decision", String, nullable=False),
+)
+# The person's own membership facts `visible()` reads for the service-line reach (0004, 0142).
+memberships = Table(
+    "memberships",
+    _metadata,
+    Column("tenant_id", PgUUID(as_uuid=True), nullable=False),
+    Column("user_id", PgUUID(as_uuid=True), nullable=False),
+    Column("kind", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("level", String, nullable=True),
+    Column("firm_role", String, nullable=True),
+    Column("offshore", Boolean, nullable=False),
+    Column("service_lines", ARRAY(String), nullable=False),
+)
+
+
 # Ethical walls (migration 0012; SPEC-002): `authorise` and `visible()` read active ones.
 ethical_walls = Table(
     "ethical_walls",
@@ -289,19 +324,28 @@ class FirmPolicy:
 
     overrides: dict[tuple[str, str], str]
     settings_on: frozenset[str]
+    # G-01-T12 (DEC-380): the lines whose content the firm opened to the line's members.
+    line_reach: frozenset[str] = frozenset()
 
 
 _OVERRIDES = text("SELECT action, role, decision FROM firm_policy_overrides")
 _SETTINGS_ON = text("SELECT key FROM firm_setting_values WHERE value")
+# Audit never opens (0167's CHECK); it is left out here as well.
+_LINE_REACH = text(
+    "SELECT service_line FROM service_line_policies WHERE enabled "
+    "AND content_visible_to = 'service_line' AND service_line <> 'audit'"
+)
 
 
 async def firm_policy(tenant: TenantContext) -> FirmPolicy:
     async with tenant_session(tenant) as session:
         overrides = (await session.execute(_OVERRIDES)).all()
         settings = (await session.execute(_SETTINGS_ON)).scalars().all()
+        lines = (await session.execute(_LINE_REACH)).scalars().all()
     return FirmPolicy(
         {(str(row.action), str(row.role)): str(row.decision) for row in overrides},
         frozenset(str(key) for key in settings),
+        frozenset(str(line) for line in lines),
     )
 
 
@@ -1220,6 +1264,16 @@ _ELSEWHERE = text(
     "SELECT user_id, bool_or(status = 'active') AS active FROM memberships "
     "WHERE user_id IN :ids AND tenant_id <> :tenant GROUP BY user_id"
 ).bindparams(bindparam("ids", expanding=True))
+
+
+async def firm_tenant_ids() -> list[UUID]:
+    """G-01-T13 (DEC-381): every firm's id, for the hourly access-end job, which then works
+    inside each firm's own session. Through the identity role, which already reads
+    `firms.tenant_id` (no other column, and no new grant); identifiers only (LIST-001 does not
+    apply: a platform job, no person's list)."""
+    async with identity_engine().connect() as conn:
+        result = await conn.execute(text("SELECT tenant_id FROM firms ORDER BY tenant_id"))
+        return [cast(UUID, r[0]) for r in result]
 
 
 async def memberships_elsewhere(tenant_id: UUID, user_ids: list[UUID]) -> dict[UUID, bool]:

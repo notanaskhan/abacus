@@ -105,9 +105,10 @@ async def create_match_run(
         return None
     matcher = spec(MATCHER)
     reader = _reader(tenant_id, f"agents:{matcher.id}")
-    # DEC-52 (TASK-1207 review): for an offshore member, only the masked text, after its scan.
-    masked = not await person_reads_unmasked(reader, requested_by)
-    material = await match_material(reader, inbox_file_id, masked=masked)
+    # P-03-T15 (DEC-369): only the masked text, after its scan, whoever the run acts for; no
+    # sheets for an offshore member (DEC-52, TASK-1207; review M1).
+    sheets = await person_reads_unmasked(reader, requested_by)
+    material = await match_material(reader, inbox_file_id, sheets=sheets)
     if material is None or material.extraction_status != "extracted" or not material.candidates:
         return None  # SPEC-033 §4.5: an unreadable or unextracted file isn't matched
     run_id: UUID | None = None
@@ -207,12 +208,9 @@ def _citation(c: VerifiedDocumentCitation) -> dict[str, object]:
 
 
 async def match_material_for(agent: AgentContext, inbox_file_id: UUID) -> MatchMaterial | None:
-    """What the matcher reads, for a run authorised on the file's engagement: a firm upload's
-    extracted text, or only its masked projection when the run acts for an offshore member (as a
-    portal drop always is; DEC-52, DEC-322, TASK-1207 review; None before the PII scan)."""
-    return await match_material(
-        agent.tenant, inbox_file_id, masked=not await may_read_unmasked(agent)
-    )
+    """What the matcher reads, for a run authorised on the file's engagement: only the file's
+    masked projection, whoever the run acts for (P-03-T15, DEC-369; None before the PII scan)."""
+    return await match_material(agent.tenant, inbox_file_id, sheets=await may_read_unmasked(agent))
 
 
 async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:

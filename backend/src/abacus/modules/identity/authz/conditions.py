@@ -107,6 +107,8 @@ ThirdPartyLookup = Callable[[TenantContext, UUID, UUID], Awaitable[bool]]
 # P-07-T24 (ADR-164 item 3): the attest flag as a column, for `visible()` under `g2_blocks_view`:
 # an engagement-ID column -> whether its client is an attest client.
 AttestColumn = Callable[[ColumnElement[UUID] | QueryableAttribute[UUID]], ColumnElement[bool]]
+# G-01-T12 (DEC-380): an engagement-ID column -> its service line, for `visible()`'s reach.
+ServiceLineColumn = Callable[[ColumnElement[UUID] | QueryableAttribute[UUID]], ColumnElement[str]]
 
 
 @dataclass
@@ -116,6 +118,7 @@ class _Lookups:
     attest_column: AttestColumn | None = None
     gates: GatesLookup | None = None
     service_line: ServiceLineLookup | None = None
+    service_line_column: ServiceLineColumn | None = None
     scope: ScopeLookup | None = None
     third_party: ThirdPartyLookup | None = None
 
@@ -162,6 +165,12 @@ def register_engagement_service_line(lookup: ServiceLineLookup) -> None:
     """engagements: (tenant, engagement_id) -> the engagement's service line."""
     _once("service_line", lookup)
     LOOKUPS.service_line = lookup
+
+
+def register_engagement_service_line_column(builder: ServiceLineColumn) -> None:
+    """engagements: an engagement-ID column -> the engagement's service line (SQL; G-01-T12)."""
+    _once("service_line_column", builder)
+    LOOKUPS.service_line_column = builder
 
 
 def register_client_scope(lookup: ScopeLookup) -> None:

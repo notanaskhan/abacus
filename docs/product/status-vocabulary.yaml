@@ -491,7 +491,7 @@ objects:
   integration:   # catalogue and connection (repo object: connection)
     source: "blueprint 3.3.1; 9.5.6"
     codes:
-      available:    {label: "Available",  variant: outline, terminal: false, derived: false}
+      available:    {label: "Available",  variant: outline, terminal: false, derived: false, client_label: "Not connected"}   # POR-16 a: a catalogue card with no connection (A-02-T06, C20 v1)
       connecting:   {label: "Connecting", variant: null, disc: spinner, terminal: false, derived: false}
       connected:    {label: "Connected",  variant: null, disc: check_olive, terminal: false, derived: false}
       needs_attention: {label: "Needs attention", variant: amber, terminal: false, derived: false}   # blueprint canonical state Degraded; split from needs_reauth on failure code
@@ -666,6 +666,7 @@ objects:
       same_family_not_adverse: {label: "Same family · not adverse", variant: green-tint, terminal: true, derived: false}
       not_adverse:             {label: "Not adverse", variant: green-tint, terminal: true, derived: false}   # cleared by a manager or partner with a reason
       counterparty_review:     {label: "Counterparty · {relationship} — review", variant: amber, terminal: false, derived: false}   # CLI-06 h "Counterparty · custodian for Calloway Family Trust — review"
+      conflict:                {label: "Conflict", variant: red-tint, terminal: true, derived: false}   # P-07-T36 (SPEC-332 AC-25): a person records the hit as a conflict
 
   nas_evaluation:   # nas_evaluations.status (P-07 M7); CLI-08 b NAS matrix Status column
     source: "CLI-08 b"

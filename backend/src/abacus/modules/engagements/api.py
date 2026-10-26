@@ -1,6 +1,11 @@
 """Public interface of the engagements module; other modules import only this (ADR-008)."""
 
 from abacus.ai_gateway import register_client_data_facts
+from abacus.modules.engagements.acceptance import (
+    NewCondition,
+    acceptance_record,
+    decide_acceptance,
+)
 from abacus.modules.engagements.acceptance_contract import (
     acceptance_router,
     independence_router,
@@ -8,7 +13,12 @@ from abacus.modules.engagements.acceptance_contract import (
 )
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
-from abacus.modules.engagements.conditions import functions_on, gates_of, service_line_of
+from abacus.modules.engagements.conditions import (
+    functions_on,
+    gates_of,
+    service_line_column,
+    service_line_of,
+)
 from abacus.modules.engagements.contacts import (
     Designation,
     EngagementContact,
@@ -30,6 +40,7 @@ from abacus.modules.engagements.contract import (
     engagement_types_router,
     engagements_v2_router,
 )
+from abacus.modules.engagements.drafts import draft_visible
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
 from abacus.modules.engagements.gates import register_gates
 from abacus.modules.engagements.hold_scope import (
@@ -39,6 +50,11 @@ from abacus.modules.engagements.hold_scope import (
     work_item_engagement,
 )
 from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
+from abacus.modules.engagements.intake_contract import (
+    client_imports_router,
+    client_intake_drafts_router,
+    dedupe_router,
+)
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
     TemplateSeed,
@@ -106,10 +122,12 @@ from abacus.modules.engagements.slots import (
     ProgressSource,
     UnknownWorkItemKind,
     WorkItemProvider,
+    evidence_readable,
     gate_fact,
     gate_registered,
     judgments_of,
     progress_of,
+    register_evidence_readable,
     register_gate_provider,
     register_judgment_source,
     register_progress_source,
@@ -152,6 +170,7 @@ from abacus.modules.identity.api import (
     register_engagement_client,
     register_engagement_resource,
     register_engagement_service_line,
+    register_engagement_service_line_column,
     register_engagements_of_scope,
     register_independence,
     register_invitation_parties,
@@ -166,8 +185,10 @@ from abacus.modules.organisations.api import (
     OverviewSection,
     activate_contact,
     register_client_engagements,
+    register_conflict_subject,
     register_open_requests,
     register_overview_section,
+    register_screening_evidence,
 )
 
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
@@ -196,12 +217,17 @@ register_member_added(request_independence)
 register_independence(confirmed_subquery, confirmed_for)
 
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
+# P-07-T36 review (DEC-375, L4): what a conflict check or screening record may name.
+register_conflict_subject("engagement_draft", draft_visible)
+register_screening_evidence(evidence_readable)
 # F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
 register_work_item_functions(functions_on)
 # G-01-T09 (AC8.5): a wall's preview counts, and its consumer ends, the person's assignments.
 register_wall_assignments(wall_assignment_count, end_wall_assignments)
 register_condition_gates(gates_of)
 register_engagement_service_line(service_line_of)
+# G-01-T12 (DEC-380): the same as SQL, for `visible()`'s service-line reach.
+register_engagement_service_line_column(service_line_column)
 register_attest_client(attest_of)  # F-03-T25: the client's derived attest flag (DEC-128)
 # P-07-T24 (ADR-164 item 3): the same flag as SQL, for `visible()` under `g2_blocks_view`.
 register_attest_client_column(attest_column)
@@ -234,6 +260,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     acceptance_router,
     independence_router,
     team_roles_router,
+    # The intake and import contract, v1 (P-07-T37).
+    dedupe_router,
+    client_intake_drafts_router,
+    client_imports_router,
     router,
     work_items_router,
     methodology_router,
@@ -263,6 +293,7 @@ __all__ = [
     "JudgmentSource",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
+    "NewCondition",
     "NewWorkItem",
     "PortalWorkItem",
     "PriorItem",
@@ -276,6 +307,7 @@ __all__ = [
     "VersionNotLatest",
     "WorkItemExists",
     "WorkItemProvider",
+    "acceptance_record",
     "answer_independence",
     "area_for",
     "assign_work_item",
@@ -291,6 +323,7 @@ __all__ = [
     "client_contact_organisations_of_users",
     "contact_portal_user",
     "create_work_item",
+    "decide_acceptance",
     "designate_contact",
     "engagement_contacts",
     "engagement_hold_facts",
@@ -320,6 +353,7 @@ __all__ = [
     "progress_of",
     "publish_drafted_version",
     "register_auto_retrieval",
+    "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
     "register_open_requests",

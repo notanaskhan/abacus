@@ -22,6 +22,9 @@ from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.acceptance import DecisionLocked
+from abacus.modules.engagements.acceptance_tables import g1_decision
+from abacus.modules.engagements.acceptance_tables import records as acceptance_records
 from abacus.modules.engagements.contacts import attest_of
 from abacus.modules.engagements.events import IndependenceRequested
 from abacus.modules.engagements.gate_policy import required_gates
@@ -228,6 +231,25 @@ def _clean(text: str | None, limit: int) -> str | None:
     return kept or None
 
 
+async def _v2_agrees(tx: UnitOfWork, engagement_id: UUID, decision: str) -> None:
+    """The adapter (P-07-T35, DEC-372): on an engagement with a CLI-07 acceptance record the
+    decision is that record's. SPEC-025's route may still document it (and the independence
+    conclusion, until P-07-T41) with the same decision; any other answers 409
+    `decision_locked`, and so does any decision while the record is undecided."""
+    record = (
+        await tx.session.execute(
+            select(acceptance_records.c.id).where(
+                acceptance_records.c.engagement_id == engagement_id
+            )
+        )
+    ).scalar_one_or_none()
+    if record is None:
+        return
+    decided = await g1_decision(tx.session, engagement_id)
+    if decided is None or decided.accepted != (decision == "accepted"):
+        raise DecisionLocked(facts={"record_id": str(record)})
+
+
 async def record_acceptance(ctx: AuthContext, engagement_id: UUID, given: AcceptanceInput) -> None:
     """The engagement partner's decision (fresh MFA), with where it's documented; a new record
     supersedes the old and keeps its file unless a new one is attached."""
@@ -237,6 +259,7 @@ async def record_acceptance(ctx: AuthContext, engagement_id: UUID, given: Accept
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, "acceptance.record", ref.resource())
+        await _v2_agrees(tx, engagement_id, given.decision)
         previous = await latest_acceptance(tx.session, engagement_id)
         kind = given.kind or (
             "continuance"

@@ -85,15 +85,16 @@ and total labels); everything else internal. Nothing Restricted.
 | 409 | `trial_balance_exists`, `no_assurance_item` | A second TB for the same item, entity, label and period; no assurance work item |
 | 409 | `tb_version_stale`, `tb_same_snapshot` | Re-versioning on a stale `seen_version`, or with the current snapshot |
 | 409 | `layer_unavailable` | AJE, RJE or Final before an adjustment source registers |
-| 409 | `layer_unbalanced` | A layer whose debits and credits differ (with the difference); registered with A-02-T07 |
+| 409 | `layer_unbalanced` | A layer whose debits and credits differ (`facts.layer`, `facts.difference`); `ledger.api.require_balanced` (A-02-T07), answered by the view-by-layer route from A-02-T10 |
 | 409 | `citation_required`, `tie_out_check_stale` | An expected value without a citation; a stale check `seen_version` (edit, issue link) |
 | 501 | `not_implemented` | A stub with the flag on |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload |
 |---|---|---|
-| `trial_balance.created`, `trial_balance.version_adopted` (audit) | Adopt and re-version | ids, version, label; the reason stays in the row |
-| `trial_balance.version_created` (outbox, A-02-T07) | A version is adopted | ids and version; P-04 stale detection |
+| `trial_balance.created` (audit) | Adopt v1 | ids, version |
+| `trial_balance.version_adopted` (audit) | Adopt v1 and every re-version | ids, version (before and after on a re-version), snapshot; the reason stays in the row |
+| `trial_balance.version_created` (outbox, A-02-T07, `ledger.api.TrialBalanceVersionCreated`) | A version is adopted (v1 and every re-version) | `trial_balance_id`, `engagement_id`, `version_no`, `snapshot_id`, `prior_snapshot_id`; P-04 stale detection |
 | `trial_balance.exported` (audit, A-02-T22) | Open in Excel | ids, version, layer |
 | `tie_out_check.defined`, `.updated`, `.issue_linked` (audit); `tie_out_check.changed` (outbox, A-02-T17) | Define, edit, link | ids and version |
 

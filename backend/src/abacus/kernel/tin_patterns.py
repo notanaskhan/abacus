@@ -13,10 +13,12 @@ groups and may have spaces around it. A form counts only when it passes its type
 - ITIN: the first digit is 9 and the fourth and fifth are 50-65, 70-88, 90-92 or 94-99.
 - EIN: the two-digit prefix is one the IRS assigns.
 `ddd-dd-dddd` is read as an SSN or ITIN, `dd-ddddddd` as an EIN, a bare or `ddd ddd ddd` run as
-any of the three. Masked forms (fewer than nine digits shown, or the last-four form `mask()`
-produces) never match. Before matching, text is NFKC-normalised, zero-width characters and soft
-hyphens are removed, and every script's decimal digits are read as ASCII digits. UUIDs and hex
-runs of 32 or more characters are identifiers, never TINs, and are skipped.
+any of the three, and so are nine digits broken three or more times by single spaces, tabs or
+hyphens (`1 2 3 4 5 6 7 8 9`, a comb-box form; P-03-T15 review N2). Masked forms (fewer than
+nine digits shown, or the last-four form `mask()` produces) never match. Before matching, text
+is NFKC-normalised, zero-width characters and soft hyphens are removed, and every script's
+decimal digits are read as ASCII digits. UUIDs and hex runs of 32 or more characters are
+identifiers, never TINs, and are skipped.
 
 False positives are accepted (failing closed is the point of a backstop): a nine-digit amount or
 number that passes the rules is treated as a TIN. Known limits (DEC-295): a TIN split across lines
@@ -54,6 +56,11 @@ _EIN_FORM: Final = re.compile(
 _THREES_FORM: Final = re.compile(
     rf"{_NOT_AFTER_DIGIT}(?P<x>{_D}{{3}}){_SEP}(?P<y>{_D}{{3}}){_SEP}(?P<z>{_D}{{3}})"
     rf"{_NOT_BEFORE_DIGIT}"
+)
+# P-03-T15 review N2: nine digits with at most one space, tab or hyphen between any two and at
+# least three such breaks (a W-9's comb boxes read as `1 2 3 4 5 6 7 8 9`), read as any type.
+_SPACED_FORM: Final = re.compile(
+    rf"{_NOT_AFTER_DIGIT}{_D}(?:[ \t\-]?{_D}){{8}}{_NOT_BEFORE_DIGIT}"
 )
 _HEX: Final = "[0-9a-fA-F]"
 _OPAQUE: Final = re.compile(
@@ -138,6 +145,13 @@ def _find(text: str) -> list[TinMatch]:
             found.append(TinMatch("ein", digits, m.start(), m.end()))
     for m in _THREES_FORM.finditer(probe):
         digits = m.group("x") + m.group("y") + m.group("z")
+        kind = _any_type(digits)
+        if kind is not None:
+            found.append(TinMatch(kind, digits, m.start(), m.end()))
+    for m in _SPACED_FORM.finditer(probe):
+        if sum(not c.isdigit() for c in m.group()) < 3:
+            continue  # a bare, SSN, EIN or three-group shape: the forms above read it by its rules
+        digits = "".join(c for c in m.group() if c.isdigit())
         kind = _any_type(digits)
         if kind is not None:
             found.append(TinMatch(kind, digits, m.start(), m.end()))

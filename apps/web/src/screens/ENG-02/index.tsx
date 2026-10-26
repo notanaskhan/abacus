@@ -5,6 +5,7 @@ import type {
   WorkItemOut,
 } from "@abacus/api-client";
 import {
+  AppShell,
   Button,
   DASH,
   DEFAULT_TZ,
@@ -43,12 +44,12 @@ import {
   conflictOf,
   gateOf,
   useEngagementRecord,
-  useEngagementTeam,
   useEngagementWorkItems,
   useHoldEngagement,
   useRecordLetter,
   waitsOnLetter,
 } from "../../domain/engagements";
+import { ENG05, type Eng05Open } from "../ENG-05";
 import { COPY } from "./copy";
 
 // ENG-02 · Engagement record, core (P-07-T20; docs/screens/ENG-02.md). T2 without the dock over
@@ -98,6 +99,8 @@ export interface ENG02Props {
   onNavigate?: (target: Eng02Target) => void;
   toolbar?: ToolbarProps;
   frame?: boolean;
+  /** ENG-05's artboards: the overlay the Team tab opens on (the gallery only). */
+  teamOpen?: Eng05Open | undefined;
 }
 
 function notFound(error: unknown): boolean {
@@ -494,38 +497,6 @@ function WorkItemRows({
   );
 }
 
-function TeamHost({ engagementId }: { engagementId: string }): JSX.Element {
-  const team = useEngagementTeam(engagementId);
-  const members = team.data ?? [];
-  return (
-    <Group title={COPY.group.team}>
-      {members.length === 0 ? (
-        <div className="bg-card">
-          <EmptyState title={team.isPending ? COPY.tabs.team : DASH} />
-        </div>
-      ) : (
-        <ul aria-label={COPY.group.team} className="flex flex-col">
-          {members.map((m) => (
-            <li
-              key={m.user_id}
-              data-member={m.user_id}
-              className="flex min-h-[33px] items-center gap-[10px] bg-card px-[13px] text-body hairline-t"
-            >
-              <span className="min-w-0 flex-1 truncate">{m.display_name}</span>
-              <span className="text-ink-2">{COPY.roles[m.role] ?? m.role}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {PLANNED_VISIBLE && (
-        <p className="bg-card px-[13px] py-[8px] text-meta text-ink-3 hairline-t">
-          {COPY.planned.team}
-        </p>
-      )}
-    </Group>
-  );
-}
-
 function PlannedHost({ tab }: { tab: "dashboard" | "board" | "budget" }): JSX.Element {
   return (
     <div data-planned-tab={tab} className="rounded-pane bg-card shadow-e1">
@@ -701,6 +672,7 @@ export function ENG02({
   onNavigate,
   toolbar,
   frame = false,
+  teamOpen,
 }: ENG02Props): JSX.Element {
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
@@ -879,8 +851,6 @@ export function ENG02({
         {banners}
         {view === "dashboard" || view === "board" || view === "budget" ? (
           <PlannedHost tab={view} />
-        ) : view === "team" ? (
-          <TeamHost engagementId={record.id} />
         ) : view === "letter" ? (
           <LetterCard
             record={record}
@@ -907,6 +877,41 @@ export function ENG02({
             )}
             {workGroup}
           </>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "team" && record !== undefined) {
+    // ENG-05 (P-07-T39): T1 inside the record — the same subbar and tabs over the team pane and
+    // its 330 inspector, as CLI-02 hosts CLI-04.
+    const pane = (
+      <div data-shell="cols" className="flex min-h-0 flex-1 items-stretch pt-(--gutter-pane)">
+        <ENG05 record={record} opens={teamOpen} />
+      </div>
+    );
+    return (
+      <div
+        data-screen="ENG-02"
+        data-read-only={archived ? "archived" : undefined}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        {toolbar === undefined ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {header}
+            {tabs}
+            {pane}
+          </div>
+        ) : (
+          <AppShell
+            toolbar={toolbar}
+            frame={frame}
+            {...(frame ? { height: 860 } : {})}
+            record={header}
+            tabs={tabs}
+          >
+            {pane}
+          </AppShell>
         )}
       </div>
     );
@@ -955,12 +960,14 @@ export function EngagementRecordPage({
   onNavigate,
   toolbar,
   frame = false,
+  teamOpen,
 }: {
   engagementId: string;
   initialTab?: Eng02Tab;
   onNavigate?: (target: Eng02Target) => void;
   toolbar?: ToolbarProps;
   frame?: boolean;
+  teamOpen?: Eng05Open | undefined;
 }): JSX.Element {
   const [tab, setTab] = useState<Eng02Tab>(initialTab);
   return (
@@ -971,6 +978,7 @@ export function EngagementRecordPage({
       {...(onNavigate === undefined ? {} : { onNavigate })}
       {...(toolbar === undefined ? {} : { toolbar })}
       frame={frame}
+      teamOpen={teamOpen}
     />
   );
 }

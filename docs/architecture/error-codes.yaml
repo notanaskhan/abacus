@@ -14,8 +14,21 @@ codes:
   acceptance_not_ready:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.AcceptanceNotReady
-    summary: 'A manual check is still open (`facts.sections`): complete it before sending to the partner.'
+    - abacus.modules.engagements.acceptance.AcceptanceNotReady
+    summary: 'Not ready for decision: a manual check is open (`facts.section`, `facts.open_checks`),
+      or the record has not been sent to the partner.'
+  acceptance_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance.AcceptanceSent
+    summary: 'The record was sent to the partner: its answers, risk rating and manual checks are frozen
+      (DEC-375).'
+  acceptance_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.acceptance.AcceptanceTemplateMissing
+    summary: 'The firm has no acceptance questionnaire for the engagement type''s family (`facts.family`):
+      templates are database content, loaded before acceptance can start.'
   access_ends_required:
     status: 422
     raised_by:
@@ -118,6 +131,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.trial_balance.AnnotationInvalid
+  annual_confirmation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.annual_independence.AnnualConfirmationInvalid
+    summary: Only the current year can be confirmed, and a decline needs a note.
   approver_not_partner:
     status: 422
     raised_by:
@@ -128,6 +146,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyLocked
+  audit_locked:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.service_lines.AuditLocked
+    summary: Audit content is visible to the engagement team only; it can never be widened.
   below_floor:
     status: 422
     raised_by:
@@ -242,7 +265,7 @@ codes:
   decision_locked:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.DecisionLocked
+    - abacus.modules.engagements.acceptance.DecisionLocked
     summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409
@@ -502,6 +525,11 @@ codes:
     - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
     summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
       clear, an SKE designee or NAS evaluations on an attest client).
+  independence_statement_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.annual_independence.StatementMissing
+    summary: The firm has not published its independence statement yet, so there is nothing to confirm.
   integrity_failed:
     status: 409
     raised_by:
@@ -592,6 +620,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.trial_balances.LayerUnavailable
+    summary: AJE, RJE or Final before an adjustment source registers (A-06, C8).
+  layer_unbalanced:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.trial_balances.LayerUnbalanced
+    summary: A layer whose debits and credits differ (`facts.layer`, `facts.difference`).
   ledger_import_off:
     status: 409
     raised_by:
@@ -925,8 +959,9 @@ codes:
   preview_outdated:
     status: 409
     raised_by:
-    - abacus.modules.evidence.viewer.PreviewOutdated
-    summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24).'
+    - abacus.modules.evidence.masked_previews.PreviewOutdated
+    summary: 'The page was rendered before masking existed: it is never served (SPEC-322 AC-24) until
+      the backfill re-renders it.'
   prior_mismatch:
     status: 409
     raised_by:
@@ -949,7 +984,7 @@ codes:
   rationale_required:
     status: 422
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.RationaleRequired
+    - abacus.modules.engagements.acceptance.RationaleRequired
     summary: A decision needs a rationale; Accept with conditions needs a condition (`facts.field`).
   read_not_confirmed:
     status: 422
@@ -1021,7 +1056,7 @@ codes:
   review_required:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.ReviewRequired
+    - abacus.modules.engagements.acceptance.ReviewRequired
     summary: A High-risk record needs a completed risk-partner review before the decision.
   reviewer_is_preparer:
     status: 409
@@ -1074,6 +1109,11 @@ codes:
     - abacus.modules.identity.people.SeatsNotProvisioned
     summary: 'The firm''s seats aren''t provisioned yet, so nobody can be invited (DEC-285: fails closed
       for a real firm; a synthetic one without seats has no limit).'
+  service_line_lead_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.service_lines.ServiceLineLeadInvalid
+    summary: The lead must be an active staff member of the firm.
   setting_invalid:
     status: 422
     raised_by:
@@ -1123,13 +1163,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
+    - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
+    - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
-    summary: 'The team changed since it was read: read it again and approve what is there now.'
+    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
   statement_already_approved:
     status: 409
     raised_by:

@@ -17,6 +17,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     AiClientDataView,
@@ -122,7 +123,13 @@ from abacus.modules.identity.support import (
     revoke_session,
 )
 from abacus.modules.identity.tokens import VerifiedIdentity
-from abacus.modules.identity.walls import WallView, create_wall, list_walls, remove_wall
+from abacus.modules.identity.walls import (
+    WallView,
+    create_wall,
+    list_walls,
+    remove_wall,
+    wall_actions,
+)
 
 router = AbacusRouter(prefix="/v1", tags=["identity"])
 
@@ -190,8 +197,15 @@ async def me(
     signed_in: Annotated[SignedIn, Depends(current_signed_in)],
     asked: Annotated[UUID | None, Depends(requested_tenant)] = None,
 ) -> MeOut:
-    memberships = signed_in.memberships
     user = str(signed_in.user.id)
+    # A firm whose access end has passed for this person is no longer theirs to open (DEC-383),
+    # whether or not the access-end job has deactivated the membership yet.
+    memberships = [
+        m
+        for m in signed_in.memberships
+        if m.kind == "client"
+        or not await access_has_ended(TenantContext(m.tenant_id, "human", user), signed_in.user.id)
+    ]
     held = {m.tenant_id for m in memberships}
     # The active tenant: the one asked for when the person holds it, or their only one.
     active = asked if asked in held else (memberships[0].tenant_id if len(held) == 1 else None)
@@ -307,9 +321,12 @@ class WallOut(BaseModel):
     approval_status: Annotated[WallApprovalStatus, classified("internal")]
     approved_at: Annotated[datetime | None, classified("internal")]
     removed_reason: Annotated[str | None, classified("confidential")]
+    # ADM-03e (AC11.2; ED-071): Approve where the reader is the named partner, Lift where a
+    # partner may and it isn't their own wall.
+    allowed_actions: Annotated[list[str], classified("internal")] = []
 
 
-def wall_out(wall: WallView) -> WallOut:
+def wall_out(wall: WallView, actions: list[str] | None = None) -> WallOut:
     return WallOut(
         id=wall.id,
         user_id=wall.user_id,
@@ -325,14 +342,20 @@ def wall_out(wall: WallView) -> WallOut:
         approval_status=WallApprovalStatus(wall.approval_status),
         approved_at=wall.approved_at,
         removed_reason=wall.removed_reason,
+        allowed_actions=actions or [],
     )
+
+
+async def _wall_with_actions(ctx: AuthContext, wall: WallView) -> WallOut:
+    return wall_out(wall, await wall_actions(ctx, wall))
 
 
 @router.post("/walls", action="wall.create", response_model=WallOut, status_code=201, errors=[409])
 async def create_wall_route(body: WallIn, ctx: Ctx) -> WallOut:
     """Firm admin or partner, fresh MFA; active at once (DEC-73). 409 `relationship_partner`,
     `wall_exists`; 422 `approver_not_partner`."""
-    return wall_out(
+    return await _wall_with_actions(
+        ctx,
         await create_wall(
             ctx,
             user_id=body.user_id,
@@ -340,7 +363,7 @@ async def create_wall_route(body: WallIn, ctx: Ctx) -> WallOut:
             reason_code=body.reason_code,
             reason_text=body.reason_text,
             approver_user_id=body.approver_user_id,
-        )
+        ),
     )
 
 
@@ -348,12 +371,14 @@ async def create_wall_route(body: WallIn, ctx: Ctx) -> WallOut:
 async def remove_wall_route(wall_id: UUID, ctx: Ctx, body: WallRemoveIn | None = None) -> WallOut:
     """A partner, fresh MFA, never on their own wall (409 `own_wall`). Walls are never deleted:
     lifting one returns it, marked removed."""
-    return wall_out(await remove_wall(ctx, wall_id, body.reason if body else None))
+    return await _wall_with_actions(
+        ctx, await remove_wall(ctx, wall_id, body.reason if body else None)
+    )
 
 
 @router.get("/walls", action="wall.list", response_model=list[WallOut])
 async def list_walls_route(ctx: Ctx) -> list[WallOut]:
-    return [wall_out(wall) for wall in await list_walls(ctx)]
+    return [await _wall_with_actions(ctx, wall) for wall in await list_walls(ctx)]
 
 
 class FirmMemberOut(BaseModel):

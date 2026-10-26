@@ -18,3 +18,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: audits.binder_export
+    description: 'Binder export (A-01; docs/contracts/engagement-export-v1.md; SPEC-344; ADR-036): POST and GET /v1/work-items/{id}/exports, GET /v1/exports/{id}, POST /v1/exports/{id}/undo and GET /v1/exports/{id}/download, and the "Export binder…" entry on AUD-02 and AUD-03. Off: those routes answer 404 and the entry is absent. On: 501 not_implemented until their task lands (create, undo and reads A-01-T18; download A-01-T22). Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale.'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

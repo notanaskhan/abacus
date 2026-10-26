@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-002, ADR-005, ADR-014, ADR-020, ADR-026, ADR-029, ADR-030, ADR-061, ADR-069]
 related_specs: [SPEC-002, SPEC-007, SPEC-008, SPEC-012, SPEC-015, SPEC-016, SPEC-019]
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-26
 ---
 
 > **Instructions for coding agents**
@@ -108,6 +108,12 @@ This spec fills the gaps between that story and what exists:
 - **AC-6** Given methodology templates tagged by engagement type, when someone creates an engagement of a type, then only matching templates are offered.
 - **AC-7** Given a new firm, then the checklist shows each step's state from the firm's data, links to each screen, and disappears when everything is done or the admin dismisses it.
 - **AC-8** Given every new screen, then loading, empty, error and not-allowed states exist, and colours come only from tokens.
+
+**Amended 2026-10-26 (G-01-T13; G-01 §3.4 AC4.5, §3.6; DEC-91, DEC-381):** seasonal access end and the annual independence confirmation.
+- **AC-9** Given members whose access ends on a date, when that date has passed in the firm's time zone, then the hourly access-end job deactivates each with reason `access_ended`, as the system on behalf of the person who set the date, with no manual step; a second run changes nothing; a date moved later is respected; the last firm or security administrator is never ended; and firm administrators are told once, seven days or fewer before the date.
+- **AC-10** Given the firm's published independence statement, when a staff member confirms or declines it for the current year (a decline with a note), then an insert-only row records it for them only, with the statement version they read (409 `stale_version` when a newer one was published; 409 `independence_statement_missing` before the first); agents, the platform, support sessions and client users never confirm.
+- **AC-11** Given a firm administrator, a quality partner or a partner, then the year's list shows every active staff member as Confirmed (with its date), Not yet or Declined (with its note), with counts that foot to them; anyone else gets a 404.
+- **AC-12** Given a member's newest answer for a year, then `has_current_annual_confirmation` is true only when it is a confirmation, and another firm reads nothing of it.
 
 ## 6. Behaviour and flows
 An example run, with the story's persona (Sam, at the illustrative firm Whitfield & Lane):

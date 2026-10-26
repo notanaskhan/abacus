@@ -55,8 +55,15 @@ export interface QueueDetailLayoutProps {
   /** The queue pane's header: left (search, filter), title, right (Download, + Issue…, Show
    * resolved). */
   queue: { title?: string; left?: ReactNode; right?: ReactNode; body: ReactNode };
-  /** The detail: its body, its pinned footer and (entity) the instruction composer. */
-  detail: { title?: string; body: ReactNode; footer?: ReactNode; composer?: ReactNode };
+  /** The detail: its body, its pinned footer and (entity) the instruction composer; `right` sits
+   * in the entity detail pane's header (TPL-09c's Resolve). */
+  detail: {
+    title?: string;
+    right?: ReactNode;
+    body: ReactNode;
+    footer?: ReactNode;
+    composer?: ReactNode;
+  };
   /** The evidence panes after the queue: viewer and sheet (individual), the register (close). */
   evidence?: readonly ReactNode[];
   store?: MatchStore<CitationPayload>;
@@ -145,7 +152,12 @@ export function QueueDetailLayout({
     preset === "issues-entity"
       ? [
           queuePane,
-          <Pane key="detail" title={detail.title ?? "Issue"} className="min-h-0">
+          <Pane
+            key="detail"
+            title={detail.title ?? "Issue"}
+            {...(detail.right === undefined ? {} : { right: detail.right })}
+            className="min-h-0"
+          >
             <DetailColumn detail={detail} className="flex-1" />
           </Pane>,
         ]

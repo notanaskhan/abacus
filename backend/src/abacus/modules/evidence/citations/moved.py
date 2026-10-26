@@ -232,8 +232,19 @@ async def _old_text(session: AsyncSession, tenant_id: UUID, row: Citation) -> st
         layer = await read_page_layer(tenant_id, page)
     except Exception:  # a shredded or unreadable layer object: storage raises several kinds
         return None
+    # P-03-T15: a quote verified since masking hashes the masked words; an older one the clear
+    # words, which are then masked. Either way the claim carries only masked text (DEC-369).
+    projection = await projection_of(session, evidence_version_id=row.source_id)
+    masked = projection.words(layer.words, page_no)
+    if masked is not None:
+        found = reread_span(masked, box, row.quote_sha256)
+        if found:
+            return " ".join(w.text for w in found)
     run = reread_span(layer.words, box, row.quote_sha256)
-    return " ".join(w.text for w in run) if run else None
+    if not run:
+        return None
+    shown = projection.words(run, page_no)
+    return " ".join(w.text for w in (shown if shown is not None else run))
 
 
 async def _claim(
@@ -264,7 +275,8 @@ async def _claim(
         except Exception:  # an unreadable layer object: the next page may still hold it
             _log.info("citation.relink_page_unreadable", page=page.page_no)
             continue
-        span = quote_span(layer.words, wanted)
+        words = projection.words(layer.words, page.page_no) or []
+        span = quote_span(words, wanted)  # on the masked words, as the verifier reads them
         if span:
             return CitationClaim(
                 "document_text",

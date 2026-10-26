@@ -41,6 +41,8 @@ WALL_KEYS = {
     "approval_status",
     "approved_at",
     "removed_reason",
+    # ED-071 (G-01-T15): what the reader may do with the wall (ADM-03e's Approve and Lift).
+    "allowed_actions",
 }
 
 

@@ -1,0 +1,89 @@
+# Citation conformance suite (P-03-T17; TASK-1256; SPEC-322 AC-39, AC-40). PROTECTED (thresholds,
+# ADR-079). Deterministic and code-only: no model, no containers. Each case is a document_text
+# claim on the seeded document, checked by the verifier's own word-layer code
+# (evidence.citations.verifiers.verify_layer_page, on the masked projection), or a citation's
+# computed state (citations.display.state_of), or the agent material built from the seeded page
+# and sheet (masking.masked_words, pii.masked_rows and the kernel TIN scrub). `expect` is `pass`,
+# the verification reason, the state, or `contained`. The suite must score 1.0 on every case,
+# every repeat (tests/unit/evidence/test_citations_suite.py). Synthetic values only: the plan's
+# seeded SSN 000-00-6081 and 9xx ITINs.
+suite: citations
+version: 1
+covers: [fabricated_page, fabricated_bbox, fabricated_quote, fabricated_value, unicode, moved, masked_quote, valid, containment]
+required_pass_rate: 1.0
+repeats: 3
+thresholds:
+  - {metric: fabrication_caught, minimum: 1.0}
+  - {metric: valid_citation_accepted, minimum: 1.0}
+  - {metric: masked_quote_verified, minimum: 1.0}
+  - {metric: tin_in_agent_material, minimum: 1.0}
+# The seeded document: three scanned pages of words [text, x0, top, x1, bottom] in page points,
+# page 2 a W-2 whose box-a SSN is a detected region; page 3 also prints a valid ITIN the detector
+# did not anchor (the kernel scrub must still keep it out of agent material).
+document:
+  pages:
+    1:
+      - [Total, 72, 82, 100, 96]
+      - [investments, 103, 82, 160, 96]
+      - ["16,500,000.00", 163, 82, 230, 96]
+    2:
+      - ["Employee's", 72, 60, 120, 72]
+      - [social, 123, 60, 150, 72]
+      - [security, 153, 60, 190, 72]
+      - [number, 193, 60, 225, 72]
+      - [000-00-6081, 72, 76, 130, 88]
+      - [Wages, 300, 60, 330, 72]
+      - ["84,250.00", 300, 76, 350, 88]
+    3:
+      - [Net, 72, 82, 90, 96]
+      - [assets, 93, 82, 125, 96]
+      - ["16,812,400.00", 128, 82, 195, 96]
+      - [Reference, 72, 110, 120, 124]
+      - [900-71-5555, 123, 110, 180, 124]
+  scanned: [1, 2, 3]
+  regions:
+    - {page: 2, bbox: [72, 76, 130, 88], kind: ssn, last4: "6081"}
+  sheet:
+    - [Name, SSN, Note]
+    - [Claire Feld, 900-70-1234, ok]
+    - [Jonah Feld, 900-72-0001, "ref 900-71-5555"]
+cases:
+  # Valid citations: accepted.
+  - {id: valid_quote, category: valid, expect: pass, page: 1, quote: "Total investments"}
+  - {id: valid_value, category: valid, expect: pass, page: 1, value: "16500000.00"}
+  - {id: valid_box_and_quote, category: valid, expect: pass, page: 1, bbox: [70, 80, 232, 98], quote: "investments 16,500,000.00"}
+  - {id: valid_quote_and_value, category: valid, expect: pass, page: 3, quote: "Net assets 16,812,400.00", value: "16812400.00"}
+  - {id: valid_beside_a_mask, category: valid, expect: pass, page: 2, quote: "Wages"}
+  - {id: valid_fullwidth_digits, category: valid, expect: pass, page: 1, quote: "１６,５００,０００.００"}
+  - {id: valid_state, category: valid, expect: valid, events: []}
+  # Fabricated pages: past the document, or the right words on the wrong page.
+  - {id: page_past_the_end, category: fabricated_page, expect: page_not_found, page: 9, quote: "Net assets"}
+  - {id: wrong_page, category: fabricated_page, expect: quote_not_found, page: 1, quote: "Net assets"}
+  # Fabricated boxes: no words in it, or the quote elsewhere on the page.
+  - {id: empty_box, category: fabricated_bbox, expect: bbox_mismatch, page: 1, bbox: [400, 400, 500, 500], quote: "Total"}
+  - {id: quote_outside_box, category: fabricated_bbox, expect: bbox_mismatch, page: 1, bbox: [70, 80, 101, 98], quote: "16,500,000.00"}
+  # Fabricated quotes.
+  - {id: altered_figure, category: fabricated_quote, expect: quote_not_found, page: 1, quote: "Total investments 17,000,000.00"}
+  - {id: invented_words, category: fabricated_quote, expect: quote_not_found, page: 1, quote: "Gross investments"}
+  # Fabricated values.
+  - {id: value_off_by_a_cent, category: fabricated_value, expect: value_mismatch, page: 1, value: "16500000.01"}
+  - {id: value_from_another_page, category: fabricated_value, expect: value_mismatch, page: 1, quote: "Total investments", value: "16812400.00"}
+  - {id: value_not_a_number, category: fabricated_value, expect: value_mismatch, page: 1, value: "sixteen million"}
+  # Unicode deception: lookalikes are other characters; zero-width ones are removed before
+  # comparing, so they neither forge nor hide a match.
+  - {id: homoglyph_letter, category: unicode, expect: quote_not_found, page: 1, quote: "Tоtal investments"}
+  - {id: lookalike_digit_one, category: unicode, expect: quote_not_found, page: 1, quote: "Tota1 investments"}
+  - {id: arabic_indic_digits, category: unicode, expect: quote_not_found, page: 1, quote: "١٦,٥٠٠,٠٠٠.٠٠"}
+  - {id: zero_width_in_a_fabrication, category: unicode, expect: quote_not_found, page: 1, quote: "Total invest​ments 16,500,0​01.00"}
+  # Moved and broken sources: never read as valid.
+  - {id: source_moved, category: moved, expect: moved, events: [moved]}
+  - {id: source_broken, category: moved, expect: broken, events: [broken]}
+  - {id: moved_after_broken, category: moved, expect: moved, events: [broken, moved]}
+  # Quotes of masked text verify; the clear value never does.
+  - {id: masked_token, category: masked_quote, expect: pass, page: 2, quote: "•••-••-6081"}
+  - {id: masked_with_label, category: masked_quote, expect: pass, page: 2, quote: "security number •••-••-6081"}
+  - {id: masked_in_box, category: masked_quote, expect: pass, page: 2, bbox: [70, 74, 132, 90], quote: "•••-••-6081"}
+  - {id: clear_value_refused, category: masked_quote, expect: quote_not_found, page: 2, quote: "000-00-6081"}
+  # Agent material built from the seeded pages and sheet holds no unmasked TIN.
+  - {id: material_pages, category: containment, expect: contained, material: pages}
+  - {id: material_sheet, category: containment, expect: contained, material: sheet}

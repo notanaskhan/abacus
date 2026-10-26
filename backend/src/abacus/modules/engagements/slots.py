@@ -16,6 +16,7 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import UnitOfWork
+from abacus.modules.identity.api import AuthContext
 
 
 class UnknownWorkItemKind(DomainConflict):
@@ -164,3 +165,19 @@ async def progress_of(tenant: TenantContext, engagement_id: UUID) -> list[Progre
     for name in sorted(_PROGRESS):
         out.extend(await _PROGRESS[name](tenant, engagement_id))
     return out
+
+
+# --- screening evidence, for organisations (P-07-T36 review, DEC-375) --------------------------
+# Evidence may import engagements, not organisations; it registers here, and engagements hands
+# the check on to organisations. Unregistered: no evidence version is readable (fail closed).
+
+EvidenceReadable = Callable[[AuthContext, UUID], Awaitable[bool]]
+_EVIDENCE_READABLE: list[EvidenceReadable] = []
+
+
+def register_evidence_readable(check: EvidenceReadable) -> None:
+    _EVIDENCE_READABLE[:] = [check]
+
+
+async def evidence_readable(ctx: AuthContext, version_id: UUID) -> bool:
+    return bool(_EVIDENCE_READABLE) and await _EVIDENCE_READABLE[0](ctx, version_id)
