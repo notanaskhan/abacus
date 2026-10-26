@@ -13,6 +13,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from statistics import median
+from typing import Final
 
 from abacus_tools.evals.calibration import calibrate
 from abacus_tools.evals.gate import reasons
@@ -21,6 +22,9 @@ from abacus_tools.evals.metrics import METRICS, Attempt
 from abacus_tools.evals.suite import Suite
 
 MAX_ERRORED = 0.2  # more errored attempts than this, and the run says nothing: `errored`
+
+
+_REPORT_ONLY_FIELDS: Final = frozenset({"regions_cited", "regions_resolved"})
 
 
 @dataclass(frozen=True)
@@ -57,7 +61,13 @@ def judge(
             grades.append(found or Grade("model_judge", False, "grader_error: no verdict"))
         passed = all(g.passed for g in grades)
         by_case.setdefault(case.id, []).append(passed)
-        row = {k: (str(v) if isinstance(v, Decimal) else v) for k, v in asdict(seen).items()}
+        row = {
+            k: (str(v) if isinstance(v, Decimal) else v)
+            for k, v in asdict(seen).items()
+            # P-03-T17: the report-only region counts live in `metrics`, not the signed case rows
+            # (a summary's canonical bytes, and so every earlier signature, stay as they were).
+            if k not in _REPORT_ONLY_FIELDS
+        }
         rows.append({**row, "passed": passed, "grades": [asdict(g) for g in grades]})
     metrics = {name: METRICS[name](attempts) for name in METRICS}
     dangerous = next(t.minimum for t in suite.thresholds if t.metric == suite.dangerous_error)

@@ -17,6 +17,7 @@ import type {
   ViewerManifestOut,
   ViewerPageOut,
   ViewerRegionOut,
+  ViewerTextPageOut,
 } from "@abacus/api-client";
 import { stableId } from "./prng";
 
@@ -40,6 +41,8 @@ export interface SeededDocument {
   manifest: ViewerManifestOut;
   regions: ViewerRegionOut[];
   face: "form" | "statement";
+  /** The masked text projection (`…/text`; DEC-369), page by page; none reads as empty pages. */
+  text?: ViewerTextPageOut[];
 }
 
 const at = (version: string, page: number, rect: Rect): string =>
@@ -488,6 +491,14 @@ export const DOCUMENTS: Record<string, SeededDocument> = {
       allowed_actions: ["pii.reveal"],
     }),
     regions: [region(W2_CLAIRE, 1, W2_BOX_1, W2_WAGES.id, "268,400.00")],
+    // DEC-369: the W-2's masked text, as the server's text view gives it (box a and box 1).
+    text: [
+      {
+        page: 1,
+        text: "a Employee's social security number •••-••-6081 1 Wages, tips, other compensation 268,400.00",
+        unread: false,
+      },
+    ],
   },
   // SHL-08e: the draft K-1 while its word layer and masked rendition are still being made (AC3.4):
   // the manifest answers `processing` with no pages yet, and the viewer polls it every 3 s.

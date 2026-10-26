@@ -24,8 +24,9 @@ from abacus.modules.evidence.citations.display import (
     citation_display,
     citation_list,
 )
+from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.repository import pages_of
-from abacus.modules.evidence.words import read_page_layer, words_upload
+from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer, words_upload
 from abacus.modules.identity.api import AuthContext, Forbidden, agent_context_for_run
 from abacus_tools.synthetic.documents import positioned_pdf
 
@@ -272,16 +273,19 @@ async def test_a_re_read_quote_is_masked_where_pii_was_detected(seed: Seeder) ->
     assert "bbox" in str(locator)
     # The SSN's word, where the layer put it on page 2 (T13 writes these; seeded here).
     async with tenant_session(firm.system) as session:
-        pages = await pages_of(session, evidence_version_id=version, extractor_version="w1")
+        pages = await pages_of(
+            session, evidence_version_id=version, extractor_version=WORDS_VERSION
+        )
     layer = await read_page_layer(firm.tenant_id, pages[1])
     [ssn] = [w for w in layer.words if w.text == "000-00-6081"]
     await seed.run(
         "INSERT INTO pii_regions (tenant_id, evidence_version_id, page_no, bbox, kind, "
         "value_sealed, last4, label_anchored, detector_version) VALUES ($1, $2, 2, "
-        "$3::numeric[], 'ssn', '\\x00'::bytea, '6081', true, 'd1')",
+        "$3::numeric[], 'ssn', '\\x00'::bytea, '6081', true, $4)",
         firm.tenant_id,
         version,
         [ssn.x0, ssn.top, ssn.x1, ssn.bottom],
+        DETECTOR_VERSION,
     )
     await scanned(seed, firm, [1, 2, 3], version=version)
     view = await citation_display(firm.person(), cited.id)

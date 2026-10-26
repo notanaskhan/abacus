@@ -143,11 +143,13 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         "tin.reveal",
         "pii.reveal",
         "export.create",
+        "export.download",  # A-01-T17 (DEC-376): the engagement export bundle
+        "email_template.test_send",  # R-01-T16 (DEC-379): firm-level, below
         "run_trace.export",
         "trial_balance.export",
         "firm_export.download",
     } == NOT_OFFSHORE
-    assert refused == NOT_OFFSHORE - {"firm_export.download"}
+    assert refused == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"}
     admin = await env.net.seed.person(env.tenant_id, "security_admin")
     offshore_admin = await env.net.seed.person(env.tenant_id, "security_admin")
     await env.net.seed.run(
@@ -160,6 +162,19 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
     as_offshore = replace(_ctx(offshore_admin), firm_role="security_admin")
     assert await _outcome(as_admin, "firm_export.download", firm) == "allowed"
     assert await _outcome(as_offshore, "firm_export.download", firm) == "condition"
+    # R-01-T16 (DEC-379): a test send is a firm admin's, firm-level: refused offshore at the
+    # condition where the onshore firm admin is allowed it.
+    firm_admin = await env.net.seed.person(env.tenant_id, "firm_admin")
+    offshore_firm_admin = await env.net.seed.person(env.tenant_id, "firm_admin")
+    await env.net.seed.run(
+        "UPDATE memberships SET offshore = true WHERE tenant_id = $1 AND user_id = $2",
+        env.tenant_id,
+        offshore_firm_admin.user_id,
+    )
+    as_firm_admin = replace(_ctx(firm_admin), firm_role="firm_admin")
+    as_offshore_firm_admin = replace(_ctx(offshore_firm_admin), firm_role="firm_admin")
+    assert await _outcome(as_firm_admin, "email_template.test_send", firm) == "allowed"
+    assert await _outcome(as_offshore_firm_admin, "email_template.test_send", firm) == "condition"
     engagement = resources[1]
     mine_allowed = await allowed_actions(remy, engagement)
     assert "engagement.read" in mine_allowed

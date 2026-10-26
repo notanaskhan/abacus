@@ -454,6 +454,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "allow",
         "mfa_recent": "required",
     },
+    "connection.disconnect": {
+        "client_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "scope_only": "required",
+        "mfa_recent": "required",
+    },
     "connection.pull": {
         "system": "allow",
     },
@@ -592,6 +600,36 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "agent": "deny",
         "mfa_recent": "required",
+    },
+    "email_template.edit": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "email_template.import": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "email_template.publish": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "email_template.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "email_template.test_send": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+        "not_offshore": "required",
     },
     "engagement.ai_exclude": {
         "engagement_partner": "allow",
@@ -763,8 +801,27 @@ ACTIONS: dict[str, dict[str, str]] = {
     "export.create": {
         "engagement_partner": "allow",
         "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
         "mfa_recent": "required",
         "not_offshore": "required",
+    },
+    "export.download": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "mfa_recent": "required",
+        "not_offshore": "required",
+    },
+    "export.read": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
     },
     "field.add_reference": {
         "engagement_partner": "allow",
@@ -1281,6 +1338,11 @@ ACTIONS: dict[str, dict[str, str]] = {
         "not_offshore": "required",
         "mfa_recent": "required",
     },
+    "portal.preview": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
     "portal_documents.read": {
         "client_admin": "allow",
         "client_contributor": "allow",
@@ -1298,6 +1360,18 @@ ACTIONS: dict[str, dict[str, str]] = {
     "portal_preferences.update": {
         "client_admin": "allow",
         "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "portal_settings.manage": {
+        "firm_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "portal_settings.read": {
+        "firm_admin": "allow",
+        "practice_leader": "allow",
         "agent": "deny",
         "system": "deny",
     },
@@ -1651,6 +1725,19 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",
+    },
+    "sending_domain.manage": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
+    "sending_domain.read": {
+        "firm_admin": "allow",
+        "security_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
     },
     "service_line_policy.manage": {
         "firm_admin": "allow",

@@ -491,7 +491,7 @@ objects:
   integration:   # catalogue and connection (repo object: connection)
     source: "blueprint 3.3.1; 9.5.6"
     codes:
-      available:    {label: "Available",  variant: outline, terminal: false, derived: false}
+      available:    {label: "Available",  variant: outline, terminal: false, derived: false, client_label: "Not connected"}   # POR-16 a: a catalogue card with no connection (A-02-T06, C20 v1)
       connecting:   {label: "Connecting", variant: null, disc: spinner, terminal: false, derived: false}
       connected:    {label: "Connected",  variant: null, disc: check_olive, terminal: false, derived: false}
       needs_attention: {label: "Needs attention", variant: amber, terminal: false, derived: false}   # blueprint canonical state Degraded; split from needs_reauth on failure code
