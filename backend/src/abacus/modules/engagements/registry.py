@@ -22,6 +22,7 @@ TABLES: frozenset[str] = frozenset(
         "engagement_contacts",  # F-03-T25 (0082): designations (DEC-63)
         "advisory_projects",  # F-03-T22 (0089)
         "engagement_drafts",  # P-07-T16 (0124): ENG-03's autosaved wizard, own scope
+        "client_intake_drafts",  # P-07-T42 (0177): CLI-06's autosaved intake, own scope
         "team_approvals",  # P-07-T30 (0155): the EP's approval of the team
         "eqr_eligibility_approvals",  # P-07-T30 (0155): the quality owner's EQR approvals
         # P-07-T35 (0163): acceptance and continuance in-app (CLI-07)
@@ -136,6 +137,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "created_by", "client_id", "client_entity_id", "type_code", "step"}
         | {"payload"}
     ),
+    "client_intake_drafts": frozenset(  # P-07-T42 (0177)
+        {"tenant_id", "created_by", "step", "payload"}
+    ),
     "engagements": frozenset(
         {"id", "tenant_id", "client_id", "client_entity_id", "name", "created_by"}
         | {"fiscal_period_start", "fiscal_period_end"}
@@ -204,5 +208,9 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"client_id", "client_entity_id", "type_code", "step", "payload"}
         | {"prospect_engagement_id", "created_engagement_id", "version", "saved_at"}
         | {"discarded_at"}
+    ),
+    "client_intake_drafts": frozenset(  # P-07-T42 (0177): autosave, discard, commit
+        {"step", "payload", "version", "saved_at", "discarded_at", "committed_at"}
+        | {"committed_client_id", "result"}
     ),
 }
