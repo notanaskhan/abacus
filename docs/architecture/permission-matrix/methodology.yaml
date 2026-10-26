@@ -1,0 +1,10 @@
+# The methodology module's actions (ADR-027; P-39, F-03-T07). Compiled with every other
+# module's file into identity/authz/_matrix.py by `make regenerate`. K-01-T01 moved the SPEC-008
+# rows here from engagements.yaml with the module's code (K-01-T02).
+
+actions:
+  # --- SPEC-008 templates and versions; K-01 §4.3 amendments (DEC-406) ---
+  methodology.read:         {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, platform_support: allow, platform_support_content: allow, agent: task_scope}   # SPEC-008; agent: the guidance drafter on a template, firm-level (TASK-074 D1); K-01: + quality_partner (senior, staff and reviewer wait for the draft/published split, DEC-406)
+  methodology.manage:       {firm_admin: allow, practice_leader: allow, quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # SPEC-008 Q3; K-01: + quality_partner; the plan's `level_in(partner, …)` waits for K-01-T06, since manage still publishes (DEC-406)
+  methodology.approve:      {quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # K-01 (KNW-02 e, KNW-03 mandatory locks): a person's act, fresh MFA (INV-1)
+  methodology.parse:        {agent: task_scope}   # K-01: the methodology importer writing draft rows for its own import only

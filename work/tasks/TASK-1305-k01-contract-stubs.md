@@ -1,0 +1,35 @@
+---
+id: TASK-1305
+title: Knowledge-catalog and methodology-programs contract stubs (K-01-T01)
+spec: SPEC-008
+acceptance_criteria: [AC-1]
+risk_zone: amber
+status: in-review
+epic: K-01
+plan_key: K-01-T01
+branch: s10-k01-knowledge
+created: 2026-10-26
+updated: 2026-10-26
+---
+
+## Objective
+Contract first for KNW-01 to KNW-03: classified shapes and 501 routes for the catalog, the
+methodology lifecycle, programs and steps; the matrix actions, five flags and status words; the
+two contract documents; the generated client.
+
+## Plan
+- `methodology/contract.py`: models and routes (three routers), each behind its flag; client 404.
+- Matrix `permission-matrix/methodology.yaml`: the SPEC-008 rows moved from `engagements.yaml`,
+  `methodology.approve` and `methodology.parse` new, `methodology.manage` amended; the read
+  widening deferred (DEC-406).
+- Flags `feature-flags/methodology.yaml` (five); status words `methodology_version`,
+  `methodology_import`, `knowledge_item`, `parse_flag`.
+- Contracts `docs/contracts/knowledge-catalog.md`, `methodology-programs.md`, register rows;
+  `make regenerate`, `make generate`.
+- Tests `tests/contracts/k01_knowledge/test_k01_stubs.py`.
+- Rollback: revert; every flag stays off.
+
+## Progress log
+- 2026-10-26: built with K-01-T02 on one branch; tests run in the end-of-batch targeted pass.
+- 2026-10-26: targeted pass green (tests/contracts/knowledge); gates clean.
+- 2026-10-26: security review: `firm_partner` held out of `methodology.manage` (M1); stubs authorise their action before the flag (L).

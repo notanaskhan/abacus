@@ -87,7 +87,14 @@ from abacus.modules.platform.provisioning import (
 from abacus.modules.platform.routes import router
 from abacus.modules.platform.service import BudgetInvalid
 from abacus.modules.platform.slots import (
+    HomeCount,
+    HomeCountProvider,
+    HomeOfficeCount,
+    HomeStatusCount,
     SearchDocument,
+    home_count,
+    home_count_keys,
+    register_home_count,
     register_search_projection,
     search_document,
 )
@@ -195,6 +202,10 @@ __all__ = [
     "Entitlement",
     "EntitlementRequired",
     "Heartbeat",
+    "HomeCount",
+    "HomeCountProvider",
+    "HomeOfficeCount",
+    "HomeStatusCount",
     "InMemoryTenantKeyOps",
     "IncidentFacts",
     "IncidentFactsChanged",
@@ -232,6 +243,8 @@ __all__ = [
     "expected_route",
     "facts_sha256",
     "finish_propagation",
+    "home_count",
+    "home_count_keys",
     "incident_clock",
     "incident_propagation_workflow_id",
     "inv2_violations",
@@ -242,6 +255,7 @@ __all__ = [
     "record_incident",
     "register_audit_labeler",
     "register_audit_value_resolver",
+    "register_home_count",
     "register_search_projection",
     "registered_audit_types",
     "require_entitlement",

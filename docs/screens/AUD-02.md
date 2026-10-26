@@ -22,7 +22,7 @@ AUD-02 has 9 artboards (a–i). The README's viewer column ("Marcus Delaney") lo
 | c | hannah-leclerc | 9:23 AM | E0 + run #4127 proposed | Plan proposed, waiting for approval in the dock | fixture (T12; dock masked) until P-09 / P-10 |
 | d | hannah-leclerc | 9:41 AM | E0 + run #4127 | `?section=materiality` with the section blocked on a decision: the canvas shows `BlockedSectionCard` | fixture (T12) until P-10; the card is A-01-T06 L3 |
 | e | hannah-leclerc | 9:58 AM | E0 + run #4127 | The Internal Control step failed (BH-EBP-140 step 8 pack configuration error) | fixture (T12; dock masked) until P-09 / P-10 |
-| f | hannah-leclerc | 9:41 AM | E0 | Auto mode toggle pressed: O3 confirm | fixture only (A-01-T31); live only when `/v1/me` reports `engagement_run.auto_mode` (P-10-T39) |
+| f | hannah-leclerc | 9:41 AM | E0 + run #4127 (the artboard draws the run's rail and "Started 9:24 AM") | Auto mode toggle pressed: O3 confirm (`autoMode.confirm`); Turn on writes `PUT /v1/engagements/{id}/auto-mode` `{enabled: true, confirmed: true}`; a 403/409 keeps the confirm open with the refusal (DV-12) | fixture (A-01-T31); live only when `/v1/me` reports `engagement_run.auto_mode` (P-10-T39), with no A-01 change (DEC-405) |
 | g | hannah-leclerc | 9:41 AM | E0 | No run; sections in the audit-program grammar: idle pills "Ready" / "In progress" replace sub-lines; overview pill "Planning" | built (T12, live) |
 | h | omar-haddad (Omar Haddad, Manager) | Mon Sep 14, 2026, 4:05 PM CT | E2 | Harlow & Pike group audit: the "Group" band between Planning and Fieldwork | deferred → A-09 (registers the band through `register_audit_section`) |
 | i | cole-hart (Cole Hart, Staff) | Thu Sep 24, 2026, 9:30 AM CT | Sep 24 | Granite Peak FY2026 with the Board on: the ENG-10 board replaces rail, canvas and dock | deferred → K-04 (C14) |
@@ -49,6 +49,7 @@ Non-artboard states:
 | write | `PATCH /v1/audits/{work_item_id}/profile` `{ebp_plan_kind, limited_scope_103a3c, standards_set_id, seen_version}` | `AuditProfileOut` | `engagement.update` | EP, manager; 409 `stale_version` |
 | write | `POST /v1/audits/{work_item_id}/phase` `{to, reason?}` | `AuditPhaseOut` | `assurance.record_phase` | EP, manager; human only; 409 `phase_backward`, `phase_skip`, `phase_follows_gate` |
 | read | `GET /v1/engagements/{id}/activity`, `GET …/agent` (agents, unchanged) | v1 engagement-agent activity for the Agent tab (DV-2) | as owned | — |
+| write | `PUT /v1/engagements/{engagement_id}/auto-mode` `{enabled, confirmed: true}` (P-10-T39; not in the OpenAPI document yet, named on the generated client by `domain/audits/mutations.ts`, DEC-405) | any body; the client keeps the value it sent | `engagement_ai.configure` (P-10); the switch renders on `/v1/me`'s `engagement_run.auto_mode` | Manager+; 403/409 = refused (real firm, Season 1, P-10 AC-E3); agent deny |
 | write | `POST /v1/engagements/{id}/agent/pause` (unchanged) | "Paused by Marcus Delaney" | `agent.pause` | dock header menu "Pause agent"; an agent context 403 |
 
 Dock content of a, c, d, e (RunCard, transcript, ToolCards, plan approval, Retry, "Fix in Knowledge →", "Sign off run") reads C6 v1 / P-10's `engagements.run` and is out of scope (A-01 §2.3). The contract is `docs/contracts/audits-cockpit.md` (A-01-T02).
@@ -97,6 +98,7 @@ Copy keys live in `screens/AUD-02/copy.ts` (screen) and `domain/audits/messages.
 | `dock.aiUnavailable` | "AI isn't available for real client data yet" (DF-04) |
 | `dock.pause` | "Pause agent" · "Paused by Marcus Delaney" (template `Paused by {person}`) |
 | `autoMode.confirm` | "Turn on Auto mode? Agents will dispatch each level without waiting for plan approval. Decisions reserved to people still wait." · "Cancel" · "Turn on" (f; A-01-T31) |
+| `autoMode.refused` | "Auto mode isn't available for client data yet" (f, the server's refusal; ADM-04h's reason, SPEC-349 AC-35, ADR-186 §6; DV-12) |
 | `composer.placeholder` | "Message" (P-09) |
 
 Canvas rows (seed, verbatim from spec.md): the 24 Northwind requests with their `initial-input/…` and `harborline-upload/…` paths, 11 "Received ✓" (3 + 4 + 3 + 1), the certified trust report "Uploaded – needs review", 12 "Requested". Dock transcript strings of a ("Run projection · 14 workpapers · 5 levels", the narration cards with $16,812,400.00 = $16,500,000.00 + $312,400.00 described as unadjusted) belong to P-09's SHL-13 contract and are recorded here only for parity.
@@ -161,6 +163,7 @@ Each becomes a test in `AUD-02.test.tsx` ("AUD-02 avoid: …"): gradients in pro
 | DV-5 | SSARS work items use this cockpit without a Planning band | AUD-26 is A-08 | A-01 §2.4 |
 | DV-9 | "Export binder…" in the layout menu and the O3 export sheet are composed from kits | No artboard (ADR-036) | A-01 §2.4 (design follow-up A-01-T24) |
 | DV-11 | "Started 9:24 AM" and "Processing" render only for C6 engagement runs | Engagement runs start with P-10 | A-01 §2.4 |
+| DV-12 | f's server-refusal state (a real firm, Season 1) keeps the O3 confirm open and replaces its text with "Auto mode isn't available for client data yet"; Cancel closes it and the switch reads off | The handoff draws no refusal state and AUD-02 has no copy for it; the string is ADM-04h's reason for the same rule (SPEC-349 AC-35, ADR-186 §6), never invented copy | A-01-T31; DEC-405 |
 | — | h (Group band) deferred to A-09 and i (Board) to K-04, recorded here, not missing | Owning epics | A-01 §2.3 |
 | — | f is built in fixture mode by A-01-T31 and hidden live until `engagement_run.auto_mode` exists | ADR P-49 / DEC-50 | A-01 §2.3 |
 
@@ -169,7 +172,7 @@ Each becomes a test in `AUD-02.test.tsx` ("AUD-02 avoid: …"): gradients in pro
 |---|---|---|---|
 | b, g | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | dock region masked; locked by Fri Apr 30, 2027 (A-01-T28) |
 | a, c, d, e | C | not run | report-only with the dock masked until P-09 locks SHL-13 |
-| f | C | not run | report-only (fixture only, A-01-T31) |
+| f | C | not run | report-only (fixture, A-01-T31; dock masked as a, c, d, e; the confirm open as in `AUD-02f.png`) |
 | h, i | — | — | deferred to A-09 / K-04 |
 | host | D | — | toolbar 46, audit bar 59, rail 330, canvas 696, dock 330, pane header 46 with a 14.5/500 title, rows 44, pills 21/19, radius 12; masks: spinners |
 

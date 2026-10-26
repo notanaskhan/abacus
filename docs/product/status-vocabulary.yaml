@@ -368,6 +368,22 @@ objects:
       signed: {label: "✓ {initials}", variant: green-tint, terminal: false, derived: true, context_labels: {with_date: "✓ {initials} · {date}"}}   # an L1 on agent work also shows the R-SO-8 adoption line (ADR-160 clause 4), which is copy, not a status word
       stale:  {label: "Changed after sign-off", variant: amber, terminal: false, derived: true, context_labels: {struck_chip: "✓ {initials} · {date} (before this change)"}}   # the chip is struck; only Re-sign is offered (SHL-12 e)
 
+  human_gate:   # C13 (I-01-T02); the projection's `state`; "Snoozed until" is per viewer and computed (I-01-T04 snoozes)
+    source: "I-01 section 4.6 (gate state words); P-04 section 4 (human_gates.state)"
+    codes:
+      open:    {label: "Open", variant: null, terminal: false, derived: false}
+      done:    {label: "Done", variant: green-tint, terminal: true, derived: false}
+      voided:  {label: "Voided", variant: muted, terminal: true, derived: false}
+      snoozed: {label: "Snoozed until {date}", variant: neutral, terminal: false, derived: true}   # the viewer's latest snooze row; never stored on the gate
+
+  due_risk:   # C13 (I-01-T02): a deadline's or gate's due chip, computed by code on kernel.clock, never stored
+    source: "HOME-01 and HOME-02 handoff spec (due chips: red-tint 'Sep 15 · 1 day', amber-tint 'Sep 23 · 9 days'; red ink within 7 days)"
+    codes:
+      overdue:     {label: "Overdue", variant: red-tint, terminal: false, derived: true}
+      due_soon:    {label: "{date} · {n} days", variant: red-tint, terminal: false, derived: true}   # 0 to 7 days; one day reads "{date} · 1 day"
+      approaching: {label: "{date} · {n} days", variant: state, terminal: false, derived: true}   # 8 to 14 days
+      later:       {label: "{date}", variant: neutral, terminal: false, derived: true}   # beyond 14 days
+
   decision_card:   # SHL-11; the human act is an insert-only `decisions` row; options are computed by code
     source: "P-04 section 4 (decision_cards.status); ADR-160 clause 8; SHL-11"
     codes:
@@ -395,6 +411,43 @@ objects:
       open:    {label: "Open", variant: null, disc: ring, terminal: false, derived: false}
       done:    {label: "Done", variant: null, disc: check_olive, terminal: true, derived: false}
       overdue: {label: "Overdue", variant: red-tint, terminal: false, derived: true}
+
+  # ---- Knowledge and methodology (K-01-T01; KNW-01 to KNW-03 handoff words) ----
+  methodology_version:   # methodology_version_states.status (migration 0180); KNW-02 shows Published as "Approved · {date} · {person}"
+    source: "K-01 section 4.2; KNW-01, KNW-02 and KNW-03 handoff pills"
+    codes:
+      draft:        {label: "Draft", variant: neutral, terminal: false, derived: false}
+      parsing:      {label: "Parsing…", variant: state, terminal: false, derived: false}
+      needs_review: {label: "Needs review", variant: state, terminal: false, derived: false}
+      published:    {label: "Published", variant: green-tint, terminal: false, derived: false, context_labels: {knw02: "Approved"}}
+      superseded:   {label: "Superseded", variant: soon, terminal: true, derived: false}
+      discarded:    {label: "Discarded", variant: muted, terminal: true, derived: false}   # no handoff pill; a discarded draft leaves the lists
+
+  methodology_import:   # methodology_imports.status (K-01-T18)
+    source: "K-01 section 4.2 (migration C); KNW-02 a and b"
+    codes:
+      awaiting_files: {label: "Awaiting files", variant: neutral, terminal: false, derived: false}
+      scanning:       {label: "Scanning", variant: state, terminal: false, derived: false}
+      parsing:        {label: "Parsing…", variant: state, terminal: false, derived: false}
+      needs_review:   {label: "Needs review", variant: state, terminal: true, derived: false}
+      failed:         {label: "Failed", variant: red-tint, terminal: true, derived: false}
+      cancelled:      {label: "Cancelled", variant: muted, terminal: true, derived: false}
+
+  knowledge_item:   # a KNW-01 catalog card's state, from its provider
+    source: "KNW-01 handoff (Published green-tint · Draft neutral · Superseded soon)"
+    codes:
+      draft:      {label: "Draft", variant: neutral, terminal: false, derived: false}
+      published:  {label: "Published", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  parse_flag:   # program_steps.parse_flag (K-01-T05); the ⚑ amber flag on KNW-02 rows
+    source: "K-01 section 4.2 (migration B); KNW-02 c"
+    codes:
+      low_confidence:          {label: "Low confidence", variant: amber, terminal: false, derived: false}
+      split_across_pages:      {label: "Split across pages", variant: amber, terminal: false, derived: false}
+      numbering_gap:           {label: "Numbering gap", variant: amber, terminal: false, derived: false}
+      unverified_citation:     {label: "Unverified citation", variant: amber, terminal: false, derived: false}
+      cross_reference_missing: {label: "Cross-reference missing", variant: amber, terminal: false, derived: false}
 
   # ---- Signing, notices, consent ----
   envelope:

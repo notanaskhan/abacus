@@ -39,6 +39,17 @@ from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.review.gates import gates_waiting_on
+from abacus.modules.review.sign_offs import (
+    LEVEL_CODES,
+    LEVEL_OF,
+    LadderLevel,
+    SignOffView,
+    eligibility,
+    hash_out,
+    ladder,
+    sign_target,
+)
+from abacus.modules.review.slots import ReviewableFacts
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -80,6 +91,12 @@ async def _stub(ctx: AuthContext) -> NoReturn:
     if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
         raise NotFound("review.grammar_api")
     raise NotImplementedYet
+
+
+async def _live(ctx: AuthContext) -> None:
+    """A live route behind the same flag: off, it answers 404 like its stub did."""
+    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
+        raise NotFound("review.grammar_api")
 
 
 class ObjectRefOut(BaseModel):
@@ -244,14 +261,66 @@ class BulkSignOffOut(BaseModel):
 sign_offs_router = AbacusRouter(prefix="/v1/sign-offs", tags=["review"])
 
 
+def _target_out(facts: ReviewableFacts) -> SignOffTargetOut:
+    return SignOffTargetOut(
+        target_type=facts.target_type,
+        target_id=facts.target_id,
+        label=facts.label or facts.target_type.replace("_", " ").capitalize(),
+        context_label=facts.context_label,
+        version_no=facts.version_no,
+        content_hash=hash_out(facts.content_hash),
+        cell_count=facts.cell_count,
+        citation_count=facts.citation_count,
+    )
+
+
+def _sign_off_out(v: SignOffView) -> SignOffOut:
+    return SignOffOut(
+        id=v.id,
+        target_type=v.target_type,
+        target_id=v.target_id,
+        kind=cast(SignOffKind, v.kind),
+        level=LEVEL_CODES[v.level],
+        signer_user_id=v.signer_user_id,
+        signer_name=v.signer_name,
+        initials=v.initials,
+        signed_at=v.signed_at,
+        content_hash=v.content_hash,
+        version_no=v.version_no,
+        statement_version=v.statement_version,
+        adopted_run_id=v.adopted_run_id,
+        adopted_run_number=v.adopted_run_number,
+        stale=v.stale,
+    )
+
+
+def _ladder_out(levels: list[LadderLevel]) -> list[LadderLevelOut]:
+    return [
+        LadderLevelOut(
+            level=LEVEL_CODES[lv.level],
+            required=lv.required,
+            expected_signer_user_id=None,
+            expected_signer_name=None,
+            latest=_sign_off_out(lv.latest) if lv.latest is not None else None,
+        )
+        for lv in levels
+    ]
+
+
 @sign_offs_router.get("", action="sign_off.read", response_model=SignOffLadderOut, errors=(501,))
 async def sign_off_ladder_route(
     ctx: Ctx,
     target_type: Annotated[str, Query(pattern=r"^[a-z][a-z_]{0,39}$")],
     target_id: Annotated[UUID, Query()],
 ) -> SignOffLadderOut:
-    """SHL-12: the ladder per level, with computed staleness."""
-    await _stub(ctx)
+    """SHL-12: the ladder per level, with computed staleness (P-04-T18)."""
+    await _live(ctx)
+    found = await ladder(ctx, target_type, target_id)
+    return SignOffLadderOut(
+        target=_target_out(found.facts),
+        levels=_ladder_out(found.levels),
+        allowed_actions=found.allowed_actions,
+    )
 
 
 @sign_offs_router.get(
@@ -264,7 +333,25 @@ async def sign_off_eligibility_route(
     level: Annotated[Level, Query()],
 ) -> SignOffEligibilityOut:
     """SHL-12 a to h: target, levels allowed, checks and the statement for one level."""
-    await _stub(ctx)
+    await _live(ctx)
+    found = await eligibility(ctx, target_type, target_id, LEVEL_OF[level])
+    return SignOffEligibilityOut(
+        target=_target_out(found.facts),
+        level=level,
+        levels_allowed=[LEVEL_CODES[n] for n in found.levels_allowed],
+        ladder=_ladder_out(found.ladder),
+        checks=[
+            EligibilityCheckOut(
+                code=cast(CheckCode, c.code),
+                result=c.result,
+                facts=c.facts,
+                refs=[ObjectRefOut(type=t, id=i) for t, i in c.refs],
+            )
+            for c in found.checks
+        ],
+        eligible=found.eligible,
+        statement=SignOffStatementOut(version=found.statement.version, text=found.statement.text),
+    )
 
 
 @sign_offs_router.post(
@@ -276,7 +363,18 @@ async def sign_off_eligibility_route(
 )
 async def sign_off_route(body: SignOffIn, ctx: Ctx) -> SignOffOut:
     """SHL-12 a-prime: record one sign-off (human only; the service also authorises the level)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _sign_off_out(
+        await sign_target(
+            ctx,
+            body.target_type,
+            body.target_id,
+            LEVEL_OF[body.level],
+            body.seen_hash,
+            body.statement_version,
+            body.kind,
+        )
+    )
 
 
 @sign_offs_router.post(

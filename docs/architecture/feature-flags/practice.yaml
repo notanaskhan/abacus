@@ -1,0 +1,12 @@
+# The practice module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: home.dashboard
+    description: 'HOME-01 live data (I-01, C13 home half): GET /v1/home. Off: the route answers 404 and the firm app keeps its current landing page. On: 501 not_implemented until I-01-T10 (tiles, your work, deadlines, running count) and I-01-T12 (client activity). On for Dev and synthetic firms in S14 (I-01-T13); renewed on the Q-04 calendar; retired in the Dec 2027 bundle (I-01-T23).'
+    owner: ayushkbhatia
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
