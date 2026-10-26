@@ -19,6 +19,11 @@ from abacus.modules.requests.binders import (
     register_binder_close_rule,
 )
 from abacus.modules.requests.classification import classify, document_kind
+from abacus.modules.requests.closed_binders import (
+    BinderClosed,
+    refuse_closed_item,
+    refuse_closed_item_in,
+)
 from abacus.modules.requests.comments import (
     check_return_comment,
     insert_return_comment,
@@ -160,6 +165,7 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "BinderClosed",
     "BinderProgress",
     "ClientHome",
     "ConsentRequired",
@@ -230,6 +236,8 @@ __all__ = [
     "prior_year_link",
     "read_item",
     "read_item_versions",
+    "refuse_closed_item",
+    "refuse_closed_item_in",
     "register_available_datasets",
     "register_binder_close_rule",
     "register_binder_tag",

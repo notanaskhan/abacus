@@ -578,13 +578,6 @@ async def test_r01_a_closed_binder_reads_read_only(net: Net) -> None:
     assert read.json()["allowed_actions"] == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1351 (ED-118): a closed binder reads read-only (no allowed_actions) but the "
-        "client write routes still accept an Ignore and an upload intent on its requests"
-    ),
-)
 async def test_r01_a_closed_binder_reads_but_takes_no_client_act(net: Net) -> None:
     b = await new_binder(net, "closed", status="closed")
     item = await b.request("Form 1099-INT", "Income")

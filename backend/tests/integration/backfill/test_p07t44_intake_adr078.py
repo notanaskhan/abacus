@@ -338,14 +338,6 @@ async def test_ac_concurrent_commits_of_one_draft_create_one_estate(intake: Inta
     assert len(won) == 1, [a.text for a in answers]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1349 (ED-116): a commit racing another commit of the same draft fails on a "
-        "unique constraint inside the unit of work and answers 500, not the stored result or "
-        "409 stale_version"
-    ),
-)
 async def test_ac_a_losing_concurrent_commit_answers_the_result_or_409_never_500(
     intake: Intake,
 ) -> None:

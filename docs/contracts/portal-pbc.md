@@ -77,6 +77,7 @@ Identifier-only facts (ADR P-36).
 | 409 | `{"detail": "nothing_to_undo", "facts": {"request_item_id" \| "binder_id"}}` | a second Undo, or an Undo of something never ignored or marked done (DEC-334) |
 | 409 | `{"detail": "not_voidable", "facts": {"fulfilment_id"}}` | a void of a human or agent fulfilment, an accepted one, or one already void |
 | 409 | `{"detail": "evidence_accepted", "facts": {"version_id"}}` | P-06's withdraw of an accepted or emailed version (unchanged) |
+| 409 | `{"detail": "binder_closed", "facts": {"binder_id"}}` | any client act on a binder closed after it was published, or on one of its requests: Ignore and its Undo, Mark as Done and its Undo, an upload intent, an upload or its unlock, a withdrawal, a comment, a SPEC-042 response (the binder reads read-only, DEC-333; ED-118, DEC-461); checked after the caller's own authorisation, nothing is written. A binder that was not published when it closed answers 404 as its reads do; a drop on any binder that is not Published keeps its 404 |
 | 413 | `{"detail": "file_too_large", "facts": {"limit_mb": 50}}` | a drop over 50 MB (DEC-58 c) |
 | 415 | `{"detail": "type_not_allowed"}` | a drop outside PDF, JPG, PNG, HEIC, XLSX, DOCX and CSV |
 | 422 | validation | a bad filter, reason or file-name list |
@@ -133,7 +134,7 @@ Additive changes in place with a line here. Breaking changes ship beside the old
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| portal-pbc v1 | — | — | 2026-10-24: stub (R-01-T01). 2026-10-25: documents reads live (R-01-T07, DEC-333); undos live, Undo open until the firm acts, a second Undo 409 `nothing_to_undo`, another person's 403 (R-01-T08, DEC-334); no shape change. 2026-10-26: room and suggest live (R-01-T13, DEC-387, DEC-388); the 501s gone from the OpenAPI document; the `third_party` role and `delegated_only`; `intro` is null until a firm-written source exists; no shape change |
+| portal-pbc v1 | — | — | 2026-10-24: stub (R-01-T01). 2026-10-25: documents reads live (R-01-T07, DEC-333); undos live, Undo open until the firm acts, a second Undo 409 `nothing_to_undo`, another person's 403 (R-01-T08, DEC-334); no shape change. 2026-10-26: room and suggest live (R-01-T13, DEC-387, DEC-388); the 501s gone from the OpenAPI document; the `third_party` role and `delegated_only`; `intro` is null until a firm-written source exists; no shape change. 2026-10-27: a closed binder takes no client act, 409 `binder_closed` on every client write route (ED-118, DEC-461); additive 409 on the upload-intent, comment and SPEC-042 response routes |
 
 ## 11. Open points
 - DEC-240: the `portal_documents.read` spelling, the return reason codes, the drop poll as a read action, and the stub's placement by module owner. The third-party role and `delegated_only`: DEC-387.

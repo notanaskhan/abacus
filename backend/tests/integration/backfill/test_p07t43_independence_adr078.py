@@ -497,13 +497,6 @@ async def test_ac18_concurrent_conclusions_leave_one_successor_each(plan: Plan) 
     assert successors and all(r["n"] == 1 for r in successors), successors
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "TASK-1348 (ED-117): a conclusion racing another on the same newest conclusion hits the "
-        "one-successor constraint and answers 500, not 409"
-    ),
-)
 async def test_ac18_a_losing_concurrent_conclusion_answers_409_never_500(plan: Plan) -> None:
     # Five rounds of three racers, so the defect shows whatever the scheduling of one round.
     answers = await _race(plan)
