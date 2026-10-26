@@ -97,6 +97,13 @@ import {
   type Eng02State,
   scenarios as eng02Scenarios,
 } from "./ENG-02/scenarios";
+import {
+  OPENS as ENG05_OPENS,
+  OVERLAYS as ENG05_OVERLAYS,
+  STATES as ENG05_STATES,
+  type Eng05State,
+  scenarios as eng05Scenarios,
+} from "./ENG-05/scenarios";
 import { PortalSignIn } from "./POR-01";
 import { PortalHome } from "./POR-02";
 import { PortalDocuments } from "./POR-03";
@@ -697,7 +704,48 @@ function Eng02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("ENG-02", { title: "Engagement record", Component: Eng02Artboard });
 
-// SHL-14 (P-06-T13): the request composer drawer, opened over an empty frame.
+// ENG-05 (P-07-T39): Team & roles inside the ENG-02 record, on its Team tab, a–e.
+function Eng05Frame({ state }: { state: Eng05State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/engagements" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <EngagementRecordPage
+        engagementId={ENG05_OPENS[state]}
+        initialTab="team"
+        toolbar={bar.toolbar}
+        frame
+        teamOpen={ENG05_OVERLAYS[state]}
+      />
+    </div>
+  );
+}
+
+function Eng05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng05State = ENG05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Eng05Frame key={state} state={state} /> : null;
+}
+
+registerScreen("ENG-05", { title: "Team & roles", Component: Eng05Artboard });
+
+// SHL-14 (P-06-T13, T24): the request composer drawer, opened over an empty frame.
 function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Shl14State = SHL14_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
