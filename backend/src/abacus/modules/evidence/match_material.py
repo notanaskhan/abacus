@@ -29,6 +29,7 @@ from abacus.modules.identity.api import member_context
 from abacus.modules.requests.api import request_items_for
 
 MAX_CANDIDATES: Final = 60
+PORTAL_DROP: Final = "portal_drop"
 
 
 @dataclass(frozen=True)
@@ -110,19 +111,23 @@ async def worth_matching(tenant: TenantContext, inbox_file_id: UUID) -> bool:
     return bool(candidates) and worth
 
 
-async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMaterial | None:
+async def match_material(
+    tenant: TenantContext, inbox_file_id: UUID, *, sheets: bool = True
+) -> MatchMaterial | None:
     """None without the file or its extraction, or before its PII scan when it has page text:
-    only the masked projection is ever material (P-03-T15)."""
+    only the masked projection is ever material (P-03-T15). A client's portal drop, or any file
+    when not `sheets` (the run acts for an offshore member), gives no sheet: cells are masked by
+    heuristic, so they stay out where DEC-322 and TASK-1207 fail closed (DEC-369, review M1)."""
     found = await _file_and_extraction(tenant, inbox_file_id)
     if found is None:
         return None
     file, row = found
-    text = await masked_document_text(tenant, row)
+    text = await masked_document_text(tenant, row, sheets=sheets and file.channel != PORTAL_DROP)
     if text is None:
         return None  # not scanned yet: nothing for an agent (fail closed)
-    pages, sheets = text
+    pages, shown = text
     candidates, worth = await _candidates(tenant, file, row)
-    excerpt_pages, excerpt_tables, truncated = excerpt_of(pages, sheets)
+    excerpt_pages, excerpt_tables, truncated = excerpt_of(pages, shown)
     return MatchMaterial(
         file.engagement_id,
         inbox_file_id,
@@ -134,5 +139,5 @@ async def match_material(tenant: TenantContext, inbox_file_id: UUID) -> MatchMat
         excerpt_tables,
         truncated,
         pages,
-        sheets,
+        shown,
     )

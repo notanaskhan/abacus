@@ -10,9 +10,14 @@ becomes one `evidence_pages` row with its geometry. A page with no words (a scan
 `has_text_layer=false` and no object, so "no text" is recorded, never inferred (T13 reads it as
 `not_scannable`).
 
-Coordinates are page points with a top-left origin, in the same space as the server-rendered page
-image: pdfplumber and PDFium both apply the page's `/Rotate`, so the client only scales
-(`image_w / width_pt`). `rotation` records the `/Rotate` value (DEC-217).
+Coordinates are render space (`w2`, P-03-T15 security review; DEC-369): page points with a
+top-left origin on the page's visible box (MediaBox ∩ CropBox) with `/Rotate` applied, exactly
+what PDFium renders, so the client and the masker only scale (`image_w / width_pt`). Words are
+read from the file with its annotations flattened in, from an unrotated copy (so text reads in
+order), and mapped into render space (`pdf_layout`). A page whose words can't be reconciled with
+PDFium's own text, that reads as a scan or drawn text, or that passes `MAX_PAGE_WORDS` is
+recorded without a text layer: `not_scannable`, never part-scanned. `rotation` records the
+`/Rotate` value (DEC-217).
 
 The layer is a derived record: it never alters the evidence or its fingerprint and can be rebuilt.
 Idempotent on (source, `WORDS_VERSION`). Words are client text (Restricted); they are never
@@ -28,7 +33,7 @@ import math
 import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import TYPE_CHECKING, Final, Literal, cast
 from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
@@ -43,6 +48,14 @@ from abacus.modules.evidence import storage
 from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.object_keys import under_key
+from abacus.modules.evidence.pdf_layout import (
+    drawn_like_a_scan,
+    flattened,
+    reconciled,
+    render_space,
+    text_boxes,
+    upright,
+)
 from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_version,
@@ -54,9 +67,15 @@ from abacus.modules.evidence.repository import (
 from abacus.modules.evidence.workflow_types import INBOX, VERSION, BackfillInput, UploadInput
 from abacus.modules.evidence.workflows import BACKFILL_BATCH, TrustLayerBackfill
 
+if TYPE_CHECKING:
+    from pdfplumber.page import Page as PlumberPage
+    from pypdfium2 import PdfPage
+
 _log = get_logger(__name__)
 
-WORDS_VERSION: Final = "w1"
+# w2 (P-03-T15 security review, DEC-369): flattened annotations, render-space boxes, and pages
+# that can't be reconciled, read as scans or pass the word cap recorded without a text layer.
+WORDS_VERSION: Final = "w2"
 MAX_PAGES: Final = 200  # the extractor's cap (extraction.MAX_PAGES)
 MAX_PAGE_WORDS: Final = 5000
 MAX_WORD: Final = 200
@@ -117,19 +136,31 @@ def _clamped(value: float) -> float:
     return min(max(value, 1.0), MAX_PAGE_PT) if math.isfinite(value) else 1.0
 
 
-def _rotation(value: object) -> int:
-    turned = int(cast(int, value or 0)) % 360
-    return turned if turned in (0, 90, 180, 270) else 0
+def _unscannable(number: int, width: float, height: float, rotation: int) -> PageWords:
+    """A page recorded without a text layer, so it reads `not_scannable` (fail closed)."""
+    return PageWords(number, _clamped(width), _clamped(height), rotation, ())
 
 
-def _page_words(number: int, page: object) -> PageWords:
-    width, height = _pt(getattr(page, "width", 0)), _pt(getattr(page, "height", 0))
-    rotation = _rotation(getattr(page, "rotation", 0))
-    if not (_side(width) and _side(height)):
-        # A hostile or broken MediaBox (zero, negative, tiny or past PDF's limit): unreadable,
-        # recorded without a text layer, with geometry the table can hold (security review).
-        return PageWords(number, _clamped(width), _clamped(height), rotation, ())
-    found = cast(list[dict[str, object]], page.extract_words(keep_blank_chars=False))  # type: ignore[attr-defined]  # pdfplumber Page
+def _page_words(number: int, page: PlumberPage, shown: PdfPage) -> PageWords:
+    """One page's words in render space (`pdf_layout`; DEC-369): what PDFium draws, where it
+    draws it. Unscannable when the two parsers can't be reconciled, when the page reads as a
+    scan or drawn text, or when its words pass `MAX_PAGE_WORDS` (security review H1, H2, L2)."""
+    rendered = render_space(shown)
+    width = _pt(getattr(rendered, "width", float("nan")))
+    height = _pt(getattr(rendered, "height", float("nan")))
+    rotation = rendered.rotation if rendered is not None else 0
+    space = (
+        render_space(shown, page)
+        if rendered is not None and _side(width) and _side(height)
+        else None
+    )
+    if space is None:
+        # A hostile or broken page box (zero, negative, tiny, past PDF's limit) or geometry the
+        # parsers disagree on: recorded without a text layer, with sides the table can hold.
+        return _unscannable(number, width, height, rotation)
+    if not upright(cast(list[dict[str, object]], page.chars)):
+        return _unscannable(number, width, height, rotation)  # sideways or mirrored text
+    found = cast(list[dict[str, object]], page.extract_words(keep_blank_chars=False))
     words: list[Word] = []
     for raw in found:
         text = _clean(raw.get("text"))
@@ -138,13 +169,21 @@ def _page_words(number: int, page: object) -> PageWords:
         box = (_pt(raw.get("x0")), _pt(raw.get("top")), _pt(raw.get("x1")), _pt(raw.get("bottom")))
         if not all(math.isfinite(v) for v in box):
             continue
-        x0, top = max(0.0, box[0]), max(0.0, box[1])
-        x1, bottom = min(width, box[2]), min(height, box[3])
+        x0, top, x1, bottom = space.plumber_box(*box)
+        if not (0 <= (x0 + x1) / 2 <= width and 0 <= (top + bottom) / 2 <= height):
+            continue  # outside the visible page box: nothing a reader could see
+        x0, top = _pt(max(0.0, x0)), _pt(max(0.0, top))
+        x1, bottom = _pt(min(width, x1)), _pt(min(height, bottom))
         if x1 < x0 or bottom < top:
-            continue  # a box outside the page: nothing a reader could see
+            continue
         words.append(Word(text, x0, top, x1, bottom))
         if len(words) >= MAX_PAGE_WORDS:
-            break
+            return _unscannable(number, width, height, rotation)  # L2: never part-scanned
+    drawn = text_boxes(shown, space)
+    if not reconciled([(w.x0, w.top, w.x1, w.bottom) for w in words], drawn):
+        return _unscannable(number, width, height, rotation)
+    if drawn_like_a_scan(shown, space):
+        return _unscannable(number, width, height, rotation)
     return PageWords(number, width, height, rotation, tuple(words))
 
 
@@ -158,27 +197,43 @@ def _reason(exc: BaseException) -> str:
 
 
 def extract_words(content: bytes, media_type: str) -> WordLayer:
-    """In-process (tests, and inside the isolated child): a PDF's words page by page."""
+    """In-process (tests, and inside the isolated child): a PDF's words page by page, read from
+    the flattened file (`pdf_layout.flattened`) in render space."""
     if media_type != PDF:
         return WordLayer("not_applicable")
     if is_active(content):  # DEC-296 (ED-021): kept, never read for words
         return WordLayer("not_applicable", "active_content")
     import pdfplumber
+    import pypdfium2 as pdfium
 
     try:
-        pdf = pdfplumber.open(io.BytesIO(content))
-    except Exception as exc:  # a damaged or hostile file: pdfminer raises many kinds
-        return WordLayer("unreadable", _reason(exc))
-    with pdf:
+        flat = flattened(content)
+        upright_copy = flattened(content, unrotated=True)
+        shown = pdfium.PdfDocument(flat)
+    except Exception as exc:  # a damaged, encrypted or hostile file: PDFium raises several kinds
+        return WordLayer(
+            "unreadable", "encrypted" if "password" in str(exc).casefold() else "damaged"
+        )
+    try:
         try:
-            if getattr(pdf.doc, "encryption", None) is not None:
-                return WordLayer("unreadable", "encrypted")
-            count = len(pdf.pages)
-            pages = tuple(
-                _page_words(n, page) for n, page in enumerate(pdf.pages[:MAX_PAGES], start=1)
-            )
-        except Exception as exc:
+            pdf = pdfplumber.open(io.BytesIO(upright_copy))
+        except Exception as exc:  # a damaged or hostile file: pdfminer raises many kinds
             return WordLayer("unreadable", _reason(exc))
+        with pdf:
+            try:
+                if getattr(pdf.doc, "encryption", None) is not None:
+                    return WordLayer("unreadable", "encrypted")
+                count = len(pdf.pages)
+                if count != len(shown):
+                    return WordLayer("unreadable", "damaged")  # the parsers disagree on pages
+                pages = tuple(
+                    _page_words(n, page, shown[n - 1])
+                    for n, page in enumerate(pdf.pages[:MAX_PAGES], start=1)
+                )
+            except Exception as exc:
+                return WordLayer("unreadable", _reason(exc))
+    finally:
+        shown.close()
     if not pages:
         return WordLayer("unreadable", "empty")
     return WordLayer("extracted", pages=pages, truncated=count > MAX_PAGES)

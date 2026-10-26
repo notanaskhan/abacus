@@ -235,3 +235,28 @@ async def test_review5_the_logged_pii_reveal_refuses_an_offshore_member(firm: Fi
     assert await firm.seed.value(count, firm.mia.user_id) == 1
     unknown = await firm.net.call("POST", path, firm.mia, body={"region_id": str(uuid.uuid4())})
     assert unknown.status_code == 404
+
+
+async def test_review_l3_the_twenty_first_reveal_answers_429_with_retry_after(firm: Firm) -> None:
+    """P-03-T16 review L3: the cap's refusal carries `Retry-After` beside `facts.retry_after`."""
+    region = await firm.seed.value(
+        "SELECT id FROM pii_regions WHERE evidence_version_id = $1 AND kind = 'ssn'",
+        firm.version,
+    )
+    for _ in range(20):  # twenty reveals in the past hour, as the reveal writes them
+        await firm.seed.run(
+            "INSERT INTO pii_reveals (tenant_id, region_id, evidence_version_id, user_id, "
+            "actor_kind, expires_at) VALUES ($1, $2, $3, $4, 'human', "
+            "clock_timestamp() + interval '30 seconds')",
+            firm.tenant_id,
+            region,
+            firm.version,
+            firm.mia.user_id,
+        )
+    path = f"/v1/evidence-versions/{firm.version}/pii-reveals"
+    refused = await firm.net.call("POST", path, firm.mia, body={"region_id": str(region)})
+    assert refused.status_code == 429, refused.text
+    body = refused.json()
+    assert body["detail"] == "reveal_rate_limited" and "value" not in body
+    assert refused.headers["retry-after"] == str(body["facts"]["retry_after"])
+    assert 0 < int(refused.headers["retry-after"]) <= 3600

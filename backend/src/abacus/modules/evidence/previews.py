@@ -11,12 +11,13 @@ The browser never renders the raw file. `render_isolated` runs `render` in the i
 - A PDF with active content: `none/active_content`, never opened (DEC-296).
 - Anything else (HEIC until P-11-T25): `none`, with why.
 
-Masked renditions (P-03-T15; SPEC-322 AC-24; P-03 §4.4; DEC-369): `render_masked` renders as
-`render` does and then, still in the child, paints every detected PII box on its page opaque in
-the page's background colour (the most common colour of the image's border), padded `MASK_PAD`
-pixels and rounded outward, on an RGB image with no alpha. Boxes are page points (top-left
-origin, the word layer's space) scaled by the image over the page's size in points. The unmasked
-bitmap never leaves the child; only the burned PNG does.
+Masked renditions (P-03-T15; SPEC-322 AC-24; P-03 §4.4; DEC-369): `render_masked` renders the
+flattened file's page content (no annotations: what the word layer read, `pdf_layout`) and then,
+still in the child, paints every detected PII box on its page opaque in the page's background
+colour (the most common colour of the image's border), padded `MASK_PAD` pixels and rounded
+outward, on an RGB image with no alpha. Boxes are render-space points (the visible page box,
+rotation applied, top-left origin: the word layer's space since `w2`), scaled by the image over
+the page's size in points. The unmasked bitmap never leaves the child; only the burned PNG does.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ from PIL import Image, ImageDraw
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.modules.evidence.active_content import is_active
+from abacus.modules.evidence.pdf_layout import flattened
 
 RENDERER_VERSION: Final = "v1"
 # P-03-T15: the masked rendition is its own renderer version, so it never collides with a
@@ -80,7 +82,7 @@ def _png(image: Image.Image) -> Page:
     return Page(out.getvalue(), clean.width, clean.height)
 
 
-def _pdf(content: bytes, burn: _Burn | None = None) -> Rendered:
+def _pdf(content: bytes, burn: _Burn | None = None, *, annotations: bool = True) -> Rendered:
     import pypdfium2 as pdfium
 
     try:
@@ -94,7 +96,7 @@ def _pdf(content: bytes, burn: _Burn | None = None) -> Rendered:
         for index in range(min(count, MAX_PAGES)):
             page = document[index]
             width, _ = page.get_size()
-            bitmap = page.render(scale=PAGE_WIDTH / max(width, 1.0))
+            bitmap = page.render(scale=PAGE_WIDTH / max(width, 1.0), draw_annots=annotations)
             image = bitmap.to_pil()
             pages.append(_png(burn(index + 1, image) if burn is not None else image))
     except Exception:  # a hostile page: pdfium raises several kinds
@@ -205,7 +207,15 @@ def render_masked(
     if media_type == PDF:
         if is_active(content):
             return Rendered("none", "active_content")
-        return _pdf(content, burn_page)
+        # What the word layer read (DEC-369, security review H2): annotations and form fields
+        # flattened into the content, and only the content drawn.
+        try:
+            flat = flattened(content)
+        except Exception as exc:  # a damaged, encrypted or hostile file
+            return Rendered(
+                "none", "encrypted" if "password" in str(exc).casefold() else "damaged"
+            )
+        return _pdf(flat, burn_page, annotations=False)
     if media_type in (PNG, JPEG, TIFF, GIF):
         return _image(content, burn_page)
     if media_type in (XLSX, CSV):

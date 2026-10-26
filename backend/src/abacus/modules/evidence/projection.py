@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.evidence.citations.matching import WordLike
 from abacus.modules.evidence.masking import MaskedWord, MaskRegion, masked_words
+from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.repository import pii_regions_of, scanned_pages
 
 
@@ -49,11 +50,19 @@ async def projection_of(
     inbox_file_id: UUID | None = None,
 ) -> Projection:
     """For a caller that authorised on the source: what of its words may be read."""
+    # Only the current detector's scan of the current word layer (P-03-T15 review): an earlier
+    # scan's pages and boxes belong to an earlier layer.
     scanned = await scanned_pages(
-        session, evidence_version_id=evidence_version_id, inbox_file_id=inbox_file_id
+        session,
+        evidence_version_id=evidence_version_id,
+        inbox_file_id=inbox_file_id,
+        detector_version=DETECTOR_VERSION,
     )
     regions = await pii_regions_of(
-        session, evidence_version_id=evidence_version_id, inbox_file_id=inbox_file_id
+        session,
+        evidence_version_id=evidence_version_id,
+        inbox_file_id=inbox_file_id,
+        detector_version=DETECTOR_VERSION,
     )
     return Projection(
         frozenset(scanned),

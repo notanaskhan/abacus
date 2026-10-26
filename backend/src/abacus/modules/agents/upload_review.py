@@ -64,6 +64,8 @@ from abacus.modules.identity.api import (
     Forbidden,
     authorise,
     is_active_member,
+    may_read_unmasked,
+    person_reads_unmasked,
 )
 from abacus.modules.requests.api import items_of_version
 
@@ -116,8 +118,10 @@ async def create_review_run(
     items = await items_of_version(reader, evidence_version_id)
     if await model_blocked(reader, [i.id for i in items]):
         return None  # P-06-T20: tax-return information, no consent registered: no model call
-    # P-03-T15 (DEC-369): only the masked text, after its scan, whoever the run acts for.
-    material = await review_material(reader, evidence_version_id)
+    # P-03-T15 (DEC-369): only the masked text, after its scan, whoever the run acts for; no
+    # sheets for an offshore member (DEC-52, TASK-1207; review M1).
+    sheets = await person_reads_unmasked(reader, requested_by)
+    material = await review_material(reader, evidence_version_id, sheets=sheets)
     if material is None or material.extraction_status != "extracted":
         return None  # SPEC-030 AC-4: an unreadable or unextracted upload isn't reviewed
     run_id: UUID | None = None
@@ -218,7 +222,7 @@ async def review_material_for(agent: AgentContext, version_id: UUID) -> ReviewMa
     """What the reviewer reads, for a run authorised on the version's engagement: only the
     version's masked projection, whoever the run acts for (P-03-T15, DEC-369; None before the
     PII scan: the run can't proceed)."""
-    return await review_material(agent.tenant, version_id)
+    return await review_material(agent.tenant, version_id, sheets=await may_read_unmasked(agent))
 
 
 async def _review(agent: AgentContext) -> ReviewOutcome:

@@ -85,6 +85,34 @@ unmasked TIN pattern, and agent quotes of masked text still verify."
 - Histories recorded with the repo recorders on throwaway containers:
   `upload-processing-v7-masked-preview{,-failed}.json`, `trust-layer-backfill-v2-done.json`.
 - Not run: Playwright, and the full suite (shared machine).
+- 2026-10-26 (security review fix round, all recorded in DEC-369):
+  - **H1:** the word layer `w2` is in render space (`pdf_layout.RenderSpace`). It is read from
+    an unrotated copy; detection runs upright (`pii.detect_on_page`, detector `d2`).
+    Projection, viewer and masker read `d2` only.
+  - **H2:** annotations are flattened before both extraction and render, and the render skips
+    annotations. A page is not_scannable when its words can't be reconciled with PDFium's text,
+    when it has sideways or mirrored text, when images cover 25% or more, or when it draws 40 or
+    more Bézier segments.
+  - **L2:** a page past the word cap is not_scannable.
+  - **M1:** no sheets for portal drops or offshore initiators.
+  - **L1:** the explicit flag `UploadInput.announce`.
+  - Legacy `page_lines` are masked by text and dropped on rotated pages.
+  - The reviewer's two scripts, run unchanged, still print their old numbers, because each
+    bypasses the word layer: `geom.py` feeds raw pdfplumber boxes, and `annot2.py` passes no
+    masks. Through the pipeline (layer, then detector, then masked render), every geometry case
+    leaves 0 dark pixels and the FreeText widget leaves 0. `annot2.py` now shows the SSN in the
+    word layer.
+  - Tests: `test_pdf_layout.py` (19), 3 new and 1 parametrised integration tests in
+    `test_masked_renditions.py`, and the Retry-After route test.
+  - `test_words.py::test_p03t05_words_past_the_page_cap_are_left_out` now asserts the stricter
+    L2 rule, as the review asked. The fake page in the hostile-size test gained a PDFium twin.
+  - Regression runs: unit, workflows and contracts 5,250; trust kit 99; hostile files 29;
+    affected backfill 94; agent and top-level 32. All pass.
+  - **Deploy note:** runs in flight at deploy replay their old path, and uploads made before
+    the deploy have no masked rendition or `w2`/`d2` layer. Their pages answer 409
+    `preview_outdated`, and agents get no material, until `trust_layer_backfill` v2 has run for
+    each tenant: `python -m abacus_tools.trust_layer_backfill`, as an ECS one-off on staging and
+    production after the deploy. P-03-T26's RB-31 runbook should carry this step.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

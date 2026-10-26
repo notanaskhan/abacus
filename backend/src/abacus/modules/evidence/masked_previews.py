@@ -117,7 +117,10 @@ async def masked_preview_upload(given: UploadInput) -> str:
             extractor_version=WORDS_VERSION,
         )
         regions = await pii_regions_of(
-            session, evidence_version_id=version_id, inbox_file_id=inbox_id
+            session,
+            evidence_version_id=version_id,
+            inbox_file_id=inbox_id,
+            detector_version=DETECTOR_VERSION,
         )
     masks: dict[int, list[Box]] = {}
     for region in regions:
@@ -197,7 +200,9 @@ async def pending_masks(given: BackfillInput) -> list[UploadInput]:
             limit=BACKFILL_BATCH,
         )
     return [
-        UploadInput(given.tenant_id, VERSION if kind == "version" else INBOX, str(source))
+        UploadInput(
+            given.tenant_id, VERSION if kind == "version" else INBOX, str(source), announce=False
+        )
         for kind, source in found
     ]
 

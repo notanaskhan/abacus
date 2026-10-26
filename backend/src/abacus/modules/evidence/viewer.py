@@ -44,6 +44,7 @@ from abacus.modules.evidence.extraction import ACTIVE_CONTENT
 from abacus.modules.evidence.masked_previews import PreviewOutdated
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage, EvidenceVersion, PiiRegion
+from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.previews import PAGE_WIDTH, RENDERER_VERSION
 from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import (
@@ -225,7 +226,9 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         layer: Sequence[EvidencePage] = await pages_of(
             session, evidence_version_id=version.id, extractor_version=WORDS_VERSION
         )
-        regions = await pii_regions_of(session, evidence_version_id=version.id)
+        regions = await pii_regions_of(
+            session, evidence_version_id=version.id, detector_version=DETECTOR_VERSION
+        )
         projection = await projection_of(session, evidence_version_id=version.id)
         rendered = masked or preview
         images = (

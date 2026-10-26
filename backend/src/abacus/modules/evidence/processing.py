@@ -539,11 +539,15 @@ def _excerpt(
     return tuple(shown_pages), tuple(shown_sheets), truncated
 
 
-async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMaterial | None:
+async def review_material(
+    tenant: TenantContext, version_id: UUID, *, sheets: bool = True
+) -> ReviewMaterial | None:
     """For an agent run authorised on the version's engagement; None without an extraction, or
     for a version the client withdrew (P-06-T19: agents never read it). Always the masked
     projection (P-03-T15; SPEC-322 AC-25, AC-40): scanned pages' masked text and masked sheets,
-    and None while a PDF's PII scan hasn't run (fail closed; `masked_document_text`)."""
+    and None while a PDF's PII scan hasn't run (fail closed; `masked_document_text`). Without
+    `sheets` (the run acts for an offshore member; DEC-52, TASK-1207) no sheet is read: cells are
+    masked by heuristic, so they stay out where the rule fails closed (DEC-369, review M1)."""
     async with tenant_session(tenant) as session:
         if await is_withdrawn(session, version_id):
             return None
@@ -553,11 +557,11 @@ async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMate
         return None
     items = await items_of_version(tenant, version_id)
     item = next((i for i in items), None)
-    text = await masked_document_text(tenant, row)
+    text = await masked_document_text(tenant, row, sheets=sheets)
     if text is None:
         return None
-    pages, sheets = text
-    excerpt_pages, excerpt_tables, truncated = _excerpt(pages, sheets)
+    pages, shown = text
+    excerpt_pages, excerpt_tables, truncated = _excerpt(pages, shown)
     return ReviewMaterial(
         row.engagement_id,
         row.status,
@@ -569,7 +573,7 @@ async def review_material(tenant: TenantContext, version_id: UUID) -> ReviewMate
         excerpt_tables,
         truncated,
         pages,
-        sheets,
+        shown,
     )
 
 
@@ -609,14 +613,17 @@ async def material_ready(session: AsyncSession, row: UploadExtraction) -> bool:
 
 
 async def masked_document_text(
-    tenant: TenantContext, row: UploadExtraction
+    tenant: TenantContext, row: UploadExtraction, *, sheets: bool = True
 ) -> tuple[dict[int, str], dict[str, tuple[tuple[str, ...], ...]]] | None:
     """The only document text an agent reads (P-03-T15; SPEC-322 AC-25, AC-40; DEC-369): each
     PII-scanned page's masked words (`masked_text.masked_pages`) and each sheet's masked cells
     (`pii.masked_rows`), both through the kernel's TIN scrub. None when the document has page
-    text and no PII scan has run (fail closed); a page no scan covers is left out."""
-    pages, sheets = await document_text(tenant.tenant_id, row)
-    masked_sheets = {name: masked_rows(rows) for name, rows in sheets.items()}
+    text and no PII scan has run (fail closed); a page no scan covers is left out. Without
+    `sheets`, no sheet at all (review M1)."""
+    pages, raw_sheets = await document_text(tenant.tenant_id, row)
+    masked_sheets = (
+        {name: masked_rows(rows) for name, rows in raw_sheets.items()} if sheets else {}
+    )
     if not pages:
         return {}, masked_sheets
     text = await masked_pages(

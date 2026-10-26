@@ -51,7 +51,6 @@ from abacus.modules.evidence.citations.matching import WordLike
 from abacus.modules.evidence.events import InboxFileExtracted, UploadChecksRecorded
 from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidenceVersion, InboxFile
-from abacus.modules.evidence.previews import RENDERER_VERSION
 from abacus.modules.evidence.repository import (
     get_inbox_file,
     get_version,
@@ -61,7 +60,6 @@ from abacus.modules.evidence.repository import (
     latest_checks,
     newest_extraction,
     pages_of,
-    preview_for,
     scan_run_for,
 )
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
@@ -72,7 +70,8 @@ _log = get_logger(__name__)
 PORTAL_DROP: Final = "portal_drop"
 _CURLY: Final = chr(0x2019)  # a curly apostrophe, as forms print "Payer's"
 
-DETECTOR_VERSION: Final = "d1"
+# d2 (P-03-T15 security review): scans the render-space, fail-closed word layer `w2`.
+DETECTOR_VERSION: Final = "d2"
 PiiKind = Literal["ssn", "itin", "ein", "bank_account", "routing_number", "dob"]
 Box = tuple[float, float, float, float]
 
@@ -301,6 +300,58 @@ def detect(page_no: int, words: Sequence[WordLike]) -> list[Found]:
     return found
 
 
+# --- Rotated pages (P-03-T15 security review; DEC-369) ------------------------------------------
+
+
+@dataclass(frozen=True)
+class _Placed:
+    text: str
+    x0: float
+    top: float
+    x1: float
+    bottom: float
+
+
+def _turn(box: Box, rotation: int, width: float, height: float, *, back: bool) -> Box:
+    """A box between render space (the page as shown, `width` x `height`) and the content's own
+    upright frame. `back` maps upright to render space."""
+    (x0, top, x1, bottom) = box
+    corners = ((x0, top), (x1, bottom))
+    out: list[tuple[float, float]] = []
+    for u, v in corners:
+        if rotation == 90:  # shown = (H0 - b, a), with H0 = width
+            point = (width - v, u) if back else (v, width - u)
+        elif rotation == 180:
+            point = (width - u, height - v)
+        elif rotation == 270:  # shown = (b, W0 - a), with W0 = height
+            point = (v, height - u) if back else (height - v, u)
+        else:
+            point = (u, v)
+        out.append(point)
+    (ax, ay), (bx, by) = out
+    return (min(ax, bx), min(ay, by), max(ax, bx), max(ay, by))
+
+
+def detect_on_page(
+    page_no: int, words: Sequence[WordLike], rotation: int, width: float, height: float
+) -> list[Found]:
+    """`detect` on a page whose layer is in render space (`w2`): the words are turned back into
+    the content's upright frame, where a form's lines read left to right, and each region is
+    turned again into render space, where the masks are burned."""
+    if rotation not in (90, 180, 270):
+        return detect(page_no, words)
+    upright = [
+        _Placed(w.text, *_turn((w.x0, w.top, w.x1, w.bottom), rotation, width, height, back=False))
+        for w in words
+    ]
+    found: list[Found] = []
+    for f in detect(page_no, upright):
+        x0, top, x1, bottom = _turn(f.box, rotation, width, height, back=True)
+        box: Box = (round(x0, 2), round(top, 2), round(x1, 2), round(bottom, 2))
+        found.append(Found(f.page, f.kind, box, f.value, f.last4, f.label_anchored))
+    return found
+
+
 # --- Spreadsheet cells (P-03-T15; P-03 §4.4 "spreadsheet cells get the same tokens") ----------
 
 _CELL_TOKEN: Final = re.compile(r"\S+")
@@ -387,24 +438,16 @@ async def _announce(
     session: AsyncSession, source: EvidenceVersion | InboxFile, version_id: UUID | None
 ) -> bool:
     """Whether this first scan re-announces the upload to agents (P-03-T15; DEC-369): it has
-    page text (agent material waited for this scan, `processing.material_ready`), it came through
-    a live v7 run (no pre-masking preview, so the backfill never re-announces an old upload), and
-    there is something to announce: a version's recorded checks on a request, or a firm inbox
-    file still waiting (a portal drop's sort announces its own)."""
+    page text (agent material waited for this scan, `processing.material_ready`) and there is
+    something to announce: a version's recorded checks on a request, or a firm inbox file still
+    waiting (a portal drop's sort announces its own). The caller only asks for a live upload
+    (`UploadInput.announce`; the backfill passes False: review L1)."""
     extraction = await newest_extraction(
         session,
         evidence_version_id=version_id,
         inbox_file_id=None if version_id is not None else source.id,
     )
     if extraction is None or extraction.status != "extracted" or not extraction.page_count:
-        return False
-    legacy = await preview_for(
-        session,
-        evidence_version_id=version_id,
-        inbox_file_id=None if version_id is not None else source.id,
-        renderer_version=RENDERER_VERSION,
-    )
-    if legacy is not None:
         return False
     if isinstance(source, InboxFile):
         return source.channel != PORTAL_DROP and source.status == "waiting"
@@ -459,7 +502,15 @@ async def pii_scan_upload(given: UploadInput) -> int:
             unscannable.append(page.page_no)
             continue
         layer = await read_page_layer(tenant_id, page)
-        found.extend(detect(page.page_no, layer.words))
+        found.extend(
+            detect_on_page(
+                page.page_no,
+                layer.words,
+                page.rotation,
+                float(page.width_pt),
+                float(page.height_pt),
+            )
+        )
         scanned.append(page.page_no)
     rows: list[dict[str, object]] = []
     for item in found:
@@ -496,7 +547,11 @@ async def pii_scan_upload(given: UploadInput) -> int:
         )
         if first:
             await insert_pii_regions(tx.session, rows)
-            if extraction is not None and await _announce(tx.session, source, version_id):
+            if (
+                given.announce
+                and extraction is not None
+                and await _announce(tx.session, source, version_id)
+            ):
                 # P-03-T15: agents read only masked material, which a document with page text
                 # has from now on; the reviewer or matcher held back at extraction may follow.
                 tx.emit(
@@ -524,6 +579,7 @@ __all__ = [
     "LABELS",
     "Found",
     "detect",
+    "detect_on_page",
     "lines_of",
     "masked_rows",
     "pii_scan_upload",

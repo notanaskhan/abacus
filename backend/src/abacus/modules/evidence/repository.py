@@ -25,6 +25,7 @@ from sqlalchemy import (
     select,
     table,
     text,
+    true,
     update,
 )
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
@@ -1192,6 +1193,7 @@ async def pii_regions_of(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    detector_version: str | None = None,
 ) -> Sequence[PiiRegion]:
     """A source's detected regions (none derived), by page; never their sealed values
     (LIST_EXEMPT: one source's regions, for a caller that authorised on it)."""
@@ -1204,7 +1206,14 @@ async def pii_regions_of(
         (
             await session.execute(
                 select(PiiRegion)
-                .where(source, PiiRegion.derivation_id.is_(None))
+                .where(
+                    source,
+                    PiiRegion.derivation_id.is_(None),
+                    # P-03-T15 review: only the regions of the current layer's scan, when named.
+                    PiiRegion.detector_version == detector_version
+                    if detector_version is not None
+                    else true(),
+                )
                 .order_by(PiiRegion.page_no, PiiRegion.id)
             )
         )
@@ -1218,6 +1227,7 @@ async def scanned_pages(
     *,
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
+    detector_version: str | None = None,
 ) -> set[int]:
     """The pages any PII scan of the source (none derived) recorded as scanned (LIST_EXEMPT:
     one source's scan runs, for a caller that authorised on it)."""
@@ -1228,7 +1238,13 @@ async def scanned_pages(
     )
     rows = (
         await session.execute(
-            select(PiiScanRun.pages_scanned).where(source, PiiScanRun.derivation_id.is_(None))
+            select(PiiScanRun.pages_scanned).where(
+                source,
+                PiiScanRun.derivation_id.is_(None),
+                PiiScanRun.detector_version == detector_version
+                if detector_version is not None
+                else true(),
+            )
         )
     ).scalars()
     return {int(page) for pages in rows for page in pages}

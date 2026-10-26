@@ -22,6 +22,7 @@ from abacus.modules.evidence.api import (
     process_upload,
     record_citations,
 )
+from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.processing import preview_upload
 from abacus.modules.evidence.viewer import (
     PreviewOutdated,
@@ -80,9 +81,10 @@ async def _ssn_region(seed: Seeder, firm: Firm, version: uuid.UUID) -> None:
     await seed.run(
         "INSERT INTO pii_regions (tenant_id, evidence_version_id, page_no, bbox, kind, "
         "value_sealed, last4, label_anchored, detector_version) VALUES ($1, $2, 2, "
-        "ARRAY[130, 80, 200, 100]::numeric[], 'ssn', '\\x00'::bytea, '6081', true, 'd1')",
+        "ARRAY[130, 80, 200, 100]::numeric[], 'ssn', '\\x00'::bytea, '6081', true, $3)",
         firm.tenant_id,
         version,
+        DETECTOR_VERSION,
     )
 
 

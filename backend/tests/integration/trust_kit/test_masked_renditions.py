@@ -23,6 +23,7 @@ from PIL import Image
 
 from abacus.kernel.tin_patterns import has_tin
 from abacus.kernel.uow import uow
+from abacus.modules.agents.upload_review import review_material_for
 from abacus.modules.evidence import viewer
 from abacus.modules.evidence.api import (
     CitationAnchor,
@@ -62,6 +63,42 @@ TINS = positioned_pdf(
         ]
     ]
 )
+_APPEARANCE = b"BT /F1 24 Tf 2 6 Td (900-70-1234) Tj ET"
+_PAGE = b"BT /F1 12 Tf 72 720 Td (Form W-9 taxpayer identification number) Tj ET"
+
+
+def _annotated() -> bytes:
+    """A W-9 whose TIN is a FreeText annotation (Fill & Sign): only flattening shows it."""
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R "
+        b">> >> /Contents 4 0 R /Annots [6 0 R] >>",
+        b"<< /Length %d >>\nstream\n" % len(_PAGE) + _PAGE + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Type /Annot /Subtype /FreeText /Contents (900-70-1234) /DA (/F1 24 Tf) "
+        b"/Rect [100 600 300 640] /P 3 0 R /AP << /N 7 0 R >> >>",
+        b"<< /Type /XObject /Subtype /Form /BBox [0 0 200 40] /Resources << /Font << /F1 5 0 R "
+        b">> >> /Length %d >>\nstream\n" % len(_APPEARANCE) + _APPEARANCE + b"\nendstream",
+    ]
+    out = io.BytesIO()
+    out.write(b"%PDF-1.4\n")
+    offsets: list[int] = []
+    for n, body in enumerate(objects, 1):
+        offsets.append(out.tell())
+        out.write(b"%d 0 obj\n" % n + body + b"\nendobj\n")
+    start = out.tell()
+    out.write(b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1))
+    for offset in offsets:
+        out.write(b"%010d 00000 n \n" % offset)
+    out.write(
+        b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n"
+        % (len(objects) + 1, start)
+    )
+    return out.getvalue()
+
+
+ANNOTATED = _annotated()
 SHEET = b"Name,SSN,Note\nClaire Feld,900-70-1234,ok\nJonah Feld,900-72-0001,ref 900-71-5555\n"
 
 
@@ -260,3 +297,95 @@ async def test_legacy_preview_lines_and_sheets_carry_tokens(seed: Seeder) -> Non
     table = await preview_of(firm.system, evidence_version_id=sheet, inbox_file_id=None)
     cells = " ".join(c for _, rows in table.sheets for row in rows for c in row)
     assert table.kind == "table" and not has_tin(cells) and "Claire Feld" in cells
+
+
+# --- Security review fix round (DEC-369: M1, L1) ------------------------------------------------
+
+
+async def test_review_m1_no_sheet_for_an_offshore_initiator_or_a_portal_drop(seed: Seeder) -> None:
+    """Cells are masked by heuristic, so they stay out where TASK-1207 and DEC-322 fail closed:
+    a run acting for an offshore member, and a client's portal drop."""
+    firm = await make_firm(seed)
+    sheet = await _version(firm, SHEET, "text/csv")
+    onshore = await review_material(firm.system, sheet)
+    assert onshore is not None and onshore.sheets  # the onshore control: masked cells
+    offshore = await review_material(firm.system, sheet, sheets=False)
+    assert offshore is not None and offshore.sheets == {} and offshore.excerpt_tables == ()
+    await _offshore(firm)
+    agent = await _agent(firm, "evidence.upload_reviewer")
+    via_agent = await review_material_for(agent, sheet)
+    assert via_agent is not None and via_agent.sheets == {}
+    drop = await firm.inbox_file(SHEET, "text/csv")
+    await seed.run(
+        "UPDATE inbox_files SET channel = 'portal_drop', drop_batch_id = $2, "
+        "drop_binder_id = $3, drop_key = 'k' WHERE id = $1",
+        drop,
+        uuid.uuid4(),
+        uuid.uuid4(),
+    )
+    await extract_upload(as_inbox(firm, drop))
+    material = await match_material(firm.system, drop)
+    assert material is not None and material.sheets == {}
+
+
+async def test_review_l1_the_backfill_never_re_announces_an_upload(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    announced = (
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = 'inbox_file.extracted'"
+    )
+    live = await firm.inbox_file(w2_pdf())
+    await _processed(firm, as_inbox(firm, live))
+    assert await seed.value(announced, firm.tenant_id) == 2  # extraction, then the scan
+    old = await firm.inbox_file(TINS)
+    await extract_upload(as_inbox(firm, old))
+    [pending] = [
+        u
+        for u in await pending_masks(BackfillInput(str(firm.tenant_id)))
+        if u.source_id == str(old)
+    ]
+    assert pending.announce is False
+    await words_upload(pending)
+    await pii_scan_upload(pending)
+    assert await seed.value(announced, firm.tenant_id) == 3  # only the old file's extraction
+
+
+async def test_review_h2_a_filled_annotation_is_masked_in_the_served_page(seed: Seeder) -> None:
+    """The FreeText value is flattened into the content, read, detected and burned out."""
+    firm = await make_firm(seed)
+    version = await _version(firm, ANNOTATED)
+    regions = await seed.rows(
+        "SELECT kind, last4 FROM pii_regions WHERE evidence_version_id = $1", version
+    )
+    assert [(r["kind"], r["last4"]) for r in regions] == [("itin", "1234")]
+    material = await review_material(firm.system, version)
+    assert material is not None and not has_tin(" ".join(material.pages.values()))
+
+
+@pytest.mark.parametrize(
+    "geometry", [b"/CropBox [20 30 600 780]", b"/Rotate 90 /CropBox [20 30 600 780]"]
+)
+async def test_review_h1_a_cropped_or_rotated_w2_is_served_masked(
+    seed: Seeder, geometry: bytes
+) -> None:
+    """The word layer is in render space, so the served page's regions hold one colour, and the
+    legacy JSON's printed lines carry tokens (or, on a rotated page, are left out)."""
+    firm = await make_firm(seed)
+    content = w2_pdf().replace(b"/MediaBox [0 0 612 792]", b"/MediaBox [0 0 612 792] " + geometry)
+    version = await _version(firm, content)
+    regions = await seed.rows(
+        "SELECT bbox FROM pii_regions WHERE evidence_version_id = $1", version
+    )
+    assert len(regions) == 2
+    [page] = (await viewer.viewer_manifest(firm.person(), version)).pages
+    image = Image.open(io.BytesIO(await viewer.viewer_page(firm.person(), version, 1)))
+    scale_x, scale_y = image.width / page.width_pt, image.height / page.height_pt
+    for row in regions:
+        box = cast(tuple[float, float, float, float], tuple(float(v) for v in row["bbox"]))
+        assert _colours(image, pixel_box(box, scale_x, scale_y, image.width, image.height)) == 1
+    view = await preview_of(firm.system, evidence_version_id=version, inbox_file_id=None)
+    lines = " ".join(text for p in view.page_lines for text, _ in p)
+    assert SSN not in lines and "00-1230287" not in lines
+    if b"Rotate" in geometry:
+        assert lines == ""
+    else:
+        assert MASKED in lines

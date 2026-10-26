@@ -58,6 +58,9 @@ while an offshore member, an agent or a client principal is refused and nothing 
   route test (review5 in `test_offshore_evidence_reads.py`): Remy gets 403 with no row; Mia gets
   201 with the value, `no-store`, `expires_in` 30; an unknown region gets 404. `make generate`
   regenerated `packages/api-client` (the reveal's 429, and 409 on the three legacy page routes).
+- 2026-10-26 (security review): the reveal itself passed review. L3: added a route test that
+  the 429 carries `Retry-After` equal to `facts.retry_after` (the platform handler already set
+  it). DEC-370 note added.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

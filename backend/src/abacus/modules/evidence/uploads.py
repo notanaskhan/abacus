@@ -34,9 +34,10 @@ from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref, 
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.active_content import REASON_CODES, UNSCANNABLE, reason_of
+from abacus.modules.evidence.citations.matching import words_in
 from abacus.modules.evidence.events import EvidenceUploaded
 from abacus.modules.evidence.masked_previews import PreviewOutdated
-from abacus.modules.evidence.masking import MASK, MaskedWord
+from abacus.modules.evidence.masking import mask_token
 from abacus.modules.evidence.models import EvidencePage
 from abacus.modules.evidence.pii import masked_rows
 from abacus.modules.evidence.previews import RENDERER_VERSION, TABLE_ROWS
@@ -751,43 +752,36 @@ async def preview_of(
 Line = tuple[str, tuple[float, float, float, float]]
 
 
-def _overlaps(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> bool:
-    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
-
-
 async def masked_page_lines(
     tenant_id: UUID,
     pages: tuple[tuple[Line, ...], ...],
     projection: Projection,
     layer: Sequence[EvidencePage],
 ) -> tuple[tuple[Line, ...], ...]:
-    """The extraction's printed lines as a reader may see them (P-03-T15; DEC-369): a page no PII
-    scan covers has none (fail closed); a line crossing a detected region is rebuilt from the
-    page's masked words inside it; every line goes through the kernel's TIN scrub."""
+    """The extraction's printed lines as a reader may see them (P-03-T15; DEC-369): none for a
+    page no PII scan covers or one with a `/Rotate` (its lines are read in another order and
+    frame than the word layer's; fail closed). On the rest, every word a detected region covers
+    in the word layer is replaced by that region's token wherever the line prints it (matched by
+    text, so the extraction's own geometry is never trusted), and every line goes through the
+    kernel's TIN scrub."""
     by_page = {p.page_no: p for p in layer}
     out: list[tuple[Line, ...]] = []
     for number, lines in enumerate(pages, start=1):
         page = by_page.get(number)
-        if page is None or not projection.readable(number):
+        if page is None or page.rotation != 0 or not projection.readable(number):
             out.append(())
             continue
-        regions = [r.box for r in projection.regions if r.page_no == number]
-        words: list[MaskedWord] = []
+        regions = [r for r in projection.regions if r.page_no == number]
+        tokens: dict[str, str] = {}
         if regions:
-            words = projection.words((await read_page_layer(tenant_id, page)).words, number) or []
-        width, height = float(page.width_pt), float(page.height_pt)
+            raw = (await read_page_layer(tenant_id, page)).words
+            for region in regions:
+                for word in words_in(raw, region.box):
+                    tokens[word.text] = mask_token(region.kind, region.last4)
         kept: list[Line] = []
         for text, box in lines:
-            points = (box[0] * width, box[1] * height, box[2] * width, box[3] * height)
-            if any(_overlaps(points, region) for region in regions):
-                inside = [
-                    w.text
-                    for w in words
-                    if points[0] <= (w.x0 + w.x1) / 2 <= points[2]
-                    and points[1] <= (w.top + w.bottom) / 2 <= points[3]
-                ]
-                text = " ".join(inside) or MASK
-            kept.append((scrub_tins(text), box))
+            shown = " ".join(tokens.get(part, part) for part in text.split())
+            kept.append((scrub_tins(shown), box))
         out.append(tuple(kept))
     return tuple(out)
 

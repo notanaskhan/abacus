@@ -60,6 +60,8 @@ from abacus.modules.identity.api import (
     AgentContext,
     authorise,
     is_active_member,
+    may_read_unmasked,
+    person_reads_unmasked,
 )
 
 MATCHER = "evidence.matcher"
@@ -103,8 +105,10 @@ async def create_match_run(
         return None
     matcher = spec(MATCHER)
     reader = _reader(tenant_id, f"agents:{matcher.id}")
-    # P-03-T15 (DEC-369): only the masked text, after its scan, whoever the run acts for.
-    material = await match_material(reader, inbox_file_id)
+    # P-03-T15 (DEC-369): only the masked text, after its scan, whoever the run acts for; no
+    # sheets for an offshore member (DEC-52, TASK-1207; review M1).
+    sheets = await person_reads_unmasked(reader, requested_by)
+    material = await match_material(reader, inbox_file_id, sheets=sheets)
     if material is None or material.extraction_status != "extracted" or not material.candidates:
         return None  # SPEC-033 §4.5: an unreadable or unextracted file isn't matched
     run_id: UUID | None = None
@@ -206,7 +210,7 @@ def _citation(c: VerifiedDocumentCitation) -> dict[str, object]:
 async def match_material_for(agent: AgentContext, inbox_file_id: UUID) -> MatchMaterial | None:
     """What the matcher reads, for a run authorised on the file's engagement: only the file's
     masked projection, whoever the run acts for (P-03-T15, DEC-369; None before the PII scan)."""
-    return await match_material(agent.tenant, inbox_file_id)
+    return await match_material(agent.tenant, inbox_file_id, sheets=await may_read_unmasked(agent))
 
 
 async def _match(agent: AgentContext, inbox_file_id: UUID) -> MatchOutcome:
