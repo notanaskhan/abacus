@@ -50,10 +50,12 @@ export function harnessProject(): HarnessProject {
 }
 
 function withQuery(path: string, params: Record<string, string>): string {
-  const [base = "/", query = ""] = path.split("?");
+  // A fragment (`#link=…`, an emailed link's token) stays last, after the query.
+  const [url = "/", fragment] = path.split("#");
+  const [base = "/", query = ""] = url.split("?");
   const search = new URLSearchParams(query);
   for (const [k, v] of Object.entries(params)) search.set(k, v);
-  return `${base}?${search.toString()}`;
+  return `${base}?${search.toString()}${fragment === undefined ? "" : `#${fragment}`}`;
 }
 
 /** With the SPA's own session (its sessionStorage token and tenant): the status `path` answers. */

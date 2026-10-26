@@ -48,6 +48,7 @@ export const PERSONAS = {
   "cole-hart": staff("Cole Hart"),
   "claire-feld": portal("Claire Feld"),
   "dana-kowalski": portal("Dana Kowalski"),
+  "tess-moreno": portal("Tess Moreno"),
   "luis-ferrante": portal("Luis Ferrante"),
   "meera-shah": portal("Meera Shah"),
   "sam-ortiz": portal("Sam Ortiz", "third_party"),
