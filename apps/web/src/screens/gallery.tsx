@@ -138,6 +138,13 @@ import {
 } from "./POR-03/scenarios";
 import { PortalRequest } from "./POR-04";
 import { PortalRoom } from "./POR-14";
+import { PortalConnections } from "./POR-16";
+import {
+  ARTBOARD as POR16_ARTBOARD,
+  STATES as POR16_STATES,
+  type Por16State,
+  scenarios as por16Scenarios,
+} from "./POR-16/scenarios";
 import {
   ARTBOARD as POR14_ARTBOARD,
   STATES as POR14_STATES,
@@ -1157,6 +1164,37 @@ registerScreen("POR-14", {
   title: "Third-party request room · Keystone Retirement Services",
   Component: Por14Artboard,
 });
+
+// POR-16 (A-02-T18): Connections for Copperleaf, a–g; the sheet and the dialog open on b, e, f.
+function Por16Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por16State = POR16_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por16Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const board = POR16_ARTBOARD[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <PortalConnections
+        frame
+        {...(board.sheet === undefined ? {} : { sheet: board.sheet })}
+        {...(board.dialog === undefined ? {} : { dialog: board.dialog })}
+        onAuthorise={() => undefined}
+      />
+    </div>
+  );
+}
+
+registerScreen("POR-16", { title: "Connections · Copperleaf", Component: Por16Artboard });
 
 // SHL-07 (P-03-T07, T11): the citation popover on the AUD-04 and AUD-05 underlays, a–e.
 function Shl07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
