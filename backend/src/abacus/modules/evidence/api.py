@@ -5,6 +5,9 @@ from abacus.kernel.uow import Handler
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import register_evidence_readable
 from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
+from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
+from abacus.modules.evidence.anchor_job import SCHEDULES
+from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.citations.matching import (
     cell_reason as citation_cell_reason,
@@ -228,11 +231,18 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # gets its S3 holds before its processing starts. Importing `holds` registered `holds_covering`
 # as the kernel's hold check (fail closed without it).
 # P-06-T19 (ADR-162 §7): the withdrawal purge, started by `evidence_version.withdrawn`.
-WORKFLOWS: dict[type, str] = {**UPLOAD_WORKFLOWS, **HOLD_WORKFLOWS, **WITHDRAWAL_WORKFLOWS}
+# Q-02-T21: the daily audit-chain anchor to the records bucket, on its Schedule.
+WORKFLOWS: dict[type, str] = {
+    **UPLOAD_WORKFLOWS,
+    **HOLD_WORKFLOWS,
+    **WITHDRAWAL_WORKFLOWS,
+    **ANCHOR_WORKFLOWS,
+}
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
     *HOLD_ACTIVITIES,
     *WITHDRAWAL_ACTIVITIES,
+    *ANCHOR_ACTIVITIES,
 )
 
 
@@ -286,6 +296,7 @@ __all__ = [
     "NAME_COLUMN",
     "RECORD_TYPES",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "SUGGESTION_MIN_SCORE",
     "TOTAL_LABEL",

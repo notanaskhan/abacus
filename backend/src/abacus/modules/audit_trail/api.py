@@ -2,6 +2,7 @@
 
 from abacus.kernel.uow.chain import Checkpoint, latest_checkpoint, verify_chain
 from abacus.modules.audit_trail.audit_log_contract import router as audit_log_router
+from abacus.modules.audit_trail.jobs import ACTIVITIES, SCHEDULES, WORKFLOWS
 from abacus.modules.audit_trail.routes import router
 from abacus.modules.audit_trail.service import events_for_target
 from abacus.modules.identity.api import AbacusRouter, register_target_events
@@ -17,8 +18,12 @@ register_target_events(events_for_target)
 
 # Q-02-T21: the audit hash chain lives beside the events it seals (kernel.uow); the audit trail
 # answers for it (Q-02 §4.1: `latest_checkpoint`, `verify_chain`).
+# Q-02-T20, T21: partitions, checkpoints, the nightly verify and the daily anchor on Schedules.
 __all__ = [
+    "ACTIVITIES",
     "ROUTERS",
+    "SCHEDULES",
+    "WORKFLOWS",
     "Checkpoint",
     "events_for_target",
     "latest_checkpoint",

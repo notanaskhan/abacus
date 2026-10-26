@@ -304,3 +304,22 @@ class TrustLayerBackfill:
         if len(batch) >= BACKFILL_BATCH:
             workflow.continue_as_new(reached)
         return reached.done
+
+
+# --- Q-02-T21: the daily audit-chain anchor (`anchor_job.py`) ------------------------------------
+
+ANCHOR_ID = "audit_anchor:platform"
+_ANCHOR_TIMEOUT = timedelta(minutes=10)
+_ANCHOR_RETRY = RetryPolicy(maximum_attempts=3)  # a failed day is retried by the next one
+
+
+@workflow.defn(name="AuditAnchor")
+class AuditAnchorWorkflow:
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "evidence.anchor_chains",
+            result_type=int,
+            start_to_close_timeout=_ANCHOR_TIMEOUT,
+            retry_policy=_ANCHOR_RETRY,
+        )

@@ -48,3 +48,11 @@ updated: 2026-10-23
 
 ## Progress log
 - 2026-10-23: the tests above pass.
+- 2026-10-26 (S10 code gap, branch `s10-q02-schedules`): the Schedules. `AuditCheckpoint` every
+  5 minutes and `AuditChainVerify` nightly (`audit_trail/jobs.py`, `workflows.py`): firm by
+  firm; a mismatch is logged with the checkpoint numbers and fails the run as a non-retryable
+  `AuditChainMismatch` (the metric `audit_chain_mismatches` the SEV1 alarm reads was already
+  counted by `verify_chain`). The daily anchor is evidence's (`evidence/anchor_job.py`,
+  `AuditAnchorWorkflow` in `evidence/workflows.py`; BOUND-002: the audit trail may not depend on
+  evidence), seven years in COMPLIANCE mode. `make schedules` ensures them. Still open: the
+  alarm resource itself (Terraform), the seven staging nights. Tests at the end of the run.
