@@ -36,3 +36,4 @@ in any test" (ADR-111 until ADR P-25's conditions hold).
 
 ## Progress log
 - 2026-10-26: suite written (no product change); run in the end-of-batch targeted pass.
+- 2026-10-26: targeted run green (26 passed across both suites, first run); no defect, no spec drift found; no xfail.

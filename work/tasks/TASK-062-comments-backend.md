@@ -133,3 +133,4 @@ SPEC-032 AC-1 to AC-9.
 
 ## Handoff
 Done. Restart `make dev` so the worker delivers `comment.mentioned`. Next: TASK-063 (web).
+- 2026-10-26: ADR-078 back-fill suite on `s10-q03-backfill` (TASK-1308, Q-03-T039): every covered AC passes; no defect found.

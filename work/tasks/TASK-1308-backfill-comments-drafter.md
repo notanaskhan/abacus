@@ -39,3 +39,4 @@ comment passes the scope check and a redaction is a new row, never an edit."
 
 ## Progress log
 - 2026-10-26: suite written (no product change); run in the end-of-batch targeted pass.
+- 2026-10-26: targeted run green (26 passed across both suites, first run); no defect, no spec drift found; no xfail.
