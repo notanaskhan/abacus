@@ -46,6 +46,7 @@ export {
   type ComposerSave,
   useClientContacts,
   useComposerSave,
+  useIncorporate,
   useItemComments,
   useRequestItems,
 } from "./composer";

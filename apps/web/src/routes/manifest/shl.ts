@@ -34,7 +34,8 @@ export const shlScreens = {
   "SHL-12": { name: "Sign-off modal", status: "planned", path: null },
   "SHL-13": { name: "Agent dock · run pane", status: "planned", path: null },
   // SHL-14 artboard c (Sample-driven bulk) is deferred to A-03, not missing (P-06 §2.3, §5.5).
-  // P-06-T13: a, b, e, f on fixtures as `?ov=request:…` over BND-02; c is A-03's, d P-06-T24's.
+  // P-06-T13: a, b, e, f on fixtures as `?ov=request:…` over BND-02; P-06-T24: d, the close
+  // variant, on the same overlay over a close_intake binder until C-01's CLS-03; c is A-03's.
   "SHL-14": { name: "Request composer drawer", status: "fixture", path: null },
   "SHL-15": { name: "Issue composer & fix instructions", status: "planned", path: null },
   "SHL-16": { name: "Checkpoint diff drawer", status: "planned", path: null },

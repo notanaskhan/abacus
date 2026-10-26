@@ -544,6 +544,36 @@ test.describe("tier D: T8 inbox master-detail", () => {
     });
     expect(got).toEqual({ rail: 392, height: 752, shortRows: 0 });
   });
+
+  test("t5a: side 358, panes 698 tall, cards 210 in three columns gap 12", async ({ page }) => {
+    const got = await specimen(page, "t5-catalog", '[data-artboard="t5a"]').evaluate((el) => {
+      const first = el.querySelector("[data-split-pane]");
+      const cards = [...el.querySelectorAll("[data-catalog-card]")].map((c) =>
+        c.getBoundingClientRect(),
+      );
+      const [a, b] = cards;
+      return {
+        side: first === null ? null : Math.round(first.getBoundingClientRect().width),
+        height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+        card: a === undefined ? null : Math.round(a.height),
+        gap: a === undefined || b === undefined ? null : Math.round(b.left - a.right),
+      };
+    });
+    expect(got).toEqual({ side: 358, height: 698, card: 210, gap: 12 });
+  });
+
+  test("tpl-05e: Connect panes 742 tall, tiles 212, no images", async ({ page }) => {
+    const got = await specimen(page, "tpl-05", '[data-artboard="tpl-05e"]').evaluate((el) => {
+      const first = el.querySelector("[data-split-pane]");
+      const tile = el.querySelector("[data-catalog-card]");
+      return {
+        height: first === null ? null : Math.round(first.getBoundingClientRect().height),
+        tile: tile === null ? null : Math.round(tile.getBoundingClientRect().height),
+        images: el.querySelectorAll("img").length,
+      };
+    });
+    expect(got).toEqual({ height: 742, tile: 212, images: 0 });
+  });
 });
 
 // T9 QueueDetailLayout (F-05-T55): the three presets' panes. Individual 546 · 433 · 377 (706

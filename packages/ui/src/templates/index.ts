@@ -108,3 +108,5 @@ export {
 } from "./queue-detail";
 // T8 InboxLayout (F-05-T56): the filter bar, the 392 rail and the reading pane.
 export { InboxLayout, type InboxLayoutProps } from "./inbox-layout";
+// T5 CatalogLayout (F-05-T59): side pane with About and Categories beside the three-column grid.
+export { CatalogLayout, type CatalogLayoutProps } from "./catalog-layout";

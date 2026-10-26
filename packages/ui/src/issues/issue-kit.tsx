@@ -60,6 +60,9 @@ export interface IssueGroup {
   items: readonly IssueItem[];
   /** Default true; the Resolved band opens closed. */
   defaultOpen?: boolean;
+  /** Tree: the form section the rows sit under ("Payments, Penalties & Estimates"), drawn as a
+   * 12.5 sub-head between the band and its rows (TPL-09a). */
+  sub?: string;
 }
 
 export const ISSUE_DONE: readonly IssueState[] = ["resolved", "na"];
@@ -151,7 +154,7 @@ export function IssueQueue({
                   <span className="ml-[8px] text-dense text-ink-3">{g.count}</span>
                 )}
               </span>
-              {variant !== "severity" && (
+              {variant !== "severity" && g.count !== "" && (
                 <span className="flex-none text-dense text-ink-3">{g.count}</span>
               )}
               {variant !== "tree" && (
@@ -165,6 +168,15 @@ export function IssueQueue({
                 />
               )}
             </button>
+            {open && variant === "tree" && g.sub !== undefined && (
+              <p
+                data-issue-sub=""
+                className="flex items-center gap-[6px] py-[4px] pr-[14px] pl-[14px] text-meta text-ink-3"
+              >
+                <Icon name="chevron-down" size={12} className="flex-none" />
+                <span className="min-w-0 truncate">{g.sub}</span>
+              </p>
+            )}
             {open && g.items.length > 0 && (
               <ul className={cn("relative flex flex-col", variant === "tree" && "pb-[4px]")}>
                 {variant === "tree" && (
@@ -301,12 +313,22 @@ export interface IssueDetailView {
   severity: { label: string; flag?: "red" | "amber" };
   status: string;
   createdBy: string;
-  /** "What it blocks": the server's sentence with its figures marked (drawn at 500). */
+  /** The rows after "Assigned to", when the record draws its own (TPL-09: Priority and Created by
+   * on a return; Severity, Status and Account on a close). Default: Priority, Severity, Status,
+   * Created by. */
+  facts?: readonly { label: string; value: string }[];
+  /** The issue's body under its title, before the rows (TPL-09a); agent text, figures at 500. */
+  summary?: readonly { text: string; figure?: boolean }[];
+  /** "What it blocks": the server's sentence with its figures marked (drawn at 500); empty draws
+   * no band. */
   blocks: readonly { text: string; figure?: boolean }[];
   cells: readonly IssueCell[];
-  /** "Why This Was Surfaced": the agent's reason. */
+  /** "Why This Was Surfaced": the agent's reason; empty draws no band. */
   why: string;
   links: readonly IssueLink[];
+  /** Linked records named in Linked Entities above the file chips: "Operating Checking (Front
+   * Range Bank) ••4410" with "1 reconciling item", flagged when it carries the issue. */
+  entities?: readonly { name: string; sub?: string; flag?: boolean }[];
   /** The agent's explanation, shown when Explain… is pressed. */
   explain?: string;
   /** Agent working: the instruction it follows and how far it is (0 to 100). */
@@ -421,6 +443,23 @@ function Assignee({
   );
 }
 
+/** A server sentence in parts, its figures at 500, through AgentText. */
+function Parts({ parts }: { parts: readonly { text: string; figure?: boolean }[] }): JSX.Element {
+  return (
+    <>
+      {parts.map((part, n) => (
+        <AgentText
+          // The parts are a fixed sentence; their order is their identity.
+          key={n}
+          inline
+          text={part.text}
+          {...(part.figure === true ? { className: "font-medium text-ink" } : {})}
+        />
+      ))}
+    </>
+  );
+}
+
 /** The issue's detail card (C-17 Detail), or the empty card when nothing is selected. */
 export function IssueDetail({
   issue,
@@ -505,6 +544,11 @@ export function IssueDetail({
           <Spinner label="Running" size={15} showLabel={false} />
         </div>
       )}
+      {issue.summary !== undefined && issue.summary.length > 0 && (
+        <p data-issue-summary="" className="px-[20px] pt-[2px] pb-[14px] text-para text-ink-2">
+          <Parts parts={issue.summary} />
+        </p>
+      )}
       <dl className="flex flex-col">
         <div className={KV}>
           <dt className="w-[40%] flex-none text-ink-3">Assigned to</dt>
@@ -516,46 +560,58 @@ export function IssueDetail({
             />
           </dd>
         </div>
-        <div className={KV}>
-          <dt className="w-[40%] flex-none text-ink-3">Priority</dt>
-          <dd className="min-w-0 flex-1">{issue.priority}</dd>
-        </div>
-        <div className={KV}>
-          <dt className="w-[40%] flex-none text-ink-3">Severity</dt>
-          <dd className="flex min-w-0 flex-1 items-center gap-[8px]">
-            {issue.severity.flag !== undefined && (
-              <Icon
-                name="flag"
-                size={13}
-                className={issue.severity.flag === "amber" ? "text-amber" : "text-red"}
-              />
-            )}
-            {issue.severity.label}
-          </dd>
-        </div>
-        <div className={KV}>
-          <dt className="w-[40%] flex-none text-ink-3">Status</dt>
-          <dd className="min-w-0 flex-1" data-issue-status="">
-            {issue.status}
-          </dd>
-        </div>
-        <div className={KV}>
-          <dt className="w-[40%] flex-none text-ink-3">Created by</dt>
-          <dd className="min-w-0 flex-1">{issue.createdBy}</dd>
-        </div>
+        {issue.facts === undefined ? (
+          <>
+            <div className={KV}>
+              <dt className="w-[40%] flex-none text-ink-3">Priority</dt>
+              <dd className="min-w-0 flex-1">{issue.priority}</dd>
+            </div>
+            <div className={KV}>
+              <dt className="w-[40%] flex-none text-ink-3">Severity</dt>
+              <dd className="flex min-w-0 flex-1 items-center gap-[8px]">
+                {issue.severity.flag !== undefined && (
+                  <Icon
+                    name="flag"
+                    size={13}
+                    className={issue.severity.flag === "amber" ? "text-amber" : "text-red"}
+                  />
+                )}
+                {issue.severity.label}
+              </dd>
+            </div>
+            <div className={KV}>
+              <dt className="w-[40%] flex-none text-ink-3">Status</dt>
+              <dd className="min-w-0 flex-1" data-issue-status="">
+                {issue.status}
+              </dd>
+            </div>
+            <div className={KV}>
+              <dt className="w-[40%] flex-none text-ink-3">Created by</dt>
+              <dd className="min-w-0 flex-1">{issue.createdBy}</dd>
+            </div>
+          </>
+        ) : (
+          issue.facts.map((f) => (
+            <div key={f.label} className={KV}>
+              <dt className="w-[40%] flex-none text-ink-3">{f.label}</dt>
+              <dd
+                className="min-w-0 flex-1"
+                {...(f.label === "Status" ? { "data-issue-status": "" } : {})}
+              >
+                {f.value}
+              </dd>
+            </div>
+          ))
+        )}
       </dl>
-      <h4 className={BAND}>What it blocks</h4>
-      <p data-issue-blocks="" className="px-[20px] py-[14px] text-para text-ink-2 hairline-t">
-        {issue.blocks.map((part, n) => (
-          <AgentText
-            // The parts are a fixed sentence; their order is their identity.
-            key={n}
-            inline
-            text={part.text}
-            {...(part.figure === true ? { className: "font-medium text-ink" } : {})}
-          />
-        ))}
-      </p>
+      {issue.blocks.length > 0 && (
+        <>
+          <h4 className={BAND}>What it blocks</h4>
+          <p data-issue-blocks="" className="px-[20px] py-[14px] text-para text-ink-2 hairline-t">
+            <Parts parts={issue.blocks} />
+          </p>
+        </>
+      )}
       {issue.cells.length > 0 && (
         <>
           <h4 className={BAND}>Workbook cells</h4>
@@ -566,13 +622,17 @@ export function IssueDetail({
           </ul>
         </>
       )}
-      <h4 className={BAND}>
-        <StatusDisc state="done" size={15} />
-        Why This Was Surfaced
-      </h4>
-      <div className="px-[20px] py-[14px] hairline-t">
-        <AgentText text={issue.why} />
-      </div>
+      {issue.why !== "" && (
+        <>
+          <h4 className={BAND}>
+            <StatusDisc state="done" size={15} />
+            Why This Was Surfaced
+          </h4>
+          <div data-issue-why="" className="px-[20px] py-[14px] hairline-t">
+            <AgentText text={issue.why} />
+          </div>
+        </>
+      )}
       {explainOpen && issue.explain !== undefined && issue.explain !== "" && (
         <>
           <h4 className={BAND}>
@@ -584,14 +644,37 @@ export function IssueDetail({
           </div>
         </>
       )}
-      {issue.links.length > 0 && (
+      {(issue.links.length > 0 || (issue.entities ?? []).length > 0) && (
         <>
           <h4 className={BAND}>Linked Entities</h4>
-          <ul className="flex flex-wrap gap-[8px] px-[20px] py-[14px] hairline-t">
-            {issue.links.map((l) => (
-              <LinkChip key={l.name} link={l} />
-            ))}
-          </ul>
+          {(issue.entities ?? []).map((e) => (
+            <p
+              key={e.name}
+              data-issue-entity={e.name}
+              className="flex items-start gap-[8px] px-[20px] pt-[12px] text-body hairline-t"
+            >
+              {e.flag === true && (
+                <Icon name="flag" size={12} aria-label="Flagged" className="mt-[3px] text-red" />
+              )}
+              <span className="flex min-w-0 flex-col gap-[2px]">
+                <span>{e.name}</span>
+                {e.sub !== undefined && <span className="text-meta text-ink-3">{e.sub}</span>}
+              </span>
+            </p>
+          ))}
+          {issue.links.length > 0 && (
+            <ul
+              className={cn(
+                "flex flex-wrap gap-[8px] px-[20px] py-[14px]",
+                (issue.entities ?? []).length === 0 && "hairline-t",
+              )}
+            >
+              {issue.links.map((l) => (
+                <LinkChip key={l.name} link={l} />
+              ))}
+            </ul>
+          )}
+          {issue.links.length === 0 && <span className="pb-[12px]" />}
         </>
       )}
     </article>

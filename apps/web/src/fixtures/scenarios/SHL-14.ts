@@ -1,4 +1,4 @@
-// SHL-14 Request composer drawer: one fixture scenario per state P-06-T13 builds
+// SHL-14 Request composer drawer: one fixture scenario per state P-06-T13 and P-06-T24 build
 // (docs/screens/SHL-14.md). a, b and e stand at Mon Sep 14, 2026, 9:41 AM CT, seen by Marcus
 // Delaney (revision R2 wins over the README's Sep 24); f at Thu Sep 24, 2026, 10:58 AM CT, seen
 // by Cole Hart. The binders are built from the seed's own request lists, so the counts foot
@@ -8,8 +8,12 @@
 //   b  the existing "Bridge letter — Keystone, Oct–Dec 2025", requested Sep 1, due Sep 25
 //   e  a on a binder with no default due date: nothing to send without one
 //   f  the Granite Peak FY2026 SURL Draft, drafted by the agent, assigned to Luis Ferrante
+//   d  (P-06-T24) Raj Malhotra on Copperleaf's August `close_intake` binder: "Square payouts —
+//      August", received Sep 3 and `pending_incorporation`, with Ben Ashby's upload
 //
-// c is A-03's (the sampling engine) and d P-06-T24's (the close variant). They live under
+// d's binder is the backend seed's own (`abacus_tools/synthetic/scenarios/brightwater_hale/
+// binders.py`, P-06-T08): "Requests", 8 recurring + 1 ad hoc = 9 requests, 7 received, in the
+// seed's five categories, with the seed's ids. c is A-03's (the sampling engine). They live under
 // fixtures/ (dev and test only); screens/SHL-14/scenarios.ts re-exports them.
 
 import type {
@@ -17,12 +21,15 @@ import type {
   BinderClientPreviewOut,
   BinderOut,
   BinderRequestRowOut,
+  DecisionOut,
   ListPageActivityEventOut,
   ListPageBinderRequestRowOut,
   RequestItemIn,
   RequestItemOut,
   RequestItemPatchIn,
   RequestItemV2Out,
+  RequestStatus,
+  UploadOut,
 } from "@abacus/api-client";
 import {
   type FixtureHandler,
@@ -35,6 +42,7 @@ import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { DEMO_INSTANT } from "../seed/clock";
 import { stableId } from "../seed/prng";
+import { SEND_BACK_REASONS } from "../seed/screening";
 
 const E0 = seedScenario();
 const seed = getSeed();
@@ -67,6 +75,8 @@ interface ComposerData {
   items: RequestItemOut[];
   preview: BinderClientPreviewOut;
   activity: Record<string, ActivityEventOut[]>;
+  /** A request's files (`GET …/uploads`); none unless the state draws one. */
+  uploads?: Record<string, UploadOut[]>;
 }
 
 function categoryId(binderId: string, name: string): string {
@@ -200,6 +210,196 @@ function granitePeak(): ComposerData {
   };
 }
 
+// ---- d: Copperleaf's August close intake (P-06-T24) ---------------------------------------------
+
+const CLOSE_LABEL = "close:copperleaf-2026-08";
+export const COPPERLEAF_CLOSE = stableId("engagement:copperleaf:2026-close");
+export const COPPERLEAF_BINDER = stableId(`binder:${CLOSE_LABEL}`);
+const RAJ_MALHOTRA = stableId("user:raj-malhotra");
+const BANK = "Bank & Cash Accounts";
+const CLOSE_CATEGORIES = [
+  BANK,
+  "Revenue",
+  "Payroll",
+  "Loans & Payables",
+  "Questions from review",
+] as const;
+const SQUARE_TITLE = "Square payouts — August";
+/** The file CLS-03 and POR-11 name; uploaded by Ben Ashby, Sep 3, 2026. */
+export const SQUARE_FILE = "square-2026-08-01_2026-08-31-payouts.xlsx";
+
+type Incorporation = NonNullable<BinderRequestRowOut["incorporation_state"]>;
+interface CloseRequest {
+  category: (typeof CLOSE_CATEGORIES)[number];
+  title: string;
+  status: RequestStatus;
+  requested: string;
+  due: string | null;
+  incorporation?: Incorporation;
+}
+
+// The seed's CLOSE_REQUESTS, in order (8 recurring from close plan v3 + 1 ad hoc; 7 received).
+const CLOSE_REQUESTS: readonly CloseRequest[] = [
+  {
+    category: BANK,
+    title: SQUARE_TITLE,
+    status: "received",
+    requested: "2026-09-01",
+    due: "2026-09-03",
+    incorporation: "pending_incorporation",
+  },
+  {
+    category: BANK,
+    title: "Shopify payouts — August",
+    status: "received",
+    requested: "2026-09-01",
+    due: null,
+    incorporation: "incorporated",
+  },
+  {
+    category: BANK,
+    title: "Front Range Bank statement — August (Savings ••4436)",
+    status: "requested",
+    requested: "2026-09-01",
+    due: "2026-09-05",
+  },
+  {
+    category: BANK,
+    title: "Amex ••1009 statement — cycle ending Aug 22",
+    status: "received",
+    requested: "2026-09-01",
+    due: null,
+    incorporation: "incorporated",
+  },
+  {
+    category: "Revenue",
+    title: "Subscription billing report — August",
+    status: "received",
+    requested: "2026-09-01",
+    due: null,
+    incorporation: "incorporated",
+  },
+  {
+    category: "Payroll",
+    title: "Payroll register — August (pay dates Aug 3, 17, 31)",
+    status: "received",
+    requested: "2026-09-01",
+    due: null,
+    incorporation: "incorporated",
+  },
+  {
+    category: "Loans & Payables",
+    title: "Equipment loan statement — August",
+    status: "received",
+    requested: "2026-09-01",
+    due: null,
+    incorporation: "incorporated",
+  },
+  {
+    category: "Loans & Payables",
+    title: "AP aging — Aug 31",
+    status: "received",
+    requested: "2026-09-01",
+    due: null,
+    incorporation: "incorporated",
+  },
+  {
+    category: "Questions from review",
+    title: "Sound Electric invoice — Aug 18 ($3,200)",
+    status: "requested",
+    requested: "2026-09-11",
+    due: null,
+  },
+];
+
+const closeCategory = (name: string): string =>
+  stableId(`request-category:${CLOSE_LABEL}:${name}`);
+export const SQUARE_REQUEST = stableId(`request:${CLOSE_LABEL}:0`);
+
+function copperleafClose(): ComposerData {
+  const ids = CLOSE_REQUESTS.map((_, n) => stableId(`request:${CLOSE_LABEL}:${String(n)}`));
+  const received = (r: CloseRequest): boolean => r.status === "received";
+  const rows: BinderRequestRowOut[] = CLOSE_REQUESTS.map((r, n) => ({
+    id: ids[n] ?? "",
+    category_id: closeCategory(r.category),
+    title: r.title,
+    status: r.status,
+    overdue: false,
+    client_visible: true,
+    kind: "client_upload",
+    due_on: r.due,
+    requested_at: `${r.requested}T15:00:00Z`,
+    incorporation_state: r.incorporation ?? "none",
+    allowed_actions: ["request_item.update"],
+  }));
+  const items: RequestItemOut[] = CLOSE_REQUESTS.map((r, n) => ({
+    id: ids[n] ?? "",
+    engagement_id: COPPERLEAF_CLOSE,
+    audit_area: r.category,
+    description: r.title,
+    status: r.status,
+    created_at: `${r.requested}T15:00:00Z`,
+    due_on: r.due,
+    client_visible: true,
+  }));
+  const binder: BinderOut = {
+    id: COPPERLEAF_BINDER,
+    engagement_id: COPPERLEAF_CLOSE,
+    work_item_id: stableId("work-item:copperleaf:2026-08"),
+    kind: "close_intake",
+    name: "Requests",
+    part: 1,
+    status: "published",
+    created_from: "template",
+    default_due_on: null,
+    categories: CLOSE_CATEGORIES.map((name, position) => {
+      const mine = CLOSE_REQUESTS.filter((r) => r.category === name);
+      return {
+        id: closeCategory(name),
+        name,
+        position,
+        total_count: mine.length,
+        done_count: mine.filter(received).length,
+      };
+    }),
+    done_count: CLOSE_REQUESTS.filter(received).length,
+    total_count: CLOSE_REQUESTS.length,
+    allowed_actions: ["binder.read", "binder.update"],
+  };
+  const sent = (id: string, day: string): ActivityEventOut => ({
+    id: stableId(`event:sent:${id}`),
+    event_type: "request_item.sent",
+    at: `${day}T15:00:00Z`,
+    actor_kind: "human",
+    actor_user_id: RAJ_MALHOTRA,
+    via_agent: false,
+    target_type: "request_item",
+    target_id: id,
+  });
+  return {
+    binder,
+    rows,
+    items,
+    preview: { binder_id: COPPERLEAF_BINDER, name: binder.name, status: binder.status, items: [] },
+    activity: Object.fromEntries(
+      ids.map((id, n) => [id, [sent(id, CLOSE_REQUESTS[n]?.requested ?? "")]]),
+    ),
+    uploads: {
+      [SQUARE_REQUEST]: [
+        {
+          evidence_version_id: stableId(`evidence-version:${SQUARE_REQUEST}:0`),
+          file_name: SQUARE_FILE,
+          media_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          size_bytes: 0,
+          uploaded_at: "2026-09-03T17:00:00Z",
+          uploaded_by: null,
+          uploaded_by_name: "Ben Ashby",
+        },
+      ],
+    },
+  };
+}
+
 /** The composer's routes over one or more binders. Writes change this scenario's own copy. */
 function handlers(start: readonly ComposerData[]): Record<string, FixtureHandler> {
   const data = structuredClone(start) as ComposerData[];
@@ -260,7 +460,8 @@ function handlers(start: readonly ComposerData[]): Record<string, FixtureHandler
       };
       return json(body);
     },
-    "GET /v1/engagements/{engagement_id}/request-items/{item_id}/uploads": () => json([]),
+    "GET /v1/engagements/{engagement_id}/request-items/{item_id}/uploads": (r) =>
+      json(byEngagement(r)?.uploads?.[r.params.item_id ?? ""] ?? []),
     "GET /v1/engagements/{engagement_id}/request-items/{item_id}/comments": () => json([]),
     "POST /v1/engagements/{engagement_id}/request-items": (r) => {
       const d = byEngagement(r);
@@ -308,6 +509,48 @@ function handlers(start: readonly ComposerData[]): Record<string, FixtureHandler
       const d = byEngagement(r);
       return d === undefined ? json(NOT_FOUND, 404) : json({ delegated: true });
     },
+    "POST /v1/engagements/{engagement_id}/request-items/{item_id}/incorporate": (r) => {
+      const d = byEngagement(r);
+      const item = d?.items.find((i) => i.id === r.params.item_id);
+      const row = d?.rows.find((x) => x.id === r.params.item_id);
+      if (d === undefined || item === undefined || row === undefined) {
+        return json(NOT_FOUND, 404);
+      }
+      if (row.incorporation_state !== "pending_incorporation") {
+        return json({ detail: "illegal_transition" }, 409);
+      }
+      d.rows = d.rows.map((x) =>
+        x.id === row.id ? { ...x, incorporation_state: "incorporated" as const } : x,
+      );
+      return json({
+        ...v2(d, item),
+        incorporation_state: "incorporated",
+        incorporated_at: "2026-09-14T14:41:00Z",
+        incorporated_by: r.persona === undefined ? null : stableId(`user:${r.persona}`),
+      } satisfies RequestItemV2Out);
+    },
+    "GET /v1/engagements/{engagement_id}/review-reason-codes/{applies_to}": () =>
+      json(SEND_BACK_REASONS),
+    "POST /v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/send-back": (
+      r,
+    ) => {
+      const d = byEngagement(r);
+      const itemId = Object.entries(d?.uploads ?? {}).find(([, files]) =>
+        files.some((f) => f.evidence_version_id === r.params.version_id),
+      )?.[0];
+      if (d === undefined || itemId === undefined) return json(NOT_FOUND, 404);
+      d.rows = d.rows.map((x) => (x.id === itemId ? { ...x, status: "returned" as const } : x));
+      const decision: DecisionOut = {
+        id: `decision:${r.params.version_id ?? ""}`,
+        decision: "send_back",
+        evidence_version_id: r.params.version_id ?? "",
+        reason_code: (r.body as { reason_code?: string } | null)?.reason_code ?? null,
+        item_status: "returned",
+        request_item_ids: [itemId],
+        corrects_proposal: false,
+      };
+      return json(decision, 201);
+    },
     "POST /v1/engagements/{engagement_id}/request-items/{item_id}/send": (r) => {
       const d = byEngagement(r);
       const item = d?.items.find((i) => i.id === r.params.item_id);
@@ -344,6 +587,7 @@ export const scenarios = defineScenarios({
   b: at("b", "marcus-delaney", CLOCK_A, [northwind(NORTHWIND_BINDER, "2026-09-21")]),
   e: at("e", "marcus-delaney", CLOCK_A, [northwind(NORTHWIND_NO_DEFAULT, null)]),
   f: at("f", "cole-hart", CLOCK_F, [granitePeak()]),
+  d: at("d", "raj-malhotra", CLOCK_A, [copperleafClose()]),
 });
 
 export type Shl14State = keyof typeof scenarios;
@@ -358,6 +602,7 @@ export const OPENS: Readonly<Record<Shl14State, { binderId: string; requestId: s
     b: { binderId: NORTHWIND_BINDER, requestId: bridgeId },
     e: { binderId: NORTHWIND_NO_DEFAULT, requestId: null },
     f: { binderId: GRANITE_BINDER, requestId: stableId("request:granite-peak:surl") },
+    d: { binderId: COPPERLEAF_BINDER, requestId: SQUARE_REQUEST },
   };
 
 /** The E0 day the seed stands at, for the scenario tests. */
