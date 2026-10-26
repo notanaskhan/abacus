@@ -39,7 +39,6 @@ from uuid import UUID
 
 from abacus.kernel._flags import FOLLOW_UPS_SCHEDULED_SEND
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AuthContext
 
@@ -133,6 +132,9 @@ class EmailTemplateRegistration:
     cta_targets: tuple[CtaTarget, ...]
     used_by: tuple[str, ...]  # screen ids ("CLI-04", "SIG-01")
     firm_editable: bool
+    name: str = ""  # the list's label ("Signature request"); defaults to the key in words
+    used_by_label: str = ""  # "Used by …" ("SIG-02 envelopes")
+    designed: bool = False  # one of R-01's designed six: listed first (POR-20 a)
 
 
 class TemplateRegistrationInvalid(ValueError):
@@ -150,6 +152,9 @@ def register_email_template(
     used_by: tuple[str, ...],
     *,
     firm_editable: bool,
+    name: str | None = None,
+    used_by_label: str = "",
+    designed: bool = False,
 ) -> EmailTemplateRegistration:
     """Register a template key, once, at import time: whitelisted variables only, at most one
     call-to-action target per audience (an email still renders one button), screens by id."""
@@ -168,8 +173,19 @@ def register_email_template(
         raise TemplateRegistrationInvalid(f"{key}: used_by names screen ids")
     if firm_editable and "staff" in audience:
         raise TemplateRegistrationInvalid(f"{key}: staff templates are platform-locked")
+    label = name if name is not None else key.replace("_", " ").capitalize()
+    if not 1 <= len(label) <= 60 or len(used_by_label) > 120:
+        raise TemplateRegistrationInvalid(f"{key}: name and used-by label are short labels")
     registration = EmailTemplateRegistration(
-        key, tuple(audience), tuple(variables), tuple(cta_targets), tuple(used_by), firm_editable
+        key,
+        tuple(audience),
+        tuple(variables),
+        tuple(cta_targets),
+        tuple(used_by),
+        firm_editable,
+        label,
+        used_by_label,
+        designed,
     )
     _REGISTERED[key] = registration
     return registration
@@ -177,6 +193,10 @@ def register_email_template(
 
 def registered_templates() -> tuple[EmailTemplateRegistration, ...]:
     return tuple(_REGISTERED[k] for k in sorted(_REGISTERED))
+
+
+def registration_of(key: str) -> EmailTemplateRegistration | None:
+    return _REGISTERED.get(key)
 
 
 @dataclass(frozen=True)
@@ -224,9 +244,14 @@ async def send_templated(
     """Authorise, render the key's published version for one recipient and queue it, or record
     it `blocked` with a `SendRefusal`. A person: `authorise(ctx, "message.send", engagement)`
     first, then `lint_values`, then the rendered text through `check_scope`. The system: the
-    flag, the `reminder` key and the policy's mode, then the same checks. R-01-T19 builds it;
-    until then it refuses to run."""
-    raise NotImplementedYet
+    flag, the `reminder` key and a version the firm published, then the same checks (R-01-T19;
+    the policy's mode joins with R-01-T24, the client-mail gate with R-01-T27)."""
+    # Imported here: `template_send` imports this module.
+    from abacus.modules.communications import template_send
+
+    return await template_send.send(
+        ctx, key, recipient, variables, scope=scope, idempotency_key=idempotency_key
+    )
 
 
 # --- the value lint (DEC-379): client-written values never carry these shapes ------------------
@@ -236,6 +261,10 @@ _AMOUNT_VALUE: Final = re.compile(
 )
 _TIN_VALUE: Final = re.compile(r"\b\d{3}-\d{2}-\d{4}\b|\b\d{2}-\d{7}\b|(?<!\d)\d{9}(?!\d)")
 _ACCOUNT_VALUE: Final = re.compile(r"(?:••|\*{2,}|[xX]{2,}|#)\s?\d{4}\b|(?<!\d)\d{10,}(?!\d)")
+# The same shapes for the template text lint (`lint.py`).
+AMOUNT_SHAPE: Final = _AMOUNT_VALUE
+TIN_SHAPE: Final = _TIN_VALUE
+ACCOUNT_SHAPE: Final = _ACCOUNT_VALUE
 
 
 @dataclass(frozen=True)

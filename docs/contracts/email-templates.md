@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C16 in `docs/contracts/README.md` (v1.1, additive; v1 is `notifications.md`, frozen) |
 | Version | v1.1 |
-| Status | stub (R-01-T16, 2026-10-26) |
+| Status | stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449) |
 | Provider epic | R-01 (N the email half, AY the screens); T19 drafts and publish, T23 preview, lint, test send and import, T24 follow-up policy, T27 sending domains |
 | Consumers | POR-20, ADM-10 (R-01-T25, T28); P-06 (`request_sent`, `request_returned`, `reminder`); P-08 (`portal.sign_in_code`, platform-locked, same renderer); N-02 (`signature_request`); A-02 (`reconnect_request`); A-08 (`confirmation_request`); R-02, A-07, T-02 (`deliverable_ready`); R-03, X-01, X-03, A-09 (DF-40 keys); N-03 (sender domains); Q-04 (import) |
 | Freeze sprint | at the R-01 S12 review (with T19) |
@@ -32,11 +32,11 @@ Consumers can rely on one slot to register a firm-editable template key, one fun
 | Revoke | `DELETE /v1/firm/sending-domains/{domain_id}` | `sending_domain.manage` | as add | denied |
 | Follow-up policy and next send | `GET /v1/firm/follow-up-policy?sample_contact_id=` | `portal_settings.read` | firm admin, practice leader | denied |
 
-Flags: template writes 404 with `portal.settings_editor` off; sending-domain writes 404 with `communications.firm_sender_domain` off; reads and the import are never gated (off, the screens show published values read-only). Every route answers 501 `not_implemented` until its task. Policy edits are saved through the portal-settings draft (`portal-settings.md`), so this contract only reads the policy.
+Flags: template writes 404 with `portal.settings_editor` off; sending-domain writes 404 with `communications.firm_sender_domain` off; reads and the import are never gated (off, the screens show published values read-only and `allowed_actions` is empty). Every route answers 501 `not_implemented` until its task; list, read, draft save and discard and publish are live (R-01-T19): they authorise first, then check the flag, then the key (404 for a key that is not registered firm-editable). Policy edits are saved through the portal-settings draft (`portal-settings.md`), so this contract only reads the policy.
 
 ### Module interface (`communications.api`)
 - `register_email_template(key, audience, variables, cta_targets, used_by, *, firm_editable) -> EmailTemplateRegistration`: once per key at import time; variables from the whitelist only; at most one call-to-action target per audience; `used_by` names screen ids; a `staff` template is never firm-editable. `registered_templates()` lists them.
-- `send_templated(ctx: AuthContext | SystemSendContext, key, recipient: RecipientRef, variables, *, scope: SendScope, idempotency_key) -> SendOutcome` (DEC-379): the caller's own context, never an asserted actor. For a person it authorises `message.send` on `scope.engagement_id` inside (independence, G2 on attest clients, walls; a refusal raises as `authorise` does), runs `lint_values` on the filled values and `check_scope` (ADR-065) on the rendered text. `SystemSendContext` is only a scheduled reminder (`reason: scheduled_follow_up`, the `reminder` key, its published version, `follow_ups.scheduled_send` on); never an agent. It queues one message or records it `blocked` with a `SendRefusal`: `template_missing` (no published version), `template_lint_failed` (text or values), `out_of_scope` (names another client, entity, account or amount; communications' `OutOfScope` check), `firm_not_client_facing` (the client-mail gate before the firm's M10 flip; staff recipients unaffected; synthetic firms always deliver to the sink), `suppressed` (a bounce or complaint). Until R-01-T19 it raises `NotImplementedYet`.
+- `send_templated(ctx: AuthContext | SystemSendContext, key, recipient: RecipientRef, variables, *, scope: SendScope, idempotency_key) -> SendOutcome` (DEC-379): the caller's own context, never an asserted actor. For a person it authorises `message.send` on `scope.engagement_id` inside (independence, G2 on attest clients, walls; a refusal raises as `authorise` does), runs `lint_values` on the filled values and `check_scope` (ADR-065) on the rendered text. `SystemSendContext` is only a scheduled reminder (`reason: scheduled_follow_up`, the `reminder` key, its published version, `follow_ups.scheduled_send` on); never an agent. It queues one message or records it `blocked` with a `SendRefusal`: `template_missing` (no published version), `template_lint_failed` (text or values), `out_of_scope` (names another client, entity, account or amount; communications' `OutOfScope` check), `firm_not_client_facing` (the client-mail gate before the firm's M10 flip; staff recipients unaffected; synthetic firms always deliver to the sink), `suppressed` (a bounce or complaint). Built by R-01-T19 (DEC-449): the version in use is the firm's published one, else the platform default; the message records its `template_version_id` and `kind`, its body is the text part with the secure link removed, its id derives from the idempotency key (a retry sends nothing again), and delivery follows the commit. A recipient other than a `user` has no address resolver yet and is recorded `blocked` `suppressed`. `firm_not_client_facing` waits for R-01-T27 and the policy's mode for R-01-T24. The system path refuses (`Forbidden`) unless the reason is the scheduled reminder, the key is `reminder`, `follow_ups.scheduled_send` is on and the version in use is one the firm published (its publisher, still a member, is the message's author).
 - `lint_values(values) -> ValueFinding[]` (DEC-379): the amount, TIN-shape and account-number rules over every filled value (each line of `open_items`). Template text is safe by the closed kinds; values are client-written (a `document_title` "W-2 912-34-5678 $84,210.pdf"), so preview shows the findings and test send and send refuse `template_lint_failed` naming the code and the variable, never the value. A masked last four ("••4436") counts as an account number; `connection_name` is the catalogue name ("American Express"), never the masked label. Nothing is masked into a near-miss: fail closed.
 - `viewer_scoped(items, viewer_can_read, *, contact_visible) -> PreviewSelection` (DEC-379): what a preview or test send may show of a real `sample_contact_id`. The preview actions grant no client content: the contact must be visible to the viewer, each item (request, binder, work item) is kept only if the viewer could read it themselves (`engagement.read` and the item's read action under `visible()`, walls, independence), dropped items leave no count, and with nothing left the sample client renders. A firm admin walled off Copperleaf previews Tess Moreno as the sample client.
 - `scheduled_send_enabled(tenant)`: whether a `send_on_schedule` policy may send by itself (`follow_ups.scheduled_send`).
@@ -66,7 +66,7 @@ The kind list is closed (`person_name`, `organisation_name`, `title`, `item_list
 
 - `EmailTemplateListOut {items: EmailTemplateRowOut[]}`; a row `{key, name, group: designed | registered, audience[], used_by_label, used_by_screen?, published? {version, published_at, published_by}, draft? {version, saved_at}}`.
 - `EmailTemplateOut {key, name, audience[], firm_editable, variables: TemplateVariableOut[], published?: EmailTemplateVersionOut, draft?: EmailTemplateDraftOut, allowed_actions: (edit | test_send | publish)[]}`.
-- `EmailTemplateVersionOut {version, subject, preheader, blocks: TemplateBlock[], cta_label?, cta_target?, content_sha256, published_at, published_by}`; `EmailTemplateDraftOut {expected_version, base_version?, subject, preheader, blocks, cta_label?, cta_target?, saved_at, saved_by}`.
+- `EmailTemplateVersionOut {version, subject, preheader, blocks: TemplateBlock[], cta_label?, cta_target?, content_sha256, published_at, published_by?}` (`published_by` is null for a platform default; the same on the list row's `published`); `EmailTemplateDraftOut {expected_version, base_version?, subject, preheader, blocks, cta_label?, cta_target?, saved_at, saved_by}`.
 - `TemplateBlock {id, kind: heading | paragraph | item_list | note | footer, text ≤ 2000 (confidential)}`; `cta_target ∈ portal_home, documents, request, room, sign, deliverables, confirm, connections`.
 - `EmailTemplateDraftIn {subject, preheader, blocks ≤ 40, cta_label?, cta_target?, expected_version}`.
 - `EmailPreviewIn {source: draft | published, width: 600 | 390, sample_contact_id?}` → `EmailPreviewOut {subject, html, text, from_display, from_address, reply_to?, findings: LintFindingOut[]}` (deterministic).
@@ -86,9 +86,10 @@ Every action here is denied to the agent and the system at the matrix (INV-1). S
 | Status | Body | When |
 |---|---|---|
 | 404 | `{"detail": "not_found"}` | flag off (writes); an unknown key; a sample contact outside `visible()` |
-| 409 | `{"detail": "stale_version"}` | a draft save or publish over a newer draft |
+| 409 | `{"detail": "stale_version"}` | a draft save over a newer draft; a publish with no draft, over a newer draft, or of a draft based on a version that is no longer in use |
 | 409 | `{"detail": "sending_domain_exists"}` | a second domain while one is pending or verified |
-| 422 | `{"detail": "template_lint_failed", "facts": {"findings": […]}}` | test send or publish of a draft with findings |
+| 422 | `{"detail": "template_lint_failed", "facts": {"count": n, "finding_0": "amount:b2", …}}` | test send or publish of a draft with findings (at most 20 `finding_<n>`, each `code:where`, `where` a block id or `subject`, `preheader`, `cta_label`; identifier-only facts, ADR-139) |
+| 422 | `{"detail": "template_invalid"}` | a draft whose call to action the key does not register, a label without a target, a repeated block id, a line break in the subject or a stray brace |
 | 501 | `{"detail": "not_implemented"}` | until the implementing task |
 
 `send_templated` never raises a refusal; it records `blocked` with the reason.
@@ -128,7 +129,7 @@ v1.1 is additive to C16 v1 (frozen 2026-10-23): new routes and models only. Brea
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1.1 | (planned with R-01-T19) | | stub R-01-T16 |
+| v1.1 | (planned at the R-01 S12 review) | | stub R-01-T16; T19 built list, read, drafts, publish and `send_templated` |
 
 ## 11. Open points
 Decided in DEC-378; the security review's preview scoping, `send_templated` signature, value lint and test-send conditions in DEC-379. Open, from the screen contracts: the per-key sender display name (POR-20 h, R-01-T19); the "Email preferences" footer link (T23); whether a "••" last-four in a request title is an account number for the lint (T23, fail closed by default).

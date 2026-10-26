@@ -1250,6 +1250,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.intake.IntakeStaleVersion
@@ -1329,6 +1330,11 @@ codes:
     raised_by:
     - abacus.modules.communications.templates.TemplateInvalid
     summary: The template's key, locale, text or values are malformed.
+  template_lint_failed:
+    status: 422
+    raised_by:
+    - abacus.modules.communications.template_service.TemplateLintFailed
+    summary: The draft breaks the text lint; facts name each rule and where, never the text.
   template_name_invalid:
     status: 422
     raised_by:

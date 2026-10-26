@@ -230,6 +230,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "membership.revoked",
         "membership.role_changed",
         "membership.security_role_changed",
+        "email_template.draft_discarded",  # R-01-T19
+        "email_template.draft_saved",  # R-01-T19
+        "email_template.published",  # R-01-T19
         "message.blocked",
         "message.sent",
         "methodology.applied",

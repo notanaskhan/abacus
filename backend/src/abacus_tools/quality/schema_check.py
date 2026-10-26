@@ -267,6 +267,9 @@ DEFINER_FUNCTIONS = frozenset(
     # 0086 (Q-01-T19, ADR-157): the app reads controls; operators set them and provision firms.
     | {"platform_control_state", "set_platform_control", "provision_firm"}
     | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
+    # 0196 (R-01-T19): firm overrides, resolving and publishing, in the session's firm only.
+    | {"email_template_firm_row", "email_template_resolve", "email_template_version_at"}
+    | {"email_template_publish", "email_template_firm_id"}
     # 0101 (P-01-T09, ADR-165): the staff session BFF's sign-in state and sessions.
     | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
     | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}

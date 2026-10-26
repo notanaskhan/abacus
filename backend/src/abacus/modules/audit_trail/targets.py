@@ -55,6 +55,7 @@ FIRM_LEVEL: Final = frozenset(
         "team",  # G-01-T08: teams and groups, and their rosters
         "secure_link",  # P-08-T21: a portal email's link, for one contact (no engagement)
         "firm_integration",  # A-02-T12: a firm's install of a catalogue app and its secret
+        "email_template",  # R-01-T19: a firm's template key, its drafts and versions
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.
