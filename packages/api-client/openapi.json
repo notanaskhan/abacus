@@ -2663,6 +2663,44 @@
         "title": "AnnualRowOut",
         "type": "object"
       },
+      "AnnualStatementIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "AnnualStatementIn",
+        "type": "object"
+      },
+      "AnnualStatementOut": {
+        "description": "The firm's independence statement (firm content, G-01-T13): the version a person\nconfirms.",
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "title": "Body",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "body"
+        ],
+        "title": "AnnualStatementOut",
+        "type": "object"
+      },
       "AppliedMethodologyOut": {
         "properties": {
           "items_created": {
@@ -26845,6 +26883,50 @@
           "recorded_at"
         ],
         "title": "MisstatementOut",
+        "type": "object"
+      },
+      "MyAnnualIndependenceOut": {
+        "description": "SHL-03's profile drawer (AC6.1): one's own status for the year and the statement to\nconfirm (absent until the firm publishes one).",
+        "properties": {
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "statement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnnualStatementOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnnualIndependenceStatus",
+            "cls": "internal"
+          },
+          "year": {
+            "cls": "internal",
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "status"
+        ],
+        "title": "MyAnnualIndependenceOut",
         "type": "object"
       },
       "NasEvaluationIn": {
@@ -93445,6 +93527,7 @@
     },
     "/v1/firm/independence/annual": {
       "get": {
+        "description": "ADM-02g (AC6.3): every active staff member's status for the year (Confirmed with its\ndate, Not yet, Declined with its note); the counts foot to them.",
         "operationId": "annual_independence",
         "parameters": [
           {
@@ -93541,16 +93624,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Annual Independence Route",
@@ -93558,6 +93631,216 @@
           "firm-settings"
         ],
         "x-abacus-action": "independence.annual_read"
+      }
+    },
+    "/v1/firm/independence/statement": {
+      "get": {
+        "description": "The firm's current independence statement, or null before the first (G-01-T13).",
+        "operationId": "independence_statement",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AnnualStatementOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Independence Statement"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Independence Statement Route",
+        "tags": [
+          "firm-settings"
+        ],
+        "x-abacus-action": "firm.read_settings"
+      },
+      "put": {
+        "description": "A new version of the statement (firm admin, fresh MFA); confirmations name the version\nthey read (DEC-381).",
+        "operationId": "publish_independence_statement",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnualStatementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnualStatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Publish Independence Statement Route",
+        "tags": [
+          "firm-settings"
+        ],
+        "x-abacus-action": "firm.manage_settings"
       }
     },
     "/v1/firm/letter-policy": {
@@ -102500,8 +102783,121 @@
       }
     },
     "/v1/me/independence/annual": {
+      "get": {
+        "description": "AC6.1: one's own status for the year (the firm's current year by default) and the\nstatement to confirm.",
+        "operationId": "my_annual_independence",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2025,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyAnnualIndependenceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "My Annual Independence Route",
+        "tags": [
+          "firm-settings"
+        ],
+        "x-abacus-action": "own"
+      },
       "post": {
-        "description": "Oneself only (`independence.annual_confirm`); agents and the system can't confirm.",
+        "description": "Oneself only (`independence.annual_confirm`); agents and the system can't confirm. The\ncurrent year only and a note to decline (422 `annual_confirmation_invalid`); the statement\nversion read (409 `stale_version`, `independence_statement_missing`).",
         "operationId": "confirm_annual_independence",
         "parameters": [
           {
@@ -102588,6 +102984,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -102597,16 +103003,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirm Annual Independence Route",

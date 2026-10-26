@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated, ClassVar
 from uuid import UUID
 
@@ -155,6 +156,26 @@ class ServiceLinePolicyChanged(DomainEvent):
 
     service_line: Annotated[str, classified("internal")]
     version: Annotated[int, classified("internal")]
+
+
+class IndependenceAnnualRecorded(DomainEvent):
+    """A person confirmed or declined their annual independence for a year (G-01-T13; DEC-91):
+    P-07's team picker and G2 read the new answer."""
+
+    event_type: ClassVar[str] = "independence.annual_recorded"
+
+    user_id: Annotated[UUID, classified("internal")]
+    year: Annotated[int, classified("internal")]
+
+
+class SeasonalAccessEnding(DomainEvent):
+    """Seasonal access ends for `members` people of the firm on `access_ends_on`, seven days or
+    fewer from now (G-01-T13; AC4.5): firm admins are told once (`seasonal_access_ending`)."""
+
+    event_type: ClassVar[str] = "membership.access_ending"
+
+    access_ends_on: Annotated[date, classified("internal")]
+    members: Annotated[int, classified("internal")]
 
 
 class WallRemoved(DomainEvent):

@@ -3,13 +3,14 @@ fixture rules.
 
 Run: python -m abacus_tools.workflows.record_platform_jobs <output-directory>
 
-Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow` and `DrainSesEventsWorkflow`
-against throwaway containers with their activities replaced by stubs (replay never runs
-activities):
+Records the real `SpendAnomalyWorkflow`, `NotificationPurgeWorkflow`, `DrainSesEventsWorkflow` and
+`AccessEndSweepWorkflow` against throwaway containers with their activities replaced by stubs
+(replay never runs activities):
 - `spend-anomaly-v1-flagged.json`: one pass that flagged one engagement;
 - `notification-purge-v1-purged.json`: one pass that purged three notifications;
 - `ses-drain-v1-drained.json`: one drain that recorded two delivery events (Q-01-T46's workflow,
-  first started by its Schedule in Q-01-T26).
+  first started by its Schedule in Q-01-T26);
+- `access-end-v1-swept.json`: one access-end pass that ended five members (G-01-T13).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -25,6 +26,7 @@ from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
 from abacus.modules.communications.api import SES_EVENTS_ID, DrainSesEventsWorkflow
+from abacus.modules.identity.api import ACCESS_END_ID, AccessEndSweepWorkflow
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
 from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
@@ -35,6 +37,7 @@ _FILES = (
     "spend-anomaly-v1-flagged.json",
     "notification-purge-v1-purged.json",
     "ses-drain-v1-drained.json",
+    "access-end-v1-swept.json",
 )
 
 
@@ -53,6 +56,11 @@ async def _drain() -> int:
     return 2
 
 
+@activity.defn(name="identity.sweep_access_ends")
+async def _sweep() -> int:
+    return 5
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -68,13 +76,19 @@ async def _record(out: Path, stack: Stack) -> None:
     async with Worker(
         client,
         task_queue=_TASK_QUEUE,
-        workflows=[SpendAnomalyWorkflow, NotificationPurgeWorkflow, DrainSesEventsWorkflow],
-        activities=[_flag, _purge, _drain],
+        workflows=[
+            SpendAnomalyWorkflow,
+            NotificationPurgeWorkflow,
+            DrainSesEventsWorkflow,
+            AccessEndSweepWorkflow,
+        ],
+        activities=[_flag, _purge, _drain, _sweep],
     ):
         runs = (
             (SpendAnomalyWorkflow, SPEND_ANOMALY_ID, _FILES[0]),
             (NotificationPurgeWorkflow, NOTIFICATION_PURGE_ID, _FILES[1]),
             (DrainSesEventsWorkflow, SES_EVENTS_ID, _FILES[2]),
+            (AccessEndSweepWorkflow, ACCESS_END_ID, _FILES[3]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():

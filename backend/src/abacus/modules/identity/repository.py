@@ -1215,6 +1215,16 @@ _ELSEWHERE = text(
 ).bindparams(bindparam("ids", expanding=True))
 
 
+async def firm_tenant_ids() -> list[UUID]:
+    """G-01-T13 (DEC-381): every firm's id, for the hourly access-end job, which then works
+    inside each firm's own session. Through the identity role, which already reads
+    `firms.tenant_id` (no other column, and no new grant); identifiers only (LIST-001 does not
+    apply: a platform job, no person's list)."""
+    async with identity_engine().connect() as conn:
+        result = await conn.execute(text("SELECT tenant_id FROM firms ORDER BY tenant_id"))
+        return [cast(UUID, r[0]) for r in result]
+
+
 async def memberships_elsewhere(tenant_id: UUID, user_ids: list[UUID]) -> dict[UUID, bool]:
     """G-01-T05 (DEC-286): which of these people belong or belonged to another firm (True: one
     still active there). Staff sessions carry no firm, so their sign-ins can't be told apart, and

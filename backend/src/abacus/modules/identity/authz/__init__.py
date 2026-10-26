@@ -1089,6 +1089,41 @@ def _member_of(
     return or_(*reach) if reach else false()
 
 
+async def authorise_own(ctx: Actor, action: str) -> None:
+    """A firm action a person takes on their own row only (G-01-T13: `independence.annual_confirm`,
+    DEC-91), so the relationship is their active staff membership here, not a role on a
+    resource: a staff member with no firm role and no engagement holds it too. Allowed for a live
+    signed-in person (never support, a client user, an agent or the platform: INV-1) whose
+    membership here is an active staff one, when the matrix allows the cell their firm role (or,
+    without one, their partner level or the `staff` role) takes, narrowed by the firm's
+    overrides, with fresh MFA and a reason where the action asks. Records the check."""
+    rule = _rule(action)
+    if (
+        not isinstance(ctx, AuthContext)
+        or ctx.is_support
+        or ctx.client
+        or ctx.tenant.actor_kind != "human"
+    ):
+        raise _deny(ctx, action, "relationship")
+    member = await member_facts(ctx.tenant, ctx.user_id)
+    if member is None or member.client:
+        raise _deny(ctx, action, "relationship")
+    if ctx.firm_role is not None:
+        role = ctx.firm_role
+    elif member.level == "partner":
+        role = FIRM_PARTNER
+    else:
+        role = _LINE_READER_CELL  # `staff`: every staff member's own cell
+    policy = await _firm_policy(ctx)
+    decision = apply_override(rule.decisions.get(role), policy.overrides.get((action, role)))
+    if decision != "allow" or has_conditions(rule):
+        raise _deny(ctx, action, "role")
+    if rule.mfa_recent and (ctx.mfa_at is None or system_now() - ctx.mfa_at > MFA_RECENT):
+        raise _deny(ctx, action, "attribute")
+    _record(action)
+    _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
+
+
 async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
     """For a list of an engagement's request items (a read): allowed outright, or by a client
     condition, in which case `visible_items` then filters the rows (SPEC-020; TASK-035 D2)."""
@@ -1146,6 +1181,7 @@ __all__ = [
     "UnknownAction",
     "authorise",
     "authorise_items",
+    "authorise_own",
     "policy_agent_may_hold",
     "recording_checks",
     "register_active_engagements",

@@ -20,12 +20,18 @@ from temporalio.worker import Worker
 from abacus.kernel import dispatch
 from abacus.kernel.dispatch import PlatformSchedule, queue_for
 from abacus.kernel.temporal import configure_temporal_client, data_converter
+from abacus.modules.identity import api as identity
 from abacus.modules.notifications import api as notifications
 from abacus.modules.platform import api as platform
 from abacus_tools import schedules
 
-IDS = ("notification_purge:platform", "ses_events:platform", "spend_anomaly:platform")
-BACKGROUND = ("notification_purge:platform", "spend_anomaly:platform")
+IDS = (
+    "access_end:platform",  # G-01-T13: the seasonal access-end sweep, hourly
+    "notification_purge:platform",
+    "ses_events:platform",
+    "spend_anomaly:platform",
+)
+BACKGROUND = ("access_end:platform", "notification_purge:platform", "spend_anomaly:platform")
 _passes: list[str] = []
 
 
@@ -38,6 +44,12 @@ async def _flag() -> int:
 @activity.defn(name="notifications.purge_expired")
 async def _purge() -> int:
     _passes.append("purge")
+    return 0
+
+
+@activity.defn(name="identity.sweep_access_ends")
+async def _sweep() -> int:
+    _passes.append("access_end")
     return 0
 
 
@@ -69,6 +81,8 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["ses_events:platform"]["workflow_type"] == "DrainSesEvents"
     assert facts["ses_events:platform"]["every_seconds"] == (60,)
     assert facts["ses_events:platform"]["task_queue"] == queue_for("time_sensitive")
+    assert facts["access_end:platform"]["workflow_type"] == "AccessEndSweep"
+    assert facts["access_end:platform"]["every_seconds"] == (3600,)
     for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
     for fact in facts.values():
@@ -94,30 +108,34 @@ async def test_a_triggered_run_does_each_job_once_on_the_background_queue(
     await schedules.ensure()
     # A second connection, as a second deployment's worker would have.
     other = await Client.connect(temporal_target, data_converter=data_converter())
-    workflows = [platform.SpendAnomalyWorkflow, notifications.NotificationPurgeWorkflow]
+    workflows = [
+        platform.SpendAnomalyWorkflow,
+        notifications.NotificationPurgeWorkflow,
+        identity.AccessEndSweepWorkflow,
+    ]
     # Two background pools polling the same queue, as two deployments would: one run, one pass.
     async with (
         Worker(
             temporal,
             task_queue=queue_for("background"),
             workflows=workflows,
-            activities=[_flag, _purge],
+            activities=[_flag, _purge, _sweep],
         ),
         Worker(
             other,
             task_queue=queue_for("background"),
             workflows=workflows,
-            activities=[_flag, _purge],
+            activities=[_flag, _purge, _sweep],
         ),
     ):
         for schedule_id in BACKGROUND:
             await temporal.get_schedule_handle(schedule_id).trigger()
         for _ in range(200):
-            if sorted(_passes) == ["anomaly", "purge"]:
+            if sorted(_passes) == ["access_end", "anomaly", "purge"]:
                 break
             await asyncio.sleep(0.1)
         await asyncio.sleep(1)  # nothing else arrives
-    assert sorted(_passes) == ["anomaly", "purge"]
+    assert sorted(_passes) == ["access_end", "anomaly", "purge"]
     for schedule_id in BACKGROUND:
         described = await temporal.get_schedule_handle(schedule_id).describe()
         assert len(described.info.recent_actions) == 1

@@ -41,12 +41,19 @@ TABLES: frozenset[str] = frozenset(
         "portal_security_policies",  # P-08-T17: the firm's stricter-only floor extension
         "approval_grants",  # P-04-T10 (ADR-161): settled once, by consume or void
         "service_line_policies",  # G-01-T12 (0167): who reads a service line's content
+        # G-01-T13 (0168): the annual independence statement and confirmations (DEC-91), and the
+        # access-end job's notices.
+        "independence_statements",
+        "independence_annual_confirmations",
+        "access_end_notices",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {"firm_policy_overrides", "client_access_events"}
     | {"engagement_member_events"}  # P-07-T30 (0155)
+    # G-01-T13 (0168)
+    | {"independence_statements", "independence_annual_confirmations", "access_end_notices"}
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -97,6 +104,12 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "service_line", "enabled", "lead_user_id", "content_visible_to"}
         | {"cross_line_access", "updated_by"}
     ),
+    # G-01-T13 (0168): versions, decisions and notices; times and actor kinds are server-set.
+    "independence_statements": frozenset({"tenant_id", "version", "body", "created_by"}),
+    "independence_annual_confirmations": frozenset(
+        {"tenant_id", "user_id", "year", "decision", "note", "statement_version"}
+    ),
+    "access_end_notices": frozenset({"tenant_id", "access_ends_on", "members"}),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {

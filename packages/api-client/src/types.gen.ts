@@ -1223,6 +1223,33 @@ export type AnnualRowOut = {
 };
 
 /**
+ * AnnualStatementIn
+ */
+export type AnnualStatementIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * AnnualStatementOut
+ *
+ * The firm's independence statement (firm content, G-01-T13): the version a person
+ * confirms.
+ */
+export type AnnualStatementOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * AppliedMethodologyOut
  */
 export type AppliedMethodologyOut = {
@@ -12719,6 +12746,25 @@ export type MisstatementOut = {
      * Recorded By Name
      */
     recorded_by_name: string;
+};
+
+/**
+ * MyAnnualIndependenceOut
+ *
+ * SHL-03's profile drawer (AC6.1): one's own status for the year and the statement to
+ * confirm (absent until the firm publishes one).
+ */
+export type MyAnnualIndependenceOut = {
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    statement?: AnnualStatementOut | null;
+    status: AnnualIndependenceStatus;
+    /**
+     * Year
+     */
+    year: number;
 };
 
 /**
@@ -43491,10 +43537,6 @@ export type AnnualIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AnnualIndependenceError = AnnualIndependenceErrors[keyof AnnualIndependenceErrors];
@@ -43507,6 +43549,102 @@ export type AnnualIndependenceResponses = {
 };
 
 export type AnnualIndependenceResponse = AnnualIndependenceResponses[keyof AnnualIndependenceResponses];
+
+export type IndependenceStatementData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/independence/statement';
+};
+
+export type IndependenceStatementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type IndependenceStatementError = IndependenceStatementErrors[keyof IndependenceStatementErrors];
+
+export type IndependenceStatementResponses = {
+    /**
+     * Response Independence Statement
+     *
+     * Successful Response
+     */
+    200: AnnualStatementOut | null;
+};
+
+export type IndependenceStatementResponse = IndependenceStatementResponses[keyof IndependenceStatementResponses];
+
+export type PublishIndependenceStatementData = {
+    body: AnnualStatementIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/independence/statement';
+};
+
+export type PublishIndependenceStatementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PublishIndependenceStatementError = PublishIndependenceStatementErrors[keyof PublishIndependenceStatementErrors];
+
+export type PublishIndependenceStatementResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnnualStatementOut;
+};
+
+export type PublishIndependenceStatementResponse = PublishIndependenceStatementResponses[keyof PublishIndependenceStatementResponses];
 
 export type LetterPolicyData = {
     body?: never;
@@ -47561,6 +47699,58 @@ export type MyCapabilitiesResponses = {
 
 export type MyCapabilitiesResponse = MyCapabilitiesResponses[keyof MyCapabilitiesResponses];
 
+export type MyAnnualIndependenceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Year
+         */
+        year?: number | null;
+    };
+    url: '/v1/me/independence/annual';
+};
+
+export type MyAnnualIndependenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MyAnnualIndependenceError = MyAnnualIndependenceErrors[keyof MyAnnualIndependenceErrors];
+
+export type MyAnnualIndependenceResponses = {
+    /**
+     * Successful Response
+     */
+    200: MyAnnualIndependenceOut;
+};
+
+export type MyAnnualIndependenceResponse = MyAnnualIndependenceResponses[keyof MyAnnualIndependenceResponses];
+
 export type ConfirmAnnualIndependenceData = {
     body: AnnualConfirmIn;
     headers?: {
@@ -47592,13 +47782,13 @@ export type ConfirmAnnualIndependenceErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConfirmAnnualIndependenceError = ConfirmAnnualIndependenceErrors[keyof ConfirmAnnualIndependenceErrors];

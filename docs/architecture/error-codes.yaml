@@ -118,6 +118,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.trial_balance.AnnotationInvalid
+  annual_confirmation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.annual_independence.AnnualConfirmationInvalid
+    summary: Only the current year can be confirmed, and a decline needs a note.
   approver_not_partner:
     status: 422
     raised_by:
@@ -500,6 +505,11 @@ codes:
     - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
     summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
       clear, an SKE designee or NAS evaluations on an attest client).
+  independence_statement_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.annual_independence.StatementMissing
+    summary: The firm has not published its independence statement yet, so there is nothing to confirm.
   integrity_failed:
     status: 409
     raised_by:
@@ -1128,6 +1138,7 @@ codes:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
+    - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
