@@ -16,7 +16,7 @@
   withdrawn file voids the ready bundle (A-01-T22).
 
 Revision ID: 0191
-Revises: 0180
+Revises: 0173
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0191"
-down_revision = "0180"
+down_revision = "0173"
 branch_labels = None
 depends_on = None
 
