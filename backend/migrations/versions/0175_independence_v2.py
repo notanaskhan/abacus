@@ -24,8 +24,20 @@ SPEC-025's free-text `independence_concluded_by/at` are not converted here (a co
 a concluder id the legacy text cannot give): G2 reads the newest conclusion row where one exists
 and SPEC-025's row otherwise, until P-07-T59 converts and drops the table (DEC-428, as DEC-372).
 
+Security review (DEC-429):
+- `engagement_acceptance.legacy_g2` (new, default true, so every row written before 0175 has
+  it): `engagement_acceptance_written_by_app` sets it false on any row the application writes
+  from now on (the owner's paths and superuser seeding are not the app, as 0154's guard), so
+  SPEC-025's route can never meet G2 again; G2 falls back only to rows with `legacy_g2`.
+- `independence_confirmations_own_answer` (BEFORE UPDATE OF the answer columns only: status,
+  statement_version, statements, interests_note, decline_note, note, answered_at): written by
+  the app, the row is the acting person's own (`app.actor_id`) and `app.actor_kind` is `human`.
+  Reminder counts (another person's row) and inserts (the member-added request) stay unbound.
+- A conclusion supersedes one of the same engagement (`(tenant_id, engagement_id,
+  supersedes_id)` foreign key on a new unique key).
+
 Revision ID: 0175
-Revises: 0172
+Revises: 0180
 """
 
 from __future__ import annotations
@@ -35,7 +47,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0175"
-down_revision = "0172"
+down_revision = "0180"
 branch_labels = None
 depends_on = None
 
@@ -130,6 +142,44 @@ _CONCLUSION_GUARD = """
 """
 
 
+# 0154's precedent: the owner's definer paths and superuser seeding are not the application.
+_BY_APP = (
+    "current_user <> 'abacus_owner' "
+    "AND NOT (SELECT r.rolsuper FROM pg_roles r WHERE r.rolname = current_user)"
+)
+_OWN_ANSWER = f"""
+    CREATE FUNCTION independence_confirmations_own_answer() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    BEGIN
+        IF {_BY_APP} AND (
+            current_setting('app.actor_id', true) IS DISTINCT FROM NEW.user_id::text
+            OR current_setting('app.actor_kind', true) IS DISTINCT FROM 'human'
+        ) THEN
+            RAISE EXCEPTION 'an independence answer is the acting person''s own'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        RETURN NEW;
+    END $$
+"""
+_LEGACY_CUTOFF = f"""
+    CREATE FUNCTION engagement_acceptance_written_by_app() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    BEGIN
+        IF {_BY_APP} THEN
+            NEW.legacy_g2 := false;
+        END IF;
+        RETURN NEW;
+    END $$
+"""
+_ANSWER_COLUMNS = (
+    "status, statement_version, statements, interests_note, decline_note, note, answered_at"
+)
+
+
 def _human_only(actions: list[str]) -> None:
     listed = ", ".join(f"'{a}'" for a in actions)
     op.execute(
@@ -173,6 +223,22 @@ def upgrade() -> None:
         "GRANT UPDATE (statements, interests_note, decline_note, reminder_count, "
         "last_reminded_at) ON independence_confirmations TO abacus_app"
     )
+    op.execute(_OWN_ANSWER)
+    op.execute(
+        "CREATE TRIGGER independence_confirmations_own_answer BEFORE UPDATE OF "
+        f"{_ANSWER_COLUMNS} ON independence_confirmations "
+        "FOR EACH ROW EXECUTE FUNCTION independence_confirmations_own_answer()"
+    )
+    # SPEC-025's conclusion counts for G2 only on rows the app wrote before this migration.
+    op.execute(
+        "ALTER TABLE engagement_acceptance ADD COLUMN legacy_g2 boolean NOT NULL DEFAULT true"
+    )
+    op.execute(_LEGACY_CUTOFF)
+    op.execute(
+        "CREATE TRIGGER engagement_acceptance_written_by_app BEFORE INSERT ON "
+        "engagement_acceptance FOR EACH ROW EXECUTE FUNCTION "
+        "engagement_acceptance_written_by_app()"
+    )
 
     # --- the conclusion -------------------------------------------------------------------------
     op.execute(
@@ -193,10 +259,11 @@ def upgrade() -> None:
             CONSTRAINT independence_conclusions_safeguards
                 CHECK (option <> 'independent_with_safeguards' OR safeguards_sealed IS NOT NULL),
             UNIQUE (tenant_id, id),
+            UNIQUE (tenant_id, engagement_id, id),
             UNIQUE (tenant_id, supersedes_id),
             {_ENGAGEMENT_FK},
-            FOREIGN KEY (tenant_id, supersedes_id)
-                REFERENCES independence_conclusions (tenant_id, id),
+            FOREIGN KEY (tenant_id, engagement_id, supersedes_id)
+                REFERENCES independence_conclusions (tenant_id, engagement_id, id),
             FOREIGN KEY (tenant_id, concluded_by) REFERENCES memberships (tenant_id, user_id)
         )
         """
@@ -356,6 +423,11 @@ def downgrade() -> None:
         op.execute(f"DROP TABLE {table}")
         op.execute(f"DROP FUNCTION {table}_immutable()")
     op.execute("DROP FUNCTION independence_conclusions_guard()")
+    op.execute("DROP TRIGGER engagement_acceptance_written_by_app ON engagement_acceptance")
+    op.execute("DROP FUNCTION engagement_acceptance_written_by_app()")
+    op.execute("ALTER TABLE engagement_acceptance DROP COLUMN legacy_g2")
+    op.execute("DROP TRIGGER independence_confirmations_own_answer ON independence_confirmations")
+    op.execute("DROP FUNCTION independence_confirmations_own_answer()")
     op.execute(
         "REVOKE UPDATE (statements, interests_note, decline_note, reminder_count, "
         "last_reminded_at) ON independence_confirmations FROM abacus_app"

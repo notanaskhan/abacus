@@ -637,7 +637,7 @@ async def record_screening(
 
 _STANDING_FOR_CLIENT = text(
     """
-    SELECT r.id
+    SELECT r.id, r.matched_client_id
       FROM conflict_results r
       JOIN conflict_checks c ON c.id = r.check_id
       LEFT JOIN LATERAL (
@@ -663,14 +663,15 @@ _STANDING_FOR_CLIENT = text(
 
 async def standing_conflict_results(
     tenant: TenantContext, client_id: UUID, check_ids: Sequence[UUID] = ()
-) -> list[UUID]:
+) -> list[tuple[UUID, UUID]]:
     """The conflict results still standing (pending, counterparty review or conflict) on the
     checks run for the client or its entities, and on any checks named (an intake's, linked to
-    the engagement), leaving out matches on the client itself. Identifiers only, for a caller
-    that authorised reading the client's engagement; walls do not narrow it, since the answer
-    is a precondition, never a list a person reads (DEC-428)."""
+    the engagement), leaving out matches on the client itself: `(result id, matched client)`.
+    Identifiers only, for a caller that authorised reading the client's engagement; walls do not
+    narrow the search (it is a precondition), so a caller showing it to a person drops or
+    collapses results on clients that person is walled from (DEC-428, DEC-429)."""
     async with tenant_session(tenant) as session:
         rows = await session.execute(
             _STANDING_FOR_CLIENT, {"client": client_id, "checks": list(check_ids)}
         )
-        return [cast(UUID, r) for r in rows.scalars().all()]
+        return [(cast(UUID, r.id), cast(UUID, r.matched_client_id)) for r in rows.all()]

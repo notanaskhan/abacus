@@ -50,3 +50,10 @@ duplicated. The human-only register is redefined from main's 40-entry list (0168
   had a `# noqa: S608` that SUPPRESS-001 refuses, rewritten as two literal statements (same
   assertions).
 - 2026-10-26: targeted pass green (see the wave report); gates green.
+- 2026-10-26: security review (changes requested), one fix round (DEC-429): H1 the old route's
+  conclusion refused with v2 on or a record, and G2's legacy fallback limited to rows from before
+  0175 (`legacy_g2`); M1 the answer columns bound to the acting person at the database; L1 the
+  conclusion chain within one engagement; L2 NAS service codes and the partner's decision; L3 G2
+  "met at"; L4 walled conflict blockers. 0175 now revises 0180 (rebased onto main a0d16491).
+  New tests `test_p07t41_security_review.py` (6); spec-drift updates in three legacy suites and
+  the unit fakes (`legacy_g2=True`). The T43 suite is unchanged and passes.

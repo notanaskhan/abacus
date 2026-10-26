@@ -71,6 +71,7 @@ from abacus.modules.identity.api import (
     engagement_team,
     engagement_team_query,
     has_current_annual_confirmation,
+    hidden_clients,
     member_facts,
 )
 from abacus.modules.organisations.api import standing_conflict_results
@@ -115,6 +116,12 @@ class IndependencePreconditionsUnmet(DomainConflict):
     """The conclusion (or a NAS evaluation) waits on the blockers counted in `facts`."""
 
     code = "independence_preconditions_unmet"
+
+
+class NasDecided(DomainConflict):
+    """The engagement partner decided this NAS row; only they record another evaluation."""
+
+    code = "decision_locked"
 
 
 # --- outbox events (identifiers and codes only) ------------------------------------------------
@@ -308,7 +315,7 @@ class _Facts:
     confirmations: dict[UUID, IndependenceConfirmation]
     ske_contact_ids: list[UUID]
     nas: list[_NasFact] = field(default_factory=list[_NasFact])
-    conflicts: list[UUID] = field(default_factory=list[UUID])
+    conflicts: list[tuple[UUID, UUID]] = field(default_factory=list[tuple[UUID, UUID]])
     breaches: list[UUID] = field(default_factory=list[UUID])
 
 
@@ -396,7 +403,12 @@ async def _facts(ctx: AuthContext, session: AsyncSession, ref: EngagementRef) ->
     return facts
 
 
-def _blockers(facts: _Facts, engagement_id: UUID, *, with_breaches: bool) -> list[Blocker]:
+def _blockers(
+    facts: _Facts, engagement_id: UUID, *, with_breaches: bool, hidden: frozenset[UUID]
+) -> list[Blocker]:
+    """The banner's reasons. Conflict results on clients the reader is walled from collapse into
+    one `conflict_not_cleared` naming the engagement: no result id, no count (DEC-429, L4;
+    DEC-43, DEC-375)."""
     out: list[Blocker] = []
     for user_id, _, _ in facts.members:
         row = facts.confirmations.get(user_id)
@@ -405,7 +417,13 @@ def _blockers(facts: _Facts, engagement_id: UUID, *, with_breaches: bool) -> lis
             out.append(Blocker("member_declined", "user", user_id))
         elif status != "confirmed":
             out.append(Blocker("member_not_confirmed", "user", user_id))
-    out.extend(Blocker("conflict_not_cleared", "conflict_result", r) for r in facts.conflicts)
+    out.extend(
+        Blocker("conflict_not_cleared", "conflict_result", result)
+        for result, client in facts.conflicts
+        if client not in hidden
+    )
+    if any(client in hidden for _, client in facts.conflicts):
+        out.append(Blocker("conflict_not_cleared", "engagement", engagement_id))
     if facts.attest:
         if not facts.ske_contact_ids:
             out.append(Blocker("ske_designee_missing", "engagement", engagement_id))
@@ -418,6 +436,14 @@ def _blockers(facts: _Facts, engagement_id: UUID, *, with_breaches: bool) -> lis
     if with_breaches:
         out.extend(Blocker("breach_open", "independence_breach", b) for b in facts.breaches)
     return out
+
+
+async def _hidden(ctx: AuthContext, facts: _Facts) -> frozenset[UUID]:
+    """The matched clients of standing conflict results the reader is walled from."""
+    clients = {client for _, client in facts.conflicts}
+    if not clients:
+        return frozenset()
+    return await hidden_clients(ctx.tenant, ctx.user_id, clients)
 
 
 def _counts(blockers: Sequence[Blocker]) -> dict[str, object]:
@@ -495,7 +521,7 @@ async def independence_summary(ctx: AuthContext, engagement_id: UUID) -> Summary
         sum(1 for m in members if m.confirmation == "confirmed"),
         len(members),
         members,
-        _blockers(facts, engagement_id, with_breaches=True),
+        _blockers(facts, engagement_id, with_breaches=True, hidden=await _hidden(ctx, facts)),
         conclusion,
         facts.ske_contact_ids[0] if facts.ske_contact_ids else None,
         sorted(a for a in ACTIONS if a in allowed),
@@ -703,11 +729,13 @@ async def evaluate_nas(
             raise IndependencePreconditionsUnmet(facts={"ske_designee_missing": 1})
         if ske_contact_id is not None and ske_contact_id not in ske:
             raise DomainInvalid(facts={"field": "ske_contact_id"})
+        # DEC-429 (L2): only a service the firm provides the client outside the attest family.
+        if service_code not in await _services(tx.session, ref):
+            raise DomainInvalid(facts={"field": "service_code"})
         # The evaluation decision is the engagement partner's: whoever holds the conclusion
         # here (the matrix, through `authorise`'s layers; never a role compared here).
-        if status != "pending" and CONCLUDE not in await allowed_actions(
-            ctx, ref.resource(), (CONCLUDE,)
-        ):
+        decides = CONCLUDE in await allowed_actions(ctx, ref.resource(), (CONCLUDE,))
+        if status != "pending" and not decides:
             raise Forbidden(NAS, "role")
         row_id = (
             await tx.session.execute(
@@ -717,6 +745,18 @@ async def evaluate_nas(
                 )
             )
         ).scalar_one_or_none()
+        if row_id is not None and not decides:
+            # DEC-429 (L2): once the partner decided a row, a preparer cannot reopen it.
+            latest = (
+                await tx.session.execute(
+                    select(nas_events.c.status)
+                    .where(nas_events.c.nas_id == row_id)
+                    .order_by(nas_events.c.seq.desc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if latest is not None and latest != "pending":
+                raise NasDecided(facts={"nas_id": str(row_id)})
         if row_id is None:
             row_id = uuid4()
             await tx.session.execute(
@@ -928,7 +968,9 @@ async def conclude_independence(
     async with uow(ctx.tenant) as tx:
         ref = await _writable(tx, ctx, engagement_id, CONCLUDE)
         facts = await _facts(ctx, tx.session, ref)
-        blockers = _blockers(facts, engagement_id, with_breaches=False)
+        blockers = _blockers(
+            facts, engagement_id, with_breaches=False, hidden=await _hidden(ctx, facts)
+        )
         if blockers:
             raise IndependencePreconditionsUnmet(facts=_counts(blockers))
         if ctx.mfa_at is None:  # the matrix asked for it already; the row records when

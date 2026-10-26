@@ -281,6 +281,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.acceptance.DecisionLocked
+    - abacus.modules.engagements.independence.NasDecided
     summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409

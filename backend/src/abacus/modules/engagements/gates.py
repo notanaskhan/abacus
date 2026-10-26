@@ -17,6 +17,7 @@ from abacus.modules.engagements.gate_policy import required_gates
 from abacus.modules.engagements.independence_tables import (
     POSITIVE,
     latest_conclusion,
+    legacy_concluded,
     open_breach_ids,
 )
 from abacus.modules.engagements.repository import get_letter, latest_acceptance
@@ -48,7 +49,7 @@ async def _independence(tenant: TenantContext, engagement_id: UUID) -> GateFact:
             met = concluded.option in POSITIVE
         else:
             legacy = await latest_acceptance(session, engagement_id)
-            met = legacy is not None and legacy.independence_concluded_at is not None
+            met = legacy_concluded(legacy) is not None  # pre-0175 rows only (DEC-429)
     if not met:
         return GateFact(met=False, blockers=("independence_conclusion",))
     return GateFact(met=True)

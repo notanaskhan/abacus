@@ -77,7 +77,9 @@ async def test_c1_nothing_recorded_blocks_every_gate(monkeypatch: pytest.MonkeyP
 
 
 async def test_c1_all_recorded_meets_every_gate(monkeypatch: pytest.MonkeyPatch) -> None:
-    accepted = SimpleNamespace(decision="accepted", independence_concluded_at=datetime.now(UTC))
+    accepted = SimpleNamespace(
+        decision="accepted", independence_concluded_at=datetime.now(UTC), legacy_g2=True
+    )  # a row from before 0175 (DEC-429)
     _world(monkeypatch, accepted, SimpleNamespace(status="signed"))
     assert all(v.met for v in await subject.engagement_gates(TENANT, E, "review"))
 
@@ -85,7 +87,7 @@ async def test_c1_all_recorded_meets_every_gate(monkeypatch: pytest.MonkeyPatch)
 async def test_c1_a_non_attest_type_skips_g2_and_a_firm_without_letters_meets_g3(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    declined = SimpleNamespace(decision="declined", independence_concluded_at=None)
+    declined = SimpleNamespace(decision="declined", independence_concluded_at=None, legacy_g2=True)
     _world(monkeypatch, declined, None, needs_letter=False)
     views = await subject.engagement_gates(TENANT, E, "cas_monthly_close")
     assert [(v.gate, v.met, v.blockers) for v in views] == [

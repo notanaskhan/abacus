@@ -2,9 +2,10 @@
 
 `g2_met` is G2's one source (DEC-428, as DEC-372 is G1's): an engagement with a conclusion row
 reads its newest conclusion (Independent or Independent with safeguards: met; Not independent:
-unmet); one without reads SPEC-025's `engagement_acceptance` conclusion, until P-07-T59 converts
-those rows. Either way an open breach (logged, and not yet evaluated, communicated to those
-charged with governance and remediated) keeps G2 unmet (SPEC-332 AC-28).
+unmet); one without reads SPEC-025's `engagement_acceptance` conclusion, only on a row written
+before 0175 (`legacy_g2`, DEC-429: the old route can never meet G2 again), until P-07-T59
+converts those rows. Either way an open breach (logged, and not yet evaluated, communicated to
+those charged with governance and remediated) keeps G2 unmet (SPEC-332 AC-28).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger, Boolean, DateTime, Text
 
+from abacus.modules.engagements.models import EngagementAcceptance
 from abacus.modules.engagements.repository import latest_acceptance
 
 _meta = MetaData()
@@ -124,6 +126,7 @@ async def latest_conclusion(session: AsyncSession, engagement_id: UUID) -> Concl
                 conclusions.c.engagement_id == engagement_id,
                 conclusions.c.id.not_in(superseded),
             )
+            .order_by(conclusions.c.concluded_at.desc(), conclusions.c.id.desc())
             .limit(1)
         )
     ).one_or_none()
@@ -162,5 +165,11 @@ async def g2_met(session: AsyncSession, engagement_id: UUID) -> bool:
     concluded = await latest_conclusion(session, engagement_id)
     if concluded is not None:
         return concluded.option in POSITIVE
-    legacy = await latest_acceptance(session, engagement_id)
-    return legacy is not None and legacy.independence_concluded_at is not None
+    return legacy_concluded(await latest_acceptance(session, engagement_id)) is not None
+
+
+def legacy_concluded(legacy: EngagementAcceptance | None) -> datetime | None:
+    """SPEC-025's conclusion time, on a row written before 0175 only (DEC-429)."""
+    if legacy is None or not legacy.legacy_g2:
+        return None
+    return legacy.independence_concluded_at
