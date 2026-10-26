@@ -372,7 +372,9 @@ async def test_ac21_a_change_is_an_admins_with_fresh_mfa_against_the_version_and
 ) -> None:
     daniel = await firm.person(level="partner")
     kevin = await firm.person(lines=("tax",))
-    for who in (daniel, kevin):
+    # ADR-183 condition 4 (Ayush, 2026-10-26): security admins never manage the policy.
+    felix = await firm.person("security_admin", level="admin")
+    for who in (felix, kevin):
         refused = await firm.call("PUT", f"{LINES}/tax", who, _policy(0))
         assert refused.status_code in (403, 404), refused.text
     stale_mfa = await firm.call("PUT", f"{LINES}/tax", firm.grace, _policy(0), mfa=False)
@@ -384,14 +386,13 @@ async def test_ac21_a_change_is_an_admins_with_fresh_mfa_against_the_version_and
     assert stale.status_code == 409, stale.text
     assert _detail(stale) == "stale_version"
     assert (await _lines(firm))["tax"]["content_visible_to"] == "service_line"
-    # A security admin changes it too (with fresh MFA).
-    felix = await firm.person("security_admin", level="admin")
-    by_felix = await firm.call("PUT", f"{LINES}/tax", felix, _policy(1, "engagement_team_only"))
-    assert by_felix.status_code == 200, by_felix.text
+    # A partner changes it too (with fresh MFA; ADR-183 condition 4).
+    by_daniel = await firm.call("PUT", f"{LINES}/tax", daniel, _policy(1, "engagement_team_only"))
+    assert by_daniel.status_code == 200, by_daniel.text
     rows = await firm.audit("service_line_policy.updated")
     assert [(r["actor_kind"], r["actor_id"]) for r in rows] == [
         ("human", str(firm.grace.user_id)),
-        ("human", str(felix.user_id)),
+        ("human", str(daniel.user_id)),
     ]
     assert len(await firm.outbox("service_line_policy.changed")) == 2
     # A lead must be the firm's active staff.

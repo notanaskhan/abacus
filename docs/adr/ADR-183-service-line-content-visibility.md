@@ -1,9 +1,9 @@
 ---
 id: ADR-183
 title: Service-line content visibility - a firm may open a line's content, read-only, to the line's members; never Audit, attest clients, walled or offshore members, or admins
-status: proposed
+status: accepted
 date: 2026-10-26
-deciders: ayushkbhatia, notanaskhan
+deciders: ayushkbhatia (accepted 2026-10-26)
 risk_zone: red
 ---
 
@@ -11,7 +11,7 @@ risk_zone: red
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
-> - **This ADR is proposed.** It is G-01 OQ-1 ("Service-line content visibility", the Jan 29, 2027 decision), decided in session as DEC-380 under AMENDMENT-solo item 7 with OQ-1's recommended option. It extends ADR-024; it does not relax it for admins. Its switch is `authz.SERVICE_LINE_REACH`: set it to False for G-01 AC10.4's fallback (every line "Engagement team only").
+> - **Accepted by Ayush on 2026-10-26 with the five conditions below, which bind.** It is G-01 OQ-1 ("Service-line content visibility", the Jan 29, 2027 decision), first decided in session as DEC-380 with OQ-1's recommended option. It extends ADR-024; it does not relax it for admins. Its switch is `authz.SERVICE_LINE_REACH`: False is G-01 AC10.4's fallback (every line "Engagement team only").
 
 ## Context
 ADM-03's revision R2 lets a firm set, per service line, who reads a line's content: the engagement team only, or the whole line. ADR-024 grants content to an engagement's team and, in their scope, to practice leaders and quality partners; firm admins see metadata only and join to see content. A tax or client-accounting practice often works as one pool: a preparer covers a colleague's return without being added to every engagement. G-01 §3.10 (AC10.1 to AC10.4) and OQ-1 describe the setting and recommend a narrow form of it; no register row decided it.
@@ -26,12 +26,12 @@ A firm may set a service line's "Content visible to" to "Service line". The line
 6. **A member of the line.** The person's `service_lines` include the engagement's line and they hold no engagement role there: a team role decides as before, even one the read is not granted to, in `authorise` and in `visible()` alike.
 7. **Off by default, audited, immediate.** A firm without a policy row reads every line as "Engagement team only". A change is fresh-MFA, a live person's, audited, and tells every member holding the line their access changed; it applies on their next request.
 
-## Conditions for acceptance (security review, S9 wave A; DEC-383)
-The reviewer asked for these before this ADR can be accepted. All but (4) are built; (4) is the deciders' call.
+## Conditions (binding; security review, S9 wave A; DEC-383; accepted 2026-10-26)
+Ayush accepted this ADR with these five conditions; all five are built.
 1. **M1 and M2 fixed.** `visible()` no longer ORs a team member with a line reader: a row on which the person holds any engagement role is never reached through the line (rule 6), so lists agree with `authorise`. The line never counts at firm level (M2), so a firm-level read (client search, knowledge, methodology, retention policies) is exactly what it was before a line opened.
 2. **Per-engagement rows only.** The reach applies only to engagement-scoped resources and to rows `visible()` filters by engagement; it is never a firm-level grant. A firm's stricter-only override of `staff`'s cell for an action keeps the reach out of that action in lists as well as in `authorise`.
 3. **No agent delegation.** An agent run never inherits its initiator's line: the initiator check for an agent (its action, or the agent-only reach `evidence.read`) and the agent's list filter both leave the line out.
-4. **Who may open a line.** `service_line_policy.manage` is held by firm admins and security admins, as G-01 §4.3's matrix says. A security admin is metadata-only, yet could open content to other people. The reviewer recommends firm admins and partners only; the plan says otherwise, so the plan's cell stands until the deciders choose. Every change needs fresh MFA, is a live person's own (database trigger), is human-only in the audit register and is audited.
+4. **Who may open a line: firm admins and partners only.** `service_line_policy.manage` is held by `firm_admin` and the derived `firm_partner` (a partner-level member), never a security admin: a security admin is metadata-only and must not open content to other people (Ayush, 2026-10-26, replacing G-01 §4.3's "firm_admin, security_admin" cell). Every change needs fresh MFA, is a live person's own (database trigger), is human-only in the audit register and is audited.
 5. **Pen-test retest.** The service-line layer stays on the pen-test retest list (G-01 R-2).
 
 ## Options considered

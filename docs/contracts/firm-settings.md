@@ -39,7 +39,7 @@ One family for the firm's own configuration: the settings frame and its typed se
 | Confirm one's own | `POST /v1/me/independence/annual` | `independence.annual_confirm` (oneself only: `authorise_own`) |
 | One's own status and the statement | `GET /v1/me/independence/annual?year=` | `OWN` |
 | The firm's statement | `GET /v1/firm/independence/statement` · `PUT /v1/firm/independence/statement` | `firm.read_settings` · `firm.manage_settings` (fresh MFA) |
-| Service lines | `GET /v1/firm/service-lines` · `PUT /v1/firm/service-lines/{line}` | `firm.read_settings` · `service_line_policy.manage` (fresh MFA) |
+| Service lines | `GET /v1/firm/service-lines` · `PUT /v1/firm/service-lines/{line}` | `firm.read_settings` · `service_line_policy.manage` (firm admins and partners, never security admins: ADR-183 condition 4; fresh MFA) |
 | Offshore | `GET /v1/firm/offshore` | `firm.read_settings` |
 | Offices | `GET` · `POST /v1/firm/offices` · `PATCH /v1/firm/offices/{office_id}` | `org_structure.read` · `org_structure.manage` (fresh MFA) |
 | Teams | `GET` · `POST /v1/firm/teams` · `PATCH /{team_id}` · `PUT /{team_id}/members` | `org_structure.read` · `org_structure.manage` (fresh MFA) |

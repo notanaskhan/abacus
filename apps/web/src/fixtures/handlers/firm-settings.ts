@@ -179,8 +179,10 @@ export function firmSettingsHandlers(
 export interface Adm03Options {
   /** The viewer's initials: rows carry their wall actions (Approve, Lift). */
   viewer: string;
-  /** May the viewer edit offices, teams and service lines (firm or security admin)? */
+  /** May the viewer edit offices and teams (firm or security admin)? */
   manage: boolean;
+  /** May the viewer change service-line policies (firm admin or partner; ADR-183 condition 4)? */
+  manageLines: boolean;
   /** Lena Park's wall: awaiting Margaret Okonkwo, or approved (ADM-03g). */
   wallState?: WallState;
   /** ADM-03d: Remy Vidal is in the offshore group. */
@@ -233,7 +235,7 @@ export function adm03Handlers(options: Adm03Options): Record<string, FixtureHand
     },
     "GET /v1/firm/service-lines": () => json(lines),
     "PUT /v1/firm/service-lines/{line}": ({ params, body }) => {
-      if (!options.manage) return forbidden();
+      if (!options.manageLines) return forbidden();
       const i = lines.findIndex((l) => l.service_line === params.line);
       const found = lines[i];
       if (found === undefined) return json(NOT_FOUND, 404);

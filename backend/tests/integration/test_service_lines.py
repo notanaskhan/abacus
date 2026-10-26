@@ -294,16 +294,19 @@ async def test_ac10_1_who_reads_and_who_changes_the_policies(firm: Firm) -> None
     with pytest.raises(NotFound):
         await service_lines.policies(kevin)  # ADR-024: nothing to see
     with pytest.raises(Forbidden):
-        await _open(daniel, "tax", 0)
-    with pytest.raises(Forbidden):
         await _open(kevin, "tax", 0)
+    # ADR-183 condition 4 (Ayush, 2026-10-26): a security admin, metadata-only, never opens a
+    # line's content to others.
+    with pytest.raises(Forbidden):
+        await _open(felix, "tax", 0)
     stale = _ctx(firm.tenant, grace.user_id, "firm_admin", fresh=False)
     with pytest.raises(Forbidden):
         await _open(stale, "tax", 0)  # fresh MFA
     agent_like = _ctx(firm.tenant, grace.user_id, "firm_admin", kind="agent")
     with pytest.raises(Forbidden):
         await _open(agent_like, "tax", 0)  # INV-1: a live person only
-    assert await _open(felix, "tax", 0) == 1  # security admins manage them too
+    assert await _open(daniel, "tax", 0) == 1  # partners manage them (ADR-183 condition 4)
+    assert await _open(grace, "tax", 1, to="engagement_team_only") == 2  # and firm admins
 
 
 # --- AC10.2, AC10.3: the reach -------------------------------------------------------------------

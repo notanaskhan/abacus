@@ -7,7 +7,8 @@ without a row reads as offered, "Engagement team only" and "Hand-offs only", so 
 widened by default. Audit can never be widened (422 `audit_locked`, and 0167's CHECK).
 
 Reading is `firm.read_settings` (a 404 for anyone else, ADR-024); a change is
-`service_line_policy.manage` (firm or security admin, fresh MFA), a live person's only (INV-1),
+`service_line_policy.manage` (firm admin or partner, never a security admin: ADR-183 condition
+4; fresh MFA), a live person's only (INV-1),
 against the line's version (409 `stale_version`). It is audited with codes only, published as
 `service_line_policy.changed`, and when the line's reach opens or narrows every active member
 holding the line is told their access changed (their next request applies it: AC10.2).

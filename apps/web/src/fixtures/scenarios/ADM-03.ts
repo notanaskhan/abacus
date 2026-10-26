@@ -1,7 +1,8 @@
 // ADM-03 Offices, teams, walls & offshore: one fixture scenario per artboard (G-01-T14; G-01 §5.3;
 // docs/screens/ADM-03.md). a, c, g and h are Grace Holloway at E0, 9:24 AM; b and f are 9:20 AM,
 // when she adds the Lena Park ✕ Ashford wall (f: the new row tinted for 2 s); d puts Remy Vidal
-// in the offshore group; e is Daniel Reyes (partner), read-only but for his wall actions; g opens
+// in the offshore group; e is Daniel Reyes (partner): offices, teams and offshore locked, his wall
+// actions, and the service lines a partner manages (ADR-183 condition 4); g opens
 // Lena Park's wall log after Margaret Okonkwo approved it; h narrows Tax to "Engagement team
 // only" (the change is the test's: a dirty form is not a URL).
 
@@ -40,6 +41,7 @@ const ACTIONS: Readonly<Record<string, readonly string[]>> = {
     "firm.read_settings",
     "firm.read_people",
     "org_structure.read",
+    "service_line_policy.manage", // ADR-183 condition 4: partners manage service lines
     "wall.list",
     "wall.create",
     "wall.approve",
@@ -71,7 +73,7 @@ function at(
   const grace = persona === "grace-holloway";
   const own = {
     ...firmSettingsHandlers(grace ? "admin" : "partner", "e0"),
-    ...adm03Handlers({ viewer: grace ? "GH" : "DR", manage: grace, ...more }),
+    ...adm03Handlers({ viewer: grace ? "GH" : "DR", manage: grace, manageLines: true, ...more }),
   };
   return {
     state,

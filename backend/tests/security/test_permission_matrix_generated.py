@@ -3065,7 +3065,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("service_line_policy.manage", "firm_admin", "allow"),
     ("service_line_policy.manage", "practice_leader", "deny"),
     ("service_line_policy.manage", "quality_partner", "deny"),
-    ("service_line_policy.manage", "security_admin", "allow"),
+    ("service_line_policy.manage", "security_admin", "deny"),
     ("service_line_policy.manage", "engagement_partner", "deny"),
     ("service_line_policy.manage", "manager", "deny"),
     ("service_line_policy.manage", "senior", "deny"),

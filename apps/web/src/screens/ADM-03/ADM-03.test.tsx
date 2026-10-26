@@ -253,13 +253,16 @@ describe("ADM-03 artboards", () => {
     ).toBeTruthy();
   });
 
-  it("ADM-03e: Daniel Reyes reads every value locked, adds walls and lifts others' walls", async () => {
+  it("ADM-03e: Daniel Reyes manages service lines, adds walls and lifts others' walls; the rest is locked", async () => {
     const calls = show("e");
-    expect(await screen.findByText("Only firm admins can edit these settings.")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Time zone: Central Time (CT)" })).toBeNull();
+    // ADR-183 condition 4 (Ayush, 2026-10-26): partners manage service lines, so Daniel's form
+    // is not read-only; offices, teams and offshore stay locked for him.
     const lines = await screen.findByRole("table", { name: "Service lines" });
-    expect(within(lines).queryByRole("button")).toBeNull();
+    expect(await within(lines).findByRole("button", { name: "Tax: Service line" })).toBeTruthy();
+    expect(screen.queryByText("Only firm admins can edit these settings.")).toBeNull();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save" }).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Time zone: Central Time (CT)" })).toBeNull();
+    expect(within(fieldset("Offices")).getByLabelText("Locked")).toBeTruthy();
     expect(await screen.findByRole("button", { name: "Wall" })).toBeTruthy();
     await waitFor(() => {
       expect(wallRows()).toHaveLength(3);
@@ -337,6 +340,24 @@ describe("ADM-03 writes and edges", () => {
     const code = await screen.findByDisplayValue("CHI");
     fireEvent.change(code, { target: { value: "C1" } });
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save" }).disabled).toBe(true);
+  });
+
+  it("a security admin reads the service lines locked (ADR-183 condition 4)", async () => {
+    const base: FixtureHandler = scenarios.a.handlers["GET /v1/me/capabilities"];
+    show("a", OPENS.a, {
+      "GET /v1/me/capabilities": async (request) => {
+        const answer = await Promise.resolve(base(request));
+        const body = (await answer.json()) as { capabilities: string[] };
+        return json({
+          ...body,
+          capabilities: body.capabilities.filter((c) => c !== "service_line_policy.manage"),
+        });
+      },
+    });
+    const lines = await screen.findByRole("table", { name: "Service lines" });
+    await waitFor(() => {
+      expect(within(lines).queryByRole("button")).toBeNull();
+    });
   });
 
   it("walls without a fresh second factor show the step-up row and no count", async () => {
