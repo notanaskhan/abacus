@@ -4286,7 +4286,8 @@ export const leadsheets = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Tb Leadsheet Area Route
  *
- * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10).
+ * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10); "Unassigned" holds the
+ * accounts no rule or annotation places.
  */
 export const tbLeadsheetArea = <ThrowOnError extends boolean = false>(options: Options<TbLeadsheetAreaData, ThrowOnError>): RequestResult<TbLeadsheetAreaResponses, TbLeadsheetAreaErrors, ThrowOnError> => (options.client ?? client).get<TbLeadsheetAreaResponses, TbLeadsheetAreaErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

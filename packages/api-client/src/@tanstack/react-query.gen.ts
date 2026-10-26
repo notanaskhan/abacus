@@ -7089,7 +7089,8 @@ export const tbLeadsheetAreaQueryKey = (options: Options<TbLeadsheetAreaData>) =
 /**
  * Tb Leadsheet Area Route
  *
- * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10).
+ * AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10); "Unassigned" holds the
+ * accounts no rule or annotation places.
  */
 export const tbLeadsheetAreaOptions = (options: Options<TbLeadsheetAreaData>) => queryOptions<TbLeadsheetAreaResponse, TbLeadsheetAreaError, TbLeadsheetAreaResponse, ReturnType<typeof tbLeadsheetAreaQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
