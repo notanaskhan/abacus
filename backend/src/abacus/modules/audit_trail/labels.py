@@ -20,8 +20,13 @@ The projection is operational, like the hash chain's checkpoints: its writes car
 (auditing the index of the audit trail would feed itself) and commit on their own connection
 (UOW-001's exclusion names this file). It is never the record: `audit_events` is.
 
-Search is bounded: `search` answers at most `SCAN` matching seqs, newest first, so the list's
-`total` over a search is capped there and Load more continues by `seq`.
+**Late commits (M2):** `seq` commits out of order, so each catch-up batch also re-reads the
+settle window's events that have no label yet. **One indexer per firm (L4):** a batch takes the
+firm's transaction advisory lock or writes nothing.
+
+**Search (L3):** `matching` is a predicate the explorer adds to its own query, so visibility,
+the page's keyset limit and the capped total apply to matches together; nothing is capped before
+visibility.
 """
 
 from __future__ import annotations
@@ -39,14 +44,17 @@ from sqlalchemy import (
     MetaData,
     Table,
     Text,
+    and_,
+    exists,
+    false,
     func,
     literal,
+    or_,
     select,
 )
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import REGCONFIG, TSVECTOR, insert
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_connection
 from abacus.kernel.uow.explorer import AUDIT_EVENTS
@@ -54,7 +62,7 @@ from abacus.modules.identity.api import names_of
 from abacus.modules.platform.api import audit_labels
 
 BATCH: Final = 2_000  # G-02 §4.9 `audit_label_index_batch`
-SCAN: Final = 2_000  # the most matches one search answers
+SETTLE_SECONDS: Final = 120  # as `kernel.uow.chain.SETTLE_SECONDS`: late commits re-scanned
 MAX_Q: Final = 200
 _CONFIG: Final = "simple"
 _INDEXER: Final = "system:audit_label_index"
@@ -169,13 +177,37 @@ async def _label_rows(tenant_id: UUID, rows: Sequence[Row]) -> list[dict[str, ob
     return out
 
 
+def _lock_key(tenant_id: UUID) -> ColumnElement[int]:
+    return func.hashtextextended(literal(f"audit_label_index:{tenant_id}", Text()), 0)
+
+
+def _pending(after: int | None, start: int) -> ColumnElement[bool]:
+    """The events a batch indexes. From the newest indexed `seq` on, and (M2) any event of the
+    settle window that has no label yet: `seq` is assigned at insert but commits in any order,
+    so a lower `seq` can commit after a higher one was indexed (`chain.py` settles the same
+    way). An explicit `after` (the back-fill) reads the range as given."""
+    newer = E.seq > start
+    if after is not None:
+        return newer
+    unlabelled = ~exists(select(literal(1)).where(L.tenant_id == E.tenant_id, L.seq == E.seq))
+    recent = E.occurred_at > func.clock_timestamp() - func.make_interval(
+        0, 0, 0, 0, 0, 0, SETTLE_SECONDS
+    )
+    return or_(newer, and_(recent, unlabelled))
+
+
 async def index_batch(
     tenant_id: UUID, limit: int = BATCH, *, after: int | None = None
 ) -> tuple[int, int | None]:
-    """Index up to `limit` of the firm's events after `after` (default: the newest indexed);
-    upserts, so a replay of the same range writes the same rows. Answers how many it wrote and
-    the last `seq` it indexed."""
+    """Index up to `limit` of the firm's events (`_pending`); upserts, so a replay of the same
+    range writes the same rows. One indexer per firm at a time (L4): a run that finds the firm's
+    advisory lock held writes nothing. Answers how many it wrote and the last `seq` it indexed."""
     async with tenant_connection(_indexer(tenant_id)) as conn:
+        locked = (
+            await conn.execute(select(func.pg_try_advisory_xact_lock(_lock_key(tenant_id))))
+        ).scalar_one()
+        if not locked:
+            return 0, None
         start = (
             after
             if after is not None
@@ -200,7 +232,7 @@ async def index_batch(
                         E.office_id,
                         E.engagement_id,
                     )
-                    .where(E.seq > start)
+                    .where(_pending(after, start))
                     .order_by(E.seq)
                     .limit(limit)
                 )
@@ -211,35 +243,39 @@ async def index_batch(
         if not events:
             return 0, None
         rows = await _label_rows(tenant_id, events)
-        for row in rows:
-            stmt = insert(AUDIT_EVENT_LABELS).values(
-                tenant_id=row["tenant_id"],
-                seq=row["seq"],
-                effective_at=row["effective_at"],
-                actor_label=row["actor_label"],
-                target_label=row["target_label"],
-                keywords=func.to_tsvector(_config(), literal(str(row["text"]), Text())),
-                client_id=row["client_id"],
-                office_id=row["office_id"],
-                engagement_id=row["engagement_id"],
+        stmt = insert(AUDIT_EVENT_LABELS).values(
+            [
+                {
+                    "tenant_id": row["tenant_id"],
+                    "seq": row["seq"],
+                    "effective_at": row["effective_at"],
+                    "actor_label": row["actor_label"],
+                    "target_label": row["target_label"],
+                    "keywords": func.to_tsvector(_config(), literal(str(row["text"]), Text())),
+                    "client_id": row["client_id"],
+                    "office_id": row["office_id"],
+                    "engagement_id": row["engagement_id"],
+                }
+                for row in rows
+            ]
+        )
+        await conn.execute(
+            stmt.on_conflict_do_update(
+                index_elements=[L.tenant_id, L.seq],
+                set_={
+                    "effective_at": stmt.excluded.effective_at,
+                    "actor_label": stmt.excluded.actor_label,
+                    "target_label": stmt.excluded.target_label,
+                    "keywords": stmt.excluded.keywords,
+                    "client_id": stmt.excluded.client_id,
+                    "office_id": stmt.excluded.office_id,
+                    "engagement_id": stmt.excluded.engagement_id,
+                    "indexed_at": func.now(),
+                },
             )
-            await conn.execute(
-                stmt.on_conflict_do_update(
-                    index_elements=[L.tenant_id, L.seq],
-                    set_={
-                        "effective_at": stmt.excluded.effective_at,
-                        "actor_label": stmt.excluded.actor_label,
-                        "target_label": stmt.excluded.target_label,
-                        "keywords": stmt.excluded.keywords,
-                        "client_id": stmt.excluded.client_id,
-                        "office_id": stmt.excluded.office_id,
-                        "engagement_id": stmt.excluded.engagement_id,
-                        "indexed_at": func.now(),
-                    },
-                )
-            )
+        )
         await conn.commit()
-    return len(rows), int(events[-1]["seq"])
+    return len(rows), max(int(e["seq"]) for e in events)
 
 
 async def backfill(tenant_id: UUID, *, batch: int = BATCH) -> int:
@@ -258,28 +294,31 @@ def _query(q: str) -> str:
     return " ".join(w for w in _WORDS.split(q[:MAX_Q].lower()) if w)
 
 
-async def search(session: AsyncSession, tenant_id: UUID, q: str) -> list[int]:
-    """The newest `SCAN` seqs whose labels match every word of `q` (catching the firm's index
-    up by one batch first). Labels only: never a value (M4)."""
+async def catch_up(tenant_id: UUID) -> None:
+    """One bounded batch before a search, while the Schedule is not wired (DEC-436)."""
+    await index_batch(tenant_id)
+
+
+def matching(seq: ColumnElement[int], q: str) -> ColumnElement[bool]:
+    """Events whose labels match every word of `q`, as a predicate on the caller's query, so
+    the caller's visibility and limit apply with it (L3). Labels only: never a value (M4)."""
     words = _query(q)
     if not words:
-        return []
-    await index_batch(tenant_id)
-    found = await session.execute(
-        select(L.seq)
-        .where(L.keywords.op("@@")(func.plainto_tsquery(_config(), literal(words, Text()))))
-        .order_by(L.seq.desc())
-        .limit(SCAN)
+        return false()
+    return seq.in_(
+        select(L.seq).where(
+            L.keywords.op("@@")(func.plainto_tsquery(_config(), literal(words, Text())))
+        )
     )
-    return [int(s) for (s,) in found.all()]
 
 
 __all__ = [
     "AUDIT_EVENT_LABELS",
     "BATCH",
-    "SCAN",
+    "SETTLE_SECONDS",
     "backfill",
+    "catch_up",
     "index_batch",
     "keywords_text",
-    "search",
+    "matching",
 ]

@@ -358,3 +358,70 @@ async def test_events_for_work_item_answers_the_readers_view(world: World) -> No
     grace = await events_for_work_item(world.grace, work_item)
     assert len(grace) == 2
     assert [r.seq for r in grace] == sorted(r.seq for r in grace)
+
+
+# --- Security review M1: firm-level events that name a walled client -----------------------------
+
+
+async def test_m1_a_walled_admin_never_sees_a_hold_on_the_walled_client(
+    world: World, as_: Callable[[object], Call], seed: Seeder
+) -> None:
+    def client_of(engagement: uuid.UUID) -> Awaitable[object]:
+        return seed.value("SELECT client_id FROM engagements WHERE id = $1", engagement)
+
+    ashford_client = cast(uuid.UUID, await client_of(world.ashford))
+    copperleaf_client = cast(uuid.UUID, await client_of(world.copperleaf))
+    walled_hold, open_hold, link = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    await _record(
+        world.grace.tenant,
+        "legal_hold.placed",
+        Target("legal_hold", walled_hold),
+        after=Ref(client_id=ashford_client),
+    )
+    await _record(
+        world.grace.tenant,
+        "legal_hold.placed",
+        Target("legal_hold", open_hold),
+        after=Ref(client_id=copperleaf_client),
+    )
+    # A contact names a client the explorer cannot place: hidden from a walled reader.
+    await _record(
+        world.grace.tenant,
+        "secure_link.issued",
+        Target("secure_link", link),
+        after=Ref(contact_id=uuid.uuid4()),
+    )
+    ivan = await as_(world.ivan)("GET", LIST)
+    assert str(walled_hold) not in _target_ids(ivan)
+    assert str(link) not in _target_ids(ivan)
+    assert str(open_hold) in _target_ids(ivan)
+    assert str(ashford_client) not in ivan.text
+    assert ivan.json()["total"] == len(_items(ivan)) == ivan.json()["counts"]["all"]
+    grace = await as_(world.grace)("GET", LIST)
+    assert {str(walled_hold), str(open_hold), str(link)} <= set(_target_ids(grace))
+    walled_seq = cast(
+        int,
+        await seed.value(
+            "SELECT seq FROM audit_events WHERE tenant_id = $1 AND target_id = $2",
+            world.tenant,
+            str(walled_hold),
+        ),
+    )
+    assert (await as_(world.ivan)("GET", f"{LIST}/{walled_seq}")).status_code == 404
+    searched = await as_(world.ivan)("GET", LIST, params={"q": "legal hold placed"})
+    assert _target_ids(searched) == [str(open_hold)]
+    assert searched.json()["total"] == 1
+    by_grace = await as_(world.grace)("GET", LIST, params={"q": "legal hold placed"})
+    assert set(_target_ids(by_grace)) == {str(walled_hold), str(open_hold)}
+
+
+# --- Security review L7: an IPv6 zone is refused, never a 500 -----------------------------------
+
+
+async def test_l7_an_ipv6_zone_in_the_ip_filter_answers_422(
+    world: World, as_: Callable[[object], Call]
+) -> None:
+    refused = await as_(world.felix)("GET", LIST, params={"ip": "fe80::1%eth0"})
+    assert refused.status_code == 422
+    plain = await as_(world.felix)("GET", LIST, params={"ip": "fe80::1"})
+    assert plain.status_code == 200

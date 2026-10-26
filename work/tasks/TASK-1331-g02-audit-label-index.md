@@ -39,3 +39,6 @@ Downgrade drops both tables (local only); the projection is rebuildable.
   `schema_check`. Schedule not wired (DEC-436): a search catches the index up by one batch.
   UOW-001 and UOW-002 exclude `audit_trail/labels.py`. The 500 ms p95 at 50,000 events is a
   staging measurement, not run here.
+- 2026-10-26: security review fixes. M2: each batch re-reads the 120 s settle window's
+  unlabelled events. L4: per-firm advisory lock, one multi-row upsert. L6: a test holds the file
+  to `audit_event_labels`. `office_id` is never filled by writers, so its copy here is null.

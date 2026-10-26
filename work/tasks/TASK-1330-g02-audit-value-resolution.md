@@ -40,3 +40,5 @@ Flag `audit_log.values` off: every values section reads `withheld` `not_enabled`
   values through `audit_event.read_firm_values` (QM owner). Labelers now accept a `None` viewer
   for the label index. Other v1 types (ai_policy, security_policy, support_session, membership,
   evidence_version, request_item, pii_reveal) wait for their owners: partial (DEC-435).
+- 2026-10-26: security review L8: not-included items are classified and masked in the slot
+  (`AuditNotIncluded`); L5: need-to-know probed via `allowed_actions`.

@@ -13,6 +13,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Path, Query
+from pydantic import AfterValidator
 
 from abacus.modules.audit_trail import explorer
 from abacus.modules.audit_trail.audit_log_contract import (
@@ -28,6 +29,16 @@ from abacus.modules.audit_trail.audit_log_contract import (
 Text = Annotated[str | None, Query(max_length=200)]
 
 
+def _no_zone(ip: IPv4Address | IPv6Address | None) -> IPv4Address | IPv6Address | None:
+    """L7: an IPv6 zone (`fe80::1%eth0`) is no host `inet` holds: 422, never a 500."""
+    if isinstance(ip, IPv6Address) and ip.scope_id is not None:
+        raise ValueError("an IP address filter names a host, without a zone")
+    return ip
+
+
+Ip = Annotated[IPv4Address | IPv6Address | None, Query(), AfterValidator(_no_zone)]
+
+
 @router.get("", action="audit_event.read", response_model=AuditEventPageOut)
 async def list_audit_events_route(
     ctx: Ctx,
@@ -38,7 +49,7 @@ async def list_audit_events_route(
     from_: Annotated[date | None, Query(alias="from")] = None,
     to: Annotated[date | None, Query()] = None,
     office_id: Annotated[UUID | None, Query()] = None,
-    ip: Annotated[IPv4Address | IPv6Address | None, Query()] = None,
+    ip: Ip = None,
     q: Text = None,
     since_seq: Annotated[int | None, Query(ge=0)] = None,
     cursor: Annotated[str | None, Query(max_length=1024)] = None,

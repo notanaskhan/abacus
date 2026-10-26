@@ -174,3 +174,23 @@ async def test_g02t10_a_search_catches_the_index_up_with_new_events(
     other = await seed.firm()
     assert await index_labels(other) == (0, None)
     assert await _labels(seed, other) == []
+
+
+async def test_m2_an_event_committed_late_below_the_indexed_seq_is_still_indexed(
+    firm: tuple[uuid.UUID, AuthContext], seed: Seeder
+) -> None:
+    """`seq` commits out of order: an event whose lower `seq` commits after a higher one was
+    indexed has no label row although `max(seq)` is past it. The next batch re-reads the settle
+    window and indexes it (the missing row stands in for the late commit)."""
+    tenant, _ = firm
+    await index_labels(tenant)
+    late = cast(
+        int,
+        await seed.value("SELECT min(seq) FROM audit_event_labels WHERE tenant_id = $1", tenant),
+    )
+    await seed.run(
+        "DELETE FROM audit_event_labels WHERE tenant_id = $1 AND seq = $2", tenant, late
+    )
+    written, _ = await index_labels(tenant)
+    assert written == 1
+    assert [r[0] for r in await _labels(seed, tenant)].count(late) == 1

@@ -16,22 +16,21 @@ out (`platform.audit_values`: a Restricted value is only ever masked). In order:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import Final
 
 from abacus.kernel._flags import AUDIT_LOG_VALUES
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.audit_trail.audit_log_contract import (
+    AuditPersonOut,
     AuditValuesOut,
     NotIncludedRow,
     ValueRow,
 )
 from abacus.modules.identity.api import (
     AuthContext,
-    Forbidden,
     Resource,
-    authorise,
+    allowed_actions,
     engagement_resource,
 )
 from abacus.modules.platform.api import AuditEventRef, AuditValues, audit_values
@@ -43,25 +42,16 @@ FIRM_VALUES: Final = "audit_event.read_firm_values"
 
 async def may_see_values(ctx: AuthContext, event: AuditEventRef) -> bool:
     """ADR-024 need to know: the target's content read, never an admin's metadata right."""
-    try:
-        if event.engagement_id is None:
-            await authorise(ctx, FIRM_VALUES, Resource.firm(ctx.tenant_id))
-            return True
-        resource = await engagement_resource(ctx.tenant, event.engagement_id)
-        await authorise(ctx, CONTENT_READ, resource)
-    except (Forbidden, NotFound):
-        return False
-    return True
-
-
-def _not_included(facts: Mapping[str, str | int]) -> NotIncludedRow | None:
-    label, reason = facts.get("item_label"), facts.get("reason_code")
-    if not isinstance(label, str) or not isinstance(reason, str):
-        return None
-    amount = facts.get("amount")
-    return NotIncludedRow(
-        item_label=label, reason_code=reason, amount=amount if isinstance(amount, str) else None
-    )
+    # L5: probes (`allowed_actions`), not checks: a withheld section logs no `authz.denied`.
+    if event.engagement_id is None:
+        action, resource = FIRM_VALUES, Resource.firm(ctx.tenant_id)
+    else:
+        action = CONTENT_READ
+        try:
+            resource = await engagement_resource(ctx.tenant, event.engagement_id)
+        except NotFound:
+            return False
+    return action in await allowed_actions(ctx, resource, (action,))
 
 
 def out(values: AuditValues) -> AuditValuesOut:
@@ -81,7 +71,20 @@ def out(values: AuditValues) -> AuditValuesOut:
             )
             for row in values.rows
         ],
-        not_included=[r for f in values.not_included if (r := _not_included(f)) is not None],
+        # Already classified and masked by `audit_values` (L8).
+        not_included=[
+            NotIncludedRow(
+                item_label=n.item_label,
+                reason_code=n.reason_code,
+                amount=n.amount,
+                routed_to=(
+                    AuditPersonOut(user_id=n.routed_to_user_id, display_name="")
+                    if n.routed_to_user_id is not None
+                    else None
+                ),
+            )
+            for n in values.not_included
+        ],
     )
 
 

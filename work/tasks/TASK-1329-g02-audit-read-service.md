@@ -61,3 +61,8 @@ Flag `audit_log.explorer` off (404). No migration in this task.
   target unplaced on main; `test_targets` fails there too). Targeted pass: 8,131 passed, 1 failed
   (ED-112). Mistake made twice: reading `ctx.firm_role` in module code (AUTHZ-002) and naming a
   class after a banned glossary word (`Activity`, `project`); both caught by `banned_patterns`.
+- 2026-10-26: security review fixes. M1: firm-level events whose references name a walled
+  client (or an unplaceable client-side id) are hidden from a walled reader in list, detail,
+  counts and search. L3: search is a predicate in the list query. L5: role rows probed via
+  `allowed_actions`. L7: an IPv6 zone in `ip` answers 422. **Known gap:** writers fill neither
+  `audit_events.client_id` nor `office_id`, so the Office filter matches nothing yet (DEC-436).

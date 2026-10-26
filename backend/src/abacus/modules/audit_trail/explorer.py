@@ -15,7 +15,10 @@ and `counts` never include an omitted row and nothing says rows were left out (D
   history) is firm-level: only a reader allowed `audit_event.read_firm_level` at the firm sees it
   (`firm_admin`, `security_admin`, the QM owner `quality_partner` and platform support; DEC-434).
   Engagement roles never do. A firm-level reader walled from any client sees, of these, only
-  the kinds that can name no client (`targets.FIRM_LEVEL`): unplaced history fails closed.
+  the kinds that can name no client (`targets.FIRM_LEVEL`), and of those only events whose
+  references name no client it is walled from and no client-side identifier it cannot place
+  (`FIRM_SAFE_REFS`; security review M1: `legal_hold.placed` carries its client in `after_ref`,
+  and `audit_events.client_id` is not filled by writers yet). Unplaced history fails closed.
 - A stored `client_id` the reader is walled from hides the event whatever else holds.
 
 **What a row carries:** the actor grammar (`person`, `via_agent` with the person it acted for,
@@ -41,6 +44,7 @@ from sqlalchemy import (
     Select,
     and_,
     case,
+    exists,
     false,
     func,
     literal,
@@ -50,7 +54,7 @@ from sqlalchemy import (
     true,
 )
 from sqlalchemy import cast as sql_cast
-from sqlalchemy.dialects.postgresql import INET
+from sqlalchemy.dialects.postgresql import INET, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -87,9 +91,8 @@ from abacus.modules.audit_trail.audit_log_contract import (
 from abacus.modules.audit_trail.targets import FIRM_LEVEL
 from abacus.modules.identity.api import (
     AuthContext,
-    Forbidden,
     Resource,
-    authorise,
+    allowed_actions,
     firm_time_zone,
     member_facts,
     names_of,
@@ -171,21 +174,51 @@ class Reader:
     request_context: bool  # DEC-420
 
 
-async def _allowed(ctx: AuthContext, action: str) -> bool:
-    try:
-        await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    except Forbidden:
-        return False
-    return True
-
-
 async def reader_of(ctx: AuthContext) -> Reader:
+    # L5: a probe, not a check: an ordinary read logs no `authz.denied` for the rows it narrows.
+    allowed = await allowed_actions(
+        ctx, Resource.firm(ctx.tenant_id), (READ_FIRM_LEVEL, READ_REQUEST_CONTEXT)
+    )
     return Reader(
         ctx,
-        firm=await _allowed(ctx, READ_FIRM_LEVEL),
+        firm=READ_FIRM_LEVEL in allowed,
         walled=await walled_from(ctx.tenant, ctx.user_id),
-        request_context=await _allowed(ctx, READ_REQUEST_CONTEXT),
+        request_context=READ_REQUEST_CONTEXT in allowed,
     )
+
+
+# Reference keys a firm-level event may carry to a walled reader: people and firm structure.
+# Any other identifier in its references (a client, contact, entity, engagement, work item or
+# record of one) can name a walled client's work, so a walled reader does not see the event
+# (fail closed; security review M1). `client_id` is checked exactly instead.
+FIRM_SAFE_REFS: Final = frozenset(
+    {"user_id", "staff_id", "approver_user_id", "on_behalf_of", "initiator", "uploaded_by"}
+    | {"security_admin", "office", "office_id", "team_id", "flag_id", "methodology_version_id"}
+    | {"renewed_from_id", "supersedes_id", "feedback_id", "decision_id", "check_id"}
+)
+_NO_REFS: Final = literal({}, JSONB)
+
+
+def _refs_of_event() -> ColumnElement[Any]:  # Any: jsonb
+    return func.coalesce(t.before_ref, _NO_REFS).op("||")(func.coalesce(t.after_ref, _NO_REFS))
+
+
+def _names_walled_work(walled: frozenset[UUID]) -> ColumnElement[bool]:
+    """A firm-level event whose references name a walled client, or name any client-side
+    identifier the explorer cannot place (security review M1)."""
+    pairs = func.jsonb_each_text(_refs_of_event()).table_valued("key", "value").render_derived()
+    unplaced = exists(
+        select(literal(1))
+        .select_from(pairs)
+        .where(
+            pairs.c.value.op("~")(_UUID),
+            pairs.c.key.not_in(sorted(FIRM_SAFE_REFS | {"client_id"})),
+        )
+    )
+    clients = sorted(str(c) for c in walled)
+    # Coalesced: a missing key is NULL, and NOT (NULL OR false) would hide the event too.
+    named = func.coalesce(t.before_ref["client_id"].astext, "").in_(clients)
+    return or_(named, func.coalesce(t.after_ref["client_id"].astext, "").in_(clients), unplaced)
 
 
 def shown_to(reader: Reader) -> ColumnElement[bool]:
@@ -196,7 +229,11 @@ def shown_to(reader: Reader) -> ColumnElement[bool]:
     if reader.firm:
         firm_level: ColumnElement[bool] = ENGAGEMENT.is_(None)
         if reader.walled:
-            firm_level = and_(firm_level, t.target_type.in_(sorted(FIRM_LEVEL)))
+            firm_level = and_(
+                firm_level,
+                t.target_type.in_(sorted(FIRM_LEVEL)),
+                ~_names_walled_work(reader.walled),
+            )
         clauses.append(firm_level)
     shown = or_(*clauses)
     if reader.walled:
@@ -441,9 +478,12 @@ async def list_events(
     others = await _conditions(reader, where, with_actor_kind=False)
     async with tenant_session(ctx.tenant) as session:
         if where.q is not None:
-            seqs = await label_index.search(session, ctx.tenant_id, where.q)
-            conditions.append(t.seq.in_(seqs) if seqs else false())
-            others.append(t.seq.in_(seqs) if seqs else false())
+            # L3: the search is a predicate inside this query, so visibility and the page's
+            # limit apply together (no cap before visibility).
+            await label_index.catch_up(ctx.tenant_id)
+            matched = label_index.matching(t.seq, where.q)
+            conditions.append(matched)
+            others.append(matched)
         stmt = keyset(
             _select(conditions),
             sort=cast(ColumnElement[object], t.seq),

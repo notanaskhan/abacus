@@ -77,12 +77,23 @@ class AuditValueRow:
 
 
 @dataclass(frozen=True)
+class AuditNotIncluded:
+    """An item left out of the change ("Not included"), classified like a value row (L8): a
+    Restricted label leaves the slot masked and without its amount."""
+
+    item_label: str
+    reason_code: str
+    amount: str | None = None
+    routed_to_user_id: UUID | None = None
+    classification: LabelClass = "confidential"
+
+
+@dataclass(frozen=True)
 class AuditValues:
     status: ValuesStatus
     reason: WithheldReason | None = None
     rows: tuple[AuditValueRow, ...] = ()
-    # Facts about related items left out of the change ("Not included"), identifiers and codes.
-    not_included: tuple[Mapping[str, str | int], ...] = field(default=())
+    not_included: tuple[AuditNotIncluded, ...] = field(default=())
 
 
 UNAVAILABLE: Final = AuditValues("unavailable")
@@ -127,10 +138,21 @@ def _safe_row(row: AuditValueRow) -> AuditValueRow:
     return replace(row, amount=amount)
 
 
+def _safe_not_included(item: AuditNotIncluded) -> AuditNotIncluded:
+    amount = item.amount if item.amount is not None and _AMOUNT.fullmatch(item.amount) else None
+    if item.classification == "restricted":
+        return replace(item, item_label=mask_value(item.item_label) or "", amount=None)
+    return replace(item, amount=amount)
+
+
 def _safe(values: AuditValues) -> AuditValues:
     if values.status != "resolved":
         return AuditValues(values.status, values.reason)
-    return replace(values, rows=tuple(_safe_row(r) for r in values.rows))
+    return replace(
+        values,
+        rows=tuple(_safe_row(r) for r in values.rows),
+        not_included=tuple(_safe_not_included(n) for n in values.not_included),
+    )
 
 
 # A labeler's viewer is None when the label index asks (G-02-T10): the label must then suit

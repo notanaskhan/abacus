@@ -69,3 +69,24 @@ def test_dec60_withheld_and_unavailable_carry_no_rows() -> None:
 def test_g02t09_no_source_resolver_means_no_source_section() -> None:
     event = AuditEventRef(1, "probe.changed", "probe", "1", None, None)
     assert asyncio.run(audit_slots.audit_source(_viewer(), event)) is None
+
+
+def test_l8_a_restricted_not_included_item_leaves_masked_and_without_its_amount() -> None:
+    async def careless(_viewer: AuthContext, _event: AuditEventRef) -> AuditValues:
+        return AuditValues(
+            "resolved",
+            not_included=(
+                audit_slots.AuditNotIncluded(
+                    SSN, "review_required", amount="14900.00", classification="restricted"
+                ),
+                audit_slots.AuditNotIncluded("Accrued expenses", "review_required", "14900"),
+                audit_slots.AuditNotIncluded("Accrued expenses", "review_required", "14900.00"),
+            ),
+        )
+
+    audit_slots.register_audit_value_resolver("g02t09_probe_not_included", careless)
+    event = AuditEventRef(1, "probe.changed", "g02t09_probe_not_included", "1", None, None)
+    secret, malformed, fine = asyncio.run(audit_slots.audit_values(_viewer(), event)).not_included
+    assert (secret.item_label, secret.amount) == ("•••-••-2208", None)
+    assert malformed.amount is None
+    assert fine.amount == "14900.00"
