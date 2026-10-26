@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel.classification import classified
 from abacus.modules.agents.blocks import AgentBlocks
+from abacus.modules.agents.run_records import RunRecord, record_for
 from abacus.modules.agents.runs import (
     RunItems,
     RunSummary,
@@ -173,6 +174,96 @@ class TraceExportOut(BaseModel):
     renderer_version: Annotated[str, classified("internal")]
 
 
+# --- The run record (Q-02-T41; ADR-169 §3 and §4) --------------------------------------------
+
+
+class RecordRefOut(BaseModel):
+    """A record the run read, or a citation points into: its type and id (null in metadata)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    type: Annotated[str, classified("internal")]
+    id: Annotated[UUID | None, classified("internal")]
+
+
+class CitationLocatorOut(BaseModel):
+    """Where a citation points: positions and codes, never the quoted words."""
+
+    model_config = ConfigDict(frozen=True)
+
+    document: Annotated[str | None, classified("internal")] = None
+    claim: Annotated[str | None, classified("internal")] = None
+    page: Annotated[int | None, classified("internal")] = None
+    cell: Annotated[str | None, classified("internal")] = None
+
+
+class RecordCitationOut(BaseModel):
+    """A citation of the run's output: its locator, code's verdict and fingerprints only."""
+
+    model_config = ConfigDict(frozen=True)
+
+    source: Annotated[str, classified("internal")]
+    record: Annotated[RecordRefOut | None, classified("internal")]
+    locator: Annotated[CitationLocatorOut, classified("internal")]
+    quote_sha256: Annotated[str | None, classified("internal")]
+    sheet_sha256: Annotated[str | None, classified("internal")]
+    verified: Annotated[bool | None, classified("internal")] = None
+    reason: Annotated[str | None, classified("internal")] = None
+    amount_matches: Annotated[bool | None, classified("internal")] = None
+
+
+class RecordInputHashesOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    context: Annotated[str | None, classified("internal")]
+    model_calls: Annotated[list[str], classified("internal")]
+
+
+class RecordOutcomeOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    state: Annotated[
+        Literal["succeeded", "needs_input", "failed", "cancelled"], classified("internal")
+    ]
+    failure_code: Annotated[str | None, classified("internal")]
+    outputs: Annotated[dict[str, int], classified("internal")]
+
+
+class RunRecordOut(BaseModel):
+    """ADR-169 §3: the run's durable record as stored. Content-free by construction:
+    identifiers, versions and fingerprints. `record_sha256` is the record's own hash, not the
+    run view's `run_record_sha256` (DEC-396)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    run_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    capability: Annotated[str, classified("internal")]
+    spec_version: Annotated[int, classified("internal")]
+    stage: Annotated[Literal["shadow", "live"], classified("internal")]
+    prompt_ref: Annotated[str | None, classified("internal")]
+    prompt_sha256: Annotated[str | None, classified("internal")]
+    model: Annotated[str | None, classified("internal")]
+    route: Annotated[str | None, classified("internal")]
+    region: Annotated[str | None, classified("internal")]
+    terms_version: Annotated[str | None, classified("internal")]
+    boundary_basis: Annotated[str | None, classified("internal")]
+    input_hashes: Annotated[RecordInputHashesOut, classified("internal")]
+    records_read: Annotated[list[RecordRefOut], classified("internal")]
+    citations: Annotated[list[RecordCitationOut], classified("internal")]
+    outcome: Annotated[RecordOutcomeOut, classified("internal")]
+    initiator_user_id: Annotated[UUID, classified("internal")]
+    started_at: Annotated[datetime, classified("internal")]
+    completed_at: Annotated[datetime, classified("internal")]
+    record_sha256: Annotated[str, classified("internal")]
+    persisted_at: Annotated[datetime, classified("internal")]
+    projection: Annotated[Literal["content", "metadata"], classified("internal")]
+
+
+def _record(found: RunRecord) -> RunRecordOut:
+    return RunRecordOut.model_validate(found, from_attributes=True)
+
+
 def _run(run: RunSummary) -> AgentRunOut:
     return AgentRunOut.model_validate(run, from_attributes=True)
 
@@ -223,6 +314,11 @@ def _items(found: RunItems) -> RunItemsOut:
         last_seq=found.last_seq,
         resync=found.resync,
     )
+
+
+@runs_router.get("/{run_id}/record", action="agent_run.read", response_model=RunRecordOut)
+async def agent_run_record_route(run_id: UUID, ctx: Ctx) -> RunRecordOut:
+    return _record(await record_for(ctx, run_id))
 
 
 @runs_router.get("/{run_id}/items", action="agent_run.read", response_model=RunItemsOut)

@@ -3579,6 +3579,30 @@ export type CitationLocatorIn = {
 };
 
 /**
+ * CitationLocatorOut
+ *
+ * Where a citation points: positions and codes, never the quoted words.
+ */
+export type CitationLocatorOut = {
+    /**
+     * Cell
+     */
+    cell?: string | null;
+    /**
+     * Claim
+     */
+    claim?: string | null;
+    /**
+     * Document
+     */
+    document?: string | null;
+    /**
+     * Page
+     */
+    page?: number | null;
+};
+
+/**
  * CitationMovedOut
  */
 export type CitationMovedOut = {
@@ -15491,6 +15515,90 @@ export type ReconciliationOut = {
 };
 
 /**
+ * RecordCitationOut
+ *
+ * A citation of the run's output: its locator, code's verdict and fingerprints only.
+ */
+export type RecordCitationOut = {
+    /**
+     * Amount Matches
+     */
+    amount_matches?: boolean | null;
+    locator: CitationLocatorOut;
+    /**
+     * Quote Sha256
+     */
+    quote_sha256: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    record: RecordRefOut | null;
+    /**
+     * Sheet Sha256
+     */
+    sheet_sha256: string | null;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Verified
+     */
+    verified?: boolean | null;
+};
+
+/**
+ * RecordInputHashesOut
+ */
+export type RecordInputHashesOut = {
+    /**
+     * Context
+     */
+    context: string | null;
+    /**
+     * Model Calls
+     */
+    model_calls: Array<string>;
+};
+
+/**
+ * RecordOutcomeOut
+ */
+export type RecordOutcomeOut = {
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Outputs
+     */
+    outputs: {
+        [key: string]: number;
+    };
+    /**
+     * State
+     */
+    state: 'succeeded' | 'needs_input' | 'failed' | 'cancelled';
+};
+
+/**
+ * RecordRefOut
+ *
+ * A record the run read, or a citation points into: its type and id (null in metadata).
+ */
+export type RecordRefOut = {
+    /**
+     * Id
+     */
+    id: string | null;
+    /**
+     * Type
+     */
+    type: string;
+};
+
+/**
  * RecordsReadOut
  */
 export type RecordsReadOut = {
@@ -17262,6 +17370,98 @@ export type RunItemsOut = {
      */
     resync: boolean;
     run: AgentRunOut;
+};
+
+/**
+ * RunRecordOut
+ *
+ * ADR-169 §3: the run's durable record as stored. Content-free by construction:
+ * identifiers, versions and fingerprints. `record_sha256` is the record's own hash, not the
+ * run view's `run_record_sha256` (DEC-396).
+ */
+export type RunRecordOut = {
+    /**
+     * Boundary Basis
+     */
+    boundary_basis: string | null;
+    /**
+     * Capability
+     */
+    capability: string;
+    /**
+     * Citations
+     */
+    citations: Array<RecordCitationOut>;
+    /**
+     * Completed At
+     */
+    completed_at: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Initiator User Id
+     */
+    initiator_user_id: string;
+    input_hashes: RecordInputHashesOut;
+    /**
+     * Model
+     */
+    model: string | null;
+    outcome: RecordOutcomeOut;
+    /**
+     * Persisted At
+     */
+    persisted_at: string;
+    /**
+     * Projection
+     */
+    projection: 'content' | 'metadata';
+    /**
+     * Prompt Ref
+     */
+    prompt_ref: string | null;
+    /**
+     * Prompt Sha256
+     */
+    prompt_sha256: string | null;
+    /**
+     * Record Sha256
+     */
+    record_sha256: string;
+    /**
+     * Records Read
+     */
+    records_read: Array<RecordRefOut>;
+    /**
+     * Region
+     */
+    region: string | null;
+    /**
+     * Route
+     */
+    route: string | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Spec Version
+     */
+    spec_version: number;
+    /**
+     * Stage
+     */
+    stage: 'shadow' | 'live';
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Terms Version
+     */
+    terms_version: string | null;
 };
 
 /**
@@ -21985,6 +22185,58 @@ export type AgentRunItemsResponses = {
 };
 
 export type AgentRunItemsResponse = AgentRunItemsResponses[keyof AgentRunItemsResponses];
+
+export type AgentRunRecordData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}/record';
+};
+
+export type AgentRunRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunRecordError = AgentRunRecordErrors[keyof AgentRunRecordErrors];
+
+export type AgentRunRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunRecordOut;
+};
+
+export type AgentRunRecordResponse = AgentRunRecordResponses[keyof AgentRunRecordResponses];
 
 export type AgentRunTraceData = {
     body?: never;
