@@ -162,3 +162,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-183](ADR-183-service-line-content-visibility.md) | Service-line content visibility: a firm may open a line's content, read-only, to its members; never Audit, attest clients, walled or offshore members, or admins | red | accepted |
 | [ADR-186](ADR-186-autonomy-policy-versions-auto-mode.md) | Autonomy policy versions and Auto mode: a versioned, stricter-only firm AI policy published by the QM owner and approved by a second partner | red | accepted |
 | [ADR-187](ADR-187-policy-principal-dormant.md) | Policy principal (dormant): the `policy` actor kind designed, stored off and locked, rendered in fixture mode only | red | accepted |
+| [ADR-190](ADR-190-status-fields-bare-codes.md) | API status fields carry the bare code; the label context is the screen's, a server-known discriminator its own field (amends ADR-138) | amber | proposed |
