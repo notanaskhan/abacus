@@ -1355,6 +1355,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckInvalid
+  tie_out_check_issue_linked:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.tie_out.IssueAlreadyLinked
+    summary: 'The check is linked to another issue already: a link is set once (A-02-T17).'
   tie_out_check_key_taken:
     status: 422
     raised_by:
@@ -1527,6 +1532,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.NothingToReview
     summary: No ready version, or it's already reviewed.
+  write_capability_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.writes.WriteCapabilityRefused
+    summary: 'A write to a client''s system was refused: the registry enables none (ADR-150).'
   wrong_password:
     status: 422
     raised_by:

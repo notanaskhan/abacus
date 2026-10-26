@@ -54,6 +54,7 @@ from abacus.modules.evidence.api import (
     register_export_audit_trail,
 )
 from abacus.modules.identity import api as identity
+from abacus.modules.integrations.api import assert_egress_declared
 
 # A-01-T18 (SPEC-344, DEC-433): no module may import audit_trail, so the composition roots (this
 # and the worker) give the engagement export its audit-trail reader.
@@ -192,6 +193,9 @@ class _Abacus(FastAPI):
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+    # A-02-T15 (ADR-040, ADR-150): no adapter may reach a host write-capabilities.yaml does not
+    # declare for it; the API does not start while one would.
+    assert_egress_declared()
     yield
     # Spans and error reports still buffered at shutdown are sent, not lost.
     shutdown_tracing()

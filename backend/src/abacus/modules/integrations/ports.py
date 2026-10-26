@@ -76,6 +76,11 @@ class WriteCapabilityEntry(BaseModel):
     adapter_key: Annotated[Key, classified("internal")]
     shape: Annotated[str, Field(pattern=r"^W[1-9]$"), classified("internal")]
     owner_epic: Annotated[str, Field(pattern=r"^[A-Z]-[0-9]{2}$"), classified("internal")]
+    # The decision that would enable it (a plan P-nn or a repo ADR). The schema allows none so a
+    # bare reservation validates; the protected file's compiler requires one (A-02-T15).
+    decision: Annotated[
+        str | None, Field(pattern=r"^(P-[0-9]{2}|ADR-[0-9]{3})$"), classified("internal")
+    ] = None
     enabled: Annotated[Literal[False], classified("internal")] = False
 
 
