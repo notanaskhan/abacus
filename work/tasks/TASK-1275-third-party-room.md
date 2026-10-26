@@ -128,3 +128,8 @@ cells deny without delegate facts, so reverting identity is safe in any order.
   version and checks `authorise_upload` and the room); the Brightwater Hale seed's Sam holds
   template grants with no delegation rows (P-08-T18), so his seeded room is empty until the
   scenario slice (R-01-T11, blocked on DEC-348) records the delegations.
+- 2026-10-26: self-review found that `authorise_items` (the request-list check whose rows
+  `visible_items` then filters) let any client condition through, `delegated_only` included, so
+  a third party passed the check of lists that read no rows through `visible_items` (who marked
+  the list done, a client name). Fixed: only the conditions a list filters by pass it; a new case
+  (`test_inv4_no_list_of_the_engagement_answers_to_sam`) fails without the fix.

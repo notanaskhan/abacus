@@ -1005,7 +1005,9 @@ async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
         if denied.layer != "role" or not isinstance(ctx, AuthContext):
             raise
         roles = await _roles(ctx, resource, rule)
-        if not any(rule.decisions.get(role) in _CLIENT_CONDITIONS for role in roles):
+        # Only the conditions `visible_items` filters by: `delegated_only` reaches no list, so a
+        # third party never passes a list's check (R-01-T13; it reads through the room).
+        if not any(rule.decisions.get(role) in _LISTED_CONDITIONS for role in roles):
             raise
         _record(action)
 

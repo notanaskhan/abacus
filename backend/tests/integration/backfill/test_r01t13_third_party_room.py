@@ -36,8 +36,11 @@ from abacus.modules.communications.templates import import_platform_version
 from abacus.modules.evidence.uploads import authorise_upload
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.portal.notices import on_evidence_uploaded
+from abacus.modules.requests.client_responses import list_done
+from abacus.modules.requests.client_responses import responses as client_responses
 from abacus.modules.requests.comments import post_comment, thread
 from abacus.modules.requests.lifecycle import ConsentRequired, delegate_item
+from abacus.modules.requests.service import request_items_for
 
 from . import test_p07t26_contacts_g2_independent as t26
 from .support import Net, Person, Seeder
@@ -401,6 +404,17 @@ async def test_inv4_upload_and_comments_reach_the_delegated_request_only(room: R
     assert posted.visibility == "shared"
     seen = await thread(sam, eid, room.bridge, None)
     assert [c.text for c in seen] == ["I'll upload it by Sep 22."]
+
+
+async def test_inv4_no_list_of_the_engagement_answers_to_sam(room: Room) -> None:
+    """`delegated_only` reaches no list: the engagement's request list, the client's responses
+    and who marked the list done are refused to a third party (they would name the client)."""
+    _, user = await _signed_in(room)
+    sam = _sam(room, user)
+    eid = room.base.site.engagement_id
+    for read in (request_items_for, client_responses, list_done):
+        with pytest.raises(Forbidden):
+            await read(sam, eid)
 
 
 async def test_inv4_a_revoked_delegation_leaves_the_room(room: Room) -> None:
