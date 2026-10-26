@@ -53,6 +53,12 @@ cockpit wiring in `screens/AUD-02/index.tsx`; data `fixtures/scenarios/AUD-06.ts
 | Edit | inline annotations (P-04 path, A-02-T35) | planned |
 | Open in Excel | export.xlsx | planned (A-02-T22) |
 | A line | the cockpit's Viewer dock (SHL-08 ViewerPane) | live in fixture mode |
+| "All audits" breadcrumb | AUD-01 | planned until A-01-T11 |
+| Client name in the header | AUD-02 cockpit | planned until A-01-T12 |
+| Consolidated TB (multi-entity) | AUD-33 | planned |
+| AJE-1 on an adjusted line | AUD-16 | planned |
+| Investments and certification | EBP-06 | planned (EBP wave) |
+| Distributions and loans | EBP-05 | planned (later wave) |
 
 ## Acceptance
 - AUD-06a and AUD-06c pass their Vitest scenarios (`TrialBalance.test.tsx`, `AUD-06.test.tsx`).

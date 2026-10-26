@@ -120,8 +120,10 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (unbuilt) | report-only until A-01's AUD-03 host is stable; mask the skeleton pulse and spinner in c |
-| card | D | — | card 420, radius 12, header 44, sheet 500 |
+| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built (P-06-T22); axe in `e2e/screens/SHL-20.spec.ts` (added by P-06-T26, not run here); report-only until A-01's AUD-03 host is stable; mask the skeleton pulse and spinner in c |
+| card | D | not run | card 420, radius 12, header 44, sheet 500; no `e2e/visual/tier-d.spec.ts` row for the C-34 card or the O3 sheet yet |
+
+Keyboard: `src/screens/SHL-20/SHL-20.keyboard.test.tsx` (P-06-T26; vitest, passing): Escape closes the card and focus returns to the screening chip (ED-090, fixed in the same change). Report: `docs/quality/parity-P-06.md`.
 
 ## Open gaps
 - b: the README dates the frame "Mon Sep 14, 2026, 10:16 AM"; spec.md has b at 10:16 AM on the Sat Sep 26 frame, after a at 10:14 AM. The scenario uses Sat Sep 26, 10:16 AM (P-06 §2.1).

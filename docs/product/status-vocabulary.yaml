@@ -368,6 +368,22 @@ objects:
       signed: {label: "✓ {initials}", variant: green-tint, terminal: false, derived: true, context_labels: {with_date: "✓ {initials} · {date}"}}   # an L1 on agent work also shows the R-SO-8 adoption line (ADR-160 clause 4), which is copy, not a status word
       stale:  {label: "Changed after sign-off", variant: amber, terminal: false, derived: true, context_labels: {struck_chip: "✓ {initials} · {date} (before this change)"}}   # the chip is struck; only Re-sign is offered (SHL-12 e)
 
+  human_gate:   # C13 (I-01-T02); the projection's `state`; "Snoozed until" is per viewer and computed (I-01-T04 snoozes)
+    source: "I-01 section 4.6 (gate state words); P-04 section 4 (human_gates.state)"
+    codes:
+      open:    {label: "Open", variant: null, terminal: false, derived: false}
+      done:    {label: "Done", variant: green-tint, terminal: true, derived: false}
+      voided:  {label: "Voided", variant: muted, terminal: true, derived: false}
+      snoozed: {label: "Snoozed until {date}", variant: neutral, terminal: false, derived: true}   # the viewer's latest snooze row; never stored on the gate
+
+  due_risk:   # C13 (I-01-T02): a deadline's or gate's due chip, computed by code on kernel.clock, never stored
+    source: "HOME-01 and HOME-02 handoff spec (due chips: red-tint 'Sep 15 · 1 day', amber-tint 'Sep 23 · 9 days'; red ink within 7 days)"
+    codes:
+      overdue:     {label: "Overdue", variant: red-tint, terminal: false, derived: true}
+      due_soon:    {label: "{date} · {n} days", variant: red-tint, terminal: false, derived: true}   # 0 to 7 days; one day reads "{date} · 1 day"
+      approaching: {label: "{date} · {n} days", variant: state, terminal: false, derived: true}   # 8 to 14 days
+      later:       {label: "{date}", variant: neutral, terminal: false, derived: true}   # beyond 14 days
+
   decision_card:   # SHL-11; the human act is an insert-only `decisions` row; options are computed by code
     source: "P-04 section 4 (decision_cards.status); ADR-160 clause 8; SHL-11"
     codes:

@@ -159,9 +159,11 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colors, 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26 adds the manifest entries) | built 2026-10-23; axe 0 serious or critical on all six (`e2e/screens/BND-02.spec.ts`); mask the "Uploading" spinner |
-| g | C | — | P-06-T22 |
-| host | D | — | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12, card 420, drawer 480, sheet 500 |
+| a–f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built 2026-10-23; axe in `e2e/screens/BND-02.spec.ts` (not run by P-06-T26); mask the "Uploading" spinner. The route registry still marks BND-02 `planned`, so the screen parity report leaves it out until the entry turns `fixture` (Open gaps); the Tier C lock (P-06 §5.5) is pending its first measured run |
+| g | C | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | P-06-T22; added to `e2e/screens/BND-02.spec.ts` by P-06-T26; same pending lock |
+| host | D | not run | toolbar 46, subbar 42, pane header 46 with a 14.5/500 title, rows 38/44, pills 21/19/18, radius 12, card 420, drawer 480, sheet 500; `e2e/visual/tier-d.spec.ts` has T2's rail 330, canvas 696 and dock 330, not yet the card, drawer or sheet |
+
+Keyboard: `src/screens/BND-02/BND-02.keyboard.test.tsx` (P-06-T26; vitest, passing). Report: `docs/quality/parity-P-06.md`.
 
 ## Open gaps
 - README "Rendered" says 9:24 AM for g; revision.md says 9:31 AM. Revision wins (DEC-15 precedence): the g scenario clock is 9:31 AM.

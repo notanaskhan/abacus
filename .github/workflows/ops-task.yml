@@ -26,6 +26,7 @@ on:
           - abacus_tools.schedules show
           - abacus_tools.schedules pause
           - abacus_tools.schedules unpause
+          - abacus_tools.trust_layer_backfill
       args:
         description: 'Arguments as a JSON array of strings, e.g. ["--tenant", "<uuid>"]'
         required: true

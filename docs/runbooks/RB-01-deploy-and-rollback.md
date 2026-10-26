@@ -21,6 +21,8 @@ rehearse_by: 2026-11-13
 
 How code reaches an environment (Q-01-T11, T18, T34): `build.yml` builds one image per SHA on every push to `main`; `deploy-staging.yml` is dispatched once per merge window; production changes only by merging a PR that edits `deploy/production/release.json`. This runbook covers a normal deploy, a deploy that fails, and putting the previous release back.
 
+Release-specific one-off steps (a secret to set before the image starts, a migration's up/down/up on a staging copy, a backfill per tenant after the deploy) are listed per release in `docs/runbooks/demo-tenant.md` sections 4 and 5; S9's are the run-record pepper (#422), 0172 on a copy (#424) and the masked-rendition backfill (#419).
+
 ## 1. Recognise it
 - A deploy run is red (GitHub Actions, `deploy-staging` or `deploy-production`), or a step reports "rolled back" (the ECS circuit breaker or an alarm rolled a service back).
 - SLO-01 burns right after a deploy, or the canary (SLO-10) fails twice after one.

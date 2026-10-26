@@ -1,6 +1,7 @@
-// BND-01 a, c, d, e in fixture mode (P-06-T09; build-screen-from-handoff §5): every scenario at
-// 1440×900, DPR 2, from the /components gallery on fixtures (no API, no database), with axe at zero
-// serious or critical findings. Pixel parity against the handoff PNGs is P-06-T26's (Tier C).
+// BND-01 a, c, d, e (P-06-T09) and b (P-06-T16; added to this spec by P-06-T26) in fixture mode
+// (build-screen-from-handoff §5): every scenario at 1440×900, DPR 2, from the /components gallery
+// on fixtures (no API, no database), with axe at zero serious or critical findings. Pixel parity
+// against the handoff PNGs is P-06-T26's (Tier C), reported by e2e/parity/screens.spec.ts.
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/screens/BND-01.spec.ts`.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
@@ -9,6 +10,7 @@ const SERIOUS = new Set(["serious", "critical"]);
 
 const ARTBOARDS = [
   { st: "a", ready: "Showing 15 of 241" },
+  { st: "b", ready: "Fenwick Family Foundation" },
   { st: "c", ready: "Showing 16 of 241" },
   { st: "d", ready: "No TY2026 binders yet." },
   { st: "e", ready: null },
