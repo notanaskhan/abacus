@@ -53,6 +53,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("staff.unlock", "access_control", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("GET", "/v1/audit-events/exports/{export_id}", "audit_event.export"),
     (
         "GET",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx",
@@ -62,6 +63,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/members", "wall.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
+    ("POST", "/v1/audit-events/exports", "audit_event.export"),
+    ("POST", "/v1/audit-events/exports/{export_id}/link", "audit_event.export"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),

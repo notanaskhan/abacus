@@ -1463,6 +1463,30 @@ export type AttestBody = {
 };
 
 /**
+ * AuditActorOut
+ *
+ * The actor grammar's facts (INV-5): `person` and `support` name `person`; `via_agent` names
+ * `on_behalf_of` (and the agent by id only); `policy` names `policy_ref`; `system` names
+ * nothing.
+ */
+export type AuditActorOut = {
+    /**
+     * Agent Id
+     */
+    agent_id?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'person' | 'via_agent' | 'policy' | 'system' | 'support';
+    on_behalf_of?: AuditPersonOut | null;
+    person?: AuditPersonOut | null;
+    /**
+     * Policy Ref
+     */
+    policy_ref?: string | null;
+};
+
+/**
  * AuditArchiveOut
  *
  * The Archive cell: "Archive in 13 days" (clock from the release date + 60, on `kernel.clock`)
@@ -1481,6 +1505,25 @@ export type AuditArchiveOut = {
      * State
      */
     state: 'archiving' | 'archived';
+};
+
+/**
+ * AuditAuthorityOut
+ *
+ * Why the actor could do it: a code and identifier facts ("within BH AJE thresholds v2,
+ * approval limit Senior"), composed by the SPA.
+ */
+export type AuditAuthorityOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Facts
+     */
+    facts?: {
+        [key: string]: string | number | boolean | null;
+    };
 };
 
 /**
@@ -1571,6 +1614,296 @@ export type AuditCockpitOut = {
  * AuditEngagementStatus
  */
 export type AuditEngagementStatus = 'planning' | 'fieldwork' | 'in_review' | 'completion' | 'ready_to_release' | 'released' | 'archiving' | 'archived';
+
+/**
+ * AuditEventDetail
+ *
+ * The O2 480 drawer (ADM-07 c): the row plus authority, time to the second, request
+ * context, content hash, values and source. The footer reads "Immutable. Corrections are new
+ * events.".
+ */
+export type AuditEventDetail = {
+    /**
+     * Action
+     */
+    action: string;
+    actor: AuditActorOut;
+    authority?: AuditAuthorityOut | null;
+    /**
+     * Category
+     */
+    category: 'decision' | 'change' | 'access' | 'run' | 'sign_in' | 'communication' | 'export';
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Detail Facts
+     */
+    detail_facts?: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Device Label
+     */
+    device_label?: string | null;
+    /**
+     * Effective At
+     */
+    effective_at: string;
+    /**
+     * Ip
+     */
+    ip?: string | null;
+    /**
+     * Link Kind
+     */
+    link_kind?: 'run' | 'none';
+    /**
+     * Mark
+     */
+    mark: 'ok' | 'no' | 'pl';
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Run Id
+     */
+    run_id?: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
+    session?: AuditSessionOut | null;
+    source?: AuditSourceOut | null;
+    target: AuditTargetOut;
+    /**
+     * User Agent Family
+     */
+    user_agent_family?: string | null;
+    values: AuditValuesOut;
+};
+
+/**
+ * AuditEventPageOut
+ *
+ * The P-36 envelope. `counts` holds `all`, `person`, `via_agent`, `policy` and `system`
+ * over the other filters (capped like `total`); walled events are in none of them.
+ */
+export type AuditEventPageOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<AuditEventRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * AuditEventRow
+ *
+ * One row of the feed (ADM-07 a, b): newest first, its own date over its time.
+ */
+export type AuditEventRow = {
+    /**
+     * Action
+     */
+    action: string;
+    actor: AuditActorOut;
+    /**
+     * Category
+     */
+    category: 'decision' | 'change' | 'access' | 'run' | 'sign_in' | 'communication' | 'export';
+    /**
+     * Detail Facts
+     */
+    detail_facts?: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Effective At
+     */
+    effective_at: string;
+    /**
+     * Ip
+     */
+    ip?: string | null;
+    /**
+     * Link Kind
+     */
+    link_kind?: 'run' | 'none';
+    /**
+     * Mark
+     */
+    mark: 'ok' | 'no' | 'pl';
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * Run Id
+     */
+    run_id?: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
+    target: AuditTargetOut;
+};
+
+/**
+ * AuditExport
+ *
+ * An export job (ADM-07 e, g): CSV plus `manifest.json` and `manifest.sig` (format
+ * `accrued.audit-log-export` v1).
+ */
+export type AuditExport = {
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * File Name
+     */
+    file_name?: string | null;
+    /**
+     * Filter
+     */
+    filter?: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * From Date
+     */
+    from_date: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Include Values
+     */
+    include_values: boolean;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256?: string | null;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    requested_by: AuditPersonOut;
+    /**
+     * Row Count
+     */
+    row_count?: number | null;
+    /**
+     * Seq From
+     */
+    seq_from?: number | null;
+    /**
+     * Seq To
+     */
+    seq_to?: number | null;
+    /**
+     * Status
+     */
+    status: 'requested' | 'building' | 'ready' | 'downloaded' | 'expired' | 'failed';
+    /**
+     * To Date
+     */
+    to_date: string;
+};
+
+/**
+ * AuditExportFilterIn
+ */
+export type AuditExportFilterIn = {
+    /**
+     * Action
+     */
+    action?: string | null;
+    /**
+     * Actor Kind
+     */
+    actor_kind?: 'person' | 'via_agent' | 'policy' | 'system' | 'support' | null;
+    /**
+     * Object Type
+     */
+    object_type?: string | null;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+};
+
+/**
+ * AuditExportLinkOut
+ *
+ * A 15-minute presigned link; Restricted (it opens the firm's log) and never logged.
+ */
+export type AuditExportLinkOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
+ * AuditExportRequestIn
+ *
+ * ADM-07 e: a date range in the firm's time zone, at most 92 days (422 otherwise).
+ */
+export type AuditExportRequestIn = {
+    filter?: AuditExportFilterIn;
+    /**
+     * From Date
+     */
+    from_date: string;
+    /**
+     * Include Values
+     */
+    include_values?: boolean;
+    /**
+     * To Date
+     */
+    to_date: string;
+};
 
 /**
  * AuditIndexPage
@@ -1805,6 +2138,30 @@ export type AuditPbcOut = {
 };
 
 /**
+ * AuditPersonOut
+ *
+ * A person named on an event; the id links to the ADM-02 user drawer.
+ */
+export type AuditPersonOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Level
+     */
+    level?: string | null;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * AuditPhaseIn
  *
  * A record-mode forward move by a named person (409 `phase_backward`, `phase_skip`,
@@ -1991,6 +2348,105 @@ export type AuditSectionRowOut = {
  * AuditSectionStatus
  */
 export type AuditSectionStatus = 'not_started' | 'queued' | 'waiting_on_inputs' | 'ready_to_run' | 'in_progress' | 'running' | 'blocked_on_decision' | 'draft_ready' | 'prepared' | 'reviewed' | 'signed_off' | 'locked' | 'failed' | 'changed_after_signoff';
+
+/**
+ * AuditSessionOut
+ *
+ * The drawer's Session line ("SSO · MFA 9:01 AM").
+ */
+export type AuditSessionOut = {
+    /**
+     * Auth Method
+     */
+    auth_method?: 'sso' | 'email_code' | 'passkey' | 'totp' | 'support' | 'service' | null;
+    /**
+     * Mfa At
+     */
+    mfa_at?: string | null;
+    /**
+     * Session Id
+     */
+    session_id?: string | null;
+};
+
+/**
+ * AuditSourceOut
+ *
+ * The run behind an event ("Proposed by Raj Malhotra via Agent · Close run 2 · started 9:06
+ * AM"); `run_id` links to WB-09, a planned link until P-09.
+ */
+export type AuditSourceOut = {
+    /**
+     * Agent Id
+     */
+    agent_id?: string | null;
+    initiator?: AuditPersonOut | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Run No
+     */
+    run_no?: number | null;
+    /**
+     * Started At
+     */
+    started_at?: string | null;
+};
+
+/**
+ * AuditTargetOut
+ *
+ * The object chip: type and id always; a label when its owner's labeler names it.
+ */
+export type AuditTargetOut = {
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label?: string | null;
+    /**
+     * Type
+     */
+    type: string;
+};
+
+/**
+ * AuditValuesOut
+ *
+ * `resolved` with rows; `withheld` with a reason ("Values are visible to partners in
+ * scope."); `unavailable` when the owner cannot resolve them ("Values not available").
+ */
+export type AuditValuesOut = {
+    /**
+     * Not Included
+     */
+    not_included?: Array<NotIncludedRow>;
+    /**
+     * Reason
+     */
+    reason?: 'need_to_know' | 'walled' | 'not_enabled' | null;
+    /**
+     * Rows
+     */
+    rows?: Array<ValueRow>;
+    /**
+     * Status
+     */
+    status: 'resolved' | 'withheld' | 'unavailable';
+};
 
 /**
  * AuthRedirectOut
@@ -12831,6 +13287,28 @@ export type NextItemOut = {
 };
 
 /**
+ * NotIncludedRow
+ *
+ * An item left out of the change ("Accrued expenses 14,900.00 · Review required → Priya
+ * Raman").
+ */
+export type NotIncludedRow = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Item Label
+     */
+    item_label: string;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
+    routed_to?: AuditPersonOut | null;
+};
+
+/**
  * NoteAnchorIn
  */
 export type NoteAnchorIn = {
@@ -20959,6 +21437,39 @@ export type ValidationErrorOut = {
 };
 
 /**
+ * ValueRow
+ *
+ * One changed item, as the viewer may see it. A Restricted value is only ever masked
+ * (`•••-••-2208`, `masked: true`). Amounts are decimal strings, never floats.
+ */
+export type ValueRow = {
+    /**
+     * After
+     */
+    after?: string | null;
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Before
+     */
+    before?: string | null;
+    /**
+     * Field
+     */
+    field: string;
+    /**
+     * Item Label
+     */
+    item_label: string;
+    /**
+     * Masked
+     */
+    masked?: boolean;
+};
+
+/**
  * VersionBody
  */
 export type VersionBody = {
@@ -22197,6 +22708,337 @@ export type AgentRunWritesResponses = {
 };
 
 export type AgentRunWritesResponse = AgentRunWritesResponses[keyof AgentRunWritesResponses];
+
+export type ListAuditEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Actor Kind
+         */
+        actor_kind?: 'person' | 'via_agent' | 'policy' | 'system' | 'support' | null;
+        /**
+         * Actor Id
+         */
+        actor_id?: string | null;
+        /**
+         * Object Type
+         */
+        object_type?: string | null;
+        /**
+         * Action
+         */
+        action?: string | null;
+        /**
+         * From
+         */
+        from?: string | null;
+        /**
+         * To
+         */
+        to?: string | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Ip
+         */
+        ip?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Since Seq
+         */
+        since_seq?: number | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/audit-events';
+};
+
+export type ListAuditEventsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListAuditEventsError = ListAuditEventsErrors[keyof ListAuditEventsErrors];
+
+export type ListAuditEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditEventPageOut;
+};
+
+export type ListAuditEventsResponse = ListAuditEventsResponses[keyof ListAuditEventsResponses];
+
+export type RequestAuditExportData = {
+    body: AuditExportRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/audit-events/exports';
+};
+
+export type RequestAuditExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestAuditExportError = RequestAuditExportErrors[keyof RequestAuditExportErrors];
+
+export type RequestAuditExportResponses = {
+    /**
+     * Successful Response
+     */
+    202: AuditExport;
+};
+
+export type RequestAuditExportResponse = RequestAuditExportResponses[keyof RequestAuditExportResponses];
+
+export type AuditExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/audit-events/exports/{export_id}';
+};
+
+export type AuditExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditExportError = AuditExportErrors[keyof AuditExportErrors];
+
+export type AuditExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditExport;
+};
+
+export type AuditExportResponse = AuditExportResponses[keyof AuditExportResponses];
+
+export type LinkAuditExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Export Id
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/v1/audit-events/exports/{export_id}/link';
+};
+
+export type LinkAuditExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Gone: the code, link or window expired or was used
+     */
+    410: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LinkAuditExportError = LinkAuditExportErrors[keyof LinkAuditExportErrors];
+
+export type LinkAuditExportResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditExportLinkOut;
+};
+
+export type LinkAuditExportResponse = LinkAuditExportResponses[keyof LinkAuditExportResponses];
+
+export type AuditEventData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Seq
+         */
+        seq: number;
+    };
+    query?: never;
+    url: '/v1/audit-events/{seq}';
+};
+
+export type AuditEventErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AuditEventError = AuditEventErrors[keyof AuditEventErrors];
+
+export type AuditEventResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditEventDetail;
+};
+
+export type AuditEventResponse = AuditEventResponses[keyof AuditEventResponses];
 
 export type AuditsIndexData = {
     body?: never;
