@@ -2100,6 +2100,73 @@
         "title": "AgentRunStatus",
         "type": "string"
       },
+      "AgentStageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "cls": "internal",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "stage": {
+            "cls": "internal",
+            "enum": [
+              "shadow",
+              "live",
+              "off"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "note"
+        ],
+        "title": "AgentStageIn",
+        "type": "object"
+      },
+      "AgentStageOut": {
+        "properties": {
+          "agent_id": {
+            "cls": "internal",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "firm_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Firm Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "stage": {
+            "cls": "internal",
+            "enum": [
+              "shadow",
+              "live",
+              "off"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firm_id",
+          "agent_id",
+          "stage"
+        ],
+        "title": "AgentStageOut",
+        "type": "object"
+      },
       "AgentSuggestionOut": {
         "description": "One proposed value for one target, after a person's decision.",
         "properties": {
@@ -120424,6 +120491,128 @@
           "notifications"
         ],
         "x-abacus-action": "own"
+      }
+    },
+    "/v1/platform/agent-stages/{firm_id}/{agent_id}": {
+      "put": {
+        "description": "Shadow, live or off for this firm; `live` only after 50 shadow runs over 14 days.",
+        "operationId": "put_agent_stage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "firm_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Firm Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$",
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentStageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Put Agent Stage",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "staff"
       }
     },
     "/v1/platform/email-templates/import": {

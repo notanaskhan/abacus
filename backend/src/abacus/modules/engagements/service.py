@@ -15,7 +15,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import ColumnElement, Select, select
 from sqlalchemy.orm import QueryableAttribute
 
-from abacus.ai_gateway import forget_boundary_facts
+from abacus.ai_gateway import BoundaryFactsChanged, forget_boundary_facts
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
@@ -652,6 +652,7 @@ async def set_ai_exclusion_of(
             "engagement.ai_excluded" if excluded else "engagement.ai_included",
             target=Target("engagement", engagement_id),
         )
+        tx.emit(BoundaryFactsChanged())  # Q-02-T08: the worker forgets them too
     forget_boundary_facts(ctx.tenant_id)
     return await ai_exclusion(ctx, engagement_id)
 

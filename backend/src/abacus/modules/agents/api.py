@@ -1,6 +1,10 @@
 """Public interface of the agents module; other modules import only this (ADR-008)."""
 
-from abacus.ai_gateway import register_client_data_facts
+from abacus.ai_gateway import (
+    BoundaryFactsChanged,
+    on_boundary_facts_changed,
+    register_client_data_facts,
+)
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
@@ -72,6 +76,7 @@ from abacus.modules.agents.service import (
     screening_results_for,
 )
 from abacus.modules.agents.spec import AGENTS, AgentSpec, cleared_for_client_data, spec
+from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for
 from abacus.modules.agents.upload_review import (
     REVIEWER,
@@ -128,9 +133,15 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     # C5 v1.2 SHL-20 family stub behind `screening.card` (P-06-T15).
     screening_items_router,
     screenings_router,
+    platform_stages_router,  # Q-02-T07: platform staff set an agent's stage for a firm
 )
 # P-06-T14: a sent follow-up's email leaves when the relay delivers its grant-held event.
-SUBSCRIPTIONS = {**SCREENING_SUBSCRIPTIONS, FollowUpSent.event_type: on_follow_up_sent}
+# Q-02-T08: a firm's changed boundary facts are forgotten in the worker too.
+SUBSCRIPTIONS = {
+    **SCREENING_SUBSCRIPTIONS,
+    FollowUpSent.event_type: on_follow_up_sent,
+    BoundaryFactsChanged.event_type: on_boundary_facts_changed,
+}
 
 # P-04-T16 (C13): the agent's proposals are `proposal` gates until a person decides.
 register_gate_sources()

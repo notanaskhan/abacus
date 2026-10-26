@@ -55,6 +55,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.AdjustmentState
     summary: Approve once; record the client's answer once, after approval.
+  agent_not_cleared:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.stage_admin.AgentNotCleared
+    summary: Only an agent cleared for client data has a stage (SPEC-036 §4.4).
   ai_assessor_unavailable:
     status: 409
     raised_by:
@@ -1206,6 +1211,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.identity.staff.StaffInvitationInvalid
+  stage_not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.stage_admin.StageNotReady
+    summary: '`live` needs 50 shadow runs of the agent for the firm over 14 days (SPEC-036 Q1).'
   stale_version:
     status: 409
     raised_by:
