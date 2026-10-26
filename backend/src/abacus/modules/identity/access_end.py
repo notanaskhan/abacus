@@ -23,7 +23,8 @@ else runs inside each firm's own session (row-level security). A failing firm is
 (`access_end.firm_failed`) and counted (`abacus.access_end.firm_failed`), and the others still run.
 
 The job is the state change, the notices and the audit; it is not what keeps a member out. Access
-ends at request time too (`access_has_ended`, read by `routing.current_context`; DEC-383): a
+ends at request time too (`access_window.access_has_ended`, read by `routing.current_context`,
+by `authorise` for an agent's initiator and by `/v1/me`; DEC-383): a
 staff member whose end date is before the firm's business date is refused whether or not a sweep
 ran, so a stopped Schedule can't extend access. Each pass is counted (`abacus.access_end.sweep`,
 by outcome) and, when neither of the two runs before it succeeded (no successful sweep in two
@@ -37,7 +38,6 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Final, cast
 from uuid import UUID
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import text
 from temporalio import activity
@@ -49,6 +49,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
 from abacus.kernel.uow import Ref, Target, audit_of_targets, uow
 from abacus.modules.identity import people_repository as repo
+from abacus.modules.identity.access_window import firm_zone
 from abacus.modules.identity.events import (
     AccessChanged,
     MembershipDeactivated,
@@ -59,7 +60,6 @@ from abacus.modules.identity.people import revoke_invitations_of
 from abacus.modules.identity.repository import (
     firm_tenant_ids,
     memberships_elsewhere,
-    time_zone_of,
 )
 from abacus.modules.identity.workflows import ACCESS_END_ID
 
@@ -88,15 +88,6 @@ class Sweep:
 
 class _Skip(Exception):
     """Nothing to write for this member after all: the unit of work rolls back."""
-
-
-async def _zone(tenant: TenantContext) -> ZoneInfo:
-    async with tenant_session(tenant) as session:
-        name = await time_zone_of(session)
-    try:
-        return ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError):
-        return clock.FIRM_ZONE
 
 
 _ENDING = text(
@@ -199,7 +190,7 @@ async def sweep_firm(tenant_id: UUID) -> tuple[int, int]:
         ]
     if not rows:
         return 0, 0
-    today = await clock.today(system, await _zone(system))
+    today = await clock.today(system, await firm_zone(system))
     ended = 0
     for user_id, ends in rows:
         if ends < today and await _end(tenant_id, user_id, today):
@@ -256,19 +247,3 @@ async def sweep_access_ends_activity() -> int:
         raise
     _sweeps.add(1, {"outcome": "partial" if swept.failed_firms else "ok"})
     return swept.ended
-
-
-async def access_has_ended(tenant: TenantContext, user_id: UUID) -> bool:
-    """Whether the person's staff membership here is past its access end in the firm's time
-    zone (`kernel.clock`, with the firm's demo clock): the request-time check (DEC-383)."""
-    async with tenant_session(tenant) as session:
-        ends = await session.scalar(
-            text(
-                "SELECT access_ends_on FROM memberships WHERE user_id = :u AND kind = 'staff' "
-                "AND status = 'active'"
-            ),
-            {"u": user_id},
-        )
-    if ends is None:
-        return False
-    return cast(date, ends) < await clock.today(tenant, await _zone(tenant))

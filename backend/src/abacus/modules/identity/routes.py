@@ -17,6 +17,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
     AiClientDataView,
@@ -196,8 +197,15 @@ async def me(
     signed_in: Annotated[SignedIn, Depends(current_signed_in)],
     asked: Annotated[UUID | None, Depends(requested_tenant)] = None,
 ) -> MeOut:
-    memberships = signed_in.memberships
     user = str(signed_in.user.id)
+    # A firm whose access end has passed for this person is no longer theirs to open (DEC-383),
+    # whether or not the access-end job has deactivated the membership yet.
+    memberships = [
+        m
+        for m in signed_in.memberships
+        if m.kind == "client"
+        or not await access_has_ended(TenantContext(m.tenant_id, "human", user), signed_in.user.id)
+    ]
     held = {m.tenant_id for m in memberships}
     # The active tenant: the one asked for when the person holds it, or their only one.
     active = asked if asked in held else (memberships[0].tenant_id if len(held) == 1 else None)

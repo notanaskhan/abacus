@@ -12,6 +12,7 @@ import json
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, date, datetime, timedelta
+from typing import cast
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -298,3 +299,78 @@ def test_m3_no_successful_sweep_in_two_runs_is_stale() -> None:
     assert not access_end.stale([False, True])
     assert not access_end.stale([False])  # one failed run is not two hours
     assert not access_end.stale([])
+
+
+async def test_m3_an_agent_acting_for_someone_whose_access_ended_is_refused(firm: Firm) -> None:
+    """Re-review: an agent is checked against its initiator, so a run started by a person whose
+    end date has passed is refused on its next action, though no sweep has run."""
+    from abacus.modules.identity import context
+    from abacus.modules.identity.api import AgentContext, Forbidden, Resource, authorise
+
+    _, seasonal, _ = await _season(firm)
+    lena = seasonal[0]
+    client = await firm.seed.value(
+        "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Probe client') RETURNING id",
+        firm.tenant,
+    )
+    entity = await firm.seed.value(
+        "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, 'Probe') "
+        "RETURNING id",
+        firm.tenant,
+        client,
+    )
+    engagement = cast(
+        uuid.UUID,
+        await firm.seed.value(
+            "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, type, status, "
+            "fiscal_period_start, fiscal_period_end, created_by) VALUES ($1, $2, $3, 'Probe', "
+            "'tax_compliance', 'active', '2025-01-01', '2025-12-31', $4) RETURNING id",
+            firm.tenant,
+            client,
+            entity,
+            lena.user_id,
+        ),
+    )
+    await firm.seed.open(firm.tenant, engagement)
+    await firm.seed.member(engagement, lena, "staff")
+    run_id = uuid.uuid4()
+    agent = AgentContext(
+        tenant=TenantContext(firm.tenant, "agent", f"agent:evidence.screener:{run_id}"),
+        agent_id="evidence.screener",
+        agent_run_id=run_id,
+        engagement_id=engagement,
+        task_scope=frozenset({"screening.run"}),
+        initiator=_ctx(lena),
+        issued_by=context._ISSUER,  # pyright: ignore[reportPrivateUsage] -- an agent run's context
+    )
+    resource = Resource.engagement(firm.tenant, engagement, archived=False)
+    with clock.frozen(_at(OCT_31, 23, 50)):
+        await authorise(agent, "screening.run", resource)  # the last day: still allowed
+    with clock.frozen(_at(date(2026, 11, 1), 0, 20)), pytest.raises(Forbidden) as refused:
+        await authorise(agent, "screening.run", resource)
+    assert refused.value.layer == "delegation"
+    assert (await firm.status(lena))[0] == "active"  # no sweep ran
+
+
+async def test_m3_me_stops_listing_a_firm_whose_access_ended(
+    firm: Firm, http: httpx.AsyncClient, idp: FakeIdentityProvider
+) -> None:
+    _, seasonal, kevin = await _season(firm)
+    lena = seasonal[0]
+
+    async def firms_of(who: Person) -> list[str]:
+        subject = str(
+            await firm.seed.value("SELECT idp_subject FROM users WHERE id = $1", who.user_id)
+        )
+        response = await http.get(
+            "/v1/me", headers={"Authorization": f"Bearer {idp.token(subject, mfa=True)}"}
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        return [str(m["tenant_id"]) for m in body["memberships"]]
+
+    with clock.frozen(_at(OCT_31, 23, 50)):
+        assert await firms_of(lena) == [str(firm.tenant)]
+    with clock.frozen(_at(date(2026, 11, 1), 0, 20)):
+        assert await firms_of(lena) == []
+        assert await firms_of(kevin) == [str(firm.tenant)]

@@ -30,7 +30,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.controls import control_active, ensure_writable
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
-from abacus.modules.identity.access_end import access_has_ended
+from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.identity.context import AuthContext, TenantNotHeld

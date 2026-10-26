@@ -71,6 +71,7 @@ from sqlalchemy.orm import QueryableAttribute
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.logging import get_logger
+from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, conditions_hold
 from abacus.modules.identity.authz.matrix import G2_BLOCKS_VIEW, RULES, Decision, Rule
 from abacus.modules.identity.authz.overrides import apply_override
@@ -575,6 +576,10 @@ async def authorise(
     if isinstance(ctx, AgentContext):
         reach = AGENT_ONLY_REACH if resource.engagement_id is not None else AGENT_FIRM_REACH
         delegated = action if _human_held(rule) else reach
+        # The person the run acts for may have reached their access end since the run started:
+        # the same check a request makes (DEC-383), whether or not the sweep has run.
+        if await access_has_ended(ctx.initiator.tenant, ctx.initiator.user_id):
+            raise _deny(ctx, action, "delegation")
         token = _delegating.set(True)
         try:
             await authorise(ctx.initiator, delegated, resource, reason=reason)
