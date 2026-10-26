@@ -62,6 +62,7 @@ POR-04; contract C5 section `portal-pbc` (stub R-01-T01, TASK-1042; DEC-240).
   the binder-level `upload_intents[]` the screen contract mentions is not in the C5 model, so it
   is not served (no shape change).
 - 2026-10-25: security review fixes (items 1, 2, 5, 6, 7), failing tests first in `test_portal_documents.py` (`test_review*`, 8 new): closed-after-unpublish binders 404, prior-year binder rule plus authorisation, `delegate` opens no documents (grant made by `delegate_item`), comment counts over live files only, hidden-only categories not named, uploaders named only as client people or a third party's organisation. DEC-333 amended.
+- 2026-10-27 (S10 gap build): the literal "Claire Feld binder 21 requests" figure is closed as a handoff gap by DEC-348 (decided with the proposed option). E0 names 7 requests, 5 done, and the 2 open match TAX-03 "Intake 2". That match is already asserted on the loaded E0 (`test_p08t22_portal_seed_footing.py`, Upload 2 = binder open), and DEC-348's test pins the 5 of 7. R-01-T11 can resume on DEC-348's terms.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

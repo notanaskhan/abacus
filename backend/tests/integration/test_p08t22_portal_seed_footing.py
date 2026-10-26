@@ -9,10 +9,11 @@ database, and the figures are read the way a client reads them: Claire Feld and 
 in on Brightwater Hale's portal host through the pre-session routes and read their homes over
 HTTP. Expected figures are typed from the screen contracts, never imported from the scenario.
 
-Spec conflict left open (not asserted): POR-02 a and SPEC-320 AC-15 read the Feld binder as "19 of
-21 requests done · 37 sorted", while BND-02 a and P-06 §5.4 (golden-tested by P-06-T29) read the
-same E0 binder as "5 of 7". Both give Upload 2, which is what is asserted, with its footing
-(open = total - done).
+The Feld binder's figures (DEC-348, decided 2026-10-27): POR-02 a and SPEC-320 AC-15 read "19 of
+21 requests done · 37 sorted", but only BND-02 a's seven requests are named anywhere, so E0 loads
+those: 5 of 7 with nothing sorted (P-06 §5.4, golden-tested by P-06-T29). The handoff's figures
+are a recorded gap (POR-02 Deviations). Both give Upload 2, asserted with its footing (open =
+total - done).
 """
 
 from __future__ import annotations
@@ -230,6 +231,13 @@ async def test_t14_claires_upload_2_is_her_binders_open_requests(
     assert upload["state"] == ("overdue" if past else "open"), upload
     assert binder["total"] - binder["done"] == upload["count"]  # Figures: = binder open
     assert binder["sorted_count"] >= 0
+
+
+async def test_dec348_claires_binder_reads_the_loaded_5_of_7(http: httpx.AsyncClient) -> None:
+    """DEC-348: the home's binder is the one E0 loads (BND-02 a), not the handoff's 19 of 21."""
+    home = await _home(http, await _session(http, f"claire.feld@{SINK}"))
+    binder = cast(dict[str, int], home["binder"])
+    assert (binder["done"], binder["total"], binder["sorted_count"]) == (5, 7, 0)
 
 
 async def test_t14_tess_morenos_copperleaf_upload_is_overdue_since_sep_5(
