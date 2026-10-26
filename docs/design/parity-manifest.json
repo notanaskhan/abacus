@@ -935,6 +935,102 @@
       "tier": "B",
       "deviation": "F-05-T59: integration tiles draw F-05-T13's monogram VendorTile on the category colour where the board draws a Lucide glyph (F-05 F4); the Sessions tab is disabled (T4's); Details…, + and Enable's WB-11 drawer are not drawn"
     },
+    "tpl-08.a": {
+      "selector": "[data-artboard=\"tpl-08a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-08 Inbox master-detail specimen - firm Inbox- Feld thread/screenshots/TPL-08a.png",
+      "sha256": "d00dc24edaf0c04ca3fc3577e2897a000e453a4295df0ce3ecf56f400c5b6176",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T58: thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders Form 1095-C, W-2 and 1098 pages in Arimo; the agent note's Review has no trailing arrow"
+    },
+    "tpl-08.b": {
+      "selector": "[data-artboard=\"tpl-08b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-08 Inbox master-detail specimen - firm Inbox- Feld thread/screenshots/TPL-08b.png",
+      "sha256": "587dca1a5bcfd211374e93af6e7e0cd853e644b118a49b51792fae5d9c6bb65b",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T58: thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders Form 1095-C, W-2 and 1098 pages in Arimo; the agent note's Review has no trailing arrow"
+    },
+    "tpl-08.c": {
+      "selector": "[data-artboard=\"tpl-08c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-08 Inbox master-detail specimen - firm Inbox- Feld thread/screenshots/TPL-08c.png",
+      "sha256": "2a9b07788ff43f916c0080e834d9165882c3976fe591471f7053159c6f61afeb",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T58: thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders Form 1095-C, W-2 and 1098 pages in Arimo; the agent note's Review has no trailing arrow"
+    },
+    "tpl-08.d": {
+      "selector": "[data-artboard=\"tpl-08d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-08 Inbox master-detail specimen - firm Inbox- Feld thread/screenshots/TPL-08d.png",
+      "sha256": "6eae32e01f601a18c7f0e99c4440ea0a4a38c9e9ddefbaeca0d5c76eed197ea4",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T58: thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders Form 1095-C, W-2 and 1098 pages in Arimo; the agent note's Review has no trailing arrow"
+    },
+    "tpl-08.e": {
+      "selector": "[data-artboard=\"tpl-08e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-08 Inbox master-detail specimen - firm Inbox- Feld thread/screenshots/TPL-08e.png",
+      "sha256": "44d1639d656d9e38a05369f49f71ce6115e31583d2573bf29fc3b4e90dc97c35",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T58: thumbnails draw the gallery's synthetic page images (viewer-pages.ts) where the handoff renders Form 1095-C, W-2 and 1098 pages in Arimo; the agent note's Review has no trailing arrow"
+    },
+    "tpl-09.a": {
+      "selector": "[data-artboard=\"tpl-09a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09a.png",
+      "sha256": "2100f8ea943dc78e2f78a1c2499ea09abd8af1c44c684c47b306fc36719fa54e",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
+    "tpl-09.b": {
+      "selector": "[data-artboard=\"tpl-09b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09b.png",
+      "sha256": "e6be475e7230574bf623cbe4c5ea3761b45e9f5660ed425ebb81a547108cfed5",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
+    "tpl-09.c": {
+      "selector": "[data-artboard=\"tpl-09c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09c.png",
+      "sha256": "8d99608763c63e26d1594d95065d1974f1aa96eb53a7ecd87d3f9e372832961b",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
+    "tpl-09.d": {
+      "selector": "[data-artboard=\"tpl-09d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09d.png",
+      "sha256": "18a57ac6c42ab5bfd20518dae45281adb90cdf95b5e352261bce137c7303206c",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
+    "tpl-09.e": {
+      "selector": "[data-artboard=\"tpl-09e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09e.png",
+      "sha256": "61b6d48b806004ed4aa31b3ea88dbf6e5f2e8c135234438da9665b0ac9f432a2",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
+    "tpl-09.f": {
+      "selector": "[data-artboard=\"tpl-09f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09f.png",
+      "sha256": "a7a11e4696a992cdaad03382a7e9e16286f46430369ddf82faaa25fdc916f750",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
+    "tpl-09.g": {
+      "selector": "[data-artboard=\"tpl-09g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-09 Queue - detail - evidence specimen - three presets/screenshots/TPL-09g.png",
+      "sha256": "57e23b71ae9905f91904f5a73d8692068fce63171e3afc5884b7cdeacaa6be3a",
+      "crop": "window",
+      "tier": "B",
+      "deviation": "F-05-T57: the viewer draws the gallery's synthetic page image (viewer-pages.ts) where the handoff renders the draft K-1 in Arimo with the DRAFT watermark, the supporting-schedule block sits under the viewer rather than in its scroll, the tree's band chevron is on the left (the C-17 tree's), and the footer buttons sit two to a row as the C-17 footer draws them"
+    },
     "t8-inbox.t8a": {
       "selector": "[data-artboard=\"t8a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/T8 Inbox master-detail/screenshots/T8a.png",

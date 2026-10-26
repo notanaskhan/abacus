@@ -569,3 +569,27 @@ The lock follows the parity-tier reading the plan records for Decision Day (F-05
 | 2026-10-26 | Catalogue        | The 28 agents and 53 integrations the T5 and TPL-05 canvases mount; counts tie to 01 §9.5; the §9.1 differences go to WB-10 as gaps (DEC-384)                   |
 | 2026-10-26 | Disconnect       | Keeps the handoff's word without "…" although it opens the confirm dialog                                                                                       |
 | 2026-10-26 | Sessions tab     | Disabled in the specimen: it belongs to T4                                                                                                                      |
+
+### TPL-09 three-preset specimen (F-05-T57)
+
+| Date       | Item                | Decision                                                                                                                                                                                                                                         |
+| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-26 | Issue lists         | The seed's own lists from the TPL-09 spec and canvas: Feld 4 (2 missing information, 1 action required, 1 review point), Copperleaf 7 (2 medium, 5 low), Ridgeline 11 (5 waiting on the client, 6 review points)                                 |
+| 2026-10-26 | Detail rows         | `IssueDetailView.facts` replaces the default rows after Assigned to (Priority and Created by on a return; Severity, Status and Account on a close); `summary` draws the body under the title (TPL-09a); an empty `blocks` or `why` draws no band |
+| 2026-10-26 | Linked Entities     | `entities` name linked records above the file chips, with a sub-line and a red flag when the record carries the issue ("1 reconciling item")                                                                                                     |
+| 2026-10-26 | Tree sections       | `IssueGroup.sub` draws the form section between a tree band and its rows; an empty count draws none                                                                                                                                              |
+| 2026-10-26 | Proposed value      | `FieldItem.proposed`: the value in a dashed match-line box on the match fill with a person's Accept and Reject (22 high) under it; the third of TPL-09's three purples                                                                           |
+| 2026-10-26 | Resolve with a note | Mark as Resolved and Resolve open a note ("Add a resolution note") and resolve only with one; Mark Not Applicable needs none                                                                                                                     |
+| 2026-10-26 | Reconciliation      | The ••4410 view is a plain table on the tokens; Difference carries `TallyPill` `tie`, never Reconciled, while #2281 and the refund are open; the refund's chip lights with its statement match                                                   |
+| 2026-10-26 | Entity header       | `QueueDetailLayout` `detail.right` puts TPL-09c's Resolve in the Issue pane header                                                                                                                                                               |
+
+### TPL-08 firm Inbox specimen (F-05-T58)
+
+| Date       | Item        | Decision                                                                                                                                                                                                                  |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-26 | Data        | The File Kit's `w0` and `w0-filed` datasets the boards mount, which tie to blueprint 01 §9 (23 waiting, 4 unmatched); where the spec's row list differs (Stein and Collins subjects, row order), the boards win (DEC-384) |
+| 2026-10-26 | Row hover   | A waiting row shows File… (secondary sm, opens the triage sheet) over its time on hover or focus; `InboxList.hovered` holds it for TPL-08b                                                                                |
+| 2026-10-26 | Attachments | `InboxAttachment` takes all four states, a red-tint `tag` ("2024 ≠ 2025") and a `result` line ("Filed to" with the destination, "Ignored · wrong year")                                                                   |
+| 2026-10-26 | Thread      | Opening a roll-up shows the newest message, then the older ones recessed on the nested fill; the agent note belongs to the thread and goes once a person files or ignores                                                 |
+| 2026-10-26 | Header      | `ReadingHeader.context` names the record after the client chip ("TY2025 Form 1040 · Kevin Osei")                                                                                                                          |
+| 2026-10-26 | Filters     | Received is set to Past 30 Days on every board, so its chip reads amber; Channel reads Email as its placeholder                                                                                                           |
