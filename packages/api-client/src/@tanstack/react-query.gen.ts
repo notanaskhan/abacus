@@ -7896,8 +7896,9 @@ export const saveEmailTemplateDraftMutation = (options?: Partial<Options<SaveEma
 /**
  * Preview Email Template Route
  *
- * POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings; creates
- * nothing.
+ * POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and
+ * the filled values; the sample contact's items only as far as the viewer may read them
+ * (DEC-379); creates nothing.
  */
 export const previewEmailTemplateMutation = (options?: Partial<Options<PreviewEmailTemplateData>>): UseMutationOptions<PreviewEmailTemplateResponse, PreviewEmailTemplateError, Options<PreviewEmailTemplateData>> => {
     const mutationOptions: UseMutationOptions<PreviewEmailTemplateResponse, PreviewEmailTemplateError, Options<PreviewEmailTemplateData>> = {
@@ -7937,8 +7938,9 @@ export const publishEmailTemplateMutation = (options?: Partial<Options<PublishEm
 /**
  * Test Send Email Template Route
  *
- * POR-20 j, k (R-01-T23): to the acting admin only; 422 `template_lint_failed`. Audited
- * `email_template.test_sent`.
+ * POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample
+ * contact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.
+ * Audited `email_template.test_sent`.
  */
 export const testSendEmailTemplateMutation = (options?: Partial<Options<TestSendEmailTemplateData>>): UseMutationOptions<TestSendEmailTemplateResponse, TestSendEmailTemplateError, Options<TestSendEmailTemplateData>> => {
     const mutationOptions: UseMutationOptions<TestSendEmailTemplateResponse, TestSendEmailTemplateError, Options<TestSendEmailTemplateData>> = {
@@ -8321,8 +8323,9 @@ export const previewPortalQueryKey = (options?: Options<PreviewPortalData>) => c
 /**
  * Preview Portal Route
  *
- * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; audited
- * `portal.preview_viewed` with the contact id or `sample`.
+ * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer
+ * may read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with
+ * the contact id or `sample`.
  */
 export const previewPortalOptions = (options?: Options<PreviewPortalData>) => queryOptions<PreviewPortalResponse, PreviewPortalError, PreviewPortalResponse, ReturnType<typeof previewPortalQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

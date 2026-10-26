@@ -48,3 +48,4 @@ updated: 2026-10-26
 - Not here: the six keys' registrations and content (T19, T22); fresh-MFA register entries for
   the new mfa actions (the register's groups have no "client mail" group; add with T19 or T26);
   `test_agent_never.py` rows (R-01-T20, T30).
+- 2026-10-26 (security review, DEC-379): fix round on the same branch; see DEC-379 for this task's part (H1 preview scoping, M1 send_templated signature, M2 value lint, M3 connection.disconnect, M4 section requester, L1 test-send conditions, L4 support contact).

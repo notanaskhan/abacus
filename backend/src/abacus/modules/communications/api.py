@@ -33,6 +33,7 @@ from abacus.modules.communications.notification_email import (
     send_notification_email,
     template_key,
 )
+from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scope import Violation, check_scope, comment_scope_kinds
 from abacus.modules.communications.secure_link_routes import router as secure_link_router
@@ -76,11 +77,14 @@ from abacus.modules.communications.template_registry import (
 from abacus.modules.communications.template_registry import (
     EmailTemplateRegistration,
     RecipientRef,
-    SendActor,
     SendOutcome,
     SendRefusal,
+    SendScope,
+    SystemSendContext,
     TemplateRegistrationInvalid,
     TemplateVariable,
+    ValueFinding,
+    lint_values,
     register_email_template,
     registered_templates,
     scheduled_send_enabled,
@@ -180,20 +184,23 @@ __all__ = [
     "NextSendOut",
     "NotificationMail",
     "OutOfScope",
+    "PreviewSelection",
     "RecipientRef",
     "SecureLinkView",
-    "SendActor",
     "SendOutcome",
     "SendRefusal",
+    "SendScope",
     "SesEventQueue",
     "SesIdentities",
     "SesIdentityInvalid",
     "SesIdentityNotFound",
     "SesIdentityPort",
     "SesIdentityUnavailable",
+    "SystemSendContext",
     "TemplateRegistrationInvalid",
     "TemplateVariable",
     "Transport",
+    "ValueFinding",
     "Violation",
     "check_scope",
     "compose_follow_up",
@@ -204,6 +211,7 @@ __all__ = [
     "drain_ses_events",
     "is_suppressed",
     "issue_secure_link",
+    "lint_values",
     "on_sink",
     "register_email_template",
     "registered_templates",
@@ -217,4 +225,5 @@ __all__ = [
     "sink_address",
     "sink_domain",
     "template_key",
+    "viewer_scoped",
 ]

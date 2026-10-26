@@ -9,7 +9,8 @@ consumers' tests and fixture mode run against them:
 - `POST /v1/work-items/{work_item_id}/exports` (`export.create`: engagement partner or manager,
   fresh MFA, independence, not offshore; `Idempotency-Key`): 202 `queued` with `not_before` ten
   seconds on, a single-use approval grant behind it (P-35). A retried key returns the same export.
-  422 `export_kind_unsupported` for a work item that is not an audit (fail closed until C19).
+  422 `export_kind_unsupported` for a work item that is not an audit (fail closed until C19);
+  422 `binder_not_in_work_item` for a binder id that is not one of the work item's (DEC-379).
 - `POST /v1/exports/{export_id}/undo` (`export.create`): inside the window, `undone`; after it,
   409 `undo_window_closed`.
 - `GET /v1/work-items/{work_item_id}/exports` and `GET /v1/exports/{export_id}` (`export.read`):
@@ -21,7 +22,8 @@ consumers' tests and fixture mode run against them:
 
 Statuses are C2's `engagement_export` codes. No route is reachable by a client principal (INV-4)
 and the agent holds none of the actions (INV-1). Sizes are bytes; counts and digests exist only
-once the package is built.
+once the package is built. The stub checks the flag first, as every stub does; the implementing
+tasks authorise first (404 behind a wall before anything else).
 """
 
 from __future__ import annotations

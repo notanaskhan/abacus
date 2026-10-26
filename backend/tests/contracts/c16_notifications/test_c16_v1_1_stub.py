@@ -9,7 +9,9 @@ refuses to run until R-01-T19. C16 v1 stays frozen (`test_c16_frozen.py`)."""
 
 from __future__ import annotations
 
+import inspect
 import json
+import typing
 import uuid
 from types import ModuleType
 from typing import cast
@@ -64,7 +66,8 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag | None]] = {
 }
 IDEMPOTENT = {f"{T}/{{key}}/test-send", f"{T}/{{key}}/publish", D, f"{S}/publish"}
 FRESH_MFA = {"email_template.publish", "email_template.import", "sending_domain.manage"} | {
-    "portal_settings.manage"
+    "portal_settings.manage",
+    "email_template.test_send",  # DEC-379: a sample contact's titles leave the firm
 }
 ACTIONS = sorted({action for action, _ in ROUTES.values()})
 MODELS: tuple[type[BaseModel], ...] = (
@@ -121,6 +124,12 @@ def test_ac3_the_agent_and_system_hold_none(action: str) -> None:
 @pytest.mark.parametrize("action", ACTIONS)
 def test_ac3_fresh_mfa_where_the_plan_says(action: str) -> None:
     assert RULES[action].mfa_recent == (action in FRESH_MFA)
+
+
+def test_ac3_a_test_send_needs_an_onshore_member() -> None:
+    """DEC-379 (security review L1): a test send with a sample contact emails that client's
+    request titles out of the firm."""
+    assert RULES["email_template.test_send"].not_offshore
 
 
 def test_ac3_who_holds_what() -> None:
@@ -214,12 +223,31 @@ def test_ac5_the_slot_registers_a_whitelisted_key_once(monkeypatch: pytest.Monke
 
 
 async def test_ac5_send_templated_refuses_to_run_until_built() -> None:
+    scope = template_registry.SendScope(engagement_id=uuid.uuid4())
+    recipient = template_registry.RecipientRef("contact", uuid.uuid4())
     with pytest.raises(NotImplementedYet):
         await template_registry.send_templated(
-            _ctx().tenant,
+            _ctx(),
             "reminder",
-            template_registry.RecipientRef("contact", uuid.uuid4()),
+            recipient,
             {"client_first_name": "Claire"},
-            actor=template_registry.SendActor("human", uuid.uuid4()),
+            scope=scope,
             idempotency_key="k",
         )
+    system = template_registry.SystemSendContext(_ctx().tenant, "scheduled_follow_up", 1)
+    with pytest.raises(NotImplementedYet):
+        await template_registry.send_templated(
+            system, "reminder", recipient, {}, scope=scope, idempotency_key="k"
+        )
+
+
+def test_ac5_send_templated_takes_the_callers_context_and_an_engagement() -> None:
+    """DEC-379 (security review M1): no caller-asserted actor; `message.send` is authorised
+    inside, on the engagement the message is about, and the scope check can refuse."""
+    signature = inspect.signature(template_registry.send_templated)
+    first = next(iter(signature.parameters.values()))
+    assert first.name == "ctx"
+    assert "AuthContext" in str(first.annotation) and "SystemSendContext" in str(first.annotation)
+    assert "scope" in signature.parameters and "actor" not in signature.parameters
+    assert "out_of_scope" in typing.get_args(template_registry.SendRefusal)
+    assert RULES["message.send"].independence

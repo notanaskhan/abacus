@@ -56,3 +56,4 @@ types" (A-01-T17). ADR-036's follow-up: the export format specification. Today o
 - Not here: the schema file is not yet listed in `.claude/hooks/_protected.py` GENERATED (a
   protected path; add with the next protected bundle). The export sheet's TS fixtures are
   A-01-T24's. DEC-376.
+- 2026-10-26 (security review, DEC-379): fix round on the same branch; see DEC-379 for this task's part (H1 preview scoping, M1 send_templated signature, M2 value lint, M3 connection.disconnect, M4 section requester, L1 test-send conditions, L4 support contact).

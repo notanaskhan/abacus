@@ -22,11 +22,11 @@ Consumers can rely on POR-16's shapes (the entity's connection cards, the consen
 | Start with consent (`Idempotency-Key`, 201) | `POST /v1/portal/entities/{entity_id}/connections/{catalog_key}/start` | `connection.create` | client_admin; fresh MFA | denied |
 | Details drawer | `GET /v1/portal/connections/{connection_id}` | `connection.read` | as cards | denied |
 | *Try again* (`Idempotency-Key`, 202) | `POST /v1/portal/connections/{connection_id}/retry` | `connection.retry` | client_admin (`scope_only`); engagement partner, manager | denied |
-| Disconnect (`Idempotency-Key`) | `POST /v1/portal/connections/{connection_id}/disconnect` | `connection.revoke` | client_admin; engagement partner, manager | denied (no cell) |
+| Disconnect (`Idempotency-Key`) | `POST /v1/portal/connections/{connection_id}/disconnect` | `connection.disconnect` | client_admin (`scope_only`: an entity the grant covers); fresh MFA, since the secret is destroyed | denied |
 | Ask client to reconnect (`Idempotency-Key`, 201) | `POST /v1/connections/{connection_id}/reconnect-requests` | `connection.reconnect_request` | engagement partner, manager, senior; independence | denied |
 | On-demand pull (`Idempotency-Key`, 202) | `POST /v1/engagements/{engagement_id}/connection/pulls` | `ledger.pull` | engagement partner, manager, senior; independence | denied |
 
-Matrix rows: `docs/architecture/permission-matrix/connections.yaml` (A-02-T02, TASK-1185). Flag off: 404. Flag on: 501 `not_implemented` until the task named in each route's docstring. Firm staff cannot start a client connection (only `client_admin` holds `connection.create`); a third party holds no cell (AC-41).
+Matrix rows: `docs/architecture/permission-matrix/connections.yaml` (A-02-T02, TASK-1185; `connection.disconnect` added by the A-02-T06 security review, DEC-379: the legacy engagement route keeps the looser `connection.revoke`, the portal route never uses it). Stubs check the flag before anything else, as every stub on main does; the implementing tasks authorise first (a wall answers 404 before the flag or any read). Flag off: 404. Flag on: 501 `not_implemented` until the task named in each route's docstring. Firm staff cannot start a client connection (only `client_admin` holds `connection.create`); a third party holds no cell (AC-41).
 
 Module interface (`integrations.api`): `IntegrationAdapter` (`key`, `category`, `connector_provider`, `read_scopes()`, `egress_hosts()`; no write method), `WriteCapabilityRegistry` (`version: 1`, `read_connectors[]`, `writes[]`, `egress_hosts()`), `ReadConnectorEntry`, `WriteCapabilityEntry` (`enabled` is `false` by type), `IntegrationCategory`. Other modules import only `integrations.api` (DEC-13).
 

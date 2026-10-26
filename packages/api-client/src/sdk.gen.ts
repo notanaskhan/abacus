@@ -4798,8 +4798,9 @@ export const saveEmailTemplateDraft = <ThrowOnError extends boolean = false>(opt
 /**
  * Preview Email Template Route
  *
- * POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings; creates
- * nothing.
+ * POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and
+ * the filled values; the sample contact's items only as far as the viewer may read them
+ * (DEC-379); creates nothing.
  */
 export const previewEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<PreviewEmailTemplateData, ThrowOnError>): RequestResult<PreviewEmailTemplateResponses, PreviewEmailTemplateErrors, ThrowOnError> => (options.client ?? client).post<PreviewEmailTemplateResponses, PreviewEmailTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4827,8 +4828,9 @@ export const publishEmailTemplate = <ThrowOnError extends boolean = false>(optio
 /**
  * Test Send Email Template Route
  *
- * POR-20 j, k (R-01-T23): to the acting admin only; 422 `template_lint_failed`. Audited
- * `email_template.test_sent`.
+ * POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample
+ * contact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.
+ * Audited `email_template.test_sent`.
  */
 export const testSendEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<TestSendEmailTemplateData, ThrowOnError>): RequestResult<TestSendEmailTemplateResponses, TestSendEmailTemplateErrors, ThrowOnError> => (options.client ?? client).post<TestSendEmailTemplateResponses, TestSendEmailTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5068,8 +5070,9 @@ export const uploadPortalLogo = <ThrowOnError extends boolean = false>(options: 
 /**
  * Preview Portal Route
  *
- * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; audited
- * `portal.preview_viewed` with the contact id or `sample`.
+ * ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer
+ * may read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with
+ * the contact id or `sample`.
  */
 export const previewPortal = <ThrowOnError extends boolean = false>(options?: Options<PreviewPortalData, ThrowOnError>): RequestResult<PreviewPortalResponses, PreviewPortalErrors, ThrowOnError> => (options?.client ?? client).get<PreviewPortalResponses, PreviewPortalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

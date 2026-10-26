@@ -12,9 +12,14 @@ routes and new models beside it.
 - Template writes (draft save and discard, test send, publish) are behind `portal.settings_editor`;
   sending-domain writes behind `communications.firm_sender_domain`. Off: 404. On: 501.
 
-Publish and test send carry `Idempotency-Key` (a client-visible version; an email). Publish and
-import need a fresh second factor. Test send goes only to the acting admin. A lint failure is 422
-`template_lint_failed` with identifier-only findings (`{code, block_id}`), never the text.
+Publish and test send carry `Idempotency-Key` (a client-visible version; an email). Publish,
+import and test send need a fresh second factor; test send also an onshore member, and goes only
+to the acting admin. A `sample_contact_id` on preview or test send renders only what the viewer
+could read themselves (`communications.api.viewer_scoped`, DEC-379), else the sample client, and
+the filled values pass `lint_values` (a client-written title never carries an amount, a TIN or an
+account number out). The stubs check the flag first; the implementing tasks authorise first.
+A lint failure is 422 `template_lint_failed` with identifier-only findings (`{code, block_id,
+variable}`), never the text or the value.
 """
 
 from __future__ import annotations
@@ -430,8 +435,9 @@ async def discard_email_template_draft_route(key: TemplateKey, ctx: Ctx) -> Emai
 async def preview_email_template_route(
     key: TemplateKey, body: EmailPreviewIn, ctx: Ctx
 ) -> EmailPreviewOut:
-    """POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings; creates
-    nothing."""
+    """POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and
+    the filled values; the sample contact's items only as far as the viewer may read them
+    (DEC-379); creates nothing."""
     await _stub(ctx)
 
 
@@ -445,8 +451,9 @@ async def preview_email_template_route(
 async def test_send_email_template_route(
     key: TemplateKey, body: EmailTestSendIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EmailTestSendOut:
-    """POR-20 j, k (R-01-T23): to the acting admin only; 422 `template_lint_failed`. Audited
-    `email_template.test_sent`."""
+    """POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample
+    contact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.
+    Audited `email_template.test_sent`."""
     await _stub(ctx, PORTAL_SETTINGS_EDITOR)
 
 

@@ -901,7 +901,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/portal/binders/{binder_id}/drops", "evidence.upload"),
     ("POST", "/v1/portal/binders/{binder_id}/mark-done", "binder.mark_done"),
     ("POST", "/v1/portal/binders/{binder_id}/mark-done/undo", "binder.mark_done"),
-    ("POST", "/v1/portal/connections/{connection_id}/disconnect", "connection.revoke"),
+    ("POST", "/v1/portal/connections/{connection_id}/disconnect", "connection.disconnect"),
     ("POST", "/v1/portal/connections/{connection_id}/retry", "connection.retry"),
     (
         "POST",

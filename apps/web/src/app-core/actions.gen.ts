@@ -58,6 +58,7 @@ export const ACTIONS = [
   "conflict.run",
   "connection.check",
   "connection.create",
+  "connection.disconnect",
   "connection.pull",
   "connection.read",
   "connection.read_log",

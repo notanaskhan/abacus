@@ -25,6 +25,8 @@ from abacus.modules.communications.api import (
     TEMPLATE_VARIABLES,
     FollowUpPolicyFields,
     SendRefusal,
+    lint_values,
+    viewer_scoped,
 )
 from abacus.modules.communications.templates_contract import LintFindingOut
 from abacus.modules.portal.settings_contract import (
@@ -160,7 +162,7 @@ def test_ac7_the_whitelist_is_r01s() -> None:
     assert [n for n, v in TEMPLATE_VARIABLES.items() if v.block] == ["open_items"]
 
 
-# --- AC-6 each consumer's keys ------------------------------------------------------------------
+# --- AC-6 each consumer's keys -------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -188,9 +190,68 @@ def test_ac6_the_refusal_reasons_are_the_four() -> None:
     assert set(get_args(SendRefusal)) == {
         "template_missing",
         "template_lint_failed",
+        "out_of_scope",
         "firm_not_client_facing",
         "suppressed",
     }
+
+
+# --- DEC-379: the filled values are linted too (security review M2) ------------------------------
+
+
+def test_ac7_a_hostile_client_title_never_leaves_in_a_value() -> None:
+    findings = lint_values(
+        {
+            "document_title": "W-2 912-34-5678 $84,210.pdf",  # 9xx: a fake TIN
+            "open_items": "Front Range Bank savings ••4436 statement — August\nForm 1099-NEC",
+            "connection_name": "American Express ••1009",
+        }
+    )
+    assert {(f.code, f.variable) for f in findings} == {
+        ("tin_shape", "document_title"),
+        ("amount", "document_title"),
+        ("account_number", "open_items"),
+        ("account_number", "connection_name"),
+    }
+    assert all("912" not in repr(f) and "4436" not in repr(f) for f in findings)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Form 1095-C From Mercer Hill Health",
+        "Estimated payment confirmation, Q3",
+        "Northwind FY2026 audit",
+        "Sep 24, 2026",
+        "American Express",
+        "Claire",
+    ],
+)
+def test_ac7_the_seeds_ordinary_values_pass(value: str) -> None:
+    assert lint_values({"work_item": value}) == []
+
+
+# --- DEC-379: a preview never widens access (security review H1) ---------------------------------
+
+TESS_ITEMS = ("Copperleaf savings statement", "Copperleaf August close", "Copperleaf 1120-S")
+
+
+def test_ac8_a_walled_admin_previews_the_sample_client() -> None:
+    walled = viewer_scoped(TESS_ITEMS, lambda _item: False, contact_visible=True)
+    assert (walled.items, walled.use_sample) == ((), True)
+    invisible = viewer_scoped(TESS_ITEMS, lambda _item: True, contact_visible=False)
+    assert (invisible.items, invisible.use_sample) == ((), True)
+
+
+def test_ac8_only_what_the_viewer_reads_and_no_count_of_the_rest() -> None:
+    readable = {"Copperleaf August close"}
+    scoped = viewer_scoped(TESS_ITEMS, lambda item: item in readable, contact_visible=True)
+    assert scoped.items == ("Copperleaf August close",)
+    assert scoped.use_sample is False
+    assert set(vars(scoped)) == {"items", "use_sample"}  # nothing says how many were dropped
+    for model in ("PortalPreviewOut", "EmailPreviewOut"):
+        props = cast(dict[str, Json], SCHEMAS[model]["properties"])
+        assert not [p for p in props if "hidden" in p or "dropped" in p or "omitted" in p]
 
 
 def test_ac6_a_lint_finding_names_where_never_what() -> None:
@@ -202,7 +263,7 @@ def test_ac6_a_lint_finding_names_where_never_what() -> None:
     assert finding.model_dump() == {"code": "amount", "block_id": "body-2", "variable": None}
 
 
-# --- AC-6 the settings draft and publish, and the preview ---------------------------------------
+# --- AC-6 the settings draft and publish, and the preview ----------------------------------------
 
 
 def _policy(cadence: int = 7) -> FollowUpPolicyFields:

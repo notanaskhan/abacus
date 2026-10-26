@@ -430,6 +430,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "allow",
         "mfa_recent": "required",
     },
+    "connection.disconnect": {
+        "client_admin": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+        "scope_only": "required",
+        "mfa_recent": "required",
+    },
     "connection.pull": {
         "system": "allow",
     },
@@ -596,6 +604,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "firm_admin": "allow",
         "agent": "deny",
         "system": "deny",
+        "mfa_recent": "required",
+        "not_offshore": "required",
     },
     "engagement.ai_exclude": {
         "engagement_partner": "allow",

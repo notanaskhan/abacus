@@ -161,6 +161,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "completion.decide",  # SPEC-314 (TASK-332)
         "completion.read",  # SPEC-314 (TASK-332)
         "completion.record",  # SPEC-314 (TASK-332)
+        "connection.disconnect",  # A-02-T06 security review (DEC-379): POR-16 f
         "connection.read",  # A-02 §4.4 (TASK-1185)
         "connection.read_log",
         "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)

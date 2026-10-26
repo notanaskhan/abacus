@@ -55,7 +55,7 @@ ADR-036 (accepted) promises portability: firms must keep their documentation ind
 ### Story 2: Create and undo (A-01-T18)
 - **AC-6** Given Hannah with fresh MFA and a key, when she creates, then one `engagement_exports` row is `queued` with `not_before = +10 s` and a single-use grant; a retry with the same key returns the same export; `engagement_export.requested` is audited.
 - **AC-7** Given Undo inside 10 s, then the grant is voided, the status is `undone`, nothing is built; after 10 s, 409 `undo_window_closed`.
-- **AC-8** Given a `tax_return` work item, then 422 `export_kind_unsupported`.
+- **AC-8** Given a `tax_return` work item, then 422 `export_kind_unsupported`; given a scope binder id that is not one of the work item's PBC binders, 422 `binder_not_in_work_item` (DEC-379).
 
 ### Story 3: The package (A-01-T19)
 - **AC-9** Given Northwind after Ana's acceptance, then the ZIP holds §7's layout with 24 index rows and 12 files (3 + 5 + 3 + 1); every evidence file's SHA-256 equals its `evidence_versions` fingerprint; `shasum -a 256 -c checksums.sha256` passes.
@@ -84,7 +84,7 @@ ADR-036 (accepted) promises portability: firms must keep their documentation ind
 | `packaging` | build fails | `failed` | system |
 | `ready` | 7 days, or withdrawn content | `expired` | system |
 
-**The section slot.** `evidence.api.register_export_section(name, provider, section_version="1.0")`, once per name at import time. Core names land at fixed paths: `index` (`index.csv`, and the builder renders `index.xlsx` from the same rows), `fulfilments`, `review_decisions`, `screening`, `citations` (`provenance/<name>.csv`). Any other name writes under `sections/<name>/`. Names match `[a-z][a-z0-9_]{1,39}`; `readme`, `manifest`, `checksums`, `evidence` and `audit_trail` are reserved. Providers read at the export's audit sequence, never write, never call a model.
+**The section slot.** `evidence.api.register_export_section(name, provider, section_version="1.0")`, once per name at import time. Core names land at fixed paths: `index` (`index.csv`, and the builder renders `index.xlsx` from the same rows), `fulfilments`, `review_decisions`, `screening`, `citations` (`provenance/<name>.csv`). Any other name writes under `sections/<name>/`. Names match `[a-z][a-z0-9_]{1,39}`; `readme`, `manifest`, `checksums`, `evidence` and `audit_trail` are reserved. Providers read at the export's audit sequence, never write, never call a model. A `SectionRequest` names the requester (`requested_by_user_id`, `membership_id`) and the checked binder ids: providers read as that person (`visible()`, walls, independence) and mask Restricted values (TINs, bank accounts) through `kernel.classification.mask` (DEC-379).
 
 ## 7. Domain and data changes
 ### 7.1 Package layout (format `accrued.binder-export`, version 1.0)

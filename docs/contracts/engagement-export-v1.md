@@ -26,7 +26,9 @@ Consumers can rely on one open package format for an audit engagement's PBC bind
 
 Platform support holds no export cell (SPEC-012: support roles are read-only); client principals reach none (INV-4). Flag off: 404. Flag on: 501 `not_implemented` until A-01-T18 (create, undo, reads) and T22 (download).
 
-Module interface: `evidence.api.register_export_section(name, provider, *, section_version="1.0")` with `SectionRequest` and `SectionFile`; core names `index`, `fulfilments`, `review_decisions`, `screening`, `citations`; reserved `readme`, `manifest`, `checksums`, `evidence`, `audit_trail` (SPEC-344 §6).
+Module interface: `evidence.api.register_export_section(name, provider, *, section_version="1.0")` with `SectionRequest` and `SectionFile`; core names `index`, `fulfilments`, `review_decisions`, `screening`, `citations`; reserved `readme`, `manifest`, `checksums`, `evidence`, `audit_trail` (SPEC-344 §6). `SectionRequest` names the requester (`requested_by_user_id`, `membership_id`): a provider reads as that person (`visible()`, walls, independence) and never emits a Restricted value unmasked (DEC-379); it names each binder once, and every binder id has been checked against the work item at create.
+
+Stubs check the flag before anything else, as every stub on main does; the implementing tasks authorise first (a wall answers 404 before the flag or any read).
 
 ## 3. Models
 Code: `backend/src/abacus/modules/evidence/export_contract.py` (routes) and `export_manifest.py` (format).
@@ -52,6 +54,7 @@ C2 `engagement_export` (`docs/product/status-vocabulary.yaml`): `queued` "Queued
 | 409 | `{"detail": "export_not_ready"}` | download before `ready` |
 | 410 | `{"detail": "export_expired"}` | download after 7 days or once voided |
 | 422 | `{"detail": "export_kind_unsupported"}` | a work item that is not an audit (fail closed until C19) |
+| 422 | `{"detail": "binder_not_in_work_item"}` | a scope binder id that is not one of the work item's PBC binders (DEC-379) |
 | 501 | `{"detail": "not_implemented"}` | flag on, until the implementing task |
 
 ## 7. Audit and outbox events

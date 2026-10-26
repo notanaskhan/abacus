@@ -42,7 +42,7 @@ ACTIONS = (
     "connection.read",
     "connection.create",
     "connection.retry",
-    "connection.revoke",
+    "connection.disconnect",
     "connection.reconnect_request",
     "ledger.pull",
 )

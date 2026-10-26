@@ -48,3 +48,4 @@ schema, and fixture mode serves POR-16a-g from typed fixtures" (A-02-T06).
   `connections.live_ledger` as A-02 §4.3 says. DEC-377.
 - Not here: the fail-closed adapter registry and catalogue (T12), the registry file and compiler
   (T15), POR-16 screens (T18).
+- 2026-10-26 (security review, DEC-379): fix round on the same branch; see DEC-379 for this task's part (H1 preview scoping, M1 send_templated signature, M2 value lint, M3 connection.disconnect, M4 section requester, L1 test-send conditions, L4 support contact).

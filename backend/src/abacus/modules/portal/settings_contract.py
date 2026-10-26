@@ -12,8 +12,12 @@ client-experience row and the follow-up policy (communications) in one unit of w
   `portal.settings_editor`: 404 off, 501 on.
 
 The preview is P-08's POR-02 projection built in preview mode: read-only, no session, no
-impersonation, and its target must be a contact the viewer can read under `visible()` (404
-otherwise, DEC-20); with none, the sample client from the firm's published settings.
+impersonation. `portal.preview` grants no client content (DEC-379, `communications.api.
+viewer_scoped`): the contact must be visible to the viewer (404 otherwise, DEC-20), every
+projected item is kept only if the viewer could read it themselves (`engagement.read` and the
+item's read action under `visible()`), dropped items leave no count, and with nothing left the
+preview is the sample client from the firm's published settings. The stub checks the flag first;
+the implementing task authorises first.
 """
 
 from __future__ import annotations
@@ -71,6 +75,7 @@ class ClientExperienceFields(BaseModel):
     phone_capture: Annotated[bool, classified("internal")] = True
     show_team_card: Annotated[bool, classified("internal")] = True
     show_progress_per_item: Annotated[bool, classified("internal")] = True
+    # The service checks this is an active member of the firm (else 422); never a client contact.
     support_contact_user_id: Annotated[UUID | None, classified("internal")] = None
 
 
@@ -226,6 +231,7 @@ async def preview_portal_route(
     device: PreviewDevice = "desktop",
     source: Literal["draft", "published"] = "draft",
 ) -> PortalPreviewOut:
-    """ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; audited
-    `portal.preview_viewed` with the contact id or `sample`."""
+    """ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer
+    may read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with
+    the contact id or `sample`."""
     await _stub(ctx)

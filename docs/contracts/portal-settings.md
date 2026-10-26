@@ -25,7 +25,7 @@ Consumers can rely on one versioned set of portal settings per firm (brand slots
 | Logo (raw body) | `POST /v1/firm/portal-settings/logo` | `portal_settings.manage` | as save | denied |
 | Preview | `GET /v1/firm/portal-settings/preview?as=&device=desktop\|phone&source=draft\|published` | `portal.preview` | firm admin | denied |
 
-The plan's `portal.settings.read` and `portal.settings.manage` are spelt `portal_settings.*` (DEC-139: an action has one dot). The plan's `preview_target_visible` condition is the service's check, not a matrix condition: a contact outside the viewer's `visible()` answers 404 and is never offered (DEC-20). Writes 404 with `portal.settings_editor` off; reads and the preview are not gated. Every route answers 501 until R-01-T26.
+The plan's `portal.settings.read` and `portal.settings.manage` are spelt `portal_settings.*` (DEC-139: an action has one dot). The plan's `preview_target_visible` condition is the service's check, not a matrix condition: a contact outside the viewer's `visible()` answers 404 and is never offered (DEC-20). `portal.preview` grants no client content (DEC-379, `communications.api.viewer_scoped`): every projected POR-02 item (to-do, work card, binder, request) is kept only if the viewer could read it themselves (`engagement.read` and the item's read action under `visible()`, walls, independence); dropped items leave no count; with nothing left the preview is the sample client. A firm admin walled off Copperleaf, or without membership on its engagements, previews Tess Moreno as the sample client. Stubs check the flag before anything else, as every stub on main does; the implementing tasks authorise first (a wall answers 404 before the flag or any read). Writes 404 with `portal.settings_editor` off; reads and the preview are not gated. Every route answers 501 until R-01-T26.
 
 ## 3. Models
 Code: `backend/src/abacus/modules/portal/settings_contract.py`; the policy fields are `communications.api.FollowUpPolicyFields`.
@@ -35,7 +35,7 @@ Code: `backend/src/abacus/modules/portal/settings_contract.py`; the policy field
 - `PortalSettingsDraftOut {expected_version, base_version?, brand: PortalBrandFields, client_experience, follow_up_policy, has_new_logo, saved_at, saved_by}`.
 - `PortalSettingsDraftIn {brand: PortalBrandFields, client_experience: ClientExperienceFields, follow_up_policy: FollowUpPolicyFields, expected_version}`.
 - `PortalBrandFields {portal_name, sender_display_name, secured_footer = false}`; `PortalBrandOut` adds `accent: "espresso"` (fixed), `portal_host` (read-only, the neutral host) and `logo_url?`.
-- `ClientExperienceFields {allow_upload_something_else = false (until N-01, R-01-T33), phone_capture = true, show_team_card = true, show_progress_per_item = true, support_contact_user_id?}`.
+- `ClientExperienceFields {allow_upload_something_else = false (until N-01, R-01-T33), phone_capture = true, show_team_card = true, show_progress_per_item = true, support_contact_user_id?}`; the service checks `support_contact_user_id` is an active member of the firm (422 otherwise), never a client contact or a free id.
 - `PortalLogoOut {logo_sha256, expected_version}`.
 - `PortalPreviewOut {read_only: true, device, contact_id? (null: the sample client), sample, source, brand, home: PortalHomeOut}`: P-08's POR-02 projection in preview mode, no session, no `allowed_actions` reachable.
 
@@ -76,4 +76,4 @@ Additive to C16 v1.
 | v1.1 | (planned with R-01-T26) | | stub R-01-T16 |
 
 ## 11. Open points
-Decided in DEC-378. POR-20's Reminder schedule edits save into this draft and publish from ADM-10 (`docs/screens/POR-20.md`, Open gaps).
+Decided in DEC-378 and DEC-379 (preview scoping). POR-20's Reminder schedule edits save into this draft and publish from ADM-10 (`docs/screens/POR-20.md`, Open gaps).

@@ -41,11 +41,14 @@ R-01 §8.2 names C16 v1.1 (additive) with two documents, `docs/contracts/email-t
 - **AC-2** Given the models, then every field is classified (ADR-031); C16 v1's models are unchanged (the frozen snapshot passes) and the firm import is a new `FirmEmailTemplateImportIn`.
 - **AC-3** Given the matrix, then `email_template.{read,edit,test_send,publish,import}`, `sending_domain.{read,manage}`, `portal_settings.{read,manage}` and `portal.preview` exist (DEC-139 spells the plan's `portal.settings.*` with one dot); publish, import and both manage actions need `mfa_recent`; the agent and system are denied every one.
 - **AC-4** Given `portal.settings_editor` off, then template and settings writes answer 404, and `communications.firm_sender_domain` off, sending-domain writes 404; reads and the import are not flag-gated; every route answers 501 until its task; `follow_ups.scheduled_send` decides whether a `send_on_schedule` policy may send. All three flags default off.
-- **AC-5** Given `register_email_template`, then a key registers once, with whitelisted variables only, at most one call-to-action target per audience, screens by id, and staff templates are never firm-editable; `send_templated` refuses to run until R-01-T19 and its refusal reasons are `template_missing`, `template_lint_failed`, `firm_not_client_facing`, `suppressed`.
+- **AC-5** Given `register_email_template`, then a key registers once, with whitelisted variables only, at most one call-to-action target per audience, screens by id, and staff templates are never firm-editable; `send_templated` takes the caller's `AuthContext` (or the scheduled-reminder `SystemSendContext`) and a `SendScope` naming the engagement, authorises `message.send` inside, refuses to run until R-01-T19, and its refusal reasons are `template_missing`, `template_lint_failed`, `out_of_scope`, `firm_not_client_facing`, `suppressed` (DEC-379).
 
 ### Story 2: The consumer suite (R-01-T17)
 - **AC-6** Given each consumer's keys (P-06, N-02, A-02, A-08, R-02, R-01), then the variables they need are whitelisted, register through the slot, and the lint finding, settings draft and publish, and read-only preview shapes carry what their screens need.
-- **AC-7** Given the whitelist, then no variable's kind can be an amount, an account number or a TIN, none is Restricted, and the variable kind type itself has no such member: the suite fails if one is ever added.
+- **AC-7** Given the whitelist, then no variable's kind can be an amount, an account number or a TIN, none is Restricted, and the variable kind type itself has no such member: the suite fails if one is ever added. Given client-written values (a document title "W-2 912-34-5678 $84,210.pdf"), then `lint_values` finds the TIN shape and the amount and the send refuses `template_lint_failed`, naming the code and the variable, never the value (DEC-379).
+
+### Story 3: Previews never widen access (security review, DEC-379)
+- **AC-8** Given a preview or test send for a real contact, then the contact must be visible to the viewer, every projected item is one the viewer could read themselves (`engagement.read` and the item's read action under `visible()`), dropped items leave no count, and with nothing readable the sample client renders; a firm admin walled off Copperleaf previews Tess Moreno as the sample client. `email_template.test_send` needs fresh MFA and an onshore member.
 
 ## 6. Behaviour and flows
 As R-01 §3.7 to §3.9. The publish of a template or of portal settings writes one insert-only version in one unit of work; a draft carries `expected_version` and a stale save answers 409 `stale_version`.
@@ -87,7 +90,7 @@ POR-20 a-l and ADM-10 a-g (`docs/screens/POR-20.md`, `docs/screens/ADM-10.md`).
 | AC | Test type | Description |
 |---|---|---|
 | AC-1 to AC-5 | contract | `backend/tests/contracts/c16_notifications/test_c16_v1_1_stub.py` |
-| AC-6, AC-7 | contract | `backend/tests/contracts/c16_notifications/test_c16_v1_1_consumers.py` |
+| AC-6, AC-7, AC-8 | contract | `backend/tests/contracts/c16_notifications/test_c16_v1_1_consumers.py` |
 
 ## 19. Rollout
 Flags `portal.settings_editor`, `communications.firm_sender_domain`, `follow_ups.scheduled_send`, all off. Rollback: revert; no data.

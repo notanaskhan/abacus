@@ -97224,7 +97224,7 @@
     },
     "/v1/firm/email-templates/{key}/preview": {
       "post": {
-        "description": "POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings; creates\nnothing.",
+        "description": "POR-20 a, c, d (R-01-T23): deterministic HTML and text plus lint findings on the text and\nthe filled values; the sample contact's items only as far as the viewer may read them\n(DEC-379); creates nothing.",
         "operationId": "preview_email_template",
         "parameters": [
           {
@@ -97489,7 +97489,7 @@
     },
     "/v1/firm/email-templates/{key}/test-send": {
       "post": {
-        "description": "POR-20 j, k (R-01-T23): to the acting admin only; 422 `template_lint_failed`. Audited\n`email_template.test_sent`.",
+        "description": "POR-20 j, k (R-01-T23): to the acting admin only, fresh MFA, onshore; the sample\ncontact's items as far as the viewer may read them (DEC-379); 422 `template_lint_failed`.\nAudited `email_template.test_sent`.",
         "operationId": "test_send_email_template",
         "parameters": [
           {
@@ -99696,7 +99696,7 @@
     },
     "/v1/firm/portal-settings/preview": {
       "get": {
-        "description": "ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; audited\n`portal.preview_viewed` with the contact id or `sample`.",
+        "description": "ADM-10 a, c, g (R-01-T26): 404 for a contact outside `visible()`; only items the viewer\nmay read themselves, else the sample client (DEC-379); audited `portal.preview_viewed` with\nthe contact id or `sample`.",
         "operationId": "preview_portal",
         "parameters": [
           {
@@ -113165,7 +113165,7 @@
         "tags": [
           "connections"
         ],
-        "x-abacus-action": "connection.revoke"
+        "x-abacus-action": "connection.disconnect"
       }
     },
     "/v1/portal/connections/{connection_id}/retry": {

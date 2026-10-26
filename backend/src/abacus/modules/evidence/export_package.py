@@ -8,8 +8,14 @@ under `sections/<name>/`. The package builder (A-01-T19) calls every registered 
 export's audit sequence and refuses to build while a core section has no provider
 (`export_section_missing`): fail closed, never a package with a hole in its provenance.
 
-Providers read; they never write and never call a model. What they return is client content
-and is treated as hostile (file names are normalised by the builder, cells are neutralised).
+Providers read; they never write and never call a model. They read as the requester, not as
+the system: `SectionRequest.requested_by_user_id` and `membership_id` name the person whose
+export it is, and a provider applies `visible()`, walls and independence for that person and
+never emits a Restricted value unmasked (TINs and bank accounts through
+`kernel.classification.mask`; DEC-379). The export service has already checked that every
+binder id belongs to the work item (422 `binder_not_in_work_item` at create), so a provider
+never widens the selection. What providers return is client content and is treated as hostile
+(file names are normalised by the builder, cells are neutralised).
 """
 
 from __future__ import annotations
@@ -34,6 +40,10 @@ _NAME: Final = re.compile(r"[a-z][a-z0-9_]{1,39}")
 _FILE: Final = re.compile(r"[a-z0-9][a-z0-9_.-]{0,79}")
 
 
+class ExportSectionInvalid(ValueError):
+    """A registration or a request the slot refuses."""
+
+
 @dataclass(frozen=True)
 class SectionRequest:
     """What a provider is asked for: one export's selection at one audit sequence."""
@@ -41,9 +51,18 @@ class SectionRequest:
     export_id: UUID
     engagement_id: UUID
     work_item_id: UUID
-    binder_ids: tuple[UUID, ...]
+    binder_ids: tuple[UUID, ...]  # checked against work_item_id by the export service
     as_of_seq: int
     include_unaccepted: bool
+    # The requester: providers filter by what this person may read (visible(), walls).
+    requested_by_user_id: UUID
+    membership_id: UUID
+
+    def __post_init__(self) -> None:
+        if not self.binder_ids or len(set(self.binder_ids)) != len(self.binder_ids):
+            raise ExportSectionInvalid("a section request names each binder once, at least one")
+        if self.as_of_seq < 0:
+            raise ExportSectionInvalid("as_of_seq is an audit sequence")
 
 
 @dataclass(frozen=True)
@@ -66,10 +85,6 @@ class RegisteredSection:
 
 
 _SECTIONS: dict[str, RegisteredSection] = {}
-
-
-class ExportSectionInvalid(ValueError):
-    """A registration the slot refuses (a bad or reserved name, a second registration)."""
 
 
 def register_export_section(

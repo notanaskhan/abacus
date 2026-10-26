@@ -30,3 +30,4 @@ an account number or a TIN" (R-01-T17).
   variable's kind, class and name exclude amounts, account numbers and TINs, and the editor's
   OpenAPI enum matches the closed list; refusal reasons; lint findings carry code, block and
   variable only; ADM-10 b's five-day draft; the fixed accent and host; the read-only preview.
+- 2026-10-26 (security review, DEC-379): fix round on the same branch; see DEC-379 for this task's part (H1 preview scoping, M1 send_templated signature, M2 value lint, M3 connection.disconnect, M4 section requester, L1 test-send conditions, L4 support contact).

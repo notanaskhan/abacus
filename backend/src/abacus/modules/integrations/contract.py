@@ -17,8 +17,9 @@ connections, A-02-T13) and the catalogue (A-02-T12):
 - `GET /v1/portal/connections/{connection_id}` (`connection.read`): the details drawer.
 - `POST …/{connection_id}/retry` (`connection.retry`, `Idempotency-Key`): one run; a second
   click while it runs returns the same run (AC-40).
-- `POST …/{connection_id}/disconnect` (`connection.revoke`, `Idempotency-Key`): crypto-erases the
-  secret, keeps what was received (AC-39).
+- `POST …/{connection_id}/disconnect` (`connection.disconnect`: the client Owner, on an entity
+  their grant covers, fresh MFA; `Idempotency-Key`): crypto-erases the secret, keeps what was
+  received (AC-39).
 - `POST /v1/connections/{connection_id}/reconnect-requests` (`connection.reconnect_request`): the
   firm asks the client to reconnect (AC-44).
 - `POST /v1/engagements/{engagement_id}/connection/pulls` (`ledger.pull`): an on-demand pull
@@ -291,7 +292,7 @@ async def retry_connection_route(
 
 @portal_router.post(
     "/connections/{connection_id}/disconnect",
-    action="connection.revoke",
+    action="connection.disconnect",
     response_model=PortalConnectionCardOut,
     errors=(409, 501),
 )

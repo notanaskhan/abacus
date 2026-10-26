@@ -373,6 +373,30 @@ async def _provider(
     return []
 
 
+def _request(**overrides: object) -> export_package.SectionRequest:
+    fields: dict[str, object] = {
+        "export_id": uuid.uuid4(),
+        "engagement_id": uuid.uuid4(),
+        "work_item_id": uuid.uuid4(),
+        "binder_ids": (BINDER,),
+        "as_of_seq": 1,
+        "include_unaccepted": False,
+        "requested_by_user_id": uuid.uuid4(),
+        "membership_id": uuid.uuid4(),
+    }
+    return export_package.SectionRequest(**{**fields, **overrides})  # type: ignore[arg-type]  # test table
+
+
+def test_ac5_providers_read_as_the_requester_over_named_binders() -> None:
+    """DEC-379 (security review M4): providers filter by the requester, and a request names
+    each binder once."""
+    request = _request()
+    assert request.requested_by_user_id and request.membership_id
+    for bad in ({"binder_ids": ()}, {"binder_ids": (BINDER, BINDER)}, {"as_of_seq": -1}):
+        with pytest.raises(export_package.ExportSectionInvalid):
+            _request(**bad)
+
+
 def test_ac5_sections_register_once_under_a_safe_name(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(export_package, "_SECTIONS", {})
     assert export_package.missing_core_sections() == (

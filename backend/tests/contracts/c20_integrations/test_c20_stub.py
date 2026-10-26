@@ -44,7 +44,7 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ("post", f"{ENTITY}/{{catalog_key}}/start"): ("connection.create", CONNECTIONS_PORTAL_V2),
     ("get", CONN): ("connection.read", CONNECTIONS_PORTAL_V2),
     ("post", f"{CONN}/retry"): ("connection.retry", CONNECTIONS_PORTAL_V2),
-    ("post", f"{CONN}/disconnect"): ("connection.revoke", CONNECTIONS_PORTAL_V2),
+    ("post", f"{CONN}/disconnect"): ("connection.disconnect", CONNECTIONS_PORTAL_V2),
     ("post", "/v1/connections/{connection_id}/reconnect-requests"): (
         "connection.reconnect_request",
         CONNECTIONS_PORTAL_V2,
@@ -99,6 +99,15 @@ def test_the_start_needs_fresh_mfa_and_only_a_client_owner_may_start() -> None:
     rule = RULES["connection.create"]
     assert rule.mfa_recent
     assert {r for r, d in rule.decisions.items() if d != "deny"} == {"client_admin"}
+
+
+def test_the_disconnect_is_the_owners_on_a_covered_entity_with_fresh_mfa() -> None:
+    """DEC-379 (security review M3): a client admin whose grant covers entity A can't disconnect
+    entity B's ledger, and destroying the secret needs a fresh second factor."""
+    rule = RULES["connection.disconnect"]
+    assert {r for r, d in rule.decisions.items() if d == "allow"} == {"client_admin"}
+    assert rule.scope_only and rule.independence and rule.mfa_recent
+    assert rule.decisions.get("agent") == "deny" and rule.decisions.get("system") == "deny"
 
 
 def _ctx() -> AuthContext:
