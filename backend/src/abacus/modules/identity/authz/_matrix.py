@@ -1741,7 +1741,7 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "service_line_policy.manage": {
         "firm_admin": "allow",
-        "security_admin": "allow",
+        "firm_partner": "allow",
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",

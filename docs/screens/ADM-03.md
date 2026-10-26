@@ -7,9 +7,9 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/ADM-03 Offices- teams- walls and offshore/` (README.md, spec.md, revision.md: R2 service lines; revision wins) · HANDOFF_VERSION 2026-10-21 |
 | Epic and tasks | G-01 · contracts G-01-T01 (TASK-1225) · stub T02 · seed and fixtures T06 · offices, teams and groups T08 · walls v2 and offshore T09 (TASK-1207 narrowed offshore) · service-line need-to-know T12 · screen T14 · independent AC tests T15 · Playwright T16 · parity lock T17 |
-| Manifest status | planned (`routes/manifest/adm.ts`); fixture once G-01-T14 builds it |
+| Manifest status | planned with its path (`routes/manifest/adm.ts`; DEC-195's reason, as ADM-02): built by G-01-T14 behind `firm_settings.v2`, `/settings/offices` live in the router and the gallery |
 
-Code to come (G-01-T14): `src/screens/ADM-03/{index.tsx, copy.ts, scenarios.ts, ADM-03.test.tsx}`, `src/fixtures/scenarios/ADM-03.ts`, wall and offshore handlers in `src/fixtures/handlers/firm-settings.ts`, `e2e/screens/adm-03.spec.ts`.
+Code (G-01-T14, TASK-1268): `src/screens/ADM-03/{index.tsx, walls.tsx, model.ts, copy.ts, scenarios.ts, ADM-03.test.tsx}`, `src/fixtures/scenarios/ADM-03.ts`, `adm03Handlers` in `src/fixtures/handlers/firm-settings.ts`; `e2e/screens/adm-03.spec.ts` is G-01-T16's.
 
 ## States
 
@@ -17,14 +17,14 @@ Code to come (G-01-T14): `src/screens/ADM-03/{index.tsx, copy.ts, scenarios.ts, 
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
-| a | grace-holloway (Grace Holloway, Firm Admin) | Mon Sep 14, 2026, 9:24 AM CT | E0 | `?expand=CHI`: offices (Chicago HQ 22, Denver 14, New York 10), teams 16 · 21 · 7 · 2, groups EQR pool 2 · Monitoring reviewers 5 · Seasonal 5, service lines (R2), three walls, offshore 0 members; nothing edited: Save disabled | to build (T14) · Prod |
-| b | grace-holloway | Mon Sep 14, 2026, 9:20 AM CT | E0 | `?ov=wall:new` with Lena Park ✕ Ashford Manufacturing Co., reason Personal relationship "Family member employed at Ashford", approver Margaret Okonkwo; effects from `GET /v1/walls/preview` ("Remove from 0 current assignments") | to build (T14) · Prod |
-| c | grace-holloway | 9:24 AM | E0 | the sheet with Neil Ashcroft ✕ Ashford: the preview returns `relationship_partner`; red-ink row; Save disabled | to build (T14) · Prod |
-| d | grace-holloway (Remy Vidal's membership offshore) | 9:24 AM | E0 + Remy offshore | `GET /v1/firm/offshore`: 1 member, 0 consented clients; the amber banner (copy per DEC-352) | to build (T14) · Prod |
-| e | daniel-reyes (Daniel Reyes, Partner) | 9:24 AM | E0 | read-only fieldsets A, B, service lines and D under the banner and locks; fieldset C shows "+ Wall" and per-row Approve and Lift where he is the named approver or a partner (AC11.2); every wall row opens its log | to build (T14) · Prod |
-| f | grace-holloway | 9:20 AM | E0 | `#walls` scrolled; the Lena Park wall created at 9:20 AM is tinted amber-tint for 2 s (none under reduced motion) and reads "Awaiting Margaret Okonkwo" until she approves | to build (T14) · Prod |
-| g | grace-holloway | 9:24 AM | E0 | `?ov=wall:<Lena wall>`: `GET /v1/walls/{id}/events` in the ADM-07 grammar ("Ethical wall added by Grace Holloway", "Approved by Margaret Okonkwo") | to build (T14) · Prod |
-| h | grace-holloway | 9:24 AM | E0 | Service lines: Tax narrowed to "Engagement team only" (dirty): the amber confirm row, Save enabled | to build (T14) · Prod only if the service-line decision is accepted by Fri Jan 29, 2027; otherwise fixture-only with the fieldset read-only at "Engagement team only" (AC10.4) |
+| a | grace-holloway (Grace Holloway, Firm Admin) | Mon Sep 14, 2026, 9:24 AM CT | E0 | `?expand=CHI`: offices (Chicago HQ 22, Denver 14, New York 10), teams 16 · 21 · 7 · 2, groups EQR pool 2 · Monitoring reviewers 5 · Seasonal 5, service lines (R2), three walls, offshore 0 members; nothing edited: Save disabled | built (T14) · Prod |
+| b | grace-holloway | Mon Sep 14, 2026, 9:20 AM CT | E0 | `?ov=wall:new` with Lena Park ✕ Ashford Manufacturing Co., reason Personal relationship "Family member employed at Ashford", approver Margaret Okonkwo; effects from `GET /v1/walls/preview` ("Remove from 0 current assignments") | built (T14) · Prod |
+| c | grace-holloway | 9:24 AM | E0 | the sheet with Neil Ashcroft ✕ Ashford: the preview returns `relationship_partner`; red-ink row; Save disabled | built (T14) · Prod |
+| d | grace-holloway (Remy Vidal's membership offshore) | 9:24 AM | E0 + Remy offshore | `GET /v1/firm/offshore`: 1 member, 0 consented clients; the amber banner (copy per DEC-352) | built (T14) · Prod |
+| e | daniel-reyes (Daniel Reyes, Partner) | 9:24 AM | E0 | fieldsets A, B and D locked; service lines editable (partners manage them: ADR-183 condition 4, so no read-only banner and Save shows); fieldset C shows "+ Wall" and per-row Approve and Lift where he is the named approver or a partner (AC11.2); every wall row opens its log | built (T14) · Prod |
+| f | grace-holloway | 9:20 AM | E0 | `#walls` scrolled; the Lena Park wall created at 9:20 AM is tinted amber-tint for 2 s (none under reduced motion) and reads "Awaiting Margaret Okonkwo" until she approves | built (T14) · Prod |
+| g | grace-holloway | 9:24 AM | E0 | `?ov=wall:<Lena wall>`: `GET /v1/walls/{id}/events` in the ADM-07 grammar ("Ethical wall added by Grace Holloway", "Approved by Margaret Okonkwo") | built (T14) · Prod |
+| h | grace-holloway | 9:24 AM | E0 | Service lines: Tax narrowed to "Engagement team only" (dirty): the amber confirm row, Save enabled | built (T14) · Prod: the service-line decision is DEC-380 (G-01-T12); AC10.4's fallback is `authz.SERVICE_LINE_REACH = False` |
 
 Non-artboard states:
 
@@ -43,7 +43,7 @@ Non-artboard states:
 | write | `POST /v1/firm/offices` · `PATCH /v1/firm/offices/{id}` | `409 office_code_taken · one_hq` | `org_structure.manage` (fresh MFA) | firm admin, security admin |
 | read/write | `GET /v1/firm/teams` · `POST` · `PATCH /{id}` · `PUT /{id}/members` | teams and groups with members | `org_structure.read` / `org_structure.manage` | as above |
 | write | `PUT /v1/firm/groups/seasonal/access-ends` | one date for every seasonal member | `firm.manage_users` (fresh MFA) | firm admin |
-| read/write | `GET /v1/firm/service-lines` · `PUT /v1/firm/service-lines/{line}` | policies; `422 audit_locked`; `409 stale_version` | `firm.read_settings` / `service_line_policy.manage` | 501 until G-01-T12 |
+| read/write | `GET /v1/firm/service-lines` · `PUT /v1/firm/service-lines/{line}` | policies; `422 audit_locked`; `409 stale_version` | `firm.read_settings` / `service_line_policy.manage` | live (G-01-T12); firm admins and partners manage, never security admins (ADR-183 condition 4) |
 | read | `GET /v1/firm/offshore` | member ids, consented-client count (0 until T-01 registers the consent provider) | `firm.read_settings` | the two policy toggles are always on |
 | read | `GET /v1/walls` | wall register with reason, creator, approver, approval status | `wall.list` (fresh MFA) | firm admin, security admin, partners |
 | read | `GET /v1/walls/preview?user_id&client_id` | blockers (`relationship_partner`, `wall_exists`, `own_wall`), `assignments_ended` | `wall.create` | firm admin, partners |
@@ -126,10 +126,12 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 | DEC-73 / INV-5 | The save toast reads "Wall added · approval requested from Margaret Okonkwo", not "Wall added · approval recorded"; the new row reads "Awaiting Margaret Okonkwo" until she approves with fresh MFA | A wall applies at once; a firm admin cannot record a partner's approval | DEC-73; parity masks the toast (b, c) and the Approved by cell (f) |
 | SPEC-002 Q2 / R-5 | A "Confirm it's you to view walls" step-up row when MFA is not recent | `wall.list` keeps `mfa_recent` | G-01 R-5 |
 | AC11.2 | ADM-03e: Daniel Reyes sees "+ Wall" and per-row Approve and Lift where he is the named approver or a partner, instead of a fully locked board | DEC-73 gives walls to partners; confirmed in T01 | DEC-352 |
+| ADR-183 condition 4 | ADM-03e: the service lines are editable for a partner and the read-only banner is gone (offices, teams and offshore keep their locks); a security admin reads the service lines locked | Ayush, 2026-10-26: partners and firm admins manage service-line policies, security admins never | DEC-383 |
 | DEC-352 (TASK-1207) | ADM-03d's banner reads "Remy Vidal can't be assigned to a client until its offshore consent is signed. SSNs stay masked." instead of "Remy Vidal can see 0 clients until offshore consents are signed."; the group helper reads "Members can be assigned only to clients…" instead of "Members see only clients…" | Offshore is not a wall (TASK-1207, DEC-319 narrowed): an offshore member sees and works what their roles reach; consent gates assignment (`409 offshore_consent_required`) and reveals stay refused (`not_offshore`) | DEC-352; parity masks both strings (d) |
 | AC10.4 | h is fixture-only and the fieldset read-only at "Engagement team only" unless the service-line decision is accepted by Fri Jan 29, 2027 | Widening content reads is red and never defaults on silence | G-01 §11 OQ-1 |
 | — | "Quarterly access review" in fieldset D is hidden until G-02 registers it | G-02 owns access reviews | G-01 §2.1 |
 | — | g (the wall log drawer) and h have no spec letter | Added in the build; h is revision R2 state f | handoff README |
+| DEC-382 | Built-screen choices: the address row is read-only (one value over five columns; no address editor is designed), the Seasonal "Access ends" date reads without ⇕ (no date picker in the kit) and shows only to people-list readers, the sheet's client helper ("Client · 1 entity · TY2025 Form 1120 · …") is not drawn (no endpoint serves it), the sheet may open on a person and client by id (`?ov=wall:new:<userId>:<clientId>`, b and c), Lift asks a confirm and sends a fixed reason, the confirm row's CAS and Advisory wording follows Tax's, a reviewer pool reads "{name} ({initials})" unless its name is its initials, g shows Lena Park's wall after Margaret's approval (both events at 9:20 AM), b shows the firm before that wall | No design or endpoint for those pieces; the URL carries ids only | DEC-382 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
@@ -140,5 +142,5 @@ Gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 
 ## Open gaps
 - The handoff's toast and helper copy predates DEC-43, DEC-73 and TASK-1207; the strings above are the product's words until a design refresh redraws d, b and the helper.
-- The service-line policies are 501 until G-01-T12; the fieldset renders read-only from the fallback until then.
+- The service-line policies are live (G-01-T12, DEC-380).
 - Returns per office are T-02's office facts (fixture until then).

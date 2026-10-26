@@ -131,6 +131,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.trial_balance.AnnotationInvalid
+  annual_confirmation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.annual_independence.AnnualConfirmationInvalid
+    summary: Only the current year can be confirmed, and a decline needs a note.
   approver_not_partner:
     status: 422
     raised_by:
@@ -141,6 +146,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyLocked
+  audit_locked:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.service_lines.AuditLocked
+    summary: Audit content is visible to the engagement team only; it can never be widened.
   below_floor:
     status: 422
     raised_by:
@@ -508,6 +518,11 @@ codes:
     - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
     summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
       clear, an SKE designee or NAS evaluations on an attest client).
+  independence_statement_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.identity.annual_independence.StatementMissing
+    summary: The firm has not published its independence statement yet, so there is nothing to confirm.
   integrity_failed:
     status: 409
     raised_by:
@@ -1081,6 +1096,11 @@ codes:
     - abacus.modules.identity.people.SeatsNotProvisioned
     summary: 'The firm''s seats aren''t provisioned yet, so nobody can be invited (DEC-285: fails closed
       for a real firm; a synthetic one without seats has no limit).'
+  service_line_lead_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.identity.service_lines.ServiceLineLeadInvalid
+    summary: The lead must be an active staff member of the firm.
   setting_invalid:
     status: 422
     raised_by:
@@ -1133,7 +1153,9 @@ codes:
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
+    - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
+    - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
