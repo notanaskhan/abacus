@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (BND-01, BND-02, SHL-14 family incl. portal mark-done, ignore, upload intents and withdraw: P-06-T01, 2026-10-22). The SHL-20 family (screening, follow-ups) is added in place as v1.2 (§12): the follow-ups v2 routes are live (P-06-T14, 2026-10-24) and the screening routes are a stub behind `screening.card` (P-06-T15, 2026-10-24). The portal-scopes half is P-08's: `portal-identity.md` (v1.1, P-08-T01, 2026-10-23) |
+| Status | **frozen 2026-10-27** (v1 with v1.1 and v1.2, this half; `backend/tests/contracts/c5_requests_binders/v1.json`). Was stub (BND-01, BND-02, SHL-14 family incl. portal mark-done, ignore, upload intents and withdraw: P-06-T01, 2026-10-22). The SHL-20 family (screening, follow-ups) is added in place as v1.2 (§12): the follow-ups v2 routes are live (P-06-T14, 2026-10-24) and the screening routes are a stub behind `screening.card` (P-06-T15, 2026-10-24). The portal-scopes half is P-08's: `portal-identity.md` (v1.1, P-08-T01, 2026-10-23) |
 | Provider epic | P-06 (binders and requests half); P-08 (portal scopes). Schema half: F-03-T14, F-03-T15, F-03-T26 |
 | Consumers | A-01 (AUD-03), R-01 (POR-03, POR-04, POR-14, POR-20), T-02, C-01 (CLS-03), K-01, N-01, A-03, N-03, K-04, I-01. Screens: BND-01, BND-02, SHL-14 |
 | Freeze sprint | S3 (starts 2026-11-30); freeze Fri 2026-12-11 |
@@ -178,12 +178,12 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (planned 2026-12-11) | | stub 2026-10-22 (P-06-T01); SHL-20 family additive in P-06-T15 |
+| v1 | 2026-10-27 | | stub 2026-10-22 (P-06-T01); SHL-20 family additive in P-06-T15 |
 | v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-08-T01): the portal half (portal identity and home, POR-01 and POR-02) in `docs/contracts/portal-identity.md`; nothing in this half changes |
-| v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-06-T11): `GET /v1/binders` live; `BinderRowOut` gains the status-line facts and `service`, `season`, `office_id`, `published_at`; facets named |
-| v1.2 | (planned 2026-12-11) | | additive, 2026-10-24 (P-06-T14, P-06-T15): the SHL-20 family (§12): follow-ups v2 live behind `binders.engine`; the screening card, rerun, feedback and screening-return draft as a stub behind `screening.card` |
+| v1.1 | 2026-10-27 | | additive, 2026-10-23 (P-06-T11): `GET /v1/binders` live; `BinderRowOut` gains the status-line facts and `service`, `season`, `office_id`, `published_at`; facets named |
+| v1.2 | 2026-10-27 | | additive, 2026-10-24 (P-06-T14, P-06-T15): the SHL-20 family (§12): follow-ups v2 live behind `binders.engine`; the screening card, rerun, feedback and screening-return draft as a stub behind `screening.card` |
 
-**Freeze note (P-06-T27, 2026-10-26; DEC-409).** Not frozen. v1 with v1.1 and v1.2 is **ready to record frozen at the batch merge once `backend/tests/contracts/c5_requests_binders/` and `apps/web/src/fixtures/contracts/c5.test.ts` are green in `make check` stage 2**; the TypeScript half passed on 2026-10-26, the pytest half was not run in that session. Recording it means listing the C5 models in `abacus_tools.contracts.MODELS`, running `--freeze c5_requests_binders v1`, and setting "Frozen on" above and the register row (`docs/contracts/README.md`). Every route this half documents is live except `PUT /v1/binders/{id}/follow-up-override` (501).
+**Freeze note (2026-10-27; P-06-T27, DEC-409).** Frozen. The consumer suites were green on 2026-10-27: `backend/tests/contracts/c5_requests_binders/` 197 passed, 3 xfailed (strict, cited), and `apps/web/src/fixtures/contracts/c5.test.ts` 12 passed. The C5 models are listed in `abacus_tools.contracts.MODELS` under `c5_requests_binders`. `--freeze c5_requests_binders v1` wrote `backend/tests/contracts/c5_requests_binders/v1.json`, and `--check` passes. v1.1 (the index fields) and v1.2 (the SHL-20 family) were additive to v1 and are in the same snapshot. The portal half (`portal-identity.md`) is P-08's and is not frozen here. Further changes are additive in place or ship as v2. Every route this half documents is live except `PUT /v1/binders/{id}/follow-up-override` (501).
 
 ## 11. Open points
 - DEC-136: OQ-1 mechanism (preparer publish on tax-return binders), firm-setting key names, portal ignore vs SPEC-042, staff create deferred to P-06-T10.

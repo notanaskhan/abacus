@@ -32,6 +32,7 @@ P-06-T27: "Docs: requests, evidence and agents READMEs, final SPEC, C5 v1 frozen
 - 2026-10-26: READMEs. requests: lifecycle v2, what follow-ups chase, the withdrawal's requests side, and "Not built". evidence: withdraw refusals, the purge step by step (statuses of `evidence_key_destroy`, retries, continue-as-new), the API for other modules, staff accept. agents: the stale P-4 line ("Routine sends as the agent") corrected to draft-only (DEC-220), follow-ups v2, withdrawn versions.
 - 2026-10-26: SPEC-319 final (approved). C5: `c5.test.ts` passed (12 tests); the pytest half not run; the freeze recorded as ready, not done. C5's header expiries corrected to 2027-04-21 (DEC-137).
 - 2026-10-26: RB-32 written (number: the README's next free; RB-33 onward now owed to Q-02-T51). Skill section added. Flag rows added. Capacity ledger updated (26 of 29 rows delivered, 23.75 of 26.0 te).
+- 2026-10-27 (S10 gap build): C5 binders and requests half recorded frozen. `MODELS["c5_requests_binders"]` lists 32 models. `--freeze c5_requests_binders v1` wrote `backend/tests/contracts/c5_requests_binders/v1.json`; `--check` exit 0. Consumer suites green: pytest 197 passed, 3 xfailed; `c5.test.ts` 12 passed. Register row, §10 and both freeze notes updated. C3 is not frozen: finding #285's strict xfail is still open.
 
 ## Hand-off (P-06 close-out)
 **State of the epic.** 23 rows done, 3 in review (T22, T26, T27), 2 in progress (T16, T21), T25 not started (`docs/product/capacity-ledger.md`). The epic's DoD (§10) is not met yet.
