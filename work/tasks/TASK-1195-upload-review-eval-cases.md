@@ -68,10 +68,10 @@ updated: 2026-10-27
   - Two scratch capture runs, while other sessions' stacks loaded Docker, saw a botocore `ClientError` on two uploads (S3 container); three later runs didn't. A fake run fails on any errored attempt, so a recurrence would fail `make check`: watch for it.
   - The integration test runs the suite three times on one stack (about 7 minutes plus the stack; 15 under load).
   - The direct-route run at the protected thresholds is still Q-02's.
-  - The decision below needs a DEC number (asked the S10 main session on 2026-10-27).
+  - The decision below is DEC-470 (number from the S10 main session, 2026-10-27; recorded in decision-log.md).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-325 | The five cases' labels and documents; the fast run waits for a reviewer fake | No |
-| DEC pending (number asked of the S10 session) | The fake fast run: answers keyed by (prompt, `review_sha256`: request wording plus the document block as shown); `model_available` also opens on the fake route when the fake model has a reviewer responder (only the evaluation installs one; the local stack's has none); `fast` = every case once; a fake run also fails on any attempt not reviewed or not showing exactly its case's flags; `make evals-review-fast` in `make check` and CI stage 3. Supersedes TASK-058 D5 for the fake route only | No |
+| DEC-470 | The fake fast run: answers keyed by (prompt, `review_sha256`: request wording plus the document block as shown); `model_available` also opens on the fake route when the fake model has a reviewer responder (only the evaluation installs one; the local stack's has none); `fast` = every case once; a fake run also fails on any attempt not reviewed or not showing exactly its case's flags; `make evals-review-fast` in `make check` and CI stage 3. Supersedes TASK-058 D5 for the fake route only | No |
