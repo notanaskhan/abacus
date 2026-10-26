@@ -55,3 +55,4 @@ updated: 2026-10-25
   statement as written, Confirm, and Decline with a required note; the confirmed or declined date
   afterwards. `docs/screens/ADM-02.md` updated (DEC-353's wait is over). Tests at the end of the
   run (not yet, confirm, decline needs a note, no statement).
+- 2026-10-26: SHL-03 tests pass (22, four new): not yet then Confirm with the statement version, decline needs a note, no statement disables Confirm, already confirmed shows the date. The tests bring their own statement text (DF-07 has no design data).
