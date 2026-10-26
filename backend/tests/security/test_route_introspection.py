@@ -1087,6 +1087,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/firm/time-zone", "firm.manage_settings"),
     ("PUT", "/v1/me/notification-preferences", "own"),
     ("PUT", "/v1/me/preferences", "own"),
+    ("PUT", "/v1/platform/agent-stages/{firm_id}/{agent_id}", "staff"),
     ("PUT", "/v1/portal/preferences", "portal_preferences.update"),
     ("PUT", "/v1/retention/policies", "retention_policy.update"),
 )

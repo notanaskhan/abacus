@@ -55,11 +55,6 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.AdjustmentState
     summary: Approve once; record the client's answer once, after approval.
-  agent_not_cleared:
-    status: 422
-    raised_by:
-    - abacus.modules.agents.stage_admin.AgentNotCleared
-    summary: Only an agent cleared for client data has a stage (SPEC-036 §4.4).
   ai_assessor_unavailable:
     status: 409
     raised_by:
@@ -1357,6 +1352,12 @@ codes:
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
+  unknown_agent:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.stage_admin.UnknownAgent
+    summary: Only an agent the registry declares has a stage. Like the founder's command, a stage may
+      be set before the agent is cleared for client data; the gateway reads it only once it is.
   unknown_engagement_type:
     status: 422
     raised_by:

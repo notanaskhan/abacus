@@ -296,6 +296,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0144 (P-06-T18, ADR-162): the withdrawal purge's crypto-erase of one version's key.
     | {"evidence_key_destroy"}
     | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
+    # 0181 (Q-02-T07): the staff route's stage row, inside the firm's own unit of work only.
+    | {"agent_stage_set"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
