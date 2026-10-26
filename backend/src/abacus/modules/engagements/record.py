@@ -14,9 +14,9 @@ AC-17; engagements-v2 contract §3; DEC-224).
   signature dates on or after the G1 decision (409 `letter_before_acceptance`), never on an
   archived engagement (409 `engagement_archived`). It writes the letter, moves an Accepted
   engagement to Contracted (the system move on the fact), one `letter.recorded` audit event and
-  `gate.met` (G3) in one unit of work. "Not required this year" is the engagement partner's, and
-  only while the firm setting `allow_letter_exceptions` is on; that setting is not registered
-  yet, so the exception answers 409 `letter_exceptions_off` (fail closed, DEC-224).
+  `gate.met` (G3) in one unit of work. "Not required this year" is the engagement partner's, with
+  a reason, and only while the firm setting `allow_letter_exceptions` (0182) is on; otherwise 409
+  `letter_exceptions_off` (fail closed, DEC-224). It meets G3 without signatures.
 """
 
 from __future__ import annotations
@@ -32,8 +32,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.gate_policy import required_gates
 from abacus.modules.engagements.index import PARTNER_ROLES, LetterSummary, letter_summary
@@ -47,10 +47,13 @@ from abacus.modules.engagements.service import get_ref, lock_ref
 from abacus.modules.engagements.slots import gate_fact
 from abacus.modules.engagements.transitions import transition
 from abacus.modules.identity.api import (
+    ALLOW_LETTER_EXCEPTIONS,
     AuthContext,
     allowed_actions,
     authorise,
+    engagement_role_of,
     engagement_team_query,
+    firm_setting_on,
 )
 from abacus.modules.organisations.api import (
     client_name_column,
@@ -93,6 +96,12 @@ class LetterExceptionsOff(DomainConflict):
     `allow_letter_exceptions` on."""
 
     code = "letter_exceptions_off"
+
+
+class LetterExceptionReasonRequired(DomainInvalid):
+    """ "Not required this year" needs a reason (OQ-9)."""
+
+    code = "letter_exception_reason_required"
 
 
 class GateMet(DomainEvent):
@@ -322,6 +331,30 @@ class RecordedLetter:
     engagement_status: str
 
 
+async def _letter_exception(
+    ctx: AuthContext, engagement_id: UUID, given: RecordedLetterIn
+) -> None:
+    """ "Not required this year": the engagement partner's, with a reason, and only while the firm
+    has `allow_letter_exceptions` on (OQ-9); 409 `letter_exceptions_off` otherwise."""
+    on = await firm_setting_on(ctx.tenant, ALLOW_LETTER_EXCEPTIONS)
+    role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
+    if not on or role not in PARTNER_ROLES:
+        raise LetterExceptionsOff(facts={"engagement_id": str(engagement_id)})
+    if not (given.not_required_reason or "").strip():
+        raise LetterExceptionReasonRequired(facts={"engagement_id": str(engagement_id)})
+
+
+async def _contract_if_accepted(tx: UnitOfWork, engagement_id: UUID) -> str:
+    """An Accepted engagement moves to Contracted on its letter (the system move on the fact)."""
+    status = (
+        await tx.session.execute(select(Engagement.status).where(Engagement.id == engagement_id))
+    ).scalar_one()
+    if status == EngagementStatus.ACCEPTED:
+        await transition(tx, engagement_id, "contracted", by="system")
+        return "contracted"
+    return str(status)
+
+
 async def record_letter_v2(
     ctx: AuthContext, engagement_id: UUID, given: RecordedLetterIn
 ) -> RecordedLetter:
@@ -330,28 +363,34 @@ async def record_letter_v2(
         if ref.archived:
             raise EngagementArchived(facts={"engagement_id": str(engagement_id)})
         await authorise(ctx, "letter.record", ref.resource())
-        if given.mode == "not_required_this_year":
-            raise LetterExceptionsOff(facts={"engagement_id": str(engagement_id)})
+        exception = given.mode == "not_required_this_year"
+        if exception:
+            await _letter_exception(ctx, engagement_id, given)
         acceptance = await g1_decision(tx.session, engagement_id)
         if acceptance is None or not acceptance.accepted:
             raise GateUnmet(facts={"gate": "G1", "engagement_id": str(engagement_id)})
-        if given.client_signed_on is None or given.firm_signed_on is None:
-            raise GateUnmet(facts={"gate": "G3", "engagement_id": str(engagement_id)})
-        decided_on = acceptance.decided_at.date()
-        if min(given.client_signed_on, given.firm_signed_on) < decided_on:
-            raise LetterBeforeAcceptance(facts={"engagement_id": str(engagement_id)})
         previous = await get_letter(tx.session, engagement_id)
-        await put_letter(
-            tx.session,
-            {
-                "tenant_id": ctx.tenant_id,
-                "engagement_id": engagement_id,
+        if exception:
+            row: dict[str, object] = {
+                "status": "not_required_this_year",
+                "letter_date": None,
+                "reason": (given.not_required_reason or "").strip(),
+                "client_signed_on": None,
+                "firm_signed_on": None,
+                "client_signer_contact_id": None,
+                "firm_signer_user_id": None,
+                "signed_copy_version_id": None,
+            }
+        else:
+            if given.client_signed_on is None or given.firm_signed_on is None:
+                raise GateUnmet(facts={"gate": "G3", "engagement_id": str(engagement_id)})
+            decided_on = acceptance.decided_at.date()
+            if min(given.client_signed_on, given.firm_signed_on) < decided_on:
+                raise LetterBeforeAcceptance(facts={"engagement_id": str(engagement_id)})
+            row = {
                 "status": "signed",
                 "letter_date": max(given.client_signed_on, given.firm_signed_on),
                 "reason": None,
-                "link": None,
-                "recorded_by": str(ctx.user_id),
-                "recorded_by_user_id": ctx.user_id,
                 "client_signed_on": given.client_signed_on,
                 "firm_signed_on": given.firm_signed_on,
                 "client_signer_contact_id": given.client_signer_contact_id,
@@ -369,20 +408,23 @@ async def record_letter_v2(
                         "file_name": previous.file_name,
                     }
                 ),
+            }
+        await put_letter(
+            tx.session,
+            {
+                "tenant_id": ctx.tenant_id,
+                "engagement_id": engagement_id,
+                "link": None,
+                "recorded_by": str(ctx.user_id),
+                "recorded_by_user_id": ctx.user_id,
+                **row,
             },
         )
-        status = (
-            await tx.session.execute(
-                select(Engagement.status).where(Engagement.id == engagement_id)
-            )
-        ).scalar_one()
-        if status == EngagementStatus.ACCEPTED:
-            await transition(tx, engagement_id, "contracted", by="system")
-            status = "contracted"
+        status = await _contract_if_accepted(tx, engagement_id)
         tx.record(
             "letter.recorded",
             target=Target("engagement", engagement_id),
-            after=Ref(signed=1),
+            after=Ref(signed=0 if exception else 1),
         )
         if previous is None or previous.status not in ("signed", "not_required_this_year"):
             tx.emit(GateMet(engagement_id=engagement_id, gate="G3"))

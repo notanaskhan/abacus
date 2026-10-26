@@ -45,7 +45,7 @@ from abacus.modules.identity.authz.conditions import (
     register_gates,
     register_work_item_functions,
 )
-from abacus.modules.identity.authz.matrix import RULES, Rule
+from abacus.modules.identity.authz.matrix import ALLOW_LETTER_EXCEPTIONS, RULES, Rule
 from abacus.modules.identity.client_access import (
     DELEGATE_ROLES,
     FULL_ROLES,
@@ -120,6 +120,7 @@ from abacus.modules.identity.firm_settings import (
     clock_view,
     drafted_guidance_to_clients,
     firm_facts,
+    firm_setting_on,
     firm_tenancy,
     firm_time_zone,
     is_synthetic_firm,
@@ -415,6 +416,7 @@ __all__ = [
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",
+    "ALLOW_LETTER_EXCEPTIONS",
     "CODE_DIGITS",
     "DELEGATE_ROLES",
     "EQR_ROLE",
@@ -586,6 +588,7 @@ __all__ = [
     "firm_admins",
     "firm_facts",
     "firm_name",
+    "firm_setting_on",
     "firm_support_router",
     "firm_tenancy",
     "firm_time_zone",

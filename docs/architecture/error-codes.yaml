@@ -665,6 +665,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.record.LetterBeforeAcceptance
     summary: The letter's date is before the acceptance decision (G1 < letter, R-06).
+  letter_exception_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.record.LetterExceptionReasonRequired
+    summary: '"Not required this year" needs a reason (OQ-9).'
   letter_exceptions_off:
     status: 409
     raised_by:
