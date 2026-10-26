@@ -674,6 +674,9 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "decision_card.raise": {
+        "agent": "task_scope",
+    },
     "demo_clock.set": {
         "firm_admin": "allow",
         "agent": "deny",
@@ -1923,6 +1926,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "sign_off.create": {
         "engagement_partner": "allow",

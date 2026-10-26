@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel.clock import now as business_now
@@ -373,10 +373,39 @@ async def eligibility(
 # --- Signing -----------------------------------------------------------------------------------
 
 
+async def _view_of(row: SignOff, facts: ReviewableFacts) -> SignOffView:
+    name = (await names_of([row.signed_by])).get(row.signed_by, "")
+    return SignOffView(
+        id=row.id,
+        target_type=row.target_type,
+        target_id=row.target_id,
+        kind=row.kind,
+        level=row.level,
+        signer_user_id=row.signed_by,
+        signer_name=name,
+        initials=row.initials or initials_of(name) or "",
+        signed_at=row.created_at,
+        content_hash=hash_out(row.content_hash),
+        version_no=row.version_no or facts.version_no,
+        statement_version=row.statement_version or "",
+        adopted_run_id=row.adopted_run_id,
+        adopted_run_number=None,
+        stale=row.content_hash != facts.content_hash,
+    )
+
+
 def _live_human(ctx: AuthContext) -> bool:
     """INV-1 (`require_live_human`): a person's own act, never an agent, the platform, a client
     principal or a break-glass support session."""
-    return not ctx.client and ctx.tenant.actor_kind == "human" and not ctx.is_support
+    return (
+        isinstance(cast(object, ctx), AuthContext)  # an agent principal reaches a route too
+        and not ctx.client
+        and ctx.tenant.actor_kind == "human"
+        and not ctx.is_support
+    )
+
+
+live_human = _live_human  # P-04-T22: bulk sign-off asks the same first
 
 
 async def _authorise_level(
@@ -402,9 +431,13 @@ async def sign_target(
     seen_hash: str,
     statement_version: str,
     kind: Literal["ladder", "field_tick", "final_approval"] = "ladder",
+    *,
+    bulk_request_id: UUID | None = None,
 ) -> SignOffView:
     """`POST /v1/sign-offs`: one insert-only row, audited `sign_off.recorded` and announced on
-    the outbox. R-SO-1 first: nobody but a live person reaches the rules."""
+    the outbox. R-SO-1 first: nobody but a live person reaches the rules. A bulk item
+    (P-04-T22) passes its request's id: the row records it, and a row that request already wrote
+    for this target and level is answered again rather than refused."""
     if not _live_human(ctx):
         raise Forbidden("sign_off.create", "role")
     if kind != "ladder":
@@ -419,6 +452,19 @@ async def sign_target(
         await lock_target(tx.session, target_type, target_id)
         facts = await reviewable_facts(ctx.tenant, target_type, target_id)
         rows = list(await sign_offs_of(tx.session, target_type, [target_id]))
+        if bulk_request_id is not None:
+            done = next(
+                (
+                    r
+                    for r in rows
+                    if r.bulk_request_id == bulk_request_id
+                    and r.level == level
+                    and r.signed_by == ctx.user_id
+                ),
+                None,
+            )
+            if done is not None:
+                return await _view_of(done, facts)
         preparers = _preparers(facts, rows)
         await _authorise_level(ctx, level, resource, preparers)
         if not await _independent(ctx, facts.engagement_id):
@@ -434,7 +480,9 @@ async def sign_target(
         if facts.uncited_count:
             raise UncitedChange(facts={"count": facts.uncited_count})
         await _rules(tx, ctx, facts, rows, level, preparers)
-        return await _insert(tx, ctx, facts, resource, level, kind, statement_version)
+        return await _insert(
+            tx, ctx, facts, resource, level, kind, statement_version, bulk_request_id
+        )
 
 
 async def _rules(
@@ -481,6 +529,7 @@ async def _insert(
     level: int,
     kind: str,
     statement_version: str,
+    bulk_request_id: UUID | None = None,
 ) -> SignOffView:
     name = (await names_of([ctx.user_id])).get(ctx.user_id, "")
     initials = initials_of(name)
@@ -504,6 +553,7 @@ async def _insert(
         statement_version=statement_version,
         adopted_run_id=adopted,
         independence_checked_at=now,
+        bulk_request_id=bulk_request_id,
     )
     tx.record(
         "sign_off.recorded",

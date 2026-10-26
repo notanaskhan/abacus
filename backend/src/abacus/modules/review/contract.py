@@ -38,7 +38,26 @@ from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.review.bulk import BulkTarget, bulk_sign
+from abacus.modules.review.decisions import (
+    CardDetail,
+    CardItem,
+    card_detail,
+    decide_card,
+    list_cards,
+    notify,
+    reassess,
+    request_analysis,
+)
 from abacus.modules.review.gates import gates_waiting_on
+from abacus.modules.review.notes import (
+    NoteDetail,
+    NoteItem,
+    list_notes,
+    note_detail,
+    note_event,
+    raise_on_target,
+)
 from abacus.modules.review.sign_offs import (
     LEVEL_CODES,
     LEVEL_OF,
@@ -69,7 +88,8 @@ CheckCode = Literal[
     "eqr_limits",
 ]
 CheckResult = Literal["pass", "fail", "warn"]
-# Why a bulk item was left out (R-SO-7): the same fixed codes the single sign-off answers.
+# Why a bulk item was left out (R-SO-7): the same fixed codes the single sign-off answers (§6;
+# P-04-T22 adds the last three, which §6 already lists).
 ExclusionCode = Literal[
     "content_changed",
     "segregation",
@@ -78,6 +98,9 @@ ExclusionCode = Literal[
     "incomplete",
     "uncited_change",
     "level_not_permitted",
+    "not_prepared",
+    "already_signed",
+    "sign_off_invalid",
 ]
 AnchorKind = Literal["cell", "field", "section", "region"]
 NoteEvent = Literal["raised", "responded", "cleared", "closed", "withdrawn", "reopened"]
@@ -385,8 +408,30 @@ async def sign_off_bulk_route(
     ctx: Ctx,
     idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
 ) -> BulkSignOffOut:
-    """SHL-12 f: sign several targets at one level; reviewers only."""
-    await _stub(ctx)
+    """SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA
+    (P-04-T22). A replay with the same key returns the stored result."""
+    await _live(ctx)
+    found = await bulk_sign(
+        ctx,
+        targets=[BulkTarget(t.target_type, t.target_id, t.seen_hash) for t in body.targets],
+        level=LEVEL_OF[body.level],
+        statement_version=body.statement_version,
+        idempotency_key=str(idempotency_key),
+    )
+    return BulkSignOffOut(
+        results=[
+            BulkSignOffItemOut(
+                target_type=r.target_type,
+                target_id=r.target_id,
+                ok=r.ok,
+                sign_off_id=r.sign_off_id,
+                detail=cast(ExclusionCode | None, r.detail),
+            )
+            for r in found.results
+        ],
+        signed=found.signed,
+        excluded=found.excluded,
+    )
 
 
 # --- Review notes (AUD-17, SHL-12 b, SHL-09 a) -------------------------------------------------
@@ -465,6 +510,44 @@ class ReviewNoteEventIn(BaseModel):
 review_notes_router = AbacusRouter(prefix="/v1/review-notes", tags=["review"])
 
 
+def _note_item_out(n: NoteItem) -> ReviewNoteItemOut:
+    return ReviewNoteItemOut(
+        id=n.id,
+        engagement_id=n.engagement_id,
+        target_type=n.target_type,
+        target_id=n.target_id,
+        anchor=(
+            NoteAnchorOut(kind=n.anchor_kind, ref=n.anchor_ref)
+            if n.anchor_kind is not None and n.anchor_ref is not None
+            else None
+        ),
+        status=cast(ReviewNoteStatus, n.status),
+        raised_by_user_id=n.raised_by,
+        raised_by_initials=n.raised_by_initials,
+        raised_at=n.raised_at,
+        assignee_user_id=n.assignee_user_id,
+        allowed_actions=n.allowed_actions,
+    )
+
+
+def _note_detail_out(d: NoteDetail) -> ReviewNoteDetailOut:
+    return ReviewNoteDetailOut(
+        note=_note_item_out(d.note),
+        body=d.body,
+        events=[
+            ReviewNoteEventOut(
+                event=cast(NoteEvent, e.kind),
+                body=e.body,
+                actor_user_id=e.by_user,
+                actor_name=e.by_name,
+                at=e.at,
+            )
+            for e in d.events
+            if e.by_user is not None
+        ],
+    )
+
+
 @review_notes_router.get(
     "", action="review_note.read", response_model=ListPage[ReviewNoteItemOut], errors=(501,)
 )
@@ -477,16 +560,34 @@ async def review_note_list_route(
     cursor: Annotated[str | None, Query(max_length=2000)] = None,
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[ReviewNoteItemOut]:
-    """Notes on a target or an engagement, on the list envelope with per-status counts."""
-    await _stub(ctx)
+    """Notes on a target or an engagement, on the list envelope with per-status counts. Rows
+    never carry a body (P-04-T21)."""
+    await _live(ctx)
+    found = await list_notes(
+        ctx,
+        engagement_id=engagement_id,
+        target_type=target_type,
+        target_id=target_id,
+        status=status,
+        cursor=cursor,
+        limit=limit,
+    )
+    return ListPage[ReviewNoteItemOut](
+        items=[_note_item_out(n) for n in found.items],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+        counts=found.counts,
+    )
 
 
 @review_notes_router.get(
     "/{note_id}", action="review_note.read", response_model=ReviewNoteDetailOut, errors=(501,)
 )
 async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteDetailOut:
-    """One note with its body and events."""
-    await _stub(ctx)
+    """One note with its body and events (the body read is an access event)."""
+    await _live(ctx)
+    return _note_detail_out(await note_detail(ctx, note_id))
 
 
 @review_notes_router.post(
@@ -497,8 +598,19 @@ async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteDetailOut:
     errors=(501,),
 )
 async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNoteDetailOut:
-    """Raise a note on a registered reviewable, optionally on an anchor."""
-    await _stub(ctx)
+    """Raise a note on a registered reviewable, optionally on an anchor; the body is sealed."""
+    await _live(ctx)
+    return _note_detail_out(
+        await raise_on_target(
+            ctx,
+            body.target_type,
+            body.target_id,
+            anchor_kind=body.anchor.kind if body.anchor else None,
+            anchor_ref=body.anchor.ref if body.anchor else None,
+            body=body.body,
+            assignee=body.assignee_user_id,
+        )
+    )
 
 
 @review_notes_router.post(
@@ -510,7 +622,8 @@ async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNo
 async def review_note_respond_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
 ) -> ReviewNoteDetailOut:
-    await _stub(ctx)
+    await _live(ctx)
+    return _note_detail_out(await note_event(ctx, note_id, "responded", body.body))
 
 
 @review_notes_router.post(
@@ -523,7 +636,8 @@ async def review_note_clear_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
 ) -> ReviewNoteDetailOut:
     """Clearing is a person's act (the event's CHECK requires a human)."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _note_detail_out(await note_event(ctx, note_id, "cleared", body.body))
 
 
 @review_notes_router.post(
@@ -536,7 +650,8 @@ async def review_note_withdraw_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
 ) -> ReviewNoteDetailOut:
     """The raiser withdraws their own note."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _note_detail_out(await note_event(ctx, note_id, "withdrawn", body.body))
 
 
 # --- Human gates (C13 read; HOME-01/02) --------------------------------------------------------
@@ -773,6 +888,87 @@ class DecisionNotifyOut(BaseModel):
 decision_cards_router = AbacusRouter(prefix="/v1/decision-cards", tags=["review"])
 
 
+def _card_item_out(c: CardItem) -> DecisionCardItemOut:
+    return DecisionCardItemOut(
+        id=c.id,
+        engagement_id=c.engagement_id,
+        work_item_id=c.work_item_id,
+        kind=c.kind,
+        version_no=c.version_no,
+        status=cast(DecisionCardStatus, c.status),
+        reserved_role=cast(ReservedRole, c.reserved_role),
+        reserved_user_id=c.reserved_user_id,
+        reserved_user_name=c.reserved_user_name,
+        requested_at=c.requested_at,
+        blocking_count=c.blocking_count,
+        superseded_by_version=c.superseded_by_version,
+        allowed_actions=c.allowed_actions,
+    )
+
+
+def _card_out(d: CardDetail) -> DecisionCardOut:
+    return DecisionCardOut(
+        card=_card_item_out(d.card),
+        question=d.question,
+        context=[
+            DecisionContextOut(key=c.key, label=c.label, value=c.value, citation_id=c.citation_id)
+            for c in d.context
+        ],
+        options=[
+            DecisionOptionOut(
+                key=o.key,
+                label=o.label,
+                detail=o.detail,
+                figures=o.figures,
+                recommended=o.recommended,
+            )
+            for o in d.options
+        ],
+        factors=[
+            DecisionFactorOut(key=f.key, label=f.label, applicable=f.applicable, checked=f.checked)
+            for f in d.factors
+        ],
+        citation_ids=d.citation_ids,
+        note=None,
+        recommendation=(
+            DecisionRecommendationOut(
+                suggestion_id=d.recommendation[0], option_key=d.recommendation[1], reasons=[]
+            )
+            if d.recommendation is not None
+            else None
+        ),
+        blocking_refs=[ObjectRefOut(type=t, id=i) for t, i in d.blocking_refs],
+        decision=(
+            CardDecisionOut(
+                id=d.decision.id,
+                option_key=d.decision.option_key,
+                factors=d.decision.factors,
+                rationale=d.decision.rationale,
+                seen_card_version=d.decision.seen_card_version,
+                decided_by_user_id=d.decision.decided_by,
+                decided_by_name=d.decision.decided_by_name,
+                decided_at=d.decision.decided_at,
+            )
+            if d.decision is not None
+            else None
+        ),
+        history=[
+            DecisionCardVersionOut(
+                version_no=v.version_no,
+                event=cast(CardEvent, v.event),
+                actor_kind=cast(ActorKind, v.actor_kind),
+                actor_user_id=v.actor_user_id,
+                actor_initials=v.actor_initials,
+                at=v.at,
+                option_key=v.option_key,
+                changed=v.changed,
+                figures=v.figures,
+            )
+            for v in d.history
+        ],
+    )
+
+
 @decision_cards_router.get(
     "", action="decision.read", response_model=ListPage[DecisionCardItemOut], errors=(501,)
 )
@@ -783,8 +979,18 @@ async def decision_card_list_route(
     cursor: Annotated[str | None, Query(max_length=2000)] = None,
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[DecisionCardItemOut]:
-    """Cards on an engagement, on the list envelope with per-status counts."""
-    await _stub(ctx)
+    """Cards on an engagement, on the list envelope with per-status counts (P-04-T23)."""
+    await _live(ctx)
+    found = await list_cards(
+        ctx, engagement_id=engagement_id, state=state, cursor=cursor, limit=limit
+    )
+    return ListPage[DecisionCardItemOut](
+        items=[_card_item_out(c) for c in found.items],
+        next_cursor=found.next_cursor,
+        total=found.total,
+        total_capped=found.total_capped,
+        counts=found.counts,
+    )
 
 
 @decision_cards_router.get(
@@ -792,7 +998,8 @@ async def decision_card_list_route(
 )
 async def decision_card_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
     """SHL-11 a to h: one card, its versions and the caller's allowed actions."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _card_out(await card_detail(ctx, card_id))
 
 
 @decision_cards_router.post(
@@ -804,8 +1011,18 @@ async def decision_card_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
 async def decision_card_decide_route(
     card_id: UUID, body: CardDecideIn, ctx: Ctx
 ) -> DecisionCardOut:
-    """SHL-11 a to c: the reserved role decides, with a rationale (human only)."""
-    await _stub(ctx)
+    """SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind)."""
+    await _live(ctx)
+    return _card_out(
+        await decide_card(
+            ctx,
+            card_id,
+            option_key=body.option_key,
+            factors=body.factors,
+            rationale=body.rationale,
+            seen_version=body.seen_version,
+        )
+    )
 
 
 @decision_cards_router.post(
@@ -819,7 +1036,14 @@ async def decision_card_analysis_request_route(
     card_id: UUID, body: AnalysisRequestIn, ctx: Ctx
 ) -> AnalysisRequestOut:
     """SHL-11 b: "Request more analysis" records a request for the run."""
-    await _stub(ctx)
+    await _live(ctx)
+    found = await request_analysis(ctx, card_id, body.text)
+    return AnalysisRequestOut(
+        id=found.id,
+        card_id=found.card_id,
+        requested_by_user_id=found.requested_by,
+        requested_at=found.requested_at,
+    )
 
 
 @decision_cards_router.post(
@@ -830,7 +1054,13 @@ async def decision_card_analysis_request_route(
 )
 async def decision_card_notify_route(card_id: UUID, ctx: Ctx) -> DecisionNotifyOut:
     """SHL-11 b: "Notify Margaret" sends the reserved person a mention notification."""
-    await _stub(ctx)
+    await _live(ctx)
+    found = await notify(ctx, card_id)
+    return DecisionNotifyOut(
+        card_id=found.card_id,
+        notified_user_id=found.notified_user_id,
+        notified_at=found.notified_at,
+    )
 
 
 @decision_cards_router.post(
@@ -842,7 +1072,8 @@ async def decision_card_notify_route(card_id: UUID, ctx: Ctx) -> DecisionNotifyO
 async def decision_card_reassess_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
     """SHL-11 d, h: the owner's provider recomputes in code; no change is a new version, a
     changed outcome raises a superseding card."""
-    await _stub(ctx)
+    await _live(ctx)
+    return _card_out(await reassess(ctx, card_id))
 
 
 # === C3 stub PR 3 (P-04-T11): issues, checkpoints, field provenance ===========================

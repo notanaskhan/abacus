@@ -6,8 +6,8 @@ provider that raises makes the gate unmet."""
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable, Mapping
+from dataclasses import dataclass, field
 from typing import Final
 from uuid import UUID
 
@@ -127,20 +127,92 @@ class UnregisteredKind(DomainInvalid):
     code = "unregistered_kind"
 
 
-DecisionOptions = Callable[[TenantContext, UUID], Awaitable[list[str]]]
 GateCheck = Callable[[TenantContext, UUID], Awaitable[bool]]
 FieldValue = Callable[[TenantContext, UUID, str], Awaitable[dict[str, object] | None]]
 FixRunner = Callable[[TenantContext, UUID], Awaitable[None]]
 
 
+# --- P-04-T23 (ADR-160 clause 8): what a decision kind's provider computes, in code.
+
+
+@dataclass(frozen=True)
+class CardOption:
+    """One option, computed by the kind's provider (never a model, ADR-050). Money is a decimal
+    string in `figures`; `label` and `detail` are the provider's fixed copy over those figures."""
+
+    key: str
+    label: str
+    figures: Mapping[str, str] = field(default_factory=dict[str, str])
+    detail: str | None = None
+
+
+@dataclass(frozen=True)
+class CardContext:
+    """A context row ("Benchmark", "Amount", "Firm range", "Prior year")."""
+
+    key: str
+    label: str
+    value: str
+    citation_id: UUID | None = None
+
+
+@dataclass(frozen=True)
+class CardFactor:
+    key: str
+    label: str
+    applicable: bool = True
+
+
+@dataclass(frozen=True)
+class ComputedCard:
+    options: tuple[CardOption, ...]
+    context: tuple[CardContext, ...] = ()
+    factors: tuple[CardFactor, ...] = ()
+    blocking_refs: tuple[tuple[str, UUID], ...] = ()
+
+
+@dataclass(frozen=True)
+class CardSubject:
+    """What a card is about: the provider reads its own records for it."""
+
+    engagement_id: UUID
+    work_item_id: UUID | None
+    question_key: str
+
+
+@dataclass(frozen=True)
+class Reassessment:
+    """The provider's recompute: `changed` False is "No change" (a new version of the same card);
+    True raises a superseding card from `card`. `figures` are what the history row shows (the
+    new amount, the difference)."""
+
+    changed: bool
+    figures: Mapping[str, str] = field(default_factory=dict[str, str])
+    card: ComputedCard | None = None
+
+
+CardCompute = Callable[[TenantContext, CardSubject], Awaitable[ComputedCard]]
+# (tenant, subject, the decided option or None, the card as computed when raised)
+CardReassess = Callable[
+    [TenantContext, CardSubject, str | None, ComputedCard], Awaitable[Reassessment]
+]
+# The default fresh-MFA window for deciding (the matrix's `mfa_recent`, 15 minutes).
+DECIDE_MFA_MAX_AGE_S: Final = 900
+
+
 @dataclass(frozen=True)
 class DecisionKind:
-    """A decision card's kind (A-04 materiality, T-04 treatment, ...): who it is reserved to
-    and how its options are computed (by code, never a model: ADR-050)."""
+    """A decision card's kind (A-04 materiality, T-04 treatment, ...): who it is reserved to,
+    how its options are computed (by code, never a model: ADR-050), its questions' copy, how it
+    is reassessed, and whether deciding needs a recent second factor (ADR-160 clause 8: the
+    kind declares it; required unless a kind opts out with None)."""
 
     code: str
     reserved_role: str
-    options: DecisionOptions
+    options: CardCompute
+    questions: Mapping[str, str] = field(default_factory=dict[str, str])
+    reassess: CardReassess | None = None
+    mfa_max_age_s: int | None = DECIDE_MFA_MAX_AGE_S
 
 
 @dataclass(frozen=True)

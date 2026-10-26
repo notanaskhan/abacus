@@ -53,6 +53,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("security.manage", "access_control", "security_admin"),
     ("session.end", "access_control", "security_admin"),
     ("staff.unlock", "access_control", "firm_admin"),
+    ("sign_off.bulk", "sign_off", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (
@@ -95,6 +96,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/firm/staff/{user_id}/unlock", "staff.unlock"),
     ("POST", "/v1/legal-holds", "legal_hold.place"),
     ("POST", "/v1/legal-holds/{hold_id}/release", "legal_hold.lift"),
+    ("POST", "/v1/sign-offs:bulk", "sign_off.bulk"),
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),

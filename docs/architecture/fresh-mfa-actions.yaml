@@ -92,3 +92,6 @@ actions:
     group: access_control
   - action: staff.unlock
     group: access_control
+  # Bulk sign-off (P-04-T22, DEC-501): many signatures in one request
+  - action: sign_off.bulk
+    group: sign_off
