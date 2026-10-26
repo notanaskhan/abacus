@@ -8,6 +8,7 @@ import type {
   ListPageCitationV2Out,
   ViewerRegionsOut,
   ViewerSearchOut,
+  ViewerTextOut,
 } from "@abacus/api-client";
 import { FORM_PAGE_PNG, STATEMENT_PAGE_PNG } from "@abacus/ui/specimens";
 import {
@@ -19,6 +20,7 @@ import {
 import type { SeededCitation, SeededDocument } from "../seed/trust";
 
 const NOT_FOUND = { detail: "not found" };
+const FORBIDDEN = { detail: "forbidden" };
 
 function bytesOf(dataUrl: string): ArrayBuffer {
   const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
@@ -66,6 +68,9 @@ export interface TrustFixtures {
   documents: Readonly<Record<string, SeededDocument>>;
   /** Versions whose manifest never answers (SHL-08e: still processing). */
   loading?: readonly string[];
+  /** The reader gets no page images (DEC-369: an offshore member until OCR): the manifest says
+   * `view: text`, a page image is refused 403 as the server refuses it, the text is served. */
+  textOnly?: boolean;
 }
 
 /** The C4 read routes over `fixtures`. */
@@ -84,15 +89,27 @@ export function trustHandlers(fixtures: TrustFixtures): Record<string, FixtureHa
     "GET /v1/evidence-versions/{version_id}/viewer": (request) => {
       if (fixtures.loading?.includes(request.params.version_id ?? "")) return never();
       const found = doc(request);
-      return found === undefined ? json(NOT_FOUND, 404) : json(found.manifest);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      return json(
+        fixtures.textOnly === true ? { ...found.manifest, view: "text" } : found.manifest,
+      );
     },
     "GET /v1/evidence-versions/{version_id}/pages/{page_no}": (request) => {
+      if (fixtures.textOnly === true) return json(FORBIDDEN, 403);
       const found = doc(request);
       const page = Number(request.params.page_no);
       if (found === undefined || !found.manifest.pages.some((p) => p.n === page)) {
         return json(NOT_FOUND, 404);
       }
       return png(found.face);
+    },
+    "GET /v1/evidence-versions/{version_id}/text": (request) => {
+      const found = doc(request);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      const items =
+        found.text ??
+        found.manifest.pages.map((p) => ({ page: p.n, text: "", unread: p.pii_scan !== "done" }));
+      return json({ items, sheets: [], truncated: false } satisfies ViewerTextOut);
     },
     "GET /v1/evidence-versions/{version_id}/regions": (request) => {
       const found = doc(request);

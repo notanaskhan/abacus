@@ -42,6 +42,8 @@ ROUTES: dict[tuple[str, str], tuple[str, Flag]] = {
     ("get", f"{VERSION}/pages/{{page_no}}"): ("evidence.read", EVIDENCE_VIEWER_V1),
     ("get", f"{VERSION}/regions"): ("evidence.read", EVIDENCE_VIEWER_V1),
     ("get", f"{VERSION}/search"): ("evidence.read", EVIDENCE_VIEWER_V1),
+    # DEC-369 (Ayush, 2026-10-26): the masked text view.
+    ("get", f"{VERSION}/text"): ("evidence.read", EVIDENCE_VIEWER_V1),
     ("post", f"{VERSION}/pii-reveals"): ("pii.reveal", EVIDENCE_PII_REVEAL),
     ("post", f"{VERSION}/unlock"): ("evidence.unlock", EVIDENCE_VIEWER_UNLOCK),
 }
@@ -196,3 +198,10 @@ def test_spec322_the_fixture_figures_foot() -> None:
     assert Decimal("16500000.00") + Decimal("312400.00") == Decimal("16812400.00")
     # SHL-08a: 25% of the 6,200 Ridgeline allocation is the K-1's 1,550 box 18A.
     assert Decimal("6200") * Decimal("0.25") == Decimal("1550")
+
+
+def test_dec369_the_text_view_is_restricted_text_and_the_manifest_names_the_view() -> None:
+    assert _enum("ViewerManifestOut", "view") == {"images", "text"}
+    page = _props("ViewerTextPageOut")
+    assert page["text"]["cls"] == "restricted" and set(page) == {"page", "text", "unread"}
+    assert _props("ViewerTextSheetOut")["rows"]["cls"] == "restricted"

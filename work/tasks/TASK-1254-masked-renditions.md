@@ -158,6 +158,28 @@ unmasked TIN pattern, and agent quotes of masked text still verify."
   - Existing tests changed to the new semantics:
     - outlined text, sideways digits and the vector logo now assert `unread` with the words kept;
     - the N2 pixel checks are `<=` the label-only baseline, because masks spread over neighbours.
+- 2026-10-26 (Ayush, in chat: "Offshore readers get the masked-text-only view (no page
+  images) until OCR (P-11) lands"; recorded in DEC-369):
+  - **Pages:** the C4 page route refuses every offshore read (403 before any read). The legacy
+    page and preview routes, the download, the statement preview and the setup files already
+    refused offshore readers.
+  - **Text view:** the manifest carries `view: text`, and a new `GET …/text` serves the masked
+    projection per page, with `unread` flags and masked sheet cells. Contract first:
+    `ViewerTextOut` plus the C4 doc, then `make generate` and the regenerated security-test
+    route list.
+  - **SPA:** SHL-08 and the cockpit dock render `app-core/masked-text.tsx`. Fixtures: the
+    `textOnly(state)` scenario builder and a W-2 text seed.
+  - **Tests:**
+    - backend: `test_masked_renditions.py` covers 9 variants (r3 layouts plus a clean upright
+      page): offshore 403 on the page, masked text with no TIN spaced, joined or reversed;
+      onshore keeps images; workbook text masked;
+    - route level (`test_offshore_evidence_reads.py`): `viewer_page` added to the refused
+      routes, plus the text and manifest view;
+    - frontend: the text view renders with no `img` or region; the fixture contract
+      validates `…/text`;
+    - C4 contract: the new route and the classifications.
+  - **Deploy note:** offshore readers see text only from deploy on, independent of the backfill.
+    A version not yet backfilled answers 409 `preview_outdated` on its text view.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

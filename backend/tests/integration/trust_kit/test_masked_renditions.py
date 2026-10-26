@@ -15,6 +15,7 @@ contains an unmasked TIN pattern, and agent quotes of masked text still verify."
 from __future__ import annotations
 
 import io
+import re
 import uuid
 from typing import cast
 
@@ -528,3 +529,102 @@ async def test_review_r5_a_tin_split_by_a_page_break_is_masked_on_both_pages(
     assert material is not None
     text = " ".join(material.pages.values())
     assert "900-70" not in text and "1234" not in text and not has_tin(text)
+
+
+# --- Ayush, 2026-10-26 (DEC-369): offshore readers get the masked text view only -------------
+
+
+def _page(content: bytes) -> bytes:
+    """One page with Helvetica as /F1 and a grey picture as /Im1, drawn only when the content
+    says `/Im1 Do`."""
+    picture = b"\x00\xff\xff\x00"
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R "
+        b">> /XObject << /Im1 6 0 R >> >> /Contents 4 0 R >>",
+        b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceGray "
+        b"/BitsPerComponent 8 /Length 4 >>\nstream\n" + picture + b"\nendstream",
+    ]
+    out = io.BytesIO()
+    out.write(b"%PDF-1.4\n")
+    offsets: list[int] = []
+    for n, body in enumerate(objects, 1):
+        offsets.append(out.tell())
+        out.write(b"%d 0 obj\n" % n + body + b"\nendobj\n")
+    start = out.tell()
+    out.write(b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1))
+    for offset in offsets:
+        out.write(b"%010d 00000 n \n" % offset)
+    out.write(
+        b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n"
+        % (len(objects) + 1, start)
+    )
+    return out.getvalue()
+
+
+_LABEL = b"BT /F1 9 Tf 100 420 Td (Social security number) Tj ET\n"
+_COMB = b"".join(
+    b"BT /F1 12 Tf %d 620 Td (%s) Tj ET\n" % (380 + i * 18, bytes([c]))
+    for i, c in enumerate(b"900701234")
+)
+_OUTLINE = (
+    b"q 1 w 0 g "
+    + b"".join(
+        b"%d 400 m %d 414 l %d 414 l S " % (100 + i * 11, 100 + i * 11, 108 + i * 11)
+        for i in range(9)
+    )
+    + b"Q "
+)
+VARIANTS = {
+    "upright_spaced_dashes": b"BT /F1 12 Tf 100 600 Td (SSN 900 - 70 - 1234) Tj ET",
+    "upright_dots": b"BT /F1 12 Tf 100 600 Td (SSN 900.70.1234) Tj ET",
+    "upright_slashes": b"BT /F1 12 Tf 100 600 Td (SSN 900/70/1234) Tj ET",
+    "comb": _LABEL + _COMB,
+    "sideways": _LABEL + b"BT /F1 14 Tf 0 1 -1 0 300 300 Tm (900-70-1234) Tj ET",
+    "sideways_spaced": _LABEL + b"BT /F1 14 Tf 0 1 -1 0 300 300 Tm (900  70  1234) Tj ET",
+    "outlined": _LABEL + _OUTLINE,
+    "image_strip": _LABEL + b"q 90 0 0 10.5 100 400 cm /Im1 Do Q",
+    "clean": b"BT /F1 12 Tf 100 600 Td (Recipient's TIN 900-70-1234) Tj ET",
+}
+
+
+@pytest.mark.parametrize("variant", list(VARIANTS))
+async def test_offshore_reader_gets_masked_text_and_never_a_page_image(
+    seed: Seeder, variant: str
+) -> None:
+    """Every r3 layout variant, and a clean upright page: no page image for the offshore reader
+    (403 before anything is read), the masked text with no TIN (spaced or not, nor reversed)."""
+    firm = await make_firm(seed)
+    version = await _version(firm, _page(VARIANTS[variant]))
+    await _offshore(firm)
+    manifest = await viewer.viewer_manifest(firm.person(), version)
+    assert manifest.view == "text"
+    with pytest.raises(Forbidden):
+        await viewer.viewer_page(firm.person(), version, 1)
+    found = await viewer.viewer_text(firm.person(), version)
+    text = " ".join(p.text for p in found.items)
+    assert not has_tin(text), text
+    assert not re.search(r"9\D{0,3}0\D{0,3}0\D{0,3}7\D{0,3}0", text), text
+    assert not re.search(r"4\D{0,3}3\D{0,3}2\D{0,3}1\D{0,3}0\D{0,3}7", text), text  # reversed
+    [page] = found.items
+    flagged = variant in ("sideways", "sideways_spaced", "outlined", "image_strip")
+    assert page.unread is flagged
+
+
+async def test_onshore_reader_keeps_the_image_view(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    version = await _version(firm, _page(VARIANTS["clean"]))
+    assert (await viewer.viewer_manifest(firm.person(), version)).view == "images"
+    assert (await viewer.viewer_page(firm.person(), version, 1)).startswith(b"\x89PNG")
+
+
+async def test_the_text_view_of_a_workbook_is_masked_cells(seed: Seeder) -> None:
+    firm = await make_firm(seed)
+    sheet = await _version(firm, SHEET, "text/csv")
+    await _offshore(firm)
+    found = await viewer.viewer_text(firm.person(), sheet)
+    cells = " ".join(c for s in found.sheets for row in s.rows for c in row)
+    assert found.items == [] and "Claire Feld" in cells and not has_tin(cells)

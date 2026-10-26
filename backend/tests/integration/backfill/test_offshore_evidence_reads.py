@@ -26,6 +26,7 @@ from types_boto3_s3 import S3Client
 
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.storage import s3_client
+from abacus.kernel.tin_patterns import has_tin
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.api import (
     UPLOAD_INBOX,
@@ -105,6 +106,8 @@ class Firm:
             "version_page": f"{e}/evidence-versions/{self.version}/preview/pages/1",
             "inbox_preview": f"{e}/inbox/{self.inbox}/preview",
             "inbox_page": f"{e}/inbox/{self.inbox}/preview/pages/1",
+            # Ayush, 2026-10-26 (DEC-369): no page image of any kind for an offshore reader.
+            "viewer_page": f"/v1/evidence-versions/{self.version}/pages/1",
         }
 
     async def content_reads(self, who: Person) -> int:
@@ -134,7 +137,7 @@ async def _offshore(seed: Seeder, who: Person) -> None:
 @pytest.fixture
 async def firm(net: Net, seed: Seeder) -> Firm:
     tenant_id = await seed.firm()
-    for flag in ("uploads.processing", "evidence.pii_reveal"):
+    for flag in ("uploads.processing", "evidence.pii_reveal", "evidence.viewer_v1"):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 'test-seed', 'TASK-1207')",
@@ -184,6 +187,7 @@ ROUTES: Final = (
     "version_page",
     "inbox_preview",
     "inbox_page",
+    "viewer_page",
 )
 
 
@@ -260,3 +264,24 @@ async def test_review_l3_the_twenty_first_reveal_answers_429_with_retry_after(fi
     assert body["detail"] == "reveal_rate_limited" and "value" not in body
     assert refused.headers["retry-after"] == str(body["facts"]["retry_after"])
     assert 0 < int(refused.headers["retry-after"]) <= 3600
+
+
+async def test_offshore_readers_get_the_masked_text_view_and_onshore_the_images(
+    firm: Firm,
+) -> None:
+    """Ayush, 2026-10-26 (DEC-369): the manifest says how this reader sees the pages; an
+    offshore reader gets the masked text projection (no TIN), never a page image; Mia, onshore,
+    keeps the images and may read the text view too."""
+    base = f"/v1/evidence-versions/{firm.version}"
+    remy = await firm.net.call("GET", f"{base}/viewer", firm.remy)
+    mia = await firm.net.call("GET", f"{base}/viewer", firm.mia)
+    assert (remy.json()["view"], mia.json()["view"]) == ("text", "images")
+    text = await firm.net.call("GET", f"{base}/text", firm.remy)
+    assert text.status_code == 200, text.text
+    assert text.headers["cache-control"] == "no-store"
+    [page] = text.json()["items"]
+    assert page["page"] == 1 and page["unread"] is False
+    assert "•••-••-6081" in page["text"] and "000-00-6081" not in page["text"]
+    assert not has_tin(text.text)
+    assert await firm.content_reads(firm.remy) > 0  # the text is content: its read is logged
+    assert (await firm.net.call("GET", f"{base}/text", firm.mia)).status_code == 200

@@ -252,6 +252,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/evidence-versions/{version_id}/pages/{page_no}", "evidence.read"),
     ("GET", "/v1/evidence-versions/{version_id}/regions", "evidence.read"),
     ("GET", "/v1/evidence-versions/{version_id}/search", "evidence.read"),
+    ("GET", "/v1/evidence-versions/{version_id}/text", "evidence.read"),
     ("GET", "/v1/evidence-versions/{version_id}/viewer", "evidence.read"),
     ("GET", "/v1/fields/{target_type}/{target_id}/{field_key}/provenance", "field.read"),
     ("GET", "/v1/firm/agents", "firm.read_settings"),

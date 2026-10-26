@@ -38,6 +38,7 @@ Matrix: `docs/architecture/permission-matrix/evidence.yaml` (evidence section, F
 | Masked page | `GET /v1/evidence-versions/{version_id}/pages/{page_no}` | `evidence.read` | unchanged | unchanged | `evidence.viewer_v1` |
 | Regions | `GET /v1/evidence-versions/{version_id}/regions?match_ids=` | `evidence.read` | unchanged | unchanged | `evidence.viewer_v1` |
 | In-document search | `GET /v1/evidence-versions/{version_id}/search?q=` | `evidence.read` | unchanged | unchanged | `evidence.viewer_v1` |
+| Masked text view | `GET /v1/evidence-versions/{version_id}/text` | `evidence.read` | unchanged | unchanged | `evidence.viewer_v1` |
 | Reveal a masked value | `POST /v1/evidence-versions/{version_id}/pii-reveals` | `pii.reveal` (new) | engagement_partner, manager, senior, staff, eqr_reviewer; `not_offshore`, `independence: required`, `mfa_recent: required` (every kind as built, DEC-370). Client roles, `client_service` and platform support are denied | **denied** (agent and system) | `evidence.pii_reveal` (also the reveal kill switch, ADR-097) |
 | Unlock a password PDF | `POST /v1/evidence-versions/{version_id}/unlock` | `evidence.unlock` (new) | engagement_partner, manager, senior, staff; `independence: required`. Client roles are denied | **denied** | `evidence.viewer_unlock` |
 | Download (exists, unchanged) | `GET /v1/engagements/{id}/evidence-versions/{vid}/content` | `evidence.read` | unchanged | unchanged | none |
@@ -83,13 +84,19 @@ No field carries the stored hash, a quote the client sent, or a hidden-by-wall c
 - **Pages:** `pages[]` holds `{n, width_pt, height_pt, rotation, image_w, image_h, text_layer, pii_scan: done | not_scannable}`, all I.
 - **Masks:** `pii_masks[]` holds `{id, page, rect, kind, display}`. `display` is the mask token, for example `•••-••-6081`. The `display` field is C; the others are I.
 - **Other:** `derivation?` I (the unlock derivation id), `allowed_actions` I (`pii.reveal`, `evidence.unlock` when allowed).
+- **View:** `view` I is `images` or `text`. It is the server's decision, never the client's (Ayush, 2026-10-26; DEC-369). A reader who may not read unmasked content (an offshore member, or a run acting for one) gets `text` until OCR (P-11). Every page image route refuses them, and the viewer renders `…/text` instead.
 
 The manifest carries geometry and mask tokens only, never text. Coordinates are in PDF points, top-left origin, in unrotated page space. The client scales by `image_w / width_pt`.
 
 ### 3.4 Pages, regions and search
-- **Page:** a masked PNG, 1,240 px wide, served `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. No JSON body.
+- **Page:** a masked PNG, 1,240 px wide, served `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. No JSON body. A reader whose manifest says `view: text` gets 403 before anything is read, whatever the page holds (DEC-369).
 - **`RegionsOut`:** `items[]` holds `{match_id, page, rects: [[x0, top, x1, bottom]], citation_id, label?}`. Rects are in page points; a table cell is `{sheet, cell}`. All I, except `label` C.
 - **`SearchOut`:** `items[]` holds `{page, rects}`, plus `total` and `truncated`, all I. There are at most 200 hits and no text. The query string is never logged.
+- **`TextOut`** (`GET …/text`; DEC-369) is the masked text projection, served `Cache-Control: no-store` and logged as a content read. It is the same text agents read.
+  - `items[]` holds `{page, text, unread}`. `text` is **R**: the page's upright words with every detected region replaced by its token, then the kernel TIN scrub. `unread` I marks a page whose content no scan reads: no text layer, a picture, glyph-sized vector shapes or a sideways digit. Such a page still gives its upright masked words.
+  - `sheets[]` holds `{name, rows}`, with cells masked by code (`pii.masked_rows`).
+  - At most 50 pages; `truncated` I.
+  - A PDF with text pages and no PII scan yet answers 409 `preview_outdated`.
 
 ### 3.5 Reveal and unlock
 - **`RevealIn`:** `region_id` I, `context_ref?` I (a citation or anchor).
@@ -128,7 +135,7 @@ The YAML is the authority for labels. Never invent a synonym.
 |---|---|---|
 | 404 | `{"detail": "not found"}` | flag off; a walled, invisible, other-firm or unknown citation or version (DEC-43). Stacks omit it with no count |
 | 403 | `{"detail": "forbidden", "facts": {"reason": "role"}}` | the action is not held. A client principal gets this on every citation route |
-| 403 | `{"detail": "forbidden", "facts": {"reason": "offshore"}}` | an offshore member on a reveal or an unscannable page |
+| 403 | `{"detail": "forbidden", "facts": {"reason": "offshore"}}` | an offshore member on a reveal, or on any page image (`…/pages/{n}`, and the legacy preview pages, previews and download; DEC-369). As built, these answer the plain `{"detail": "forbidden"}` (DEC-370) |
 | 403 | `{"detail": "forbidden", "facts": {"reason": "mfa_required"}}` | a reveal (any kind as built, DEC-370) with MFA missing or older than the window; the shell runs step-up and retries |
 | 409 | `{"detail": "preview_outdated"}` | the page was rendered before masking existed, until the backfill re-renders it |
 | 409 | `{"detail": "active_content"}` | the manifest, a page, regions or search of a PDF with active content (DEC-296): kept, never shown |

@@ -164,6 +164,23 @@ function scenario(
   };
 }
 
+/** DEC-369 (Ayush, 2026-10-26): `state`'s data as an offshore reader sees it, the server's text
+ * view with no page images. Not an artboard: the viewer's text state for tests and the gallery. */
+export function textOnly(state: Shl08State): Scenario {
+  const base = scenarios[state];
+  return {
+    ...base,
+    handlers: {
+      ...base.handlers,
+      ...trustHandlers({
+        citations: state === "b" || state === "h" ? NORTHWIND_CITATIONS : FELD_CITATIONS,
+        documents: DOCUMENTS,
+        textOnly: true,
+      }),
+    },
+  };
+}
+
 export const scenarios = defineScenarios({
   a: scenario("a", "samuel-ito", CLOCK_VIEWER, FELD_CITATIONS),
   b: scenario("b", "hannah-leclerc", CLOCK_POPOVER, NORTHWIND_CITATIONS),

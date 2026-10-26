@@ -52,6 +52,7 @@ from abacus.modules.evidence.viewer import (
     viewer_page,
     viewer_regions,
     viewer_search,
+    viewer_text,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -298,6 +299,32 @@ class ViewerManifestOut(BaseModel):
     pii_masks: Annotated[list[PiiMaskOut], classified("confidential")]
     derivation_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # Ayush, 2026-10-26 (DEC-369): `text` for a reader who may not read unmasked content (an
+    # offshore member): no page images, the masked text projection (`…/text`) instead.
+    view: Annotated[Literal["images", "text"], classified("internal")] = "images"
+
+
+class ViewerTextPageOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    page: Annotated[int, Field(ge=1), classified("internal")]
+    text: Annotated[str, classified("restricted")]  # masked words, then the TIN scrub
+    unread: Annotated[bool, classified("internal")]  # content on the page no scan read
+
+
+class ViewerTextSheetOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    name: Annotated[str, classified("confidential")]
+    rows: Annotated[list[list[str]], classified("restricted")]  # masked cells
+
+
+class ViewerTextOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[ViewerTextPageOut], classified("restricted")]
+    sheets: Annotated[list[ViewerTextSheetOut], classified("restricted")]
+    truncated: Annotated[bool, classified("internal")]
 
 
 class ViewerRegionOut(BaseModel):
@@ -362,9 +389,28 @@ async def viewer_page_route(
     ctx: Ctx,
 ) -> Response:
     """AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made
-    before masking. The read leaves an access event first (Q-02-T20)."""
+    before masking. The read leaves an access event first (Q-02-T20). Never served to a reader who
+    may not read unmasked content: 403 (Ayush, 2026-10-26; DEC-369), whose view is `…/text`."""
     await _gate(ctx, EVIDENCE_VIEWER_V1)
     return _png_response(await viewer_page(ctx, version_id, page_no))
+
+
+@router.get(
+    "/evidence-versions/{version_id}/text",
+    action="evidence.read",
+    response_model=ViewerTextOut,
+    errors=(409, 501),
+)
+async def viewer_text_route(version_id: VersionId, ctx: Ctx, response: Response) -> ViewerTextOut:
+    """Ayush, 2026-10-26 (DEC-369): the masked text projection, page by page, the view a reader
+    who may not read unmasked content gets instead of page images until OCR (P-11): detected
+    values as tokens, the kernel TIN scrub applied, `unread` on pages with content no scan read,
+    a workbook's cells masked; 409 `preview_outdated` before the PII scan. `no-store`; logged as
+    a content read."""
+    await _gate(ctx, EVIDENCE_VIEWER_V1)
+    found = await viewer_text(ctx, version_id)
+    response.headers["Cache-Control"] = "no-store"
+    return ViewerTextOut.model_validate(asdict(found))
 
 
 @router.get(
