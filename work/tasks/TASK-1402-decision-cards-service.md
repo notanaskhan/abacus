@@ -48,3 +48,4 @@ $16,861,000 records No change with the $700 difference.
 ## Progress log
 - 2026-10-27: planned.
 - 2026-10-27: built (acceptance tests written first, run in the end-of-batch targeted pass). Decisions DEC-500 to DEC-504; ED-150. Generated client and matrix regenerated.
+- 2026-10-27: security-review fix round (merged origin/main ee7bdf04; 0210 now revises 0197): migration 0213 status guards, fresh MFA on sign_off.create and decision.decide, serialised idempotency keys, decided-card reassess by the decider, suggestion and work-item ownership checks (DEC-505, DEC-506).
