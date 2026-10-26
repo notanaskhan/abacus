@@ -13,8 +13,9 @@ indexed as text, so a seeded SSN is never findable (AC-11).
 
 **Maintenance:** `index_batch` indexes a firm's events after the newest indexed `seq`, upserting
 on `(tenant_id, seq)`, so a replay rewrites the same rows (idempotent); `backfill` runs batches
-until it has caught up. The Temporal Schedule G-02 §4.5 names (`AuditLabelIndexer`) is not wired
-yet (DEC-436): until it is, a search first catches its firm's index up by one bounded batch.
+until it has caught up. The `AuditLabelIndexer` Schedule (G-02 §4.5; `jobs.py`, every 60 seconds,
+DEC-453) runs `index_batch` for every firm; a search still first catches its firm's index up by one
+bounded batch, the fallback while a run is late or the Schedule is paused.
 
 The projection is operational, like the hash chain's checkpoints: its writes carry no audit event
 (auditing the index of the audit trail would feed itself) and commit on their own connection
@@ -318,8 +319,9 @@ def _query(q: str) -> str:
 
 
 async def catch_up(tenant_id: UUID) -> None:
-    """One bounded batch before a search, while the Schedule is not wired (DEC-436). Another
-    indexer running for the firm is catching it up already: the search does not wait."""
+    """One bounded batch before a search: the fallback beside the `AuditLabelIndexer` Schedule
+    (DEC-453). Another indexer running for the firm is catching it up already: the search does
+    not wait."""
     with contextlib.suppress(IndexBusy):
         await index_batch(tenant_id)
 

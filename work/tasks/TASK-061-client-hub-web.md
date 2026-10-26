@@ -82,3 +82,4 @@ SPEC-031 AC-1, AC-3 (screen), AC-4 to AC-7 (screens), AC-9.
 
 ## Handoff
 Done. SPEC-031 is complete. Next per the Act 2 plan: A4 comments spec.
+- 2026-10-27: recorded closed by R-01-T20's POR-03 client-hub AC suite (`backend/tests/security/test_r01t20_portal_pbc_independent.py`; R-01 §10.3.3; DEC-448, TASK-1351).
