@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C5 in `docs/contracts/README.md` (a named section with its own change log, R-01 §8.2 and R11; the other C5 files are `c5-requests-binders.md` and `portal-identity.md`) |
 | Version | section `portal-pbc` v1 (additive to C5 v1 and the v1.1 portal half; no C5 version bump) |
-| Status | stub (R-01-T01, 2026-10-24); partly live. Every route answers 404 with its flag off. Live with it on: the binder picker, binder and request (R-01-T07, 2026-10-25; DEC-333) and the two undos (R-01-T08, 2026-10-25; DEC-334); the drop and its poll (R-01-T09, 2026-10-25; DEC-323) and the void (R-01-T09 remainder, TASK-1248, 2026-10-25; DEC-339). Still 501 `not_implemented` with the flag on until their task lands: R-01-T13 (room, suggest) |
+| Status | live (stub R-01-T01, 2026-10-24). Every route answers 404 with its flag off. Live with it on: the binder picker, binder and request (R-01-T07, 2026-10-25; DEC-333) and the two undos (R-01-T08, 2026-10-25; DEC-334); the drop and its poll (R-01-T09, 2026-10-25; DEC-323) and the void (R-01-T09 remainder, TASK-1248, 2026-10-25; DEC-339); the room and its suggest (R-01-T13, 2026-10-26; DEC-387, DEC-388) |
 | Provider epic | R-01 (portal read models: AY; requests and evidence writes: N), on P-06's binder and request routes and P-08's portal identity |
 | Consumers | R-01 (POR-03, POR-04, POR-14), T-02 (POR-05 "upload if yes" falls back to POR-04's upload), C-01 (POR-11 reuses the Request kit rows and the POR-04 `question` slot), A-09 (POR-23 reuses `ScopedRequestRoom` and the room projection), R-03 (mobile capture feeds POR-03 and POR-04), N-03 (INB-04 threads on POR-04 comments), A-01 and P-06 (the firm-side void row-menu) |
 | Freeze sprint | with the rest of C5 (S3, freeze Fri 2026-12-11) for the shapes here; R-01-T36 freezes the section |
@@ -15,7 +15,7 @@
 ## 1. Purpose
 Consumers can rely on the client's view of a binder, a request and a third party's room: rows in client words (To do · Done · Ignored · Returned), receipts that prove what was sent and how, firm-written guidance, the firm's client-visible return note, code-computed category completion and counts, and `allowed_actions` from one closed vocabulary. Nothing in the section carries a firm status code ("Uploaded – needs review", "Received ✓"), an amount, a confidence, a screening verdict, an agent name or reference, or another party's data (INV-4; R-01-T02's consumer tests fail if one appears). A file dropped anywhere is sorted by code: only a decisive match against an item the dropper can see becomes a `rule` fulfilment, which a named person accepts or voids (DEC-58 a, ADR-005). The client may undo an Ignore or Mark as Done until the firm acts (DEC-24), as compensating events. Every client-facing string is firm-written, a fixed word in the frontend copy registry or computed: no model text reaches a client (ADR P-25 off), and nothing says "Accrued" (ADR-163).
 
-**Stub behaviour.** With its flag off a route answers 404; with it on, 501 until its task lands. No route here is unauthenticated (ADR P-45 untouched). The stub returns no fixtures; the screens build on fixture scenarios typed with the generated client (R-01-T05).
+**Flags.** With its flag off a route answers 404 (every route is live; none answers 501 any more). No route here is unauthenticated (ADR P-45 untouched). The stub returns no fixtures; the screens build on fixture scenarios typed with the generated client (R-01-T05).
 
 ## 2. Who may call it
 Matrix: `docs/architecture/permission-matrix/portal.yaml` (new `portal_documents.read`); the writes reuse `requests.yaml` and `evidence.yaml` rows.
@@ -30,14 +30,16 @@ Matrix: `docs/architecture/permission-matrix/portal.yaml` (new `portal_documents
 | Drop one file | `POST /v1/portal/binders/{binder_id}/drops?filename=` raw body + `X-Drop-Batch` + `Idempotency-Key` → 202 | `evidence.upload` (existing) | client admin, client contributor (assigned) | system allowed only for connector retrieval, never through this route | `portal.drop_sort` · T09 |
 | Poll a drop batch | `GET /v1/portal/drops/{batch_id}` | `portal_documents.read` | the dropper; anyone else's batch is 404 | **denied** | `portal.drop_sort` · T09 |
 | Void a rule fulfilment | `POST /v1/engagements/{engagement_id}/fulfilments/{fulfilment_id}/void` `{reason: wrong_request}` + `Idempotency-Key` | `fulfilment.confirm` (existing) | engagement partner, manager, senior | **denied** (human only) | `portal.drop_sort` · T09 |
-| POR-14 room | `GET /v1/portal/room` | `portal_documents.read` | today client roles only; a `third_party` grant holds no cell until R-01-T13 (DEC-240) | **denied** | `portal.third_party_room` · T13 |
+| POR-14 room | `GET /v1/portal/room` | `portal_documents.read` (`third_party`: `delegated_only`) | a third party: the holder of an active `request_item` grant (`third_party` from CLI-04, `delegate` from P-06) under one of the request's open delegations, each row authorised on its own facts; a full-client person has no room (404) | **denied** | `portal.third_party_room` · T13 |
 | Which request? | `POST /v1/portal/room/suggest` `{file_names[]}` | `portal_documents.read` | as the room | **denied** | `portal.third_party_room` · T13 |
 
 Used unchanged (P-06, existing): `POST /v1/portal/request-items/{id}/ignore {reason, note?}` (`request_item.ignore`), `POST /v1/portal/binders/{id}/mark-done` (`binder.mark_done`), `POST /v1/portal/request-items/{id}/upload-intents` (`evidence.upload`), `POST /v1/engagements/{eid}/request-items/{id}/uploads` (`evidence.upload`), `POST /v1/engagements/{eid}/evidence-versions/{vid}/withdraw` (`evidence.withdraw`), `GET`/`POST /v1/engagements/{eid}/request-items/{id}/comments` (`comment.read` / `comment.create`).
 
 **The additive ignore note.** P-06's `IgnoreIn` already carries `note`. R-01 changes only where it goes: R-01-T08 stores it as a shared comment on the request with origin `ignore_note` (sealed, insert-only, ADR-109), so the firm sees it in BND-02 and the thread; Undo never deletes it. No shape changes.
 
-**Third parties (DEC-240).** R-01 §4.3 names a `third_party` role with a `delegated_only` condition on `portal_documents.read`, `evidence.upload`, `request_item.read`, `comment.read` and `comment.create`. T01's check found that neither exists in the matrix grammar (F-03-T24 shipped `scope_only`; DEC-211 leaves third-party grants without cells), so no third party can reach any route today: the room is 404 for everyone but a client role, and its service will refuse those too. R-01-T13 adds the role and the condition with the room read model, in the matrix codegen and `authorise`, and the security cases of R-01-T20 cover them.
+**Third parties (DEC-240, DEC-387).** R-01-T13 adds the matrix role `third_party` and the cell `delegated_only`, on `portal_documents.read`, `request_item.read`, `evidence.upload`, `evidence.withdraw`, `comment.read` and `comment.create` and nothing else. A client person with no role on the engagement who holds an active `request_item` grant of a delegate (`third_party` or `delegate`) on one of its requests is `third_party` there; `delegated_only` allows only a client-visible request whose facts name the person among the holders of its open delegations' grants (`ItemFacts.delegated_to`; without the facts it denies). No list filter reaches through it: the room reads by the person's own grants and authorises row by row, and the comment thread of a delegated request is its shared comments only. So the existing upload, upload-intent, withdraw and comment routes serve a third party on the delegated request and refuse every other (403/404). R-01-T20's security cases cover them. The delegates' fact is empty while the engagement's requests may not reach a third party (§7216; DEC-389), so every one of those routes fails closed together. A third party's thread names the firm's people and themself only: any other author reads as the client's name with a null `author_user_id`, and mentions keep firm members only (C5 `CommentOut.author_user_id` is nullable since 2026-10-26). A client person who also holds a delegation acts as the client (DEC-390).
+
+**Invitations on delegation (DEC-388).** The invitation is CLI-04's contact invitation (P-07-T25, DEC-300): one per person, from the firm's database Invitation template in the firm's name, carrying the `third_party` grants, with the delegations recorded in the same unit of work. P-06's delegate route keeps its 409 `contact_not_portal_user` for a contact who cannot sign in yet (DEC-158); a later item for a person who already signs in is a new grant and no second invitation (OQ-9). Both paths refuse, before any grant, invitation or email exists, a request of an engagement that holds a `tax_return` work item without the client's C19 `third_party_disclosure` consent: 409 `consent_required` (ADR P-12; until T-01 registers the consent nobody holds it). The room leaves such an engagement out too.
 
 ## 3. Models
 Code: `backend/src/abacus/modules/portal/pbc_contract.py` (reads), `backend/src/abacus/modules/requests/pbc_contract.py` (undos), `backend/src/abacus/modules/evidence/drops_contract.py` (drop and void: the void returns the dropped file to the inbox in the same unit of work, so it lives with evidence, which depends on requests; DEC-339). Every field is tagged (ADR-031): confidential for titles, file names, notes, guidance, names and organisation names; public for the firm's name; internal for everything else. No Restricted field; no TIN, amount or firm status code.
@@ -78,8 +80,7 @@ Identifier-only facts (ADR P-36).
 | 413 | `{"detail": "file_too_large", "facts": {"limit_mb": 50}}` | a drop over 50 MB (DEC-58 c) |
 | 415 | `{"detail": "type_not_allowed"}` | a drop outside PDF, JPG, PNG, HEIC, XLSX, DOCX and CSV |
 | 422 | validation | a bad filter, reason or file-name list |
-| 501 | `{"detail": "not_implemented"}` | the flag is on and the task has not landed |
-| `consent_required` | firm-side delegation state, not an HTTP error of this section | R-01-T13 refuses a third-party invitation on a `tax_return` work item without the C19 `third_party_disclosure` consent (fail closed, ADR P-12) |
+| 409 | `{"detail": "consent_required", "facts": {"engagement_id"}}` | not on a route of this section: P-06's delegate and CLI-04's invitation with delegated requests, on an engagement that holds a `tax_return` work item without the C19 `third_party_disclosure` consent (fail closed, ADR P-12; DEC-388) |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |
@@ -92,7 +93,8 @@ Identifier-only facts (ADR P-36).
 | `fulfilment.created` (`created_by_kind = rule`) | a decisive match links | fulfilment id; actor `system`, `on_behalf_of` the dropper (INV-5) |
 | `evidence_version.duplicate_flagged` | a drop's SHA-256 matches a version on the engagement | version id, duplicate-of id |
 | `fulfilment.voided` (audit and outbox) | a person voids a rule link | fulfilment id, reason code; actor the person |
-| `client_invitation.created`, `client_access.granted` | R-01-T13's subscriber on `request_item.delegated` | ids; attributed to the person who delegated |
+| `contact.invited`, `client_invitation.created`, `request_item.delegated` | CLI-04's invitation with delegated requests (DEC-388) | ids; the person who delegated |
+| `third_party.upload_noticed` (audit) and `third_party.uploaded` (outbox) | a third party's upload reaches a request delegated to them (portal's subscriber on `evidence.uploaded`) | request item, version and uploader ids; the request's firm owner |
 
 Values that quote client content (notes, file names) are never stored in `audit_events` (DEC-60). In-app kinds (C16): `portal.drop_unsorted` (binder owner), `third_party.uploaded` (request owner), `binder.marked_done` (P-06; preparer).
 
@@ -131,8 +133,9 @@ Additive changes in place with a line here. Breaking changes ship beside the old
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| portal-pbc v1 | — | — | 2026-10-24: stub (R-01-T01). 2026-10-25: documents reads live (R-01-T07, DEC-333); undos live, Undo open until the firm acts, a second Undo 409 `nothing_to_undo`, another person's 403 (R-01-T08, DEC-334); no shape change |
+| portal-pbc v1 | — | — | 2026-10-24: stub (R-01-T01). 2026-10-25: documents reads live (R-01-T07, DEC-333); undos live, Undo open until the firm acts, a second Undo 409 `nothing_to_undo`, another person's 403 (R-01-T08, DEC-334); no shape change. 2026-10-26: room and suggest live (R-01-T13, DEC-387, DEC-388); the 501s gone from the OpenAPI document; the `third_party` role and `delegated_only`; `intro` is null until a firm-written source exists; no shape change |
 
 ## 11. Open points
-- DEC-240: the `portal_documents.read` spelling, the third-party role and `delegated_only` deferred to R-01-T13, the return reason codes, the drop poll as a read action, and the stub's placement by module owner.
+- DEC-240: the `portal_documents.read` spelling, the return reason codes, the drop poll as a read action, and the stub's placement by module owner. The third-party role and `delegated_only`: DEC-387.
+- DEC-387: the room shows one engagement (the one delegated to the person most recently); a person delegated requests of two clients sees the other's once those are done or ended. A query parameter for the engagement is the additive change if A-09 or T-09 needs both.
 - R-01 §11 OQ-1 (a rule link reads Done to the client with the Suggested line), OQ-2 (Undo until the firm acts) and OQ-8 (who may withdraw a contributor's upload) take the plan's options, as recorded in DEC-240.

@@ -40,7 +40,17 @@ NEW = {
 # own tables and routes (SPEC-308, TASK-319; assurance SPEC-309, TASK-320).
 # F-03-T22 (TASK-385, migration 0089): tax, closes and notices hold their work-item subtypes.
 # P-08-T01 (TASK-431): the portal module serves the C5 v1.1 home and preferences stubs.
-LANDED = {"assurance", "review", "workpapers", "tax", "closes", "notices", "portal"}
+# A-02-T06 (TASK-1262): the integrations module serves the C20 v1 stub (no tables yet).
+LANDED = {
+    "assurance",
+    "review",
+    "workpapers",
+    "tax",
+    "closes",
+    "notices",
+    "portal",
+    "integrations",
+}
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
 
 

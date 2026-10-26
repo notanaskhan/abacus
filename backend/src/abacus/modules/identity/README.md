@@ -99,6 +99,7 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 
 ## Client conditions on request items (SPEC-020; TASK-035)
 - **In `authorise`:** `Resource` may carry `ItemFacts` (`client_visible`, `client_assignee`). `client_visible_only` then allows a client-visible item; `assigned_only` allows a client-visible item assigned to the person. Without the facts both still deny.
+- **Third parties (R-01-T13, DEC-387):** a client person with no role on an engagement who holds an active `request_item` grant of a delegate (`third_party`, `delegate`) on one of its requests acts as the matrix role `third_party` there (`authz._engagement_role_once`, through the `third_party_on` lookup; `engagement_role` itself is unchanged). Its cells are all `delegated_only`: a client-visible item whose `ItemFacts.delegated_to` names the person. No list reaches through it (`visible_items` and `authorise_items` leave it out); a third party reads through the portal's room, which authorises item by item.
 - **For lists:** `visible_items` is the list-query twin. `authorise_items` lets a client list an engagement's items, which are then filtered row by row.
 - **`visible()` counts client roles** the matrix allows (it agrees with `authorise`). Client roles read engagement metadata (their own engagements only).
 - **Client contacts** now carry members' display names.

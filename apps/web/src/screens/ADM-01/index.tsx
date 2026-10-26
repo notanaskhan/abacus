@@ -361,7 +361,9 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
       navTitle={COPY.navTitle}
       groups={GROUPS.map((g) => ({
         ...g,
-        sections: g.sections.filter((s) => s.id === "general" || PLANNED_VISIBLE),
+        sections: g.sections.filter(
+          (s) => s.id === "general" || s.id === "people" || s.id === "offices" || PLANNED_VISIBLE,
+        ),
       })).filter((g) => g.sections.length > 0)}
       active="general"
       onSelect={(id) => {

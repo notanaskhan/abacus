@@ -102,6 +102,7 @@ SPEC-033 AC-3, AC-4, AC-5, AC-6, AC-9.
 ## Progress log
 - `2026-10-13` — Design written for founder review after TASK-065 (#116); TASK-067 (cell references) in progress.
 - `2026-10-14` — Built (D1–D4): `inbox_file.extracted`; P-7; `match_start` (starter, "Suggest with AI", firm reads, picks lookup); `InboxMatchWorkflow` and activities with replay histories; `inbox_match.read` and `inbox_match.request`; flag `matching.enabled` (on for the Dev firm by the seed); migration 0050; the firm's AI suggestion block and "Suggest with AI" on the Board's inbox; matcher picks as "Suggested" for clients. Backend (10,436 with workflow replays), web (310) and gates pass. Local smoke on the Dev firm with the real model: a loan agreement named "scan0043.pdf" was proposed for the engagement's loan and debt requests (0.90–0.95, verified quote); the client saw the picks only as "Suggested"; the client was refused the firm's reads.
+- `2026-10-26` — Back-filled by Q-03-T033: `backend/tests/integration/backfill/test_q03t033_matcher.py` (AC-3, AC-5, AC-6); see TASK-1284.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

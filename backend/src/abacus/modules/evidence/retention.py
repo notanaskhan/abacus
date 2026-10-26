@@ -276,6 +276,9 @@ async def set_policy(ctx: AuthContext, change: PolicyChange) -> int:
 RECORD_TYPES: Final = frozenset(
     {"client_document", "derived_rendering", "chain_anchor", "seal_manifest"}
     | {"consent_evidence", "signature_evidence"}
+    # Q-02-T41 (ADR-169 §3; Q-02 §7.3): run records, anchored on the engagement's report release
+    # or filing date; their floor and default years are content, imported like every other's.
+    | {"agent_run_records"}
 )
 _DAYS_PER_YEAR: Final = Decimal("365.25")
 _EFFECTIVE_YEARS = text(

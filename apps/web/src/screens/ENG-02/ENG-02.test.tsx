@@ -413,22 +413,24 @@ describe("ENG-02 remaining (P-07-T28)", () => {
     ).toBeTruthy();
   });
 
-  it("Team tab hosts the roster from GET …/team: Priya Raman, Raj Malhotra, Grace Holloway", async () => {
+  it("Team tab hosts ENG-05 over GET …/team: Priya Raman, Raj Malhotra, Grace Holloway", async () => {
+    // P-07-T39 (DEC-386): the interim roster list gave way to ENG-05's table on this tab.
     const seen = show("a");
     await screen.findByRole("heading", { name: /2026 Close/ });
     fireEvent.click(screen.getByRole("tab", { name: /^Team/ }));
-    const group = await screen.findByRole("list", { name: "Team" });
     await waitFor(() => {
-      expect(within(group).getAllByRole("listitem")).toHaveLength(3);
+      expect(document.querySelectorAll("tr[data-row]")).toHaveLength(3);
     });
+    expect(document.querySelector("[data-screen='ENG-05']")).not.toBeNull();
     expect(
-      within(group)
-        .getAllByRole("listitem")
-        .map((li) => li.textContent),
+      [...document.querySelectorAll("tr[data-row]")].map((tr) => [
+        tr.querySelector("[data-name]")?.textContent,
+        tr.querySelectorAll("td")[1]?.textContent,
+      ]),
     ).toEqual([
-      "Priya RamanEngagement partner",
-      "Raj MalhotraSenior",
-      "Grace HollowayClient service",
+      ["Priya Raman", "Engagement partner (EP)"],
+      ["Raj Malhotra", "Senior (in-charge)"],
+      ["Grace Holloway", "Client service"],
     ]);
     expect(seen.calls.some((c) => c.path.endsWith("/team"))).toBe(true);
   });

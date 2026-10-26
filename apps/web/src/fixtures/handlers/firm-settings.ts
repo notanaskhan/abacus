@@ -5,13 +5,24 @@
 
 import type {
   AnnualIndependenceOut,
+  FirmOfficeIn,
+  FirmOfficeOut,
   MeOut,
   PersonPatchIn,
+  ServiceLinePolicyIn,
+  ServiceLinePolicyOut,
   SettingsPatchIn,
+  WallIn,
+  WallOut,
+  WallPreviewOut,
 } from "@abacus/api-client";
+import { nowMs } from "../../app-core/clock";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { getSeed, meFor } from "../seed";
 import {
+  ASHFORD_CLIENT,
+  ASHFORD_PARTNER,
+  ASHFORD_WALL,
   type PeopleSnapshot,
   SECTION_VALUES,
   type SectionKey,
@@ -20,12 +31,18 @@ import {
   firmTeams,
   firmWalls,
   personOut,
+  offshoreGroup,
   roleTemplatesOut,
+  seatOf,
+  serviceLinePolicies,
   settingsOverview,
   settingsSection,
   staffList,
   staffRows,
   tallies,
+  userIdOf,
+  type WallState,
+  wallEvents,
 } from "../seed/firm-people";
 
 const NOT_FOUND = { detail: "not found" };
@@ -154,5 +171,141 @@ export function firmSettingsHandlers(
       };
       return json(body);
     },
+  };
+}
+
+// --- ADM-03: offices, teams, service lines, walls and offshore (G-01-T14) -----------------------
+
+export interface Adm03Options {
+  /** The viewer's initials: rows carry their wall actions (Approve, Lift). */
+  viewer: string;
+  /** May the viewer edit offices and teams (firm or security admin)? */
+  manage: boolean;
+  /** May the viewer change service-line policies (firm admin or partner; ADR-183 condition 4)? */
+  manageLines: boolean;
+  /** Lena Park's wall: awaiting Margaret Okonkwo, or approved (ADM-03g). */
+  wallState?: WallState;
+  /** ADM-03d: Remy Vidal is in the offshore group. */
+  offshoreRemy?: boolean;
+  /** ADM-03b: 9:20 AM, the moment before Grace adds the Lena Park ✕ Ashford wall. */
+  beforeLenaWall?: boolean;
+}
+
+/** The live routes' answers for ADM-03 (docs/contracts/firm-settings.md): a save bumps the
+ * version, Audit can't be widened (422 `audit_locked`), a relationship partner or a duplicate
+ * can't be walled (409), and only the named partner approves. */
+export function adm03Handlers(options: Adm03Options): Record<string, FixtureHandler> {
+  const forbidden = () => json({ detail: "forbidden" }, 403);
+  const lines = serviceLinePolicies();
+  const offices = firmOffices("e0", true);
+  const created: WallOut[] = [];
+  const walls = (): WallOut[] => [
+    ...firmWalls(options.wallState, options.viewer).filter(
+      (w) => options.beforeLenaWall !== true || w.id !== ASHFORD_WALL,
+    ),
+    ...created,
+  ];
+  const ashfordPartner = userIdOf(seatOf(ASHFORD_PARTNER));
+  const blockers = (user: string, client: string): WallPreviewOut["blockers"] => [
+    ...(client === ASHFORD_CLIENT && user === ashfordPartner
+      ? (["relationship_partner"] as const)
+      : []),
+    ...(walls().some((w) => w.user_id === user && w.client_id === client && w.status === "active")
+      ? (["wall_exists"] as const)
+      : []),
+  ];
+  return {
+    "GET /v1/firm/offices": () => json(offices),
+    "GET /v1/firm/teams": () => json(firmTeams({ pools: true })),
+    "PATCH /v1/firm/offices/{office_id}": ({ params, body }) => {
+      if (!options.manage) return forbidden();
+      const i = offices.findIndex((o) => o.id === params.office_id);
+      const found = offices[i];
+      if (found === undefined) return json(NOT_FOUND, 404);
+      const patch = body as FirmOfficeIn;
+      if (patch.version !== found.version) return json({ detail: "stale_version" }, 409);
+      const next: FirmOfficeOut = {
+        ...found,
+        ...patch,
+        is_hq: patch.is_hq ?? found.is_hq,
+        version: (found.version ?? 1) + 1,
+      };
+      offices[i] = next;
+      return json(next);
+    },
+    "GET /v1/firm/service-lines": () => json(lines),
+    "PUT /v1/firm/service-lines/{line}": ({ params, body }) => {
+      if (!options.manageLines) return forbidden();
+      const i = lines.findIndex((l) => l.service_line === params.line);
+      const found = lines[i];
+      if (found === undefined) return json(NOT_FOUND, 404);
+      const patch = body as ServiceLinePolicyIn;
+      if (found.service_line === "audit" && patch.content_visible_to !== "engagement_team_only") {
+        return json({ detail: "audit_locked", facts: { service_line: "audit" } }, 422);
+      }
+      if (patch.version !== found.version) {
+        return json({ detail: "stale_version", facts: { version: found.version } }, 409);
+      }
+      const next: ServiceLinePolicyOut = { ...found, ...patch, version: found.version + 1 };
+      lines[i] = next;
+      return json(next);
+    },
+    "GET /v1/firm/offshore": () => json(offshoreGroup(options.offshoreRemy === true)),
+    "GET /v1/walls": () => json(walls()),
+    "GET /v1/walls/preview": ({ query }) => {
+      const body: WallPreviewOut = {
+        blockers: blockers(query.get("user_id") ?? "", query.get("client_id") ?? ""),
+        assignments_ended: 0,
+      };
+      return json(body);
+    },
+    "POST /v1/walls": ({ body }) => {
+      const wall = body as WallIn;
+      const found = blockers(wall.user_id, wall.client_id);
+      if (found.length > 0) return json({ detail: found[0] }, 409);
+      const out: WallOut = {
+        id: `00000000-0000-4000-8000-${String(created.length + 1).padStart(12, "0")}`,
+        user_id: wall.user_id,
+        client_id: wall.client_id,
+        reason_code: wall.reason_code ?? "other",
+        reason_text: wall.reason_text ?? null,
+        created_by: userIdOf(seatOf(options.viewer)),
+        created_at: new Date(nowMs()).toISOString(),
+        approver_user_id: wall.approver_user_id ?? null,
+        approval_status: "awaiting",
+        approved_at: null,
+        status: "active",
+        removed_at: null,
+        removed_by: null,
+        removed_reason: null,
+        allowed_actions: [],
+      };
+      created.push(out);
+      return json(out, 201);
+    },
+    "POST /v1/walls/{wall_id}/approve": ({ params }) => {
+      const found = walls().find((w) => w.id === params.wall_id);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      if (!(found.allowed_actions ?? []).includes("wall.approve")) {
+        return json({ detail: "not_named_approver" }, 403);
+      }
+      return json({
+        ...found,
+        approval_status: "approved",
+        approved_at: new Date(nowMs()).toISOString(),
+      });
+    },
+    "POST /v1/walls/{wall_id}/remove": ({ params }) => {
+      const found = walls().find((w) => w.id === params.wall_id);
+      if (found === undefined) return json(NOT_FOUND, 404);
+      if (!(found.allowed_actions ?? []).includes("wall.remove")) return forbidden();
+      return json({ ...found, status: "removed", removed_at: new Date(nowMs()).toISOString() });
+    },
+    "GET /v1/walls/{wall_id}/events": ({ params }) =>
+      json({
+        items: wallEvents(params.wall_id ?? "", options.wallState),
+        next_cursor: null,
+        total: wallEvents(params.wall_id ?? "", options.wallState).length,
+      }),
   };
 }

@@ -26,3 +26,19 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: connections.portal_v2
+    description: 'Entity-scoped client connections (A-02; docs/contracts/c20-integrations.md; C20 v1): POR-16 over GET /v1/portal/entities/{id}/connections, POST …/connections/{catalog_key}/start, GET /v1/portal/connections/{id} and its retry and disconnect, and the firm''s POST /v1/connections/{id}/reconnect-requests. Off: those routes answer 404 and the portal keeps the legacy engagement connection panel. On: 501 not_implemented until their task lands (list and start A-02-T16 over T12 and T13; reconnect requests A-02-T23). Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale.'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: connections.live_ledger
+    description: 'The live ledger adapter per firm (A-02; C20 v1): the on-demand pull POST /v1/engagements/{id}/connection/pulls and, from A-02-T26, the live adapter''s start and complete. Off: the pull route answers 404 and only file imports and fakes feed the trial balance. On: 501 not_implemented until A-02-T30 lands. Off until a founder switches it on per firm; production stays dark until the M10 flip (A-02-T33, T37).'
+    owner: notanaskhan
+    created: 2026-10-26
+    expires: 2027-04-21
+    override: DEC-137
+    kind: boolean
+    default: false

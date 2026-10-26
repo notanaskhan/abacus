@@ -92,9 +92,14 @@ def test_p03t05_pages_past_the_cap_are_left_out_and_say_so(
     assert (len(layer.pages), layer.truncated) == (1, True)
 
 
-def test_p03t05_words_past_the_page_cap_are_left_out(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_p03t05_a_page_past_the_word_cap_has_no_text_layer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """P-03-T15 security review L2 replaced "the words past the cap are left out": a page read in
+    part would count as scanned, so a page past the cap has no text layer (`not_scannable`)."""
+    assert len(extract_words(positioned_pdf([LINE]), PDF).pages[0].words) > 2
     monkeypatch.setattr(words, "MAX_PAGE_WORDS", 2)
-    assert len(extract_words(positioned_pdf([LINE]), PDF).pages[0].words) == 2
+    assert extract_words(positioned_pdf([LINE]), PDF).pages[0].words == ()
 
 
 def test_p03t05_the_layer_object_round_trips_and_is_stable() -> None:
@@ -132,6 +137,22 @@ class _Page:
         return [{"text": "Total", "x0": 1.0, "top": 1.0, "x1": 2.0, "bottom": 2.0}]
 
 
+class _Shown:
+    """The same page as PDFium sees it (P-03-T15 review: words are kept in its render space)."""
+
+    def __init__(self, width: float, height: float) -> None:
+        self.width, self.height = width, height
+
+    def get_rotation(self) -> int:
+        return 0
+
+    def get_bbox(self) -> tuple[float, float, float, float]:
+        return (0.0, 0.0, self.width, self.height)
+
+    def get_size(self) -> tuple[float, float]:
+        return (self.width, self.height)
+
+
 @pytest.mark.parametrize(
     ("width", "height"),
     [(0.0, 792.0), (0.001, 0.001), (-612.0, 792.0), (2_000_000.0, 792.0), (612.0, float("nan"))],
@@ -141,7 +162,7 @@ def test_review_a_hostile_page_size_has_no_text_layer_and_storable_geometry(
 ) -> None:
     """Security review (#1): `evidence_pages` holds numeric(8, 2) > 0; a hostile MediaBox must
     never reach the insert. Such a page is unreadable: no words, geometry within the cap."""
-    page = words._page_words(1, _Page(width, height))  # pyright: ignore[reportPrivateUsage] -- the page reader itself
+    page = words._page_words(1, _Page(width, height), _Shown(width, height))  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the page reader, on fakes
     assert page.words == ()
     for side in (page.width, page.height):
         assert 0 < side <= words.MAX_PAGE_PT

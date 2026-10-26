@@ -417,8 +417,18 @@ async def test_ac14_the_workflow_completes_with_a_recorded_agent_result(
     )
     assert outcome.screening_result_id == str(result["id"])
     assert (result["created_by_kind"], str(result["agent_run_id"])) == ("agent", outcome.run_id)
-    assert await _scheduled_activities(handle) == [*SLOTTED, "screening.release_slot"]
+    assert await _scheduled_activities(handle) == [
+        *SLOTTED,
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
     assert await seed.item_status(world.item_id) == "uploaded"  # the agent only proposes
+    # Q-02-T41 (AC-44): the real workflow persisted the run's record once it had ended.
+    [record] = await seed.rows(
+        "SELECT capability, outcome ->> 'state' AS state FROM agent_run_records WHERE run_id = $1",
+        uuid.UUID(outcome.run_id),
+    )
+    assert (record["capability"], record["state"]) == ("evidence.screener", "succeeded")
     [usage] = await seed.rows(
         "SELECT outcome FROM usage_records WHERE tenant_id = $1", world.tenant_id
     )
@@ -467,7 +477,11 @@ async def test_ac14_invalid_output_twice_escalates_with_no_result(
     assert await seed.count("screening_results", world.tenant_id) == 0
     assert len(model.requests) == 2
     assert "agent_run.escalated" in await seed.actions(world.tenant_id)
-    assert await _scheduled_activities(handle) == [*SLOTTED, "screening.release_slot"]
+    assert await _scheduled_activities(handle) == [
+        *SLOTTED,
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
 
 
 @pytest.mark.usefixtures("worker")
@@ -491,7 +505,12 @@ async def test_ac17_a_terminal_error_fails_the_run_and_the_workflow_returns_the_
     assert await seed.count("screening_results", world.tenant_id) == 0
     assert model.requests == []
     names = await _scheduled_activities(handle)
-    assert names == [*SLOTTED, "screening.fail_run", "screening.release_slot"]
+    assert names == [
+        *SLOTTED,
+        "screening.fail_run",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
     # Not retried: the terminal error is non-retryable.
     history = await handle.fetch_history()
     screens = [
@@ -503,7 +522,7 @@ async def test_ac17_a_terminal_error_fails_the_run_and_the_workflow_returns_the_
     assert len(screens) == 1
     assert (
         len([e for e in history.events if e.HasField("activity_task_started_event_attributes")])
-        == 5  # create_run, acquire_slot, screen, fail_run, release_slot
+        == 6  # create_run, acquire_slot, screen, fail_run, persist_run_record, release_slot
     )
 
 
@@ -566,7 +585,11 @@ async def test_ac14_a_provider_error_is_retried_then_the_run_ends_provider_unava
     assert await seed.count("screening_results", world.tenant_id) == 0
     names = await _scheduled_activities(handle)
     assert names[0] == "screening.create_run"
-    assert names[-2:] == ["screening.fail_run", "screening.release_slot"]
+    assert names[-3:] == [
+        "screening.fail_run",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]
     assert LEAKED not in json.dumps(outcome.__dict__)
 
 
@@ -624,7 +647,11 @@ async def test_ac14_cancelling_the_workflow_fails_the_run_as_cancelled(
     )
     assert (run["status"], run["failure_code"]) == ("failed", "cancelled")
     names = await _scheduled_activities(handle)
-    assert names[-2:] == ["screening.fail_run", "screening.release_slot"]  # released in `finally`
+    assert names[-3:] == [
+        "screening.fail_run",
+        "agents.persist_run_record",
+        "screening.release_slot",
+    ]  # released in `finally`
     # The model call that was in flight finishes after the cancellation: it records nothing.
     gate.release.set()
     await asyncio.sleep(1.0)

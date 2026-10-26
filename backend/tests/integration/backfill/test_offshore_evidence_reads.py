@@ -26,6 +26,7 @@ from types_boto3_s3 import S3Client
 
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.storage import s3_client
+from abacus.kernel.tin_patterns import has_tin
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.api import (
     UPLOAD_INBOX,
@@ -34,10 +35,20 @@ from abacus.modules.evidence.api import (
     check_upload_content,
 )
 from abacus.modules.evidence.api import process_upload as extract_upload
-from abacus.modules.evidence.processing import preview_upload
+from abacus.modules.evidence.masked_previews import masked_preview_upload
+from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.words import words_upload
 from abacus_tools.synthetic.documents import w2_pdf
 
 from .support import Net, Person, Seeder, Site
+
+
+async def preview_upload(given: UploadInput) -> str:
+    """The rendition steps of a v7 run (P-03-T15): word layer, PII scan, masked rendition."""
+    await words_upload(given)
+    await pii_scan_upload(given)
+    return await masked_preview_upload(given)
+
 
 BUCKET: Final = "task1207-offshore-reads"
 MASTER: Final = b"task1207-offshore-reads-master-key-0123456"
@@ -95,6 +106,8 @@ class Firm:
             "version_page": f"{e}/evidence-versions/{self.version}/preview/pages/1",
             "inbox_preview": f"{e}/inbox/{self.inbox}/preview",
             "inbox_page": f"{e}/inbox/{self.inbox}/preview/pages/1",
+            # Ayush, 2026-10-26 (DEC-369): no page image of any kind for an offshore reader.
+            "viewer_page": f"/v1/evidence-versions/{self.version}/pages/1",
         }
 
     async def content_reads(self, who: Person) -> int:
@@ -124,7 +137,7 @@ async def _offshore(seed: Seeder, who: Person) -> None:
 @pytest.fixture
 async def firm(net: Net, seed: Seeder) -> Firm:
     tenant_id = await seed.firm()
-    for flag in ("uploads.processing", "evidence.pii_reveal"):
+    for flag in ("uploads.processing", "evidence.pii_reveal", "evidence.viewer_v1"):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 'test-seed', 'TASK-1207')",
@@ -174,6 +187,7 @@ ROUTES: Final = (
     "version_page",
     "inbox_preview",
     "inbox_page",
+    "viewer_page",
 )
 
 
@@ -204,11 +218,70 @@ async def test_review1_a_wall_comes_first_for_an_offshore_member(firm: Firm, rou
 
 
 async def test_review5_the_logged_pii_reveal_refuses_an_offshore_member(firm: Firm) -> None:
-    """`pii.reveal` is `not_offshore`: Remy is refused at the condition (403) before the stub;
-    Mia, allowed, reaches the stub (501 until SHL-08c is live)."""
+    """`pii.reveal` is `not_offshore`: Remy is refused at the condition (403) and nothing is
+    revealed; Mia, allowed, gets the W-2's SSN once, `no-store` (P-03-T16, SPEC-322 AC-26)."""
     path = f"/v1/evidence-versions/{firm.version}/pii-reveals"
-    body = {"region_id": str(uuid.uuid4())}
+    region = await firm.seed.value(
+        "SELECT id FROM pii_regions WHERE evidence_version_id = $1 AND kind = 'ssn'",
+        firm.version,
+    )
+    body = {"region_id": str(region)}
     remy = await firm.net.call("POST", path, firm.remy, body=body)
     assert (remy.status_code, remy.json()) == (403, FORBIDDEN)
+    assert "6081" not in remy.text
+    count = "SELECT count(*) FROM pii_reveals WHERE user_id = $1"
+    assert await firm.seed.value(count, firm.remy.user_id) == 0
     mia = await firm.net.call("POST", path, firm.mia, body=body)
-    assert mia.status_code == 501, mia.text
+    assert mia.status_code == 201, mia.text
+    assert mia.headers["cache-control"] == "no-store"
+    answer = mia.json()
+    assert (answer["value"], answer["kind"], answer["expires_in"]) == ("000-00-6081", "ssn", 30)
+    assert await firm.seed.value(count, firm.mia.user_id) == 1
+    unknown = await firm.net.call("POST", path, firm.mia, body={"region_id": str(uuid.uuid4())})
+    assert unknown.status_code == 404
+
+
+async def test_review_l3_the_twenty_first_reveal_answers_429_with_retry_after(firm: Firm) -> None:
+    """P-03-T16 review L3: the cap's refusal carries `Retry-After` beside `facts.retry_after`."""
+    region = await firm.seed.value(
+        "SELECT id FROM pii_regions WHERE evidence_version_id = $1 AND kind = 'ssn'",
+        firm.version,
+    )
+    for _ in range(20):  # twenty reveals in the past hour, as the reveal writes them
+        await firm.seed.run(
+            "INSERT INTO pii_reveals (tenant_id, region_id, evidence_version_id, user_id, "
+            "actor_kind, expires_at) VALUES ($1, $2, $3, $4, 'human', "
+            "clock_timestamp() + interval '30 seconds')",
+            firm.tenant_id,
+            region,
+            firm.version,
+            firm.mia.user_id,
+        )
+    path = f"/v1/evidence-versions/{firm.version}/pii-reveals"
+    refused = await firm.net.call("POST", path, firm.mia, body={"region_id": str(region)})
+    assert refused.status_code == 429, refused.text
+    body = refused.json()
+    assert body["detail"] == "reveal_rate_limited" and "value" not in body
+    assert refused.headers["retry-after"] == str(body["facts"]["retry_after"])
+    assert 0 < int(refused.headers["retry-after"]) <= 3600
+
+
+async def test_offshore_readers_get_the_masked_text_view_and_onshore_the_images(
+    firm: Firm,
+) -> None:
+    """Ayush, 2026-10-26 (DEC-369): the manifest says how this reader sees the pages; an
+    offshore reader gets the masked text projection (no TIN), never a page image; Mia, onshore,
+    keeps the images and may read the text view too."""
+    base = f"/v1/evidence-versions/{firm.version}"
+    remy = await firm.net.call("GET", f"{base}/viewer", firm.remy)
+    mia = await firm.net.call("GET", f"{base}/viewer", firm.mia)
+    assert (remy.json()["view"], mia.json()["view"]) == ("text", "images")
+    text = await firm.net.call("GET", f"{base}/text", firm.remy)
+    assert text.status_code == 200, text.text
+    assert text.headers["cache-control"] == "no-store"
+    [page] = text.json()["items"]
+    assert page["page"] == 1 and page["unread"] is False
+    assert "•••-••-6081" in page["text"] and "000-00-6081" not in page["text"]
+    assert not has_tin(text.text)
+    assert await firm.content_reads(firm.remy) > 0  # the text is content: its read is logged
+    assert (await firm.net.call("GET", f"{base}/text", firm.mia)).status_code == 200

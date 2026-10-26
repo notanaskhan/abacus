@@ -132,6 +132,7 @@ SPEC-033 AC-3, AC-4, AC-7, AC-8 (the agent and its suite).
 - `2026-10-13` — Design written for founder review after TASK-064 merged (#115).
 - `2026-10-13` — Built (D1–D4): spec `evidence.matcher` v1, prompt `evidence.inbox_match@v1`, `MatchOutput` (R1–R60 references), `inbox_match.py` (runs, context, reference mapping, citation checks, records), migration 0049, `inbox_match.run`, evidence's `match_material` with `score_all` and the skip rule, seven synthetic document types, the suite (30 cases, 42 attempts) and its runner. Unit tests (10,147) and gates pass.
 - `2026-10-13` — First real-model run (Haiku 4.5, temperature 0, synthetic tenant): **passed**, $0.11 for 42 attempts, median 2.3 s. Top-1 0.95, top-3 1.0, none-fit precision 1.0, hard-case gain 0.90 (file names alone 0.0 on hard cases, pipeline 0.90), citations 1.0, adversarial containment 1.0. Report: `docs/operations/matching/direct-2026-10-13-prompt-v1-passed.json`. Two misses, both AR agings with meaningless or misleading names: the matcher chose AR aging at 0.95, but its spreadsheet quote didn't verify, so the proposal stayed hidden and the content rules' AR/AP tie (D2 of TASK-064) put AP first. The skip rule never fired (skip rate 0): with two bank accounts and kind-only matches elsewhere, code was never decisive.
+- `2026-10-26` — Back-filled by Q-03-T033: `backend/tests/integration/backfill/test_q03t033_matcher.py` (AC-3, AC-4; fake model on a stubbed real route); see TASK-1284.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

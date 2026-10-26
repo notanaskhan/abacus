@@ -22,6 +22,8 @@ from abacus.modules.evidence.api import (
     process_upload,
     record_citations,
 )
+from abacus.modules.evidence.pii import DETECTOR_VERSION
+from abacus.modules.evidence.previews import MASKED_RENDERER_VERSION
 from abacus.modules.evidence.processing import preview_upload
 from abacus.modules.evidence.viewer import (
     PreviewOutdated,
@@ -59,9 +61,10 @@ async def _masked(seed: Seeder, firm: Firm, version: uuid.UUID) -> uuid.UUID:
     masked = await seed.id(
         "INSERT INTO upload_previews (tenant_id, engagement_id, evidence_version_id, "
         "renderer_version, kind, page_count, truncated, mask_version) SELECT tenant_id, "
-        "engagement_id, evidence_version_id, 'v99', kind, page_count, truncated, 'k1' "
+        "engagement_id, evidence_version_id, $2, kind, page_count, truncated, 'k1' "
         "FROM upload_previews WHERE evidence_version_id = $1 RETURNING id",
         version,
+        MASKED_RENDERER_VERSION,  # the current masker's (P-03-T15 review L5)
     )
     await seed.run(
         "INSERT INTO upload_preview_pages (tenant_id, preview_id, page_no, storage_key, "
@@ -80,9 +83,10 @@ async def _ssn_region(seed: Seeder, firm: Firm, version: uuid.UUID) -> None:
     await seed.run(
         "INSERT INTO pii_regions (tenant_id, evidence_version_id, page_no, bbox, kind, "
         "value_sealed, last4, label_anchored, detector_version) VALUES ($1, $2, 2, "
-        "ARRAY[130, 80, 200, 100]::numeric[], 'ssn', '\\x00'::bytea, '6081', true, 'd1')",
+        "ARRAY[130, 80, 200, 100]::numeric[], 'ssn', '\\x00'::bytea, '6081', true, $3)",
         firm.tenant_id,
         version,
+        DETECTOR_VERSION,
     )
 
 

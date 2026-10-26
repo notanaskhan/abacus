@@ -29,6 +29,7 @@ actions:
     staff: allow
     client_admin: allow
     client_contributor: assigned_only
+    third_party: delegated_only   # R-01-T13 (DEC-387): POR-14, the delegated request only
     system: allow             # retrieval via connections
   evidence.accept:
     independence: required   # SPEC-025 (TASK-045): client data, per person
@@ -53,7 +54,7 @@ actions:
     agent: deny               # ADR-005
     system: deny              # ADR-005
   evidence.void:            {engagement_partner: allow, manager: allow, requires: reason}
-  evidence.withdraw:        {client_admin: client_visible_only, client_contributor: assigned_only, agent: deny, system: deny}   # ADR-162 (P-31): an unaccepted client upload; every firm role denied (C5 stub, P-06-T01)
+  evidence.withdraw:        {client_admin: client_visible_only, client_contributor: assigned_only, third_party: delegated_only, agent: deny, system: deny}   # ADR-162 (P-31): an unaccepted client upload; every firm role denied (C5 stub, P-06-T01)
   # --- Review queues (SPEC-004 Q7, Q8; TASK-019) ---
   review.read:
     independence: required   # SPEC-025 (TASK-045): client data, per person
@@ -74,7 +75,9 @@ actions:
     senior: firm_setting(seniors_can_accept)
     agent: deny               # ADR-005
   review.assign:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}
-  export.create:            {engagement_partner: allow, manager: allow, mfa_recent: required, not_offshore: required}   # TASK-1207: an export hands over client content (DEC-52)
+  export.create:            {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required}   # TASK-1207: an export hands over client content (DEC-52); A-01 §4.4 (A-01-T17): independence, and the agent and system denied outright (INV-1); support roles hold no cell (SPEC-012: read-only)
+  export.read:              {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # A-01-T17: the export sheet's history and poll (engagement-export v1)
+  export.download:          {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required}   # A-01-T17: the service also requires the requester or an export.create holder on the engagement
   # --- Statement transactions (SPEC-312; TASK-324) ---
   statement.approve:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # a person approves the reconciled transactions (ADR-005; a database CHECK agrees); reading them follows evidence.read
   # --- Trust kit, C4 v1 (P-03-T02; ADR-166 for P-48; P-03 §4.3) ---

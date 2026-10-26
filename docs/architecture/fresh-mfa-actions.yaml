@@ -27,6 +27,8 @@ actions:
   # Exports
   - action: export.create
     group: export
+  - action: export.download  # A-01-T17: the engagement export's download (ADR-036)
+    group: export
   - action: run_trace.export
     group: export
   - action: trial_balance.export  # A-02 Open in Excel (DEC-316, amended 2026-10-25)
@@ -50,6 +52,8 @@ actions:
   - action: acceptance.decide  # P-07-T29: the acceptance decision (CLI-07)
     group: independence
   - action: independence.conclude  # P-07-T29: the independence conclusion (CLI-08)
+    group: independence
+  - action: acceptance.complete_review  # P-07-T35 review (DEC-375): the risk-partner review
     group: independence
   # The engagement partner's team approval (P-07-T30 security review, DEC-327)
   - action: team.approve

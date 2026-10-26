@@ -40,6 +40,8 @@ export interface Por04Artboard {
   ignoreOpen?: boolean;
   /** A portal upload in flight, held for review (g). */
   uploadPercent?: number;
+  /** The file in flight (g): Claire's 2025 1095-C, 412 KB. */
+  uploading?: { name: string; sizeBytes: number; percent: number };
   question?: QuestionSlot;
   decision?: DecisionSlot;
 }
@@ -85,17 +87,33 @@ const SHEET_RETURNED = sheet1095c({
   allowed_actions: ["upload", "comment"],
 });
 
+const BUILD = {
+  a: () => sheetAt("a", "claire-feld", sheet1095c()),
+  b: () => sheetAt("b", "claire-feld", sheet1095c()),
+  c: () => sheetAt("c", "claire-feld", SHEET_EMAILED, FELD_ROWS_C2, EMAIL_CLOCK),
+  d: () => sheetAt("d", "claire-feld", SHEET_RETURNED, FELD_ROWS_G),
+  e: () => sheetAt("e", "ben-ashby", null, FELD_ROWS_A, QUESTION_CLOCK),
+  f: () => sheetAt("f", "owen-calder", null, FELD_ROWS_A, DECISION_CLOCK),
+  g: () => sheetAt("g", "claire-feld", sheet1095c({ uploading_count: 1 })),
+} as const;
+
+export type Por04State = keyof typeof BUILD;
+
 export const scenarios = defineScenarios({
-  a: sheetAt("a", "claire-feld", sheet1095c()),
-  b: sheetAt("b", "claire-feld", sheet1095c()),
-  c: sheetAt("c", "claire-feld", SHEET_EMAILED, FELD_ROWS_C2, EMAIL_CLOCK),
-  d: sheetAt("d", "claire-feld", SHEET_RETURNED, FELD_ROWS_G),
-  e: sheetAt("e", "ben-ashby", null, FELD_ROWS_A, QUESTION_CLOCK),
-  f: sheetAt("f", "owen-calder", null, FELD_ROWS_A, DECISION_CLOCK),
-  g: sheetAt("g", "claire-feld", sheet1095c({ uploading_count: 1 })),
+  a: BUILD.a(),
+  b: BUILD.b(),
+  c: BUILD.c(),
+  d: BUILD.d(),
+  e: BUILD.e(),
+  f: BUILD.f(),
+  g: BUILD.g(),
 });
 
-export type Por04State = keyof typeof scenarios;
+/** A scenario with handlers of its own: the writes it answers (an upload, a comment) change only
+ * its own rows (tests that write start from the artboard each time). */
+export function freshScenario(state: Por04State): Scenario {
+  return BUILD[state]();
+}
 
 export const ARTBOARD: Readonly<Record<Por04State, Por04Artboard>> = {
   a: { requestId: FELD.form1095c },
@@ -104,5 +122,13 @@ export const ARTBOARD: Readonly<Record<Por04State, Por04Artboard>> = {
   d: { requestId: FELD.form1095c },
   e: { requestId: "question", question: SOUND_ELECTRIC_QUESTION },
   f: { requestId: "decision", decision: RIDGELINE_DECISION },
-  g: { requestId: FELD.form1095c, uploadPercent: SHEET_UPLOAD_PERCENT },
+  g: {
+    requestId: FELD.form1095c,
+    uploadPercent: SHEET_UPLOAD_PERCENT,
+    uploading: {
+      name: FELD_FILES.uploaded1095c.name,
+      sizeBytes: FELD_FILES.uploaded1095c.size_bytes ?? 0,
+      percent: SHEET_UPLOAD_PERCENT,
+    },
+  },
 };

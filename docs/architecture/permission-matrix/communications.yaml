@@ -4,3 +4,12 @@
 actions:
   # --- Communications (SPEC-006 Q4; TASK-021) ---
   message.send:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # ADR-164 item 2 (P-07-T24): client-facing, G2 for the acting member on attest clients
+  # --- C16 v1.1: firm email templates and sending domains (R-01-T16 stub; R-01 §4.3; POR-20, ADM-10) ---
+  # Firm-level actions: the firm's own content and sender. The agent and system hold none (INV-1).
+  email_template.read:      {firm_admin: allow, practice_leader: allow, agent: deny, system: deny}   # POR-20 list and editor, ADM-10 rows, the preview
+  email_template.edit:      {firm_admin: allow, agent: deny, system: deny}   # draft save and discard
+  email_template.test_send: {firm_admin: allow, agent: deny, system: deny, mfa_recent: required, not_offshore: required}   # to the acting admin only; with a sample contact it carries that client's request titles out (DEC-379), so fresh MFA and onshore
+  email_template.publish:   {firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # insert-only version n+1
+  email_template.import:    {firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # onboarding bundle (dry run and apply)
+  sending_domain.read:      {firm_admin: allow, security_admin: allow, agent: deny, system: deny}   # ADM-10 d
+  sending_domain.manage:    {firm_admin: allow, security_admin: allow, agent: deny, system: deny, mfa_recent: required}   # create, check, revoke (SES identity)

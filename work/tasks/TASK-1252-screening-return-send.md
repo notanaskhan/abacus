@@ -65,3 +65,4 @@ request `returned`, and a shared comment carrying the sender's final text (C5 §
   Accepted and recorded in DEC-368: M2 (a refused delivery grant leaves the send-backs), L3
   (delivery re-checks only `follow_up.send`), L4 (the decisions' Undo window starts a few ms
   earlier), L5 (Returned shows in the portal during the window).
+- 2026-10-26: P-06-T23's independent suite covers the screening return (`backfill/test_p06t23_follow_ups_v2_independent.py`, TASK-1280).

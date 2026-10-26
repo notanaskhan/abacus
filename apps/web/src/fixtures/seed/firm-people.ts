@@ -10,6 +10,9 @@
 import type {
   FirmOfficeOut,
   FirmTeamOut,
+  OffshoreOut,
+  ServiceLinePolicyOut,
+  WallEventOut,
   GlanceRowOut,
   GridRowOut,
   PersonOut,
@@ -342,25 +345,126 @@ const WALLS: readonly {
   },
 ];
 
-/** `GET /v1/walls` (SPEC-002; G-01-T09's register) for the three walls. */
-export function firmWalls(): WallOut[] {
+/** Ashford Manufacturing Co.'s relationship partner (ADM-03c): Neil Ashcroft. */
+export const ASHFORD_PARTNER = "NA";
+export const ASHFORD_CLIENT = stableId(`client:${slugOfClient("Ashford Manufacturing Co.")}`);
+
+/** Lena Park's wall before Margaret Okonkwo approves it (ADM-03a, f: "Awaiting …") or after
+ * (ADM-03g: the log reads "Approved by Margaret Okonkwo", both at 9:20 AM). */
+export type WallState = "awaiting" | "approved";
+
+/** What the viewer may do with each wall (ED-071; AC11.2): Approve where they are its named
+ * partner and it awaits them, Lift where they are a partner and it isn't on themself. */
+function wallActions(
+  w: { person: string; approver: string },
+  approved: boolean,
+  viewer: string | undefined,
+): string[] {
+  if (viewer === undefined) return [];
+  const seat = SEATS.find((s) => s.initials === viewer);
+  if (seat === undefined || levelOf(seat) !== "partner") return [];
+  return [
+    ...(!approved && w.approver === viewer ? ["wall.approve"] : []),
+    ...(w.person === viewer ? [] : ["wall.remove"]),
+  ];
+}
+
+/** `GET /v1/walls` (SPEC-002; G-01-T09's register) for the three walls; `viewer` is the reader's
+ * initials when the rows should carry their actions. */
+export function firmWalls(state: WallState = "awaiting", viewer?: string): WallOut[] {
   const grace = userIdOf(seatOf("GH"));
-  return WALLS.map((w) => ({
-    id: w.id,
-    user_id: userIdOf(seatOf(w.person)),
-    client_id: stableId(`client:${slugOfClient(w.client)}`),
-    reason_code: w.reason,
-    reason_text: w.text,
-    created_by: grace,
-    created_at: w.at,
-    approver_user_id: userIdOf(seatOf(w.approver)),
-    approval_status: w.approvedAt === null ? "awaiting" : "approved",
-    approved_at: w.approvedAt,
-    status: "active",
-    removed_at: null,
-    removed_by: null,
-    removed_reason: null,
-  }));
+  return WALLS.map((w) => {
+    const approvedAt = w.approvedAt ?? (state === "approved" ? w.at : null);
+    return {
+      id: w.id,
+      user_id: userIdOf(seatOf(w.person)),
+      client_id: stableId(`client:${slugOfClient(w.client)}`),
+      reason_code: w.reason,
+      reason_text: w.text,
+      created_by: grace,
+      created_at: w.at,
+      approver_user_id: userIdOf(seatOf(w.approver)),
+      approval_status: approvedAt === null ? "awaiting" : "approved",
+      approved_at: approvedAt,
+      status: "active",
+      removed_at: null,
+      removed_by: null,
+      removed_reason: null,
+      allowed_actions: wallActions(w, approvedAt !== null, viewer),
+    } satisfies WallOut;
+  });
+}
+
+/** `GET /v1/walls/{id}/events` (ADM-03g): newest first, in the ADM-07 grammar's event types. */
+export function wallEvents(wallId: string, state: WallState = "awaiting"): WallEventOut[] {
+  const w = WALLS.find((x) => x.id === wallId);
+  if (w === undefined) return [];
+  const approvedAt = w.approvedAt ?? (state === "approved" ? w.at : null);
+  const added: WallEventOut = {
+    event_type: "wall.created",
+    at: w.at,
+    actor_user_id: userIdOf(seatOf("GH")),
+  };
+  return approvedAt === null
+    ? [added]
+    : [
+        {
+          event_type: "wall.approved",
+          at: approvedAt,
+          actor_user_id: userIdOf(seatOf(w.approver)),
+        },
+        added,
+      ];
+}
+
+/** ADM-03's service lines (revision R2, item 1): leads, who reads content, cross-line access. */
+export function serviceLinePolicies(): ServiceLinePolicyOut[] {
+  const lead = (i: string): string => userIdOf(seatOf(i));
+  return [
+    {
+      service_line: "audit",
+      enabled: true,
+      lead_user_id: lead("MO"),
+      content_visible_to: "engagement_team_only",
+      cross_line_access: "handoffs_only",
+      version: 1,
+    },
+    {
+      service_line: "tax",
+      enabled: true,
+      lead_user_id: lead("DR"),
+      content_visible_to: "service_line",
+      cross_line_access: "handoffs_only",
+      version: 1,
+    },
+    {
+      service_line: "cas",
+      enabled: true,
+      lead_user_id: lead("PR"),
+      content_visible_to: "service_line",
+      cross_line_access: "handoffs_only",
+      version: 1,
+    },
+    {
+      service_line: "advisory",
+      enabled: true,
+      lead_user_id: lead("PR"),
+      content_visible_to: "engagement_team_only",
+      cross_line_access: "by_request",
+      version: 1,
+    },
+  ];
+}
+
+/** `GET /v1/firm/offshore` (ADM-03d): no member at E0, Remy Vidal once he is marked offshore;
+ * no client is consented until T-01 registers the provider (DEC-52). */
+export function offshoreGroup(remy: boolean): OffshoreOut {
+  return {
+    member_ids: remy ? [userIdOf(seatOf("RV"))] : [],
+    consented_client_count: 0,
+    block_without_consent: true,
+    mask_tins: true,
+  };
 }
 
 /** `GET /v1/firm/staff/{user_id}`: ADM-02d's drawer (Lena Park's facts from the design). */
@@ -455,7 +559,21 @@ const OFFICE_FACTS: Readonly<
   },
 };
 
-export function firmOffices(snapshot: PeopleSnapshot = "e0"): FirmOfficeOut[] {
+/** ADM-03a's office leads and default reviewer pools (the pool's name is what the design draws). */
+const OFFICE_LEADS: Readonly<Record<string, string>> = {
+  Chicago: "MO",
+  Denver: "PR",
+  "New York": "DR",
+};
+const REVIEWER_POOLS: Readonly<Record<string, readonly [string, readonly string[]]>> = {
+  Chicago: ["Tax reviewers in Chicago", ["YK"]],
+  Denver: ["IM, OB", ["IM", "OB"]],
+  "New York": ["SI, TR, NP, QL", ["SI", "TR", "NP", "QL"]],
+};
+
+/** `GET /v1/firm/offices`; `pools` names each office's reviewer pool (ADM-03a), which the teams
+ * list then carries (`firmTeams({ pools: true })`). */
+export function firmOffices(snapshot: PeopleSnapshot = "e0", pools = false): FirmOfficeOut[] {
   const active = staffRows(snapshot).filter((r) => r.status !== "deactivated");
   return OFFICES.map((o) => {
     const f = OFFICE_FACTS[o.name];
@@ -470,17 +588,20 @@ export function firmOffices(snapshot: PeopleSnapshot = "e0"): FirmOfficeOut[] {
       city: f?.city ?? null,
       region_code: f?.region ?? null,
       postal_code: f?.postal ?? null,
-      lead_user_id: o.name === "Chicago" ? userIdOf(seatOf("MO")) : null,
-      default_reviewer_pool_team_id: null,
+      lead_user_id:
+        OFFICE_LEADS[o.name] === undefined ? null : userIdOf(seatOf(OFFICE_LEADS[o.name] ?? "")),
+      default_reviewer_pool_team_id: pools ? teamIdOf(REVIEWER_POOLS[o.name]?.[0] ?? "") : null,
       seats: active.filter((r) => r.office_id === officeIdOf(o.name)).length,
       facts: { returns: f?.returns ?? 0 },
       allowed_actions: [],
+      version: 1,
     };
   });
 }
 
-/** `GET /v1/firm/teams` (T08's shape): four service-line teams and three groups. */
-export function firmTeams(): FirmTeamOut[] {
+/** `GET /v1/firm/teams` (T08's shape): four service-line teams and three groups, and with `pools`
+ * the three offices' reviewer pools (ADM-03a). */
+export function firmTeams({ pools = false }: { pools?: boolean } = {}): FirmTeamOut[] {
   const teams: FirmTeamOut[] = TEAMS.map((name) => ({
     id: teamIdOf(name),
     name,
@@ -500,6 +621,19 @@ export function firmTeams(): FirmTeamOut[] {
       member_ids: members.map((i) => userIdOf(seatOf(i))),
       allowed_actions: [],
     });
+  }
+  if (pools) {
+    for (const [name, members] of Object.values(REVIEWER_POOLS)) {
+      teams.push({
+        id: teamIdOf(name),
+        name,
+        kind: "reviewer_pool",
+        office_id: null,
+        lead_user_id: null,
+        member_ids: members.map((i) => userIdOf(seatOf(i))),
+        allowed_actions: [],
+      });
+    }
   }
   return teams;
 }
