@@ -106,3 +106,4 @@ SPEC-035 AC-1, AC-2, AC-4, AC-5 and AC-8 for template items. Synthetic firms onl
 
 ## Handoff
 Done. SPEC-035 is complete apart from AC-7's judge calibration (waiting on the founder's scores).
+- 2026-10-26: ADR-078 back-fill suite on `s10-q03-backfill` (TASK-1309, Q-03-T040): every covered AC passes; no defect found.

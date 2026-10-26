@@ -1,19 +1,20 @@
 ---
 id: SPEC-319
-title: "Requests and binders engine (C5 v1, binders and requests half): binder lifecycle, request lifecycle v2, portal mark-done, ignore, upload intents and client withdrawal - outline"
-status: draft
+title: "Requests and binders engine (C5 v1, binders and requests half): binder lifecycle, request lifecycle v2, portal mark-done, ignore, upload intents and client withdrawal"
+status: approved
 owner: notanaskhan
 risk_zone: red
 related_adrs: [ADR-005, ADR-139, ADR-140, ADR-161, ADR-162]
 related_specs: [SPEC-032, SPEC-042, SPEC-306]
 created: 2026-10-22
-updated: 2026-10-23
+updated: 2026-10-26
 ---
 
-> **Outline.** Written with the C5 v1 stub (P-06-T01, TASK-415). The epic is the source until this
-> spec is final (P-06-T27): `docs/plan/epics/P-06.md` §3 (stories), §4 (backend), §8 (C5). The
-> contract is `docs/contracts/c5-requests-binders.md`. AC-1 to AC-4 hold for the stub; AC-5 onward
-> are the behaviour the implementing tasks prove (P-06-T17 and T23 write the independent suites).
+> **Final (P-06-T27, 2026-10-26).** Written as an outline with the C5 v1 stub (P-06-T01, TASK-415)
+> and grown story by story; this spec now replaces the epic as the source for P-06's behaviour.
+> Shapes, routes and error codes are the contract's (`docs/contracts/c5-requests-binders.md`);
+> each AC names the suite that proves it (§18). What P-06 left open is listed in §20 and §21 and
+> in the hand-off (`work/tasks/TASK-1311-p06-docs-closeout.md`), never folded into an AC.
 
 ## 1. Summary
 Binders become many `request_lists` per work item with a lifecycle (Draft, Published, Unpublished, Complete, Closed); requests get the DEC-09 status set, the client's own words and a composer with a recipient preview; the client can mark a binder done, ignore a request with a reason, announce an upload in progress and withdraw an upload the firm never accepted. A named person publishes, sends, returns, delegates and accepts; the agent never does (INV-1).
@@ -33,7 +34,9 @@ The repo has one request list per engagement and a PBC board. BND-01, BND-02 and
 ## 4. Goals and non-goals
 **Goals:** the C5 v1 routes, models and matrix rows (§8); the lifecycles in §6; flag `binders.engine`.
 
-**Non-goals:** the SHL-20 screening card and follow-ups v2 (P-06-T14, T15); SHL-14 c (A-03); portal screens (R-01); P-40 client-scoped files (N-01); SSE (P-10).
+**Goals (added as the family grew):** follow-ups v2 (Story 5, P-06-T14) and the SHL-20 screening aggregate (Story 6, P-06-T15, T20, T22) in C5 v1.2; the four screens (Story 7).
+
+**Non-goals:** SHL-14 c (A-03); portal screens (R-01); P-40 client-scoped files (N-01); SSE (P-10).
 
 ## 5. User stories and acceptance criteria
 ### Story 1: the C5 v1 stub (P-06-T01)
@@ -75,6 +78,10 @@ The repo has one request list per engagement and a PBC board. BND-01, BND-02 and
 - **AC-26** Feedback is a person's insert-only row on an aggregate (a thumbs-down without a reason is 422; the agent is denied; a per-version result answers 404); the note is sealed; the card shows the viewer's latest.
 - **AC-27** On a `tax_return` work item at a firm that is not synthetic (no §7216 consent registration exists until C19), the reviewer makes no run and no model call, and the aggregate's model check stays not run; code checks still run.
 - **AC-28** A review decision's `screening_result_id` may name only a `version` row.
+
+### Story 7: the screens, parity and accessibility (P-06-T09, T12, T13, T16, T22, T24, T26; epic §5.5, §5.6)
+- **AC-29** All 23 built artboards (BND-01 a–e, BND-02 a–g, SHL-14 a, b, d, e, f, SHL-20 a–f) are reported at Tier C (threshold 0.20, maxDiffPixelRatio 3 %); BND-01 and BND-02 are locked at Tier C; Tier D holds for the host templates; SHL-14 c is recorded as deferred to A-03.
+- **AC-30** axe finds no serious or critical issue in any artboard, and the keyboard suites pass: overlays close on Escape and give focus back to their opener, the composer drawer's dirty guard asks "Discard changes?", the screening card closes on Escape back to its chip, and the feedback menu cannot send without a reason.
 
 ## 6. Behaviour and flows
 **State transitions**
@@ -129,24 +136,29 @@ Metrics: publish and send counts, Undo rate, idempotent replays, withdraw and er
 BND-01: 241 binders per season per firm in the seed; keyset pages of 50 (max 200). The live poll every 5 s while visible.
 
 ## 17. UX
-BND-01, BND-02, SHL-14 screen contracts (`docs/screens/`); flag off shows F-05's flag-off ViewState.
+BND-01, BND-02, SHL-14 and SHL-20 screen contracts (`docs/screens/`); flag off shows F-05's flag-off ViewState.
 
 ## 18. Test plan
 | AC | Test type | Description |
 |---|---|---|
 | AC-1 to AC-4 | unit (contract) | `backend/tests/contracts/c5_requests_binders/test_c5_stub.py` |
-| AC-5 to AC-9 | integration | `backend/tests/integration/test_binder_lifecycle.py` (P-06-T07); P-06-T17 adds the independent suite |
-| AC-10 | integration | `backend/tests/integration/test_binders_index.py`, `test_binders_index_e0.py` (P-06-T11; the E0 tiles foot to 241) |
-| AC-5 to AC-14 | integration | P-06-T17 (independent suite) |
-| AC-15 | integration, workflow replay | P-06-T23 |
-| AC-16 to AC-20 | unit, integration, workflow replay | `tests/unit/agents/test_follow_up_drafts.py`, `tests/unit/communications/test_follow_up_templates.py`, `tests/integration/test_follow_ups_v2.py`, `tests/workflows/test_engagement_agent_replay.py` (P-06-T14) |
+| AC-5 to AC-9 | integration | `backend/tests/integration/test_binder_lifecycle.py` (P-06-T07) |
+| AC-10 | integration, golden | `backend/tests/integration/test_binders_index.py`, `test_binders_index_e0.py` (P-06-T11; the E0 tiles foot to 241); `test_p06t29_binder_goldens.py` (P-06-T29) |
+| AC-11 to AC-14 | integration | `backend/tests/integration/test_request_lifecycle.py` (P-06-T10) |
+| AC-5 to AC-14 | integration (independent) | `backend/tests/integration/backfill/test_p06t17_binders_requests.py` (P-06-T17, TASK-1140) |
+| AC-15 | integration, workflow replay | `backend/tests/integration/backfill/test_p06t19_withdrawal.py`, `test_p06t19_security_review.py`, `test_p06t18_detached_keys.py`, `test_p06t23_withdrawal_race_and_screening_rows.py` (P-06-T23); `backend/tests/workflows/test_withdrawal_purge_replay.py` |
+| AC-16 to AC-20 | unit, integration, workflow replay | `tests/unit/agents/test_follow_up_drafts.py`, `tests/unit/communications/test_follow_up_templates.py`, `tests/integration/test_follow_ups_v2.py`, `tests/integration/test_screening_return.py`, `tests/workflows/test_engagement_agent_replay.py` (P-06-T14); `tests/integration/backfill/test_p06t23_follow_ups_v2_independent.py` (P-06-T23) |
+| AC-21 to AC-28 | integration, contract | `tests/integration/backfill/test_p06t20_screening_aggregate.py` (P-06-T20), `test_p06t23_withdrawal_race_and_screening_rows.py` (P-06-T23); `tests/contracts/c5_requests_binders/test_c5_shl20_family.py` |
+| AC-29 | visual (Playwright) | `apps/web/e2e/parity/screens.spec.ts` over each contract's Parity table; `e2e/visual/tier-d.spec.ts`. Not yet measured: `docs/quality/parity-P-06.md` |
+| AC-30 | component (vitest), Playwright | `apps/web/src/screens/{BND-01,BND-02,SHL-14,SHL-20}/*.keyboard.test.tsx` (P-06-T26); axe in `apps/web/e2e/screens/{BND-01,BND-02,SHL-14,SHL-20}.spec.ts` (not yet run, `docs/quality/parity-P-06.md`) |
 
 ## 19. Rollout
-- **Feature flag:** `binders.engine` (default off, expires 2027-01-20; renewal in P-06-T27).
+- **Feature flags:** `binders.engine`, `screening.card` and `evidence.withdrawal`, each default off and expiring 2027-04-21 (DEC-137); the renewal plan is `docs/plan/status/flag-renewals-2027.md` (P-06-T27).
 - **Rollback:** the stub only adds routes behind the flag and matrix rows; revert the commit.
 
 ## 20. Open questions
-- [ ] OQ-1 mechanism (DEC-136): how the preparer path widens `binder.publish` on tax-return binders given conditions only narrow. Settled by P-06-T07.
+- [ ] OQ-1 mechanism (DEC-136): the plan's option is decided (the return's preparer may publish a `tax_return` binder), but the derived grant that would widen `binder.publish` is not built; `binder.publish` has DEC-38's cells only.
+- [ ] The live poll's inbox-waiting and screening-running facts: no module registers `requests.register_live_facts`, so they read 0 and false on the live stack (DEC-158).
 
 ## 21. Future / explicitly deferred
-SHL-20 family (P-06-T15), follow-ups v2 (P-06-T14), SHL-14 c (A-03), SSE (P-10).
+SHL-14 c (A-03), SSE (P-10), the per-binder follow-up override write (its route still answers 501), `requests.api.awaiting_review_count` (I-01), the model drafter (N-03, P-25).

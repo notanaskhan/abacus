@@ -163,6 +163,12 @@ async def _wall_creator(tenant_id: UUID, payload: dict[str, object]) -> list[UUI
     return [creator] if creator is not None else []
 
 
+async def _signer(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-04-T19: the person whose sign-off went stale."""
+    signer = _uuid(payload, "signed_by")
+    return [signer] if signer is not None else []
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -236,6 +242,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "third_party.uploaded": Kind(
         "third_party_uploaded", _request_owner, "request_item", "request_item_id"
     ),
+    # P-04-T19 (SHL-12 e): the work a person signed changed after their sign-off.
+    "sign_off.went_stale": Kind("sign_off_stale", _signer, "sign_off", "sign_off_id"),
 }
 
 # AC-7: fixed English text per kind; placeholders are names the reader can already see.
@@ -268,6 +276,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "membership.access_ending": "Seasonal access ends within seven days for some of your people.",
     "portal.drop_unsorted": "A client sent a file for your team to sort on {engagement}.",
     "third_party.uploaded": "A third party uploaded a file to a request on {engagement}.",
+    "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
 }
 
 
@@ -314,6 +323,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("seasonal_access_ending", "system", "UserMinus"),  # G-01-T13
     NotificationKind("portal_drop_unsorted", "client_activity", "Inbox"),  # R-01-T09
     NotificationKind("third_party_uploaded", "client_activity", "Upload"),  # R-01-T13
+    NotificationKind("sign_off_stale", "approval", "ClipboardCheck"),  # P-04-T19
     # G-02-T02 (G-02 section 4.8): firm governance v1. Email text is database rows (C16), loaded
     # as content (G-02-T07); their owners add facts and pending resolvers with their tasks.
     NotificationKind(

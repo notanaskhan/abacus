@@ -59,8 +59,9 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-29 | Integrity alert: evidence fingerprint mismatch, seal mismatch, or broken audit hash chain (SEV1) | ADR-096 | R1 | never | chain mismatch alarm | drafted |
 | RB-30 | Write-capability incident (wrong posting or export; reversal as a new write) | P-16 | Before the first write capability goes live | never | write anomaly | to write |
 | RB-31 | Pause notification email for a firm or every firm (`notifications.email`, the C16 channel's kill switch) | P-01-T17 | R1 | never | none yet (RB-20 points here) | drafted |
+| RB-32 | Client withdrawal: erase failures and legal-hold conflicts (`EvidenceWithdrawalPurge`, ADR-162) | P-06-T27 | R2 | never | none yet | drafted |
 
-Also owed by Q-02-T51, not yet numbered: agent stage promotion and demotion; Bedrock route-parity refresh. Give each the next free RB number when written (RB-32 onward; RB-31 is P-01-T17's).
+Also owed by Q-02-T51, not yet numbered: agent stage promotion and demotion; Bedrock route-parity refresh. Give each the next free RB number when written (RB-33 onward; RB-31 is P-01-T17's, RB-32 P-06-T27's).
 
 ## Template
 

@@ -929,6 +929,19 @@ def _check_named(name: str, message: str) -> Callable[[SourceFile], Iterator[Fin
     return check
 
 
+def _check_named_any(
+    names: tuple[str, ...], message: str
+) -> Callable[[SourceFile], Iterator[Finding]]:
+    """`_check_named` for several names under one rule (SIGNOFF-001)."""
+    checks = [_check_named(name, message) for name in names]
+
+    def check(src: SourceFile) -> Iterator[Finding]:
+        for one in checks:
+            yield from one(src)
+
+    return check
+
+
 def _check_evaluation_mode(src: SourceFile) -> Iterator[Finding]:
     """Only the evaluation runner pins a tier (`ai_gateway.evaluation`, SPEC-005; TASK-020):
     product code never switches the gateway into evaluation mode."""
@@ -1081,7 +1094,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/fieldwork/repository.py", "support_request_ids"),  # TASK-085
         # Methodology templates are firm-wide (SPEC-008): read after `authorise` on the firm
         # (`methodology.read`) or by a caller authorised on the engagement; no engagement rows.
-        ("src/abacus/modules/engagements/repository.py", "list_templates"),
+        ("src/abacus/modules/methodology/repository.py", "list_templates"),  # K-01-T02: moved
         # SPEC-025 (TASK-043): the client picker, firm-level after `authorise(client.read)`; the
         # service drops clients the person is walled off from.
         ("src/abacus/modules/organisations/repository.py", "clients_matching"),
@@ -1141,7 +1154,7 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/notifications/repository.py", "insert_notifications"),
         # Support sessions are firm-level records, listed after `authorise(support_session.read)`.
         ("src/abacus/modules/identity/repository.py", "list_support_sessions"),
-        ("src/abacus/modules/engagements/repository.py", "version_rows"),
+        ("src/abacus/modules/methodology/repository.py", "version_rows"),  # K-01-T02: moved
         # Knowledge is firm-wide (SPEC-009 §9: `visible()` reduces to the tenant): listed and
         # searched after `authorise` on the firm, embedded by the platform's own workflow.
         ("src/abacus/modules/agents/repository.py", "list_documents"),
@@ -2005,6 +2018,11 @@ RULES: list[Rule | TreeRule] = [
             # A-02-T04: 0149's round trip on a private database; seeds as the superuser and
             # proves the app role's refusals with the tenant set, as tenant_session sets it.
             "tests/integration/test_tb_of_record_schema.py",
+            # A-02-T11/T12/T13 (S10): 0193-0195's round trips on private databases; seed as the
+            # superuser and prove the app role's refusals with the tenant set by hand.
+            "tests/integration/test_tie_out_schema.py",
+            "tests/integration/test_integrations_schema.py",
+            "tests/integration/test_entity_connections_schema.py",
             # Records replay fixtures against throwaway containers (seeds as the superuser).
             "src/abacus_tools/workflows/record_retrieval.py",
             "src/abacus_tools/stack.py",  # the recorders' and evals' stack (connect_db)
@@ -2150,6 +2168,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/test_work_slots_db.py",  # calls the ledger functions
             # A-02-T04: the app role's refusals on 0149's tables, with the tenant set by hand.
             "tests/integration/test_tb_of_record_schema.py",
+            # A-02-T11/T12/T13 (S10): the app role's refusals on 0193-0195's tables.
+            "tests/integration/test_tie_out_schema.py",
+            "tests/integration/test_integrations_schema.py",
+            "tests/integration/test_entity_connections_schema.py",
             # Q-03-T028: plans each list as the app role with the firm's tenant set by hand, as
             # tenant_session sets it, so row-level security adds the tenant predicate.
             "tests/integration/test_q03t028_plan_tests.py",
@@ -2302,6 +2324,27 @@ RULES: list[Rule | TreeRule] = [
         ),
     ),
     Rule(
+        id="SIGNOFF-001",
+        description="Only the review service and the owners' sign routes reach a sign-off",
+        adr="ADR-160",
+        check=_check_named_any(
+            ("record_sign_off", "sign_target"),
+            "only a person signs off, through the review service (INV-1, ADR-160 clause 12)",
+        ),
+        # P-04-T18: the definitions, review's public interface and its route, and the owners'
+        # sign routes that call `record_sign_off` (SPEC-308, SPEC-333); any other file fails.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/review/service.py",
+            "src/abacus/modules/review/sign_offs.py",
+            "src/abacus/modules/review/contract.py",
+            "src/abacus/modules/review/api.py",
+            "src/abacus/modules/workpapers/service.py",
+            "src/abacus/modules/assurance/mapping.py",
+            "src/abacus/modules/assurance/trial_balance.py",
+        ),
+    ),
+    Rule(
         id="ACCEPT-001",
         description="Only the acceptance service and its route reach the acceptance decision",
         adr="ADR-005",
@@ -2330,6 +2373,21 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/organisations/conflicts.py",
             "src/abacus/modules/organisations/conflicts_contract.py",
             "src/abacus/modules/organisations/api.py",
+        ),
+    ),
+    Rule(
+        id="INDEP-001",
+        description="Only the independence service and its route reach the conclusion",
+        adr="ADR-005",
+        check=_check_named(
+            "conclude_independence", "only the engagement partner concludes independence (INV-1)"
+        ),
+        # P-07-T41 (SPEC-332 AC-20): the definition, its route, and the module's interface.
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/engagements/independence.py",
+            "src/abacus/modules/engagements/acceptance_contract.py",
+            "src/abacus/modules/engagements/api.py",
         ),
     ),
     Rule(

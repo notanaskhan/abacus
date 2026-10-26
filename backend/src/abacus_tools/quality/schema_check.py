@@ -76,6 +76,8 @@ NON_TENANT_TABLES = frozenset(
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}
     # 0143 (Q-02-T33): the staff record of incident propagations; definers only.
     | {"incident_propagations"}
+    # 0194 (A-02-T12): the integration catalogue is platform content; definers only.
+    | {"integration_catalog"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -151,6 +153,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "gl_entries": "ledger_immutable",
     "trial_balance_lines": "ledger_immutable",
     "trial_balance_versions": "ledger_immutable",  # 0149 (A-02-T04; ED-037)
+    "tie_out_check_versions": "tie_out_check_versions_immutable",  # 0193 (A-02-T11)
+    "connection_consents": "connection_consents_immutable",  # 0195 (A-02-T13)
+    "connection_consent_links": "connection_consents_immutable",  # 0195 (A-02-T13)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -225,6 +230,8 @@ GLOBAL_TABLES = frozenset(
     | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}  # 0133 (P-08-T17)
     | {"incident_propagations"}  # 0143 (Q-02-T33)
+    | {"standards_sets"}  # 0180 (K-01-T02): reference data, K-02's publish path writes it
+    | {"integration_catalog"}  # 0194 (A-02-T12)
 )
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
@@ -295,6 +302,8 @@ DEFINER_FUNCTIONS = frozenset(
     # 0144 (P-06-T18, ADR-162): the withdrawal purge's crypto-erase of one version's key.
     | {"evidence_key_destroy"}
     | {"audit_request_session"}  # 0172 (G-02-T06): the staff session behind a request
+    # 0194 (A-02-T12): the catalogue's read (app and operators) and the operator's load.
+    | {"integration_catalog_rows", "integration_catalog_load"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -305,6 +314,7 @@ OPS = "abacus_ops"
 OPS_ONLY_FUNCTIONS = frozenset(
     {"set_platform_control", "provision_firm", "set_plan_module"}
     | {"retention_defaults_backfill"}  # 0112 (Q-02-T23): the one-off back-fill
+    | {"integration_catalog_load"}  # 0194 (A-02-T12): the reviewed catalogue document
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """

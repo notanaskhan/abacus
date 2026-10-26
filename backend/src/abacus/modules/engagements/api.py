@@ -49,7 +49,14 @@ from abacus.modules.engagements.hold_scope import (
     engagements_in_hold_scope,
     work_item_engagement,
 )
+from abacus.modules.engagements.independence import (
+    conclude_independence,
+    confirm_independence,
+)
 from abacus.modules.engagements.index_facts import assurance_index, letters_sent, work_item_index
+from abacus.modules.engagements.intake import commit_intake as commit_client_intake
+from abacus.modules.engagements.intake import draft_visible as intake_draft_visible
+from abacus.modules.engagements.intake import subject_names as intake_subject_names
 from abacus.modules.engagements.intake_contract import (
     client_imports_router,
     client_intake_drafts_router,
@@ -62,19 +69,14 @@ from abacus.modules.engagements.roll_forward import (
 )
 from abacus.modules.engagements.routes import (
     firm_router,
-    methodology_router,
     router,
     work_items_router,
 )
 from abacus.modules.engagements.service import (
-    ApprovedGuidance,
     CheckFacts,
     EngagementMetadata,
     EngagementRef,
     MethodologyAlreadyApplied,
-    MethodologyVersionView,
-    TemplateVersionSummary,
-    VersionNotLatest,
     active_engagements,
     ai_excluded,
     check_facts,
@@ -90,13 +92,10 @@ from abacus.modules.engagements.service import (
     get_ref,
     is_archived,
     lock_ref,
-    methodology_version,
     open_engagements,
     pin_methodology,
-    publish_drafted_version,
     register_auto_retrieval,
     run_auto_retrieval,
-    version_detail,
 )
 from abacus.modules.engagements.setup import (
     EngagementNotOpen,
@@ -153,13 +152,6 @@ from abacus.modules.engagements.work_items import (
     set_assurance_profile,
     wall_assignment_count,
 )
-from abacus.modules.engagements.workbook import (
-    AccountRule,
-    Area,
-    Effort,
-    TemplateItem,
-    area_for,
-)
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
@@ -181,11 +173,26 @@ from abacus.modules.identity.api import (
     register_work_item_functions,
 )
 from abacus.modules.identity.api import register_gates as register_condition_gates
+from abacus.modules.methodology.api import (
+    AccountRule,
+    ApprovedGuidance,
+    Area,
+    Effort,
+    MethodologyVersionView,
+    TemplateItem,
+    TemplateVersionSummary,
+    VersionNotLatest,
+    area_for,
+    methodology_version,
+    publish_drafted_version,
+    version_detail,
+)
 from abacus.modules.organisations.api import (
     OverviewSection,
     activate_contact,
     register_client_engagements,
     register_conflict_subject,
+    register_conflict_subject_names,
     register_open_requests,
     register_overview_section,
     register_screening_evidence,
@@ -219,6 +226,9 @@ register_independence(confirmed_subquery, confirmed_for)
 register_gates()  # C1: G1 to G3 in the fail-closed gate slot
 # P-07-T36 review (DEC-375, L4): what a conflict check or screening record may name.
 register_conflict_subject("engagement_draft", draft_visible)
+register_conflict_subject("client_intake_draft", intake_draft_visible)  # P-07-T42
+# P-07-T42 security review (H1): a check on an intake draft searches the draft's own names.
+register_conflict_subject_names("client_intake_draft", intake_subject_names)
 register_screening_evidence(evidence_readable)
 # F-03-T24: the facts the matrix conditions read (function_in, gates_met, in_scope).
 register_work_item_functions(functions_on)
@@ -266,7 +276,6 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     client_imports_router,
     router,
     work_items_router,
-    methodology_router,
     firm_router,
 )
 
@@ -321,6 +330,9 @@ __all__ = [
     "client_contact_names",
     "client_contact_organisations",
     "client_contact_organisations_of_users",
+    "commit_client_intake",
+    "conclude_independence",
+    "confirm_independence",
     "contact_portal_user",
     "create_work_item",
     "decide_acceptance",
@@ -345,7 +357,6 @@ __all__ = [
     "lock_assurance_item",
     "lock_engagement",
     "lock_ref",
-    "methodology_router",
     "methodology_version",
     "open_engagements",
     "pin_methodology",

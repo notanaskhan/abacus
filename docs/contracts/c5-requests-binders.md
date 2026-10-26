@@ -8,8 +8,8 @@
 | Provider epic | P-06 (binders and requests half); P-08 (portal scopes). Schema half: F-03-T14, F-03-T15, F-03-T26 |
 | Consumers | A-01 (AUD-03), R-01 (POR-03, POR-04, POR-14, POR-20), T-02, C-01 (CLS-03), K-01, N-01, A-03, N-03, K-04, I-01. Screens: BND-01, BND-02, SHL-14 |
 | Freeze sprint | S3 (starts 2026-11-30); freeze Fri 2026-12-11 |
-| Flag | `binders.engine` (default off, created 2026-10-22, expires 2027-01-20). The withdraw route is behind `evidence.withdrawal` (P-06-T19, 2026-10-24; ADR-162 §3) |
-| Spec | `docs/specs/SPEC-319-requests-binders-engine.md` (outline) |
+| Flag | `binders.engine` (default off, created 2026-10-22; renewed 2026-10-23 to 2027-04-21 under DEC-137; renewal plan in `docs/plan/status/flag-renewals-2027.md`). The withdraw route is behind `evidence.withdrawal` (P-06-T19, 2026-10-24; ADR-162 §3) |
+| Spec | `docs/specs/SPEC-319-requests-binders-engine.md` (final, P-06-T27) |
 | ADRs | ADR-139 (P-36 conventions), ADR-140 (P-39 per-module files), ADR-161 (P-35 Undo), ADR-162 (P-31 withdrawal), ADR-005, ADR-031; DEC-09, DEC-20, DEC-31, DEC-37, DEC-38, DEC-58, DEC-74, DEC-136 |
 
 ## 1. Purpose
@@ -183,6 +183,8 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 | v1.1 | (planned 2026-12-11) | | additive, 2026-10-23 (P-06-T11): `GET /v1/binders` live; `BinderRowOut` gains the status-line facts and `service`, `season`, `office_id`, `published_at`; facets named |
 | v1.2 | (planned 2026-12-11) | | additive, 2026-10-24 (P-06-T14, P-06-T15): the SHL-20 family (§12): follow-ups v2 live behind `binders.engine`; the screening card, rerun, feedback and screening-return draft as a stub behind `screening.card` |
 
+**Freeze note (P-06-T27, 2026-10-26; DEC-409).** Not frozen. v1 with v1.1 and v1.2 is **ready to record frozen at the batch merge once `backend/tests/contracts/c5_requests_binders/` and `apps/web/src/fixtures/contracts/c5.test.ts` are green in `make check` stage 2**; the TypeScript half passed on 2026-10-26, the pytest half was not run in that session. Recording it means listing the C5 models in `abacus_tools.contracts.MODELS`, running `--freeze c5_requests_binders v1`, and setting "Frozen on" above and the register row (`docs/contracts/README.md`). Every route this half documents is live except `PUT /v1/binders/{id}/follow-up-override` (501).
+
 ## 11. Open points
 - DEC-136: OQ-1 mechanism (preparer publish on tax-return binders), firm-setting key names, portal ignore vs SPEC-042, staff create deferred to P-06-T10.
 - ADR-162 (P-31, the plan's "ADR-137") is accepted; the withdraw route follows it.
@@ -192,7 +194,7 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 ## 12. The SHL-20 family: follow-ups and evidence screening (v1.2, additive)
 Spec: SPEC-319 Story 5 (AC-16 to AC-20); P-06 §3.2 Story 2.2, §3.5–3.6, §4.3; DEC-74, DEC-79, DEC-220.
 
-**Behaviour.** The follow-ups v2 routes are **live** behind `binders.engine` (off: 404), with the screens that use them (BND-01 b, BND-02 d, SHL-20 b). The screening routes and the screening-return draft sit behind `screening.card` (default off, created 2026-10-24, expires 2027-01-22): off, 404 and the card area shows nothing extra. On, the card, its rerun and feedback are **live** (P-06-T20, 2026-10-25, DEC-324: the aggregate is composed by code from the code checks and the verified reviewer flags of the request's live versions, withdrawn ones left out, and supersedes itself on each change), and the screening-return draft is **live** (TASK-1252, 2026-10-26, DEC-368): it is sent on its own (bulk send answers 409 `follow_up_send_alone`); its send records a `send_back` per file with the reason and returns the request in the send's unit of work (409 `superseded` when the request's newest file is not among them, 409 `file_answers_other_requests` for a file that also answers another request), and its delivery, after the Undo window, posts the shared comment carrying the sender's final text with the email; Undo undoes the send-backs. The SPEC-027 engagement routes (`/v1/engagements/{eid}/follow-ups…`) stay and compose from the same template.
+**Behaviour.** The follow-ups v2 routes are **live** behind `binders.engine` (off: 404), with the screens that use them (BND-01 b, BND-02 d, SHL-20 b). The screening routes and the screening-return draft sit behind `screening.card` (default off, created 2026-10-24, expires 2027-04-21 under DEC-137): off, 404 and the card area shows nothing extra. On, the card, its rerun and feedback are **live** (P-06-T20, 2026-10-25, DEC-324: the aggregate is composed by code from the code checks and the verified reviewer flags of the request's live versions, withdrawn ones left out, and supersedes itself on each change), and the screening-return draft is **live** (TASK-1252, 2026-10-26, DEC-368): it is sent on its own (bulk send answers 409 `follow_up_send_alone`); its send records a `send_back` per file with the reason and returns the request in the send's unit of work (409 `superseded` when the request's newest file is not among them, 409 `file_answers_other_requests` for a file that also answers another request), and its delivery, after the Undo window, posts the shared comment carrying the sender's final text with the email; Undo undoes the send-backs. The SPEC-027 engagement routes (`/v1/engagements/{eid}/follow-ups…`) stay and compose from the same template.
 
 | Operation | Method and path | Matrix action | Roles allowed | Agent or system principal |
 |---|---|---|---|---|

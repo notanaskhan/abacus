@@ -47,5 +47,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
-    "tie_out_checks": frozenset({"current_version_no"}),  # SPEC-310: the current definition
+    "tie_out_checks": frozenset(
+        {"current_version_no"}  # SPEC-310: the current definition
+        | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): the issue link
+    ),
 }

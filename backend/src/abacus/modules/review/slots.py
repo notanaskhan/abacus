@@ -74,6 +74,18 @@ class ReviewableFacts:
     preparer_user_ids: frozenset[UUID]
     required_levels: tuple[int, ...] = REQUIRED_LEVELS
     locked: bool = False
+    # P-04-T18 (SHL-12): what the sheet shows and the R-SO-6 and R-SO-8 facts, from the owner's
+    # records. Defaults keep an owner that states none working: nothing incomplete or uncited.
+    label: str = ""
+    context_label: str = ""
+    work_item_id: UUID | None = None
+    cell_count: int = 0
+    citation_count: int = 0
+    cited_count: int = 0
+    incomplete_count: int = 0  # required fields still empty (R-SO-6, 409 `incomplete`)
+    uncited_count: int = 0  # agent values with no citation (R-SO-6, 422 `uncited_change`)
+    adopted_run_id: UUID | None = None  # the agent run whose work an L1 adopts (R-SO-8)
+    adopted_run_number: int | None = None
 
 
 ReviewableFactsProvider = Callable[[TenantContext, UUID], Awaitable[ReviewableFacts | None]]

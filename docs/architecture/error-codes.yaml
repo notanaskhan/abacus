@@ -248,6 +248,11 @@ codes:
     raised_by:
     - abacus.modules.requests.lifecycle.ContactNotPortalUser
     summary: 'The contact has no portal sign-in yet: invite them first, then delegate.'
+  content_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.review.sign_offs.ContentChanged
+    summary: 'The target changed since the signer saw it: nothing is written.'
   correction_not_allowed:
     status: 422
     raised_by:
@@ -276,6 +281,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.acceptance.DecisionLocked
+    - abacus.modules.engagements.independence.NasDecided
     summary: 'The acceptance record is decided and locked: nothing on it changes any more.'
   demo_clock_refused:
     status: 409
@@ -300,6 +306,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.engagements.drafts.DraftIncomplete
+    - abacus.modules.engagements.intake.IntakeIncomplete
     summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
   drafted_guidance_not_allowed:
     status: 409
@@ -525,16 +532,25 @@ codes:
     - abacus.modules.platform.incidents.PropagationRunning
     summary: 'A propagation of this Accrued incident is still running: wait for it, then name any further
       firms in a new one.'
+  incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.review.sign_offs.Incomplete
+    summary: 'R-SO-6: required fields are still empty.'
   independence_conclusion_missing:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.IndependenceConclusionMissing
+  independence_pending:
+    status: 409
+    raised_by:
+    - abacus.modules.review.sign_offs.IndependencePending
+    summary: 'R-SO-5: the signer''s independence confirmation (G2) is not on file.'
   independence_preconditions_unmet:
     status: 409
     raised_by:
-    - abacus.modules.engagements.acceptance_contract.IndependencePreconditionsUnmet
-    summary: The conclusion waits on the blockers named in `facts` (members to confirm, conflicts to
-      clear, an SKE designee or NAS evaluations on an attest client).
+    - abacus.modules.engagements.independence.IndependencePreconditionsUnmet
+    summary: The conclusion (or a NAS evaluation) waits on the blockers counted in `facts`.
   independence_statement_missing:
     status: 409
     raised_by:
@@ -878,6 +894,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.org_structure.OneHq
     summary: A firm has one headquarters office (AC7.2); clear the current one first.
+  open_review_notes:
+    status: 409
+    raised_by:
+    - abacus.modules.review.sign_offs.OpenReviewNotes
+    summary: 'R-SO-4: open review notes on the target block L2 and above.'
   org_structure_invalid:
     status: 422
     raised_by:
@@ -1131,6 +1152,11 @@ codes:
     - abacus.modules.identity.people.SeatsNotProvisioned
     summary: 'The firm''s seats aren''t provisioned yet, so nobody can be invited (DEC-285: fails closed
       for a real firm; a synthetic one without seats has no limit).'
+  segregation:
+    status: 409
+    raised_by:
+    - abacus.modules.review.sign_offs.Segregation
+    summary: 'R-SO-3: the target''s preparer never signs L2 or L3 on it.'
   service_line_lead_invalid:
     status: 422
     raised_by:
@@ -1192,6 +1218,7 @@ codes:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.engagements.acceptance.AcceptanceStale
     - abacus.modules.engagements.drafts.DraftStaleVersion
+    - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.identity.annual_independence.StaleStatement
     - abacus.modules.identity.people.StalePerson
@@ -1271,7 +1298,7 @@ codes:
   template_name_invalid:
     status: 422
     raised_by:
-    - abacus.modules.engagements.service.TemplateNameInvalid
+    - abacus.modules.methodology.service.TemplateNameInvalid
     summary: A template name is 1 to 100 characters.
   template_type_mismatch:
     status: 409
@@ -1315,6 +1342,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  uncited_change:
+    status: 422
+    raised_by:
+    - abacus.modules.review.sign_offs.UncitedChange
+    summary: 'R-SO-6: an agent value carries no citation (INV-2).'
   undo_window_closed:
     status: 409
     raised_by:
@@ -1397,7 +1429,7 @@ codes:
   version_not_latest:
     status: 409
     raised_by:
-    - abacus.modules.engagements.service.VersionNotLatest
+    - abacus.modules.methodology.service.VersionNotLatest
     summary: Drafted guidance is published onto the template's latest version only (TASK-074 D2).
   wall_exists:
     status: 409

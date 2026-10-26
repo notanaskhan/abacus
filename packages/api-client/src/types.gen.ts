@@ -534,6 +534,24 @@ export type AccruedIncidentFactsIn = {
 };
 
 /**
+ * ActivityActorOut
+ */
+export type ActivityActorOut = {
+    /**
+     * Id
+     */
+    id: string | null;
+    /**
+     * Label
+     */
+    label: string | null;
+    /**
+     * Type
+     */
+    type: 'user' | 'contact' | 'agent_run' | 'system';
+};
+
+/**
  * ActivityEventOut
  *
  * One audit event, identifiers only, through `audit_trail.api` (§4.7). The UI words it;
@@ -620,6 +638,20 @@ export type ActivityOut = {
      * Record Type
      */
     record_type: string | null;
+};
+
+/**
+ * ActivityRefOut
+ */
+export type ActivityRefOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Type
+     */
+    type: string;
 };
 
 /**
@@ -1317,6 +1349,28 @@ export type ApproveProposalIn = {
      * Seen Version
      */
     seen_version: number;
+};
+
+/**
+ * ApproveVersionIn
+ *
+ * Approve what was reviewed: a changed checklist answers 409 `checklist_changed`; open flags
+ * `flags_open`; unverified sources `unverified_sources`. The prior published version is
+ * superseded from `effective_from`.
+ */
+export type ApproveVersionIn = {
+    /**
+     * Checklist Hash
+     */
+    checklist_hash: string;
+    /**
+     * Effective From
+     */
+    effective_from: string;
+    /**
+     * Row Version
+     */
+    row_version: number;
 };
 
 /**
@@ -3576,6 +3630,67 @@ export type CellsBody = {
 };
 
 /**
+ * ChangeActorOut
+ */
+export type ChangeActorOut = {
+    /**
+     * Kind
+     */
+    kind: 'human' | 'agent' | 'system';
+    /**
+     * Name
+     */
+    name: string | null;
+    /**
+     * On Behalf Of User Id
+     */
+    on_behalf_of_user_id: string | null;
+    /**
+     * User Id
+     */
+    user_id: string | null;
+};
+
+/**
+ * ChangeLogEntryOut
+ *
+ * One lifecycle event across providers, oldest first within a page.
+ */
+export type ChangeLogEntryOut = {
+    actor: ChangeActorOut;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Category
+     */
+    category: 'methodology' | 'pbc_templates' | 'firm_standards' | 'engagement_templates' | 'skills' | 'notes' | 'content_packs' | 'frameworks' | 'research' | 'agent_instructions';
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: string | number | boolean | null;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'legacy_backfilled' | 'imported' | 'published' | 'draft_created' | 'submitted' | 'approved' | 'superseded' | 'discarded' | 'standards_mapped' | 'exported';
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * CheckOut
  */
 export type CheckOut = {
@@ -4254,6 +4369,47 @@ export type CitedSourceOut = {
      * Label
      */
     label: string;
+};
+
+/**
+ * ClientActivityOut
+ *
+ * One timeline row: an allowlisted event about a client, with codes and counts only
+ * (`{"count": 2, "document_class": "health_insurance_form"}`).
+ */
+export type ClientActivityOut = {
+    actor: ActivityActorOut;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Label
+     */
+    client_label: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: string | number | boolean;
+    };
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    subject: ActivityRefOut;
 };
 
 /**
@@ -6198,6 +6354,50 @@ export type DeactivateIn = {
      * Reason
      */
     reason?: 'manual' | 'access_ended' | 'scim_deprovisioned';
+};
+
+/**
+ * DeadlineRowOut
+ */
+export type DeadlineRowOut = {
+    /**
+     * Client
+     */
+    client: string;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Filing Label
+     */
+    filing_label: string;
+    /**
+     * Risk
+     */
+    risk: 'overdue' | 'due_soon' | 'approaching' | 'later';
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * DeadlinesOut
+ *
+ * The viewer's next 14 days (interim source: work items' `due_on` and milestones; T-08 moves
+ * it to `filing_deadlines` without a shape change). `next` is the first one past the window.
+ */
+export type DeadlinesOut = {
+    next: DeadlineRowOut | null;
+    /**
+     * Rows
+     */
+    rows: Array<DeadlineRowOut>;
 };
 
 /**
@@ -10956,6 +11156,22 @@ export type GraphTeamMemberOut = {
 };
 
 /**
+ * GreetingOut
+ *
+ * "Good morning, Daniel" and the date, in the firm's time zone on `kernel.clock`.
+ */
+export type GreetingOut = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * First Name
+     */
+    first_name: string;
+};
+
+/**
  * GridRowOut
  *
  * One capability row; cells per template computed from the compiled matrix and the firm's
@@ -11093,6 +11309,30 @@ export type GroupingVersionOut = {
 };
 
 /**
+ * GuidanceBlockOut
+ *
+ * Sanitised guidance: paragraphs, ordered lists and strong text only, never HTML.
+ */
+export type GuidanceBlockOut = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+    /**
+     * Kind
+     */
+    kind: 'paragraph' | 'ordered_list';
+    /**
+     * Strong
+     */
+    strong: Array<MatchRangeOut>;
+    /**
+     * Text
+     */
+    text: string | null;
+};
+
+/**
  * GuidanceDraftOut
  */
 export type GuidanceDraftOut = {
@@ -11192,6 +11432,68 @@ export type HistoryEntryOut = {
      * Reason Label
      */
     reason_label?: string | null;
+};
+
+/**
+ * HomeOut
+ *
+ * `HomeVM`: HOME-01 without the queue. The Approvals badge, the header count and the
+ * "Waiting on you" pane read `review`'s C13 counts and list.
+ */
+export type HomeOut = {
+    /**
+     * Client Activity
+     */
+    client_activity: Array<ClientActivityOut>;
+    deadlines: DeadlinesOut;
+    greeting: GreetingOut;
+    /**
+     * Running Count
+     */
+    running_count: number | null;
+    segments: SegmentsOut;
+    /**
+     * Tiles
+     */
+    tiles: Array<HomeTileOut>;
+    your_work: YourWorkOut | null;
+};
+
+/**
+ * HomeTileOut
+ *
+ * One practice count tile ("Audits 27 · 17 Planning · 15 Fieldwork …"). `key` is the
+ * registered home count; `label` and `caption` are copy keys the SPA renders.
+ */
+export type HomeTileOut = {
+    /**
+     * By Office
+     */
+    by_office: Array<TileOfficeOut>;
+    /**
+     * By Status
+     */
+    by_status: Array<TileStatusOut>;
+    /**
+     * Caption
+     */
+    caption: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target
+     */
+    target: string;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -11875,6 +12177,10 @@ export type IntakeServiceIn = {
      * Fiscal Period Start
      */
     fiscal_period_start?: string | null;
+    /**
+     * Forms
+     */
+    forms?: Array<string> | null;
     /**
      * Type Code
      */
@@ -12809,6 +13115,64 @@ export type KnowledgeHitOut = {
 };
 
 /**
+ * KnowledgeItemOut
+ *
+ * One catalog card from its provider: what it is, its state and how much it is used.
+ */
+export type KnowledgeItemOut = {
+    /**
+     * Category
+     */
+    category: 'methodology' | 'pbc_templates' | 'firm_standards' | 'engagement_templates' | 'skills' | 'notes' | 'content_packs' | 'frameworks' | 'research' | 'agent_instructions';
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Match
+     */
+    match: Array<MatchRangeOut>;
+    /**
+     * Owner Name
+     */
+    owner_name: string | null;
+    /**
+     * Route
+     */
+    route: string;
+    status: KnowledgeItemStatus;
+    /**
+     * Subtitle
+     */
+    subtitle: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Usage Count
+     */
+    usage_count: number | null;
+    /**
+     * Version Label
+     */
+    version_label: string | null;
+};
+
+/**
+ * KnowledgeItemStatus
+ */
+export type KnowledgeItemStatus = 'draft' | 'published' | 'superseded';
+
+/**
  * KnowledgeSearchIn
  */
 export type KnowledgeSearchIn = {
@@ -13417,6 +13781,40 @@ export type ListPageBinderRowOut = {
 };
 
 /**
+ * ListPage[ChangeLogEntryOut]
+ */
+export type ListPageChangeLogEntryOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ChangeLogEntryOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[CitationV2Out]
  */
 export type ListPageCitationV2Out = {
@@ -13621,6 +14019,40 @@ export type ListPageIssueItemOut = {
 };
 
 /**
+ * ListPage[KnowledgeItemOut]
+ */
+export type ListPageKnowledgeItemOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<KnowledgeItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[ReviewNoteItemOut]
  */
 export type ListPageReviewNoteItemOut = {
@@ -13640,6 +14072,40 @@ export type ListPageReviewNoteItemOut = {
      * Items
      */
     items: Array<ReviewNoteItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ReviewQueueItemOut]
+ */
+export type ListPageReviewQueueItemOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ReviewQueueItemOut>;
     /**
      * Next Cursor
      */
@@ -13780,6 +14246,20 @@ export type LogEntryOut = {
      * Status
      */
     status: 'running' | 'succeeded' | 'failed_validation' | 'failed';
+};
+
+/**
+ * MandatoryIn
+ */
+export type MandatoryIn = {
+    /**
+     * Lock Note
+     */
+    lock_note?: string | null;
+    /**
+     * Mandatory
+     */
+    mandatory: boolean;
 };
 
 /**
@@ -14003,6 +14483,22 @@ export type MatchProposalOut = {
      * Request Item Id
      */
     request_item_id: string;
+};
+
+/**
+ * MatchRangeOut
+ *
+ * Where the search matched in the title, for highlighting (start inclusive, end exclusive).
+ */
+export type MatchRangeOut = {
+    /**
+     * End
+     */
+    end: number;
+    /**
+     * Start
+     */
+    start: number;
 };
 
 /**
@@ -14336,6 +14832,10 @@ export type MePortalScopeOut = {
  */
 export type MemberConfirmationOut = {
     /**
+     * Annual Confirmed
+     */
+    annual_confirmed?: boolean | null;
+    /**
      * Answered At
      */
     answered_at?: string | null;
@@ -14433,6 +14933,11 @@ export type MethodologyVersionOut = {
     rules: Array<AccountRuleOut>;
     summary: TemplateVersionOut;
 };
+
+/**
+ * MethodologyVersionStatus
+ */
+export type MethodologyVersionStatus = 'draft' | 'parsing' | 'needs_review' | 'published' | 'superseded' | 'discarded';
 
 /**
  * MetricPart
@@ -15068,7 +15573,7 @@ export type OnboardingOut = {
     /**
      * Steps
      */
-    steps: Array<StepOut>;
+    steps: Array<AbacusModulesEngagementsRoutesStepOut>;
 };
 
 /**
@@ -15193,6 +15698,11 @@ export type ParagraphPart = {
      */
     segments: Array<TextSeg | CiteSeg | FactSeg>;
 };
+
+/**
+ * ParseFlagStatus
+ */
+export type ParseFlagStatus = 'low_confidence' | 'split_across_pages' | 'numbering_gap' | 'unverified_citation' | 'cross_reference_missing';
 
 /**
  * PassedEntryOut
@@ -17121,6 +17631,47 @@ export type ProcedureOut = {
 };
 
 /**
+ * ProgramOut
+ */
+export type ProgramOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Counts By Level
+     */
+    counts_by_level: {
+        [key: string]: number;
+    };
+    /**
+     * Flags Open
+     */
+    flags_open: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Mandatory Count
+     */
+    mandatory_count: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Step Count
+     */
+    step_count: number;
+    version: VersionStateOut;
+};
+
+/**
  * ProposalDecisionOut
  *
  * The latest insert-only, human-only `proposal_decisions` row. `undo_until` is the end of
@@ -18979,6 +19530,47 @@ export type ReviewOut = {
 };
 
 /**
+ * ReviewQueueItemOut
+ *
+ * A version waiting on the viewer's approval, or a draft the viewer owns.
+ */
+export type ReviewQueueItemOut = {
+    /**
+     * Category
+     */
+    category: 'methodology' | 'pbc_templates' | 'firm_standards' | 'engagement_templates' | 'skills' | 'notes' | 'content_packs' | 'frameworks' | 'research' | 'agent_instructions';
+    /**
+     * Flags Open
+     */
+    flags_open: number;
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Route
+     */
+    route: string;
+    status: MethodologyVersionStatus;
+    /**
+     * Submitted At
+     */
+    submitted_at: string | null;
+    /**
+     * Submitted By Name
+     */
+    submitted_by_name: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version Label
+     */
+    version_label: string;
+};
+
+/**
  * ReviewQuoteOut
  */
 export type ReviewQuoteOut = {
@@ -20135,6 +20727,27 @@ export type SecurityRoleIn = {
      * Security Admin
      */
     security_admin: boolean;
+};
+
+/**
+ * SegmentsOut
+ *
+ * DF-39: the Home segmented control's other options, each available, planned (hidden in
+ * production) or missing its entitlement (Insights, DEC-55).
+ */
+export type SegmentsOut = {
+    /**
+     * Capacity
+     */
+    capacity: 'available' | 'planned' | 'entitlement_missing';
+    /**
+     * Deadlines
+     */
+    deadlines: 'available' | 'planned' | 'entitlement_missing';
+    /**
+     * Insights
+     */
+    insights: 'available' | 'planned' | 'entitlement_missing';
 };
 
 /**
@@ -21658,21 +22271,99 @@ export type StatementOut = {
 };
 
 /**
- * StepOut
+ * StepCreateIn
  */
-export type StepOut = {
+export type StepCreateIn = {
     /**
-     * Done
+     * After Step Id
      */
-    done: boolean;
+    after_step_id?: string | null;
     /**
-     * How
+     * Assertions
      */
-    how?: string | null;
+    assertions?: Array<string>;
     /**
-     * Id
+     * Level
      */
-    id: 'sso' | 'team' | 'methodology' | 'autonomy' | 'budget' | 'walls' | 'engagement';
+    level: 'foundation' | 'planning' | 'testing' | 'completion';
+    /**
+     * Standard Refs
+     */
+    standard_refs?: Array<string>;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * StepPatchIn
+ *
+ * A draft step's edit; absent fields stay as they are. The citation anchor is kept.
+ */
+export type StepPatchIn = {
+    /**
+     * Assertions
+     */
+    assertions?: Array<string> | null;
+    /**
+     * Guidance
+     */
+    guidance?: Array<GuidanceBlockOut> | null;
+    /**
+     * Level
+     */
+    level?: 'foundation' | 'planning' | 'testing' | 'completion' | null;
+    /**
+     * Standard Refs
+     */
+    standard_refs?: Array<string> | null;
+    /**
+     * Text
+     */
+    text?: string | null;
+};
+
+/**
+ * StepRemovedOut
+ */
+export type StepRemovedOut = {
+    /**
+     * Step Id
+     */
+    step_id: string;
+};
+
+/**
+ * StepResolveOut
+ *
+ * A citation target resolved: which program and step a `step_key@version` is now.
+ */
+export type StepResolveOut = {
+    /**
+     * Anchor
+     */
+    anchor: string;
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Program Code
+     */
+    program_code: string;
+    /**
+     * Program Id
+     */
+    program_id: string;
+    /**
+     * Step Id
+     */
+    step_id: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
 };
 
 /**
@@ -21701,6 +22392,16 @@ export type SubjectRefOut = {
      * Kind
      */
     kind: 'client' | 'client_entity' | 'engagement_draft' | 'client_intake_draft';
+};
+
+/**
+ * SubmitVersionIn
+ */
+export type SubmitVersionIn = {
+    /**
+     * Row Version
+     */
+    row_version: number;
 };
 
 /**
@@ -23136,6 +23837,20 @@ export type TierIn = {
 };
 
 /**
+ * TileOfficeOut
+ */
+export type TileOfficeOut = {
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Office Id
+     */
+    office_id: string;
+};
+
+/**
  * TileOut
  */
 export type TileOut = {
@@ -23159,6 +23874,24 @@ export type TileOut = {
      * Value
      */
     value: number;
+};
+
+/**
+ * TileStatusOut
+ */
+export type TileStatusOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Filter
+     */
+    filter: string;
+    /**
+     * N
+     */
+    n: number;
 };
 
 /**
@@ -23635,6 +24368,75 @@ export type VersionOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * VersionStateOut
+ *
+ * A version's lifecycle row and what the viewer may do with it.
+ */
+export type VersionStateOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Approval Basis
+     */
+    approval_basis: 'approved' | 'legacy_import' | null;
+    /**
+     * Approved At
+     */
+    approved_at: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Approved By User Id
+     */
+    approved_by_user_id: string | null;
+    /**
+     * Default For New Engagements
+     */
+    default_for_new_engagements: boolean;
+    /**
+     * Drafted From Version Id
+     */
+    drafted_from_version_id: string | null;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Effective To
+     */
+    effective_to: string | null;
+    /**
+     * Engagement Types
+     */
+    engagement_types: Array<string>;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Standards Set Id
+     */
+    standards_set_id: string | null;
+    status: MethodologyVersionStatus;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
 };
 
 /**
@@ -24209,6 +25011,36 @@ export type WorkItemRowOut = {
 };
 
 /**
+ * WorkRowOut
+ */
+export type WorkRowOut = {
+    /**
+     * Client
+     */
+    client: string;
+    /**
+     * Function
+     */
+    function: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Tags
+     */
+    tags: Array<string>;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * WorkingPaperOut
  */
 export type WorkingPaperOut = {
@@ -24361,6 +25193,22 @@ export type YourPartOut = {
      * Minutes
      */
     minutes: number;
+};
+
+/**
+ * YourWorkOut
+ *
+ * HOME-01 a2: the viewer's assigned work items; `label` is the band's copy key.
+ */
+export type YourWorkOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rows
+     */
+    rows: Array<WorkRowOut>;
 };
 
 /**
@@ -24531,6 +25379,24 @@ export type AbacusModulesEngagementsRoutesConfirmationOut = {
 };
 
 /**
+ * StepOut
+ */
+export type AbacusModulesEngagementsRoutesStepOut = {
+    /**
+     * Done
+     */
+    done: boolean;
+    /**
+     * How
+     */
+    how?: string | null;
+    /**
+     * Id
+     */
+    id: 'sso' | 'team' | 'methodology' | 'autonomy' | 'budget' | 'walls' | 'engagement';
+};
+
+/**
  * CitationOut
  *
  * A checked citation of the proposal (the same shape as the board's).
@@ -24576,6 +25442,89 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
+};
+
+/**
+ * StepOut
+ */
+export type AbacusModulesMethodologyContractStepOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Anchor
+     */
+    anchor: string;
+    /**
+     * Assertions
+     */
+    assertions: Array<string>;
+    /**
+     * Depends On Step Keys
+     */
+    depends_on_step_keys: Array<string>;
+    /**
+     * Flag Resolution
+     */
+    flag_resolution: 'confirmed' | 'edited' | null;
+    /**
+     * Guidance
+     */
+    guidance: Array<GuidanceBlockOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Level
+     */
+    level: 'foundation' | 'planning' | 'testing' | 'completion';
+    /**
+     * Lock Note
+     */
+    lock_note: string | null;
+    /**
+     * Mandatory
+     */
+    mandatory: boolean;
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Origin
+     */
+    origin: 'workbook' | 'importer' | 'manual';
+    parse_flag: ParseFlagStatus | null;
+    /**
+     * Pbc Positions
+     */
+    pbc_positions: Array<number>;
+    /**
+     * Prepopulates
+     */
+    prepopulates: Array<string>;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Rules Count
+     */
+    rules_count: number;
+    /**
+     * Standard Refs
+     */
+    standard_refs: Array<string>;
+    /**
+     * Step Key
+     */
+    step_key: string;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -27853,10 +28802,6 @@ export type CreateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateIntakeDraftError = CreateIntakeDraftErrors[keyof CreateIntakeDraftErrors];
@@ -27909,10 +28854,6 @@ export type DiscardIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiscardIntakeDraftError = DiscardIntakeDraftErrors[keyof DiscardIntakeDraftErrors];
@@ -27965,10 +28906,6 @@ export type GetIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetIntakeDraftError = GetIntakeDraftErrors[keyof GetIntakeDraftErrors];
@@ -28025,10 +28962,6 @@ export type UpdateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateIntakeDraftError = UpdateIntakeDraftErrors[keyof UpdateIntakeDraftErrors];
@@ -28089,10 +29022,6 @@ export type CommitIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CommitIntakeDraftError = CommitIntakeDraftErrors[keyof CommitIntakeDraftErrors];
@@ -28145,10 +29074,6 @@ export type ValidateIntakeDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ValidateIntakeDraftError = ValidateIntakeDraftErrors[keyof ValidateIntakeDraftErrors];
@@ -28284,10 +29209,6 @@ export type DedupeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DedupeError = DedupeErrors[keyof DedupeErrors];
@@ -35693,10 +36614,6 @@ export type GetIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetIndependenceError = GetIndependenceErrors[keyof GetIndependenceErrors];
@@ -35801,10 +36718,6 @@ export type LogBreachErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LogBreachError = LogBreachErrors[keyof LogBreachErrors];
@@ -35865,10 +36778,6 @@ export type AddBreachEventErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddBreachEventError = AddBreachEventErrors[keyof AddBreachEventErrors];
@@ -35925,10 +36834,6 @@ export type ConcludeIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConcludeIndependenceError = ConcludeIndependenceErrors[keyof ConcludeIndependenceErrors];
@@ -35985,10 +36890,6 @@ export type ConfirmIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConfirmIndependenceError = ConfirmIndependenceErrors[keyof ConfirmIndependenceErrors];
@@ -36045,10 +36946,6 @@ export type DeclineIndependenceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeclineIndependenceError = DeclineIndependenceErrors[keyof DeclineIndependenceErrors];
@@ -36101,10 +36998,6 @@ export type GetNasErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetNasError = GetNasErrors[keyof GetNasErrors];
@@ -36165,10 +37058,6 @@ export type PutNasErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PutNasError = PutNasErrors[keyof PutNasErrors];
@@ -36273,10 +37162,6 @@ export type GetRotationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetRotationError = GetRotationErrors[keyof GetRotationErrors];
@@ -44048,10 +44933,6 @@ export type TbLayerViewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLayerViewError = TbLayerViewErrors[keyof TbLayerViewErrors];
@@ -44189,10 +45070,6 @@ export type TbLeadsheetAreaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TbLeadsheetAreaError = TbLeadsheetAreaErrors[keyof TbLeadsheetAreaErrors];
@@ -51385,6 +52262,62 @@ export type PublishGroupingSetResponses = {
 
 export type PublishGroupingSetResponse = PublishGroupingSetResponses[keyof PublishGroupingSetResponses];
 
+export type HomeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+    };
+    url: '/v1/home';
+};
+
+export type HomeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HomeError = HomeErrors[keyof HomeErrors];
+
+export type HomeResponses = {
+    /**
+     * Successful Response
+     */
+    200: HomeOut;
+};
+
+export type HomeResponse = HomeResponses[keyof HomeResponses];
+
 export type HumanGateListData = {
     body?: never;
     headers?: {
@@ -52424,6 +53357,66 @@ export type IssueVerifyResponses = {
 
 export type IssueVerifyResponse = IssueVerifyResponses[keyof IssueVerifyResponses];
 
+export type KnowledgeChangeLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/knowledge/change-log';
+};
+
+export type KnowledgeChangeLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type KnowledgeChangeLogError = KnowledgeChangeLogErrors[keyof KnowledgeChangeLogErrors];
+
+export type KnowledgeChangeLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageChangeLogEntryOut;
+};
+
+export type KnowledgeChangeLogResponse = KnowledgeChangeLogResponses[keyof KnowledgeChangeLogResponses];
+
 export type ListDocumentsData = {
     body?: never;
     headers?: {
@@ -52631,6 +53624,129 @@ export type WithdrawDocumentResponses = {
 };
 
 export type WithdrawDocumentResponse = WithdrawDocumentResponses[keyof WithdrawDocumentResponses];
+
+export type KnowledgeItemsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Category
+         */
+        category?: 'methodology' | 'pbc_templates' | 'firm_standards' | 'engagement_templates' | 'skills' | 'notes' | 'content_packs' | 'frameworks' | 'research' | 'agent_instructions' | null;
+        /**
+         * Status
+         */
+        status?: KnowledgeItemStatus | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number | null;
+    };
+    url: '/v1/knowledge/items';
+};
+
+export type KnowledgeItemsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type KnowledgeItemsError = KnowledgeItemsErrors[keyof KnowledgeItemsErrors];
+
+export type KnowledgeItemsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageKnowledgeItemOut;
+};
+
+export type KnowledgeItemsResponse = KnowledgeItemsResponses[keyof KnowledgeItemsResponses];
+
+export type KnowledgeReviewQueueData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/knowledge/review-queue';
+};
+
+export type KnowledgeReviewQueueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type KnowledgeReviewQueueError = KnowledgeReviewQueueErrors[keyof KnowledgeReviewQueueErrors];
+
+export type KnowledgeReviewQueueResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageReviewQueueItemOut;
+};
+
+export type KnowledgeReviewQueueResponse = KnowledgeReviewQueueResponses[keyof KnowledgeReviewQueueResponses];
 
 export type SearchData = {
     body: KnowledgeSearchIn;
@@ -53228,6 +54344,180 @@ export type MeteringResponses = {
 
 export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
 
+export type ProgramData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Program Id
+         */
+        program_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/programs/{program_id}';
+};
+
+export type ProgramErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProgramError = ProgramErrors[keyof ProgramErrors];
+
+export type ProgramResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProgramOut;
+};
+
+export type ProgramResponse = ProgramResponses[keyof ProgramResponses];
+
+export type ProgramStepsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Program Id
+         */
+        program_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/programs/{program_id}/steps';
+};
+
+export type ProgramStepsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProgramStepsError = ProgramStepsErrors[keyof ProgramStepsErrors];
+
+export type ProgramStepsResponses = {
+    /**
+     * Response Program Steps
+     *
+     * Successful Response
+     */
+    200: Array<AbacusModulesMethodologyContractStepOut>;
+};
+
+export type ProgramStepsResponse = ProgramStepsResponses[keyof ProgramStepsResponses];
+
+export type ResolveStepData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Key
+         */
+        key: string;
+        /**
+         * Version
+         */
+        version: string;
+    };
+    url: '/v1/methodology/steps/resolve';
+};
+
+export type ResolveStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResolveStepError = ResolveStepErrors[keyof ResolveStepErrors];
+
+export type ResolveStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: StepResolveOut;
+};
+
+export type ResolveStepResponse = ResolveStepResponses[keyof ResolveStepResponses];
+
 export type ListTemplatesData = {
     body?: never;
     headers?: {
@@ -53391,6 +54681,126 @@ export type GetVersionResponses = {
 
 export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
 
+export type ApproveVersionData = {
+    body: ApproveVersionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/approve';
+};
+
+export type ApproveVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ApproveVersionError = ApproveVersionErrors[keyof ApproveVersionErrors];
+
+export type ApproveVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: VersionStateOut;
+};
+
+export type ApproveVersionResponse = ApproveVersionResponses[keyof ApproveVersionResponses];
+
+export type DiscardDraftData = {
+    body: SubmitVersionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/discard';
+};
+
+export type DiscardDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DiscardDraftError = DiscardDraftErrors[keyof DiscardDraftErrors];
+
+export type DiscardDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: VersionStateOut;
+};
+
+export type DiscardDraftResponse = DiscardDraftResponses[keyof DiscardDraftResponses];
+
 export type DraftTemplateGuidanceData = {
     body: DraftTemplateGuidanceIn;
     headers?: {
@@ -53446,6 +54856,124 @@ export type DraftTemplateGuidanceResponses = {
 };
 
 export type DraftTemplateGuidanceResponse = DraftTemplateGuidanceResponses[keyof DraftTemplateGuidanceResponses];
+
+export type CreateDraftData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/drafts';
+};
+
+export type CreateDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateDraftError = CreateDraftErrors[keyof CreateDraftErrors];
+
+export type CreateDraftResponses = {
+    /**
+     * Successful Response
+     */
+    201: VersionStateOut;
+};
+
+export type CreateDraftResponse = CreateDraftResponses[keyof CreateDraftResponses];
+
+export type ExportVersionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/export.xlsx';
+};
+
+export type ExportVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportVersionError = ExportVersionErrors[keyof ExportVersionErrors];
+
+export type ExportVersionResponses = {
+    /**
+     * Response Export Version
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExportVersionResponse = ExportVersionResponses[keyof ExportVersionResponses];
 
 export type TemplateDraftsData = {
     body?: never;
@@ -53613,6 +55141,70 @@ export type DiscardTemplateDraftsResponses = {
 
 export type DiscardTemplateDraftsResponse = DiscardTemplateDraftsResponses[keyof DiscardTemplateDraftsResponses];
 
+export type AddStepData = {
+    body: StepCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Program Id
+         */
+        program_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/programs/{program_id}/steps';
+};
+
+export type AddStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AddStepError = AddStepErrors[keyof AddStepErrors];
+
+export type AddStepResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesMethodologyContractStepOut;
+};
+
+export type AddStepResponse = AddStepResponses[keyof AddStepResponses];
+
 export type PublishDraftedData = {
     body?: never;
     headers?: {
@@ -53668,6 +55260,270 @@ export type PublishDraftedResponses = {
 };
 
 export type PublishDraftedResponse = PublishDraftedResponses[keyof PublishDraftedResponses];
+
+export type RemoveStepData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/steps/{step_id}';
+};
+
+export type RemoveStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RemoveStepError = RemoveStepErrors[keyof RemoveStepErrors];
+
+export type RemoveStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: StepRemovedOut;
+};
+
+export type RemoveStepResponse = RemoveStepResponses[keyof RemoveStepResponses];
+
+export type EditStepData = {
+    body: StepPatchIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/steps/{step_id}';
+};
+
+export type EditStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EditStepError = EditStepErrors[keyof EditStepErrors];
+
+export type EditStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesMethodologyContractStepOut;
+};
+
+export type EditStepResponse = EditStepResponses[keyof EditStepResponses];
+
+export type MandatoryStepData = {
+    body: MandatoryIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/steps/{step_id}/mandatory';
+};
+
+export type MandatoryStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MandatoryStepError = MandatoryStepErrors[keyof MandatoryStepErrors];
+
+export type MandatoryStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesMethodologyContractStepOut;
+};
+
+export type MandatoryStepResponse = MandatoryStepResponses[keyof MandatoryStepResponses];
+
+export type SubmitVersionData = {
+    body: SubmitVersionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/submit';
+};
+
+export type SubmitVersionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SubmitVersionError = SubmitVersionErrors[keyof SubmitVersionErrors];
+
+export type SubmitVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: VersionStateOut;
+};
+
+export type SubmitVersionResponse = SubmitVersionResponses[keyof SubmitVersionResponses];
 
 export type ListNotificationsData = {
     body?: never;
