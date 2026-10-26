@@ -1541,6 +1541,8 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "checkpoint_diffs": "review_rows_immutable",  # 0094 (P-04-T04)
         "checkpoint_decisions": "review_rows_immutable",  # 0094 (P-04-T04)
         "issue_events": "review_rows_immutable",  # 0094 (P-04-T04)
+        "decision_card_versions": "review_rows_immutable",  # 0211 (P-04-T23)
+        "decision_analysis_requests": "review_rows_immutable",  # 0211 (P-04-T23)
         "suggestion_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_rows": "agent_decisions_immutable",  # 0095 (P-04-T05)
         "proposal_decisions": "agent_decisions_immutable",  # 0095 (P-04-T05)
