@@ -1,7 +1,10 @@
-// SPEC-031 (TASK-061): what a client reads about a request, as fixed templates (ADR-111). The
-// only values in them are dates, account digits or names, and counts computed by the server.
+// SPEC-031 (TASK-061), moved from the retired legacy client page by R-01-T18 (R-01 §8: the
+// upload, history and send-back flows of ClientEngagement.tsx and ClientGuidance.tsx move into
+// domain/portal): what a client reads about a request, as fixed templates (ADR-111). The only
+// values in them are dates, account digits or names, and counts computed by the server. The
+// legacy ClientHome still words "your part" with `yourPartMessage` until P-08-T28.
 import type { GapOut, HistoryEntryOut, ProvidedOut, YourPartOut } from "@abacus/api-client";
-import { longDate } from "./importMessages";
+import { longDate } from "@abacus/ui";
 
 function day(iso: string): string {
   return longDate(iso.slice(0, 10));

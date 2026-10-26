@@ -22,6 +22,7 @@ Inputs in DIR, each optional:
   parity.json      apps/web parity-report/parity.json (F-05-T16)
   journeys.json    the Playwright JSON reporter's output
   evals/*.json     eval run summaries (`abacus_tools.evals`)
+  loadtest-trend.json  the x1 load smoke's p95 trend (`abacus_tools.loadtest.trend --out`)
 And from the repository: docs/quality/backfill.md, docs/quality/escaped-defects.md, the
 capacity ledger's refused-requests table, and the `# ac-test-author:` headers and strict xfails in
 the test trees.
@@ -532,6 +533,28 @@ def placeholder_rows() -> Iterator[Row]:
     )
 
 
+def load_rows(found: object) -> Iterator[Row]:
+    """The x1 load smoke's p95 against its 4-week median (Q-03-T043; chapter 10 §10.11.5)."""
+    metric = "x1 load smoke: p95 per group against its 4-week median"
+    target = "no group more than 20% over"
+    src = "loadtest-trend.json"
+    if not isinstance(found, dict):
+        yield Row("Ops", metric, "no data", target, "no data", src)
+        return
+    trend = cast(Json, found)
+    groups = cast(list[Json], trend.get("groups") or [])
+    regressed = [str(g.get("name")) for g in groups if g.get("regressed")]
+    compared = [g for g in groups if g.get("rise") is not None]
+    value = (
+        f"{len(compared)} of {len(groups)} groups compared, {len(regressed)} over "
+        f"(run {trend.get('run_started_at')})"
+    )
+    if regressed:
+        value += f": {', '.join(regressed)}"
+    status: Status = "breach" if regressed else ("ok" if compared else "reported")
+    yield Row("Ops", metric, value, target, status, src)
+
+
 def ai_rows(summaries: Sequence[Json], window: Window) -> Iterator[Row]:
     src = "evals/*.json (eval summaries)"
     recent = [
@@ -621,6 +644,7 @@ def build(inputs: Path, window: Window, repo: Path = REPO) -> list[Row]:
         *journey_rows(_load_json(inputs / "journeys.json")),
         *design_rows(_load_json(inputs / "parity.json")),
         *placeholder_rows(),
+        *load_rows(_load_json(inputs / "loadtest-trend.json")),
         *ai_rows(summaries, window),
         *cost_rows(runs, summaries, window),
     ]
