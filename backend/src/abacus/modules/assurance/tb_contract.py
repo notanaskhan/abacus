@@ -4,10 +4,11 @@ Contract: `docs/contracts/c09-ledger.md`; spec: SPEC-333; screen AUD-06.
 The trial balance routes SPEC-309 to SPEC-311 built (`routes.py`, and the tie-out checks in
 `workpapers`) stay live and ungated: their shapes are C9 v1's for list, adopt, view, candidates,
 re-version, all-area leadsheets, annotations, sign-offs and checks (DEC-314). This module adds
-C9 v1's remaining operations as stubs behind `ledger.tb_workpaper`: every route authorises its
-one action on the engagement first (walls answer 404, independence 403), then answers 404 with
-the flag off and 501 `not_implemented` with it on, until the task that implements it (view by
-layer and leadsheet by area A-02-T10; Open in Excel A-02-T22; issue link A-02-T17).
+C9 v1's remaining operations behind `ledger.tb_workpaper`: every route authorises its one
+action on the engagement first (walls answer 404, independence 403), then answers 404 with the
+flag off. The view by layer and the leadsheet by area are live (A-02-T10, `tb_read_model.py`,
+which declares them on this router); Open in Excel (A-02-T22) and the issue link (A-02-T17)
+answer 501 `not_implemented` with the flag on until their tasks.
 
 Every amount is computed by `ledger` and sent as a decimal string (ADR-050); the browser never
 sums a column. Labels and layers are C2's generated enums. No model carries a count of hidden
@@ -263,42 +264,6 @@ tb_router = AbacusRouter(
     prefix="/v1/engagements/{engagement_id}/trial-balances", tags=["trial balance"]
 )
 AreaKey = Annotated[str, Path(min_length=1, max_length=120)]
-
-
-@tb_router.get(
-    "/{tb_id}/layers/{layer}",
-    action="trial_balance.read",
-    response_model=TbLayerViewOut,
-    errors=(409, 501),
-)
-async def tb_layer_view_route(
-    engagement_id: UUID,
-    tb_id: UUID,
-    layer: TrialBalanceLayerStatus,
-    ctx: Ctx,
-    version: Annotated[int | None, Query(ge=1)] = None,
-) -> TbLayerViewOut:
-    """AUD-06's view at one layer (A-02-T10); AJE, RJE and Final answer 409 `layer_unavailable`
-    until an adjustment source is registered, and an unbalanced layer 409 `layer_unbalanced`."""
-    await _stub(ctx, "trial_balance.read", engagement_id)
-
-
-@tb_router.get(
-    "/{tb_id}/leadsheets/{area}",
-    action="trial_balance.read",
-    response_model=TbLeadsheetAreaOut,
-    errors=(409, 501),
-)
-async def tb_leadsheet_area_route(
-    engagement_id: UUID,
-    tb_id: UUID,
-    area: AreaKey,
-    ctx: Ctx,
-    layer: TrialBalanceLayerStatus = TrialBalanceLayerStatus.UNADJUSTED,
-    version: Annotated[int | None, Query(ge=1)] = None,
-) -> TbLeadsheetAreaOut:
-    """AUD-06 e: one audit area's leadsheet, PY · CY · Δ · Δ% (A-02-T10)."""
-    await _stub(ctx, "trial_balance.read", engagement_id)
 
 
 @tb_router.get(
