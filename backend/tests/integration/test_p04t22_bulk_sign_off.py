@@ -8,6 +8,7 @@ without saying whether it exists.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from datetime import timedelta
@@ -219,3 +220,37 @@ async def test_a_hidden_or_unknown_target_is_excluded_without_saying_which(
     )
     assert duplicate.status_code == 422
     assert cast(str, duplicate.json()["detail"]) == "sign_off_invalid"
+
+
+async def test_concurrent_requests_with_one_key_sign_once(team: Cast) -> None:
+    """Security review M2: two requests with the same key and different bodies at once. The key
+    is claimed before anything is signed, so one signs and the other is refused unsigned."""
+    six = await _six(team)
+    key = str(uuid.uuid4())
+    call = team.call("hannah")
+    first, second = await asyncio.gather(
+        call("POST", "/v1/sign-offs:bulk", json=_body(six[:2]), headers={"Idempotency-Key": key}),
+        call("POST", "/v1/sign-offs:bulk", json=_body(six[1:3]), headers={"Idempotency-Key": key}),
+    )
+    codes = sorted([first.status_code, second.status_code])
+    assert codes == [200, 422], (first.text, second.text)
+    refused = first if first.status_code == 422 else second
+    assert refused.json()["detail"] == "idempotency_key_reused"
+    signed = await team.seed.rows(
+        "SELECT target_id FROM sign_offs WHERE tenant_id = $1 AND level = 2", team.tenant
+    )
+    winner = first if first.status_code == 200 else second
+    assert sorted(str(r["target_id"]) for r in signed) == sorted(
+        r["target_id"] for r in winner.json()["results"] if r["ok"]
+    )
+    assert len(signed) == 2
+
+    # The same body twice at once: one signs, the other replays the stored answer.
+    again = str(uuid.uuid4())
+    body, headers = _body(six[3:4] + six[:1]), {"Idempotency-Key": again}
+    one, two = await asyncio.gather(
+        call("POST", "/v1/sign-offs:bulk", json=body, headers=headers),
+        call("POST", "/v1/sign-offs:bulk", json=body, headers=headers),
+    )
+    assert one.status_code == two.status_code == 200
+    assert one.json() == two.json()

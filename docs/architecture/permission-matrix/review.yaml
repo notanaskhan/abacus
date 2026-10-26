@@ -13,7 +13,7 @@ actions:
   # declares sign_off.create and the service also authorises the level's row, with the target's
   # facts (P-04-T15: not_preparer_of_target on L2 and L3).
   sign_off.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-12 ladder and eligibility; firm roles only
-  sign_off.create:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # R-SO-1: a live human; the level row decides who may sign what
+  sign_off.create:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required, mfa_recent: required}   # R-SO-1: a live human; the level row decides who may sign what; a fresh second factor (DEC-505)
   sign_off.bulk:            {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required, mfa_recent: required}   # R-SO-7: reviewers only (senior, manager, partner); a fresh second factor (P-04-T22, DEC-501)
   # --- Review notes (SPEC-041, SPEC-313; ADR-160 clause 6). Moved from fieldwork.yaml: review owns notes ---
   review_note.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # P-04-T07: GET /v1/review-notes; bodies are sealed and read as access events
@@ -26,7 +26,7 @@ actions:
   # --- Decision cards (C3 stub 2, P-04-T08; ADR-160 clause 8). decision.decide holds the
   # reserved_role condition (P-04-T15); MFA per kind arrives with P-04-T23. Raising a card is service-only (review.api.raise_decision_card).
   decision.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-11: firm roles only; never client roles
-  decision.decide:          {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required, reserved_role: required}   # SHL-11 a: only the card's reserved role and person (P-04-T15); MFA per kind with P-04-T23
+  decision.decide:          {engagement_partner: allow, manager: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required, reserved_role: required, mfa_recent: required}   # SHL-11 a: only the card's reserved role and person (P-04-T15); a fresh second factor, a kind may tighten it (DEC-505)
   decision.request_analysis: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Request more analysis"
   decision.notify:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Notify Margaret"
   decision.reassess:        {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # SHL-11 d: the owner's provider recomputes in code

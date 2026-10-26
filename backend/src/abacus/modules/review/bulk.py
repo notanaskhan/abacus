@@ -25,12 +25,11 @@ from dataclasses import dataclass
 from typing import Final, cast
 from uuid import UUID
 
-from abacus.kernel.clock import system_now
 from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.engagements.api import engagement_resource_of
-from abacus.modules.identity.api import MFA_RECENT, AuthContext, Forbidden, authorise
-from abacus.modules.review.decisions import MfaRequired
+from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.review.mfa import require_fresh
 from abacus.modules.review.service import SignOffInvalid
 from abacus.modules.review.sign_offs import LEVEL_CODES, live_human, sign_target
 from abacus.modules.review.slots import UnregisteredKind, reviewable_facts
@@ -138,6 +137,18 @@ async def _reviewer_somewhere(ctx: AuthContext, targets: list[BulkTarget]) -> bo
     return False
 
 
+async def _still_visible(ctx: AuthContext, item: BulkItem) -> BulkItem:
+    """A replay (security review L9) shows a stored item only where the caller still holds
+    `sign_off.bulk` on its engagement; elsewhere it reads `level_not_permitted`."""
+    try:
+        facts = await reviewable_facts(ctx.tenant, item.target_type, item.target_id)
+        resource = await engagement_resource_of(ctx.tenant, facts.engagement_id)
+        await authorise(ctx, ROUTE, resource)
+    except (NotFound, UnregisteredKind, Forbidden):
+        return BulkItem(item.target_type, item.target_id, False, None, "level_not_permitted")
+    return item
+
+
 async def bulk_sign(
     ctx: AuthContext,
     *,
@@ -150,8 +161,7 @@ async def bulk_sign(
     same key returns the stored result."""
     if not live_human(ctx):
         raise Forbidden(ROUTE, "role")
-    if ctx.mfa_at is None or system_now() - ctx.mfa_at > MFA_RECENT:
-        raise MfaRequired(facts={"max_age_s": int(MFA_RECENT.total_seconds())})
+    require_fresh(ctx)
     if len({(t.target_type, t.target_id) for t in targets}) != len(targets):
         raise SignOffInvalid(facts={"field": "targets"})
     if not await _reviewer_somewhere(ctx, targets):
@@ -198,5 +208,7 @@ async def bulk_sign(
         )
         for r in raw
     ]
+    if stored.replayed:
+        results = [await _still_visible(ctx, r) for r in results]
     signed = sum(1 for r in results if r.ok)
     return BulkResult(results, signed, len(results) - signed)

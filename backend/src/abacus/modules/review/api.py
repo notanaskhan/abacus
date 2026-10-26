@@ -19,7 +19,6 @@ from abacus.modules.review.contract import (
 )
 from abacus.modules.review.decisions import (
     DecisionCardState,
-    MfaRequired,
     RationaleRequired,
     RecommendationChanged,
     raise_decision_card,
@@ -34,6 +33,7 @@ from abacus.modules.review.gates import (
 from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.matrix import review_gate
+from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import notes_for, open_note_counts
 from abacus.modules.review.routes import router
 from abacus.modules.review.service import (
@@ -84,6 +84,7 @@ from abacus.modules.review.slots import (
     register_gate_kind,
     register_reviewable,
     register_reviewable_facts,
+    register_suggestion_owner,
     reviewable_fact_types,
     reviewable_facts,
     reviewables_of,
@@ -177,6 +178,7 @@ __all__ = [
     "register_gate_source",
     "register_reviewable",
     "register_reviewable_facts",
+    "register_suggestion_owner",
     "reviewable_fact_types",
     "reviewable_facts",
     "reviewables_of",

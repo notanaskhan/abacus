@@ -8,6 +8,11 @@ its request. For 24 hours:
 - the same key with a different request is refused (422 `idempotency_key_reused`).
 
 The stored response must not hold Restricted data: store identifiers, as routes return.
+
+Requests with one (tenant, actor, route, key) are serialised (P-04-T22 security review M2): the
+first holds a transaction-scoped advisory lock on its own connection from before the lookup until
+its answer is stored, so a concurrent second waits, then finds the stored answer and replays it,
+or is refused with `idempotency_key_reused`, before its effect could run.
 """
 
 from __future__ import annotations
@@ -30,6 +35,7 @@ _FIND = text(
     "SELECT request_sha256, status_code, response FROM idempotency_keys WHERE actor_id = :actor "
     "AND route = :route AND key = :key AND expires_at > clock_timestamp()"
 )
+_LOCK = text("SELECT pg_advisory_xact_lock(hashtextextended(:name, 0))")
 _STORE = text(
     "INSERT INTO idempotency_keys (tenant_id, actor_id, route, key, request_sha256, status_code, "
     "response) VALUES (:tenant, :actor, :route, :key, :sha, :status, CAST(:response AS jsonb)) "
@@ -74,6 +80,23 @@ async def idempotent(
     if not _KEY.fullmatch(key):
         raise IdempotencyKeyInvalid
     sha = request_hash(body)
+    name = f"idempotency:{ctx.tenant_id}:{ctx.actor_id}:{route}:{key}"
+    async with tenant_connection(ctx) as claim:
+        # Held until this block ends: after the answer is stored and committed below.
+        await claim.execute(_LOCK, {"name": name})
+        stored = await _run_once(ctx, route=route, key=key, sha=sha, run=run)
+        await claim.commit()
+    return stored
+
+
+async def _run_once(
+    ctx: TenantContext,
+    *,
+    route: str,
+    key: str,
+    sha: str,
+    run: Callable[[], Awaitable[tuple[int, dict[str, object]]]],
+) -> Stored:
     found = await _find(ctx, route, key)
     if found is not None:
         return _replay(found, sha)

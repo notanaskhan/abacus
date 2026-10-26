@@ -637,6 +637,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
         "reserved_role": "required",
+        "mfa_recent": "required",
     },
     "decision.notify": {
         "engagement_partner": "allow",
@@ -1938,6 +1939,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "sign_off.eqr": {
         "reviewer": "allow",

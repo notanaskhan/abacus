@@ -1790,3 +1790,11 @@ async def get_run_record(session: AsyncSession, run_id: UUID) -> AgentRunRecord 
 
 async def insert_run_record(session: AsyncSession, values: dict[str, object]) -> None:
     await session.execute(insert(AgentRunRecord).values(**values))
+
+
+async def suggestion_engagement_of(session: AsyncSession, suggestion_id: UUID) -> UUID | None:
+    """P-04-T23 (security review L8): a suggestion's engagement, for review's decision cards."""
+    found = await session.execute(
+        text("SELECT engagement_id FROM suggestions WHERE id = :id"), {"id": suggestion_id}
+    )
+    return found.scalar_one_or_none()

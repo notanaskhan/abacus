@@ -21,13 +21,13 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Final, cast
 from uuid import UUID, uuid4
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.listing import (
     ListPage,
     capped_total,
@@ -40,7 +40,7 @@ from abacus.kernel.listing import (
     status_counts,
 )
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import get_ref, lock_ref
+from abacus.modules.engagements.api import get_ref, lock_ref, work_item_engagement
 from abacus.modules.identity.api import (
     Actor,
     AgentContext,
@@ -48,6 +48,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     Resource,
     TargetFacts,
+    allowed_actions,
     authorise,
     member_could,
     names_of,
@@ -59,6 +60,7 @@ from abacus.modules.review.events import (
     DecisionDecided,
     DecisionNotifyRequested,
 )
+from abacus.modules.review.mfa import require_fresh
 from abacus.modules.review.models import DecisionCard, DecisionCardVersion
 from abacus.modules.review.repository import (
     card_list_query,
@@ -85,6 +87,7 @@ from abacus.modules.review.slots import (
     DecisionKind,
     UnregisteredKind,
     decision_kind,
+    suggestion_engagement,
 )
 
 SUBJECT: Final = "decision_card"
@@ -121,13 +124,6 @@ class DecisionInvalid(DomainInvalid):
     """An option, factor, subject or provider answer the card can't take."""
 
     code = "decision_invalid"
-
-
-class MfaRequired(DomainForbidden):
-    """The kind asks for a second factor verified in the last `max_age_s` seconds: the shell
-    steps up through ConfirmItsYou and retries."""
-
-    code = "mfa_required"
 
 
 # --- Views -------------------------------------------------------------------------------------
@@ -403,6 +399,16 @@ async def raise_decision_card(
     ref = await get_ref(ctx, engagement_id)
     resource = replace(ref.resource(), work_item_id=work_item_id)
     await authorise(ctx, RAISE, resource)
+    # The card's work item and the agent's suggestion must be this engagement's (fail closed: an
+    # unknown suggestion, or no registered owner to ask, is refused).
+    if work_item_id is not None and (
+        await work_item_engagement(ctx.tenant, work_item_id) != engagement_id
+    ):
+        raise DecisionInvalid(facts={"field": "work_item_id"})
+    if recommendation_suggestion_id is not None and (
+        await suggestion_engagement(ctx.tenant, recommendation_suggestion_id) != engagement_id
+    ):
+        raise DecisionInvalid(facts={"field": "recommendation_suggestion_id"})
     computed = _checked(
         await found.options(ctx.tenant, CardSubject(engagement_id, work_item_id, question_key)),
         recommended_option_key,
@@ -526,7 +532,9 @@ async def _allowed(ctx: AuthContext, card: DecisionCard, resource: Resource) -> 
     if not _live_human(ctx) or card.status == "superseded":
         return []
     out: list[str] = []
-    if card.status == "awaiting_role" and await _may(ctx, DECIDE, resource):
+    # Deciding is probed by every layer but fresh MFA, asked for when acting (DEC-505).
+    may_decide = DECIDE in await allowed_actions(ctx, resource, [DECIDE])
+    if card.status == "awaiting_role" and may_decide:
         out.append(DECIDE)
     if await _may(ctx, "decision.request_analysis", resource):
         out.append("decision.request_analysis")
@@ -541,6 +549,7 @@ async def _allowed(ctx: AuthContext, card: DecisionCard, resource: Resource) -> 
     if (
         kind is not None
         and kind.reassess is not None
+        and (card.status != "decided" or may_decide)  # DEC-505: a decided card, its decider
         and await _may(ctx, "decision.reassess", resource)
     ):
         out.append("decision.reassess")
@@ -761,13 +770,17 @@ async def card_detail(ctx: AuthContext, card_id: UUID) -> CardDetail:
 # --- Decide ------------------------------------------------------------------------------------
 
 
-def _fresh(ctx: AuthContext, kind: DecisionKind) -> None:
-    """ADR-160 clause 8: the kind declares whether deciding needs a recent second factor."""
-    limit = kind.mfa_max_age_s
-    if limit is None:
-        return
-    if ctx.mfa_at is None or system_now() - ctx.mfa_at > timedelta(seconds=limit):
-        raise MfaRequired(facts={"max_age_s": limit})
+async def _authorise_decide(ctx: AuthContext, resource: Resource, kind: DecisionKind) -> None:
+    """`decision.decide` with the card's reserved role and person, then the kind's window for a
+    second factor (ADR-160 clause 8; DEC-505: the matrix's `mfa_recent` is the floor, a kind may
+    only tighten it). A refusal for a stale factor alone answers 403 `mfa_required`."""
+    try:
+        await authorise(ctx, DECIDE, resource)
+    except Forbidden as denied:
+        if denied.layer == "attribute":
+            require_fresh(ctx, kind.mfa_max_age_s)
+        raise
+    require_fresh(ctx, kind.mfa_max_age_s)
 
 
 async def decide_card(
@@ -794,8 +807,7 @@ async def decide_card(
         locked = await lock_card(tx.session, card_id)
         if locked is None or locked.engagement_id != card.engagement_id:
             raise NotFound(SUBJECT)
-        await authorise(ctx, DECIDE, _resource(ref.resource(), locked))
-        _fresh(ctx, kind)
+        await _authorise_decide(ctx, _resource(ref.resource(), locked), kind)
         if locked.status != "awaiting_role":
             raise DecisionCardState(facts={"status": locked.status})
         current = await current_version(tx.session, locked.id) or locked.version_no
@@ -928,12 +940,14 @@ async def reassess(ctx: AuthContext, card_id: UUID) -> CardDetail:
     the same card with the provider's figures; a changed outcome raises a superseding card (its
     first version is the reassessment) and marks this one superseded."""
     _human(ctx, "decision.reassess")
-    card, _ = await _readable(ctx, card_id)
+    card, readable = await _readable(ctx, card_id)
     kind = decision_kind(card.kind)
     if kind.reassess is None:
         raise UnregisteredKind
     if card.status == "superseded":
         raise DecisionCardState(facts={"status": card.status})
+    if card.status == "decided":  # refuse before the provider runs; checked again under lock
+        await _authorise_decide(ctx, readable, kind)
     async with tenant_session(ctx.tenant) as session:
         decision = await decision_of(session, card.id)
     subject = CardSubject(card.engagement_id, card.work_item_id, card.question_key)
@@ -952,9 +966,14 @@ async def reassess(ctx: AuthContext, card_id: UUID) -> CardDetail:
         locked = await lock_card(tx.session, card_id)
         if locked is None:
             raise NotFound(SUBJECT)
-        await authorise(ctx, "decision.reassess", _resource(ref.resource(), locked))
+        resource = _resource(ref.resource(), locked)
+        await authorise(ctx, "decision.reassess", resource)
         if locked.status != card.status:
             raise RecommendationChanged(facts={"status": locked.status})
+        if locked.status == "decided":
+            # DEC-505: reassessing a decision can supersede it, so on a decided card it is the
+            # reserved person's act, with a fresh second factor, as deciding was.
+            await _authorise_decide(ctx, resource, kind)
         current = await current_version(tx.session, locked.id) or locked.version_no
         version = current + 1
         scope = Scope(engagement_id=locked.engagement_id, work_item_id=locked.work_item_id)

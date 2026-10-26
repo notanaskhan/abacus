@@ -43,11 +43,13 @@ from abacus.modules.identity.api import (
     Forbidden,
     Resource,
     TargetFacts,
+    allowed_actions,
     authorise,
     engagement_role_of,
     names_of,
 )
 from abacus.modules.review.events import SignOffRecorded
+from abacus.modules.review.mfa import require_fresh
 from abacus.modules.review.models import SignOff
 from abacus.modules.review.notes import OPEN
 from abacus.modules.review.repository import (
@@ -237,14 +239,6 @@ def _with_preparers(resource: Resource, preparers: frozenset[UUID]) -> Resource:
     return replace(resource, target=TargetFacts(preparer_user_ids=preparers))
 
 
-async def _may(ctx: AuthContext, action: str, resource: Resource) -> bool:
-    try:
-        await authorise(ctx, action, resource)
-    except Forbidden:
-        return False
-    return True
-
-
 async def _rows(tenant: TenantContext, target_type: str, target_id: UUID) -> list[SignOff]:
     async with tenant_session(tenant) as session:
         return list(await sign_offs_of(session, target_type, [target_id]))
@@ -289,10 +283,15 @@ async def _ladder(
 async def _levels_allowed(
     ctx: AuthContext, resource: Resource, preparers: frozenset[UUID]
 ) -> list[int]:
-    if not _live_human(ctx) or not await _may(ctx, "sign_off.create", resource):
+    """The levels the caller could sign now, by every layer but fresh MFA, which is asked for at
+    the moment of signing (`allowed_actions`, DEC-505)."""
+    if not _live_human(ctx) or "sign_off.create" not in await allowed_actions(
+        ctx, resource, ["sign_off.create"]
+    ):
         return []
     target = _with_preparers(resource, preparers)
-    return [n for n, action in LEVEL_ACTIONS.items() if await _may(ctx, action, target)]
+    held = await allowed_actions(ctx, target, list(LEVEL_ACTIONS.values()))
+    return [n for n, action in LEVEL_ACTIONS.items() if action in held]
 
 
 async def ladder(ctx: AuthContext, target_type: str, target_id: UUID) -> Ladder:
@@ -440,6 +439,7 @@ async def sign_target(
     for this target and level is answered again rather than refused."""
     if not _live_human(ctx):
         raise Forbidden("sign_off.create", "role")
+    require_fresh(ctx)  # DEC-505: `sign_off.create` holds `mfa_recent`; answer the fixed code
     if kind != "ladder":
         # Field ticks are P-04-T35's and final approval P-04-T31's; until then only the ladder.
         raise SignOffInvalid(facts={"field": "kind"})

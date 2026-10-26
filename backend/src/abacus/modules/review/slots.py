@@ -196,7 +196,8 @@ CardCompute = Callable[[TenantContext, CardSubject], Awaitable[ComputedCard]]
 CardReassess = Callable[
     [TenantContext, CardSubject, str | None, ComputedCard], Awaitable[Reassessment]
 ]
-# The default fresh-MFA window for deciding (the matrix's `mfa_recent`, 15 minutes).
+# The fresh-MFA window for deciding: the matrix's `mfa_recent` (15 minutes) is the floor every
+# kind gets; a kind may only tighten it (DEC-505; no kind opts out).
 DECIDE_MFA_MAX_AGE_S: Final = 900
 
 
@@ -204,15 +205,15 @@ DECIDE_MFA_MAX_AGE_S: Final = 900
 class DecisionKind:
     """A decision card's kind (A-04 materiality, T-04 treatment, ...): who it is reserved to,
     how its options are computed (by code, never a model: ADR-050), its questions' copy, how it
-    is reassessed, and whether deciding needs a recent second factor (ADR-160 clause 8: the
-    kind declares it; required unless a kind opts out with None)."""
+    is reassessed, and how recent the decider's second factor must be (ADR-160 clause 8: the
+    kind declares it, within the matrix's 15 minutes; DEC-505 removed the opt-out)."""
 
     code: str
     reserved_role: str
     options: CardCompute
     questions: Mapping[str, str] = field(default_factory=dict[str, str])
     reassess: CardReassess | None = None
-    mfa_max_age_s: int | None = DECIDE_MFA_MAX_AGE_S
+    mfa_max_age_s: int = DECIDE_MFA_MAX_AGE_S
 
 
 @dataclass(frozen=True)
@@ -248,6 +249,8 @@ def _register[T](registry: dict[str, T], what: str, code: str, value: T, same: b
 def register_decision_kind(kind: DecisionKind) -> None:
     if kind.reserved_role not in _RESERVED_ROLES:
         raise ValueError(f"decision kind {kind.code!r}: unknown reserved role")
+    if not 0 < kind.mfa_max_age_s <= DECIDE_MFA_MAX_AGE_S:
+        raise ValueError(f"decision kind {kind.code!r}: MFA window must be 1 to 900 seconds")
     known = _DECISION_KINDS.get(kind.code)
     same = known is not None and (known.reserved_role, _name(known.options)) == (
         kind.reserved_role,
@@ -261,6 +264,26 @@ def decision_kind(code: str) -> DecisionKind:
     if found is None:
         raise UnregisteredKind
     return found
+
+
+# P-04-T23 (security review L8): who owns an agent suggestion, so a card's recommendation can be
+# checked against the card's engagement. The agents module registers it (review never imports
+# agents); unregistered, every suggestion is unknown (fail closed).
+SuggestionOwner = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_SUGGESTION_OWNER: list[SuggestionOwner] = []
+
+
+def register_suggestion_owner(owner: SuggestionOwner) -> None:
+    if _SUGGESTION_OWNER and _name(_SUGGESTION_OWNER[0]) != _name(owner):
+        raise ValueError("the suggestion owner is already registered")
+    _SUGGESTION_OWNER[:] = [owner]
+
+
+async def suggestion_engagement(tenant: TenantContext, suggestion_id: UUID) -> UUID | None:
+    """The suggestion's engagement, or None (unknown, another firm's, or no owner registered)."""
+    if not _SUGGESTION_OWNER:
+        return None
+    return await _SUGGESTION_OWNER[0](tenant, suggestion_id)
 
 
 def register_gate_kind(code: str, check: GateCheck) -> None:
