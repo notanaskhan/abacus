@@ -249,6 +249,7 @@ export const ACTIONS = [
   "proposal.reject",
   "proposal.route",
   "proposal.undo",
+  "record_activity.read",
   "report.approve",
   "report.release",
   "representation.edit",

@@ -16163,6 +16163,40 @@ export type ListPageActivityEventOut = {
 };
 
 /**
+ * ListPage[AuditEventRow]
+ */
+export type ListPageAuditEventRow = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<AuditEventRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[BinderRequestRowOut]
  */
 export type ListPageBinderRequestRowOut = {
@@ -33932,6 +33966,67 @@ export type UpdateClientResponses = {
 
 export type UpdateClientResponse = UpdateClientResponses[keyof UpdateClientResponses];
 
+export type ClientActivityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/clients/{client_id}/activity';
+};
+
+export type ClientActivityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ClientActivityError = ClientActivityErrors[keyof ClientActivityErrors];
+
+export type ClientActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageAuditEventRow;
+};
+
+export type ClientActivityResponse = ClientActivityResponses[keyof ClientActivityResponses];
+
 export type ListContactsData = {
     body?: never;
     headers?: {
@@ -44553,6 +44648,67 @@ export type EngagementRecordResponses = {
 };
 
 export type EngagementRecordResponse = EngagementRecordResponses[keyof EngagementRecordResponses];
+
+export type EngagementActivityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/engagements/{engagement_id}/record-activity';
+};
+
+export type EngagementActivityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EngagementActivityError = EngagementActivityErrors[keyof EngagementActivityErrors];
+
+export type EngagementActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageAuditEventRow;
+};
+
+export type EngagementActivityResponse = EngagementActivityResponses[keyof EngagementActivityResponses];
 
 export type RepresentationsData = {
     body?: never;

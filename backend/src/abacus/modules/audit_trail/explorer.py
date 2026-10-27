@@ -697,3 +697,82 @@ __all__ = [
     "row_of",
     "shown_to",
 ]
+
+
+# --- Record Activity lines (P-07-T57; DEC-718) ---------------------------------------------------
+
+RECORD_READ: Final = "record_activity.read"
+RECORD_RESOURCE: Final = "record_activity"
+
+
+def _names_client(walled: frozenset[UUID]) -> ColumnElement[bool]:
+    """An event whose references name a client the reader is walled from (a relationship edge,
+    a conflict subject): each side on its own, as `_names_walled_work`."""
+    clients = sorted(str(c) for c in walled)
+
+    def named(refs: ColumnElement[Any]) -> ColumnElement[bool]:  # Any: jsonb
+        pairs = func.jsonb_each_text(func.coalesce(refs, _NO_REFS)).table_valued("key", "value")
+        pairs = pairs.render_derived()
+        return exists(select(literal(1)).select_from(pairs).where(pairs.c.value.in_(clients)))
+
+    return or_(named(t.before_ref), named(t.after_ref))
+
+
+async def record_events(
+    ctx: AuthContext,
+    *,
+    client_id: UUID | None = None,
+    engagement_id: UUID | None = None,
+    cursor: str | None,
+    limit: int,
+) -> ListPage[AuditEventRow]:
+    """CLI-02's and ENG-02's Activity lines, newest first, in the actor grammar. The caller has
+    already 404'd a record the reader may not read (walls included). An engagement's events are
+    shown through `visible(record_activity.read)`; a client's are its own firm-level events
+    (stored `client_id`, no engagement) and its engagements' events the reader may see. Nothing
+    from a walled client: a stored walled `client_id`, or a reference naming one, hides the event.
+    No request context and no values: identifiers only, as the explorer's rows."""
+    if (client_id is None) == (engagement_id is None):
+        raise ValueError("record_events reads one client or one engagement")
+    walled = await walled_from(ctx.tenant, ctx.user_id)
+    reader = Reader(ctx, firm=False, walled=walled, request_context=False)
+    seen = and_(ENGAGEMENT.is_not(None), visible(ctx, RECORD_READ, ENGAGEMENT))
+    conditions: list[ColumnElement[bool]] = (
+        [t.client_id.is_not_distinct_from(client_id), or_(ENGAGEMENT.is_(None), seen)]
+        if client_id is not None
+        else [ENGAGEMENT.is_not_distinct_from(engagement_id), seen]
+    )
+    if walled:
+        conditions += [
+            or_(t.client_id.is_(None), t.client_id.not_in(sorted(walled))),
+            ~_names_client(walled),
+        ]
+    digest = query_hash(client_id=client_id, engagement_id=engagement_id)
+    after: Position | None = (
+        decode_cursor(cursor, tenant_id=ctx.tenant_id, resource=RECORD_RESOURCE, query=digest)
+        if cursor
+        else None
+    )
+    async with tenant_session(ctx.tenant) as session:
+        stmt = keyset(
+            _select(conditions),
+            sort=cast(ColumnElement[object], t.seq),
+            id_column=cast(ColumnElement[object], t.seq),
+            after=after,
+            descending=True,
+            limit=limit,
+        )
+        fetched = [dict(m) for m in (await session.execute(stmt)).mappings().all()]
+        total = await capped_total(session, _select(conditions))
+    rows, next_position = page_of(
+        fetched, limit=limit, key=lambda r: r["seq"], id_of=lambda r: r["seq"]
+    )
+    found = await _labels(ctx, rows)
+    return envelope(
+        [row_of(r, reader, found) for r in rows],
+        next_position=next_position,
+        tenant_id=ctx.tenant_id,
+        resource=RECORD_RESOURCE,
+        query=digest,
+        total=total,
+    )

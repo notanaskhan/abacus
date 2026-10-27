@@ -1,7 +1,7 @@
 """Public interface of the audit_trail module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.uow.chain import Checkpoint, latest_checkpoint, verify_chain
-from abacus.modules.audit_trail import audit_log_routes
+from abacus.modules.audit_trail import audit_log_routes, record_activity_routes
 from abacus.modules.audit_trail.activity_catalogue import (
     CatalogueEntry,
     activity_of,
@@ -48,6 +48,8 @@ from abacus.modules.identity.api import AbacusRouter, register_target_events
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     audit_log_router,  # G-02-T04 contract; list and detail live since G-02-T08, export T17
+    record_activity_routes.clients_router,  # P-07-T57: CLI-02 and ENG-02 Activity lines
+    record_activity_routes.engagements_router,
 )
 
 # G-01-T09 (AC8.6): the wall log reads its wall's events from the trail.
