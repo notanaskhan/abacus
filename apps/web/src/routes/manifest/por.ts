@@ -4,16 +4,18 @@
 import type { Manifest } from "./types";
 
 export const porScreens = {
-  // P-08-T09, T19: every artboard (a to g, c′ and 390) on fixtures, in the portal entry at
-  // /sign-in and /accept (routes/portal), outside the firm's tree, so it carries no firm path.
+  // P-08-T09, T19: every artboard (a to g, c′ and 390), in the portal entry at /sign-in and
+  // /accept (routes/portal), outside the firm's tree, so it carries no firm path. Live since
+  // P-08-T29: it reads the served pre-session routes (P-08-T10, T11).
   "POR-01": {
     name: "Portal sign-in · Brightwater Hale",
-    status: "fixture",
+    status: "live",
     path: null,
     entry: true,
   },
-  // P-08-T15: a, b, c, f on fixtures at the portal root; P-08-T23: d, e, g, h and M.
-  "POR-02": { name: "Portal home · Feld household", status: "fixture", path: null },
+  // P-08-T15: a, b, c, f at the portal root; P-08-T23: d, e, g, h and M. Live since P-08-T29 over
+  // GET /v1/portal/home (P-08-T13); g and h stay fixture-only until their sources register.
+  "POR-02": { name: "Portal home · Feld household", status: "live", path: null },
   // R-01-T06, T10: all twelve artboards render in the gallery on fixtures, and the portal entry
   // mounts the screen at /documents with POR-02's "Go to Documents →" wired. The entry stays
   // planned with a null path: manifest paths resolve in the firm's route tree, so the link
