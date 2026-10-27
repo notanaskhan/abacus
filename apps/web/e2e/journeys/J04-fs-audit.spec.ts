@@ -132,3 +132,22 @@ test.describe("J04-fs-audit PBC slice", () => {
     },
   );
 });
+
+// A-01-T26: j04 1 on AUD-01's own scenario in the fixture project; full stack and staging after the
+// batch deploy (A-01 §10, M6).
+test.describe("J04-fs-audit (A-01's audits index)", () => {
+  test("j04 1: Hannah finds Granite Peak on AUD-01 and opens its cockpit", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "audits.cockpit on in E0 and the S12 batch deployed (A-01 §10; M6, Fri Mar 5, 2027)",
+    );
+    await journey.as("hannah-leclerc", "/audits", { scenario: "AUD-01:a", clock: SEP_24 });
+    await journey.step("J04 step 1: Granite Peak on the audits index (AUD-01 a)", async (page) => {
+      await page
+        .getByRole("link", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
+        .first()
+        .click();
+      await expect(page).toHaveURL(/\/audits\/[^/]+/);
+    });
+  });
+});
