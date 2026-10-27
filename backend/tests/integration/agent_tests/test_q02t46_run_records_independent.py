@@ -32,7 +32,6 @@ from collections.abc import Awaitable, Callable, Mapping
 from datetime import datetime, timedelta
 from typing import Final, cast
 
-import asyncpg
 import httpx
 import pytest
 from temporalio.testing import ActivityEnvironment
@@ -43,7 +42,7 @@ from abacus.modules.agents.api import create_screening_run, load_agent_context, 
 from abacus.modules.agents.workflow_types import RunInput
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
-from .support import Migrated, Seeder, World, retrieve
+from .support import Seeder, World, retrieve
 from .walls_support import Net
 
 Json = dict[str, object]
@@ -74,15 +73,16 @@ async def _completed_run(world: World) -> uuid.UUID:
     return run_id
 
 
-async def _prune_trace(dsn: str, run_id: uuid.UUID) -> None:
+async def _untriggered(seed: Seeder, sql: str, *args: object) -> None:
+    """A change behind the product's back: one superuser transaction with triggers off."""
+    async with seed.held() as conn, conn.transaction():
+        await conn.execute("SET LOCAL session_replication_role = replica")
+        await conn.execute(sql, *args)
+
+
+async def _prune_trace(seed: Seeder, run_id: uuid.UUID) -> None:
     """ADR-032: the raw model trace expires after about 30 days."""
-    conn = await asyncpg.connect(dsn)
-    try:
-        async with conn.transaction():
-            await conn.execute("SET LOCAL session_replication_role = replica")
-            await conn.execute("DELETE FROM usage_records WHERE agent_run_id = $1", run_id)
-    finally:
-        await conn.close()
+    await _untriggered(seed, "DELETE FROM usage_records WHERE agent_run_id = $1", run_id)
 
 
 async def _persisted_digest(seed: Seeder, run_id: uuid.UUID) -> str:
@@ -154,13 +154,12 @@ async def test_ac44_a_run_completed_90_days_ago_still_yields_its_record(
     world: World,
     http: httpx.AsyncClient,
     idp: FakeIdentityProvider,
-    migrated_db: Migrated,
 ) -> None:
     run_id = await _completed_run(world)
     net = Net(seed, http, idp)
     first = await net.call("GET", f"/v1/agent-runs/{run_id}/record", world.requester)
     assert first.status_code == 200, first.text
-    await _prune_trace(migrated_db.superuser_dsn, run_id)
+    await _prune_trace(seed, run_id)
     with frozen(system_now() + timedelta(days=90)):
         later = await net.call("GET", f"/v1/agent-runs/{run_id}/record", world.requester)
     assert later.status_code == 200, later.text
@@ -260,7 +259,6 @@ async def test_seeded_run_record_violations_are_caught(
     world: World,
     http: httpx.AsyncClient,
     idp: FakeIdentityProvider,
-    migrated_db: Migrated,
 ) -> None:
     run_id = await _completed_run(world)
     net = Net(seed, http, idp)
@@ -279,17 +277,9 @@ async def test_seeded_run_record_violations_are_caught(
     for violation in planted:
         assert record_problems(violation, audited=audited, world=world, run_id=run_id)
     # A record altered in the database behind the product's back no longer matches its audit row.
-    conn = await asyncpg.connect(migrated_db.superuser_dsn)
-    try:
-        async with conn.transaction():
-            await conn.execute("SET LOCAL session_replication_role = replica")
-            await conn.execute(
-                "UPDATE agent_run_records SET record_sha256 = $2 WHERE run_id = $1",
-                run_id,
-                "f" * 64,
-            )
-    finally:
-        await conn.close()
+    await _untriggered(
+        seed, "UPDATE agent_run_records SET record_sha256 = $2 WHERE run_id = $1", run_id, "f" * 64
+    )
     tampered = cast(
         Json, (await net.call("GET", f"/v1/agent-runs/{run_id}/record", world.requester)).json()
     )

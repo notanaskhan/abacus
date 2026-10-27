@@ -275,7 +275,7 @@ async def _entries(seed: Seeder, tenant: uuid.UUID, accrued_ref: str) -> list[Js
 async def test_ac39_each_affected_firm_gets_accrueds_facts_as_the_system(net: Net) -> None:
     firms = [await _firm(net.seed), await _firm(net.seed, zone=PACIFIC), await _firm(net.seed)]
     zones = [CHICAGO, PACIFIC, CHICAGO]
-    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6]}"
+    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6].upper()}"
     confirmed = datetime.now(UTC) - timedelta(hours=1)
     facts = _accrued(confirmed)
     staff, reason = str(uuid.uuid4()), "b" * 64
@@ -306,7 +306,7 @@ async def test_ac39_each_affected_firm_gets_accrueds_facts_as_the_system(net: Ne
 
 async def test_ac39_a_repeat_with_the_same_facts_writes_nothing_more(net: Net) -> None:
     tenant = await _firm(net.seed)
-    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6]}"
+    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6].upper()}"
     facts = _accrued(datetime.now(UTC) - timedelta(hours=2))
     step = IncidentPropagationStep(accrued_ref, str(tenant), facts, str(uuid.uuid4()), "c" * 64)
     await propagate_into(step)
@@ -318,7 +318,7 @@ async def test_ac39_a_repeat_with_changed_facts_is_refused_and_nothing_is_writte
     net: Net,
 ) -> None:
     tenant = await _firm(net.seed)
-    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6]}"
+    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6].upper()}"
     confirmed = datetime.now(UTC) - timedelta(hours=2)
     staff = str(uuid.uuid4())
     await propagate_into(
@@ -357,7 +357,7 @@ async def test_seeded_clock_violations_are_caught(net: Net) -> None:
 
 async def test_seeded_propagation_violations_are_caught(net: Net) -> None:
     tenant = await _firm(net.seed)
-    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6]}"
+    accrued_ref = f"ACC-2026-{uuid.uuid4().hex[:6].upper()}"
     confirmed = datetime.now(UTC) - timedelta(hours=1)
     facts = _accrued(confirmed)
     await propagate_into(
