@@ -11,7 +11,7 @@
   communications' `follow_up_policies`; a version is the record of what a publish applied.
 
 Revision ID: 0251
-Revises: 0244
+Revises: 0250
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0251"
-down_revision = "0244"
+down_revision = "0250"
 branch_labels = None
 depends_on = None
 
